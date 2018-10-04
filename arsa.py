@@ -23,6 +23,8 @@ def main():
                         nargs='+')
     args = parser.parse_args()
 
+    print(args.os)
+
     g = graph.PyGraph()
 
     p_manager = passagemanager.PassageManager(g)
@@ -35,7 +37,7 @@ def main():
 
     #p.run(g, a)
 
-    p_manager.execute()
+    p_manager.execute(['LLVMPassage'])
 
 
 if __name__ == '__main__':

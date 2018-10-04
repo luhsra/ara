@@ -1,6 +1,8 @@
 import passages
 import graph
 
+from typing import List
+
 
 class PassageManager:
     """Manages all passages."""
@@ -14,22 +16,17 @@ class PassageManager:
         """Register a passage."""
         self._passages[passage.get_name()] = passage
 
-    def execute(self):
-        """Executes all passages in correct order."""
+    def execute(self, passes: List[str]):
+        """Executes all passages in correct order.
+
+        Arguments:
+            passes -- list of passes to execute
+        """
         # TODO transform this into a graph data structure
         # this is really quick and dirty
-        passes = set(self._passages.keys())
-        for passage in self._passages.values():
-            for dep in passage.get_dependencies():
-                try:
-                    print(dep, passes)
-                    passes.remove(dep)
-                except ValueError:
-                    pass
-        assert(len(passes) > 0)
-        passes = list(passes)
         for passage in passes:
             for dep in self._passages[passage].get_dependencies():
+                print(passage, dep)
                 passes.append(dep)
         print(passes)
 

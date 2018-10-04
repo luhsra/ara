@@ -9,6 +9,7 @@ class LLVMPassage(Passage):
     def get_dependencies(self):
         if self._config.os == 'osek':
             return And("OilPassage")
+        return []
 
 
     def run(self, graph: graph.PyGraph):
