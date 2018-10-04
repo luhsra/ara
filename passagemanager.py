@@ -6,10 +6,9 @@ from typing import List
 
 class PassageManager:
     """Manages all passages."""
-    _passages = {}
-    _graph = None
 
     def __init__(self, g: graph.PyGraph):
+        self._passages = {}
         self._graph = g
 
     def register(self, passage: passages.Passage):

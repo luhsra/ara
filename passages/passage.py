@@ -2,9 +2,8 @@ import graph
 
 
 class Logic:
-    _objects = []
-
     def __init__(self, *args):
+        self._objects = []
         for arg in args:
             self._objects.append(arg)
 
@@ -19,6 +18,7 @@ class Logic:
 
 
 class Or(Logic):
+    pass
     def __iter__(self):
         return iter(self._objects[0:1])
 
