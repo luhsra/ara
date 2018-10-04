@@ -15,12 +15,16 @@ namespace pass {
 
 		Pass() = default;
 
+		/**
+		 * This method is called, when the pass is invoked.
+		 */
 		void run(graph::Graph graph, std::vector<std::string> files) {
-			//graph.addVertex();
-			for (const auto& file : files) {
-				std::cout << "Get file: " << file << '\n';
-			}
 		}
+
+		/**
+		 * Get a unique ID for the pass.
+		 */
+		//virtual std::string getID();
 	};
 
 }

@@ -3,9 +3,13 @@
 """Automated Realtime System Analysis"""
 
 import graph
-import pass1
+#import pass1
 import argparse
 import sys
+import passagemanager
+
+from passages import OilPassage
+from passages import LLVMPassage
 
 
 def main():
@@ -13,16 +17,25 @@ def main():
                                      description=sys.modules[__name__].__doc__)
     parser.add_argument('--verbose', '-v', help="be verbose",
                         action="store_true", default=False)
+    parser.add_argument('--os', '-O', help="specify the operation system",
+                        choices=['freertos', 'osek'], default='osek')
     parser.add_argument('input_files', help="all LLVM-IR input files",
                         nargs='+')
     args = parser.parse_args()
 
     g = graph.PyGraph()
 
-    p = pass1.PyPass()
-    a = [x.encode('utf-8') for x in args.input_files]
+    p_manager = passagemanager.PassageManager(g)
 
-    p.run(g, a)
+    p_manager.register(OilPassage(args))
+    p_manager.register(LLVMPassage(args))
+
+    #p = pass1.PyPass()
+    #a = [x.encode('utf-8') for x in args.input_files]
+
+    #p.run(g, a)
+
+    p_manager.execute()
 
 
 if __name__ == '__main__':

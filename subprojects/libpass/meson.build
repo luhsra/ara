@@ -11,12 +11,12 @@ libgraph = dependency('libgraph', fallback: ['libgraph', 'graph_dep'])
 llvm_dep = dependency('llvm', version : '>=6.0')
 
 pass_pyx_cpp = custom_target('pass_pyx',
-  output : 'pass1_pyx.cpp',
-  input : 'pass1.pyx',
+  output : 'pypass_pyx.cpp',
+  input : 'pypass.pyx',
   command : [cython, '-I', '../subprojects/libgraph', '@INPUT@', '--cplus', '-o', '@OUTPUT@'],
 )
 
-plib = py3_inst.extension_module('pass1',
+plib = py3_inst.extension_module('pypass',
   'pass.h', pass_pyx_cpp,
   dependencies : [py3_inst.dependency(), libgraph, llvm_dep]
 )
