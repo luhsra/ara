@@ -1,5 +1,5 @@
-#ifndef LLVM_PASS_H
-#define LLVM_PASS_H
+#ifndef LLVM_PASSAGE_H
+#define LLVM_PASSAGE_H
 
 #include "graph.h"
 #include "passage.h"
@@ -21,4 +21,4 @@ namespace passage {
 	};
 }
 
-#endif //LLVM_PASS_H
+#endif //LLVM_PASSAGE_H
