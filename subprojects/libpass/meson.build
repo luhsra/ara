@@ -17,7 +17,7 @@ pass_pyx_cpp = custom_target('pass_pyx',
 )
 
 plib = py3_inst.extension_module('pass1',
-  'pass.h', pass_pyx_cpp,
+  'pass.h', pass_pyx_cpp, 'pass.cc',
   dependencies : [py3_inst.dependency(), libgraph, llvm_dep]
 )
 

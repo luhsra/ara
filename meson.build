@@ -12,6 +12,6 @@ build_dir = meson.current_build_dir()
 
 test('ara tester',
 	py3_inst,
-	args : files('arsa.py', 'test/osek.ll'),
+	args : files('arsa.py', 'test/appl.ll'),
 	env : ['PYTHONPATH=' + 'subprojects/libpass/' + ':' + 'subprojects/libgraph']
 )
