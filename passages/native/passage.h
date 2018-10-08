@@ -1,5 +1,5 @@
-#ifndef PASS_H
-#define PASS_H
+#ifndef PASSAGE_H
+#define PASSAGE_H
 
 #include "graph.h"
 #include "Python.h"
@@ -8,21 +8,21 @@
 #include <stdexcept>
 #include <vector>
 
-namespace pass {
+namespace passage {
 
 	// some comment
-	class Pass {
+	class Passage {
 	private:
 		const PyObject* config;
 
 	public:
 
-		Pass(const PyObject* config) : config(config) {
+		Passage(const PyObject* config) : config(config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Pass: Need a dict as config.");
 			}
 		}
-		virtual ~Pass() {}
+		virtual ~Passage() {}
 
 		virtual std::string get_name() = 0;
 
@@ -38,4 +38,4 @@ namespace pass {
 	};
 }
 
-#endif //PASS_H
+#endif //PASSAGE_H

@@ -3,9 +3,9 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "pass.h" namespace "pass":
-    cdef cppclass Pass:
-        Pass(dict config) except +
+cdef extern from "passage.h" namespace "passage":
+    cdef cppclass Passage:
+        Passage(dict config) except +
         string get_name()
         string get_description()
         vector[string] get_dependencies()

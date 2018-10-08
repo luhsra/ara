@@ -2,14 +2,14 @@
 #define LLVM_PASS_H
 
 #include "graph.h"
-#include "pass.h"
+#include "passage.h"
 
 #include <string>
 
-namespace pass {
-	class LLVMPass : public Pass {
+namespace passage {
+	class LLVMPassage : public Passage {
 	public:
-		LLVMPass(const PyObject* config) : Pass(config) {}
+		LLVMPassage(const PyObject* config) : Passage(config) {}
 
 		virtual std::string get_name() override;
 

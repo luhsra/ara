@@ -3,21 +3,21 @@
 #include <string>
 #include <iostream>
 
-namespace pass {
+namespace passage {
 
-	std::string LLVMPass::get_name() {
+	std::string LLVMPassage::get_name() {
 		return "LLVMPassage";
 	}
 
-	std::string LLVMPass::get_description() {
+	std::string LLVMPassage::get_description() {
 		return "Extracts out of LLVM.";
 	}
 
-	void LLVMPass::run(graph::Graph graph) {
+	void LLVMPassage::run(graph::Graph graph) {
 		std::cout << "Run " << get_name() << std::endl;
 	}
 
-	std::vector<std::string> LLVMPass::get_dependencies() {
+	std::vector<std::string> LLVMPassage::get_dependencies() {
 		return {"OilPassage"};
 	}
 }

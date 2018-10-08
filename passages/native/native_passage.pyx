@@ -32,11 +32,11 @@ ctypedef enum passages:
 
 cdef class NativePassage(SuperPassage):
 
-    cdef cpass.Pass* _c_pass
+    cdef cpass.Passage* _c_pass
 
-    def __cinit__(self, config: dict, passages pass_cls):
-        if pass_cls == LLVM_PASSAGE:
-            self._c_pass = <cpass.Pass*> new llvm.LLVMPass(config)
+    def __cinit__(self, config: dict, passages passage_cls):
+        if passage_cls == LLVM_PASSAGE:
+            self._c_pass = <cpass.Passage*> new llvm.LLVMPassage(config)
         else:
             raise("Unknown pass class")
 
