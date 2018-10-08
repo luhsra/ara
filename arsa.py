@@ -54,7 +54,7 @@ def main():
     else:
         folder = "FreeRTOS"
 
-    commands = ["clang-4.0", "-S", "-emit-llvm", "../appl/" + folder + "/" +application_file, "--std=c++11",  "-o", "../test/appl.ll", "-target", "i386-pc-linux-gnu"]
+    commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/" +application_file, "--std=c++11",  "-o", "../test/appl.ll", "-target", "i386-pc-linux-gnu"]
 
     execute_shellcommands(commands, False)
 
