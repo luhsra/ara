@@ -1,6 +1,6 @@
 import graph
 
-from .passage import Passage
+from native_passage import Passage
 
 
 class OilPassage(Passage):

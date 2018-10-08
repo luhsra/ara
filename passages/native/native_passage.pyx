@@ -5,9 +5,6 @@ cimport llvm
 cimport graph
 
 cdef class SuperPassage:
-    def __init__(self, config):
-        self._config = config
-
     def get_dependencies(self):
         return []
 
@@ -21,7 +18,8 @@ cdef class SuperPassage:
         raise("Not implemented.")
 
 class Passage(SuperPassage):
-    _config = {}
+    def __init__(self, config):
+        self._config = config
 
     def get_name(self):
         return self.__class__.__name__
@@ -29,11 +27,19 @@ class Passage(SuperPassage):
     def get_description(self) -> str:
         return self.__doc__
 
-cdef class NativePassage(SuperPassage):
-    cdef cpass.Pass* _c_pass  # Hold a C++ instance which we're wrapping
+ctypedef enum passages:
+    LLVM_PASSAGE
 
-    def __cinit__(self):
-        self._c_pass = <cpass.Pass*> new llvm.LLVMPass()
+cdef class NativePassage(SuperPassage):
+
+    cdef cpass.Pass* _c_pass
+
+    def __cinit__(self, config: dict, passages pass_cls):
+        if pass_cls == LLVM_PASSAGE:
+            self._c_pass = <cpass.Pass*> new llvm.LLVMPass(config)
+        else:
+            raise("Unknown pass class")
+
         if self._c_pass is NULL:
             raise MemoryError()
 
@@ -41,11 +47,19 @@ cdef class NativePassage(SuperPassage):
         if self._c_pass is not NULL:
             del self._c_pass
 
+    def get_dependencies(self):
+        # doing this in one line leads to a compiler error
+        deps = self._c_pass.get_dependencies()
+        return [x.decode('UTF-8') for x in deps]
+
     def run(self, graph.PyGraph g):
         self._c_pass.run(g._c_graph)
 
     def get_name(self) -> str:
-        return self._c_pass.get_name()
+        return self._c_pass.get_name().decode('UTF-8')
 
     def get_description(self):
         return self._c_pass.get_description()
+
+def provide_passages(config: dict):
+    return [NativePassage(config, LLVM_PASSAGE)]

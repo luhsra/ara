@@ -6,7 +6,7 @@
 namespace pass {
 
 	std::string LLVMPass::get_name() {
-		return "LLVMPass";
+		return "LLVMPassage";
 	}
 
 	std::string LLVMPass::get_description() {
@@ -15,5 +15,9 @@ namespace pass {
 
 	void LLVMPass::run(graph::Graph graph) {
 		std::cout << "Run " << get_name() << std::endl;
+	}
+
+	std::vector<std::string> LLVMPass::get_dependencies() {
+		return {"OilPassage"};
 	}
 }

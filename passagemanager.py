@@ -7,13 +7,15 @@ from typing import List
 class PassageManager:
     """Manages all passages."""
 
-    def __init__(self, g: graph.PyGraph):
-        self._passages = {}
+    def __init__(self, g: graph.PyGraph, config: dict):
         self._graph = g
-
-    def register(self, passage: passages.Passage):
-        """Register a passage."""
-        self._passages[passage.get_name()] = passage
+        self._config = config
+        self._passages = {}
+        for passage in passages.provide_passages(config):
+            print(passage.get_name())
+            print(passage)
+            print(type(passage))
+            self._passages[passage.get_name()] = passage
 
     def execute(self, passes: List[str]):
         """Executes all passages in correct order.

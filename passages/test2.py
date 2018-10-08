@@ -1,13 +1,13 @@
 import graph
 
-from .passage import Passage, And
+from native_passage import Passage
 
 
 class Test2Passage(Passage):
     """Only for testing purposes"""
 
     def get_dependencies(self):
-        return And("OilPassage", "Test1Passage")
+        return ["OilPassage", "Test1Passage"]
 
     def run(self, graph: graph.PyGraph):
         print("I'm an Test2Passage")

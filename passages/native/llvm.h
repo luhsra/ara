@@ -7,16 +7,15 @@
 #include <string>
 
 namespace pass {
-
-	// some comment
 	class LLVMPass : public Pass {
 	public:
-
-		LLVMPass() = default;
+		LLVMPass(const PyObject* config) : Pass(config) {}
 
 		virtual std::string get_name() override;
 
 		virtual std::string get_description() override;
+
+		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph graph) override;
 	};

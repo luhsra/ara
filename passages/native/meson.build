@@ -1,21 +1,13 @@
-project('ara-pass', 'cpp',
-  default_options : ['warning_level=3', 'cpp_std=c++17'])
-
-cython = find_program('cython')
-py3_mod = import('python')
-py3_inst = py3_mod.find_installation('python3')
-
-libgraph = dependency('libgraph', fallback: ['libgraph', 'graph_dep'])
 llvm_dep = dependency('llvm', version : '>=6.0')
 
-pypass_pyx_cpp = custom_target('pypass_pyx',
-  output : 'pypass_pyx.cpp',
-  input : 'pypass.pyx',
-  command : [cython, '-I', '../subprojects/libgraph', '@INPUT@', '--cplus', '-o', '@OUTPUT@'],
+native_pass_pyx_cpp = custom_target('native_pass_pyx',
+  output : 'native_pass_pyx.cpp',
+  input : 'native_passage.pyx',
+  command : [cython, '-I', '../subprojects/libgraph', '@INPUT@', '--cplus', '-3', '-o', '@OUTPUT@'],
 )
 
-plib = py3_inst.extension_module('pypass',
-  pypass_pyx_cpp,
+plib = py3_inst.extension_module('native_passage',
+  native_pass_pyx_cpp,
   'llvm.cpp',
   dependencies : [py3_inst.dependency(), libgraph, llvm_dep]
 )
