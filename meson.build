@@ -13,6 +13,6 @@ subdir('passages')
 
 test('ara tester',
 	py3_inst,
-	args : [files('arsa.py', 'test/appl.ll'), '--os', 'freertos'],
+	args : [files('arsa.py', 'test/data/appl.ll'), '--os', 'freertos'],
 	env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )
