@@ -5,9 +5,20 @@ from typing import List
 
 
 class PassageManager:
-    """Manages all passages."""
+    """Manages all passages.
+
+    Knows about all passages and can execute them in correct order.
+    Usage: Construct one instance of PassageManager and then call execute()
+    with a list of passage that should be executed.
+    """
 
     def __init__(self, g: graph.PyGraph, config: dict):
+        """Construct a PassageManager.
+
+        Arguments:
+        g      -- the system graph
+        config -- the program configuration. This should be a dict.
+        """
         self._graph = g
         self._config = config
         self._passages = {}
@@ -17,22 +28,23 @@ class PassageManager:
             print(type(passage))
             self._passages[passage.get_name()] = passage
 
-    def execute(self, passes: List[str]):
+    def execute(self, passages: List[str]):
         """Executes all passages in correct order.
 
         Arguments:
-            passes -- list of passes to execute
+        passages -- list of passsages to execute. The elements are strings that
+                    matches the ones returned by passage.get_name().
         """
         # TODO transform this into a graph data structure
         # this is really quick and dirty
-        for passage in passes:
+        for passage in passages:
             for dep in self._passages[passage].get_dependencies():
                 print(passage, dep)
-                passes.append(dep)
-        print(passes)
+                passages.append(dep)
+        print(passages)
 
         executed = set()
-        for passage in reversed(passes):
+        for passage in reversed(passages):
             if passage not in executed:
                 self._passages[passage].run(self._graph)
                 executed.add(passage)
