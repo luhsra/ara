@@ -10,13 +10,21 @@
 
 namespace passage {
 
-	// some comment
+	/**
+	 * Superclass for constructing arbitrary passages in C++.
+	 */
 	class Passage {
 	private:
 		const PyObject* config;
 
 	public:
 
+		/**
+		 * Contruct a native passage.
+		 *
+		 * @Args
+		 * config -- a Python dictionary, that holds the configuration of the whole program.
+		 */
 		Passage(const PyObject* config) : config(config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Pass: Need a dict as config.");
@@ -24,10 +32,21 @@ namespace passage {
 		}
 		virtual ~Passage() {}
 
+		/**
+		 * Return a unique name of this passage. This acts as ID for the passage.
+		 */
 		virtual std::string get_name() = 0;
 
+		/**
+		 * Get a descriptive string of the passage that says what the passage is doing.
+		 */
 		virtual std::string get_description() = 0;
 
+		/**
+		 * Get all depencies of this passage.
+		 *
+		 * @Return: A list of passage names (the ones that are returned with get_name().
+		 */
 		virtual std::vector<std::string> get_dependencies() = 0;
 
 		/**
