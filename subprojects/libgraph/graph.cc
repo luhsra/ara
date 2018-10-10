@@ -1,8 +1,8 @@
 #include "graph.h"
 
-graph::Graph::Graph(std::shared_ptr<llvm::Module> test_module){
+graph::Graph::Graph(std::shared_ptr<llvm::Module> module){
    
-    llvm_module = test_module;
+    llvm_module = module;
 }
 
 
@@ -31,18 +31,24 @@ llvm::Module* graph::Graph::get_llvm_module(){
 
 
 
-bool graph::Graph::set_vertex(Vertex *vertex){
+graph::Vertex* graph::Graph::set_vertex(Vertex *vertex){
     
     std::shared_ptr<graph::Vertex> graph_vertex(vertex->clone());       //create shared po
     this->vertexes.push_back(graph_vertex);                                                //store the shared pointer in the internal list
-    return true;
+    
+   // std::cout << "Referenz: " << graph_vertex.get() << std::endl;
+    
+   // std::cout << "Return Referenz: " << this->vertexes.back().get() << std::endl;
+    //std::cout << "Name: " << this->vertexes.back().get()->get_name() << std::endl;
+    
+    return this->vertexes.back().get();
 }
 
-bool graph::Graph::set_edge(Edge *edge){
+graph::Edge* graph::Graph::set_edge(Edge *edge){
     
     std::shared_ptr<graph::Edge> graph_edge(edge->clone());          //create shared pointer of copied and heap allocated edge
     this->edges.push_back(graph_edge);                                                   //store the shared pointer in the internal list
-    return true;
+    return this->edges.back().get();
 }
 
 
@@ -51,7 +57,7 @@ graph::Vertex* graph::Graph::create_vertex(){
     //std::shared_ptr<Vertex> shared_pointer = std::make_shared<Vertex>(vertex->clone());     //create shared pointer of copied and heap allocated vertex
 
     
-    std::shared_ptr<Vertex> shared_pointer = std::make_shared<Vertex>(this);     //create shared po
+    std::shared_ptr<Vertex> shared_pointer = std::make_shared<Vertex>(this,typeid(graph::Vertex()).hash_code());     //create shared po
     
     this->vertexes.push_back(shared_pointer);                                                //store the shared pointer in the internal list
     return shared_pointer.get();
@@ -69,23 +75,21 @@ graph::Edge* graph::Graph::create_edge(){
 
 
             
-std::list<std::shared_ptr<graph::Vertex>*> graph::Graph::get_type_vertexes(size_t type_info){
+std::list<graph::Vertex*> graph::Graph::get_type_vertexes(size_t type_info){
     
-    std::list<std::shared_ptr<Vertex>*> tmp_list;
+    std::list<Vertex*> tmp_list;
     std::list<std::shared_ptr<Vertex>>::iterator it = this->vertexes.begin();       //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
-        
-        if(type_info==typeid(*it).hash_code()){                                         //check if vertex is from wanted type
+        if(type_info==(*it).get()->get_type()){                                         //check if vertex is from wanted type
             std::shared_ptr<graph::Vertex>* tmp_pointer = &(*it);
-            tmp_list.push_back(tmp_pointer);
-            it = this->vertexes.erase(it--);
+            tmp_list.push_back(tmp_pointer->get());
         }
     }
     return tmp_list;
 }
 
 
-std::shared_ptr<graph::Vertex>* graph::Graph::get_vertex(size_t seed){   
+graph::Vertex* graph::Graph::get_vertex(size_t seed){   
     
     //gebe Vertex mit dem entsprechenden hashValue zurück
     std::list<std::shared_ptr<Vertex>>::iterator it = this->vertexes.begin();       //iterate about the list elements
@@ -93,7 +97,7 @@ std::shared_ptr<graph::Vertex>* graph::Graph::get_vertex(size_t seed){
         
         //gesuchter vertex gefunden
         if(seed==(*it)->get_seed()){                                         //check if vertex is from wanted type
-           return (&(*it)); 
+           return (*it).get(); 
         }
     }
     return nullptr;        
@@ -225,13 +229,11 @@ graph::Vertex::Vertex(){
 
 
 
-graph::Vertex::Vertex(Graph *graph){
+graph::Vertex::Vertex(Graph *graph,std::size_t type){
     this->graph = graph;
     this->name = ""  ; // spezifischer Name des Vertexes
     this->seed = 0 ; // für jedes Element spezifischer hashValue
-
-    
-    
+    this->type = type;
 } // Constructor
 
 
@@ -472,6 +474,27 @@ std::list<std::shared_ptr<graph::Edge>*> graph::Vertex::get_direct_edge(std::sha
     }
     return tmp_list;
 }
+
+
+void graph::Vertex::set_type(std::size_t type){
+    this->type = type;
+}
+
+
+std::size_t graph::Vertex::get_type(){
+    return this->type;
+}
+                
+
+
+
+
+
+
+
+
+
+
 
 
 

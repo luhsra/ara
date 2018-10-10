@@ -78,8 +78,10 @@ def main():
     p_manager = passagemanager.PassageManager(g, vars(args))
 
     #p = pass1.PyPass()
-    #a = [x.encode('utf-8') for x in args.input_files]
-
+    a = [x.encode('utf-8') for x in args.input_files]
+    
+    print(a)
+    
     #p.run(g, a)
 
     p_manager.execute(['Test4Passage'])

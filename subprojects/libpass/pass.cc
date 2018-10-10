@@ -1,53 +1,6 @@
 #include "pass.h"
 
 
-static bool isCallToLLVMIntrinsic(Instruction * inst) {
-    if (CallInst* callInst = dyn_cast<CallInst>(inst)) {
-        Function * func = callInst->getCalledFunction();
-        if (func && func->getName().startswith("llvm.")) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-void split_basicblocks(Function *function,unsigned *split_counter) {
-    std::list<BasicBlock *> bbs;
-    for (BasicBlock &_bb : *function) {
-        bbs.push_back(&_bb);
-    }
-    for (BasicBlock *bb : bbs) {
-        BasicBlock::iterator it = bb->begin();
-        while (it != bb->end()) {
-            //TODO check if iterator is at end of instruction list of BasicBlock
-            while (isa<InvokeInst>(*it) || isa<CallInst>(*it)) {
-                // If the call is an artifical function (e.g. @llvm.dbg.metadata)
-                if (isCallToLLVMIntrinsic(&*it)) {
-                    ++it;
-                    continue;
-                }
-
-                std::stringstream ss;
-                ss << "BB" << split_counter++;
-                bb = bb->splitBasicBlock(it, ss.str());
-                it = bb->begin();
-                ++it;
-
-                if (isa<InvokeInst>(*it) || isa<CallInst>(*it))
-                    continue;
-
-                //TODO dead code?
-                ss.str("");
-                ss << "BB" << split_counter++;
-                bb = bb->splitBasicBlock(it, ss.str());
-                it = bb->begin();
-            }
-            ++it;
-        }
-    }
-}
-            
 void pass::Pass::run(graph::Graph graph, std::vector<std::string> files) {
                     
     SMDiagnostic Err;
@@ -105,17 +58,24 @@ void pass::Pass::run(graph::Graph graph, std::vector<std::string> files) {
                 bb.setName(ss.str());
             }
         }
-    
+    	OS::ABB *successor = nullptr;
+	OS::ABB *predecessor = nullptr;
+
+        
+        
         // Only non-empty functions
-        for (auto &bb : *func) {
+        for (auto &bb : *func){
             
+            //generate ABB 
             OS::ABB abb = OS::ABB(&tmp_graph, &graph_function,bb.getName().str());
-            /*
-            abb = self.system_graph.new_abb([bb_name])
-            assert not bb_name in abbs
-            abbs[bb_name] = abb
-            function.add_atomic_basic_block(abb)
-            */
+            bb.set_BascBlock&(bb);
+            //store the abb
+            tmp_graph.set_vertex(&abb);
+            
+            //TODO set predecessor and successor 
+	    
+            graph_function.add_atomic_basic_block(abb);
+            
         }
         
         //store the generated element in the graph datastructure
