@@ -3,3 +3,5 @@ test('dependency_resolving',
         args : files('dependency_resolving.py'),
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )
+
+subdir('native_passage_test')
