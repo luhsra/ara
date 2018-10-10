@@ -14,12 +14,6 @@ import passagemanager
 
 from passages import OilPassage
 
-from passages import Test1Passage
-from passages import Test2Passage
-from passages import Test3Passage
-from passages import Test4Passage
-
-
 #select the operating system: 0 = OSEK; 1 = FreeRTOS
 realtime_system = 1;
 application_file = "g.cc"
@@ -70,19 +64,12 @@ def main():
                         nargs='+')
     args = parser.parse_args()
 
-    print(args.os)
-
     g = graph.PyGraph()
 
 
     p_manager = passagemanager.PassageManager(g, vars(args))
 
-    #p = pass1.PyPass()
-    #a = [x.encode('utf-8') for x in args.input_files]
-
-    #p.run(g, a)
-
-    p_manager.execute(['Test4Passage'])
+    p_manager.execute(['LLVMPassage'])
 
 
 if __name__ == '__main__':
