@@ -1,3 +1,5 @@
+// vim: set noet ts=4 sw=4:
+
 #include "graph.h"
 
 graph::Graph::Graph(std::shared_ptr<llvm::Module> module){

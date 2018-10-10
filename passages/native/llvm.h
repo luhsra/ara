@@ -1,3 +1,5 @@
+// vim: set noet ts=4 sw=4:
+
 #ifndef LLVM_PASSAGE_H
 #define LLVM_PASSAGE_H
 

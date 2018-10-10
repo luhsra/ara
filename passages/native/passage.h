@@ -1,3 +1,5 @@
+// vim: set noet ts=4 sw=4:
+
 #ifndef PASSAGE_H
 #define PASSAGE_H
 
