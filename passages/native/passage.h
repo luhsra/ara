@@ -14,8 +14,8 @@ namespace passage {
 	 * Superclass for constructing arbitrary passages in C++.
 	 */
 	class Passage {
-	private:
-		const PyObject* config;
+	protected:
+		PyObject* config;
 
 	public:
 
@@ -25,7 +25,7 @@ namespace passage {
 		 * @Args
 		 * config -- a Python dictionary, that holds the configuration of the whole program.
 		 */
-		Passage(const PyObject* config) : config(config) {
+		Passage(PyObject* config) : config(config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Pass: Need a dict as config.");
 			}

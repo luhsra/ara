@@ -12,7 +12,7 @@ __all__ = ['Passage', 'OilPassage',
            'Test1Passage', 'Test2Passage', 'Test3Passage', 'Test4Passage']
 
 def provide_passages(config: dict):
-    for passage in  _native_provide({'a': 1}):
+    for passage in  _native_provide(config):
         yield passage
 
     yield OilPassage(config)

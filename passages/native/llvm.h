@@ -9,7 +9,7 @@
 namespace passage {
 	class LLVMPassage : public Passage {
 	public:
-		LLVMPassage(const PyObject* config) : Passage(config) {}
+		LLVMPassage(PyObject* config) : Passage(config) {}
 
 		virtual std::string get_name() override;
 
