@@ -39,7 +39,7 @@ cdef class SuperPassage:
         Arguments:
         g -- the system graph.
         """
-        raise("Not implemented.")
+        raise Exception("Not implemented.")
 
 class Passage(SuperPassage):
     """Python representation of a passage. This is the superclass for all other
