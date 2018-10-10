@@ -12,20 +12,22 @@ class PassageManager:
     with a list of passage that should be executed.
     """
 
-    def __init__(self, g: graph.PyGraph, config: dict):
+    def __init__(self, g: graph.PyGraph, config: dict,
+                 provides=passages.provide_passages):
         """Construct a PassageManager.
 
         Arguments:
         g      -- the system graph
         config -- the program configuration. This should be a dict.
+
+        Keyword arguments:
+        provides -- An optional provides function to announce the passes to
+                    PassageManager
         """
         self._graph = g
         self._config = config
         self._passages = {}
-        for passage in passages.provide_passages(config):
-            print(passage.get_name())
-            print(passage)
-            print(type(passage))
+        for passage in provides(config):
             self._passages[passage.get_name()] = passage
 
     def execute(self, passages: List[str]):
@@ -39,9 +41,7 @@ class PassageManager:
         # this is really quick and dirty
         for passage in passages:
             for dep in self._passages[passage].get_dependencies():
-                print(passage, dep)
                 passages.append(dep)
-        print(passages)
 
         executed = set()
         for passage in reversed(passages):
