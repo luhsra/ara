@@ -57,14 +57,14 @@ namespace graph {
                 
                 llvm::Module* get_llvm_module();
                 
-		bool set_vertex(Vertex *vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
-		bool set_edge(Edge *edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+		Vertex* set_vertex(Vertex *vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+		Edge* set_edge(Edge *edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
                 
                 Vertex * create_vertex();
                 Edge * create_edge();
                 
-		std::list<std::shared_ptr<Vertex>*>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
-		std::shared_ptr<Vertex> *get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
+		std::list<Vertex*>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
+		Vertex* get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
                 std::shared_ptr<Edge> *get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
 		std::list<std::shared_ptr<Vertex> *> get_vertexes();  // gebe alle Vertexes des Graphen zurück
                 
@@ -88,6 +88,7 @@ namespace graph {
 	  protected:
 		Graph *graph; // Referenz zum Graphen, in der der Vertex gespeichert ist
 
+                std::size_t type;
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
 
@@ -117,8 +118,11 @@ namespace graph {
                 
                 virtual Vertex *clone() const{return new Vertex(*this);};
                 
-		Vertex(Graph *graph); // Construktor
+		Vertex(Graph *graph,std::size_t type); // Construktor
     
+                
+                void set_type(std::size_t type);
+                std::size_t get_type();
                 
 		std::string get_name(); // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
@@ -152,6 +156,8 @@ namespace graph {
 		std::list<std::shared_ptr<Edge>*> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
 		std::list<std::shared_ptr<Edge>*>get_direct_edge(std::shared_ptr<Vertex> *vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
+		                                   
+               // virtual  ~Vertex();
 	};
 
 	class ABB;
@@ -237,7 +243,7 @@ namespace OS {
 		static bool classof(const Vertex *v); // LLVM RTTI class of Methode
                 
                 
-                Function(graph::Graph *graph,std::string name) : graph::Vertex(graph){
+                Function(graph::Graph *graph, std::size_t type,std::string name) : graph::Vertex(graph,type){
                     this->function_name = name;
                     this->name = name;
                     std::hash<std::string> hash_fn;
@@ -308,12 +314,14 @@ namespace OS {
 
 	  public:
               
-                ABB(graph::Graph *graph, Function *function, std::string name) : graph::Vertex(graph){
+                virtual ABB *clone() const{
+                    return new ABB(*this);};
+                
+                ABB(graph::Graph *graph,  std::size_t type,Function *function, std::string name) : graph::Vertex(graph,type){
                     parent_function = function;
                     this->name = name;
                     std::hash<std::string> hash_fn;
-                    this->seed = hash_fn(name +  typeid(this).name());
-                    
+                    this->seed = hash_fn(name +  typeid(this).name());                   
                 }
               
 		syscall_definition_type get_calltype();
