@@ -7,12 +7,15 @@
 #include <functional>
 #include <list>
 #include <string>
+#include <tuple>
 #include <typeinfo>
 #include <memory>
 #include "llvm/IR/Module.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Function.h"
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
 #include <iostream>
 #include <sstream>
 #include <queue>
@@ -28,7 +31,7 @@ typedef enum  { oneshot, autoreload }timer_type;
 
 typedef enum  { binary, counting, mutex, recursive_mutex }semaphore_type;
 
-typedef enum  { integer, floating, pointer, array, structure, string, additional }argument_type;
+typedef enum  { integer, floating, pointer, array, structure, string, initial }argument_type;
 
 typedef enum  { stream, message }buffer_type;
 
@@ -44,41 +47,41 @@ namespace graph {
 	// Basis Klasse des Graphen
 	class Graph {
 
-            private:
-		std::list<std::shared_ptr<Vertex>> vertexes; // std::liste aller Vertexes des Graphen
-		std::list<std::shared_ptr<Edge>> edges;      // std::liste aller Edges des Graphen
-		
-		std::shared_ptr<llvm::Module> llvm_module;
+		private:
+			std::list<std::shared_ptr<Vertex>> vertexes; // std::liste aller Vertexes des Graphen
+			std::list<std::shared_ptr<Edge>> edges;      // std::liste aller Edges des Graphen
+			
+			std::shared_ptr<llvm::Module> llvm_module;
                 
-            public:
+		public:
                 
-                Graph(std::shared_ptr<llvm::Module>);
+			Graph(std::shared_ptr<llvm::Module>);
 
-                Graph();
-		void set_llvm_module(std::shared_ptr<llvm::Module> module);
+			Graph();
+			void set_llvm_module(std::shared_ptr<llvm::Module> module);
                 
-                llvm::Module* get_llvm_module();
+			llvm::Module* get_llvm_module();
                 
-		Vertex* set_vertex(Vertex *vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
-		Edge* set_edge(Edge *edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+			Vertex* set_vertex(Vertex *vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+			Edge* set_edge(Edge *edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+			
+			Vertex * create_vertex();
+			Edge * create_edge();
+					
+			std::list<Vertex*>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
+			Vertex* get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
+			Edge* get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
+			std::list<Vertex*> get_vertexes();  // gebe alle Vertexes des Graphen zurück
                 
-                Vertex * create_vertex();
-                Edge * create_edge();
-                
-		std::list<Vertex*>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
-		Vertex* get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
-                std::shared_ptr<Edge> *get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
-		std::list<std::shared_ptr<Vertex> *> get_vertexes();  // gebe alle Vertexes des Graphen zurück
-                
-                std::list<std::shared_ptr<Edge> *> get_edges();  // gebe alle Edges des Graphen zurück
+			std::list<Edge*> get_edges();  // gebe alle Edges des Graphen zurück
 
-		bool remove_vertex(std::shared_ptr<Vertex> * vertex); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes
-		                                    // aus dem Graphen
-		bool remove_edge(std::shared_ptr<Edge> * edge); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes aus dem Graphen
+			bool remove_vertex(Vertex * vertex); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes
+												// aus dem Graphen
+			bool remove_edge(Edge * edge); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes aus dem Graphen
                 
-                bool contain_vertex(Vertex *vertex);
-                
-                bool contain_edge(Edge *edge);
+			bool contain_vertex(Vertex *vertex);
+			
+			bool contain_edge(Edge *edge);
    
                 
 	};
@@ -118,13 +121,13 @@ namespace graph {
 		const VertexKind Kind;
 		*/
                 
-                virtual Vertex *clone() const{return new Vertex(*this);};
+		virtual Vertex *clone() const{return new Vertex(*this);};
                 
 		Vertex(Graph *graph,std::size_t type); // Construktor
     
                 
-                void set_type(std::size_t type);
-                std::size_t get_type();
+		void set_type(std::size_t type);
+		std::size_t get_type();
                 
 		std::string get_name(); // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
@@ -140,7 +143,7 @@ namespace graph {
 		bool remove_edge(std::shared_ptr<Edge> *);
 		bool remove_vertex(std::shared_ptr<Vertex> *vertex);
                 
-                Graph* get_graph();
+		Graph* get_graph();
 
 		std::list<std::shared_ptr<Vertex>*>
 		get_specific_connected_vertexes(size_t type_info); // get elements from graph with specific type
@@ -159,7 +162,7 @@ namespace graph {
 		std::list<std::shared_ptr<Edge>*>get_direct_edge(std::shared_ptr<Vertex> *vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
 		                                   
-               // virtual  ~Vertex();
+		//virtual  ~Vertex();
 	};
 
 	class ABB;
@@ -180,11 +183,11 @@ namespace graph {
 		ABB *atomic_basic_block_reference;
 
 	  public:
-                
-                virtual Edge *clone() const{return new Edge(*this);};
-                
-                
-                Edge();
+		
+		virtual Edge *clone() const{return new Edge(*this);};
+		
+		
+		Edge();
 		Edge(Graph *graph, std::string name, std::shared_ptr<Vertex> *start, std::shared_ptr<Vertex> *target);
 
 		std::string get_name(); // gebe Namen des Vertexes zurück
@@ -200,7 +203,7 @@ namespace graph {
 
 		std::list<std::tuple<argument_type, std::any>> get_arguments();
 		void set_arguments(std::list<std::tuple<argument_type, std::any>> arguments);
-                void append_argument(std::tuple<argument_type, std::any> argument);
+		void append_argument(std::tuple<argument_type, std::any> argument);
 	};
 } // namespace graph
 
@@ -240,24 +243,24 @@ namespace OS {
 	  public:
                               
               
-                virtual Function *clone() const{return new Function(*this);};
+		Function *clone() const{return new Function(*this);};
                 
 		static bool classof(const Vertex *v); // LLVM RTTI class of Methode
                 
                 
-                Function(graph::Graph *graph, std::size_t type,std::string name) : graph::Vertex(graph,type){
-                    this->function_name = name;
-                    this->name = name;
-                    std::hash<std::string> hash_fn;
-                    this->seed = hash_fn(name +  typeid(this).name());
-                }
+		Function(graph::Graph *graph, std::size_t type,std::string name) : graph::Vertex(graph,type){
+			this->function_name = name;
+			this->name = name;
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(this).name());
+		}
 
 
 		void set_definition(function_definition_type type);
 		function_definition_type get_definition();
                 
                 
-                std::list<Function*>get_used_functions(); // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
+		std::list<Function*>get_used_functions(); // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
 		bool set_used_function(OS::Function *function); // Setze Funktion in std::liste aller Funktionen, die diese Funktion benutzen
 
 
@@ -267,8 +270,8 @@ namespace OS {
 		llvm::BasicBlock *get_start_critical_section_block();
 		llvm::BasicBlock *get_end_critical_section_block();
 
-                bool has_critical_section();
-                void set_critical_section(bool flag);
+		bool has_critical_section();
+		void set_critical_section(bool flag);
                 
 		bool set_llvm_reference(llvm::Function *function);
 		llvm::Function *get_llvm_reference();
@@ -280,19 +283,19 @@ namespace OS {
 
 		bool set_referenced_task(OS::Task *task);
 
-                bool set_referenced_function(OS::Function *function);
-                
-                
-                void set_function_name(std::string name);
-                std::string get_function_name();
+		bool set_referenced_function(OS::Function *function);
+		
+		
+		void set_function_name(std::string name);
+		std::string get_function_name();
                 
 		std::list<OS::Function *> get_referenced_functions();
 
 		std::list<llvm::Type*> get_argument_types();
 		void set_argument_type(llvm::Type* argument); // Setze Argument des SystemCalls in Argumentenliste
                 
-                void set_return_type(llvm::Type* argument); 
-                llvm::Type * get_return_type();
+		void set_return_type(llvm::Type* argument); 
+		llvm::Type * get_return_type();
 	};
 
 	// Klasse AtomicBasicBlock
@@ -309,28 +312,30 @@ namespace OS {
 
 		std::list<llvm::BasicBlock *> basic_blocks;
 
-		std::string callname = ""; // Name des Sycalls
-		std::list<std::any> arguments;
+		std::string call_name = ""; // Name des Sycalls
+		
+		std::list<std::tuple<std::any,llvm::Type*>> arguments;
 
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 
 	  public:
               
-                virtual ABB *clone() const{
-                    return new ABB(*this);};
-                
-                ABB(graph::Graph *graph,  std::size_t type,Function *function, std::string name) : graph::Vertex(graph,type){
-                    parent_function = function;
-                    this->name = name;
-                    std::hash<std::string> hash_fn;
-                    this->seed = hash_fn(name +  typeid(this).name());                   
-                }
+		virtual ABB *clone() const{
+			return new ABB(*this);};
+		
+		ABB(graph::Graph *graph,  std::size_t type,Function *function, std::string name) : graph::Vertex(graph,type){
+			parent_function = function;
+			this->name = name;
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(this).name());                   
+		}
               
 		syscall_definition_type get_calltype();
 		void set_calltype(syscall_definition_type type);
 
-
-
+		void set_call_name(std::string call_name);
+		std::string get_call_name();
+		
 		std::list<ABB *> get_ABB_successor();
 		std::list<ABB *> get_ABB_predecessor();
 
@@ -338,10 +343,10 @@ namespace OS {
 		bool is_critical();
 		void set_critical(bool critical);
 
-		std::list<std::any> get_arguments();
-		void set_arguments(std::list<std::any> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
+		std::list<std::tuple<std::any,llvm::Type*>> get_arguments();
+		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
 
-                void set_argument(std::any new_argument);
+		void set_argument(std::any,llvm::Type* type);
 		bool set_ABB_successor(ABB *basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
 		bool set_ABB_predecessor(ABB *basicblock); // Speicher Referenz auf Vorgänger des BasicBlocks
 		std::list<ABB *> get_ABB_successors();      // Gebe Referenz auf Nachfolger zurück
@@ -544,6 +549,8 @@ namespace OS {
 		bool static_buffer;
 
 		static bool classof(const Vertex *S);
+		
+		~Buffer(){};
 	};
 
 } // namespace OS

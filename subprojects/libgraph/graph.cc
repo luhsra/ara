@@ -9,7 +9,10 @@ graph::Graph::Graph(std::shared_ptr<llvm::Module> module){
 
 
 graph::Graph::Graph(){
-    llvm_module = nullptr;
+	llvm::LLVMContext ctx;
+	std::unique_ptr<llvm::Module> uptr_module = llvm::make_unique<llvm::Module>( "tmp", ctx );
+    std::shared_ptr<llvm::Module> shared_module = std::move(uptr_module);
+	//llvm_module = shared_module;
 }
 
 
@@ -106,7 +109,7 @@ graph::Vertex* graph::Graph::get_vertex(size_t seed){
 }
 
 
-std::shared_ptr<graph::Edge>* graph::Graph::get_edge(size_t seed){   
+graph::Edge* graph::Graph::get_edge(size_t seed){   
     
     //gebe edge mit dem entsprechenden hashValue zurück
     std::list<std::shared_ptr<Edge>>::iterator it = this->edges.begin();       //iterate about the list elements
@@ -114,39 +117,38 @@ std::shared_ptr<graph::Edge>* graph::Graph::get_edge(size_t seed){
         
         //gesuchter vertex gefunden
         if(seed==(*it)->get_seed()){                                         //check if vertex is from wanted type
-           return (&(*it)); 
+           return ((*it).get()); 
         }
     }
     return nullptr;        
 }
 
-std::list<std::shared_ptr<graph::Vertex> *> graph::Graph::get_vertexes(){
+std::list<graph::Vertex *> graph::Graph::get_vertexes(){
     
-    std::list<std::shared_ptr<Vertex>*> tmp_list;
-    std::list<std::shared_ptr<Vertex>>::iterator it = this->vertexes.begin();            //iterate about the list elements
+    std::list<graph::Vertex*> tmp_list;
+    std::list<std::shared_ptr<graph::Vertex>>::iterator it = this->vertexes.begin();            //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
-        std::shared_ptr<graph::Vertex>* tmp_pointer = &(*it);
-        tmp_list.push_back(tmp_pointer);
+        tmp_list.push_back((*it).get());
     }
     return tmp_list;
 }
 
-std::list<std::shared_ptr<graph::Edge> *> graph::Graph::get_edges(){
+std::list<graph::Edge *> graph::Graph::get_edges(){
     
-    std::list<std::shared_ptr<graph::Edge>*> tmp_list;
+    std::list<graph::Edge*> tmp_list;
     std::list<std::shared_ptr<graph::Edge>>::iterator it = this->edges.begin();           //iterate about the list elements
     for(; it != this->edges.end(); ++it){
-        tmp_list.push_back(&(*it));
+        tmp_list.push_back((*it).get());
     }
     return tmp_list;
 }
 
-bool graph::Graph::remove_vertex(std::shared_ptr<graph::Vertex> * vertex){
+bool graph::Graph::remove_vertex(graph::Vertex * vertex){
     
     bool success = false;
      std::list<std::shared_ptr<Vertex>>::iterator it = this->vertexes.begin();           //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
-        if(vertex == &(*it)){
+        if(vertex == (*it).get()){
             //TODO remove edges
             it = this->vertexes.erase(it--);
             success = true;
@@ -157,12 +159,12 @@ bool graph::Graph::remove_vertex(std::shared_ptr<graph::Vertex> * vertex){
 }
 
 
-bool graph::Graph::remove_edge(std::shared_ptr<Edge> * edge){
+bool graph::Graph::remove_edge(Edge* edge){
     
     bool success = false;
     std::list<std::shared_ptr<Edge>>::iterator it = this->edges.begin();           //iterate about the list elements
     for(; it != this->edges.end(); ++it){
-        if(edge == &(*it)){
+        if(edge == (*it).get()){
             //TODO remove edges
             it = this->edges.erase(it--);
             success = true;
@@ -715,16 +717,17 @@ bool OS::ABB::is_critical(){return this->critical_section;}
 void OS::ABB::set_critical(bool critical){this->critical_section = critical;}
 
 
-std::list<std::any> OS::ABB::get_arguments(){
+std::list<std::tuple<std::any,llvm::Type*>> OS::ABB::get_arguments(){
     return this->arguments;
 }
 
-void OS::ABB::set_arguments(std::list<std::any> new_arguments){
+void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments){
     this->arguments = new_arguments;
 } // Setze Argument des SystemCalls in Argumentenliste
 
-void OS::ABB::set_argument(std::any argument){
-    this->arguments.push_back(argument);
+void OS::ABB::set_argument(std::any argument,llvm::Type* type){
+	
+    this->arguments.push_back(std::make_tuple (argument,type));
 } // Setze Argument des SystemCalls in Argumentenliste
 
 
@@ -767,12 +770,12 @@ std::list<llvm::BasicBlock*> OS::ABB::get_BasicBlocks(){
 
 
 bool  OS::ABB::set_parent_function(OS::Function *function){
-    
-        bool success = false;
-        if(this->graph->contain_vertex((Vertex*)function)){
-            success = true;
-            this->parent_function = function;
-        }
+
+	bool success = false;
+	if(this->graph->contain_vertex((Vertex*)function)){
+		success = true;
+		this->parent_function = function;
+	}
 	return success;
 }
 
@@ -784,7 +787,12 @@ OS::Function * OS::ABB::get_parent_function(){
 
 
 
-
+void OS::ABB::set_call_name(std::string call_name){
+	this->call_name = call_name;
+}
+std::string OS::ABB::get_call_name(){
+	return this->call_name;
+}
 
 
 
