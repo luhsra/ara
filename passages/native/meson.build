@@ -9,6 +9,7 @@ native_passage_pyx_cpp = custom_target('native_passage_pyx',
 plib = py3_inst.extension_module('native_passage',
   native_passage_pyx_cpp,
   'llvm.cpp',
+  'test.cpp',
   dependencies : [py3_inst.dependency(), libgraph, llvm_dep]
 )
 

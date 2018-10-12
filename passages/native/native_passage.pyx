@@ -9,6 +9,7 @@ passagemanager then fulfils this dependencies.
 
 cimport cpass
 cimport llvm
+cimport test
 cimport graph
 
 cdef class SuperPassage:
@@ -61,7 +62,9 @@ class Passage(SuperPassage):
         return self.__doc__
 
 ctypedef enum passages:
-    LLVM_PASSAGE
+    LLVM_PASSAGE,
+    TEST0_PASSAGE,
+    TEST2_PASSAGE
 
 cdef class NativePassage(SuperPassage):
     """Constructs a dummy Python class for a C++ passage."""
@@ -83,6 +86,11 @@ cdef class NativePassage(SuperPassage):
         # select here what specific passage should be constructed
         if passage_cls == LLVM_PASSAGE:
             self._c_pass = <cpass.Passage*> new llvm.LLVMPassage(config)
+        # for testing purposes (can not be transferred into seperate file)
+        elif passage_cls == TEST0_PASSAGE:
+            self._c_pass = <cpass.Passage*> new test.Test0Passage(config)
+        elif passage_cls == TEST2_PASSAGE:
+            self._c_pass = <cpass.Passage*> new test.Test2Passage(config)
         else:
             raise("Unknown passage class")
 
@@ -116,3 +124,9 @@ def provide_passages(config: dict):
     config -- a configuration dict like the one Passage.__init__() needs.
     """
     return [NativePassage(config, LLVM_PASSAGE)]
+
+def provide_test_passages(config: dict):
+    """Do not use this, only for testing purposes."""
+    return [NativePassage(config, TEST0_PASSAGE),
+            NativePassage(config, TEST2_PASSAGE)]
+
