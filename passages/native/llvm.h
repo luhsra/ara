@@ -27,6 +27,7 @@
 #include "llvm/IR/User.h"
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/Use.h"
+#include "llvm/IR/Function.h"
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/ManagedStatic.h>

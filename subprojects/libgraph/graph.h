@@ -23,7 +23,7 @@
 
 typedef enum  { Task, ISR, Timer, normal }function_definition_type;
 
-typedef enum  { syscall1, funccall, nocall }syscall_definition_type;
+typedef enum  { sys_call, func_call, no_call , has_call }syscall_definition_type;
 
 typedef enum  { ISR1, ISR2, basic }ISR_type;
 
@@ -237,7 +237,8 @@ namespace OS {
 
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
-
+		
+		ABB * front_abb;
 
                                                             
 	  public:
@@ -254,7 +255,10 @@ namespace OS {
 			std::hash<std::string> hash_fn;
 			this->seed = hash_fn(name +  typeid(this).name());
 		}
+		
+		void set_front_abb(ABB * abb);
 
+		ABB* get_front_abb();
 
 		void set_definition(function_definition_type type);
 		function_definition_type get_definition();
@@ -309,7 +313,8 @@ namespace OS {
 		std::list<ABB *> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
 		std::list<ABB *> predecessors;  // AtomicBasicBlocks die dem BasicBlock vorhergehen
 		OS::Function *parent_function; // Zeiger auf Function, die den BasicBlock enthält
-
+		
+		
 		std::list<llvm::BasicBlock *> basic_blocks;
 
 		std::string call_name = ""; // Name des Sycalls
@@ -327,7 +332,8 @@ namespace OS {
 			parent_function = function;
 			this->name = name;
 			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(this).name());                   
+			this->seed = hash_fn(name +  typeid(this).name());       
+			this->type = no_call;
 		}
               
 		syscall_definition_type get_calltype();
@@ -340,6 +346,8 @@ namespace OS {
 		std::list<ABB *> get_ABB_predecessor();
 
 		bool set_parent_function(OS::Function *function);
+		OS::Function *get_parent_function();
+				
 		bool is_critical();
 		void set_critical(bool critical);
 
@@ -355,7 +363,7 @@ namespace OS {
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
 		std::list<llvm::BasicBlock*> get_BasicBlocks();
 
-		OS::Function *get_parent_function();
+
                 
 	};
 

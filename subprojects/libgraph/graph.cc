@@ -697,6 +697,21 @@ llvm::Type * OS::Function::get_return_type(){
 }
 
 
+		
+void OS::Function::set_front_abb(OS::ABB * abb){
+	this->front_abb = abb;
+}
+
+OS::ABB* OS::Function::get_front_abb(){
+	return this->front_abb;
+}
+
+
+
+
+
+
+
 
 
 
