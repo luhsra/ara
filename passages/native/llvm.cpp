@@ -671,7 +671,7 @@ namespace passage {
 		return "Extracts out of LLVM.";
 	}
 
-	void LLVMPassage::run(graph::Graph graph) {
+	void LLVMPassage::run(graph::Graph& graph) {
 		// get file arguments from config
 		std::vector<std::string> files;
 		std::cout << "Run " << get_name() << std::endl;

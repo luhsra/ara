@@ -53,7 +53,7 @@ namespace passage {
 
 		virtual std::vector<std::string> get_dependencies() override;
 
-		virtual void run(graph::Graph graph) override;
+		virtual void run(graph::Graph& graph) override;
 	};
 }
 

@@ -15,8 +15,9 @@ namespace passage {
 		return "Passage for testing purposes";
 	}
 
-	void Test0Passage::run(graph::Graph graph) {
+	void Test0Passage::run(graph::Graph& graph) {
 		std::cout << "Run " << get_name() << std::endl;
+		std::cout << "Graph address: " << &graph << std::endl;
 	}
 
 	std::vector<std::string> Test0Passage::get_dependencies() {
@@ -31,8 +32,9 @@ namespace passage {
 		return "Passage for testing purposes";
 	}
 
-	void Test2Passage::run(graph::Graph graph) {
+	void Test2Passage::run(graph::Graph& graph) {
 		std::cout << "Run " << get_name() << std::endl;
+		std::cout << "Graph address: " << &graph << std::endl;
 	}
 
 	std::vector<std::string> Test2Passage::get_dependencies() {

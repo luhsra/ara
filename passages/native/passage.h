@@ -54,7 +54,7 @@ namespace passage {
 		/**
 		 * This method is called, when the pass is invoked.
 		 */
-		virtual void run(graph::Graph graph) = 0;
+		virtual void run(graph::Graph& graph) = 0;
 
 	};
 }
