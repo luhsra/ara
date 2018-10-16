@@ -36,11 +36,20 @@ typedef enum  { stream, message }buffer_type;
 
 
 
+
+
 namespace graph {
+
+
 
 	class Graph;
 	class Vertex;
 	class Edge;
+	
+	
+	typedef std::shared_ptr<Vertex> shared_vertex;
+	typedef std::shared_ptr<Edge>  shared_edge;
+
 
 	// Basis Klasse des Graphen
 	class Graph {
@@ -50,36 +59,39 @@ namespace graph {
 			std::list<std::shared_ptr<Edge>> edges;      // std::liste aller Edges des Graphen
 			
 			std::shared_ptr<llvm::Module> llvm_module;
+			
+			std::shared_ptr<llvm::LLVMContext> llvm_context;
                 
 		public:
                 
 			Graph(std::shared_ptr<llvm::Module>*module);
 
 			Graph();
-			void set_llvm_module(std::shared_ptr<llvm::Module> *module);
+			
+			void set_llvm_module(std::shared_ptr<llvm::Module> *module,std::shared_ptr<llvm::LLVMContext>*context);
                 
 			llvm::Module* get_llvm_module();
                 
-			Vertex* set_vertex(Vertex *vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
-			Edge* set_edge(Edge *edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+			void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
+			void set_edge(shared_edge edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
 			
-			Vertex * create_vertex();
-			Edge * create_edge();
+			shared_vertex create_vertex();
+			shared_edge create_edge();
 					
-			std::list<Vertex*>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
-			Vertex* get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
-			Edge* get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
-			std::list<Vertex*> get_vertexes();  // gebe alle Vertexes des Graphen zurück
+			std::list<shared_vertex>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
+			shared_vertex get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
+			shared_edge get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
+			std::list<shared_vertex> get_vertexes();  // gebe alle Vertexes des Graphen zurück
                 
-			std::list<Edge*> get_edges();  // gebe alle Edges des Graphen zurück
+			std::list<shared_edge> get_edges();  // gebe alle Edges des Graphen zurück
 
-			bool remove_vertex(Vertex * vertex); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes
+			bool remove_vertex(shared_vertex *vertex); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes
 												// aus dem Graphen
-			bool remove_edge(Edge * edge); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes aus dem Graphen
+			bool remove_edge(shared_edge *edge); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes aus dem Graphen
                 
-			bool contain_vertex(Vertex *vertex);
+			bool contain_vertex(shared_vertex vertex);
 			
-			bool contain_edge(Edge *edge);
+			bool contain_edge(shared_edge edge);
 			
 			~Graph();
                 
@@ -96,11 +108,11 @@ namespace graph {
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
 
-		std::list<Edge *> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
-		std::list<Edge *> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
+		std::list<shared_edge> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
+		std::list<shared_edge> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
 
-		std::list<Vertex *> outgoing_vertexes; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
-		std::list<Vertex *> ingoing_vertexes;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
+		std::list<shared_vertex> outgoing_vertexes; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
+		std::list<shared_vertex> ingoing_vertexes;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
 
 	  public:
               /*
@@ -133,32 +145,31 @@ namespace graph {
 
 		//VertexKind getKind(); // LLVM-style RTTI const {return Kind}
 
-		bool set_outgoing_edge(Edge *edge);
-		bool set_ingoing_edge(Edge *edge);
+		bool set_outgoing_edge(shared_edge edge);
+		bool set_ingoing_edge(shared_edge edge);
 
-		bool set_outgoing_vertex(Vertex *vertex);
-		bool set_ingoing_vertex(Vertex *vertex);
+		bool set_outgoing_vertex(shared_vertex vertex);
+		bool set_ingoing_vertex(shared_vertex vertex);
 
-		bool remove_edge(Edge *);
-		bool remove_vertex(Vertex *vertex);
+		bool remove_edge(shared_edge edge);
+		bool remove_vertex(shared_vertex vertex);
                 
 		Graph* get_graph();
 
-		std::list<Vertex*>
-		get_specific_connected_vertexes(size_t type_info); // get elements from graph with specific type
+		std::list<shared_vertex> get_specific_connected_vertexes(size_t type_info); // get elements from graph with specific type
 
-		std::list<Vertex*> get_vertex_chain(Vertex* vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
+		std::list<shared_vertex> get_vertex_chain(shared_vertex target_vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
 		                     // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
-		std::list<Vertex *>
+		std::list<shared_vertex>
 		get_connected_vertexes();                // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
-		std::list<Edge*> get_connected_edges(); // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
-		std::list<Vertex*> get_ingoing_vertexes(); // Methode, die die mit diesem Knoten eingehenden Vertexes
+		std::list<shared_edge> get_connected_edges(); // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
+		std::list<shared_vertex> get_ingoing_vertexes(); // Methode, die die mit diesem Knoten eingehenden Vertexes
 		                                            // zurückgibt
-		std::list<Edge*> get_ingoing_edges(); // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
-		std::list<Vertex*>
+		std::list<shared_edge> get_ingoing_edges(); // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
+		std::list<shared_vertex>
 		get_outgoing_vertexes();                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
-		std::list<Edge*> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
-		std::list<Edge*>get_direct_edge(Vertex *vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
+		std::list<shared_edge> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
+		std::list<shared_edge>get_direct_edge(shared_vertex vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
 		                                   
 		//virtual  ~Vertex();
@@ -174,8 +185,8 @@ namespace graph {
 		std::string name;
 		Graph *graph;          // Referenz zum Graphen, in der der Vertex gespeichert ist
 		std::size_t seed;      // für jedes Element spezifischer hashValue
-		Vertex *start_vertex;  // Entsprechende Set- und Get-Methoden
-		Vertex *target_vertex; // Entsprechende Set- und Get-Methoden
+		shared_vertex start_vertex;  // Entsprechende Set- und Get-Methoden
+		shared_vertex target_vertex; // Entsprechende Set- und Get-Methoden
 		bool is_syscall;       // Flag, ob Edge ein Syscall ist
 		std::string call;      // Entsprechende Set- und Get-Methoden
 		std::list<std::tuple<std::any,llvm::Type*>> arguments;
@@ -187,15 +198,15 @@ namespace graph {
 		
 		
 		Edge();
-		Edge(Graph *graph, std::string name, Vertex *start, Vertex *target);
+		Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target);
 
 		std::string get_name(); // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
 
-		bool set_start_vertex(Vertex *vertex);
-		bool set_target_vertex(Vertex *vertex);
-		Vertex *get_start_vertex();
-		Vertex *get_target_vertex();
+		bool set_start_vertex(shared_vertex vertex);
+		bool set_target_vertex(shared_vertex vertex);
+		shared_vertex get_start_vertex();
+		shared_vertex get_target_vertex();
 
 		void set_syscall(bool syscall);
 		bool is_sycall();
@@ -206,13 +217,18 @@ namespace graph {
 	};
 } // namespace graph
 
+
+
+
 namespace OS {
 
 	class ABB;
 	class Task;
-        class ISR;
+	class ISR;
 	class QueueSet;
-        class Function;
+	class Function;
+	typedef std::shared_ptr<ABB> shared_abb;
+	typedef std::shared_ptr<Function> shared_function;
 
 	// Einfache Funktion innerhalb der Applikation
 	class Function : public graph::Vertex {
@@ -224,9 +240,9 @@ namespace OS {
 
 		std::list<ABB *> atomic_basic_blocks;       // Liste der AtomicBasicBlocks, die die Funktion definieren
 		std::list<OS::Task *> referenced_tasks;     // Liste aller Task, die diese Function aufrufen
-		std::list<Function *> referenced_functions; // Liste aller Funktionen, die diese Funktion aufrufen
-                
-                std::list<OS::ISR *> referenced_ISRs;
+		std::list<OS::shared_function> referenced_functions; // Liste aller Funktionen, die diese Funktion aufrufen
+
+		std::list<OS::ISR *> referenced_ISRs;
 		function_definition_type definition; // information, ob task ,isr, timer durch die Funktion definiert wird
 
 		bool contains_critical_section;
@@ -237,7 +253,7 @@ namespace OS {
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 		
-		ABB * front_abb;
+		shared_abb front_abb;
 
                                                             
 	  public:
@@ -252,15 +268,15 @@ namespace OS {
 			this->function_name = name;
 		}
 		
-		void set_front_abb(ABB * abb);
+		void set_front_abb(shared_abb abb);
 
-		ABB* get_front_abb();
+		shared_abb get_front_abb();
 
 		void set_definition(function_definition_type type);
 		function_definition_type get_definition();
                 
                 
-		std::list<Function*>get_used_functions(); // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
+		std::list<shared_function>* get_used_functions(); // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
 		bool set_used_function(OS::Function *function); // Setze Funktion in std::liste aller Funktionen, die diese Funktion benutzen
 
 
@@ -283,7 +299,7 @@ namespace OS {
 
 		bool set_referenced_task(OS::Task *task);
 
-		bool set_referenced_function(OS::Function *function);
+		bool set_referenced_function(shared_function function);
 		
 		
 		void set_function_name(std::string name);
@@ -306,9 +322,9 @@ namespace OS {
 		syscall_definition_type
 		    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
 		          // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
-		std::list<ABB *> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
-		std::list<ABB *> predecessors;  // AtomicBasicBlocks die dem BasicBlock vorhergehen
-		OS::Function *parent_function; // Zeiger auf Function, die den BasicBlock enthält
+		std::list<shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
+		std::list<shared_abb> predecessors;  // AtomicBasicBlocks die dem BasicBlock vorhergehen
+		shared_function parent_function; // Zeiger auf Function, die den BasicBlock enthält
 		
 		
 		std::list<llvm::BasicBlock *> basic_blocks;
@@ -324,7 +340,7 @@ namespace OS {
 		virtual ABB *clone() const{
 			return new ABB(*this);};
 		
-		ABB(graph::Graph *graph,Function *function, std::string name) : graph::Vertex(graph,name){
+		ABB(graph::Graph *graph,shared_function function, std::string name) : graph::Vertex(graph,name){
 			parent_function = function;
 			std::hash<std::string> hash_fn;
 			this->seed = hash_fn(name +  typeid(this).name());       
@@ -337,11 +353,11 @@ namespace OS {
 		void set_call_name(std::string call_name);
 		std::string get_call_name();
 		
-		std::list<ABB *> get_ABB_successor();
-		std::list<ABB *> get_ABB_predecessor();
+		std::list<shared_abb> get_ABB_successor();
+		std::list<shared_abb> get_ABB_predecessor();
 
-		bool set_parent_function(OS::Function *function);
-		OS::Function *get_parent_function();
+		bool set_parent_function(shared_function function);
+		shared_function get_parent_function();
 				
 		bool is_critical();
 		void set_critical(bool critical);
@@ -350,10 +366,10 @@ namespace OS {
 		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
 
 		void set_argument(std::any,llvm::Type* type);
-		bool set_ABB_successor(ABB *basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
-		bool set_ABB_predecessor(ABB *basicblock); // Speicher Referenz auf Vorgänger des BasicBlocks
-		std::list<ABB *> get_ABB_successors();      // Gebe Referenz auf Nachfolger zurück
-		std::list<ABB *> get_ABB_predecessors();    // Gebe Referenz auf Vorgänger zurück
+		bool set_ABB_successor(shared_abb basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
+		bool set_ABB_predecessor(shared_abb basicblock); // Speicher Referenz auf Vorgänger des BasicBlocks
+		std::list<shared_abb> get_ABB_successors();      // Gebe Referenz auf Nachfolger zurück
+		std::list<shared_abb> get_ABB_predecessors();    // Gebe Referenz auf Vorgänger zurück
 
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
 		std::list<llvm::BasicBlock*> get_BasicBlocks();

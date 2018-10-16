@@ -19,9 +19,27 @@ using namespace llvm;
 #define PRINT_NAME(x) std::cout << #x << " - " << typeid(x).name() << '\n'
 
 
+bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type * type, Value *arg,llvm::Instruction* call_reference);
+
+
+ //check if instruction a is before instruction b 
+ bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT) {
+	DenseMap< BasicBlock *, std::unique_ptr<OrderedBasicBlock>> OBBMap;
+	if (InstA->getParent() == InstB->getParent()){
+		BasicBlock *IBB = InstA->getParent();
+		auto OBB = OBBMap.find(IBB);
+		if (OBB == OBBMap.end())OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
+		return OBB->second->dominates(InstA, InstB);
+	}
+	DomTreeNode *DA = DT->getNode(InstA->getParent());
+	DomTreeNode *DB = DT->getNode(InstB->getParent());
+	return DA->getDFSNumIn() < DB->getDFSNumIn();
+ }
 
 
 
+
+//print the argument
 void debug_argument(std::any value,llvm::Type *type){
 	
 	std::size_t const tmp = value.type().hash_code();
@@ -45,10 +63,7 @@ void debug_argument(std::any value,llvm::Type *type){
 	}
 }
 
-
-bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type * type, Value *arg,llvm::Instruction* call_reference);
-
-
+//check if instruction calls a llvm specific function
 static bool isCallToLLVMIntrinsic(Instruction * inst) {
     if (CallInst* callInst = dyn_cast<CallInst>(inst)) {
         Function * func = callInst->getCalledFunction();
@@ -60,7 +75,7 @@ static bool isCallToLLVMIntrinsic(Instruction * inst) {
 }
 
 
-
+//check if graph node is already visited
 bool visited(size_t seed, std::vector<size_t> *vector){
 	bool found = false;
     for (unsigned i=0; i < vector->size(); i++) {
@@ -120,18 +135,20 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 	//get control flow information of the function
 	llvm::Function & tmp_function = *cast->getFunction();
 	DominatorTree dominator_tree = DominatorTree(tmp_function);
+	
 	bool pointer_flag = true;
-	//OrderedInstructions instruction_tree = OrderedInstructions(dominator_tree);
+	
 	if(AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(cast_operand)){
 		Value::user_iterator sUse = alloca_instruction->user_begin();
 		Value::user_iterator sEnd = alloca_instruction->user_end();
 		
 		//iterate about the user of the allocation
 		for(;sUse != sEnd; ++sUse){
-			//check if user is before of the original call
-			//if(instruction_tree.dfsBefore(*sUse,call_reference)){
-				//check if instruction is a store instruction
-				if(StoreInst *tmp_instruction = dyn_cast<StoreInst>(*sUse)){
+			
+			//check if instruction is a store instruction
+			if(StoreInst *tmp_instruction = dyn_cast<StoreInst>(*sUse)){
+				//check if user is before of the original call
+				if(instruction_before(tmp_instruction,call_reference,&dominator_tree)){
 					pointer_flag = false;
 					//check if the store instruction is before the original call
 					if(dominator_tree.dominates(tmp_instruction,call_reference)){
@@ -139,15 +156,13 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 							store_instruction = tmp_instruction;
 						}else{
 							//check if the tmp_store instruction is behind the store_instruction
-							//if(instruction_tree.dfsBefore(store_instruction,tmp_instruction))store_instruction = tmp_instruction;
-							store_instruction = tmp_instruction;
+							if(instruction_before(store_instruction,tmp_instruction,&dominator_tree))store_instruction = tmp_instruction;
 						}
 					}else{
 						//check if the tmp_instruction is behind the store_instruction
-						//if(instruction_tree.dfsBefore(store_instruction, tmp_instruction))store_instruction = nullptr;	
-						store_instruction = nullptr;	
+						if(instruction_before(store_instruction, tmp_instruction,&dominator_tree))store_instruction = nullptr;		
 					}
-				//}
+				}
 			}
 			//no load between allocation and call reference
 		}
@@ -490,7 +505,7 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
 
 
 //iterate about the arguments of the instruction and dump the value
-void dump_instruction(OS::ABB * abb,llvm::Function * func , auto& instruction){
+void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instruction){
 	//store the name of the called function
 	abb->set_call_name(func->getName().str());
 	
@@ -529,7 +544,7 @@ void dump_instruction(OS::ABB * abb,llvm::Function * func , auto& instruction){
 
 
 //set the arguments and argument types of the abb
-void set_arguments(OS::ABB * abb){
+void set_arguments(OS::shared_abb abb){
 	
 	std::stringstream out;
 	std::list<llvm::BasicBlock*>::iterator it;
@@ -568,7 +583,7 @@ void set_arguments(OS::ABB * abb){
 
 
 //function to create all abbs in the graph
-void abb_generation(graph::Graph *graph, OS::Function *function ) {
+void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
     //get llvm function reference
     llvm::Function* llvm_reference_function = function->get_llvm_reference();
@@ -576,16 +591,18 @@ void abb_generation(graph::Graph *graph, OS::Function *function ) {
     //get first basic block of the function
 
     //create ABB
-    OS::ABB abb = OS::ABB(graph,function,llvm_reference_function->front().getName());
+	auto abb = std::make_shared<OS::ABB>(graph,function,llvm_reference_function->front().getName());
 	
     //store coresponding basic block in ABB
-    abb.set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
+    abb->set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
 
     //queue for new created ABBs
-    std::deque<OS::ABB*> queue; 
+    std::deque<OS::shared_abb> queue; 
 
     //store abb in graph
-    queue.push_back((OS::ABB *)graph->set_vertex(&abb));
+	graph->set_vertex(abb);
+	
+    queue.push_back(abb);
 
     //queue with information, which abbs were already analyzed
     std::vector<size_t> visited_abbs;
@@ -598,7 +615,7 @@ void abb_generation(graph::Graph *graph, OS::Function *function ) {
     while(!queue.empty()) {
 
 		//get first element of the queue
-        OS::ABB * old_abb = queue.front();
+        OS::shared_abb old_abb = queue.front();
         queue.pop_front();
 
         //iterate about the successors of the ABB
@@ -618,11 +635,11 @@ void abb_generation(graph::Graph *graph, OS::Function *function ) {
                 llvm::BasicBlock *succ = *it1;
 
                 //create temporary basic block
-                OS::ABB new_abb = OS::ABB(graph,function, succ->getName());
+				auto new_abb = std::make_shared<OS::ABB>(graph,function, succ->getName());
 
                 //check if the successor abb is already stored in the list
 				
-                if(!visited(new_abb.get_seed(), &visited_abbs)) {
+                if(!visited(new_abb->get_seed(), &visited_abbs)) {
 
                     if(succ->getName().str().empty()){
 						
@@ -632,27 +649,30 @@ void abb_generation(graph::Graph *graph, OS::Function *function ) {
                         //std::cerrr  << rso.str() << std::endl;
                     }
                     //store new abb in graph
-                    OS::ABB * new_abb_reference = (OS::ABB *)graph->set_vertex(&new_abb);
+                    graph->set_vertex(new_abb);
 					
                     //set abb predecessor reference and bb reference 
-                    new_abb_reference->set_BasicBlock(succ);
-                    new_abb_reference->set_ABB_predecessor(old_abb);
+                    new_abb->set_BasicBlock(succ);
+                    new_abb->set_ABB_predecessor(old_abb);
 
 					
                     //set successor reference of old abb 
-                    old_abb->set_ABB_successor(new_abb_reference);
+                    old_abb->set_ABB_successor(new_abb);
 
                     //update the lists
-                    queue.push_back(new_abb_reference);
+                    queue.push_back(new_abb);
 
-                    visited_abbs.push_back(new_abb_reference->get_seed());
+                    visited_abbs.push_back(new_abb->get_seed());
 
 					//set the abb call`s argument values and types
-					set_arguments(new_abb_reference);
+					set_arguments(new_abb);
                 }else{
 					
                     //get the alread existing abb from the graph
-                    OS::ABB * existing_abb = (OS::ABB*) graph->get_vertex(new_abb.get_seed());
+					
+					std::shared_ptr<graph::Vertex> tmp = graph->get_vertex(new_abb->get_seed());
+					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB> (tmp);
+				
 
                     if(old_abb->get_seed() != existing_abb->get_seed()){
                         ////std::cerrr << "Connect:" << old_abb->get_name() << " with " << existing_abb->get_name() << std::endl;
@@ -746,13 +766,14 @@ namespace passage {
 		std::string file_name = files.at(0); 
 		
 		
-		
+		std::shared_ptr<llvm::LLVMContext>  context = std::make_shared<llvm::LLVMContext>();
+		//llvm::Context context;
 		llvm::SMDiagnostic Err;
-		llvm::LLVMContext Context;
 		
 		//load the IR representation file
 		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
-		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
+		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
+		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, *(context));
 		
 		if(!module){
 			std::cerr << "Could not load file:" << file_name << "\n" << std::endl;
@@ -761,18 +782,20 @@ namespace passage {
 		//convert unique_ptr to shared_ptr
 		std::shared_ptr<llvm::Module> shared_module = std::move(module);
 
-		
-		std::make_unique<std::string>("test");
+				
+		if(!module){
+			std::cerr << "Unique pointer was deleted:" << file_name << "\n" << std::endl;
+		}
 		
 		
 		//graph module can just be created in the pass
 		//graph::Graph tmp_graph =  graph::Graph(shared_module);
 		graph::Graph tmp_graph =  graph::Graph();
 		
-		//graph.set_llvm_module(&shared_module);
+		graph.set_llvm_module(&shared_module,&context);
 		
 		//set the llvm module in the graph object
-		tmp_graph.set_llvm_module(&shared_module);
+		tmp_graph.set_llvm_module(&shared_module,&context);
 		
 		
 		//initialize the split counter
@@ -781,9 +804,8 @@ namespace passage {
 		//iterate about the functions of the llvm module
 		for (auto &func : *shared_module){
 			
-			//create Function, set the module reference and function name and calculate the seed of the function
-			OS::Function graph_function = OS::Function(&tmp_graph,func.getName().str());
-			
+			//create Function, set the module reference and function name and calculate the seed of the function			
+			auto graph_function = std::make_shared<OS::Function>(&tmp_graph,func.getName().str());
 			
 			//get arguments of the function
 			llvm::FunctionType *argList = func.getFunctionType();
@@ -791,15 +813,15 @@ namespace passage {
 			//iterate about the arguments
 			for(unsigned int i = 0; i < argList->getNumParams();i++){
 				//store the argument references in the argument list
-				graph_function.set_argument_type(argList->getParamType(i));
+				graph_function->set_argument_type(argList->getParamType(i));
 			}
 			
 			//store the return type of the function
-			graph_function.set_return_type(func.getReturnType());
+			graph_function->set_return_type(func.getReturnType());
 			
 			
 			//store llvm function reference
-			graph_function.set_llvm_reference(&(func));
+			graph_function->set_llvm_reference(&(func));
 			
 			split_basicblocks( &(func), &split_counter);
 			
@@ -818,10 +840,10 @@ namespace passage {
 			
 			if(!func.empty()){
 				//store the generated function in the graph datastructure
-				OS::Function * function_reference = (OS::Function*)tmp_graph.set_vertex(&graph_function);
+				tmp_graph.set_vertex(graph_function);
 				
 				//generate and store the abbs of the function in the graph datatstructure
-				abb_generation(&tmp_graph, function_reference );
+				abb_generation(&tmp_graph, graph_function );
 			}
 		}
 		

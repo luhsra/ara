@@ -41,6 +41,8 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Analysis/Interval.h>
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/DenseMap.h"
+#include "OrderedInstructions.h"
 
 
 namespace passage {
