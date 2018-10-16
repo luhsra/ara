@@ -2,21 +2,30 @@
 
 #include "graph.h"
 
-graph::Graph::Graph(std::shared_ptr<llvm::Module> module){
+graph::Graph::Graph(std::shared_ptr<llvm::Module>* module){
    
-    llvm_module = module;
+    llvm_module = *module;
+	
 }
 
 
+graph::Graph::~Graph(){
+
+}
+
+
+
 graph::Graph::Graph(){
+	/*
 	llvm::LLVMContext ctx;
 	std::unique_ptr<llvm::Module> uptr_module = llvm::make_unique<llvm::Module>( "tmp", ctx );
     std::shared_ptr<llvm::Module> shared_module = std::move(uptr_module);
+    */
 	//llvm_module = shared_module;
 }
 
 
-void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> module){
+void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> *module){
     
     /*
     std::cerr << "Adress" << &module << "\n" <<std::endl;
@@ -27,7 +36,8 @@ void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> module){
 
     
     
-    llvm_module = module;
+    llvm_module = *module;
+	std::cerr << "Count: " << llvm_module.use_count() << "\n";
 }
 
 llvm::Module* graph::Graph::get_llvm_module(){
@@ -62,7 +72,7 @@ graph::Vertex* graph::Graph::create_vertex(){
     //std::shared_ptr<Vertex> shared_pointer = std::make_shared<Vertex>(vertex->clone());     //create shared pointer of copied and heap allocated vertex
 
     
-    std::shared_ptr<Vertex> shared_pointer = std::make_shared<Vertex>(this,typeid(graph::Vertex()).hash_code());     //create shared po
+    std::shared_ptr<Vertex> shared_pointer = std::make_shared<Vertex>(this,"");     //create shared po
     
     this->vertexes.push_back(shared_pointer);                                                //store the shared pointer in the internal list
     return shared_pointer.get();
@@ -86,8 +96,8 @@ std::list<graph::Vertex*> graph::Graph::get_type_vertexes(size_t type_info){
     std::list<std::shared_ptr<Vertex>>::iterator it = this->vertexes.begin();       //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
         if(type_info==(*it).get()->get_type()){                                         //check if vertex is from wanted type
-            std::shared_ptr<graph::Vertex>* tmp_pointer = &(*it);
-            tmp_list.push_back(tmp_pointer->get());
+            graph::Vertex* tmp_pointer = (*it).get();
+            tmp_list.push_back(tmp_pointer);
         }
     }
     return tmp_list;
@@ -126,7 +136,7 @@ graph::Edge* graph::Graph::get_edge(size_t seed){
 std::list<graph::Vertex *> graph::Graph::get_vertexes(){
     
     std::list<graph::Vertex*> tmp_list;
-    std::list<std::shared_ptr<graph::Vertex>>::iterator it = this->vertexes.begin();            //iterate about the list elements
+    std::list<std::shared_ptr<Vertex>>::iterator it = this->vertexes.begin();            //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
         tmp_list.push_back((*it).get());
     }
@@ -233,11 +243,12 @@ graph::Vertex::Vertex(){
 
 
 
-graph::Vertex::Vertex(Graph *graph,std::size_t type){
+graph::Vertex::Vertex(Graph *graph,std::string name){
     this->graph = graph;
-    this->name = ""  ; // spezifischer Name des Vertexes
-    this->seed = 0 ; // für jedes Element spezifischer hashValue
-    this->type = type;
+	this->name = name;
+	std::hash<std::string> hash_fn;
+	this->seed = hash_fn(name +  typeid(this).name());
+    this->type = typeid(this).hash_code();
 } // Constructor
 
 
@@ -252,7 +263,7 @@ std::size_t graph::Vertex::get_seed(){
 }
 
 
-bool graph::Vertex::set_outgoing_edge(std::shared_ptr<Edge> *edge){
+bool graph::Vertex::set_outgoing_edge(Edge *edge){
     
     //TODO check if element is not in list yet
     
@@ -261,7 +272,7 @@ bool graph::Vertex::set_outgoing_edge(std::shared_ptr<Edge> *edge){
     return success;
 }
 
-bool graph::Vertex::set_ingoing_edge(std::shared_ptr<Edge> *edge){
+bool graph::Vertex::set_ingoing_edge(Edge *edge){
     //TODO check if element is not in list yet
     
     bool success = true;
@@ -269,13 +280,13 @@ bool graph::Vertex::set_ingoing_edge(std::shared_ptr<Edge> *edge){
     return success;
 }
 
-bool graph::Vertex::set_outgoing_vertex(std::shared_ptr<Vertex> *vertex){
+bool graph::Vertex::set_outgoing_vertex(Vertex *vertex){
     bool success = true;
     this->outgoing_vertexes.push_back(vertex);
     return success;
 }
 
-bool graph::Vertex::set_ingoing_vertex(std::shared_ptr<Vertex> *vertex){
+bool graph::Vertex::set_ingoing_vertex(Vertex *vertex){
     bool success = true;
     this->ingoing_vertexes.push_back(vertex);
     return success;
@@ -283,10 +294,10 @@ bool graph::Vertex::set_ingoing_vertex(std::shared_ptr<Vertex> *vertex){
 
 
 
-bool graph::Vertex::remove_edge(std::shared_ptr<Edge> *edge){
+bool graph::Vertex::remove_edge(Edge *edge){
     bool success = false;
     
-    std::list<std::shared_ptr<Edge>*>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
+    std::list<Edge*>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
     for(; it != this->outgoing_edges.end(); ++it){
         if(edge == (*it)){
             it = this->outgoing_edges.erase(it--);
@@ -307,10 +318,10 @@ bool graph::Vertex::remove_edge(std::shared_ptr<Edge> *edge){
     
     
     
-bool graph::Vertex::remove_vertex(std::shared_ptr<Vertex> *vertex){
+bool graph::Vertex::remove_vertex(Vertex *vertex){
     bool success = false;
     
-    std::list<std::shared_ptr<Vertex>*>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
+    std::list<Vertex*>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_vertexes.end(); ++it){
         if(vertex == (*it)){
@@ -334,19 +345,19 @@ bool graph::Vertex::remove_vertex(std::shared_ptr<Vertex> *vertex){
 
 
 
-std::list<std::shared_ptr<graph::Vertex> *> graph::Vertex::get_specific_connected_vertexes(size_t type_info){
-    std::list<std::shared_ptr<Vertex>*> tmp_list;
+std::list<graph::Vertex *> graph::Vertex::get_specific_connected_vertexes(size_t type_info){
+    std::list<Vertex*> tmp_list;
     
-    std::list<std::shared_ptr<Vertex>*>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
+    std::list<Vertex*>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_vertexes.end(); ++it){
-        if(typeid((*(*(*it)))).hash_code() == type_info){
+        if(typeid((*(*it))).hash_code() == type_info){
             tmp_list.push_back(*it);
         }
     }
     //iterate about the ingoing vertexes
     for(it = this->ingoing_vertexes.begin();  it != this->ingoing_vertexes.end(); ++it){
-        if(typeid((*(*(*it)))).hash_code()== type_info){
+        if(typeid((*(*it))).hash_code()== type_info){
             tmp_list.push_back(*it);
         }
     }
@@ -369,13 +380,13 @@ std::list<graph::Vertex *> wide_search (graph::Vertex* start,graph::Vertex* ende
         graph::Vertex *  tmp = queue.front();
         queue.pop();
         if(&tmp==&ende) return tmp_list;
-        std::list<std::shared_ptr<graph::Vertex>*> neighbours = tmp->get_outgoing_vertexes();
-        std::list<std::shared_ptr<graph::Vertex>*>::iterator it = neighbours.begin();
+        std::list<graph::Vertex*> neighbours = tmp->get_outgoing_vertexes();
+        std::list<graph::Vertex*>::iterator it = neighbours.begin();
 
         for(; it != neighbours.end(); ++it){
-            if(!(std::find(visited.begin(), visited.end(), (*it)->get()->get_seed()) != visited.end())){
-                queue.push((*it)->get());
-                tmp_list.push_back((*it)->get());
+            if(!(std::find(visited.begin(), visited.end(), (*it)->get_seed()) != visited.end())){
+                queue.push(*it);
+                tmp_list.push_back(*it);
             }
         }
     }
@@ -386,16 +397,16 @@ std::list<graph::Vertex *> wide_search (graph::Vertex* start,graph::Vertex* ende
 
 
 
-std::list<graph::Vertex*> graph::Vertex::get_vertex_chain(std::shared_ptr<graph::Vertex*> *vertex){     // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
+std::list<graph::Vertex*> graph::Vertex::get_vertex_chain(graph::Vertex *vertex){     // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
                                                                                             // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
-    return wide_search(this, *(vertex->get()));                       
+    return wide_search(this, vertex);                       
 }
 
-std::list<std::shared_ptr<graph::Vertex> *>graph::Vertex::get_connected_vertexes(){ // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
+std::list<graph::Vertex *>graph::Vertex::get_connected_vertexes(){ // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
     
-    std::list<std::shared_ptr<graph::Vertex>*> tmp_list;
+    std::list<graph::Vertex*> tmp_list;
     
-    std::list<std::shared_ptr<graph::Vertex>*>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
+    std::list<graph::Vertex*>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_vertexes.end(); ++it){
         tmp_list.push_back(*it);
@@ -408,10 +419,10 @@ std::list<std::shared_ptr<graph::Vertex> *>graph::Vertex::get_connected_vertexes
 }
 
 
-std::list<std::shared_ptr<graph::Edge> *> graph::Vertex::get_connected_edges(){ // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
+std::list<graph::Edge*> graph::Vertex::get_connected_edges(){ // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
     
-    std::list<std::shared_ptr<graph::Edge>*> tmp_list;
-    std::list<std::shared_ptr<graph::Edge>*>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
+    std::list<graph::Edge*> tmp_list;
+    std::list<graph::Edge*>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
     //iterate about the outgoing edges
     for(; it != this->outgoing_edges.end(); ++it){
         tmp_list.push_back(*it);
@@ -423,55 +434,55 @@ std::list<std::shared_ptr<graph::Edge> *> graph::Vertex::get_connected_edges(){ 
     return tmp_list;
 }
 
-std::list<std::shared_ptr<graph::Vertex> *> graph::Vertex::get_ingoing_vertexes(){    // Methode, die die mit diesem Knoten eingehenden Vertexes
+std::list<graph::Vertex *> graph::Vertex::get_ingoing_vertexes(){    // Methode, die die mit diesem Knoten eingehenden Vertexes
                                                                 // zurückgibt
-    std::list<std::shared_ptr<graph::Vertex>*> tmp_list;
-    std::list<std::shared_ptr<graph::Vertex>*>::iterator it = this->ingoing_vertexes.begin();
+    std::list<graph::Vertex*> tmp_list;
+    std::list<graph::Vertex*>::iterator it = this->ingoing_vertexes.begin();
     for(; it != this->ingoing_vertexes.end(); ++it){
         tmp_list.push_back(*it);
     }
     return tmp_list;
 }
     
-std::list<std::shared_ptr<graph::Edge> *> graph::Vertex::get_ingoing_edges(){ // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
-    std::list<std::shared_ptr<graph::Edge>*> tmp_list;
-    std::list<std::shared_ptr<graph::Edge>*>::iterator it = this->ingoing_edges.begin();
+std::list<graph::Edge*> graph::Vertex::get_ingoing_edges(){ // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
+    std::list<graph::Edge*> tmp_list;
+    std::list<graph::Edge*>::iterator it = this->ingoing_edges.begin();
     for(; it != this->ingoing_edges.end(); ++it){
         tmp_list.push_back(*it);
     }
     return tmp_list;
 }
 
-std::list<std::shared_ptr<graph::Vertex> *> graph::Vertex::get_outgoing_vertexes(){                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
-    std::list<std::shared_ptr<graph::Vertex>*> tmp_list;
-    std::list<std::shared_ptr<graph::Vertex>*>::iterator it = this->outgoing_vertexes.begin();
+std::list<graph::Vertex *> graph::Vertex::get_outgoing_vertexes(){                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
+    std::list<graph::Vertex*> tmp_list;
+    std::list<graph::Vertex*>::iterator it = this->outgoing_vertexes.begin();
     for(; it != this->outgoing_vertexes.end(); ++it){
         tmp_list.push_back(*it);
     }
     return tmp_list;
 }
 
-std::list<std::shared_ptr<graph::Edge> *> graph::Vertex::get_outgoing_edges(){ // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
-    std::list<std::shared_ptr<graph::Edge>*> tmp_list;
-    std::list<std::shared_ptr<graph::Edge>*>::iterator it = this->outgoing_edges.begin();
+std::list<graph::Edge *> graph::Vertex::get_outgoing_edges(){ // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
+    std::list<graph::Edge*> tmp_list;
+    std::list<graph::Edge*>::iterator it = this->outgoing_edges.begin();
     for(; it != this->outgoing_edges.end(); ++it){
         tmp_list.push_back(*it);
     }
     return tmp_list;
 }
 
-std::list<std::shared_ptr<graph::Edge>*> graph::Vertex::get_direct_edge(std::shared_ptr<graph::Vertex> *vertex){ // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
-    std::list<std::shared_ptr<graph::Edge>*> tmp_list;
-    std::list<std::shared_ptr<graph::Edge>*>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
+std::list<graph::Edge*> graph::Vertex::get_direct_edge(graph::Vertex *vertex){ // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
+    std::list<graph::Edge*> tmp_list;
+    std::list<graph::Edge*>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_edges.end(); ++it){
-        if(vertex==((*it)->get()->get_target_vertex())){
+        if(vertex==((*it)->get_target_vertex())){
             tmp_list.push_back(*it);
         }
     }
-    //iterate about the ingoing vertexes
+    //iterate about the ingoing vertexesget
     for(it = this->ingoing_edges.begin();  it != this->ingoing_edges.end(); ++it){
-        if(vertex==((*it)->get()->get_start_vertex())){
+        if(vertex==((*it)->get_start_vertex())){
             tmp_list.push_back(*it);
     
         }
@@ -515,7 +526,7 @@ graph::Edge::Edge(){
 
 
 
-graph::Edge::Edge(Graph *graph, std::string name, std::shared_ptr<graph::Vertex> *start, std::shared_ptr<graph::Vertex> *target){
+graph::Edge::Edge(Graph *graph, std::string name, graph::Vertex *start, graph::Vertex *target){
     this->name = name;
     this->graph = graph;
     this->start_vertex = start;
@@ -530,18 +541,18 @@ std::size_t graph::Edge::get_seed(){
     return this->seed;
 }
 
-bool graph::Edge::set_start_vertex(std::shared_ptr<graph::Vertex> *vertex){
+bool graph::Edge::set_start_vertex(graph::Vertex *vertex){
     bool success = false;
-    if(this->graph->contain_vertex((*vertex).get())){
+    if(this->graph->contain_vertex(vertex)){
         success = true;
         this->start_vertex =vertex;  
     }
     return success;
 }
 
-bool graph::Edge::set_target_vertex(std::shared_ptr<graph::Vertex> *vertex){
+bool graph::Edge::set_target_vertex(graph::Vertex *vertex){
     bool success = false;
-    if(this->graph->contain_vertex((*vertex).get())){
+    if(this->graph->contain_vertex(vertex)){
         success = true;
         this->target_vertex =vertex;
     }
@@ -549,8 +560,8 @@ bool graph::Edge::set_target_vertex(std::shared_ptr<graph::Vertex> *vertex){
 }
 
 
-std::shared_ptr<graph::Vertex> *graph::Edge::get_start_vertex(){return this->target_vertex;}
-std::shared_ptr<graph::Vertex> *graph::Edge::get_target_vertex(){return this->start_vertex;}
+graph::Vertex *graph::Edge::get_start_vertex(){return this->target_vertex;}
+graph::Vertex *graph::Edge::get_target_vertex(){return this->start_vertex;}
 
 void graph::Edge::set_syscall(bool syscall){this->is_syscall = syscall;}
 bool graph::Edge::is_sycall(){return this->is_syscall;}
@@ -558,15 +569,15 @@ bool graph::Edge::is_sycall(){return this->is_syscall;}
 
 
 
-std::list<std::tuple<argument_type, std::any>> graph::Edge::get_arguments(){return this->arguments;}
+std::list<std::tuple< std::any,llvm::Type*>> graph::Edge::get_arguments(){return this->arguments;}
 
 
-void graph::Edge::set_arguments(std::list<std::tuple<argument_type, std::any>> arguments){
+void graph::Edge::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> arguments){
     this->arguments = arguments;
     return;
 }
 
-void graph::Edge::append_argument(std::tuple<argument_type, std::any> argument){
+void graph::Edge::set_argument(std::tuple<std::any,llvm::Type*> argument){
     this->arguments.push_back(argument);
     return;
 }
@@ -719,11 +730,11 @@ OS::ABB* OS::Function::get_front_abb(){
 
 
 syscall_definition_type OS::ABB::get_calltype(){
-    return this->type;
+    return this->abb_type;
 }
 
 void OS::ABB::set_calltype(syscall_definition_type type){
-    this->type = type;
+    this->abb_type = type;
 }
 
 

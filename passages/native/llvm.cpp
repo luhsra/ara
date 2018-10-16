@@ -19,6 +19,9 @@ using namespace llvm;
 #define PRINT_NAME(x) std::cout << #x << " - " << typeid(x).name() << '\n'
 
 
+
+
+
 void debug_argument(std::any value,llvm::Type *type){
 	
 	std::size_t const tmp = value.type().hash_code();
@@ -43,7 +46,7 @@ void debug_argument(std::any value,llvm::Type *type){
 }
 
 
-bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type * type, Value *arg);
+bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type * type, Value *arg,llvm::Instruction* call_reference);
 
 
 static bool isCallToLLVMIntrinsic(Instruction * inst) {
@@ -95,36 +98,75 @@ std::string print_argument(auto& argument){
 	
 }
 
+bool check_nullptr(std::any &out, llvm::Type *type,llvm::Value *value,std::stringstream &debug_out ){
+	bool load_success = false;
+	if(ConstantPointerNull  * constant_data = dyn_cast<ConstantPointerNull>(value)){
+		debug_out << "CONSTANTPOINTERNULL";
+		std::string tmp = "&$%NULL&$%";
+		out = tmp;
+		type = constant_data->getType();
+		//std::cerr << "[nullptr] type: " <<print_argument(value)  <<'\n';  
+		load_success = true;
+	}
+	return load_success;
+}
 
-bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::Type *type  ){
-	
+//dump a cast instruction
+bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::Type *type, Instruction * call_reference){
 	bool cast_success = false;
 	StoreInst* store_instruction = nullptr;
-	int store_count = 0;
+	int _count = 0;
 	Value * cast_operand = cast->getOperand(0);
-	
-	
+	//get control flow information of the function
+	llvm::Function & tmp_function = *cast->getFunction();
+	DominatorTree dominator_tree = DominatorTree(tmp_function);
+	bool pointer_flag = true;
+	//OrderedInstructions instruction_tree = OrderedInstructions(dominator_tree);
 	if(AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(cast_operand)){
 		Value::user_iterator sUse = alloca_instruction->user_begin();
 		Value::user_iterator sEnd = alloca_instruction->user_end();
+		
+		//iterate about the user of the allocation
 		for(;sUse != sEnd; ++sUse){
-			//if(cast_operand->hasOneUse()){
-				if(store_instruction = dyn_cast<StoreInst>(*sUse)){
-					store_count++;
-					debug_out << "Store instruction: " << print_argument(cast_operand);
-				}
-			//}else{
-				//TODO get last store instruction and check if argument is before the real call
-		//	}
+			//check if user is before of the original call
+			//if(instruction_tree.dfsBefore(*sUse,call_reference)){
+				//check if instruction is a store instruction
+				if(StoreInst *tmp_instruction = dyn_cast<StoreInst>(*sUse)){
+					pointer_flag = false;
+					//check if the store instruction is before the original call
+					if(dominator_tree.dominates(tmp_instruction,call_reference)){
+						if(store_instruction == nullptr){
+							store_instruction = tmp_instruction;
+						}else{
+							//check if the tmp_store instruction is behind the store_instruction
+							//if(instruction_tree.dfsBefore(store_instruction,tmp_instruction))store_instruction = tmp_instruction;
+							store_instruction = tmp_instruction;
+						}
+					}else{
+						//check if the tmp_instruction is behind the store_instruction
+						//if(instruction_tree.dfsBefore(store_instruction, tmp_instruction))store_instruction = nullptr;	
+						store_instruction = nullptr;	
+					}
+				//}
+			}
+			//no load between allocation and call reference
 		}
-	}
-	
-	if(store_count == 1){
-		debug_out << "User: " << print_argument(store_instruction);
-		Value * tmp = store_instruction->getOperand(0);
-		debug_out << "Operand: " << print_argument(tmp);
-		cast_success = dump_argument(debug_out,out,type,store_instruction->getOperand(0));
-		debug_out << print_argument(cast_operand);
+		//check if a valid store instruction could be found
+		if(store_instruction != nullptr){
+			debug_out << "User: " << print_argument(store_instruction);
+			Value * tmp = store_instruction->getOperand(0);
+			debug_out << "Operand: " << print_argument(tmp);
+			cast_success = dump_argument(debug_out,out,type,store_instruction->getOperand(0),call_reference);
+			debug_out << print_argument(cast_operand);
+		}else{
+			if(pointer_flag){
+				cast_success = true;
+				type = cast->getDestTy();
+				
+				std::string tmp_string = print_argument(alloca_instruction);
+				out = tmp_string.substr(tmp_string.find("%"),tmp_string.find("=")-3); 
+			}
+		}
 	}
 	return cast_success;
 }
@@ -136,7 +178,7 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 
 
 //function to get the global information of variable
-bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Value *arg,Value *prior_arg) {
+bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Value *arg,Value *prior_arg,llvm::Instruction *call_reference) {
 	
     //debug data
     debug_out << "ENTRYLOAD" << "\n";    
@@ -145,7 +187,12 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
     llvm::raw_string_ostream rso(type_str);
 
     bool load_success = false;
-
+	
+	//check if arg is a null ptr
+	if(check_nullptr(out,type,arg,debug_out)){
+		
+		return true;
+	}
 
      if (GlobalVariable *global_var = dyn_cast<GlobalVariable>(arg)){
 		
@@ -164,7 +211,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
                 if(ConstantDataSequential  * constant_sequential = dyn_cast<ConstantDataSequential>(constant_data)){
 					debug_out << "CONSTANTDATASEQUIENTIAL" << "\n";
                     if (ConstantDataArray  * constant_array = dyn_cast<ConstantDataArray>(constant_sequential)){
-						debug_out << "CONSTANTDATAARRAY" << "\n";
+				debug_out << "CONSTANTDATAARRAY" << "\n";
                         //global variable is a constant array
                         if (constant_array->isCString()){
 							out = constant_array->getAsCString().str();
@@ -208,7 +255,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
                 //check if value is from type value 
                 if (Value  * tmp_arg = dyn_cast<Value>(constant_expr)){
                     //get the value
-                    load_success = dump_argument(debug_out,out,type, tmp_arg);
+                    load_success = dump_argument(debug_out,out,type, tmp_arg,call_reference);
                 }
 			
             //check if global variable is from type constant aggregate
@@ -234,7 +281,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
                         Value *aggregate_operand = constant_array->getOperand(index_n);
 					
 					
-                        load_success = dump_argument(debug_out,out,type,aggregate_operand);
+                        load_success = dump_argument(debug_out,out,type,aggregate_operand,call_reference);
 					
                     }
 				
@@ -261,8 +308,9 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
         }
 	
      }else{
-		
+
          if(ConstantAggregate  * constant_aggregate = dyn_cast<ConstantAggregate>(arg)){
+				debug_out << "CONSTANTAGGREGATE";
                 //check if global variable is from type constant array
                 if (ConstantArray  * constant_array = dyn_cast<ConstantArray>(constant_aggregate)) {
                     debug_out << "Constant Array";
@@ -304,7 +352,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
 
 //st = myString.substr(0, myString.size()-1);
 //function to get the dump information of the argument
-inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *type, Value *arg) {
+inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *type, Value *arg, Instruction * call_reference) {
     debug_out << "ENTRYDUMP" << "\n"; 
     bool dump_success = false;
 	
@@ -321,7 +369,7 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
             if (GlobalVariable *global_var = dyn_cast<GlobalVariable>(load->getOperand(0))) {
                 debug_out << "LOAD GLOBAL" << "\n";
                 //load the global information
-                dump_success = load_value(debug_out,out,type, load->getOperand(0),arg);
+                dump_success = load_value(debug_out,out,type, load->getOperand(0),arg,call_reference);
             }
         //check if instruction is an alloca instruction
         }else if (AllocaInst *alloca = dyn_cast<AllocaInst>(instr)) {
@@ -344,12 +392,12 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
             }
         }else if (CastInst *cast = dyn_cast<CastInst>(instr)) {
             debug_out << "CAST INSTRUCTION" << "\n";
-			dump_success = dump_cast(debug_out,cast,out,type );
+			dump_success = dump_cast(debug_out,cast,out,type,call_reference );
 			debug_out << print_argument(cast);
 		
         }else if (StoreInst *store = dyn_cast<StoreInst>(instr)) {
             debug_out << "STORE INSTRUCTION" << "\n";
-			dump_success = load_value(debug_out,out,type,store->getOperand(1),arg );
+			dump_success = load_value(debug_out,out,type,store->getOperand(1),arg,call_reference );
 			debug_out << print_argument(store);
 		
         }
@@ -383,7 +431,11 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
         debug_out << "POINTER" << "\n";
         Type* elementType = PT->getElementType();
 		
-		
+		//check if arg is a null ptr
+		if(check_nullptr(out,type,arg,debug_out)){
+			return true;
+		}
+	
         //check if pointer points to function
         if (FunctionType * FT = dyn_cast<FunctionType>(elementType)) {  //check pointer to function 
             //check if argument has a name
@@ -399,20 +451,20 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
             //check if pointer target is a global variable
 			
 			//load the global information
-			dump_success = load_value(debug_out,out, type,arg,arg);
+			dump_success = load_value(debug_out,out, type,arg,arg,call_reference);
 			debug_out << "Pointer to pointer: " << print_argument(arg);
 		
         }//check if value is a constant value
         else if(GlobalVariable  * global_var = dyn_cast<GlobalVariable>(arg)) {
             debug_out << "POINTER TO GLOBAL" << "\n";
-            dump_success = load_value(debug_out,out, type,arg,arg);
+            dump_success = load_value(debug_out,out, type,arg,arg,call_reference);
 
 
         }else if (Constant * constant = dyn_cast<ConstantExpr>(arg) ){ //check if value is a constant value
             //check if the constant value is global global variable
             if (GlobalVariable  * global_var = dyn_cast<GlobalVariable>(constant->getOperand(0))) {
                 debug_out << "POINTER TO CONSTANT GLOBAL" << "\n";
-                dump_success = load_value(debug_out,out, type,constant->getOperand(0),arg);
+                dump_success = load_value(debug_out,out, type,constant->getOperand(0),arg,call_reference);
             }
 		
         }else{
@@ -426,7 +478,7 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
         arg->getType()->print(rso);
         debug_out << rso.str() << "\n";
 	
-        dump_success = load_value(debug_out,out, type,arg,arg);
+        dump_success = load_value(debug_out,out, type,arg,arg,call_reference);
         if(!dump_success)debug_out << "Kein Load/Instruction/Pointer" << "\n";
     }
 
@@ -459,7 +511,7 @@ void dump_instruction(OS::ABB * abb,llvm::Function * func , auto& instruction){
 		Value *arg = instruction->getArgOperand(i);
 		
 		//dump argument
-		if(dump_argument(debug_out,value_argument,type_argument, arg)){
+		if(dump_argument(debug_out,value_argument,type_argument, arg,instruction)){
 			//store the dumped argument in the abb with corresponding llvm type
 			abb->set_argument(value_argument, type_argument);
 			//debug_argument(value_argument ,type_argument);
@@ -506,7 +558,9 @@ void set_arguments(OS::ABB * abb){
  				}
 			}
 		}
-		if(call_found)abb->set_calltype(has_call);
+		if(call_found){
+			abb->set_calltype(has_call);			
+		}
 	}
 }
 
@@ -522,7 +576,7 @@ void abb_generation(graph::Graph *graph, OS::Function *function ) {
     //get first basic block of the function
 
     //create ABB
-    OS::ABB abb = OS::ABB(graph,typeid(OS::ABB()).hash_code(),function,llvm_reference_function->front().getName());
+    OS::ABB abb = OS::ABB(graph,function,llvm_reference_function->front().getName());
 	
     //store coresponding basic block in ABB
     abb.set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
@@ -564,7 +618,7 @@ void abb_generation(graph::Graph *graph, OS::Function *function ) {
                 llvm::BasicBlock *succ = *it1;
 
                 //create temporary basic block
-                OS::ABB new_abb = OS::ABB(graph, typeid(OS::ABB()).hash_code(),function, succ->getName());
+                OS::ABB new_abb = OS::ABB(graph,function, succ->getName());
 
                 //check if the successor abb is already stored in the list
 				
@@ -697,7 +751,9 @@ namespace passage {
 		llvm::LLVMContext Context;
 		
 		//load the IR representation file
+		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
 		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
+		
 		if(!module){
 			std::cerr << "Could not load file:" << file_name << "\n" << std::endl;
 		}
@@ -706,13 +762,18 @@ namespace passage {
 		std::shared_ptr<llvm::Module> shared_module = std::move(module);
 
 		
-		//graph module can just be created in the pass
-		graph::Graph tmp_graph =  graph::Graph(shared_module);
+		std::make_unique<std::string>("test");
 		
-		//graph.set_llvm_module(shared_module);
+		
+		//graph module can just be created in the pass
+		//graph::Graph tmp_graph =  graph::Graph(shared_module);
+		graph::Graph tmp_graph =  graph::Graph();
+		
+		//graph.set_llvm_module(&shared_module);
 		
 		//set the llvm module in the graph object
-		tmp_graph.set_llvm_module(shared_module);
+		tmp_graph.set_llvm_module(&shared_module);
+		
 		
 		//initialize the split counter
 		unsigned split_counter = 0;
@@ -721,7 +782,7 @@ namespace passage {
 		for (auto &func : *shared_module){
 			
 			//create Function, set the module reference and function name and calculate the seed of the function
-			OS::Function graph_function = OS::Function(&tmp_graph,typeid(OS::Function()).hash_code(),func.getName().str());
+			OS::Function graph_function = OS::Function(&tmp_graph,func.getName().str());
 			
 			
 			//get arguments of the function
@@ -751,15 +812,6 @@ namespace passage {
 					ss << "BB" << split_counter++;
 					bb.setName(ss.str());
 					
-					/*
-					if(bb.getName().startswith("BB6")) {
-						
-						std::string type_str;
-						llvm::raw_string_ostream rso(type_str);
-						bb.print(rso);
-						//std::cerrr  << rso.str() << std::endl;
-						
-					}*/
 				}
 				//std::cerrr << "basicblock_name = " << bb.getName().str() << std::endl;
 			}
@@ -776,7 +828,7 @@ namespace passage {
 		
 		
 		
-		
+		/*
 		std::cerr << "_____________________________________________________________________________" << std::endl;
 		
 		
@@ -790,72 +842,25 @@ namespace passage {
 			if(pDerived) // always test  
 			{
 				//std::cerrr << "ABB Name: " << pDerived->get_name() << "\n" << std::endl;
-				
-				
-				if(pDerived->get_name().empty()){
+				if( pDerived->get_calltype()== has_call){ 
+					std::cerr << "\n" << "Name: "  << pDerived->get_name() << "\n" ;
+					std::cerr  << "Call: " << pDerived->get_call_name() << "\n";
+					std::list<std::tuple<std::any,llvm::Type*>> tmp_list = pDerived->get_arguments();
+					//std::cerrr << "Argument: " << pDerived->get_name();
 					
-					{
-						std::cerr << "Function Name: " << pDerived->get_parent_function()->get_function_name()  << std::endl;
-						std::cerr << "Debug Function" << std::endl;
-						std::string type_str;
-						llvm::raw_string_ostream rso(type_str);
-						pDerived->get_parent_function()->get_llvm_reference()->print(rso);
-						std::cerr  << rso.str() << std::endl;
+					for (auto &argument_tuple : tmp_list){
+						debug_argument( std::get<0>(argument_tuple), std::get<1>(argument_tuple));
 					}
-					if(pDerived->get_BasicBlocks().size()>0){
-						
-						std::cerr << "ABB Name: " << pDerived->get_name()  << std::endl;
-						std::string type_str;
-						llvm::raw_string_ostream rso(type_str);
-						pDerived->get_BasicBlocks().front()->print(rso);
-						std::cerr  << rso.str() << std::endl;
-					}
-					
-					
-					
-				}else{
-					/*
-					
-					if( pDerived->get_calltype()== has_call){ 
-						std::cerr << "\n" << "Name: "  << pDerived->get_name() << "\n" ;
-						std::cerr  << "Call: " << pDerived->get_call_name() << "\n";
-						std::list<std::tuple<std::any,llvm::Type*>> tmp_list = pDerived->get_arguments();
-						//std::cerrr << "Argument: " << pDerived->get_name();
-						
-						for (auto &argument_tuple : tmp_list){
-								
-							debug_argument(std::get<0>(argument_tuple), std::get<1>(argument_tuple));
-						}
-						
-						std::cerr  << "Parent Function: " << pDerived->get_parent_function()->get_function_name() << "\n";
-						
-						
-					}
-						*/
+					std::cerr  << "Parent Function: " << pDerived->get_parent_function()->get_function_name() << "\n";
 				}
 			}
 			else
 			{
 				// fail to down-cast
 			}
-		}
+		}*/
 		
-		/*
-		PRINT_NAME(char);
-		PRINT_NAME(signed char);
-		PRINT_NAME(unsigned char);
-		PRINT_NAME(short);
-		PRINT_NAME(unsigned short);
-		PRINT_NAME(int);
-		PRINT_NAME(unsigned int);
-		PRINT_NAME(long);
-		PRINT_NAME(unsigned long);
-		PRINT_NAME(float);
-		PRINT_NAME(double);
-		PRINT_NAME(long double);
-		PRINT_NAME(char*);
-		PRINT_NAME(const char*);
-		*/
+
 	}
 	std::vector<std::string> LLVMPassage::get_dependencies() {
 		return {"OilPassage"};

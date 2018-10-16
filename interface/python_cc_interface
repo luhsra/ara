@@ -1,0 +1,84 @@
+//alles public Attribute und Methoden
+
+class Graph{
+
+	Vertex* set_vertex(Vertex *vertex);
+	Edge* set_edge(Edge *edge);
+	
+	bool contain_vertex(Vertex *vertex);
+	bool contain_edge(Edge *edge);
+
+	std::list<Vertex*>get_type_vertexes(size_t type_info); 
+	Vertex* get_vertex(size_t seed);
+	Edge* get_edge(size_t seed);
+	std::list<Vertex*> get_vertexes();
+}
+	
+class Vertex{
+
+	Vertex(Graph *graph,std::string name);
+	std::size_t get_type();
+	std::string get_name(); 
+	std::size_t get_seed(); 
+	Graph* get_graph();
+}
+
+	
+class TaskGroup : public graph::Vertex:{
+	
+	TaskGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name);
+	bool set_task_in_group(OS::Task *task);
+	std::list<OS::Task *> get_tasks_in_group();
+}
+	
+class Task: public graph::Vertex{
+
+	Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name);
+	
+	bool set_definition_function(OS::Function *function);
+	bool set_TaskGroup_reference(OS::TaskGroup *task_group);
+	
+	std::string AUTOSTART;
+	std::string autostart_appmodes;
+	std::string ACTIVATION;
+	std::string SCHEDULE;
+	std::string TASKGROUP;
+	std::string handler_name;
+}
+
+class Timer: public graph::Vertex{
+
+	Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name);
+	bool set_definition_function(OS::Function *function);
+	
+	int periode;  
+	timer_type type; // typedef enum  { oneshot, autoreload }timer_type;
+	int timer_id;
+}
+
+
+class ISR: public graph::Vertex{
+
+	ISR(graph::Graph *graph,std::string name) : graph::Vertex(graph,name);
+	bool set_definition_function(OS::Function *function);
+	std::string interrupt_source;
+	std::string handler_name;
+	int stacksize;
+	int priority;
+}
+	
+class Event: public graph::Vertex{
+
+	Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name);
+	bool set_task_reference(OS::Task *task);
+	std:list<OS::Task*> get_task_references();
+	long long event_mask;
+	int id;
+}
+	
+class Resource :public graph::Vertex{
+
+	Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name);
+	bool set_task_reference(OS::Task * task);
+	std:list<OS::Task*> get_task_references();
+}

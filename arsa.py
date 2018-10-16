@@ -18,7 +18,6 @@ from passages import OilPassage
 realtime_system = 1;
 application_file = "g.cc"
 
-
 def execute_shellcommands(commands,shell_flag):
     """execute_shellcommands is used to  generate the makefile, build the pass and run the pass on the application code
     """

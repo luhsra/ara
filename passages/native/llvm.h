@@ -6,13 +6,14 @@
 #include "graph.h"
 #include "passage.h"
 
-
+//#include <llvm/Analysis/OrderedInstructions.h>
 #include <string>
 #include <tuple>
 #include <vector>
 #include <iostream>
 #include <queue>
-
+#include <llvm/Analysis/LoopInfo.h>
+#include "llvm/IR/Dominators.h"
 #include <llvm/Config/llvm-config.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/IR/Verifier.h>

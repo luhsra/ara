@@ -31,8 +31,6 @@ typedef enum  { oneshot, autoreload }timer_type;
 
 typedef enum  { binary, counting, mutex, recursive_mutex }semaphore_type;
 
-typedef enum  { integer, floating, pointer, array, structure, string, initial }argument_type;
-
 typedef enum  { stream, message }buffer_type;
 
 
@@ -55,10 +53,10 @@ namespace graph {
                 
 		public:
                 
-			Graph(std::shared_ptr<llvm::Module>);
+			Graph(std::shared_ptr<llvm::Module>*module);
 
 			Graph();
-			void set_llvm_module(std::shared_ptr<llvm::Module> module);
+			void set_llvm_module(std::shared_ptr<llvm::Module> *module);
                 
 			llvm::Module* get_llvm_module();
                 
@@ -82,7 +80,8 @@ namespace graph {
 			bool contain_vertex(Vertex *vertex);
 			
 			bool contain_edge(Edge *edge);
-   
+			
+			~Graph();
                 
 	};
 
@@ -93,15 +92,15 @@ namespace graph {
 	  protected:
 		Graph *graph; // Referenz zum Graphen, in der der Vertex gespeichert ist
 
-                std::size_t type;
+		std::size_t type;
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
 
-		std::list<std::shared_ptr<Edge> *> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
-		std::list<std::shared_ptr<Edge> *> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
+		std::list<Edge *> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
+		std::list<Edge *> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
 
-		std::list<std::shared_ptr<Vertex> *> outgoing_vertexes; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
-		std::list<std::shared_ptr<Vertex> *> ingoing_vertexes;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
+		std::list<Vertex *> outgoing_vertexes; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
+		std::list<Vertex *> ingoing_vertexes;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
 
 	  public:
               /*
@@ -123,7 +122,7 @@ namespace graph {
                 
 		virtual Vertex *clone() const{return new Vertex(*this);};
                 
-		Vertex(Graph *graph,std::size_t type); // Construktor
+		Vertex(Graph *graph,std::string name); // Construc tor
     
                 
 		void set_type(std::size_t type);
@@ -134,32 +133,32 @@ namespace graph {
 
 		//VertexKind getKind(); // LLVM-style RTTI const {return Kind}
 
-		bool set_outgoing_edge(std::shared_ptr<Edge> *edge);
-		bool set_ingoing_edge(std::shared_ptr<Edge> *edge);
+		bool set_outgoing_edge(Edge *edge);
+		bool set_ingoing_edge(Edge *edge);
 
-		bool set_outgoing_vertex(std::shared_ptr<Vertex> *vertex);
-		bool set_ingoing_vertex(std::shared_ptr<Vertex> *vertex);
+		bool set_outgoing_vertex(Vertex *vertex);
+		bool set_ingoing_vertex(Vertex *vertex);
 
-		bool remove_edge(std::shared_ptr<Edge> *);
-		bool remove_vertex(std::shared_ptr<Vertex> *vertex);
+		bool remove_edge(Edge *);
+		bool remove_vertex(Vertex *vertex);
                 
 		Graph* get_graph();
 
-		std::list<std::shared_ptr<Vertex>*>
+		std::list<Vertex*>
 		get_specific_connected_vertexes(size_t type_info); // get elements from graph with specific type
 
-		std::list<Vertex*> get_vertex_chain(std::shared_ptr<Vertex*> *vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
+		std::list<Vertex*> get_vertex_chain(Vertex* vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
 		                     // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
-		std::list<std::shared_ptr<Vertex> *>
+		std::list<Vertex *>
 		get_connected_vertexes();                // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
-		std::list<std::shared_ptr<Edge>*> get_connected_edges(); // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
-		std::list<std::shared_ptr<Vertex> *> get_ingoing_vertexes(); // Methode, die die mit diesem Knoten eingehenden Vertexes
+		std::list<Edge*> get_connected_edges(); // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
+		std::list<Vertex*> get_ingoing_vertexes(); // Methode, die die mit diesem Knoten eingehenden Vertexes
 		                                            // zurückgibt
-		std::list<std::shared_ptr<Edge>*> get_ingoing_edges(); // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
-		std::list<std::shared_ptr<Vertex>*>
+		std::list<Edge*> get_ingoing_edges(); // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
+		std::list<Vertex*>
 		get_outgoing_vertexes();                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
-		std::list<std::shared_ptr<Edge>*> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
-		std::list<std::shared_ptr<Edge>*>get_direct_edge(std::shared_ptr<Vertex> *vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
+		std::list<Edge*> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
+		std::list<Edge*>get_direct_edge(Vertex *vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
 		                                   
 		//virtual  ~Vertex();
@@ -175,11 +174,11 @@ namespace graph {
 		std::string name;
 		Graph *graph;          // Referenz zum Graphen, in der der Vertex gespeichert ist
 		std::size_t seed;      // für jedes Element spezifischer hashValue
-		std::shared_ptr<Vertex> *start_vertex;  // Entsprechende Set- und Get-Methoden
-		std::shared_ptr<Vertex> *target_vertex; // Entsprechende Set- und Get-Methoden
+		Vertex *start_vertex;  // Entsprechende Set- und Get-Methoden
+		Vertex *target_vertex; // Entsprechende Set- und Get-Methoden
 		bool is_syscall;       // Flag, ob Edge ein Syscall ist
 		std::string call;      // Entsprechende Set- und Get-Methoden
-		std::list<std::tuple<argument_type, std::any>> arguments;
+		std::list<std::tuple<std::any,llvm::Type*>> arguments;
 		ABB *atomic_basic_block_reference;
 
 	  public:
@@ -188,22 +187,22 @@ namespace graph {
 		
 		
 		Edge();
-		Edge(Graph *graph, std::string name, std::shared_ptr<Vertex> *start, std::shared_ptr<Vertex> *target);
+		Edge(Graph *graph, std::string name, Vertex *start, Vertex *target);
 
 		std::string get_name(); // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
 
-		bool set_start_vertex(std::shared_ptr<Vertex> *vertex);
-		bool set_target_vertex(std::shared_ptr<Vertex> *edge);
-		std::shared_ptr<Vertex> *get_start_vertex();
-		std::shared_ptr<Vertex> *get_target_vertex();
+		bool set_start_vertex(Vertex *vertex);
+		bool set_target_vertex(Vertex *vertex);
+		Vertex *get_start_vertex();
+		Vertex *get_target_vertex();
 
 		void set_syscall(bool syscall);
 		bool is_sycall();
 
-		std::list<std::tuple<argument_type, std::any>> get_arguments();
-		void set_arguments(std::list<std::tuple<argument_type, std::any>> arguments);
-		void append_argument(std::tuple<argument_type, std::any> argument);
+		std::list<std::tuple<std::any,llvm::Type*>> get_arguments();
+		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> arguments);
+		void set_argument(std::tuple<std::any,llvm::Type*> argument);
 	};
 } // namespace graph
 
@@ -249,11 +248,8 @@ namespace OS {
 		static bool classof(const Vertex *v); // LLVM RTTI class of Methode
                 
                 
-		Function(graph::Graph *graph, std::size_t type,std::string name) : graph::Vertex(graph,type){
+		Function(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->function_name = name;
-			this->name = name;
-			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(this).name());
 		}
 		
 		void set_front_abb(ABB * abb);
@@ -308,7 +304,7 @@ namespace OS {
 	  private:
               
 		syscall_definition_type
-		    type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
+		    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
 		          // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 		std::list<ABB *> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
 		std::list<ABB *> predecessors;  // AtomicBasicBlocks die dem BasicBlock vorhergehen
@@ -328,12 +324,11 @@ namespace OS {
 		virtual ABB *clone() const{
 			return new ABB(*this);};
 		
-		ABB(graph::Graph *graph,  std::size_t type,Function *function, std::string name) : graph::Vertex(graph,type){
+		ABB(graph::Graph *graph,Function *function, std::string name) : graph::Vertex(graph,name){
 			parent_function = function;
-			this->name = name;
 			std::hash<std::string> hash_fn;
 			this->seed = hash_fn(name +  typeid(this).name());       
-			this->type = no_call;
+			this->abb_type = no_call;
 		}
               
 		syscall_definition_type get_calltype();
@@ -373,28 +368,38 @@ namespace OS {
 	class TaskGroup : public graph::Vertex {
 
 	  private:
-		std::string group_name;
 		std::list<OS::Task *> task_group;
 
 	  public:
-              
-                virtual TaskGroup *clone() const{return new TaskGroup(*this);};
+		
+		TaskGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+		} 
+		
+		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
                 
-		std::string get_name();
-		void set_name(std::string name);
+		std::string group_name;
+		
 		bool set_task_in_group(OS::Task *task);
 		bool remove_task_in_group(OS::Task *task);
 		std::list<OS::Task *> get_tasks_in_group();
 	};
 
 	class Task : public graph::Vertex {
-
-	  public:
-              
-                //virtual Task *clone() const{return new Task(*this);};
-                
-		OS::Function *definition_function;
+	
+	private:
+		
+		OS::Function *function;
 		TaskGroup *task_group;
+		
+	public:
+		
+		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+		} 
+		
+		//virtual Task *clone() const{return new Task(*this);};
+
+		bool set_function_reference(OS::Function *function);
+
 
 		// FreeRTOS attributes
 		std::string handler_name;
@@ -418,11 +423,16 @@ namespace OS {
 
 	class Timer : public graph::Vertex {
 
-	  public:
-              
-                virtual Timer *clone() const{return new Timer(*this);};
-                
 		OS::Function *definition_function;
+		
+	  public:
+
+		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+		}
+
+		virtual Timer *clone() const{return new Timer(*this);};
+                
+		bool set_definition_function(OS::Function *function);
 
 		int periode;     // Periode in Ticks
 		timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
@@ -435,11 +445,16 @@ namespace OS {
 
 	class ISR : public graph::Vertex {
 
-	  public:
-              
-                virtual ISR *clone() const{return new ISR(*this);};
-              
 		OS::Function *definition_function;
+		
+	  public:
+
+		virtual ISR *clone() const{return new ISR(*this);};
+
+		ISR(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+		}
+		
+		bool set_definition_function(OS::Function *function);
 
 		std::string interrupt_source;
 		std::string handler_name;
@@ -452,20 +467,20 @@ namespace OS {
 	class QueueSet : public graph::Vertex {
 
 	  private:
-		std::list<std::shared_ptr<Vertex> *> queueset_elements; //  Queues, Semaphores
+		std::list<Vertex *> queueset_elements; //  Queues, Semaphores
 
 	  public:
-              
-                virtual QueueSet *clone() const{return new QueueSet(*this);};
-                
+
+		virtual QueueSet *clone() const{return new QueueSet(*this);};
+
 		std::string queueset_handle_name;
 
 		int length_queueset;
-		bool set_queue(std::shared_ptr<Vertex> *element);
-		bool member_of_queueset(std::shared_ptr<Vertex> *element);
-		bool remove_from_queueset(std::shared_ptr<Vertex> *element);
+		bool set_queue(Vertex *element);
+		bool member_of_queueset(Vertex *element);
+		bool remove_from_queueset(Vertex *element);
 
-		std::list<std::shared_ptr<Vertex> *> get_queueset_elements(); // gebe alle Elemente der Queueset zurück
+		std::list<Vertex *> get_queueset_elements(); // gebe alle Elemente der Queueset zurück
 		std::string get_queueset_handle_name();
 
 		void set_queueset_handle_name(std::string name);
@@ -477,14 +492,14 @@ namespace OS {
 
 	  public:
               
-                virtual Queue *clone() const{return new Queue(*this);};
+		virtual Queue *clone() const{return new Queue(*this);};
 		OS::QueueSet *queueset_reference; // Referenz zur Queueset
 
 		std::string handle_name; // Namen des Queue handle
 		int length;              // Länger der Queue
 		int item_size;
 
-		std::list<std::shared_ptr<Vertex> *> get_accessed_elements(); // gebe ISR/Task zurück, die mit der Queue interagieren
+		std::list<Vertex *> get_accessed_elements(); // gebe ISR/Task zurück, die mit der Queue interagieren
 
 		static bool classof(const Vertex *S);
 	};
@@ -492,14 +507,14 @@ namespace OS {
 	class Semaphore : public graph::Vertex {
 
 	  public:
-              
-                virtual Semaphore *clone() const{return new Semaphore(*this);};
+
+		virtual Semaphore *clone() const{return new Semaphore(*this);};
 		semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
 		std::string handle_name;
 		int max_count;
 		int initial_count;
 
-		std::list<std::shared_ptr<Vertex> *> get_accessed_elements(); // gebe alle Elemente zurück, die auf die Sempahore zugreifen
+		std::list<Vertex *> get_accessed_elements(); // gebe alle Elemente zurück, die auf die Sempahore zugreifen
 
 		static bool classof(const Vertex *S);
 	};
@@ -507,30 +522,31 @@ namespace OS {
 	class EventGroups : public graph::Vertex {
 
 	  private:
-		std::list<std::shared_ptr<Vertex> *> writing_vertexes;
-		std::list<std::shared_ptr<Vertex> *> reading_vertexes;
+		std::list<Vertex *> writing_vertexes;
+		std::list<Vertex *> reading_vertexes;
 
 		std::list<int> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
 		std::list<int> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
 		                             // müssen auch wieder gesetzt werden
-		std::list<std::shared_ptr<Vertex> *>
-		    synchronized_vertexes; // Alle std::shared_ptr<Vertex>es die durch den EventGroupSynchronized Aufruf synchronisiert werden
+		std::list<Vertex *>
+		    synchronized_vertexes; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 
 	  public:
-                virtual EventGroups *clone() const{return new EventGroups(*this);};
-              
+		  
+		virtual EventGroups *clone() const{return new EventGroups(*this);};
+		
 		std::string event_group_handle_name;
 		bool wait_for_all_bits;
 		bool wait_for_any_bit;
 
-		bool set_writing_vertex(std::shared_ptr<Vertex> *);
-		bool is_writing_vertex(std::shared_ptr<Vertex> *);
+		bool set_writing_vertex(Vertex *);
+		bool is_writing_vertex(Vertex *);
 
-		bool set_reading_vertex(std::shared_ptr<Vertex> *);
-		bool is_reading_vertex(std::shared_ptr<Vertex> *);
+		bool set_reading_vertex(Vertex *);
+		bool is_reading_vertex(Vertex *);
 
-		bool set_synchronized_vertex(std::shared_ptr<Vertex> *);
-		bool is_synchronized_vertex(std::shared_ptr<Vertex> *);
+		bool set_synchronized_vertex(Vertex *);
+		bool is_synchronized_vertex(Vertex *);
 
 		bool set_bit(int bit);
 		bool set_cleared_bit(int bit);
@@ -546,11 +562,11 @@ namespace OS {
 
 	class Buffer : public graph::Vertex {
 	  public:
-              
-                virtual Buffer *clone() const{return new Buffer(*this);};
+
+        virtual Buffer *clone() const{return new Buffer(*this);};
 		buffer_type type; // enum buffer_type {stream, message}
-		std::shared_ptr<Vertex> *reader;   // Buffer sind als single reader und single writer objekte gedacht
-		std::shared_ptr<Vertex> *writer;
+		Vertex *reader;   // Buffer sind als single reader und single writer objekte gedacht
+		Vertex *writer;
 		int buffer_size;
 		int trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
 		                   // kann
@@ -560,6 +576,35 @@ namespace OS {
 		
 		~Buffer(){};
 	};
+	
+	class Event: public graph::Vertex{
+		
+		private:
+			
+			OS::Task *task_reference;
+		
+		public:
+			
+			Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){};
+			bool set_task_reference(OS::Task *task);
+			std::list<OS::Task*> get_task_references();
+			long long event_mask;
+			int id;
+	};
+	
+	class Resource :public graph::Vertex{
+		
+		public:
+			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){};
+			bool set_task_reference(OS::Task * task);
+			std::list<OS::Task*> get_task_references();
+	};
+	
+	
+	
+	
+	
+	
 
 } // namespace OS
 
