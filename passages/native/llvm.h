@@ -6,7 +6,7 @@
 #include "graph.h"
 #include "passage.h"
 
-//#include <llvm/Analysis/OrderedInstructions.h>
+
 #include <string>
 #include <tuple>
 #include <vector>
@@ -41,8 +41,9 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Analysis/Interval.h>
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/ADT/DenseMap.h"
-#include "OrderedInstructions.h"
+#include "llvm/Analysis/OrderedBasicBlock.h"
+#include "llvm/IR/Operator.h"
+
 
 
 namespace passage {

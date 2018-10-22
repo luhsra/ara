@@ -666,6 +666,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
 					//set the abb call`s argument values and types
 					set_arguments(new_abb);
+					
                 }else{
 					
                     //get the alread existing abb from the graph
@@ -746,6 +747,8 @@ namespace passage {
 	}
 
 	void LLVMPassage::run(graph::Graph& graph) {
+		
+		
 		// get file arguments from config
 		std::vector<std::string> files;
 		std::cout << "Run " << get_name() << std::endl;
@@ -766,14 +769,18 @@ namespace passage {
 		std::string file_name = files.at(0); 
 		
 		
-		std::shared_ptr<llvm::LLVMContext>  context = std::make_shared<llvm::LLVMContext>();
+
+		llvm::LLVMContext context;
+
 		//llvm::Context context;
 		llvm::SMDiagnostic Err;
+		
+		//llvm::Module *tmp_module = parseIRFile(file_name, Err, context);
 		
 		//load the IR representation file
 		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
 		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
-		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, *(context));
+		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, context);
 		
 		if(!module){
 			std::cerr << "Could not load file:" << file_name << "\n" << std::endl;
@@ -790,13 +797,13 @@ namespace passage {
 		
 		//graph module can just be created in the pass
 		//graph::Graph tmp_graph =  graph::Graph(shared_module);
-		graph::Graph tmp_graph =  graph::Graph();
+		//graph::Graph tmp_graph =  graph::Graph();
 		
-		graph.set_llvm_module(&shared_module,&context);
+		
 		
 		//set the llvm module in the graph object
-		tmp_graph.set_llvm_module(&shared_module,&context);
-		
+		//tmp_graph.set_llvm_module(shared_module);
+		graph.set_llvm_module(shared_module);
 		
 		//initialize the split counter
 		unsigned split_counter = 0;
@@ -805,7 +812,7 @@ namespace passage {
 		for (auto &func : *shared_module){
 			
 			//create Function, set the module reference and function name and calculate the seed of the function			
-			auto graph_function = std::make_shared<OS::Function>(&tmp_graph,func.getName().str());
+			auto graph_function = std::make_shared<OS::Function>(&graph,func.getName().str());
 			
 			//get arguments of the function
 			llvm::FunctionType *argList = func.getFunctionType();
@@ -840,27 +847,28 @@ namespace passage {
 			
 			if(!func.empty()){
 				//store the generated function in the graph datastructure
-				tmp_graph.set_vertex(graph_function);
+				graph.set_vertex(graph_function);
 				
 				//generate and store the abbs of the function in the graph datatstructure
-				abb_generation(&tmp_graph, graph_function );
+				abb_generation(&graph, graph_function );
 			}
 		}
 		
 		
 		
 		
-		/*
+		
 		std::cerr << "_____________________________________________________________________________" << std::endl;
 		
 		
 		//TEST Abschnitt
-		std::list<graph::Vertex*> test_list =  tmp_graph.get_type_vertexes(typeid(OS::ABB()).hash_code());
-		std::list<graph::Vertex*>::iterator it = test_list.begin();       //iterate about the list elements
+		std::list<graph::shared_vertex> test_list =  graph.get_type_vertexes(typeid(OS::ABB()).hash_code());
+		std::list<graph::shared_vertex>::iterator it = test_list.begin();       //iterate about the list elements
 		for(; it != test_list.end(); ++it){
 	
+			std::shared_ptr<graph::Vertex> tmp = (*it);
+			std::shared_ptr<OS::ABB> pDerived = std::dynamic_pointer_cast<OS::ABB> (tmp);
 			
-			OS::ABB* pDerived = (OS::ABB*)(*it);
 			if(pDerived) // always test  
 			{
 				//std::cerrr << "ABB Name: " << pDerived->get_name() << "\n" << std::endl;
@@ -880,7 +888,7 @@ namespace passage {
 			{
 				// fail to down-cast
 			}
-		}*/
+		}
 		
 
 	}

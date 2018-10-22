@@ -4,42 +4,54 @@
 
 using namespace graph;
 
-graph::Graph::Graph(std::shared_ptr<llvm::Module>* module){
-    llvm_module = *module;
+/*graph::Graph::Graph(std::shared_ptr<llvm::Module> module){
+    llvm_module = module;
 }
+*/
+
 
 graph::Graph::~Graph(){
 }
 
+
+
 graph::Graph::Graph(){
 }
 
-void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> *module,std::shared_ptr<llvm::LLVMContext>*context){
-	llvm_context = *context;
-	llvm_module = *module;
+
+void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> module){
+
+	llvm_module = module;
 }
+
+void load_llvm_module(std::string file){
+	
+		llvm::SMDiagnostic Err;
+		//this->tmp_module = parseIRFile(file, Err, *(this->llvm_context)).get();
+}
+
 
 llvm::Module* graph::Graph::get_llvm_module(){
     return this->llvm_module.get();
 }
 
 void graph::Graph::set_vertex(shared_vertex vertex){
-	this->vertexes.push_back(vertex);
+	this->vertexes.emplace_back(vertex);
 }
 
 void graph::Graph::set_edge(shared_edge edge){
-    this->edges.push_back(edge);
+    this->edges.emplace_back(edge);
 }
 
 shared_vertex graph::Graph::create_vertex(){
     shared_vertex vertex = std::make_shared<Vertex>(this,""); 	//create shared po
-    this->vertexes.push_back(vertex);                   		//store the shared pointer in the internal list
+    this->vertexes.emplace_back(vertex);                   		//store the shared pointer in the internal list
     return vertex;
 }
 
 shared_edge graph::Graph::create_edge(){
     shared_edge edge = std::make_shared<Edge>();    		//create shared pointer
-    this->edges.push_back(edge);               				//store the shared pointer in the internal list
+    this->edges.emplace_back(edge);               				//store the shared pointer in the internal list
     return edge;
 }
 
@@ -48,7 +60,7 @@ std::list<shared_vertex> graph::Graph::get_type_vertexes(size_t type_info){
     std::list<shared_vertex>::iterator it = this->vertexes.begin();       //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
         if(type_info==(*it).get()->get_type()){                                         //check if vertex is from wanted type
-            tmp_list.push_back((*it));
+            tmp_list.emplace_back((*it));
         }
     }
     return tmp_list;
@@ -82,7 +94,7 @@ std::list<shared_vertex> graph::Graph::get_vertexes(){
     std::list<shared_vertex> tmp_list;
     std::list<shared_vertex>::iterator it = this->vertexes.begin();            //iterate about the list elements
     for(; it != this->vertexes.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -91,7 +103,7 @@ std::list<shared_edge> graph::Graph::get_edges(){
     std::list<shared_edge> tmp_list;
     std::list<shared_edge>::iterator it = this->edges.begin();           //iterate about the list elements
     for(; it != this->edges.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -162,9 +174,6 @@ bool graph::Graph::contain_edge(shared_edge edge){
 graph::Vertex::Vertex(Graph *graph,std::string name){
     this->graph = graph;
 	this->name = name;
-	std::hash<std::string> hash_fn;
-	this->seed = hash_fn(name +  typeid(this).name());
-    this->type = typeid(this).hash_code();
 }
 
 std::string graph::Vertex::get_name(){
@@ -179,7 +188,7 @@ bool graph::Vertex::set_outgoing_edge(shared_edge edge){
 	bool success = false;
     if(this->graph->contain_edge(edge)){
 		success = true;
-		this->outgoing_edges.push_back(edge);
+		this->outgoing_edges.emplace_back(edge);
 	}
     return success;
 }
@@ -188,7 +197,7 @@ bool graph::Vertex::set_ingoing_edge(shared_edge edge){
 	bool success = false;
     if(this->graph->contain_edge(edge)){
 		success = true;
-		this->ingoing_edges.push_back(edge);
+		this->ingoing_edges.emplace_back(edge);
 	}
     return success;
 }
@@ -197,7 +206,7 @@ bool graph::Vertex::set_outgoing_vertex(shared_vertex vertex){
 	bool success = false;
     if(this->graph->contain_vertex(vertex)){
 		success = true;
-		this->outgoing_vertexes.push_back(vertex);
+		this->outgoing_vertexes.emplace_back(vertex);
 	}
     return success;
 }
@@ -206,7 +215,7 @@ bool graph::Vertex::set_ingoing_vertex(shared_vertex vertex){
 	bool success = false;
     if(this->graph->contain_vertex(vertex)){
 		success = true;
-		this->ingoing_vertexes.push_back(vertex);
+		this->ingoing_vertexes.emplace_back(vertex);
 	}
     return success;
 }
@@ -259,13 +268,13 @@ std::list<graph::shared_vertex > graph::Vertex::get_specific_connected_vertexes(
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_vertexes.end(); ++it){
         if(typeid((*(*it))).hash_code() == type_info){
-            tmp_list.push_back(*it);
+            tmp_list.emplace_back(*it);
         }
     }
     //iterate about the ingoing vertexes
     for(it = this->ingoing_vertexes.begin();  it != this->ingoing_vertexes.end(); ++it){
         if(typeid((*(*it))).hash_code()== type_info){
-            tmp_list.push_back(*it);
+            tmp_list.emplace_back(*it);
         }
     }
     return tmp_list;
@@ -277,9 +286,9 @@ std::list<graph::shared_vertex > wide_search (Vertex* start,graph::shared_vertex
     /*//TODO
 	std::queue<graph::shared_vertex> queue;
     queue.push(*start);
-    tmp_list.push_back(start);
+    tmp_list.emplace_back(start);
     std::vector<size_t> visited;
-    visited.push_back(start->get_seed());
+    visited.emplace_back(start->get_seed());
     //iterate about the queue with open elements
     while(!queue.empty()){
         graph::shared_vertex tmp = queue.front();
@@ -291,7 +300,7 @@ std::list<graph::shared_vertex > wide_search (Vertex* start,graph::shared_vertex
         for(; it != neighbours.end(); ++it){
             if(!(std::find(visited.begin(), visited.end(), (*it)->get_seed()) != visited.end())){
                 queue.push(*it);
-                tmp_list.push_back(*it);
+                tmp_list.emplace_back(*it);
             }
         }
     }
@@ -308,11 +317,11 @@ std::list<graph::shared_vertex >graph::Vertex::get_connected_vertexes(){ // Meth
     std::list<graph::shared_vertex>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_vertexes.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     //iterate about the ingoing vertexes
     for(it = this->ingoing_vertexes.begin();  it != this->ingoing_vertexes.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -323,11 +332,11 @@ std::list<graph::shared_edge> graph::Vertex::get_connected_edges(){ // Methode, 
     std::list<graph::shared_edge>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
     //iterate about the outgoing edges
     for(; it != this->outgoing_edges.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     //iterate about the ingoing edges
     for(it = this->ingoing_edges.begin();  it != this->ingoing_edges.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -337,7 +346,7 @@ std::list<graph::shared_vertex > graph::Vertex::get_ingoing_vertexes(){    // Me
     std::list<graph::shared_vertex> tmp_list;
     std::list<graph::shared_vertex>::iterator it = this->ingoing_vertexes.begin();
     for(; it != this->ingoing_vertexes.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -346,7 +355,7 @@ std::list<graph::shared_edge> graph::Vertex::get_ingoing_edges(){ // Methode, di
     std::list<graph::shared_edge> tmp_list;
     std::list<graph::shared_edge>::iterator it = this->ingoing_edges.begin();
     for(; it != this->ingoing_edges.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -355,7 +364,7 @@ std::list<graph::shared_vertex > graph::Vertex::get_outgoing_vertexes(){        
     std::list<graph::shared_vertex> tmp_list;
     std::list<graph::shared_vertex>::iterator it = this->outgoing_vertexes.begin();
     for(; it != this->outgoing_vertexes.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -364,7 +373,7 @@ std::list<graph::shared_edge > graph::Vertex::get_outgoing_edges(){ // Methode, 
     std::list<graph::shared_edge> tmp_list;
     std::list<graph::shared_edge>::iterator it = this->outgoing_edges.begin();
     for(; it != this->outgoing_edges.end(); ++it){
-        tmp_list.push_back(*it);
+        tmp_list.emplace_back(*it);
     }
     return tmp_list;
 }
@@ -375,13 +384,13 @@ std::list<graph::shared_edge> graph::Vertex::get_direct_edge(graph::shared_verte
     //iterate about the outgoing vertexes
     for(; it != this->outgoing_edges.end(); ++it){
         if(vertex->get_seed()==((*it)->get_target_vertex()->get_seed())){
-            tmp_list.push_back(*it);
+            tmp_list.emplace_back(*it);
         }
     }
     //iterate about the ingoing vertexesget
     for(it = this->ingoing_edges.begin();  it != this->ingoing_edges.end(); ++it){
         if(vertex->get_seed()==((*it)->get_start_vertex()->get_seed())){
-            tmp_list.push_back(*it);
+            tmp_list.emplace_back(*it);
         }
     }
     return tmp_list;
@@ -476,7 +485,7 @@ void graph::Edge::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> argu
 }
 
 void graph::Edge::set_argument(std::tuple<std::any,llvm::Type*> argument){
-    this->arguments.push_back(argument);
+    this->arguments.emplace_back(argument);
     return;
 }
 
@@ -509,14 +518,14 @@ void OS::Function::set_definition(function_definition_type type){
 function_definition_type OS::Function::get_definition(){return this->definition;}
 
 
-std::list<OS::shared_function>* OS::Function::get_used_functions(){return &(this->referenced_functions);} // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
+std::list<OS::shared_function> OS::Function::get_referenced_functions(){return (this->referenced_functions);} // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
 
 
 bool OS::Function::set_referenced_function(OS::shared_function function){
     bool success = false;
     graph::Graph graph = (*this->graph);
     if(this->graph->contain_vertex(function)){
-        this->referenced_functions.push_back(function);
+        this->referenced_functions.emplace_back(function);
         success = true;
     }
     return success;
@@ -560,22 +569,22 @@ llvm::Function* OS::Function::get_llvm_reference(){return this->LLVM_function_re
 
 
 
-void OS::Function::set_atomic_basic_block(OS::ABB *atomic_basic_block){
-    this->atomic_basic_blocks.push_back(atomic_basic_block);
+void OS::Function::set_atomic_basic_block(OS::shared_abb atomic_basic_block){
+    this->atomic_basic_blocks.emplace_back(atomic_basic_block);
 }
 
-std::list<OS::ABB *> OS::Function::get_atomic_basic_blocks(){
+std::list<OS::shared_abb> OS::Function::get_atomic_basic_blocks(){
     return this->atomic_basic_blocks;
 }
 
-std::list<OS::Task *> OS::Function::get_referenced_tasks(){
+std::list<OS::shared_task> OS::Function::get_referenced_tasks(){
     return this->referenced_tasks;
 }
 
-bool OS::Function::set_referenced_task(OS::Task *task){
+bool OS::Function::set_referenced_task(OS::shared_task task){
     bool success = false;
-    if(this->graph->contain_vertex((shared_vertex)task)){
-        this->referenced_tasks.push_back(task);
+    if(this->graph->contain_vertex(task)){
+        this->referenced_tasks.emplace_back(task);
         success = true;
     }
     return success;
@@ -591,7 +600,7 @@ std::list<llvm::Type*>  OS::Function::get_argument_types(){
 }
 
 void  OS::Function::set_argument_type(llvm::Type* argument){ // Setze Argument des SystemCalls in Argumentenliste
-    this->argument_types.push_back(argument);
+    this->argument_types.emplace_back(argument);
 }
 
 
@@ -649,18 +658,18 @@ void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_argu
 
 void OS::ABB::set_argument(std::any argument,llvm::Type* type){
 	
-    this->arguments.push_back(std::make_tuple (argument,type));
+    this->arguments.emplace_back(std::make_tuple (argument,type));
 } // Setze Argument des SystemCalls in Argumentenliste
 
 
 
 bool OS::ABB::set_ABB_successor(OS::shared_abb basicblock){
-	this->successors.push_back(basicblock);
+	this->successors.emplace_back(basicblock);
         //TODO check if basic_block exists in module
 	return true;	
 }   // Speicher Referenz auf Nachfolger des BasicBlocks
 bool OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock){
-	this->predecessors.push_back(basicblock);
+	this->predecessors.emplace_back(basicblock);
         //TODO check if basic_block exists in module
 	return true;	
 } // Speicher Referenz auf Vorgänger des BasicBlocks
@@ -677,7 +686,7 @@ std::list<OS::shared_abb> OS::ABB::get_ABB_predecessor(){
 bool OS::ABB::set_BasicBlock(llvm::BasicBlock *basic_block){
 	bool success = false;
 	if(this->parent_function->get_llvm_reference() == basic_block->getParent()){
-		this->basic_blocks.push_back(basic_block);	
+		this->basic_blocks.emplace_back(basic_block);	
 		success = true;
 	}
 	return success;
