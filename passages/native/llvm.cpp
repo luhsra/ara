@@ -19,6 +19,11 @@ using namespace llvm;
 #define PRINT_NAME(x) std::cout << #x << " - " << typeid(x).name() << '\n'
 
 
+
+static llvm::LLVMContext context;
+
+
+
 bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type * type, Value *arg,llvm::Instruction* call_reference);
 
 
@@ -626,19 +631,16 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 		for (auto &it : old_abb->get_BasicBlocks()) {
 			
 
-            ////std::cerrr << "[master] basicblock_name = " << it->getName().str() << std::endl;
             //iterate about the successors of the abb
             for (auto it1 = succ_begin(it); it1 != succ_end(it); ++it1){
 
-                ////std::cerrr << "[successor basicblock] basicblock_name = " << (*it1)->getName().str() << std::endl;
                 //get sucessor basicblock reference
                 llvm::BasicBlock *succ = *it1;
 
                 //create temporary basic block
 				auto new_abb = std::make_shared<OS::ABB>(graph,function, succ->getName());
 
-                //check if the successor abb is already stored in the list
-				
+                //check if the successor abb is already stored in the list				
                 if(!visited(new_abb->get_seed(), &visited_abbs)) {
 
                     if(succ->getName().str().empty()){
@@ -670,14 +672,11 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
                 }else{
 					
                     //get the alread existing abb from the graph
-					
 					std::shared_ptr<graph::Vertex> tmp = graph->get_vertex(new_abb->get_seed());
 					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB> (tmp);
 				
-
                     if(old_abb->get_seed() != existing_abb->get_seed()){
-                        ////std::cerrr << "Connect:" << old_abb->get_name() << " with " << existing_abb->get_name() << std::endl;
-						
+
                         //connect the abbs via reference
                         existing_abb->set_ABB_predecessor(old_abb);
                         old_abb->set_ABB_successor(existing_abb);
@@ -688,11 +687,6 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
     }
 }
 
-
-
-
-
-
 void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
     std::list<llvm::BasicBlock *> bbs;
     for (llvm::BasicBlock &_bb : *function) {
@@ -702,8 +696,6 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
     for (llvm::BasicBlock *bb : bbs) {
         llvm::BasicBlock::iterator it = bb->begin();
         while (it != bb->end()) {
-		
-            //TODO check if iterator is at end of instruction list of BasicBlock
 
             while (llvm::isa<llvm::InvokeInst>(*it) || llvm::isa<llvm::CallInst>(*it)) {
                 // If the call is an artifical function (e.g. @llvm.dbg.metadata)
@@ -770,7 +762,7 @@ namespace passage {
 		
 		
 
-		llvm::LLVMContext context;
+
 
 		//llvm::Context context;
 		llvm::SMDiagnostic Err;
@@ -794,11 +786,7 @@ namespace passage {
 			std::cerr << "Unique pointer was deleted:" << file_name << "\n" << std::endl;
 		}
 		
-		
-		//graph module can just be created in the pass
-		//graph::Graph tmp_graph =  graph::Graph(shared_module);
-		//graph::Graph tmp_graph =  graph::Graph();
-		
+	
 		
 		
 		//set the llvm module in the graph object
@@ -835,7 +823,7 @@ namespace passage {
 			for (auto &bb : func) {
 				
 				
-				// Name all basic blocks
+				// name all basic blocks
 				if (!bb.getName().startswith("BB")) {
 					std::stringstream ss;
 					ss << "BB" << split_counter++;
@@ -852,14 +840,10 @@ namespace passage {
 				//generate and store the abbs of the function in the graph datatstructure
 				abb_generation(&graph, graph_function );
 			}
-		}
-		
-		
-		
+		}		
 		
 		
 		std::cerr << "_____________________________________________________________________________" << std::endl;
-		
 		
 		//TEST Abschnitt
 		std::list<graph::shared_vertex> test_list =  graph.get_type_vertexes(typeid(OS::ABB()).hash_code());

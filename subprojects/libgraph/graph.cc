@@ -26,8 +26,8 @@ void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> module){
 
 void load_llvm_module(std::string file){
 	
-		llvm::SMDiagnostic Err;
-		//this->tmp_module = parseIRFile(file, Err, *(this->llvm_context)).get();
+	llvm::SMDiagnostic Err;
+	//this->tmp_module = parseIRFile(file, Err, *(this->llvm_context)).get();
 }
 
 
@@ -397,12 +397,12 @@ std::list<graph::shared_edge> graph::Vertex::get_direct_edge(graph::shared_verte
 }
 
 void graph::Vertex::set_type(std::size_t type){
-    this->type = type;
+    this->vertex_type = type;
 }
 
 
 std::size_t graph::Vertex::get_type(){
-    return this->type;
+    return this->vertex_type;
 }
 
 

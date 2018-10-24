@@ -40,6 +40,81 @@ class OilPassage(Passage):
 		#remove tmp file
 		os.remove(tmp_file)
 		
+		#generate instances
+		counter_list = {}
+		timer_list = {}
+		isr_list = {}
+		task_list = {}
+		event_list = {}
+		resource_list = {}
+		alarm_list = {}
+		
+		#get the counters 
+		counters = dictionary.get("COUNTER", "error")
+		if counters != "error":
+			#iterate about the counter
+			for name in counters:
+				print("TEST")
+				#TODO counter = Counter(graph, name)
+				#counter_list[name] = counter
+		
+		#get the events
+		events = dictionary.get("EVENT", "error")
+		if events != "error":
+			#iterate about the counter
+			for name in events:
+				print("TEST")
+				#TODO event = Event(graph, name)
+				#event_list[name] = event
+
+		#get the isrs
+		isrs = dictionary.get("ISR", "error")
+		if isrs != "error":
+			#iterate about the isr
+			for name in isrs:
+				print("TEST")
+				#TODO isr = ISR(graph, name)
+				#isr_list[name] = isr
+				
+		#get the tasks
+		tasks = dictionary.get("TASK", "error")
+		if tasks != "error":
+			#iterate about the tasks
+			for name in tasks:
+				print("TEST")
+				#TODO task = Task(graph, name)
+				#task_list[name] = task
+			
+		#get the resources
+		resources = dictionary.get("RESOURCE", "error")
+		if resources != "error":
+			#iterate about the isr
+			for name in isrs:
+				print("TEST")
+				#TODO resource = Resource(graph, name)
+				#resource_list[name] = resource
+				
+		#get the alarms
+		alarms = dictionary.get("ALARM", "error")
+		if alarms != "error":
+			#iterate about the alarms
+			for name in alarms:
+				print("TEST")
+				#TODO alarm = Alarm(graph, name)
+				#alarm_list[name] = alarm
+				
+		#get the timers
+		timers = dictionary.get("TIMER", "error")
+		if timers != "error":
+			#iterate about the timers
+			for name in timers:
+				print("TEST")
+				#TODO timer = Timer(graph, name)
+				timer_list[name] = timer
+				
+				
+				
+				
 		#get the counters 
 		counters = dictionary.get("COUNTER", "error")
 		if counters != "error":
@@ -47,7 +122,8 @@ class OilPassage(Passage):
 			#iterate about the counter
 			for name in counters:
 				
-				#TODO counter = Counter(graph, name)
+				#TODO counter
+				
 				print (name, 'corresponds to', counters[name])
 				oil_counter = counters[name]
 				
@@ -76,8 +152,6 @@ class OilPassage(Passage):
 							print("mincycle value is no digit")
 					else:
 						print(attribute ,";counter has other attribute than MAXALLOWEDVALUE or TICKSPERBASE or MINCYCLE")
-					
-					
 					
 					
 		#get the resources 
@@ -119,7 +193,7 @@ class OilPassage(Passage):
 					else:
 						print("resource has other attribute than RESOURCEPROPERTY")
 		
-
+		
 		#get the events 
 		events = dictionary.get("EVENT", "error")
 		if events != "error":

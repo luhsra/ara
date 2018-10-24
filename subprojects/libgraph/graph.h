@@ -111,7 +111,7 @@ namespace graph {
 	  protected:
 		Graph *graph; // Referenz zum Graphen, in der der Vertex gespeichert ist
 
-		std::size_t type;
+		std::size_t vertex_type;
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
 
@@ -287,7 +287,7 @@ namespace OS {
 			this->function_name = name;
 			std::hash<std::string> hash_fn;
 			this->seed = hash_fn(name +  typeid(this).name());
-			this->type = typeid(Function()).hash_code();
+			this->vertex_type =  typeid(Function()).hash_code();
 		}
 		
 		void set_front_abb(shared_abb abb);
@@ -367,7 +367,7 @@ namespace OS {
 			std::hash<std::string> hash_fn;
 			this->seed = hash_fn(name +  typeid(this).name());
 			this->abb_type = no_call;
-			this->type = typeid(ABB()).hash_code();
+			this->vertex_type = typeid(ABB()).hash_code();
 		}
               
 		syscall_definition_type get_calltype();
@@ -412,7 +412,7 @@ namespace OS {
 	  public:
 		
 		TaskGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->type = typeid(TaskGroup()).hash_code();
+			this->vertex_type = typeid(TaskGroup()).hash_code();
 		} 
 		
 		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
@@ -428,7 +428,7 @@ namespace OS {
 	
 	private:
 		
-		OS::shared_function function;
+		OS::shared_function definition_function;
 		TaskGroup *task_group;
 		
 		std::list<shared_resource> resources;
@@ -452,7 +452,7 @@ namespace OS {
 	public:
 		
 		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->type = typeid(Task()).hash_code();
+			this->vertex_type = typeid(Task()).hash_code();
 		} 
 		
 		//virtual Task *clone() const{return new Task(*this);};
@@ -482,7 +482,7 @@ namespace OS {
 	  public:
 
 		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->type = typeid(Timer()).hash_code();
+			this->vertex_type = typeid(Timer()).hash_code();
 		}
 
 		virtual Timer *clone() const{return new Timer(*this);};
@@ -502,32 +502,29 @@ namespace OS {
 
 		OS::shared_function definition_function;
 		
-		std::list<shared_resource> resources;
-		std::list<shared_message> messages;
 		
+		//OSEK attributes
 		int category;			// OSEK just values 0 and 1 are allowed
 		int stacksize;
 		
+		std::list<shared_resource> resources;
+		std::list<shared_message> messages;
+		
+		//FreeRTOS attributes
+		std::string interrupt_source;
+		std::string handler_name;
+		int priority;
+		
 	  public:
 
-		virtual ISR *clone() const{return new ISR(*this);};
-
 		ISR(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->type = typeid(ISR()).hash_code();
+			this->vertex_type = typeid(ISR()).hash_code();
 		}
 		
 
 		void set_category(int category);
 		bool set_message_reference(std::string);
 		bool set_resource_reference(std::string);
-		
-		//FreeRTOS attribute
-		std::string interrupt_source;
-		std::string handler_name;
-		int priority;
-		
-		//OSEK attributes
-		
 		
 		static bool classof(const Vertex *S);
 	};
@@ -563,17 +560,14 @@ namespace OS {
 			
 			OS::shared_queueset queueset_reference; // Referenz zur Queueset
 
-		public:
-		
-			virtual Queue *clone() const{return new Queue(*this);};
-			
-			bool set_queueset_reference(shared_queueset);
-			shared_queueset get_queueset_reference();
-
 			std::string handle_name; // Namen des Queue handle
 			int length;              // Länger der Queue
 			int item_size;
-
+				
+		public:
+		
+			bool set_queueset_reference(shared_queueset);
+			shared_queueset get_queueset_reference();
 			std::list<graph::shared_vertex> get_accessed_elements(); // gebe ISR/Task zurück, die mit der Queue interagieren
 
 			static bool classof(const Vertex *S);
@@ -636,16 +630,19 @@ namespace OS {
 	};
 
 	class Buffer : public graph::Vertex {
-	  public:
+	  
+		private:
+			
+			buffer_type type; // enum buffer_type {stream, message}
+			graph::shared_vertex reader;   // Buffer sind als single reader und single writer objekte gedacht
+			graph::shared_vertex writer;
+			int buffer_size;
+			int trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
+							// kann
+			bool static_buffer;
+	
+		public:
 
-        virtual Buffer *clone() const{return new Buffer(*this);};
-		buffer_type type; // enum buffer_type {stream, message}
-		graph::shared_vertex reader;   // Buffer sind als single reader und single writer objekte gedacht
-		graph::shared_vertex writer;
-		int buffer_size;
-		int trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
-		                   // kann
-		bool static_buffer;
 
 		static bool classof(const Vertex *S);
 		
@@ -663,7 +660,7 @@ namespace OS {
 		public:
 			
 			Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->type = typeid(Event()).hash_code();
+				this->vertex_type = typeid(Event()).hash_code();
 			};
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
@@ -680,11 +677,11 @@ namespace OS {
 			std::list<OS::shared_isr> irs;
 			std::list<OS::shared_resource> resources;
 			
-			resoure_type property;
+			resoure_type type;
 			
 		public:
 			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->type = typeid(Resource()).hash_code();
+				this->vertex_type = typeid(Resource()).hash_code();
 			};
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
@@ -695,7 +692,7 @@ namespace OS {
 			bool set_linked_resource(OS::shared_resource resource);
 			std::list<OS::shared_resource> get_linked_resources();
 			
-			void set_resource_property(std::string property, std::string linked_resource);
+			void set_resource_property(std::string type, std::string linked_resource);
 			
 	};
 	
@@ -708,7 +705,7 @@ namespace OS {
 		public:
 			
 			Counter(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->type = typeid(Counter()).hash_code();
+				this->vertex_type = typeid(Counter()).hash_code();
 			};
 			
 			void set_max_allowedvalue(unsigned long max_allowedvalue);
@@ -740,7 +737,7 @@ namespace OS {
 		public:
 			
 			Alarm(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->type = typeid(Alarm()).hash_code();
+				this->vertex_type = typeid(Alarm()).hash_code();
 			};
 			
 
