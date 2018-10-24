@@ -4,4 +4,4 @@ test('dependency_resolving',
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )
 
-subdir('native_passage_test')
+subdir('native_step_test')

@@ -1,5 +1,5 @@
-test('native_passages',
+test('native_steps',
         py3_inst,
-        args : files('native_passages.py'),
+        args : files('native_steps.py'),
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )

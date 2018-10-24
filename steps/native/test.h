@@ -1,17 +1,17 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef TEST_PASSAGE_H
-#define TEST_PASSAGE_H
+#ifndef TEST_STEP_H
+#define TEST_STEP_H
 
 #include "graph.h"
-#include "passage.h"
+#include "step.h"
 
 #include <string>
 
-namespace passage {
-	class Test0Passage : public Passage {
+namespace step {
+	class Test0Step : public Step {
 	public:
-		Test0Passage(PyObject* config) : Passage(config) {}
+		Test0Step(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
 
@@ -22,9 +22,9 @@ namespace passage {
 		virtual void run(graph::Graph& graph) override;
 	};
 
-	class Test2Passage : public Passage {
+	class Test2Step : public Step {
 	public:
-		Test2Passage(PyObject* config) : Passage(config) {}
+		Test2Step(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
 
@@ -36,4 +36,4 @@ namespace passage {
 	};
 }
 
-#endif //TEST_PASSAGE_H
+#endif //TEST_STEP_H

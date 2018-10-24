@@ -3,10 +3,10 @@ import json
 import os
 
 
-from native_passage import Passage
+from native_step import Step
 
 
-class OilPassage(Passage):
+class OilStep(Step):
 	"""Reads an oil file and writes all information to the graph."""
 	
 
@@ -475,7 +475,7 @@ class OilPassage(Passage):
 								
 		
 						
-		print("I'm an OilPassage")
+		print("I'm an OilStep")
 					
 	def validate_reference(self, dictionary, element, abstraction):
 		print("HELLO")

@@ -728,17 +728,17 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
     }
 }
 
-namespace passage {
+namespace step {
 
-	std::string LLVMPassage::get_name() {
-		return "LLVMPassage";
+	std::string LLVMStep::get_name() {
+		return "LLVMStep";
 	}
 
-	std::string LLVMPassage::get_description() {
+	std::string LLVMStep::get_description() {
 		return "Extracts out of LLVM.";
 	}
 
-	void LLVMPassage::run(graph::Graph& graph) {
+	void LLVMStep::run(graph::Graph& graph) {
 		
 		
 		// get file arguments from config
@@ -876,7 +876,7 @@ namespace passage {
 		
 
 	}
-	std::vector<std::string> LLVMPassage::get_dependencies() {
-		return {"OilPassage"};
+	std::vector<std::string> LLVMStep::get_dependencies() {
+		return {"OilStep"};
 	}
 }

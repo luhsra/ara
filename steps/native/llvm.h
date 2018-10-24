@@ -1,10 +1,10 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef LLVM_PASSAGE_H
-#define LLVM_PASSAGE_H
+#ifndef LLVM_STEP_H
+#define LLVM_STEP_H
 
 #include "graph.h"
-#include "passage.h"
+#include "step.h"
 
 
 #include <string>
@@ -46,10 +46,10 @@
 
 
 
-namespace passage {
-	class LLVMPassage : public Passage {
+namespace step {
+	class LLVMStep : public Step {
 	public:
-		LLVMPassage(PyObject* config) : Passage(config) {}
+		LLVMStep(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
 
@@ -61,4 +61,4 @@ namespace passage {
 	};
 }
 
-#endif //LLVM_PASSAGE_H
+#endif //LLVM_STEP_H

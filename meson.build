@@ -10,7 +10,7 @@ libgraph = dependency('libgraph', fallback : ['libgraph', 'graph_dep'])
 build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
-subdir('passages')
+subdir('steps')
 subdir('test')
 
 test('ara tester',

@@ -10,10 +10,10 @@ import graph
 #import pass1
 import argparse
 import sys
-import passagemanager
+import stepmanager
 
 
-from passages import OilPassage
+from steps import OilStep
 
 def execute_shellcommands(commands,shell_flag):
 	"""execute_shellcommands is used to  generate the makefile, build the pass and run the pass on the application code
@@ -66,9 +66,9 @@ def main():
 	
 	g = graph.PyGraph()
 
-	p_manager = passagemanager.PassageManager(g, vars(args))
+	p_manager = stepmanager.StepManager(g, vars(args))
 
-	p_manager.execute(['LLVMPassage'])
+	p_manager.execute(['LLVMStep'])
 	
 
 if __name__ == '__main__':

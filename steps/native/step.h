@@ -1,7 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef PASSAGE_H
-#define PASSAGE_H
+#ifndef STEP_H
+#define STEP_H
 
 #include "graph.h"
 #include "Python.h"
@@ -10,44 +10,44 @@
 #include <stdexcept>
 #include <vector>
 
-namespace passage {
+namespace step {
 
 	/**
-	 * Superclass for constructing arbitrary passages in C++.
+	 * Superclass for constructing arbitrary steps in C++.
 	 */
-	class Passage {
+	class Step {
 	protected:
 		PyObject* config;
 
 	public:
 
 		/**
-		 * Contruct a native passage.
+		 * Contruct a native step.
 		 *
 		 * @Args
 		 * config -- a Python dictionary, that holds the configuration of the whole program.
 		 */
-		Passage(PyObject* config) : config(config) {
+		Step(PyObject* config) : config(config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Pass: Need a dict as config.");
 			}
 		}
-		virtual ~Passage() {}
+		virtual ~Step() {}
 
 		/**
-		 * Return a unique name of this passage. This acts as ID for the passage.
+		 * Return a unique name of this step. This acts as ID for the step.
 		 */
 		virtual std::string get_name() = 0;
 
 		/**
-		 * Get a descriptive string of the passage that says what the passage is doing.
+		 * Get a descriptive string of the step that says what the step is doing.
 		 */
 		virtual std::string get_description() = 0;
 
 		/**
-		 * Get all depencies of this passage.
+		 * Get all depencies of this step.
 		 *
-		 * @Return: A list of passage names (the ones that are returned with get_name().
+		 * @Return: A list of step names (the ones that are returned with get_name().
 		 */
 		virtual std::vector<std::string> get_dependencies() = 0;
 
@@ -59,4 +59,4 @@ namespace passage {
 	};
 }
 
-#endif //PASSAGE_H
+#endif //STEP_H

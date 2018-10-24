@@ -1,13 +1,13 @@
 #!/usr/bin/env python3.6
 
-import passagemanager
+import stepmanager
 import graph
 
-from native_passage import Passage
+from native_step import Step
 
 shared_state = ""
 
-class TestPassage(Passage):
+class TestStep(Step):
     """Only for testing purposes"""
 
     def run(self, graph: graph.PyGraph):
@@ -27,49 +27,49 @@ class TestPassage(Passage):
 #         Test8         Test9
 
 
-class Test0Passage(TestPassage):
+class Test0Step(TestStep):
     pass
 
 
-class Test1Passage(TestPassage):
+class Test1Step(TestStep):
     pass
 
 
-class Test2Passage(TestPassage):
+class Test2Step(TestStep):
     pass
 
 
-class Test3Passage(TestPassage):
+class Test3Step(TestStep):
     pass
 
 
-class Test4Passage(TestPassage):
+class Test4Step(TestStep):
     def get_dependencies(self):
-        return ["Test0Passage", "Test1Passage"]
+        return ["Test0Step", "Test1Step"]
 
 
-class Test5Passage(TestPassage):
+class Test5Step(TestStep):
     def get_dependencies(self):
-        return ["Test0Passage"]
+        return ["Test0Step"]
 
 
-class Test6Passage(TestPassage):
+class Test6Step(TestStep):
     def get_dependencies(self):
-        return ["Test4Passage"]
+        return ["Test4Step"]
 
 
-class Test7Passage(TestPassage):
+class Test7Step(TestStep):
     pass
 
 
-class Test8Passage(TestPassage):
+class Test8Step(TestStep):
     def get_dependencies(self):
-        return ["Test5Passage", "Test6Passage", "Test7Passage"]
+        return ["Test5Step", "Test6Step", "Test7Step"]
 
 
-class Test9Passage(TestPassage):
+class Test9Step(TestStep):
     def get_dependencies(self):
-        return ["Test1Passage", "Test3Passage"]
+        return ["Test1Step", "Test3Step"]
 
 
 # TestDep0
@@ -78,11 +78,11 @@ class Test9Passage(TestPassage):
 #    |
 # TestDep1
 
-class TestDep0(TestPassage):
+class TestDep0(TestStep):
     pass
 
 
-class TestDep1(TestPassage):
+class TestDep1(TestStep):
     def get_dependencies(self):
         if self._config['cond']:
             return ["TestDep0"]
@@ -90,63 +90,63 @@ class TestDep1(TestPassage):
 
 
 def provide(config):
-    yield Test0Passage(config)
-    yield Test1Passage(config)
-    yield Test2Passage(config)
-    yield Test3Passage(config)
-    yield Test4Passage(config)
-    yield Test5Passage(config)
-    yield Test6Passage(config)
-    yield Test7Passage(config)
-    yield Test8Passage(config)
-    yield Test9Passage(config)
+    yield Test0Step(config)
+    yield Test1Step(config)
+    yield Test2Step(config)
+    yield Test3Step(config)
+    yield Test4Step(config)
+    yield Test5Step(config)
+    yield Test6Step(config)
+    yield Test7Step(config)
+    yield Test8Step(config)
+    yield Test9Step(config)
     yield TestDep0(config)
     yield TestDep1(config)
 
 
 tests = ["""
-Run: Test1Passage
-Run: Test0Passage
-Run: Test4Passage
-Run: Test7Passage
-Run: Test6Passage
-Run: Test5Passage
-Run: Test8Passage
+Run: Test1Step
+Run: Test0Step
+Run: Test4Step
+Run: Test7Step
+Run: Test6Step
+Run: Test5Step
+Run: Test8Step
 """[1:], """
-Run: Test3Passage
-Run: Test1Passage
-Run: Test9Passage
+Run: Test3Step
+Run: Test1Step
+Run: Test9Step
 """[1:], """
-Run: Test1Passage
-Run: Test0Passage
-Run: Test4Passage
-Run: Test3Passage
-Run: Test7Passage
-Run: Test6Passage
-Run: Test5Passage
-Run: Test9Passage
-Run: Test8Passage
+Run: Test1Step
+Run: Test0Step
+Run: Test4Step
+Run: Test3Step
+Run: Test7Step
+Run: Test6Step
+Run: Test5Step
+Run: Test9Step
+Run: Test8Step
 """[1:]]
 
 
 def main():
     g = graph.PyGraph()
     config = {}
-    p_manager = passagemanager.PassageManager(g, config,
+    p_manager = stepmanager.StepManager(g, config,
                                               provides=provide)
 
     global shared_state
 
     # standard tests
-    p_manager.execute(['Test8Passage'])
+    p_manager.execute(['Test8Step'])
     assert(shared_state == tests[0])
     shared_state = ""
 
-    p_manager.execute(['Test9Passage'])
+    p_manager.execute(['Test9Step'])
     assert(shared_state == tests[1])
     shared_state = ""
 
-    p_manager.execute(['Test8Passage', 'Test9Passage'])
+    p_manager.execute(['Test8Step', 'Test9Step'])
     assert(shared_state == tests[2])
     shared_state = ""
 
