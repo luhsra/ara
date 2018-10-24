@@ -77,6 +77,8 @@ def main():
 
     g = graph.PyGraph()
 
+    a = graph.Alarm(g, "foobar")
+
     p_manager = stepmanager.StepManager(g, vars(args))
 
     p_manager.execute(['LLVMStep'])

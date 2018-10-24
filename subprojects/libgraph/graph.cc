@@ -727,6 +727,9 @@ std::string OS::ABB::get_call_name(){
 
 
 
+void OS::Counter::set_max_allowedvalue(unsigned long max_allowedvalue) { /*dummy*/ }
+void OS::Resource::set_resource_property(std::string type, std::string linked_resource) { /*dummy*/ }
+bool OS::Task::set_message_reference(std::string message) { /* dummy */ return false; }
 
 
 
