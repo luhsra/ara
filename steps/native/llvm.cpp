@@ -846,7 +846,7 @@ namespace step {
 		std::cerr << "_____________________________________________________________________________" << std::endl;
 		
 		//TEST Abschnitt
-		std::list<graph::shared_vertex> test_list =  graph.get_type_vertexes(typeid(OS::ABB()).hash_code());
+		std::list<graph::shared_vertex> test_list =  graph.get_type_vertices(typeid(OS::ABB()).hash_code());
 		std::list<graph::shared_vertex>::iterator it = test_list.begin();       //iterate about the list elements
 		for(; it != test_list.end(); ++it){
 	

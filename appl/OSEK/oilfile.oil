@@ -151,7 +151,7 @@
 		"ResDistance" : {
 			//RESOURCEPROPERTY (STANDARD, LINKED, INTERNAL)
 			//STANDARD, a normal RESOURCE that is not linked to another internal RESOURCE
-			//LINKED, RESOURCE that is linked to another RESOURCE with property STANDARD and LINKED
+			//LINKED, RESOURCE that is linked to another RESOURCE with property STANDARD or LINKED
 			//the  resource  to  which  the  linking  shall  be  performed  is  defined  by  the  subattribute 
 			//LINKEDRESOURCE  of  type  RESOURCE_TYPE
 			//

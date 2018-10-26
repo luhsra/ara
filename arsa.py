@@ -59,7 +59,6 @@ def main():
                         nargs='+')
 
     args = parser.parse_args()
-    print("TEST")
     # generate IR (.ll file) of application in dependency
     # of the transmitted argument
     if args.os == "freertos":
@@ -76,8 +75,6 @@ def main():
     execute_shellcommands(commands, False)
 
     g = graph.PyGraph()
-
-    a = graph.Alarm(g, "foobar")
 
     p_manager = stepmanager.StepManager(g, vars(args))
 

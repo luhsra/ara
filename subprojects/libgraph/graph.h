@@ -37,11 +37,12 @@ typedef enum  { stream, message }buffer_type;
 
 typedef enum {activate_task, set_event, alarm_callback} alarm_action_type;
 
-typedef enum {standard, linked, internal} resoure_type;
+typedef enum {standard, linked, internal} resource_type;
 
 typedef enum {full, none} schedule_type;
 
 typedef enum {automatic, mask} event_type;
+
 
 namespace graph {
 
@@ -60,7 +61,7 @@ namespace graph {
 	class Graph {
 
 		private:
-			std::list<std::shared_ptr<Vertex>> vertexes; // std::liste aller Vertexes des Graphen
+			std::list<std::shared_ptr<Vertex>> vertices; // std::liste aller Vertexes des Graphen
 			std::list<std::shared_ptr<Edge>> edges;      // std::liste aller Edges des Graphen
 			
 			std::shared_ptr<llvm::Module> llvm_module;
@@ -85,10 +86,13 @@ namespace graph {
 			shared_vertex create_vertex();
 			shared_edge create_edge();
 					
-			std::list<shared_vertex>get_type_vertexes(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
+			std::list<shared_vertex>get_type_vertices(size_t type_info); // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
 			shared_vertex get_vertex(size_t seed);     // gebe Vertex mit dem entsprechenden hashValue zurück
 			shared_edge get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
-			std::list<shared_vertex> get_vertexes();  // gebe alle Vertexes des Graphen zurück
+			
+			shared_vertex get_vertex(std::string name);     // gebe Edge mit dem
+			
+			std::list<shared_vertex> get_vertices();  // gebe alle Vertexes des Graphen zurück
                 
 			std::list<shared_edge> get_edges();  // gebe alle Edges des Graphen zurück
 
@@ -118,8 +122,8 @@ namespace graph {
 		std::list<shared_edge> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
 		std::list<shared_edge> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
 
-		std::list<shared_vertex> outgoing_vertexes; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
-		std::list<shared_vertex> ingoing_vertexes;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
+		std::list<shared_vertex> outgoing_vertices; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
+		std::list<shared_vertex> ingoing_vertices;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
 
 	  public:
               /*
@@ -141,7 +145,7 @@ namespace graph {
                 
 		virtual Vertex *clone() const{return new Vertex(*this);};
                 
-		Vertex(Graph *graph,std::string name); // Construc tor
+		Vertex(Graph *graph,std::string name); // Constructor
     
                 
 		void set_type(std::size_t type);
@@ -163,18 +167,18 @@ namespace graph {
                 
 		Graph* get_graph();
 
-		std::list<shared_vertex> get_specific_connected_vertexes(size_t type_info); // get elements from graph with specific type
+		std::list<shared_vertex> get_specific_connected_vertices(size_t type_info); // get elements from graph with specific type
 
 		std::list<shared_vertex> get_vertex_chain(shared_vertex target_vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
 		                     // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
 		std::list<shared_vertex>
-		get_connected_vertexes();                // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
+		get_connected_vertices();                // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
 		std::list<shared_edge> get_connected_edges(); // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
-		std::list<shared_vertex> get_ingoing_vertexes(); // Methode, die die mit diesem Knoten eingehenden Vertexes
+		std::list<shared_vertex> get_ingoing_vertices(); // Methode, die die mit diesem Knoten eingehenden Vertexes
 		                                            // zurückgibt
 		std::list<shared_edge> get_ingoing_edges(); // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
 		std::list<shared_vertex>
-		get_outgoing_vertexes();                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
+		get_outgoing_vertices();                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
 		std::list<shared_edge> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
 		std::list<shared_edge>get_direct_edge(shared_vertex vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
@@ -447,12 +451,13 @@ namespace OS {
 		// OSEK attributes
 		bool autostart;	// Information if Task is activated during system start or or application mode
 		unsigned int activation;
-		schedule_type schedule; //NON/FULL defines preemptability of task
+		schedule_type scheduler; //NON/FULL defines preemptability of task
 		
 	public:
 		
 		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(Task()).hash_code();
+			std::cerr << "name subclass: " << name << std::endl;
 		} 
 		
 		//virtual Task *clone() const{return new Task(*this);};
@@ -463,7 +468,7 @@ namespace OS {
 		bool set_function_reference(std::string);
 		
 		void set_priority(unsigned long priority);
-		void set_scheduler(std::string scheduler);
+		bool set_scheduler(std::string scheduler);
 		void set_activation(unsigned long activation);
 		void set_autostart(bool autostart);
 		void set_appmode(std::string app_mode);
@@ -519,10 +524,11 @@ namespace OS {
 
 		ISR(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(ISR()).hash_code();
+			std::cerr  << "name: " << name << "\n";
 		}
 		
 
-		void set_category(int category);
+		bool set_category(int category);
 		bool set_message_reference(std::string);
 		bool set_resource_reference(std::string);
 		
@@ -591,14 +597,14 @@ namespace OS {
 	class EventGroups : public graph::Vertex {
 
 	  private:
-		std::list<graph::shared_vertex> writing_vertexes;
-		std::list<graph::shared_vertex> reading_vertexes;
+		std::list<graph::shared_vertex> writing_vertices;
+		std::list<graph::shared_vertex> reading_vertices;
 
 		std::list<int> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
 		std::list<int> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
 		                             // müssen auch wieder gesetzt werden
 		std::list<graph::shared_vertex >
-		    synchronized_vertexes; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
+		    synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 
 	  public:
 		  
@@ -653,7 +659,7 @@ namespace OS {
 		
 		private:
 			std::list<OS::shared_task> task_reference;
-			long long event_mask;
+			unsigned long  event_mask;
 			unsigned int id;
 			event_type mask_type;
 			
@@ -661,10 +667,11 @@ namespace OS {
 			
 			Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Event()).hash_code();
+				std::cerr << "name subclass: " << name << std::endl;
 			};
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
-			void set_event_mask(unsigned long long mask);
+			void set_event_mask(unsigned long  mask);
 			void set_event_mask_auto();
 			void set_id(unsigned int id);
 			
@@ -677,11 +684,12 @@ namespace OS {
 			std::list<OS::shared_isr> irs;
 			std::list<OS::shared_resource> resources;
 			
-			resoure_type type;
+			resource_type type;
 			
 		public:
 			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Resource()).hash_code();
+				std::cerr << "name subclass: " << name << std::endl;
 			};
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
@@ -692,7 +700,9 @@ namespace OS {
 			bool set_linked_resource(OS::shared_resource resource);
 			std::list<OS::shared_resource> get_linked_resources();
 			
-			void set_resource_property(std::string type, std::string linked_resource);
+			bool set_resource_property(std::string type, std::string linked_resource);
+			
+			resource_type get_resource_type();
 			
 	};
 	
@@ -706,11 +716,12 @@ namespace OS {
 			
 			Counter(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Counter()).hash_code();
+				std::cerr << "name subclass: " << name << std::endl;
 			};
 			
-			void set_max_allowedvalue(unsigned long max_allowedvalue);
-			void set_ticksperbase(unsigned long max_allowedvalue);
-			void set_min_cycle(unsigned long max_allowedvalue); 
+			void set_max_allowed_value(unsigned long max_allowedvalue);
+			void set_ticks_per_base(unsigned long ticks);
+			void set_min_cycle(unsigned long min_cycle); 
 	};
 	
 	
@@ -721,13 +732,12 @@ namespace OS {
 		
 			OS::shared_task referenced_task;
 			OS::shared_event referenced_event;
+			OS::shared_counter referenced_counter;
+						
 			alarm_action_type action;
 			
 			std::string alarm_callback;
 			
-			OS::shared_counter counter;
-			
-
 			std::list<std::string> appmodes;
 			
 			bool autostart;
@@ -738,6 +748,7 @@ namespace OS {
 			
 			Alarm(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Alarm()).hash_code();
+				std::cerr << "name subclass: " << name << std::endl;
 			};
 			
 
@@ -748,9 +759,8 @@ namespace OS {
 			OS::shared_counter get_counter_reference();
 			
 			
-			bool activate_task(std::string task_name);
 			bool set_event_reference(std::string event);
-			bool set_alarm_callback_reference(std::string callback_name);
+			void set_alarm_callback_reference(std::string callback_name);
 			
 			void set_autostart(bool flag);
 			void set_alarm_time(unsigned int alarm_time);

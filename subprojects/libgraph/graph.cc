@@ -2,6 +2,7 @@
 
 #include "graph.h"
 
+
 using namespace graph;
 
 /*graph::Graph::Graph(std::shared_ptr<llvm::Module> module){
@@ -9,6 +10,11 @@ using namespace graph;
 }
 */
 
+//help function to use string in switch case statements
+constexpr unsigned int str2int(const char* str, int h = 0)
+{
+    return !str[h] ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
+}
 
 graph::Graph::~Graph(){
 }
@@ -36,7 +42,14 @@ llvm::Module* graph::Graph::get_llvm_module(){
 }
 
 void graph::Graph::set_vertex(shared_vertex vertex){
-	this->vertexes.emplace_back(vertex);
+	
+	//std::cerr << vertex->get_name();
+	
+	if(vertex == nullptr){
+		std::cerr << " set nullptr in list";
+	} 
+	
+	this->vertices.emplace_back(vertex);
 }
 
 void graph::Graph::set_edge(shared_edge edge){
@@ -45,7 +58,7 @@ void graph::Graph::set_edge(shared_edge edge){
 
 shared_vertex graph::Graph::create_vertex(){
     shared_vertex vertex = std::make_shared<Vertex>(this,""); 	//create shared po
-    this->vertexes.emplace_back(vertex);                   		//store the shared pointer in the internal list
+    this->vertices.emplace_back(vertex);                   		//store the shared pointer in the internal list
     return vertex;
 }
 
@@ -55,10 +68,10 @@ shared_edge graph::Graph::create_edge(){
     return edge;
 }
 
-std::list<shared_vertex> graph::Graph::get_type_vertexes(size_t type_info){
+std::list<shared_vertex> graph::Graph::get_type_vertices(size_t type_info){
     std::list<shared_vertex> tmp_list;
-    std::list<shared_vertex>::iterator it = this->vertexes.begin();       //iterate about the list elements
-    for(; it != this->vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
+    for(; it != this->vertices.end(); ++it){
         if(type_info==(*it).get()->get_type()){                                         //check if vertex is from wanted type
             tmp_list.emplace_back((*it));
         }
@@ -68,8 +81,8 @@ std::list<shared_vertex> graph::Graph::get_type_vertexes(size_t type_info){
 
 shared_vertex graph::Graph::get_vertex(size_t seed){   
     //gebe Vertex mit dem entsprechenden hashValue zurück
-    std::list<shared_vertex>::iterator it = this->vertexes.begin();       //iterate about the list elements
-    for(; it != this->vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
+    for(; it != this->vertices.end(); ++it){
         //gesuchter vertex gefunden
         if(seed==(*it)->get_seed()){                                         //check if vertex is from wanted type
            return (*it); 
@@ -77,6 +90,47 @@ shared_vertex graph::Graph::get_vertex(size_t seed){
     }
     return nullptr;
 }
+
+
+shared_vertex graph::Graph::get_vertex(std::string name){   
+    //gebe Vertex mit dem entsprechenden hashValue zurück
+    std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
+	
+	shared_vertex return_vertex;
+	int counter = 0;
+	
+	std::cerr << "vertices " << this->vertices.size() << '\n';
+	
+	for (auto& vertex : this->vertices) {
+		if(vertex == nullptr){
+			std::cerr << "NULLPTR" << "\n";
+		}
+		else{
+			std::cerr << "Vertex " << vertex->get_name() << '\n';
+		}
+	}
+	
+	/*
+    for(; it != this->vertices.end(); ++it){
+        //gesuchter vertex gefunden
+		//std::cerr << "name: " << (*it)->get_name() << ", ";
+		std::cerr << "vertex" << (*it) << '\n';
+        if(name==(*it)->get_name()){                                         //check if vertex is from wanted type
+			counter++;
+			return_vertex = (*it); 
+        }
+    }
+	*/
+	
+    if(counter == 1){
+		return return_vertex;
+	}
+	else{
+		return nullptr;
+	}
+		
+}
+
 
 shared_edge graph::Graph::get_edge(size_t seed){   
     //gebe edge mit dem entsprechenden hashValue zurück
@@ -90,10 +144,10 @@ shared_edge graph::Graph::get_edge(size_t seed){
     return nullptr;
 }
 
-std::list<shared_vertex> graph::Graph::get_vertexes(){
+std::list<shared_vertex> graph::Graph::get_vertices(){
     std::list<shared_vertex> tmp_list;
-    std::list<shared_vertex>::iterator it = this->vertexes.begin();            //iterate about the list elements
-    for(; it != this->vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->vertices.begin();            //iterate about the list elements
+    for(; it != this->vertices.end(); ++it){
         tmp_list.emplace_back(*it);
     }
     return tmp_list;
@@ -110,11 +164,11 @@ std::list<shared_edge> graph::Graph::get_edges(){
 
 bool graph::Graph::remove_vertex(graph::shared_vertex *vertex){
     bool success = false;
-    std::list<shared_vertex>::iterator it = this->vertexes.begin();           //iterate about the list elements
-    for(; it != this->vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->vertices.begin();           //iterate about the list elements
+    for(; it != this->vertices.end(); ++it){
         if(vertex->get()->get_seed() == (*it)->get_seed()){
             //TODO remove edges
-            it = this->vertexes.erase(it--);
+            it = this->vertices.erase(it--);
             success = true;
             break;
         }
@@ -138,8 +192,8 @@ bool graph::Graph::remove_edge(shared_edge *edge){
 
 bool graph::Graph::contain_vertex(shared_vertex vertex){
     bool success = false;
-    std::list<shared_vertex>::iterator it = this->vertexes.begin();           //iterate about the list elements
-    for(; it != this->vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->vertices.begin();           //iterate about the list elements
+    for(; it != this->vertices.end(); ++it){
         if(vertex->get_seed() == ((*it)->get_seed())){
             success = true;
             break;
@@ -166,14 +220,11 @@ bool graph::Graph::contain_edge(shared_edge edge){
 
 
 
-
-
-
-
-
 graph::Vertex::Vertex(Graph *graph,std::string name){
+	
     this->graph = graph;
 	this->name = name;
+	std::cerr  << "name: " << this->name << "\n";
 }
 
 std::string graph::Vertex::get_name(){
@@ -206,7 +257,7 @@ bool graph::Vertex::set_outgoing_vertex(shared_vertex vertex){
 	bool success = false;
     if(this->graph->contain_vertex(vertex)){
 		success = true;
-		this->outgoing_vertexes.emplace_back(vertex);
+		this->outgoing_vertices.emplace_back(vertex);
 	}
     return success;
 }
@@ -215,7 +266,7 @@ bool graph::Vertex::set_ingoing_vertex(shared_vertex vertex){
 	bool success = false;
     if(this->graph->contain_vertex(vertex)){
 		success = true;
-		this->ingoing_vertexes.emplace_back(vertex);
+		this->ingoing_vertices.emplace_back(vertex);
 	}
     return success;
 }
@@ -242,19 +293,19 @@ bool graph::Vertex::remove_edge(shared_edge edge){
 
 bool graph::Vertex::remove_vertex(shared_vertex vertex){
     bool success = false;
-    std::list<shared_vertex>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
-    //iterate about the outgoing vertexes
-    for(; it != this->outgoing_vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->outgoing_vertices.begin();           //iterate about the list elements
+    //iterate about the outgoing vertices
+    for(; it != this->outgoing_vertices.end(); ++it){
         if(vertex == (*it)){
-            it = this->outgoing_vertexes.erase(it--);
+            it = this->outgoing_vertices.erase(it--);
             success = true;
             break;
         }
     }
-    //iterate about the ingoing vertexes
-    for(it = this->ingoing_vertexes.begin();  it != this->ingoing_vertexes.end(); ++it){
+    //iterate about the ingoing vertices
+    for(it = this->ingoing_vertices.begin();  it != this->ingoing_vertices.end(); ++it){
         if(vertex == (*it)){
-            it = this->ingoing_vertexes.erase(it--);
+            it = this->ingoing_vertices.erase(it--);
             success = true;
             break;
         }
@@ -262,17 +313,17 @@ bool graph::Vertex::remove_vertex(shared_vertex vertex){
     return success;
 }
 
-std::list<graph::shared_vertex > graph::Vertex::get_specific_connected_vertexes(size_t type_info){
+std::list<graph::shared_vertex > graph::Vertex::get_specific_connected_vertices(size_t type_info){
     std::list<shared_vertex> tmp_list;
-    std::list<shared_vertex>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
-    //iterate about the outgoing vertexes
-    for(; it != this->outgoing_vertexes.end(); ++it){
+    std::list<shared_vertex>::iterator it = this->outgoing_vertices.begin();           //iterate about the list elements
+    //iterate about the outgoing vertices
+    for(; it != this->outgoing_vertices.end(); ++it){
         if(typeid((*(*it))).hash_code() == type_info){
             tmp_list.emplace_back(*it);
         }
     }
-    //iterate about the ingoing vertexes
-    for(it = this->ingoing_vertexes.begin();  it != this->ingoing_vertexes.end(); ++it){
+    //iterate about the ingoing vertices
+    for(it = this->ingoing_vertices.begin();  it != this->ingoing_vertices.end(); ++it){
         if(typeid((*(*it))).hash_code()== type_info){
             tmp_list.emplace_back(*it);
         }
@@ -294,7 +345,7 @@ std::list<graph::shared_vertex > wide_search (Vertex* start,graph::shared_vertex
         graph::shared_vertex tmp = queue.front();
         queue.pop();
         if(&tmp==&end) return tmp_list;
-        std::list<graph::shared_vertex> neighbours = tmp->get_outgoing_vertexes();
+        std::list<graph::shared_vertex> neighbours = tmp->get_outgoing_vertices();
         std::list<graph::shared_vertex>::iterator it = neighbours.begin();
 
         for(; it != neighbours.end(); ++it){
@@ -312,15 +363,15 @@ std::list<graph::shared_vertex> graph::Vertex::get_vertex_chain(graph::shared_ve
     return wide_search(this, vertex); // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
 }
 
-std::list<graph::shared_vertex >graph::Vertex::get_connected_vertexes(){ // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
+std::list<graph::shared_vertex >graph::Vertex::get_connected_vertices(){ // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
     std::list<graph::shared_vertex> tmp_list;
-    std::list<graph::shared_vertex>::iterator it = this->outgoing_vertexes.begin();           //iterate about the list elements
-    //iterate about the outgoing vertexes
-    for(; it != this->outgoing_vertexes.end(); ++it){
+    std::list<graph::shared_vertex>::iterator it = this->outgoing_vertices.begin();           //iterate about the list elements
+    //iterate about the outgoing vertices
+    for(; it != this->outgoing_vertices.end(); ++it){
         tmp_list.emplace_back(*it);
     }
-    //iterate about the ingoing vertexes
-    for(it = this->ingoing_vertexes.begin();  it != this->ingoing_vertexes.end(); ++it){
+    //iterate about the ingoing vertices
+    for(it = this->ingoing_vertices.begin();  it != this->ingoing_vertices.end(); ++it){
         tmp_list.emplace_back(*it);
     }
     return tmp_list;
@@ -341,11 +392,11 @@ std::list<graph::shared_edge> graph::Vertex::get_connected_edges(){ // Methode, 
     return tmp_list;
 }
 
-std::list<graph::shared_vertex > graph::Vertex::get_ingoing_vertexes(){    // Methode, die die mit diesem Knoten eingehenden Vertexes
+std::list<graph::shared_vertex > graph::Vertex::get_ingoing_vertices(){    // Methode, die die mit diesem Knoten eingehenden Vertexes
                                                                 // zurückgibt
     std::list<graph::shared_vertex> tmp_list;
-    std::list<graph::shared_vertex>::iterator it = this->ingoing_vertexes.begin();
-    for(; it != this->ingoing_vertexes.end(); ++it){
+    std::list<graph::shared_vertex>::iterator it = this->ingoing_vertices.begin();
+    for(; it != this->ingoing_vertices.end(); ++it){
         tmp_list.emplace_back(*it);
     }
     return tmp_list;
@@ -360,10 +411,10 @@ std::list<graph::shared_edge> graph::Vertex::get_ingoing_edges(){ // Methode, di
     return tmp_list;
 }
 
-std::list<graph::shared_vertex > graph::Vertex::get_outgoing_vertexes(){                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
+std::list<graph::shared_vertex > graph::Vertex::get_outgoing_vertices(){                // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
     std::list<graph::shared_vertex> tmp_list;
-    std::list<graph::shared_vertex>::iterator it = this->outgoing_vertexes.begin();
-    for(; it != this->outgoing_vertexes.end(); ++it){
+    std::list<graph::shared_vertex>::iterator it = this->outgoing_vertices.begin();
+    for(; it != this->outgoing_vertices.end(); ++it){
         tmp_list.emplace_back(*it);
     }
     return tmp_list;
@@ -381,13 +432,13 @@ std::list<graph::shared_edge > graph::Vertex::get_outgoing_edges(){ // Methode, 
 std::list<graph::shared_edge> graph::Vertex::get_direct_edge(graph::shared_vertex vertex){ // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
     std::list<graph::shared_edge> tmp_list;
     std::list<graph::shared_edge>::iterator it = this->outgoing_edges.begin();           //iterate about the list elements
-    //iterate about the outgoing vertexes
+    //iterate about the outgoing vertices
     for(; it != this->outgoing_edges.end(); ++it){
         if(vertex->get_seed()==((*it)->get_target_vertex()->get_seed())){
             tmp_list.emplace_back(*it);
         }
     }
-    //iterate about the ingoing vertexesget
+    //iterate about the ingoing verticesget
     for(it = this->ingoing_edges.begin();  it != this->ingoing_edges.end(); ++it){
         if(vertex->get_seed()==((*it)->get_start_vertex()->get_seed())){
             tmp_list.emplace_back(*it);
@@ -727,25 +778,224 @@ std::string OS::ABB::get_call_name(){
 
 
 
-void OS::Counter::set_max_allowedvalue(unsigned long max_allowedvalue) { /*dummy*/ }
-void OS::Resource::set_resource_property(std::string type, std::string linked_resource) { /*dummy*/ }
-bool OS::Task::set_message_reference(std::string message) { /* dummy */ return false; }
+void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 
+	this->max_allowed_value = max_allowed_value;
+}
 
 
+void OS::Counter::set_ticks_per_base(unsigned long ticks_per_base) { 
+	this->min_cycle = min_cycle;
+}
+
+void OS::Counter::set_min_cycle(unsigned long min_cycle) { 
+	this->ticks_per_base = ticks_per_base;
+}
+
+bool OS::Resource::set_linked_resource(OS::shared_resource resource) {
+	
+	bool result = false;
+	if(this->graph->contain_vertex(resource)){
+		result = true;
+		this->resources.emplace_back(resource);
+	}
+	return result;
+}
 
 
+resource_type OS::Resource::get_resource_type(){
+	return this->type;
+}
+
+bool OS::Resource::set_resource_property(std::string type, std::string linked_resource) {
+	
+	bool result = false;
+	
+	
+	switch(str2int(type.c_str())){
+		
+		case str2int("INTERNAL"):
+			this->type = internal;
+			result = true;
+			break;
+		case str2int("STANDARD"):
+			this->type = standard;
+			result = true;
+			break;
+				
+		case str2int("LINKED"):
+			shared_vertex vertex = this->graph->get_vertex(linked_resource);
+			
+			shared_resource resource_reference = std::dynamic_pointer_cast<OS::Resource> (vertex);
+			if(resource_reference){
+				if(resource_reference->get_resource_type() == linked || resource_reference->get_resource_type() == standard){
+					this->type = linked;
+					result = true;
+					this->set_linked_resource(resource_reference);
+				}
+			}
+	}
+	
+	return result;
+
+}
 
 
+void OS::Task::set_priority(unsigned long priority) {
+	this->priority = priority;
+}
+
+bool OS::Task::set_message_reference(std::string message) { 
+	return false; 
+
+}
 
 
+bool OS::Task::set_scheduler(std::string scheduler){
+	
+	bool result = false;
+	switch(str2int(scheduler.c_str())){
+		
+		case str2int("NONE"):
+			this->scheduler = none;
+			result = true;
+			break;
+		case str2int("FULL"):
+			result = true;
+			this->scheduler = full;
+			break;
+	}
+	return result;
+}
+
+void OS::Task::set_activation(unsigned long activation){
+	this->activation = activation;
+}
+
+void OS::Task::set_autostart(bool autostart){
+	this->autostart = autostart;
+}
+
+void OS::Task::set_appmode(std::string app_mode){
+	this->app_modes.emplace_back(app_mode);
+}
+
+bool OS::Task::set_resource_reference(std::string resource_name){
+	bool result = false;
+	auto resource = this->graph->get_vertex(resource_name);
+	if(resource != nullptr){
+		auto resource_cast = std::dynamic_pointer_cast<OS::Resource> (resource);
+		if(resource_cast){
+			this->resources.emplace_back(resource_cast);
+			result = true;
+		}
+	}
+	return result;
+}
+
+bool OS::Task::set_event_reference(std::string event_name){
+	bool result = false;
+	auto event = this->graph->get_vertex(event_name);
+	if(event != nullptr){
+		auto event_cast = std::dynamic_pointer_cast<OS::Event> (event);
+		if(event_cast){
+			this->events.emplace_back(event_cast);
+			result = true;
+		}
+	}
+	return result;
+	
+}
 
 
+void OS::Event::set_event_mask(unsigned long  mask){
+	this->event_mask = mask;	
+}
+
+void OS::Event::set_event_mask_auto(){
+	this->mask_type = automatic;	
+}
+
+bool OS::ISR::set_category(int category){
+	bool result =false;
+	
+	if(category == 0 || category == 1){
+		this->category = category;
+		result = true;
+	}
+	return result;
+}
+
+bool OS::ISR::set_resource_reference(std::string resource_name){
+	bool result = false;
+	auto resource = this->graph->get_vertex(resource_name);
+	if(resource != nullptr){
+		auto resource_cast = std::dynamic_pointer_cast<OS::Resource> (resource);
+		if(resource_cast){
+			this->resources.emplace_back(resource_cast);
+			result = true;
+		}
+	}
+	return result;
+}
 
 
+bool OS::Alarm::set_task_reference(std::string task_name){
+	bool result = false;
+	auto task = this->graph->get_vertex(task_name);
+	if(task != nullptr){
+		auto task_cast = std::dynamic_pointer_cast<OS::Task>(task);
+		if(task_cast){
+			this->referenced_task = task_cast;
+			result = true;
+		}
+	}
+	return result;
+}
+	
+	
+bool OS::Alarm::set_counter_reference(std::string counter_name){
+	bool result = false;
+	auto counter = this->graph->get_vertex(counter_name);
+	if(counter != nullptr){
+		auto counter_cast = std::dynamic_pointer_cast<OS::Counter>(counter);
+		if(counter_cast){
+			referenced_counter = counter_cast;
+			result = true;
+		}
+	}
+	return result;
+}
 
+bool OS::Alarm::set_event_reference(std::string event_name){
+	bool result = false;
+	auto event = this->graph->get_vertex(event_name);
+	if(event != nullptr){
+		auto event_cast = std::dynamic_pointer_cast<OS::Event> (event);
+		if(event_cast){
+			this->referenced_event = event_cast;
+			result = true;
+		}
+	}
+	return result;
+}
 
+void OS::Alarm::set_alarm_callback_reference(std::string callback_name){
+	alarm_callback = callback_name;
+}
 
+void OS::Alarm::set_autostart(bool flag){
+	this->autostart = flag;
+}
+void OS::Alarm::set_alarm_time(unsigned int alarm_time){
+	this->alarm_time = alarm_time;
+}
 
+void OS::Alarm::set_cycle_time(unsigned int cycle_time){
+	this->cycle_time = cycle_time;
+}
 
+void OS::Alarm::set_appmode(std::string appmode){
+	this->appmodes.emplace_back(appmode);
+}
 
 

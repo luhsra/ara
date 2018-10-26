@@ -6,11 +6,12 @@ import os
 from native_step import Step
 
 
+
 class OilStep(Step):
 	"""Reads an oil file and writes all information to the graph."""
 	
 
-	def run(self, graph: graph.PyGraph):
+	def run(self, g: graph.PyGraph):
 
 		structure_file = '../appl/OSEK/oilfile.oil'
 		tmp_file = '../tmp.txt'
@@ -49,72 +50,68 @@ class OilStep(Step):
 		resource_list = {}
 		alarm_list = {}
 		
-		#get the counters 
-		counters = dictionary.get("COUNTER", "error")
-		if counters != "error":
-			#iterate about the counter
-			for name in counters:
-				print("TEST")
-				#TODO counter = Counter(graph, name)
-				#counter_list[name] = counter
 		
-		#get the events
-		events = dictionary.get("EVENT", "error")
-		if events != "error":
-			#iterate about the counter
-			for name in events:
-				print("TEST")
-				#TODO event = Event(graph, name)
-				#event_list[name] = event
-
 		#get the isrs
 		isrs = dictionary.get("ISR", "error")
 		if isrs != "error":
 			#iterate about the isr
 			for name in isrs:
-				print("TEST")
-				#TODO isr = ISR(graph, name)
-				#isr_list[name] = isr
+				isr = graph.ISR(g, name)
+				print("name of isr: ", isr.get_name())
+				isr_list[name]= isr
+				g.set_vertex(isr)
+
+				
+		
+		#get the counters 
+		counters = dictionary.get("COUNTER", "error")
+		if counters != "error":
+			#iterate about the counter
+			for name in counters:
+				counter = graph.Counter(g, name)
+				counter_list[name] = counter
+				g.set_vertex(counter)
+				
+		#get the events
+		events = dictionary.get("EVENT", "error")
+		if events != "error":
+			#iterate about the counter
+			for name in events:
+				event = graph.Event(g, name)
+				event_list[name] = event
+				g.set_vertex(event)
+
+
 				
 		#get the tasks
 		tasks = dictionary.get("TASK", "error")
 		if tasks != "error":
 			#iterate about the tasks
 			for name in tasks:
-				print("TEST")
-				#TODO task = Task(graph, name)
-				#task_list[name] = task
-			
+				
+				task = graph.Task(g, name)
+				task_list[name] = task
+				g.set_vertex(task)
+				
 		#get the resources
 		resources = dictionary.get("RESOURCE", "error")
 		if resources != "error":
 			#iterate about the isr
-			for name in isrs:
-				print("TEST")
-				#TODO resource = Resource(graph, name)
-				#resource_list[name] = resource
+			for name in resources:
+				resource = graph.Resource(g, name)
+				resource_list[name] = resource
+				g.set_vertex(resource)
 				
 		#get the alarms
 		alarms = dictionary.get("ALARM", "error")
 		if alarms != "error":
 			#iterate about the alarms
 			for name in alarms:
-				print("TEST")
-				#TODO alarm = Alarm(graph, name)
-				#alarm_list[name] = alarm
+				alarm = graph.Alarm(g, name)
+				alarm_list[name] = alarm
+				g.set_vertex(alarm)
 				
-		#get the timers
-		timers = dictionary.get("TIMER", "error")
-		if timers != "error":
-			#iterate about the timers
-			for name in timers:
-				print("TEST")
-				#TODO timer = Timer(graph, name)
-				timer_list[name] = timer
-				
-				
-				
-				
+
 		#get the counters 
 		counters = dictionary.get("COUNTER", "error")
 		if counters != "error":
@@ -122,9 +119,9 @@ class OilStep(Step):
 			#iterate about the counter
 			for name in counters:
 				
-				#TODO counter
+				#shared pointer counter reference
+				counter = counter_list[name]
 				
-				print (name, 'corresponds to', counters[name])
 				oil_counter = counters[name]
 				
 				#iterate about the attributes of the counter
@@ -132,26 +129,27 @@ class OilStep(Step):
 					
 					if attribute == "MAXALLOWEDVALUE":
 						if isinstance(oil_counter[attribute] , int):
-							#TODO counter.set_max_allowed_value(oil_counter[attribute])
-							print("maxallowedvalue" ,[attribute])
+							counter.set_max_allowed_value(oil_counter[attribute])
+							
 						else:
 							print("maxallowed value is no digit")
 							
 					elif attribute == "TICKSPERBASE":
 						if isinstance(oil_counter[attribute] , int):
-							#TODO counter.set_ticks_per_base(oil_counter[attribute])
-							print("ticksperbase: " , oil_counter[attribute])
+							counter.set_ticks_per_base(oil_counter[attribute])
+							
 						else:
 							print("ticksperbase value is no digit")
 							
 					elif attribute == "MINCYCLE":
 						if isinstance(oil_counter[attribute] , int):
-							#TODO counter.set_min_cycle(oil_counter[attribute])
-							print("mincycle: ", oil_counter[attribute])
+							counter.set_min_cycle(oil_counter[attribute])
+					
 						else:
 							print("mincycle value is no digit")
 					else:
 						print(attribute ,";counter has other attribute than MAXALLOWEDVALUE or TICKSPERBASE or MINCYCLE")
+					
 					
 					
 		#get the resources 
@@ -161,7 +159,8 @@ class OilStep(Step):
 			#iterate about the events
 			for name in resources:
 				
-				#TODO resource = Resource(graph, name) 
+				resource = resource_list[name]
+				
 				print (name, 'corresponds to', resources[name])
 				oil_resource = resources[name]
 				
@@ -175,8 +174,15 @@ class OilStep(Step):
 							for linked_attribute in linked_dict:
 								if linked_attribute == "LINKED":
 									if isinstance(linked_dict[linked_attribute], str):
-										#TODO resource.set_resource_property(oil_resource[attribute],linked_dict[linked_attribute])
-										print("linked: " , oil_resource[attribute],linked_dict[linked_attribute])
+										if linked_dict[linked_attribute] in resource_list:
+											
+											if resource.set_resource_property(oil_resource[attribute],linked_dict[linked_attribute]):
+												#TODO validate that linked object has also attribute linked or standard[it is done in the graph methode, but should also be done in the oil step
+												print("linked: " , oil_resource[attribute],linked_dict[linked_attribute])
+											else:
+												print("resource could not linked", linked_dict[linked_attribute])
+										else:
+											print("resource was not defined in OIL: ", linked_dict[linked_attribute])
 									else:
 										print("linked resource is no string")
 								else:
@@ -184,7 +190,7 @@ class OilStep(Step):
 						if isinstance(oil_resource[attribute] , str):
 							#print(oil_counter[attribute])
 							if oil_resource[attribute] == "STANDARD" or oil_resource[attribute] == "INTERNAL":
-								#TODO resource.set_resource_property(oil_resource[attribute], "")
+								resource.set_resource_property(oil_resource[attribute], "")
 								print("resource attribute: " ,oil_resource[attribute])
 							else:
 								print("resource has other attribute than STANDARD or LINKED or INTERNAL")
@@ -201,7 +207,8 @@ class OilStep(Step):
 			#iterate about the events
 			for name in events:
 				
-				#TODO event = Event(graph, name)
+				event = event_list[name]
+				
 				print (name, 'corresponds to', events[name])
 				oil_event = events[name]
 				
@@ -210,10 +217,10 @@ class OilStep(Step):
 					
 					if attribute == "MASK":
 						if oil_event[attribute] == "AUTO":
-							#TODO event.set_mask_auto();
+							event.set_event_mask_auto();
 							print(oil_event[attribute])
 						elif isinstance(oil_event[attribute] , int):
-							#TODO event.set_mask(oil_event[attribute])
+							event.set_event_mask(oil_event[attribute])
 							print(oil_event[attribute])
 						else:
 							print("eventmask is not auto or digit")
@@ -229,8 +236,7 @@ class OilStep(Step):
 			#iterate about the tasks
 			for name in tasks:
 				
-				#TODO task =  Task(graph, name)
-				
+				task = task_list[name]
 				print (name, 'corresponds to', tasks[name])
 				
 				#iterate about the attributes of the task
@@ -243,7 +249,7 @@ class OilStep(Step):
 						
 						if isinstance(oil_task[attribute], int):
 							print("priority: ", oil_task[attribute])
-							#TODO task.set_priority(oil_task[attribute])
+							task.set_priority(oil_task[attribute])
 						else:
 							print("priority is no digit")
 							
@@ -252,32 +258,32 @@ class OilStep(Step):
 						if isinstance(autostart_attribute,dict):
 							for appmodes in autostart_attribute:
 								if appmodes == "TRUE":
-									#TODO task.set_autostart(True)
+									task.set_autostart(True)
 									if isinstance(autostart_attribute[appmodes],list):
 										for appmode in appmodes:
 											print("autostart: ", autostart_attribute)
 											print("appmode: ", appmode)
-											#TODO task.set_appmode(app_mode)
+											task.set_appmode(app_mode)
 								else:
 									print("autostart is no boolean")
 						else:
 							if "FALSE" == autostart_attribute:
 								print("autostart: ", autostart_attribute)
-								#TODO task.set_autostart(False)
+								task.set_autostart(False)
 							else:
 								print("autostart is no boolean")
 								
 					elif attribute ==	"ACTIVATION": 	
 						if isinstance(oil_task[attribute], int):
 							print("activation: ", oil_task[attribute])
-							#TODO task.set_activation(oil_task[attribute])
+							task.set_activation(oil_task[attribute])
 						else:
 							print("activation is no digit")
 							
 					elif attribute ==	"SCHEDULE":
 						if oil_task[attribute] == "NONE" or oil_task[attribute] == "FULL":
 							print("schedule: ", oil_task[attribute])
-							#TODO task.set_scheduler(oil_task[attribute])
+							task.set_scheduler(oil_task[attribute])
 						else:
 							print("schedule is not none or full")
 					
@@ -286,7 +292,7 @@ class OilStep(Step):
 							for resource in oil_task[attribute]:
 								if isinstance(resource, str):
 									print("resource: ",resource)
-									#TODO task.set_resource_reference(resource)
+									task.set_resource_reference(resource)
 								else:
 									print("resource is no string")
 								
@@ -294,8 +300,11 @@ class OilStep(Step):
 						if isinstance(oil_task[attribute], list):
 							for event in oil_task[attribute]:
 								if isinstance(event, str):
-									print("event: ", event)
-									#TODO task.set_event_reference(event)
+									if event in event_list:
+										print("event: ", event)
+										task.set_event_reference(event)
+									else:
+										print("event was not defined in OIL: ", event)
 								else:
 									print("event is no string")
 								
@@ -303,8 +312,11 @@ class OilStep(Step):
 						if isinstance(oil_task[attribute], list):
 							for message in oil_task[attribute]:
 								if isinstance(message, str):
-									print("message: ", message)
-									#TODO task.set_message_reference(message)
+									if message in message_list:
+										print("message: ", message)
+										task.set_message_reference(message)
+									else:
+										print("message was not defined in OIL:", message)
 								else:
 									print("message is no string")
 		
@@ -316,9 +328,7 @@ class OilStep(Step):
 			for name in isrs:
 				
 				#create isr
-				#TODO 	isr = "tmp" #Generieren des isrs -> isr = (graph, name);  generate isr from graph interface 
-				#if not isr.set_function_reference(%&%):
-				#	print("no function reference was found in graph")
+				isr = isr_list[name]
 				
 				print (name, 'corresponds to', isrs[name])
 				oil_isr = isrs[name]
@@ -330,7 +340,7 @@ class OilStep(Step):
 						if isinstance(oil_isr[attribute], int):
 							if oil_isr[attribute] == 1 or oil_isr[attribute] == 2:
 								print("category: " , oil_isr[attribute])
-								#TODO isr.set_category(oil_isr[attribute])
+								isr.set_category(oil_isr[attribute])
 							else:
 								print("category is not 1 or 2")
 						else:
@@ -340,8 +350,11 @@ class OilStep(Step):
 						if isinstance(oil_isr[attribute], list):
 							for resource in oil_isr[attribute]:
 								if isinstance(resource, str):
-									print("resource: ",resource)
-									#TODO isr.set_resource_reference(resource)
+									if resource in resource_list:
+										print("resource: ",resource)
+										isr.set_resource_reference(resource)
+									else:
+										print("resource was not defined in OIL: ", resource)
 								else:
 									print("resource is no string")
 								
@@ -349,10 +362,16 @@ class OilStep(Step):
 						if isinstance(oil_isr[attribute], list):
 							for message in oil_isr[attribute]:
 								if isinstance(message, str):
-									print("message: ", message)
-									#TODO isr.set_message_reference(message)
+									#if message in message_list:
+										print("message: ", message)
+										#isr.set_message_reference(message)
+									#else:
+									#	print("message was not defined in OIL: ", message)
 								else:
 									print("message is no string")
+											
+				
+			
 					
 		#get the alarms 
 		alarms = dictionary.get("ALARM", "error")
@@ -361,7 +380,8 @@ class OilStep(Step):
 			#iterate about the alarms
 			for name in alarms:
 				
-				#TODO alarm =  Alarm(graph, name)
+				alarm = alarm_list[name]
+				
 				print (name, 'corresponds to', alarms[name])
 				oil_alarm = alarms[name]
 				
@@ -371,7 +391,7 @@ class OilStep(Step):
 					if attribute ==	"COUNTER":
 						if isinstance(oil_alarm[attribute], str):
 							print("counter: " , oil_alarm[attribute])
-							#TODO  alarm.set_counter_reference(oil_alarm[attribute])
+							alarm.set_counter_reference(oil_alarm[attribute])
 						else:
 							print("counter is no string")
 						
@@ -382,8 +402,11 @@ class OilStep(Step):
 							for activatetask_attribute in activatetask_attributes:
 								if activatetask_attribute == "TASK": 
 									if isinstance(activatetask_attributes[activatetask_attribute], str):
-										print("activatetask: " , activatetask_attributes[activatetask_attribute])
-										#TODO alarm.set_task_reference(activatetask_attributes[activatetask_attribute])
+										if activatetask_attributes[activatetask_attribute] in tast_list:
+											print("activatetask: " , activatetask_attributes[activatetask_attribute])
+											alarm.set_task_reference(activatetask_attributes[activatetask_attribute])
+										else:
+											print("task was not defined in OIL file: ", activatetask_attributes[activatetask_attribute])
 									else:
 										print("activatetask has no string attribute")
 								else:
@@ -394,15 +417,21 @@ class OilStep(Step):
 							for set_event_attribute in set_event_attributes:
 								if set_event_attribute == "TASK": 
 									if isinstance(set_event_attributes[set_event_attribute], str):
-										print("setevent task: " ,set_event_attributes[set_event_attribute])
-										#TODO alarm.set_task_reference(set_event_attributes[set_event_attribute])
+										if set_event_attributes[set_event_attribute] in event_list:
+											print("setevent task: " ,set_event_attributes[set_event_attribute])
+											alarm.set_task_reference(set_event_attributes[set_event_attribute])
+										else: 
+											print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
 									else:
 										print("setevent has no string attribute")
 										
 								elif activatetask_attribute == "EVENT": 	
 									if isinstance(set_event_attributes[set_event_attribute], str):
-										print("setevent event: " ,set_event_attributes[set_event_attribute])
-										#TODO alarm.set_event_reference(set_event_attributes[set_event_attribute])
+										if set_event_attributes[set_event_attribute] in event_list:
+											print("setevent event: " ,set_event_attributes[set_event_attribute])
+											alarm.set_event_reference(set_event_attributes[set_event_attribute])
+										else:
+											print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
 									else:
 										print("setevent has no string attribute")
 											
@@ -415,7 +444,7 @@ class OilStep(Step):
 								if alarmcallback_attribute == "ALARMCALLBACKNAME": 
 									if isinstance(alarmcallback_attributes[alarmcallback_attribute], str):
 										print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
-										#TODO alarm.set_alarm_callback_reference(activatetask_attributes[activatetask_attribute])
+										alarm.set_alarm_callback_reference(activatetask_attributes[activatetask_attribute])
 									else:
 										print("alarmcallback has no string attribute")
 								else:
@@ -432,10 +461,10 @@ class OilStep(Step):
 						for autostart in autostart_attribute:
 							
 							if autostart == "FALSE":
-								#TODO alarm.set_autostart(False)
+								alarm.set_autostart(False)
 								print("autostart: ",autostart)
 							elif autostart == "TRUE":
-								#TODO alarm.set_autostart(True)
+								alarm.set_autostart(True)
 								print("autostart: ",autostart)
 								autostart_dict =  autostart_attribute[autostart]
 								if isinstance( autostart_dict, dict):
@@ -443,14 +472,14 @@ class OilStep(Step):
 										
 										if tmp_attribute == "ALARMTIME":
 											if isinstance(autostart_dict[tmp_attribute], int):
-												#TODO alarm.set_alarm_time(autostart_dict[tmp_attribute])
+												alarm.set_alarm_time(autostart_dict[tmp_attribute])
 												print("alarmtime: ", autostart_dict[tmp_attribute])
 											else:
 												print("autostart alarmtime is no int")
 
 										elif tmp_attribute == "CYCLETIME":
 											if isinstance(autostart_dict[tmp_attribute], int):
-												#TODO alarm.set_cycle_time(autostart_dict[tmp_attribute])
+												alarm.set_cycle_time(autostart_dict[tmp_attribute])
 												print("cycletime: ", autostart_dict[tmp_attribute])
 											else:
 												print("autostart cycletime is no int")
@@ -459,7 +488,7 @@ class OilStep(Step):
 												for appmode in autostart_dict[tmp_attribute]:
 													if isinstance(appmode, str):
 														print("appmode: ",appmode)
-														#TODO alarm.set_appmode(appmode)
+														alarm.set_appmode(appmode)
 	
 													else:
 														print("appmode is no string")
