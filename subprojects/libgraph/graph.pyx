@@ -27,15 +27,15 @@ cdef class PyGraph:
 cdef class Vertex:
 	
 	
-    cdef shared_ptr[cgraph.Vertex] _c_vertex
+	cdef shared_ptr[cgraph.Vertex] _c_vertex
 
-    def __cinit__(self, PyGraph graph, name, *args, **kwargs):
-        # prevent double constructions
-        # https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
-        if type(self) != Vertex:
-            return
-        cdef string bname = name.encode('UTF-8')
-        self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
+	def __cinit__(self, PyGraph graph, name, *args, **kwargs):
+		# prevent double constructions
+		# https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
+		if type(self) != Vertex:
+			return
+		cdef string bname = name.encode('UTF-8')
+		self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
 		
 	#def __afterinit__(self, shared_ptr[cgraph.Vertex] vertex):
 	#	_c_vertex = vertex
@@ -58,35 +58,35 @@ cdef class Alarm(Vertex):
 		
 	def set_task_reference(self, str task_name):
 		cdef string c_task_name = task_name.encode('UTF-8')
-		deref(self._c_alarm).set_task_reference(c_task_name)
+		deref(self._c).set_task_reference(c_task_name)
 		
 	def set_counter_reference(self, str counter_name):
 		cdef string c_counter_name = counter_name.encode('UTF-8')
-		deref(self._c_alarm).set_counter_reference(c_counter_name)
+		deref(self._c).set_counter_reference(c_counter_name)
 		
 	def set_event_reference(self, str event_name):
 		cdef string c_event_name = event_name.encode('UTF-8')
-		deref(self._c_alarm).set_event_reference(c_event_name)
+		deref(self._c).set_event_reference(c_event_name)
 		
 	def set_alarm_callback_reference(self, str callback_name):
 		cdef string c_callback_name = callback_name.encode('UTF-8')
-		deref(self._c_alarm).set_alarm_callback_reference(c_callback_name)
+		deref(self._c).set_alarm_callback_reference(c_callback_name)
 		
 	def set_appmode(self, str appmode_name):
 		cdef string c_appmode_name = appmode_name.encode('UTF-8')
-		deref(self._c_alarm).set_appmode(c_appmode_name)
+		deref(self._c).set_appmode(c_appmode_name)
 		
 	def set_autostart(self, bool autostart):
-		deref(self._c_alarm).set_autostart(autostart)
+		deref(self._c).set_autostart(autostart)
 		
 	def set_alarm_time(self, unsigned int alarm_time):
-		deref(self._c_alarm).set_alarm_time(alarm_time)
+		deref(self._c).set_alarm_time(alarm_time)
 		
 	def set_cycle_time(self, unsigned int cycle_time):
-		deref(self._c_alarm).set_cycle_time(cycle_time)
+		deref(self._c).set_cycle_time(cycle_time)
 		
 	def get_name(self):
-		cdef string c_string = deref(self._c_alarm).get_name()
+		cdef string c_string = deref(self._c).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 
@@ -99,37 +99,37 @@ cdef class Counter(Vertex):
 		cdef string bname = name.encode('UTF-8')
 		self._c_vertex = spc[cgraph.Vertex, cgraph.Counter](make_shared[cgraph.Counter](&graph._c_graph, bname))
 
-    def set_max_allowed_value(self, unsigned long max_allowedvalue):
-        deref(self._c()).set_max_allowedvalue(max_allowedvalue)
-		
+	def set_max_allowed_value(self, unsigned long max_allowedvalue):
+		deref(self._c()).set_max_allowedvalue(max_allowedvalue)
+	
 	def set_ticks_per_base(self, unsigned long ticks):
-		deref(self._c_counter).set_ticks_per_base(ticks)
+		deref(self._c).set_ticks_per_base(ticks)
 	
 	def set_min_cycle(self, unsigned long min_cycle):
-		deref(self._c_counter).set_min_cycle(min_cycle)
+		deref(self._c).set_min_cycle(min_cycle)
 		
 	def get_name(self):
-		cdef string c_string = deref(self._c_counter).get_name()
+		cdef string c_string = deref(self._c).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 
 
 cdef class Event(Vertex):
-    cdef inline shared_ptr[cgraph.Event] _c(self):
-        return spc[cgraph.Event, cgraph.Vertex](self._c_vertex)
+	cdef inline shared_ptr[cgraph.Event] _c(self):
+		return spc[cgraph.Event, cgraph.Vertex](self._c_vertex)
 
-    def __cinit__(self, PyGraph graph, str name):
-        cdef string bname = name.encode('UTF-8')
-        self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
+	def __cinit__(self, PyGraph graph, str name):
+		cdef string bname = name.encode('UTF-8')
+		self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
 		
 	def set_event_mask(self, unsigned long mask):
-		return deref(self._c_event).set_event_mask(mask)
+		return deref(self._c).set_event_mask(mask)
 	
 	def set_event_mask_auto(self): 
-		return deref(self._c_event).set_event_mask_auto()
+		return deref(self._c).set_event_mask_auto()
 	
 	def get_name(self):
-		cdef string c_string = deref(self._c_event).get_name()
+		cdef string c_string = deref(self._c).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 
@@ -145,14 +145,14 @@ cdef class ISR(Vertex):
 		self._c_vertex = spc[cgraph.Vertex, cgraph.ISR](make_shared[cgraph.ISR](&graph._c_graph, bname))
 		
 	def set_category(self, int category):
-		deref(self._c_isr).set_category(category)
+		deref(self._c).set_category(category)
 		
 	def set_resource_reference(self, str resource_name):
 		cdef string c_resource_name = resource_name.encode('UTF-8')
-		deref(self._c_isr).set_resource_reference(c_resource_name)
+		deref(self._c).set_resource_reference(c_resource_name)
 
 	def get_name(self):
-		cdef string c_string = deref(self._c_isr).get_name()
+		cdef string c_string = deref(self._c).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 
@@ -167,10 +167,10 @@ cdef class Resource(Vertex):
 		self._c_vertex = spc[cgraph.Vertex, cgraph.Resource](make_shared[cgraph.Resource](&graph._c_graph, bname))
 
 	def set_resource_property(self, string prop, string linked_resource):
-        deref(self._c()).set_resource_property(prop, linked_resource)
+		deref(self._c()).set_resource_property(prop, linked_resource)
 
 	def get_name(self):
-		cdef string c_string = deref(self._c_resource).get_name()
+		cdef string c_string = deref(self._c).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 	
@@ -185,31 +185,31 @@ cdef class Task(Vertex):
 		self._c_vertex = spc[cgraph.Vertex, cgraph.Task](make_shared[cgraph.Task](&graph._c_graph, bname))
 
 	def set_priority(self, unsigned long priority):
-		return deref(self._c_task).set_priority(priority)
+		return deref(self._c).set_priority(priority)
 
 	def set_activation(self, unsigned long activation):
-		return deref(self._c_task).set_activation(activation)
+		return deref(self._c).set_activation(activation)
 	
 	def set_autostart(self, bool autostart):
-		return deref(self._c_task).set_autostart(autostart)
+		return deref(self._c).set_autostart(autostart)
 	
 	def set_appmode(self, str appmode_name):
 		cdef string c_appmode_name = appmode_name.encode('UTF-8') 
-		return deref(self._c_task).set_appmode(c_appmode_name)
+		return deref(self._c).set_appmode(c_appmode_name)
 	
 	def set_scheduler(self, str scheduler_name):
 		cdef string c_scheduler_name = scheduler_name.encode('UTF-8') 
-		return deref(self._c_task).set_scheduler(c_scheduler_name)
+		return deref(self._c).set_scheduler(c_scheduler_name)
 
 	def set_resource_reference(self, str resource_name):
 		cdef string c_resource_name = resource_name.encode('UTF-8')
-		return deref(self._c_task).set_resource_reference(c_resource_name)
+		return deref(self._c).set_resource_reference(c_resource_name)
 
 	def set_event_reference(self, str event_name):
 		cdef string c_event_name = event_name.encode('UTF-8')
-		return deref(self._c_task).set_event_reference(c_event_name)
+		return deref(self._c).set_event_reference(c_event_name)
 
 	def get_name(self):
-		cdef string c_string = deref(self._c_task).get_name()
+		cdef string c_string = deref(self._c).get_name()
 		cdef bytes py_string = c_string
 		return py_string
