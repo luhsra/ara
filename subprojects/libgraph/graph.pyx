@@ -7,6 +7,8 @@ from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp cimport bool
 
+from backported_memory cimport static_pointer_cast as spc
+
 from cython.operator cimport dereference as deref
 
 # Create a Cython extension type which holds a C++ instance
@@ -23,15 +25,17 @@ cdef class PyGraph:
 		self._c_graph.set_vertex(vertex._c_vertex)
 
 cdef class Vertex:
-	cdef shared_ptr[cgraph.Vertex] _c_vertex
+	
+	
+    cdef shared_ptr[cgraph.Vertex] _c_vertex
 
-	def __cinit__(self, PyGraph graph, name):
-		# prevent double constructions
-		# https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
-		if type(self) != Vertex:
-			return
-		cdef string bname = name.encode('UTF-8')
-		self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
+    def __cinit__(self, PyGraph graph, name, *args, **kwargs):
+        # prevent double constructions
+        # https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
+        if type(self) != Vertex:
+            return
+        cdef string bname = name.encode('UTF-8')
+        self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
 		
 	#def __afterinit__(self, shared_ptr[cgraph.Vertex] vertex):
 	#	_c_vertex = vertex
@@ -45,11 +49,12 @@ cdef class Vertex:
 
 
 cdef class Alarm(Vertex):
-	cdef shared_ptr[cgraph.Alarm] _c_alarm
+	cdef inline shared_ptr[cgraph.Alarm] _c(self):
+		return spc[cgraph.Alarm, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name):
 		cdef string bname = name.encode('UTF-8')
-		self._c_alarm = make_shared[cgraph.Alarm](&graph._c_graph, bname)
+		self._c_vertex = spc[cgraph.Vertex, cgraph.Alarm](make_shared[cgraph.Alarm](&graph._c_graph, bname))
 		
 	def set_task_reference(self, str task_name):
 		cdef string c_task_name = task_name.encode('UTF-8')
@@ -87,14 +92,15 @@ cdef class Alarm(Vertex):
 
 
 cdef class Counter(Vertex):
-	cdef shared_ptr[cgraph.Counter] _c_counter
+	cdef inline shared_ptr[cgraph.Counter] _c(self):
+		return spc[cgraph.Counter, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name):
 		cdef string bname = name.encode('UTF-8')
-		self._c_counter = make_shared[cgraph.Counter](&graph._c_graph, bname)
+		self._c_vertex = spc[cgraph.Vertex, cgraph.Counter](make_shared[cgraph.Counter](&graph._c_graph, bname))
 
-	def set_max_allowed_value(self, unsigned long max_allowed_value):
-		deref(self._c_counter).set_max_allowed_value(max_allowed_value)
+    def set_max_allowed_value(self, unsigned long max_allowedvalue):
+        deref(self._c()).set_max_allowedvalue(max_allowedvalue)
 		
 	def set_ticks_per_base(self, unsigned long ticks):
 		deref(self._c_counter).set_ticks_per_base(ticks)
@@ -109,11 +115,12 @@ cdef class Counter(Vertex):
 
 
 cdef class Event(Vertex):
-	cdef shared_ptr[cgraph.Event] _c_event
+    cdef inline shared_ptr[cgraph.Event] _c(self):
+        return spc[cgraph.Event, cgraph.Vertex](self._c_vertex)
 
-	def __cinit__(self, PyGraph graph, str name):
-		cdef string bname = name.encode('UTF-8')
-		self._c_event = make_shared[cgraph.Event](&graph._c_graph, bname)
+    def __cinit__(self, PyGraph graph, str name):
+        cdef string bname = name.encode('UTF-8')
+        self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
 		
 	def set_event_mask(self, unsigned long mask):
 		return deref(self._c_event).set_event_mask(mask)
@@ -127,13 +134,15 @@ cdef class Event(Vertex):
 		return py_string
 
 
+
+
 cdef class ISR(Vertex):
-	cdef shared_ptr[cgraph.ISR] _c_isr
+	cdef inline shared_ptr[cgraph.ISR] _c(self):
+		return spc[cgraph.ISR, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name):
 		cdef string bname = name.encode('UTF-8')
-		self._c_isr = make_shared[cgraph.ISR](&graph._c_graph, bname)
-		#__afterinit__(self._c_isr)
+		self._c_vertex = spc[cgraph.Vertex, cgraph.ISR](make_shared[cgraph.ISR](&graph._c_graph, bname))
 		
 	def set_category(self, int category):
 		deref(self._c_isr).set_category(category)
@@ -147,17 +156,18 @@ cdef class ISR(Vertex):
 		cdef bytes py_string = c_string
 		return py_string
 
+
+
 cdef class Resource(Vertex):
-	cdef shared_ptr[cgraph.Resource] _c_resource
+	cdef inline shared_ptr[cgraph.Resource] _c(self):
+		return spc[cgraph.Resource, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name):
 		cdef string bname = name.encode('UTF-8')
-		self._c_resource = make_shared[cgraph.Resource](&graph._c_graph, bname)
+		self._c_vertex = spc[cgraph.Vertex, cgraph.Resource](make_shared[cgraph.Resource](&graph._c_graph, bname))
 
-	def set_resource_property(self, str prop, str linked_resource):
-		cdef string c_prop = prop.encode('UTF-8')
-		cdef string c_linked_resource = linked_resource.encode('UTF-8')
-		deref(self._c_resource).set_resource_property(c_prop, c_linked_resource)
+	def set_resource_property(self, string prop, string linked_resource):
+        deref(self._c()).set_resource_property(prop, linked_resource)
 
 	def get_name(self):
 		cdef string c_string = deref(self._c_resource).get_name()
@@ -166,11 +176,13 @@ cdef class Resource(Vertex):
 	
 
 cdef class Task(Vertex):
-	cdef shared_ptr[cgraph.Task] _c_task
+	
+	cdef inline shared_ptr[cgraph.Task] _c(self):
+		return spc[cgraph.Task, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name):
 		cdef string bname = name.encode('UTF-8')
-		self._c_task = make_shared[cgraph.Task](&graph._c_graph, bname)
+		self._c_vertex = spc[cgraph.Vertex, cgraph.Task](make_shared[cgraph.Task](&graph._c_graph, bname))
 
 	def set_priority(self, unsigned long priority):
 		return deref(self._c_task).set_priority(priority)
