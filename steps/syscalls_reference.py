@@ -1,6 +1,6 @@
 
 #class which contains all OSEK and FreeRTOS syscalls
-class Syscalls:
+class syscall_reference:
     
     def __init__(self, flag):
     

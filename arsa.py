@@ -78,7 +78,7 @@ def main():
 
     p_manager = stepmanager.StepManager(g, vars(args))
 
-    p_manager.execute(['LLVMStep'])
+    p_manager.execute(['LLVMStep','SyscallStep'])
 
 
 if __name__ == '__main__':

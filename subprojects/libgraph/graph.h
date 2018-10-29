@@ -292,6 +292,7 @@ namespace OS {
 			std::hash<std::string> hash_fn;
 			this->seed = hash_fn(name +  typeid(this).name());
 			this->vertex_type =  typeid(Function()).hash_code();
+			std::cerr << "FunctionID: " << typeid(this).hash_code() << std::endl;
 		}
 		
 		void set_front_abb(shared_abb abb);

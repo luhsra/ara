@@ -52,6 +52,7 @@
 #include "source/include/task.h"
 #include "source/include/queue.h"
 #include "source/include/semphr.h"
+
 #include <stdint.h>
 void vPrintString( const char * string );
 

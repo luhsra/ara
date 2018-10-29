@@ -866,7 +866,62 @@ namespace step {
 						debug_argument( std::get<0>(argument_tuple), std::get<1>(argument_tuple));
 					}
 					std::cerr  << "Parent Function: " << pDerived->get_parent_function()->get_function_name() << "\n";
+					std::string callname = pDerived->get_call_name();
+					if(callname.find("Create")){ 
+						
+						if(callname.find("Task")){
+								
+							break;
+						}
+						if(callname.find("Queue")){
+								
+							break;
+						}
+						if(callname.find("Timer")){
+								
+							break;
+						}
+						if(callname.find("Task")){
+								
+							break;
+						}
+						if(callname.find("Counting")){
+								
+							break;
+						}
+						if(callname.find("Semaphore")){
+								
+							break;
+						}
+					/*	
+					"xTaskCreate": 2,
+					"xTaskCreateStatic": 3 ,
+					"xTaskCreateRestricted": 4 ,
+					"xQueueCreate": 5 ,
+					"xQueueCreateSet": 6 ,
+					"xQueueCreateStatic": 7 ,
+					"vSemaphoreCreateBinary": 8 ,
+					"xSemaphoreCreateBinary": 9 ,
+					"xSemaphoreCreateBinaryStatic": 10 ,
+					"xSemaphoreCreateCounting": 11 ,
+					"xSemaphoreCreateCountingStatic": 12 ,
+					"xSemaphoreCreateMutex": 13 ,
+					"xSemaphoreCreateMutexStatic": 14 ,
+					"xSemaphoreCreateRecursiveMutex": 15 ,
+					"xSemaphoreCreateRecursiveMutexStatic": 16 ,
+					"xTimerCreate": 17 ,
+					"xTimerCreateStatic": 18 ,
+					"xEventGroupCreate": 19 ,
+					"xEventGroupCreateStatic": 20 ,
+					"xStreamBufferCreate": 21 ,
+					"xStreamBufferCreateStatic": 22 ,
+					"xMessageBufferCreate": 23 ,
+					"xMessageBufferCreateStatic": 24 ,
+					*/
+					}
 				}
+				
+				
 			}
 			else
 			{

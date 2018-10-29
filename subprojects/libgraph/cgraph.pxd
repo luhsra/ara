@@ -7,6 +7,8 @@ cdef extern from "graph.h" namespace "graph":
 		Graph() except +
 
 		void set_vertex(shared_ptr[Vertex] vertex)
+		#TODO shared pointer problem
+		#list[shared_ptr[Vertex]] get_type_vertices(size_t type_info);
 
 	cdef cppclass Vertex:
 		Vertex(Graph* graph, string name) except +
@@ -85,5 +87,17 @@ cdef extern from "graph.h" namespace "OS":
 		bool set_scheduler(string scheduler);
 		bool set_resource_reference(string resource);
 		bool set_event_reference(string event);
+	
+		string get_name()
+		
+		
+	cdef cppclass Function:
+		Function(Graph* graph, string name) except +
+	
+		string get_name()
+		
+		
+	cdef cppclass ABB:
+		#ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
 	
 		string get_name()
