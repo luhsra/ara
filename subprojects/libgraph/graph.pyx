@@ -6,6 +6,7 @@ cimport graph
 
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
+from libcpp.list cimport list as clist
 from libcpp cimport bool
 
 from backported_memory cimport static_pointer_cast as spc
@@ -22,23 +23,33 @@ cdef class PyGraph:
 
     def set_vertex(self, Vertex vertex):
         self._c_graph.set_vertex(vertex._c_vertex)
-    #TODO shared pointer problem
-    #def get_type_vertices(self, unsigned long id):
-    #    cdef size_t c_id = id
-    #    return self._c_graph.get_type_vertices(c_id)
+
+    def get_type_vertices(self, unsigned long id):
+        cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(id)
+        pylist = []
+        for vertex in vertices:
+            pylist.append(Vertex.create_from_pointer(vertex))
+        return pylist
 
 
 cdef class Vertex:
     cdef shared_ptr[cgraph.Vertex] _c_vertex
 
-    def __cinit__(self, PyGraph graph, name, *args, **kwargs):
+    def __cinit__(self, PyGraph graph, name, *args, _raw=False, **kwargs):
         # prevent double constructions
         # https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
         if type(self) != Vertex:
             return
         cdef string bname = name.encode('UTF-8')
-        self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
+        if not _raw:
+            self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
 
+    @staticmethod
+    cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
+        # we have to create an empty dummy graph to fulfil the constructor
+        py_obj = Vertex(PyGraph(), "empty", _raw=True)
+        py_obj._c_vertex = vertex
+        return py_obj
 
     def get_name(self):
         cdef string c_string = deref(self._c_vertex).get_name()

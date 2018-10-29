@@ -1,5 +1,6 @@
 # vim: set et ts=4 sw=4:
 from libcpp.string cimport string
+from libcpp.list cimport list as clist
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
@@ -8,8 +9,7 @@ cdef extern from "graph.h" namespace "graph":
         Graph() except +
 
         void set_vertex(shared_ptr[Vertex] vertex)
-        #TODO shared pointer problem
-        #list[shared_ptr[Vertex]] get_type_vertices(size_t type_info);
+        clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info);
 
     cdef cppclass Vertex:
         Vertex(Graph* graph, string name) except +
