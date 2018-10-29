@@ -1,3 +1,4 @@
+# vim: set et ts=4 sw=4:
 cimport cgraph
 from libcpp.memory cimport shared_ptr
 
