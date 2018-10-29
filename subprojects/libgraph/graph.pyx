@@ -46,8 +46,7 @@ cdef class Vertex:
 
     @staticmethod
     cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
-        # we have to create an empty dummy graph to fulfil the constructor
-        py_obj = Vertex(PyGraph(), "empty", _raw=True)
+        py_obj = Vertex(None, "empty", _raw=True)
         py_obj._c_vertex = vertex
         return py_obj
 
