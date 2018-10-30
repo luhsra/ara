@@ -125,7 +125,7 @@ bool check_nullptr(std::any &out, llvm::Type *type,llvm::Value *value,std::strin
 		std::string tmp = "&$%NULL&$%";
 		out = tmp;
 		type = constant_data->getType();
-		//std::cerr << "[nullptr] type: " <<print_argument(value)  <<'\n';  
+		////std::cerr << "[nullptr] type: " <<print_argument(value)  <<'\n';  
 		load_success = true;
 	}
 	return load_success;
@@ -398,7 +398,7 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
                 //return name of allocated space
                 out = alloca->getName().str();
 				type = alloca->getType();
-				////std::cerrr << "Type: " << abb->get_call_name() <<  std::endl;
+				//////std::cerrr << "Type: " << abb->get_call_name() <<  std::endl;
                 dump_success = true;
             }
             else{
@@ -537,10 +537,10 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 			//debug_argument(value_argument ,type_argument);
 			
 		}else{
-			std::cerr << "\n";
-			std::cerr << "\n------------------------------------------------- \n";
-			std::cerr  << "!! Could not load argument in Function: "<< abb->get_parent_function()->get_function_name()  << " !!" << "\n\n";
- 			std::cerr << debug_out.str() << "------------------------------------------------- \n";
+			//std::cerr << "\n";
+			//std::cerr << "\n------------------------------------------------- \n";
+			//std::cerr  << "!! Could not load argument in Function: "<< abb->get_parent_function()->get_function_name()  << " !!" << "\n\n";
+ 			//std::cerr << debug_out.str() << "------------------------------------------------- \n";
 		}
 		
 	}
@@ -557,7 +557,7 @@ void set_arguments(OS::shared_abb abb){
 	for (auto &i : abb->get_BasicBlocks()) {
 		
 		
-		////std::cerrr  << "TEST" << std::endl;
+		//////std::cerrr  << "TEST" << std::endl;
 		bool call_found = false;
 		
 		
@@ -579,7 +579,7 @@ void set_arguments(OS::shared_abb abb){
 			}
 		}
 		if(call_found){
-			abb->set_calltype(has_call);			
+			abb->set_call_type(has_call);			
 		}
 	}
 }
@@ -648,7 +648,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
                         std::string type_str;
                         llvm::raw_string_ostream rso(type_str);
                         succ->print(rso);
-                        //std::cerrr  << rso.str() << std::endl;
+                        ////std::cerrr  << rso.str() << std::endl;
                     }
                     //store new abb in graph
                     graph->set_vertex(new_abb);
@@ -707,7 +707,7 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
                 std::stringstream ss;
 			
                 ss << "BB" << (*split_counter)++;
-                ////std::cerrr << "split_counter = " << *split_counter << std::endl;
+                //////std::cerrr << "split_counter = " << *split_counter << std::endl;
                 bb = bb->splitBasicBlock(it, ss.str());
                 it = bb->begin();
                 ++it;
@@ -718,7 +718,7 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
                 //TODO dead code?
                 ss.str("");
                 ss << "BB" << (*split_counter)++;
-                ////std::cerrr << "split_counter = " << *split_counter << std::endl;
+                //////std::cerrr << "split_counter = " << *split_counter << std::endl;
                 bb = bb->splitBasicBlock(it, ss.str());
                 it = bb->begin();
             }
@@ -775,7 +775,7 @@ namespace step {
 		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, context);
 		
 		if(!module){
-			std::cerr << "Could not load file:" << file_name << "\n" << std::endl;
+			//std::cerr << "Could not load file:" << file_name << "\n" << std::endl;
 		}
 		
 		//convert unique_ptr to shared_ptr
@@ -783,7 +783,7 @@ namespace step {
 
 				
 		if(!module){
-			std::cerr << "Unique pointer was deleted:" << file_name << "\n" << std::endl;
+			//std::cerr << "Unique pointer was deleted:" << file_name << "\n" << std::endl;
 		}
 		
 	
@@ -830,7 +830,7 @@ namespace step {
 					bb.setName(ss.str());
 					
 				}
-				//std::cerrr << "basicblock_name = " << bb.getName().str() << std::endl;
+				////std::cerrr << "basicblock_name = " << bb.getName().str() << std::endl;
 			}
 			
 			if(!func.empty()){
@@ -843,91 +843,9 @@ namespace step {
 		}		
 		
 		
-		std::cerr << "_____________________________________________________________________________" << std::endl;
+		//std::cerr << "_____________________________________________________________________________" << std::endl;
 		
-		//TEST Abschnitt
-		std::list<graph::shared_vertex> test_list =  graph.get_type_vertices(typeid(OS::ABB()).hash_code());
-		std::list<graph::shared_vertex>::iterator it = test_list.begin();       //iterate about the list elements
-		for(; it != test_list.end(); ++it){
-	
-			std::shared_ptr<graph::Vertex> tmp = (*it);
-			std::shared_ptr<OS::ABB> pDerived = std::dynamic_pointer_cast<OS::ABB> (tmp);
-			
-			if(pDerived) // always test  
-			{
-				//std::cerrr << "ABB Name: " << pDerived->get_name() << "\n" << std::endl;
-				if( pDerived->get_calltype()== has_call){ 
-					std::cerr << "\n" << "Name: "  << pDerived->get_name() << "\n" ;
-					std::cerr  << "Call: " << pDerived->get_call_name() << "\n";
-					std::list<std::tuple<std::any,llvm::Type*>> tmp_list = pDerived->get_arguments();
-					//std::cerrr << "Argument: " << pDerived->get_name();
-					
-					for (auto &argument_tuple : tmp_list){
-						debug_argument( std::get<0>(argument_tuple), std::get<1>(argument_tuple));
-					}
-					std::cerr  << "Parent Function: " << pDerived->get_parent_function()->get_function_name() << "\n";
-					std::string callname = pDerived->get_call_name();
-					if(callname.find("Create")){ 
-						
-						if(callname.find("Task")){
-								
-							break;
-						}
-						if(callname.find("Queue")){
-								
-							break;
-						}
-						if(callname.find("Timer")){
-								
-							break;
-						}
-						if(callname.find("Task")){
-								
-							break;
-						}
-						if(callname.find("Counting")){
-								
-							break;
-						}
-						if(callname.find("Semaphore")){
-								
-							break;
-						}
-					/*	
-					"xTaskCreate": 2,
-					"xTaskCreateStatic": 3 ,
-					"xTaskCreateRestricted": 4 ,
-					"xQueueCreate": 5 ,
-					"xQueueCreateSet": 6 ,
-					"xQueueCreateStatic": 7 ,
-					"vSemaphoreCreateBinary": 8 ,
-					"xSemaphoreCreateBinary": 9 ,
-					"xSemaphoreCreateBinaryStatic": 10 ,
-					"xSemaphoreCreateCounting": 11 ,
-					"xSemaphoreCreateCountingStatic": 12 ,
-					"xSemaphoreCreateMutex": 13 ,
-					"xSemaphoreCreateMutexStatic": 14 ,
-					"xSemaphoreCreateRecursiveMutex": 15 ,
-					"xSemaphoreCreateRecursiveMutexStatic": 16 ,
-					"xTimerCreate": 17 ,
-					"xTimerCreateStatic": 18 ,
-					"xEventGroupCreate": 19 ,
-					"xEventGroupCreateStatic": 20 ,
-					"xStreamBufferCreate": 21 ,
-					"xStreamBufferCreateStatic": 22 ,
-					"xMessageBufferCreate": 23 ,
-					"xMessageBufferCreateStatic": 24 ,
-					*/
-					}
-				}
-				
-				
-			}
-			else
-			{
-				// fail to down-cast
-			}
-		}
+		
 		
 
 	}

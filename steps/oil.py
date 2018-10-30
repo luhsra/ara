@@ -5,11 +5,30 @@ import os
 
 from native_step import Step
 
-
-
 class OilStep(Step):
 	"""Reads an oil file and writes all information to the graph."""
 	
+	
+	def validate_linked_resource(self, element):
+	
+		result = false
+		#iterate about the attributes of the events
+		for attribute in element:
+			
+			if attribute == "RESOURCEPROPERTY":
+				
+				if isinstance(element[attribute] , dict):
+					linked_dict = element[attribute]
+					for linked_attribute in linked_dict:
+						if linked_attribute == "LINKED":
+							result = true
+							break
+						
+				if isinstance(element[attribute] , str):
+					#print(oil_counter[attribute])
+					if element[attribute] == "STANDARD":
+						result = true
+						break
 
 	def run(self, g: graph.PyGraph):
 
@@ -175,12 +194,13 @@ class OilStep(Step):
 								if linked_attribute == "LINKED":
 									if isinstance(linked_dict[linked_attribute], str):
 										if linked_dict[linked_attribute] in resource_list:
-											
-											if resource.set_resource_property(oil_resource[attribute],linked_dict[linked_attribute]):
-												#TODO validate that linked object has also attribute linked or standard[it is done in the graph methode, but should also be done in the oil step
-												print("linked: " , oil_resource[attribute],linked_dict[linked_attribute])
+											if validate_linked_resource(linked_dict[linked_attribute]):
+												if resource.set_resource_property(oil_resource[attribute],linked_dict[linked_attribute]):
+													print("linked: " , oil_resource[attribute],linked_dict[linked_attribute])
+												else:
+													print("resource could not linked", linked_dict[linked_attribute])
 											else:
-												print("resource could not linked", linked_dict[linked_attribute])
+												print("Linked resource has no linked or normal attribute value")
 										else:
 											print("resource was not defined in OIL: ", linked_dict[linked_attribute])
 									else:
@@ -506,8 +526,8 @@ class OilStep(Step):
 						
 		print("I'm an OilStep")
 					
-	def validate_reference(self, dictionary, element, abstraction):
-		print("HELLO")
+
+		
 
 		
 		

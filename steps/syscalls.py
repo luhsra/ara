@@ -1,14 +1,21 @@
 import graph
 import os
+from enum import Enum
+#from enumerations import Type
 #import syscalls_references
 
 from native_step import Step
+
+import test
 
 
 
 class SyscallStep(Step):
 	"""Reads an oil file and writes all information to the graph."""
 	
+	def get_dependencies(self):
+		
+		return ["LLVMStep"]
 
 	def run(self, g: graph.PyGraph):
 		
@@ -19,7 +26,7 @@ class SyscallStep(Step):
 			
 			syscall_dict = { 	
 					# no syscall
-					"Computation":1,
+					"Computation": 1,
 					
 					# activate task
 					"ActivateTask":41,
@@ -231,24 +238,31 @@ class SyscallStep(Step):
 			
 			
 			
-			
-			
-			#TODO iterate about the functions of the graph 
-			#function_list = get_type_vertices(10308015844984797642);
-				
-				#TODO cast vertex pointer to function pointer
-				
-				#TODO iterate about the abbs of the functions
-				
-					#TODO get_atomic_basic_blocks();
-					#check if abb contains call
-						# TODO check if call is listed in the syscall_dictionary
-						# TODO set the corresponding flag 
-					
-					
+		print("HELLO!$")
 		
+		#iterate about the functions of the graph 
+		function_list = g.get_type_vertices(type(graph.Function))
+		
+		for function in function_list:
+			
+			
+			print(function.get_name())
+			
+
+			
+			#cast vertex pointer to function pointer
+			
+			#TODO iterate about the abbs of the functions
+			
+				#TODO get_atomic_basic_blocks();
+				#check if abb contains call
+					# TODO check if call is listed in the syscall_dictionary
+					# TODO set the corresponding flag 
+				
+				
+	
 		print("I'm an SyscallStep")
-					
+	
 
 
 		

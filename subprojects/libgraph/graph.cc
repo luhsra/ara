@@ -72,7 +72,10 @@ std::list<shared_vertex> graph::Graph::get_type_vertices(size_t type_info){
     std::list<shared_vertex> tmp_list;
     std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
     for(; it != this->vertices.end(); ++it){
+		
+		//std::cerr << "searched type: " << type_info << ";current type: " << (*it).get()->get_type() << std::endl;
         if(type_info==(*it).get()->get_type()){                                         //check if vertex is from wanted type
+			//std::cerr << "succes\n";
             tmp_list.emplace_back((*it));
         }
     }
@@ -677,19 +680,26 @@ OS::shared_abb OS::Function::get_front_abb(){
 
 
 
+syscall_definition_type OS::ABB::get_syscall_type(){
+    return this->abb_syscall_type;
+}
+
+void OS::ABB::set_syscall_type(syscall_definition_type type){
+    this->abb_syscall_type = type;
+}
 
 
+std::size_t OS::ABB::get_call_target_instance(){
+	// TODO dummy
+	return 0;
+}
 
 
-
-
-
-
-syscall_definition_type OS::ABB::get_calltype(){
+call_definition_type OS::ABB::get_call_type(){
     return this->abb_type;
 }
 
-void OS::ABB::set_calltype(syscall_definition_type type){
+void OS::ABB::set_call_type(call_definition_type type){
     this->abb_type = type;
 }
 
@@ -998,4 +1008,106 @@ void OS::Alarm::set_appmode(std::string appmode){
 	this->appmodes.emplace_back(appmode);
 }
 
+
+
+
+
+
+
+//print methods -------------------------------------------------------------------------------
+std::string debug_argument(std::any value,llvm::Type *type){
+	
+	std::size_t const tmp = value.type().hash_code();
+	const std::size_t  tmp_int = typeid(int).hash_code();
+	const std::size_t  tmp_double = typeid(double).hash_code();
+	const std::size_t  tmp_string = typeid(std::string).hash_code();
+	const std::size_t tmp_long 	= typeid(long).hash_code();
+	std::string information = "Argument: ";
+	
+		
+	if(tmp_int == tmp){
+		information += std::any_cast<int>(value)  +'\n';
+	}else if(tmp_double == tmp){ 
+		information += std::any_cast<double>(value)  + '\n';
+	}else if(tmp_string == tmp){
+		information +=  std::any_cast<std::string>(value) +'\n';  
+	}else if(tmp_long == tmp){
+		information +=  std::any_cast<long>(value)   +'\n';  
+	}else{
+		information +=  "[warning: cast not possible] type: ";
+		information +=  value.type().name();
+		information += '\n';  
+	}
+	return information;
+}
+
+
+std::string graph::Graph::print_information(){
+	std::string information = "\n------------------------\nGraph:\n";
+	information += "Vertices:\n";
+	for (auto & vertex:this->vertices){
+		information+= vertex->print_information();
+	}
+	return information += "\n------------------------\n\n";
+}	
+
+
+
+
+std::string OS::Function::print_information(){
+	std::string information = "\n------------------------\nFunction:\n";
+	information += "function name:" + this->function_name + "\n";
+	information += "argument types:\n";
+	for (auto & argument:this->argument_types){
+		std::string type_str;
+		llvm::raw_string_ostream rso(type_str);
+		argument->print(rso);
+		information += "\t" +  rso.str() ;
+	}
+	{
+		std::string type_str;
+		llvm::raw_string_ostream rso(type_str);
+		this->return_type->print(rso);
+		information += "return type: " + rso.str() + "\n";
+	}
+	
+
+	information += "first abb: " + this->front_abb->get_name() + "\n";
+	information += "abbs:\n";
+
+	for (auto & abb: this->atomic_basic_blocks){
+		information += abb->print_information();
+	}
+	return information += "\n------------------------\n\n";
+}	
+
+
+std::string OS::ABB::print_information(){
+	std::string information = "\n------------------------\nABB:\n";
+	information += "abb name: " + this->name + "\n";
+	information += "\nsuccessors:\n";
+	for (auto & successor:this->successors){
+		information += "\t" + successor->get_name();
+	}
+
+	information += "\npredecessors:\n";
+	for (auto & predecessor:this->predecessors){
+		information += "\t" + predecessor->get_name() + "\n";
+	}
+	information += "syscall: "; 
+	information += (this->abb_type);
+	information += "\n";
+	information += "call: " + this->call_name + "\n";
+	information += "arguments:\n";
+
+	for (auto & argument: this->arguments){
+		information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ "\n";
+	}
+
+
+	return information += "\n------------------------\n\n";
+}	
+
+
+//print methods -------------------------------------------------------------------------------
 

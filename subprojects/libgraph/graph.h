@@ -25,7 +25,9 @@
 
 typedef enum  { Task, ISR, Timer, normal }function_definition_type;
 
-typedef enum  { sys_call, func_call, no_call , has_call }syscall_definition_type;
+typedef enum  { sys_call, func_call, no_call , has_call }call_definition_type;
+
+typedef enum  {	computate ,create, destroy ,receive, approach ,release ,schedule} syscall_definition_type;
 
 typedef enum  { ISR1, ISR2, basic }ISR_type;
 
@@ -104,6 +106,8 @@ namespace graph {
 			
 			bool contain_edge(shared_edge edge);
 			
+			std::string print_information();
+			
 			~Graph();
                 
 	};
@@ -142,7 +146,10 @@ namespace graph {
 		};
 		const VertexKind Kind;
 		*/
-                
+		
+		virtual std::string print_information(){
+			return "";
+		};
 		virtual Vertex *clone() const{return new Vertex(*this);};
                 
 		Vertex(Graph *graph,std::string name); // Constructor
@@ -283,16 +290,19 @@ namespace OS {
                               
               
 		Function *clone() const{return new Function(*this);};
-                
+		
+		
+		std::string print_information();
+		
 		static bool classof(const Vertex *v); // LLVM RTTI class of Methode
                 
                 
 		Function(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->function_name = name;
 			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(this).name());
+			this->seed = hash_fn(name +  typeid(Function()).name());
 			this->vertex_type =  typeid(Function()).hash_code();
-			std::cerr << "FunctionID: " << typeid(this).hash_code() << std::endl;
+			std::cerr << "FunctionID: " << typeid(Function()).hash_code() << std::endl;
 		}
 		
 		void set_front_abb(shared_abb abb);
@@ -346,9 +356,10 @@ namespace OS {
 
 	  private:
               
-		syscall_definition_type
-		    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
+		call_definition_type    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
 		          // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
+		
+		syscall_definition_type abb_syscall_type;
 		std::list<shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
 		std::list<shared_abb> predecessors;  // AtomicBasicBlocks die dem BasicBlock vorhergehen
 		shared_function parent_function; // Zeiger auf Function, die den BasicBlock enthält
@@ -359,6 +370,10 @@ namespace OS {
 		std::string call_name = ""; // Name des Sycalls
 		
 		std::list<std::tuple<std::any,llvm::Type*>> arguments;
+		
+		std::size_t call_target_instance;
+		
+		
 
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 
@@ -367,17 +382,26 @@ namespace OS {
 		virtual ABB *clone() const{
 			return new ABB(*this);};
 		
+		
+		std::string print_information();
+		
 		ABB(graph::Graph *graph,shared_function function, std::string name) : graph::Vertex(graph,name){
 			parent_function = function;
 			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(this).name());
+			this->seed = hash_fn(name +  typeid(ABB()).name());
 			this->abb_type = no_call;
 			this->vertex_type = typeid(ABB()).hash_code();
 		}
               
-		syscall_definition_type get_calltype();
-		void set_calltype(syscall_definition_type type);
+		syscall_definition_type get_syscall_type();
+		void set_syscall_type(syscall_definition_type type);
+		
+		call_definition_type get_call_type();
+		void set_call_type(call_definition_type type);
 
+		std::size_t get_call_target_instance();
+		void set_call_target_instance(size_t target_instance);
+		
 		void set_call_name(std::string call_name);
 		std::string get_call_name();
 		
@@ -421,7 +445,11 @@ namespace OS {
 		} 
 		
 		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
-                
+		
+		std::string print_information(){
+			return "";	
+		};
+		
 		std::string group_name;
 		
 		bool set_task_in_group(OS::shared_task task);
@@ -459,8 +487,12 @@ namespace OS {
 		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(Task()).hash_code();
 			std::cerr << "name subclass: " << name << std::endl;
-		} 
+		}
 		
+		
+		std::string print_information(){
+			return "";	
+		};
 		//virtual Task *clone() const{return new Task(*this);};
 
 		
@@ -492,7 +524,11 @@ namespace OS {
 		}
 
 		virtual Timer *clone() const{return new Timer(*this);};
-                
+	
+		std::string print_information(){
+			return "";	
+		};
+		
 		bool set_definition_function(OS::shared_function function);
 
 		int periode;     // Periode in Ticks
@@ -528,6 +564,9 @@ namespace OS {
 			std::cerr  << "name: " << name << "\n";
 		}
 		
+		std::string print_information(){
+			return "";	
+		};
 
 		bool set_category(int category);
 		bool set_message_reference(std::string);
@@ -572,7 +611,11 @@ namespace OS {
 			int item_size;
 				
 		public:
-		
+			
+			
+			std::string print_information(){
+				return "";	
+			};
 			bool set_queueset_reference(shared_queueset);
 			shared_queueset get_queueset_reference();
 			std::list<graph::shared_vertex> get_accessed_elements(); // gebe ISR/Task zurück, die mit der Queue interagieren
@@ -583,16 +626,21 @@ namespace OS {
 	class Semaphore : public graph::Vertex {
 
 		public:
+			
+			
+			std::string print_information(){
+				return "";	
+			};
 
-		virtual Semaphore *clone() const{return new Semaphore(*this);};
-		semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
-		std::string handle_name;
-		int max_count;
-		int initial_count;
+			virtual Semaphore *clone() const{return new Semaphore(*this);};
+			semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
+			std::string handle_name;
+			int max_count;
+			int initial_count;
 
-		std::list<graph::shared_vertex> get_accessed_elements(); // gebe alle Elemente zurück, die auf die Sempahore zugreifen
+			std::list<graph::shared_vertex> get_accessed_elements(); // gebe alle Elemente zurück, die auf die Sempahore zugreifen
 
-		static bool classof(const Vertex *S);
+			static bool classof(const Vertex *S);
 	};
 
 	class EventGroups : public graph::Vertex {
@@ -608,7 +656,12 @@ namespace OS {
 		    synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 
 	  public:
-		  
+		
+		
+		std::string print_information(){
+			return "";	
+		};
+			
 		virtual EventGroups *clone() const{return new EventGroups(*this);};
 		
 		std::string event_group_handle_name;
@@ -649,11 +702,15 @@ namespace OS {
 			bool static_buffer;
 	
 		public:
+			
+			
+			std::string print_information(){
+				return "";	
+			};
 
-
-		static bool classof(const Vertex *S);
-		
-		~Buffer(){};
+			static bool classof(const Vertex *S);
+			
+			~Buffer(){};
 	};
 	
 	class Event: public graph::Vertex{
@@ -670,6 +727,12 @@ namespace OS {
 				this->vertex_type = typeid(Event()).hash_code();
 				std::cerr << "name subclass: " << name << std::endl;
 			};
+			
+			
+			std::string print_information(){
+				return "";	
+			};
+			
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
 			void set_event_mask(unsigned long  mask);
@@ -720,6 +783,11 @@ namespace OS {
 				std::cerr << "name subclass: " << name << std::endl;
 			};
 			
+			
+			std::string print_information(){
+				return "";	
+			};
+			
 			void set_max_allowed_value(unsigned long max_allowedvalue);
 			void set_ticks_per_base(unsigned long ticks);
 			void set_min_cycle(unsigned long min_cycle); 
@@ -752,6 +820,9 @@ namespace OS {
 				std::cerr << "name subclass: " << name << std::endl;
 			};
 			
+			std::string print_information(){
+				return "";	
+			};
 
 			bool set_task_reference(std::string task);
 			OS::shared_task get_task_reference();
