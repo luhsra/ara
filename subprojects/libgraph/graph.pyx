@@ -25,26 +25,26 @@ from libcpp.typeinfo cimport type_info
 	#return ISR
 
 
-cdef extern from './graph.h':
-	ctypedef enum _syscall_definition_type 'syscall_definition_type':
-		_computate 	'computate'
-		_create 	'create'
-		_destroy 	'destroy'
-		_receive 	'receive'
-		_approach 	'approach'
-		_release 	'release'
-		_schedule 	'schedule'
+#cdef extern from './graph.h':
+	#ctypedef enum _syscall_definition_type 'syscall_definition_type':
+		#_computate 	'computate'
+		#_create 	'create'
+		#_destroy 	'destroy'
+		#_receive 	'receive'
+		#_approach 	'approach'
+		#_release 	'release'
+		#_schedule 	'schedule'
 
 
 
-cpdef enum syscall_definition_type:
-	computate 	=	_computate 	
-	create 		= 	_create	
-	destroy		=	_destroy	
-	receive 	= 	_receive	
-	approach	=	_approach	
-	release		= 	_release	
-	schedule	= 	_schedule
+#cpdef enum syscall_definition_type:
+	#computate 	=	_computate 	
+	#create 		= 	_create	
+	#destroy		=	_destroy	
+	#receive 	= 	_receive	
+	#approach	=	_approach	
+	#release		= 	_release	
+	#schedule	= 	_schedule
 
 	
 cdef extern from "<typeinfo>" namespace "std" nogil:
@@ -61,20 +61,21 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
 	
 	#cdef const type_info* info = &typeid(cgraph.Vertex())
 	a = {typeid(cgraph.Vertex).hash_code(): Vertex,
-	     11246527478366681422: Function,
+	     typeid(cgraph.Function).hash_code(): Function,
 	     typeid(cgraph.Counter).hash_code(): Counter,
 	     typeid(cgraph.Task).hash_code(): Task,
-	     typeid(cgraph.ISR).hash_code(): ISR
+	     typeid(cgraph.ISR).hash_code(): ISR,
+	     typeid(cgraph.ABB).hash_code(): ABB
 	}
+	
+	
 	cdef size_t type_id = deref(vertex).get_type()
+
+	cdef Vertex py_obj = a[type_id](None, None,None,_raw=True)
 	
-	py_obj = a[type_id](None, None,_raw=True)
-	
-	print("ASFJALSKDFJASLKDJFLASJDFLAKSJDFLKAJSDLFJASLKDJFALSKJDFLKASJF", py_obj)
-	print(type(py_obj))
-	
-	#py_obj.set_c_vertex(vertex)
+	py_obj._c_vertex = vertex
 	return py_obj
+
 
 
 
@@ -92,25 +93,21 @@ cdef class PyGraph:
 		cdef size_t hash_type = 0 
 		
 		if ptype == type(Function):
-			#11246527478366681422
-			#hash_type = 
-			print("hash_type python",typeid(cgraph.Function).hash_code())
-			hash_type = 11246527478366681422
-			print("hash_type",hash_type)
-		#elif Type.counter == id:
-			#hash_type = typeid(cgraph.Counter).hash_code()
-		#elif Type.task == id:
-			#hash_type = typeid(cgraph.Task).hash_code()
-		#elif Type.isr == id:
-			#hash_type = typeid(cgraph.ISR).hash_code() 
-
+			hash_type = typeid(cgraph.Function).hash_code()
+			
+			
 		cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(hash_type)
+		
 		pylist = []
 		
-		print("-------------------Size of Vertices:", vertices.size())
+		#print("-------------------Size of Vertices:", vertices.size())
 		
 		for vertex in vertices:
 			pylist.append(create_from_pointer(vertex))
+			
+		
+		#print(pylist)
+		
 		return pylist
 
 
@@ -123,12 +120,7 @@ cdef class PyGraph:
 
 cdef class Vertex:
 	
-	
-	
 	cdef shared_ptr[cgraph.Vertex] _c_vertex
-	
-	cdef set_c_vertex(self, shared_ptr[cgraph.Vertex] vertex):
-		self._c_vertex = vertex
 
 	def __cinit__(self, PyGraph graph, name, *args, _raw=False, **kwargs):
 		# prevent double constructions
@@ -313,6 +305,10 @@ cdef class Task(Vertex):
 
 	def set_autostart(self, bool autostart):
 		return deref(self._c()).set_autostart(autostart)
+	
+	def set_definition_function(self, str function_name):
+		cdef string c_function_name = function_name.encode('UTF-8')
+		return deref(self._c()).set_definition_function(c_function_name)
 
 	def set_appmode(self, str appmode_name):
 		cdef string c_appmode_name = appmode_name.encode('UTF-8')
@@ -338,6 +334,8 @@ cdef class Task(Vertex):
 
 
 cdef class Function(Vertex):
+	
+	
 
 	cdef inline shared_ptr[cgraph.Function] _c(self):
 		return spc[cgraph.Function, cgraph.Vertex](self._c_vertex)
@@ -347,6 +345,21 @@ cdef class Function(Vertex):
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Function](make_shared[cgraph.Function](&graph._c_graph, bname))
+			
+	def get_atomic_basic_blocks(self):
+			
+		cdef clist[shared_ptr[cgraph.ABB]] abbs = deref(self._c()).get_atomic_basic_blocks()
+		
+		pylist = []
+		
+		
+		for abb in abbs:
+			#shared_ptr[cgraph.ABB] = abb
+			pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
+			
+		print(pylist)
+		
+		return pylist
 
 
 	def get_name(self):
@@ -354,6 +367,10 @@ cdef class Function(Vertex):
 		cdef bytes py_string = c_string
 		return py_string
 
+	#cdef get_function(self):
+	#	return deref(self._c())
+		
+		
 	#@staticmethod
 	#cdef create_from_pointer(shared_ptr[cgraph.Function] function):
 	#	# we have to create an empty dummy graph to fulfil the constructor
@@ -362,19 +379,21 @@ cdef class Function(Vertex):
 	#	return py_obj
 	
 	
-#cdef class ABB(Vertex):
+cdef class ABB(Vertex):
 
-	#cdef inline shared_ptr[cgraph.ABB] _c(self):
-		#return spc[cgraph.ABB, cgraph.Vertex](self._c_vertex)
+	cdef inline shared_ptr[cgraph.ABB] _c(self):
+		return spc[cgraph.ABB, cgraph.Vertex](self._c_vertex)
 
-	#def __cinit__(self, PyGraph graph, shared_ptr[cgraph.Function] function_reference, str name, *args, _raw=False, **kwargs):
-		#cdef string bname 
-		#if not _raw:
-			#bname = name.encode('UTF-8')
-			#self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](&graph._c_graph,function_reference._c , bname))
+	def __cinit__(self, PyGraph graph,  str name ,Function function_reference, *args, _raw=False, **kwargs):
+	#def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+		cdef string bname 
+		if not _raw:
+			bname = name.encode('UTF-8')
+	
+			self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](&graph._c_graph,spc[cgraph.Function, cgraph.Vertex](function_reference._c_vertex) , bname))
 
-	#def get_name(self):
-		#cdef string c_string = deref(self._c()).get_name()
-		#cdef bytes py_string = c_string
-		#return py_string
+	def get_name(self):
+		cdef string c_string = deref(self._c()).get_name()
+		cdef bytes py_string = c_string
+		return py_string
 

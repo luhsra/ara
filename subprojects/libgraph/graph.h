@@ -300,9 +300,9 @@ namespace OS {
 		Function(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->function_name = name;
 			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(Function()).name());
-			this->vertex_type =  typeid(Function()).hash_code();
-			std::cerr << "FunctionID: " << typeid(Function()).hash_code() << std::endl;
+			this->seed = hash_fn(name +  typeid(Function).name());
+			this->vertex_type =  typeid(Function).hash_code();
+			//std::cerr << "FunctionID: " << typeid(Function).hash_code() << std::endl;
 		}
 		
 		void set_front_abb(shared_abb abb);
@@ -330,8 +330,10 @@ namespace OS {
 		llvm::Function *get_llvm_reference();
 
 		void set_atomic_basic_block(OS::shared_abb atomic_basic_block);
+		//std::list<graph::shared_vertex> get_atomic_basic_blocks();
+		
 		std::list<OS::shared_abb> get_atomic_basic_blocks();
-
+		
 		std::list<shared_task> get_referenced_tasks();
 
 		bool set_referenced_task(shared_task task);
@@ -388,9 +390,9 @@ namespace OS {
 		ABB(graph::Graph *graph,shared_function function, std::string name) : graph::Vertex(graph,name){
 			parent_function = function;
 			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(ABB()).name());
+			this->seed = hash_fn(name +  typeid(ABB).name());
 			this->abb_type = no_call;
-			this->vertex_type = typeid(ABB()).hash_code();
+			this->vertex_type = typeid(ABB).hash_code();
 		}
               
 		syscall_definition_type get_syscall_type();
@@ -441,7 +443,7 @@ namespace OS {
 	  public:
 		
 		TaskGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->vertex_type = typeid(TaskGroup()).hash_code();
+			this->vertex_type = typeid(TaskGroup).hash_code();
 		} 
 		
 		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
@@ -485,8 +487,8 @@ namespace OS {
 	public:
 		
 		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->vertex_type = typeid(Task()).hash_code();
-			std::cerr << "name subclass: " << name << std::endl;
+			this->vertex_type = typeid(Task).hash_code();
+			//std::cerr << "name subclass: " << name << std::endl;
 		}
 		
 		
@@ -498,7 +500,7 @@ namespace OS {
 		
 		
 		bool set_task_group(std::string taskgroup); //name of TaskGroup
-		bool set_function_reference(std::string);
+		bool set_definition_function(std::string function_name);
 		
 		void set_priority(unsigned long priority);
 		bool set_scheduler(std::string scheduler);
@@ -520,7 +522,7 @@ namespace OS {
 	  public:
 
 		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->vertex_type = typeid(Timer()).hash_code();
+			this->vertex_type = typeid(Timer).hash_code();
 		}
 
 		virtual Timer *clone() const{return new Timer(*this);};
@@ -560,8 +562,8 @@ namespace OS {
 	  public:
 
 		ISR(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->vertex_type = typeid(ISR()).hash_code();
-			std::cerr  << "name: " << name << "\n";
+			this->vertex_type = typeid(ISR).hash_code();
+			//std::cerr  << "name: " << name << "\n";
 		}
 		
 		std::string print_information(){
@@ -724,8 +726,8 @@ namespace OS {
 		public:
 			
 			Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Event()).hash_code();
-				std::cerr << "name subclass: " << name << std::endl;
+				this->vertex_type = typeid(Event).hash_code();
+				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
 			
@@ -752,8 +754,8 @@ namespace OS {
 			
 		public:
 			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Resource()).hash_code();
-				std::cerr << "name subclass: " << name << std::endl;
+				this->vertex_type = typeid(Resource).hash_code();
+				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
@@ -779,8 +781,8 @@ namespace OS {
 		public:
 			
 			Counter(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Counter()).hash_code();
-				std::cerr << "name subclass: " << name << std::endl;
+				this->vertex_type = typeid(Counter).hash_code();
+				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
 			
@@ -816,8 +818,8 @@ namespace OS {
 		public:
 			
 			Alarm(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Alarm()).hash_code();
-				std::cerr << "name subclass: " << name << std::endl;
+				this->vertex_type = typeid(Alarm).hash_code();
+				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
 			std::string print_information(){

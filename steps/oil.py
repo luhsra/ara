@@ -32,13 +32,16 @@ class OilStep(Step):
 
 	def run(self, g: graph.PyGraph):
 
+
+		print("Run ", self.get_name())
+		
 		structure_file = '../appl/OSEK/oilfile.oil'
 		tmp_file = '../tmp.txt'
 		
 		#open oil file
 		f_old = open(structure_file)
 		
-		print(f_old)
+		#print(f_old)
 		
 		#generate tmp file
 		f_new = open(tmp_file, 'w')
@@ -76,7 +79,7 @@ class OilStep(Step):
 			#iterate about the isr
 			for name in isrs:
 				isr = graph.ISR(g, name)
-				print("name of isr: ", isr.get_name())
+				#print("name of isr: ", isr.get_name())
 				isr_list[name]= isr
 				g.set_vertex(isr)
 
@@ -180,7 +183,7 @@ class OilStep(Step):
 				
 				resource = resource_list[name]
 				
-				print (name, 'corresponds to', resources[name])
+				#print (name, 'corresponds to', resources[name])
 				oil_resource = resources[name]
 				
 				#iterate about the attributes of the events
@@ -195,12 +198,10 @@ class OilStep(Step):
 									if isinstance(linked_dict[linked_attribute], str):
 										if linked_dict[linked_attribute] in resource_list:
 											if validate_linked_resource(linked_dict[linked_attribute]):
-												if resource.set_resource_property(oil_resource[attribute],linked_dict[linked_attribute]):
-													print("linked: " , oil_resource[attribute],linked_dict[linked_attribute])
-												else:
+												if not resource.set_resource_property(oil_resource[attribute],linked_dict[linked_attribute]):
 													print("resource could not linked", linked_dict[linked_attribute])
 											else:
-												print("Linked resource has no linked or normal attribute value")
+												print("linked resource has no linked or normal attribute value")
 										else:
 											print("resource was not defined in OIL: ", linked_dict[linked_attribute])
 									else:
@@ -211,7 +212,7 @@ class OilStep(Step):
 							#print(oil_counter[attribute])
 							if oil_resource[attribute] == "STANDARD" or oil_resource[attribute] == "INTERNAL":
 								resource.set_resource_property(oil_resource[attribute], "")
-								print("resource attribute: " ,oil_resource[attribute])
+								#print("resource attribute: " ,oil_resource[attribute])
 							else:
 								print("resource has other attribute than STANDARD or LINKED or INTERNAL")
 						else:
@@ -229,7 +230,7 @@ class OilStep(Step):
 				
 				event = event_list[name]
 				
-				print (name, 'corresponds to', events[name])
+				#print (name, 'corresponds to', events[name])
 				oil_event = events[name]
 				
 				#iterate about the attributes of the events
@@ -238,10 +239,10 @@ class OilStep(Step):
 					if attribute == "MASK":
 						if oil_event[attribute] == "AUTO":
 							event.set_event_mask_auto();
-							print(oil_event[attribute])
+							#print(oil_event[attribute])
 						elif isinstance(oil_event[attribute] , int):
 							event.set_event_mask(oil_event[attribute])
-							print(oil_event[attribute])
+							#print(oil_event[attribute])
 						else:
 							print("eventmask is not auto or digit")
 							
@@ -257,7 +258,7 @@ class OilStep(Step):
 			for name in tasks:
 				
 				task = task_list[name]
-				print (name, 'corresponds to', tasks[name])
+				#print (name, 'corresponds to', tasks[name])
 				
 				#iterate about the attributes of the task
 				oil_task = tasks[name]
@@ -268,7 +269,7 @@ class OilStep(Step):
 					if attribute ==	"PRIORITY":
 						
 						if isinstance(oil_task[attribute], int):
-							print("priority: ", oil_task[attribute])
+							#print("priority: ", oil_task[attribute])
 							task.set_priority(oil_task[attribute])
 						else:
 							print("priority is no digit")
@@ -281,28 +282,28 @@ class OilStep(Step):
 									task.set_autostart(True)
 									if isinstance(autostart_attribute[appmodes],list):
 										for appmode in appmodes:
-											print("autostart: ", autostart_attribute)
-											print("appmode: ", appmode)
+											#print("autostart: ", autostart_attribute)
+											#print("appmode: ", appmode)
 											task.set_appmode(app_mode)
 								else:
 									print("autostart is no boolean")
 						else:
 							if "FALSE" == autostart_attribute:
-								print("autostart: ", autostart_attribute)
+								#print("autostart: ", autostart_attribute)
 								task.set_autostart(False)
 							else:
 								print("autostart is no boolean")
 								
 					elif attribute ==	"ACTIVATION": 	
 						if isinstance(oil_task[attribute], int):
-							print("activation: ", oil_task[attribute])
+							#print("activation: ", oil_task[attribute])
 							task.set_activation(oil_task[attribute])
 						else:
 							print("activation is no digit")
 							
 					elif attribute ==	"SCHEDULE":
 						if oil_task[attribute] == "NONE" or oil_task[attribute] == "FULL":
-							print("schedule: ", oil_task[attribute])
+							#print("schedule: ", oil_task[attribute])
 							task.set_scheduler(oil_task[attribute])
 						else:
 							print("schedule is not none or full")
@@ -311,7 +312,7 @@ class OilStep(Step):
 						if isinstance(oil_task[attribute], list):
 							for resource in oil_task[attribute]:
 								if isinstance(resource, str):
-									print("resource: ",resource)
+									#print("resource: ",resource)
 									task.set_resource_reference(resource)
 								else:
 									print("resource is no string")
@@ -321,7 +322,7 @@ class OilStep(Step):
 							for event in oil_task[attribute]:
 								if isinstance(event, str):
 									if event in event_list:
-										print("event: ", event)
+										#print("event: ", event)
 										task.set_event_reference(event)
 									else:
 										print("event was not defined in OIL: ", event)
@@ -334,7 +335,7 @@ class OilStep(Step):
 								if isinstance(message, str):
 									if message in message_list:
 										print("message: ", message)
-										task.set_message_reference(message)
+										#task.set_message_reference(message)
 									else:
 										print("message was not defined in OIL:", message)
 								else:
@@ -350,7 +351,7 @@ class OilStep(Step):
 				#create isr
 				isr = isr_list[name]
 				
-				print (name, 'corresponds to', isrs[name])
+				#print (name, 'corresponds to', isrs[name])
 				oil_isr = isrs[name]
 				
 				#iterate about the attributes of the isr
@@ -359,7 +360,7 @@ class OilStep(Step):
 					if attribute ==	"CATEGORY":
 						if isinstance(oil_isr[attribute], int):
 							if oil_isr[attribute] == 1 or oil_isr[attribute] == 2:
-								print("category: " , oil_isr[attribute])
+								#print("category: " , oil_isr[attribute])
 								isr.set_category(oil_isr[attribute])
 							else:
 								print("category is not 1 or 2")
@@ -371,7 +372,7 @@ class OilStep(Step):
 							for resource in oil_isr[attribute]:
 								if isinstance(resource, str):
 									if resource in resource_list:
-										print("resource: ",resource)
+										#print("resource: ",resource)
 										isr.set_resource_reference(resource)
 									else:
 										print("resource was not defined in OIL: ", resource)
@@ -381,14 +382,16 @@ class OilStep(Step):
 					elif attribute ==	"MESSAGE":
 						if isinstance(oil_isr[attribute], list):
 							for message in oil_isr[attribute]:
-								if isinstance(message, str):
+								#TODO
+								if not isinstance(message, str):
+									print("message is no string")
 									#if message in message_list:
-										print("message: ", message)
+										
 										#isr.set_message_reference(message)
 									#else:
 									#	print("message was not defined in OIL: ", message)
-								else:
-									print("message is no string")
+								
+									
 											
 				
 			
@@ -402,7 +405,7 @@ class OilStep(Step):
 				
 				alarm = alarm_list[name]
 				
-				print (name, 'corresponds to', alarms[name])
+				#print (name, 'corresponds to', alarms[name])
 				oil_alarm = alarms[name]
 				
 				#iterate about the attributes of the alarms
@@ -410,7 +413,7 @@ class OilStep(Step):
 					
 					if attribute ==	"COUNTER":
 						if isinstance(oil_alarm[attribute], str):
-							print("counter: " , oil_alarm[attribute])
+							#print("counter: " , oil_alarm[attribute])
 							alarm.set_counter_reference(oil_alarm[attribute])
 						else:
 							print("counter is no string")
@@ -423,7 +426,7 @@ class OilStep(Step):
 								if activatetask_attribute == "TASK": 
 									if isinstance(activatetask_attributes[activatetask_attribute], str):
 										if activatetask_attributes[activatetask_attribute] in tast_list:
-											print("activatetask: " , activatetask_attributes[activatetask_attribute])
+											#print("activatetask: " , activatetask_attributes[activatetask_attribute])
 											alarm.set_task_reference(activatetask_attributes[activatetask_attribute])
 										else:
 											print("task was not defined in OIL file: ", activatetask_attributes[activatetask_attribute])
@@ -438,7 +441,7 @@ class OilStep(Step):
 								if set_event_attribute == "TASK": 
 									if isinstance(set_event_attributes[set_event_attribute], str):
 										if set_event_attributes[set_event_attribute] in event_list:
-											print("setevent task: " ,set_event_attributes[set_event_attribute])
+											#print("setevent task: " ,set_event_attributes[set_event_attribute])
 											alarm.set_task_reference(set_event_attributes[set_event_attribute])
 										else: 
 											print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
@@ -448,7 +451,7 @@ class OilStep(Step):
 								elif activatetask_attribute == "EVENT": 	
 									if isinstance(set_event_attributes[set_event_attribute], str):
 										if set_event_attributes[set_event_attribute] in event_list:
-											print("setevent event: " ,set_event_attributes[set_event_attribute])
+											#print("setevent event: " ,set_event_attributes[set_event_attribute])
 											alarm.set_event_reference(set_event_attributes[set_event_attribute])
 										else:
 											print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
@@ -463,7 +466,7 @@ class OilStep(Step):
 							for alarmcallback_attribute in alarmcallback_attributes:
 								if alarmcallback_attribute == "ALARMCALLBACKNAME": 
 									if isinstance(alarmcallback_attributes[alarmcallback_attribute], str):
-										print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
+										#print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
 										alarm.set_alarm_callback_reference(activatetask_attributes[activatetask_attribute])
 									else:
 										print("alarmcallback has no string attribute")
@@ -482,10 +485,10 @@ class OilStep(Step):
 							
 							if autostart == "FALSE":
 								alarm.set_autostart(False)
-								print("autostart: ",autostart)
+								#print("autostart: ",autostart)
 							elif autostart == "TRUE":
 								alarm.set_autostart(True)
-								print("autostart: ",autostart)
+								#print("autostart: ",autostart)
 								autostart_dict =  autostart_attribute[autostart]
 								if isinstance( autostart_dict, dict):
 									for tmp_attribute in autostart_dict:
@@ -493,21 +496,21 @@ class OilStep(Step):
 										if tmp_attribute == "ALARMTIME":
 											if isinstance(autostart_dict[tmp_attribute], int):
 												alarm.set_alarm_time(autostart_dict[tmp_attribute])
-												print("alarmtime: ", autostart_dict[tmp_attribute])
+												#print("alarmtime: ", autostart_dict[tmp_attribute])
 											else:
 												print("autostart alarmtime is no int")
 
 										elif tmp_attribute == "CYCLETIME":
 											if isinstance(autostart_dict[tmp_attribute], int):
 												alarm.set_cycle_time(autostart_dict[tmp_attribute])
-												print("cycletime: ", autostart_dict[tmp_attribute])
+												#print("cycletime: ", autostart_dict[tmp_attribute])
 											else:
 												print("autostart cycletime is no int")
 										elif tmp_attribute == "APPMODE":
 											if isinstance(autostart_dict[tmp_attribute], list):
 												for appmode in autostart_dict[tmp_attribute]:
 													if isinstance(appmode, str):
-														print("appmode: ",appmode)
+														#("appmode: ",appmode)
 														alarm.set_appmode(appmode)
 	
 													else:
@@ -524,7 +527,7 @@ class OilStep(Step):
 								
 		
 						
-		print("I'm an OilStep")
+		
 					
 
 		

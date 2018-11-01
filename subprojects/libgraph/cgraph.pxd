@@ -10,7 +10,7 @@ cdef extern from "graph.h" namespace "graph":
 		Graph() except +
 
 		void set_vertex(shared_ptr[Vertex] vertex)
-		clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info);
+		clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info)
 
 	cdef cppclass Vertex:
 		Vertex(Graph* graph, string name) except +
@@ -80,26 +80,29 @@ cdef extern from "graph.h" namespace "OS":
 	cdef cppclass Task:
 		Task(Graph* graph, string name) except +
 
+		
+		void set_priority(unsigned long priority)
+		void set_activation(unsigned long activation)
+		void set_autostart(bool autostart)
+		bool set_definition_function(string function_name)
+		void set_appmode(string app_mode)
 
-		void set_priority(unsigned long priority);
-		void set_activation(unsigned long activation);
-		void set_autostart(bool autostart);
-		void set_appmode(string app_mode);
-
-		bool set_scheduler(string scheduler);
-		bool set_resource_reference(string resource);
-		bool set_event_reference(string event);
+		bool set_scheduler(string scheduler)
+		bool set_resource_reference(string resource)
+		bool set_event_reference(string event)
 
 		string get_name()
 
 
 	cdef cppclass Function:
 		Function(Graph* graph, string name) except +
-
+		
+		#clist[shared_ptr[Vertex]] get_atomic_basic_blocks()
+		clist[shared_ptr[ABB]] get_atomic_basic_blocks()
 		string get_name()
 
 
 	cdef cppclass ABB:
 		#ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
-
+		
 		string get_name()

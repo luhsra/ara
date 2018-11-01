@@ -78,7 +78,7 @@ def main():
 
     p_manager = stepmanager.StepManager(g, vars(args))
 
-    p_manager.execute(['LLVMStep','SyscallStep'])
+    p_manager.execute(['LLVMStep','SyscallStep' ,'FreeRTOSInstancesStep'])
 
 
 if __name__ == '__main__':

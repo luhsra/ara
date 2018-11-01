@@ -1,7 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "graph.h"
-
+#include <iostream>
 
 using namespace graph;
 
@@ -71,7 +71,9 @@ shared_edge graph::Graph::create_edge(){
 std::list<shared_vertex> graph::Graph::get_type_vertices(size_t type_info){
     std::list<shared_vertex> tmp_list;
     std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
+	
     for(; it != this->vertices.end(); ++it){
+		
 		
 		//std::cerr << "searched type: " << type_info << ";current type: " << (*it).get()->get_type() << std::endl;
         if(type_info==(*it).get()->get_type()){                                         //check if vertex is from wanted type
@@ -102,28 +104,12 @@ shared_vertex graph::Graph::get_vertex(std::string name){
 	shared_vertex return_vertex;
 	int counter = 0;
 	
-	std::cerr << "vertices " << this->vertices.size() << '\n';
-	
 	for (auto& vertex : this->vertices) {
-		if(vertex == nullptr){
-			std::cerr << "NULLPTR" << "\n";
-		}
-		else{
-			std::cerr << "Vertex " << vertex->get_name() << '\n';
-		}
-	}
-	
-	/*
-    for(; it != this->vertices.end(); ++it){
-        //gesuchter vertex gefunden
-		//std::cerr << "name: " << (*it)->get_name() << ", ";
-		std::cerr << "vertex" << (*it) << '\n';
-        if(name==(*it)->get_name()){                                         //check if vertex is from wanted type
+		if(name==vertex->get_name()){                                         //check if vertex is from wanted type
 			counter++;
-			return_vertex = (*it); 
+			return_vertex = vertex; 
         }
-    }
-	*/
+	}
 	
     if(counter == 1){
 		return return_vertex;
@@ -227,7 +213,7 @@ graph::Vertex::Vertex(Graph *graph,std::string name){
 	
     this->graph = graph;
 	this->name = name;
-	std::cerr  << "name: " << this->name << "\n";
+	//std::cerr  << "name: " << this->name << "\n";
 }
 
 std::string graph::Vertex::get_name(){
@@ -321,13 +307,13 @@ std::list<graph::shared_vertex > graph::Vertex::get_specific_connected_vertices(
     std::list<shared_vertex>::iterator it = this->outgoing_vertices.begin();           //iterate about the list elements
     //iterate about the outgoing vertices
     for(; it != this->outgoing_vertices.end(); ++it){
-        if(typeid((*(*it))).hash_code() == type_info){
+        if((*it)->get_type() == type_info){
             tmp_list.emplace_back(*it);
         }
     }
     //iterate about the ingoing vertices
     for(it = this->ingoing_vertices.begin();  it != this->ingoing_vertices.end(); ++it){
-        if(typeid((*(*it))).hash_code()== type_info){
+         if((*it)->get_type() == type_info){
             tmp_list.emplace_back(*it);
         }
     }
@@ -627,9 +613,20 @@ void OS::Function::set_atomic_basic_block(OS::shared_abb atomic_basic_block){
     this->atomic_basic_blocks.emplace_back(atomic_basic_block);
 }
 
+/*
+std::list<graph::shared_vertex> OS::Function::get_atomic_basic_blocks(){
+	std::list<graph::shared_vertex> tmp_list;
+	for(auto &abb : this->atomic_basic_blocks){
+			tmp_list.emplace_back(abb);
+	}
+	return tmp_list;
+}*/
+
+
 std::list<OS::shared_abb> OS::Function::get_atomic_basic_blocks(){
-    return this->atomic_basic_blocks;
+	return this->atomic_basic_blocks;
 }
+
 
 std::list<OS::shared_task> OS::Function::get_referenced_tasks(){
     return this->referenced_tasks;
@@ -917,6 +914,23 @@ bool OS::Task::set_event_reference(std::string event_name){
 }
 
 
+
+bool OS::Task::set_definition_function(std::string function_name){
+	bool result = false;
+	auto function = this->graph->get_vertex(function_name);
+	if(function != nullptr){
+		auto function_cast = std::dynamic_pointer_cast<OS::Function> (function);
+		if(function_cast){
+			this->definition_function = function_cast;
+			result = true;
+		}
+	}
+	return result;
+	
+}
+
+
+
 void OS::Event::set_event_mask(unsigned long  mask){
 	this->event_mask = mask;	
 }
@@ -1036,8 +1050,13 @@ std::string debug_argument(std::any value,llvm::Type *type){
 	}else{
 		information +=  "[warning: cast not possible] type: ";
 		information +=  value.type().name();
-		information += '\n';  
 	}
+	
+	std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	type->print(rso);
+	information += ";llvm type: " + rso.str() + "\n";
+	
 	return information;
 }
 
@@ -1057,13 +1076,14 @@ std::string graph::Graph::print_information(){
 std::string OS::Function::print_information(){
 	std::string information = "\n------------------------\nFunction:\n";
 	information += "function name:" + this->function_name + "\n";
-	information += "argument types:\n";
+	information += "argument types: ";
 	for (auto & argument:this->argument_types){
 		std::string type_str;
 		llvm::raw_string_ostream rso(type_str);
 		argument->print(rso);
 		information += "\t" +  rso.str() ;
 	}
+	information += "\n";
 	{
 		std::string type_str;
 		llvm::raw_string_ostream rso(type_str);
@@ -1085,27 +1105,29 @@ std::string OS::Function::print_information(){
 std::string OS::ABB::print_information(){
 	std::string information = "\n------------------------\nABB:\n";
 	information += "abb name: " + this->name + "\n";
-	information += "\nsuccessors:\n";
+	information += "successors: ";
 	for (auto & successor:this->successors){
 		information += "\t" + successor->get_name();
 	}
 
-	information += "\npredecessors:\n";
+	information += "\npredecessors: ";
 	for (auto & predecessor:this->predecessors){
-		information += "\t" + predecessor->get_name() + "\n";
+		information += "\t" + predecessor->get_name() ;
 	}
-	information += "syscall: "; 
+	information += "\nsyscall: ";
 	information += (this->abb_type);
 	information += "\n";
-	information += "call: " + this->call_name + "\n";
-	information += "arguments:\n";
+	if(this->abb_type != no_call){
 
-	for (auto & argument: this->arguments){
-		information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ "\n";
+		information += "call: " + this->call_name + "\n";
+		information += "arguments:\n";
+
+		for (auto & argument: this->arguments){
+			//information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ "\n";
+		}
 	}
 
-
-	return information += "\n------------------------\n\n";
+	return information += "------------------------\n\n";
 }	
 
 

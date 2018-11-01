@@ -368,6 +368,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
 	
     debug_out << "EXITLOAD: " <<  load_success << "\n";     
     return load_success;
+
 }
 
 //st = myString.substr(0, myString.size()-1);
@@ -753,7 +754,7 @@ namespace step {
 		}
 
 		for (const auto& file : files) {
-			std::cout << "File: " << file << std::endl;
+			//std::cout << "File: " << file << std::endl;
 		}
 
 		//TODO read in object type
@@ -841,12 +842,7 @@ namespace step {
 				abb_generation(&graph, graph_function );
 			}
 		}		
-		
-		
-		//std::cerr << "_____________________________________________________________________________" << std::endl;
-		
-		
-		
+
 
 	}
 	std::vector<std::string> LLVMStep::get_dependencies() {
