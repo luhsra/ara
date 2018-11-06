@@ -4,7 +4,26 @@ from libcpp.list cimport list as clist
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
+cdef extern from './graph.h':
+	ctypedef enum _syscall_definition_type 'syscall_definition_type':
+		_computate 	'computate'
+		_create 	'create'
+		_destroy 	'destroy'
+		_receive 	'receive'
+		_approach 	'approach'
+		_release 	'release'
+		_schedule 	'schedule'
 
+
+	
+cdef extern from './graph.h':
+	ctypedef enum _call_definition_type 'call_definition_type':
+		_sys_call 	'sys_call'
+		_func_call 	'func_call'
+		_no_call 	'no_call'
+		_has_call	'has_call'
+
+	
 cdef extern from "graph.h" namespace "graph":
 	cdef cppclass Graph:
 		Graph() except +
@@ -57,10 +76,6 @@ cdef extern from "graph.h" namespace "OS":
 
 		string get_name()
 
-	cdef cppclass Function:
-		Function(Graph* graph, string name) except +
-
-		string get_name()
 
 	cdef cppclass ISR:
 		ISR(Graph* graph, string name) except +
@@ -97,12 +112,17 @@ cdef extern from "graph.h" namespace "OS":
 	cdef cppclass Function:
 		Function(Graph* graph, string name) except +
 		
-		#clist[shared_ptr[Vertex]] get_atomic_basic_blocks()
 		clist[shared_ptr[ABB]] get_atomic_basic_blocks()
 		string get_name()
+		
+	
 
 
 	cdef cppclass ABB:
-		#ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
+		ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
+		
+		call_definition_type get_call_type()
 		
 		string get_name()
+		
+

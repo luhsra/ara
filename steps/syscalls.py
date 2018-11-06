@@ -1,11 +1,10 @@
 import graph
 import os
-from enum import Enum
-from .enumerations import Syscall_Type
+
+
 #import syscalls_references
 
 from native_step import Step
-
 
 
 
@@ -21,6 +20,9 @@ class SyscallStep(Step):
 		syscall_dict = {}
 		flag  = 1
 		
+		for element in graph.syscall_definition_type:
+			print(element.name)
+		
 		if flag == 0:
 			
 			syscall_dict = { 	
@@ -29,16 +31,16 @@ class SyscallStep(Step):
 					"Computation": 		[1,None,None],
 					
 
-					"ActivateTask": 	[2,Syscall_Type.create,type(graph.Task)],
-					"StartOS": 			[3,Syscall_Type.activate,type(graph.Task)],
-					#"Idle": 			[4,Syscall_Type.schedule,type(graph.OS)],
-					#"iret": 			[5,Syscall_Type.schedule,type(graph.OS)],
+					"ActivateTask": 	[2,graph.syscall_definition_type.create,type(graph.Task)],
+					"StartOS": 			[3,graph.syscall_definition_type.activate,type(graph.Task)],
+					#"Idle": 			[4,graph.syscall_definition_type.schedule,type(graph.OS)],
+					#"iret": 			[5,graph.syscall_definition_type.schedule,type(graph.OS)],
 					"kickoff": 			[6,None,None],
-					"TerminateTask": 	[7,Syscall_Type.delete,type(graph.Task)],
-					"ChainTask": 		[8,Syscall_Type.schedule,type(graph.Task)],
-					"CancelAlarm":		[9,Syscall_Type.delete,type(graph.Alarm)],
-					"GetResource":		[10,Syscall_Type.access,type(graph.Resource)],
-					"ReleaseResource":	[11,Syscall_Type.release,type(graph.Resource)],
+					"TerminateTask": 	[7,graph.syscall_definition_type.delete,type(graph.Task)],
+					"ChainTask": 		[8,graph.syscall_definition_type.schedule,type(graph.Task)],
+					"CancelAlarm":		[9,graph.syscall_definition_type.delete,type(graph.Alarm)],
+					"GetResource":		[10,graph.syscall_definition_type.access,type(graph.Resource)],
+					"ReleaseResource":	[11,graph.syscall_definition_type.release,type(graph.Resource)],
 					
 					
 					#"DisableAllInterrupts":[1,None,None],
@@ -69,29 +71,29 @@ class SyscallStep(Step):
 					"Computation": [1,None,None] ,
 				
 					# all syscall which creates abstaction instances
-					"xTaskCreate": 							[2,Syscall_Type.create,type(graph.Task)],
-					"xTaskCreateStatic": 					[3,Syscall_Type.create,type(graph.Task)],
-					"xTaskCreateRestricted":		 		[4,Syscall_Type.create,type(graph.Task)],
-					#"xQueueCreate": 						[5,Syscall_Type.create,type(graph.Queue)],
-					#"xQueueCreateSet": 						[6,Syscall_Type.create,type(graph.Queue)],
-					#"xQueueCreateStatic": 					[7,Syscall_Type.create,type(graph.Queue)],
-					#"vSemaphoreCreateBinary": 				[8,Syscall_Type.create,type(graph.Semaphore)],
-					#"xSemaphoreCreateBinary": 				[9,Syscall_Type.create,type(graph.Semaphore)],
-					#"xSemaphoreCreateBinaryStatic": 		[10,Syscall_Type.create,type(graph.Semaphore)],
-					#"xSemaphoreCreateCounting": 			[11,Syscall_Type.create,type(graph.Counter)],
-					#"xSemaphoreCreateCountingStatic": 		[12,Syscall_Type.create,type(graph.Counter)],
-					#"xSemaphoreCreateMutex": 				[13,Syscall_Type.create,type(graph.Semaphore)],
-					#"xSemaphoreCreateMutexStatic": 		[14,Syscall_Type.create,type(graph.Semaphore)],
-					#"xSemaphoreCreateRecursiveMutex": 		[15,Syscall_Type.create,type(graph.Semaphore)],
-					#"xSemaphoreCreateRecursiveMutexStatic": [16,Syscall_Type.create,type(graph.Semaphore)],
-					#"xTimerCreate": 						[17,Syscall_Type.create,type(graph.Timer)],
-					#"xTimerCreateStatic": 					[18,Syscall_Type.create,type(graph.Timer)],
-					#"xEventGroupCreate": 					[19,Syscall_Type.create,type(graph.Event)],
-					#"xEventGroupCreateStatic": 			[20,Syscall_Type.create,type(graph.Event)],
-					#"xStreamBufferCreate": 				[21,Syscall_Type.create,type(graph.Buffer)],
-					#"xStreamBufferCreateStatic": 			[22,Syscall_Type.create,type(graph.Buffer)],
-					#"xMessageBufferCreate": 				[23,Syscall_Type.create,type(graph.Buffer)],
-					#"xMessageBufferCreateStatic": 			[24,Syscall_Type.create,type(graph.Buffer)],
+					"xTaskCreate": 							[2,graph.syscall_definition_type.create,type(graph.Task)],
+					"xTaskCreateStatic": 					[3,graph.syscall_definition_type.create,type(graph.Task)],
+					"xTaskCreateRestricted":		 		[4,graph.syscall_definition_type.create,type(graph.Task)],
+					#"xQueueCreate": 						[5,graph.syscall_definition_type.create,type(graph.Queue)],
+					#"xQueueCreateSet": 						[6,graph.syscall_definition_type.create,type(graph.Queue)],
+					#"xQueueCreateStatic": 					[7,graph.syscall_definition_type.create,type(graph.Queue)],
+					#"vSemaphoreCreateBinary": 				[8,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xSemaphoreCreateBinary": 				[9,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xSemaphoreCreateBinaryStatic": 		[10,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xSemaphoreCreateCounting": 			[11,graph.syscall_definition_type.create,type(graph.Counter)],
+					#"xSemaphoreCreateCountingStatic": 		[12,graph.syscall_definition_type.create,type(graph.Counter)],
+					#"xSemaphoreCreateMutex": 				[13,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xSemaphoreCreateMutexStatic": 		[14,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xSemaphoreCreateRecursiveMutex": 		[15,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xSemaphoreCreateRecursiveMutexStatic": [16,graph.syscall_definition_type.create,type(graph.Semaphore)],
+					#"xTimerCreate": 						[17,graph.syscall_definition_type.create,type(graph.Timer)],
+					#"xTimerCreateStatic": 					[18,graph.syscall_definition_type.create,type(graph.Timer)],
+					#"xEventGroupCreate": 					[19,graph.syscall_definition_type.create,type(graph.Event)],
+					#"xEventGroupCreateStatic": 			[20,graph.syscall_definition_type.create,type(graph.Event)],
+					#"xStreamBufferCreate": 				[21,graph.syscall_definition_type.create,type(graph.Buffer)],
+					#"xStreamBufferCreateStatic": 			[22,graph.syscall_definition_type.create,type(graph.Buffer)],
+					#"xMessageBufferCreate": 				[23,graph.syscall_definition_type.create,type(graph.Buffer)],
+					#"xMessageBufferCreateStatic": 			[24,graph.syscall_definition_type.create,type(graph.Buffer)],
 					
 					
 					
@@ -247,13 +249,16 @@ class SyscallStep(Step):
 		
 		for function in function_list:
 			
-			
 			#iterate about the abbs of the functions
 			abb_list = function.get_atomic_basic_blocks()
 			
 			#for abb in abb_list:
-				
-				#check if abb contains call
+					
+					#if abb.get_call_type() == graph.call_definition_type.has_call:
+						
+						#print("TEST")
+						
+					#check if abb contains call
 					# TODO check if call is listed in the syscall_dictionary
 					# TODO set the corresponding flag 
 				

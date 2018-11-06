@@ -23,19 +23,19 @@
 #include <queue>
 
 
-typedef enum  { Task, ISR, Timer, normal }function_definition_type;
+typedef enum { Task, ISR, Timer, normal }function_definition_type;
 
-typedef enum  { sys_call, func_call, no_call , has_call }call_definition_type;
+typedef enum { sys_call, func_call, no_call , has_call }call_definition_type;
 
-typedef enum  {	computate ,create, destroy ,receive, approach ,release ,schedule} syscall_definition_type;
+typedef enum {	computate ,create, destroy ,receive, approach ,release ,schedule} syscall_definition_type;
 
-typedef enum  { ISR1, ISR2, basic }ISR_type;
+typedef enum { ISR1, ISR2, basic }ISR_type;
 
-typedef enum  { oneshot, autoreload }timer_type;
+typedef enum { oneshot, autoreload }timer_type;
 
-typedef enum  { binary, counting, mutex, recursive_mutex }semaphore_type;
+typedef enum { binary = 3, counting = 2, mutex = 1 , recursive_mutex = 4 }semaphore_type;
 
-typedef enum  { stream, message }buffer_type;
+typedef enum { stream, message }buffer_type;
 
 typedef enum {activate_task, set_event, alarm_callback} alarm_action_type;
 
@@ -229,7 +229,7 @@ namespace graph {
 		void set_syscall(bool syscall);
 		bool is_sycall();
 
-		std::list<std::tuple<std::any,llvm::Type*>> get_arguments();
+		std::list<std::tuple<std::any,llvm::Type*>>* get_arguments();
 		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> arguments);
 		void set_argument(std::tuple<std::any,llvm::Type*> argument);
 	};
@@ -375,8 +375,7 @@ namespace OS {
 		
 		std::size_t call_target_instance;
 		
-		
-
+		llvm::Instruction* call_instruction_reference;
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 
 	  public:
@@ -394,14 +393,17 @@ namespace OS {
 			this->abb_type = no_call;
 			this->vertex_type = typeid(ABB).hash_code();
 		}
-              
+		
+		void set_call_instruction_reference(llvm::Instruction * call_instruction);
+		llvm::Instruction* get_call_instruction_reference();
+		
 		syscall_definition_type get_syscall_type();
 		void set_syscall_type(syscall_definition_type type);
 		
 		call_definition_type get_call_type();
 		void set_call_type(call_definition_type type);
 
-		std::size_t get_call_target_instance();
+		size_t get_call_target_instance();
 		void set_call_target_instance(size_t target_instance);
 		
 		void set_call_name(std::string call_name);
@@ -416,7 +418,8 @@ namespace OS {
 		bool is_critical();
 		void set_critical(bool critical);
 
-		std::list<std::tuple<std::any,llvm::Type*>> get_arguments();
+		std::list<std::tuple<std::any,llvm::Type*>> get_arguments_tmp();
+		std::list<std::tuple<std::any,llvm::Type*>>* get_arguments();
 		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
 
 		void set_argument(std::any,llvm::Type* type);
@@ -501,8 +504,9 @@ namespace OS {
 		
 		bool set_task_group(std::string taskgroup); //name of TaskGroup
 		bool set_definition_function(std::string function_name);
-		
+		bool set_handler_name(std::string handler_name);
 		void set_priority(unsigned long priority);
+		void set_stacksize(unsigned long priority);
 		bool set_scheduler(std::string scheduler);
 		void set_activation(unsigned long activation);
 		void set_autostart(bool autostart);
@@ -519,6 +523,13 @@ namespace OS {
 
 		OS::shared_function definition_function;
 		
+		
+		int periode;     // Periode in Ticks
+		timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
+		int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
+		              // same callback function is used by more software timers because it can be used to provide
+		              // timer-specific storage.
+		
 	  public:
 
 		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -531,13 +542,16 @@ namespace OS {
 			return "";	
 		};
 		
-		bool set_definition_function(OS::shared_function function);
+		void set_timer_type(timer_type type);
+		timer_type get_timer_type();
+		void set_timer_id(unsigned long timer_id);
+		void set_periode(unsigned long period);
+		
+		unsigned long get_timer_id();
+		unsigned long get_periode();
+		
+		bool set_definition_function(std::string definition_function_name);
 
-		int periode;     // Periode in Ticks
-		timer_type type_timer; // enum timer_type {One_shot_timer, Auto_reload_timer}
-		int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
-		              // same callback function is used by more software timers because it can be used to provide
-		              // timer-specific storage.
 
 		static bool classof(const Vertex *S);
 	};
@@ -580,24 +594,31 @@ namespace OS {
 	class QueueSet : public graph::Vertex {
 
 	  private:
+		  
+			std::string handler_name;
+
+			unsigned long length;
 		
 			std::list<graph::shared_vertex> queueset_elements; //  Queues, Semaphores
 
 	  public:
+	  
+			QueueSet(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(QueueSet).hash_code();
+			}
 
 			virtual QueueSet *clone() const{return new QueueSet(*this);};
 
-			std::string queueset_handle_name;
-
-			int length_queueset;
-			bool set_queue(graph::shared_vertex element);
+			
+			bool set_queue_element(graph::shared_vertex element);
 			bool member_of_queueset(graph::shared_vertex element);
 			bool remove_from_queueset(graph::shared_vertex element);
 
 			std::list<graph::shared_vertex> get_queueset_elements(); // gebe alle Elemente der Queueset zurück
-			std::string get_queueset_handle_name();
+			std::string get_queueset_handler_name();
 
-			void set_queueset_handle_name(std::string name);
+			void set_handler_name(std::string name);
+			void set_length (unsigned long length);
 
 			static bool classof(const Vertex *S);
 	};
@@ -608,16 +629,27 @@ namespace OS {
 			
 			OS::shared_queueset queueset_reference; // Referenz zur Queueset
 
-			std::string handle_name; // Namen des Queue handle
+			std::string handler_name; // Namen des Queue handle
 			int length;              // Länger der Queue
 			int item_size;
 				
 		public:
 			
-			
+			Queue(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(Queue).hash_code();
+			}
 			std::string print_information(){
 				return "";	
 			};
+			
+			void set_handler_name(std::string handler_name);
+			
+			unsigned long get_item_size();
+			void set_item_size(unsigned long size);
+			
+			unsigned long get_length();
+			void set_length(unsigned long size);
+			
 			bool set_queueset_reference(shared_queueset);
 			shared_queueset get_queueset_reference();
 			std::list<graph::shared_vertex> get_accessed_elements(); // gebe ISR/Task zurück, die mit der Queue interagieren
@@ -627,7 +659,32 @@ namespace OS {
 
 	class Semaphore : public graph::Vertex {
 
+		private:
+		
+			semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
+			std::string handler_name;
+			unsigned long max_count;
+			unsigned long initial_count;
+
+			std::list<graph::shared_vertex> get_accessed_elements(); 
+			
 		public:
+		
+			Semaphore(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(Semaphore).hash_code();
+			}
+		
+			void set_semaphore_type(semaphore_type type);
+			semaphore_type get_semaphore_type();
+			
+			void set_max_count(unsigned long count);
+			unsigned long get_max_count();
+			
+			void set_initial_count(unsigned long count);
+			unsigned long get_initial_count();
+			
+			void set_handler_name(std::string name);
+			std::string get_handler_name();
 			
 			
 			std::string print_information(){
@@ -635,17 +692,12 @@ namespace OS {
 			};
 
 			virtual Semaphore *clone() const{return new Semaphore(*this);};
-			semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
-			std::string handle_name;
-			int max_count;
-			int initial_count;
-
-			std::list<graph::shared_vertex> get_accessed_elements(); // gebe alle Elemente zurück, die auf die Sempahore zugreifen
+			// gebe alle Elemente zurück, die auf die Sempahore zugreifen
 
 			static bool classof(const Vertex *S);
 	};
 
-	class EventGroups : public graph::Vertex {
+	class EventGroup : public graph::Vertex {
 
 	  private:
 		std::list<graph::shared_vertex> writing_vertices;
@@ -656,17 +708,20 @@ namespace OS {
 		                             // müssen auch wieder gesetzt werden
 		std::list<graph::shared_vertex >
 		    synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
-
+		std::string handler_name;
 	  public:
 		
+		EventGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(EventGroup).hash_code();
+		}
 		
 		std::string print_information(){
 			return "";	
 		};
 			
-		virtual EventGroups *clone() const{return new EventGroups(*this);};
+		virtual EventGroup *clone() const{return new EventGroup(*this);};
 		
-		std::string event_group_handle_name;
+		void set_handler_name(std::string handler_name);
 		bool wait_for_all_bits;
 		bool wait_for_any_bit;
 

@@ -19,7 +19,6 @@ using namespace llvm;
 #define PRINT_NAME(x) std::cout << #x << " - " << typeid(x).name() << '\n'
 
 
-
 static llvm::LLVMContext context;
 
 
@@ -236,6 +235,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
                         if (constant_array->isCString()){
 							out = constant_array->getAsCString().str();
                             load_success = true;
+							type = constant_array->getType();
                         } else debug_out << "Keine konstante sequentielle Date geladen" << "\n";
                     }
                 }//check if global variable is contant integer
@@ -532,10 +532,25 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 		Value *arg = instruction->getArgOperand(i);
 		
 		//dump argument
+		//TODO 
 		if(dump_argument(debug_out,value_argument,type_argument, arg,instruction)){
 			//store the dumped argument in the abb with corresponding llvm type
+			
 			abb->set_argument(value_argument, type_argument);
-			//debug_argument(value_argument ,type_argument);
+			/*if(type_argument != nullptr){
+				abb->set_argument(value_argument, type_argument);
+				//std::cout << type_argument->getTypeID();
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				type_argument->print(rso);
+				std::cout<< rso.str() ;
+				//debug_argument(value_argument ,type_argument);
+				
+			}
+			else{
+				debug_argument(value_argument,type_argument);
+			}*/
+		
 			
 		}else{
 			//std::cerr << "\n";
@@ -570,12 +585,14 @@ void set_arguments(OS::shared_abb abb){
 				if (func && !isCallToLLVMIntrinsic(call)) {
 					call_found = true;
 					dump_instruction(abb,func , call);
+					abb->set_call_instruction_reference(&inst);
 				}
 			} else if (InvokeInst *invoke = dyn_cast<InvokeInst>(&inst)) {
 				Function * func = invoke->getCalledFunction();
 				if (func) {
 					call_found = true;
 					dump_instruction(abb,func , invoke);
+					abb->set_call_instruction_reference(&inst);
  				}
 			}
 		}
@@ -601,7 +618,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 	
     //store coresponding basic block in ABB
     abb->set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
-
+	function->set_atomic_basic_block(abb);
     //queue for new created ABBs
     std::deque<OS::shared_abb> queue; 
 
@@ -649,10 +666,12 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
                         std::string type_str;
                         llvm::raw_string_ostream rso(type_str);
                         succ->print(rso);
-                        ////std::cerrr  << rso.str() << std::endl;
+                        std::cerr  << rso.str() << std::endl;
                     }
                     //store new abb in graph
                     graph->set_vertex(new_abb);
+					
+					function->set_atomic_basic_block(new_abb);
 					
                     //set abb predecessor reference and bb reference 
                     new_abb->set_BasicBlock(succ);
@@ -841,8 +860,34 @@ namespace step {
 				//generate and store the abbs of the function in the graph datatstructure
 				abb_generation(&graph, graph_function );
 			}
-		}		
-
+		}
+		/*
+		//iterate about the ABBS
+		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
+		
+		
+		for (auto &vertex : vertex_list) {
+			
+			vertex->print_information();
+			//cast vertex to abb 
+			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+			
+			if(abb) // always test  
+			{
+				
+				//check if abb has a syscall instruction
+				if( abb->get_call_type()!= no_call)	{
+					
+					std::list<std::tuple<std::any,llvm::Type*>> arguments = abb->get_arguments_tmp();
+					for (auto & tuple: arguments){
+	
+						auto test = std::get<llvm::Type*>(tuple);
+						std::cout << test->getTypeID();
+					}
+					
+				}
+			}
+		}*/
 
 	}
 	std::vector<std::string> LLVMStep::get_dependencies() {

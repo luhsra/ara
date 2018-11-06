@@ -453,15 +453,6 @@ std::size_t graph::Vertex::get_type(){
 
 
 
-                
-                
-
-
-
-
-
-
-
 graph::Edge::Edge(){
     this->name = "";
     this->graph = nullptr;
@@ -516,7 +507,12 @@ bool graph::Edge::is_sycall(){return this->is_syscall;}
 
 
 
-std::list<std::tuple< std::any,llvm::Type*>> graph::Edge::get_arguments(){return this->arguments;}
+std::list<std::tuple< std::any,llvm::Type*>>* graph::Edge::get_arguments(){
+	std::cout << "TEST";
+	return &this->arguments;
+	
+}
+
 
 
 void graph::Edge::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> arguments){
@@ -624,7 +620,9 @@ std::list<graph::shared_vertex> OS::Function::get_atomic_basic_blocks(){
 
 
 std::list<OS::shared_abb> OS::Function::get_atomic_basic_blocks(){
+	//std::cerr << this->atomic_basic_blocks.size() << std::endl;
 	return this->atomic_basic_blocks;
+	
 }
 
 
@@ -676,6 +674,10 @@ OS::shared_abb OS::Function::get_front_abb(){
 
 
 
+void OS::ABB::set_call_target_instance(size_t target_instance){
+	this->call_target_instance = target_instance;
+}
+
 
 syscall_definition_type OS::ABB::get_syscall_type(){
     return this->abb_syscall_type;
@@ -687,8 +689,7 @@ void OS::ABB::set_syscall_type(syscall_definition_type type){
 
 
 std::size_t OS::ABB::get_call_target_instance(){
-	// TODO dummy
-	return 0;
+	return  this->call_target_instance;;
 }
 
 
@@ -706,9 +707,17 @@ bool OS::ABB::is_critical(){return this->critical_section;}
 void OS::ABB::set_critical(bool critical){this->critical_section = critical;}
 
 
-std::list<std::tuple<std::any,llvm::Type*>> OS::ABB::get_arguments(){
-    return this->arguments;
+std::list<std::tuple<std::any,llvm::Type*>>* OS::ABB::get_arguments(){
+	//std::cerr << "length: " << this->arguments.size() << std::endl;
+	return &this->arguments;
 }
+
+/*
+std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
+	return this->arguments;
+}*/
+
+
 
 void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments){
     this->arguments = new_arguments;
@@ -785,6 +794,22 @@ std::string OS::ABB::get_call_name(){
 
 
 
+void OS::ABB::set_call_instruction_reference(llvm::Instruction * call_instruction){
+	this->call_instruction_reference = call_instruction;
+}
+
+llvm::Instruction* OS::ABB::get_call_instruction_reference(){
+	return this->call_instruction_reference;
+}
+
+ 
+
+
+
+
+
+
+
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 
 	this->max_allowed_value = max_allowed_value;
 }
@@ -850,6 +875,15 @@ bool OS::Resource::set_resource_property(std::string type, std::string linked_re
 void OS::Task::set_priority(unsigned long priority) {
 	this->priority = priority;
 }
+
+void OS::Task::set_stacksize(unsigned long stacksize) {
+	this->stacksize = stacksize;
+}
+
+bool OS::Task::set_handler_name(std::string handler_name) { 
+	this->handler_name = handler_name;
+}
+
 
 bool OS::Task::set_message_reference(std::string message) { 
 	return false; 
@@ -949,6 +983,12 @@ bool OS::ISR::set_category(int category){
 	return result;
 }
 
+
+
+void OS::EventGroup::set_handler_name(std::string handler_name) { 
+	this->handler_name = handler_name;
+}
+
 bool OS::ISR::set_resource_reference(std::string resource_name){
 	bool result = false;
 	auto resource = this->graph->get_vertex(resource_name);
@@ -1022,10 +1062,89 @@ void OS::Alarm::set_appmode(std::string appmode){
 	this->appmodes.emplace_back(appmode);
 }
 
+void OS::Queue::set_item_size(unsigned long item_size){
+	this->item_size;
+}
+
+unsigned long OS::Queue::get_item_size(){
+	return this->item_size = item_size;
+}
+
+unsigned long OS::Queue::get_length(){
+	return this->length;
+}
+
+void OS::Queue::set_length(unsigned long length){
+	this->length = length;
+}
+
+void OS::Queue::set_handler_name(std::string name){
+	this->handler_name = name;
+}
 
 
 
 
+void OS::Timer::set_timer_id(unsigned long timer_id){
+	this->timer_id = timer_id;
+}
+
+void OS::Timer::set_periode(unsigned long periode){
+	this->periode = periode;
+}
+
+
+
+void OS::Timer::set_timer_type( timer_type type){
+	this->type = type;
+}
+
+
+
+
+bool OS::Timer::set_definition_function(std::string function_name){
+	bool result = false;
+	auto function = this->graph->get_vertex(function_name);
+	if(function != nullptr){
+		auto function_cast = std::dynamic_pointer_cast<OS::Function> (function);
+		if(function_cast){
+			this->definition_function = function_cast;
+			result = true;
+		}
+	}
+	return result;
+	
+}
+
+
+
+void OS::Semaphore::set_handler_name(std::string handler_name){
+	this->handler_name = handler_name;
+}
+
+
+void OS::Semaphore::set_max_count(unsigned long max_count){
+	this->max_count = max_count;
+}
+
+void OS::Semaphore::set_initial_count(unsigned long initial_count){
+	this->initial_count = initial_count;
+}
+
+
+void OS::Semaphore::set_semaphore_type( semaphore_type type){
+	this->type = type;
+}
+
+
+void OS::QueueSet::set_handler_name(std::string name){
+	this->handler_name = name;
+}
+
+void OS::QueueSet::set_length(unsigned long length){
+	this->length = length;
+}
+	
 
 
 //print methods -------------------------------------------------------------------------------

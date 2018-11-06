@@ -16,35 +16,27 @@ from backported_memory cimport dynamic_pointer_cast as dpc
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 
+
+
 from libcpp.typeinfo cimport type_info
-#def get_vertex_object(shared_ptr[cgraph.Vertex] vertex):
-	#py_obj = Vertex.create_from_pointer(vertex)
-	#if type(py_obj) == Alarm:
-		#return 
-	#return Alarm
-	#return ISR
-
-
-#cdef extern from './graph.h':
-	#ctypedef enum _syscall_definition_type 'syscall_definition_type':
-		#_computate 	'computate'
-		#_create 	'create'
-		#_destroy 	'destroy'
-		#_receive 	'receive'
-		#_approach 	'approach'
-		#_release 	'release'
-		#_schedule 	'schedule'
 
 
 
-#cpdef enum syscall_definition_type:
-	#computate 	=	_computate 	
-	#create 		= 	_create	
-	#destroy		=	_destroy	
-	#receive 	= 	_receive	
-	#approach	=	_approach	
-	#release		= 	_release	
-	#schedule	= 	_schedule
+
+cpdef enum syscall_definition_type:
+	computate 	=	cgraph._syscall_definition_type._computate 	
+	create 		= 	cgraph._syscall_definition_type._create	
+	destroy		=	cgraph._syscall_definition_type._destroy	
+	receive 	= 	cgraph._syscall_definition_type._receive	
+	approach	=	cgraph._syscall_definition_type._approach	
+	release		= 	cgraph._syscall_definition_type._release	
+	schedule	= 	cgraph._syscall_definition_type._schedule
+
+#cpdef enum call_definition_type:
+	#sys_call 	=	cgraph_sys_call 	
+	#func_call 	= 	cgraph_func_call	
+	#no_call		=	cgraph_no_call	
+	#has_call 	= 	cgraph_has_call	
 
 	
 cdef extern from "<typeinfo>" namespace "std" nogil:
@@ -352,12 +344,11 @@ cdef class Function(Vertex):
 		
 		pylist = []
 		
-		
+
 		for abb in abbs:
+		
 			#shared_ptr[cgraph.ABB] = abb
 			pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
-			
-		print(pylist)
 		
 		return pylist
 
@@ -367,6 +358,10 @@ cdef class Function(Vertex):
 		cdef bytes py_string = c_string
 		return py_string
 
+	#def get_call_target_instance(self):
+		#return deref(self._c()).get_call_target_instance()
+
+		
 	#cdef get_function(self):
 	#	return deref(self._c())
 		
@@ -396,4 +391,7 @@ cdef class ABB(Vertex):
 		cdef string c_string = deref(self._c()).get_name()
 		cdef bytes py_string = c_string
 		return py_string
+	
+	#def get_call_type(self):
+	#	cdef definition_type = deref(self._c()).get_call_type() 
 
