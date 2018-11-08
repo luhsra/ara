@@ -4,6 +4,16 @@ from libcpp.list cimport list as clist
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
+cdef extern from "graph.h":
+	cdef cppclass call_definition_type:
+		pass
+
+cdef extern from "graph.h" namespace "call_definition_type":
+	cdef call_definition_type sys_call
+	cdef call_definition_type func_call
+	cdef call_definition_type no_call
+	cdef call_definition_type has_call
+
 cdef extern from './graph.h':
 	ctypedef enum _syscall_definition_type 'syscall_definition_type':
 		_computate 	'computate'
@@ -15,15 +25,6 @@ cdef extern from './graph.h':
 		_schedule 	'schedule'
 
 
-	
-cdef extern from './graph.h':
-	ctypedef enum _call_definition_type 'call_definition_type':
-		_sys_call 	'sys_call'
-		_func_call 	'func_call'
-		_no_call 	'no_call'
-		_has_call	'has_call'
-
-	
 cdef extern from "graph.h" namespace "graph":
 	cdef cppclass Graph:
 		Graph() except +
@@ -33,7 +34,7 @@ cdef extern from "graph.h" namespace "graph":
 
 	cdef cppclass Vertex:
 		Vertex(Graph* graph, string name) except +
-		
+
 		size_t get_type()
 		string get_name()
 
@@ -95,7 +96,7 @@ cdef extern from "graph.h" namespace "OS":
 	cdef cppclass Task:
 		Task(Graph* graph, string name) except +
 
-		
+
 		void set_priority(unsigned long priority)
 		void set_activation(unsigned long activation)
 		void set_autostart(bool autostart)
@@ -111,18 +112,19 @@ cdef extern from "graph.h" namespace "OS":
 
 	cdef cppclass Function:
 		Function(Graph* graph, string name) except +
-		
+
 		clist[shared_ptr[ABB]] get_atomic_basic_blocks()
 		string get_name()
-		
-	
+
+
 
 
 	cdef cppclass ABB:
 		ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
-		
-		#call_definition_type get_call_type()
-		
+
+
+		call_definition_type get_call_type()
+
 		string get_name()
-		
+
 
