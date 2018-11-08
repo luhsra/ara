@@ -8,6 +8,9 @@ from native_step import Step
 class OilStep(Step):
 	"""Reads an oil file and writes all information to the graph."""
 	
+	def get_dependencies(self):
+		
+		return ["LLVMStep"]
 	
 	def validate_linked_resource(self, element):
 	
@@ -259,6 +262,11 @@ class OilStep(Step):
 				
 				task = task_list[name]
 				#print (name, 'corresponds to', tasks[name])
+				function_list = g.get_type_vertices(type(graph.Function))
+				
+				#set and check function reference of task
+				if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
+					print("Task ", name, " has no reference in data")
 				
 				#iterate about the attributes of the task
 				oil_task = tasks[name]
@@ -340,6 +348,9 @@ class OilStep(Step):
 										print("message was not defined in OIL:", message)
 								else:
 									print("message is no string")
+									
+									
+			
 		
 		#get the isrs
 		isrs = dictionary.get("ISR", "error")
@@ -353,6 +364,14 @@ class OilStep(Step):
 				
 				#print (name, 'corresponds to', isrs[name])
 				oil_isr = isrs[name]
+				
+				function_list = g.get_type_vertices(type(graph.Function))
+				
+				name
+				
+				if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
+					print("ISR ", name, " has no reference in data")
+				
 				
 				#iterate about the attributes of the isr
 				for attribute in oil_isr:

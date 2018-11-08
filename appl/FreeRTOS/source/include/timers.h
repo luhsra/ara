@@ -196,15 +196,15 @@ typedef void (*PendedFunction_t)( void *, uint32_t );
  *                                     );
  *
  *         if( xTimers[ x ] == NULL )
- *         {
- *             // The timer was not created.
- *         }
- *         else
- *         {
- *             // Start the timer.  No block time is specified, and even if one was
- *             // it would be ignored because the scheduler has not yet been
- *             // started.
- *             if( xTimerStart( xTimers[ x ], 0 ) != pdPASS )
+ *         {erenced.std::string
+ * Internally, within the FreeRTOS implementation, software timers use a block
+ * of memory, in which the timer data structure is stored.  If a software timer
+ * is created using xTimerCreate() then the required memory is automatically
+ * dynamically allocated inside the xTimerCreate() function.  (see
+ * http://www.freertos.org/a00111.html).  If a software timer is created using
+ * xTimerCreateStatic() then the application writer must provide the memory that
+ * will get used by the software timer.  xTimerCreateStatic() therefore allows a
+ * software timer to be created wS )
  *             {
  *                 // The timer could not be set into the Active state.
  *             }
@@ -215,7 +215,15 @@ typedef void (*PendedFunction_t)( void *, uint32_t );
  *     // Create tasks here.
  *     // ...
  *
- *     // Starting the scheduler will start the timers running as they have already
+ *     // Starting the scheduler will start the timers run
+ *             // The timer was not created.
+ *         }
+ *         else
+ *         {
+ *             // Start the timer.  No block time is specified, and even if one was
+ *             // it would be ignored because the scheduler has not yet been
+ *             // started.
+ *             if( xTimerStart( xTimers[ x ], 0 ) != pdPASning as they have already
  *     // been set into the active state.
  *     vTaskStartScheduler();
  *

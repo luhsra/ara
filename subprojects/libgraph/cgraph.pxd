@@ -121,7 +121,7 @@ cdef extern from "graph.h" namespace "OS":
 	cdef cppclass ABB:
 		ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
 		
-		call_definition_type get_call_type()
+		#call_definition_type get_call_type()
 		
 		string get_name()
 		

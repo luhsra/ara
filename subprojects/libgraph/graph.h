@@ -35,7 +35,7 @@ typedef enum { oneshot, autoreload }timer_type;
 
 typedef enum { binary = 3, counting = 2, mutex = 1 , recursive_mutex = 4 }semaphore_type;
 
-typedef enum { stream, message }buffer_type;
+typedef enum { stream = 0, message = 1 }buffer_type;
 
 typedef enum {activate_task, set_event, alarm_callback} alarm_action_type;
 
@@ -753,13 +753,23 @@ namespace OS {
 			buffer_type type; // enum buffer_type {stream, message}
 			graph::shared_vertex reader;   // Buffer sind als single reader und single writer objekte gedacht
 			graph::shared_vertex writer;
-			int buffer_size;
-			int trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
+			unsigned long buffer_size;
+			unsigned long trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
 							// kann
 			bool static_buffer;
-	
+			std::string handler_name;
 		public:
 			
+			Buffer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(Buffer).hash_code();
+		
+			};
+			
+			void set_trigger_level(unsigned long level);
+			void set_buffer_size(unsigned long size);
+			void set_buffer_type(buffer_type type);
+		
+			void set_handler_name(std::string name);
 			
 			std::string print_information(){
 				return "";	

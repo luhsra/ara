@@ -23,7 +23,7 @@ static llvm::LLVMContext context;
 
 
 
-bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type * type, Value *arg,llvm::Instruction* call_reference);
+bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *& type, Value *arg,llvm::Instruction* call_reference);
 
 
  //check if instruction a is before instruction b 
@@ -197,7 +197,7 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 
 
 //function to get the global information of variable
-bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Value *arg,Value *prior_arg,llvm::Instruction *call_reference) {
+bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type*& type,Value *arg,Value *prior_arg,llvm::Instruction *call_reference) {
 	
     //debug data
     debug_out << "ENTRYLOAD" << "\n";    
@@ -373,7 +373,7 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type *type,Val
 
 //st = myString.substr(0, myString.size()-1);
 //function to get the dump information of the argument
-inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *type, Value *arg, Instruction * call_reference) {
+bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type, Value *arg, Instruction * call_reference) {
     debug_out << "ENTRYDUMP" << "\n"; 
     bool dump_success = false;
 	
@@ -403,7 +403,7 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
                 dump_success = true;
             }
             else{
-                //return type of allocated space
+                //return type of allocated space/*
                 std::string type_str;
                 llvm::raw_string_ostream rso(type_str);
                 alloca->getType()->print(rso);
@@ -427,6 +427,10 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
         debug_out << "CONSTANT INT" << "\n";
         out = CI->getSExtValue();
 		type = CI->getType();
+
+		
+		
+		
         dump_success = true;
     }//check if argument is a constant floating point
     else if(ConstantFP  * constant_fp = dyn_cast<ConstantFP>(arg)){
@@ -502,9 +506,7 @@ inline bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type 
         dump_success = load_value(debug_out,out, type,arg,arg,call_reference);
         if(!dump_success)debug_out << "Kein Load/Instruction/Pointer" << "\n";
     }
-
-
-
+	
     debug_out  << "EXITDUMP: " << dump_success << "\n"; 
     return dump_success;
 }
@@ -515,50 +517,23 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 	//store the name of the called function
 	abb->set_call_name(func->getName().str());
 	
-	
-
-	
 	//iterate about the arguments of the call
 	for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
-		
-		
+	
 		std::stringstream debug_out;
 		debug_out <<  func->getName().str() << "\n";
 	
 		std::any value_argument; 
-		llvm::Type* type_argument = nullptr;
+		llvm::Type* type_argument;
 		
 		//get argument
 		Value *arg = instruction->getArgOperand(i);
 		
 		//dump argument
-		//TODO 
 		if(dump_argument(debug_out,value_argument,type_argument, arg,instruction)){
 			//store the dumped argument in the abb with corresponding llvm type
-			
 			abb->set_argument(value_argument, type_argument);
-			/*if(type_argument != nullptr){
-				abb->set_argument(value_argument, type_argument);
-				//std::cout << type_argument->getTypeID();
-				std::string type_str;
-				llvm::raw_string_ostream rso(type_str);
-				type_argument->print(rso);
-				std::cout<< rso.str() ;
-				//debug_argument(value_argument ,type_argument);
-				
-			}
-			else{
-				debug_argument(value_argument,type_argument);
-			}*/
-		
-			
-		}else{
-			//std::cerr << "\n";
-			//std::cerr << "\n------------------------------------------------- \n";
-			//std::cerr  << "!! Could not load argument in Function: "<< abb->get_parent_function()->get_function_name()  << " !!" << "\n\n";
- 			//std::cerr << debug_out.str() << "------------------------------------------------- \n";
 		}
-		
 	}
 }
 
@@ -714,33 +689,41 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
 	
     }
     for (llvm::BasicBlock *bb : bbs) {
+		int counter =  0;
         llvm::BasicBlock::iterator it = bb->begin();
         while (it != bb->end()) {
-
-            while (llvm::isa<llvm::InvokeInst>(*it) || llvm::isa<llvm::CallInst>(*it)) {
+			
+			counter++;
+            if(llvm::isa<llvm::InvokeInst>(*it) || llvm::isa<llvm::CallInst>(*it)) {
                 // If the call is an artifical function (e.g. @llvm.dbg.metadata)
                 if (isCallToLLVMIntrinsic(&*it)) {
                     ++it;
                     continue;
                 }
-
+                /*
+				{
+				std::cout << std::endl << "BB natural" << std::endl;
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				bb->print(rso);
+				std::cout<< rso.str();
+				}
+				*/
                 std::stringstream ss;
 			
                 ss << "BB" << (*split_counter)++;
                 //////std::cerrr << "split_counter = " << *split_counter << std::endl;
                 bb = bb->splitBasicBlock(it, ss.str());
                 it = bb->begin();
-                ++it;
-			
-                if (llvm::isa<llvm::InvokeInst>(*it) || llvm::isa<llvm::CallInst>(*it))
-                    continue;
-
-                //TODO dead code?
-                ss.str("");
-                ss << "BB" << (*split_counter)++;
-                //////std::cerrr << "split_counter = " << *split_counter << std::endl;
-                bb = bb->splitBasicBlock(it, ss.str());
-                it = bb->begin();
+				
+				/*
+				{
+				std::cout << std::endl << "BB splitted" << std::endl;
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				bb->print(rso);
+				std::cout<< rso.str();
+				}*/
             }
 		
             ++it;
@@ -891,6 +874,6 @@ namespace step {
 
 	}
 	std::vector<std::string> LLVMStep::get_dependencies() {
-		return {"OilStep"};
+		return {};
 	}
 }

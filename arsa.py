@@ -68,7 +68,7 @@ def main():
 
     print(args.application_file)
 
-    commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/g.cc",
+    commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/a.cc",
                 "--std=c++11", "-o", "../test/data/appl.ll",
                 "-target", "i386-pc-linux-gnu"]
 
@@ -78,7 +78,7 @@ def main():
 
     p_manager = stepmanager.StepManager(g, vars(args))
 
-    p_manager.execute(['LLVMStep','SyscallStep' ,'FreeRTOSInstancesStep'])
+    p_manager.execute(['LLVMStep','OilStep','SyscallStep' ,'FreeRTOSInstancesStep'])
 
 
 if __name__ == '__main__':

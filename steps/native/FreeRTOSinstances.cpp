@@ -5,12 +5,17 @@
 
 #include "FreeRTOSinstances.h"
 #include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Pass.h"
 #include <string>
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include <cassert>
 #include <stdexcept>
+#include <functional>
 
 using namespace llvm;
 
@@ -59,6 +64,55 @@ bool verify_arguments(std::vector<size_t> &forced_arguments_types ,std::vector<s
 	return success;
 }
 
+
+bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::size_t>* already_visited){
+	//generate hash code of basic block name
+	std::hash<std::string> hash_fn;
+	size_t hash_value = hash_fn(bb->getName().str());
+	
+	//search hash value in list of already visited basic blocks
+	for(auto hash : *already_visited){
+		
+		if(hash_value == hash){
+			//basic block already visited
+			return true;
+			break;
+		}
+	}
+	//set basic block hash value in already visited list
+	already_visited->push_back(hash_value);
+	
+	bool success = true;
+	//search loop of function
+	llvm::DominatorTree DT = llvm::DominatorTree();
+	DT.recalculate(*bb->getParent());
+	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* LoopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
+	LoopInfo->releaseMemory();
+	LoopInfo->analyze(DT);
+	llvm::Loop * tmp_loop = LoopInfo->getLoopFor(bb);
+	
+	//ScalarEvolution &SE = getpass<ScalarEvolution>();
+	
+	//check if basic block is in loop
+	if(tmp_loop != nullptr){
+		success = false;
+		std::cout << "warning" << std::endl;
+		std::cout << "loop depth: " << LoopInfo->getLoopDepth(bb) << std::endl;
+		std::cout << "call name: " << call_name << std::endl;
+	}else{
+		//check if function of basic block is called in a loop of other function
+		for(auto user : bb->getParent()->users()){  // U is of type User*
+			
+			if(CallInst* instruction = dyn_cast<CallInst>(user)){
+				//analyse basic block of call instruction 
+				success = validate_loop(instruction->getParent(), "recursive step" ,already_visited);
+				if(success == false)break;
+			}
+		}
+
+	}
+	return success;
+}
 
 //xTaskCreate
 bool create_task(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments){
@@ -459,24 +513,78 @@ bool create_timer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>
 }
 
 
-
-bool validate_loop(llvm::BasicBlock *bb){
+//xTimerCreate
+bool create_buffer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction){
 	
 	bool success = true;
-	//std::cerr << "TEST" << std::endl;
-	llvm::DominatorTree DT = llvm::DominatorTree();
-	DT.recalculate(*bb->getParent());
-	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* LoopInfo = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
-	LoopInfo->releaseMemory();
-	LoopInfo->analyze(DT);
 	
-	if(LoopInfo->getLoopFor(bb)!= nullptr){
-		success = false;
-		std::cout << "loop depth: " << LoopInfo->getLoopDepth(bb) << std::endl;
+	
+	
+	//create reference list for all arguments types of the task creation syscall
+	std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(arguments->size());
+	
+	int counter = 0;
+	for(auto & tuple : *arguments){
 		
+		tmp_arguments.at(counter) = tuple;
+		counter++;
+	}
+	std::vector<size_t> forced_arguments_types(3);
+	forced_arguments_types.at(0) = (typeid(long).hash_code());
+	forced_arguments_types.at(1) = (typeid(long).hash_code());
+	forced_arguments_types.at(2) = (typeid(long).hash_code());
+	
+			
+	//verify the arguments
+	if(!verify_arguments(forced_arguments_types,tmp_arguments)){
+		success = false;
+	}else{
+		
+		//load the arguments
+		std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(2);
+		auto argument = std::get<std::any>(tuple);
+		buffer_type type = (buffer_type) std::any_cast<long>(argument);
+		
+		std::cout << "buffer type: "<< std::any_cast<long>(argument)<< std::endl;
+		
+		tuple  = tmp_arguments.at(1);
+		argument = std::get<std::any>(tuple);
+		long trigger_level =  std::any_cast<long>(argument);
+	
+		tuple  = tmp_arguments.at(0);
+		argument = std::get<std::any>(tuple);
+		long buffer_size =  std::any_cast<long>(argument);
+		
+		//create timer and set properties 
+		//create queue set and set properties 
+		std::string handler_name = get_handler_name(instruction, 1);
+		auto buffer = std::make_shared<OS::Buffer>(&graph,handler_name);
+		
+		
+		buffer->set_buffer_size(buffer_size);
+		buffer->set_trigger_level(trigger_level);
+		buffer->set_handler_name(handler_name);
+		
+		buffer->set_buffer_type(type);
+		
+		std::cout << "buffer successfully created"<< std::endl;
+		//set timer to graph
+		graph.set_vertex(buffer);
+	
 	}
 	return success;
 }
+
+/*shared_abb get_scheduler_abb(graph::Graph& graph){
+	
+	
+	
+	
+};
+bool validate_start_scheduler
+*/
+
+
 
 namespace step {
 
@@ -514,14 +622,15 @@ namespace step {
 				
 				//check if abb has a syscall instruction
 				if( abb->get_call_type()!= no_call){
-					//TODO validate the loopinformation
-					//if(true||validate_loop(llvm_abbs.front()))
-					{
+					//TODO validate the loopinformation -> counter size
+					std::string callname = abb->get_call_name();
+					std::vector<std::size_t> already_visited;
+					if(validate_loop(llvm_abbs.front(),callname,&already_visited)){
 
 					//std::cout << vertex->get_type() << "\n";
 					//check if abb syscall is creation syscall
 					//if(abb->get_syscall_type() == create)
-						std::string callname = abb->get_call_name();
+						
 						//if(target_instance == typeid(OS::Task).hash_code())
 					
 						//std::cout << callname << std::endl;
@@ -551,8 +660,9 @@ namespace step {
 							if(!create_event_group(graph, abb->get_arguments(),abb->get_call_instruction_reference()))std::cout << "Event Group could not created" << std::endl;
 						}
 						
-						if(callname  == "xStreamBufferCreate"){
+						if(callname  == "xStreamBufferGenericCreate" ){
 							//std::cout << callname << std::endl;
+							if(!create_buffer(graph, abb->get_arguments(),abb->get_call_instruction_reference()))std::cout << "Buffer could not created" << std::endl;
 						}
 						if(callname  == "xQueueCreateSet"){
 							//std::cout << callname << std::endl;

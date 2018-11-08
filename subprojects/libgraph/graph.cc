@@ -1144,7 +1144,24 @@ void OS::QueueSet::set_handler_name(std::string name){
 void OS::QueueSet::set_length(unsigned long length){
 	this->length = length;
 }
-	
+
+
+void OS::Buffer::set_buffer_type(buffer_type type){
+	this->type = type;
+}
+
+
+void OS::Buffer::set_buffer_size(unsigned long size){
+	this->buffer_size = size;
+}
+
+void OS::Buffer::set_trigger_level(unsigned long level){
+	this->trigger_level = level;
+}
+
+void OS::Buffer::set_handler_name(std::string name){
+	this->handler_name = name;
+}
 
 
 //print methods -------------------------------------------------------------------------------

@@ -13,7 +13,7 @@ class SyscallStep(Step):
 	
 	def get_dependencies(self):
 		
-		return ["LLVMStep"]
+		return ["LLVMStep", 'OilStep']
 
 	def run(self, g: graph.PyGraph):
 		

@@ -6,20 +6,20 @@
 // Test memory protection (spanning over more than one 4k page in x86)
 //volatile int testme[1024*4*10] __attribute__ ((section (".data.Handler12")));
 
-DeclareTask(Handler11);
-DeclareTask(Handler12);
+DeclareTask(taskContact);
+DeclareTask(taskSend);
 DeclareTask(Handler13);
 
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
-TASK(Handler11) {
+TASK(taskContact) {
 #if !defined(CONFIG_ARCH_PATMOS)
     volatile int i = 1;
     while (i <  200000) i++;
 #endif
 
     test_trace('a');
-    ActivateTask(Handler12);
+    ActivateTask(taskSend);
 
 
 #if !defined(CONFIG_ARCH_PATMOS)
@@ -27,12 +27,12 @@ TASK(Handler11) {
     while (i <  200000) i++;
 #endif
     test_trace('b');
-    ActivateTask(Handler13);
+    ActivateTask(taskContact);
     test_trace('c');
     TerminateTask();
 }
 
-TASK(Handler12) {
+TASK(taskSend) {
     test_trace('2');
     TerminateTask();
 }
@@ -42,6 +42,11 @@ TASK(Handler13) {
 	TerminateTask();
 }
 
+ISR2(isr_button_start){
+	
+	for(int i = 0;i< 100 ; ++i)int a =+ 20;
+	
+}
 /*	
     extern const uint32_t OSEKOS_TASK_Handler11;		
     static __attribute__((unused)) const uint32_t &Handler11 = OSEKOS_TASK_Handler11;	

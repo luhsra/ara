@@ -202,6 +202,7 @@ void vAMoreRealisticReceiverTask( void *pvParameters )
         }
 
     }
+   
 
 }
 
@@ -212,12 +213,17 @@ int main( void )
     /* Create the two queues, both of which send character pointers. The priority of the receiving task is above the priority of the sending tasks, so the queues will never have more than one item in them at any one time*/
 
     xQueue1 = xQueueCreate( 1, sizeof( char * ) );
-
-    xQueue2 = xQueueCreate( 1, sizeof( char * ) );
-
+	
+	
     /* Create the queue set. Two queues will be added to the set, each of which can contain 1 item, so the maximum number of queue handles the queue set will ever have to hold at one time is 2 (2 queues multiplied by 1 item per queue). */
 
     xQueueSet = xQueueCreateSet( 1 * 2 );
+	
+	for(int i = 0; i< 10;i++){
+		for(int j = 0; j < 10 ; j++){
+			xQueue2 = xQueueCreate( 1, sizeof( char * ) );
+		}
+	}
 
     /* Add the two queues to the set. */
 
