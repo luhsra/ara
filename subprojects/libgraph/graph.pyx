@@ -15,30 +15,29 @@ from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
+from enum import IntEnum
 
 
 
 from libcpp.typeinfo cimport type_info
 
 
+# cpdef enum syscall_definition_type:
+# 	computate 	=	cgraph._syscall_definition_type._computate
+# 	create 		= 	cgraph._syscall_definition_type._create
+# 	destroy		=	cgraph._syscall_definition_type._destroy
+# 	receive 	= 	cgraph._syscall_definition_type._receive
+# 	approach	=	cgraph._syscall_definition_type._approach
+# 	release		= 	cgraph._syscall_definition_type._release
+# 	schedule	= 	cgraph._syscall_definition_type._schedule
+
+class call_definition_type(IntEnum):
+	sys_call  = <int> cgraph.sys_call
+	func_call = <int> cgraph.func_call
+	no_call   = <int> cgraph.no_call
+	has_call  = <int> cgraph.has_call
 
 
-cpdef enum syscall_definition_type:
-	computate 	=	cgraph._syscall_definition_type._computate 	
-	create 		= 	cgraph._syscall_definition_type._create	
-	destroy		=	cgraph._syscall_definition_type._destroy	
-	receive 	= 	cgraph._syscall_definition_type._receive	
-	approach	=	cgraph._syscall_definition_type._approach	
-	release		= 	cgraph._syscall_definition_type._release	
-	schedule	= 	cgraph._syscall_definition_type._schedule
-
-#cpdef enum call_definition_type:
-	#sys_call 	=	cgraph_sys_call 	
-	#func_call 	= 	cgraph_func_call	
-	#no_call		=	cgraph_no_call	
-	#has_call 	= 	cgraph_has_call	
-
-	
 cdef extern from "<typeinfo>" namespace "std" nogil:
 	cdef cppclass type_info:
 		const char* name()
@@ -50,7 +49,7 @@ cdef extern from "<typeinfo>" namespace "std" nogil:
 
 
 cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
-	
+
 	#cdef const type_info* info = &typeid(cgraph.Vertex())
 	a = {typeid(cgraph.Vertex).hash_code(): Vertex,
 	     typeid(cgraph.Function).hash_code(): Function,
@@ -59,12 +58,12 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
 	     typeid(cgraph.ISR).hash_code(): ISR,
 	     typeid(cgraph.ABB).hash_code(): ABB
 	}
-	
-	
+
+
 	cdef size_t type_id = deref(vertex).get_type()
 
 	cdef Vertex py_obj = a[type_id](None, None,None,_raw=True)
-	
+
 	py_obj._c_vertex = vertex
 	return py_obj
 
@@ -81,25 +80,25 @@ cdef class PyGraph:
 		self._c_graph.set_vertex(vertex._c_vertex)
 
 	def get_type_vertices(self, ptype):
-		
-		cdef size_t hash_type = 0 
-		
+
+		cdef size_t hash_type = 0
+
 		if ptype == type(Function):
 			hash_type = typeid(cgraph.Function).hash_code()
-			
-			
+
+
 		cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(hash_type)
-		
+
 		pylist = []
-		
+
 		#print("-------------------Size of Vertices:", vertices.size())
-		
+
 		for vertex in vertices:
 			pylist.append(create_from_pointer(vertex))
-			
-		
+
+
 		#print(pylist)
-		
+
 		return pylist
 
 
@@ -111,7 +110,7 @@ cdef class PyGraph:
 
 
 cdef class Vertex:
-	
+
 	cdef shared_ptr[cgraph.Vertex] _c_vertex
 
 	def __cinit__(self, PyGraph graph, name, *args, _raw=False, **kwargs):
@@ -189,7 +188,7 @@ cdef class Counter(Vertex):
 		return spc[cgraph.Counter, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Counter](make_shared[cgraph.Counter](&graph._c_graph, bname))
@@ -214,7 +213,7 @@ cdef class Event(Vertex):
 		return spc[cgraph.Event, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
@@ -238,7 +237,7 @@ cdef class ISR(Vertex):
 		return spc[cgraph.ISR, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.ISR](make_shared[cgraph.ISR](&graph._c_graph, bname))
@@ -262,7 +261,7 @@ cdef class Resource(Vertex):
 		return spc[cgraph.Resource, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Resource](make_shared[cgraph.Resource](&graph._c_graph, bname))
@@ -284,7 +283,7 @@ cdef class Task(Vertex):
 		return spc[cgraph.Task, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Task](make_shared[cgraph.Task](&graph._c_graph, bname))
@@ -297,7 +296,7 @@ cdef class Task(Vertex):
 
 	def set_autostart(self, bool autostart):
 		return deref(self._c()).set_autostart(autostart)
-	
+
 	def set_definition_function(self, str function_name):
 		cdef string c_function_name = function_name.encode('UTF-8')
 		return deref(self._c()).set_definition_function(c_function_name)
@@ -326,30 +325,30 @@ cdef class Task(Vertex):
 
 
 cdef class Function(Vertex):
-	
-	
+
+
 
 	cdef inline shared_ptr[cgraph.Function] _c(self):
 		return spc[cgraph.Function, cgraph.Vertex](self._c_vertex)
 
 	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Function](make_shared[cgraph.Function](&graph._c_graph, bname))
-			
+
 	def get_atomic_basic_blocks(self):
-			
+
 		cdef clist[shared_ptr[cgraph.ABB]] abbs = deref(self._c()).get_atomic_basic_blocks()
-		
+
 		pylist = []
-		
+
 
 		for abb in abbs:
-		
+
 			#shared_ptr[cgraph.ABB] = abb
 			pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
-		
+
 		return pylist
 
 
@@ -361,19 +360,19 @@ cdef class Function(Vertex):
 	#def get_call_target_instance(self):
 		#return deref(self._c()).get_call_target_instance()
 
-		
+
 	#cdef get_function(self):
 	#	return deref(self._c())
-		
-		
+
+
 	#@staticmethod
 	#cdef create_from_pointer(shared_ptr[cgraph.Function] function):
 	#	# we have to create an empty dummy graph to fulfil the constructor
 	#	py_obj = Function(PyGraph(), "empty", _raw=True)
 	#	py_obj._c = function
 	#	return py_obj
-	
-	
+
+
 cdef class ABB(Vertex):
 
 	cdef inline shared_ptr[cgraph.ABB] _c(self):
@@ -381,17 +380,18 @@ cdef class ABB(Vertex):
 
 	def __cinit__(self, PyGraph graph,  str name ,Function function_reference, *args, _raw=False, **kwargs):
 	#def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-		cdef string bname 
+		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
-	
+
 			self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](&graph._c_graph,spc[cgraph.Function, cgraph.Vertex](function_reference._c_vertex) , bname))
 
 	def get_name(self):
 		cdef string c_string = deref(self._c()).get_name()
 		cdef bytes py_string = c_string
 		return py_string
-	
-	#def get_call_type(self):
-	#	cdef definition_type = deref(self._c()).get_call_type() 
+
+	def get_call_type(self):
+		cdef cgraph.call_definition_type t = deref(self._c()).get_call_type()
+		return call_definition_type(<int> t)
 

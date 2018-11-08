@@ -23,27 +23,27 @@
 #include <queue>
 
 
-typedef enum { Task, ISR, Timer, normal }function_definition_type;
+enum function_definition_type { Task, ISR, Timer, normal };
 
-typedef enum { sys_call, func_call, no_call , has_call }call_definition_type;
+enum call_definition_type { sys_call, func_call, no_call , has_call };
 
-typedef enum {	computate ,create, destroy ,receive, approach ,release ,schedule} syscall_definition_type;
+enum syscall_definition_type { computate ,create, destroy ,receive, approach ,release ,schedule};
 
-typedef enum { ISR1, ISR2, basic }ISR_type;
+enum ISR_type { ISR1, ISR2, basic };
 
-typedef enum { oneshot, autoreload }timer_type;
+enum timer_type { oneshot, autoreload };
 
-typedef enum { binary = 3, counting = 2, mutex = 1 , recursive_mutex = 4 }semaphore_type;
+enum semaphore_type { binary = 3, counting = 2, mutex = 1 , recursive_mutex = 4 };
 
-typedef enum { stream, message }buffer_type;
+enum buffer_type { stream, message };
 
-typedef enum {activate_task, set_event, alarm_callback} alarm_action_type;
+enum alarm_action_type {activate_task, set_event, alarm_callback};
 
-typedef enum {standard, linked, internal} resource_type;
+enum resource_type {standard, linked, internal};
 
-typedef enum {full, none} schedule_type;
+enum schedule_type {full, none};
 
-typedef enum {automatic, mask} event_type;
+enum event_type {automatic, mask};
 
 
 namespace graph {
