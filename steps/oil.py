@@ -5,6 +5,21 @@ import os
 
 from native_step import Step
 
+def get_category_ISR(attributes):
+	
+	attribute = attributes.get("CATEGORY", "error")
+	
+	if attribute != "error":
+		if isinstance(attribute, int):
+			if not (attribute == 1 or attribute == 2):
+				print("category is not 1 or 2")
+		else:
+			print("category is no int")
+	else:
+		print("ISR has no category attribute")
+		
+	return attribute
+
 class OilStep(Step):
 	"""Reads an oil file and writes all information to the graph."""
 	
@@ -367,9 +382,11 @@ class OilStep(Step):
 				
 				function_list = g.get_type_vertices(type(graph.Function))
 				
-				name
+				reference_function = name
+				if get_category_ISR(oil_isr) == 2:
+					reference_function = "OSEKOS_ISR_" + name
 				
-				if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
+				if not task.set_definition_function(reference_function):
 					print("ISR ", name, " has no reference in data")
 				
 				

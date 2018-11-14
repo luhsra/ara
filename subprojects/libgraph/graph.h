@@ -27,7 +27,7 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, no_call , has_call };
 
-enum syscall_definition_type { computate ,create, destroy ,receive, approach ,release ,schedule};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule};
 
 enum ISR_type { ISR1, ISR2, basic };
 
@@ -193,8 +193,7 @@ namespace graph {
 		//virtual  ~Vertex();
 	};
 
-	class ABB;
-
+	
 	// Klasse Edge verbindet zwei Betriebssystemabstraktionen über einen Syscall/Call mit entsprechenden Argumenten
 	// Da jeder Edge der Start und Ziel Vertex zugeordnet ist, kann der Graph durchlaufen werden
 	class Edge {
@@ -208,7 +207,8 @@ namespace graph {
 		bool is_syscall;       // Flag, ob Edge ein Syscall ist
 		std::string call;      // Entsprechende Set- und Get-Methoden
 		std::list<std::tuple<std::any,llvm::Type*>> arguments;
-		ABB *atomic_basic_block_reference;
+		shared_vertex atomic_basic_block_reference;
+		
 
 	  public:
 		
@@ -216,7 +216,7 @@ namespace graph {
 		
 		
 		Edge();
-		Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target);
+		Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_vertex atomic_basic_block_reference);
 
 		std::string get_name(); // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
@@ -264,6 +264,9 @@ namespace OS {
 	class Function : public graph::Vertex {
 
 	  private:
+		  
+		graph::shared_vertex definition_element;
+		
 		std::string function_name;       // name der Funktion
 		std::list<llvm::Type*> argument_types; // Argumente des Functionsaufrufes
 		llvm::Type* return_type;
@@ -311,8 +314,10 @@ namespace OS {
 
 		void set_definition(function_definition_type type);
 		function_definition_type get_definition();
-                
-                
+		
+		
+		bool set_definition_vertex(graph::shared_vertex vertex);
+		graph::shared_vertex get_definition_vertex();
 		//Funktionen zurück, die diese Funktion benutzen
 		bool set_used_function(OS::Function *function); // Setze Funktion in std::liste aller Funktionen, die diese Funktion benutzen
 
@@ -373,7 +378,9 @@ namespace OS {
 		
 		std::list<std::tuple<std::any,llvm::Type*>> arguments;
 		
-		std::size_t call_target_instance;
+		std::list<std::size_t>  call_target_instance;
+		
+		std::list<std::size_t>  expected_argument_types;
 		
 		llvm::Instruction* call_instruction_reference;
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
@@ -394,6 +401,8 @@ namespace OS {
 			this->vertex_type = typeid(ABB).hash_code();
 		}
 		
+		void set_expected_syscall_argument_type(size_t argument_type);
+		std::list<size_t> get_expected_syscall_argument_type();
 		void set_call_instruction_reference(llvm::Instruction * call_instruction);
 		llvm::Instruction* get_call_instruction_reference();
 		
@@ -403,7 +412,7 @@ namespace OS {
 		call_definition_type get_call_type();
 		void set_call_type(call_definition_type type);
 
-		size_t get_call_target_instance();
+		std::list<std::size_t>*  get_call_target_instance();
 		void set_call_target_instance(size_t target_instance);
 		
 		void set_call_name(std::string call_name);
@@ -447,6 +456,8 @@ namespace OS {
 		
 		TaskGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(TaskGroup).hash_code();
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(TaskGroup).name());
 		} 
 		
 		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
@@ -491,7 +502,9 @@ namespace OS {
 		
 		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(Task).hash_code();
-			//std::cerr << "name subclass: " << name << std::endl;
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(Task).name());
+			//std::cout << "type: " << this->vertex_type  << std::endl;
 		}
 		
 		
@@ -534,6 +547,8 @@ namespace OS {
 
 		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(Timer).hash_code();
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(Timer).name());
 		}
 
 		virtual Timer *clone() const{return new Timer(*this);};
@@ -577,7 +592,8 @@ namespace OS {
 
 		ISR(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 			this->vertex_type = typeid(ISR).hash_code();
-			//std::cerr  << "name: " << name << "\n";
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(ISR).name());
 		}
 		
 		std::string print_information(){
@@ -605,6 +621,8 @@ namespace OS {
 	  
 			QueueSet(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(QueueSet).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(QueueSet).name());
 			}
 
 			virtual QueueSet *clone() const{return new QueueSet(*this);};
@@ -637,12 +655,15 @@ namespace OS {
 			
 			Queue(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Queue).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Queue).name());
 			}
 			std::string print_information(){
 				return "";	
 			};
 			
 			void set_handler_name(std::string handler_name);
+			std::string get_handler_name();
 			
 			unsigned long get_item_size();
 			void set_item_size(unsigned long size);
@@ -672,6 +693,8 @@ namespace OS {
 		
 			Semaphore(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Semaphore).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Semaphore).name());
 			}
 		
 			void set_semaphore_type(semaphore_type type);
@@ -713,6 +736,8 @@ namespace OS {
 		
 		EventGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(EventGroup).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(EventGroup).name());
 		}
 		
 		std::string print_information(){
@@ -762,6 +787,8 @@ namespace OS {
 			
 			Buffer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Buffer).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Buffer).name());
 		
 			};
 			
@@ -792,6 +819,8 @@ namespace OS {
 			
 			Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Event).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Event).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
@@ -820,6 +849,8 @@ namespace OS {
 		public:
 			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Resource).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Resource).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			bool set_task_reference(OS::shared_task task);
@@ -847,6 +878,8 @@ namespace OS {
 			
 			Counter(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Counter).hash_code();
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Counter).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
@@ -884,7 +917,8 @@ namespace OS {
 			
 			Alarm(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
 				this->vertex_type = typeid(Alarm).hash_code();
-				//std::cerr << "name subclass: " << name << std::endl;
+				std::hash<std::string> hash_fn;
+				this->seed = hash_fn(name +  typeid(Alarm).name());				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
 			std::string print_information(){

@@ -7,6 +7,10 @@ from libcpp.memory cimport shared_ptr
 cdef extern from "graph.h":
 	cdef cppclass call_definition_type:
 		pass
+		
+cdef extern from "graph.h":
+	cdef cppclass syscall_definition_type:
+		pass
 
 cdef extern from "graph.h" namespace "call_definition_type":
 	cdef call_definition_type sys_call
@@ -14,16 +18,16 @@ cdef extern from "graph.h" namespace "call_definition_type":
 	cdef call_definition_type no_call
 	cdef call_definition_type has_call
 
-cdef extern from './graph.h':
-	ctypedef enum _syscall_definition_type 'syscall_definition_type':
-		_computate 	'computate'
-		_create 	'create'
-		_destroy 	'destroy'
-		_receive 	'receive'
-		_approach 	'approach'
-		_release 	'release'
-		_schedule 	'schedule'
-
+	
+cdef extern from "graph.h" namespace "syscall_definition_type":
+	cdef syscall_definition_type computate
+	cdef syscall_definition_type create
+	cdef syscall_definition_type destroy
+	cdef syscall_definition_type receive
+	cdef syscall_definition_type commit
+	cdef syscall_definition_type release
+	cdef syscall_definition_type schedule
+	cdef syscall_definition_type reset
 
 cdef extern from "graph.h" namespace "graph":
 	cdef cppclass Graph:
@@ -108,6 +112,32 @@ cdef extern from "graph.h" namespace "OS":
 		bool set_event_reference(string event)
 
 		string get_name()
+		
+		
+	cdef cppclass Queue:
+		Queue(Graph* graph, string name) except +
+
+	cdef cppclass QueueSet:
+		QueueSet(Graph* graph, string name) except +
+		
+	cdef cppclass Semaphore:
+		Semaphore(Graph* graph, string name) except +
+
+	
+	cdef cppclass Timer:
+		Timer(Graph* graph, string name) except +
+
+
+	cdef cppclass Event:
+		Event(Graph* graph, string name) except +
+		
+		
+		
+	cdef cppclass Buffer:
+		Buffer(Graph* graph, string name) except +
+
+
+
 
 
 	cdef cppclass Function:
@@ -122,9 +152,17 @@ cdef extern from "graph.h" namespace "OS":
 	cdef cppclass ABB:
 		ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
 
-
+		
 		call_definition_type get_call_type()
-
+		
+		void set_call_type(call_definition_type type)
+		void set_syscall_type(syscall_definition_type type)
+		void set_call_target_instance(size_t target_instance)
+		void set_expected_syscall_argument_type(size_t data_type_hash)
+		
+		clist[size_t] get_expected_syscall_argument_type()
+			
+		string get_call_name()
 		string get_name()
 
 

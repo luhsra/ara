@@ -68,7 +68,7 @@ def main():
 
     print(args.application_file)
 
-    commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/a.cc",
+    commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/"+ args.application_file[0],
                 "--std=c++11", "-o", "../test/data/appl.ll",
                 "-target", "i386-pc-linux-gnu"]
 

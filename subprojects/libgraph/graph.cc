@@ -87,7 +87,9 @@ std::list<shared_vertex> graph::Graph::get_type_vertices(size_t type_info){
 shared_vertex graph::Graph::get_vertex(size_t seed){   
     //gebe Vertex mit dem entsprechenden hashValue zurück
     std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
+	
     for(; it != this->vertices.end(); ++it){
+		
         //gesuchter vertex gefunden
         if(seed==(*it)->get_seed()){                                         //check if vertex is from wanted type
            return (*it); 
@@ -464,11 +466,12 @@ graph::Edge::Edge(){
 
 
 
-graph::Edge::Edge(Graph *graph, std::string name, graph::shared_vertex start, graph::shared_vertex target){
+graph::Edge::Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_vertex atomic_basic_block_reference){
     this->name = name;
     this->graph = graph;
     this->start_vertex = start;
     this->target_vertex = target;
+	this->atomic_basic_block_reference = atomic_basic_block_reference;
 }
 
 
@@ -530,6 +533,18 @@ void graph::Edge::set_argument(std::tuple<std::any,llvm::Type*> argument){
 
 
 
+bool OS::Function::set_definition_vertex(graph::shared_vertex vertex){
+	bool success =false;
+	if(this->graph->contain_vertex(vertex)){
+		this->definition_element = vertex;
+		success = true;
+	}
+	return success;
+}
+
+graph::shared_vertex OS::Function::get_definition_vertex(){
+	return this->definition_element;
+}
 
 
 
@@ -632,6 +647,7 @@ std::list<OS::shared_task> OS::Function::get_referenced_tasks(){
 
 bool OS::Function::set_referenced_task(OS::shared_task task){
     bool success = false;
+	
     if(this->graph->contain_vertex(task)){
         this->referenced_tasks.emplace_back(task);
         success = true;
@@ -675,7 +691,7 @@ OS::shared_abb OS::Function::get_front_abb(){
 
 
 void OS::ABB::set_call_target_instance(size_t target_instance){
-	this->call_target_instance = target_instance;
+	this->call_target_instance.emplace_back(target_instance);
 }
 
 
@@ -688,8 +704,8 @@ void OS::ABB::set_syscall_type(syscall_definition_type type){
 }
 
 
-std::size_t OS::ABB::get_call_target_instance(){
-	return  this->call_target_instance;;
+std::list<std::size_t>* OS::ABB::get_call_target_instance(){
+	return  &(this->call_target_instance);
 }
 
 
@@ -700,6 +716,7 @@ call_definition_type OS::ABB::get_call_type(){
 void OS::ABB::set_call_type(call_definition_type type){
     this->abb_type = type;
 }
+
 
 
 
@@ -804,9 +821,14 @@ llvm::Instruction* OS::ABB::get_call_instruction_reference(){
 
  
 
+void OS::ABB::set_expected_syscall_argument_type(size_t argument_type){
+	this->expected_argument_types.emplace_back(argument_type);
+}
 
-
-
+std::list<size_t> OS::ABB::get_expected_syscall_argument_type(){
+	return this->expected_argument_types;
+}
+ 
 
 
 
@@ -884,6 +906,9 @@ bool OS::Task::set_handler_name(std::string handler_name) {
 	this->handler_name = handler_name;
 }
 
+std::string OS::Queue::get_handler_name(){
+	return this->handler_name;	
+}
 
 bool OS::Task::set_message_reference(std::string message) { 
 	return false; 

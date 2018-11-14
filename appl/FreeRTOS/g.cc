@@ -81,7 +81,46 @@ SemaphoreHandle_t xBinarySemaphore;
 
 QueueSetHandle_t xQueueSet;
 
+struct AMessage
+ {
+	char ucMessageID;
+	char ucData[ 20 ];
+ } xMessage;
 
+ unsigned long ulVar = 10UL;
+
+
+ void xqueueTask( void *pvParameters ){
+ 	QueueHandle_t xQueue1, xQueue2;
+ 	struct AMessage *pxMessage;
+
+        // Create a queue capable of containing 10 uint32_t values.
+        xQueue1 = xQueueCreate( 10, sizeof( uint32_t ) );
+
+        // Create a queue capable of containing 10 pointers to AMessage structures.
+        // These should be passed by pointer as they contain a lot of data.
+        xQueue2 = xQueueCreate( 10, sizeof( struct AMessage * ) );
+
+        // ...
+
+        if( xQueue1 != 0 )
+        {
+                // Send an uint32_t.  Wait for 10 ticks for space to become
+                // available if necessary.
+                if( xQueueSendToFront( xQueue1, ( void * ) &ulVar, ( TickType_t ) 10 ) != pdPASS )
+                {
+                        // Failed to post the message, even after 10 ticks.
+                }
+        }
+
+        if( xQueue2 != 0 )
+        {
+                // Send a pointer to a struct AMessage object.  Dont block if the
+                // queue is already full.
+                pxMessage = & xMessage;
+                xQueueSendToFront( xQueue2, ( void * ) &pxMessage, ( TickType_t ) 0 );
+        }
+}
 
 void vSenderTask1( void *pvParameters )
 {
@@ -209,7 +248,10 @@ void vAMoreRealisticReceiverTask( void *pvParameters )
 int main( void )
 
 {
-
+    int b= 0;
+    for (int a = 0;a < 100; ++a){
+	b = b + a;
+    }
     /* Create the two queues, both of which send character pointers. The priority of the receiving task is above the priority of the sending tasks, so the queues will never have more than one item in them at any one time*/
 
     xQueue1 = xQueueCreate( 1, sizeof( char * ) );
@@ -220,8 +262,8 @@ int main( void )
     xQueueSet = xQueueCreateSet( 1 * 2 );
 	
 	for(int i = 0; i< 10;i++){
-		for(int j = 0; j < 10 ; j++){
-			xQueue2 = xQueueCreate( 1, sizeof( char * ) );
+		for(int j = 0; j < 10;j++){
+		xQueue2 = xQueueCreate( 1, sizeof( char * ) );
 		}
 	}
 
@@ -234,6 +276,7 @@ int main( void )
     /* Create the tasks that send to the queues. */
 
     xTaskCreate( vSenderTask1, "Sender1", 1000, NULL, 1, NULL );
+    xTaskCreate( xqueueTask, "QueueTask", 1000, NULL, 1, NULL );
 
     xTaskCreate( vSenderTask2, "Sender2", 1000, NULL, 1, NULL );
 

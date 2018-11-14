@@ -22,14 +22,34 @@ from enum import IntEnum
 from libcpp.typeinfo cimport type_info
 
 
-# cpdef enum syscall_definition_type:
-# 	computate 	=	cgraph._syscall_definition_type._computate
-# 	create 		= 	cgraph._syscall_definition_type._create
-# 	destroy		=	cgraph._syscall_definition_type._destroy
-# 	receive 	= 	cgraph._syscall_definition_type._receive
-# 	approach	=	cgraph._syscall_definition_type._approach
-# 	release		= 	cgraph._syscall_definition_type._release
-# 	schedule	= 	cgraph._syscall_definition_type._schedule
+cpdef get_type_hash(name):
+	hash_type = 0
+	if name== "Function":
+		hash_type = typeid(cgraph.Function).hash_code()
+	elif name== "ABB":
+		hash_type = typeid(cgraph.ABB).hash_code()
+	elif name == "Semaphore":
+		hash_type = typeid(cgraph.Semaphore).hash_code()
+	elif name == "Task":
+		hash_type = typeid(cgraph.Task).hash_code()
+	elif name == "Event":
+		hash_type = typeid(cgraph.Event).hash_code()
+	elif name == "Queue":
+		hash_type = typeid(cgraph.Queue).hash_code()
+	elif name == "Resource":
+		hash_type = typeid(cgraph.Resource).hash_code()
+	elif name == "Timer":
+		hash_type = typeid(cgraph.Timer).hash_code()
+	elif name == "Buffer":
+		hash_type = typeid(cgraph.Buffer).hash_code()
+	elif name == "Alarm":
+		hash_type = typeid(cgraph.Alarm).hash_code()
+	elif name == "QueueSet":
+		hash_type = typeid(cgraph.QueueSet).hash_code()
+	
+	
+	return  hash_type
+
 
 class call_definition_type(IntEnum):
 	sys_call  = <int> cgraph.sys_call
@@ -37,6 +57,26 @@ class call_definition_type(IntEnum):
 	no_call   = <int> cgraph.no_call
 	has_call  = <int> cgraph.has_call
 
+
+
+
+class syscall_definition_type(IntEnum):
+	computate  = <int> cgraph.computate
+	create = <int> cgraph.create
+	destroy   = <int> cgraph.destroy
+	receive  = <int> cgraph.receive
+	commit = <int> cgraph.commit
+	release = <int> cgraph.release
+	schedule = <int> cgraph.schedule
+	reset = <int> cgraph.reset
+	
+class data_type(IntEnum):
+	string = 1
+	integer = 2
+	unsigned_integer = 3
+	long = 4
+	
+	
 
 
 cdef extern from "<typeinfo>" namespace "std" nogil:
@@ -81,12 +121,33 @@ cdef class PyGraph:
 	def set_vertex(self, Vertex vertex):
 		self._c_graph.set_vertex(vertex._c_vertex)
 
-	def get_type_vertices(self, ptype):
+	def get_type_vertices(self, name):
 
 		cdef size_t hash_type = 0
-
-		if ptype == type(Function):
+		
+		
+		if name == "Function":
 			hash_type = typeid(cgraph.Function).hash_code()
+		elif name== "ABB":
+			hash_type = typeid(cgraph.ABB).hash_code()
+		elif name == "Semaphore":
+			hash_type = typeid(cgraph.Semaphore).hash_code()
+		elif name == "Task":
+			hash_type = typeid(cgraph.Task).hash_code()
+		elif name == "Event":
+			hash_type = typeid(cgraph.Event).hash_code()
+		elif name == "Queue":
+			hash_type = typeid(cgraph.Queue).hash_code()
+		elif name == "Resource":
+			hash_type = typeid(cgraph.Resource).hash_code()
+		elif name == "Timer":
+			hash_type = typeid(cgraph.Timer).hash_code()
+		elif name == "Buffer":
+			hash_type = typeid(cgraph.Buffer).hash_code()
+		elif name == "Alarm":
+			hash_type = typeid(cgraph.Alarm).hash_code()
+		elif name == "QueueSet":
+			hash_type = typeid(cgraph.QueueSet).hash_code()
 
 
 		cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(hash_type)
@@ -392,8 +453,113 @@ cdef class ABB(Vertex):
 		cdef string c_string = deref(self._c()).get_name()
 		cdef bytes py_string = c_string
 		return py_string
+	
+	def get_name(self):
+		cdef string c_string = deref(self._c()).get_name()
+		cdef bytes py_string = c_string
+		return py_string
 
+
+	def get_call_name(self):
+		cdef string c_string = deref(self._c()).get_call_name()
+		cdef bytes py_string = c_string
+		return py_string
+	
 	def get_call_type(self):
 		cdef cgraph.call_definition_type t = deref(self._c()).get_call_type()
 		return call_definition_type(<int> t)
+	
+	def set_call_type(self, int syscall_type ):
+		cdef cgraph.call_definition_type t = <cgraph.call_definition_type> syscall_type
+		return deref(self._c()).set_call_type(t)
+	
+	def set_syscall_type(self, int syscall_type ):
+		cdef cgraph.syscall_definition_type t = <cgraph.syscall_definition_type> syscall_type
+		return deref(self._c()).set_syscall_type(t)
+	
+	def set_call_target_instance(self, ptype ):
 
+		for hash_type in ptype:
+			deref(self._c()).set_call_target_instance( <size_t>  hash_type)
+			
+	def set_expected_syscall_argument_types(self, argument_types ):
+		cdef data_type_hash
+		
+
+					
+			
+		for argument_type in argument_types:
+			if argument_type == data_type.integer:
+				data_type_hash = typeid(long).hash_code()
+			elif argument_type == data_type.string:
+				data_type_hash = typeid(string).hash_code()
+			elif argument_type == data_type.long:
+				data_type_hash = typeid(long).hash_code()
+				
+			deref(self._c()).set_expected_syscall_argument_type( data_type_hash)
+	
+	def get_expected_syscall_argument_types(self ):
+		
+
+		cdef clist[size_t] argument_types =  deref(self._c()).get_expected_syscall_argument_type()
+			
+		pylist = []
+		
+		for argument_type in argument_types:
+			pylist.append(argument_type)
+			
+		return pylist
+		 
+cdef class Queue(Vertex):
+
+	cdef inline shared_ptr[cgraph.Queue] _c(self):
+		return spc[cgraph.Queue, cgraph.Vertex](self._c_vertex)
+
+	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+		cdef string bname
+		if not _raw:
+			bname = name.encode('UTF-8')
+			self._c_vertex = spc[cgraph.Vertex, cgraph.Queue](make_shared[cgraph.Queue](&graph._c_graph, bname))
+
+
+cdef class Semaphore(Vertex):
+
+	cdef inline shared_ptr[cgraph.Semaphore] _c(self):
+		return spc[cgraph.Semaphore, cgraph.Vertex](self._c_vertex)
+
+	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+		cdef string bname
+		if not _raw:
+			bname = name.encode('UTF-8')
+			self._c_vertex = spc[cgraph.Vertex, cgraph.Semaphore](make_shared[cgraph.Semaphore](&graph._c_graph, bname))
+			
+		
+		
+		
+cdef class Buffer(Vertex):
+
+	cdef inline shared_ptr[cgraph.Buffer] _c(self):
+		return spc[cgraph.Buffer, cgraph.Vertex](self._c_vertex)
+
+	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+		cdef string bname
+		if not _raw:
+			bname = name.encode('UTF-8')
+			self._c_vertex = spc[cgraph.Vertex, cgraph.Buffer](make_shared[cgraph.Buffer](&graph._c_graph, bname))
+		
+		
+		
+		
+		
+cdef class Timer(Vertex):
+
+	cdef inline shared_ptr[cgraph.Timer] _c(self):
+		return spc[cgraph.Timer, cgraph.Vertex](self._c_vertex)
+
+	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+		cdef string bname
+		if not _raw:
+			bname = name.encode('UTF-8')
+			self._c_vertex = spc[cgraph.Vertex, cgraph.Timer](make_shared[cgraph.Timer](&graph._c_graph, bname))
+			
+			
