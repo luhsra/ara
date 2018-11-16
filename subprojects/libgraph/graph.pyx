@@ -495,7 +495,7 @@ cdef class ABB(Vertex):
 				data_type_hash = typeid(string).hash_code()
 			elif argument_type == data_type.long:
 				data_type_hash = typeid(long).hash_code()
-				
+			print("string id", typeid(string).hash_code())
 			deref(self._c()).set_expected_syscall_argument_type( data_type_hash)
 	
 	def get_expected_syscall_argument_types(self ):

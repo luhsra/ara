@@ -129,6 +129,10 @@ namespace graph {
 		std::list<shared_vertex> outgoing_vertices; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
 		std::list<shared_vertex> ingoing_vertices;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
 
+		std::string handler_name;
+		
+		bool start_scheduler_creation_flag;
+					
 	  public:
               /*
 		// Discriminator for LLVM-style RTTI (dyn_cast<> et al.)
@@ -154,7 +158,10 @@ namespace graph {
                 
 		Vertex(Graph *graph,std::string name); // Constructor
     
-                
+		
+		void set_start_scheduler_creation_flag(bool flag);
+		bool get_start_scheduler_creation_flag();
+		
 		void set_type(std::size_t type);
 		std::size_t get_type();
                 
@@ -163,6 +170,8 @@ namespace graph {
 
 		//VertexKind getKind(); // LLVM-style RTTI const {return Kind}
 
+		void set_handler_name(std::string handler_name);
+		std::string get_handler_name();
 		bool set_outgoing_edge(shared_edge edge);
 		bool set_ingoing_edge(shared_edge edge);
 
@@ -489,7 +498,6 @@ namespace OS {
 		int priority;
 		
 		// FreeRTOS attributes
-		std::string handler_name;
 		llvm::Type* parameter;
 		bool gatekeeper;
 
@@ -517,7 +525,7 @@ namespace OS {
 		
 		bool set_task_group(std::string taskgroup); //name of TaskGroup
 		bool set_definition_function(std::string function_name);
-		bool set_handler_name(std::string handler_name);
+
 		void set_priority(unsigned long priority);
 		void set_stacksize(unsigned long priority);
 		bool set_scheduler(std::string scheduler);
@@ -585,7 +593,6 @@ namespace OS {
 		
 		//FreeRTOS attributes
 		std::string interrupt_source;
-		std::string handler_name;
 		int priority;
 		
 	  public:
@@ -611,7 +618,6 @@ namespace OS {
 
 	  private:
 		  
-			std::string handler_name;
 
 			unsigned long length;
 		
@@ -633,9 +639,9 @@ namespace OS {
 			bool remove_from_queueset(graph::shared_vertex element);
 
 			std::list<graph::shared_vertex> get_queueset_elements(); // gebe alle Elemente der Queueset zurück
-			std::string get_queueset_handler_name();
+		
 
-			void set_handler_name(std::string name);
+		
 			void set_length (unsigned long length);
 
 			static bool classof(const Vertex *S);
@@ -647,7 +653,7 @@ namespace OS {
 			
 			OS::shared_queueset queueset_reference; // Referenz zur Queueset
 
-			std::string handler_name; // Namen des Queue handle
+		
 			int length;              // Länger der Queue
 			int item_size;
 				
@@ -662,8 +668,8 @@ namespace OS {
 				return "";	
 			};
 			
-			void set_handler_name(std::string handler_name);
-			std::string get_handler_name();
+		
+			
 			
 			unsigned long get_item_size();
 			void set_item_size(unsigned long size);
@@ -683,7 +689,7 @@ namespace OS {
 		private:
 		
 			semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
-			std::string handler_name;
+		
 			unsigned long max_count;
 			unsigned long initial_count;
 
@@ -705,9 +711,6 @@ namespace OS {
 			
 			void set_initial_count(unsigned long count);
 			unsigned long get_initial_count();
-			
-			void set_handler_name(std::string name);
-			std::string get_handler_name();
 			
 			
 			std::string print_information(){
@@ -731,7 +734,7 @@ namespace OS {
 		                             // müssen auch wieder gesetzt werden
 		std::list<graph::shared_vertex >
 		    synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
-		std::string handler_name;
+		
 	  public:
 		
 		EventGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -746,7 +749,7 @@ namespace OS {
 			
 		virtual EventGroup *clone() const{return new EventGroup(*this);};
 		
-		void set_handler_name(std::string handler_name);
+		
 		bool wait_for_all_bits;
 		bool wait_for_any_bit;
 
@@ -782,7 +785,7 @@ namespace OS {
 			unsigned long trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
 							// kann
 			bool static_buffer;
-			std::string handler_name;
+
 		public:
 			
 			Buffer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -796,7 +799,7 @@ namespace OS {
 			void set_buffer_size(unsigned long size);
 			void set_buffer_type(buffer_type type);
 		
-			void set_handler_name(std::string name);
+		
 			
 			std::string print_information(){
 				return "";	

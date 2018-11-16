@@ -447,9 +447,23 @@ std::size_t graph::Vertex::get_type(){
     return this->vertex_type;
 }
 
+std::string graph::Vertex::get_handler_name(){
+    return this->handler_name;
+}
 
 
+void graph::Vertex::set_handler_name(std::string handler_name){
+     this->handler_name = handler_name;
+	 std::cout << "real handler name: " <<  handler_name << std::endl;
+}
 
+void graph::Vertex::set_start_scheduler_creation_flag(bool flag){
+     this->start_scheduler_creation_flag = flag;
+}
+
+bool graph::Vertex::get_start_scheduler_creation_flag(){
+	return this->start_scheduler_creation_flag;
+}
 
 
 
@@ -902,13 +916,6 @@ void OS::Task::set_stacksize(unsigned long stacksize) {
 	this->stacksize = stacksize;
 }
 
-bool OS::Task::set_handler_name(std::string handler_name) { 
-	this->handler_name = handler_name;
-}
-
-std::string OS::Queue::get_handler_name(){
-	return this->handler_name;	
-}
 
 bool OS::Task::set_message_reference(std::string message) { 
 	return false; 
@@ -1010,10 +1017,6 @@ bool OS::ISR::set_category(int category){
 
 
 
-void OS::EventGroup::set_handler_name(std::string handler_name) { 
-	this->handler_name = handler_name;
-}
-
 bool OS::ISR::set_resource_reference(std::string resource_name){
 	bool result = false;
 	auto resource = this->graph->get_vertex(resource_name);
@@ -1103,12 +1106,6 @@ void OS::Queue::set_length(unsigned long length){
 	this->length = length;
 }
 
-void OS::Queue::set_handler_name(std::string name){
-	this->handler_name = name;
-}
-
-
-
 
 void OS::Timer::set_timer_id(unsigned long timer_id){
 	this->timer_id = timer_id;
@@ -1143,11 +1140,6 @@ bool OS::Timer::set_definition_function(std::string function_name){
 
 
 
-void OS::Semaphore::set_handler_name(std::string handler_name){
-	this->handler_name = handler_name;
-}
-
-
 void OS::Semaphore::set_max_count(unsigned long max_count){
 	this->max_count = max_count;
 }
@@ -1161,10 +1153,6 @@ void OS::Semaphore::set_semaphore_type( semaphore_type type){
 	this->type = type;
 }
 
-
-void OS::QueueSet::set_handler_name(std::string name){
-	this->handler_name = name;
-}
 
 void OS::QueueSet::set_length(unsigned long length){
 	this->length = length;
@@ -1182,10 +1170,6 @@ void OS::Buffer::set_buffer_size(unsigned long size){
 
 void OS::Buffer::set_trigger_level(unsigned long level){
 	this->trigger_level = level;
-}
-
-void OS::Buffer::set_handler_name(std::string name){
-	this->handler_name = name;
 }
 
 

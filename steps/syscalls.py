@@ -292,7 +292,7 @@ class SyscallStep(Step):
 						abb.set_expected_syscall_argument_types(syscall[0])
 						
 						argument_types = abb.get_expected_syscall_argument_types()
-
+						print(syscall[0])
 					else:
 						abb.set_call_type(graph.call_definition_type.func_call)
 						

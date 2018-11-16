@@ -20,6 +20,8 @@ SemaphoreHandle_t xCountingSemaphore;
 SemaphoreHandle_t xMutex;
 static void prvNewPrintString( const char *pcString )
 {
+	
+	 
 	/* The mutex is created before the scheduler is started, so already exists by the
 	time this task executes.
 	Attempt to take the mutex, blocking indefinitely to wait for the mutex if it is
@@ -37,6 +39,13 @@ static void prvNewPrintString( const char *pcString )
 static void prvPrintTask( void *pvParameters ){
 	char *pcStringToPrint;
 	const TickType_t xMaxBlockTimeTicks = 0x20;
+	
+	
+	 TickType_t xTicksToWait = 120;
+	 
+	 vTaskDelay( ( xTicksToWait ) );
+	 
+	 xTicksToWait = 1230;
 	/* Two instances of this task are created. The string printed by the task is
 	passed into the task using the task’s parameter. The parameter is cast to the
 	required type. */
@@ -95,6 +104,8 @@ void vTaskFunction( void *pvParameters ){
 			/* Now one call to xSemaphoreGiveRecursive() has been executed for every
 			proceeding call to xSemaphoreTakeRecursive(), so the task is no longer the
 			mutex holder.*/
+			
+			
 		}
 	}
 }
@@ -105,7 +116,7 @@ int main( void )
 	/* Before a semaphore is used it must be explicitly created.
 	a binary semaphore is created. */
 	xBinaryḾutex =  xSemaphoreCreateMutex( );
-	
+	xMutex =  xSemaphoreCreateMutex( );
 	xBinarySemaphore = xSemaphoreCreateBinary();
 	
 	prvNewPrintString( "TEST");
@@ -118,11 +129,15 @@ int main( void )
 		the interrupt. The handler task is created with a high priority to ensure
 		it runs immediately after the interrupt exits. In this case a priority of
 		3 is chosen. */
-		xTaskCreate( vTaskFunction, "Handler", 1000, NULL, 3, NULL );
+		const configSTACK_DEPTH_TYPE  test = 100;
+		
+		xTaskCreate( vTaskFunction, "Handler", test, NULL, 3, NULL );
 		/* Create the task that will periodically generate a software interrupt.
 		This is created with a priority below the handler task to ensure it will
 		get preempted each time the handler task exits the Blocked state. */
 		xTaskCreate( prvPrintTask, "Periodic", 1000, NULL, 1, NULL );
+		
+		
 		/* Install the handler for the software interrupt. The syntax necessary
 		to do this is dependent on the FreeRTOS port being used. The syntax
 		shown here can only be used with the FreeRTOS windows port, where such
@@ -130,7 +145,12 @@ int main( void )
 		//vPortSetInterruptHandler( mainINTERRUPT_NUMBER, ulExampleInterruptHandler );
 		/* Start the scheduler so the created tasks start executing. */
 		vTaskStartScheduler();
+		
+		
+	
 	}
+	xTaskCreate( prvPrintTask, "AFTER SCHEDULER", 1000, NULL, 1, NULL );
+	
 	/* As normal, the following line should never be reached. */
 	for( ;; );
 }

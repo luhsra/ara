@@ -30,13 +30,18 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *& type
  bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT) {
 	DenseMap< BasicBlock *, std::unique_ptr<OrderedBasicBlock>> OBBMap;
 	if (InstA->getParent() == InstB->getParent()){
+		std::cout << "debug" << std::endl;
 		BasicBlock *IBB = InstA->getParent();
 		auto OBB = OBBMap.find(IBB);
 		if (OBB == OBBMap.end())OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
 		return OBB->second->dominates(InstA, InstB);
 	}
+	
 	DomTreeNode *DA = DT->getNode(InstA->getParent());
+
 	DomTreeNode *DB = DT->getNode(InstB->getParent());
+	
+	std::cout << "debug not same parents" <<  DA->getDFSNumIn() << ":" <<  DB->getDFSNumIn() << std::endl;
 	return DA->getDFSNumIn() < DB->getDFSNumIn();
  }
 
@@ -130,6 +135,81 @@ bool check_nullptr(std::any &out, llvm::Type *type,llvm::Value *value,std::strin
 	return load_success;
 }
 
+
+llvm::Instruction* get_syscall_instruction(OS::shared_function function){
+	for(auto & abb : function->get_atomic_basic_blocks()){
+		if(abb->get_call_type() != no_call){
+			std::cout << abb->get_call_name() << std::endl; 
+			if(abb->get_call_name() == "vTaskDelay")return abb->get_call_instruction_reference();
+		}
+	}
+	return nullptr;
+}
+
+/*
+void test_method(graph::Graph& graph){
+	
+	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+	for (auto &vertex : vertex_list) {
+		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+	
+		if(function->get_name()=="_ZL12prvPrintTaskPv"){
+			
+			DominatorTree dominator_tree = DominatorTree(*(function->get_llvm_reference()));
+			dominator_tree.updateDFSNumbers();
+			
+		
+			llvm::Instruction* syscall = get_syscall_instruction(function);
+			if(syscall == nullptr)std::cout << "syscall instruction could not find" << std::endl; 
+			{
+				Value * cast_operand = syscall->getOperand(0);
+				if(Instruction  * constant_data = dyn_cast<Instruction>(cast_operand))	cast_operand = constant_data->getOperand(0);
+				{
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				syscall->print(rso);
+				std::cout<< "scheduler instruction" <<  rso.str() << std::endl;
+				}
+				Value::user_iterator sUse = cast_operand->user_begin();
+				Value::user_iterator sEnd = cast_operand->user_end();
+						
+				
+				//iterate about the user of the allocation
+				for(;sUse != sEnd; ++sUse){
+					if(Instruction  * instruction = dyn_cast<Instruction>(*sUse)){
+					
+						if(instruction_before(instruction,syscall,&dominator_tree))
+						//if(dominator_tree.dominates(instruction,syscall))
+						{
+							std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!before" << std::endl;
+
+							{
+							std::string type_str;
+							llvm::raw_string_ostream rso(type_str);
+							instruction->print(rso);
+							std::cout<< "instruction" <<  rso.str() << std::endl;
+							}
+						}
+						else{
+							std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!after" << std::endl;
+							{
+							std::string type_str;
+							llvm::raw_string_ostream rso(type_str);
+							instruction->print(rso);
+							std::cout<< "instruction" <<  rso.str() << std::endl;
+							}
+						}
+					}
+				}
+			}
+			
+			
+			
+		}
+	}
+}*/
+
+
 //dump a cast instruction
 bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::Type *type, Instruction * call_reference){
 	bool cast_success = false;
@@ -167,7 +247,8 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 						if(instruction_before(store_instruction, tmp_instruction,&dominator_tree))store_instruction = nullptr;		
 					}
 				}
-			}
+				
+			}else std::cout << "local variable was set after value" << std::endl;
 			//no load between allocation and call reference
 		}
 		//check if a valid store instruction could be found
@@ -516,7 +597,7 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type,
 void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instruction){
 	//store the name of the called function
 	abb->set_call_name(func->getName().str());
-	
+	std::cout << std::endl << func->getName().str() << std::endl;
 	//iterate about the arguments of the call
 	for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
 	
@@ -529,8 +610,10 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 		//get argument
 		Value *arg = instruction->getArgOperand(i);
 		
+		
 		//dump argument
 		if(dump_argument(debug_out,value_argument,type_argument, arg,instruction)){
+			 debug_argument(value_argument,type_argument);
 			//store the dumped argument in the abb with corresponding llvm type
 			abb->set_argument(value_argument, type_argument);
 		}
@@ -742,8 +825,7 @@ namespace step {
 	}
 
 	void LLVMStep::run(graph::Graph& graph) {
-		
-		
+
 		// get file arguments from config
 		std::vector<std::string> files;
 		std::cout << "Run " << get_name() << std::endl;
@@ -871,7 +953,20 @@ namespace step {
 				}
 			}
 		}*/
+		/*
+		for (auto &func : *shared_module){
+			
+			for (auto &bb : func) {
 
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				bb.print(rso);
+				std::cout<< rso.str() ;
+				
+			}
+		}*/
+		
+		//test_method(graph);
 	}
 	std::vector<std::string> LLVMStep::get_dependencies() {
 		return {};

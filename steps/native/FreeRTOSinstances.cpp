@@ -49,14 +49,14 @@ llvm::Instruction* get_start_scheduler_instruction(OS::shared_function function)
 	for(auto & abb : function->get_atomic_basic_blocks()){
 		if(abb->get_call_type() != no_call){
 			std::cout << abb->get_call_name() << std::endl; 
-			if(abb->get_call_name() == "start_scheduler")return abb->get_call_instruction_reference();
+			if(abb->get_call_name() == "vTaskStartScheduler")return abb->get_call_instruction_reference();
 		}
 	}
 	return nullptr;
 }
 
 
-void append_instructions(llvm::Function* function,std::vector<std::size_t>* already_visited,std::list<llvm::Instruction *> *instruction_list){
+void append_instructions(llvm::Function* function,std::vector<std::size_t>* already_visited,std::list<size_t> *instruction_list){
 	
 	std::hash<std::string> hash_fn;
 	size_t hash_value = hash_fn(function->getName().str());
@@ -71,7 +71,10 @@ void append_instructions(llvm::Function* function,std::vector<std::size_t>* alre
 	}
 	already_visited->emplace_back(hash_value);
 	for(llvm::BasicBlock &bb :*function){
+		std::cout << "insert hash in " << function->getName().str() << " " << bb.getName().str() << " : " << hash_fn(bb.getName().str()) << std::endl;
 		for(llvm::Instruction &instruction :bb){
+			
+			instruction_list->emplace_back(hash_fn(bb.getName().str()));
 			if(isa<llvm::CallInst>(instruction)){
 				llvm::CallInst& call_instruction = cast<CallInst>(instruction);
 				llvm::Function* called_function = call_instruction.getCalledFunction();
@@ -91,45 +94,78 @@ void append_instructions(llvm::Function* function,std::vector<std::size_t>* alre
 
 
 
-void before_scheduler_instructions(graph::Graph& graph,std::list<llvm::Instruction *> *instruction_list){
-	std::vector<std::size_t> already_visited;
+void before_scheduler_instructions(graph::Graph& graph,std::list<size_t> *instruction_list){
 	
+	std::hash<std::string> hash_fn;
+	
+	
+	std::vector<std::size_t> already_visited;
+	std::cout << "get instruction before  scheduler start"  << std::endl;
 	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
 	for (auto &vertex : vertex_list) {
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function->get_name().find("main")){
-			
+		
+		if(function->get_name()=="main"){
+
+			std::cout << "function name: " << function->get_name() << std::endl;
+		
 			llvm::Instruction* start_scheduler = get_start_scheduler_instruction(function);
+			if(start_scheduler == nullptr)std::cout << "scheduler instruction could not find in main function" << std::endl; 
+			{
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				start_scheduler->print(rso);
+				std::cout<< "scheduler instruction" <<  rso.str() << std::endl;
+			}
 			DominatorTree dominator_tree = DominatorTree();
 			dominator_tree.recalculate(*(function->get_llvm_reference()));
+			dominator_tree.updateDFSNumbers();
 			for(auto &abb : function->get_atomic_basic_blocks()){
 					
 				for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 					
 					for(auto &instruction:*bb){
-						if(check_instruction_order(&instruction,start_scheduler,&dominator_tree)){
+						if(check_instruction_order(&instruction,start_scheduler,&dominator_tree)&& !dominator_tree.dominates(start_scheduler,&instruction)){
+							{/*
+								std::string type_str;
+								llvm::raw_string_ostream rso(type_str);
+								bb->print(rso);
+								std::cout<< "before scheduler instruction" <<  rso.str() << std::endl;*/
+							}
 							if(abb->get_call_type()== sys_call){
-								instruction_list->emplace_back(abb->get_call_instruction_reference());
-							}else if(abb->get_call_type()== has_call){
+								instruction_list->emplace_back(hash_fn(bb->getName().str()));
+								std::cout << "insert hash in main " << bb->getName().str() << " : " << hash_fn(bb->getName().str()) << std::endl;
+							}else if(abb->get_call_type()== func_call){
 								if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(abb->get_call_instruction_reference())){
 									llvm::Function* called_function = call_instruction->getCalledFunction();
 									if(called_function != nullptr){
-										append_instructions(function->get_llvm_reference(),&already_visited,instruction_list);
+										append_instructions(called_function,&already_visited,instruction_list);
 									}
 								}else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(abb->get_call_instruction_reference())){
 									llvm::Function* called_function = call_instruction->getCalledFunction();
 									if(called_function != nullptr){
-										append_instructions(function->get_llvm_reference(),&already_visited,instruction_list);
+										append_instructions(called_function,&already_visited,instruction_list);
 									}
 								}
 							}
+						}else{
+							{/*
+								std::string type_str;
+								llvm::raw_string_ostream rso(type_str);
+								bb->print(rso);
+								std::cout<< "after scheduler instruction" <<  rso.str() << std::endl;
+								*/
+							}
+							
 						}
 					}
 				}
 			}
 			break;
+
 		}
 	}
+	std::cout << "end instruction before start scheduler start" << std::endl;
 }
 
 
@@ -162,12 +198,38 @@ bool verify_arguments(std::vector<size_t> &forced_arguments_types ,std::vector<s
 	unsigned int counter = 0;
 	bool success = true;
 	
+	if(forced_arguments_types.size() != arguments.size()){
+		success = false;
+		std::cout << "exptected argument size " << forced_arguments_types.size()  << " and real argument size " << arguments.size()  << "  are not equal" << std::endl;
+	}else{
+		for (auto & argument_type: forced_arguments_types){
+			std::tuple<std::any,llvm::Type*> tuple = arguments.at(counter);
+			auto argument = std::get<std::any>(tuple);
+			if(argument_type != argument.type().hash_code()){
+				std::cerr << "error: " << argument.type().name() << "counter: " << counter << std::endl;
+				success = false;
+				break;
+			}
+			counter++;
+		}
+	}
+	//std::cerr << success << std::endl;
+	return success;
+}
+
+bool verify_syscall_arguments(std::vector<size_t> &forced_arguments_types ,std::vector<size_t>& arguments){
+	
+
+	//iterate about the demanded arguments
+	unsigned int counter = 0;
+	bool success = true;
+	
 	if(forced_arguments_types.size() != arguments.size())success = false;
-	for (auto & argument_type: forced_arguments_types){
-		std::tuple<std::any,llvm::Type*> tuple = arguments.at(counter);
-		auto argument = std::get<std::any>(tuple);
-		if(argument_type != argument.type().hash_code()){
-			std::cerr << "error: " << argument.type().name() << "counter: " << counter << std::endl;
+	for (auto & forced_argument_type: forced_arguments_types){
+		std::size_t argument_type = arguments.at(counter);
+		
+		if(argument_type != forced_argument_type){
+			std::cerr << "error: " << argument_type << "counter: " << counter << std::endl;
 			success = false;
 			break;
 		}
@@ -176,6 +238,8 @@ bool verify_arguments(std::vector<size_t> &forced_arguments_types ,std::vector<s
 	//std::cerr << success << std::endl;
 	return success;
 }
+
+
 
 
 bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::size_t>* already_visited){
@@ -199,6 +263,14 @@ bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::
 	//search loop of function
 	llvm::DominatorTree DT = llvm::DominatorTree();
 	DT.recalculate(*bb->getParent());
+	DT.updateDFSNumbers();
+	/*{
+		std::string type_str;
+		llvm::raw_string_ostream rso(type_str);
+		DT.print(rso);
+		std::cout<< "loop: " <<  rso.str() << std::endl;
+	
+	}*/
 	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* LIB = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
 	LIB->releaseMemory();
 	LIB->analyze(DT);
@@ -211,12 +283,12 @@ bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::
 	LoopInfo LI = LoopInfo(DT);
 	ScalarEvolution SE = ScalarEvolution(*bb->getParent(), TLI.getTLI(),AC, DT, LI);
 	
-	{
+	{/*
 		std::string type_str;
 		llvm::raw_string_ostream rso(type_str);
 		SE.print(rso);
 		std::cout<< "loop: " <<  rso.str() << std::endl;
-	
+	*/
 	}
 	//check if basic block is in loop
 	//TODO get loop count
@@ -248,7 +320,7 @@ bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::
 }
 
 //xTaskCreate
-bool create_task(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments){
+bool create_task(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -309,6 +381,7 @@ bool create_task(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>
 		task->set_handler_name( handler_name);
 		task->set_stacksize( stacksize);
 		task->set_priority( priority);
+		task->set_start_scheduler_creation_flag(before_scheduler_start);
 		graph.set_vertex(task);
 		
 		std::hash<std::string> hash_fn;
@@ -331,7 +404,7 @@ bool create_task(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>
 
 //..Semaphore...Create
 //{ binary, counting, mutex, recursive_mutex }semaphore_type;
-bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,semaphore_type type ,llvm::Instruction* instruction){
+bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,semaphore_type type ,llvm::Instruction* instruction, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -354,7 +427,8 @@ bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 	auto semaphore = std::make_shared<OS::Semaphore>(&graph,handler_name);
 	semaphore->set_semaphore_type(type);
 	semaphore->set_handler_name(handler_name);
-	
+
+	std::cout << "semaphore handler name: " <<  handler_name << std::endl;
 	switch(type){
 		
 		case binary:{
@@ -378,7 +452,6 @@ bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 			std::vector<size_t> forced_arguments_types(2);
 			forced_arguments_types.at(0) = (typeid(long).hash_code());
 			forced_arguments_types.at(1) = (typeid(long).hash_code());
-
 					
 			//verify the arguments
 			if(!verify_arguments(forced_arguments_types,tmp_arguments)){
@@ -393,7 +466,7 @@ bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 				tuple  = tmp_arguments.at(0);
 				argument = std::get<std::any>(tuple);
 				unsigned long max_count =  std::any_cast<long>(argument);
-			
+				
 
 				semaphore->set_initial_count(initial_count);
 				semaphore->set_max_count(max_count);
@@ -409,7 +482,8 @@ bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 			
 			std::vector<size_t> forced_arguments_types(1);
 			forced_arguments_types.at(0) = (typeid(long).hash_code());
-		
+			
+			std::cout << "create mutex" << std::endl;
 			//verify the arguments
 			if(!verify_arguments(forced_arguments_types,tmp_arguments)){
 				success = false;
@@ -437,14 +511,14 @@ bool create_semaphore(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 			break;
 		}
 	}
-	
+	semaphore->set_start_scheduler_creation_flag(before_scheduler_start);
 	if(success)graph.set_vertex(semaphore);
 	
 	return success;
 }
 
 //xQueueCreate
-bool create_queue(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction){
+bool create_queue(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -494,10 +568,12 @@ bool create_queue(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>
 			queue->set_handler_name(handler_name);
 			queue->set_length(queue_length);
 			queue->set_item_size(item_size);
+			queue->set_start_scheduler_creation_flag(before_scheduler_start);
 			graph.set_vertex(queue);
+			
 			std::cout << "queue successfully created"<< std::endl;
 		}else{
-			success = create_semaphore(graph,arguments,binary,instruction);
+			success = create_semaphore(graph,arguments,binary,instruction, before_scheduler_start);
 		}
 	}
 	return success;
@@ -505,7 +581,7 @@ bool create_queue(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>
 
 
 //xQueueCreate
-bool create_event_group(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction){
+bool create_event_group(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -534,6 +610,7 @@ bool create_event_group(graph::Graph& graph,std::list<std::tuple<std::any,llvm::
 		auto event_group = std::make_shared<OS::EventGroup>(&graph,handler_name);
 			
 		event_group->set_handler_name(handler_name);
+		event_group->set_start_scheduler_creation_flag(before_scheduler_start);
 		graph.set_vertex(event_group);
 		std::cout << "event group successfully created"<< std::endl;
 		
@@ -545,7 +622,7 @@ bool create_event_group(graph::Graph& graph,std::list<std::tuple<std::any,llvm::
 
 
 //xQueueSet
-bool create_queue_set(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction){
+bool create_queue_set(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -583,6 +660,7 @@ bool create_queue_set(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 		
 		std::cout << "queue set successfully created"<< std::endl;
 		//set timer to graph
+		queue_set->set_start_scheduler_creation_flag(before_scheduler_start);
 		graph.set_vertex(queue_set);
 	
 	}
@@ -590,7 +668,7 @@ bool create_queue_set(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Ty
 }
 
 //xTimerCreate
-bool create_timer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments){
+bool create_timer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -650,6 +728,7 @@ bool create_timer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>
 		else timer->set_timer_type(autoreload);
 		std::cout << "timer successfully created"<< std::endl;
 		//set timer to graph
+		timer->set_start_scheduler_creation_flag(before_scheduler_start);
 		graph.set_vertex(timer);
 	
 	}
@@ -658,7 +737,7 @@ bool create_timer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>
 
 
 //xTimerCreate
-bool create_buffer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction){
+bool create_buffer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*>>* arguments,llvm::Instruction* instruction, bool before_scheduler_start){
 	
 	bool success = true;
 	
@@ -713,6 +792,7 @@ bool create_buffer(graph::Graph& graph,std::list<std::tuple<std::any,llvm::Type*
 		
 		std::cout << "buffer successfully created"<< std::endl;
 		//set timer to graph
+		buffer->set_start_scheduler_creation_flag(before_scheduler_start);
 		graph.set_vertex(buffer);
 	
 	}
@@ -751,8 +831,7 @@ void debug_arguments(std::any value,llvm::Type *type){
 }
 
 
-
-void detect_Queue_interactions(graph::Graph& graph){
+bool detect_interaction(graph::Graph& graph){
 	
 	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
 	for (auto &vertex : vertex_list) {
@@ -762,326 +841,86 @@ void detect_Queue_interactions(graph::Graph& graph){
 		std::list<OS::shared_abb> abb_list = function->get_atomic_basic_blocks();
 		
 		for(auto &abb : abb_list){
+			std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
+			std::list<std::size_t> expected_argument_type_list  = abb->get_expected_syscall_argument_type();
+			std::list<std::size_t>* target_list = abb->get_call_target_instance();
 			
 			if(abb->get_call_type() == sys_call ){
 				
-				if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Queue).hash_code())){
+				
+				
+				bool success = false;
 
-					if(abb->get_syscall_type() == reset){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
+				std::vector<size_t> expected_argument_types(argument_list->size());
+				for(auto& argument_type: expected_argument_type_list){
+					expected_argument_types.emplace_back(argument_type);
+				}
+				
+				std::vector<size_t>arguments_types(argument_list->size());
 	
-						int counter = 0;
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.at(counter) = tuple;
-							counter++;
-						}
-						
-						std::vector<size_t> forced_arguments_types(2);
-						forced_arguments_types.at(0) = (typeid(std::string).hash_code());
-						forced_arguments_types.at(1) = (typeid(long).hash_code());
+				for(auto & tuple : *argument_list){
+					 
+					arguments_types.emplace_back(std::get<std::any>(tuple).type().hash_code());
+					
+				}
+				
 
-
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							//load the arguments
-							std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-							auto argument = std::get<std::any>(tuple);
-							std::string queue_handler_name = std::any_cast<std::string>(argument);
-						
-							tuple  = tmp_arguments.at(1);
-							argument = std::get<std::any>(tuple);
-							long new_queue =  std::any_cast<long>(argument);
-							
-							
-							
-							std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-		
-		
-							for (auto &vertex : vertex_list) {
-								
-								//vertex->print_information();
-								//cast vertex to abb 
-								auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-								if(queue->get_handler_name() == queue_handler_name){
-									
-									graph::shared_vertex start_vertex = function;
-									if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-									
-									//TODO verifc that abb reference of the edge is a real abb
-									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-									//TODO set arguments ?									
-									graph.set_edge(edge);
-									
-								}
-							}
-						}
-					}					
-					if(abb->get_syscall_type() == commit){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						int counter = 0;
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.at(counter) = tuple;
-							counter++;
-						}
-						
-						std::vector<size_t> forced_arguments_types(4);
-						forced_arguments_types.at(0) = (typeid(std::string).hash_code());
-						forced_arguments_types.at(1) = (typeid(std::string).hash_code());
-						forced_arguments_types.at(2) = (typeid(long).hash_code());
-						forced_arguments_types.at(3) = (typeid(long).hash_code());
-
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							//load the arguments
-							std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-							auto argument = std::get<std::any>(tuple);
-							std::string queue_handler_name = std::any_cast<std::string>(argument);
-							
-							//TODO handle queue pointer values
-							tuple  = tmp_arguments.at(1);
-							argument = std::get<std::any>(tuple);
-							std::string queue_pointer = std::any_cast<std::string>(argument);
-							
-							tuple  = tmp_arguments.at(2);
-							argument = std::get<std::any>(tuple);
-							long ticks_to_wait =  std::any_cast<long>(argument);
-						
-							tuple  = tmp_arguments.at(3);
-							argument = std::get<std::any>(tuple);
-							long insertion_place =  std::any_cast<long>(argument);
-							
-							
-							
-							std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-		
-		
-							for (auto &vertex : vertex_list) {
-								
-								//vertex->print_information();
-								//cast vertex to abb 
-								auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-								if(queue->get_handler_name() == queue_handler_name){
-									
-									graph::shared_vertex start_vertex = function;
-									if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-									
-									//TODO verifc that abb reference of the edge is a real abb
-									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-									//TODO set arguments ?									
-									graph.set_edge(edge);
-									
-								}
-							}
-						}
+				
+				
+				//verify the arguments
+				if(!verify_syscall_arguments(expected_argument_types,arguments_types)){
+					success = false;
+				}else{
+					
+					{
+						std::string type_str;
+						llvm::raw_string_ostream rso(type_str);
+						abb->get_call_instruction_reference()->print(rso);
+						std::cout<< "instruction: " <<  rso.str() << std::endl;
+					
 					}
 					
-					if(abb->get_syscall_type() == receive){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.push_back(tuple);
-						}
-						
-						bool receive = abb->get_call_name().find("Receive");
-						bool peek =  abb->get_call_name().find("Peek");
-						
-						std::vector<size_t> forced_arguments_types;
-						if( receive||peek){
-							forced_arguments_types.push_back(typeid(std::string).hash_code());
-							forced_arguments_types.push_back(typeid(std::string).hash_code());
-							forced_arguments_types.push_back(typeid(long).hash_code());
-						}
-						else{
-							forced_arguments_types.push_back(typeid(std::string).hash_code());
-						}
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							
-							std::vector<size_t> forced_arguments_types;
-							if(peek||receive){
-							//load the arguments
-								std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-								auto argument = std::get<std::any>(tuple);
-								std::string queue_handler_name = std::any_cast<std::string>(argument);
-								
-								//TODO handle queue pointer values
-								tuple  = tmp_arguments.at(1);
-								argument = std::get<std::any>(tuple);
-								std::string queue_pointer = std::any_cast<std::string>(argument);
-								
-								tuple  = tmp_arguments.at(2);
-								argument = std::get<std::any>(tuple);
-								long ticks_to_wait =  std::any_cast<long>(argument);
-								
-								
-								std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-			
-			
-								for (auto &vertex : vertex_list) {
-									
-									//vertex->print_information();
-									//cast vertex to abb 
-									auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-									if(queue->get_handler_name() == queue_handler_name){
-										
-										graph::shared_vertex start_vertex = function;
-										if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-	
-								   
-										//TODO verifc that abb reference of the edge is a real abb
-										auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-										//TODO set arguments ?									
-										graph.set_edge(edge);
-										
-									}
-								}
-							}else{
-								
-								std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-								auto argument = std::get<std::any>(tuple);
-								std::string queue_handler_name = std::any_cast<std::string>(argument);
-								
-								
-								std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-			
-			
-								for (auto &vertex : vertex_list) {
-									
-									//vertex->print_information();
-									//cast vertex to abb 
-									auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-									if(queue->get_handler_name() == queue_handler_name){
-										
-										graph::shared_vertex start_vertex = function;
-										if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-										
-										
-										//TODO verifc that abb reference of the edge is a real abb
-										auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-										//TODO set arguments ?									
-										graph.set_edge(edge);
-										
-									}
-								
-								}
-							}
-						}
-						
+					//load the handler name
+					std::string handler_name = "";
+					if(argument_list->size() >0){
+						std::tuple<std::any,llvm::Type*> tuple  = (argument_list->front());
+						auto argument = std::get<std::any>(tuple);
+						handler_name = std::any_cast<std::string>(argument);
 					}
-					
-					if(abb->get_syscall_type() == destroy){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
+					std::cout << "handler_name " << handler_name<<  std::endl;
+					for(auto& target: *target_list){
+				
+						//TODO eventually cast the vertex to the specific type
+						std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(target);
 
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						int counter = 0;
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.at(counter) = tuple;
-							counter++;
-						}
-						
-						std::vector<size_t> forced_arguments_types(4);
-						forced_arguments_types.at(0) = (typeid(std::string).hash_code());
-						
-
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							//load the arguments
-							std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-							auto argument = std::get<std::any>(tuple);
-							std::string queue_handler_name = std::any_cast<std::string>(argument);
-							
-							std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-		
-		
-							for (auto &vertex : vertex_list) {
+						for (auto &vertex : vertex_list) {
+							std::cout << "existiing handler_name " << vertex->get_handler_name() <<  std::endl;
+							if(vertex->get_handler_name() == handler_name){
+								std::cout << "Edge created" << std::endl;
+								graph::shared_vertex start_vertex = function;
+								if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
 								
-								//vertex->print_information();
-								//cast vertex to abb 
-								auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-								if(queue->get_handler_name() == queue_handler_name){
-									
-									graph::shared_vertex start_vertex = function;
-									if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-									
+								if(abb->get_syscall_type() == receive){
 									//TODO verifc that abb reference of the edge is a real abb
-									auto edge = std::make_shared<graph::Edge>(&graph,"destroy",start_vertex ,queue,abb);
-									//TODO set arguments ?									
+									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,vertex,abb);
+									//TODO set arguments ?
 									graph.set_edge(edge);
-									
+									success = true;
+
+								}else{
+									//TODO verifc that abb reference of the edge is a real abb
+									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),vertex ,start_vertex,abb);
+									//TODO set arguments ?
+									graph.set_edge(edge);
+									success = true;
+									std::cout << get_handler_name << std::endl;
 								}
+								break;
 							}
+						}
+						if(success){
+							break;
+							std::cout << "Edge created" << std::endl;
 						}
 					}
 				}
@@ -1090,344 +929,6 @@ void detect_Queue_interactions(graph::Graph& graph){
 	}
 }
 
-
-void detect_Semaphore_interactions(graph::Graph& graph){
-	
-	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-	for (auto &vertex : vertex_list) {
-		
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		
-		std::list<OS::shared_abb> abb_list = function->get_atomic_basic_blocks();
-		
-		for(auto &abb : abb_list){
-			
-			if(abb->get_call_type() == sys_call ){
-				
-				if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Semaphore).hash_code())){
-
-					if(abb->get_syscall_type() == reset){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						int counter = 0;
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.at(counter) = tuple;
-							counter++;
-						}
-						
-						std::vector<size_t> forced_arguments_types(2);
-						forced_arguments_types.at(0) = (typeid(std::string).hash_code());
-						forced_arguments_types.at(1) = (typeid(long).hash_code());
-
-
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							//load the arguments
-							std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-							auto argument = std::get<std::any>(tuple);
-							std::string queue_handler_name = std::any_cast<std::string>(argument);
-						
-							tuple  = tmp_arguments.at(1);
-							argument = std::get<std::any>(tuple);
-							long new_queue =  std::any_cast<long>(argument);
-							
-							
-							
-							std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-		
-		
-							for (auto &vertex : vertex_list) {
-								
-								//vertex->print_information();
-								//cast vertex to abb 
-								auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-								if(queue->get_handler_name() == queue_handler_name){
-									
-									graph::shared_vertex start_vertex = function;
-									if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-									
-									//TODO verifc that abb reference of the edge is a real abb
-									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-									//TODO set arguments ?									
-									graph.set_edge(edge);
-									
-								}
-							}
-						}
-					}					
-					if(abb->get_syscall_type() == commit){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						int counter = 0;
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.at(counter) = tuple;
-							counter++;
-						}
-						
-						std::vector<size_t> forced_arguments_types(4);
-						forced_arguments_types.at(0) = (typeid(std::string).hash_code());
-						forced_arguments_types.at(1) = (typeid(std::string).hash_code());
-						forced_arguments_types.at(2) = (typeid(long).hash_code());
-						forced_arguments_types.at(3) = (typeid(long).hash_code());
-
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							//load the arguments
-							std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-							auto argument = std::get<std::any>(tuple);
-							std::string queue_handler_name = std::any_cast<std::string>(argument);
-							
-							//TODO handle queue pointer values
-							tuple  = tmp_arguments.at(1);
-							argument = std::get<std::any>(tuple);
-							std::string queue_pointer = std::any_cast<std::string>(argument);
-							
-							tuple  = tmp_arguments.at(2);
-							argument = std::get<std::any>(tuple);
-							long ticks_to_wait =  std::any_cast<long>(argument);
-						
-							tuple  = tmp_arguments.at(3);
-							argument = std::get<std::any>(tuple);
-							long insertion_place =  std::any_cast<long>(argument);
-							
-							
-							
-							std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-		
-		
-							for (auto &vertex : vertex_list) {
-								
-								//vertex->print_information();
-								//cast vertex to abb 
-								auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-								if(queue->get_handler_name() == queue_handler_name){
-									
-									graph::shared_vertex start_vertex = function;
-									if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-									
-									//TODO verifc that abb reference of the edge is a real abb
-									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-									//TODO set arguments ?									
-									graph.set_edge(edge);
-									
-								}
-							}
-						}
-					}
-					
-					if(abb->get_syscall_type() == receive){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.push_back(tuple);
-						}
-						
-						bool receive = abb->get_call_name().find("Receive");
-						bool peek =  abb->get_call_name().find("Peek");
-						
-						std::vector<size_t> forced_arguments_types;
-						if( receive||peek){
-							forced_arguments_types.push_back(typeid(std::string).hash_code());
-							forced_arguments_types.push_back(typeid(std::string).hash_code());
-							forced_arguments_types.push_back(typeid(long).hash_code());
-						}
-						else{
-							forced_arguments_types.push_back(typeid(std::string).hash_code());
-						}
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							
-							std::vector<size_t> forced_arguments_types;
-							if(peek||receive){
-							//load the arguments
-								std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-								auto argument = std::get<std::any>(tuple);
-								std::string queue_handler_name = std::any_cast<std::string>(argument);
-								
-								//TODO handle queue pointer values
-								tuple  = tmp_arguments.at(1);
-								argument = std::get<std::any>(tuple);
-								std::string queue_pointer = std::any_cast<std::string>(argument);
-								
-								tuple  = tmp_arguments.at(2);
-								argument = std::get<std::any>(tuple);
-								long ticks_to_wait =  std::any_cast<long>(argument);
-								
-								
-								std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-			
-			
-								for (auto &vertex : vertex_list) {
-									
-									//vertex->print_information();
-									//cast vertex to abb 
-									auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-									if(queue->get_handler_name() == queue_handler_name){
-										
-										graph::shared_vertex start_vertex = function;
-										if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-	
-								   
-										//TODO verifc that abb reference of the edge is a real abb
-										auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-										//TODO set arguments ?									
-										graph.set_edge(edge);
-										
-									}
-								}
-							}else{
-								
-								std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-								auto argument = std::get<std::any>(tuple);
-								std::string queue_handler_name = std::any_cast<std::string>(argument);
-								
-								
-								std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-			
-			
-								for (auto &vertex : vertex_list) {
-									
-									//vertex->print_information();
-									//cast vertex to abb 
-									auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-									if(queue->get_handler_name() == queue_handler_name){
-										
-										graph::shared_vertex start_vertex = function;
-										if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-										
-										
-										//TODO verifc that abb reference of the edge is a real abb
-										auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,queue,abb);
-										//TODO set arguments ?									
-										graph.set_edge(edge);
-										
-									}
-								
-								}
-							}
-						}
-						
-					}
-					
-					if(abb->get_syscall_type() == destroy){
-						
-							
-						bool success = true;
-						
-						std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-						
-						for(auto & tuple : *argument_list){
-							debug_arguments(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
-						}
-						
-						//xQueueGenericSend( ( xQueue ), ( pvItemToQueue ), ( xTicksToWait ), queueSEND_TO_FRONT )
-
-						std::vector<std::tuple<std::any,llvm::Type*>>tmp_arguments(argument_list->size());
-	
-						int counter = 0;
-						for(auto & tuple : *argument_list){
-							
-							tmp_arguments.at(counter) = tuple;
-							counter++;
-						}
-						
-						std::vector<size_t> forced_arguments_types(4);
-						forced_arguments_types.at(0) = (typeid(std::string).hash_code());
-						
-
-	
-			
-						//verify the arguments
-						if(!verify_arguments(forced_arguments_types,tmp_arguments)){
-							success = false;
-						}else{
-						
-							//load the arguments
-							std::tuple<std::any,llvm::Type*> tuple  = tmp_arguments.at(0);
-							auto argument = std::get<std::any>(tuple);
-							std::string queue_handler_name = std::any_cast<std::string>(argument);
-							
-							std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Queue).hash_code());
-		
-		
-							for (auto &vertex : vertex_list) {
-								
-								//vertex->print_information();
-								//cast vertex to abb 
-								auto queue = std::dynamic_pointer_cast<OS::Queue> (vertex);
-								if(queue->get_handler_name() == queue_handler_name){
-									
-									graph::shared_vertex start_vertex = function;
-									if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
-									
-									//TODO verifc that abb reference of the edge is a real abb
-									auto edge = std::make_shared<graph::Edge>(&graph,"destroy",start_vertex ,queue,abb);
-									//TODO set arguments ?									
-									graph.set_edge(edge);
-									
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
 
 
 namespace step {
@@ -1447,13 +948,18 @@ namespace step {
 		
 		std::cout << "Run " << get_name() << std::endl;
 		
-		std::list<llvm::Instruction *> instruction_list;
-		//before_scheduler_instructions(graph,&instruction_list);
+		std::hash<std::string> hash_fn;
+
+		
+		std::list<size_t> instruction_list;
+		before_scheduler_instructions(graph,&instruction_list);
 		
 		//iterate about the ABBS
 		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 		
-		
+		for(auto & hash_value : instruction_list){
+			std::cout << hash_value << std::endl;
+		}
 		for (auto &vertex : vertex_list) {
 			
 			//vertex->print_information();
@@ -1480,40 +986,64 @@ namespace step {
 					
 					//validate if sysccall is in loop
 					if(validate_loop(llvm_abbs.front(),callname,&already_visited)){
-
-					
+						
+						bool before_scheduler_start = false;
+						size_t tmp = 0;
+						std::string name = "";
+						for(auto & hash_value : instruction_list){
+							//std::cout << hash_value << std::endl;
+							for(auto &bb :abb->get_BasicBlocks()){
+								
+								if(hash_value == hash_fn(bb->getName().str())){
+									tmp = hash_value;
+									name =bb->getName().str();
+									before_scheduler_start = true;
+									break;
+								}
+							}
+						}
+						
+						if(before_scheduler_start)std::cout << "before_scheduler_start " <<  callname		<< std::endl;
+						else std::cout << "!!!!!!!!!!!!!!!1after_scheduler_start " <<  	callname	<< std::endl;
 						//check if abb syscall is creation syscall
 						if(abb->get_syscall_type() == create){
 							
 							//check which target should be generated
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Task).hash_code())){
-								if(!create_task(graph,abb->get_arguments()))std::cout << "Task could not created" << std::endl;
+								std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
+								if(!create_task(graph,abb->get_arguments(),before_scheduler_start))std::cout << "Task could not created" << std::endl;
 							}
 								
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Queue).hash_code())){
-								if(!create_queue( graph,abb->get_arguments(),abb->get_call_instruction_reference()))std::cout << "Queue could not created" << std::endl;
+								if(!create_queue( graph,abb->get_arguments(),abb->get_call_instruction_reference(),before_scheduler_start))std::cout << "Queue could not created" << std::endl;
 
 							}
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Semaphore).hash_code())){
-								if(!create_semaphore(graph, abb->get_arguments(), counting,abb->get_call_instruction_reference()))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
+								//TODO set semaphore
+								semaphore_type type;
+								if(abb->get_call_name() =="xQueueCreateMutex")type = mutex;
+								if(abb->get_call_name() =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
+								if(abb->get_call_name() =="xQueueCreateCountingSemaphore")type = counting;
+
+								if(!create_semaphore(graph, abb->get_arguments(), type,abb->get_call_instruction_reference(),  before_scheduler_start))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
 								
 							}						
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Timer).hash_code())){
-								if(!create_timer( graph,abb->get_arguments()))std::cout << "Timer could not created" << std::endl;
+								if(!create_timer( graph,abb->get_arguments(),before_scheduler_start))std::cout << "Timer could not created" << std::endl;
 							}
 
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::EventGroup).hash_code())){
 								//std::cout << callname << std::endl;
-								if(!create_event_group(graph, abb->get_arguments(),abb->get_call_instruction_reference()))std::cout << "Event Group could not created" << std::endl;
+								if(!create_event_group(graph, abb->get_arguments(),abb->get_call_instruction_reference(),before_scheduler_start))std::cout << "Event Group could not created" << std::endl;
 							}
 							
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Buffer).hash_code())){
 								//std::cout << callname << std::endl;
-								if(!create_buffer(graph, abb->get_arguments(),abb->get_call_instruction_reference()))std::cout << "Buffer could not created" << std::endl;
+								if(!create_buffer(graph, abb->get_arguments(),abb->get_call_instruction_reference(),before_scheduler_start))std::cout << "Buffer could not created" << std::endl;
 							}
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::QueueSet).hash_code())){
 								//std::cout << callname << std::endl;
-								if(!create_queue_set(graph, abb->get_arguments(),abb->get_call_instruction_reference()))std::cout << "Queue Set could not created" << std::endl;
+								if(!create_queue_set(graph, abb->get_arguments(),abb->get_call_instruction_reference(),before_scheduler_start))std::cout << "Queue Set could not created" << std::endl;
 							}
 						}
 					}
@@ -1528,8 +1058,10 @@ namespace step {
 					//}
 				}
 			}
+			
 		}
-		detect_Queue_interactions(graph);
+		detect_interaction(graph);
+
 		
 		
 	}
