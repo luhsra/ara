@@ -56,7 +56,7 @@ def main():
                         nargs='*')
     parser.add_argument('--oilfile', help="name of oilfile",
                         default='oilfile.oil')
-    
+
     args = parser.parse_args()
 
     # logging
