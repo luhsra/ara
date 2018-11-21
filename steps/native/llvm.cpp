@@ -13,6 +13,14 @@
 #include <fstream>
 #include <cassert>
 #include <stdexcept>
+#include "llvm/Analysis/AssumptionCache.h"
+#include "FreeRTOSinstances.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Pass.h"
+#include <string>
 
 using namespace llvm;
 
@@ -21,6 +29,111 @@ using namespace llvm;
 
 static llvm::LLVMContext context;
 
+bool validates_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::size_t>* already_visited){
+	//generate hash code of basic block name
+	std::hash<std::string> hash_fn;
+	size_t hash_value = hash_fn(bb->getName().str());
+	std::cout << "callname" << call_name << std::endl;
+	//search hash value in list of already visited basic blocks
+	for(auto hash : *already_visited){
+		
+		if(hash_value == hash){
+			//basic block already visited
+			return true;
+			break;
+		}
+	}
+	//set basic block hash value in already visited list
+	already_visited->push_back(hash_value);
+	
+	bool success = true;
+	//search loop of function
+	llvm::DominatorTree DT = llvm::DominatorTree();
+	DT.recalculate(*bb->getParent());
+	DT.updateDFSNumbers();
+
+	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* LIB = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
+	LIB->releaseMemory();
+	LIB->analyze(DT);
+	llvm::Loop * L = LIB->getLoopFor(bb);
+	AssumptionCache AC = AssumptionCache(*bb->getParent());
+	
+	Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
+	TargetLibraryInfoImpl TLII(ModuleTriple);
+	//TODO check behavoiur
+	TLII.disableAllFunctions();
+	TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
+	
+	//TODO getExitBlock - If getExitBlocks would return exactly one block, return that block.
+	
+	LoopInfo LI = LoopInfo(DT);
+	LI.analyze (DT);
+	ScalarEvolution SE = ScalarEvolution(*bb->getParent(), TLI.getTLI(),AC, DT, LI);
+	SE.verify();
+
+	//auto * test = SE.getBackedgeTakenCount (L);
+	//check if basic block is in loop
+	//TODO get loop count
+	if(L != nullptr){
+			
+		SmallVector<BasicBlock *,10> blocks;
+		if(L->getExitingBlock()==nullptr){
+			std::cout << "loop has more or no exit blocks" << std::endl;
+		}
+		else{
+			std::cout << "loop has one exit block" << std::endl;
+		
+			std::cout << "finaler Test" << SE.getSmallConstantMaxTripCount  (L ) << std::endl;
+			std::cout << "finaler Test" << SE.getSmallConstantTripMultiple  (L) << std::endl;
+			std::cout << "finaler Test" << SE.getSmallConstantTripCount   (L) << std::endl;
+		}
+		//auto  blocks;
+		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
+		L->getExitingBlocks(blocks);
+		
+		std::cout << blocks.size() << std::endl;
+		for(auto & exit_block: blocks){
+			std::cout << "test" << std::endl;
+				
+			std::string type_str;
+			llvm::raw_string_ostream rso(type_str);
+			exit_block->print(rso);
+			std::cout <<  rso.str() << std::endl;
+		}
+		std::cout << "trip count " <<  SE.getSmallConstantTripCount(L) << std::endl; 
+		{
+			
+		std::string type_str;
+		llvm::raw_string_ostream rso(type_str);
+		L->print(rso);
+		std::cout <<  rso.str() << std::endl;
+	
+		}
+		//std::cout << "element is in loop" << std::endl;
+		//std::cout << "loop count:" << SE.getSmallConstantMaxTripCount(L);
+		//std::cout << "loop count:" << SE.getSmallConstantTripCount(L);
+	
+		//std::cout << "warning" << std::endl;
+		//std::cout << "loop depth: " << LIB->getLoopDepth(bb) << std::endl;
+		//std::cout << "loop depth: " << LI.getLoopDepth(bb) << std::endl;
+		//std::cout << "call name: " << call_name << std::endl;
+		success = false;
+	}else{
+		//check if function of basic block is called in a loop of other function
+		for(auto user : bb->getParent()->users()){  // U is of type User*
+			
+			if(CallInst* instruction = dyn_cast<CallInst>(user)){
+				//analyse basic block of call instruction 
+				success = validates_loop(instruction->getParent(), "recursive step" ,already_visited);
+				if(success == false)break;
+			}
+		}
+
+	}
+	//free dynamic memory
+	delete LIB;
+	return success;
+}
 
 
 bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *& type, Value *arg,llvm::Instruction* call_reference);
@@ -135,7 +248,7 @@ bool check_nullptr(std::any &out, llvm::Type *type,llvm::Value *value,std::strin
 	return load_success;
 }
 
-
+/*
 llvm::Instruction* get_syscall_instruction(OS::shared_function function){
 	for(auto & abb : function->get_atomic_basic_blocks()){
 		if(abb->get_call_type() != no_call){
@@ -146,7 +259,7 @@ llvm::Instruction* get_syscall_instruction(OS::shared_function function){
 	return nullptr;
 }
 
-/*
+
 void test_method(graph::Graph& graph){
 	
 	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
@@ -753,6 +866,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 					std::shared_ptr<graph::Vertex> tmp = graph->get_vertex(new_abb->get_seed());
 					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB> (tmp);
 				
+					//TODO basic block can be connected with itself
                     if(old_abb->get_seed() != existing_abb->get_seed()){
 
                         //connect the abbs via reference
@@ -871,6 +985,13 @@ namespace step {
 			//std::cerr << "Unique pointer was deleted:" << file_name << "\n" << std::endl;
 		}
 		
+		/*for (auto &func : *shared_module){
+			for (auto &bb : func){
+				std::vector<std::size_t> already_visited;
+				validates_loop(&bb, "",&already_visited);
+			}
+		}*/
+	
 	
 		
 		
@@ -881,9 +1002,14 @@ namespace step {
 		//initialize the split counter
 		unsigned split_counter = 0;
 		
+		
+		auto rtos = std::make_shared<OS::RTOS>(&graph,"RTOS");
+		graph.set_vertex(rtos);	
+		
 		//iterate about the functions of the llvm module
 		for (auto &func : *shared_module){
 			
+				
 			//create Function, set the module reference and function name and calculate the seed of the function			
 			auto graph_function = std::make_shared<OS::Function>(&graph,func.getName().str());
 			

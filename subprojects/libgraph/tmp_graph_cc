@@ -210,8 +210,17 @@ bool graph::Graph::contain_edge(shared_edge edge){
 
 bool graph::Graph::append_basic_blocks(shared_vertex entry_abb, shared_vertex abb){
 	
+	//check if the graph contains the commited argument abbs
+	if(!this->contain_vertex(entry_abb) && this->contain_vertex(abb))return false;
+	if(entry_abb->get_type()!= typeid(OS::ABB).hash_code() && entry_abb->get_type()!= typeid(OS::ABB).hash_code())return false;
+	auto tmp_entry_abb =  std::dynamic_pointer_cast<OS::ABB>(entry_abb);
+	auto tmp_abb =  std::dynamic_pointer_cast<OS::ABB>(abb);
 	
-	return false;
+	for(auto& bb : tmp_abb->get_BasicBlocks()){
+		tmp_entry_abb->set_BasicBlock(bb);
+	}
+	
+    return true;
 }
 
 
@@ -836,22 +845,30 @@ std::string OS::ABB::get_call_name(){
 }
 
 
+void OS::ABB::set_syscall_instruction_reference(llvm::Instruction * call_instruction){
+	this->syscall_instruction_references = call_instruction;
+}
 
+llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
+	return this->syscall_instruction_references;
+}
+
+
+/*
 void OS::ABB::set_call_instruction_reference(llvm::Instruction * call_instruction){
 	this->call_instruction_references.emplace_back(call_instruction);
 }
 
-std::list<llvm::Instruction*> OS::ABB::get_call_instruction_references(){
+std::list<llvm::Instruction*> OS::ABB::get_call_instruction_reference(){
 	return this->call_instruction_references;
 }
-
-llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
-	return this->syscall_instruction_reference;
-}
+*/
+ 
 
 void OS::ABB::set_expected_syscall_argument_type(size_t argument_type){
 	this->expected_argument_types.emplace_back(argument_type);
 }
+
 
 std::list<size_t> OS::ABB::get_expected_syscall_argument_types(){
 	
@@ -868,15 +885,22 @@ std::list<size_t> OS::ABB::get_syscall_argument_types(){
 		argument_types.emplace_back(std::get<std::any>(tuple).type().hash_code());
 	}
 	return argument_types;
+}*/
+
+bool OS::ABB::is_mergeable(){
+		
+	for(auto&
+	if(this->abb_type ==computate  && !this->get_called_function()->has_syscall())return true;
+	else return false;
 }
 
 
 std::list<OS::shared_function> OS::ABB::get_called_functions(){
 	std::cout << "test" << std::endl;
 	std::list<OS::shared_function> function_list;
-	//TODO handel invoke instruction TDODO 
+	//TODO handel invoke instruction TODO check why called function reference is a nullptr
 	for(auto *instr : this->call_instruction_references){
-		if(CallInst* tmp = dyn_cast<CallInst>((instr))){
+		if(CallInst* tmp = dyn_cast<CallInst>(instr)){
 			llvm::Function* llvm_function = tmp->getCalledFunction();
 			std::hash<std::string> hash_fn;
 			std::cout<< "function name" << llvm_function->getName().str();
@@ -887,7 +911,7 @@ std::list<OS::shared_function> OS::ABB::get_called_functions(){
 				function_list.emplace_back( function);
 			}
 		}
-		if(InvokeInst* tmp = dyn_cast<InvokeInst>((instr))){
+		if(InvokeInst* tmp = dyn_cast<InvokeInst>(instr)){
 			llvm::Function* llvm_function = tmp->getCalledFunction();
 			std::hash<std::string> hash_fn;
 			std::cout<< "function name" << llvm_function->getName().str();
@@ -901,21 +925,7 @@ std::list<OS::shared_function> OS::ABB::get_called_functions(){
 	}
 	return function_list;
 }
- 
 
-bool OS::ABB::is_mergeable(){
-	
-	bool syscall_flag;
-	for(auto& function : this->get_called_functions()){
-		if(function->has_syscall()){
-			syscall_flag = true;
-			break;
-		}
-	}
-	
-	if(this->abb_type ==computate  && !syscall_flag)return true;
-	else return false;
-}
 
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 
 	this->max_allowed_value = max_allowed_value;

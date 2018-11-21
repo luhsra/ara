@@ -15,7 +15,60 @@
 #define mainSECOND_TASK_BIT (4)
 #define mainISR_BIT  (5)
 
+void portSAVE_CONTEXT();
+void portRESTORE_CONTEXT();
+void portYIELD_FROM_ISR();
+
 EventGroupHandle_t xEventGroup;
+
+void tmp(void *) __attribute__((interrupt("IRQ")));
+
+void tmp(void *){
+	int a = 0;
+}
+/* Declare the wrapper function using the naked attribute.*/
+void vASwitchCompatibleISR_Wrapper( void ) __attribute__ ((naked));
+
+/* Declare the handler function as an ordinary function.*/
+void vASwitchCompatibleISR_Handler( void );
+
+/* The handler function is just an ordinary function. */
+void vASwitchCompatibleISR_Handler( void )
+{
+	long lSwitchRequired = pdFALSE;
+
+	
+	/* ISR code comes here.  If the ISR wakes a task then
+		lSwitchRequired should be set to 1. */
+
+
+	/* If the ISR caused a task to unblock, and the priority 
+	of the unblocked task is higher than the priority of the
+	interrupted task then the ISR should return directly into 
+	the unblocked task.  portYIELD_FROM_ISR() is used for this 
+	purpose. */
+	if( lSwitchRequired )
+	{
+		portYIELD_FROM_ISR();
+	}
+}
+
+void vASwitchCompatibleISR_Wrapper( void )
+{
+	/* Save the context of the interrupted task. */
+	//portSAVE_CONTEXT();
+	
+	/*Call the handler function.  This must be a separate 
+	function unless you can guarantee that handling the 
+	interrupt will never use any stack space. */
+	//vASwitchCompatibleISR_Handler();
+
+	/* Restore the context of the task that is going to 
+	execute next. This might not be the same as the originally 
+	interrupted task.*/
+	//portRESTORE_CONTEXT();
+}
+
 
 static void vEventBitSettingTask( void *pvParameters ){
 	const TickType_t xDelay200ms = pdMS_TO_TICKS( 200UL ), xDontBlock = 0;

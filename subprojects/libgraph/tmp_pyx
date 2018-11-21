@@ -148,7 +148,6 @@ cdef class PyGraph:
 
 		cdef size_t hash_type = 0
 		
-		
 		if name == "Function":
 			hash_type = typeid(cgraph.Function).hash_code()
 		elif name== "ABB":
@@ -172,26 +171,19 @@ cdef class PyGraph:
 		elif name == "QueueSet":
 			hash_type = typeid(cgraph.QueueSet).hash_code()
 
-
 		cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(hash_type)
 
 		pylist = []
 
-		#print("-------------------Size of Vertices:", vertices.size())
-
 		for vertex in vertices:
 			pylist.append(create_from_pointer(vertex))
 
-
-		#print(pylist)
-
 		return pylist
 
-
-	def append_basic_blocks(self, ABB entry_abb,ABB  abb):	
+	def append_basic_blocks(self, ABB entry_abb,ABB  abb):
+	
 		self._c_graph.append_basic_blocks(entry_abb._c_vertex,abb._c_vertex)
-		
-		
+	
     #@staticmethod
     #cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         #py_obj = Vertex(None, "empty", _raw=True)
@@ -220,12 +212,14 @@ cdef class Vertex:
 		#return py_obj
 
 	def get_name(self):
+		return deref(self._c_vertex).get_seed()
+	
+	def get_name(self):
 		cdef string c_string = deref(self._c_vertex).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 
-	def get_seed(self):
-		return deref(self._c_vertex).get_seed()
+
 
 
 cdef class Alarm(Vertex):
@@ -545,21 +539,17 @@ cdef class ABB(Vertex):
 		return pylist
 	
 	
-	def get_called_functions(self):
+	def get_called_function(self):
 		
-		cdef clist[shared_ptr[cgraph.Function]] function_list  =  deref(self._c()).get_called_functions()
+		cdef shared_ptr[cgraph.Function] function =  deref(self._c()).get_called_function()
 		
+		if function == NULL:
+			print("NULL")
+		else:
+			print("success")
+			return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
 		
-		pylist = []
-		
-		for function in function_list:
-			pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)))
-				
-		
-		return pylist
-	
 	def get_ABB_successors(self):
-		
 		cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_successors()
 			
 		pylist = []
@@ -580,11 +570,9 @@ cdef class ABB(Vertex):
 			
 		return pylist
 	
-	
-	
 	def is_mergeable(self):
 		return deref(self._c()).is_mergeable()
-	
+
 		
 		 
 cdef class Queue(Vertex):

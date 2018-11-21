@@ -254,7 +254,7 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 						
 					}else if(abb->get_call_type()== func_call){
 						scheduler_return_value result;
-						for(auto *instr :abb->get_call_instruction_references()){
+						for(auto *instr :abb->get_call_instruction_reference()){
 							if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
 								llvm::Function* called_function = call_instruction->getCalledFunction();
 								if(called_function != nullptr){

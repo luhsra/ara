@@ -15,6 +15,6 @@ subdir('test')
 
 test('ara tester',
 	py3_inst,
-	args : [files('arsa.py', 'test/data/appl.ll'), '--os', 'freertos','--application_file' , 'i.cc'],
+	args : [files('arsa.py', 'test/data/appl.ll'), '--os', 'freertos','--application_file' , 'l.cc'],
 	env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )

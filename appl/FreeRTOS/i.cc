@@ -43,7 +43,7 @@ static void prvPrintTask( void *pvParameters ){
 	
 	 TickType_t xTicksToWait = 120;
 	 
-	 vTaskDelay( ( xTicksToWait ) );
+	 vTaskDelay( ( 120 ) );
 	 
 	 xTicksToWait = 1230;
 	/* Two instances of this task are created. The string printed by the task is
@@ -76,7 +76,7 @@ void vTaskFunction( void *pvParameters ){
 	configASSERT( xRecursiveMutex );
 	//configASSERT() is described in
 	/* As per most tasks, this task is implemented as an infinite loop. */
-	for( ;; )
+	for( int i  = 0; i < 10; ++i )
 	{
 		/* ... */
 		/* Take the recursive mutex. */

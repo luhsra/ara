@@ -34,16 +34,21 @@ cdef extern from "graph.h" namespace "graph":
 		Graph() except +
 
 		void set_vertex(shared_ptr[Vertex] vertex)
+		
+		#void append_basic_blocks(shared_ptr[Vertex] entry_abb,shared_ptr[Vertex] abb)
+		
 		clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info)
-		void append_basic_blocks(shared_ptr[Vertex] entry_abb,shared_ptr[Vertex] abb)
 		
 		
+
 	cdef cppclass Vertex:
 		Vertex(Graph* graph, string name) except +
+		
 		size_t get_seed()
+
 		size_t get_type()
 		string get_name()
-	
+
 
 	cdef cppclass Edge:
 		Edge() except +
@@ -166,13 +171,13 @@ cdef extern from "graph.h" namespace "OS":
 		void set_syscall_type(syscall_definition_type type)
 		void set_call_target_instance(size_t target_instance)
 		void set_expected_syscall_argument_type(size_t data_type_hash)
-		clist[shared_ptr[Function]] get_called_functions()
+		shared_ptr[Function] get_called_function()
 		
 		clist[shared_ptr[ABB]]  get_ABB_successors()
 		clist[shared_ptr[ABB]]  get_ABB_predecessors()
 		clist[size_t] get_syscall_argument_types()
 		
-		bool is_mergeable();
+		bool is_mergeable()
 			
 		string get_call_name()
 		string get_name()

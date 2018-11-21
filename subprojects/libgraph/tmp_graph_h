@@ -110,6 +110,7 @@ namespace graph {
 			bool contain_edge(shared_edge edge);
 			
 			std::string print_information();
+			
 			bool append_basic_blocks(shared_vertex entry_abb, shared_vertex abb);
 			
 			~Graph();
@@ -425,10 +426,8 @@ namespace OS {
 		//TODO get/set Methode and set the blocks in the llvm pass
 		llvm::BasicBlock* entry;
 		llvm::BasicBlock* exit;
-		//TODO change the Instruction call reference to a list object 
-		llvm::Instruction* syscall_instruction_reference;
+		llvm::Instruction* syscall_instruction_references;
 		std::list<llvm::Instruction*> call_instruction_references;
-		
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 
 	  public:
@@ -450,7 +449,7 @@ namespace OS {
 		void set_expected_syscall_argument_type(size_t argument_type);
 		
 		void set_call_instruction_reference(llvm::Instruction * call_instruction);
-		std::list<llvm::Instruction*> get_call_instruction_references();
+		std::list<llvm::Instruction*> get_call_instruction_reference();
 		
 		void set_syscall_instruction_reference(llvm::Instruction * call_instruction);
 		llvm::Instruction* get_syscall_instruction_reference();
@@ -461,6 +460,8 @@ namespace OS {
 		call_definition_type get_call_type();
 		void set_call_type(call_definition_type type);
 
+		//std::list<shared_function>get_called_functions();
+		
 		std::list<std::size_t>*  get_call_target_instance();
 		void set_call_target_instance(size_t target_instance);
 		
@@ -472,7 +473,7 @@ namespace OS {
 		bool set_parent_function(shared_function function);
 		shared_function get_parent_function();
 				
-		std::list<OS::shared_function> get_called_functions();
+		//shared_function get_called_function();
 		
 		bool is_critical();
 		void set_critical(bool critical);
