@@ -414,7 +414,9 @@ namespace OS {
 		
 		std::list<llvm::BasicBlock *> basic_blocks;
 
-		std::string call_name = ""; // Name des Sycalls
+		std::list<std::string> call_names; // Name des Sycalls
+		
+		std::string syscall_name;
 		
 		std::list<std::tuple<std::any,llvm::Type*>> arguments;
 		
@@ -465,9 +467,14 @@ namespace OS {
 		void set_call_target_instance(size_t target_instance);
 		
 		void set_call_name(std::string call_name);
-		std::string get_call_name();
+		std::list<std::string> get_call_names();
 		
-
+		std::string get_syscall_name();
+		void set_syscall_name(std::string name );
+		void expend_call_sites(shared_abb abb);
+		llvm::BasicBlock* get_exit_bb();
+		void adapt_exit_bb(shared_abb abb);
+		
 
 		bool set_parent_function(shared_function function);
 		shared_function get_parent_function();
@@ -491,6 +498,8 @@ namespace OS {
 		std::list<llvm::BasicBlock*> get_BasicBlocks();
 		std::list<size_t> get_expected_syscall_argument_types();
  		std::list<size_t> get_syscall_argument_types();
+		
+		void remove_successor(shared_abb abb);
 		
 		bool is_mergeable();
 	};

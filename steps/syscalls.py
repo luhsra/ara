@@ -21,38 +21,41 @@ def do_merge( entry_abb, exit_abb, inner_abbs = set()):
 	for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
 		
 		graph.append_basic_blocks(entry_bb, abb)
-		
-		
+
 		# Collect all call sites
-		entry_abb.call_sites.extend(abb.call_sites)
+		entry_abb.expend_call(abb)
 		
 		
 	# We merge everything into the entry block of a region.
 	# Therefore, we just update the exit node of the entry to
 	# preserve a correct entry/exit region
-	entry_abb.set_exit_bb(exit_abb.get_exit_bb())
+	
+	entry_abb.adapt_exit_bb(exit_abb)
 
 	# adopt outgoing edges
-	for target in exit_abb.get_outgoing_nodes(E.function_level):
-		exit_abb.remove_cfg_edge(target, E.function_level)
-		if not target == entry_abb: # omit self loop
-			entry_abb.add_cfg_edge(target, E.function_level)
+	for target in exit_abb.get_ABB_successors():
+		exit_abb.remove_successor(target)
+		seed = target.get_seed()
+		if not seed == entry_abb.get_seed(): # omit self loop
+			entry_abb.set_successor(target)
 
 	# Remove edges between entry and inner_abbs/exit
 	for abb in inner_abbs | {entry_abb}:
-		for target in abb.get_outgoing_nodes(E.function_level):
-			if target in inner_abbs | {exit_abb}:
-				abb.remove_cfg_edge(target, E.function_level)
+		for target in abb.get_ABB_successors:
+			seed = target.get_seed()
+			for element in inner_abbs | {exit_abb}:
+				if element.get_seed() == seed:
+					abb.remove_successor(target)
 
 	for abb in (inner_abbs | {exit_abb}):
 		# Adapt exit ABB in corresponding function
-		if parent_function.exit_abb == abb:
+		if parent_function.get_exit_abb().get_seed() == abb.get_seed():
 			parent_function.set_exit_abb(entry_abb)
 
 
 	# Remove merged successors from any existing list
 	for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
-		self.system_graph.remove_abb(abb.get_id())
+		graph.remove_abb(abb.get_seed())
 		parent_function.remove_abb(abb)
 
 	#print("Merged: ", successor, "into:", abb)
@@ -356,49 +359,50 @@ class SyscallStep(Step):
 				if abb.get_call_type() == graph.call_definition_type.has_call:
 					
 					#get call name #TODO get call names
-					call_name = abb.get_call_name()
-			
-					#check if call is a function call or a sys call
-					syscall = syscall_dict.get(call_name.decode('ascii'), "error")
-					if syscall != "error":
-						
-						function.set_has_syscall(True)
-						
-						expected_argument_types = graph.cast_expected_syscall_argument_types(syscall[0])
-						argument_types = abb.get_syscall_argument_types()
-						
-						
-						
-						success = True
-						
-						if len(expected_argument_types) != len(argument_types):
-							success = False
+					call_name_list = abb.get_call_names()
+					
+					for call_name in call_name_list:
+						#check if call is a function call or a sys call
+						syscall = syscall_dict.get(call_name.decode('ascii'), "error")
+						if syscall != "error":
+							
+							function.set_has_syscall(True)
+							
+							expected_argument_types = graph.cast_expected_syscall_argument_types(syscall[0])
+							argument_types = abb.get_syscall_argument_types()
+							
+							abb.set_syscall_name(call_name)
+							
+							success = True
+							
+							if len(expected_argument_types) != len(argument_types):
+								success = False
+							else:
+								counter = 0
+								for expected_type in expected_argument_types:
+									if isinstance(expected_type, list):
+										tmp_success = False
+										for sub_expected_type in expected_type:
+											if sub_expected_type == argument_types[counter]:
+												tmp_success = True
+										success = tmp_success
+										
+									else:
+										if expected_type != argument_types[counter]:
+											success = False
+									counter+=1
+							
+							if success == False:
+								print(abb.get_call_name(), "does not match the expected arguments")
+							
+							abb.set_call_type(graph.call_definition_type.sys_call)
+							abb.set_syscall_type(syscall[1])
+							abb.set_call_target_instance(syscall[2])
+							abb.set_expected_syscall_argument_types(syscall[0])
+							
+							
 						else:
-							counter = 0
-							for expected_type in expected_argument_types:
-								if isinstance(expected_type, list):
-									tmp_success = False
-									for sub_expected_type in expected_type:
-										if sub_expected_type == argument_types[counter]:
-											tmp_success = True
-									success = tmp_success
-									
-								else:
-									if expected_type != argument_types[counter]:
-										success = False
-								counter+=1
-						
-						if success == False:
-							print(abb.get_call_name(), "does not match the expected arguments")
-						
-						abb.set_call_type(graph.call_definition_type.sys_call)
-						abb.set_syscall_type(syscall[1])
-						abb.set_call_target_instance(syscall[2])
-						abb.set_expected_syscall_argument_types(syscall[0])
-						
-						
-					else:
-						abb.set_call_type(graph.call_definition_type.func_call)
+							abb.set_call_type(graph.call_definition_type.func_call)
 						
 					
 		function_list = g.get_type_vertices("Function")

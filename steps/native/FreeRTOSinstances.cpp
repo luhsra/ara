@@ -78,7 +78,9 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
 	for(auto & abb : function->get_atomic_basic_blocks()){
 		if(abb->get_call_type() != no_call){
 			//std::cout << abb->get_call_name() << std::endl; 
-			if(abb->get_call_name() == "vTaskStartScheduler")instruction_vector.push_back(abb->get_syscall_instruction_reference());
+			for(auto& call_name : abb->get_call_names() ){
+				if(call_name == "vTaskStartScheduler")instruction_vector.push_back(abb->get_syscall_instruction_reference());
+			}
 		}
 	}
 	return instruction_vector;
@@ -377,11 +379,11 @@ bool verify_syscall_arguments(std::vector<size_t> &forced_arguments_types ,std::
 
 
 
-bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::size_t>* already_visited){
+bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visited){
 	//generate hash code of basic block name
 	std::hash<std::string> hash_fn;
 	size_t hash_value = hash_fn(bb->getName().str());
-	std::cout << "callname" << call_name << std::endl;
+	//std::cout << "callname" << call_name << std::endl;
 	//search hash value in list of already visited basic blocks
 	for(auto hash : *already_visited){
 		
@@ -471,7 +473,7 @@ bool validate_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::
 			
 			if(CallInst* instruction = dyn_cast<CallInst>(user)){
 				//analyse basic block of call instruction 
-				success = validate_loop(instruction->getParent(), "recursive step" ,already_visited);
+				success = validate_loop(instruction->getParent() ,already_visited);
 				if(success == false)break;
 			}
 		}
@@ -984,7 +986,7 @@ bool detect_interaction(graph::Graph& graph){
 								
 								//TODO verifc that abb reference of the edge is a real abb
 								//create the edge, which contains the start and target vertex and the arguments
-								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),start_vertex ,vertex,abb);
+								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex ,vertex,abb);
 								//TODO set arguments ?
 								//store the edge in the graph
 								graph.set_edge(edge);
@@ -994,7 +996,7 @@ bool detect_interaction(graph::Graph& graph){
 							}else{	//syscall set values
 								//TODO verifc that abb reference of the edge is a real abb
 								//create the edge, which contains the start and target vertex and the arguments
-								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_call_name(),vertex ,start_vertex,abb);
+								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),vertex ,start_vertex,abb);
 								//TODO set arguments ?
 								//store the edge in the graph
 								graph.set_edge(edge);
@@ -1006,13 +1008,13 @@ bool detect_interaction(graph::Graph& graph){
 					}
 					//check if target vertex with corresponding handler name was detected
 					if(success){
-						std::cout << "edge created " << abb->get_call_name() << std::endl;
+						std::cout << "edge created " << abb->get_syscall_name() << std::endl;
 						//break the loop iteration about the possible syscall target instances
 						break;
 					}
 				}
 				if(success == false){
-					std::cout << "edge could not created: " << abb->get_call_name() << std::endl;
+					std::cout << "edge could not created: " << abb->get_syscall_name() << std::endl;
 					for(auto & tuple:* abb->get_arguments()){
 						test_debug_argument(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
 					}
@@ -1079,13 +1081,12 @@ namespace step {
 				//check if abb has a syscall instruction
 				if( abb->get_call_type()== sys_call){
 					
-					std::string callname = abb->get_call_name();
+					
 					std::vector<std::size_t> already_visited;
-					
-					
+
 					
 					//validate if sysccall is in loop
-					if(validate_loop(llvm_abbs.front(),callname,&already_visited)){
+					if(validate_loop(llvm_abbs.front(),&already_visited)){
 						
 						bool before_scheduler_start = false;
 						
@@ -1118,10 +1119,11 @@ namespace step {
 							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Semaphore).hash_code())){
 								//TODO set semaphore
 								semaphore_type type;
-								if(abb->get_call_name() =="xQueueCreateMutex")type = mutex;
-								if(abb->get_call_name() =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
-								if(abb->get_call_name() =="xQueueCreateCountingSemaphore")type = counting;
-
+								for(auto& callname: abb->get_call_names()){
+									if(callname =="xQueueCreateMutex")type = mutex;
+									if(callname =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
+									if(callname =="xQueueCreateCountingSemaphore")type = counting;
+								}
 								if(!create_semaphore(graph, abb, type, before_scheduler_start))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
 								
 							}						

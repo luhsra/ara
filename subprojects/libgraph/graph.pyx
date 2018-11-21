@@ -483,7 +483,6 @@ cdef class ABB(Vertex):
 		cdef string bname
 		if not _raw:
 			bname = name.encode('UTF-8')
-
 			self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](&graph._c_graph,spc[cgraph.Function, cgraph.Vertex](function_reference._c_vertex) , bname))
 
 	def get_name(self):
@@ -496,12 +495,29 @@ cdef class ABB(Vertex):
 		cdef bytes py_string = c_string
 		return py_string
 
+	def set_syscall_name(self,  name):
+		cdef bname
+		if isinstance(name, str):
+			bname = name.encode('UTF-8')
+		else:
+			bname = name
+		
+		return deref(self._c()).set_syscall_name(bname)
 
-	def get_call_name(self):
-		cdef string c_string = deref(self._c()).get_call_name()
-		cdef bytes py_string = c_string
-		return py_string
 	
+	def get_syscall_name(self):
+		return deref(self._c()).get_syscall_name()
+
+	def get_call_names(self):
+		cdef clist[string] call_names =  deref(self._c()).get_call_names()
+		pylist = []
+		cdef bytes tmp_name
+		for name in call_names:
+			tmp_name = name
+			pylist.append( tmp_name)
+			
+		return pylist
+		
 	def get_call_type(self):
 		cdef cgraph.call_definition_type t = deref(self._c()).get_call_type()
 		return call_definition_type(<int> t)
@@ -543,6 +559,16 @@ cdef class ABB(Vertex):
 			pylist.append(argument_type)
 			
 		return pylist
+	
+	
+	def expend_call_sites(self,ABB abb):
+		return deref(self._c()).expend_call_sites(abb._c())
+	
+	def remove_successor(self,ABB abb):
+		return deref(self._c()).remove_successor(abb._c())
+
+	def adapt_exit_bb(self,ABB abb):
+		return deref(self._c()).adapt_exit_bb(abb._c())
 	
 	
 	def get_called_functions(self):

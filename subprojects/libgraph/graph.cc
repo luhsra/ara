@@ -829,10 +829,10 @@ OS::shared_function OS::ABB::get_parent_function(){
 
 
 void OS::ABB::set_call_name(std::string call_name){
-	this->call_name = call_name;
+	this->call_names.emplace_back(call_name);
 }
-std::string OS::ABB::get_call_name(){
-	return this->call_name;
+std::list<std::string> OS::ABB::get_call_names(){
+	return this->call_names;
 }
 
 
@@ -915,6 +915,41 @@ bool OS::ABB::is_mergeable(){
 	
 	if(this->abb_type ==computate  && !syscall_flag)return true;
 	else return false;
+}
+
+void OS::ABB::expend_call_sites(shared_abb abb){
+	//TODO implement call site exchange
+	
+}
+
+std::string OS::ABB::get_syscall_name( ){
+	return this->syscall_name;
+}
+
+void OS::ABB::set_syscall_name(std::string name ){
+	this->syscall_name = name;
+}
+
+
+
+llvm::BasicBlock* OS::ABB::get_exit_bb(){
+	return this->exit;
+}
+
+void OS::ABB::remove_successor(shared_abb abb){
+	for (std::list<shared_abb>::iterator itr = this->successors.begin(); itr != this->successors.end();){
+		if ((*itr)->get_seed() == abb->get_seed()){
+			itr = this->successors.erase(itr);
+		}
+		else{
+			++itr;
+	
+		}
+	}
+}
+
+void OS::ABB::adapt_exit_bb(shared_abb abb){
+	this->exit = abb->get_exit_bb();
 }
 
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 
@@ -1347,10 +1382,11 @@ std::string OS::ABB::print_information(){
 	information += (this->abb_type);
 	information += "\n";
 	if(this->abb_type != no_call){
-
-		information += "call: " + this->call_name + "\n";
-		information += "arguments:\n";
-
+		
+		for(auto& call_name : this->call_names){
+			information += "call: " + call_name + "\n";
+			information += "arguments:\n";
+		}
 		for (auto & argument: this->arguments){
 			//information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ "\n";
 		}

@@ -162,6 +162,8 @@ cdef extern from "graph.h" namespace "OS":
 		
 		call_definition_type get_call_type()
 		
+		void expend_call_sites(shared_ptr[ABB])
+		void remove_successor(shared_ptr[ABB])
 		void set_call_type(call_definition_type type)
 		void set_syscall_type(syscall_definition_type type)
 		void set_call_target_instance(size_t target_instance)
@@ -171,10 +173,12 @@ cdef extern from "graph.h" namespace "OS":
 		clist[shared_ptr[ABB]]  get_ABB_successors()
 		clist[shared_ptr[ABB]]  get_ABB_predecessors()
 		clist[size_t] get_syscall_argument_types()
-		
-		bool is_mergeable();
+		void adapt_exit_bb(shared_ptr[ABB])
+		bool is_mergeable()
 			
-		string get_call_name()
+		clist[string] get_call_names()
+		string get_syscall_name()
+		void set_syscall_name(string)
 		string get_name()
 
 
