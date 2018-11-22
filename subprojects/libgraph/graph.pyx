@@ -143,7 +143,11 @@ cdef class PyGraph:
 
 	def set_vertex(self, Vertex vertex):
 		self._c_graph.set_vertex(vertex._c_vertex)
-
+		
+	def remove_vertex(self,seed):
+		return self._c_graph.remove_vertex(seed)
+			
+	
 	def get_type_vertices(self, name):
 
 		cdef size_t hash_type = 0
@@ -188,8 +192,7 @@ cdef class PyGraph:
 		return pylist
 
 
-	def append_basic_blocks(self, ABB entry_abb,ABB  abb):	
-		self._c_graph.append_basic_blocks(entry_abb._c_vertex,abb._c_vertex)
+	
 		
 		
     #@staticmethod
@@ -456,6 +459,8 @@ cdef class Function(Vertex):
 	
 		return deref(self._c()).has_syscall()
 		
+	def remove_abb(self,seed):
+		return deref(self._c()).remove_abb(seed)
 		
 	#def get_call_target_instance(self):
 		#return deref(self._c()).get_call_target_instance()
@@ -504,6 +509,15 @@ cdef class ABB(Vertex):
 		
 		return deref(self._c()).set_syscall_name(bname)
 
+
+	def convert_call_to_syscall(self, name):
+		cdef bname
+		if isinstance(name, str):
+			bname = name.encode('UTF-8')
+		else:
+			bname = name
+		
+		return deref(self._c()).convert_call_to_syscall(bname)
 	
 	def get_syscall_name(self):
 		return deref(self._c()).get_syscall_name()
@@ -584,7 +598,7 @@ cdef class ABB(Vertex):
 		
 		return pylist
 	
-	def get_ABB_successors(self):
+	def get_successors(self):
 		
 		cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_successors()
 			
@@ -595,7 +609,7 @@ cdef class ABB(Vertex):
 			
 		return pylist
 	
-	def get_ABB_predecessors(self):
+	def get_predecessors(self):
 		
 		cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_predecessors()
 			
@@ -606,12 +620,37 @@ cdef class ABB(Vertex):
 			
 		return pylist
 	
+	def get_single_successor(self):
+		
+		cdef shared_ptr[cgraph.ABB] abb =  deref(self._c()).get_single_ABB_successor()
+	
+		if abb == NULL:
+			print("error in getting single abb successor") 
+		
+		return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
 	
 	
 	def is_mergeable(self):
 		return deref(self._c()).is_mergeable()
 	
-		
+	def has_single_successor(self):
+		return deref(self._c()).has_single_successor()
+	
+	def append_basic_blocks(self, ABB  abb):	
+		return deref(self._c()).append_basic_blocks(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+	
+	
+	def set_successor(self, ABB  abb):	
+		return deref(self._c()).set_ABB_successor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+	
+	
+	
+	def set_predecessor(self, ABB  abb):	
+		return deref(self._c()).set_ABB_predecessor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+	
+		 
+		 
+		 
 		 
 cdef class Queue(Vertex):
 

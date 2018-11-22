@@ -155,11 +155,26 @@ std::list<shared_edge> graph::Graph::get_edges(){
     return tmp_list;
 }
 
-bool graph::Graph::remove_vertex(graph::shared_vertex *vertex){
+bool graph::Graph::remove_vertex(size_t seed){
     bool success = false;
     std::list<shared_vertex>::iterator it = this->vertices.begin();           //iterate about the list elements
     for(; it != this->vertices.end(); ++it){
-        if(vertex->get()->get_seed() == (*it)->get_seed()){
+        if(seed == (*it)->get_seed()){
+            //TODO remove edges
+            it = this->vertices.erase(it--);
+            success = true;
+            break;
+        }
+    }
+    return success;
+}
+
+
+bool graph::Graph::remove_vertex(graph::shared_vertex vertex){
+    bool success = false;
+    std::list<shared_vertex>::iterator it = this->vertices.begin();           //iterate about the list elements
+    for(; it != this->vertices.end(); ++it){
+        if(vertex->get_seed() == (*it)->get_seed()){
             //TODO remove edges
             it = this->vertices.erase(it--);
             success = true;
@@ -207,12 +222,6 @@ bool graph::Graph::contain_edge(shared_edge edge){
     return success;
 }
 
-
-bool graph::Graph::append_basic_blocks(shared_vertex entry_abb, shared_vertex abb){
-	
-	
-	return false;
-}
 
 
 
@@ -548,7 +557,24 @@ void graph::Edge::set_argument(std::tuple<std::any,llvm::Type*> argument){
 }
 
 
-
+bool OS::Function::remove_abb(size_t seed){
+	
+	bool success = false;
+	for (auto itr = this->atomic_basic_blocks.begin(); itr != this->atomic_basic_blocks.end(); ){
+		if ((*itr)->get_seed() == seed){
+			success = true;
+			itr = this->atomic_basic_blocks.erase(itr);
+		}
+		else{
+			++itr;
+		}
+	}
+	if(this->front_abb->get_seed() == seed)this->front_abb =nullptr;
+	if(this->exit_abb->get_seed() == seed)this->exit_abb =nullptr;
+	
+	return success;
+	
+}
 
 
 
@@ -709,6 +735,16 @@ void OS::Function::set_front_abb(OS::shared_abb abb){
 	this->front_abb = abb;
 }
 
+void OS::Function::set_exit_abb(OS::shared_abb abb){
+	this->exit_abb = abb;
+}
+
+
+OS::shared_abb OS::Function::get_exit_abb(){
+	return this->exit_abb;
+}
+
+
 OS::shared_abb OS::Function::get_front_abb(){
 	return this->front_abb;
 }
@@ -717,7 +753,7 @@ OS::shared_abb OS::Function::get_front_abb(){
 
 
 void OS::ABB::set_call_target_instance(size_t target_instance){
-	this->call_target_instance.emplace_back(target_instance);
+	this->call_target_instances.emplace_back(target_instance);
 }
 
 
@@ -730,8 +766,8 @@ void OS::ABB::set_syscall_type(syscall_definition_type type){
 }
 
 
-std::list<std::size_t>* OS::ABB::get_call_target_instance(){
-	return  &(this->call_target_instance);
+std::list<std::size_t>* OS::ABB::get_call_target_instances(){
+	return  &(this->call_target_instances);
 }
 
 
@@ -750,9 +786,14 @@ bool OS::ABB::is_critical(){return this->critical_section;}
 void OS::ABB::set_critical(bool critical){this->critical_section = critical;}
 
 
-std::list<std::tuple<std::any,llvm::Type*>>* OS::ABB::get_arguments(){
+std::list<std::list<std::tuple<std::any,llvm::Type*>>>* OS::ABB::get_arguments(){
 	//std::cerr << "length: " << this->arguments.size() << std::endl;
 	return &this->arguments;
+}
+
+std::list<std::tuple<std::any,llvm::Type*>>* OS::ABB::get_syscall_arguments(){
+	//std::cerr << "length: " << this->arguments.size() << std::endl;
+	return &this->syscall_arguments;
 }
 
 /*
@@ -763,12 +804,12 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments){
-    this->arguments = new_arguments;
+    this->arguments.emplace_back(new_arguments);
 } // Setze Argument des SystemCalls in Argumentenliste
 
 void OS::ABB::set_argument(std::any argument,llvm::Type* type){
 	
-    this->arguments.emplace_back(std::make_tuple (argument,type));
+    this->arguments.back().emplace_back(std::make_tuple (argument,type));
 } // Setze Argument des SystemCalls in Argumentenliste
 
 
@@ -787,6 +828,12 @@ bool OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock){
 std::list<OS::shared_abb> OS::ABB::get_ABB_successors(){
 	return this->successors;	
 }      // Gebe Referenz auf Nachfolger zurück
+
+OS::shared_abb OS::ABB::get_single_ABB_successor(){
+	if(this->successors.size() ==1)return this->successors.front();
+	else return nullptr;
+}      // Gebe Referenz auf Nachfolger zurück
+
 
 
 std::list<OS::shared_abb> OS::ABB::get_ABB_predecessors(){
@@ -858,13 +905,30 @@ std::list<size_t> OS::ABB::get_expected_syscall_argument_types(){
 	return this->expected_argument_types;
 }
 
-
+bool OS::ABB::convert_call_to_syscall(std::string name){
+	
+	if(this->call_names.size() != this->arguments.size())return false;
+	
+	int index= 0;
+	for(auto& call_name: this->call_names){
+		if(call_name == name)break;
+		index++;
+	}
+	int tmp_index = 0;
+	for(auto& call_arguments: this->arguments){
+		if(tmp_index == index){
+			this->syscall_arguments =call_arguments;
+			this->syscall_name = name;
+		}
+		tmp_index++;
+	}
+}
 
 std::list<size_t> OS::ABB::get_syscall_argument_types(){
 	
 	std::list<size_t> argument_types;
 	
-	for(auto & tuple: this->arguments){
+	for(auto & tuple: this->syscall_arguments){
 		argument_types.emplace_back(std::get<std::any>(tuple).type().hash_code());
 	}
 	return argument_types;
@@ -874,7 +938,6 @@ std::list<size_t> OS::ABB::get_syscall_argument_types(){
 std::list<OS::shared_function> OS::ABB::get_called_functions(){
 	std::cout << "test" << std::endl;
 	std::list<OS::shared_function> function_list;
-	//TODO handel invoke instruction TDODO 
 	for(auto *instr : this->call_instruction_references){
 		if(CallInst* tmp = dyn_cast<CallInst>((instr))){
 			llvm::Function* llvm_function = tmp->getCalledFunction();
@@ -901,7 +964,18 @@ std::list<OS::shared_function> OS::ABB::get_called_functions(){
 	}
 	return function_list;
 }
- 
+
+//append basic blocks to entry abb from abb
+bool OS::ABB::append_basic_blocks(shared_abb  abb){
+	
+	if(!this->graph->contain_vertex(abb))return false;
+	for(auto& basic_block : abb->get_BasicBlocks()){
+		this->set_BasicBlock(basic_block);
+	}
+	
+	return true;
+}
+
 
 bool OS::ABB::is_mergeable(){
 	
@@ -918,8 +992,37 @@ bool OS::ABB::is_mergeable(){
 }
 
 void OS::ABB::expend_call_sites(shared_abb abb){
-	//TODO implement call site exchange
 	
+	if(this->syscall_instruction_reference != nullptr && abb->get_syscall_instruction_reference() != nullptr){
+		std::cout << "ERROR, both abbs, which shall be merged, contain a syscall"<< std::endl;
+	}
+	if(this->syscall_instruction_reference == nullptr && abb->get_syscall_instruction_reference() != nullptr){
+		this->syscall_instruction_reference = abb->get_syscall_instruction_reference();
+		this->syscall_arguments = *(abb->get_syscall_arguments());
+		this->syscall_name = abb->get_syscall_name();
+	}
+	
+	for(auto& call_name: abb->get_call_names()){
+		
+		this->call_names.emplace_back(call_name);
+	}
+	
+	for(auto& call_instruction_reference: abb->get_call_instruction_references()){
+		
+		this->call_instruction_references.emplace_back(call_instruction_reference);
+	}
+	
+	for(auto& tmp_argument: *(abb->get_arguments())){
+		
+		this->arguments.emplace_back(tmp_argument);
+	}
+	
+	
+	for(auto& call_target_instance: *(abb->get_call_target_instances())){
+		
+		this->call_target_instances.emplace_back(call_target_instance);
+	}
+
 }
 
 std::string OS::ABB::get_syscall_name( ){
@@ -950,6 +1053,11 @@ void OS::ABB::remove_successor(shared_abb abb){
 
 void OS::ABB::adapt_exit_bb(shared_abb abb){
 	this->exit = abb->get_exit_bb();
+}
+
+bool  OS::ABB::has_single_successor(){
+	if(this->successors.size() == 1)return true;
+	else return false;
 }
 
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 

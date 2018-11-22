@@ -495,7 +495,7 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *(abb->get_syscall_arguments())){
 		argument_list.emplace_back(tuple);
 	}
 
@@ -565,7 +565,7 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *abb->get_syscall_arguments()){
 		argument_list.emplace_back(tuple);
 	}
 	
@@ -650,7 +650,7 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *abb->get_syscall_arguments()){
 		argument_list.emplace_back(tuple);
 	}
 		
@@ -702,7 +702,7 @@ bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_sche
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *abb->get_syscall_arguments()){
 		argument_list.emplace_back(tuple);
 	}
 		
@@ -733,7 +733,7 @@ bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_sche
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *abb->get_syscall_arguments()){
 		argument_list.emplace_back(tuple);
 	}
 		
@@ -765,7 +765,7 @@ bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_
 	
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *abb->get_syscall_arguments()){
 		argument_list.emplace_back(tuple);
 	}
 	//load the arguments
@@ -820,7 +820,7 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 	//get the typeid hashcode of the expected arguments
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
-	for(auto & tuple : *abb->get_arguments()){
+	for(auto & tuple : *abb->get_syscall_arguments()){
 		argument_list.emplace_back(tuple);
 	}
 			
@@ -953,8 +953,8 @@ bool detect_interaction(graph::Graph& graph){
 				
 				bool success = false;
 				
-				std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_arguments();
-				std::list<std::size_t>*  target_list = abb->get_call_target_instance();
+				std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_syscall_arguments();
+				std::list<std::size_t>*  target_list = abb->get_call_target_instances();
 				//load the handler name
 				std::string handler_name = "";
 				if(argument_list->size() >0 &&  std::get<std::any>(argument_list->front()).type().hash_code()== typeid(std::string).hash_code()){
@@ -1015,8 +1015,10 @@ bool detect_interaction(graph::Graph& graph){
 				}
 				if(success == false){
 					std::cout << "edge could not created: " << abb->get_syscall_name() << std::endl;
-					for(auto & tuple:* abb->get_arguments()){
-						test_debug_argument(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
+					for(auto & arguments:* abb->get_arguments()){
+						for(auto &tuple : arguments){
+							test_debug_argument(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
+						}
 					}
 				}
 			}
@@ -1107,16 +1109,16 @@ namespace step {
 						if(abb->get_syscall_type() == create){
 							
 							//check which target should be generated
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Task).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
 								//std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
 								if(!create_task(graph,abb,before_scheduler_start))std::cout << "Task could not created" << std::endl;
 							}
 								
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Queue).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Queue).hash_code())){
 								if(!create_queue( graph,abb,before_scheduler_start))std::cout << "Queue could not created" << std::endl;
 
 							}
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Semaphore).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
 								//TODO set semaphore
 								semaphore_type type;
 								for(auto& callname: abb->get_call_names()){
@@ -1127,20 +1129,20 @@ namespace step {
 								if(!create_semaphore(graph, abb, type, before_scheduler_start))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
 								
 							}						
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Timer).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
 								if(!create_timer( graph,abb,before_scheduler_start))std::cout << "Timer could not created" << std::endl;
 							}
 
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::EventGroup).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
 								//std::cout << callname << std::endl;
 								if(!create_event_group(graph, abb,before_scheduler_start))std::cout << "Event Group could not created" << std::endl;
 							}
 							
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::Buffer).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Buffer).hash_code())){
 								//std::cout << callname << std::endl;
 								if(!create_buffer(graph, abb,before_scheduler_start))std::cout << "Buffer could not created" << std::endl;
 							}
-							if(list_contains_element(abb->get_call_target_instance(),typeid(OS::QueueSet).hash_code())){
+							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::QueueSet).hash_code())){
 								//std::cout << callname << std::endl;
 								if(!create_queue_set(graph, abb,before_scheduler_start))std::cout << "Queue Set could not created" << std::endl;
 							}

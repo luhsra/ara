@@ -35,7 +35,7 @@ cdef extern from "graph.h" namespace "graph":
 
 		void set_vertex(shared_ptr[Vertex] vertex)
 		clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info)
-		void append_basic_blocks(shared_ptr[Vertex] entry_abb,shared_ptr[Vertex] abb)
+		bool remove_vertex(size_t)
 		
 		
 	cdef cppclass Vertex:
@@ -43,7 +43,7 @@ cdef extern from "graph.h" namespace "graph":
 		size_t get_seed()
 		size_t get_type()
 		string get_name()
-	
+
 
 	cdef cppclass Edge:
 		Edge() except +
@@ -149,6 +149,8 @@ cdef extern from "graph.h" namespace "OS":
 		string get_name()
 		void has_syscall(bool flag)
 		bool has_syscall()
+		
+		bool remove_abb(size_t seed)
 
 		
 	cdef cppclass RTOS:
@@ -171,14 +173,20 @@ cdef extern from "graph.h" namespace "OS":
 		clist[shared_ptr[Function]] get_called_functions()
 		
 		clist[shared_ptr[ABB]]  get_ABB_successors()
+		shared_ptr[ABB]  get_single_ABB_successor()
+		
 		clist[shared_ptr[ABB]]  get_ABB_predecessors()
 		clist[size_t] get_syscall_argument_types()
 		void adapt_exit_bb(shared_ptr[ABB])
 		bool is_mergeable()
-			
+		bool has_single_successor()
 		clist[string] get_call_names()
 		string get_syscall_name()
 		void set_syscall_name(string)
+		bool convert_call_to_syscall(string)
 		string get_name()
+	
+		void append_basic_blocks(shared_ptr[ABB] abb)
 
-
+		bool set_ABB_successor(shared_ptr[ABB] abb)
+		bool set_ABB_predecessor(shared_ptr[ABB] abb)

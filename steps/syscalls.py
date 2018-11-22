@@ -1,5 +1,6 @@
 import graph
 import os
+import sys
 from collections import namedtuple
 import logging
 #import syscalls_references
@@ -7,6 +8,108 @@ import logging
 from native_step import Step
 
 
+MergeCandidates = namedtuple('MergeCandidates', 'entry_abb exit_abb inner_abbs')
+
+
+def find_branches_to_merge(abb):
+	successors = abb.get_successors()
+	if not len(successors) == 2:
+		return None
+
+	left_succ = successors[0]
+	right_succ = successors[1]
+
+	#   O abb
+	#  | \
+	#  | O right_succ
+	#  | /
+	#   O left_succ
+	#
+	if right_succ.has_single_successor():
+		rss = right_succ.get_single_successor()
+		if rss.get_seed() == left_succ.get_seed():
+			return MergeCandidates(entry_abb = abb, exit_abb = left_succ, inner_abbs = set([right_succ]))
+
+	#   O abb
+	#  /|
+	# O | left_succ
+	# \ |
+	#  O  right_succ
+	#
+	if left_succ.has_single_successor():
+		lss = left_succ.get_single_successor()
+		if lss.get_seed() == right_succ.get_seed():
+			return MergeCandidates(entry_abb = abb, exit_abb = right_succ, inner_abbs = set([left_succ]))
+
+	#
+	#   O abb
+	#  / \
+	# O   O right_succ
+	#  \ /
+	#   O rss/lss
+	if left_succ.has_single_successor() and right_succ.has_single_successor():
+		lss = left_succ.get_single_successor()
+		rss = right_succ.get_single_successor()
+		if lss.get_seed() == rss.get_seed():
+			return MergeCandidates(entry_abb = abb, exit_abb = lss, inner_abbs = set([right_succ, left_succ]))
+
+	return None
+
+def merge_branches(graph):
+	"""
+	Try to merge if - else branches with the following pattern:
+			O      O
+			/ \     |\
+			O  O     |O
+			\/      |/
+			O       O
+	"""
+	anyChanges = True
+	while anyChanges:
+		anyChanges = False
+		for abb in graph.get_type_vertices("ABB"):
+			mc = find_branches_to_merge(abb)
+			if mc and can_be_merged(mc.entry_abb, mc.exit_abb, mc.inner_abbs):
+				do_merge(mc.entry_abb, mc.exit_abb, mc.inner_abbs)
+				anyChanges = True
+
+
+	#self.merge_stats.after_branch_merge = len(self.system_graph.abbs)
+
+def find_loops_to_merge(abb):
+	# |
+	# o<--->o
+	# |
+	successors = abb.successors()
+	if not len(successors) == 2:
+		return None
+
+	left_succ = successors[0]
+	right_succ = successors[1]
+
+	if left_succ.has_single_successor():
+		succ = left_succ.get_single_successor()
+		if succ.get_seed() == abb.get_seed():
+			return MergeCandidates(entry_abb = abb, exit_abb = abb,inner_abbs = {left_succ})
+	if right_succ.has_single_successor():
+		succ = right_succ.get_single_successor()
+		if succ.get_seed() == abb.get_seed():
+			return MergeCandidates(entry_abb = abb, exit_abb = abb,inner_abbs = {right_succ})
+
+	return None
+
+def merge_loops(graph):
+	anyChanges = True
+	while anyChanges:
+		anyChanges = False
+		for abb in graph.get_type_vertices("ABB"):
+			mc = find_loops_to_merge(abb)
+			if mc and can_be_merged(mc.entry_abb, mc.exit_abb, mc.inner_abbs):
+				do_merge(mc.entry_abb, mc.exit_abb, mc.inner_abbs)
+				anyChanges = True
+
+	#self.merge_stats.after_loop_merge = len(g.get_type_vertices("ABB"))
+        
 def do_merge( entry_abb, exit_abb, inner_abbs = set()):
 	#print('Trying to merge:', inner_abbs, exit_abb, 'into', entry_abb)
 	#assert not entry_abb == exit_abb, 'Entry ABB cannot merge itself into itself'
@@ -20,8 +123,7 @@ def do_merge( entry_abb, exit_abb, inner_abbs = set()):
 	# adopt basic blocks and call sites
 	for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
 		
-		graph.append_basic_blocks(entry_bb, abb)
-
+		entry_abb.append_basic_blocks(abb)
 		# Collect all call sites
 		entry_abb.expend_call(abb)
 		
@@ -41,7 +143,7 @@ def do_merge( entry_abb, exit_abb, inner_abbs = set()):
 
 	# Remove edges between entry and inner_abbs/exit
 	for abb in inner_abbs | {entry_abb}:
-		for target in abb.get_ABB_successors:
+		for target in abb.get_ABB_successors():
 			seed = target.get_seed()
 			for element in inner_abbs | {exit_abb}:
 				if element.get_seed() == seed:
@@ -49,14 +151,21 @@ def do_merge( entry_abb, exit_abb, inner_abbs = set()):
 
 	for abb in (inner_abbs | {exit_abb}):
 		# Adapt exit ABB in corresponding function
+		#TODO check if possible more exit blocks
 		if parent_function.get_exit_abb().get_seed() == abb.get_seed():
 			parent_function.set_exit_abb(entry_abb)
 
 
 	# Remove merged successors from any existing list
 	for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
-		graph.remove_abb(abb.get_seed())
-		parent_function.remove_abb(abb)
+		
+		if not parent_function.remove_abb(abb.get_seed()):
+			sys.exit("abb could not removed from function")
+			
+		if not graph.remove_vertex(abb.get_seed()):
+			sys.exit("abb could not removed from graph")
+		
+		
 
 	#print("Merged: ", successor, "into:", abb)
 	#print(abb.outgoing_edges)
@@ -87,8 +196,15 @@ def can_be_merged( entry_abb, exit_abb, inner_abbs = set()):
 
 		for entry_successor in entry_abb.get_ABB_successors():
 			# The entry node may only be followed by any inner ABB or the exit ABB
-			if not (entry_successor in inner_abbs | {exit_abb}):
+			seed = entry_successor.get_seed()
+			flag = False
+			for element in inner_abbs | {exit_abb}:
+				if seed == element.get_seed():
+					flag = True
+				
+			if flag == False:
 				return False
+			
 	else: # entry_abb == exit_abb
 		pass
 		# Intentionally left blank:
@@ -361,17 +477,22 @@ class SyscallStep(Step):
 					#get call name #TODO get call names
 					call_name_list = abb.get_call_names()
 					
+					assert len(call_name_list) == 1 , "more than one call in abb during syscall detection"
+					
 					for call_name in call_name_list:
 						#check if call is a function call or a sys call
 						syscall = syscall_dict.get(call_name.decode('ascii'), "error")
 						if syscall != "error":
 							
+							abb.convert_call_to_syscall(call_name)
+							
 							function.set_has_syscall(True)
 							
 							expected_argument_types = graph.cast_expected_syscall_argument_types(syscall[0])
+							
 							argument_types = abb.get_syscall_argument_types()
 							
-							abb.set_syscall_name(call_name)
+							
 							
 							success = True
 							
@@ -393,12 +514,13 @@ class SyscallStep(Step):
 									counter+=1
 							
 							if success == False:
-								print(abb.get_call_name(), "does not match the expected arguments")
+								print(call_name, "does not match the expected arguments")
 							
 							abb.set_call_type(graph.call_definition_type.sys_call)
+							abb.set_expected_syscall_argument_types(syscall[0])
 							abb.set_syscall_type(syscall[1])
 							abb.set_call_target_instance(syscall[2])
-							abb.set_expected_syscall_argument_types(syscall[0])
+							
 							
 							
 						else:
@@ -467,17 +589,6 @@ class SyscallStep(Step):
 							
 		"""
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 		print("I'm an SyscallStep")
 	
 

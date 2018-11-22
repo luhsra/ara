@@ -101,7 +101,9 @@ namespace graph {
                 
 			std::list<shared_edge> get_edges();  // gebe alle Edges des Graphen zurück
 
-			bool remove_vertex(shared_vertex *vertex); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes
+			bool remove_vertex(shared_vertex vertex); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes
+			
+			bool remove_vertex(size_t seed);
 												// aus dem Graphen
 			bool remove_edge(shared_edge *edge); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes aus dem Graphen
                 
@@ -110,7 +112,7 @@ namespace graph {
 			bool contain_edge(shared_edge edge);
 			
 			std::string print_information();
-			bool append_basic_blocks(shared_vertex entry_abb, shared_vertex abb);
+			
 			
 			~Graph();
                 
@@ -243,7 +245,7 @@ namespace graph {
 		bool is_sycall();
 
 		std::list<std::tuple<std::any,llvm::Type*>>* get_arguments();
-		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> arguments);
+		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>>arguments);
 		void set_argument(std::tuple<std::any,llvm::Type*> argument);
 	};
 } // namespace graph
@@ -323,6 +325,7 @@ namespace OS {
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 		
 		shared_abb front_abb;
+		shared_abb exit_abb;
 
                                                             
 	  public:
@@ -349,7 +352,9 @@ namespace OS {
 		bool has_syscall();
 		
 		void set_front_abb(shared_abb abb);
-
+		shared_abb get_exit_abb();
+		void set_exit_abb(shared_abb abb);
+		
 		shared_abb get_front_abb();
 
 		void set_definition(function_definition_type type);
@@ -396,6 +401,10 @@ namespace OS {
                 
 		void set_return_type(llvm::Type* argument); 
 		llvm::Type * get_return_type();
+		
+		bool has_single_successor();
+		
+		bool remove_abb(size_t seed);
 	};
 
 	// Klasse AtomicBasicBlock
@@ -418,9 +427,9 @@ namespace OS {
 		
 		std::string syscall_name;
 		
-		std::list<std::tuple<std::any,llvm::Type*>> arguments;
+		std::list<std::list<std::tuple<std::any,llvm::Type*>>> arguments;
 		
-		std::list<std::size_t>  call_target_instance;
+		std::list<std::size_t>  call_target_instances;
 		
 		std::list<std::size_t>  expected_argument_types;
 		
@@ -428,7 +437,12 @@ namespace OS {
 		llvm::BasicBlock* entry;
 		llvm::BasicBlock* exit;
 		//TODO change the Instruction call reference to a list object 
-		llvm::Instruction* syscall_instruction_reference;
+		
+		llvm::Instruction* syscall_instruction_reference = nullptr;
+		
+		std::list<std::tuple<std::any,llvm::Type*>>syscall_arguments;
+		
+		
 		std::list<llvm::Instruction*> call_instruction_references;
 		
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
@@ -463,7 +477,7 @@ namespace OS {
 		call_definition_type get_call_type();
 		void set_call_type(call_definition_type type);
 
-		std::list<std::size_t>*  get_call_target_instance();
+		std::list<std::size_t>*  get_call_target_instances();
 		void set_call_target_instance(size_t target_instance);
 		
 		void set_call_name(std::string call_name);
@@ -484,14 +498,19 @@ namespace OS {
 		bool is_critical();
 		void set_critical(bool critical);
 
-		std::list<std::tuple<std::any,llvm::Type*>> get_arguments_tmp();
-		std::list<std::tuple<std::any,llvm::Type*>>* get_arguments();
+		//std::list<std::tuple<std::any,llvm::Type*>> get_arguments_tmp();
+		std::list<std::list<std::tuple<std::any,llvm::Type*>>>* get_arguments();
 		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
+		
+		std::list<std::tuple<std::any,llvm::Type*>>* get_syscall_arguments();
+		
 
 		void set_argument(std::any,llvm::Type* type);
+		
 		bool set_ABB_successor(shared_abb basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
 		bool set_ABB_predecessor(shared_abb basicblock); // Speicher Referenz auf Vorgänger des BasicBlocks
 		std::list<shared_abb> get_ABB_successors();      // Gebe Referenz auf Nachfolger zurück
+		shared_abb get_single_ABB_successor();
 		std::list<shared_abb> get_ABB_predecessors();    // Gebe Referenz auf Vorgänger zurück
 
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
@@ -501,7 +520,12 @@ namespace OS {
 		
 		void remove_successor(shared_abb abb);
 		
+		bool convert_call_to_syscall(std::string name);
+		bool append_basic_blocks(shared_abb abb);
+		
+		bool has_single_successor();
 		bool is_mergeable();
+		void merge_call_sites(shared_abb abb);
 	};
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter
