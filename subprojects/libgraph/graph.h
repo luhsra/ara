@@ -303,7 +303,7 @@ namespace OS {
 		
 		bool syscall_flag = false;
 		
-		graph::shared_vertex definition_element;
+		graph::shared_vertex definition_element = nullptr;
 		
 		std::string function_name;       // name der Funktion
 		std::list<llvm::Type*> argument_types; // Argumente des Functionsaufrufes
@@ -324,8 +324,8 @@ namespace OS {
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 		
-		shared_abb front_abb;
-		shared_abb exit_abb;
+		shared_abb front_abb = nullptr;
+		shared_abb exit_abb = nullptr;
 
                                                             
 	  public:
@@ -504,8 +504,6 @@ namespace OS {
 		
 		std::list<std::tuple<std::any,llvm::Type*>>* get_syscall_arguments();
 		
-
-		void set_argument(std::any,llvm::Type* type);
 		
 		bool set_ABB_successor(shared_abb basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
 		bool set_ABB_predecessor(shared_abb basicblock); // Speicher Referenz auf Vorgänger des BasicBlocks
@@ -515,8 +513,8 @@ namespace OS {
 
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
 		std::list<llvm::BasicBlock*> get_BasicBlocks();
-		std::list<size_t> get_expected_syscall_argument_types();
- 		std::list<size_t> get_syscall_argument_types();
+		//std::list<size_t> get_expected_syscall_argument_types();
+ 		std::list<std::list<size_t>> get_call_argument_types();
 		
 		void remove_successor(shared_abb abb);
 		

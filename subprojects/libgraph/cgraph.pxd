@@ -169,10 +169,13 @@ cdef extern from "graph.h" namespace "OS":
 		void set_call_type(call_definition_type type)
 		void set_syscall_type(syscall_definition_type type)
 		void set_call_target_instance(size_t target_instance)
-		void set_expected_syscall_argument_type(size_t data_type_hash)
+		#void set_expected_syscall_argument_type(size_t data_type_hash)
 		clist[shared_ptr[Function]] get_called_functions()
 		
 		clist[shared_ptr[ABB]]  get_ABB_successors()
+		
+		clist[clist[size_t]] get_call_argument_types()
+		
 		shared_ptr[ABB]  get_single_ABB_successor()
 		
 		clist[shared_ptr[ABB]]  get_ABB_predecessors()

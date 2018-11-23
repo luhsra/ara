@@ -29,135 +29,19 @@ using namespace llvm;
 
 static llvm::LLVMContext context;
 
-bool validates_loop(llvm::BasicBlock *bb, std::string call_name,std::vector<std::size_t>* already_visited){
-	//generate hash code of basic block name
-	std::hash<std::string> hash_fn;
-	size_t hash_value = hash_fn(bb->getName().str());
-	std::cout << "callname" << call_name << std::endl;
-	//search hash value in list of already visited basic blocks
-	for(auto hash : *already_visited){
-		
-		if(hash_value == hash){
-			//basic block already visited
-			return true;
-			break;
-		}
-	}
-	//set basic block hash value in already visited list
-	already_visited->push_back(hash_value);
-	
-	bool success = true;
-	//search loop of function
-	llvm::DominatorTree DT = llvm::DominatorTree();
-	DT.recalculate(*bb->getParent());
-	DT.updateDFSNumbers();
-
-	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* LIB = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
-	LIB->releaseMemory();
-	LIB->analyze(DT);
-	llvm::Loop * L = LIB->getLoopFor(bb);
-	AssumptionCache AC = AssumptionCache(*bb->getParent());
-	
-	Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
-	TargetLibraryInfoImpl TLII(ModuleTriple);
-	//TODO check behavoiur
-	TLII.disableAllFunctions();
-	TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
-	
-	//TODO getExitBlock - If getExitBlocks would return exactly one block, return that block.
-	
-	LoopInfo LI = LoopInfo(DT);
-	LI.analyze (DT);
-	ScalarEvolution SE = ScalarEvolution(*bb->getParent(), TLI.getTLI(),AC, DT, LI);
-	SE.verify();
-
-	//auto * test = SE.getBackedgeTakenCount (L);
-	//check if basic block is in loop
-	//TODO get loop count
-	if(L != nullptr){
-			
-		SmallVector<BasicBlock *,10> blocks;
-		if(L->getExitingBlock()==nullptr){
-			std::cout << "loop has more or no exit blocks" << std::endl;
-		}
-		else{
-			std::cout << "loop has one exit block" << std::endl;
-		
-			std::cout << "finaler Test" << SE.getSmallConstantMaxTripCount  (L ) << std::endl;
-			std::cout << "finaler Test" << SE.getSmallConstantTripMultiple  (L) << std::endl;
-			std::cout << "finaler Test" << SE.getSmallConstantTripCount   (L) << std::endl;
-		}
-		//auto  blocks;
-		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
-		L->getExitingBlocks(blocks);
-		
-		std::cout << blocks.size() << std::endl;
-		for(auto & exit_block: blocks){
-			std::cout << "test" << std::endl;
-				
-			std::string type_str;
-			llvm::raw_string_ostream rso(type_str);
-			exit_block->print(rso);
-			std::cout <<  rso.str() << std::endl;
-		}
-		std::cout << "trip count " <<  SE.getSmallConstantTripCount(L) << std::endl; 
-		{
-			
-		std::string type_str;
-		llvm::raw_string_ostream rso(type_str);
-		L->print(rso);
-		std::cout <<  rso.str() << std::endl;
-	
-		}
-		//std::cout << "element is in loop" << std::endl;
-		//std::cout << "loop count:" << SE.getSmallConstantMaxTripCount(L);
-		//std::cout << "loop count:" << SE.getSmallConstantTripCount(L);
-	
-		//std::cout << "warning" << std::endl;
-		//std::cout << "loop depth: " << LIB->getLoopDepth(bb) << std::endl;
-		//std::cout << "loop depth: " << LI.getLoopDepth(bb) << std::endl;
-		//std::cout << "call name: " << call_name << std::endl;
-		success = false;
-	}else{
-		//check if function of basic block is called in a loop of other function
-		for(auto user : bb->getParent()->users()){  // U is of type User*
-			
-			if(CallInst* instruction = dyn_cast<CallInst>(user)){
-				//analyse basic block of call instruction 
-				success = validates_loop(instruction->getParent(), "recursive step" ,already_visited);
-				if(success == false)break;
-			}
-		}
-
-	}
-	//free dynamic memory
-	delete LIB;
-	return success;
-}
-
 
 bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *& type, Value *arg,llvm::Instruction* call_reference);
 
 
- //check if instruction a is before instruction b 
- bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT) {
-	DenseMap< BasicBlock *, std::unique_ptr<OrderedBasicBlock>> OBBMap;
-	if (InstA->getParent() == InstB->getParent()){
-		std::cout << "debug" << std::endl;
-		BasicBlock *IBB = InstA->getParent();
-		auto OBB = OBBMap.find(IBB);
-		if (OBB == OBBMap.end())OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
-		return OBB->second->dominates(InstA, InstB);
-	}
-	
-	DomTreeNode *DA = DT->getNode(InstA->getParent());
 
-	DomTreeNode *DB = DT->getNode(InstB->getParent());
-	
-	std::cout << "debug not same parents" <<  DA->getDFSNumIn() << ":" <<  DB->getDFSNumIn() << std::endl;
-	return DA->getDFSNumIn() < DB->getDFSNumIn();
- }
 
+std::string print_argument(llvm::Value* argument){
+	std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	argument->print(rso);
+	return rso.str() +  "\"\n";
+	
+}
 
 
 
@@ -196,7 +80,25 @@ static bool isCallToLLVMIntrinsic(Instruction * inst) {
     return false;
 }
 
+ //check if instruction a is before instruction b 
+ bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT) {
+	DenseMap< BasicBlock *, std::unique_ptr<OrderedBasicBlock>> OBBMap;
+	if (InstA->getParent() == InstB->getParent()){
+		std::cout << "debug" << std::endl;
+		BasicBlock *IBB = InstA->getParent();
+		auto OBB = OBBMap.find(IBB);
+		if (OBB == OBBMap.end())OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
+		return OBB->second->dominates(InstA, InstB);
+	}
+	
+	DomTreeNode *DA = DT->getNode(InstA->getParent());
 
+	DomTreeNode *DB = DT->getNode(InstB->getParent());
+	
+	std::cout << "debug not same parents" <<  DA->getDFSNumIn() << ":" <<  DB->getDFSNumIn() << std::endl;
+	return DA->getDFSNumIn() < DB->getDFSNumIn();
+ }
+ 
 //check if graph node is already visited
 bool visited(size_t seed, std::vector<size_t> *vector){
 	bool found = false;
@@ -208,7 +110,6 @@ bool visited(size_t seed, std::vector<size_t> *vector){
 	}
     return found;
 }
-
 
 
 //function to load the index of an array
@@ -227,13 +128,6 @@ int load_index(Value *arg) {
 }
 
 
-std::string print_argument(auto& argument){
-	std::string type_str;
-	llvm::raw_string_ostream rso(type_str);
-	argument->print(rso);
-	return rso.str() +  "\"\n";
-	
-}
 
 bool check_nullptr(std::any &out, llvm::Type *type,llvm::Value *value,std::stringstream &debug_out ){
 	bool load_success = false;
@@ -247,80 +141,6 @@ bool check_nullptr(std::any &out, llvm::Type *type,llvm::Value *value,std::strin
 	}
 	return load_success;
 }
-
-/*
-llvm::Instruction* get_syscall_instruction(OS::shared_function function){
-	for(auto & abb : function->get_atomic_basic_blocks()){
-		if(abb->get_call_type() != no_call){
-			std::cout << abb->get_call_name() << std::endl; 
-			if(abb->get_call_name() == "vTaskDelay")return abb->get_call_instruction_reference();
-		}
-	}
-	return nullptr;
-}
-
-
-void test_method(graph::Graph& graph){
-	
-	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-	for (auto &vertex : vertex_list) {
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-	
-		if(function->get_name()=="_ZL12prvPrintTaskPv"){
-			
-			DominatorTree dominator_tree = DominatorTree(*(function->get_llvm_reference()));
-			dominator_tree.updateDFSNumbers();
-			
-		
-			llvm::Instruction* syscall = get_syscall_instruction(function);
-			if(syscall == nullptr)std::cout << "syscall instruction could not find" << std::endl; 
-			{
-				Value * cast_operand = syscall->getOperand(0);
-				if(Instruction  * constant_data = dyn_cast<Instruction>(cast_operand))	cast_operand = constant_data->getOperand(0);
-				{
-				std::string type_str;
-				llvm::raw_string_ostream rso(type_str);
-				syscall->print(rso);
-				std::cout<< "scheduler instruction" <<  rso.str() << std::endl;
-				}
-				Value::user_iterator sUse = cast_operand->user_begin();
-				Value::user_iterator sEnd = cast_operand->user_end();
-						
-				
-				//iterate about the user of the allocation
-				for(;sUse != sEnd; ++sUse){
-					if(Instruction  * instruction = dyn_cast<Instruction>(*sUse)){
-					
-						if(instruction_before(instruction,syscall,&dominator_tree))
-						//if(dominator_tree.dominates(instruction,syscall))
-						{
-							std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!before" << std::endl;
-
-							{
-							std::string type_str;
-							llvm::raw_string_ostream rso(type_str);
-							instruction->print(rso);
-							std::cout<< "instruction" <<  rso.str() << std::endl;
-							}
-						}
-						else{
-							std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!after" << std::endl;
-							{
-							std::string type_str;
-							llvm::raw_string_ostream rso(type_str);
-							instruction->print(rso);
-							std::cout<< "instruction" <<  rso.str() << std::endl;
-							}
-						}
-					}
-				}
-			}
-			
-			
-			
-		}
-	}
-}*/
 
 
 //dump a cast instruction
@@ -710,79 +530,106 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type,
 void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instruction){
 	//store the name of the called function
 	abb->set_call_name(func->getName().str());
-	std::cout << std::endl << func->getName().str() << std::endl;
+	
+	//store the llvm call instruction reference
+	abb->set_call_instruction_reference(instruction);
+	
+	std::list<std::tuple<std::any,llvm::Type*>> arguments;
+	
 	//iterate about the arguments of the call
 	for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
 	
+		//debug string
 		std::stringstream debug_out;
 		debug_out <<  func->getName().str() << "\n";
-	
+
 		std::any value_argument; 
-		llvm::Type* type_argument;
 		
+		llvm::Type* type_argument;
 		//get argument
 		Value *arg = instruction->getArgOperand(i);
 		
 		
-		//dump argument
+		//dump argument and check if it was successfull
 		if(dump_argument(debug_out,value_argument,type_argument, arg,instruction)){
-			 debug_argument(value_argument,type_argument);
 			//store the dumped argument in the abb with corresponding llvm type
-			abb->set_argument(value_argument, type_argument);
+			arguments.push_back(std::make_tuple (value_argument,type_argument));
+		}else{
+			std::cerr << "ERROR: instruction argument dump was not successfull" << '\n';
+			std::cerr <<  print_argument(instruction) << '\n';
+			abort();
 		}
 	}
+	
+	if(arguments.size() == 0){
+		std::any tmp_any = "void";
+		llvm::Type* tmp_type = nullptr;
+		arguments.emplace_back(std::make_tuple (tmp_any,tmp_type));
+	}
+	abb->set_arguments(arguments);
 }
 
 
 
 //set the arguments and argument types of the abb
 void set_arguments(OS::shared_abb abb){
+
+	int bb_count = 0;
 	
-	std::stringstream out;
-	std::list<llvm::BasicBlock*>::iterator it;
-	
-	for (auto &i : abb->get_BasicBlocks()) {
+	//iterate about the basic blocks of the abb
+	for (auto &bb : abb->get_BasicBlocks()) {
 		
+		int call_count =0;
+		++bb_count;
 		
-		//////std::cerrr  << "TEST" << std::endl;
+		//call found flag
 		bool call_found = false;
 		
 		
-		for (auto &inst : *i) {
-			
+		//iterate about the instructions of the bb
+		for (auto &inst : *bb) {
+			//check if instruction is a call instruction
 			if (isa<CallInst>(inst)) {
 				CallInst *call = (CallInst *)&inst;
 				Function * func = call->getCalledFunction();
 				if (func && !isCallToLLVMIntrinsic(call)) {
 					call_found = true;
+					//get and store the called arguments values
 					dump_instruction(abb,func , call);
-					abb->set_call_instruction_reference(&inst);
+					++call_count;
 				}
-			} else if (InvokeInst *invoke = dyn_cast<InvokeInst>(&inst)) {
+			}else if (InvokeInst *invoke = dyn_cast<InvokeInst>(&inst)) {
 				Function * func = invoke->getCalledFunction();
-				if (func) {
+				if (func && !isCallToLLVMIntrinsic(invoke)) {
 					call_found = true;
+					//get and store the called arguments values
 					dump_instruction(abb,func , invoke);
-					abb->set_call_instruction_reference(&inst);
+					++call_count;
  				}
 			}
 		}
-		if(call_found){
-			abb->set_call_type(has_call);			
+		if(call_count > 1){
+			std::cerr << abb->get_name() << " has more than one call instructions: "  << call_count << std::endl;
+			abort();
 		}
+		if(call_found){
+			abb->set_call_type(has_call);	
+		}
+	}
+	if(bb_count > 1){
+		std::cerr << abb->get_name() << " has more than one llvm basic block: "  << bb_count << std::endl;
+		abort();
 	}
 }
 
 
 
 
-//function to create all abbs in the graph
+//function to create all abbs and store them in the graph
 void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
     //get llvm function reference
     llvm::Function* llvm_reference_function = function->get_llvm_reference();
-
-    //get first basic block of the function
 
     //create ABB
 	auto abb = std::make_shared<OS::ABB>(graph,function,llvm_reference_function->front().getName());
@@ -790,22 +637,23 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
     //store coresponding basic block in ABB
     abb->set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
 	function->set_atomic_basic_block(abb);
+	
     //queue for new created ABBs
     std::deque<OS::shared_abb> queue; 
 
     //store abb in graph
 	graph->set_vertex(abb);
+
 	
     queue.push_back(abb);
 
     //queue with information, which abbs were already analyzed
     std::vector<size_t> visited_abbs;
-
-    //iterate about the ABB queue
 	
 	//store the first abb as front abb of the function
 	function->set_front_abb(queue.front());
-
+	
+	//iterate about the ABB queue
     while(!queue.empty()) {
 
 		//get first element of the queue
@@ -831,13 +679,10 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
                 //check if the successor abb is already stored in the list				
                 if(!visited(new_abb->get_seed(), &visited_abbs)) {
-
                     if(succ->getName().str().empty()){
-						
-                        std::string type_str;
-                        llvm::raw_string_ostream rso(type_str);
-                        succ->print(rso);
-                        std::cerr  << rso.str() << std::endl;
+						std::cerr << "ERROR: basic block has no name" << '\n';
+						std::cerr <<  print_argument(succ) << '\n';
+						abort();
                     }
                     //store new abb in graph
                     graph->set_vertex(new_abb);
@@ -848,7 +693,6 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
                     new_abb->set_BasicBlock(succ);
                     new_abb->set_ABB_predecessor(old_abb);
 
-					
                     //set successor reference of old abb 
                     old_abb->set_ABB_successor(new_abb);
 
@@ -859,70 +703,56 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
 					//set the abb call`s argument values and types
 					set_arguments(new_abb);
+					//std::cout<< new_abb->get_arguments()->size() << std::endl;
+					//std::cout << new_abb->print_information();
 					
                 }else{
 					
                     //get the alread existing abb from the graph
-					std::shared_ptr<graph::Vertex> tmp = graph->get_vertex(new_abb->get_seed());
-					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB> (tmp);
+					std::shared_ptr<graph::Vertex> vertex = graph->get_vertex(new_abb->get_seed());
+					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
 				
 					//TODO basic block can be connected with itself
                     if(old_abb->get_seed() != existing_abb->get_seed()){
-
                         //connect the abbs via reference
                         existing_abb->set_ABB_predecessor(old_abb);
                         old_abb->set_ABB_successor(existing_abb);
-                    }
+                    }else{
+						existing_abb->set_ABB_predecessor(old_abb);
+                        old_abb->set_ABB_successor(existing_abb);
+					}
                 }
             }
         }
     }
 }
 
+//split the basic blocks, so that just one call exists per instance
 void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
+	//store the basic blocks in a list
     std::list<llvm::BasicBlock *> bbs;
     for (llvm::BasicBlock &_bb : *function) {
         bbs.push_back(&_bb);
-	
     }
+    //iterate about the basic blocks
     for (llvm::BasicBlock *bb : bbs) {
-		int counter =  0;
+		
+		//iterate about the instruction
         llvm::BasicBlock::iterator it = bb->begin();
         while (it != bb->end()) {
-			
-			counter++;
+			//check if the instruction is a call instruction
             if(llvm::isa<llvm::InvokeInst>(*it) || llvm::isa<llvm::CallInst>(*it)) {
-                // If the call is an artifical function (e.g. @llvm.dbg.metadata)
+                // check if call is targete is an artifical function (e.g. @llvm.dbg.metadata)
                 if (isCallToLLVMIntrinsic(&*it)) {
                     ++it;
                     continue;
                 }
-                /*
-				{
-				std::cout << std::endl << "BB natural" << std::endl;
-				std::string type_str;
-				llvm::raw_string_ostream rso(type_str);
-				bb->print(rso);
-				std::cout<< rso.str();
-				}
-				*/
+                //split the basic block and rename it
                 std::stringstream ss;
-			
                 ss << "BB" << (*split_counter)++;
-                //////std::cerrr << "split_counter = " << *split_counter << std::endl;
                 bb = bb->splitBasicBlock(it, ss.str());
                 it = bb->begin();
-				
-				/*
-				{
-				std::cout << std::endl << "BB splitted" << std::endl;
-				std::string type_str;
-				llvm::raw_string_ostream rso(type_str);
-				bb->print(rso);
-				std::cout<< rso.str();
-				}*/
             }
-		
             ++it;
         }
     }
@@ -951,100 +781,72 @@ namespace step {
 			files.push_back(std::string(PyUnicode_AsUTF8(elem)));
 		}
 
-		for (const auto& file : files) {
-			//std::cout << "File: " << file << std::endl;
-		}
-
-		//TODO read in object type
-		//std::string file_name = config["input_files"]; 
+	
+		//TODO read in files and link them to one function
 		std::string file_name = files.at(0); 
 		
-		
-
-
-
 		//llvm::Context context;
 		llvm::SMDiagnostic Err;
 		
-		//llvm::Module *tmp_module = parseIRFile(file_name, Err, context);
 		
-		//load the IR representation file
-		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
-		//std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, Context);
 		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, context);
 		
 		if(!module){
-			//std::cerr << "Could not load file:" << file_name << "\n" << std::endl;
+			std::cerr << "ERROR: could not load the module IR file: " << file_name << '\n';
+			abort();
 		}
 		
 		//convert unique_ptr to shared_ptr
 		std::shared_ptr<llvm::Module> shared_module = std::move(module);
 
-				
-		if(!module){
-			//std::cerr << "Unique pointer was deleted:" << file_name << "\n" << std::endl;
-		}
-		
-		/*for (auto &func : *shared_module){
-			for (auto &bb : func){
-				std::vector<std::size_t> already_visited;
-				validates_loop(&bb, "",&already_visited);
-			}
-		}*/
-	
-	
-		
-		
-		//set the llvm module in the graph object
-		//tmp_graph.set_llvm_module(shared_module);
+		//set llvm module in the graph object
 		graph.set_llvm_module(shared_module);
 		
 		//initialize the split counter
 		unsigned split_counter = 0;
 		
-		
+		//create and store the OS instance in the graph
 		auto rtos = std::make_shared<OS::RTOS>(&graph,"RTOS");
 		graph.set_vertex(rtos);	
 		
-		//iterate about the functions of the llvm module
+		//iterate about llvm functions of llvm module
 		for (auto &func : *shared_module){
 			
-				
-			//create Function, set the module reference and function name and calculate the seed of the function			
-			auto graph_function = std::make_shared<OS::Function>(&graph,func.getName().str());
-			
-			//get arguments of the function
-			llvm::FunctionType *argList = func.getFunctionType();
-			
-			//iterate about the arguments
-			for(unsigned int i = 0; i < argList->getNumParams();i++){
-				//store the argument references in the argument list
-				graph_function->set_argument_type(argList->getParamType(i));
-			}
-			
-			//store the return type of the function
-			graph_function->set_return_type(func.getReturnType());
-			
-			
-			//store llvm function reference
-			graph_function->set_llvm_reference(&(func));
-			
-			split_basicblocks( &(func), &split_counter);
-			
-			for (auto &bb : func) {
-				
-				
-				// name all basic blocks
-				if (!bb.getName().startswith("BB")) {
-					std::stringstream ss;
-					ss << "BB" << split_counter++;
-					bb.setName(ss.str());
-					
-				}
-				////std::cerrr << "basicblock_name = " << bb.getName().str() << std::endl;
-			}
-			
+			//check if llvm function has definition
 			if(!func.empty()){
+				
+				//intialize a graph function			
+				auto graph_function = std::make_shared<OS::Function>(&graph,func.getName().str());
+				
+				//get defined arguments of  function
+				llvm::FunctionType *argList = func.getFunctionType();
+				
+				//iterate about  arguments
+				for(unsigned int i = 0; i < argList->getNumParams();i++){
+					//store  argument references in  argument list
+					graph_function->set_argument_type(argList->getParamType(i));
+				}
+				
+				//store  return type of  function
+				graph_function->set_return_type(func.getReturnType());
+				
+				//store llvm function reference
+				graph_function->set_llvm_reference(&(func));
+				
+				//split  llvm basic blocks, so that just one call exits per instance 
+				split_basicblocks( &(func), &split_counter);
+				
+				//iterate about  splitted llvm basic blocks of llvm function an set their name
+				for (auto &bb : func) {
+					
+					// name all basic blocks
+					if (!bb.getName().startswith("BB")) {
+						std::stringstream ss;
+						ss << "BB" << split_counter++;
+						bb.setName(ss.str());
+						
+					}
+				}
 				//store the generated function in the graph datastructure
 				graph.set_vertex(graph_function);
 				
@@ -1052,48 +854,10 @@ namespace step {
 				abb_generation(&graph, graph_function );
 			}
 		}
-		/*
-		//iterate about the ABBS
-		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 		
-		
-		for (auto &vertex : vertex_list) {
-			
-			vertex->print_information();
-			//cast vertex to abb 
-			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
-			
-			if(abb) // always test  
-			{
-				
-				//check if abb has a syscall instruction
-				if( abb->get_call_type()!= no_call)	{
-					
-					std::list<std::tuple<std::any,llvm::Type*>> arguments = abb->get_arguments_tmp();
-					for (auto & tuple: arguments){
-	
-						auto test = std::get<llvm::Type*>(tuple);
-						std::cout << test->getTypeID();
-					}
-					
-				}
-			}
-		}*/
-		/*
-		for (auto &func : *shared_module){
-			
-			for (auto &bb : func) {
-
-				std::string type_str;
-				llvm::raw_string_ostream rso(type_str);
-				bb.print(rso);
-				std::cout<< rso.str() ;
-				
-			}
-		}*/
-		
-		//test_method(graph);
+		//std::cout << graph.print_information();
 	}
+	
 	std::vector<std::string> LLVMStep::get_dependencies() {
 		return {};
 	}

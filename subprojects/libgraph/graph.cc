@@ -804,13 +804,11 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments){
-    this->arguments.emplace_back(new_arguments);
+    this->arguments.push_back(new_arguments);
+	
+	
 } // Setze Argument des SystemCalls in Argumentenliste
 
-void OS::ABB::set_argument(std::any argument,llvm::Type* type){
-	
-    this->arguments.back().emplace_back(std::make_tuple (argument,type));
-} // Setze Argument des SystemCalls in Argumentenliste
 
 
 
@@ -900,10 +898,10 @@ void OS::ABB::set_expected_syscall_argument_type(size_t argument_type){
 	this->expected_argument_types.emplace_back(argument_type);
 }
 
-std::list<size_t> OS::ABB::get_expected_syscall_argument_types(){
-	
-	return this->expected_argument_types;
-}
+// std::list<size_t> OS::ABB::get_expected_syscall_argument_types(){
+// 	
+// 	return this->expected_argument_types;
+// }
 
 bool OS::ABB::convert_call_to_syscall(std::string name){
 	
@@ -924,13 +922,19 @@ bool OS::ABB::convert_call_to_syscall(std::string name){
 	}
 }
 
-std::list<size_t> OS::ABB::get_syscall_argument_types(){
+std::list<std::list<size_t>> OS::ABB::get_call_argument_types(){
 	
-	std::list<size_t> argument_types;
-	
-	for(auto & tuple: this->syscall_arguments){
-		argument_types.emplace_back(std::get<std::any>(tuple).type().hash_code());
+	std::list<std::list<size_t>> argument_types;
+
+	for(auto & tmp_list: this->arguments){
+		
+		std::list<size_t>  tmp_argument_types;
+		for(auto & tuple: tmp_list){
+			tmp_argument_types.emplace_back(std::get<std::any>(tuple).type().hash_code());
+		}
+		argument_types.emplace_back(tmp_argument_types);
 	}
+	
 	return argument_types;
 }
 
@@ -1399,6 +1403,18 @@ void OS::Buffer::set_trigger_level(unsigned long level){
 	this->trigger_level = level;
 }
 
+template< typename T > bool contains( std::any& a ){
+   try
+   {
+      // we do the comparison with 'name' because across shared library boundries we get
+      // two different type_info objects
+      return( std::strcmp( typeid( T ).name(), a.type().name() ) == 0 );
+   }
+   catch( ... )
+   { }
+
+   return false;
+}
 
 //print methods -------------------------------------------------------------------------------
 std::string debug_argument(std::any value,llvm::Type *type){
@@ -1410,25 +1426,32 @@ std::string debug_argument(std::any value,llvm::Type *type){
 	const std::size_t tmp_long 	= typeid(long).hash_code();
 	std::string information = "Argument: ";
 	
-		
-	if(tmp_int == tmp){
-		information += std::any_cast<int>(value)  +'\n';
-	}else if(tmp_double == tmp){ 
-		information += std::any_cast<double>(value)  + '\n';
-	}else if(tmp_string == tmp){
-		information +=  std::any_cast<std::string>(value) +'\n';  
-	}else if(tmp_long == tmp){
-		information +=  std::any_cast<long>(value)   +'\n';  
-	}else{
-		information +=  "[warning: cast not possible] type: ";
-		information +=  value.type().name();
+	//std::cout << "reference: " << tmp_int << " " << tmp_double << " " << tmp_string << " " << tmp_long << std::endl;
+	
+	
+	try{
+		//std::cout << "test" << value.type().name() << "\n" << value.type().hash_code() << std::endl;
+		if( contains< int >( value ) ){
+			int tmp = (std::any_cast< int >( value ));
+			information += std::to_string(tmp);
+		}
+		if( contains<double>( value ) ){
+			double tmp = (std::any_cast< double >( value ));
+			information += std::to_string(tmp);
+		}
+		if( contains<std::string>( value ) ){
+			std::string tmp = std::any_cast< std::string >( value );
+			information += tmp;
+		}
+		if( contains< long >( value ) ){
+			long tmp = (std::any_cast< long >( value ));
+			information += std::to_string(tmp);
+		}
 	}
-	
-	std::string type_str;
-	llvm::raw_string_ostream rso(type_str);
-	type->print(rso);
-	information += ";llvm type: " + rso.str() + "\n";
-	
+	catch( ... )
+	{ 
+		information+=  "any cast not possible";
+	}
 	return information;
 }
 
@@ -1447,6 +1470,7 @@ std::string graph::Graph::print_information(){
 
 std::string OS::Function::print_information(){
 	std::string information = "\n------------------------\nFunction:\n";
+	information += "name:" + this->name + "\n";
 	information += "function name:" + this->function_name + "\n";
 	information += "argument types: ";
 	for (auto & argument:this->argument_types){
@@ -1462,14 +1486,17 @@ std::string OS::Function::print_information(){
 		this->return_type->print(rso);
 		information += "return type: " + rso.str() + "\n";
 	}
-	
-
-	information += "first abb: " + this->front_abb->get_name() + "\n";
-	information += "abbs:\n";
+	if(contains_critical_section)information += "contains critical section: True \n";
+	//if(definition_element != nullptr)information += "OS definition instance name:" + this->definition_element->get_name() + "\n";
+		
+	if(this->front_abb != nullptr)information += "first abb: " + this->front_abb->get_name() + "\n";
+	if(this->exit_abb != nullptr)information += "last abb: " + this->exit_abb->get_name() + "\n";
+	information += "abbs: ";
 
 	for (auto & abb: this->atomic_basic_blocks){
-		information += abb->print_information();
+		information += abb->get_name() + ", ";
 	}
+	information += "\n";
 	return information += "\n------------------------\n\n";
 }	
 
@@ -1486,19 +1513,54 @@ std::string OS::ABB::print_information(){
 	for (auto & predecessor:this->predecessors){
 		information += "\t" + predecessor->get_name() ;
 	}
-	information += "\nsyscall: ";
-	information += (this->abb_type);
 	information += "\n";
 	if(this->abb_type != no_call){
 		
-		for(auto& call_name : this->call_names){
-			information += "call: " + call_name + "\n";
-			information += "arguments:\n";
+		information += "syscall: ";
+		information += (this->abb_type);
+		information += "\n";
+	
+		if(this->call_names.size() != this->arguments.size()){
+			std::cerr <<  "ERROR: call names and call arguments size are different!\n";
+			std::cerr << "ERROR: call names size:" << std::to_string(this->call_names.size()) << ", call arguments size:" << std::to_string(this->arguments.size()) << "\n";
+			abort();
 		}
-		for (auto & argument: this->arguments){
-			//information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ "\n";
+		else{
+			
+			int i = 0;
+			for(auto& call_name : this->call_names){
+				information += "call: " + call_name + "\n";
+				information += "arguments: ";
+				int j = 0;
+				for (auto  argument_list: this->arguments){
+					for(auto & tuple :argument_list){
+						information +=  debug_argument(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple))+ ", ";
+					}
+					if(i == j) break;
+					++j;
+				}
+				information += "\n";
+				++i;
+			}
 		}
 	}
+	if(this->abb_type == sys_call){
+		int i = 0;
+		for(auto& call_name : this->call_names){
+			information += "syscall: " + call_name + "\n";
+			information += "arguments: ";
+			int j = 0;
+			for (auto & argument: this->syscall_arguments){
+				information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ ", ";
+				if(i == j) break;
+				++j;
+			}
+			information += "\n";
+			++i;
+		}
+	}
+	
+	
 
 	return information += "------------------------\n\n";
 }	

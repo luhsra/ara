@@ -6,7 +6,7 @@
 #include "graph.h"
 #include "step.h"
 
-
+#include <cassert>
 #include <string>
 #include <tuple>
 #include <vector>

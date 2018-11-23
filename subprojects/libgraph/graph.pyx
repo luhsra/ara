@@ -549,28 +549,27 @@ cdef class ABB(Vertex):
 		for hash_type in ptype:
 			deref(self._c()).set_call_target_instance( <size_t>  hash_type)
 			
-	def set_expected_syscall_argument_types(self, argument_types ):
-		cdef data_type_hash
-
-					
+	#def set_expected_syscall_argument_types(self, argument_types ):
+		#cdef data_type_hash
+		#for argument_type in argument_types:
+			#if argument_type == data_type.integer:
+				#data_type_hash = typeid(long).hash_code()
+			#elif argument_type == data_type.string:
+				#data_type_hash = typeid(string).hash_code()
+			#elif argument_type == data_type.long:
+				#data_type_hash = typeid(long).hash_code()
+			#deref(self._c()).set_expected_syscall_argument_type( data_type_hash)
 			
-		for argument_type in argument_types:
-			if argument_type == data_type.integer:
-				data_type_hash = typeid(long).hash_code()
-			elif argument_type == data_type.string:
-				data_type_hash = typeid(string).hash_code()
-			elif argument_type == data_type.long:
-				data_type_hash = typeid(long).hash_code()
-			deref(self._c()).set_expected_syscall_argument_type( data_type_hash)
-	
-	def get_syscall_argument_types(self ):
+	def get_call_argument_types(self ):
 		
-		cdef clist[size_t] argument_types =  deref(self._c()).get_syscall_argument_types()
+		cdef clist[clist[size_t]] argument_types_list =  deref(self._c()).get_call_argument_types()
 			
+		
 		pylist = []
-		
-		for argument_type in argument_types:
-			pylist.append(argument_type)
+			
+		for	argument_types in argument_types_list:
+			tmp_pylist = []
+			pylist.append(argument_types)
 			
 		return pylist
 	

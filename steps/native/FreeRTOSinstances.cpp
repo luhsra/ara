@@ -1040,11 +1040,11 @@ namespace step {
 
 	void FreeRTOSInstancesStep::run(graph::Graph& graph) {
 		
-		
+		std::cout  << graph.print_information();
 		//std::cerr << graph.print_information();
 		
 		std::cout << "Run " << get_name() << std::endl;
-		
+			/*
 		std::hash<std::string> hash_fn;
 
 		
@@ -1067,7 +1067,7 @@ namespace step {
 		//iterate about the ABBS
 		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 		
-
+	
 		for (auto &vertex : vertex_list) {
 			
 			//vertex->print_information();
@@ -1149,13 +1149,13 @@ namespace step {
 						}
 					}
 					//else{
-						/*
+						
 						std::cout << "element is in loop" << std::endl;
 						std::string type_str;
 						llvm::raw_string_ostream rso(type_str);
 						llvm_abbs.front()->print(rso);
 						std::cout<< rso.str() ;
-						*/
+						
 					//}
 				}
 			}
@@ -1165,7 +1165,7 @@ namespace step {
 		
 		detect_isrs(graph);
 		detect_interaction(graph);
-
+		*/
 		
 		
 	}
