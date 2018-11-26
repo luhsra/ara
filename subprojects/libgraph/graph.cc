@@ -1113,6 +1113,13 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 		this->call_target_instances.emplace_back(call_target_instance);
 	}
 	
+	//TODO analyze it
+	if(abb->get_call_type() != no_call && this->get_call_type() == no_call)this->abb_type = abb->get_call_type();
+	
+	if(abb->get_call_type() == sys_call && this->get_call_type() == func_call){
+		std::cerr << "abb merge, syscall abb was merged" << std::endl;
+		this->abb_type = abb->get_call_type();
+	}
 	
 
 }

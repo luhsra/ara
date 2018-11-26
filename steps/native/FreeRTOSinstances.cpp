@@ -8,6 +8,7 @@
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/Pass.h"
 #include <string>
 #include <iostream>
@@ -86,11 +87,12 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
 	return instruction_vector;
 }
 
+//return false if instruction is  before scheduler start or and the scheduler start does  dominate the instruction
 bool validate_start_scheduler_instruction_relations(std::vector<llvm::Instruction*> *start_scheduler_func_calls, llvm::Instruction* instruction,llvm::DominatorTree *dominator_tree){
-	bool success = true;
+	bool success = false;
 	for(auto * start_scheduler:*start_scheduler_func_calls){
-		if(!(check_instruction_order(instruction,start_scheduler,dominator_tree)&& !dominator_tree->dominates(start_scheduler,instruction))){
-			success = false;
+		if((dominator_tree->dominates(start_scheduler,instruction))){
+			success = true;
 			break;
 		}
 	}
@@ -177,6 +179,35 @@ std::vector<std::tuple<int, llvm::BasicBlock*>> generate_bfs(llvm::Function*  fu
 }
 
 
+bool is_reachable(std::vector<llvm::Instruction*> *start_scheduler_func_calls, llvm::BasicBlock *bb, std::vector<size_t> *already_visited){
+	
+	std::hash<std::string> hash_fn;
+	size_t hash_value = hash_fn(bb->getName().str());
+	//std::cout << "callname" << call_name << std::endl;
+	//search hash value in list of already visited basic blocks
+	for(auto hash : *already_visited){
+		if(hash_value == hash){
+			//basic block already visited
+			return false;
+		}
+	}
+	//insert bb in alread visited
+	already_visited->emplace_back(hash_value);
+	
+	for (BasicBlock::iterator i = bb->begin(), e = bb->end(); i != e; ++i) {
+		for(llvm::Instruction* start_scheduler : *start_scheduler_func_calls){
+			llvm::Instruction* instr = &*i;
+			if(instr == start_scheduler)return true;
+		}
+	}
+
+	for (auto it = pred_begin(bb), et = pred_end(bb); it != et; ++it){
+		if(is_reachable(start_scheduler_func_calls, *it, already_visited))return true;
+	}
+	return false;
+}
+
+
 bool verify_instruction_order(llvm::Instruction* expected_front, llvm::Instruction* expected_back,std::vector<std::tuple<int, llvm::BasicBlock*>>*bfs_reference){
 	
 	if(bfs_level( bfs_reference ,expected_front) <  bfs_level( bfs_reference ,expected_back) )return true;
@@ -194,6 +225,8 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 	
 	std::vector<llvm::Instruction*> start_scheduler_func_calls;
 	std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
+	std::vector<llvm::Instruction*> return_instructions;
+		
 	std::hash<std::string> hash_fn;
 
 	size_t hash_value = hash_fn(function->get_name());
@@ -205,6 +238,8 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 			return not_found;
 		}
 	}
+	//set function as already visited
+	already_visited->emplace_back(hash_value);
 	
 	//get all start scheduler instructions of the function
 	start_scheduler_func_calls = get_start_scheduler_instruction(function);
@@ -226,8 +261,8 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 	if(start_scheduler_func_calls.size() == 0){
 		success = not_found;
 	}else{
-		std::cerr<< "name: " << function->get_name() << std::endl;
-		std::vector<llvm::Instruction*> return_instructions;
+		
+	
 		for(auto &abb : function->get_atomic_basic_blocks()){
 			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 				for(auto &instr:*bb){
@@ -242,7 +277,7 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 		for(auto& instruction:start_scheduler_func_calls){
 			if(dominator_tree.dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))success= found;
 		}
-		if(success ==not_found)success = uncertain;
+		//if(success == not_found)success = uncertain;
 	}
 	
 	//iterate about the basic blocks of the abb
@@ -251,51 +286,83 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 		for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 			
 			for(auto &instruction:*bb){
-				//continue if, no start scheduler syscall is in function, the instruction is before the start scheduler instruction and the scheduler instrcution doesnt dominate the instrcution 
-				if(success ==not_found || validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, &dominator_tree )){
-
-					if(abb->get_call_type()== sys_call){
-						instruction_list->emplace_back(hash_fn(bb->getName().str()));
-						//std::cout << "insert hash in main " << bb->getName().str() << " : " << hash_fn(bb->getName().str()) << std::endl;
-						
-					}else if(abb->get_call_type()== func_call){
-						scheduler_return_value result;
-						for(auto *instr :abb->get_call_instruction_references()){
-							if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
-								llvm::Function* called_function = call_instruction->getCalledFunction();
-								if(called_function != nullptr){
-									graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
-									auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-									result = before_scheduler_instructions(graph,instruction_list,uncertain_instruction_list,target_function  ,already_visited);
-									if(result == found)start_scheduler_func_calls.emplace_back(call_instruction);
-									else if (result == uncertain) uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
+				if(abb->get_call_type()== func_call){
+					scheduler_return_value result;
+					for(auto *instr :abb->get_call_instruction_references()){
+						if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
+							llvm::Function* called_function = call_instruction->getCalledFunction();
+							if(called_function != nullptr){
+								graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
+								auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
+								result = before_scheduler_instructions(graph,instruction_list,uncertain_instruction_list,target_function  ,already_visited);
+								if(result == found){
+									start_scheduler_func_calls.emplace_back(call_instruction);
+									success = found;
 								}
-							}else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(instr)){
-								llvm::Function* called_function = call_instruction->getCalledFunction();
-								if(called_function != nullptr){
-									graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
-									auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-									result = before_scheduler_instructions(graph,instruction_list,uncertain_instruction_list,target_function  ,already_visited);
-									if(result == found)start_scheduler_func_calls.emplace_back(call_instruction);
-									else if (result == uncertain) uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
+								else{
+									if (result == uncertain) uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
+							
+								}
+							}
+						}else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(instr)){
+							llvm::Function* called_function = call_instruction->getCalledFunction();
+							if(called_function != nullptr){
+								graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
+								auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
+								result = before_scheduler_instructions(graph,instruction_list,uncertain_instruction_list,target_function  ,already_visited);
+								if(result == found){
+									start_scheduler_func_calls.emplace_back(call_instruction);
+									success = found;
+								}
+								else{
+									if (result == uncertain) uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
 								}
 							}
 						}
 					}
-				}else{
-					{
-						std::string type_str;
-						llvm::raw_string_ostream rso(type_str);
-						bb->print(rso);
-						std::cout<< "after scheduler instruction" <<  rso.str() << std::endl;
-						
-					}
-					
 				}
 			}
 		}
 	}
-
+		
+		
+	if(success !=not_found){
+		for(auto &abb : function->get_atomic_basic_blocks()){
+			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
+				if(abb->get_call_type()== sys_call){
+					
+					for(auto &instruction:*bb){
+						//check if the abb contains a syscall
+						//continue if, no start scheduler syscall is in function, the instruction is before all the start scheduler instruction and the scheduler instrcutions dont dominate the instrcution 
+						if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, &dominator_tree )){
+							//if instruction is a syscall set the instruction in the before scheduler start list
+							instruction_list->emplace_back(hash_fn(bb->getName().str()));
+							
+						}else{
+							//check if the instruction is reachable from a start scheduler instruction 
+							std::vector<size_t> already_visited_abbs;
+							if(is_reachable(&start_scheduler_func_calls,instruction.getParent(),&already_visited_abbs)){
+								uncertain_instruction_list->emplace_back();
+							}
+						}
+					}
+				}
+			}
+		}
+		//check return value is that a start scheduler call is certainly or uncertainly called 
+		bool uncertain_flag = false;
+		bool found_flag = true;
+		for(auto instr : return_instructions){
+			if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,instr, &dominator_tree ))uncertain_flag = true;
+			else found_flag = false;
+		}
+		
+		if(found_flag)success = found;
+		else{
+			if(uncertain_flag)success = uncertain;
+		}
+	}
+	
 	return success;
 	
 }
@@ -1060,7 +1127,7 @@ namespace step {
 		
 		//graph.print_information();
 		
-		std::list<size_t> instruction_list;
+		std::list<size_t> before_scheduler;
 		std::vector<size_t> uncertain_instruction_list;
 		std::vector<std::size_t> already_visited;
 		
@@ -1073,7 +1140,7 @@ namespace step {
 		if(target_vertex != nullptr){
 			
 			auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-			before_scheduler_instructions(graph,&instruction_list, &uncertain_instruction_list, target_function  ,&already_visited);
+			before_scheduler_instructions(graph,&before_scheduler, &uncertain_instruction_list, target_function  ,&already_visited);
 		}else std::cout << "no main function in programm" << std::endl;
 	
 		//iterate about the ABBS
@@ -1104,7 +1171,8 @@ namespace step {
 						
 						bool before_scheduler_start = false;
 						
-						for(auto & hash_value : instruction_list){
+						//check if instruction is before start scheduler instruction
+						for(auto & hash_value : before_scheduler){
 							//std::cout << hash_value << std::endl;
 							for(auto &bb :abb->get_BasicBlocks()){
 								
