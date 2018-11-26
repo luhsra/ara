@@ -28,6 +28,7 @@ class StepManager:
 		self._config = config
 		self._steps = {}
 		for step in provides(config):
+
 			self._steps[step.get_name()] = step
 			
 	def execute(self, steps: List[str]):

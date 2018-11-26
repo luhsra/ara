@@ -32,6 +32,7 @@ void vASwitchCompatibleISR_Wrapper( void ) __attribute__ ((naked));
 /* Declare the handler function as an ordinary function.*/
 void vASwitchCompatibleISR_Handler( void );
 
+int test();
 /* The handler function is just an ordinary function. */
 void vASwitchCompatibleISR_Handler( void )
 {
@@ -196,6 +197,18 @@ void vBFunction( void ){
 
 int fake_create() {
 	xTaskCreate( vEventBitSettingTask, "Bit Setter", 1000, NULL, 1, NULL );
+	test();
+}
+
+int test1();
+
+int test(){
+	test1();
+	fake_create();
+}
+
+int test1(){
+	test();
 }
 
 int main( void ){

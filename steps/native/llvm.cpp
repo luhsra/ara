@@ -45,30 +45,6 @@ std::string print_argument(llvm::Value* argument){
 
 
 
-//print the argument
-void debug_argument(std::any value,llvm::Type *type){
-	
-	std::size_t const tmp = value.type().hash_code();
-	const std::size_t  tmp_int = typeid(int).hash_code();
-	const std::size_t  tmp_double = typeid(double).hash_code();
-	const std::size_t  tmp_string = typeid(std::string).hash_code();
-	const std::size_t tmp_long 	= typeid(long).hash_code();
-	std::cerr << "Argument: ";
-	
-		
-	if(tmp_int == tmp){
-		std::cerr << std::any_cast<int>(value)   <<'\n';
-	}else if(tmp_double == tmp){ 
-		std::cerr << std::any_cast<double>(value)  << '\n';
-	}else if(tmp_string == tmp){
-		std::cerr << std::any_cast<std::string>(value)  <<'\n';  
-	}else if(tmp_long == tmp){
-		std::cerr << std::any_cast<long>(value)   <<'\n';  
-	}else{
-		std::cerr << "[warning: cast not possible] type: " <<value.type().name()   <<'\n';  
-	}
-}
-
 //check if instruction calls a llvm specific function
 static bool isCallToLLVMIntrinsic(Instruction * inst) {
     if (CallInst* callInst = dyn_cast<CallInst>(inst)) {
@@ -567,6 +543,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 		arguments.emplace_back(std::make_tuple (tmp_any,tmp_type));
 	}
 	abb->set_arguments(arguments);
+	//std::cout << abb->print_information();
 }
 
 
@@ -614,6 +591,7 @@ void set_arguments(OS::shared_abb abb){
 		}
 		if(call_found){
 			abb->set_call_type(has_call);	
+			//std::cout << abb->print_information();
 		}
 	}
 	if(bb_count > 1){
@@ -636,6 +614,9 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 	
     //store coresponding basic block in ABB
     abb->set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
+	abb->set_exit_abb(&(llvm_reference_function->getEntryBlock()));
+	abb->set_entry_abb(&(llvm_reference_function->getEntryBlock()));
+	
 	function->set_atomic_basic_block(abb);
 	
     //queue for new created ABBs
@@ -651,7 +632,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
     std::vector<size_t> visited_abbs;
 	
 	//store the first abb as front abb of the function
-	function->set_front_abb(queue.front());
+	function->set_entry_abb(queue.front());
 	
 	//iterate about the ABB queue
     while(!queue.empty()) {
@@ -691,6 +672,10 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 					
                     //set abb predecessor reference and bb reference 
                     new_abb->set_BasicBlock(succ);
+					abb->set_exit_abb(succ);
+					abb->set_entry_abb(succ);
+					
+					
                     new_abb->set_ABB_predecessor(old_abb);
 
                     //set successor reference of old abb 
@@ -855,8 +840,76 @@ namespace step {
 			}
 		}
 		
-		//std::cout << graph.print_information();
+		//set called functions for each abb
+		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
+		for (auto &vertex : vertex_list) {
+
+			//cast vertex to abb 
+			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+			//std::cout<< "function name " << abb->get_name()<< std::endl;
+			for(auto *instr : abb->get_call_instruction_references()){
+				if(CallInst* tmp = dyn_cast<CallInst>((instr))){
+					llvm::Function* llvm_function = tmp->getCalledFunction();
+					std::hash<std::string> hash_fn;
+					//std::cout<< "function name " << llvm_function->getName().str()<< std::endl;
+					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
+					if(vertex != nullptr){
+						//TODO set edge
+						vertex->get_type();
+						//std::cout <<  "success" << vertex->get_name() << std::endl;
+						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
+						abb->set_called_function( function);
+					}
+				}
+				if(InvokeInst* tmp = dyn_cast<InvokeInst>((instr))){
+					llvm::Function* llvm_function = tmp->getCalledFunction();
+					std::hash<std::string> hash_fn;
+					//std::cout<< "function name" << llvm_function->getName().str();
+					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
+					if(vertex != nullptr){
+						//std::cout << "success" <<  vertex->get_name() << std::endl;
+						vertex->get_type();
+						//TODO set edge
+						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
+						abb->set_called_function( function);
+					}
+				}
+			}
+		}
+		
+		//set an entry abb for each function
+		vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+		for (auto &vertex : vertex_list) {
+
+			//cast vertex to abb 
+			auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+	
+            std::list<OS::shared_abb> return_abbs;
+			
+            for(auto abb : function->get_atomic_basic_blocks()){
+				if( abb->get_ABB_successors().size()== 0){
+                    return_abbs.emplace_back(abb);
+				}
+			}
+			//TODO log endless loop bzw. use llvm for exit loop detection
+            if(return_abbs.size() >1){
+				//std::cerr << "size" << return_abbs.size() << std::endl;
+				std::stringstream ss;
+				ss << "BB" << split_counter++;
+				auto new_abb = std::make_shared<OS::ABB>(&graph,function, ss.str());
+				graph.set_vertex(new_abb);
+                function->set_atomic_basic_block(new_abb);
+                for(auto ret : return_abbs){
+                    ret->set_ABB_successor(new_abb);
+					new_abb->set_ABB_predecessor(ret);
+				}
+                function->set_exit_abb(new_abb);
+			}else{
+				if(return_abbs.size() ==1) function->set_exit_abb(return_abbs.front());
+			}
+		}
 	}
+	
 	
 	std::vector<std::string> LLVMStep::get_dependencies() {
 		return {};

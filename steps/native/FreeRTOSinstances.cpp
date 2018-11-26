@@ -184,11 +184,12 @@ bool verify_instruction_order(llvm::Instruction* expected_front, llvm::Instructi
 }
 //TODO case: where in func call uncertain start scheduler exists
 //TODO BFS instead of DFS for basic block order
-scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::list<size_t> *instruction_list, std::list<size_t> *uncertain_instruction_list,OS::shared_function function,std::vector<std::size_t> *already_visited){
+scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::list<size_t> *instruction_list, std::vector<size_t> *uncertain_instruction_list,OS::shared_function function,std::vector<std::size_t> *already_visited){
 
 	
 	scheduler_return_value success = not_found;
 	
+	//check if valid function pointer was committed
 	if(function == nullptr) return not_found;
 	
 	std::vector<llvm::Instruction*> start_scheduler_func_calls;
@@ -199,44 +200,52 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 	
 	//search hash value in list of already visited basic blocks
 	for(auto hash : *already_visited){
-		
 		if(hash_value == hash){
 			//function already visited
 			return not_found;
 		}
 	}
 	
-
+	//get all start scheduler instructions of the function
 	start_scheduler_func_calls = get_start_scheduler_instruction(function);
 	
-	std::vector<std::tuple<int, llvm::BasicBlock*>> bfs = generate_bfs(  function->get_llvm_reference());
+	//generate bfs order of basicblocks //TODO
+	std::vector<std::tuple<int, llvm::BasicBlock*>> bfs = generate_bfs(function->get_llvm_reference());
 	
+	//generate dominator tree
 	DominatorTree dominator_tree = DominatorTree();
 	dominator_tree.recalculate(*(function->get_llvm_reference()));
 	dominator_tree.updateDFSNumbers();
 	
+	std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	//dominator_tree.print(rso);
+	std::cout<< "dominator tree "<< std::endl  <<  rso.str() << std::endl;
+	
+	//check if scheduler start instruction was found in function
 	if(start_scheduler_func_calls.size() == 0){
 		success = not_found;
-		/*
-		std::string type_str;
-		llvm::raw_string_ostream rso(type_str);
-		function->get_llvm_reference()->print(rso);
-		std::cout << "scheduler instruction could not find in function" << rso.str() << std::endl; */
-
 	}else{
+		std::cerr<< "name: " << function->get_name() << std::endl;
+		std::vector<llvm::Instruction*> return_instructions;
+		for(auto &abb : function->get_atomic_basic_blocks()){
+			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
+				for(auto &instr:*bb){
+					if(isa<ReturnInst>(instr)){
+						std::cerr << "return instrcution found" << std::endl;
+						return_instructions.emplace_back(&instr);
+					}
+				}
+			}
+		}
 		
 		for(auto& instruction:start_scheduler_func_calls){
 			if(dominator_tree.dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))success= found;
 		}
 		if(success ==not_found)success = uncertain;
-		/*
-		std::string type_str;
-		llvm::raw_string_ostream rso(type_str);
-		start_scheduler->print(rso);
-		std::cout<< "scheduler instruction" <<  rso.str() << std::endl;
-		*/
 	}
 	
+	//iterate about the basic blocks of the abb
 	for(auto &abb : function->get_atomic_basic_blocks()){
 			
 		for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
@@ -244,12 +253,7 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 			for(auto &instruction:*bb){
 				//continue if, no start scheduler syscall is in function, the instruction is before the start scheduler instruction and the scheduler instrcution doesnt dominate the instrcution 
 				if(success ==not_found || validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, &dominator_tree )){
-					{/*
-						std::string type_str;
-						llvm::raw_string_ostream rso(type_str);
-						bb->print(rso);
-						std::cout<< "before scheduler instruction" <<  rso.str() << std::endl;*/
-					}
+
 					if(abb->get_call_type()== sys_call){
 						instruction_list->emplace_back(hash_fn(bb->getName().str()));
 						//std::cout << "insert hash in main " << bb->getName().str() << " : " << hash_fn(bb->getName().str()) << std::endl;
@@ -279,12 +283,12 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 						}
 					}
 				}else{
-					{/*
+					{
 						std::string type_str;
 						llvm::raw_string_ostream rso(type_str);
 						bb->print(rso);
 						std::cout<< "after scheduler instruction" <<  rso.str() << std::endl;
-						*/
+						
 					}
 					
 				}
@@ -302,7 +306,11 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 std::string get_handler_name(llvm::Instruction * instruction, unsigned int argument_index){
 	//llvm::Instruction * next_instruction = instruction->getNextNonDebugInstruction();
 	
+	if(instruction == nullptr)std::cerr << "ERROR" << std::endl;
+	
 	std::string handler_name = "";
+	
+	
 	//check if call instruction has one user
 	if(instruction->hasOneUse()){
 		//get the user of the call instruction
@@ -429,33 +437,36 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 		//SE.verify();
 		SmallVector<BasicBlock *,10> blocks;
 		if(L->getExitingBlock()==nullptr){
-			std::cout << "loop has more or no exiting blocks" << std::endl;
+			//std::cout << "loop has more or no exiting blocks" << std::endl;
 		}
 		else{
-			std::cout << "loop has one exiting block" << std::endl;
+			//std::cout << "loop has one exiting block" << std::endl;
 			//const SCEVConstant *ExitCount = dyn_cast<SCEVConstant>(getExitCount(L, ExitingBlock));
-			std::cout << "finaler Test" << SE.getSmallConstantTripCount (L, L->getExitingBlock()) << std::endl;
+			//std::cout << "finaler Test" << SE.getSmallConstantTripCount (L, L->getExitingBlock()) << std::endl;
 		}
 		//auto  blocks;
 		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
 		L->getUniqueExitBlocks(blocks);
 		
-		std::cout << blocks.size() << std::endl;
+		//std::cout << blocks.size() << std::endl;
 		for(auto & exit_block: blocks){
+			/*
 			std::cout << "test" << std::endl;
 				
 			std::string type_str;
 			llvm::raw_string_ostream rso(type_str);
 			exit_block->print(rso);
 			std::cout <<  rso.str() << std::endl;
+			*/
+			
 		}
-		std::cout << "trip count " <<  SE.getSmallConstantTripCount(L) << std::endl; 
+		//std::cout << "trip count " <<  SE.getSmallConstantTripCount(L) << std::endl; 
 		{
 			
 		std::string type_str;
 		llvm::raw_string_ostream rso(type_str);
 		L->print(rso);
-		std::cout <<  rso.str() << std::endl;
+		//std::cout <<  rso.str() << std::endl;
 	
 		}
 		//std::cout << "element is in loop" << std::endl;
@@ -560,8 +571,7 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 	bool success = true;
 	
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
-	
-	
+		
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
 	
@@ -829,7 +839,7 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 	auto argument = std::get<std::any>(tuple);
 	buffer_type type = (buffer_type) std::any_cast<long>(argument);
 	
-	std::cout << "buffer type: "<< std::any_cast<long>(argument)<< std::endl;
+	//std::cout << "buffer type: "<< std::any_cast<long>(argument)<< std::endl;
 	
 	tuple  = argument_list.at(1);
 	argument = std::get<std::any>(tuple);
@@ -976,7 +986,7 @@ bool detect_interaction(graph::Graph& graph){
 						//compare the referenced handler name with the handler name of the vertex
 						if(vertex->get_handler_name() == handler_name){
 							
-							std::cout << handler_name << std::endl;
+							//std::cout << handler_name << std::endl;
 							//get the vertex abstraction of the function, where the syscall is called
 							graph::shared_vertex start_vertex = function;
 							if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
@@ -1040,16 +1050,18 @@ namespace step {
 
 	void FreeRTOSInstancesStep::run(graph::Graph& graph) {
 		
-		std::cout  << graph.print_information();
+		//std::cout  << graph.print_information();
 		//std::cerr << graph.print_information();
 		
 		std::cout << "Run " << get_name() << std::endl;
-			/*
+			
 		std::hash<std::string> hash_fn;
 
 		
+		//graph.print_information();
+		
 		std::list<size_t> instruction_list;
-		std::list<size_t> uncertain_instruction_list;
+		std::vector<size_t> uncertain_instruction_list;
 		std::vector<std::size_t> already_visited;
 		
 		//get function with name main from graph
@@ -1148,15 +1160,15 @@ namespace step {
 							}
 						}
 					}
-					//else{
-						
+					else{
+						/*
 						std::cout << "element is in loop" << std::endl;
 						std::string type_str;
 						llvm::raw_string_ostream rso(type_str);
 						llvm_abbs.front()->print(rso);
 						std::cout<< rso.str() ;
-						
-					//}
+						*/
+					}
 				}
 			}
 			
@@ -1165,12 +1177,12 @@ namespace step {
 		
 		detect_isrs(graph);
 		detect_interaction(graph);
-		*/
+		
 		
 		
 	}
 	
 	std::vector<std::string> FreeRTOSInstancesStep::get_dependencies() {
-		return {"SyscallStep"};
+		return {"ABB_MergeStep"};
 	}
 }

@@ -48,6 +48,7 @@ enum schedule_type {full, none};
 
 enum event_type {automatic, mask};
 
+std::string debug_argument(std::any *value,llvm::Type *type);
 
 namespace graph {
 
@@ -108,10 +109,9 @@ namespace graph {
 			bool remove_edge(shared_edge *edge); // löschen den Vertex mit dem Namen und automatisch alle Knoten des Vertexes aus dem Graphen
                 
 			bool contain_vertex(shared_vertex vertex);
-			
 			bool contain_edge(shared_edge edge);
 			
-			std::string print_information();
+			void print_information();
 			
 			
 			~Graph();
@@ -157,8 +157,8 @@ namespace graph {
 		const VertexKind Kind;
 		*/
 		
-		virtual std::string print_information(){
-			return "";
+		virtual void print_information(){
+			
 		};
 		virtual Vertex *clone() const{return new Vertex(*this);};
                 
@@ -316,7 +316,7 @@ namespace OS {
 		std::list<OS::ISR *> referenced_ISRs;
 		function_definition_type definition; // information, ob task ,isr, timer durch die Funktion definiert wird
 
-		bool contains_critical_section;
+		bool contains_critical_section = false;
 
 		llvm::BasicBlock *start_critical_section_block; //  LLVM BasicBlock reference
 		llvm::BasicBlock *end_critical_section_block;   //  LLVM BasicBlock reference
@@ -324,7 +324,7 @@ namespace OS {
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 		
-		shared_abb front_abb = nullptr;
+		shared_abb entry_abb = nullptr;
 		shared_abb exit_abb = nullptr;
 
                                                             
@@ -334,7 +334,7 @@ namespace OS {
 		Function *clone() const{return new Function(*this);};
 		
 		
-		std::string print_information();
+		void print_information();
 		
 		static bool classof(const Vertex *v); // LLVM RTTI class of Methode
                 
@@ -351,11 +351,11 @@ namespace OS {
 		
 		bool has_syscall();
 		
-		void set_front_abb(shared_abb abb);
+		void set_entry_abb(shared_abb abb);
 		shared_abb get_exit_abb();
 		void set_exit_abb(shared_abb abb);
 		
-		shared_abb get_front_abb();
+		shared_abb get_entry_abb();
 
 		void set_definition(function_definition_type type);
 		function_definition_type get_definition();
@@ -433,6 +433,8 @@ namespace OS {
 		
 		std::list<std::size_t>  expected_argument_types;
 		
+		std::list<OS::shared_function>  called_functions;
+		
 		//TODO get/set Methode and set the blocks in the llvm pass
 		llvm::BasicBlock* entry;
 		llvm::BasicBlock* exit;
@@ -443,7 +445,7 @@ namespace OS {
 		std::list<std::tuple<std::any,llvm::Type*>>syscall_arguments;
 		
 		
-		std::list<llvm::Instruction*> call_instruction_references;
+		std::vector<llvm::Instruction*> call_instruction_references;
 		
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 
@@ -453,7 +455,7 @@ namespace OS {
 			return new ABB(*this);};
 		
 		
-		std::string print_information();
+		void print_information();
 		
 		ABB(graph::Graph *graph,shared_function function, std::string name) : graph::Vertex(graph,name){
 			parent_function = function;
@@ -466,7 +468,7 @@ namespace OS {
 		void set_expected_syscall_argument_type(size_t argument_type);
 		
 		void set_call_instruction_reference(llvm::Instruction * call_instruction);
-		std::list<llvm::Instruction*> get_call_instruction_references();
+		std::vector<llvm::Instruction*> get_call_instruction_references();
 		
 		void set_syscall_instruction_reference(llvm::Instruction * call_instruction);
 		llvm::Instruction* get_syscall_instruction_reference();
@@ -487,6 +489,9 @@ namespace OS {
 		void set_syscall_name(std::string name );
 		void expend_call_sites(shared_abb abb);
 		llvm::BasicBlock* get_exit_bb();
+		void set_exit_abb(llvm::BasicBlock* bb);
+		void set_entry_abb(llvm::BasicBlock* bb);
+		
 		void adapt_exit_bb(shared_abb abb);
 		
 
@@ -494,6 +499,7 @@ namespace OS {
 		shared_function get_parent_function();
 				
 		std::list<OS::shared_function> get_called_functions();
+		void set_called_function(OS::shared_function);
 		
 		bool is_critical();
 		void set_critical(bool critical);
@@ -544,8 +550,7 @@ namespace OS {
 		
 		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
 		
-		std::string print_information(){
-			return "";	
+		void print_information(){	
 		};
 		
 		std::string group_name;
@@ -589,8 +594,8 @@ namespace OS {
 		}
 		
 		
-		std::string print_information(){
-			return "";	
+		void print_information(){
+		
 		};
 		//virtual Task *clone() const{return new Task(*this);};
 
@@ -634,8 +639,8 @@ namespace OS {
 
 		virtual Timer *clone() const{return new Timer(*this);};
 	
-		std::string print_information(){
-			return "";	
+		void print_information(){
+			
 		};
 		
 		void set_timer_type(timer_type type);
@@ -676,8 +681,8 @@ namespace OS {
 			this->seed = hash_fn(name +  typeid(ISR).name());
 		}
 		
-		std::string print_information(){
-			return "";	
+		void print_information(){
+
 		};
 
 		bool set_category(int category);
@@ -737,8 +742,8 @@ namespace OS {
 				std::hash<std::string> hash_fn;
 				this->seed = hash_fn(name +  typeid(Queue).name());
 			}
-			std::string print_information(){
-				return "";	
+			void print_information(){
+			
 			};
 			
 		
@@ -786,8 +791,8 @@ namespace OS {
 			unsigned long get_initial_count();
 			
 			
-			std::string print_information(){
-				return "";	
+			void print_information(){
+					
 			};
 
 			virtual Semaphore *clone() const{return new Semaphore(*this);};
@@ -816,8 +821,8 @@ namespace OS {
 				this->seed = hash_fn(name +  typeid(EventGroup).name());
 		}
 		
-		std::string print_information(){
-			return "";	
+		void print_information(){
+			
 		};
 			
 		virtual EventGroup *clone() const{return new EventGroup(*this);};
@@ -874,8 +879,8 @@ namespace OS {
 		
 		
 			
-			std::string print_information(){
-				return "";	
+			void print_information(){
+			
 			};
 
 			static bool classof(const Vertex *S);
@@ -901,8 +906,8 @@ namespace OS {
 			};
 			
 			
-			std::string print_information(){
-				return "";	
+			void print_information(){
+				
 			};
 			
 			bool set_task_reference(OS::shared_task task);
@@ -960,8 +965,8 @@ namespace OS {
 			};
 			
 			
-			std::string print_information(){
-				return "";	
+			void print_information(){
+				
 			};
 			
 			void set_max_allowed_value(unsigned long max_allowedvalue);
@@ -997,8 +1002,8 @@ namespace OS {
 				this->seed = hash_fn(name +  typeid(Alarm).name());				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
-			std::string print_information(){
-				return "";	
+			void print_information(){
+			
 			};
 
 			bool set_task_reference(std::string task);

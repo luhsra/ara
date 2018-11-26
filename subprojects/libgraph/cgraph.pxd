@@ -37,6 +37,7 @@ cdef extern from "graph.h" namespace "graph":
 		clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info)
 		bool remove_vertex(size_t)
 		
+		shared_ptr[Vertex] get_vertex(size_t seed)
 		
 	cdef cppclass Vertex:
 		Vertex(Graph* graph, string name) except +
@@ -151,7 +152,10 @@ cdef extern from "graph.h" namespace "OS":
 		bool has_syscall()
 		
 		bool remove_abb(size_t seed)
-
+		
+		void set_exit_abb(shared_ptr[ABB])
+		shared_ptr[ABB] get_exit_abb()
+		shared_ptr[ABB] get_entry_abb()
 		
 	cdef cppclass RTOS:
 		RTOS(Graph* graph,string name) except +
@@ -193,3 +197,7 @@ cdef extern from "graph.h" namespace "OS":
 
 		bool set_ABB_successor(shared_ptr[ABB] abb)
 		bool set_ABB_predecessor(shared_ptr[ABB] abb)
+			
+		void print_information()
+		shared_ptr[Function] get_parent_function()
+		

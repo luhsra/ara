@@ -144,6 +144,10 @@ cdef class PyGraph:
 	def set_vertex(self, Vertex vertex):
 		self._c_graph.set_vertex(vertex._c_vertex)
 		
+	def get_vertex(self, seed ):
+		cdef shared_ptr[cgraph.Vertex]  vertex = self._c_graph.get_vertex(seed)
+		return create_from_pointer(vertex)
+	
 	def remove_vertex(self,seed):
 		return self._c_graph.remove_vertex(seed)
 			
@@ -462,6 +466,22 @@ cdef class Function(Vertex):
 	def remove_abb(self,seed):
 		return deref(self._c()).remove_abb(seed)
 		
+	def set_exit_abb(self, ABB abb):
+		return deref(self._c()).set_exit_abb(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+	
+	def get_exit_abb(self):
+		cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_exit_abb()
+		if abb!= NULL:
+			return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
+		else: 
+			return None
+		
+	def get_entry_abb(self):
+		cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_entry_abb()
+		if abb!= NULL:
+			return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
+		else: 
+			return None
 	#def get_call_target_instance(self):
 		#return deref(self._c()).get_call_target_instance()
 
@@ -648,9 +668,21 @@ cdef class ABB(Vertex):
 		return deref(self._c()).set_ABB_predecessor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 	
 		 
+	def get_parent_function(self):
+	
+		cdef shared_ptr[cgraph.Function] function =  deref(self._c()).get_parent_function()
+	
+		if function == NULL:
+			print("error in getting function parent") 
+				
+		return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)) 
 		 
 		 
 		 
+	def  print_information(self):
+		return deref(self._c()).print_information()
+
+		
 cdef class Queue(Vertex):
 
 	cdef inline shared_ptr[cgraph.Queue] _c(self):

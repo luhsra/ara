@@ -2,6 +2,14 @@
 
 #include "graph.h"
 #include <iostream>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <cassert>
+#include <stdexcept>
+#include <functional>
+#include <tuple>
 
 using namespace graph;
 using namespace llvm;
@@ -10,6 +18,85 @@ using namespace llvm;
     llvm_module = module;
 }
 */
+
+template< typename T > bool contains( std::any a ){
+	bool success = false;
+	//std::cout <<  typeid( T ).hash_code() << "," <<a.type().hash_code()  << std::endl;
+	try
+	{
+		// we do the comparison with 'name' because across shared library boundries we get
+		// two different type_info objects
+		if(( typeid( T ).hash_code()==  a.type().hash_code() )){
+			success = true;
+			std::cout << "test_verify" << std::endl;
+		}
+	}
+	catch( ... )
+	{ }
+	
+	std::cout <<  success << std::endl;
+	return success;
+}
+
+
+//print methods -------------------------------------------------------------------------------
+void debug_argument(std::any value,llvm::Type *type){
+	
+	std::size_t const tmp = value.type().hash_code();
+	const std::size_t  tmp_int = typeid(int).hash_code();
+	const std::size_t  tmp_double = typeid(double).hash_code();
+	const std::size_t  tmp_string = typeid(std::string).hash_code();
+	const std::size_t tmp_long 	= typeid(long).hash_code();
+	std::cerr << "Argument: ";
+	/*
+	std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	type->print(rso);
+	std::cout<< rso.str() << std::endl ;
+	*/
+	//std::cout << "reference: " << tmp_int << " " << tmp_double << " " << tmp_string << " " << tmp_long << std::endl;
+	
+	
+	
+		
+	if(tmp_int == tmp){
+		std::cerr << std::any_cast<int>(value)   <<'\n';
+	}else if(tmp_double == tmp){ 
+		std::cerr << std::any_cast<double>(value)  << '\n';
+	}else if(tmp_string == tmp){
+		std::cerr << std::any_cast<std::string>(value)  <<'\n';  
+	}else if(tmp_long == tmp){
+		std::cerr << std::any_cast<long>(value)   <<'\n';  
+	}else{
+		std::cerr << "[warning: cast not possible] type: " <<value.type().name()   <<'\n';  
+	}
+	/*
+		
+	if( tmp == tmp_double){
+		auto*  tmp_value = (std::any_cast< double >( &(*value) ));
+		std::cerr << " double" << std::endl;
+		information += std::to_string(*tmp_value);
+	}
+	//if( contains<std::string>( value ) ){
+	if( tmp == tmp_string){
+		auto*  tmp_value = std::any_cast< std::string >( &(*value) );
+		std::cerr << " string" << std::endl;
+		//information += tmp_value;
+	}
+	if( tmp == tmp_long){
+		auto* tmp_value = (std::any_cast< long >( &(*value) ));
+		std::cerr << " long" << std::endl;
+		information += std::to_string(*tmp_value);
+	}
+	//std::cout << "test" << value.type().name() << "\n" << value.type().hash_code() << std::endl;
+	if( tmp == tmp_int){
+
+		auto*tmp_value = (std::any_cast< int >( &(*value) ));
+		std::cerr << " int" << std::endl;
+		information += std::to_string(*tmp_value);
+	}
+	*/
+}
 
 //help function to use string in switch case statements
 constexpr unsigned int str2int(const char* str, int h = 0)
@@ -569,8 +656,8 @@ bool OS::Function::remove_abb(size_t seed){
 			++itr;
 		}
 	}
-	if(this->front_abb->get_seed() == seed)this->front_abb =nullptr;
-	if(this->exit_abb->get_seed() == seed)this->exit_abb =nullptr;
+	if(this->entry_abb != nullptr && this->entry_abb->get_seed() == seed)this->entry_abb =nullptr;
+	if(this->exit_abb != nullptr && this->exit_abb->get_seed() == seed)this->exit_abb =nullptr;
 	
 	return success;
 	
@@ -731,8 +818,8 @@ llvm::Type * OS::Function::get_return_type(){
 
 
 		
-void OS::Function::set_front_abb(OS::shared_abb abb){
-	this->front_abb = abb;
+void OS::Function::set_entry_abb(OS::shared_abb abb){
+	this->entry_abb = abb;
 }
 
 void OS::Function::set_exit_abb(OS::shared_abb abb){
@@ -745,8 +832,8 @@ OS::shared_abb OS::Function::get_exit_abb(){
 }
 
 
-OS::shared_abb OS::Function::get_front_abb(){
-	return this->front_abb;
+OS::shared_abb OS::Function::get_entry_abb(){
+	return this->entry_abb;
 }
 
 
@@ -804,7 +891,16 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments){
-    this->arguments.push_back(new_arguments);
+    this->arguments.emplace_back(new_arguments);
+	
+	
+	for (auto  argument_list: this->arguments){
+		for(auto  tuple :argument_list){
+			//std::cout <<   debug_argument(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple)) << ", ";
+		}
+	}
+	//std::cout << std::endl;
+	
 	
 	
 } // Setze Argument des SystemCalls in Argumentenliste
@@ -886,7 +982,7 @@ void OS::ABB::set_call_instruction_reference(llvm::Instruction * call_instructio
 	this->call_instruction_references.emplace_back(call_instruction);
 }
 
-std::list<llvm::Instruction*> OS::ABB::get_call_instruction_references(){
+std::vector<llvm::Instruction*> OS::ABB::get_call_instruction_references(){
 	return this->call_instruction_references;
 }
 
@@ -904,8 +1000,11 @@ void OS::ABB::set_expected_syscall_argument_type(size_t argument_type){
 // }
 
 bool OS::ABB::convert_call_to_syscall(std::string name){
+	bool success = false;
 	
-	if(this->call_names.size() != this->arguments.size())return false;
+	if(this->call_names.size() != this->arguments.size()){
+		return success;
+	}
 	
 	int index= 0;
 	for(auto& call_name: this->call_names){
@@ -913,13 +1012,18 @@ bool OS::ABB::convert_call_to_syscall(std::string name){
 		index++;
 	}
 	int tmp_index = 0;
+	
+	
 	for(auto& call_arguments: this->arguments){
 		if(tmp_index == index){
 			this->syscall_arguments =call_arguments;
 			this->syscall_name = name;
+			this->syscall_instruction_reference = this->call_instruction_references.at(index);
+			success = true;
 		}
 		tmp_index++;
 	}
+	return success;
 }
 
 std::list<std::list<size_t>> OS::ABB::get_call_argument_types(){
@@ -938,68 +1042,50 @@ std::list<std::list<size_t>> OS::ABB::get_call_argument_types(){
 	return argument_types;
 }
 
+void OS::ABB::set_called_function(OS::shared_function function){
+	this->called_functions.emplace_back(function);
+	
+}
 
 std::list<OS::shared_function> OS::ABB::get_called_functions(){
-	std::cout << "test" << std::endl;
-	std::list<OS::shared_function> function_list;
-	for(auto *instr : this->call_instruction_references){
-		if(CallInst* tmp = dyn_cast<CallInst>((instr))){
-			llvm::Function* llvm_function = tmp->getCalledFunction();
-			std::hash<std::string> hash_fn;
-			std::cout<< "function name" << llvm_function->getName().str();
-			shared_vertex vertex = this->graph->get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
-			if(vertex != nullptr){
-				vertex->get_type();
-				auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
-				function_list.emplace_back( function);
-			}
-		}
-		if(InvokeInst* tmp = dyn_cast<InvokeInst>((instr))){
-			llvm::Function* llvm_function = tmp->getCalledFunction();
-			std::hash<std::string> hash_fn;
-			std::cout<< "function name" << llvm_function->getName().str();
-			shared_vertex vertex = this->graph->get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
-			if(vertex != nullptr){
-				vertex->get_type();
-				auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
-				function_list.emplace_back( function);
-			}
-		}
-	}
-	return function_list;
+	return this->called_functions;
 }
 
 //append basic blocks to entry abb from abb
 bool OS::ABB::append_basic_blocks(shared_abb  abb){
 	
-	if(!this->graph->contain_vertex(abb))return false;
+	if(!(this->graph->contain_vertex(abb))){
+		return false;
+	}
 	for(auto& basic_block : abb->get_BasicBlocks()){
 		this->set_BasicBlock(basic_block);
 	}
-	
 	return true;
 }
 
 
 bool OS::ABB::is_mergeable(){
 	
-	bool syscall_flag;
+	bool syscall_flag = false;
 	for(auto& function : this->get_called_functions()){
 		if(function->has_syscall()){
 			syscall_flag = true;
 			break;
 		}
 	}
-	
-	if(this->abb_type ==computate  && !syscall_flag)return true;
+	//std::cout << syscall_flag << std::endl;
+	if(this->abb_type != sys_call  && syscall_flag ==false)return true;
 	else return false;
 }
 
 void OS::ABB::expend_call_sites(shared_abb abb){
 	
+	//check if the current and the to merged abb have both a syscall
 	if(this->syscall_instruction_reference != nullptr && abb->get_syscall_instruction_reference() != nullptr){
-		std::cout << "ERROR, both abbs, which shall be merged, contain a syscall"<< std::endl;
+		std::cerr << "ERROR, both abbs, which shall be merged, contain a syscall"<< std::endl;
 	}
+	
+	//
 	if(this->syscall_instruction_reference == nullptr && abb->get_syscall_instruction_reference() != nullptr){
 		this->syscall_instruction_reference = abb->get_syscall_instruction_reference();
 		this->syscall_arguments = *(abb->get_syscall_arguments());
@@ -1026,6 +1112,8 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 		
 		this->call_target_instances.emplace_back(call_target_instance);
 	}
+	
+	
 
 }
 
@@ -1053,6 +1141,15 @@ void OS::ABB::remove_successor(shared_abb abb){
 	
 		}
 	}
+}
+
+void OS::ABB::set_entry_abb(llvm::BasicBlock* bb){
+	this->entry = bb;
+}
+
+
+void OS::ABB::set_exit_abb(llvm::BasicBlock* bb){
+	this->exit = bb;
 }
 
 void OS::ABB::adapt_exit_bb(shared_abb abb){
@@ -1403,72 +1500,22 @@ void OS::Buffer::set_trigger_level(unsigned long level){
 	this->trigger_level = level;
 }
 
-template< typename T > bool contains( std::any& a ){
-   try
-   {
-      // we do the comparison with 'name' because across shared library boundries we get
-      // two different type_info objects
-      return( std::strcmp( typeid( T ).name(), a.type().name() ) == 0 );
-   }
-   catch( ... )
-   { }
-
-   return false;
-}
-
-//print methods -------------------------------------------------------------------------------
-std::string debug_argument(std::any value,llvm::Type *type){
-	
-	std::size_t const tmp = value.type().hash_code();
-	const std::size_t  tmp_int = typeid(int).hash_code();
-	const std::size_t  tmp_double = typeid(double).hash_code();
-	const std::size_t  tmp_string = typeid(std::string).hash_code();
-	const std::size_t tmp_long 	= typeid(long).hash_code();
-	std::string information = "Argument: ";
-	
-	//std::cout << "reference: " << tmp_int << " " << tmp_double << " " << tmp_string << " " << tmp_long << std::endl;
-	
-	
-	try{
-		//std::cout << "test" << value.type().name() << "\n" << value.type().hash_code() << std::endl;
-		if( contains< int >( value ) ){
-			int tmp = (std::any_cast< int >( value ));
-			information += std::to_string(tmp);
-		}
-		if( contains<double>( value ) ){
-			double tmp = (std::any_cast< double >( value ));
-			information += std::to_string(tmp);
-		}
-		if( contains<std::string>( value ) ){
-			std::string tmp = std::any_cast< std::string >( value );
-			information += tmp;
-		}
-		if( contains< long >( value ) ){
-			long tmp = (std::any_cast< long >( value ));
-			information += std::to_string(tmp);
-		}
-	}
-	catch( ... )
-	{ 
-		information+=  "any cast not possible";
-	}
-	return information;
-}
 
 
-std::string graph::Graph::print_information(){
+void graph::Graph::print_information(){
 	std::string information = "\n------------------------\nGraph:\n";
 	information += "Vertices:\n";
+	std::cerr << information;
 	for (auto & vertex:this->vertices){
-		information+= vertex->print_information();
+		vertex->print_information();
 	}
-	return information += "\n------------------------\n\n";
+	std::cerr <<  "\n------------------------\n\n";
 }	
 
 
 
 
-std::string OS::Function::print_information(){
+void OS::Function::print_information(){
 	std::string information = "\n------------------------\nFunction:\n";
 	information += "name:" + this->name + "\n";
 	information += "function name:" + this->function_name + "\n";
@@ -1489,36 +1536,36 @@ std::string OS::Function::print_information(){
 	if(contains_critical_section)information += "contains critical section: True \n";
 	//if(definition_element != nullptr)information += "OS definition instance name:" + this->definition_element->get_name() + "\n";
 		
-	if(this->front_abb != nullptr)information += "first abb: " + this->front_abb->get_name() + "\n";
+	if(this->entry_abb != nullptr)information += "first abb: " + this->entry_abb->get_name() + "\n";
 	if(this->exit_abb != nullptr)information += "last abb: " + this->exit_abb->get_name() + "\n";
 	information += "abbs: ";
-
+	std::cerr << information;
 	for (auto & abb: this->atomic_basic_blocks){
-		information += abb->get_name() + ", ";
+		std::cerr << abb->get_name() << ", ";
 	}
-	information += "\n";
-	return information += "\n------------------------\n\n";
+
+	std::cerr <<  "\n------------------------\n\n";
 }	
 
 
-std::string OS::ABB::print_information(){
-	std::string information = "\n------------------------\nABB:\n";
-	information += "abb name: " + this->name + "\n";
-	information += "successors: ";
+void OS::ABB::print_information(){
+	std::cerr << "\n------------------------\nABB:\n";
+	std::cerr << "abb name: " << this->name << "\n";
+	std::cerr <<  "successors: ";
 	for (auto & successor:this->successors){
-		information += "\t" + successor->get_name();
+		std::cerr <<  "\t" << successor->get_name();
 	}
 
-	information += "\npredecessors: ";
+	std::cerr <<  "\npredecessors: ";
 	for (auto & predecessor:this->predecessors){
-		information += "\t" + predecessor->get_name() ;
+		std::cerr <<  "\t" + predecessor->get_name() ;
 	}
-	information += "\n";
+	std::cerr << "\n";
 	if(this->abb_type != no_call){
 		
-		information += "syscall: ";
-		information += (this->abb_type);
-		information += "\n";
+		std::cerr <<  "syscall: ";
+		std::cerr <<  (this->abb_type);
+		std::cerr <<  "\n";
 	
 		if(this->call_names.size() != this->arguments.size()){
 			std::cerr <<  "ERROR: call names and call arguments size are different!\n";
@@ -1529,40 +1576,25 @@ std::string OS::ABB::print_information(){
 			
 			int i = 0;
 			for(auto& call_name : this->call_names){
-				information += "call: " + call_name + "\n";
-				information += "arguments: ";
+				std::cerr <<  "call: " << call_name << "\n";
+				std::cerr << "arguments: ";
 				int j = 0;
-				for (auto  argument_list: this->arguments){
-					for(auto & tuple :argument_list){
-						information +=  debug_argument(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple))+ ", ";
+				for (auto &arguments: * this->get_arguments()){
+					for(auto &tuple : arguments){
+						//debug_argument(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
+						std::cerr <<  ", ";
 					}
 					if(i == j) break;
 					++j;
 				}
-				information += "\n";
+				std::cerr << "\n";
 				++i;
 			}
 		}
 	}
-	if(this->abb_type == sys_call){
-		int i = 0;
-		for(auto& call_name : this->call_names){
-			information += "syscall: " + call_name + "\n";
-			information += "arguments: ";
-			int j = 0;
-			for (auto & argument: this->syscall_arguments){
-				information +=  debug_argument(std::get<std::any>(argument),std::get<llvm::Type*>(argument))+ ", ";
-				if(i == j) break;
-				++j;
-			}
-			information += "\n";
-			++i;
-		}
-	}
-	
-	
 
-	return information += "------------------------\n\n";
+	std::cerr <<  "------------------------\n\n";
+
 }	
 
 

@@ -145,11 +145,12 @@ define void @_Z10vBFunctionv() #1 {
 define i32 @_Z11fake_createv() #1 {
   %1 = alloca i32, align 4
   %2 = call i32 @xTaskCreate(void (i8*)* @_ZL20vEventBitSettingTaskPv, i8* getelementptr inbounds ([11 x i8], [11 x i8]* @.str, i32 0, i32 0), i16 zeroext 1000, i8* null, i32 1, %struct.tskTaskControlBlock** null)
+  %3 = call i32 @_Z4testv()
   call void @llvm.trap()
   unreachable
                                                   ; No predecessors!
-  %4 = load i32, i32* %1, align 4
-  ret i32 %4
+  %5 = load i32, i32* %1, align 4
+  ret i32 %5
 }
 
 declare i32 @xTaskCreate(void (i8*)*, i8*, i16 zeroext, i8*, i32, %struct.tskTaskControlBlock**) #2
@@ -176,8 +177,31 @@ define internal void @_ZL20vEventBitSettingTaskPv(i8*) #1 {
   ret void
 }
 
+; Function Attrs: noinline optnone
+define i32 @_Z4testv() #1 {
+  %1 = alloca i32, align 4
+  %2 = call i32 @_Z5test1v()
+  %3 = call i32 @_Z11fake_createv()
+  call void @llvm.trap()
+  unreachable
+                                                  ; No predecessors!
+  %5 = load i32, i32* %1, align 4
+  ret i32 %5
+}
+
 ; Function Attrs: noreturn nounwind
 declare void @llvm.trap() #4
+
+; Function Attrs: noinline optnone
+define i32 @_Z5test1v() #1 {
+  %1 = alloca i32, align 4
+  %2 = call i32 @_Z4testv()
+  call void @llvm.trap()
+  unreachable
+                                                  ; No predecessors!
+  %4 = load i32, i32* %1, align 4
+  ret i32 %4
+}
 
 ; Function Attrs: noinline norecurse optnone
 define i32 @main() #5 {

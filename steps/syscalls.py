@@ -9,13 +9,12 @@ from native_step import Step
 
 
 class SyscallStep(Step):
-	"""Reads an oil file and writes all information to the graph."""
+	"""Detects the syscalls from the calls and validates the arguments."""
 		
 	def get_dependencies(self):
 		return ["LLVMStep", 'OilStep']
 		
-		
-		
+	
 	syscall_dict = {}
 	
 	
@@ -282,7 +281,8 @@ class SyscallStep(Step):
 						syscall = self.syscall_dict.get(call_name.decode('ascii'), "error")
 						if syscall != "error":
 							
-							abb.convert_call_to_syscall(call_name)
+							assert abb.convert_call_to_syscall(call_name) == True, "could not conver call to syscall"
+								
 							
 							function.set_has_syscall(True)
 							
