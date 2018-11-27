@@ -78,7 +78,7 @@ def main():
 
     p_manager = stepmanager.StepManager(g, vars(args))
 
-    p_manager.execute(['LLVMStep','OilStep','SyscallStep' ,'ABB_MergeStep','FreeRTOSInstancesStep'])
+    p_manager.execute(['LLVMStep','OilStep','SyscallStep' ,'ABB_MergeStep','FreeRTOSInstancesStep','DetectInteractionsStep'])
 
 
 if __name__ == '__main__':

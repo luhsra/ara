@@ -21,7 +21,29 @@
 using namespace llvm;
 
 	
-
+//print the argument
+void debug_argument_test(std::any value,llvm::Type *type){
+	
+	std::size_t const tmp = value.type().hash_code();
+	const std::size_t  tmp_int = typeid(int).hash_code();
+	const std::size_t  tmp_double = typeid(double).hash_code();
+	const std::size_t  tmp_string = typeid(std::string).hash_code();
+	const std::size_t tmp_long 	= typeid(long).hash_code();
+	std::cerr << "Argument: ";
+	
+		
+	if(tmp_int == tmp){
+		std::cerr << std::any_cast<int>(value)   <<'\n';
+	}else if(tmp_double == tmp){ 
+		std::cerr << std::any_cast<double>(value)  << '\n';
+	}else if(tmp_string == tmp){
+		std::cerr << std::any_cast<std::string>(value)  <<'\n';  
+	}else if(tmp_long == tmp){
+		std::cerr << std::any_cast<long>(value)   <<'\n';  
+	}else{
+		std::cerr << "[warning: cast not possible] type: " <<value.type().name()   <<'\n';  
+	}
+}
 //detect interactions of OS abstractions and create the corresponding edges in the graph
 bool detect_interaction(graph::Graph& graph){
 	
@@ -39,14 +61,14 @@ bool detect_interaction(graph::Graph& graph){
 		//iterate about the abbs
 		for(auto &abb : abb_list){
 			
-			//check if abb contains a syscall
+			//check if abb contains a syscall and it is not a creational syscall
 			if(abb->get_call_type() == sys_call  && abb->get_syscall_type() != create ){
 				
 				
 				bool success = false;
-				
 				std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_syscall_arguments();
 				std::list<std::size_t>*  target_list = abb->get_call_target_instances();
+			
 				//load the handler name
 				std::string handler_name = "";
 				if(argument_list->size() >0 &&  std::get<std::any>(argument_list->front()).type().hash_code()== typeid(std::string).hash_code()){
@@ -55,10 +77,12 @@ bool detect_interaction(graph::Graph& graph){
 					handler_name = std::any_cast<std::string>(argument);
 				}
 				
-				//iterate about the possible refereneced abstraction types
+				//iterate about the possible refereneced(syscall targets) abstraction types
 				for(auto& target: *target_list){
 					
+					//the RTOS has the handler name RTOS
 					if(target == typeid(OS::RTOS).hash_code())handler_name = "RTOS";
+					
 					//get the vertices of the specific type from the graph
 					std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(target);
 					
@@ -76,20 +100,20 @@ bool detect_interaction(graph::Graph& graph){
 							//check if the syscall expect values
 							if(abb->get_syscall_type() == receive){
 								
-								//TODO verifc that abb reference of the edge is a real abb
+								
 								//create the edge, which contains the start and target vertex and the arguments
 								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex ,vertex,abb);
-								//TODO set arguments ?
+								
 								//store the edge in the graph
 								graph.set_edge(edge);
 								//set the success flag
 								success = true;
 							
 							}else{	//syscall set values
-								//TODO verifc that abb reference of the edge is a real abb
+								
 								//create the edge, which contains the start and target vertex and the arguments
 								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),vertex ,start_vertex,abb);
-								//TODO set arguments ?
+								
 								//store the edge in the graph
 								graph.set_edge(edge);
 								//set the success flag
@@ -109,7 +133,7 @@ bool detect_interaction(graph::Graph& graph){
 					std::cout << "edge could not created: " << abb->get_syscall_name() << std::endl;
 					for(auto & arguments:* abb->get_arguments()){
 						for(auto &tuple : arguments){
-							//test_debug_argument(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
+							debug_argument_test(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
 						}
 					}
 				}
@@ -123,7 +147,7 @@ bool detect_interaction(graph::Graph& graph){
 namespace step {
 
 	std::string DetectInteractionsStep::get_name() {
-		return "DetectInteractionStep";
+		return "DetectInteractionsStep";
 	}
 
 	std::string DetectInteractionsStep::get_description() {
@@ -132,7 +156,10 @@ namespace step {
 
 	void DetectInteractionsStep::run(graph::Graph& graph) {
 		
-	
+		std::cout << "Run DetectInteractionsStep" << std::endl;
+		//detect interactions of the OS abstraction instances
+		
+		graph.print_information();
 		detect_interaction(graph);
 		
 		
@@ -140,6 +167,6 @@ namespace step {
 	}
 	
 	std::vector<std::string> DetectInteractionsStep::get_dependencies() {
-		return {"FreeRTOSInstances_Step"};
+		return {"FreeRTOSInstancesStep"};
 	}
 }
