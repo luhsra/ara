@@ -599,6 +599,9 @@ cdef class ABB(Vertex):
 	
 	def remove_successor(self,ABB abb):
 		return deref(self._c()).remove_successor(abb._c())
+	
+	def remove_predecessor(self,ABB abb):
+		return deref(self._c()).remove_predecessor(abb._c())
 
 	def adapt_exit_bb(self,ABB abb):
 		return deref(self._c()).adapt_exit_bb(abb._c())

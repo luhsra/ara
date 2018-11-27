@@ -523,6 +523,7 @@ namespace OS {
  		std::list<std::list<size_t>> get_call_argument_types();
 		
 		void remove_successor(shared_abb abb);
+		void remove_predecessor(shared_abb abb);
 		
 		bool convert_call_to_syscall(std::string name);
 		bool append_basic_blocks(shared_abb abb);

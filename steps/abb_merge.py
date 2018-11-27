@@ -182,7 +182,7 @@ class ABB_MergeStep(Step):
 			seed = target.get_seed()
 			if not seed == entry_abb.get_seed(): # omit self loop
 				entry_abb.set_successor(target)
-
+				target.set_predecessor(entry_abb)
 		
 		# Remove edges between entry and inner_abbs/exit
 		for abb in inner_abbs | {entry_abb}:
@@ -191,7 +191,7 @@ class ABB_MergeStep(Step):
 				for element in inner_abbs | {exit_abb}:
 					if element.get_seed() == seed:
 						abb.remove_successor(target)
-						
+						target.remove_predecessor(abb)
 
 		for abb in (inner_abbs | {exit_abb}):
 			# Adapt exit ABB in corresponding function
@@ -209,7 +209,7 @@ class ABB_MergeStep(Step):
 				
 			if not g.remove_vertex(abb.get_seed()):
 				sys.exit("abb could not removed from graph")
-		
+	
 		
 		#entry_abb.print_information()
 
@@ -229,7 +229,6 @@ class ABB_MergeStep(Step):
 		for abb in  { entry_abb, exit_abb}:
 			if not abb.is_mergeable():
 				return False
-			
 			
 		#print( entry_abb.get_seed(), exit_abb.get_seed())
 		
@@ -296,12 +295,17 @@ class ABB_MergeStep(Step):
 	def find_region(self, start, end):
 		region = set([start, end])
 		ws = []
+		visited = []
+		visited.append(start.get_seed())
+		visited.append(end.get_seed())
 		ws.append(start)
+
 		while len(ws)>0:
 			cur = ws.pop()
+			visited.append(cur.get_seed())
 			region.add(cur)
 			for node in cur.get_successors():
-				if not node in region:
+				if not node.get_seed() in visited:
 					ws.append(node)
 		return region
 	
@@ -321,12 +325,12 @@ class ABB_MergeStep(Step):
 
 			#print("dom" , func.get_entry_abb())
 			dom = DominanceAnalysis(forward = True)
-			dom.do(g,nodes=function_abbs)
+			dom.do(g,nodes=function_abbs,entry =func.get_entry_abb())
 
 			# Backward analysis
 			#print("post_dom" , func.get_exit_abb())
 			post_dom = DominanceAnalysis(forward = False)
-			post_dom.do(g,nodes=function_abbs)
+			post_dom.do(g,nodes=function_abbs,entry =func.get_exit_abb())
 			removed = set()
 			
 			for abb in function_abbs:
@@ -341,13 +345,42 @@ class ABB_MergeStep(Step):
 				start = dom.immdom_tree[abb.get_seed()]
 				end   = post_dom.immdom_tree[abb.get_seed()]
 				
+				
+				
 				if start and end and start != end:
+					
 					region = self.find_region(start, end)
-					inner = region - set([start, end])
+					
+						
+						
+					inner = set()
+					
+					for element in region:
+						if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
+							inner.add(element)
+					
 					# Was there already some subset removed?
-					if start in removed or end in removed:
-						continue
-					inner = inner - removed
+					for element in removed:
+						if element.get_seed() == start.get_seed() or element.get_seed() == end.get_seed():
+							continue
+					
+					tmp_inner = inner
+					inner = set()
+					
+					for inner_element in tmp_inner:
+						flag = True
+						for inner_removed in removed:
+							if inner_element.get_seed() == inner_removed.get_element():
+								flag = False
+								break
+						if flag == True:
+							inner.add(inner_element)
+							
+					print("start",start.get_name(),"end", end.get_name())
+					
+					for element in inner:
+						print("inner",element.get_name())
+					
 					if self.can_be_merged(start, end, inner):
 						self.do_merge(start, end, inner)
 						# Mark as removed

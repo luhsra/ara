@@ -1150,6 +1150,20 @@ void OS::ABB::remove_successor(shared_abb abb){
 	}
 }
 
+void OS::ABB::remove_predecessor(shared_abb abb){
+
+	for (std::list<shared_abb>::iterator itr = this->predecessors.begin(); itr != this->predecessors.end();){
+		if ((*itr)->get_seed() == abb->get_seed()){
+			itr = this->predecessors.erase(itr);
+		}
+		else{
+			++itr;
+	
+		}
+	}
+}
+
+
 void OS::ABB::set_entry_abb(llvm::BasicBlock* bb){
 	this->entry = bb;
 }

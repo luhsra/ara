@@ -10,6 +10,7 @@ stepmanager then fulfils this dependencies.
 cimport cpass
 cimport llvm
 cimport FreeRTOSinstances
+cimport DetectInteractions
 cimport test
 cimport graph
 
@@ -64,6 +65,7 @@ class Step(SuperStep):
 
 ctypedef enum steps:
 	FreeRTOSInstances_STEP
+	DetectInteractions_STEP
 	LLVM_STEP,
 	TEST0_STEP,
 	TEST2_STEP
@@ -90,6 +92,8 @@ cdef class NativeStep(SuperStep):
 			self._c_pass = <cpass.Step*> new llvm.LLVMStep(config)
 		elif  step_cls == FreeRTOSInstances_STEP:
 			self._c_pass = <cpass.Step*> new FreeRTOSinstances.FreeRTOSInstancesStep(config)
+		elif  step_cls == DetectInteractions_STEP:
+			self._c_pass = <cpass.Step*> new DetectInteractions.DetectInteractionsStep(config)
 		# for testing purposes (can not be transferred into seperate file)
 		elif step_cls == TEST0_STEP:
 			self._c_pass = <cpass.Step*> new test.Test0Step(config)
@@ -127,7 +131,7 @@ def provide_steps(config: dict):
 	Arguments:
 	config -- a configuration dict like the one Step.__init__() needs.
 	"""
-	return [NativeStep(config, LLVM_STEP),NativeStep(config, FreeRTOSInstances_STEP)]
+	return [NativeStep(config, LLVM_STEP),NativeStep(config, FreeRTOSInstances_STEP),NativeStep(config, DetectInteractions_STEP)]
 
 def provide_test_steps(config: dict):
 	"""Do not use this, only for testing purposes."""

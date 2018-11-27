@@ -170,6 +170,7 @@ cdef extern from "graph.h" namespace "OS":
 		
 		void expend_call_sites(shared_ptr[ABB])
 		void remove_successor(shared_ptr[ABB])
+		void remove_predecessor(shared_ptr[ABB])
 		void set_call_type(call_definition_type type)
 		void set_syscall_type(syscall_definition_type type)
 		void set_call_target_instance(size_t target_instance)

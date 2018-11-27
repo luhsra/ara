@@ -134,7 +134,7 @@ class DominanceAnalysis():
 		# On this path we found a loop
 		return None
 
-	def do(self,g: graph.PyGraph, nodes=None):
+	def do(self,g: graph.PyGraph, nodes=None , entry = None):
 		if nodes is not None:
 			self.nodes = nodes
 		else:
@@ -142,7 +142,23 @@ class DominanceAnalysis():
 
 		start_nodes, dom = self.find_dominators()
 		
+		#check if the entry argument is a real start abb
+		check = None
+		for start_node in start_nodes:
+			if start_node.get_seed() == entry.get_seed():
+				check = start_node
+				
+		assert check != None
+		
 		self.immdom_tree = dict()
+		
+		for x in start_nodes:
+			if x.get_seed() == check.get_seed():
+				self.immdom_tree[x.get_seed()] = None
+			else:
+				self.immdom_tree[x.get_seed()] = check
+					
+		
 		
 		self.immdom_tree_keys = []
 		for start_node in start_nodes:
