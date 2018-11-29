@@ -1,8 +1,9 @@
-import graph
+import graph 
 import os
 import sys
 from collections import namedtuple
 import logging
+
 #import syscalls_references
 
 from native_step import Step
@@ -27,47 +28,55 @@ class SyscallStep(Step):
 				
 				# quadruple of syscall id , syscall type and syscall target
 				# no syscall
-				"Computation": 		[1,None,None],
+				#"Computation": 				[1,None,None],
 				
 
-				"ActivateTask": 	[2,0,type(graph.Task)],
-				"StartOS": 			[3,0,type(graph.Task)],
-				#"Idle": 			[4,graph.syscall_definition_type.schedule,type(graph.RTOS)],
-				#"iret": 			[5,graph.syscall_definition_type.schedule,type(graph.RTOS)],
-				"kickoff": 			[6,None,None],
-				"TerminateTask": 	[7,0,type(graph.Task)],
-				"ChainTask": 		[8,0,type(graph.Task)],
-				"CancelAlarm":		[9,0,type(graph.Alarm)],
-				"GetResource":		[10,0,type(graph.Resource)],
-				"ReleaseResource":	[11,0,type(graph.Resource)],
+				"OSEKOS_ActivateTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")]],
+				"StartOS": 					[[],graph.syscall_definition_type.schedule,[graph.get_type_hash("OS")]],
+				"OSEKOS_TerminateTask": 	[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")]],
 				
 				
-				#"DisableAllInterrupts":[1,None,None],
-				#"EnableAllInterrupts":[1,None,None],
-				#"SuspendAllInterrupts":[1,None,None],
-				#"SuspendOSInterrupts":[1,None,None],
-				#"ResumeOSInterrupts":[1,None,None],
-				#"GetAlarm":[1,None,None],
-				#"AdvanceCounter":[1,None,None],
+				
+				
+				"OSEKOS_ChainTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")]],
+				"OSEKOS_CancelAlarm":		[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Alarm")]],
+				
+				"OSEKOS_GetResource":				[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")]],
+				"OSEKOS_ReleaseResource":			[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")]],
+				
+				"OSEKOS_DisableAllInterrupts":		[[],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")]],
+				"OSEKOS_EnableAllInterrupts":		[[],graph.syscall_definition_type.activate,[graph.get_type_hash("RTOS")]],
+				"OSEKOS_SuspendAllInterrupts":		[[],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")]],
+				"OSEKOS_ResumeAllInterrupts":		[[],graph.syscall_definition_type.activate,[graph.get_type_hash("RTOS")]],
+				"OSEKOS_SuspendOSInterrupts":		[[],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")]],
+				"OSEKOS_ResumeOSInterrupts":		[[],graph.syscall_definition_type.activate,[graph.get_type_hash("RTOS")]],
+				
+				"OSEKOS_GetAlarm":					[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Alarm")]],
+				"OSEKOS_AdvanceCounter":			[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Counter")]],
+				
+				
+				
+				"OSEKOS_SetEvent":					[[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.enable,[graph.get_type_hash("Task")]],
+				"OSEKOS_ClearEvent":				[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Event")]],
+				"OSEKOS_WaitEvent":					[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Event")]],
+				"OSEKOS_GetEvent":					[[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Task")]],
+				
+				"OSEKOS_SetRelAlarm":				[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Alarm")]],
+				"OSEKOS_CheckAlarm":				[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Alarm")]],
+				
+				
 				#"AcquireCheckedObject":[1,None,None],
 				#"ReleaseCheckedObject":[1,None,None],
-				#"SetEvent":[1,None,None],
-				#"ClearEvent":[1,None,None],
-				#"WaitEvent":[1,None,None],
-				#"GetEvent":[1,None,None],
 				#"ActivateDevice":[1,None,None],
-				#"ActivateTask":[1,None,None],
 				#"DeactivateDevice":[1,None,None],
-				#"SetRelAlarm":[1,None,None],
-				#"CheckAlarm":[1,None,None],
 				#"CheckIRQ":[1,None,None],
-				#"ResumeAllInterrupts"[1,None,None]
+				#"
 				}
 		else:
 
 			self.syscall_dict = { 	 	
 				# no syscall
-				"Computation": 							[[],None,None] ,
+				#"Computation": 							[[],None,None] ,
 			
 				# all syscall which creates abstaction instances
 				
@@ -236,7 +245,7 @@ class SyscallStep(Step):
 				"xStreamBufferReceive" : 			[[graph.data_type.string,graph.data_type.string,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Buffer")]],
 				"xStreamBufferReceiveFromISR" : 	[[graph.data_type.string,graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Buffer")]],
 				"xStreamBufferReset" : 				[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")]],
-				"xStreamBufferReset" : 				[[graph.data_type.string],graph.syscall_definition_type.reset,[graph.get_type_hash("Buffer")]],
+				"xStreamBufferResetFromISR" : 		[[graph.data_type.string],graph.syscall_definition_type.reset,[graph.get_type_hash("Buffer")]],
 				"xStreamBufferSend" : 				[[graph.data_type.string,graph.data_type.string,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")]],
 				"xStreamBufferSendFromISR" : 		[[graph.data_type.string,graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")]],
 				"xStreamBufferSetTriggerLevel" : 	[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")]],
@@ -280,6 +289,7 @@ class SyscallStep(Step):
 						#check if call is a function call or a sys call
 						syscall = self.syscall_dict.get(call_name.decode('ascii'), "error")
 						if syscall != "error":
+						
 							
 							assert abb.convert_call_to_syscall(call_name) == True, "could not conver call to syscall"
 								

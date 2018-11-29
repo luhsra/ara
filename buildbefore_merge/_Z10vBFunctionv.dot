@@ -1,0 +1,19 @@
+digraph G {
+BB22 -> BB21;
+BB22[fillcolor="#9ACEEB" style=filled];
+BB21 -> BB23;
+BB21 -> BB24;
+BB21[fillcolor="#FCD975" style=filled label=<BB21<BR /> <FONT POINT-SIZE="10">syscall: xStreamBufferGenericCreate</FONT>>];
+BB21 -> BB22[color=grey];
+BB23 -> BB25;
+BB23[fillcolor="#9ACEEB" style=filled];
+BB23 -> BB21[color=grey];
+BB24 -> BB25;
+BB24[fillcolor="#9ACEEB" style=filled];
+BB24 -> BB21[color=grey];
+BB25[fillcolor="#9ACEEB" style=filled];
+BB25 -> BB23[color=grey];
+BB25 -> BB24[color=grey];
+BB25 [color=red style=filled] ;
+BB22 [color=green style=filled];
+}

@@ -28,7 +28,10 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
 	cdef syscall_definition_type release
 	cdef syscall_definition_type schedule
 	cdef syscall_definition_type reset
-
+	cdef syscall_definition_type activate
+	cdef syscall_definition_type enable
+	cdef syscall_definition_type disable
+	
 cdef extern from "graph.h" namespace "graph":
 	cdef cppclass Graph:
 		Graph() except +
@@ -44,7 +47,7 @@ cdef extern from "graph.h" namespace "graph":
 		size_t get_seed()
 		size_t get_type()
 		string get_name()
-
+		void set_handler_name(string)
 
 	cdef cppclass Edge:
 		Edge() except +

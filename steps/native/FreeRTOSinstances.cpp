@@ -20,8 +20,50 @@
 #include "llvm/ADT/APFloat.h"
 using namespace llvm;
 
-enum scheduler_return_value { not_found , found , uncertain };
 
+
+void example(Function* func){
+
+	DominatorTree DT = DominatorTree();
+	DT.recalculate(*func);
+	DT.updateDFSNumbers();
+	
+	LoopInfo LI = LoopInfo(DT);
+	LI.analyze(DT);
+	
+	for(auto&bb :*func){
+		
+		Loop * L = LI.getLoopFor(&bb);
+		
+		if(L != nullptr){
+			
+			
+			AssumptionCache AC = AssumptionCache(*bb.getParent());
+			Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
+			TargetLibraryInfoImpl TLII(ModuleTriple);
+			TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
+			
+			SmallVector<BasicBlock*, 8> ExitingBlocks;
+			L->getExitingBlocks (ExitingBlocks) ;
+			
+			for(auto exiting_block :  ExitingBlocks){
+			
+				ScalarEvolution SE = ScalarEvolution(*func, TLI.getTLI(),AC, DT, LI);
+			
+				
+				const SCEV * exitcount = SE.getExitCount (L,exiting_block );
+
+				std::string type_str;
+				llvm::raw_string_ostream rso(type_str);
+				exiting_block->print(rso);
+				std::cout<< rso.str() ;
+			}
+		}
+	}
+}
+
+
+enum scheduler_return_value { not_found , found , uncertain };
 
 //print the argument
 void test_debug_argument(std::any value,llvm::Type *type){
@@ -622,10 +664,14 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	graph::shared_vertex vertex = nullptr;
 	vertex =  graph.get_vertex(hash_fn(function_reference_name +  typeid(OS::Function).name()));
 
-	
-	auto function_reference = std::dynamic_pointer_cast<OS::Function> (vertex);
+	if(vertex != nullptr){
+		auto function_reference = std::dynamic_pointer_cast<OS::Function> (vertex);
 
-	function_reference->set_definition_vertex(task);
+		function_reference->set_definition_vertex(task);
+	}else{
+		std::cerr << "task definition function does not exist " << function_reference_name << std::endl;
+		abort();
+	}
 	
 	std::cout << "task successfully created"<< std::endl;
 
@@ -1025,6 +1071,15 @@ namespace step {
 
 	void FreeRTOSInstancesStep::run(graph::Graph& graph) {
 		
+// 		std::list<graph::shared_vertex> tmp =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+// 
+// 		for (auto &vertex : tmp) {
+// 			
+// 			//vertex->print_information();
+// 			//cast vertex to abb 
+// 			auto func = std::dynamic_pointer_cast<OS::Function> (vertex);
+// 			example(func->get_llvm_reference());
+// 		}
 		//std::cout  << graph.print_information();
 		//std::cerr << graph.print_information();
 		
@@ -1090,7 +1145,17 @@ namespace step {
 								}
 							}
 						}
-						
+						//check if syscall is isr specific 
+						if(abb->get_syscall_name().find("FromISR")){
+							//check if function defines already an isr 
+							//TODO change definition element to a list
+							if(abb->get_parent_function()->get_definition_vertex() == nullptr){
+								std::string isr_name = abb->get_syscall_instruction_reference()->getFunction()->getName().str();
+								auto isr = std::make_shared<OS::ISR>(&graph,isr_name);
+								isr->set_definition_function(abb->get_parent_function()->get_name());
+								graph.set_vertex(isr);
+							}
+						}
 						//if(before_scheduler_start)std::cout << "before_scheduler_start " <<  callname		<< std::endl;
 						//else std::cout << "!!!!!!!!!!!!!!!1after_scheduler_start " <<  	callname	<< std::endl;
 						//check if abb syscall is creation syscall
@@ -1109,11 +1174,11 @@ namespace step {
 							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
 								//TODO set semaphore
 								semaphore_type type;
-								for(auto& callname: abb->get_call_names()){
-									if(callname =="xQueueCreateMutex")type = mutex;
-									if(callname =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
-									if(callname =="xQueueCreateCountingSemaphore")type = counting;
-								}
+								std::string syscall_name = abb->get_syscall_name();
+								if(syscall_name =="xQueueCreateMutex")type = mutex;
+								if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
+								if(syscall_name =="xQueueCreateCountingSemaphore")type = counting;
+							
 								if(!create_semaphore(graph, abb, type, before_scheduler_start))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
 								
 							}						

@@ -70,6 +70,9 @@ class syscall_definition_type(IntEnum):
 	release = <int> cgraph.release
 	schedule = <int> cgraph.schedule
 	reset = <int> cgraph.reset
+	activate = <int> cgraph.activate
+	enable = <int> cgraph.enable
+	disable = <int> cgraph.disable
 	
 class data_type(IntEnum):
 	string = 1
@@ -227,12 +230,19 @@ cdef class Vertex:
 		#return py_obj
 
 	def get_name(self):
-		cdef string c_string = deref(self._c_vertex).get_name()
+		cdef c_string = deref(self._c_vertex).get_name()
 		cdef bytes py_string = c_string
 		return py_string
 
 	def get_seed(self):
 		return deref(self._c_vertex).get_seed()
+
+
+	def	set_handler_name(self,str name):
+		cdef string handlername = name.encode('UTF-8')
+		deref(self._c_vertex).set_handler_name(handlername)
+			
+		
 
 
 cdef class Alarm(Vertex):
@@ -419,6 +429,7 @@ cdef class Task(Vertex):
 		cdef string c_string = deref(self._c()).get_name()
 		cdef bytes py_string = c_string
 		return py_string
+	
 
 
 

@@ -194,18 +194,23 @@ shared_vertex graph::Graph::get_vertex(std::string name){
 	
 	shared_vertex return_vertex;
 	int counter = 0;
-	
+	//std::cerr << "_______________________" << std::endl;
+	//std::cerr << "searched name: " <<  name << std::endl;
 	for (auto& vertex : this->vertices) {
+	//	std::cerr << vertex->get_name() << std::endl;
 		if(name==vertex->get_name()){                                         //check if vertex is from wanted type
 			counter++;
 			return_vertex = vertex; 
         }
 	}
-	
+	//std::cerr << counter<<  std::endl;
+	//std::cerr << "_______________________" << std::endl;
     if(counter == 1){
 		return return_vertex;
 	}
 	else{
+		//std::cerr << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+		
 		return nullptr;
 	}
 		
@@ -666,6 +671,7 @@ bool OS::Function::remove_abb(size_t seed){
 
 
 bool OS::Function::set_definition_vertex(graph::shared_vertex vertex){
+	
 	bool success =false;
 	if(this->graph->contain_vertex(vertex)){
 		this->definition_element = vertex;
@@ -1319,11 +1325,13 @@ bool OS::Task::set_event_reference(std::string event_name){
 
 bool OS::Task::set_definition_function(std::string function_name){
 	bool result = false;
-	auto function = this->graph->get_vertex(function_name);
-	if(function != nullptr){
-		auto function_cast = std::dynamic_pointer_cast<OS::Function> (function);
-		if(function_cast){
-			this->definition_function = function_cast;
+	auto vertex = this->graph->get_vertex(function_name);
+	auto self_vertex = this->graph->get_vertex(this->name);
+	if(vertex != nullptr && self_vertex != nullptr){
+		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+		if(function){
+			this->definition_function = function;
+			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
@@ -1334,11 +1342,13 @@ bool OS::Task::set_definition_function(std::string function_name){
 
 bool OS::ISR::set_definition_function(std::string function_name){
 	bool result = false;
-	auto function = this->graph->get_vertex(function_name);
-	if(function != nullptr){
-		auto function_cast = std::dynamic_pointer_cast<OS::Function> (function);
-		if(function_cast){
-			this->definition_function = function_cast;
+	auto vertex = this->graph->get_vertex(function_name);
+	auto self_vertex = this->graph->get_vertex(this->name);
+	if(vertex != nullptr && self_vertex != nullptr){
+		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+		if(function){
+			this->definition_function = function;
+			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
@@ -1475,11 +1485,13 @@ void OS::Timer::set_timer_type( timer_type type){
 
 bool OS::Timer::set_definition_function(std::string function_name){
 	bool result = false;
-	auto function = this->graph->get_vertex(function_name);
-	if(function != nullptr){
-		auto function_cast = std::dynamic_pointer_cast<OS::Function> (function);
-		if(function_cast){
-			this->definition_function = function_cast;
+	auto vertex = this->graph->get_vertex(function_name);
+	auto self_vertex = this->graph->get_vertex(this->name);
+	if(vertex != nullptr && self_vertex != nullptr){
+		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+		if(function){
+			this->definition_function = function;
+			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}

@@ -39,7 +39,7 @@ TASK(taskSend) {
 
 TASK(Handler13) {
 	test_trace('3');
-	TerminateTask();
+	ChainTask(taskContact);
 }
 
 ISR2(isr_button_start){
@@ -47,26 +47,15 @@ ISR2(isr_button_start){
 	for(int i = 0;i< 100 ; ++i)int a =+ 20;
 	
 }
-/*	
-    extern const uint32_t OSEKOS_TASK_Handler11;		
-    static __attribute__((unused)) const uint32_t &Handler11 = OSEKOS_TASK_Handler11;	
-    
-    extern const uint32_t OSEKOS_TASK_Handler12;		
-    static __attribute__((unused)) const uint32_t &Handler11 = OSEKOS_TASK_Handler12;
-    
-    extern const uint32_t OSEKOS_TASK_Handler13;		
-    static __attribute__((unused)) const uint32_t &Handler11 = OSEKOS_TASK_Handler13;
+
+
+int main(void) {
+	Schedule();
+	return 0;
+}				
+					
  
-    extern void os_main(void) {	\
-	test_main();		\
-    }				\
-					\
-    void test() {			\
-        test_start();		\
-        body;			\
-    }		
- * 
- * noinline extern void OSEKOS_TASK_FUNC_Handler11(void){
+/* noinline extern void OSEKOS_TASK_FUNC_Handler11(void){
  
         volatile int i = 1;
         while (i <  200000) i++;

@@ -12,14 +12,9 @@
 
 
 int main( void ){
-	
 	int a = 0;
-	int i = 0;
-	for(; i < 10; i++){
+	for(int i; i < 10; ++i){
 		a = a + 1;
 	};
-	
-
-	
 	return 0;
 }

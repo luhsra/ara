@@ -1,0 +1,11 @@
+digraph G {
+BB39 -> BB37;
+BB39[fillcolor="#9ACEEB" style=filled];
+BB37 -> BB38;
+BB37[fillcolor="#FCD975" style=filled label=<BB37<BR /> <FONT POINT-SIZE="10">call: _Z5test1v</FONT>>];
+BB37 -> BB39[color=grey];
+BB38[fillcolor="#FCD975" style=filled label=<BB38<BR /> <FONT POINT-SIZE="10">call: _Z11fake_createv</FONT>>];
+BB38 -> BB37[color=grey];
+BB38 [color=red style=filled] ;
+BB39 [color=green style=filled];
+}

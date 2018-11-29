@@ -1,0 +1,11 @@
+digraph G {
+BB28 -> BB26;
+BB28[fillcolor="#9ACEEB" style=filled];
+BB26 -> BB27;
+BB26[fillcolor="#FCD975" style=filled label=<BB26<BR /> <FONT POINT-SIZE="10">syscall: xTaskCreate</FONT>>];
+BB26 -> BB28[color=grey];
+BB27[fillcolor="#FCD975" style=filled label=<BB27<BR /> <FONT POINT-SIZE="10">call: _Z4testv</FONT>>];
+BB27 -> BB26[color=grey];
+BB27 [color=red style=filled] ;
+BB28 [color=green style=filled];
+}

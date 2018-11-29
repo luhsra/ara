@@ -30,7 +30,7 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, no_call , has_call };
 
-enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable};
 
 enum ISR_type { ISR1, ISR2, basic };
 
@@ -303,6 +303,7 @@ namespace OS {
 		
 		bool syscall_flag = false;
 		
+		//TODO make a list of this
 		graph::shared_vertex definition_element = nullptr;
 		
 		std::string function_name;       // name der Funktion
@@ -435,10 +436,11 @@ namespace OS {
 		
 		std::list<OS::shared_function>  called_functions;
 		
-		//TODO get/set Methode and set the blocks in the llvm pass
+		
 		llvm::BasicBlock* entry;
 		llvm::BasicBlock* exit;
-		//TODO change the Instruction call reference to a list object 
+		
+		
 		
 		llvm::Instruction* syscall_instruction_reference = nullptr;
 		

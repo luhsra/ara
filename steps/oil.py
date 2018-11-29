@@ -1,7 +1,7 @@
 import graph
 import json
 import os
-
+import sys
 
 from native_step import Step
 
@@ -54,10 +54,12 @@ class OilStep(Step):
 
 	def run(self, g: graph.PyGraph):
 
-
+	
 		print("Run ", self.get_name())
 		
-		structure_file = '../appl/OSEK/oilfile.oil'
+		return
+	
+		structure_file = '../appl/OSEK/coptermok.oil'
 		tmp_file = '../tmp.txt'
 		
 		#open oil file
@@ -67,7 +69,7 @@ class OilStep(Step):
 		
 		#generate tmp file
 		f_new = open(tmp_file, 'w')
-
+		
 		
 		#ignore // comments
 		for i in f_old.readlines():
@@ -208,6 +210,8 @@ class OilStep(Step):
 				#print (name, 'corresponds to', resources[name])
 				oil_resource = resources[name]
 				
+				resource.set_handler_name("OSEKOS_RESOURCE_" + name)
+				
 				#iterate about the attributes of the events
 				for attribute in oil_resource:
 					
@@ -255,6 +259,8 @@ class OilStep(Step):
 				#print (name, 'corresponds to', events[name])
 				oil_event = events[name]
 				
+				event.set_handler_name("OSEKOS_EVENT_" + name);
+				
 				#iterate about the attributes of the events
 				for attribute in oil_event:
 					
@@ -286,6 +292,8 @@ class OilStep(Step):
 				#set and check function reference of task
 				if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
 					print("Task ", name, " has no reference in data")
+					
+				task.set_handler_name("OSEKOS_TASK_" +name)
 				
 				#iterate about the attributes of the task
 				oil_task = tasks[name]
@@ -311,15 +319,17 @@ class OilStep(Step):
 										for appmode in appmodes:
 											#print("autostart: ", autostart_attribute)
 											#print("appmode: ", appmode)
-											task.set_appmode(app_mode)
+											task.set_appmode(appmode)
 								else:
 									print("autostart is no boolean")
+									sys.exit()
 						else:
 							if "FALSE" == autostart_attribute:
 								#print("autostart: ", autostart_attribute)
 								task.set_autostart(False)
 							else:
 								print("autostart is no boolean")
+								sys.exit()
 								
 					elif attribute ==	"ACTIVATION": 	
 						if isinstance(oil_task[attribute], int):
@@ -327,6 +337,7 @@ class OilStep(Step):
 							task.set_activation(oil_task[attribute])
 						else:
 							print("activation is no digit")
+							sys.exit()
 							
 					elif attribute ==	"SCHEDULE":
 						if oil_task[attribute] == "NONE" or oil_task[attribute] == "FULL":
@@ -334,6 +345,7 @@ class OilStep(Step):
 							task.set_scheduler(oil_task[attribute])
 						else:
 							print("schedule is not none or full")
+							sys.exit()
 					
 					elif attribute ==	"RESOURCE":
 						if isinstance(oil_task[attribute], list):
@@ -353,8 +365,10 @@ class OilStep(Step):
 										task.set_event_reference(event)
 									else:
 										print("event was not defined in OIL: ", event)
+										sys.exit()
 								else:
 									print("event is no string")
+									sys.exit()
 								
 					elif attribute ==	"MESSAGE":
 						if isinstance(oil_task[attribute], list):
@@ -362,11 +376,14 @@ class OilStep(Step):
 								if isinstance(message, str):
 									if message in message_list:
 										print("message: ", message)
+										sys.exit()
 										#task.set_message_reference(message)
 									else:
 										print("message was not defined in OIL:", message)
+										sys.exit()
 								else:
 									print("message is no string")
+									sys.exit()
 									
 									
 			
@@ -381,9 +398,12 @@ class OilStep(Step):
 				#create isr
 				isr = isr_list[name]
 				
+			
 				#print (name, 'corresponds to', isrs[name])
 				oil_isr = isrs[name]
-				
+			
+				isr.set_handler_name("OSEKOS_ISR_" +name)
+			
 				function_list = g.get_type_vertices(type(graph.Function))
 				
 				reference_function = name
@@ -391,8 +411,8 @@ class OilStep(Step):
 					reference_function = "OSEKOS_ISR_" + name
 				
 				if not task.set_definition_function(reference_function):
-					print("ISR ", name, " has no reference in data")
-				
+					print("ISR ", name, " has no definition reference in data")
+					sys.exit()
 				
 				#iterate about the attributes of the isr
 				for attribute in oil_isr:
@@ -404,9 +424,11 @@ class OilStep(Step):
 								isr.set_category(oil_isr[attribute])
 							else:
 								print("category is not 1 or 2")
+								sys.exit()
 						else:
 							print("category is no string")
-					
+							sys.exit()
+							
 					elif attribute ==	"RESOURCE":
 						if isinstance(oil_isr[attribute], list):
 							for resource in oil_isr[attribute]:
@@ -416,8 +438,10 @@ class OilStep(Step):
 										isr.set_resource_reference(resource)
 									else:
 										print("resource was not defined in OIL: ", resource)
+										sys.exit()
 								else:
 									print("resource is no string")
+									sys.exit()
 								
 					elif attribute ==	"MESSAGE":
 						if isinstance(oil_isr[attribute], list):
@@ -425,6 +449,7 @@ class OilStep(Step):
 								#TODO
 								if not isinstance(message, str):
 									print("message is no string")
+									sys.exit()
 									#if message in message_list:
 										
 										#isr.set_message_reference(message)
@@ -448,6 +473,9 @@ class OilStep(Step):
 				#print (name, 'corresponds to', alarms[name])
 				oil_alarm = alarms[name]
 				
+				alarm.set_handler_name("OSEKOS_ALARM_" +name)
+				
+				
 				#iterate about the attributes of the alarms
 				for attribute in oil_alarm:
 					
@@ -457,65 +485,80 @@ class OilStep(Step):
 							alarm.set_counter_reference(oil_alarm[attribute])
 						else:
 							print("counter is no string")
+							sys.exit()
 						
 					elif attribute ==	"ACTION":
-						
-						if oil_alarm[attribute] == "ACTIVATETASK":
-							activatetask_attributes = oil_alarm[attribute]
-							for activatetask_attribute in activatetask_attributes:
-								if activatetask_attribute == "TASK": 
-									if isinstance(activatetask_attributes[activatetask_attribute], str):
-										if activatetask_attributes[activatetask_attribute] in tast_list:
-											#print("activatetask: " , activatetask_attributes[activatetask_attribute])
-											alarm.set_task_reference(activatetask_attributes[activatetask_attribute])
+						for action_attribute in oil_alarm[attribute]:
+							if action_attribute == "ACTIVATETASK":
+								
+								activatetask_attributes = oil_alarm[attribute][action_attribute]
+								print(activatetask_attributes)
+								for activatetask_attribute in activatetask_attributes:
+									#print(activatetask_attribute)
+									if activatetask_attribute == "TASK": 
+										if isinstance(activatetask_attributes[activatetask_attribute], str):
+											if activatetask_attributes[activatetask_attribute] in task_list:
+												#print("activatetask: " , activatetask_attributes[activatetask_attribute])
+												alarm.set_task_reference(activatetask_attributes[activatetask_attribute])
+											else:
+												print("task was not defined in OIL file: ", activatetask_attributes[activatetask_attribute])
+												sys.exit()
 										else:
-											print("task was not defined in OIL file: ", activatetask_attributes[activatetask_attribute])
+											print("activatetask has no string attribute")
+											sys.exit()
 									else:
-										print("activatetask has no string attribute")
-								else:
-									print("activatetask has no attribute task")
-									
-						elif oil_alarm[attribute] == "SETEVENT":
-							set_event_attributes = oil_alarm[attribute]
-							for set_event_attribute in set_event_attributes:
-								if set_event_attribute == "TASK": 
-									if isinstance(set_event_attributes[set_event_attribute], str):
-										if set_event_attributes[set_event_attribute] in event_list:
-											#print("setevent task: " ,set_event_attributes[set_event_attribute])
-											alarm.set_task_reference(set_event_attributes[set_event_attribute])
-										else: 
-											print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
-									else:
-										print("setevent has no string attribute")
+										print("activatetask has no attribute task")
+										sys.exit()
 										
-								elif activatetask_attribute == "EVENT": 	
-									if isinstance(set_event_attributes[set_event_attribute], str):
-										if set_event_attributes[set_event_attribute] in event_list:
-											#print("setevent event: " ,set_event_attributes[set_event_attribute])
-											alarm.set_event_reference(set_event_attributes[set_event_attribute])
+							elif action_attribute == "SETEVENT":
+								set_event_attributes = oil_alarm[attribute]
+								for set_event_attribute in set_event_attributes:
+									if set_event_attribute == "TASK": 
+										if isinstance(set_event_attributes[set_event_attribute], str):
+											if set_event_attributes[set_event_attribute] in event_list:
+												#print("setevent task: " ,set_event_attributes[set_event_attribute])
+												alarm.set_task_reference(set_event_attributes[set_event_attribute])
+											else: 
+												print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
+												sys.exit()
 										else:
-											print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
-									else:
-										print("setevent has no string attribute")
+											print("setevent has no string attribute")
+											sys.exit()
 											
-								else:
-									print("activatetask has no attribute task")
-						
-						elif attribute == "ALARMCALLBACK)":
-							alarmcallback_attributes = oil_alarm[attribute]
-							for alarmcallback_attribute in alarmcallback_attributes:
-								if alarmcallback_attribute == "ALARMCALLBACKNAME": 
-									if isinstance(alarmcallback_attributes[alarmcallback_attribute], str):
-										#print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
-										alarm.set_alarm_callback_reference(activatetask_attributes[activatetask_attribute])
+									elif activatetask_attribute == "EVENT": 	
+										if isinstance(set_event_attributes[set_event_attribute], str):
+											if set_event_attributes[set_event_attribute] in event_list:
+												#print("setevent event: " ,set_event_attributes[set_event_attribute])
+												alarm.set_event_reference(set_event_attributes[set_event_attribute])
+											else:
+												print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
+												sys.exit()
+										else:
+											print("setevent has no string attribute")
+											sys.exit()
+												
 									else:
-										print("alarmcallback has no string attribute")
-								else:
-									print("alarmcallback has no attribute alarmcallbackname")
+										print("activatetask has no attribute task")
+										sys.exit()
 							
-							
-						else:
-							print("counter is not ACTIVATETASK or SETEVENT or ALARMCALLBACK")
+							elif action_attribute == "ALARMCALLBACK)":
+								alarmcallback_attributes = oil_alarm[attribute]
+								for alarmcallback_attribute in alarmcallback_attributes:
+									if alarmcallback_attribute == "ALARMCALLBACKNAME": 
+										if isinstance(alarmcallback_attributes[alarmcallback_attribute], str):
+											#print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
+											alarm.set_alarm_callback_reference(activatetask_attributes[activatetask_attribute])
+										else:
+											print("alarmcallback has no string attribute")
+											sys.exit()
+									else:
+										print("alarmcallback has no attribute alarmcallbackname")
+										sys.exit()
+								
+								
+							else:
+								print("counter is not ACTIVATETASK or SETEVENT or ALARMCALLBACK",print(attribute))
+								sys.exit()
 							
 	
 
@@ -543,7 +586,7 @@ class OilStep(Step):
 										elif tmp_attribute == "CYCLETIME":
 											if isinstance(autostart_dict[tmp_attribute], int):
 												alarm.set_cycle_time(autostart_dict[tmp_attribute])
-												#print("cycletime: ", autostart_dict[tmp_attribute])
+										
 											else:
 												print("autostart cycletime is no int")
 										elif tmp_attribute == "APPMODE":
@@ -555,22 +598,19 @@ class OilStep(Step):
 	
 													else:
 														print("appmode is no string")
+														sys.exit()
 											else:
 												print("appmode is no list")
+												sys.exit()
 										else:
 											print("no ALARMTIME or CYCLETIME or APPMODE in autostart" ,autostart_attribute)
+											sys.exit()
 								else:
 									print("autostart is no dict")
+									sys.exit()
 								
 							else:
 								print("autostart is no boolean")
-								
-		
-						
-		
-					
-
+								sys.exit()
 		
 
-		
-		

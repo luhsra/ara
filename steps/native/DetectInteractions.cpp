@@ -60,10 +60,20 @@ bool detect_interaction(graph::Graph& graph){
 		
 		//iterate about the abbs
 		for(auto &abb : abb_list){
+// 			if(abb->get_call_type() != no_call){
+// 				std::cout << abb->get_name() << std::endl;
+// 				for(auto& name: abb->get_call_names()){
+// 					std::cout << name << std::endl;
+// 				}
+// 			}
 			
 			//check if abb contains a syscall and it is not a creational syscall
 			if(abb->get_call_type() == sys_call  && abb->get_syscall_type() != create ){
 				
+				//std::cout << abb->get_name() << std::endl;
+				for(auto& name: abb->get_call_names()){
+					//std::cout << name << std::endl;
+				}
 				
 				bool success = false;
 				std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_syscall_arguments();
@@ -77,18 +87,24 @@ bool detect_interaction(graph::Graph& graph){
 					handler_name = std::any_cast<std::string>(argument);
 				}
 				
+				
 				//iterate about the possible refereneced(syscall targets) abstraction types
 				for(auto& target: *target_list){
+					
 					
 					//the RTOS has the handler name RTOS
 					if(target == typeid(OS::RTOS).hash_code())handler_name = "RTOS";
 					
+					//std::cerr << target << std::endl;
 					//get the vertices of the specific type from the graph
 					std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(target);
 					
+					
 					//iterate about the vertices
 					for (auto &vertex : vertex_list) {
-					
+						
+						//std::cerr << "TEST"<< std::endl;
+						//std::cerr<< "handler name " << vertex->get_handler_name() << std::endl;
 						//compare the referenced handler name with the handler name of the vertex
 						if(vertex->get_handler_name() == handler_name){
 							
@@ -97,8 +113,9 @@ bool detect_interaction(graph::Graph& graph){
 							graph::shared_vertex start_vertex = function;
 							if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
 							
-							//check if the syscall expect values
-							if(abb->get_syscall_type() == receive){
+							
+							//check if the syscall expect values from target or commits values to target
+							if(start_vertex != nullptr && abb->get_syscall_type() == receive){
 								
 								
 								//create the edge, which contains the start and target vertex and the arguments
@@ -124,16 +141,17 @@ bool detect_interaction(graph::Graph& graph){
 					}
 					//check if target vertex with corresponding handler name was detected
 					if(success){
-						std::cout << "edge created " << abb->get_syscall_name() << std::endl;
+						//std::cout << "edge created " << abb->get_syscall_name() << std::endl;
 						//break the loop iteration about the possible syscall target instances
 						break;
 					}
 				}
 				if(success == false){
 					std::cout << "edge could not created: " << abb->get_syscall_name() << std::endl;
+					std::cerr << "expected handler name " << handler_name	<< std::endl;
 					for(auto & arguments:* abb->get_arguments()){
 						for(auto &tuple : arguments){
-							debug_argument_test(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
+							//debug_argument_test(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
 						}
 					}
 				}
@@ -159,7 +177,7 @@ namespace step {
 		std::cout << "Run DetectInteractionsStep" << std::endl;
 		//detect interactions of the OS abstraction instances
 		
-		graph.print_information();
+		//graph.print_information();
 		detect_interaction(graph);
 		
 		

@@ -531,9 +531,10 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 			//store the dumped argument in the abb with corresponding llvm type
 			arguments.push_back(std::make_tuple (value_argument,type_argument));
 		}else{
-			std::cerr << "ERROR: instruction argument dump was not successfull" << '\n';
-			std::cerr <<  print_argument(instruction) << '\n';
-			abort();
+			//TODO
+			//std::cerr << "ERROR: instruction argument dump was not successfull" << '\n';
+			//std::cerr <<  print_argument(instruction) << '\n';
+			//abort();
 		}
 	}
 	

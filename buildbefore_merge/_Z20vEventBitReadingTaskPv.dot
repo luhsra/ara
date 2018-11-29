@@ -1,0 +1,36 @@
+digraph G {
+BB7 -> BB8;
+BB7[fillcolor="#9ACEEB" style=filled];
+BB8 -> BB6;
+BB8[fillcolor="#9ACEEB" style=filled];
+BB8 -> BB7[color=grey];
+BB8 -> BB14[color=grey];
+BB6 -> BB9;
+BB6 -> BB10;
+BB6[fillcolor="#FCD975" style=filled label=<BB6<BR /> <FONT POINT-SIZE="10">syscall: xEventGroupWaitBits</FONT>>];
+BB6 -> BB8[color=grey];
+BB9 -> BB10;
+BB9[fillcolor="#9ACEEB" style=filled];
+BB9 -> BB6[color=grey];
+BB10 -> BB11;
+BB10 -> BB12;
+BB10[fillcolor="#9ACEEB" style=filled];
+BB10 -> BB6[color=grey];
+BB10 -> BB9[color=grey];
+BB11 -> BB12;
+BB11[fillcolor="#9ACEEB" style=filled];
+BB11 -> BB10[color=grey];
+BB12 -> BB13;
+BB12 -> BB14;
+BB12[fillcolor="#9ACEEB" style=filled];
+BB12 -> BB10[color=grey];
+BB12 -> BB11[color=grey];
+BB13 -> BB14;
+BB13[fillcolor="#9ACEEB" style=filled];
+BB13 -> BB12[color=grey];
+BB14 -> BB8;
+BB14[fillcolor="#9ACEEB" style=filled];
+BB14 -> BB12[color=grey];
+BB14 -> BB13[color=grey];
+BB7 [color=green style=filled];
+}
