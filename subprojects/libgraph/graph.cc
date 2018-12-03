@@ -1139,6 +1139,11 @@ void OS::ABB::set_syscall_name(std::string name ){
 }
 
 
+llvm::BasicBlock* OS::ABB::get_entry_bb(){
+	return this->entry;
+}
+
+
 
 llvm::BasicBlock* OS::ABB::get_exit_bb(){
 	return this->exit;
@@ -1170,12 +1175,12 @@ void OS::ABB::remove_predecessor(shared_abb abb){
 }
 
 
-void OS::ABB::set_entry_abb(llvm::BasicBlock* bb){
+void OS::ABB::set_entry_bb(llvm::BasicBlock* bb){
 	this->entry = bb;
 }
 
 
-void OS::ABB::set_exit_abb(llvm::BasicBlock* bb){
+void OS::ABB::set_exit_bb(llvm::BasicBlock* bb){
 	this->exit = bb;
 }
 
@@ -1186,6 +1191,130 @@ void OS::ABB::adapt_exit_bb(shared_abb abb){
 bool  OS::ABB::has_single_successor(){
 	if(this->successors.size() == 1)return true;
 	else return false;
+}
+
+OS::shared_abb OS::ABB::get_postdominator(){
+	
+	llvm:BasicBlock* bb = this->entry;
+	PostDominatorTree  DT = PostDominatorTree();
+	DT.recalculate(*(this->parent_function->get_llvm_reference()));
+	DT.updateDFSNumbers();
+	
+	std::hash<std::string> hash_fn;
+    //get first basic block of the function
+
+    //store coresponding basic block in ABB
+    //queue for new created ABBs
+    std::queue<shared_abb> queue; 
+	
+	
+   	shared_vertex vertex = this->graph->get_vertex(this->seed);
+	if(vertex!=nullptr){
+		shared_abb abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+		if(abb) queue.push(abb);
+	}
+
+    //queue with information, which abbs were already analyzed
+    std::vector<size_t> visited_abbs;
+
+    //iterate about the ABB queue
+    while(!queue.empty()) {
+
+		//get first element of the queue
+		auto abb = queue.front();
+		
+		if(bb != abb->get_entry_bb() && DT.dominates(abb->get_entry_bb(), bb))return abb;
+		queue.pop();
+		
+		
+		bool visited =false;
+			
+		size_t seed =  hash_fn(abb->get_name());
+		
+		for(auto tmp_seed : visited_abbs){
+			if(seed == tmp_seed){
+				visited = true;
+				break;
+			}
+		}
+		if(visited)continue;
+		else visited_abbs.push_back(seed);
+		
+		//iterate about the successors of the abb
+		for (auto successor:abb->get_ABB_successors()){
+			queue.push(successor);
+        }
+    }
+    return nullptr;
+	
+}
+
+OS::shared_abb OS::ABB::get_dominator(){
+	
+	llvm:BasicBlock* bb = this->entry;
+	DominatorTree DT = DominatorTree();
+	DT.recalculate(*(this->parent_function->get_llvm_reference()));
+	DT.updateDFSNumbers();
+	
+	
+	std::hash<std::string> hash_fn;
+    //get first basic block of the function
+
+    //store coresponding basic block in ABB
+    //queue for new created ABBs
+    std::queue<shared_abb> queue; 
+	
+	shared_vertex vertex = this->graph->get_vertex(this->seed);
+	if(vertex!=nullptr){
+		shared_abb abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+		if(abb) queue.push(abb);
+	}
+   
+
+    //queue with information, which abbs were already analyzed
+    std::vector<size_t> visited_abbs;
+
+    //iterate about the ABB queue
+    while(!queue.empty()) {
+
+		//get first element of the queue
+		shared_abb abb = queue.front();
+		
+		//TODO remove error that the bb reference is not valid
+		//std::string type_str;
+		
+		//llvm::raw_string_ostream rso(type_str);
+		//abb->get_entry_bb()->getParent()->print(rso);
+		//std::cerr << "bb " <<  rso.str()<< std::endl ;
+		
+		//if(abb->get_entry_bb() != nullptr)std::cerr << "bb: " <<abb->get_name() << " dominates " << this->name ; 
+		if(bb != abb->get_entry_bb() && DT.dominates(abb->get_entry_bb(), bb)){
+			//std::cerr << " True" <<  std::endl;
+			return abb;
+		}
+		//std::cerr << " False" <<  std::endl;
+		queue.pop();
+		
+		
+		bool visited =false;
+			
+		size_t seed =  hash_fn(abb->get_name());
+		
+		for(auto tmp_seed : visited_abbs){
+			if(seed == tmp_seed){
+				visited = true;
+				break;
+			}
+		}
+		if(visited)continue;
+		else visited_abbs.push_back(seed);
+		
+		//iterate about the successors of the abb
+		for (auto predecessor:abb->get_ABB_predecessors()){
+			queue.push(predecessor);
+        }
+    }
+    return nullptr;
 }
 
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 

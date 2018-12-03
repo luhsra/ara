@@ -615,8 +615,9 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 	
     //store coresponding basic block in ABB
     abb->set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
-	abb->set_exit_abb(&(llvm_reference_function->getEntryBlock()));
-	abb->set_entry_abb(&(llvm_reference_function->getEntryBlock()));
+	abb->set_exit_bb(&(llvm_reference_function->getEntryBlock()));
+	abb->set_entry_bb(&(llvm_reference_function->getEntryBlock()));
+	
 	
 	function->set_atomic_basic_block(abb);
 	
@@ -647,35 +648,43 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
         std::list<llvm::BasicBlock*>::iterator it;
 
         //iterate about the basic block of the abb
-		for (auto &it : old_abb->get_BasicBlocks()) {
+		for (llvm::BasicBlock *bb : old_abb->get_BasicBlocks()) {
 			
 
             //iterate about the successors of the abb
-            for (auto it1 = succ_begin(it); it1 != succ_end(it); ++it1){
+            for (auto it = succ_begin(bb); it != succ_end(bb); ++it){
 
                 //get sucessor basicblock reference
-                llvm::BasicBlock *succ = *it1;
+                llvm::BasicBlock *succ = *it;
 
                 //create temporary basic block
 				auto new_abb = std::make_shared<OS::ABB>(graph,function, succ->getName());
-
+				
                 //check if the successor abb is already stored in the list				
                 if(!visited(new_abb->get_seed(), &visited_abbs)) {
                     if(succ->getName().str().empty()){
 						std::cerr << "ERROR: basic block has no name" << '\n';
 						std::cerr <<  print_argument(succ) << '\n';
 						abort();
-                    }
+                    }else{
+						for(auto & tmp_bb : *llvm_reference_function){
+							if(succ->getName().str() == tmp_bb.getName().str()){
+								succ = &tmp_bb;
+								break;
+							}
+						}
+						
+					}
                     //store new abb in graph
                     graph->set_vertex(new_abb);
 					
 					function->set_atomic_basic_block(new_abb);
-					
+				
                     //set abb predecessor reference and bb reference 
                     new_abb->set_BasicBlock(succ);
-					abb->set_exit_abb(succ);
-					abb->set_entry_abb(succ);
-					
+					new_abb->set_exit_bb(succ);
+					new_abb->set_entry_bb(succ);
+			
 					
                     new_abb->set_ABB_predecessor(old_abb);
 

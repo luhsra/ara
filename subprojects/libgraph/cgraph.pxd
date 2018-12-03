@@ -48,11 +48,22 @@ cdef extern from "graph.h" namespace "graph":
 		size_t get_type()
 		string get_name()
 		void set_handler_name(string)
-
+		clist[shared_ptr[Edge]] get_outgoing_edges()
+		
 	cdef cppclass Edge:
-		Edge() except +
+		Edge(Graph* graph,string name , shared_ptr[Vertex] start , shared_ptr[Vertex] target ,shared_ptr[ABB] abb_reference) except +
+		
+		shared_ptr[Vertex] get_start_vertex()
+		shared_ptr[Vertex] get_target_vertex()
+		
+		
 
 cdef extern from "graph.h" namespace "OS":
+
+	cdef cppclass RTOS:
+		RTOS(Graph* graph, string name) except +
+
+
 	cdef cppclass Alarm:
 		Alarm(Graph* graph, string name) except +
 
@@ -142,7 +153,8 @@ cdef extern from "graph.h" namespace "OS":
 	cdef cppclass Buffer:
 		Buffer(Graph* graph, string name) except +
 
-
+	cdef cppclass EventGroup:
+		EventGroup(Graph* graph, string name) except +
 
 
 
@@ -205,3 +217,5 @@ cdef extern from "graph.h" namespace "OS":
 		void print_information()
 		shared_ptr[Function] get_parent_function()
 		
+		shared_ptr[ABB] get_postdominator()
+		shared_ptr[ABB] get_dominator()

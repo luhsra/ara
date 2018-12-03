@@ -1,8 +1,0 @@
-digraph G {
-BB42 -> BB41;
-BB42[fillcolor="#9ACEEB" style=filled];
-BB41[fillcolor="#FCD975" style=filled label=<BB41<BR /> <FONT POINT-SIZE="10">call: _Z4testv</FONT>>];
-BB41 -> BB42[color=grey];
-BB41 [color=red style=filled] ;
-BB42 [color=green style=filled];
-}

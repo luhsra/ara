@@ -291,7 +291,7 @@ class SyscallStep(Step):
 						if syscall != "error":
 						
 							
-							assert abb.convert_call_to_syscall(call_name) == True, "could not conver call to syscall"
+							assert abb.convert_call_to_syscall(call_name) == True, "could not convert call to syscall"
 								
 							
 							function.set_has_syscall(True)
@@ -333,6 +333,7 @@ class SyscallStep(Step):
 							if success == False:
 								assert len(argument_types_list) <= 1, "unexpected argument type"
 							
+							#print(call_name)
 							abb.set_call_type(graph.call_definition_type.sys_call)
 							abb.set_syscall_type(syscall[1])
 							abb.set_call_target_instance(syscall[2])

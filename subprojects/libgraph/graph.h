@@ -20,6 +20,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/IR/DiagnosticInfo.h>
+#include "llvm/Analysis/PostDominators.h"
 
 #include <iostream>
 #include <sstream>
@@ -491,8 +492,11 @@ namespace OS {
 		void set_syscall_name(std::string name );
 		void expend_call_sites(shared_abb abb);
 		llvm::BasicBlock* get_exit_bb();
-		void set_exit_abb(llvm::BasicBlock* bb);
-		void set_entry_abb(llvm::BasicBlock* bb);
+		llvm::BasicBlock* get_entry_bb();
+		
+		void set_exit_bb(llvm::BasicBlock* bb);
+		void set_entry_bb(llvm::BasicBlock* bb);
+		
 		
 		void adapt_exit_bb(shared_abb abb);
 		
@@ -533,6 +537,10 @@ namespace OS {
 		bool has_single_successor();
 		bool is_mergeable();
 		void merge_call_sites(shared_abb abb);
+		
+		shared_abb get_dominator();
+		
+		shared_abb get_postdominator();
 	};
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter

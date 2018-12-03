@@ -81,6 +81,7 @@ SemaphoreHandle_t xBinarySemaphore;
 
 QueueSetHandle_t xQueueSet;
 
+
 struct AMessage
  {
 	char ucMessageID;
@@ -91,7 +92,7 @@ struct AMessage
 
 
  void xqueueTask( void *pvParameters ){
- 	QueueHandle_t xQueue1, xQueue2;
+
  	struct AMessage *pxMessage;
 
         // Create a queue capable of containing 10 uint32_t values.
@@ -177,6 +178,8 @@ void vSenderTask2( void *pvParameters )
 
 void vAMoreRealisticReceiverTask( void *pvParameters )
 {
+	xQueue1 = xQueueCreate( 100,1);
+	xBinarySemaphore = xSemaphoreCreateBinary();
 
     QueueSetMemberHandle_t xHandle;
 
@@ -192,7 +195,7 @@ void vAMoreRealisticReceiverTask( void *pvParameters )
 
         /* Block on the queue set for a maximum of 100ms to wait for one of the members of the set to contain data. */
 
-        xHandle = xQueueSelectFromSet( xQueueSet, xDelay100ms );
+        //xHandle = xQueueSelectFromSet( xQueueSet, xDelay100ms );
 
         /* Test the value returned from xQueueSelectFromSet(). If the returned value is NULL, then the call to xQueueSelectFromSet() timed out. If the returned value is not NULL, then the returned value will be the handle of one of the set's members. The QueueSetMemberHandle_t value can be cast to either a QueueHandle_t or a SemaphoreHandle_t. Whether an explicit cast is required depends on the compiler. */
 
@@ -254,9 +257,9 @@ int main( void )
     }
     /* Create the two queues, both of which send character pointers. The priority of the receiving task is above the priority of the sending tasks, so the queues will never have more than one item in them at any one time*/
 
-    xQueue1 = xQueueCreate( 1, sizeof( char * ) );
-	
-	
+    xUint32tQueue = xQueueCreate( 1, 1 );
+
+	xCharPointerQueue = xQueueCreate( 1, 6 );
     /* Create the queue set. Two queues will be added to the set, each of which can contain 1 item, so the maximum number of queue handles the queue set will ever have to hold at one time is 2 (2 queues multiplied by 1 item per queue). */
 
     xQueueSet = xQueueCreateSet( 1 * 2 );

@@ -1,5 +1,0 @@
-digraph G {
-BB2[fillcolor="#9ACEEB" style=filled];
-BB2 [color=red style=filled] ;
-BB2 [color=green style=filled];
-}

@@ -85,6 +85,7 @@ bool detect_interaction(graph::Graph& graph){
 					std::tuple<std::any,llvm::Type*> tuple  = (argument_list->front());
 					auto argument = std::get<std::any>(tuple);
 					handler_name = std::any_cast<std::string>(argument);
+					std::cerr<< "edge handler name " << handler_name << std::endl;
 				}
 				
 				
@@ -101,40 +102,47 @@ bool detect_interaction(graph::Graph& graph){
 					
 					
 					//iterate about the vertices
-					for (auto &vertex : vertex_list) {
+					for (auto &target_vertex : vertex_list) {
 						
 						//std::cerr << "TEST"<< std::endl;
 						//std::cerr<< "handler name " << vertex->get_handler_name() << std::endl;
 						//compare the referenced handler name with the handler name of the vertex
-						if(vertex->get_handler_name() == handler_name){
+						if(target_vertex->get_handler_name() == handler_name){
 							
 							//std::cout << handler_name << std::endl;
 							//get the vertex abstraction of the function, where the syscall is called
 							graph::shared_vertex start_vertex = function;
 							if(function->get_definition_vertex() != nullptr)start_vertex = function->get_definition_vertex();
 							
-							
-							//check if the syscall expect values from target or commits values to target
-							if(start_vertex != nullptr && abb->get_syscall_type() == receive){
+							if(start_vertex != nullptr && target_vertex !=nullptr){
+								//check if the syscall expect values from target or commits values to target
+								if(abb->get_syscall_type() == receive){
+									
+									
+									//create the edge, which contains the start and target vertex and the arguments
+									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex ,target_vertex,abb);
+									
+									//store the edge in the graph
+									graph.set_edge(edge);
+									
+									target_vertex->set_outgoing_edge(edge);
+									start_vertex->set_ingoing_edge(edge);
+									//set the success flag
+									success = true;
 								
-								
-								//create the edge, which contains the start and target vertex and the arguments
-								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex ,vertex,abb);
-								
-								//store the edge in the graph
-								graph.set_edge(edge);
-								//set the success flag
-								success = true;
-							
-							}else{	//syscall set values
-								
-								//create the edge, which contains the start and target vertex and the arguments
-								auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),vertex ,start_vertex,abb);
-								
-								//store the edge in the graph
-								graph.set_edge(edge);
-								//set the success flag
-								success = true;
+								}else{	//syscall set values
+									
+									//create the edge, which contains the start and target vertex and the arguments
+									auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),target_vertex ,start_vertex,abb);
+		
+									//store the edge in the graph
+									graph.set_edge(edge);
+									
+									start_vertex->set_outgoing_edge(edge);
+									target_vertex->set_ingoing_edge(edge);
+									//set the success flag
+									success = true;
+								}
 							}
 							break;
 						}

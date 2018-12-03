@@ -99,8 +99,10 @@ class DominanceAnalysis():
 					tmp_new.append(element.get_seed())
 				
 				tmp_dom = []
+				#print("middle",abb.get_name())
 				for element in dom[abb.get_seed()]:
 					tmp_dom.append(element.get_seed())
+					#print("dom", element.get_name())
 				
 				if set(tmp_dom) != set(tmp_new):
 					changes = True

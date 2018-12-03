@@ -437,7 +437,14 @@ std::string get_handler_name(llvm::Instruction * instruction, unsigned int argum
 			//std::cout << operand->getName().str() << std::endl;
 			handler_name = operand->getName().str();
 		}
+		else if(isa<BitCastInst>(user)){
+			instruction = cast<Instruction>(user);
+			handler_name = get_handler_name(instruction, argument_index);
+		}
 	}
+	
+	if(handler_name == "")std::cerr << "ERROR no handler name" << std::endl;
+	std::cerr << handler_name<< std::endl;
 	return handler_name;
 }
 
@@ -800,6 +807,8 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 	if(type != binary){
 		
 		std::string handler_name = get_handler_name(instruction, 1);
+		
+		
 		//create queue and set properties
 		auto queue = std::make_shared<OS::Queue>(&graph,handler_name);
 		
@@ -837,10 +846,11 @@ bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_sche
 	std::string handler_name = get_handler_name(instruction, 1);
 	auto event_group = std::make_shared<OS::EventGroup>(&graph,handler_name);
 		
+	//std::cerr <<  "EventGroupHandlerName" << handler_name << std::endl;
 	event_group->set_handler_name(handler_name);
 	event_group->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(event_group);
-	std::cout << "event group successfully created"<< std::endl;
+	std::cout << "event group successfully created" <<  std::endl;
 		
 	
 	return success;
@@ -1161,6 +1171,7 @@ namespace step {
 						//check if abb syscall is creation syscall
 						if(abb->get_syscall_type() == create){
 							
+						
 							//check which target should be generated
 							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
 								//std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
@@ -1187,7 +1198,6 @@ namespace step {
 							}
 
 							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
-								//std::cout << callname << std::endl;
 								if(!create_event_group(graph, abb,before_scheduler_start))std::cout << "Event Group could not created" << std::endl;
 							}
 							
@@ -1215,6 +1225,9 @@ namespace step {
 			
 		}
 		
+		vertex_list =  graph.get_vertices();
+		
+	
 		
 		detect_isrs(graph);
 				

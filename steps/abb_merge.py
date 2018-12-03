@@ -4,7 +4,7 @@ import sys
 from collections import namedtuple
 
 import logging
-from .PrintGraph import graph_print
+from .PrintGraph import DotFileParser
 from .DominatorTree import DominanceAnalysis
 #import syscalls_references
 
@@ -104,9 +104,14 @@ class ABB_MergeStep(Step):
 			anyChanges = False
 			for abb in g.get_type_vertices("ABB"):
 				mc = self.find_branches_to_merge(abb)
+				#if mc and mc.entry_abb and mc.exit_abb:
+				#	print("branch entry", mc.entry_abb.get_name(), "branch exit",mc.exit_abb.get_name())
 				if mc and self.can_be_merged(mc.entry_abb, mc.exit_abb, mc.inner_abbs):
+				#	print("can be merged")
 					self.do_merge(g,mc.entry_abb, mc.exit_abb, mc.inner_abbs)
 					anyChanges = True
+				#else:
+				#	print("can not be merged")
 
 
 		#self.merge_stats.after_branch_merge = len(self.system_graph.abbs)
@@ -147,13 +152,13 @@ class ABB_MergeStep(Step):
 			
 	def do_merge( self,g: graph.PyGraph,entry_abb, exit_abb, inner_abbs = set()):
 		
-		print("merge entry abb" , entry_abb.get_name())
-		print("merge exit abb" , exit_abb.get_name())
+		#print("merge entry abb" , entry_abb.get_name())
+		#print("merge exit abb" , exit_abb.get_name())
 		#entry_abb.print_information()
 		#exit_abb.print_information()
 		#print('Trying to merge:', inner_abbs, exit_abb, 'into', entry_abb)
 		assert not entry_abb.get_seed() == exit_abb.get_seed(), 'Entry ABB cannot merge itself into itself'
-		assert not entry_abb in inner_abbs
+		#assert not entry_abb in inner_abbs
 		
 		#assert not entry_abb.relevant_callees and not exit_abb.relevant_callees, 'Mergeable ABBs may not call relevant functions'
 
@@ -224,7 +229,7 @@ class ABB_MergeStep(Step):
 		
 
 	def can_be_merged(self,  entry_abb,  exit_abb, inner_abbs = set()):
-		
+		#print("can be merged entry")
 		#Checks if a set of ABBs can be merged 
 		
 		for abb in inner_abbs:
@@ -282,7 +287,7 @@ class ABB_MergeStep(Step):
 			return False
 			# Intentionally left blank:
 			# We can only check if "some" predecessors are within the inner_abb region
-
+		
 		for inner_abb in inner_abbs:
 			
 			# Any inner ABB may only succeed any other inner ABB or the entry ABB
@@ -294,7 +299,7 @@ class ABB_MergeStep(Step):
 						flag = True
 				if entry_abb.get_seed() == seed:
 					flag = True
-					
+
 				if flag == False:
 					return False
 			
@@ -335,8 +340,8 @@ class ABB_MergeStep(Step):
 			function_abbs = func.get_atomic_basic_blocks()
 			
 			#TODO
-			if func.get_has_syscall() == False:
-				continue
+			#if func.get_has_syscall() == False:
+			#	continue
 			
 			
 			if len(function_abbs) <= 3 or func.get_exit_abb() == None:
@@ -361,18 +366,27 @@ class ABB_MergeStep(Step):
 				if abb.get_seed() in removed:
 					continue
 				
-				if func.get_entry_abb().get_seed == abb.get_seed():
-					continue
+				#if func.get_entry_abb().get_seed == abb.get_seed():
+				#	continue
 				
 				#print( dom.immdom_tree)
 				
-				start = dom.immdom_tree[abb.get_seed()]
-				end   = post_dom.immdom_tree[abb.get_seed()]
+				#start = dom.immdom_tree[abb.get_seed()]
+				#end   = post_dom.immdom_tree[abb.get_seed()]
+				#TODO validate
 				
+				start = abb.get_dominator();
+				end = abb.get_postdominator();
 				
+				print("abb:", abb.get_name())
 				
+				if start:
+					print("start",start.get_name())	
+				if end:
+					print("end", end.get_name())	
+					
 				if start and end and start != end:
-					#print("start",start.get_name(),"end", end.get_name())	
+
 					
 					region = self.find_region(start, end)
 					
@@ -409,10 +423,10 @@ class ABB_MergeStep(Step):
 						self.do_merge(g,start, end, inner)
 						# Mark as removed
 						removed.add(end.get_seed())
-						print(end.get_name())
-						print(start.get_name())
+						#print(end.get_name())
+						#print(start.get_name())
 						for element in inner:
-							print(element.get_name())
+							#print(element.get_name())
 							removed.add(element.get_seed())
 
 		#self.merge_stats.after_dominance_merge = len(self.system_graph.abbs)
@@ -460,11 +474,9 @@ class ABB_MergeStep(Step):
 					if success == True:
 						break
 				
-		printer = graph_print(g)
+		printer = DotFileParser(g)
 		
-		function_list = g.get_type_vertices("Function")
-		for function in function_list:
-			printer.print_function(function,"before_merge")
+		printer.print_functions(g,"before_merge")
 		
 		current_size = None
 		
@@ -497,9 +509,8 @@ class ABB_MergeStep(Step):
 
 		print("abb count after merge",current_size)
 	
-		function_list = g.get_type_vertices("Function")
-		for function in function_list:
-			printer.print_function(function,"after_merge")
+		
+		printer.print_functions(g,"after_merge")
 
 
 		

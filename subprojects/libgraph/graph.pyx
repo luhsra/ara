@@ -48,7 +48,8 @@ cpdef get_type_hash(name):
 		hash_type = typeid(cgraph.QueueSet).hash_code()
 	elif name == "RTOS":
 		hash_type = typeid(cgraph.RTOS).hash_code()
-	
+	elif name == "EventGroup":
+		hash_type = typeid(cgraph.EventGroup).hash_code()
 	return  hash_type
 
 
@@ -121,13 +122,22 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
 	#cdef const type_info* info = &typeid(cgraph.Vertex())
 	a = {typeid(cgraph.Vertex).hash_code(): Vertex,
 	     typeid(cgraph.Function).hash_code(): Function,
+		 typeid(cgraph.ABB).hash_code(): ABB,
 	     typeid(cgraph.Counter).hash_code(): Counter,
 	     typeid(cgraph.Task).hash_code(): Task,
-	     typeid(cgraph.ISR).hash_code(): ISR,
-	     typeid(cgraph.ABB).hash_code(): ABB
+	     typeid(cgraph.Queue).hash_code(): Queue,
+	     typeid(cgraph.Buffer).hash_code(): Buffer,
+	     typeid(cgraph.Timer).hash_code(): Timer,
+	     typeid(cgraph.Semaphore).hash_code(): Semaphore,
+	     typeid(cgraph.Alarm).hash_code(): Alarm,
+	     typeid(cgraph.Event).hash_code(): Event,
+	     typeid(cgraph.EventGroup).hash_code(): EventGroup,
+		 typeid(cgraph.Edge).hash_code(): Edge,
+		 typeid(cgraph.RTOS).hash_code(): RTOS,
+	     
 	}
 
-
+	
 	cdef size_t type_id = deref(vertex).get_type()
 
 	cdef Vertex py_obj = a[type_id](None, None,None,_raw=True)
@@ -157,34 +167,10 @@ cdef class PyGraph:
 	
 	def get_type_vertices(self, name):
 
-		cdef size_t hash_type = 0
 		
-		
-		if name == "Function":
-			hash_type = typeid(cgraph.Function).hash_code()
-		elif name== "ABB":
-			hash_type = typeid(cgraph.ABB).hash_code()
-		elif name == "Semaphore":
-			hash_type = typeid(cgraph.Semaphore).hash_code()
-		elif name == "Task":
-			hash_type = typeid(cgraph.Task).hash_code()
-		elif name == "Event":
-			hash_type = typeid(cgraph.Event).hash_code()
-		elif name == "Queue":
-			hash_type = typeid(cgraph.Queue).hash_code()
-		elif name == "Resource":
-			hash_type = typeid(cgraph.Resource).hash_code()
-		elif name == "Timer":
-			hash_type = typeid(cgraph.Timer).hash_code()
-		elif name == "Buffer":
-			hash_type = typeid(cgraph.Buffer).hash_code()
-		elif name == "Alarm":
-			hash_type = typeid(cgraph.Alarm).hash_code()
-		elif name == "QueueSet":
-			hash_type = typeid(cgraph.QueueSet).hash_code()
+		cdef c_hash_type = get_type_hash(name)
 
-
-		cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(hash_type)
+		cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(c_hash_type)
 
 		pylist = []
 
@@ -207,7 +193,40 @@ cdef class PyGraph:
         #py_obj = Vertex(None, "empty", _raw=True)
         #py_obj._c_vertex = vertex
         #return py_obj
+        
+cdef class Edge:
 
+	cdef shared_ptr[cgraph.Edge] _c_edge
+	
+	def __cinit__(self, PyGraph graph, name,Vertex start_vertex , Vertex target_vertex , ABB abb_reference , *args, _raw=False, **kwargs):
+		# prevent double constructions
+		# https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
+		if type(self) != Edge:
+			return
+		cdef string bname
+		if not _raw:
+			bname = name.encode('UTF-8')
+			self._c_edge = make_shared[cgraph.Edge](&graph._c_graph, bname,start_vertex._c_vertex ,target_vertex._c_vertex ,spc[cgraph.ABB, cgraph.Vertex](abb_reference._c_vertex))
+		
+	def get_start_vertex(self):
+		
+		cdef shared_ptr[cgraph.Vertex] start = deref(self._c_edge).get_start_vertex()
+		if start!= NULL:
+			return create_from_pointer(start)
+		else: 
+			return None
+		
+	def get_target_vertex(self):
+		
+		
+		cdef shared_ptr[cgraph.Vertex] target = deref(self._c_edge).get_target_vertex()
+		
+		print(deref(target).get_name())
+		if target!= NULL:
+
+			return create_from_pointer(target)
+		else: 
+			return None
 
 cdef class Vertex:
 
@@ -242,8 +261,23 @@ cdef class Vertex:
 		cdef string handlername = name.encode('UTF-8')
 		deref(self._c_vertex).set_handler_name(handlername)
 			
+	def	get_outgoing_edges(self):
 		
-
+		cdef clist[shared_ptr[cgraph.Edge]] edges = deref(self._c_vertex).get_outgoing_edges()
+		cdef shared_ptr[cgraph.Vertex] start
+		pylist = []
+		for edge in edges:
+			print("EDGE")
+			py_obj= Edge(None, None,None,None,None,_raw=True)
+			
+			py_obj._c_edge = edge
+			
+			start = deref(edge).get_start_vertex()
+			
+			print(deref(start).get_name())
+	
+			pylist.append(py_obj)
+		return pylist
 
 cdef class Alarm(Vertex):
 
@@ -493,6 +527,9 @@ cdef class Function(Vertex):
 			return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
 		else: 
 			return None
+		
+
+		
 	#def get_call_target_instance(self):
 		#return deref(self._c()).get_call_target_instance()
 
@@ -579,17 +616,7 @@ cdef class ABB(Vertex):
 
 		for hash_type in ptype:
 			deref(self._c()).set_call_target_instance( <size_t>  hash_type)
-			
-	#def set_expected_syscall_argument_types(self, argument_types ):
-		#cdef data_type_hash
-		#for argument_type in argument_types:
-			#if argument_type == data_type.integer:
-				#data_type_hash = typeid(long).hash_code()
-			#elif argument_type == data_type.string:
-				#data_type_hash = typeid(string).hash_code()
-			#elif argument_type == data_type.long:
-				#data_type_hash = typeid(long).hash_code()
-			#deref(self._c()).set_expected_syscall_argument_type( data_type_hash)
+		
 			
 	def get_call_argument_types(self ):
 		
@@ -691,7 +718,19 @@ cdef class ABB(Vertex):
 				
 		return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)) 
 		 
-		 
+	def get_dominator(self):
+		cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_dominator()
+		if abb!= NULL:
+			return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
+		else: 
+			return None
+		
+	def get_postdominator(self):
+		cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_postdominator()
+		if abb!= NULL:
+			return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
+		else: 
+			return None
 		 
 	def  print_information(self):
 		return deref(self._c()).print_information()
@@ -720,7 +759,16 @@ cdef class Semaphore(Vertex):
 			bname = name.encode('UTF-8')
 			self._c_vertex = spc[cgraph.Vertex, cgraph.Semaphore](make_shared[cgraph.Semaphore](&graph._c_graph, bname))
 			
-		
+cdef class EventGroup(Vertex):
+
+	cdef inline shared_ptr[cgraph.EventGroup] _c(self):
+		return spc[cgraph.EventGroup, cgraph.Vertex](self._c_vertex)
+
+	def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+		cdef string bname
+		if not _raw:
+			bname = name.encode('UTF-8')
+			self._c_vertex = spc[cgraph.Vertex, cgraph.EventGroup](make_shared[cgraph.EventGroup](&graph._c_graph, bname))
 		
 		
 cdef class Buffer(Vertex):
