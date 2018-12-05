@@ -22,6 +22,27 @@
 #include "llvm/Pass.h"
 #include <string>
 
+
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sstream>
+
+#include "llvm/Pass.h"
+#include "llvm/IR/Function.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/SmallString.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/TypeFinder.h"
+#include "llvm/Transforms/IPO.h"
+#include "llvm/IR/Argument.h"
+#include "llvm/IR/GlobalValue.h"
+#include "llvm/IR/Metadata.h"
+
 using namespace llvm;
 
 #define PRINT_NAME(x) std::cout << #x << " - " << typeid(x).name() << '\n'
@@ -753,6 +774,19 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
     }
 }
 
+std::unique_ptr<Module> LoadFile(std::string argv, const std::string &FN,
+                                               LLVMContext& Context) {
+    SMDiagnostic Err;
+    //if (Verbose) errs() << "Loading '" << FN << "'\n";
+
+    std::unique_ptr<Module> Result = 0;
+    Result = parseIRFile(FN, Err, Context);
+    if (Result) return Result;
+
+    //Err.print(argv0, errs());
+    return NULL;
+}
+
 namespace step {
 
 	std::string LLVMStep::get_name() {
@@ -777,12 +811,73 @@ namespace step {
 		}
 
 	
-		//TODO read in files and link them to one function
+		// read in files and link them to one function
 		std::string file_name = files.at(0); 
 		
+		for(auto &file : files){
+			std::cerr << file << std::endl;
+		}
+		
+		
+		unsigned BaseArg = 0;
+		std::string ErrorMessage;
+		
+		std::string argv = "lvm.cpp";
+		
+		auto Composite = LoadFile(argv, files.at(BaseArg), context);
+		if (Composite.get() == 0) {
+			std::cerr << argv << ": error loading file '"
+				<< files.at(BaseArg) << "'\n";
+			abort();
+		}
+
+		Linker L(*Composite);
+
+		for (unsigned i = BaseArg+1; i < files.size(); ++i) {
+            std::cerr << "debug" << files.at(i) << std::endl;
+			auto M = LoadFile(argv, files.at(i), context);
+			if (M.get() == 0) {
+				std::cerr << argv << ": error loading file '" << files.at(i) << "'\n";
+				abort();
+			}
+
+        for (auto it = M->global_begin(); it != M->global_end(); ++it)
+        {
+            GlobalVariable& gv = *it;
+            if (!gv.isDeclaration())
+            gv.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+        }
+
+        for (auto it = M->alias_begin(); it != M->alias_end(); ++it)
+        {
+            GlobalAlias& ga = *it;
+            if (!ga.isDeclaration())
+            ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+        }
+
+      // Rename all functions
+      for (auto &F : *M) {
+        StringRef Name = F.getName();
+        // Leave library functions alone because their presence or absence
+        // could affect the behaviour of other passes.
+        if (F.isDeclaration())
+          continue;
+        F.setLinkage(GlobalValue::WeakAnyLinkage);
+        //F.setName(Name + "_renamed");
+      }
+            
+			if (L.linkInModule(std::move(M))) {
+				std::cerr << argv << ": link error in '" << files.at(i);
+				abort();
+			}
+		}
+		
+		
+            
 		//llvm::Context context;
 		llvm::SMDiagnostic Err;
 		
+
 		
 		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, context);
 		
@@ -792,7 +887,7 @@ namespace step {
 		}
 		
 		//convert unique_ptr to shared_ptr
-		std::shared_ptr<llvm::Module> shared_module = std::move(module);
+		std::shared_ptr<llvm::Module> shared_module = std::move(Composite);
 
 		//set llvm module in the graph object
 		graph.set_llvm_module(shared_module);

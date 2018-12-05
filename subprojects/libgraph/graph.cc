@@ -1468,6 +1468,9 @@ bool OS::Task::set_definition_function(std::string function_name){
 	
 }
 
+OS::shared_function OS::Task::get_definition_function(){
+    return this->definition_function;
+}
 
 bool OS::ISR::set_definition_function(std::string function_name){
 	bool result = false;
@@ -1484,6 +1487,11 @@ bool OS::ISR::set_definition_function(std::string function_name){
 	return result;
 	
 }
+
+OS::shared_function OS::ISR::get_definition_function(){
+    return this->definition_function;
+}
+
 
 void OS::Event::set_event_mask(unsigned long  mask){
 	this->event_mask = mask;	
@@ -1626,6 +1634,11 @@ bool OS::Timer::set_definition_function(std::string function_name){
 	}
 	return result;
 	
+}
+
+
+OS::shared_function OS::Timer::get_definition_function(){
+    return this->definition_function;
 }
 
 

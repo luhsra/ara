@@ -614,6 +614,8 @@ namespace OS {
 		
 		bool set_task_group(std::string taskgroup); //name of TaskGroup
 		bool set_definition_function(std::string function_name);
+        
+        shared_function get_definition_function();
 
 		void set_priority(unsigned long priority);
 		void set_stacksize(unsigned long priority);
@@ -663,7 +665,7 @@ namespace OS {
 		unsigned long get_periode();
 		
 		bool set_definition_function(std::string definition_function_name);
-
+        shared_function get_definition_function();
 
 		static bool classof(const Vertex *S);
 	};
@@ -700,6 +702,7 @@ namespace OS {
 		bool set_message_reference(std::string);
 		bool set_resource_reference(std::string);
 		bool set_definition_function(std::string definition_function_name);
+        shared_function get_definition_function();
 		static bool classof(const Vertex *S);
 	};
 

@@ -444,7 +444,7 @@ std::string get_handler_name(llvm::Instruction * instruction, unsigned int argum
 	}
 	
 	if(handler_name == "")std::cerr << "ERROR no handler name" << std::endl;
-	std::cerr << handler_name<< std::endl;
+	std::cerr << "handler name: " <<  handler_name<< std::endl;
 	return handler_name;
 }
 
@@ -508,19 +508,21 @@ bool verify_syscall_arguments(std::vector<size_t> &forced_arguments_types ,std::
 
 
 bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visited){
+    
 	//generate hash code of basic block name
 	std::hash<std::string> hash_fn;
 	size_t hash_value = hash_fn(bb->getName().str());
-	//std::cout << "callname" << call_name << std::endl;
+
+    
 	//search hash value in list of already visited basic blocks
 	for(auto hash : *already_visited){
-		
 		if(hash_value == hash){
 			//basic block already visited
 			return true;
 			break;
 		}
 	}
+	
 	//set basic block hash value in already visited list
 	already_visited->push_back(hash_value);
 	
@@ -530,10 +532,10 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	DT.recalculate(*bb->getParent());
 	DT.updateDFSNumbers();
 
-	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* LIB = new llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>();
-	LIB->releaseMemory();
-	LIB->analyze(DT);
-	llvm::Loop * L = LIB->getLoopFor(bb);
+	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>LIB;
+	
+	LIB.analyze(DT);
+	llvm::Loop * L = LIB.getLoopFor(bb);
 	
 	
 
@@ -541,6 +543,8 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	//check if basic block is in loop
 	//TODO get loop count
 	if(L != nullptr){
+        
+        /*
 		AssumptionCache AC = AssumptionCache(*bb->getParent());
 	
 		Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
@@ -564,54 +568,24 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 			//const SCEVConstant *ExitCount = dyn_cast<SCEVConstant>(getExitCount(L, ExitingBlock));
 			//std::cout << "finaler Test" << SE.getSmallConstantTripCount (L, L->getExitingBlock()) << std::endl;
 		}
+		
 		//auto  blocks;
 		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
-		L->getUniqueExitBlocks(blocks);
 		
-		//std::cout << blocks.size() << std::endl;
-		for(auto & exit_block: blocks){
-			/*
-			std::cout << "test" << std::endl;
-				
-			std::string type_str;
-			llvm::raw_string_ostream rso(type_str);
-			exit_block->print(rso);
-			std::cout <<  rso.str() << std::endl;
-			*/
-			
-		}
-		//std::cout << "trip count " <<  SE.getSmallConstantTripCount(L) << std::endl; 
-		{
-			
-		std::string type_str;
-		llvm::raw_string_ostream rso(type_str);
-		L->print(rso);
-		//std::cout <<  rso.str() << std::endl;
-	
-		}
-		//std::cout << "element is in loop" << std::endl;
-		//std::cout << "loop count:" << SE.getSmallConstantMaxTripCount(L);
-		//std::cout << "loop count:" << SE.getSmallConstantTripCount(L);
-	
-		//std::cout << "warning" << std::endl;
-		//std::cout << "loop depth: " << LIB->getLoopDepth(bb) << std::endl;
-		//std::cout << "loop depth: " << LI.getLoopDepth(bb) << std::endl;
-		//std::cout << "call name: " << call_name << std::endl;
+		//L->getUniqueExitBlocks(blocks);
+		*/
 		success = false;
+        
 	}else{
 		//check if function of basic block is called in a loop of other function
 		for(auto user : bb->getParent()->users()){  // U is of type User*
-			
 			if(CallInst* instruction = dyn_cast<CallInst>(user)){
 				//analyse basic block of call instruction 
 				success = validate_loop(instruction->getParent() ,already_visited);
 				if(success == false)break;
 			}
 		}
-
 	}
-	//free dynamic memory
-	delete LIB;
 	return success;
 }
 
@@ -673,11 +647,19 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 
 	if(vertex != nullptr){
 		auto function_reference = std::dynamic_pointer_cast<OS::Function> (vertex);
-
 		function_reference->set_definition_vertex(task);
 	}else{
 		std::cerr << "task definition function does not exist " << function_reference_name << std::endl;
-		abort();
+		//TODO just for debug aims
+		//abort();
+        
+        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+		
+	
+		for (auto &vertex : vertex_list) {
+            std::cerr << vertex->get_name() << std::endl;
+        }
+        
 	}
 	
 	std::cout << "task successfully created"<< std::endl;
@@ -769,6 +751,8 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 	
 	if(success)graph.set_vertex(semaphore);
 	
+    
+    
 	return success;
 }
 
@@ -1114,6 +1098,11 @@ namespace step {
 			
 			auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
 			before_scheduler_instructions(graph,&before_scheduler, &uncertain_instruction_list, target_function  ,&already_visited);
+            
+            for(auto element : before_scheduler){
+                std::cerr << "instruction: " << element << std::endl;
+            }
+            
 		}else std::cout << "no main function in programm" << std::endl;
 	
 		//iterate about the ABBS
@@ -1122,6 +1111,7 @@ namespace step {
 	
 		for (auto &vertex : vertex_list) {
 			
+            
 			//vertex->print_information();
 			//cast vertex to abb 
 			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
@@ -1129,6 +1119,8 @@ namespace step {
 			//get the list of referenced llvm bb
 			std::list<llvm::BasicBlock*> llvm_abbs = abb->get_BasicBlocks();
 			
+           
+            
 			if(llvm_abbs.size() == 1) // always test  
 			{	
 				
@@ -1141,6 +1133,9 @@ namespace step {
 					
 					//validate if sysccall is in loop
 					if(validate_loop(llvm_abbs.front(),&already_visited)){
+                    
+                         
+                        
 						
 						bool before_scheduler_start = false;
 						
@@ -1211,24 +1206,16 @@ namespace step {
 							}
 						}
 					}
-					else{
-						/*
-						std::cout << "element is in loop" << std::endl;
-						std::string type_str;
-						llvm::raw_string_ostream rso(type_str);
-						llvm_abbs.front()->print(rso);
-						std::cout<< rso.str() ;
-						*/
-					}
 				}
 			}
 			
 		}
-		
-		vertex_list =  graph.get_vertices();
-		
-	
-		
+        vertex_list =  graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
+        
+        for(auto& element: vertex_list){
+            std::cerr << "Semaphore: " << element->get_type() << std::endl;
+        }
+        
 		detect_isrs(graph);
 				
 	}
