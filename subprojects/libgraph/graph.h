@@ -49,6 +49,8 @@ enum schedule_type {full, none};
 
 enum event_type {automatic, mask};
 
+enum start_scheduler_relation { before , after , uncertain,not_defined };
+
 std::string debug_argument(std::any *value,llvm::Type *type);
 
 namespace graph {
@@ -85,7 +87,7 @@ namespace graph {
 			void load_llvm_module(std::string file);
 			void set_llvm_module(std::shared_ptr<llvm::Module> module);
                 
-			llvm::Module* get_llvm_module();
+			std::shared_ptr<llvm::Module> get_llvm_module();
                 
 			void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
 			void set_edge(shared_edge edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
@@ -313,8 +315,6 @@ namespace OS {
 
 		std::list<OS::shared_abb> atomic_basic_blocks;       // Liste der AtomicBasicBlocks, die die Funktion definieren
 		std::list<OS::shared_task> referenced_tasks;     // Liste aller Task, die diese Function aufrufen
-		std::list<OS::shared_function> referenced_functions; // Liste aller Funktionen, die diese Funktion aufrufen
-
 		std::list<OS::ISR *> referenced_ISRs;
 		function_definition_type definition; // information, ob task ,isr, timer durch die Funktion definiert wird
 
@@ -390,13 +390,14 @@ namespace OS {
 
 		bool set_referenced_task(shared_task task);
 
-		bool set_referenced_function(shared_function function);
-		
+		bool set_called_function(shared_function function,shared_abb abb );
+		std::vector<OS::shared_function> get_called_functions();
+        std::vector<OS::shared_function> get_calling_functions();
 		
 		void set_function_name(std::string name);
 		std::string get_function_name();
                 
-		std::list<OS::shared_function> get_referenced_functions();
+		
 
 		std::list<llvm::Type*> get_argument_types();
 		void set_argument_type(llvm::Type* argument); // Setze Argument des SystemCalls in Argumentenliste
@@ -413,7 +414,9 @@ namespace OS {
 	class ABB: public graph::Vertex  {
 
 	  private:
-              
+          
+        start_scheduler_relation start_scheduler_relative_position = after;
+        
 		call_definition_type    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
 		          // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 		
@@ -431,11 +434,8 @@ namespace OS {
 		
 		std::list<std::list<std::tuple<std::any,llvm::Type*>>> arguments;
 		
+        //the expected instance types which can be addressed with the syscall
 		std::list<std::size_t>  call_target_instances;
-		
-		std::list<std::size_t>  expected_argument_types;
-		
-		std::list<OS::shared_function>  called_functions;
 		
 		
 		llvm::BasicBlock* entry;
@@ -468,11 +468,13 @@ namespace OS {
 			this->vertex_type = typeid(ABB).hash_code();
 		}
 		
-		void set_expected_syscall_argument_type(size_t argument_type);
+		
 		
 		void set_call_instruction_reference(llvm::Instruction * call_instruction);
 		std::vector<llvm::Instruction*> get_call_instruction_references();
 		
+        void set_start_scheduler_relation(start_scheduler_relation relation);
+        start_scheduler_relation get_start_scheduler_relation( );
 		void set_syscall_instruction_reference(llvm::Instruction * call_instruction);
 		llvm::Instruction* get_syscall_instruction_reference();
 		
@@ -504,7 +506,9 @@ namespace OS {
 		bool set_parent_function(shared_function function);
 		shared_function get_parent_function();
 				
-		std::list<OS::shared_function> get_called_functions();
+		std::vector<OS::shared_function> get_called_functions();
+        
+        
 		void set_called_function(OS::shared_function);
 		
 		bool is_critical();

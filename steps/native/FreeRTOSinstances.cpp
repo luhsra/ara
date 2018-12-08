@@ -18,6 +18,8 @@
 #include <stdexcept>
 #include <functional>
 #include "llvm/ADT/APFloat.h"
+#include "llvm/IR/TypeFinder.h"
+
 using namespace llvm;
 
 
@@ -63,7 +65,7 @@ void example(Function* func){
 }
 
 
-enum scheduler_return_value { not_found , found , uncertain };
+
 
 //print the argument
 void test_debug_argument(std::any value,llvm::Type *type){
@@ -259,13 +261,13 @@ bool verify_instruction_order(llvm::Instruction* expected_front, llvm::Instructi
 }
 //TODO case: where in func call uncertain start scheduler exists
 //TODO BFS instead of DFS for basic block order
-scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::list<size_t> *instruction_list, std::vector<size_t> *uncertain_instruction_list,OS::shared_function function,std::vector<std::size_t> *already_visited){
+start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited){
 
 	
-	scheduler_return_value success = not_found;
+	start_scheduler_relation state = uncertain;
 	
 	//check if valid function pointer was committed
-	if(function == nullptr) return not_found;
+	if(function == nullptr) return not_defined;
 	
 	std::vector<llvm::Instruction*> start_scheduler_func_calls;
 	std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
@@ -279,7 +281,7 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 	for(auto hash : *already_visited){
 		if(hash_value == hash){
 			//function already visited
-			return not_found;
+			return not_defined;
 		}
 	}
 	//set function as already visited
@@ -301,9 +303,9 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 	//dominator_tree.print(rso);
 	//std::cout<< "dominator tree "<< std::endl  <<  rso.str() << std::endl;
 	
-	//check if scheduler start instruction was found in function
+	//check if scheduler start instruction was after in function
 	if(start_scheduler_func_calls.size() == 0){
-		success = not_found;
+		state = before;
 	}else{
 		
 	
@@ -311,7 +313,7 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 				for(auto &instr:*bb){
 					if(isa<ReturnInst>(instr)){
-						std::cerr << "return instrcution found" << std::endl;
+						std::cerr << "return instrcution after" << std::endl;
 						return_instructions.emplace_back(&instr);
 					}
 				}
@@ -319,9 +321,9 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 		}
 		
 		for(auto& instruction:start_scheduler_func_calls){
-			if(dominator_tree.dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))success= found;
+			if(dominator_tree.dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))state= after;
 		}
-		//if(success == not_found)success = uncertain;
+		//if(success == before)success = uncertain;
 	}
 	
 	//iterate about the basic blocks of the abb
@@ -331,21 +333,23 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 			
 			for(auto &instruction:*bb){
 				if(abb->get_call_type()== func_call){
-					scheduler_return_value result;
+					start_scheduler_relation result;
 					for(auto *instr :abb->get_call_instruction_references()){
 						if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
 							llvm::Function* called_function = call_instruction->getCalledFunction();
 							if(called_function != nullptr){
 								graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
 								auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-								result = before_scheduler_instructions(graph,instruction_list,uncertain_instruction_list,target_function  ,already_visited);
-								if(result == found){
+								result = before_scheduler_instructions(graph,target_function  ,already_visited);
+								if(result == after){
 									start_scheduler_func_calls.emplace_back(call_instruction);
-									success = found;
+									//state = after;
 								}
 								else{
-									if (result == uncertain) uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
-							
+									if (result == uncertain){
+                                        uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
+                                        if (state != after)state = uncertain; 
+                                    }
 								}
 							}
 						}else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(instr)){
@@ -353,14 +357,17 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 							if(called_function != nullptr){
 								graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
 								auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-								result = before_scheduler_instructions(graph,instruction_list,uncertain_instruction_list,target_function  ,already_visited);
-								if(result == found){
+								result = before_scheduler_instructions(graph,target_function  ,already_visited);
+								if(result == after){
 									start_scheduler_func_calls.emplace_back(call_instruction);
-									success = found;
+									//state = after;
 								}
 								else{
-									if (result == uncertain) uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
-								}
+									if (result == uncertain){
+                                        uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
+                                        if (state != after)state = uncertain; 
+                                    }
+                                }
 							}
 						}
 					}
@@ -370,7 +377,7 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 	}
 		
 		
-	if(success !=not_found){
+	if(state !=before){
 		for(auto &abb : function->get_atomic_basic_blocks()){
 			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 				if(abb->get_call_type()== sys_call){
@@ -380,13 +387,13 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 						//continue if, no start scheduler syscall is in function, the instruction is before all the start scheduler instruction and the scheduler instrcutions dont dominate the instrcution 
 						if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, &dominator_tree )){
 							//if instruction is a syscall set the instruction in the before scheduler start list
-							instruction_list->emplace_back(hash_fn(bb->getName().str()));
+							abb->set_start_scheduler_relation(before);
 							
 						}else{
 							//check if the instruction is reachable from a start scheduler instruction 
 							std::vector<size_t> already_visited_abbs;
 							if(is_reachable(&start_scheduler_func_calls,instruction.getParent(),&already_visited_abbs)){
-								uncertain_instruction_list->emplace_back();
+								abb->set_start_scheduler_relation(uncertain);
 							}
 						}
 					}
@@ -397,23 +404,57 @@ scheduler_return_value before_scheduler_instructions(graph::Graph& graph,std::li
 		//a unceratain call exits if one return instruction has a start scheduler call as dominator
 		bool uncertain_flag = false;
 		//a certain call exists, if all return instructions have a start scheduler call as dominator
-		bool found_flag = true;
+		bool after_flag = true;
 		for(auto instr : return_instructions){
 			if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,instr, &dominator_tree ))uncertain_flag = true;
-			else found_flag = false;
+			else after_flag = false;
 		}
 		
-		if(found_flag)success = found;
+		if(after_flag)state = after;
 		else{
-			if(uncertain_flag)success = uncertain;
+			if(uncertain_flag)state = uncertain;
 		}
 	}
 	
-	return success;
+	return state;
 	
 }
 
+void update_called_functions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited ,start_scheduler_relation state){
+    
+	
+	//check if valid function pointer was committed
+	if(function == nullptr) return;
+	
+		
+	std::hash<std::string> hash_fn;
 
+	size_t hash_value = hash_fn(function->get_name());
+	
+	//search hash value in list of already visited basic blocks
+	for(auto hash : *already_visited){
+		if(hash_value == hash){
+			//function already visited
+			return;
+		}
+	}
+	
+	for(auto & abb : function->get_atomic_basic_blocks()){
+		abb->set_start_scheduler_relation(state);
+	}
+	
+	
+	//set function as already visited
+	already_visited->emplace_back(hash_value);
+    
+    auto called_functions =  function->get_called_functions();
+    //check if function has no calling functions
+    
+    //push the calling function on the stack
+    for (auto called_function: called_functions){
+       update_called_functions(graph,called_function,already_visited , state);
+    }
+}
 
 //function to extract the handler name of the instance
 std::string get_handler_name(llvm::Instruction * instruction, unsigned int argument_index){
@@ -629,17 +670,26 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	argument = std::get<std::any>(tuple);
 	std::string handler_name =  std::any_cast<std::string>(argument);
 	
-
+    //if no handler name was transmitted
+    if(handler_name == "&$%NULL&$%"){
+        handler_name =function_reference_name;
+    }
 	
+	std::cerr << "Task name: " << task_name << std::endl;
 	//create task and set properties
 	auto task = std::make_shared<OS::Task>(&graph,task_name);
-	task->set_definition_function(function_reference_name);
 	task->set_handler_name( handler_name);
 	task->set_stacksize( stacksize);
 	task->set_priority( priority);
 	task->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(task);
 	
+    
+    if(!task->set_definition_function(function_reference_name)){
+        std::cerr << "ERROR setting defintion function!" << std::endl;
+        abort();
+    }
+    
 	std::hash<std::string> hash_fn;
 	
 	graph::shared_vertex vertex = nullptr;
@@ -649,19 +699,10 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 		auto function_reference = std::dynamic_pointer_cast<OS::Function> (vertex);
 		function_reference->set_definition_vertex(task);
 	}else{
-		std::cerr << "task definition function does not exist " << function_reference_name << std::endl;
-		//TODO just for debug aims
-		//abort();
-        
-        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-		
-	
-		for (auto &vertex : vertex_list) {
-            std::cerr << vertex->get_name() << std::endl;
-        }
-        
+		std::cerr << "ERROR task definition function does not exist " << function_reference_name << std::endl;
+		abort();
 	}
-	
+	std::cout << "handler name: "<< handler_name << std::endl;
 	std::cout << "task successfully created"<< std::endl;
 
 	return success;
@@ -1028,30 +1069,73 @@ bool verify_isr_prefix(llvm::Function *function){
 	
 //detect isrs
 bool detect_isrs(graph::Graph& graph){
-	std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+	/*std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
 	//iterate about the functions
 	for (auto &vertex : vertex_list) {
-		
 		//cast the vertex in function type
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
 		llvm::Function* llvm_function = function->get_llvm_reference();
 		if(verify_isr_prefix(llvm_function)){
-			
 			auto isr = std::make_shared<OS::ISR>(&graph,function->get_name());
-			isr->set_definition_function(function->get_name());
 			graph.set_vertex(isr);
-		
+            isr->set_definition_function(function->get_name());
 			std::cout << "ISR detected" <<  function->get_name() << std::endl;
-			
 		}
-		
+	}*/
+    
+    //iterate about the irs
+    
+    std::vector<size_t> visited_functions;
+    
+    std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 
-	}
-	
+    for (auto &vertex : vertex_list) {
+        
+        //cast vertex to abb 
+        auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+        //check if syscall is isr specific 
+        if(abb->get_syscall_name().find("FromISR") != std::string::npos){
+            
+               //queue for functions
+            std::stack<OS::shared_function> stack; 
+            
+            
+            stack.push(abb->get_parent_function());
+            //iterate about the stack 
+            while(stack.size()!=0) {
+                
+                //get first element of the queue
+                OS::shared_function function = stack.top();
+                stack.pop();
+                //check if the function was already visited by DFS
+                size_t seed =  function->get_seed();
+                for(auto tmp_seed : visited_functions){
+                    if(seed == tmp_seed)continue;
+                }
+                //set the function to the already visited functions
+                visited_functions.emplace_back(seed);
 
+                //get the calling functions of the function
+                auto calling_functions =  function->get_calling_functions();
+                //check if function has no calling functions
+                if(calling_functions.size() == 0){
+                    
+                    std::string isr_name = function->get_name();
+                    auto isr = std::make_shared<OS::ISR>(&graph,isr_name);
+                    isr->set_definition_function(function->get_name());
+                    isr->set_handler_name(function->get_name());
+                    graph.set_vertex(isr);
+                    
+                }else{
+                    //push the calling function on the stack
+                    for (auto calling_function: calling_functions){
+                        stack.push(calling_function);
+                    }
+                }
+            }
+        }
+    }
 }
-
-
 
 namespace step {
 
@@ -1084,24 +1168,31 @@ namespace step {
 		
 		//graph.print_information();
 		
-		std::list<size_t> before_scheduler;
-		std::vector<size_t> uncertain_instruction_list;
-		std::vector<std::size_t> already_visited;
+		
+		
 		
 		//get function with name main from graph
 		std::string start_function_name = "main";  
 		
-		graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(start_function_name +  typeid(OS::Function).name())); 
+		graph::shared_vertex main_vertex = graph.get_vertex( hash_fn(start_function_name +  typeid(OS::Function).name())); 
 		
 		//check if graph contains main function
-		if(target_vertex != nullptr){
-			
-			auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-			before_scheduler_instructions(graph,&before_scheduler, &uncertain_instruction_list, target_function  ,&already_visited);
+		if(main_vertex != nullptr){
+			std::vector<std::size_t> already_visited;
+			auto main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
+			before_scheduler_instructions(graph, main_function  ,&already_visited);
+            already_visited.clear();
             
-            for(auto element : before_scheduler){
-                std::cerr << "instruction: " << element << std::endl;
+            //iterate about the abbs of the function
+            for(auto & abb : main_function->get_atomic_basic_blocks()){
+                
+                //iterate about the called functions of the abb
+                for (auto called_function : abb->get_called_functions()){
+                    //update the values for the successor functions from func call
+                    update_called_functions(graph, called_function  ,&already_visited,abb->get_start_scheduler_relation());
+                }
             }
+          
             
 		}else std::cout << "no main function in programm" << std::endl;
 	
@@ -1117,11 +1208,10 @@ namespace step {
 			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
 			
 			//get the list of referenced llvm bb
-			std::list<llvm::BasicBlock*> llvm_abbs = abb->get_BasicBlocks();
+			std::list<llvm::BasicBlock*> llvm_bbs = abb->get_BasicBlocks();
 			
            
-            
-			if(llvm_abbs.size() == 1) // always test  
+			if(llvm_bbs.size() >=1) // always test  
 			{	
 				
 				//check if abb has a syscall instruction
@@ -1132,35 +1222,15 @@ namespace step {
 
 					
 					//validate if sysccall is in loop
-					if(validate_loop(llvm_abbs.front(),&already_visited)){
+					if(validate_loop(llvm_bbs.front(),&already_visited)){
                     
                          
                         
 						
 						bool before_scheduler_start = false;
 						
-						//check if instruction is before start scheduler instruction
-						for(auto & hash_value : before_scheduler){
-							//std::cout << hash_value << std::endl;
-							for(auto &bb :abb->get_BasicBlocks()){
-								
-								if(hash_value == hash_fn(bb->getName().str())){
-									before_scheduler_start = true;
-									break;
-								}
-							}
-						}
-						//check if syscall is isr specific 
-						if(abb->get_syscall_name().find("FromISR")){
-							//check if function defines already an isr 
-							//TODO change definition element to a list
-							if(abb->get_parent_function()->get_definition_vertex() == nullptr){
-								std::string isr_name = abb->get_syscall_instruction_reference()->getFunction()->getName().str();
-								auto isr = std::make_shared<OS::ISR>(&graph,isr_name);
-								isr->set_definition_function(abb->get_parent_function()->get_name());
-								graph.set_vertex(isr);
-							}
-						}
+                        if(abb->get_start_scheduler_relation() == before)before_scheduler_start = true;
+												
 						//if(before_scheduler_start)std::cout << "before_scheduler_start " <<  callname		<< std::endl;
 						//else std::cout << "!!!!!!!!!!!!!!!1after_scheduler_start " <<  	callname	<< std::endl;
 						//check if abb syscall is creation syscall
@@ -1210,13 +1280,25 @@ namespace step {
 			}
 			
 		}
-        vertex_list =  graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
-        
-        for(auto& element: vertex_list){
-            std::cerr << "Semaphore: " << element->get_type() << std::endl;
-        }
-        
-		detect_isrs(graph);
+        auto module =  graph.get_llvm_module();
+     
+
+        llvm::TypeFinder StructTypes;
+        StructTypes.run(*module.get(), true);
+
+        for (auto *STy : StructTypes){
+           
+       //for (auto &Global : module->getGlobalList()){
+           
+            std::string type_str;
+            llvm::raw_string_ostream rso(type_str);
+            STy->print(rso);
+           
+            //Global.getType()->getTypeID()  << std::endl ;
+            if(rso.str().find("%class.")!=std::string::npos) std::cout<< rso.str() << std::endl ;
+           
+       }
+        detect_isrs(graph);
 				
 	}
 	

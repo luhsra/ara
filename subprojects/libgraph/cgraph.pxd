@@ -1,6 +1,7 @@
 # vim: set et ts=4 sw=4:
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
+from libcpp.vector cimport vector as cvector
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
@@ -173,6 +174,9 @@ cdef extern from "graph.h" namespace "OS":
         shared_ptr[ABB] get_exit_abb()
         shared_ptr[ABB] get_entry_abb()
         
+        cvector[shared_ptr[Function]] get_called_functions()
+        
+        
     cdef cppclass RTOS:
         RTOS(Graph* graph,string name) except +
 
@@ -191,7 +195,7 @@ cdef extern from "graph.h" namespace "OS":
         void set_syscall_type(syscall_definition_type type)
         void set_call_target_instance(size_t target_instance)
         #void set_expected_syscall_argument_type(size_t data_type_hash)
-        clist[shared_ptr[Function]] get_called_functions()
+        cvector[shared_ptr[Function]] get_called_functions()
         
         clist[shared_ptr[ABB]]  get_ABB_successors()
         

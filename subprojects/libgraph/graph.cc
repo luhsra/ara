@@ -125,8 +125,8 @@ void load_llvm_module(std::string file){
 }
 
 
-llvm::Module* graph::Graph::get_llvm_module(){
-    return this->llvm_module.get();
+std::shared_ptr<llvm::Module>  graph::Graph::get_llvm_module(){
+    return this->llvm_module;
 }
 
 void graph::Graph::set_vertex(shared_vertex vertex){
@@ -198,11 +198,13 @@ shared_vertex graph::Graph::get_vertex(std::string name){
 	//std::cerr << "searched name: " <<  name << std::endl;
 	for (auto& vertex : this->vertices) {
 	//	std::cerr << vertex->get_name() << std::endl;
-		if(name==vertex->get_name()){                                         //check if vertex is from wanted type
+		if(name==vertex->get_name()){  
+            std::cerr << "match name:" << name << std::endl;//check if vertex is from wanted type
 			counter++;
 			return_vertex = vertex; 
         }
 	}
+	std::cerr << "left" << std::endl;//check if vertex is from wanted type
 	//std::cerr << counter<<  std::endl;
 	//std::cerr << "_______________________" << std::endl;
     if(counter == 1){
@@ -213,6 +215,7 @@ shared_vertex graph::Graph::get_vertex(std::string name){
 		
 		return nullptr;
 	}
+	 
 		
 }
 
@@ -621,8 +624,8 @@ bool graph::Edge::set_target_vertex(graph::shared_vertex vertex){
 }
 
 
-graph::shared_vertex graph::Edge::get_start_vertex(){return this->target_vertex;}
-graph::shared_vertex graph::Edge::get_target_vertex(){return this->start_vertex;}
+graph::shared_vertex graph::Edge::get_start_vertex(){return this->start_vertex;}
+graph::shared_vertex graph::Edge::get_target_vertex(){return this->target_vertex;}
 
 void graph::Edge::set_syscall(bool syscall){this->is_syscall = syscall;}
 bool graph::Edge::is_sycall(){return this->is_syscall;}
@@ -714,17 +717,56 @@ void OS::Function::set_definition(function_definition_type type){
 function_definition_type OS::Function::get_definition(){return this->definition;}
 
 
-std::list<OS::shared_function> OS::Function::get_referenced_functions(){return (this->referenced_functions);} // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
-
-
-bool OS::Function::set_referenced_function(OS::shared_function function){
-    bool success = false;
-    graph::Graph graph = (*this->graph);
-    if(this->graph->contain_vertex(function)){
-        this->referenced_functions.emplace_back(function);
-        success = true;
+std::vector<OS::shared_function> OS::Function::get_called_functions(){
+    std::vector<OS::shared_function> called_functions;
+    
+    for(auto& edge : this->outgoing_edges){
+        shared_vertex vertex =edge->get_target_vertex();
+        //std::cerr << "edge target " << vertex->get_name() << std::endl;
+        if(typeid(OS::Function).hash_code() == vertex->get_type()){
+            auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+            called_functions.emplace_back(function);
+        }
     }
-    return success;
+    
+    //return (this->referenced_functions);
+    return called_functions;
+    
+    
+} // Gebe std::liste aller Funktionen zurück, die diese Funktion benutzen
+
+std::vector<OS::shared_function> OS::Function::get_calling_functions(){
+    std::vector<OS::shared_function> called_functions;
+    
+    for(auto& edge : this->ingoing_edges){
+        shared_vertex vertex =edge->get_start_vertex();
+        //std::cerr << "edge target " << vertex->get_name() << std::endl;
+        if(typeid(OS::Function).hash_code() == vertex->get_type()){
+            auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+            called_functions.emplace_back(function);
+        }
+    }
+    
+    //return (this->referenced_functions);
+    return called_functions;
+    
+    
+} // Gebe std::list
+
+
+bool OS::Function::set_called_function(OS::shared_function function, OS::shared_abb abb){
+    
+    //TODO first call name is used for edge name and check contains
+    auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_names().front(),abb->get_parent_function() ,function,abb);
+
+    //store the edge in the graph
+    this->graph->set_edge(edge);
+    
+    //parent function of abb is the self instance
+    abb->get_parent_function()->set_outgoing_edge(edge);
+    function->set_ingoing_edge(edge);
+    
+    return true;
 } // Setze Funktion in std::liste aller Funktionen, die diese Funktion benutzen
 
 
@@ -996,9 +1038,7 @@ llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
 	return this->syscall_instruction_reference;
 }
 
-void OS::ABB::set_expected_syscall_argument_type(size_t argument_type){
-	this->expected_argument_types.emplace_back(argument_type);
-}
+
 
 // std::list<size_t> OS::ABB::get_expected_syscall_argument_types(){
 // 	
@@ -1049,12 +1089,38 @@ std::list<std::list<size_t>> OS::ABB::get_call_argument_types(){
 }
 
 void OS::ABB::set_called_function(OS::shared_function function){
-	this->called_functions.emplace_back(function);
-	
+    
+    shared_vertex vertex = this->graph->get_vertex(this->seed);
+	if(vertex!=nullptr){
+		shared_abb abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+		
+        auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_names().front(),abb ,function,abb);
+
+        //store the edge in the graph
+        this->graph->set_edge(edge);
+        
+        //parent function of abb is the self instance
+        abb->set_outgoing_edge(edge);
+        function->set_ingoing_edge(edge);
+        
+    }else{
+        abort();
+    }
 }
 
-std::list<OS::shared_function> OS::ABB::get_called_functions(){
-	return this->called_functions;
+std::vector<OS::shared_function> OS::ABB::get_called_functions(){
+    
+    std::vector<OS::shared_function> called_functions;
+    
+    for(auto& edge : this->outgoing_edges){
+        shared_vertex vertex =edge->get_target_vertex();
+        //std::cerr << "edge target " << vertex->get_name() << std::endl;
+        if(typeid(OS::Function).hash_code() == vertex->get_type()){
+            auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+            called_functions.emplace_back(function);
+        }
+    }
+    return called_functions;
 }
 
 //append basic blocks to entry abb from abb
@@ -1089,6 +1155,7 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 	//check if the current and the to merged abb have both a syscall
 	if(this->syscall_instruction_reference != nullptr && abb->get_syscall_instruction_reference() != nullptr){
 		std::cerr << "ERROR, both abbs, which shall be merged, contain a syscall"<< std::endl;
+        abort();
 	}
 	
 	//
@@ -1127,6 +1194,20 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 		this->abb_type = abb->get_call_type();
 	}
 	
+	auto self_reference = this->graph->get_vertex(this->seed);
+	if(self_reference==nullptr){
+        std::cerr << "ERRO , self vertex reference is not stored in graph" << std::endl;
+        abort();
+    }
+	for(auto& outgoing_edge: abb->get_outgoing_edges()){
+        outgoing_edge->set_start_vertex(self_reference);
+        this->outgoing_edges.emplace_back(outgoing_edge);
+    }
+	
+	for(auto& ingoing_edge: abb->get_ingoing_edges()){
+        ingoing_edge->set_target_vertex(self_reference);
+        this->ingoing_edges.emplace_back(ingoing_edge);
+    }
 
 }
 
@@ -1317,6 +1398,14 @@ OS::shared_abb OS::ABB::get_dominator(){
     return nullptr;
 }
 
+void OS::ABB::set_start_scheduler_relation(start_scheduler_relation relation){
+    this->start_scheduler_relative_position = relation;
+}
+
+start_scheduler_relation OS::ABB::get_start_scheduler_relation(){
+    return this->start_scheduler_relative_position;
+}
+
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 
 	this->max_allowed_value = max_allowed_value;
 }
@@ -1454,11 +1543,26 @@ bool OS::Task::set_event_reference(std::string event_name){
 
 bool OS::Task::set_definition_function(std::string function_name){
 	bool result = false;
+    std::cerr << "task defintion function name: " << function_name << std::endl;
+    
+//     std::list<graph::shared_vertex> vertex_list =  this->graph->get_type_vertices(typeid(OS::Function).hash_code());
+// 	//iterate about the functions
+// 	for (auto &vertex : vertex_list) {
+//         std::cerr << "function name: " << vertex->get_name() << std::endl;
+//     }
+    
+    
 	auto vertex = this->graph->get_vertex(function_name);
 	auto self_vertex = this->graph->get_vertex(this->name);
+    
+
+    if(self_vertex == nullptr) std::cerr << "task not found " << this->name << std::endl;
+    
 	if(vertex != nullptr && self_vertex != nullptr){
+        std::cerr << "success task defintion function name" << std::endl;
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function){
+		
+        if(function){
 			this->definition_function = function;
 			function->set_definition_vertex(self_vertex);
 			result = true;
@@ -1476,6 +1580,7 @@ bool OS::ISR::set_definition_function(std::string function_name){
 	bool result = false;
 	auto vertex = this->graph->get_vertex(function_name);
 	auto self_vertex = this->graph->get_vertex(this->name);
+    
 	if(vertex != nullptr && self_vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
 		if(function){

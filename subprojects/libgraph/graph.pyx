@@ -9,6 +9,8 @@ cimport graph
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
+from libcpp.vector cimport vector as cvector
+
 from libcpp cimport bool
 
 from backported_memory cimport static_pointer_cast as spc
@@ -50,6 +52,9 @@ cpdef get_type_hash(name):
         hash_type = typeid(cgraph.RTOS).hash_code()
     elif name == "EventGroup":
         hash_type = typeid(cgraph.EventGroup).hash_code()
+    elif name == "ISR":
+        hash_type = typeid(cgraph.ISR).hash_code()
+        
     return  hash_type
 
 
@@ -134,6 +139,7 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         typeid(cgraph.EventGroup).hash_code(): EventGroup,
         typeid(cgraph.Edge).hash_code(): Edge,
         typeid(cgraph.RTOS).hash_code(): RTOS,
+        typeid(cgraph.ISR).hash_code(): ISR,
         
     }
 
@@ -255,7 +261,9 @@ cdef class Vertex:
 
     def get_seed(self):
         return deref(self._c_vertex).get_seed()
-
+    
+    def get_type(self):
+        return deref(self._c_vertex).get_type()
 
     def	set_handler_name(self,str name):
         cdef string handlername = name.encode('UTF-8')
@@ -537,7 +545,18 @@ cdef class Function(Vertex):
             return None
         
 
+    def get_called_functions(self):
         
+        cdef cvector[shared_ptr[cgraph.Function]] function_list  =  deref(self._c()).get_called_functions()
+        
+        
+        pylist = []
+        
+        for function in function_list:
+            pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)))
+                
+        
+        return pylist
     #def get_call_target_instance(self):
         #return deref(self._c()).get_call_target_instance()
 
@@ -655,7 +674,7 @@ cdef class ABB(Vertex):
     
     def get_called_functions(self):
         
-        cdef clist[shared_ptr[cgraph.Function]] function_list  =  deref(self._c()).get_called_functions()
+        cdef cvector[shared_ptr[cgraph.Function]] function_list  =  deref(self._c()).get_called_functions()
         
         
         pylist = []
@@ -807,6 +826,7 @@ cdef class Timer(Vertex):
             
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_definition_function()
+  
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
         
 cdef class RTOS(Vertex):

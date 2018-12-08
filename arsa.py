@@ -74,11 +74,26 @@ def main():
     commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/"+ args.application_file[0],
                 "--std=c++11", "-o", "../test/data/appl.ll",
                 "-target", "i386-pc-linux-gnu" ,"-discard-value-names" ,"-###"]
+    
+    execute_shellcommands(commands, False)
         
-    commands = ["/usr/lib/llvm-6.0/bin/clang", "-cc1", "-triple", "i386-pc-linux-gnu", "-emit-llvm" ,"-disable-free" ,"-disable-llvm-verifier", "-main-file-name", "l.cc", "-mrelocation-model" ,"static" ,"-mthread-model" ,"posix", "-mdisable-fp-elim" ,"-fmath-errno", "-masm-verbose" ,"-mconstructor-aliases", "-fuse-init-array", "-target-cpu", "pentium4" ,"-dwarf-column-info", "-debugger-tuning=gdb", "-coverage-notes-file", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build/../test/data/appl.gcno", "-resource-dir", "/usr/lib/llvm-6.0/lib/clang/6.0.0", "-internal-isystem" ,"/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/x86_64-linux-gnu/c++/7.3.0/32", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/i386-pc-linux-gnu/c++/7.3.0" ,"-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0/backward", "-internal-isystem", "/usr/include/clang/6.0.0/include/", "-internal-isystem", "/usr/local/include", "-internal-isystem" ,"/usr/lib/llvm-6.0/lib/clang/6.0.0/include" ,"-internal-externc-isystem", "/include", "-internal-externc-isystem" ,"/usr/include", "--std=c++11", "-fdeprecated-macro" ,"-fdebug-compilation-dir", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build", "-ferror-limit", "19" ,"-fmessage-length" ,"272" ,"-fobjc-runtime=gcc" ,"-fcxx-exceptions" ,"-fexceptions" ,"-fdiagnostics-show-option" ,"-fcolor-diagnostics","-o" ,"../test/data/"+args.application_file[0] +".ll" ,"-x", "c++", "../appl/"+folder+"/"+args.application_file[0]]
+    parse_files = ['GPSLogger','ScreenManager','GPSThread','SDThread','LEDThread','ButtonsThread','SdFatSPIDriver']
+    parse_folder = ["","Screens/","GPS/","","","","" ]
+    
+    iterator = 0
+    for file_name in parse_files:
+        
 
-    #execute_shellcommands(commands, False)
+        #commands = ["/usr/lib/llvm-6.0/bin/clang", "-cc1", "-triple", "i386-pc-linux-gnu", "-emit-llvm" ,"-disable-free" ,"-disable-llvm-verifier", "-main-file-name", "l.cc", "-mrelocation-model" ,"static" ,"-mthread-model" ,"posix", "-mdisable-fp-elim" ,"-fmath-errno", "-masm-verbose" ,"-mconstructor-aliases", "-fuse-init-array", "-target-cpu", "pentium4" ,"-dwarf-column-info", "-debugger-tuning=gdb", "-coverage-notes-file", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build/../test/data/appl.gcno", "-resource-dir", "/usr/lib/llvm-6.0/lib/clang/6.0.0", "-internal-isystem" ,"/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/x86_64-linux-gnu/c++/7.3.0/32", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/i386-pc-linux-gnu/c++/7.3.0" ,"-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0/backward", "-internal-isystem", "/usr/include/clang/6.0.0/include/", "-internal-isystem", "/usr/local/include", "-internal-isystem" ,"/usr/lib/llvm-6.0/lib/clang/6.0.0/include" ,"-internal-externc-isystem", "/include", "-internal-externc-isystem" ,"/usr/include", "--std=c++11", "-fdeprecated-macro" ,"-fdebug-compilation-dir", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build", "-ferror-limit", "19" ,"-fmessage-length" ,"272" ,"-fobjc-runtime=gcc" ,"-fcxx-exceptions" ,"-fexceptions" ,"-fdiagnostics-show-option" ,"-fcolor-diagnostics","-o" ,"../test/data/"+args.application_file[0] +".ll" ,"-x", "c++", "../appl/"+folder+"/"+args.application_file[0]]
+        
+        commands = ["/usr/lib/llvm-6.0/bin/clang", "-cc1", "-triple", "i386-pc-linux-gnu", "-emit-llvm" ,"-disable-free" ,"-disable-llvm-verifier", "-main-file-name", "l.cc", "-mrelocation-model" ,"static" ,"-mthread-model" ,"posix", "-mdisable-fp-elim" ,"-fmath-errno", "-masm-verbose" ,"-mconstructor-aliases", "-fuse-init-array", "-target-cpu", "pentium4" ,"-dwarf-column-info", "-debugger-tuning=gdb", "-coverage-notes-file", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build/../test/data/appl.gcno", "-resource-dir", "/usr/lib/llvm-6.0/lib/clang/6.0.0", "-internal-isystem" ,"/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/x86_64-linux-gnu/c++/7.3.0/32", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/i386-pc-linux-gnu/c++/7.3.0" ,"-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0/backward", "-internal-isystem", "/usr/include/clang/6.0.0/include/", "-internal-isystem", "/usr/local/include", "-internal-isystem" ,"/usr/lib/llvm-6.0/lib/clang/6.0.0/include" ,"-internal-externc-isystem", "/include", "-internal-externc-isystem" ,"/usr/include", "--std=c++11", "-fdeprecated-macro" ,"-fdebug-compilation-dir", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build", "-ferror-limit", "19" ,"-fmessage-length" ,"272" ,"-fobjc-runtime=gcc" ,"-fcxx-exceptions" ,"-fexceptions" ,"-fdiagnostics-show-option" ,"-fcolor-diagnostics","-o" ,"../test/data/"+file_name +".ll" ,"-x", "c++", "../../../GPSLogger/Src/" + parse_folder[iterator] + file_name +".cpp"]
 
+        
+        execute_shellcommands(commands, False)
+        
+        iterator = iterator + 1
+        
+        
     g = graph.PyGraph()
 
     p_manager = stepmanager.StepManager(g, vars(args))

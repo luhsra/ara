@@ -197,7 +197,11 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 				out = tmp_string.substr(tmp_string.find("%"),tmp_string.find("=")-3); 
 			}
 		}
-	}
+	}else if (LoadInst *load = dyn_cast<LoadInst>(cast_operand)) {
+        cast_success = dump_argument(debug_out,out,type, load, call_reference);
+
+    }
+	if(!cast_success)debug_out << "cast instruction: " << print_argument(cast_operand);
 	return cast_success;
 }
 
@@ -278,8 +282,12 @@ bool load_value(std::stringstream &debug_out,std::any &out, llvm::Type*& type,Va
 					}else{
                         debug_out << "Globaler Null Ptr hat keinen Namen" << "\n";
                     }
-                }else debug_out << "Constante vom Typ UndefValue/ConstantTokenNone" << "\n";
-
+                }else{
+                    out = global_var->getName().str();
+					type = global_var->getType();
+                    load_success = true;
+                    debug_out << "CONSTANTUNDEF/TOKENNONE" << "\n";
+                }
 			//check if global varialbe is a constant expression
             }else if(ConstantExpr  * constant_expr = dyn_cast<ConstantExpr>(global_var->getInitializer())){
 				debug_out << "CONSTANTEXPRESSION" << "\n";
@@ -402,6 +410,10 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type,
                 debug_out << "LOAD GLOBAL" << "\n";
                 //load the global information
                 dump_success = load_value(debug_out,out,type, load->getOperand(0),arg,call_reference);
+            }else if(instr->getNumOperands() == 1){
+               debug_out << "ONEOPERAND" << "\n";
+               dump_success = dump_argument(debug_out,out,type, load->getOperand(0), call_reference);
+               
             }
         //check if instruction is an alloca instruction
         }else if (AllocaInst *alloca = dyn_cast<AllocaInst>(instr)) {
@@ -485,10 +497,10 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type,
         else if (PT->getContainedType(0)->isPointerTy()){
             debug_out << "POINTER TO POINTER" << "\n";
             //check if pointer target is a global variable
-			
+            debug_out << "Pointer to pointer: " << print_argument(arg);
 			//load the global information
 			dump_success = load_value(debug_out,out, type,arg,arg,call_reference);
-			debug_out << "Pointer to pointer: " << print_argument(arg);
+
 		
         }//check if value is a constant value
         else if(GlobalVariable  * global_var = dyn_cast<GlobalVariable>(arg)) {
@@ -508,7 +520,6 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type,
 		}
     }
     else{
-	
         std::string type_str;
         llvm::raw_string_ostream rso(type_str);
         arg->getType()->print(rso);
@@ -518,6 +529,16 @@ bool dump_argument(std::stringstream &debug_out,std::any &out,llvm::Type *&type,
         if(!dump_success)debug_out << "Kein Load/Instruction/Pointer" << "\n";
     }
 	
+	if(!dump_success){
+        std::string arg_name = arg->getName().str();
+        
+        if(arg_name.length() > 0){
+            debug_out << "DEFAULTNAME" << "\n";
+            out = arg_name;
+            type = arg->getType();
+            dump_success = true;
+        }
+    }
     debug_out  << "EXITDUMP: " << dump_success << "\n"; 
     return dump_success;
 }
@@ -553,8 +574,9 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 			arguments.push_back(std::make_tuple (value_argument,type_argument));
 		}else{
 			//TODO
-			//std::cerr << "ERROR: instruction argument dump was not successfull" << '\n';
-			//std::cerr <<  print_argument(instruction) << '\n';
+			std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
+			std::cerr <<  print_argument(instruction) << '\n';
+			std::cerr << debug_out.str() << std::endl;
 			//abort();
 		}
 	}
@@ -945,6 +967,7 @@ namespace step {
 			}
 		}
 		
+		
 		//set called functions for each abb
 		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 		for (auto &vertex : vertex_list) {
@@ -959,11 +982,13 @@ namespace step {
 					//std::cout<< "function name " << llvm_function->getName().str()<< std::endl;
 					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
 					if(vertex != nullptr){
-						//TODO set edge
+
 						vertex->get_type();
 						//std::cout <<  "success" << vertex->get_name() << std::endl;
 						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
 						abb->set_called_function( function);
+                        abb->get_parent_function()->set_called_function(function,abb);
+                        
 					}
 				}
 				if(InvokeInst* tmp = dyn_cast<InvokeInst>((instr))){
@@ -974,9 +999,12 @@ namespace step {
 					if(vertex != nullptr){
 						//std::cout << "success" <<  vertex->get_name() << std::endl;
 						vertex->get_type();
-						//TODO set edge
+
 						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
 						abb->set_called_function( function);
+                        
+                        abb->get_parent_function()->set_called_function(function,abb);
+                        
 					}
 				}
 			}
