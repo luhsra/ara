@@ -174,14 +174,11 @@ std::list<shared_vertex> graph::Graph::get_type_vertices(size_t type_info){
 
 shared_vertex graph::Graph::get_vertex(size_t seed){   
     //gebe Vertex mit dem entsprechenden hashValue zurück
-    std::list<shared_vertex>::iterator it = this->vertices.begin();       //iterate about the list elements
-	
-    for(; it != this->vertices.end(); ++it){
-		
+
+	for(auto& vertex :this->vertices){
         //gesuchter vertex gefunden
-        if(seed==(*it)->get_seed()){//check if vertex is from wanted type
-		
-			return (*it); 
+        if(seed==vertex->get_seed()){//check if vertex is from wanted type
+			return (vertex); 
         }
     }
     return nullptr;
@@ -199,12 +196,10 @@ shared_vertex graph::Graph::get_vertex(std::string name){
 	for (auto& vertex : this->vertices) {
 	//	std::cerr << vertex->get_name() << std::endl;
 		if(name==vertex->get_name()){  
-            std::cerr << "match name:" << name << std::endl;//check if vertex is from wanted type
 			counter++;
 			return_vertex = vertex; 
         }
 	}
-	std::cerr << "left" << std::endl;//check if vertex is from wanted type
 	//std::cerr << counter<<  std::endl;
 	//std::cerr << "_______________________" << std::endl;
     if(counter == 1){
@@ -741,7 +736,7 @@ std::vector<OS::shared_function> OS::Function::get_calling_functions(){
     for(auto& edge : this->ingoing_edges){
         shared_vertex vertex =edge->get_start_vertex();
         //std::cerr << "edge target " << vertex->get_name() << std::endl;
-        if(typeid(OS::Function).hash_code() == vertex->get_type()){
+        if(vertex != nullptr && typeid(OS::Function).hash_code() == vertex->get_type()){
             auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
             called_functions.emplace_back(function);
         }
@@ -885,6 +880,24 @@ OS::shared_abb OS::Function::get_entry_abb(){
 }
 
 
+		
+llvm::DominatorTree* OS::Function::get_dominator_tree(){
+    return &this->dominator_tree;
+}
+
+llvm::PostDominatorTree* OS::Function::get_postdominator_tree(){
+    return &this->postdominator_tree;
+}
+      
+void OS::Function::initialize_dominator_tree(llvm::Function* function){
+    this->dominator_tree.recalculate(*function);
+	this->dominator_tree.updateDFSNumbers();
+}
+      
+void OS::Function::initialize_postdominator_tree(llvm::Function* function){
+    this->postdominator_tree.recalculate(*function);
+	this->postdominator_tree.updateDFSNumbers();
+}
 
 
 void OS::ABB::set_call_target_instance(size_t target_instance){
@@ -1276,10 +1289,9 @@ bool  OS::ABB::has_single_successor(){
 
 OS::shared_abb OS::ABB::get_postdominator(){
 	
-	llvm:BasicBlock* bb = this->entry;
-	PostDominatorTree  DT = PostDominatorTree();
-	DT.recalculate(*(this->parent_function->get_llvm_reference()));
-	DT.updateDFSNumbers();
+	llvm::BasicBlock* bb = this->entry;
+	llvm::PostDominatorTree * DT = this->parent_function->get_postdominator_tree();
+	
 	
 	std::hash<std::string> hash_fn;
     //get first basic block of the function
@@ -1304,7 +1316,7 @@ OS::shared_abb OS::ABB::get_postdominator(){
 		//get first element of the queue
 		auto abb = queue.front();
 		
-		if(bb != abb->get_entry_bb() && DT.dominates(abb->get_entry_bb(), bb))return abb;
+		if(bb != abb->get_entry_bb() && DT->dominates(abb->get_entry_bb(), bb))return abb;
 		queue.pop();
 		
 		
@@ -1333,9 +1345,7 @@ OS::shared_abb OS::ABB::get_postdominator(){
 OS::shared_abb OS::ABB::get_dominator(){
 	
 	llvm:BasicBlock* bb = this->entry;
-	DominatorTree DT = DominatorTree();
-	DT.recalculate(*(this->parent_function->get_llvm_reference()));
-	DT.updateDFSNumbers();
+	llvm::DominatorTree * DT = this->parent_function->get_dominator_tree();
 	
 	
 	std::hash<std::string> hash_fn;
@@ -1369,7 +1379,7 @@ OS::shared_abb OS::ABB::get_dominator(){
 		//std::cerr << "bb " <<  rso.str()<< std::endl ;
 		
 		//if(abb->get_entry_bb() != nullptr)std::cerr << "bb: " <<abb->get_name() << " dominates " << this->name ; 
-		if(bb != abb->get_entry_bb() && DT.dominates(abb->get_entry_bb(), bb)){
+		if(bb != abb->get_entry_bb() && DT->dominates(abb->get_entry_bb(), bb)){
 			//std::cerr << " True" <<  std::endl;
 			return abb;
 		}
@@ -1543,26 +1553,19 @@ bool OS::Task::set_event_reference(std::string event_name){
 
 bool OS::Task::set_definition_function(std::string function_name){
 	bool result = false;
-    std::cerr << "task defintion function name: " << function_name << std::endl;
-    
-//     std::list<graph::shared_vertex> vertex_list =  this->graph->get_type_vertices(typeid(OS::Function).hash_code());
-// 	//iterate about the functions
-// 	for (auto &vertex : vertex_list) {
-//         std::cerr << "function name: " << vertex->get_name() << std::endl;
-//     }
-    
-    
-	auto vertex = this->graph->get_vertex(function_name);
-	auto self_vertex = this->graph->get_vertex(this->name);
+    std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
+	auto self_vertex = this->graph->get_vertex(this->seed);
     
 
-    if(self_vertex == nullptr) std::cerr << "task not found " << this->name << std::endl;
-    
+    if(self_vertex == nullptr){
+        std::cerr << "ERROR: task not found " << this->name << std::endl;
+        abort();
+    }
 	if(vertex != nullptr && self_vertex != nullptr){
-        std::cerr << "success task defintion function name" << std::endl;
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
 		
-        if(function){
+        if(function!=nullptr){
 			this->definition_function = function;
 			function->set_definition_vertex(self_vertex);
 			result = true;
@@ -1578,17 +1581,28 @@ OS::shared_function OS::Task::get_definition_function(){
 
 bool OS::ISR::set_definition_function(std::string function_name){
 	bool result = false;
-	auto vertex = this->graph->get_vertex(function_name);
-	auto self_vertex = this->graph->get_vertex(this->name);
     
+    std::hash<std::string> hash_fn;
+    
+
+	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
+	auto self_vertex = this->graph->get_vertex(this->seed);
+
+   if(self_vertex == nullptr){
+        std::cerr << "ERROR: isr not found " << this->name << std::endl;
+        abort();
+    }
+
 	if(vertex != nullptr && self_vertex != nullptr){
+        
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function){
+		if(function!=nullptr){
 			this->definition_function = function;
 			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
+	
 	return result;
 	
 }
@@ -1727,18 +1741,24 @@ void OS::Timer::set_timer_type( timer_type type){
 
 bool OS::Timer::set_definition_function(std::string function_name){
 	bool result = false;
-	auto vertex = this->graph->get_vertex(function_name);
-	auto self_vertex = this->graph->get_vertex(this->name);
+    std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
+	auto self_vertex = this->graph->get_vertex(this->seed);
+    
+    if(self_vertex == nullptr){
+        std::cerr << "ERROR: timer not found " << this->name << std::endl;
+        abort();
+    }
+    
 	if(vertex != nullptr && self_vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function){
+		if(function!=nullptr){
 			this->definition_function = function;
 			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
 	return result;
-	
 }
 
 

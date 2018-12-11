@@ -1,0 +1,29 @@
+digraph G {
+		main[fillcolor=lavender style=filled label=<main<BR />>];
+		isr1_tmp[fillcolor=lavender style=filled label=<isr1_tmp<BR />>];
+		OSEKOS_ISR_isr_button_start[fillcolor=lavender style=filled label=<OSEKOS_ISR_isr_button_start<BR />>];
+		OSEKOS_TASK_FUNC_InitTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_InitTask<BR />>];
+		OSEKOS_TASK_FUNC_SignalGatherInitiateTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_SignalGatherInitiateTask<BR />>];
+		OSEKOS_TASK_FUNC_SignalGatherInitiateTask -> _ZN7Machine18disable_interruptsEv[color=black];
+		OSEKOS_TASK_FUNC_SignalGatherInitiateTask -> _ZN11Null_Stream8setcolorI5ColorEEvT_S2_[color=black];
+		OSEKOS_TASK_FUNC_SignalGatherInitiateTask -> _ZN11Null_StreamlsIPKcEERS_T_[color=black];
+		_ZN7Machine18disable_interruptsEv[fillcolor=lavender style=filled label=<_ZN7Machine18disable_interruptsEv<BR />>];
+		OSEKOS_TASK_FUNC_SignalGatherWaitTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_SignalGatherWaitTask<BR />>];
+		OSEKOS_TASK_FUNC_SignalGatherTimeoutTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_SignalGatherTimeoutTask<BR />>];
+		OSEKOS_TASK_FUNC_SignalProcessingActuateTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_SignalProcessingActuateTask<BR />>];
+		OSEKOS_TASK_FUNC_SignalProcessingAttitudeTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_SignalProcessingAttitudeTask<BR />>];
+		OSEKOS_TASK_FUNC_FlightControlActuateTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_FlightControlActuateTask<BR />>];
+		OSEKOS_TASK_FUNC_FlightControlAttitudeTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_FlightControlAttitudeTask<BR />>];
+		OSEKOS_TASK_FUNC_ActuateTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_ActuateTask<BR />>];
+		OSEKOS_TASK_FUNC_MavlinkSendTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_MavlinkSendTask<BR />>];
+		OSEKOS_TASK_FUNC_MavlinkRecvTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_MavlinkRecvTask<BR />>];
+		OSEKOS_TASK_FUNC_CopterControlTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_CopterControlTask<BR />>];
+		OSEKOS_TASK_FUNC_CopterControlWatchdogTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_CopterControlWatchdogTask<BR />>];
+		OSEKOS_TASK_FUNC_EthernetTask[fillcolor=lavender style=filled label=<OSEKOS_TASK_FUNC_EthernetTask<BR />>];
+		__OS_HOOK_DEFINED_FaultDetectedHook[fillcolor=lavender style=filled label=<__OS_HOOK_DEFINED_FaultDetectedHook<BR />>];
+		__OS_HOOK_DEFINED_FaultDetectedHook -> _ZN11Null_Stream8setcolorI5ColorEEvT_S2_[color=black];
+		__OS_HOOK_DEFINED_FaultDetectedHook -> _ZN11Null_StreamlsIPKcEERS_T_[color=black];
+		_ZN11Null_Stream8setcolorI5ColorEEvT_S2_[fillcolor=lavender style=filled label=<_ZN11Null_Stream8setcolorI5ColorEEvT_S2_<BR />>];
+		_ZN11Null_StreamlsIPKcEERS_T_[fillcolor=lavender style=filled label=<_ZN11Null_StreamlsIPKcEERS_T_<BR />>];
+
+}

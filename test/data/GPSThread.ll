@@ -6,6 +6,12 @@ target triple = "i386-pc-linux-gnu"
 %class.NMEAGPS = type { i8 }
 %class.GPS_UART = type { [128 x i8], i8, i8, %struct.tskTaskControlBlock* }
 %struct.tskTaskControlBlock = type opaque
+%class.gps_fix = type { i8 }
+%class.GPSDataModel = type { %class.gps_fix, %class.gps_fix, %class.GPSSatellitesData, [3 x %class.GPSOdometer*], [3 x i8], %struct.QueueDefinition* }
+%class.GPSSatellitesData = type { [20 x %"struct.GPSSatellitesData::SatteliteData"], i8 }
+%"struct.GPSSatellitesData::SatteliteData" = type { i8, i8 }
+%class.GPSOdometer = type opaque
+%struct.QueueDefinition = type opaque
 
 $_ZN8GPS_UARTC2Ev = comdat any
 
@@ -61,6 +67,7 @@ $_ZNVK7NMEAGPS9availableEv = comdat any
 @LL_USART_HWCONTROL_NONE = global i8 1, align 1
 @LL_USART_DIRECTION_TX_RX = global i8 0, align 1
 @gpsUart = global %class.GPS_UART zeroinitializer, align 4
+@_ZZ8vGPSTaskPvE3tmp = internal constant %class.gps_fix undef, align 1
 @llvm.global_ctors = appending global [1 x { i32, void ()*, i8* }] [{ i32, void ()*, i8* } { i32 65535, void ()* @_GLOBAL__sub_I_GPSThread.cpp, i8* null }]
 
 ; Function Attrs: noinline
@@ -153,12 +160,14 @@ define void @_Z8vGPSTaskPv(i8* %pvParameters) #3 {
   %buf = alloca i8*, align 4
   %len = alloca i8, align 1
   %c = alloca i32, align 4
+  %a = alloca i32, align 4
+  %pointer_tmp = alloca i8*, align 4
   store i8* %pvParameters, i8** %pvParameters.addr, align 4
   store i8 0, i8* %maxLen, align 1
   call void @_ZN8GPS_UART4initEv(%class.GPS_UART* @gpsUart)
   br label %1
 
-; <label>:1:                                      ; preds = %28, %2, %0
+; <label>:1:                                      ; preds = %30, %2, %0
   %call = call i8* @_Z19requestRawGPSBufferv()
   store i8* %call, i8** %buf, align 4
   store i8 0, i8* %len, align 1
@@ -238,12 +247,20 @@ define void @_Z8vGPSTaskPv(i8* %pvParameters) #3 {
   call void @_Z13ackRawGPSDatah(i8 zeroext %26)
   %call16 = call zeroext i8 @_ZNVK7NMEAGPS9availableEv(%class.NMEAGPS* @gpsParser)
   %tobool = icmp ne i8 %call16, 0
-  br i1 %tobool, label %27, label %28
+  br i1 %tobool, label %27, label %30
 
 ; <label>:27:                                     ; preds = %25
-  br label %28
+  store i32 231, i32* %a, align 4
+  %28 = bitcast i32* %a to i8*
+  store i8* %28, i8** %pointer_tmp, align 4
+  %call17 = call dereferenceable(64) %class.GPSDataModel* @_ZN12GPSDataModel8instanceEv()
+  call void @_ZN12GPSDataModel16processNewGPSFixERK7gps_fix(%class.GPSDataModel* %call17, %class.gps_fix* dereferenceable(1) @_ZZ8vGPSTaskPvE3tmp)
+  %call18 = call dereferenceable(64) %class.GPSDataModel* @_ZN12GPSDataModel8instanceEv()
+  %29 = load i8*, i8** %pointer_tmp, align 4
+  call void @_ZN12GPSDataModel24processNewSatellitesDataEPvh(%class.GPSDataModel* %call18, i8* %29, i8 zeroext 65)
+  br label %30
 
-; <label>:28:                                     ; preds = %27, %25
+; <label>:30:                                     ; preds = %27, %25
   call void @vTaskDelay(i32 10)
   br label %1
                                                   ; No predecessors!
@@ -398,6 +415,12 @@ define linkonce_odr zeroext i8 @_ZNVK7NMEAGPS9availableEv(%class.NMEAGPS* %this)
   %this1 = load %class.NMEAGPS*, %class.NMEAGPS** %this.addr, align 4
   ret i8 1
 }
+
+declare dereferenceable(64) %class.GPSDataModel* @_ZN12GPSDataModel8instanceEv() #1
+
+declare void @_ZN12GPSDataModel16processNewGPSFixERK7gps_fix(%class.GPSDataModel*, %class.gps_fix* dereferenceable(1)) #1
+
+declare void @_ZN12GPSDataModel24processNewSatellitesDataEPvh(%class.GPSDataModel*, i8*, i8 zeroext) #1
 
 declare void @vTaskDelay(i32) #1
 

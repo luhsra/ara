@@ -140,6 +140,7 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         typeid(cgraph.Edge).hash_code(): Edge,
         typeid(cgraph.RTOS).hash_code(): RTOS,
         typeid(cgraph.ISR).hash_code(): ISR,
+        typeid(cgraph.Resource).hash_code(): Resource,
         
     }
 
@@ -227,12 +228,18 @@ cdef class Edge:
         
         cdef shared_ptr[cgraph.Vertex] target = deref(self._c_edge).get_target_vertex()
         
-        print(deref(target).get_name())
         if target!= NULL:
 
             return create_from_pointer(target)
         else: 
             return None
+        
+        
+    def get_name(self):
+        cdef c_string = deref(self._c_edge).get_name()
+        cdef bytes py_string = c_string
+        return py_string
+    
 
 cdef class Vertex:
 
@@ -275,16 +282,15 @@ cdef class Vertex:
         cdef shared_ptr[cgraph.Vertex] start
         pylist = []
         for edge in edges:
-            print("EDGE")
+
             py_obj= Edge(None, None,None,None,None,_raw=True)
             
             py_obj._c_edge = edge
             
             start = deref(edge).get_start_vertex()
-            
-            print(deref(start).get_name())
     
             pylist.append(py_obj)
+            
         return pylist
 
 cdef class Alarm(Vertex):
@@ -408,7 +414,9 @@ cdef class ISR(Vertex):
         cdef shared_ptr [cgraph.Function] function = deref(self._c()).get_definition_function()
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
                             
-                            
+    def set_definition_function(self, str function_name):
+        cdef string c_function_name = function_name.encode('UTF-8')
+        return deref(self._c()).set_definition_function(c_function_name)
 
 cdef class Resource(Vertex):
     cdef inline shared_ptr[cgraph.Resource] _c(self):
@@ -828,6 +836,10 @@ cdef class Timer(Vertex):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_definition_function()
   
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
+    
+    def set_definition_function(self, str function_name):
+        cdef string c_function_name = function_name.encode('UTF-8')
+        return deref(self._c()).set_definition_function(c_function_name)
         
 cdef class RTOS(Vertex):
 

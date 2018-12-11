@@ -17,6 +17,7 @@ class ABB_MergeStep(Step):
     """Merges the ABB."""
         
     def get_dependencies(self):
+        
         return ['SyscallStep']
     
     
@@ -164,13 +165,6 @@ class ABB_MergeStep(Step):
 
         parent_function = entry_abb.get_parent_function()
         
-        
-        if entry_abb.get_name().decode("utf-8") == "BB225" or exit_abb.get_name().decode("utf-8") == "BB225" :
-            print("entry abb:", entry_abb.get_name(), "exit abb:", exit_abb.get_name())
-            
-        for inner_abb in inner_abbs:
-            if inner_abb.get_name().decode("utf-8") == "BB225":
-                print("entry abb:", entry_abb.get_name(), "exit abb:", exit_abb.get_name(), "inner abb:" ,inner_abb.get_name() )
         
         # adopt basic blocks and call sites
         for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
@@ -392,12 +386,6 @@ class ABB_MergeStep(Step):
                 start = abb.get_dominator();
                 end = abb.get_postdominator();
                 
-                print("abb:", abb.get_name())
-                
-                if start:
-                    print("start",start.get_name())	
-                if end:
-                    print("end", end.get_name())	
                     
                 if start and end and start != end:
 
@@ -495,14 +483,14 @@ class ABB_MergeStep(Step):
         current_size = None
         
         initial_abb_count = len(initial_abb_list)
-        print("abb count before dominance merge",initial_abb_count)
+        
         #merge dominance regions
         self.merge_dominance(g)
         
         initial_abb_list = g.get_type_vertices("ABB")
         
         initial_abb_count = len(initial_abb_list)
-        print("abb count before merge",initial_abb_count)
+   
         while current_size != initial_abb_count:
             
             tmp_abb_list = g.get_type_vertices("ABB")
@@ -519,10 +507,6 @@ class ABB_MergeStep(Step):
 
             tmp_abb_list = g.get_type_vertices("ABB")
             current_size = len(tmp_abb_list)
-            
-
-        print("abb count after merge",current_size)
-    
         
         printer.print_functions(g,"after_merge")
 

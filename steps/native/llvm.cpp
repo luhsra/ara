@@ -178,7 +178,10 @@ bool dump_cast(std::stringstream &debug_out,CastInst *cast,std::any &out, llvm::
 					}
 				}
 				
-			}else std::cout << "local variable was set after value" << std::endl;
+			}else{
+                //TODO
+                //std::cout << "local variable was set after value" << std::endl;
+            }
 			//no load between allocation and call reference
 		}
 		//check if a valid store instruction could be found
@@ -824,20 +827,13 @@ namespace step {
 		// get file arguments from config
 		std::vector<std::string> files;
 		std::cout << "Run " << get_name() << std::endl;
+        
 		PyObject* input_files = PyDict_GetItemString(config, "input_files");
 		assert(input_files != nullptr && PyList_Check(input_files));
 		for (Py_ssize_t i = 0; i < PyList_Size(input_files); ++i) {
 			PyObject* elem = PyList_GetItem(input_files, i);
 			assert(PyUnicode_Check(elem));
 			files.push_back(std::string(PyUnicode_AsUTF8(elem)));
-		}
-
-	
-		// read in files and link them to one function
-		std::string file_name = files.at(0); 
-		
-		for(auto &file : files){
-			std::cerr << file << std::endl;
 		}
 		
 		
@@ -856,57 +852,41 @@ namespace step {
 		Linker L(*Composite);
 
 		for (unsigned i = BaseArg+1; i < files.size(); ++i) {
-            std::cerr << "debug" << files.at(i) << std::endl;
-			auto M = LoadFile(argv, files.at(i), context);
-			if (M.get() == 0) {
-				std::cerr << argv << ": error loading file '" << files.at(i) << "'\n";
-				abort();
-			}
+            auto M = LoadFile(argv, files.at(i), context);
+            if (M.get() == 0) {
+                std::cerr << argv << ": error loading file '" << files.at(i) << "'\n";
+                abort();
+            }
 
-        for (auto it = M->global_begin(); it != M->global_end(); ++it)
-        {
-            GlobalVariable& gv = *it;
-            if (!gv.isDeclaration())
-            gv.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+            for (auto it = M->global_begin(); it != M->global_end(); ++it)
+            {
+                GlobalVariable& gv = *it;
+                if (!gv.isDeclaration())
+                gv.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+            }
+
+            for (auto it = M->alias_begin(); it != M->alias_end(); ++it)
+            {
+                GlobalAlias& ga = *it;
+                if (!ga.isDeclaration())
+                ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+            }
+
+            // set linkage information of all functions
+            for (auto &F : *M) {
+                StringRef Name = F.getName();
+                // Leave library functions alone because their presence or absence
+                // could affect the behaviour of other passes.
+                if (F.isDeclaration())continue;
+                F.setLinkage(GlobalValue::WeakAnyLinkage);
+            }
+            
+            if (L.linkInModule(std::move(M))) {
+                std::cerr << argv << ": link error in '" << files.at(i);
+                abort();
+            }
         }
 
-        for (auto it = M->alias_begin(); it != M->alias_end(); ++it)
-        {
-            GlobalAlias& ga = *it;
-            if (!ga.isDeclaration())
-            ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
-        }
-
-      // Rename all functions
-      for (auto &F : *M) {
-        StringRef Name = F.getName();
-        // Leave library functions alone because their presence or absence
-        // could affect the behaviour of other passes.
-        if (F.isDeclaration())
-          continue;
-        F.setLinkage(GlobalValue::WeakAnyLinkage);
-        //F.setName(Name + "_renamed");
-      }
-            
-			if (L.linkInModule(std::move(M))) {
-				std::cerr << argv << ": link error in '" << files.at(i);
-				abort();
-			}
-		}
-		
-		
-            
-		//llvm::Context context;
-		llvm::SMDiagnostic Err;
-		
-
-		
-		std::unique_ptr<llvm::Module> module = parseIRFile(file_name, Err, context);
-		
-		if(!module){
-			std::cerr << "ERROR: could not load the module IR file: " << file_name << '\n';
-			abort();
-		}
 		
 		//convert unique_ptr to shared_ptr
 		std::shared_ptr<llvm::Module> shared_module = std::move(Composite);
@@ -942,12 +922,15 @@ namespace step {
 				//store  return type of  function
 				graph_function->set_return_type(func.getReturnType());
 				
-				//store llvm function reference
-				graph_function->set_llvm_reference(&(func));
-				
 				//split  llvm basic blocks, so that just one call exits per instance 
 				split_basicblocks( &(func), &split_counter);
 				
+                //store llvm function reference
+				graph_function->set_llvm_reference(&(func));
+                
+                //update dominator tree and postdominator tree
+				graph_function->initialize_dominator_tree(&(func));
+                graph_function->initialize_postdominator_tree(&(func));
 				//iterate about  splitted llvm basic blocks of llvm function an set their name
 				for (auto &bb : func) {
 					
@@ -1045,6 +1028,7 @@ namespace step {
 	
 	
 	std::vector<std::string> LLVMStep::get_dependencies() {
+        
 		return {};
 	}
 }

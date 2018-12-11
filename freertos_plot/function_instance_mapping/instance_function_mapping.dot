@@ -1,0 +1,17 @@
+digraph G {
+		SDThread[fillcolor=salmon style=filled label=<SDThread<BR />>];
+SDThread -> _Z9vSDThreadPv
+		LEDThread[fillcolor=salmon style=filled label=<LEDThread<BR />>];
+LEDThread -> _Z10vLEDThreadPv
+		DisplayTask[fillcolor=salmon style=filled label=<DisplayTask<BR />>];
+DisplayTask -> _Z12vDisplayTaskPv
+		ButtonsThread[fillcolor=salmon style=filled label=<ButtonsThread<BR />>];
+ButtonsThread -> _Z14vButtonsThreadPv
+		GPSTask[fillcolor=salmon style=filled label=<GPSTask<BR />>];
+GPSTask -> _Z8vGPSTaskPv
+		USART1_IRQHandler[fillcolor=cadetblue1 style=filled label=<USART1_IRQHandler<BR />>];
+USART1_IRQHandler -> USART1_IRQHandler
+		_ZN14SdFatSPIDriver22dmaTransferCompletedCBEv[fillcolor=cadetblue1 style=filled label=<_ZN14SdFatSPIDriver22dmaTransferCompletedCBEv<BR />>];
+_ZN14SdFatSPIDriver22dmaTransferCompletedCBEv -> _ZN14SdFatSPIDriver22dmaTransferCompletedCBEv
+
+}

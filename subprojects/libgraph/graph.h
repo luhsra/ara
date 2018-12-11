@@ -21,6 +21,7 @@
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/IR/DiagnosticInfo.h>
 #include "llvm/Analysis/PostDominators.h"
+#include "llvm/IR/Dominators.h"
 
 #include <iostream>
 #include <sstream>
@@ -243,7 +244,8 @@ namespace graph {
 		bool set_target_vertex(shared_vertex vertex);
 		shared_vertex get_start_vertex();
 		shared_vertex get_target_vertex();
-
+        
+        
 		void set_syscall(bool syscall);
 		bool is_sycall();
 
@@ -328,14 +330,13 @@ namespace OS {
 		
 		shared_abb entry_abb = nullptr;
 		shared_abb exit_abb = nullptr;
-
+        
+        llvm::DominatorTree dominator_tree = llvm::DominatorTree();
+        llvm::PostDominatorTree  postdominator_tree = llvm::PostDominatorTree();
                                                             
 	  public:
                               
               
-		Function *clone() const{return new Function(*this);};
-		
-		
 		void print_information();
 		
 		static bool classof(const Vertex *v); // LLVM RTTI class of Methode
@@ -362,7 +363,12 @@ namespace OS {
 		void set_definition(function_definition_type type);
 		function_definition_type get_definition();
 		
-		
+		llvm::DominatorTree* get_dominator_tree();
+        llvm::PostDominatorTree* get_postdominator_tree();
+        
+        void initialize_dominator_tree(llvm::Function* function);
+        void initialize_postdominator_tree(llvm::Function *function);
+        
 		bool set_definition_vertex(graph::shared_vertex vertex);
 		graph::shared_vertex get_definition_vertex();
 		//Funktionen zurück, die diese Funktion benutzen

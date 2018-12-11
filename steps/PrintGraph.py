@@ -111,13 +111,13 @@ class DotFileParser():
         
         interactions = element.get_outgoing_edges()
         for interaction in interactions:
-            start = element.get_name().decode("utf-8").replace(" ", "").replace(".", "_") 
+            edge_name = interaction.get_name().decode("utf-8").replace(" ", "").replace(".", "_") 
             target = interaction.get_target_vertex()
             start = interaction.get_start_vertex()
             if start.get_type() != graph.get_type_hash("ABB") and target.get_type() != graph.get_type_hash("Function"): 
                 target_name = target.get_name().decode("utf-8").replace(" ", "").replace(".", "_") 
                 start_name = start.get_name().decode("utf-8").replace(" ", "").replace(".", "_") 
-                f.write(start_name + " -> " + target_name + "\n")
+                f.write(start_name + " -> " + target_name +  " [ label=\"" + edge_name  +   "\"];\n")
             
         
     def print_called_functions(self,g, f,element):
@@ -162,6 +162,9 @@ class DotFileParser():
         self.print_instance_class( g,f,"Buffer",0, "chocolate1")
         self.print_instance_class( g,f,"EventGroup",0, "aquamarine")
         self.print_instance_class( g,f,"ISR",0, "ivory")
+        self.print_instance_class( g,f,"Resource",0, "orange")
+        
+        
         f.write("\n}" )
             
         f.close() 

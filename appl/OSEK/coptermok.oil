@@ -84,13 +84,109 @@
 		},
 
 		"SignalGatherInitiateTask":{
+			"PRIORITY" : 24,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"SignalGatherWaitTask":{
+			"PRIORITY" : 2,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"SignalGatherTimeoutTask":{
+			"PRIORITY" : 23,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"SignalProcessingActuateTask":{
+			"PRIORITY" : 22,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"SignalProcessingAttitudeTask":{
+			"PRIORITY" : 21,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"FlightControlAttitudeTask":{
 			"PRIORITY" : 9,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
 			"RESOURCE" : ["SPIBusResource"],
 			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"FlightControlActuateTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"ActuateTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"MavlinkSendTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+        },
+		"MavlinkRecvTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"CopterControlWatchdogTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["CopterControlReceiveEvent"]
+		},
+		"CopterControlTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["SignalGatherDigital2aTimeoutEvent"]
+		},
+		"EthernetTask":{
+			"PRIORITY" : 9,
+			"AUTOSTART" : "FALSE",
+			"ACTIVATION" : 1,
+			"SCHEDULE" : "FULL",
+			"RESOURCE" : ["SPIBusResource"],
+			"EVENT" : ["EthernetReceiveEvent"]
 		}
+		
 	},
 	
 	//COUNTER serves as a base for the ALARM mechanism
@@ -100,6 +196,14 @@
 			"MAXALLOWEDVALUE" : 50000,
 			//number of ticks required to reach a counter specific unit (UINT32)
 			"TICKSPERBASE" : 1,
+			//minimum allowed number of counter ticks for a cycle (UINT32)
+			"MINCYCLE" : 1
+		},
+		"C100" : {
+			//maximum allowed counter value (UINT32)
+			"MAXALLOWEDVALUE" : 1000,
+			//number of ticks required to reach a counter specific unit (UINT32)
+			"TICKSPERBASE" : 10,
 			//minimum allowed number of counter ticks for a cycle (UINT32)
 			"MINCYCLE" : 1
 		}
@@ -133,6 +237,78 @@
 					"APPMODE" : ["tmp"]
 				}
 			}
+		},
+		"SignalGatherTimeoutAlarm" : {
+		
+			//counter which is referenced to this alarm
+			"COUNTER" : "C100", 
+			
+			//type of notification when alarm expires (ACTIVATETASK or SETEVENT or ALARMCALLBACK)
+			//ACTIVATETASK defines the task to be activated when the alarm expires (TASK)
+			//SETEVENT defines the task for which the event is to be set
+			//the EVENT reference parameter defines the event to be set when the alarm expires (TASK,EVENT)
+			//ALARMCALLBACK defines the name of the callback routine that is called when the alarm expires (ALARMCALLBACKNAME)
+			"ACTION" : {
+				"ACTIVATETASK" : { 
+					"TASK" : "SignalGatherInitiateTask"
+				}
+			},
+			
+			//defines if an alarm is started automatically at system start up depending on the application mode (BOOLEAN)
+			//if TRUE, ALARMTIME(UINT32), CYCLETIME(UINT32) and APPMODES(APPMODE []) are defines
+			"AUTOSTART" : {
+				"TRUE" : {
+					"ALARMTIME" : 100,
+					"CYCLETIME" : 500,
+					"APPMODE" : ["tmp"]
+				}
+			}
+		},
+		"ActuateAlarm" : {
+		
+			//counter which is referenced to this alarm
+			"COUNTER" : "one_ms_counter", 
+			
+			//type of notification when alarm expires (ACTIVATETASK or SETEVENT or ALARMCALLBACK)
+			//ACTIVATETASK defines the task to be activated when the alarm expires (TASK)
+			//SETEVENT defines the task for which the event is to be set
+			//the EVENT reference parameter defines the event to be set when the alarm expires (TASK,EVENT)
+			//ALARMCALLBACK defines the name of the callback routine that is called when the alarm expires (ALARMCALLBACKNAME)
+			"ACTION" : {
+				"ACTIVATETASK" : { 
+					"TASK" : "MavlinkSendTask"
+				}
+			},
+			
+			//defines if an alarm is started automatically at system start up depending on the application mode (BOOLEAN)
+			//if TRUE, ALARMTIME(UINT32), CYCLETIME(UINT32) and APPMODES(APPMODE []) are defines
+			"AUTOSTART" : {
+				"TRUE" : {
+					"ALARMTIME" : 100,
+					"CYCLETIME" : 500,
+					"APPMODE" : ["tmp"]
+				}
+			}
+		},
+		"CopterControlWatchdogAlarm" : {
+		
+			//counter which is referenced to this alarm
+			"COUNTER" : "one_ms_counter", 
+			
+			//type of notification when alarm expires (ACTIVATETASK or SETEVENT or ALARMCALLBACK)
+			//ACTIVATETASK defines the task to be activated when the alarm expires (TASK)
+			//SETEVENT defines the task for which the event is to be set
+			//the EVENT reference parameter defines the event to be set when the alarm expires (TASK,EVENT)
+			//ALARMCALLBACK defines the name of the callback routine that is called when the alarm expires (ALARMCALLBACKNAME)
+			"ACTION" : {
+				"ACTIVATETASK" : { 
+					"TASK" : "SignalGatherInitiateTask"
+				}
+			},
+			
+			//defines if an alarm is started automatically at system start up depending on the application mode (BOOLEAN)
+			//if TRUE, ALARMTIME(UINT32), CYCLETIME(UINT32) and APPMODES(APPMODE []) are defines
+			"AUTOSTART" : "FALSE"
 		}
 	}, 
 
@@ -142,8 +318,50 @@
 		"CopterControlReceiveEvent" : {
 			//integer number MASK (UINT64 or AUTO)
 			"MASK" : "AUTO"
+		},
+        "MavMsgReceiveEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "EthernetReceiveEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "SignalGatherAnalogEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "SignalGatherDigital1Event" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "SignalGatherDigital2bEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "SignalGatherDigital2aEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "SignalGatherDigital1TimeoutEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "SignalGatherDigital2aTimeoutEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "FlightControlActuateEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
+        "FlightControlAttitudeEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
 		}
 	},
+	
+	
 	
 	//RESOURCE  object  is  used  to  coordinate  the  concurrent  access  by  tasks  and  ISRs  to  a shared resource
 	//e.g. the scheduler, any program sequence, memory or any hardware area
@@ -169,6 +387,14 @@
 		"isr_button_start" : {
 			//category of isr (UINT32, but only values 1 and 2 are allowed)
 			"CATEGORY" : 2,
+			//list of RESOURCES accessed by ISR
+			"RESOURCE" : ["SPIBusResource"],
+			//list of messages accessed by ISR
+			"MESSAGE" : ["button_start"]
+		},
+		"isr1_tmp" : {
+			//category of isr (UINT32, but only values 1 and 2 are allowed)
+			"CATEGORY" : 1,
 			//list of RESOURCES accessed by ISR
 			"RESOURCE" : ["SPIBusResource"],
 			//list of messages accessed by ISR

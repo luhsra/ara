@@ -146,12 +146,15 @@ define void @_Z11initScreensv() #2 {
   %call = call %class.Screen* @_ZN6Screen9addScreenEPS_(%class.Screen* getelementptr inbounds (%class.CurrentTimeScreen, %class.CurrentTimeScreen* @timeScreen, i32 0, i32 0, i32 0), %class.Screen* getelementptr inbounds (%class.CurrentPositionScreen, %class.CurrentPositionScreen* @positionScreen, i32 0, i32 0))
   %call1 = call %class.Screen* @_ZN6Screen9addScreenEPS_(%class.Screen* getelementptr inbounds (%class.CurrentPositionScreen, %class.CurrentPositionScreen* @positionScreen, i32 0, i32 0), %class.Screen* getelementptr inbounds (%class.SpeedScreen, %class.SpeedScreen* @speedScreen, i32 0, i32 0, i32 0))
   %call2 = call %class.Screen* @_ZN6Screen9addScreenEPS_(%class.Screen* getelementptr inbounds (%class.SpeedScreen, %class.SpeedScreen* @speedScreen, i32 0, i32 0, i32 0), %class.Screen* getelementptr inbounds (%class.OdometerScreen, %class.OdometerScreen* @odometerScreen, i32 0, i32 0))
+  call void @_ZNK11SpeedScreen10drawScreenEv(%class.SpeedScreen* @speedScreen)
   %call3 = call %class.Screen* @_ZN6Screen9addScreenEPS_(%class.Screen* getelementptr inbounds (%class.OdometerScreen, %class.OdometerScreen* @odometerScreen, i32 0, i32 0), %class.Screen* getelementptr inbounds (%class.SatellitesScreen, %class.SatellitesScreen* @satellitesScreen, i32 0, i32 0, i32 0))
   %call4 = call %class.Screen* @_ZN6Screen9addScreenEPS_(%class.Screen* getelementptr inbounds (%class.SatellitesScreen, %class.SatellitesScreen* @satellitesScreen, i32 0, i32 0, i32 0), %class.Screen* getelementptr inbounds (%class.SettingsGroupScreen, %class.SettingsGroupScreen* @rootSettingsScreen, i32 0, i32 0))
   ret void
 }
 
 declare %class.Screen* @_ZN6Screen9addScreenEPS_(%class.Screen*, %class.Screen*) #1
+
+declare void @_ZNK11SpeedScreen10drawScreenEv(%class.SpeedScreen*) unnamed_addr #1
 
 ; Function Attrs: noinline optnone
 define void @_Z11drawDisplayv() #2 {

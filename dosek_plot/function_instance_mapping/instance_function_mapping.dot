@@ -1,0 +1,35 @@
+digraph G {
+		InitTask[fillcolor=salmon style=filled label=<InitTask<BR />>];
+InitTask -> OSEKOS_TASK_FUNC_InitTask
+		SignalGatherInitiateTask[fillcolor=salmon style=filled label=<SignalGatherInitiateTask<BR />>];
+SignalGatherInitiateTask -> OSEKOS_TASK_FUNC_SignalGatherInitiateTask
+		SignalGatherWaitTask[fillcolor=salmon style=filled label=<SignalGatherWaitTask<BR />>];
+SignalGatherWaitTask -> OSEKOS_TASK_FUNC_SignalGatherWaitTask
+		SignalGatherTimeoutTask[fillcolor=salmon style=filled label=<SignalGatherTimeoutTask<BR />>];
+SignalGatherTimeoutTask -> OSEKOS_TASK_FUNC_SignalGatherTimeoutTask
+		SignalProcessingActuateTask[fillcolor=salmon style=filled label=<SignalProcessingActuateTask<BR />>];
+SignalProcessingActuateTask -> OSEKOS_TASK_FUNC_SignalProcessingActuateTask
+		SignalProcessingAttitudeTask[fillcolor=salmon style=filled label=<SignalProcessingAttitudeTask<BR />>];
+SignalProcessingAttitudeTask -> OSEKOS_TASK_FUNC_SignalProcessingAttitudeTask
+		FlightControlAttitudeTask[fillcolor=salmon style=filled label=<FlightControlAttitudeTask<BR />>];
+FlightControlAttitudeTask -> OSEKOS_TASK_FUNC_FlightControlAttitudeTask
+		FlightControlActuateTask[fillcolor=salmon style=filled label=<FlightControlActuateTask<BR />>];
+FlightControlActuateTask -> OSEKOS_TASK_FUNC_FlightControlActuateTask
+		ActuateTask[fillcolor=salmon style=filled label=<ActuateTask<BR />>];
+ActuateTask -> OSEKOS_TASK_FUNC_ActuateTask
+		MavlinkSendTask[fillcolor=salmon style=filled label=<MavlinkSendTask<BR />>];
+MavlinkSendTask -> OSEKOS_TASK_FUNC_MavlinkSendTask
+		MavlinkRecvTask[fillcolor=salmon style=filled label=<MavlinkRecvTask<BR />>];
+MavlinkRecvTask -> OSEKOS_TASK_FUNC_MavlinkRecvTask
+		CopterControlWatchdogTask[fillcolor=salmon style=filled label=<CopterControlWatchdogTask<BR />>];
+CopterControlWatchdogTask -> OSEKOS_TASK_FUNC_CopterControlWatchdogTask
+		CopterControlTask[fillcolor=salmon style=filled label=<CopterControlTask<BR />>];
+CopterControlTask -> OSEKOS_TASK_FUNC_CopterControlTask
+		EthernetTask[fillcolor=salmon style=filled label=<EthernetTask<BR />>];
+EthernetTask -> OSEKOS_TASK_FUNC_EthernetTask
+		isr_button_start[fillcolor=cadetblue1 style=filled label=<isr_button_start<BR />>];
+isr_button_start -> OSEKOS_ISR_isr_button_start
+		isr1_tmp[fillcolor=cadetblue1 style=filled label=<isr1_tmp<BR />>];
+isr1_tmp -> isr1_tmp
+
+}

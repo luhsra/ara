@@ -40,8 +40,7 @@ def execute_shellcommands(commands, shell_flag):
         raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
     return
 
-
-
+   
 def main():
     """Entry point for ARSA."""
 
@@ -65,26 +64,19 @@ def main():
         folder = "FreeRTOS"
     else:
         folder = "OSEK"
-        
-    for element in args.application_file[0]:
-        print(element)
-
-    print(args.application_file)
+    
 
     commands = ["clang-6.0", "-S", "-emit-llvm", "../appl/" + folder + "/"+ args.application_file[0],
                 "--std=c++11", "-o", "../test/data/appl.ll",
-                "-target", "i386-pc-linux-gnu" ,"-discard-value-names" ,"-###"]
+                "-target", "i386-pc-linux-gnu" ,"-discard-value-names" ]
     
     execute_shellcommands(commands, False)
         
-    parse_files = ['GPSLogger','ScreenManager','GPSThread','SDThread','LEDThread','ButtonsThread','SdFatSPIDriver']
-    parse_folder = ["","Screens/","GPS/","","","","" ]
+    parse_files = ['GPSLogger','ScreenManager','SpeedScreen','GPSThread','SDThread','LEDThread','ButtonsThread','SdFatSPIDriver','GPSDataModel']
+    parse_folder = ["","Screens/","Screens/", "GPS/","","","","","GPS/" ]
     
     iterator = 0
     for file_name in parse_files:
-        
-
-        #commands = ["/usr/lib/llvm-6.0/bin/clang", "-cc1", "-triple", "i386-pc-linux-gnu", "-emit-llvm" ,"-disable-free" ,"-disable-llvm-verifier", "-main-file-name", "l.cc", "-mrelocation-model" ,"static" ,"-mthread-model" ,"posix", "-mdisable-fp-elim" ,"-fmath-errno", "-masm-verbose" ,"-mconstructor-aliases", "-fuse-init-array", "-target-cpu", "pentium4" ,"-dwarf-column-info", "-debugger-tuning=gdb", "-coverage-notes-file", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build/../test/data/appl.gcno", "-resource-dir", "/usr/lib/llvm-6.0/lib/clang/6.0.0", "-internal-isystem" ,"/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/x86_64-linux-gnu/c++/7.3.0/32", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/i386-pc-linux-gnu/c++/7.3.0" ,"-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0/backward", "-internal-isystem", "/usr/include/clang/6.0.0/include/", "-internal-isystem", "/usr/local/include", "-internal-isystem" ,"/usr/lib/llvm-6.0/lib/clang/6.0.0/include" ,"-internal-externc-isystem", "/include", "-internal-externc-isystem" ,"/usr/include", "--std=c++11", "-fdeprecated-macro" ,"-fdebug-compilation-dir", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build", "-ferror-limit", "19" ,"-fmessage-length" ,"272" ,"-fobjc-runtime=gcc" ,"-fcxx-exceptions" ,"-fexceptions" ,"-fdiagnostics-show-option" ,"-fcolor-diagnostics","-o" ,"../test/data/"+args.application_file[0] +".ll" ,"-x", "c++", "../appl/"+folder+"/"+args.application_file[0]]
         
         commands = ["/usr/lib/llvm-6.0/bin/clang", "-cc1", "-triple", "i386-pc-linux-gnu", "-emit-llvm" ,"-disable-free" ,"-disable-llvm-verifier", "-main-file-name", "l.cc", "-mrelocation-model" ,"static" ,"-mthread-model" ,"posix", "-mdisable-fp-elim" ,"-fmath-errno", "-masm-verbose" ,"-mconstructor-aliases", "-fuse-init-array", "-target-cpu", "pentium4" ,"-dwarf-column-info", "-debugger-tuning=gdb", "-coverage-notes-file", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build/../test/data/appl.gcno", "-resource-dir", "/usr/lib/llvm-6.0/lib/clang/6.0.0", "-internal-isystem" ,"/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/x86_64-linux-gnu/c++/7.3.0/32", "-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/i386-pc-linux-gnu/c++/7.3.0" ,"-internal-isystem", "/usr/bin/../lib/gcc/x86_64-linux-gnu/7.3.0/../../../../include/c++/7.3.0/backward", "-internal-isystem", "/usr/include/clang/6.0.0/include/", "-internal-isystem", "/usr/local/include", "-internal-isystem" ,"/usr/lib/llvm-6.0/lib/clang/6.0.0/include" ,"-internal-externc-isystem", "/include", "-internal-externc-isystem" ,"/usr/include", "--std=c++11", "-fdeprecated-macro" ,"-fdebug-compilation-dir", "/srv/scratch/steinmeier/ma-ben-steinmeier/arsa/build", "-ferror-limit", "19" ,"-fmessage-length" ,"272" ,"-fobjc-runtime=gcc" ,"-fcxx-exceptions" ,"-fexceptions" ,"-fdiagnostics-show-option" ,"-fcolor-diagnostics","-o" ,"../test/data/"+file_name +".ll" ,"-x", "c++", "../../../GPSLogger/Src/" + parse_folder[iterator] + file_name +".cpp"]
 
@@ -97,9 +89,8 @@ def main():
     g = graph.PyGraph()
 
     p_manager = stepmanager.StepManager(g, vars(args))
-
-    p_manager.execute(['LLVMStep','OilStep','SyscallStep' ,'ABB_MergeStep','FreeRTOSInstancesStep','DetectInteractionsStep','DisplayResultsStep'])
-
+    
+    p_manager.execute(['DisplayResultsStep'])
 
 if __name__ == '__main__':
     main()

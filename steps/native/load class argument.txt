@@ -1,0 +1,19 @@
+store (value , address)
+
+1 %mtx.addr -> store %mtx in %mtx.addr
+
+2 %1 -> load %mtx.addr
+
+3 store %1 in %mutex
+
+4 %mutex -> getelementptr from %this1
+
+5 %this1 -> load %this.addr 
+
+6 %mutex2 -> %getelementptr from %this1
+
+7 %2 -> load %mutex2
+
+8 QueueSemaphoreTake(%2)
+
+mtx -> mtx.addr -> mutex -> 

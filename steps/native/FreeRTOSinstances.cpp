@@ -1,7 +1,5 @@
 // vim: set noet ts=4 sw=4:
 
-
-
 #include "llvm/Analysis/AssumptionCache.h"
 #include "FreeRTOSinstances.h"
 #include "llvm/Analysis/LoopInfo.h"
@@ -21,50 +19,6 @@
 #include "llvm/IR/TypeFinder.h"
 
 using namespace llvm;
-
-
-
-void example(Function* func){
-
-	DominatorTree DT = DominatorTree();
-	DT.recalculate(*func);
-	DT.updateDFSNumbers();
-	
-	LoopInfo LI = LoopInfo(DT);
-	LI.analyze(DT);
-	
-	for(auto&bb :*func){
-		
-		Loop * L = LI.getLoopFor(&bb);
-		
-		if(L != nullptr){
-			
-			
-			AssumptionCache AC = AssumptionCache(*bb.getParent());
-			Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
-			TargetLibraryInfoImpl TLII(ModuleTriple);
-			TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
-			
-			SmallVector<BasicBlock*, 8> ExitingBlocks;
-			L->getExitingBlocks (ExitingBlocks) ;
-			
-			for(auto exiting_block :  ExitingBlocks){
-			
-				ScalarEvolution SE = ScalarEvolution(*func, TLI.getTLI(),AC, DT, LI);
-			
-				
-				const SCEV * exitcount = SE.getExitCount (L,exiting_block );
-
-				std::string type_str;
-				llvm::raw_string_ostream rso(type_str);
-				exiting_block->print(rso);
-				std::cout<< rso.str() ;
-			}
-		}
-	}
-}
-
-
 
 
 //print the argument
@@ -92,17 +46,13 @@ void test_debug_argument(std::any value,llvm::Type *type){
 }
 
 
+//check if element is in list
 bool list_contains_element(std::list<std::size_t>* list, size_t target){
-	
 	for(auto element : *list){
 		if(element == target)return true;
 	}
 	return false;
 }
-
-
-
-
 
 //check if instruction a is before instruction b 
  bool check_instruction_order( Instruction *InstA,  Instruction *InstB,DominatorTree *DT) {
@@ -117,8 +67,6 @@ bool list_contains_element(std::list<std::size_t>* list, size_t target){
 	DomTreeNode *DB = DT->getNode(InstB->getParent());
 	return DA->getDFSNumIn() < DB->getDFSNumIn();
  }
-
-
 
 std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_function function){
 	std::vector<llvm::Instruction*> instruction_vector;
@@ -229,8 +177,6 @@ bool is_reachable(std::vector<llvm::Instruction*> *start_scheduler_func_calls, l
 	
 	std::hash<std::string> hash_fn;
 	size_t hash_value = hash_fn(bb->getName().str());
-	//std::cout << "callname" << call_name << std::endl;
-	//search hash value in list of already visited basic blocks
 	for(auto hash : *already_visited){
 		if(hash_value == hash){
 			//basic block already visited
@@ -294,14 +240,11 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 	std::vector<std::tuple<int, llvm::BasicBlock*>> bfs = generate_bfs(function->get_llvm_reference());
 	
 	//generate dominator tree
-	DominatorTree dominator_tree = DominatorTree();
-	dominator_tree.recalculate(*(function->get_llvm_reference()));
-	dominator_tree.updateDFSNumbers();
+	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
+	
 	
 	std::string type_str;
 	llvm::raw_string_ostream rso(type_str);
-	//dominator_tree.print(rso);
-	//std::cout<< "dominator tree "<< std::endl  <<  rso.str() << std::endl;
 	
 	//check if scheduler start instruction was after in function
 	if(start_scheduler_func_calls.size() == 0){
@@ -321,9 +264,8 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 		}
 		
 		for(auto& instruction:start_scheduler_func_calls){
-			if(dominator_tree.dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))state= after;
+			if(dominator_tree->dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))state= after;
 		}
-		//if(success == before)success = uncertain;
 	}
 	
 	//iterate about the basic blocks of the abb
@@ -375,8 +317,6 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 			}
 		}
 	}
-		
-		
 	if(state !=before){
 		for(auto &abb : function->get_atomic_basic_blocks()){
 			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
@@ -385,7 +325,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 					for(auto &instruction:*bb){
 						//check if the abb contains a syscall
 						//continue if, no start scheduler syscall is in function, the instruction is before all the start scheduler instruction and the scheduler instrcutions dont dominate the instrcution 
-						if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, &dominator_tree )){
+						if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, dominator_tree )){
 							//if instruction is a syscall set the instruction in the before scheduler start list
 							abb->set_start_scheduler_relation(before);
 							
@@ -406,7 +346,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 		//a certain call exists, if all return instructions have a start scheduler call as dominator
 		bool after_flag = true;
 		for(auto instr : return_instructions){
-			if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,instr, &dominator_tree ))uncertain_flag = true;
+			if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,instr, dominator_tree ))uncertain_flag = true;
 			else after_flag = false;
 		}
 		
@@ -422,10 +362,8 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 
 void update_called_functions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited ,start_scheduler_relation state){
     
-	
 	//check if valid function pointer was committed
 	if(function == nullptr) return;
-	
 		
 	std::hash<std::string> hash_fn;
 
@@ -462,9 +400,7 @@ std::string get_handler_name(llvm::Instruction * instruction, unsigned int argum
 	
 	if(instruction == nullptr)std::cerr << "ERROR" << std::endl;
 	
-	std::string handler_name = "";
-	
-	
+	std::string handler_name = "";	
 	//check if call instruction has one user
 	if(instruction->hasOneUse()){
 		//get the user of the call instruction
@@ -473,9 +409,6 @@ std::string get_handler_name(llvm::Instruction * instruction, unsigned int argum
 		if(isa<StoreInst>(user)){
 			//get name of specific operand (-> handler name)
 			Value * operand = user->getOperand(argument_index);
-			
-			
-			//std::cout << operand->getName().str() << std::endl;
 			handler_name = operand->getName().str();
 		}
 		else if(isa<BitCastInst>(user)){
@@ -485,68 +418,8 @@ std::string get_handler_name(llvm::Instruction * instruction, unsigned int argum
 	}
 	
 	if(handler_name == "")std::cerr << "ERROR no handler name" << std::endl;
-	std::cerr << "handler name: " <<  handler_name<< std::endl;
 	return handler_name;
 }
-
-/*
-bool verify_arguments(std::vector<size_t> &forced_arguments_types ,std::vector<std::tuple<std::any,llvm::Type*>>& arguments){
-	
-
-	//iterate about the demanded arguments
-	unsigned int counter = 0;
-	bool success = true;
-	
-	if(forced_arguments_types.size() != arguments.size()){
-		success = false;
-		std::cout << "exptected argument size " << forced_arguments_types.size()  << " and real argument size " << arguments.size()  << "  are not equal" << std::endl;
-	}else{
-		std::cout << "exptected argument size " << forced_arguments_types.size()  << " and real argument size " << arguments.size()  << "  are not equal" << std::endl;
-		for (auto & argument_type: forced_arguments_types){
-			std::tuple<std::any,llvm::Type*> tuple = arguments.at(counter);
-			auto argument = std::get<std::any>(tuple);
-			if(argument_type != argument.type().hash_code()){
-				std::cerr << "error: " << argument.type().name() << "counter: " << counter << std::endl;
-				success = false;
-				break;
-			}
-			counter++;
-		}
-	}
-	//std::cerr << success << std::endl;
-	return success;
-}
-
-bool verify_syscall_arguments(std::vector<size_t> &forced_arguments_types ,std::vector<size_t>& arguments){
-	
-
-	//iterate about the demanded arguments
-	unsigned int counter = 0;
-	bool success = true;
-	
-	if(forced_arguments_types.size() != arguments.size())success = false;
-	else{
-		std::cout << forced_arguments_types.size()<< " " << arguments.size() << std::endl;
-		for (auto & forced_argument_type: forced_arguments_types){
-			std::size_t argument_type = arguments.at(counter);
-			
-			if(argument_type != forced_argument_type){
-				std::cerr << "error: " << argument_type << "counter: " << counter << std::endl;
-				success = false;
-				break;
-			}
-			counter++;
-		}
-	}
-	//std::cerr << success << std::endl;
-	return success;
-}
-
-
-*/
-
-
-
 
 bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visited){
     
@@ -563,39 +436,28 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 			break;
 		}
 	}
-	
 	//set basic block hash value in already visited list
 	already_visited->push_back(hash_value);
-	
 	bool success = true;
 	//search loop of function
 	llvm::DominatorTree DT = llvm::DominatorTree();
 	DT.recalculate(*bb->getParent());
 	DT.updateDFSNumbers();
-
 	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>LIB;
-	
 	LIB.analyze(DT);
 	llvm::Loop * L = LIB.getLoopFor(bb);
-	
-	
 
-	
 	//check if basic block is in loop
 	//TODO get loop count
 	if(L != nullptr){
-        
         /*
 		AssumptionCache AC = AssumptionCache(*bb->getParent());
-	
 		Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
 		TargetLibraryInfoImpl TLII(ModuleTriple);
 		//TODO check behavoiur
 		TLII.disableAllFunctions();
 		TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
-		
 		//TODO getExitBlock - If getExitBlocks would return exactly one block, return that block.
-		
 		LoopInfo LI = LoopInfo(DT);
 		LI.analyze (DT);
 		ScalarEvolution SE = ScalarEvolution(*bb->getParent(), TLI.getTLI(),AC, DT, LI);
@@ -609,12 +471,11 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 			//const SCEVConstant *ExitCount = dyn_cast<SCEVConstant>(getExitCount(L, ExitingBlock));
 			//std::cout << "finaler Test" << SE.getSmallConstantTripCount (L, L->getExitingBlock()) << std::endl;
 		}
-		
 		//auto  blocks;
 		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
-		
 		//L->getUniqueExitBlocks(blocks);
 		*/
+        
 		success = false;
         
 	}else{
@@ -675,7 +536,6 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
         handler_name =function_reference_name;
     }
 	
-	std::cerr << "Task name: " << task_name << std::endl;
 	//create task and set properties
 	auto task = std::make_shared<OS::Task>(&graph,task_name);
 	task->set_handler_name( handler_name);
@@ -702,7 +562,7 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 		std::cerr << "ERROR task definition function does not exist " << function_reference_name << std::endl;
 		abort();
 	}
-	std::cout << "handler name: "<< handler_name << std::endl;
+	
 	std::cout << "task successfully created"<< std::endl;
 
 	return success;
@@ -783,17 +643,12 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 		
 		}
 		default:{
-				
 			success = false;
 			std::cout << "wrong semaphore type" << std::endl;
 			break;
 		}
 	}
-	
 	if(success)graph.set_vertex(semaphore);
-	
-    
-    
 	return success;
 }
 
@@ -1021,14 +876,7 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 	return success;
 }
 
-/*shared_abb get_scheduler_abb(graph::Graph& graph){
-	
-	
-	
-	
-};
-bool validate_start_scheduler
-*/
+
 void debug_arguments(std::any value,llvm::Type *type){
 
 	std::size_t const tmp = value.type().hash_code();
@@ -1052,39 +900,25 @@ void debug_arguments(std::any value,llvm::Type *type){
 	}
 }
 
-bool verify_isr_prefix(llvm::Function *function){
-	bool success = false;
-	std::string type_str;
-	llvm::raw_string_ostream rso(type_str);
-	function->print(rso);
-	std::stringstream ss(rso.str());
-	std::string line;
-	int line_ctr = 0;
-	while(std::getline(ss,line,'\n') && line_ctr < 3){
-		if(line.find("x86_intrcc")!=std::string::npos)success =true;
-		line_ctr++;
-	}
-	return success;
-}
+// bool verify_isr_prefix(llvm::Function *function){
+// 	bool success = false;
+// 	std::string type_str;
+// 	llvm::raw_string_ostream rso(type_str);
+// 	function->print(rso);
+// 	std::stringstream ss(rso.str());
+// 	std::string line;
+// 	int line_ctr = 0;
+// 	while(std::getline(ss,line,'\n') && line_ctr < 3){
+// 		if(line.find("x86_intrcc")!=std::string::npos)success =true;
+// 		line_ctr++;
+// 	}
+// 	return success;
+// }
 	
 //detect isrs
 bool detect_isrs(graph::Graph& graph){
-	/*std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-	//iterate about the functions
-	for (auto &vertex : vertex_list) {
-		//cast the vertex in function type
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		llvm::Function* llvm_function = function->get_llvm_reference();
-		if(verify_isr_prefix(llvm_function)){
-			auto isr = std::make_shared<OS::ISR>(&graph,function->get_name());
-			graph.set_vertex(isr);
-            isr->set_definition_function(function->get_name());
-			std::cout << "ISR detected" <<  function->get_name() << std::endl;
-		}
-	}*/
-    
-    //iterate about the irs
-    
+	
+    //iterate about the abbs
     std::vector<size_t> visited_functions;
     
     std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
@@ -1096,6 +930,12 @@ bool detect_isrs(graph::Graph& graph){
         //check if syscall is isr specific 
         if(abb->get_syscall_name().find("FromISR") != std::string::npos){
             
+            std::cerr << abb->get_syscall_name() << std::endl;
+            
+            for(auto & tuple :*abb->get_syscall_arguments()){
+                test_debug_argument(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
+            }
+            bool success = false;
                //queue for functions
             std::stack<OS::shared_function> stack; 
             
@@ -1122,9 +962,12 @@ bool detect_isrs(graph::Graph& graph){
                     
                     std::string isr_name = function->get_name();
                     auto isr = std::make_shared<OS::ISR>(&graph,isr_name);
+                    graph.set_vertex(isr);
                     isr->set_definition_function(function->get_name());
                     isr->set_handler_name(function->get_name());
-                    graph.set_vertex(isr);
+                    
+                    success = true;
+                    std::cerr << "isr successfully created" << std::endl;
                     
                 }else{
                     //push the calling function on the stack
@@ -1133,6 +976,7 @@ bool detect_isrs(graph::Graph& graph){
                     }
                 }
             }
+            if(!success)std::cerr << "isr could not created, because of recursion" << std::endl;
         }
     }
 }
@@ -1149,27 +993,9 @@ namespace step {
 
 	void FreeRTOSInstancesStep::run(graph::Graph& graph) {
 		
-// 		std::list<graph::shared_vertex> tmp =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-// 
-// 		for (auto &vertex : tmp) {
-// 			
-// 			//vertex->print_information();
-// 			//cast vertex to abb 
-// 			auto func = std::dynamic_pointer_cast<OS::Function> (vertex);
-// 			example(func->get_llvm_reference());
-// 		}
-		//std::cout  << graph.print_information();
-		//std::cerr << graph.print_information();
-		
 		std::cout << "Run " << get_name() << std::endl;
 			
 		std::hash<std::string> hash_fn;
-
-		
-		//graph.print_information();
-		
-		
-		
 		
 		//get function with name main from graph
 		std::string start_function_name = "main";  
@@ -1224,15 +1050,11 @@ namespace step {
 					//validate if sysccall is in loop
 					if(validate_loop(llvm_bbs.front(),&already_visited)){
                     
-                         
-                        
 						
 						bool before_scheduler_start = false;
 						
                         if(abb->get_start_scheduler_relation() == before)before_scheduler_start = true;
 												
-						//if(before_scheduler_start)std::cout << "before_scheduler_start " <<  callname		<< std::endl;
-						//else std::cout << "!!!!!!!!!!!!!!!1after_scheduler_start " <<  	callname	<< std::endl;
 						//check if abb syscall is creation syscall
 						if(abb->get_syscall_type() == create){
 							
@@ -1248,7 +1070,7 @@ namespace step {
 
 							}
 							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
-								//TODO set semaphore
+								//set semaphore
 								semaphore_type type;
 								std::string syscall_name = abb->get_syscall_name();
 								if(syscall_name =="xQueueCreateMutex")type = mutex;
@@ -1280,24 +1102,8 @@ namespace step {
 			}
 			
 		}
-        auto module =  graph.get_llvm_module();
-     
-
-        llvm::TypeFinder StructTypes;
-        StructTypes.run(*module.get(), true);
-
-        for (auto *STy : StructTypes){
-           
-       //for (auto &Global : module->getGlobalList()){
-           
-            std::string type_str;
-            llvm::raw_string_ostream rso(type_str);
-            STy->print(rso);
-           
-            //Global.getType()->getTypeID()  << std::endl ;
-            if(rso.str().find("%class.")!=std::string::npos) std::cout<< rso.str() << std::endl ;
-           
-       }
+        
+        //detect the isrs
         detect_isrs(graph);
 				
 	}

@@ -13,7 +13,18 @@ class SyscallStep(Step):
     """Detects the syscalls from the calls and validates the arguments."""
         
     def get_dependencies(self):
-        return ["LLVMStep", 'OilStep']
+        
+        os =  self._config["os"]
+        
+        if os == "osek":
+            return ['OilStep']
+        
+        elif os == "freertos":
+            return ["LLVMStep"]
+        
+        else:
+            return ["LLVMStep", 'OilStep']
+        
         
     
     syscall_dict = {}
@@ -87,7 +98,7 @@ class SyscallStep(Step):
                 #"xTaskNotifyAndQueryFromISR": 43 ,
                 #"xTaskNotifyFromISR": 44 ,
                 #"xTaskNotifyGive": 45 ,
-                "vTaskNotifyGiveFromISR": [[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("ISR")]],
+                "vTaskNotifyGiveFromISR": [[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")]],
                 #"taskEXIT_CRITICAL_FROM_ISR": 21 ,
                 #"portSWITCH_TO_USER_MODE": 4 ,
                 #"vTaskGetTaskInfo": 33 ,
@@ -257,7 +268,7 @@ class SyscallStep(Step):
     
 
     def run(self, g: graph.PyGraph):
-        
+        print("I'm an SyscallStep")
         #get information which os is used
         os =  self._config["os"]
 
@@ -346,7 +357,7 @@ class SyscallStep(Step):
                         
                     
 
-        print("I'm an SyscallStep")
+        
     
 
 

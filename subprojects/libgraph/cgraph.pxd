@@ -56,7 +56,7 @@ cdef extern from "graph.h" namespace "graph":
         
         shared_ptr[Vertex] get_start_vertex()
         shared_ptr[Vertex] get_target_vertex()
-        
+        string get_name()
         
 
 cdef extern from "graph.h" namespace "OS":
@@ -106,6 +106,7 @@ cdef extern from "graph.h" namespace "OS":
         bool set_category(int category)
         bool set_resource_reference(string)
         shared_ptr[Function] get_definition_function()
+        bool set_definition_function(string function_name)
         string get_name()
 
     cdef cppclass Resource:
@@ -146,7 +147,8 @@ cdef extern from "graph.h" namespace "OS":
     cdef cppclass Timer:
         Timer(Graph* graph, string name) except +
         shared_ptr[Function] get_definition_function()
-
+        bool set_definition_function(string function_name)
+        
     cdef cppclass Event:
         Event(Graph* graph, string name) except +
         
