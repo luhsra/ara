@@ -52,18 +52,16 @@ void debug_argument_test(std::any value,llvm::Type *type){
 	}
 }
 
-
-
-
-llvm::Instruction* get_element_ptr(llvm::Instruction *instr){
-    
-    if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(instr)){  // U is of type User*
-        get_pointer_element->getPointerOperand();
-        auto tmp = get_pointer_element->getPointerOperand();
-        return dyn_cast<Instruction>(tmp);
+bool check_function_class_reference_type(llvm::Function* function, llvm::Type* type){
+    if(type==nullptr || function==nullptr)return -1;
+   
+    for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
+            if( (*i).getType()==type)return true;
+            else return false;
     }
-    return nullptr;
+    return false;
 }
+
 
 void  print_instruction( llvm::Value *instr){
     if(nullptr==instr)return;
@@ -72,6 +70,91 @@ void  print_instruction( llvm::Value *instr){
     instr->print(rso);
     std::cerr  << rso.str() <<  "\"\n";
 }
+
+bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElementPtrInst * instr){
+    int counter = 0;
+    for (auto i = instr->idx_begin(), ie = instr->idx_end (); i != ie; ++i){
+        int index = -1;
+        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(((*i).get()))) {
+                index =CI->getLimitedValue();
+            };
+        if(index!=reference->at(counter))return false;
+        ++counter;
+    }
+    return true;
+}
+
+void get_class_attribute_value(graph::Graph& graph,llvm::Type* type, std::vector<size_t>* indizes  ){
+
+    //get the vertices of the specific type from the graph
+    std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices( typeid(OS::Function).hash_code());
+    
+    for(auto &vertex : vertex_list){
+       
+        auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+        for (auto i = function->get_llvm_reference()->arg_begin(), ie = function->get_llvm_reference()->arg_end(); i != ie; ++i){
+             
+             if( (*i).getType()==type){
+                for (llvm::BasicBlock &bb : *(function->get_llvm_reference())){
+                    for (llvm::Instruction& instr : bb){
+                        if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(&instr)){  // U is of type User*
+                            //if (auto *I = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())){
+                                if(check_function_class_reference_type(instr.getParent()->getParent(),get_pointer_element->getPointerOperandType())&& check_get_element_ptr_indizes(indizes,get_pointer_element)){
+                                   
+                                    
+                                     for(auto user : get_pointer_element->users()){  // U is of type User*
+                                         
+                                        
+                                        if (auto store = dyn_cast<StoreInst>(user)){
+                                           std::cerr << "user" << std::endl;
+                                           print_instruction(get_pointer_element);
+                                        }
+                                    }
+                                }
+                            //}
+                        }
+                    }
+                }
+             }else break;
+        }
+    }
+}
+
+
+
+llvm::Instruction* get_element_ptr(llvm::Instruction *instr,graph::Graph& graph){
+   
+    
+    if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(instr)){  // U is of type User*
+        std::vector<size_t> indizes;
+         for (auto i = get_pointer_element->idx_begin(), ie = get_pointer_element->idx_end (); i != ie; ++i){
+            llvm::Value* tmp = ((*i).get());
+            if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(tmp)) {
+                indizes.emplace_back(CI->getLimitedValue());
+            };
+            
+        };
+        
+        if (auto I = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())){
+            std::cerr << "load" << std::endl;
+             std::string type_str;
+            llvm::raw_string_ostream rso(type_str);
+            get_pointer_element->getPointerOperandType()->print(rso);
+            std::cerr << "type" <<   rso.str() << std::endl;
+            if(check_function_class_reference_type(instr->getParent()->getParent(),get_pointer_element->getPointerOperandType())){
+                get_class_attribute_value(graph,get_pointer_element->getPointerOperandType(),&indizes);
+            }
+        };
+        std::cerr << "get element ptr value" << std::endl;
+        (get_pointer_element->getPointerOperand());
+         std::cerr << "----" << std::endl;
+
+        auto tmp = get_pointer_element->getPointerOperand();
+        return dyn_cast<Instruction>(tmp);
+    }
+    return nullptr;
+}
+
 
 
 llvm::Instruction* get_user_instruction(int argument,llvm::Value* instr){
@@ -107,6 +190,7 @@ int check_funtion_argument_reference(llvm::Function* function, llvm::Instruction
     }
     return -1;
 }
+
 
 
 void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, std::vector<size_t>* already_visited){
@@ -154,7 +238,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                 std::tuple<std::any,llvm::Type*> tuple  = (argument_list->front());
                 auto argument = std::get<std::any>(tuple);
                 handler_name = std::any_cast<std::string>(argument);
-                
+                std::cerr << handler_name << std::endl;
                 //check if the expected handler name occurs in the graph
                 bool handler_found = false;
                 for(auto &vertex : graph.get_vertices()){
@@ -198,7 +282,8 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                         print_instruction(tmp_instr);
                         
                         //get element pointer
-                        tmp_instr = get_element_ptr(tmp_instr);
+                        tmp_instr = get_element_ptr(tmp_instr,graph);
+                        /*
                         print_instruction(tmp_instr);
                         
                         //get user of element pointer
@@ -214,6 +299,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                         print_instruction(tmp_instr);
                         tmp_instr = get_user_instruction(1,tmp_instr);
                         print_instruction(tmp_instr);
+                        
                         int argument_index = -1;
                         if(tmp_instr!=nullptr) argument_index = check_funtion_argument_reference(tmp_instr->getParent()->getParent()  ,tmp_instr,0);
                         if(argument_index>=0){
@@ -284,7 +370,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                             if(success)handler_name = tmp_name;
                            
                          
-                        }
+                        }*/
                         
                         
                         

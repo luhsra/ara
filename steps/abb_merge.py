@@ -289,8 +289,8 @@ class ABB_MergeStep(Step):
                 
         else: # entry_abb == exit_abb
             #TODO bug
-            #if len(inner_abbs) == 0:
-            return False
+            if len(inner_abbs) == 0:
+                return False
             # Intentionally left blank:
             # We can only check if "some" predecessors are within the inner_abb region
         
@@ -305,8 +305,9 @@ class ABB_MergeStep(Step):
                         flag = True
                 if entry_abb.get_seed() == seed:
                     flag = True
-
-                if flag == False:
+                
+                #if flag == False:
+                if not flag:
                     return False
             
         return True

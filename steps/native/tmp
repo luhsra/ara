@@ -168,24 +168,37 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
     AAResults results = AAResults(TLI);
        
     MemorySSA ssa = MemorySSA (tmp_function, &results, &dominator_tree);
-    ssa.verifyMemorySSA();
+    //ssa.verifyMemorySSA();
     MemorySSAWalker  *walker = ssa.getWalker();
     
     MemoryAccess* access = walker->getClobberingMemoryAccess(inst);
     
+    {
+        std::string type_str;
+        llvm::raw_string_ostream rso(type_str);
+        ssa.print(rso);
+        std::cerr <<  rso.str() <<  "\"\n";
+    }
+    std::cerr  << "source" << std::endl;
+    std::cerr  <<   print_argument(inst) << std::endl;
     
     if(access != nullptr){
+        
+        std::cerr  <<   "def"  << std::endl;
+        std::cerr  <<   print_argument(access) << std::endl;
+       
+        /*
         if(auto def_access = dyn_cast<MemoryDef>(access)){
             
             if(StoreInst *store_inst = dyn_cast<StoreInst>(def_access->getMemoryInst())){
-                std::cerr << "store" << std::endl;
-                std::cerr <<  print_argument(store_inst) << std::endl;
-                 std::cerr << "source" << std::endl;
-                std::cerr <<  print_argument(inst) << std::endl;
-                std::cerr << "STORE TO ALLOCA" << std::endl << print_argument(store_inst);
-                success = dump_argument(debug_out,any_list,value_list,store_inst->getOperand(0),already_visited);
+                
+               
+                debug_out << "source" << std::endl;
+                debug_out <<   print_argument(inst) << std::endl;
+                debug_out << "STORE TO ALLOCA" << std::endl << print_argument(store_inst);
+                //success = dump_argument(debug_out,any_list,value_list,store_inst->getOperand(0),already_visited);
             }
-        }
+        }*/
     }
         /*
 //         auto test=  access->getIterator();
@@ -274,7 +287,7 @@ bool load_function_argument(std::stringstream &debug_out,std::list<std::any>* an
     auto sUse = function->user_begin();
     auto sEnd = function->user_end();
     
-    
+    debug_out << "FUNCTIONARGUMENT" << "\n"; 
     bool success = true;
     //iterate about the user of the allocation
     for(;sUse != sEnd; ++sUse){
@@ -282,15 +295,24 @@ bool load_function_argument(std::stringstream &debug_out,std::list<std::any>* an
         //check if instruction is a store instruction
         if(Instruction *instr = dyn_cast<Instruction>(*sUse)){
             
+            bool flag = true;
             for(auto * element: *already_visited){
-                if(element == instr)continue;
+                if(element == instr){
+                    flag = false;
+                    break;
+                }
             }
+            
+            if(!flag)continue;
             
             already_visited->emplace_back(instr);
             
-            std::cerr << "user" << print_argument(*sUse);
+            std::cerr << "user" << print_argument(*sUse) ;
+            debug_out << "USERFUNCTIONARGUMENT" << "\n"; 
+            std::cerr << "argument" << print_argument(instr->getOperand(arg_counter));
             if(!dump_argument(debug_out,any_list,value_list, instr->getOperand(arg_counter), already_visited))success = false;;
             //std::cerr << "user of function argument " << print_argument(instr) << std::endl;
+            
         }
     }
     
@@ -298,6 +320,7 @@ bool load_function_argument(std::stringstream &debug_out,std::list<std::any>* an
         //std::cerr << "element" << print_argument(element) << std::endl;
         
     }
+    debug_out << "ENDFUNCTIONARGUMENT" << "\n"; 
     return success;
 }
 
@@ -481,25 +504,39 @@ bool dump_argument(std::stringstream &debug_out,std::list<std::any>* any_list,st
     
     
     if(arg==nullptr)return false;
-
-    if(Instruction *instr = dyn_cast<Instruction>(arg)){
-        llvm::Function * function = already_visited->back()->getParent()->getParent();
-        
-        int arg_counter = 0;
-        for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
-            auto sUse = (*i).user_begin();
-            auto sEnd = (*i).user_end();
-          
-            //iterate about the user of the allocation
-            for(;sUse != sEnd; ++sUse){
-                
-                if (StoreInst *store = dyn_cast<StoreInst>(*sUse)) {
-                    if(store->getOperand(0) == &(*i))load_function_argument(debug_out,any_list,value_list,function,already_visited, arg_counter);
-                }
-            }
-            ++arg_counter;
-        }
+    std::cerr << "arg" << print_argument(arg);
+    if(Argument *argument = dyn_cast<Argument>(arg)){
+        std::cerr << "argument" << print_argument(argument);
     }
+
+//     if(Instruction *instr = dyn_cast<A>(arg)){
+//         llvm::Function * function = already_visited->back()->getParent()->getParent();
+//         
+//         int arg_counter = 0;
+//         for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
+//             auto sUse = (*i).user_begin();
+//             auto sEnd = (*i).user_end();
+//           
+//             //iterate about the user of the allocation
+//             for(;sUse != sEnd; ++sUse){
+//                 
+//                 if (StoreInst *store = dyn_cast<StoreInst>(*sUse)) {
+//                     
+//                     
+//                     
+//                     //if(store->getOperand(0) == &(*i)){
+//                     if(store->getOperand(0) == instr->getOperand(0)){
+//                         std::cerr << "store"<< print_argument(store);
+//                         std::cerr << "arg" << print_argument(&(*i));
+//                         std::cerr << "instr" << print_argument(instr);
+//                         load_function_argument(debug_out,any_list,value_list,function,already_visited, arg_counter);
+//                         break;
+//                     }
+//                 }
+//             }
+//             ++arg_counter;
+//         }
+//     }
     
     
     debug_out << "ENTRYDUMP" << "\n"; 
@@ -526,8 +563,6 @@ bool dump_argument(std::stringstream &debug_out,std::list<std::any>* any_list,st
                debug_out << "ONEOPERAND" << "\n";
                
                 if(isa<AllocaInst>(load->getOperand(0))){
-                    //std::cerr << "---------------------" << std::endl << "function" << print_argument(load->getParent()->getParent()) << std::endl;
-                    //std::cerr << "---------------------" << std::endl << "alloca reference" << print_argument(load) << std::endl;
                     dump_success = get_store_instruction(debug_out,load,any_list,value_list,already_visited );
                 }
                 else dump_success = dump_argument(debug_out,any_list,value_list, load->getOperand(0), already_visited);
@@ -683,13 +718,13 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
         already_visited.emplace_back(instruction);
 		//get argument
 		Value *arg = instruction->getArgOperand(i);
-		
+		std::cerr << "start: " << print_argument(arg) << std::endl;
 		
 		//dump argument and check if it was successfull
 		if(dump_argument(debug_out,&any_list,&value_list, arg,&already_visited)){
             
             for(auto element : value_list){
-                //std::cerr << "element" << print_argument(element) << std::endl;
+                std::cerr << "element: " << print_argument(element) << std::endl;
             }
             
             std::cerr << debug_out.str() << std::endl;

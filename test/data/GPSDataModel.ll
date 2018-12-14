@@ -10,7 +10,7 @@ target triple = "i386-pc-linux-gnu"
 %class.GPSSatellitesData = type { [20 x %"struct.GPSSatellitesData::SatteliteData"], i8 }
 %"struct.GPSSatellitesData::SatteliteData" = type { i8, i8 }
 %struct.QueueDefinition = type opaque
-%class.MutexLocker = type { %struct.QueueDefinition* }
+%class.MutexLocker = type { double, i32, %struct.QueueDefinition* }
 
 $_ZN11MutexLockerC2EP15QueueDefinition = comdat any
 
@@ -159,10 +159,14 @@ define linkonce_odr void @_ZN11MutexLockerC2EP15QueueDefinition(%class.MutexLock
   store %class.MutexLocker* %this, %class.MutexLocker** %this.addr, align 4
   store %struct.QueueDefinition* %mtx, %struct.QueueDefinition** %mtx.addr, align 4
   %this1 = load %class.MutexLocker*, %class.MutexLocker** %this.addr, align 4
+  %additional_attribute = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 1
+  store i32 0, i32* %additional_attribute, align 4
+  %tmp = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 0
+  store double 2.100000e+02, double* %tmp, align 4
   %1 = load %struct.QueueDefinition*, %struct.QueueDefinition** %mtx.addr, align 4
-  %mutex = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 0
+  %mutex = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 2
   store %struct.QueueDefinition* %1, %struct.QueueDefinition** %mutex, align 4
-  %mutex2 = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 0
+  %mutex2 = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 2
   %2 = load %struct.QueueDefinition*, %struct.QueueDefinition** %mutex2, align 4
   %call = call i32 @xQueueSemaphoreTake(%struct.QueueDefinition* %2, i32 -1)
   ret void
@@ -177,7 +181,7 @@ define linkonce_odr void @_ZN11MutexLockerD2Ev(%class.MutexLocker* %this) unname
   %this.addr = alloca %class.MutexLocker*, align 4
   store %class.MutexLocker* %this, %class.MutexLocker** %this.addr, align 4
   %this1 = load %class.MutexLocker*, %class.MutexLocker** %this.addr, align 4
-  %mutex = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 0
+  %mutex = getelementptr inbounds %class.MutexLocker, %class.MutexLocker* %this1, i32 0, i32 2
   %1 = load %struct.QueueDefinition*, %struct.QueueDefinition** %mutex, align 4
   %call = invoke i32 @xQueueGenericSend(%struct.QueueDefinition* %1, i8* null, i32 0, i32 0)
           to label %2 unwind label %3
