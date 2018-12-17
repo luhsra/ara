@@ -53,7 +53,7 @@ using namespace llvm;
 static llvm::LLVMContext context;
 
 
-bool dump_argument(std::stringstream &debug_out,std::list<std::any>* any_list,std::list<llvm::Value*> * value_list, Value *arg, std::list<llvm::Instruction*>* already_visited);
+bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, Value *arg, std::list<llvm::Instruction*>* already_visited);
 
 
 
@@ -127,7 +127,7 @@ int load_index(Value *arg) {
 
 
 
-bool check_nullptr(std::list<std::any>* any_list,std::list<llvm::Value*> * value_list,llvm::Value* arg,std::stringstream &debug_out ){
+bool check_nullptr(std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list,llvm::Value* arg,std::stringstream &debug_out ){
 	bool load_success = false;
 	if(ConstantPointerNull  * constant_data = dyn_cast<ConstantPointerNull>(arg)){
 		debug_out << "CONSTANTPOINTERNULL";
@@ -140,21 +140,111 @@ bool check_nullptr(std::list<std::any>* any_list,std::list<llvm::Value*> * value
 	return load_success;
 }
 
-bool validate_class_arguments(){
-    
-    
-    
-    
-    
-    
+
+bool check_function_class_reference_type(llvm::Function* function, llvm::Type* type){
+    if(type==nullptr || function==nullptr)return -1;
+   
+    for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
+            if( (*i).getType()==type && (*i).getName().str()== "this"){
+                return true;
+            }
+            else return false;
+    }
+    return false;
+}
+
+bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElementPtrInst * instr){
+    int counter = 0;
+    for (auto i = instr->idx_begin(), ie = instr->idx_end (); i != ie; ++i){
+        int index = -1;
+        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(((*i).get()))) {
+                index =CI->getLimitedValue();
+            };
+        if(index!=reference->at(counter))return false;
+        ++counter;
+    }
+    return true;
+}
+
+bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *inst,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited,std::vector<size_t>* indizes){
+    bool success = true;
+    bool flag = false;
+    //get module
+    llvm::Module* mod = inst->getFunction()->getParent();
+    //iterate about the module
+    for(auto& function :*mod){
+        //iterate about the arguments of the function
+        for (auto i = function.arg_begin(), ie = function.arg_end(); i != ie; ++i){
+            //check if the function is a method of the class
+            if( (*i).getType()==inst->getType()){
+                //std::cerr << "class specific get element ptr operation" << print_argument(inst);
+                //iterate about the basic blocks of the function
+                for (llvm::BasicBlock &bb : function){
+                    //iterate about the instructions of the function
+                    for (llvm::Instruction& instr : bb){
+                        //get pointerelement instruction 
+                        if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(&instr)){  // U is of type User*
+                            //check if the get pointer operand instruction is a load instruciton
+                            if(check_function_class_reference_type(instr.getFunction(),get_pointer_element->getPointerOperandType())&& check_get_element_ptr_indizes(indizes,get_pointer_element)){  
+                                
+                                for(auto user : get_pointer_element->users()){  // U is of type User*
+                                    //get all users of get pointer element instruction
+                                    if (auto store = dyn_cast<StoreInst>(user)){
+                                        flag = true;
+                                        //std::cerr << "user" << std::endl;
+                                        if(!dump_argument(debug_out,any_list, value_list, store->getOperand(0),already_visited))success = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            //function is not a method of the class
+            }else break;
+        }
+        
+    }
+    if(!flag)return false;
+    else return success;
 }
 
 
 
+bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited){
+    
+    bool success = false;
+    // check if this is a element ptr
+    if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(inst)){  // U is of type User*
+        std::vector<size_t> indizes;
+        //get indizes of the element ptr
+        for (auto i = get_pointer_element->idx_begin(), ie = get_pointer_element->idx_end (); i != ie; ++i){
+            llvm::Value* tmp = ((*i).get());
+            if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(tmp)) {
+                indizes.emplace_back(CI->getLimitedValue());
+            };
+        };
+        //get operand of the GetElementPtrInst
+        if (auto load = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())){
+
+            //check if the address is a class specific address
+            if(check_function_class_reference_type(inst->getFunction(),get_pointer_element->getPointerOperandType())){
+                
+                //std::cerr << "class specific get element ptr operation" << print_argument(inst);
+                           
+                //get store instructions
+                success = get_class_attribute_value(debug_out,load,any_list,value_list,already_visited, &indizes);
+                //std::cerr << success<< std::endl;
+            }
+            
+        };
+    }
+    return success;
+}
+
 
 
 //dump a cast instruction
-bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,std::list<std::any>* any_list,std::list<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited){
+bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited){
 	
     bool success = false;
 
@@ -178,11 +268,11 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
         if(auto def_access = dyn_cast<MemoryDef>(access)){
             
             if(StoreInst *store_inst = dyn_cast<StoreInst>(def_access->getMemoryInst())){
-                std::cerr << "store" << std::endl;
+                /*std::cerr << "store" << std::endl;
                 std::cerr <<  print_argument(store_inst) << std::endl;
                  std::cerr << "source" << std::endl;
                 std::cerr <<  print_argument(inst) << std::endl;
-                std::cerr << "STORE TO ALLOCA" << std::endl << print_argument(store_inst);
+                std::cerr << "STORE TO ALLOCA" << std::endl << print_argument(store_inst);*/
                 success = dump_argument(debug_out,any_list,value_list,store_inst->getOperand(0),already_visited);
             }
         }
@@ -269,7 +359,7 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
 
 
 
-bool load_function_argument(std::stringstream &debug_out,std::list<std::any>* any_list,std::list<llvm::Value*> * value_list,Function *function, std::list<llvm::Instruction*>* already_visited,int arg_counter) {
+bool load_function_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list,Function *function, std::list<llvm::Instruction*>* already_visited,int arg_counter) {
     
     auto sUse = function->user_begin();
     auto sEnd = function->user_end();
@@ -281,14 +371,18 @@ bool load_function_argument(std::stringstream &debug_out,std::list<std::any>* an
         
         //check if instruction is a store instruction
         if(Instruction *instr = dyn_cast<Instruction>(*sUse)){
-            
+            bool flag = true;
             for(auto * element: *already_visited){
-                if(element == instr)continue;
+                if(element == instr){
+                    flag = false;
+                    break;
+                }
             }
+            if(!flag)break;
             
             already_visited->emplace_back(instr);
             
-            std::cerr << "user" << print_argument(*sUse);
+            debug_out << "LOADFUNKTIONARGUMENT" << "\n";
             if(!dump_argument(debug_out,any_list,value_list, instr->getOperand(arg_counter), already_visited))success = false;;
             //std::cerr << "user of function argument " << print_argument(instr) << std::endl;
         }
@@ -298,11 +392,12 @@ bool load_function_argument(std::stringstream &debug_out,std::list<std::any>* an
         //std::cerr << "element" << print_argument(element) << std::endl;
         
     }
+    debug_out << "ENDLOADFUNKTIONARGUMENT" << "\n";
     return success;
 }
 
 //function to get the global information of variable
-bool load_value(std::stringstream &debug_out,std::list<std::any>* any_list,std::list<llvm::Value*> * value_list,Value *arg,Value *prior_arg,std::list<llvm::Instruction*>* already_visited) {
+bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list,Value *arg,Value *prior_arg,std::list<llvm::Instruction*>* already_visited) {
 	
     //debug data
     debug_out << "ENTRYLOAD" << "\n";    
@@ -476,12 +571,12 @@ bool load_value(std::stringstream &debug_out,std::list<std::any>* any_list,std::
 
 //st = myString.substr(0, myString.size()-1);
 //function to get the dump information of the argument
-bool dump_argument(std::stringstream &debug_out,std::list<std::any>* any_list,std::list<llvm::Value*> * value_list, Value *arg, std::list<Instruction*>* already_visited) {
+bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, Value *arg, std::list<Instruction*>* already_visited) {
     
     
     
     if(arg==nullptr)return false;
-
+    //std::cerr << "instruction" << print_argument(arg);
     if(Instruction *instr = dyn_cast<Instruction>(arg)){
         llvm::Function * function = already_visited->back()->getParent()->getParent();
         
@@ -494,13 +589,13 @@ bool dump_argument(std::stringstream &debug_out,std::list<std::any>* any_list,st
             for(;sUse != sEnd; ++sUse){
                 
                 if (StoreInst *store = dyn_cast<StoreInst>(*sUse)) {
-                    if(store->getOperand(0) == &(*i))load_function_argument(debug_out,any_list,value_list,function,already_visited, arg_counter);
+                    //std::cerr << "store" << print_argument(store);
+                    if(store->getOperand(0) == &(*i) && store->getOperand(1) == instr->getOperand(0))return load_function_argument(debug_out,any_list,value_list,function,already_visited, arg_counter);
                 }
             }
             ++arg_counter;
         }
     }
-    
     
     debug_out << "ENTRYDUMP" << "\n"; 
     bool dump_success = false;
@@ -563,7 +658,7 @@ bool dump_argument(std::stringstream &debug_out,std::list<std::any>* any_list,st
 		
         }else if(auto *geptr  = dyn_cast<llvm::GetElementPtrInst>(instr)){
             debug_out << "ELEMENTPTRINST INSTRUCTION" << "\n";
-            
+            dump_success  = get_element_ptr(debug_out,geptr, any_list,value_list, already_visited);
         }
     }//check if argument is a constant integer
     else if (ConstantInt * CI = dyn_cast<ConstantInt>(arg)) {
@@ -667,7 +762,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 	//store the llvm call instruction reference
 	abb->set_call_instruction_reference(instruction);
 	
-	std::list<std::tuple<std::any,llvm::Type*>> arguments;
+	 std::list<argument_data> arguments;
 	 std::cerr << "call" << print_argument(instruction) << std::endl;
 	//iterate about the arguments of the call
 	for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
@@ -676,25 +771,29 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 		std::stringstream debug_out;
 		debug_out <<  func->getName().str() << "\n";
 
-		std::list<std::any> any_list; 
+		std::vector<std::any> any_list; 
 		
-		std::list<llvm::Value*> value_list;
+		std::vector<llvm::Value*> value_list;
         std::list<llvm::Instruction*> already_visited;
         already_visited.emplace_back(instruction);
 		//get argument
 		Value *arg = instruction->getArgOperand(i);
 		
-		
+		//std::cerr << "arg: " << print_argument(arg) << std::endl;
 		//dump argument and check if it was successfull
 		if(dump_argument(debug_out,&any_list,&value_list, arg,&already_visited)){
             
             for(auto element : value_list){
-                //std::cerr << "element" << print_argument(element) << std::endl;
+                std::cerr << "element: " << print_argument(element) << std::endl;
             }
+            argument_data tmp_arguments;
+            tmp_arguments.any_list =any_list;
+            tmp_arguments.value_list = value_list;
+            if(any_list.size() > 1)tmp_arguments.multiple = true;
             
-            std::cerr << debug_out.str() << std::endl;
+            //std::cerr << debug_out.str() << std::endl;
 			//store the dumped argument in the abb with corresponding llvm type
-			//arguments.push_back(std::make_tuple (value_argument,type_argument));
+			arguments.emplace_back(tmp_arguments);
 		}else{
 			//TODO
 			/*std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
@@ -705,9 +804,8 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 	}
 	
 	if(arguments.size() == 0){
-		std::any tmp_any = "void";
-		llvm::Type* tmp_type = nullptr;
-		arguments.emplace_back(std::make_tuple (tmp_any,tmp_type));
+		argument_data tmp_arguments;
+		arguments.emplace_back(tmp_arguments);
 	}
 	abb->set_arguments(arguments);
 	//std::cout << abb->print_information();
@@ -1090,7 +1188,7 @@ namespace step {
 						vertex->get_type();
 						//std::cout <<  "success" << vertex->get_name() << std::endl;
 						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
-						abb->set_called_function( function);
+						abb->set_called_function(function,instr);
                         abb->get_parent_function()->set_called_function(function,abb);
                         
 					}
@@ -1105,7 +1203,7 @@ namespace step {
 						vertex->get_type();
 
 						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
-						abb->set_called_function( function);
+						abb->set_called_function( function,instr);
                         
                         abb->get_parent_function()->set_called_function(function,abb);
                         
@@ -1145,10 +1243,8 @@ namespace step {
 				if(return_abbs.size() ==1) function->set_exit_abb(return_abbs.front());
 			}
 		}
-		//TODO TODO TODO
-		
-		std::cerr << "ABORT" << std::endl;
-		abort();
+
+
 		
 // 		for (auto it = shared_module->global_begin(); it != shared_module->global_end(); ++it){
 //            

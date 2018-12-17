@@ -52,7 +52,15 @@ enum event_type {automatic, mask};
 
 enum start_scheduler_relation { before , after , uncertain,not_defined };
 
-std::string debug_argument(std::any *value,llvm::Type *type);
+
+struct argument_data {  
+    std::vector<std::any> any_list;   
+    std::vector<llvm::Value*> value_list;
+    bool multiple = false;
+};
+		
+		
+void debug_argument(argument_data argument);
 
 namespace graph {
 
@@ -225,8 +233,9 @@ namespace graph {
 		shared_vertex target_vertex; // Entsprechende Set- und Get-Methoden
 		bool is_syscall;       // Flag, ob Edge ein Syscall ist
 		std::string call;      // Entsprechende Set- und Get-Methoden
-		std::list<std::tuple<std::any,llvm::Type*>> arguments;
+		std::list<argument_data> arguments;
 		shared_vertex atomic_basic_block_reference;
+        llvm::Instruction* instruction_reference;
 		
 
 	  public:
@@ -245,13 +254,16 @@ namespace graph {
 		shared_vertex get_start_vertex();
 		shared_vertex get_target_vertex();
         
+        void set_instruction_reference(llvm::Instruction* reference);
+		llvm::Instruction* get_instruction_reference();
+        
         
 		void set_syscall(bool syscall);
 		bool is_sycall();
 
-		std::list<std::tuple<std::any,llvm::Type*>>* get_arguments();
-		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>>arguments);
-		void set_argument(std::tuple<std::any,llvm::Type*> argument);
+		std::list<argument_data>* get_arguments();
+		void set_arguments(std::list<argument_data> arguments);
+		void set_argument(argument_data data);
 	};
 } // namespace graph
 
@@ -438,7 +450,7 @@ namespace OS {
 		
 		std::string syscall_name;
 		
-		std::list<std::list<std::tuple<std::any,llvm::Type*>>> arguments;
+		std::list<std::list<argument_data>> arguments;
 		
         //the expected instance types which can be addressed with the syscall
 		std::list<std::size_t>  call_target_instances;
@@ -451,7 +463,7 @@ namespace OS {
 		
 		llvm::Instruction* syscall_instruction_reference = nullptr;
 		
-		std::list<std::tuple<std::any,llvm::Type*>>syscall_arguments;
+		std::list<argument_data>syscall_arguments;
 		
 		
 		std::vector<llvm::Instruction*> call_instruction_references;
@@ -515,16 +527,16 @@ namespace OS {
 		std::vector<OS::shared_function> get_called_functions();
         
         
-		void set_called_function(OS::shared_function);
+		void set_called_function(OS::shared_function, llvm::Instruction* instr);
 		
 		bool is_critical();
 		void set_critical(bool critical);
 
 		//std::list<std::tuple<std::any,llvm::Type*>> get_arguments_tmp();
-		std::list<std::list<std::tuple<std::any,llvm::Type*>>>* get_arguments();
-		void set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
+		std::list<std::list<argument_data>>* get_arguments();
+		void set_arguments(std::list<argument_data> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
 		
-		std::list<std::tuple<std::any,llvm::Type*>>* get_syscall_arguments();
+		std::list<argument_data>* get_syscall_arguments();
 		
 		
 		bool set_ABB_successor(shared_abb basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
@@ -536,7 +548,8 @@ namespace OS {
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
 		std::list<llvm::BasicBlock*> get_BasicBlocks();
 		//std::list<size_t> get_expected_syscall_argument_types();
- 		std::list<std::list<size_t>> get_call_argument_types();
+        
+ 		std::list<std::list<std::list<size_t>>> get_call_argument_types();
 		
 		void remove_successor(shared_abb abb);
 		void remove_predecessor(shared_abb abb);

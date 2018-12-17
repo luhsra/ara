@@ -22,29 +22,39 @@ using namespace llvm;
 
 
 //print the argument
-void test_debug_argument(std::any value,llvm::Type *type){
+
+void test_debug_argument(argument_data argument){
 	
-	std::size_t const tmp = value.type().hash_code();
+	
 	const std::size_t  tmp_int = typeid(int).hash_code();
 	const std::size_t  tmp_double = typeid(double).hash_code();
 	const std::size_t  tmp_string = typeid(std::string).hash_code();
 	const std::size_t tmp_long 	= typeid(long).hash_code();
 	std::cerr << "Argument: ";
+	/*
+	std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	type->print(rso);
+	std::cout<< rso.str() << std::endl ;
+	*/
+	//std::cout << "reference: " << tmp_int << " " << tmp_double << " " << tmp_string << " " << tmp_long << std::endl;
 	
-		
-	if(tmp_int == tmp){
-		std::cerr << std::any_cast<int>(value)   <<'\n';
-	}else if(tmp_double == tmp){ 
-		std::cerr << std::any_cast<double>(value)  << '\n';
-	}else if(tmp_string == tmp){
-		std::cerr << std::any_cast<std::string>(value)  <<'\n';  
-	}else if(tmp_long == tmp){
-		std::cerr << std::any_cast<long>(value)   <<'\n';  
-	}else{
-		std::cerr << "[warning: cast not possible] type: " <<value.type().name()   <<'\n';  
-	}
+	for(auto element : argument.any_list){
+        std::size_t const tmp = element.type().hash_code();
+        if(tmp_int == tmp){
+            std::cerr << std::any_cast<int>(element)   <<'\n';
+        }else if(tmp_double == tmp){ 
+            std::cerr << std::any_cast<double>(element)  << '\n';
+        }else if(tmp_string == tmp){
+            std::cerr << std::any_cast<std::string>(element)  <<'\n';  
+        }else if(tmp_long == tmp){
+            std::cerr << std::any_cast<long>(element)   <<'\n';  
+        }else{
+            std::cerr << "[warning: cast not possible] type: " <<element.type().name()   <<'\n';  
+        }
+        std::cerr << ", ";
+    }
 }
-
 
 //check if element is in list
 bool list_contains_element(std::list<std::size_t>* list, size_t target){
@@ -80,6 +90,8 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
 	}
 	return instruction_vector;
 }
+
+
 
 //return false if instruction is  before scheduler start or and the scheduler start does  dominate the instruction
 bool validate_start_scheduler_instruction_relations(std::vector<llvm::Instruction*> *start_scheduler_func_calls, llvm::Instruction* instruction,llvm::DominatorTree *dominator_tree){
@@ -205,6 +217,7 @@ bool verify_instruction_order(llvm::Instruction* expected_front, llvm::Instructi
 	if(bfs_level( bfs_reference ,expected_front) <  bfs_level( bfs_reference ,expected_back) )return true;
 	else return false;
 }
+
 //TODO case: where in func call uncertain start scheduler exists
 //TODO BFS instead of DFS for basic block order
 start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited){
@@ -237,7 +250,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 	start_scheduler_func_calls = get_start_scheduler_instruction(function);
 	
 	//generate bfs order of basicblocks //TODO
-	std::vector<std::tuple<int, llvm::BasicBlock*>> bfs = generate_bfs(function->get_llvm_reference());
+	//std::vector<std::tuple<int, llvm::BasicBlock*>> bfs = generate_bfs(function->get_llvm_reference());
 	
 	//generate dominator tree
 	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
@@ -256,7 +269,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 				for(auto &instr:*bb){
 					if(isa<ReturnInst>(instr)){
-						std::cerr << "return instrcution after" << std::endl;
+						//std::cerr << "return instruction after" << std::endl;
 						return_instructions.emplace_back(&instr);
 					}
 				}
@@ -360,6 +373,8 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 	
 }
 
+
+
 void update_called_functions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited ,start_scheduler_relation state){
     
 	//check if valid function pointer was committed
@@ -450,6 +465,7 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	//check if basic block is in loop
 	//TODO get loop count
 	if(L != nullptr){
+        
         /*
 		AssumptionCache AC = AssumptionCache(*bb->getParent());
 		Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
@@ -491,8 +507,28 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	return success;
 }
 
+std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Instruction*>*call_references){
+    
+    //check if multiple argument values are possible
+    if(argument.multiple ==false)return argument.any_list.front();
+    else{
+          for(auto value : argument.value_list){
+           
+            //TODO
+            std::any tmp;
+            
+            return tmp;
+              
+              
+          }
+    }
+    
+}
+
+
+
 //xTaskCreate
-bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start){
+bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>*call_references){
 	
 	bool success = true;
 	
@@ -500,36 +536,37 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	
 	
 	//create reference list for all arguments types of the task creation syscall
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
-	
-	for(auto & tuple : *(abb->get_syscall_arguments())){
-		argument_list.emplace_back(tuple);
+	std::vector<argument_data>argument_list;
+    
+    
+	for(auto & argument : *(abb->get_syscall_arguments())){
+		argument_list.emplace_back(argument);
 	}
 
 	//load the arguments
-	std::tuple<std::any,llvm::Type*> tuple = argument_list.at(0);
-	auto argument = std::get<std::any>(tuple);
-	std::string function_reference_name =  std::any_cast<std::string>(argument);
+	argument_data argument= argument_list.at(0);
+	auto specific_argument = get_call_relative_argument(argument,call_references);
+	std::string function_reference_name =  std::any_cast<std::string>(specific_argument);
 	
-	tuple = argument_list.at(1);
-	argument = std::get<std::any>(tuple);
-	std::string task_name =  std::any_cast<std::string>(argument);
+	argument = argument_list.at(1);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	std::string task_name =  std::any_cast<std::string>(specific_argument);
 	
-	tuple = argument_list.at(2);
-	argument = std::get<std::any>(tuple);
-	unsigned long stacksize =  std::any_cast<long>(argument);
+	argument = argument_list.at(2);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	unsigned long stacksize =  std::any_cast<long>(specific_argument);
 	
-	tuple = argument_list.at(3);
-	argument = std::get<std::any>(tuple);
-	std::string task_argument =  std::any_cast<std::string>(argument);
+	argument = argument_list.at(3);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	std::string task_argument =  std::any_cast<std::string>(specific_argument);
 	
-	tuple = argument_list.at(4);
-	argument = std::get<std::any>(tuple);
-	unsigned long priority =  std::any_cast<long>(argument);
+	argument = argument_list.at(4);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	unsigned long priority =  std::any_cast<long>(specific_argument);
 	
-	tuple = argument_list.at(5);
-	argument = std::get<std::any>(tuple);
-	std::string handler_name =  std::any_cast<std::string>(argument);
+	argument = argument_list.at(5);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	std::string handler_name =  std::any_cast<std::string>(specific_argument);
 	
     //if no handler name was transmitted
     if(handler_name == "&$%NULL&$%"){
@@ -571,19 +608,20 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 
 
 
+
 //..Semaphore...Create
 //{ binary, counting, mutex, recursive_mutex }semaphore_type;
-bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type , bool before_scheduler_start){
+bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type , bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references ){
 	
 	bool success = true;
 	
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 		
 	//create reference list for all arguments types of the task creation syscall
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
+	std::vector<argument_data>argument_list;
 	
-	for(auto & tuple : *abb->get_syscall_arguments()){
-		argument_list.emplace_back(tuple);
+	for(auto & argument : *abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
 	}
 	
 	std::string handler_name = get_handler_name(instruction, 1);
@@ -606,13 +644,13 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 		case counting:{
 			
 			//load the arguments
-			std::tuple<std::any,llvm::Type*> tuple  = argument_list.at(1);
-			auto argument = std::get<std::any>(tuple);
-			unsigned long initial_count =  std::any_cast<long>(argument);
+			argument_data argument  = argument_list.at(1);
+            auto specific_argument = get_call_relative_argument(argument,call_references);
+			unsigned long initial_count =  std::any_cast<long>(specific_argument);
 			
-			tuple  = argument_list.at(0);
-			argument = std::get<std::any>(tuple);
-			unsigned long max_count =  std::any_cast<long>(argument);
+			argument  = argument_list.at(0);
+			specific_argument = get_call_relative_argument(argument,call_references);
+			unsigned long max_count =  std::any_cast<long>(specific_argument);
 			
 
 			semaphore->set_initial_count(initial_count);
@@ -628,9 +666,9 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 			
 			
 			//load the arguments
-			std::tuple<std::any,llvm::Type*> tuple  = argument_list.at(0);
-			auto argument = std::get<std::any>(tuple);
-			unsigned long mutex_type =  std::any_cast<long>(argument);
+			argument_data argument  = argument_list.at(0);
+			auto specific_argument = get_call_relative_argument(argument,call_references);
+			unsigned long mutex_type =  std::any_cast<long>(specific_argument);
 			
 			//set the mutex type (mutex, recursive mutex)
 			type = (semaphore_type) mutex_type;
@@ -653,7 +691,7 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 }
 
 //xQueueCreate
-bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler_start){
+bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
 	bool success = true;
 	
@@ -662,25 +700,24 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 	
 	
 	//create reference list for all arguments types of the task creation syscall
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
+	std::vector<argument_data>argument_list;
 	
-	for(auto & tuple : *abb->get_syscall_arguments()){
-		argument_list.emplace_back(tuple);
+	for(auto & argument : *abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
 	}
-		
+	
 	//load the arguments
-	std::tuple<std::any,llvm::Type*> tuple  = argument_list.at(0);
-	auto argument = std::get<std::any>(tuple);
+	argument_data argument   = argument_list.at(0);
+	auto specific_argument = get_call_relative_argument(argument,call_references);
+	long queue_length =  std::any_cast<long>(specific_argument);
 	
-	long queue_length =  std::any_cast<long>(argument);
-	
-	tuple  = argument_list.at(1);
-	argument = std::get<std::any>(tuple);
-	long item_size =  std::any_cast<long>(argument);
+	argument  = argument_list.at(1);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	long item_size =  std::any_cast<long>(specific_argument);
 
-	tuple  = argument_list.at(2);
-	argument = std::get<std::any>(tuple);
-	long queue_type =  std::any_cast<long>(argument);
+	argument  = argument_list.at(2);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	long queue_type =  std::any_cast<long>(specific_argument);
 	
 	semaphore_type type = (semaphore_type) queue_type;
 	
@@ -700,7 +737,7 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 		
 		std::cout << "queue successfully created"<< std::endl;
 	}else{
-		success = create_semaphore(graph,abb,binary, before_scheduler_start);
+		success = create_semaphore(graph,abb,binary, before_scheduler_start,call_references);
 	}
 
 	return success;
@@ -708,7 +745,7 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 
 
 //xQueueCreate
-bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start){
+bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
 	bool success = true;
 	
@@ -716,12 +753,11 @@ bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_sche
 	
 	
 	//create reference list for all arguments types of the task creation syscall
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
+	std::vector<argument_data>argument_list;
 	
-	for(auto & tuple : *abb->get_syscall_arguments()){
-		argument_list.emplace_back(tuple);
+	for(auto & argument : *abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
 	}
-		
 	//create queue and set properties 
 	std::string handler_name = get_handler_name(instruction, 1);
 	auto event_group = std::make_shared<OS::EventGroup>(&graph,handler_name);
@@ -740,7 +776,7 @@ bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_sche
 
 
 //xQueueSet
-bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_scheduler_start){
+bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
 	bool success = true;
 
@@ -748,16 +784,16 @@ bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_sche
 	
 	
 	//create reference list for all arguments types of the task creation syscall
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
+	std::vector<argument_data>argument_list;
 	
-	for(auto & tuple : *abb->get_syscall_arguments()){
-		argument_list.emplace_back(tuple);
+	for(auto & argument : *abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
 	}
-		
+	
 	//load the arguments
-	std::tuple<std::any,llvm::Type*> tuple  = argument_list.at(0);
-	auto argument = std::get<std::any>(tuple);
-	unsigned long queue_set_size =  std::any_cast<long>(argument);
+    argument_data argument   = argument_list.at(0);
+	auto specific_argument = get_call_relative_argument(argument,call_references);
+	unsigned long queue_set_size =  std::any_cast<long>(specific_argument);
 	
 
 	//create queue set and set properties 
@@ -776,35 +812,35 @@ bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_sche
 }
 
 //xTimerCreate
-bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start){
+bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
 	bool success = true;
 	
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
+	std::vector<argument_data>argument_list;
 	
-	for(auto & tuple : *abb->get_syscall_arguments()){
-		argument_list.emplace_back(tuple);
+	for(auto & argument : *abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
 	}
 	//load the arguments
-	std::tuple<std::any,llvm::Type*> tuple  = argument_list.at(0);
-	auto argument = std::get<std::any>(tuple);
-	std::string timer_name =  std::any_cast<std::string>(argument);
+	argument_data argument   = argument_list.at(0);
+	auto specific_argument = get_call_relative_argument(argument,call_references);
+	std::string timer_name =  std::any_cast<std::string>(specific_argument);
 	
-	tuple  = argument_list.at(1);
-	argument = std::get<std::any>(tuple);
-	long timer_periode =  std::any_cast<long>(argument);
+	argument  = argument_list.at(1);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	long timer_periode =  std::any_cast<long>(specific_argument);
 
-	tuple  = argument_list.at(2);
-	argument = std::get<std::any>(tuple);
-	long timer_autoreload =  std::any_cast<long>(argument);
+	argument  = argument_list.at(2);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	long timer_autoreload =  std::any_cast<long>(specific_argument);
 	
-	tuple  = argument_list.at(3);
-	argument = std::get<std::any>(tuple);
-	std::string timer_id =  std::any_cast<std::string>(argument);
+	argument  = argument_list.at(3);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	std::string timer_id =  std::any_cast<std::string>(specific_argument);
 	
-	tuple  = argument_list.at(4);
-	argument = std::get<std::any>(tuple);
-	std::string timer_definition_function =  std::any_cast<std::string>(argument);
+	argument  = argument_list.at(4);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	std::string timer_definition_function =  std::any_cast<std::string>(specific_argument);
 	
 	//create timer and set properties 
 	auto timer = std::make_shared<OS::Timer>(&graph,timer_name);
@@ -826,7 +862,7 @@ bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_
 
 
 //xTimerCreate
-bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start){
+bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
 	bool success = true;
 	
@@ -835,26 +871,26 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 	
 
 	//get the typeid hashcode of the expected arguments
-	std::vector<std::tuple<std::any,llvm::Type*>>argument_list;
+		std::vector<argument_data>argument_list;
 	
-	for(auto & tuple : *abb->get_syscall_arguments()){
-		argument_list.emplace_back(tuple);
+	for(auto & argument : *abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
 	}
 			
 	//load the arguments
-	std::tuple<std::any,llvm::Type*> tuple  = argument_list.at(2);
-	auto argument = std::get<std::any>(tuple);
-	buffer_type type = (buffer_type) std::any_cast<long>(argument);
+	argument_data argument   = argument_list.at(2);
+	auto specific_argument = get_call_relative_argument(argument,call_references);
+	buffer_type type = (buffer_type) std::any_cast<long>(specific_argument);
 	
 	//std::cout << "buffer type: "<< std::any_cast<long>(argument)<< std::endl;
 	
-	tuple  = argument_list.at(1);
-	argument = std::get<std::any>(tuple);
-	long trigger_level =  std::any_cast<long>(argument);
+	argument  = argument_list.at(1);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	long trigger_level =  std::any_cast<long>(specific_argument);
 
-	tuple  = argument_list.at(0);
-	argument = std::get<std::any>(tuple);
-	long buffer_size =  std::any_cast<long>(argument);
+	argument  = argument_list.at(0);
+	specific_argument = get_call_relative_argument(argument,call_references);
+	long buffer_size =  std::any_cast<long>(specific_argument);
 	
 	//create timer and set properties 
 	//create queue set and set properties 
@@ -932,8 +968,8 @@ bool detect_isrs(graph::Graph& graph){
             
             std::cerr << abb->get_syscall_name() << std::endl;
             
-            for(auto & tuple :*abb->get_syscall_arguments()){
-                test_debug_argument(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple));
+            for(auto & argument :*abb->get_syscall_arguments()){
+                test_debug_argument(argument);
             }
             bool success = false;
                //queue for functions
@@ -981,6 +1017,108 @@ bool detect_isrs(graph::Graph& graph){
     }
 }
 
+
+
+bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls ){
+
+    //check which target should be generated
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
+        //std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
+        if(!create_task(graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Task could not created" << std::endl;
+    }
+    
+        
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Queue).hash_code())){
+        if(!create_queue( graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Queue could not created" << std::endl;
+
+    }
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
+        //set semaphore
+        semaphore_type type;
+        std::string syscall_name = abb->get_syscall_name();
+        if(syscall_name =="xQueueCreateMutex")type = mutex;
+        if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
+        if(syscall_name =="xQueueCreateCountingSemaphore")type = counting;
+    
+        if(!create_semaphore(graph, abb, type, before_scheduler_start,already_visited_calls))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
+        
+    }						
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
+        if(!create_timer( graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Timer could not created" << std::endl;
+    }
+
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
+        if(!create_event_group(graph, abb,before_scheduler_start,already_visited_calls))std::cout << "Event Group could not created" << std::endl;
+    }
+    
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Buffer).hash_code())){
+        //std::cout << callname << std::endl;
+        if(!create_buffer(graph, abb,before_scheduler_start,already_visited_calls))std::cout << "Buffer could not created" << std::endl;
+    }
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::QueueSet).hash_code())){
+        //std::cout << callname << std::endl;
+        if(!create_queue_set(graph, abb,before_scheduler_start,already_visited_calls))std::cout << "Queue Set could not created" << std::endl;
+    }
+}
+
+
+void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*>* already_visited_calls ){
+    
+    //return if function does not contain a syscall
+    if(function == nullptr || function->has_syscall() ==false)return;
+    std::hash<std::string> hash_fn;
+    
+	//search hash value in list of already visited basic blocks
+	for(auto tmp_call : *already_visited_calls){
+		if(call_reference == tmp_call){
+			//basic block already visited
+			return;
+		}
+	}
+    already_visited_calls->emplace_back(call_reference);
+
+    //get the abbs of the function
+    std::list<OS::shared_abb> abb_list = function->get_atomic_basic_blocks();
+    
+    //iterate about the abbs
+    for(auto &abb : abb_list){
+        
+        //get the list of referenced llvm bb
+        std::list<llvm::BasicBlock*> llvm_bbs = abb->get_BasicBlocks();
+            
+        //check if abb has a syscall instruction
+        if( abb->get_call_type()== sys_call){
+            
+            std::vector<std::size_t> already_visited;
+
+            //validate if sysccall is in loop
+            if(validate_loop(llvm_bbs.front(),&already_visited)){
+            
+                bool before_scheduler_start = false;
+                
+                if(abb->get_start_scheduler_relation() == before)before_scheduler_start = true;
+                                        
+                //check if abb syscall is creation syscall
+                if(abb->get_syscall_type() == create){
+                    
+                    create_abstraction_instance( graph,abb,before_scheduler_start,already_visited_calls);
+                }
+            }
+        }
+        
+        for(auto& edge : abb->get_outgoing_edges()){
+            graph::shared_vertex vertex =edge->get_target_vertex();
+            //std::cerr << "edge target " << vertex->get_name() << std::endl;
+            if(typeid(OS::Function).hash_code() == vertex->get_type()){
+                auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+                iterate_called_functions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls);
+            }
+        }
+    }
+}
+
+
+
 namespace step {
 
 	std::string FreeRTOSInstancesStep::get_name() {
@@ -1002,110 +1140,78 @@ namespace step {
 		
 		graph::shared_vertex main_vertex = graph.get_vertex( hash_fn(start_function_name +  typeid(OS::Function).name())); 
 		
+        OS::shared_function main_function;
+        
 		//check if graph contains main function
 		if(main_vertex != nullptr){
 			std::vector<std::size_t> already_visited;
-			auto main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
+			main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
 			before_scheduler_instructions(graph, main_function  ,&already_visited);
             already_visited.clear();
             
             //iterate about the abbs of the function
             for(auto & abb : main_function->get_atomic_basic_blocks()){
-                
                 //iterate about the called functions of the abb
                 for (auto called_function : abb->get_called_functions()){
                     //update the values for the successor functions from func call
                     update_called_functions(graph, called_function  ,&already_visited,abb->get_start_scheduler_relation());
                 }
             }
-          
             
-		}else std::cout << "no main function in programm" << std::endl;
-	
-		//iterate about the ABBS
-		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
+            //iterate about the main function context and detect abstraction instances
+            std::vector<llvm::Instruction*> already_visited_calls;
+            iterate_called_functions(graph, main_vertex , main_function, nullptr ,&already_visited_calls);
 		
-	
-		for (auto &vertex : vertex_list) {
-			
             
-			//vertex->print_information();
-			//cast vertex to abb 
-			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
-			
-			//get the list of referenced llvm bb
-			std::list<llvm::BasicBlock*> llvm_bbs = abb->get_BasicBlocks();
-			
-           
-			if(llvm_bbs.size() >=1) // always test  
-			{	
-				
-				//check if abb has a syscall instruction
-				if( abb->get_call_type()== sys_call){
-					
-					
-					std::vector<std::size_t> already_visited;
-
-					
-					//validate if sysccall is in loop
-					if(validate_loop(llvm_bbs.front(),&already_visited)){
-                    
-						
-						bool before_scheduler_start = false;
-						
-                        if(abb->get_start_scheduler_relation() == before)before_scheduler_start = true;
-												
-						//check if abb syscall is creation syscall
-						if(abb->get_syscall_type() == create){
-							
-						
-							//check which target should be generated
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
-								//std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
-								if(!create_task(graph,abb,before_scheduler_start))std::cout << "Task could not created" << std::endl;
-							}
-								
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Queue).hash_code())){
-								if(!create_queue( graph,abb,before_scheduler_start))std::cout << "Queue could not created" << std::endl;
-
-							}
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
-								//set semaphore
-								semaphore_type type;
-								std::string syscall_name = abb->get_syscall_name();
-								if(syscall_name =="xQueueCreateMutex")type = mutex;
-								if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
-								if(syscall_name =="xQueueCreateCountingSemaphore")type = counting;
-							
-								if(!create_semaphore(graph, abb, type, before_scheduler_start))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
-								
-							}						
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
-								if(!create_timer( graph,abb,before_scheduler_start))std::cout << "Timer could not created" << std::endl;
-							}
-
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
-								if(!create_event_group(graph, abb,before_scheduler_start))std::cout << "Event Group could not created" << std::endl;
-							}
-							
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Buffer).hash_code())){
-								//std::cout << callname << std::endl;
-								if(!create_buffer(graph, abb,before_scheduler_start))std::cout << "Buffer could not created" << std::endl;
-							}
-							if(list_contains_element(abb->get_call_target_instances(),typeid(OS::QueueSet).hash_code())){
-								//std::cout << callname << std::endl;
-								if(!create_queue_set(graph, abb,before_scheduler_start))std::cout << "Queue Set could not created" << std::endl;
-							}
-						}
-					}
-				}
-			}
-			
-		}
+        }else{
+            std::cerr << "no main function in programm" << std::endl;
+            abort();
+        }
+        
+       
         
         //detect the isrs
         detect_isrs(graph);
-				
+        
+       //get all tasks, which are stored in the graph
+        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Task).hash_code());
+        //iterate about the isrs
+        for (auto &vertex : vertex_list) {
+            //std::cerr << "task name: " << vertex->get_name() << std::endl;
+            std::vector<size_t> already_visited;
+            auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
+            OS::shared_function task_definition = task->get_definition_function();
+            //get all interactions of the instance
+            std::vector<llvm::Instruction*> already_visited_calls;
+            iterate_called_functions(graph, task , task_definition, nullptr ,&already_visited_calls);
+        }
+        
+        //get all isrs, which are stored in the graph
+        vertex_list =  graph.get_type_vertices(typeid(OS::ISR).hash_code());
+        //iterate about the isrs
+        for (auto &vertex : vertex_list) {
+            //std::cerr << "isr name: " << vertex->get_name() << std::endl;
+            std::vector<size_t> already_visited;
+            auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
+            OS::shared_function timer_definition = timer->get_definition_function();
+            //get all interactions of the instance
+            std::vector<llvm::Instruction*> already_visited_calls;
+            iterate_called_functions(graph, timer , timer_definition, nullptr ,&already_visited_calls);
+        }
+           
+        //TODO check if this is allowed
+        //get all timers of the graph
+        vertex_list =  graph.get_type_vertices(typeid(OS::Timer).hash_code());
+        //iterate about the timers
+        for (auto &vertex : vertex_list) {
+            //std::cerr << "timer name: " << vertex->get_name() << std::endl;
+            std::vector<size_t> already_visited;
+            auto isr = std::dynamic_pointer_cast<OS::Timer> (vertex);
+            OS::shared_function isr_definition = isr->get_definition_function();
+            //get all interactions of the instance
+            std::vector<llvm::Instruction*> already_visited_calls;
+            iterate_called_functions(graph, isr , isr_definition, nullptr ,&already_visited_calls);
+        }	
 	}
 	
 	std::vector<std::string> FreeRTOSInstancesStep::get_dependencies() {

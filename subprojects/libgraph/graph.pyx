@@ -108,6 +108,7 @@ cpdef cast_expected_syscall_argument_types(argument_types ):
                 data_type_hash = typeid(long).hash_code()
             
             pylist.append(data_type_hash)
+
     
     return pylist
 
@@ -655,16 +656,22 @@ cdef class ABB(Vertex):
             
     def get_call_argument_types(self ):
         
-        cdef clist[clist[size_t]] argument_types_list =  deref(self._c()).get_call_argument_types()
+        cdef clist[clist[clist[size_t]]] different_calles_argument_types =  deref(self._c()).get_call_argument_types()
             
-        
-        pylist = []
+        tmp_different_calles_argument_types = []
             
-        for	argument_types in argument_types_list:
-            tmp_pylist = []
-            pylist.append(argument_types)
+        for	specific_call_argument_types in different_calles_argument_types:
+            tmp_specific_call_argument_types = []
+            for argument_types in specific_call_argument_types:
+                tmp_argument_types = []
+                for element_type in argument_types:
+                    tmp_argument_types.append(element_type)
+                
+                tmp_specific_call_argument_types.append(tmp_argument_types)
+                
+            tmp_different_calles_argument_types.append(tmp_specific_call_argument_types)
             
-        return pylist
+        return tmp_different_calles_argument_types
     
     
     def expend_call_sites(self,ABB abb):

@@ -40,9 +40,9 @@ template< typename T > bool contains( std::any a ){
 
 
 //print methods -------------------------------------------------------------------------------
-void debug_argument(std::any value,llvm::Type *type){
+void debug_argument(argument_data argument){
 	
-	std::size_t const tmp = value.type().hash_code();
+	
 	const std::size_t  tmp_int = typeid(int).hash_code();
 	const std::size_t  tmp_double = typeid(double).hash_code();
 	const std::size_t  tmp_string = typeid(std::string).hash_code();
@@ -56,20 +56,21 @@ void debug_argument(std::any value,llvm::Type *type){
 	*/
 	//std::cout << "reference: " << tmp_int << " " << tmp_double << " " << tmp_string << " " << tmp_long << std::endl;
 	
-	
-	
-		
-	if(tmp_int == tmp){
-		std::cerr << std::any_cast<int>(value)   <<'\n';
-	}else if(tmp_double == tmp){ 
-		std::cerr << std::any_cast<double>(value)  << '\n';
-	}else if(tmp_string == tmp){
-		std::cerr << std::any_cast<std::string>(value)  <<'\n';  
-	}else if(tmp_long == tmp){
-		std::cerr << std::any_cast<long>(value)   <<'\n';  
-	}else{
-		std::cerr << "[warning: cast not possible] type: " <<value.type().name()   <<'\n';  
-	}
+	for(auto element : argument.any_list){
+        std::size_t const tmp = element.type().hash_code();
+        if(tmp_int == tmp){
+            std::cerr << std::any_cast<int>(element)   <<'\n';
+        }else if(tmp_double == tmp){ 
+            std::cerr << std::any_cast<double>(element)  << '\n';
+        }else if(tmp_string == tmp){
+            std::cerr << std::any_cast<std::string>(element)  <<'\n';  
+        }else if(tmp_long == tmp){
+            std::cerr << std::any_cast<long>(element)   <<'\n';  
+        }else{
+            std::cerr << "[warning: cast not possible] type: " <<element.type().name()   <<'\n';  
+        }
+        std::cerr << ", ";
+    }
 	/*
 		
 	if( tmp == tmp_double){
@@ -628,7 +629,7 @@ bool graph::Edge::is_sycall(){return this->is_syscall;}
 
 
 
-std::list<std::tuple< std::any,llvm::Type*>>* graph::Edge::get_arguments(){
+std::list<argument_data>* graph::Edge::get_arguments(){
 	std::cout << "TEST";
 	return &this->arguments;
 	
@@ -636,14 +637,25 @@ std::list<std::tuple< std::any,llvm::Type*>>* graph::Edge::get_arguments(){
 
 
 
-void graph::Edge::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> arguments){
+void graph::Edge::set_arguments(std::list<argument_data> arguments){
     this->arguments = arguments;
     return;
 }
 
-void graph::Edge::set_argument(std::tuple<std::any,llvm::Type*> argument){
+void graph::Edge::set_argument(argument_data argument){
     this->arguments.emplace_back(argument);
     return;
+}
+
+
+void graph::Edge::set_instruction_reference(llvm::Instruction* reference){
+    this->instruction_reference = reference;
+}
+
+
+llvm::Instruction* graph::Edge::get_instruction_reference(){
+    return this->instruction_reference;
+    
 }
 
 
@@ -934,12 +946,12 @@ bool OS::ABB::is_critical(){return this->critical_section;}
 void OS::ABB::set_critical(bool critical){this->critical_section = critical;}
 
 
-std::list<std::list<std::tuple<std::any,llvm::Type*>>>* OS::ABB::get_arguments(){
+std::list<std::list<argument_data>>* OS::ABB::get_arguments(){
 	//std::cerr << "length: " << this->arguments.size() << std::endl;
 	return &this->arguments;
 }
 
-std::list<std::tuple<std::any,llvm::Type*>>* OS::ABB::get_syscall_arguments(){
+std::list<argument_data>* OS::ABB::get_syscall_arguments(){
 	//std::cerr << "length: " << this->arguments.size() << std::endl;
 	return &this->syscall_arguments;
 }
@@ -951,15 +963,10 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 
-void OS::ABB::set_arguments(std::list<std::tuple<std::any,llvm::Type*>> new_arguments){
+void OS::ABB::set_arguments(std::list<argument_data> new_arguments){
     this->arguments.emplace_back(new_arguments);
 	
 	
-	for (auto  argument_list: this->arguments){
-		for(auto  tuple :argument_list){
-			//std::cout <<   debug_argument(std::get<std::any>(tuple),std::get<llvm::Type*>(tuple)) << ", ";
-		}
-	}
 	//std::cout << std::endl;
 	
 	
@@ -1085,30 +1092,40 @@ bool OS::ABB::convert_call_to_syscall(std::string name){
 	return success;
 }
 
-std::list<std::list<size_t>> OS::ABB::get_call_argument_types(){
+//helper function to get call argument types of the abb to pyhton
+std::list<std::list<std::list<size_t>>> OS::ABB::get_call_argument_types(){
 	
-	std::list<std::list<size_t>> argument_types;
+	std::list<std::list<std::list<size_t>>> different_calles_argument_types;
 
 	for(auto & tmp_list: this->arguments){
 		
-		std::list<size_t>  tmp_argument_types;
-		for(auto & tuple: tmp_list){
-			tmp_argument_types.emplace_back(std::get<std::any>(tuple).type().hash_code());
+		std::list<std::list<size_t>>  specific_call_argument_types;
+		for(auto & argument: tmp_list){
+            if(argument.any_list.empty())continue;
+            size_t id = argument.any_list.front().type().hash_code();
+            std::list<size_t> argument_types;
+            for(auto &any_element :argument.any_list){
+                argument_types.emplace_back(any_element.type().hash_code());
+            }
+            
+			specific_call_argument_types.emplace_back(argument_types);
 		}
-		argument_types.emplace_back(tmp_argument_types);
+		different_calles_argument_types.emplace_back(specific_call_argument_types);
 	}
 	
-	return argument_types;
+	return different_calles_argument_types;
 }
 
-void OS::ABB::set_called_function(OS::shared_function function){
+void OS::ABB::set_called_function(OS::shared_function function,llvm::Instruction* instr){
     
     shared_vertex vertex = this->graph->get_vertex(this->seed);
 	if(vertex!=nullptr){
 		shared_abb abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
 		
         auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_names().front(),abb ,function,abb);
-
+        
+        edge->set_instruction_reference(instr);
+        
         //store the edge in the graph
         this->graph->set_edge(edge);
         
@@ -1135,6 +1152,7 @@ std::vector<OS::shared_function> OS::ABB::get_called_functions(){
     }
     return called_functions;
 }
+
 
 //append basic blocks to entry abb from abb
 bool OS::ABB::append_basic_blocks(shared_abb  abb){

@@ -5,11 +5,12 @@ void test_call(int a){
     
 };
 
-int test(int a,double c){
+int test(int a){
     
+  
     int b = a;
     
-    int d = 10;
+  
     
     test_call(a);
     
@@ -18,9 +19,12 @@ int test(int a,double c){
 
 
 int main( void ){
-    int a = 198200;
-    test(a,213213);
-    test(123,1);
+    int a = 3333;
+   
+    int b = 6666;
+    test(24);
+    test(565);
+    //test(123,1);
     return 0;
 
 }

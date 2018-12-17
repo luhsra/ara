@@ -289,8 +289,8 @@ class ABB_MergeStep(Step):
                 
         else: # entry_abb == exit_abb
             #TODO bug
-            if len(inner_abbs) == 0:
-                return False
+            #if len(inner_abbs) == 0:
+            return False
             # Intentionally left blank:
             # We can only check if "some" predecessors are within the inner_abb region
         
@@ -437,7 +437,9 @@ class ABB_MergeStep(Step):
 
     def run(self, g: graph.PyGraph):
         
-                    
+        
+        print("Run abb merge")
+        
         function_list = g.get_type_vertices("Function")
         initial_abb_list = g.get_type_vertices("ABB")
         

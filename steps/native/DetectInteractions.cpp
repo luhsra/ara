@@ -27,6 +27,7 @@
 
 using namespace llvm;
 
+/*
 	
 //print the argument
 void debug_argument_test(std::any value,llvm::Type *type){
@@ -106,8 +107,8 @@ void get_class_attribute_value(graph::Graph& graph,llvm::Type* type, std::vector
                                          
                                         
                                         if (auto store = dyn_cast<StoreInst>(user)){
-                                           std::cerr << "user" << std::endl;
-                                           print_instruction(get_pointer_element);
+                                           std::cerr << "instruction" << std::endl;
+                                           print_instruction(user);
                                         }
                                     }
                                 }
@@ -229,15 +230,21 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //}
             
             bool success = false;
-            std::list<std::tuple<std::any,llvm::Type*>>* argument_list = abb->get_syscall_arguments();
+            std::list<argument_data>* argument_list = abb->get_syscall_arguments();
             std::list<std::size_t>*  target_list = abb->get_call_target_instances();
         
             //load the handler name
             std::string handler_name = "";
-            if(argument_list->size() >0 &&  std::get<std::any>(argument_list->front()).type().hash_code()== typeid(std::string).hash_code()){
-                std::tuple<std::any,llvm::Type*> tuple  = (argument_list->front());
-                auto argument = std::get<std::any>(tuple);
-                handler_name = std::any_cast<std::string>(argument);
+            argument_data argument_candidats  = (argument_list->front());
+            if(argument_candidats.any_list.size() != 1)continue;
+            auto any_argument = argument_candidats.any_list.front();
+            
+            if(argument_list->size() >0 &&  any_argument.type().hash_code()== typeid(std::string).hash_code()){
+                
+                
+                
+                
+                handler_name = std::any_cast<std::string>(any_argument);
                 std::cerr << handler_name << std::endl;
                 //check if the expected handler name occurs in the graph
                 bool handler_found = false;
@@ -267,7 +274,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                  /*   std::string type_str;
                     llvm::raw_string_ostream rso(type_str);
                     abb->get_syscall_instruction_reference()->print(rso);
-                    std::cerr <<  rso.str() <<  "\"\n";*/
+                    std::cerr <<  rso.str() <<  "\"\n";
                     
                     if(abb->get_syscall_instruction_reference()->getNumOperands()>= 1){  // U is of type User*
                        
@@ -370,7 +377,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                             if(success)handler_name = tmp_name;
                            
                          
-                        }*/
+                        }
                         
                         
                         
@@ -426,7 +433,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
 //                                 }
 //                             }
 //                        }
-                    }
+//                   }
                 }
             }
 
@@ -508,12 +515,13 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
     }
 }
 
-
+*/
 
 
 //detect interactions of OS abstractions and create the corresponding edges in the graph
 bool detect_interactions(graph::Graph& graph){
 	
+    /*
     //TODO maybe differen main functions in OSEK and FreeRTOS
     //get main function from the graph
     std::string main_function_name = "main";
@@ -566,7 +574,8 @@ bool detect_interactions(graph::Graph& graph){
         //get all interactions of the instance
         iterate_called_functions(graph, vertex, isr_definition, &already_visited);
     }
-
+    
+    */
     
     
 }

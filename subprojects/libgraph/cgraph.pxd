@@ -201,7 +201,7 @@ cdef extern from "graph.h" namespace "OS":
         
         clist[shared_ptr[ABB]]  get_ABB_successors()
         
-        clist[clist[size_t]] get_call_argument_types()
+        clist[clist[clist[size_t]]] get_call_argument_types()
         
         shared_ptr[ABB]  get_single_ABB_successor()
         
