@@ -1243,26 +1243,6 @@ namespace step {
 				if(return_abbs.size() ==1) function->set_exit_abb(return_abbs.front());
 			}
 		}
-
-
-		
-// 		for (auto it = shared_module->global_begin(); it != shared_module->global_end(); ++it){
-//            
-//             GlobalVariable& gv = *it;
-//             //if (gv.isDeclaration()){
-//                 
-//                 std::cerr <<  print_argument(&gv) << std::endl;
-//                 
-//             //}
-//         }
-/*
-        llvm::TypeFinder StructTypes;
-        StructTypes.run(shared_module, true);
-
-        for (auto *STy : StructTypes)std::cerr <<  print_argument(STy) << std::endl;
-		*/
-		
-		
 	}
 	
 	

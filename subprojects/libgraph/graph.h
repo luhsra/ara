@@ -56,6 +56,7 @@ enum start_scheduler_relation { before , after , uncertain,not_defined };
 struct argument_data {  
     std::vector<std::any> any_list;   
     std::vector<llvm::Value*> value_list;
+    std::vector<std::vector<llvm::Instruction*>> argument_calles_list;
     bool multiple = false;
 };
 		

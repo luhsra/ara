@@ -512,17 +512,29 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
     //check if multiple argument values are possible
     if(argument.multiple ==false)return argument.any_list.front();
     else{
-          for(auto value : argument.value_list){
-           
+        std::vector<std::tuple<char,std::vector<char>>> valid_candidates;
+        char index = 0;
+        for(auto argument_calles :argument.argument_calles_list){
+            auto tmp_argument_calles = argument_calles;
+            std::vector<char> missmatch_list;
+            char missmatches = 0;
+            for(auto call_reference : *call_references){
+                if(call_reference == tmp_argument_calles.front()){
+                    tmp_argument_calles.erase(tmp_argument_calles.begin());
+                    missmatch_list.emplace_back(missmatches);
+                    missmatches = 0;
+                }
+                else ++missmatches;
+            }
+            if(tmp_argument_calles.empty())valid_candidates.emplace_back( std::make_tuple(index,missmatch_list));
+            ++index;
+        }
+        if(valid_candidates.size() == 1){
+            return argument.any_list.at(std::get<0>(valid_candidates.front()));
+        }else{
             //TODO
-            std::any tmp;
-            
-            return tmp;
-              
-              
-          }
+        }
     }
-    
 }
 
 
@@ -913,28 +925,6 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 }
 
 
-void debug_arguments(std::any value,llvm::Type *type){
-
-	std::size_t const tmp = value.type().hash_code();
-	const std::size_t  tmp_int = typeid(int).hash_code();
-	const std::size_t  tmp_double = typeid(double).hash_code();
-	const std::size_t  tmp_string = typeid(std::string).hash_code();
-	const std::size_t tmp_long      = typeid(long).hash_code();
-	std::cerr << "Argument: ";
-
-
-	if(tmp_int == tmp){
-			std::cerr << std::any_cast<int>(value)   <<'\n';
-	}else if(tmp_double == tmp){
-			std::cerr << std::any_cast<double>(value)  << '\n';
-	}else if(tmp_string == tmp){
-			std::cerr << std::any_cast<std::string>(value)  <<'\n';
-	}else if(tmp_long == tmp){
-			std::cerr << std::any_cast<long>(value)   <<'\n';
-	}else{
-			std::cerr << "[warning: cast not possible] type: " <<value.type().name()   <<'\n';
-	}
-}
 
 // bool verify_isr_prefix(llvm::Function *function){
 // 	bool success = false;
@@ -968,9 +958,7 @@ bool detect_isrs(graph::Graph& graph){
             
             std::cerr << abb->get_syscall_name() << std::endl;
             
-            for(auto & argument :*abb->get_syscall_arguments()){
-                test_debug_argument(argument);
-            }
+           
             bool success = false;
                //queue for functions
             std::stack<OS::shared_function> stack; 
