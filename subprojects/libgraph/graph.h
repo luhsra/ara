@@ -60,7 +60,7 @@ struct argument_data {
     bool multiple = false;
 };
 		
-		
+std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Instruction*>*call_references);
 void debug_argument(argument_data argument);
 
 namespace graph {

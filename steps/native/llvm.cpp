@@ -53,12 +53,21 @@ using namespace llvm;
 static llvm::LLVMContext context;
 
 
-bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, Value *arg, std::list<llvm::Instruction*>* already_visited);
+bool dump_argument(std::stringstream &debug_out,argument_data* argument_container, Value *arg, std::vector<llvm::Instruction*>* already_visited);
 
 
 
 
 std::string print_argument(llvm::Value* argument){
+	std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	argument->print(rso);
+	return rso.str() +  "\"\n";
+	
+}
+
+
+std::string print_type(llvm::Type* argument){
 	std::string type_str;
 	llvm::raw_string_ostream rso(type_str);
 	argument->print(rso);
@@ -127,13 +136,14 @@ int load_index(Value *arg) {
 
 
 
-bool check_nullptr(std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list,llvm::Value* arg,std::stringstream &debug_out ){
+bool check_nullptr(argument_data* argument_container,llvm::Value* arg,std::stringstream &debug_out ,std::vector<llvm::Instruction*>* already_visited){
 	bool load_success = false;
 	if(ConstantPointerNull  * constant_data = dyn_cast<ConstantPointerNull>(arg)){
 		debug_out << "CONSTANTPOINTERNULL";
 		std::string tmp = "&$%NULL&$%";
-		any_list->emplace_back(tmp);
-		value_list->emplace_back(constant_data);
+		argument_container->any_list.emplace_back(tmp);
+		argument_container->value_list.emplace_back(constant_data);
+        argument_container->argument_calles_list.emplace_back(*already_visited);
 		////std::cerr << "[nullptr] type: " <<print_argument(value)  <<'\n';  
 		load_success = true;
 	}
@@ -142,13 +152,21 @@ bool check_nullptr(std::vector<std::any>* any_list,std::vector<llvm::Value*> * v
 
 
 bool check_function_class_reference_type(llvm::Function* function, llvm::Type* type){
+    
+    
+    std::cerr << print_type(type) << std::endl;
+    
     if(type==nullptr || function==nullptr)return -1;
    
     for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
             if( (*i).getType()==type && (*i).getName().str()== "this"){
+                std::cerr << "true" <<  print_type((*i).getType()) << std::endl;
                 return true;
             }
-            else return false;
+            else{
+                std::cerr << "false" << print_type((*i).getType()) << std::endl;
+                return false;
+            }
     }
     return false;
 }
@@ -166,7 +184,7 @@ bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElem
     return true;
 }
 
-bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *inst,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited,std::vector<size_t>* indizes){
+bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *inst,argument_data* argument_container, std::vector<llvm::Instruction*>* already_visited,std::vector<size_t>* indizes){
     bool success = true;
     bool flag = false;
     //get module
@@ -189,11 +207,28 @@ bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *i
                                 
                                 for(auto user : get_pointer_element->users()){  // U is of type User*
                                     //get all users of get pointer element instruction
+                                    debug_out << "USERWITHSAMEPOINTERINDIZES"<< std::endl;
+                                    debug_out << print_argument(user)<< std::endl;
                                     if (auto store = dyn_cast<StoreInst>(user)){
                                         flag = true;
                                         //std::cerr << "user" << std::endl;
-                                        if(!dump_argument(debug_out,any_list, value_list, store->getOperand(0),already_visited))success = false;
+                                        if(!dump_argument(debug_out,argument_container, store->getOperand(0),already_visited))success = false;
                                     }
+                                }
+                                
+                                //TODO check inital creation of class element
+                                //check if no store instruction to the class memory address exists
+                                if(false ==success){
+                                    for(auto user : get_pointer_element->users()){  // U is of type User*
+                                        //get all users of get pointer element instruction
+                                        debug_out << "USERWITHSAMEPOINTERINDIZES-NOSTOREINSTRUCTIONFOUND"<< std::endl;
+                                        //debug_out << print_argument(user)<< std::endl;
+                                        if (auto load = dyn_cast<LoadInst>(user)){
+                                            //flag = true;
+                                            //std::cerr << "user" << std::endl;
+                                            //if(!dump_argument(debug_out,argument_container, store->getOperand(0),already_visited))success = false;
+                                        }
+                                    }    
                                 }
                             }
                         }
@@ -210,7 +245,7 @@ bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *i
 
 
 
-bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited){
+bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,argument_data* argument_container, std::vector<llvm::Instruction*>* already_visited){
     
     bool success = false;
     // check if this is a element ptr
@@ -229,10 +264,11 @@ bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,std::v
             //check if the address is a class specific address
             if(check_function_class_reference_type(inst->getFunction(),get_pointer_element->getPointerOperandType())){
                 
+                
                 //std::cerr << "class specific get element ptr operation" << print_argument(inst);
-                           
+                debug_out << "GETCLASSATTRIBUTE" << std::endl;       
                 //get store instructions
-                success = get_class_attribute_value(debug_out,load,any_list,value_list,already_visited, &indizes);
+                success = get_class_attribute_value(debug_out,load,argument_container,already_visited, &indizes);
                 //std::cerr << success<< std::endl;
             }
             
@@ -244,13 +280,14 @@ bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,std::v
 
 
 //dump a cast instruction
-bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, std::list<llvm::Instruction*>* already_visited){
+bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,argument_data* argument_container,std::vector<llvm::Instruction*>* already_visited){
 	
     bool success = false;
 
 	//get control flow information of the function
 	llvm::Function & tmp_function = *inst->getFunction();
 	DominatorTree dominator_tree = DominatorTree(tmp_function);
+	dominator_tree.updateDFSNumbers();
 	
     Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
 	TargetLibraryInfoImpl TLII = TargetLibraryInfoImpl(ModuleTriple);
@@ -268,98 +305,67 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
         if(auto def_access = dyn_cast<MemoryDef>(access)){
             
             if(StoreInst *store_inst = dyn_cast<StoreInst>(def_access->getMemoryInst())){
-                /*std::cerr << "store" << std::endl;
-                std::cerr <<  print_argument(store_inst) << std::endl;
-                 std::cerr << "source" << std::endl;
-                std::cerr <<  print_argument(inst) << std::endl;
-                std::cerr << "STORE TO ALLOCA" << std::endl << print_argument(store_inst);*/
-                success = dump_argument(debug_out,any_list,value_list,store_inst->getOperand(0),already_visited);
+                if(store_inst->getOperand(1) == inst->getOperand(0))success = dump_argument(debug_out,argument_container,store_inst->getOperand(0),already_visited);
             }
         }
     }
-        /*
-//         auto test=  access->getIterator();
-//         
-//         while(!test.isEnd()){
-//            (*test)->print_argument
-//             test++;
-//         }
-        for(auto it = access->defs_begin(); it != access->defs_end();++it){
-            
-            if((*it)==nullptr)continue;
-            
-            //std::cerr << "useordef" <<   print_argument((*it)) << std::endl;
-            /*if(auto useordef_tmp = dyn_cast<MemoryUseOrDef>((*it))){
-                std::string type_str;
-                llvm::raw_string_ostream rso(type_str);
-                if(useordef_tmp->getMemoryInst()!=nullptr){
-                    if(StoreInst *store_inst = dyn_cast<StoreInst>(useordef_tmp->getMemoryInst())){
-                        std::cerr << "source" << std::endl;
-                        std::cerr <<  print_argument(store_inst) << std::endl;
-                        debug_out << "STORE TO ALLOCA" << std::endl << print_argument(store_inst);
-                        success = dump_argument(debug_out,any_list,value_list,store_inst->getOperand(0),already_visited);
-                    }
-                }
-            }
-        }
-        
-    }
-    
-    /*
-    std::cerr << "target" << std::endl;
-    std::cerr <<  print_argument(inst) << std::endl;
-    
-//     MemoryUseOrDef * useordef = ssa.getMemoryAccess (inst);
-//     if(useordef != nullptr){
-//         for(auto it = useordef->getDefiningAccess()->defs_begin(); it != useordef->getDefiningAccess()->defs_end();++it){
 
 	bool pointer_flag = true;
-	
-	if(AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(inst)){
-		Value::user_iterator sUse = alloca_instruction->user_begin();
-		Value::user_iterator sEnd = alloca_instruction->user_end();
-		
-		//iterate about the user of the allocation
-		for(;sUse != sEnd; ++sUse){
-			
-			//check if instruction is a store instruction
-			if(StoreInst *tmp_instruction = dyn_cast<StoreInst>(*sUse)){
-				//check if user is before of the original call
-				if(instruction_before(tmp_instruction,call_reference,&dominator_tree)){
-					pointer_flag = false;
-					//check if the store instruction is before the original call
-					if(dominator_tree.dominates(tmp_instruction,call_reference)){
-						if(store_instruction == nullptr){
-							store_instruction = tmp_instruction;
-						}else{
-							//check if the tmp_store instruction is behind the store_instruction
-							if(instruction_before(store_instruction,tmp_instruction,&dominator_tree))store_instruction = tmp_instruction;
-						}
-					}else{
-						//check if the tmp_instruction is behind the store_instruction
-						if(instruction_before(store_instruction, tmp_instruction,&dominator_tree))store_instruction = nullptr;		
-					}
-				}
-				
-			}else{
-                //TODO
-                //std::cout << "local variable was set after value" << std::endl;
-            }
-			//no load between allocation and call reference
-		}
-		//check if a valid store instruction could be found
-		if(store_instruction != nullptr){
-			
-	}
-	if(!cast_success)debug_out << "alloca instruction: " << print_argument(inst);
-    */
+	llvm::Instruction* store_inst = nullptr;
     
+	if(success == false){
+        if(AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(inst->getOperand(0))){
+            Value::user_iterator sUse = alloca_instruction->user_begin();
+            Value::user_iterator sEnd = alloca_instruction->user_end();
+            
+            //iterate about the user of the allocation
+            for(;sUse != sEnd; ++sUse){
+                
+                //check if instruction is a store instruction
+                if(StoreInst *tmp_instruction = dyn_cast<StoreInst>(*sUse)){
+                    
+                    //check if the instruction are in the same function
+                    if(tmp_instruction->getFunction() != inst->getFunction())continue;
+                    
+                    //check if user is before of the original call
+                    if(instruction_before(tmp_instruction,inst,&dominator_tree)){
+                        pointer_flag = false;
+                        //check if the store instruction is before the original call
+                        if(dominator_tree.dominates(tmp_instruction,inst)){
+                            if(store_inst == nullptr){
+                                store_inst = tmp_instruction;
+                            }else{
+                                //check if the tmp_store instruction is behind the store_instruction
+                                if(instruction_before(store_inst,tmp_instruction,&dominator_tree))store_inst = tmp_instruction;
+                            }
+                        }else{
+                            //check if the tmp_instruction is behind the store_instruction
+                            
+                            if(store_inst == nullptr)continue;
+                            if( tmp_instruction == nullptr)continue;
+                            
+                            if(instruction_before(store_inst, tmp_instruction,&dominator_tree))store_inst = nullptr;		
+                        }
+                    }
+                    
+                }else{
+                    //TODO
+                    //std::cout << "local variable was set after value" << std::endl;
+                }
+                //no load between allocation and call reference
+            }
+            //check if a valid store instruction could be found
+            if(store_inst != nullptr){
+                success = dump_argument(debug_out,argument_container,store_inst->getOperand(0),already_visited);
+            }
+        }
+	}
 	return success;
 }
 
 
 
-bool load_function_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list,Function *function, std::list<llvm::Instruction*>* already_visited,int arg_counter) {
+bool load_function_argument(std::stringstream &debug_out,argument_data* argument_container,Function *function, std::vector<llvm::Instruction*>* already_visited,int arg_counter) {
     
     auto sUse = function->user_begin();
     auto sEnd = function->user_end();
@@ -380,15 +386,16 @@ bool load_function_argument(std::stringstream &debug_out,std::vector<std::any>* 
             }
             if(!flag)break;
             
-            already_visited->emplace_back(instr);
+            std::vector<llvm::Instruction*> tmp_already_visited = *already_visited;
+            tmp_already_visited.emplace_back(instr);
             
             debug_out << "LOADFUNKTIONARGUMENT" << "\n";
-            if(!dump_argument(debug_out,any_list,value_list, instr->getOperand(arg_counter), already_visited))success = false;;
+            if(!dump_argument(debug_out,argument_container, instr->getOperand(arg_counter), &tmp_already_visited))success = false;;
             //std::cerr << "user of function argument " << print_argument(instr) << std::endl;
         }
     }
     
-    for(auto element : *value_list){
+    for(auto element : (*argument_container).any_list){
         //std::cerr << "element" << print_argument(element) << std::endl;
         
     }
@@ -397,7 +404,7 @@ bool load_function_argument(std::stringstream &debug_out,std::vector<std::any>* 
 }
 
 //function to get the global information of variable
-bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list,Value *arg,Value *prior_arg,std::list<llvm::Instruction*>* already_visited) {
+bool load_value(std::stringstream &debug_out,argument_data* argument_container,Value *arg,Value *prior_arg,std::vector<llvm::Instruction*> * already_visited) {
 	
     //debug data
     debug_out << "ENTRYLOAD" << "\n";    
@@ -408,7 +415,7 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
     bool load_success = false;
 	
 	//check if arg is a null ptr
-	if(check_nullptr(any_list,value_list,arg,debug_out)){
+	if(check_nullptr(argument_container,arg,debug_out,already_visited)){
 		return true;
 	}
      if (GlobalVariable *global_var = dyn_cast<GlobalVariable>(arg)){
@@ -428,34 +435,37 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
                         debug_out << "CONSTANTDATAARRAY" << "\n";
                         //global variable is a constant array
                         if (constant_array->isCString()){
-							any_list->emplace_back(constant_array->getAsCString().str());
-                            load_success = true;
-                            value_list->emplace_back(constant_array);
-							
+							argument_container->any_list.emplace_back(constant_array->getAsCString().str());
+                            argument_container->value_list.emplace_back(constant_array);
+                            argument_container->argument_calles_list.emplace_back(*already_visited);
+							load_success = true;
                         } else debug_out << "Keine konstante sequentielle Date geladen" << "\n";
                     }
                 }//check if global variable is contant integer
                 else if (ConstantInt  * constant_int = dyn_cast<ConstantInt>(constant_data)) {
 					debug_out << "CONSTANTDATAINT" << "\n";
                  
-					any_list->emplace_back(constant_int->getSExtValue());
-                    value_list->emplace_back(constant_int);
+					argument_container->any_list.emplace_back(constant_int->getSExtValue());
+                    argument_container->value_list.emplace_back(constant_int);
+                    argument_container->argument_calles_list.emplace_back(*already_visited);
                     load_success = true;
                     
                 }//check if global variable is contant floating point
                 else if(ConstantFP  * constant_fp = dyn_cast<ConstantFP>(constant_data)){
 					debug_out << "CONSTANTDATAFLOATING" << "\n";
                     
-                    any_list->emplace_back(constant_fp->getValueAPF().convertToDouble());
-                    value_list->emplace_back(constant_fp);
+                    argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+                    argument_container->value_list.emplace_back(constant_fp);
+                    argument_container->argument_calles_list.emplace_back(*already_visited);
                     load_success = true;
                 }//check if global variable is contant null pointer
                 else if(ConstantPointerNull  * null_ptr = dyn_cast<ConstantPointerNull>(constant_data)){
 					debug_out << "CONSTANTPOINTERNULL" << "\n";
                     //print name of null pointer because there is no other content
                     if(global_var->hasName()){
-                        any_list->emplace_back(global_var->getName().str());
-                        value_list->emplace_back(global_var);
+                        argument_container->any_list.emplace_back(global_var->getName().str());
+                        argument_container->value_list.emplace_back(global_var);
+                        argument_container->argument_calles_list.emplace_back(*already_visited);
                         load_success = true;
 
 						
@@ -463,8 +473,9 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
                         debug_out << "Globaler Null Ptr hat keinen Namen" << "\n";
                     }
                 }else{
-                    any_list->emplace_back(global_var->getName().str());
-                    value_list->emplace_back(global_var);
+                    argument_container->any_list.emplace_back(global_var->getName().str());
+                    argument_container->value_list.emplace_back(global_var);
+                    argument_container->argument_calles_list.emplace_back(*already_visited);
                     load_success = true;
                     debug_out << "CONSTANTUNDEF/TOKENNONE" << "\n";
                 }
@@ -474,7 +485,7 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
                 //check if value is from type value 
                 if (Value  * tmp_arg = dyn_cast<Value>(constant_expr)){
                     //get the value
-                    load_success = dump_argument(debug_out,any_list, value_list, tmp_arg,already_visited);
+                    load_success = dump_argument(debug_out,argument_container, tmp_arg,already_visited);
                 }
 			
             //check if global variable is from type constant aggregate
@@ -496,7 +507,7 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
                         //constant_array->getOperand(index_n)->print(rso);
                         Value *aggregate_operand = constant_array->getOperand(index_n);
 
-                        load_success = dump_argument(debug_out,any_list, value_list,aggregate_operand,already_visited);
+                        load_success = dump_argument(debug_out,argument_container,aggregate_operand,already_visited);
 					
                     }
 				
@@ -516,8 +527,9 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
             //check if the global variable has a name
             if(global_var->hasName()){
                 //save the name
-                any_list->emplace_back(global_var->getName().str());
-                value_list->emplace_back(global_var);
+                argument_container->any_list.emplace_back(global_var->getName().str());
+                argument_container->value_list.emplace_back(global_var);
+                argument_container->argument_calles_list.emplace_back(*already_visited);
                 load_success = true;
             }else debug_out << "Nicht ladbare globale Variable hat keinen Namen";
         }
@@ -541,16 +553,17 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
                         if (ConstantInt * CI = dyn_cast<ConstantInt>(content)) {
                             debug_out << "CONSTANT INT" << "\n";
 
-                            any_list->emplace_back(CI->getSExtValue());
-                            value_list->emplace_back(CI);
-                            
+                            argument_container->any_list.emplace_back(CI->getSExtValue());
+                            argument_container->value_list.emplace_back(CI);
+                            argument_container->argument_calles_list.emplace_back(*already_visited);
                             load_success = true;
                         }//check if argument is a constant floating point
                         else if(ConstantFP  * constant_fp = dyn_cast<ConstantFP>(content)){
                             debug_out << "CONSTANT FP" << "\n";
                             
-                            any_list->emplace_back(constant_fp->getValueAPF().convertToDouble());
-                            value_list->emplace_back(constant_fp);
+                            argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+                            argument_container->value_list.emplace_back(constant_fp);
+                            argument_container->argument_calles_list.emplace_back(*already_visited);
                             load_success = true;
                         }
                         content = constant_struct->getAggregateElement(i);
@@ -571,12 +584,18 @@ bool load_value(std::stringstream &debug_out,std::vector<std::any>* any_list,std
 
 //st = myString.substr(0, myString.size()-1);
 //function to get the dump information of the argument
-bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,std::vector<llvm::Value*> * value_list, Value *arg, std::list<Instruction*>* already_visited) {
+bool dump_argument(std::stringstream &debug_out,argument_data* argument_container, Value *arg, std::vector<Instruction*>* already_visited) {
     
     
     
     if(arg==nullptr)return false;
-    //std::cerr << "instruction" << print_argument(arg);
+    
+    if(Argument *argument = dyn_cast<Argument>(arg)){
+        return load_function_argument(debug_out,argument_container,argument->getParent(),already_visited,argument->getArgNo());
+    }
+    
+    
+    //TODO check generell if arg is one of the arguments
     if(Instruction *instr = dyn_cast<Instruction>(arg)){
         llvm::Function * function = already_visited->back()->getParent()->getParent();
         
@@ -590,7 +609,7 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
                 
                 if (StoreInst *store = dyn_cast<StoreInst>(*sUse)) {
                     //std::cerr << "store" << print_argument(store);
-                    if(store->getOperand(0) == &(*i) && store->getOperand(1) == instr->getOperand(0))return load_function_argument(debug_out,any_list,value_list,function,already_visited, arg_counter);
+                    if(store->getOperand(0) == &(*i) && store->getOperand(1) == instr->getOperand(0))return load_function_argument(debug_out,argument_container,function,already_visited, arg_counter);
                 }
             }
             ++arg_counter;
@@ -616,16 +635,17 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
             if (GlobalVariable *global_var = dyn_cast<GlobalVariable>(load->getOperand(0))) {
                 debug_out << "LOAD GLOBAL" << "\n";
                 //load the global information
-                dump_success = load_value(debug_out,any_list,value_list, load->getOperand(0),arg,already_visited);
+                dump_success = load_value(debug_out,argument_container, load->getOperand(0),arg,already_visited);
             }else if(instr->getNumOperands() == 1){
                debug_out << "ONEOPERAND" << "\n";
                
                 if(isa<AllocaInst>(load->getOperand(0))){
+                    debug_out << "ALLOCAINSTRUCTIONLOAD" << "\n";
                     //std::cerr << "---------------------" << std::endl << "function" << print_argument(load->getParent()->getParent()) << std::endl;
                     //std::cerr << "---------------------" << std::endl << "alloca reference" << print_argument(load) << std::endl;
-                    dump_success = get_store_instruction(debug_out,load,any_list,value_list,already_visited );
+                    dump_success = get_store_instruction(debug_out,load,argument_container,already_visited );
                 }
-                else dump_success = dump_argument(debug_out,any_list,value_list, load->getOperand(0), already_visited);
+                else dump_success = dump_argument(debug_out,argument_container, load->getOperand(0), already_visited);
                
             }
         //check if instruction is an alloca instruction
@@ -633,7 +653,7 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
             debug_out << "ALLOCA INSTRUCTION" << "\n";
             if(alloca->hasName()){
                 //dump_success = get_store_instruction(debug_out,alloca,any_list,value_list,already_visited );
-                //any_list->emplace_back(alloca->getName().str());
+                //argument_container->any_list.emplace_back(alloca->getName().str());
 				//value_list->emplace_back(alloca);
                 dump_success = true;
             }
@@ -642,35 +662,62 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
                 std::string type_str;
                 llvm::raw_string_ostream rso(type_str);
                 alloca->getType()->print(rso);
-                any_list->emplace_back(rso.str());
-				value_list->emplace_back(alloca);
+                argument_container->any_list.emplace_back(rso.str());
+				argument_container->value_list.emplace_back(alloca);
+                argument_container->argument_calles_list.emplace_back(*already_visited);
                 dump_success = true;
             }
         }else if (CastInst *cast = dyn_cast<CastInst>(instr)) {
             debug_out << "CAST INSTRUCTION" << "\n";
-			dump_success =  dump_argument(debug_out,any_list,value_list,cast->getOperand(0), already_visited);
+			dump_success =  dump_argument(debug_out,argument_container,cast->getOperand(0), already_visited);
 			debug_out << print_argument(cast);
 		
         }else if (StoreInst *store = dyn_cast<StoreInst>(instr)) {
             debug_out << "STORE INSTRUCTION" << "\n";
-			dump_success = load_value(debug_out,any_list,value_list,store->getOperand(0),arg,already_visited );
+			dump_success = load_value(debug_out,argument_container,store->getOperand(0),arg,already_visited );
 			debug_out << print_argument(store);
 		
         }else if(auto *geptr  = dyn_cast<llvm::GetElementPtrInst>(instr)){
             debug_out << "ELEMENTPTRINST INSTRUCTION" << "\n";
-            dump_success  = get_element_ptr(debug_out,geptr, any_list,value_list, already_visited);
+            debug_out << print_argument(geptr);
+            dump_success  = get_element_ptr(debug_out,geptr, argument_container, already_visited);
+        }else if(auto *call  = dyn_cast<llvm::CallInst>(instr)){
+            debug_out << "CALLINSTRUCTION" << "\n";
+            debug_out << print_argument(call);
+            
+            for(auto user : call->users()){  // U is of type User*
+                //get all users of get pointer element instruction
+                if (auto store = dyn_cast<StoreInst>(user)){
+                    if(store->getOperand(0) == call){
+                        if(auto *geptr  = dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))){
+                            debug_out << "TEST" << "\n";
+                            std::cerr << "TEST--------------------------------" << "\n";
+                            debug_out << print_type(geptr->getSourceElementType()) << "\n";
+                            if(check_function_class_reference_type(geptr->getFunction(), geptr->getOperand(0)->getType())){
+                                debug_out << "CLASSTYPE" << "\n";
+                                argument_container->any_list.emplace_back(geptr->getName().str());
+                                argument_container->value_list.emplace_back(geptr);
+                                argument_container->argument_calles_list.emplace_back(*already_visited);
+                                dump_success = true;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }//check if argument is a constant integer
     else if (ConstantInt * CI = dyn_cast<ConstantInt>(arg)) {
         debug_out << "CONSTANT INT" << "\n";
-        any_list->emplace_back(CI->getSExtValue());
-        value_list->emplace_back(CI);
+        argument_container->any_list.emplace_back(CI->getSExtValue());
+        argument_container->value_list.emplace_back(CI);
+        argument_container->argument_calles_list.emplace_back(*already_visited);
         dump_success = true;
     }//check if argument is a constant floating point
     else if(ConstantFP  * constant_fp = dyn_cast<ConstantFP>(arg)){
         debug_out << "CONSTANT FP" << "\n";
-        any_list->emplace_back(constant_fp->getValueAPF().convertToDouble ());
-        value_list->emplace_back(constant_fp);
+        argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble ());
+        argument_container->value_list.emplace_back(constant_fp);
+        argument_container->argument_calles_list.emplace_back(*already_visited);
         dump_success = true;
     }//check if argument is a binary operator
     else if (BinaryOperator *binop = dyn_cast<BinaryOperator>(arg)) {
@@ -690,7 +737,7 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
         debug_out << "POINTER" << "\n";
         Type* elementType = PT->getElementType();
 		//check if arg is a null ptr
-		if(check_nullptr(any_list,value_list,arg,debug_out)){
+		if(check_nullptr(argument_container,arg,debug_out,already_visited)){
 			return true;
 		}
         //check if pointer points to function
@@ -698,8 +745,9 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
             //check if argument has a name
             if(arg->hasName()){
                 debug_out << "POINTER TO FUNCTION" << "\n";
-                any_list->emplace_back(arg->getName().str());
-                value_list->emplace_back(arg);
+                argument_container->any_list.emplace_back(arg->getName().str());
+                argument_container->value_list.emplace_back(arg);
+                argument_container->argument_calles_list.emplace_back(*already_visited);
                 dump_success = true;
             }
         }//check if pointer points to pointer
@@ -708,20 +756,20 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
             //check if pointer target is a global variable
             debug_out << "Pointer to pointer: " << print_argument(arg);
 			//load the global information
-			dump_success = load_value(debug_out,any_list,value_list, arg,arg,already_visited);
+			dump_success = load_value(debug_out,argument_container, arg,arg,already_visited);
 
 		
         }//check if value is a constant value
         else if(GlobalVariable  * global_var = dyn_cast<GlobalVariable>(arg)) {
             debug_out << "POINTER TO GLOBAL" << "\n";
-            dump_success = load_value(debug_out,any_list,value_list, arg,arg,already_visited);
+            dump_success = load_value(debug_out,argument_container, arg,arg,already_visited);
 
 
         }else if (Constant * constant = dyn_cast<ConstantExpr>(arg) ){ //check if value is a constant value
             //check if the constant value is global global variable
             if (GlobalVariable  * global_var = dyn_cast<GlobalVariable>(constant->getOperand(0))) {
                 debug_out << "POINTER TO CONSTANT GLOBAL" << "\n";
-                dump_success = load_value(debug_out,any_list,value_list, constant->getOperand(0),arg,already_visited);
+                dump_success = load_value(debug_out,argument_container, constant->getOperand(0),arg,already_visited);
             }
 		
         }else{
@@ -734,7 +782,7 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
         arg->getType()->print(rso);
         debug_out << rso.str() << "\n";
 	
-        dump_success = load_value(debug_out,any_list,value_list, arg,arg,already_visited);
+        dump_success = load_value(debug_out,argument_container, arg,arg,already_visited);
         if(!dump_success)debug_out << "Kein Load/Instruction/Pointer" << "\n";
     }
 	
@@ -743,9 +791,10 @@ bool dump_argument(std::stringstream &debug_out,std::vector<std::any>* any_list,
         
         if(arg_name.length() > 0){
             debug_out << "DEFAULTNAME" << "\n";
-            
-            any_list->emplace_back(arg_name);
-            value_list->emplace_back(arg);
+            debug_out << print_argument(arg) << std::endl;
+            argument_container->any_list.emplace_back(arg_name);
+            argument_container->value_list.emplace_back(arg);
+            argument_container->argument_calles_list.emplace_back(*already_visited);
             dump_success = true;
         }
     }
@@ -762,8 +811,10 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 	//store the llvm call instruction reference
 	abb->set_call_instruction_reference(instruction);
 	
-	 std::list<argument_data> arguments;
-	 std::cerr << "call" << print_argument(instruction) << std::endl;
+    std::list<argument_data> arguments;
+    
+    std::cerr << std::endl; 
+    
 	//iterate about the arguments of the call
 	for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
 	
@@ -774,32 +825,47 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 		std::vector<std::any> any_list; 
 		
 		std::vector<llvm::Value*> value_list;
-        std::list<llvm::Instruction*> already_visited;
+        std::vector<llvm::Instruction*> already_visited;
         already_visited.emplace_back(instruction);
 		//get argument
 		Value *arg = instruction->getArgOperand(i);
 		
+        
+        argument_data argument_container;
+        
 		//std::cerr << "arg: " << print_argument(arg) << std::endl;
 		//dump argument and check if it was successfull
-		if(dump_argument(debug_out,&any_list,&value_list, arg,&already_visited)){
+		if(dump_argument(debug_out,&argument_container, arg,&already_visited)){
             
-            for(auto element : value_list){
-                std::cerr << "element: " << print_argument(element) << std::endl;
+//             for(auto element : value_list){
+//                 std::cerr << "element: " << print_argument(element) << std::endl;
+//             }
+            if(func->getName().str().find("xQueueGenericSend") != std::string::npos){
+                std::cerr << debug_out.str() << std::endl;
+                
+                
+                for(auto element : argument_container.value_list){
+                    std::cerr << print_argument(element) << std::endl;
+                }
+                
             }
-            argument_data tmp_arguments;
-            tmp_arguments.any_list =any_list;
-            tmp_arguments.value_list = value_list;
-            if(any_list.size() > 1)tmp_arguments.multiple = true;
+           
             
+            if(argument_container.any_list.size() > 1)argument_container.multiple = true;
+            
+            if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
+                std::cerr << "argument container lists have different sizes" << std::endl;
+                abort();
+            }
             //std::cerr << debug_out.str() << std::endl;
 			//store the dumped argument in the abb with corresponding llvm type
-			arguments.emplace_back(tmp_arguments);
+			arguments.emplace_back(argument_container);
 		}else{
 			//TODO
 			/*std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
 			std::cerr <<  print_argument(instruction) << '\n';
-			std::cerr << debug_out.str() << std::endl;
-			*///abort();
+			std::cerr << debug_out.str() << std::endl;*/
+			//abort();
 		}
 	}
 	
@@ -842,6 +908,16 @@ void set_arguments(OS::shared_abb abb){
 				}
 			}else if (InvokeInst *invoke = dyn_cast<InvokeInst>(&inst)) {
 				Function * func = invoke->getCalledFunction();
+                
+                if(func ==nullptr){
+                    auto tmp_value = invoke->getCalledValue();
+                    if (llvm::Constant* constant = dyn_cast<llvm::Constant>(tmp_value)) {
+                         if (llvm::Function* tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
+                             func = tmp_func;
+                         }
+                    }
+                 }
+                 
 				if (func && !isCallToLLVMIntrinsic(invoke)) {
 					call_found = true;
 					//get and store the called arguments values
@@ -1178,8 +1254,9 @@ namespace step {
 			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
 			//std::cout<< "function name " << abb->get_name()<< std::endl;
 			for(auto *instr : abb->get_call_instruction_references()){
-				if(CallInst* tmp = dyn_cast<CallInst>((instr))){
-					llvm::Function* llvm_function = tmp->getCalledFunction();
+				if(CallInst* call = dyn_cast<CallInst>((instr))){
+                    //std::cerr<< "function name" << tmp->getCalledFunction()->getName().str() << std::endl;
+					llvm::Function* llvm_function = call->getCalledFunction();
 					std::hash<std::string> hash_fn;
 					//std::cout<< "function name " << llvm_function->getName().str()<< std::endl;
 					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
@@ -1193,10 +1270,21 @@ namespace step {
                         
 					}
 				}
-				if(InvokeInst* tmp = dyn_cast<InvokeInst>((instr))){
-					llvm::Function* llvm_function = tmp->getCalledFunction();
+				if(InvokeInst* invoke = dyn_cast<InvokeInst>((instr))){
+                    
+                    //std::cerr<< "function name" << tmp->getCalledFunction()->getName().str() << std::endl;
+					llvm::Function* llvm_function = invoke->getCalledFunction();
 					std::hash<std::string> hash_fn;
 					//std::cout<< "function name" << llvm_function->getName().str();
+                    
+                    if(llvm_function ==nullptr){
+                        auto tmp_value = invoke->getCalledValue();
+                        if (llvm::Constant* constant = dyn_cast<llvm::Constant>(tmp_value)) {
+                            if (llvm::Function* tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
+                                llvm_function = tmp_func;
+                            }
+                        }
+                    }
 					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
 					if(vertex != nullptr){
 						//std::cout << "success" <<  vertex->get_name() << std::endl;

@@ -22,6 +22,12 @@ using namespace llvm;
 
 
 //print the argument
+void print_tmp(llvm::Value* val){
+    std::string type_str;
+	llvm::raw_string_ostream rso(type_str);
+	val->print(rso);
+	std::cerr << rso.str() << std::endl ;
+}
 
 void test_debug_argument(argument_data argument){
 	
@@ -42,18 +48,27 @@ void test_debug_argument(argument_data argument){
 	for(auto element : argument.any_list){
         std::size_t const tmp = element.type().hash_code();
         if(tmp_int == tmp){
-            std::cerr << std::any_cast<int>(element)   <<'\n';
+            std::cerr << std::any_cast<int>(element)   ;
         }else if(tmp_double == tmp){ 
-            std::cerr << std::any_cast<double>(element)  << '\n';
+            std::cerr << std::any_cast<double>(element) ;
         }else if(tmp_string == tmp){
-            std::cerr << std::any_cast<std::string>(element)  <<'\n';  
+            std::cerr << std::any_cast<std::string>(element)  ;  
         }else if(tmp_long == tmp){
-            std::cerr << std::any_cast<long>(element)   <<'\n';  
+            std::cerr << std::any_cast<long>(element) ;  
         }else{
-            std::cerr << "[warning: cast not possible] type: " <<element.type().name()   <<'\n';  
+            std::cerr << "[warning: cast not possible] type: " <<element.type().name() ;  
         }
         std::cerr << ", ";
     }
+    std::cerr << std::endl;
+    for(auto element : argument.value_list){
+        if(element == nullptr)continue;
+        std::string type_str;
+        llvm::raw_string_ostream rso(type_str);
+        element->print(rso);
+        std::cerr << rso.str() << std::endl << "," ;
+    }
+    std::cerr << std::endl;
 }
 
 //check if element is in list
@@ -255,16 +270,16 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 	//generate dominator tree
 	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
 	
-	
+	/*
 	std::string type_str;
 	llvm::raw_string_ostream rso(type_str);
-	
+	*/
+    
 	//check if scheduler start instruction was after in function
 	if(start_scheduler_func_calls.size() == 0){
 		state = before;
 	}else{
 		
-	
 		for(auto &abb : function->get_atomic_basic_blocks()){
 			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 				for(auto &instr:*bb){
@@ -276,6 +291,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 			}
 		}
 		
+		//check TODO
 		for(auto& instruction:start_scheduler_func_calls){
 			if(dominator_tree->dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))state= after;
 		}
@@ -284,6 +300,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 	//iterate about the basic blocks of the abb
 	for(auto &abb : function->get_atomic_basic_blocks()){
 			
+        //TODO 
 		for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
 			
 			for(auto &instruction:*bb){
@@ -507,18 +524,50 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	return success;
 }
 
+
+
 std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Instruction*>*call_references){
+    
+/*    
+    std::cerr << "--------------------------------------------" << std::endl;
+    
+    for(auto element : *call_references){
+        if(element == nullptr)continue;
+        std::cerr << "call reference" << std::endl;
+        print_tmp(element);
+    }
+    int counter = 0;
+    for(auto argument_calles : argument.argument_calles_list){
+        std::cerr << "------------------tmp------------------" << std::endl;
+        for(auto call_reference :argument_calles){
+            if(call_reference == nullptr)continue;
+            std::cerr << "call_reference" << std::endl;
+            print_tmp(call_reference);
+            std::cerr << "value" << std::endl;
+            print_tmp(argument.value_list.at(counter));
+        }
+        ++counter;
+      
+    }
+    std::cerr << "--------------------------------------------" << std::endl;
+    */
     
     //check if multiple argument values are possible
     if(argument.multiple ==false)return argument.any_list.front();
     else{
-        std::vector<std::tuple<char,std::vector<char>>> valid_candidates;
+        std::vector<std::tuple<std::any,llvm::Value*,std::vector<char>>> valid_candidates;
         char index = 0;
         for(auto argument_calles :argument.argument_calles_list){
+
             auto tmp_argument_calles = argument_calles;
+            //erase first call, not necassary in evaluation
+            tmp_argument_calles.erase(tmp_argument_calles.begin());
             std::vector<char> missmatch_list;
             char missmatches = 0;
             for(auto call_reference : *call_references){
+               
+               
+                
                 if(call_reference == tmp_argument_calles.front()){
                     tmp_argument_calles.erase(tmp_argument_calles.begin());
                     missmatch_list.emplace_back(missmatches);
@@ -526,21 +575,44 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
                 }
                 else ++missmatches;
             }
-            if(tmp_argument_calles.empty())valid_candidates.emplace_back( std::make_tuple(index,missmatch_list));
+            if(tmp_argument_calles.empty())valid_candidates.emplace_back( std::make_tuple(argument.any_list.at(index),argument.value_list.at(index),missmatch_list));
             ++index;
         }
         if(valid_candidates.size() == 1){
-            return argument.any_list.at(std::get<0>(valid_candidates.front()));
+            return std::get<std::any>(valid_candidates.front());
         }else{
+            if(valid_candidates.size() == 0){
+                 std::cerr << "no argument values are possible"<< std::endl;
+                 
             //TODO
+            }else{
+                //test_debug_argument(argument);
+                llvm::Value* old_value = std::get<llvm::Value*>(valid_candidates.front());
+                bool success = true;
+                for(auto data : valid_candidates){
+                    if(old_value !=std::get<llvm::Value*>(data)){
+                        success = false;
+                        std::cerr << "ERRROR" <<std::endl;
+                        break;
+                    }
+                }
+                if(success)return argument.any_list.front();
+                else{
+                     std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
+                    //TODO select the best 
+                }
+            }
         }
     }
+    std::any tmp = (std::string) "multiple argument values are possible";
+    return tmp;
+    
 }
 
 
 
 //xTaskCreate
-bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>*call_references){
+bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>*call_references ){
 	
 	bool success = true;
 	
@@ -613,7 +685,8 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	}
 	
 	std::cout << "task successfully created"<< std::endl;
-
+   
+    
 	return success;
 }
 
@@ -868,7 +941,7 @@ bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_
 	//set timer to graph
 	timer->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(timer);
-	
+    
 	return success;
 }
 
@@ -956,7 +1029,7 @@ bool detect_isrs(graph::Graph& graph){
         //check if syscall is isr specific 
         if(abb->get_syscall_name().find("FromISR") != std::string::npos){
             
-            std::cerr << abb->get_syscall_name() << std::endl;
+            //std::cerr << abb->get_syscall_name() << std::endl;
             
            
             bool success = false;
@@ -1006,12 +1079,12 @@ bool detect_isrs(graph::Graph& graph){
 }
 
 
-
-bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls ){
+bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls){
 
     //check which target should be generated
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
         //std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
+
         if(!create_task(graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Task could not created" << std::endl;
     }
     
@@ -1032,7 +1105,9 @@ bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool bef
         
     }						
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
+
         if(!create_timer( graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Timer could not created" << std::endl;
+      
     }
 
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
@@ -1050,7 +1125,7 @@ bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool bef
 }
 
 
-void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*>* already_visited_calls ){
+void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*>* already_visited_calls){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
@@ -1089,6 +1164,8 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                 //check if abb syscall is creation syscall
                 if(abb->get_syscall_type() == create){
                     
+                    
+                    
                     create_abstraction_instance( graph,abb,before_scheduler_start,already_visited_calls);
                 }
             }
@@ -1099,7 +1176,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //std::cerr << "edge target " << vertex->get_name() << std::endl;
             if(typeid(OS::Function).hash_code() == vertex->get_type()){
                 auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-                iterate_called_functions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls);
+                iterate_called_functions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls  );
             }
         }
     }
@@ -1148,7 +1225,7 @@ namespace step {
             
             //iterate about the main function context and detect abstraction instances
             std::vector<llvm::Instruction*> already_visited_calls;
-            iterate_called_functions(graph, main_vertex , main_function, nullptr ,&already_visited_calls);
+            iterate_called_functions(graph, main_vertex , main_function,nullptr,&already_visited_calls);
 		
             
         }else{
@@ -1156,50 +1233,56 @@ namespace step {
             abort();
         }
         
-       
-        
-        //detect the isrs
+    
         detect_isrs(graph);
         
-       //get all tasks, which are stored in the graph
-        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Task).hash_code());
+      
         //iterate about the isrs
-        for (auto &vertex : vertex_list) {
-            //std::cerr << "task name: " << vertex->get_name() << std::endl;
-            std::vector<size_t> already_visited;
-            auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
-            OS::shared_function task_definition = task->get_definition_function();
-            //get all interactions of the instance
-            std::vector<llvm::Instruction*> already_visited_calls;
-            iterate_called_functions(graph, task , task_definition, nullptr ,&already_visited_calls);
-        }
+        std::list<size_t> already_visited;
+        bool flag = false;
         
-        //get all isrs, which are stored in the graph
-        vertex_list =  graph.get_type_vertices(typeid(OS::ISR).hash_code());
-        //iterate about the isrs
-        for (auto &vertex : vertex_list) {
-            //std::cerr << "isr name: " << vertex->get_name() << std::endl;
-            std::vector<size_t> already_visited;
-            auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
-            OS::shared_function timer_definition = timer->get_definition_function();
-            //get all interactions of the instance
-            std::vector<llvm::Instruction*> already_visited_calls;
-            iterate_called_functions(graph, timer , timer_definition, nullptr ,&already_visited_calls);
-        }
-           
-        //TODO check if this is allowed
-        //get all timers of the graph
-        vertex_list =  graph.get_type_vertices(typeid(OS::Timer).hash_code());
-        //iterate about the timers
-        for (auto &vertex : vertex_list) {
-            //std::cerr << "timer name: " << vertex->get_name() << std::endl;
-            std::vector<size_t> already_visited;
-            auto isr = std::dynamic_pointer_cast<OS::Timer> (vertex);
-            OS::shared_function isr_definition = isr->get_definition_function();
-            //get all interactions of the instance
-            std::vector<llvm::Instruction*> already_visited_calls;
-            iterate_called_functions(graph, isr , isr_definition, nullptr ,&already_visited_calls);
-        }	
+        do{
+            flag = false;
+            
+            //get all tasks, which are stored in the graph
+            std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Task).hash_code());
+        
+            for (auto &vertex : vertex_list) {
+                
+                if(list_contains_element(&already_visited, vertex->get_seed()))continue;
+                else already_visited.emplace_back(vertex->get_seed());
+                
+                flag = true;
+                
+                //std::cerr << "task name: " << vertex->get_name() << std::endl;
+                auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
+                OS::shared_function task_definition = task->get_definition_function();
+                //get all interactions of the instance
+                std::vector<llvm::Instruction*> already_visited_calls;
+                iterate_called_functions(graph, task , task_definition, nullptr ,&already_visited_calls);
+            }
+        
+        
+        
+            //get all isrs, which are stored in the graph
+            vertex_list =  graph.get_type_vertices(typeid(OS::ISR).hash_code());
+            //iterate about the isrs
+            for (auto &vertex : vertex_list) {
+                
+                if(list_contains_element(&already_visited, vertex->get_seed()))continue;
+                else already_visited.emplace_back(vertex->get_seed());
+                
+                flag = true;
+                
+                auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
+                OS::shared_function timer_definition = timer->get_definition_function();
+                //get all interactions of the instance
+                std::vector<llvm::Instruction*> already_visited_calls;
+                iterate_called_functions(graph, timer , timer_definition, nullptr ,&already_visited_calls);
+            }
+            
+            
+        }while(flag);
 	}
 	
 	std::vector<std::string> FreeRTOSInstancesStep::get_dependencies() {

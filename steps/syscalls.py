@@ -319,15 +319,15 @@ class SyscallStep(Step):
                         
                         
                             success = True
+                            counter = 0
                             
                             #verify the typeid_hash_values of the syscall arguments
                             if len(expected_argument_types) != len(specific_call_argument_types):
                                 success = False
                                 
                             else:
-                                counter = 0
                                 
-
+                                
                                 #iterate about the expected call types list 
                                 for expected_type in expected_argument_types:
                                     #get argument types for this argument

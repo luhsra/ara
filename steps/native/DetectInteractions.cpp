@@ -27,10 +27,10 @@
 
 using namespace llvm;
 
-/*
+
 	
 //print the argument
-void debug_argument_test(std::any value,llvm::Type *type){
+void debug_argument_test(std::any value){
 	
 	std::size_t const tmp = value.type().hash_code();
 	const std::size_t  tmp_int = typeid(int).hash_code();
@@ -53,16 +53,6 @@ void debug_argument_test(std::any value,llvm::Type *type){
 	}
 }
 
-bool check_function_class_reference_type(llvm::Function* function, llvm::Type* type){
-    if(type==nullptr || function==nullptr)return -1;
-   
-    for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
-            if( (*i).getType()==type)return true;
-            else return false;
-    }
-    return false;
-}
-
 
 void  print_instruction( llvm::Value *instr){
     if(nullptr==instr)return;
@@ -72,145 +62,23 @@ void  print_instruction( llvm::Value *instr){
     std::cerr  << rso.str() <<  "\"\n";
 }
 
-bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElementPtrInst * instr){
-    int counter = 0;
-    for (auto i = instr->idx_begin(), ie = instr->idx_end (); i != ie; ++i){
-        int index = -1;
-        if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(((*i).get()))) {
-                index =CI->getLimitedValue();
-            };
-        if(index!=reference->at(counter))return false;
-        ++counter;
-    }
-    return true;
-}
-
-void get_class_attribute_value(graph::Graph& graph,llvm::Type* type, std::vector<size_t>* indizes  ){
-
-    //get the vertices of the specific type from the graph
-    std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices( typeid(OS::Function).hash_code());
-    
-    for(auto &vertex : vertex_list){
-       
-        auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-        for (auto i = function->get_llvm_reference()->arg_begin(), ie = function->get_llvm_reference()->arg_end(); i != ie; ++i){
-             
-             if( (*i).getType()==type){
-                for (llvm::BasicBlock &bb : *(function->get_llvm_reference())){
-                    for (llvm::Instruction& instr : bb){
-                        if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(&instr)){  // U is of type User*
-                            //if (auto *I = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())){
-                                if(check_function_class_reference_type(instr.getParent()->getParent(),get_pointer_element->getPointerOperandType())&& check_get_element_ptr_indizes(indizes,get_pointer_element)){
-                                   
-                                    
-                                     for(auto user : get_pointer_element->users()){  // U is of type User*
-                                         
-                                        
-                                        if (auto store = dyn_cast<StoreInst>(user)){
-                                           std::cerr << "instruction" << std::endl;
-                                           print_instruction(user);
-                                        }
-                                    }
-                                }
-                            //}
-                        }
-                    }
-                }
-             }else break;
-        }
-    }
-}
 
 
-
-llvm::Instruction* get_element_ptr(llvm::Instruction *instr,graph::Graph& graph){
-   
-    
-    if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(instr)){  // U is of type User*
-        std::vector<size_t> indizes;
-         for (auto i = get_pointer_element->idx_begin(), ie = get_pointer_element->idx_end (); i != ie; ++i){
-            llvm::Value* tmp = ((*i).get());
-            if (llvm::ConstantInt* CI = dyn_cast<llvm::ConstantInt>(tmp)) {
-                indizes.emplace_back(CI->getLimitedValue());
-            };
-            
-        };
-        
-        if (auto I = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())){
-            std::cerr << "load" << std::endl;
-             std::string type_str;
-            llvm::raw_string_ostream rso(type_str);
-            get_pointer_element->getPointerOperandType()->print(rso);
-            std::cerr << "type" <<   rso.str() << std::endl;
-            if(check_function_class_reference_type(instr->getParent()->getParent(),get_pointer_element->getPointerOperandType())){
-                get_class_attribute_value(graph,get_pointer_element->getPointerOperandType(),&indizes);
-            }
-        };
-        std::cerr << "get element ptr value" << std::endl;
-        (get_pointer_element->getPointerOperand());
-         std::cerr << "----" << std::endl;
-
-        auto tmp = get_pointer_element->getPointerOperand();
-        return dyn_cast<Instruction>(tmp);
-    }
-    return nullptr;
-}
-
-
-
-llvm::Instruction* get_user_instruction(int argument,llvm::Value* instr){
-    if(instr == nullptr)return nullptr;
-    int reference = 0;
-    for(auto user : instr->users()){  // U is of type User*
-        if (auto I = dyn_cast<Instruction>(user)){
-            if(reference == argument)return I;
-             
-        }
-        reference = reference + 1;
-    }
-    return nullptr;
-}
-
-llvm::Instruction* get_operand(int argument, llvm::Instruction *instr){
-    if(instr==nullptr)return nullptr;
-    if(instr->getNumOperands()> argument){  // U is of type User*
-        auto operand = instr->getOperand(argument);
-        return dyn_cast<Instruction>(operand);
-    }
-    return nullptr;
-}
-
-int check_funtion_argument_reference(llvm::Function* function, llvm::Instruction* instr, int operand){
-    if(instr==nullptr)return -1;
-    if(instr->getNumOperands()> operand){ 
-        int counter = 0;
-        for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
-            if( &(*i)==instr->getOperand(operand))return counter;
-            ++counter;
-        }
-    }
-    return -1;
-}
-
-
-
-void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, std::vector<size_t>* already_visited){
+void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*>* already_visited_calls){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
     std::hash<std::string> hash_fn;
     
 
-	size_t seed = function->get_seed();
-
 	//search hash value in list of already visited basic blocks
-	for(auto tmp_seed : *already_visited){
-		if(tmp_seed == seed){
+	for(auto tmp_call : *already_visited_calls){
+		if(call_reference == tmp_call){
 			//basic block already visited
 			return;
 		}
 	}
-    already_visited->emplace_back(seed);
+    already_visited_calls->emplace_back(call_reference);
     
     
 	
@@ -236,11 +104,16 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //load the handler name
             std::string handler_name = "";
             argument_data argument_candidats  = (argument_list->front());
-            if(argument_candidats.any_list.size() != 1)continue;
-            auto any_argument = argument_candidats.any_list.front();
             
-            if(argument_list->size() >0 &&  any_argument.type().hash_code()== typeid(std::string).hash_code()){
+            
+            if(argument_list->size() > 0 && argument_candidats.any_list.size() > 0 &&   argument_candidats.any_list.front().type().hash_code()== typeid(std::string).hash_code()){
                 
+                auto any_argument = argument_candidats.any_list.front();
+                if(argument_candidats.any_list.size() > 1){
+                
+                    std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
+                    any_argument = get_call_relative_argument( argument_candidats,already_visited_calls);                
+                }
                 
                 
                 
@@ -253,187 +126,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                 }
                 
                 if(!handler_found){
-                    //FPPassManager pass_manager;
-                    //AAResults test = getAnalysis<AAResultsWrapperPass>().getAAResults(*(abb->get_parent_function()->get_llvm_reference());
-                    //PassBuilder builder;
-                    //auto pm = builder.buildModuleOptimizationPipeline(PassBuilder::OptimizationLevel::O3);
-                    //MemoryDependenceAnalysis test= MemoryDependenceAnalysis();
-                    //llvm::AnalysisManager<llvm::Function> AM;
-                    //AM.clear();
-                    //test.run(*(abb->get_parent_function()->get_llvm_reference()), AM);
-                    //PMDataManager test = PMDataManager();
-                    //DependenceAnalysis tmp ;
-                    //tmp.run(*(abb->get_parent_function()->get_llvm_reference()), AM);
-                    
-                    //AnalysisResolver resolver = AnalysisResolver(pass_manager);
-                    
-                    //resolver
-                    
-                    //test.runOnFunction(*(abb->get_parent_function()->get_llvm_reference()));
-                    
-                 /*   std::string type_str;
-                    llvm::raw_string_ostream rso(type_str);
-                    abb->get_syscall_instruction_reference()->print(rso);
-                    std::cerr <<  rso.str() <<  "\"\n";
-                    
-                    if(abb->get_syscall_instruction_reference()->getNumOperands()>= 1){  // U is of type User*
-                       
-                        std::cerr << "TEST" << std::endl;
-                        //TODO make this more general
-                        auto instr = abb->get_syscall_instruction_reference()->getOperand(0);
-                        llvm::Instruction *tmp_instr = dyn_cast<llvm::Instruction>(instr);
-                        print_instruction(tmp_instr);
-                        
-                        //load
-                        tmp_instr = get_operand(0, tmp_instr);
-                        print_instruction(tmp_instr);
-                        
-                        //get element pointer
-                        tmp_instr = get_element_ptr(tmp_instr,graph);
-                        /*
-                        print_instruction(tmp_instr);
-                        
-                        //get user of element pointer
-                        tmp_instr = get_user_instruction(1,tmp_instr);
-                        print_instruction(tmp_instr);
-                        
-                        //get user of 
-                        tmp_instr = get_user_instruction(0,tmp_instr);
-                        print_instruction(tmp_instr);
-                        tmp_instr = get_operand(0, tmp_instr);
-                        print_instruction(tmp_instr);
-                        tmp_instr = get_operand(0, tmp_instr);
-                        print_instruction(tmp_instr);
-                        tmp_instr = get_user_instruction(1,tmp_instr);
-                        print_instruction(tmp_instr);
-                        
-                        int argument_index = -1;
-                        if(tmp_instr!=nullptr) argument_index = check_funtion_argument_reference(tmp_instr->getParent()->getParent()  ,tmp_instr,0);
-                        if(argument_index>=0){
-                            
-                            std::vector<OS::shared_function> instance_related_functions;
-                            std::stack<OS::shared_function> stack; 
-                            std::list<size_t> visited_functions;
-                            
-                            OS::shared_function definition_function;
-                            if(start_vertex->get_type() == typeid(OS::ISR).hash_code()){
-                                auto isr = std::dynamic_pointer_cast<OS::ISR> (start_vertex);
-                                definition_function =isr->get_definition_function();
-                                
-                            }else if(start_vertex->get_type() == typeid(OS::Task).hash_code()){
-                                auto task = std::dynamic_pointer_cast<OS::Task> (start_vertex);
-                                definition_function = task->get_definition_function();
-                            }
-                            
-                            stack.push(definition_function);
-                            //iterate about the stack 
-                            while(stack.size()!=0) {
-                                
-                                //get first element of the queue
-                                OS::shared_function function = stack.top();
-                                stack.pop();
-                                //check if the function was already visited by DFS
-                                size_t seed =  function->get_seed();
-                                for(auto tmp_seed : visited_functions){
-                                    if(seed == tmp_seed)continue;
-                                }
-                                //set the function to the already visited functions
-                                visited_functions.emplace_back(seed);
-                                instance_related_functions.emplace_back(function);
-                            
-                                //push the calling function on the stack
-                                for (auto called_function: function->get_called_functions()){
-                                    stack.push(called_function);
-                                }
-                            }
-                            
-                            std::vector<OS::shared_function> calling_functions = function->get_calling_functions(); 
-                            
-                            std::list<std::string> handler_names;
-                            for(auto& definition_function :instance_related_functions){
-                                for(auto& calling_function :calling_functions){
-                                    if(definition_function->get_seed() == calling_function->get_seed()){
-                                         for(auto user : tmp_instr->getParent()->getParent()->users()){
-                                            if (auto I = dyn_cast<Instruction>(user)){// U is of type User*
-                                                if(I->getParent()->getParent() == definition_function->get_llvm_reference()){
-                                                    tmp_instr = get_operand(argument_index, I);
-                                                    tmp_instr = get_operand(0, tmp_instr);
-                                                    handler_names.emplace_back(tmp_instr->getName());
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            std::string tmp_name ;
-                            bool success = true;
-                            for(auto name :handler_names){
-                                if(tmp_name.empty())tmp_name = name;
-                                if(name != tmp_name){
-                                    success = false;
-                                    break;
-                                }
-                            }
-                            if(success)handler_name = tmp_name;
-                           
-                         
-                        }
-                        
-                        
-                        
-                        
-//                        if(tmp_instr->getNumOperands()>= 1){  // U is of type User*
-//                             std::string type_str;
-//                             llvm::raw_string_ostream rso(type_str);
-//                             auto instr = tmp_instr->getOperand(0);
-//                             instr->print(rso);
-//                             std::cerr <<  "load " << rso.str() <<  "\"\n";
-//                             
-//                             for(auto user : instr->users()){  // U is of type User*
-//                                 if (auto I = dyn_cast<Instruction>(user)){
-//                                     std::string type_str;
-//                                     llvm::raw_string_ostream rso(type_str);
-//                                     user->print(rso);
-//                                     std::cerr <<  "user of allocation " << rso.str() <<  "\"\n";
-//                                     
-//                                     llvm::Instruction *tmp_instr = dyn_cast<llvm::Instruction>(user);
-//    
-//                                     if(tmp_instr->getNumOperands()>= 1){  // U is of type User*
-//                                         std::string type_str;
-//                                         llvm::raw_string_ostream rso(type_str);
-//                                         auto instr = tmp_instr->getOperand(0);
-//                                         instr->print(rso);
-//                                         std::cerr <<  "last " << rso.str() <<  "\"\n";
-//                                                 
-//                                     }
-//                                 }
-//                             }
-                            
-//                             if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(instr)){  // U is of type User*
-//                                 get_pointer_element->getPointerOperand();
-//                                 std::string type_str;
-//                                 llvm::raw_string_ostream rso(type_str);
-//                                 auto instr = get_pointer_element->getPointerOperand();
-//                                 instr->print(rso);
-//                                 std::cerr <<  "pointer operand " << rso.str() <<  "\"\n";
-//                                 if(auto * loadinst = dyn_cast<llvm::LoadInst>(instr)){  // U is of type User*
-//                                     std::string type_str;
-//                                     llvm::raw_string_ostream rso(type_str);
-//                                     auto instr = loadinst->getPointerOperand();
-//                                     instr->print(rso);
-//                                     std::cerr <<  "pointer operand " << rso.str() <<  "\"\n";
-//                                     for(auto user : instr->users()){  // U is of type User*
-//                                         if (auto I = dyn_cast<Instruction>(user)){
-//                                             std::string type_str;
-//                                             llvm::raw_string_ostream rso(type_str);
-//                                             user->print(rso);
-//                                             std::cerr <<  "user of allocation " << rso.str() <<  "\"\n";
-//                                         }
-//                                     }
-//                                 }
-//                             }
-//                        }
-//                   }
+                    std::cerr << "handler does not exist in graph " << handler_name << std::endl;
                 }
             }
 
@@ -501,6 +194,10 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             }
             if(success == false){
                 std::cout << "edge could not created: " << abb->get_syscall_name() <<  " in function " <<  abb->get_parent_function()->get_name()  << " in vertex " << start_vertex->get_name() <<  std::endl;
+                debug_argument_test(argument_candidats.any_list.front());
+                
+                abb->print_information();
+                
                 std::cerr << "expected handler name " << handler_name	<< std::endl;
                 
 //                 for(auto & task : graph.get_type_vertices(typeid(OS::Semaphore).hash_code())){
@@ -508,20 +205,25 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
 //                 }
             }
         }
-        //analyze the called functions of the function
-        for(auto called_function : abb->get_called_functions()){
-            iterate_called_functions(graph,start_vertex,called_function, already_visited);
+        
+        for(auto& edge : abb->get_outgoing_edges()){
+            graph::shared_vertex vertex =edge->get_target_vertex();
+            //std::cerr << "edge target " << vertex->get_name() << std::endl;
+            if(typeid(OS::Function).hash_code() == vertex->get_type()){
+                auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+                iterate_called_functions_interactions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls  );
+            }
         }
     }
 }
 
-*/
+
 
 
 //detect interactions of OS abstractions and create the corresponding edges in the graph
 bool detect_interactions(graph::Graph& graph){
 	
-    /*
+    
     //TODO maybe differen main functions in OSEK and FreeRTOS
     //get main function from the graph
     std::string main_function_name = "main";
@@ -534,8 +236,8 @@ bool detect_interactions(graph::Graph& graph){
     }else{
         auto main_function = std::dynamic_pointer_cast<OS::Function> (main_vertex);
         //get all interactions of the main functions and their called function with other os instances
-        std::vector<size_t> already_visited;
-        iterate_called_functions(graph, main_function, main_function, &already_visited);
+        std::vector<llvm::Instruction*> already_visited;
+        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, &already_visited);
     }
     
     
@@ -544,11 +246,11 @@ bool detect_interactions(graph::Graph& graph){
 	//iterate about the isrs
 	for (auto &vertex : vertex_list) {
         //std::cerr << "task name: " << vertex->get_name() << std::endl;
-		std::vector<size_t> already_visited;
+		std::vector<llvm::Instruction*> already_visited;
         auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
         OS::shared_function task_definition = task->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions(graph, vertex, task_definition, &already_visited);
+        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, &already_visited);
     }
     
     //get all isrs, which are stored in the graph
@@ -556,11 +258,11 @@ bool detect_interactions(graph::Graph& graph){
 	//iterate about the isrs
 	for (auto &vertex : vertex_list) {
         //std::cerr << "isr name: " << vertex->get_name() << std::endl;
-		std::vector<size_t> already_visited;
+		std::vector<llvm::Instruction*> already_visited;
         auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
         OS::shared_function timer_definition = timer->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions(graph, vertex, timer_definition, &already_visited);
+        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, &already_visited);
     }
         
     //get all timers of the graph
@@ -568,14 +270,14 @@ bool detect_interactions(graph::Graph& graph){
 	//iterate about the timers
 	for (auto &vertex : vertex_list) {
         //std::cerr << "timer name: " << vertex->get_name() << std::endl;
-		std::vector<size_t> already_visited;
+		std::vector<llvm::Instruction*>  already_visited;
         auto isr = std::dynamic_pointer_cast<OS::Timer> (vertex);
         OS::shared_function isr_definition = isr->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions(graph, vertex, isr_definition, &already_visited);
+        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, &already_visited);
     }
     
-    */
+
     
     
 }

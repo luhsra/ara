@@ -56,7 +56,9 @@ void debug_argument(argument_data argument){
 	*/
 	//std::cout << "reference: " << tmp_int << " " << tmp_double << " " << tmp_string << " " << tmp_long << std::endl;
 	
-	for(auto element : argument.any_list){
+	for(auto element : argument.value_list){
+        
+        /*
         std::size_t const tmp = element.type().hash_code();
         if(tmp_int == tmp){
             std::cerr << std::any_cast<int>(element)   <<'\n';
@@ -69,6 +71,11 @@ void debug_argument(argument_data argument){
         }else{
             std::cerr << "[warning: cast not possible] type: " <<element.type().name()   <<'\n';  
         }
+        */
+        std::string type_str;
+        llvm::raw_string_ostream rso(type_str);
+        element->print(rso);
+        std::cout<< rso.str();
         std::cerr << ", ";
     }
 	/*
@@ -1898,8 +1905,8 @@ void OS::ABB::print_information(){
 				std::cerr << "arguments: ";
 				int j = 0;
 				for (auto &arguments: * this->get_arguments()){
-					for(auto &tuple : arguments){
-						//debug_argument(std::get<std::any>(tuple),std::get<llvm::Type *>(tuple));
+					for(auto &data : arguments){
+						debug_argument(data);
 						std::cerr <<  ", ";
 					}
 					if(i == j) break;
