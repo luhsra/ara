@@ -1566,9 +1566,6 @@ bool OS::Resource::set_linked_resource(OS::shared_resource resource) {
 }
 
 
-resource_type OS::Resource::get_resource_type(){
-	return this->type;
-}
 
 bool OS::Resource::set_resource_property(std::string type, std::string linked_resource) {
 	
@@ -1772,7 +1769,7 @@ bool OS::ISR::set_resource_reference(std::string resource_name){
 }
 
 
-bool OS::Alarm::set_task_reference(std::string task_name){
+bool OS::Timer::set_task_reference(std::string task_name){
 	bool result = false;
 	auto task = this->graph->get_vertex(task_name);
 	if(task != nullptr){
@@ -1786,7 +1783,7 @@ bool OS::Alarm::set_task_reference(std::string task_name){
 }
 	
 	
-bool OS::Alarm::set_counter_reference(std::string counter_name){
+bool OS::Timer::set_counter_reference(std::string counter_name){
 	bool result = false;
 	auto counter = this->graph->get_vertex(counter_name);
 	if(counter != nullptr){
@@ -1799,7 +1796,7 @@ bool OS::Alarm::set_counter_reference(std::string counter_name){
 	return result;
 }
 
-bool OS::Alarm::set_event_reference(std::string event_name){
+bool OS::Timer::set_event_reference(std::string event_name){
 	bool result = false;
 	auto event = this->graph->get_vertex(event_name);
 	if(event != nullptr){
@@ -1812,22 +1809,23 @@ bool OS::Alarm::set_event_reference(std::string event_name){
 	return result;
 }
 
-void OS::Alarm::set_alarm_callback_reference(std::string callback_name){
-	alarm_callback = callback_name;
+void OS::Timer::set_alarm_callback_reference(std::string callback_name){
+    
+	this->set_definition_function(callback_name);
 }
 
-void OS::Alarm::set_autostart(bool flag){
+void OS::Timer::set_autostart(bool flag){
 	this->autostart = flag;
 }
-void OS::Alarm::set_alarm_time(unsigned int alarm_time){
+void OS::Timer::set_alarm_time(unsigned int alarm_time){
 	this->alarm_time = alarm_time;
 }
 
-void OS::Alarm::set_cycle_time(unsigned int cycle_time){
+void OS::Timer::set_cycle_time(unsigned int cycle_time){
 	this->cycle_time = cycle_time;
 }
 
-void OS::Alarm::set_appmode(std::string appmode){
+void OS::Timer::set_appmode(std::string appmode){
 	this->appmodes.emplace_back(appmode);
 }
 
@@ -1893,6 +1891,22 @@ OS::shared_function OS::Timer::get_definition_function(){
 }
 
 
+void OS::Resource::set_max_count(unsigned long max_count){
+	this->max_count = max_count;
+}
+
+void OS::Resource::set_initial_count(unsigned long initial_count){
+	this->initial_count = initial_count;
+}
+
+
+void OS::Resource::set_resource_type( resource_type type){
+	this->type = type;
+}
+
+resource_type OS::Resource::get_resource_type( ){
+	return this->type;
+}
 
 void OS::Semaphore::set_max_count(unsigned long max_count){
 	this->max_count = max_count;
@@ -1910,7 +1924,6 @@ void OS::Semaphore::set_semaphore_type( semaphore_type type){
 semaphore_type OS::Semaphore::get_semaphore_type( ){
 	return this->type;
 }
-
 
 void OS::QueueSet::set_length(unsigned long length){
 	this->length = length;

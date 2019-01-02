@@ -38,15 +38,15 @@ enum ISR_type { ISR1, ISR2, basic };
 
 enum timer_type { oneshot, autoreload };
 
-enum semaphore_type { binary = 3, counting = 2, mutex = 1 , recursive_mutex = 4 };
-
 enum buffer_type { stream = 0, message = 1 };
 
 enum hook_type { start_up, shut_down, pre_task, post_task, error, failed,idle,stack_overflow,tick,no_hook };
 
 enum alarm_action_type {activate_task, set_event, alarm_callback};
 
-enum resource_type {standard, linked, internal};
+enum resource_type {standard, linked, internal,binary_mutex = 1, recursive_mutex = 4 };
+
+enum semaphore_type {   binary_semaphore = 3, counting_semaphore = 2};
 
 enum schedule_type {full, none};
 
@@ -83,7 +83,6 @@ namespace OS
 
 namespace graph {
 
-    
 
 	class Graph;
 	class Vertex;
@@ -192,7 +191,6 @@ namespace graph {
 		virtual void print_information(){
 			
 		};
-		virtual Vertex *clone() const{return new Vertex(*this);};
                 
 		Vertex(Graph *graph,std::string name); // Constructor
     
@@ -237,7 +235,7 @@ namespace graph {
 		std::list<shared_edge>get_direct_edge(shared_vertex vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
 		                                   
-		//virtual  ~Vertex();
+
 	};
 
 	
@@ -260,9 +258,7 @@ namespace graph {
 
 	  public:
 		
-		virtual Edge *clone() const{return new Edge(*this);};
-		
-		
+    		
 		Edge();
 		Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_abb atomic_basic_block_reference);
 
@@ -501,11 +497,7 @@ namespace OS {
 		size_t syscall_handler_index;
 
 	  public:
-              
-		virtual ABB *clone() const{
-			return new ABB(*this);};
-		
-		
+              		
 		void print_information();
 		
 		ABB(graph::Graph *graph,shared_function function, std::string name) : graph::Vertex(graph,name){
@@ -616,7 +608,7 @@ namespace OS {
 			this->seed = hash_fn(name +  typeid(TaskGroup).name());
 		} 
 		
-		virtual TaskGroup *clone() const{return new TaskGroup(*this);};
+	
 		
 		void print_information(){	
 		};
@@ -665,7 +657,7 @@ namespace OS {
 		void print_information(){
 		
 		};
-		//virtual Task *clone() const{return new Task(*this);};
+		
 
 		
 		
@@ -685,7 +677,7 @@ namespace OS {
 		bool set_message_reference(std::string message);
 		
 		
-		static bool classof(const Vertex *S);
+
 	};
 
 
@@ -742,9 +734,6 @@ namespace OS {
 				this->seed = hash_fn(name +  typeid(QueueSet).name());
 			}
 
-			virtual QueueSet *clone() const{return new QueueSet(*this);};
-
-			
 			void set_queue_element(graph::shared_vertex element);
 			bool member_of_queueset(graph::shared_vertex element);
 			bool remove_from_queueset(graph::shared_vertex element);
@@ -755,7 +744,6 @@ namespace OS {
 		
 			void set_length (unsigned long length);
 
-			static bool classof(const Vertex *S);
 	};
 
 	class Queue : public graph::Vertex {
@@ -795,71 +783,33 @@ namespace OS {
 			static bool classof(const Vertex *S);
 	};
 
-	class Semaphore : public graph::Vertex {
 
-		private:
-		
-			semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
-		
-			unsigned long max_count;
-			unsigned long initial_count;
-
-			std::list<graph::shared_vertex> get_accessed_elements(); 
-			
-		public:
-		
-			Semaphore(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Semaphore).hash_code();
-				std::hash<std::string> hash_fn;
-				this->seed = hash_fn(name +  typeid(Semaphore).name());
-			}
-		
-			void set_semaphore_type(semaphore_type type);
-			semaphore_type get_semaphore_type();
-			
-			void set_max_count(unsigned long count);
-			unsigned long get_max_count();
-			
-			void set_initial_count(unsigned long count);
-			unsigned long get_initial_count();
-			
-			
-			void print_information(){
-					
-			};
-
-			virtual Semaphore *clone() const{return new Semaphore(*this);};
-			// gebe alle Elemente zurück, die auf die Sempahore zugreifen
-
-			static bool classof(const Vertex *S);
-	};
-
-	class EventGroup : public graph::Vertex {
+	class Event : public graph::Vertex {
 
 	  private:
-		std::list<graph::shared_vertex> writing_vertices;
-		std::list<graph::shared_vertex> reading_vertices;
+          
+        std::list<OS::shared_task> task_reference;
+        unsigned long  event_mask;
+        unsigned int id;
+        event_type mask_type;
 
 		std::list<int> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
 		std::list<int> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
 		                             // müssen auch wieder gesetzt werden
-		std::list<graph::shared_vertex >
-		    synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
+		std::list<graph::shared_vertex > synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 		
 	  public:
 		
-		EventGroup(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(EventGroup).hash_code();
+		Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(Event).hash_code();
 				std::hash<std::string> hash_fn;
-				this->seed = hash_fn(name +  typeid(EventGroup).name());
+				this->seed = hash_fn(name +  typeid(Event).name());
 		}
 		
 		void print_information(){
 			
 		};
 			
-		virtual EventGroup *clone() const{return new EventGroup(*this);};
-		
 		
 		bool wait_for_all_bits;
 		bool wait_for_any_bit;
@@ -882,8 +832,14 @@ namespace OS {
 		bool is_set_bit(int bit);
 		bool is_cleared_bit(int bit);
 
-		static bool classof(const Vertex *S);
+        bool set_task_reference(OS::shared_task task);
+        std::list<OS::shared_task> get_task_references();
+        void set_event_mask(unsigned long  mask);
+        void set_event_mask_auto();
+        void set_id(unsigned int id);
+        
 	};
+    
 
 	class Buffer : public graph::Vertex {
 	  
@@ -916,49 +872,50 @@ namespace OS {
 			
 			};
 
-			static bool classof(const Vertex *S);
-			
-			~Buffer(){};
 	};
-	
-	class Event: public graph::Vertex{
+    
+    
+    class Semaphore :public graph::Vertex{
 		
 		private:
-			std::list<OS::shared_task> task_reference;
-			unsigned long  event_mask;
-			unsigned int id;
-			event_type mask_type;
-			
+            
+            semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
+		
+			unsigned long max_count;
+			unsigned long initial_count;
+            
+		
 		public:
-			
-			Event(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Event).hash_code();
+			Semaphore(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(Semaphore).hash_code();
 				std::hash<std::string> hash_fn;
-				this->seed = hash_fn(name +  typeid(Event).name());
+				this->seed = hash_fn(name +  typeid(Semaphore).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
 			
+            void set_semaphore_type(semaphore_type type);
+			semaphore_type get_semaphore_type();
 			
-			void print_information(){
-				
-			};
+			void set_max_count(unsigned long count);
+			unsigned long get_max_count();
 			
-			bool set_task_reference(OS::shared_task task);
-			std::list<OS::shared_task> get_task_references();
-			void set_event_mask(unsigned long  mask);
-			void set_event_mask_auto();
-			void set_id(unsigned int id);
-			
+			void set_initial_count(unsigned long count);
+			unsigned long get_initial_count();
 	};
+	
 	
 	class Resource :public graph::Vertex{
 		
 		private:
+            
+            resource_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
+		
+			unsigned long max_count;
+			unsigned long initial_count;
+            
 			std::list<OS::shared_task> tasks;
 			std::list<OS::shared_isr> irs;
 			std::list<OS::shared_resource> resources;
-			
-			resource_type type;
 			
 		public:
 			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -977,11 +934,20 @@ namespace OS {
 			std::list<OS::shared_resource> get_linked_resources();
 			
 			bool set_resource_property(std::string type, std::string linked_resource);
-			
+            
+            void set_resource_type(resource_type type);
 			resource_type get_resource_type();
 			
+			void set_max_count(unsigned long count);
+			unsigned long get_max_count();
+			
+			void set_initial_count(unsigned long count);
+			unsigned long get_initial_count();
 	};
 	
+    
+    
+    
 	class Counter :public graph::Vertex{
 		
 			unsigned long max_allowed_value;
@@ -1007,100 +973,80 @@ namespace OS {
 			void set_min_cycle(unsigned long min_cycle); 
 	};
 	
-	
-	//OSEK class
-	class Alarm :public graph::Vertex{
-		
-		private:
-		
-			OS::shared_task referenced_task;
-			OS::shared_event referenced_event;
-			OS::shared_counter referenced_counter;
-						
-			alarm_action_type action;
-			
-			std::string alarm_callback;
-			
-			std::list<std::string> appmodes;
-			
-			bool autostart;
-			unsigned int alarm_time;
-			unsigned int cycle_time;
+    
+    
+    
+    
+    class Timer : public graph::Vertex {
+
+        private:
+            
+            OS::shared_task referenced_task;
+            OS::shared_event referenced_event;
+            OS::shared_counter referenced_counter;
+                        
+            alarm_action_type action;
+            
+
+            
+            std::list<std::string> appmodes;
+            
+            bool autostart;
+            unsigned int alarm_time;
+            unsigned int cycle_time;
+            
+            OS::shared_function definition_function;
+            
             
             int periode;     // Periode in Ticks
             timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
             int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
-		              // same callback function is used by more software timers because it can be used to provide
-		              // timer-specific storage.
-			
-		public:
-			
-			Alarm(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Alarm).hash_code();
-				std::hash<std::string> hash_fn;
-				this->seed = hash_fn(name +  typeid(Alarm).name());				//std::cerr << "name subclass: " << name << std::endl;
-			};
-			
-			void print_information(){
-			
-			};
+                        // same callback function is used by more software timers because it can be used to provide
+                        // timer-specific storage.
+            
+        public:
 
-			bool set_task_reference(std::string task);
-			OS::shared_task get_task_reference();
-			
-			bool set_counter_reference(std::string counter);
-			OS::shared_counter get_counter_reference();
-			
-			
-			bool set_event_reference(std::string event);
-			void set_alarm_callback_reference(std::string callback_name);
-			
-			void set_autostart(bool flag);
-			void set_alarm_time(unsigned int alarm_time);
-			void set_cycle_time(unsigned int cycle_time);
-			
-			void set_appmode(std::string appmode);
+            Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+                this->vertex_type = typeid(Timer).hash_code();
+                std::hash<std::string> hash_fn;
+                this->seed = hash_fn(name +  typeid(Timer).name());
+            }
 
-	};
-	
+        
+            void print_information(){
+                
+            };
+            
+            void set_timer_type(timer_type type);
+            timer_type get_timer_type();
+            void set_timer_id(unsigned long timer_id);
+            void set_periode(unsigned long period);
+            
+            unsigned long get_timer_id();
+            unsigned long get_periode();
+            
+            bool set_definition_function(std::string definition_function_name);
+            shared_function get_definition_function();
+            
+            bool set_task_reference(std::string task);
+            
+            OS::shared_task get_task_reference();
+            
+            bool set_counter_reference(std::string counter);
+            OS::shared_counter get_counter_reference();
+            
+            
+            bool set_event_reference(std::string event);
+            
+            void set_alarm_callback_reference(std::string callback_name);
+            
+            void set_autostart(bool flag);
+            void set_alarm_time(unsigned int alarm_time);
+            void set_cycle_time(unsigned int cycle_time);
+            
+            void set_appmode(std::string appmode);
 
-    class Timer : public graph::Vertex {
 
-		OS::shared_function definition_function;
-		
-		
-		int periode;     // Periode in Ticks
-		timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
-		int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
-		              // same callback function is used by more software timers because it can be used to provide
-		              // timer-specific storage.
-		
-	  public:
-
-		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->vertex_type = typeid(Timer).hash_code();
-			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(Timer).name());
-		}
-
-		virtual Timer *clone() const{return new Timer(*this);};
-	
-		void print_information(){
-			
-		};
-		
-		void set_timer_type(timer_type type);
-		timer_type get_timer_type();
-		void set_timer_id(unsigned long timer_id);
-		void set_periode(unsigned long period);
-		
-		unsigned long get_timer_id();
-		unsigned long get_periode();
-		
-		bool set_definition_function(std::string definition_function_name);
-        shared_function get_definition_function();
-
-		static bool classof(const Vertex *S);
 	};
 	
 	

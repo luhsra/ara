@@ -44,14 +44,10 @@ cpdef get_type_hash(name):
         hash_type = typeid(cgraph.Timer).hash_code()
     elif name == "Buffer":
         hash_type = typeid(cgraph.Buffer).hash_code()
-    elif name == "Alarm":
-        hash_type = typeid(cgraph.Alarm).hash_code()
     elif name == "QueueSet":
         hash_type = typeid(cgraph.QueueSet).hash_code()
     elif name == "RTOS":
         hash_type = typeid(cgraph.RTOS).hash_code()
-    elif name == "EventGroup":
-        hash_type = typeid(cgraph.EventGroup).hash_code()
     elif name == "ISR":
         hash_type = typeid(cgraph.ISR).hash_code()
         
@@ -137,9 +133,7 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         typeid(cgraph.Buffer).hash_code(): Buffer,
         typeid(cgraph.Timer).hash_code(): Timer,
         typeid(cgraph.Semaphore).hash_code(): Semaphore,
-        typeid(cgraph.Alarm).hash_code(): Alarm,
         typeid(cgraph.Event).hash_code(): Event,
-        typeid(cgraph.EventGroup).hash_code(): EventGroup,
         typeid(cgraph.Edge).hash_code(): Edge,
         typeid(cgraph.RTOS).hash_code(): RTOS,
         typeid(cgraph.ISR).hash_code(): ISR,
@@ -296,50 +290,11 @@ cdef class Vertex:
             
         return pylist
 
-cdef class Alarm(Vertex):
 
-    cdef inline shared_ptr[cgraph.Alarm] _c(self):
-        return spc[cgraph.Alarm, cgraph.Vertex](self._c_vertex)
 
-    def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-        cdef string bname
-        if not _raw:
-            bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Alarm](make_shared[cgraph.Alarm](&graph._c_graph, bname))
+   
 
-    def set_task_reference(self, str task_name):
-        cdef string c_task_name = task_name.encode('UTF-8')
-        deref(self._c()).set_task_reference(c_task_name)
-
-    def set_counter_reference(self, str counter_name):
-        cdef string c_counter_name = counter_name.encode('UTF-8')
-        deref(self._c()).set_counter_reference(c_counter_name)
-
-    def set_event_reference(self, str event_name):
-        cdef string c_event_name = event_name.encode('UTF-8')
-        deref(self._c()).set_event_reference(c_event_name)
-
-    def set_alarm_callback_reference(self, str callback_name):
-        cdef string c_callback_name = callback_name.encode('UTF-8')
-        deref(self._c()).set_alarm_callback_reference(c_callback_name)
-
-    def set_appmode(self, str appmode_name):
-        cdef string c_appmode_name = appmode_name.encode('UTF-8')
-        deref(self._c()).set_appmode(c_appmode_name)
-
-    def set_autostart(self, bool autostart):
-        deref(self._c()).set_autostart(autostart)
-
-    def set_alarm_time(self, unsigned int alarm_time):
-        deref(self._c()).set_alarm_time(alarm_time)
-
-    def set_cycle_time(self, unsigned int cycle_time):
-        deref(self._c()).set_cycle_time(cycle_time)
-
-    def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
+    
 
 
 cdef class Counter(Vertex):
@@ -799,17 +754,6 @@ cdef class Semaphore(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Semaphore](make_shared[cgraph.Semaphore](&graph._c_graph, bname))
             
-cdef class EventGroup(Vertex):
-
-    cdef inline shared_ptr[cgraph.EventGroup] _c(self):
-        return spc[cgraph.EventGroup, cgraph.Vertex](self._c_vertex)
-
-    def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
-        cdef string bname
-        if not _raw:
-            bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.EventGroup](make_shared[cgraph.EventGroup](&graph._c_graph, bname))
-        
         
 cdef class Buffer(Vertex):
 
@@ -854,6 +798,40 @@ cdef class Timer(Vertex):
     def set_definition_function(self, str function_name):
         cdef string c_function_name = function_name.encode('UTF-8')
         return deref(self._c()).set_definition_function(c_function_name)
+    
+    def set_task_reference(self, str task_name):
+        cdef string c_task_name = task_name.encode('UTF-8')
+        deref(self._c()).set_task_reference(c_task_name)
+
+    def set_counter_reference(self, str counter_name):
+        cdef string c_counter_name = counter_name.encode('UTF-8')
+        deref(self._c()).set_counter_reference(c_counter_name)
+
+    def set_event_reference(self, str event_name):
+        cdef string c_event_name = event_name.encode('UTF-8')
+        deref(self._c()).set_event_reference(c_event_name)
+
+    def set_alarm_callback_reference(self, str callback_name):
+        cdef string c_callback_name = callback_name.encode('UTF-8')
+        deref(self._c()).set_alarm_callback_reference(c_callback_name)
+
+    def set_appmode(self, str appmode_name):
+        cdef string c_appmode_name = appmode_name.encode('UTF-8')
+        deref(self._c()).set_appmode(c_appmode_name)
+
+    def set_autostart(self, bool autostart):
+        deref(self._c()).set_autostart(autostart)
+
+    def set_alarm_time(self, unsigned int alarm_time):
+        deref(self._c()).set_alarm_time(alarm_time)
+
+    def set_cycle_time(self, unsigned int cycle_time):
+        deref(self._c()).set_cycle_time(cycle_time)
+
+    def get_name(self):
+        cdef string c_string = deref(self._c()).get_name()
+        cdef bytes py_string = c_string
+        return py_string
         
 cdef class RTOS(Vertex):
 

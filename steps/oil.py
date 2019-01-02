@@ -147,11 +147,11 @@ class OilStep(Step):
 
  
         #get the alarms
-        alarms = dictionary.get("ALARM", "error")
+        alarms = dictionary.get("Timer", "error")
         if alarms != "error":
             #iterate about the alarms
             for name in alarms:
-                alarm = graph.Alarm(g, name)
+                alarm = graph.Timer(g, name)
                 alarm_list[name] = alarm
                 g.set_vertex(alarm)
 

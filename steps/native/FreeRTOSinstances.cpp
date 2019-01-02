@@ -750,7 +750,7 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
 	//std::cout << "semaphore handler name: " <<  handler_name << std::endl;
 	switch(type){
 		
-		case binary:{
+		case binary_semaphore:{
             
             success = true;
             
@@ -758,7 +758,7 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
 			break;
 		}
 		
-		case counting:{
+		case counting_semaphore:{
             
 			success = true;
             std::any specific_argument;
@@ -782,27 +782,6 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
 			break;
 		}
 		
-		
-		case mutex:{
-			
-			success = true;
-            std::any specific_argument;
-            llvm::Value* argument_reference;
-			//load the arguments
-			argument_data argument  = argument_list.at(0);
-			get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
-			unsigned long mutex_type =  std::any_cast<long>(specific_argument);
-			
-			//set the mutex type (mutex, recursive mutex)
-			type = (semaphore_type) mutex_type;
-			
-			semaphore->set_semaphore_type(type);
-			if(type == mutex)std::cout << "mutex successfully created"<< std::endl;
-			if(type == recursive_mutex)std::cout << "recursive mutex successfully created"<< std::endl;
-
-			break;
-		
-		}
 		default:{
 			std::cout << "wrong semaphore type" << std::endl;
 			break;
@@ -815,6 +794,68 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
         return nullptr;
     }
 }
+
+
+
+//..Semaphore...Create
+//{ binary, counting, mutex, recursive_mutex }semaphore_type;
+graph::shared_vertex create_resource(graph::Graph& graph,OS::shared_abb abb,resource_type type , bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references ){
+	
+    bool success = false;
+    
+	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
+		
+	//create reference list for all arguments types of the task creation syscall
+	std::vector<argument_data>argument_list;
+	
+	for(auto & argument : abb->get_syscall_arguments()){
+		argument_list.emplace_back(argument);
+	}
+	
+	std::string handler_name = get_handler_name(instruction, 1);
+	
+	auto resource = std::make_shared<OS::Resource>(&graph,handler_name);
+	
+	resource->set_handler_name(handler_name);
+	resource->set_start_scheduler_creation_flag(before_scheduler_start);
+	
+	
+	switch(type){
+		
+        case binary_mutex:{
+			
+			success = true;
+            std::any specific_argument;
+            llvm::Value* argument_reference;
+			//load the arguments
+			argument_data argument  = argument_list.at(0);
+			get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
+			unsigned long type_mutex =  std::any_cast<long>(specific_argument);
+			
+			//set the mutex type (mutex, recursive mutex)
+			type = (resource_type) type_mutex;
+			
+			if(type == binary_mutex)std::cout << "mutex successfully created"<< std::endl;
+			if(type == recursive_mutex)std::cout << "recursive mutex successfully created"<< std::endl;
+            resource->set_resource_type(type);
+            
+			break;
+		
+		}
+		
+		default:{
+			std::cout << "wrong mutex type" << std::endl;
+			break;
+		}
+	}
+	if(success){
+        graph.set_vertex(resource);
+        return resource;
+    }else{
+        return nullptr;
+    }
+}
+
 
 //xQueueCreate
 graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
@@ -851,7 +892,7 @@ graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb ,bool 
 	
     graph::shared_vertex vertex = nullptr;
     
-	if(type != binary){
+	if(type != binary_semaphore){
 		
 		std::string handler_name = get_handler_name(instruction, 1);
 		
@@ -869,7 +910,7 @@ graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb ,bool 
 		
 		std::cout << "queue successfully created"<< std::endl;
 	}else{
-		vertex = create_semaphore(graph,abb,binary, before_scheduler_start,call_references);
+		vertex = create_semaphore(graph,abb,binary_semaphore, before_scheduler_start,call_references);
 	}
 
 	return vertex;
@@ -891,7 +932,7 @@ graph::shared_vertex create_event_group(graph::Graph& graph,OS::shared_abb abb, 
 	}
 	//create queue and set properties 
 	std::string handler_name = get_handler_name(instruction, 1);
-	auto event_group = std::make_shared<OS::EventGroup>(&graph,handler_name);
+	auto event_group = std::make_shared<OS::Event>(&graph,handler_name);
 		
 	//std::cerr <<  "EventGroupHandlerName" << handler_name << std::endl;
 	event_group->set_handler_name(handler_name);
@@ -1154,22 +1195,34 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
     }
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
         //set semaphore
-        semaphore_type type;
+        semaphore_type type = binary_semaphore;
         std::string syscall_name = abb->get_syscall_name();
-        if(syscall_name =="xQueueCreateMutex")type = mutex;
-        if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
-        if(syscall_name =="xQueueCreateCountingSemaphore")type = counting;
+       
+        if(syscall_name =="xQueueCreateCountingSemaphore")type = counting_semaphore;
         created_vertex = create_semaphore(graph, abb, type, before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
+        if(!created_vertex)std::cout << "CountingSemaphore could not created" << std::endl;
         
-    }						
+    }
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Resource).hash_code())){
+        //set semaphore
+       
+        resource_type type;
+        std::string syscall_name = abb->get_syscall_name();
+        if(syscall_name =="xQueueCreateMutex")type = binary_mutex;
+        else if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
+        
+        created_vertex = create_resource(graph, abb, type, before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Mutex could not created" << std::endl;
+        
+    }			
+    
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
         created_vertex = create_timer( graph,abb,before_scheduler_start,already_visited_calls);
         if(!created_vertex)std::cout << "Timer could not created" << std::endl;
       
     }
 
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
+    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Event).hash_code())){
         created_vertex = create_event_group(graph, abb,before_scheduler_start,already_visited_calls);
         if(!created_vertex)std::cout << "Event Group could not created" << std::endl;
     }

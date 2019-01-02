@@ -67,21 +67,6 @@ cdef extern from "graph.h" namespace "OS":
         RTOS(Graph* graph, string name) except +
 
 
-    cdef cppclass Alarm:
-        Alarm(Graph* graph, string name) except +
-
-
-        bool set_task_reference(string task)
-        bool set_counter_reference(string counter)
-        bool set_event_reference(string event)
-        void set_alarm_callback_reference(string callback_name)
-        void set_autostart(bool flag)
-        void set_alarm_time(unsigned int alarm_time)
-        void set_cycle_time(unsigned int cycle_time)
-        void set_appmode(string appmode)
-
-        string get_name()
-
     cdef cppclass Counter:
         Counter(Graph* graph, string name) except +
 
@@ -150,6 +135,16 @@ cdef extern from "graph.h" namespace "OS":
         Timer(Graph* graph, string name) except +
         shared_ptr[Function] get_definition_function()
         bool set_definition_function(string function_name)
+        bool set_task_reference(string task)
+        bool set_counter_reference(string counter)
+        bool set_event_reference(string event)
+        void set_alarm_callback_reference(string callback_name)
+        void set_autostart(bool flag)
+        void set_alarm_time(unsigned int alarm_time)
+        void set_cycle_time(unsigned int cycle_time)
+        void set_appmode(string appmode)
+
+        string get_name()
         
     cdef cppclass Event:
         Event(Graph* graph, string name) except +
@@ -159,8 +154,7 @@ cdef extern from "graph.h" namespace "OS":
     cdef cppclass Buffer:
         Buffer(Graph* graph, string name) except +
 
-    cdef cppclass EventGroup:
-        EventGroup(Graph* graph, string name) except +
+
 
 
 

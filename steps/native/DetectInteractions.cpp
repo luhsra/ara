@@ -429,7 +429,7 @@ void add_to_queue_set(graph::Graph& graph){
 	
                         graph::shared_vertex queue_set_element = nullptr;
                         
-                        queue_set_element =  graph.get_vertex(hash_fn(handler_name +  typeid(OS::Semaphore).name()));
+                        queue_set_element =  graph.get_vertex(hash_fn(handler_name +  typeid(OS::Resource).name()));
                        
                         if(queue_set_element== nullptr)queue_set_element = graph.get_vertex(hash_fn(handler_name +  typeid(OS::Queue).name()));
                         
@@ -450,18 +450,18 @@ void add_to_queue_set(graph::Graph& graph){
 void verify_mutexes(graph::Graph& graph){
     
      //get all isrs, which are stored in the graph
-    auto vertex_list =  graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
 	//iterate about the isrs
 	for (auto &vertex : vertex_list) {
         //std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
-        auto semaphore = std::dynamic_pointer_cast<OS::Semaphore> (vertex);
+        auto resource = std::dynamic_pointer_cast<OS::Resource> (vertex);
         
         
-        std::cerr << "mutex/semaphore:" <<  semaphore->get_name() << std::endl;
+        std::cerr << "resource:" <<  resource->get_name() << std::endl;
         
         bool create_call = false;
-        auto ingoing_edges = semaphore->get_ingoing_edges();
+        auto ingoing_edges = resource->get_ingoing_edges();
         std::vector<graph::shared_edge> mutex_takes;
         std::vector<graph::shared_edge> mutex_gives;
         for(auto ingoing : ingoing_edges){
@@ -471,17 +471,17 @@ void verify_mutexes(graph::Graph& graph){
             std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
-        auto outgoing_edges = semaphore->get_outgoing_edges();
+        auto outgoing_edges = resource->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             if(outgoing->get_abb_reference()->get_syscall_type() == receive)mutex_takes.emplace_back(outgoing);
             std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
         
-        if(!create_call)std::cerr << "mutex/semaphore was not created" << std::endl;
+        if(!create_call)std::cerr << "resource was not created" << std::endl;
         else{
             
-            if(semaphore->get_semaphore_type() == mutex  || semaphore->get_semaphore_type() == recursive_mutex){
+            if(resource->get_resource_type() == binary_mutex  || resource->get_resource_type() == recursive_mutex){
                 std::list<std::size_t> parallel_takes;
                 
                 for(auto outgoing : outgoing_edges){
@@ -502,9 +502,50 @@ void verify_mutexes(graph::Graph& graph){
                             if(is_reachable (take->get_abb_reference(), give->get_abb_reference()))mutex_flag = true;
                         }
                     }
-                    if(!mutex_flag)std::cerr << "mutex was not given after taken" << std::endl;
+                    if(!mutex_flag)std::cerr << "resource was not given after taken" << std::endl;
                 }
-            }else{
+            }
+        } 
+    }
+}
+
+
+
+void verify_semaphores(graph::Graph& graph){
+    
+     //get all isrs, which are stored in the graph
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
+	//iterate about the isrs
+	for (auto &vertex : vertex_list) {
+        //std::cerr << "isr name: " << vertex->get_name() << std::endl;
+		std::vector<llvm::Instruction*> already_visited;
+        auto semaphore = std::dynamic_pointer_cast<OS::Semaphore> (vertex);
+        
+        
+        std::cerr << "semaphore:" <<  semaphore->get_name() << std::endl;
+        
+        bool create_call = false;
+        auto ingoing_edges = semaphore->get_ingoing_edges();
+        std::vector<graph::shared_edge> mutex_takes;
+        std::vector<graph::shared_edge> mutex_gives;
+        for(auto ingoing : ingoing_edges){
+            
+            if(ingoing->get_abb_reference()->get_syscall_type() == create)create_call = true;
+            if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
+            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+        }
+        
+        auto outgoing_edges = semaphore->get_outgoing_edges();
+        for(auto outgoing : outgoing_edges){
+            if(outgoing->get_abb_reference()->get_syscall_type() == receive)mutex_takes.emplace_back(outgoing);
+            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+        }
+        
+        
+        if(!create_call)std::cerr << "semaphore was not created" << std::endl;
+        else{
+            
+            if(semaphore->get_semaphore_type() == binary_mutex  || semaphore->get_semaphore_type() == recursive_mutex){
                 for(auto take : mutex_takes){
                     bool semaphore_flag = false;
                     for(auto give :mutex_gives){
@@ -515,11 +556,9 @@ void verify_mutexes(graph::Graph& graph){
                     if(!semaphore_flag)std::cerr << "semaphore was not given in other instance/better use a mutex" << std::endl;
                 }
             }
-            
         } 
     }
 }
-
 
 
 
@@ -541,6 +580,7 @@ namespace step {
 		//graph.print_information();
 		detect_interactions(graph);
 		verify_mutexes(graph);
+        verify_semaphores(graph);
         verify_isrs(graph);
         add_to_queue_set(graph);
 	}
