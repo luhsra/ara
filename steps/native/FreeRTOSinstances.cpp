@@ -543,36 +543,41 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	return success;
 }
 
+call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference){
+    call_data specific_call_data;
+    
+    specific_call_data.sys_call = true;
+    
+    specific_call_data.call_instruction = call_instruction_reference;
+    
+    for(auto argument : *arguments){
+        argument_data tmp_argument;
+        std::any any_value;
+        llvm::Value* llvm_reference;
+        argument_data specific_argument;
+        get_call_relative_argument(any_value,llvm_reference, argument,call_references);
+                
+        
+        tmp_argument.any_list.emplace_back(any_value);
+        tmp_argument.value_list.emplace_back(llvm_reference);
+        specific_argument.multiple = false;
+        specific_call_data.arguments.emplace_back(tmp_argument);
+        
+    }
+    return specific_call_data;
+}
 
 
-std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Instruction*>*call_references){
-    
-/*    
-    std::cerr << "--------------------------------------------" << std::endl;
-    
-    for(auto element : *call_references){
-        if(element == nullptr)continue;
-        std::cerr << "call reference" << std::endl;
-        print_tmp(element);
-    }
-    int counter = 0;
-    for(auto argument_calles : argument.argument_calles_list){
-        std::cerr << "------------------tmp------------------" << std::endl;
-        for(auto call_reference :argument_calles){
-            if(call_reference == nullptr)continue;
-            std::cerr << "call_reference" << std::endl;
-            print_tmp(call_reference);
-            std::cerr << "value" << std::endl;
-            print_tmp(argument.value_list.at(counter));
-        }
-        ++counter;
-      
-    }
-    std::cerr << "--------------------------------------------" << std::endl;
-    */
+void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,argument_data argument,std::vector<llvm::Instruction*>*call_references){
+   
+    if( argument.any_list.size() == 0)return;
     
     //check if multiple argument values are possible
-    if(argument.multiple ==false)return argument.any_list.front();
+    if(argument.multiple ==false){
+        any_value =  argument.any_list.front();
+        llvm_value =  argument.value_list.front();
+        return;
+    }
     else{
         std::vector<std::tuple<std::any,llvm::Value*,std::vector<char>>> valid_candidates;
         char index = 0;
@@ -598,7 +603,10 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
             ++index;
         }
         if(valid_candidates.size() == 1){
-            return std::get<std::any>(valid_candidates.front());
+            
+            any_value = std::get<std::any>(valid_candidates.front());
+            llvm_value = std::get<llvm::Value*>(valid_candidates.front());;
+            return;
         }else{
             if(valid_candidates.size() == 0){
                  std::cerr << "no argument values are possible"<< std::endl;
@@ -612,17 +620,22 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
                         break;
                     }
                 }
-                if(success)return argument.any_list.front();
-                else{
+                if(success){
+                    any_value = std::get<std::any>(valid_candidates.front());
+                    llvm_value = std::get<llvm::Value*>(valid_candidates.front());
+                    //llvm_value = argument.value_list.front();;
+                    //any_value = argument.any_list.front();
+                    return;
+                    
+                }else{
                     //std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
                     //TODO select the best 
                 }
             }
         }
     }
-    std::any tmp = (std::string) "multiple argument values are possible";
-    return tmp;
-    
+    any_value = (std::string) "multiple argument values are possible";
+    llvm_value = nullptr;
 }
 
 
@@ -641,30 +654,32 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
 	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
-
+    std::any specific_argument;
+    llvm::Value* argument_reference;
 	//load the arguments
 	argument_data argument= argument_list.at(0);
-	auto specific_argument = get_call_relative_argument(argument,call_references);
+	
+	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string function_reference_name =  std::any_cast<std::string>(specific_argument);
 	
 	argument = argument_list.at(1);
-	specific_argument = get_call_relative_argument(argument,call_references);
+	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string task_name =  std::any_cast<std::string>(specific_argument);
 	
 	argument = argument_list.at(2);
-	specific_argument = get_call_relative_argument(argument,call_references);
+	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	unsigned long stacksize =  std::any_cast<long>(specific_argument);
 	
 	argument = argument_list.at(3);
-	specific_argument = get_call_relative_argument(argument,call_references);
+	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string task_argument =  std::any_cast<std::string>(specific_argument);
 	
 	argument = argument_list.at(4);
-	specific_argument = get_call_relative_argument(argument,call_references);
+	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	unsigned long priority =  std::any_cast<long>(specific_argument);
 	
 	argument = argument_list.at(5);
-	specific_argument = get_call_relative_argument(argument,call_references);
+	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string handler_name =  std::any_cast<std::string>(specific_argument);
 	
     //if no handler name was transmitted
@@ -746,14 +761,16 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
 		case counting:{
             
 			success = true;
-            
+            std::any specific_argument;
+            llvm::Value* argument_reference;
+	
 			//load the arguments
 			argument_data argument  = argument_list.at(1);
-            auto specific_argument = get_call_relative_argument(argument,call_references);
+            get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 			unsigned long initial_count =  std::any_cast<long>(specific_argument);
 			
 			argument  = argument_list.at(0);
-			specific_argument = get_call_relative_argument(argument,call_references);
+			get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 			unsigned long max_count =  std::any_cast<long>(specific_argument);
 			
 
@@ -769,10 +786,11 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
 		case mutex:{
 			
 			success = true;
-            
+            std::any specific_argument;
+            llvm::Value* argument_reference;
 			//load the arguments
 			argument_data argument  = argument_list.at(0);
-			auto specific_argument = get_call_relative_argument(argument,call_references);
+			get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 			unsigned long mutex_type =  std::any_cast<long>(specific_argument);
 			
 			//set the mutex type (mutex, recursive mutex)
@@ -811,17 +829,22 @@ graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb ,bool 
 		argument_list.emplace_back(argument);
 	}
 	
+    std::any specific_argument;
+    llvm::Value* argument_reference;
+	
 	//load the arguments
 	argument_data argument   = argument_list.at(0);
-	auto specific_argument = get_call_relative_argument(argument,call_references);
+    
+    abb->print_information();
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long queue_length =  std::any_cast<long>(specific_argument);
 	
 	argument  = argument_list.at(1);
-	specific_argument = get_call_relative_argument(argument,call_references);
-	long item_size =  std::any_cast<long>(specific_argument);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
+    long item_size =  std::any_cast<long>(specific_argument);
 
 	argument  = argument_list.at(2);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long queue_type =  std::any_cast<long>(specific_argument);
 	
 	semaphore_type type = (semaphore_type) queue_type;
@@ -897,9 +920,12 @@ graph::shared_vertex create_queue_set(graph::Graph& graph, OS::shared_abb abb,  
 		argument_list.emplace_back(argument);
 	}
 	
+    std::any specific_argument;
+    llvm::Value* argument_reference;
+	
 	//load the arguments
     argument_data argument   = argument_list.at(0);
-	auto specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	unsigned long queue_set_size =  std::any_cast<long>(specific_argument);
 	
 
@@ -928,25 +954,29 @@ graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool b
 	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
+	
+    std::any specific_argument;
+    llvm::Value* argument_reference;
+	
 	//load the arguments
 	argument_data argument   = argument_list.at(0);
-	auto specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string timer_name =  std::any_cast<std::string>(specific_argument);
 	
 	argument  = argument_list.at(1);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long timer_periode =  std::any_cast<long>(specific_argument);
 
 	argument  = argument_list.at(2);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long timer_autoreload =  std::any_cast<long>(specific_argument);
 	
 	argument  = argument_list.at(3);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string timer_id =  std::any_cast<std::string>(specific_argument);
 	
 	argument  = argument_list.at(4);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string timer_definition_function =  std::any_cast<std::string>(specific_argument);
 	
 	//create timer and set properties 
@@ -985,20 +1015,23 @@ graph::shared_vertex create_buffer(graph::Graph& graph,OS::shared_abb abb, bool 
 	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
+	
+	std::any specific_argument;
+    llvm::Value* argument_reference;
 			
 	//load the arguments
 	argument_data argument   = argument_list.at(2);
-	auto specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	buffer_type type = (buffer_type) std::any_cast<long>(specific_argument);
 	
 	//std::cout << "buffer type: "<< std::any_cast<long>(argument)<< std::endl;
 	
 	argument  = argument_list.at(1);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long trigger_level =  std::any_cast<long>(specific_argument);
 
 	argument  = argument_list.at(0);
-	specific_argument = get_call_relative_argument(argument,call_references);
+    get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long buffer_size =  std::any_cast<long>(specific_argument);
 	
 	//create timer and set properties 
@@ -1160,6 +1193,10 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
         start_vertex->set_outgoing_edge(edge);
         created_vertex->set_ingoing_edge(edge);
         edge->set_instruction_reference( abb->get_syscall_instruction_reference());
+        auto arguments = abb->get_syscall_arguments();
+        auto syscall_reference = abb->get_syscall_instruction_reference();
+        auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference);
+        edge->set_specific_call(&specific_arguments);
         return true;
     }else{
         return false;

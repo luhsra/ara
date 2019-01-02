@@ -160,10 +160,11 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                 if(argument_list.size() > 0 && argument_candidats.any_list.size() > 0){
                     
                     auto any_argument = argument_candidats.any_list.front();
+                    llvm::Value* llvm_argument_reference = nullptr;
                     if(argument_candidats.any_list.size() > 1){
                     
                         std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
-                        any_argument = get_call_relative_argument( argument_candidats,already_visited_calls);                
+                        get_call_relative_argument(any_argument,llvm_argument_reference, argument_candidats,already_visited_calls);                
                     }
                     
                     
@@ -222,6 +223,11 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 edge->set_instruction_reference( abb->get_syscall_instruction_reference());
                                 //set the success flag
                                 success = true;
+                                
+                                auto arguments = abb->get_syscall_arguments();
+                                auto syscall_reference = abb->get_syscall_instruction_reference();
+                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference);
+                                edge->set_specific_call(&specific_arguments);
                             
                             }else{	//syscall set values
                                 
@@ -236,7 +242,11 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 edge->set_instruction_reference( abb->get_syscall_instruction_reference());
                                 //set the success flag
                                 success = true;
-                                 //std::cerr << "start vertex: " << start_vertex->get_name() << " target vertex: " << target_vertex->get_name() << std::endl;
+                                
+                                auto arguments = abb->get_syscall_arguments();
+                                auto syscall_reference = abb->get_syscall_instruction_reference();
+                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference);
+                                edge->set_specific_call(&specific_arguments);
                             }
                         }
                         break;
@@ -406,13 +416,13 @@ void add_to_queue_set(graph::Graph& graph){
             
             if(ingoing->get_abb_reference()->get_syscall_type() == add){
                 
-                auto arguments = ingoing->get_abb_reference()->get_syscall_arguments();
+                auto call = ingoing->get_specific_call();
                 
-                if(arguments.front().multiple ==false){
+                if(call.arguments.front().multiple ==false){
                     
-                    if(arguments.front().any_list.front().type().hash_code() == typeid(std::string).hash_code()){
+                    if(call.arguments.front().any_list.front().type().hash_code() == typeid(std::string).hash_code()){
                         
-                        std::string handler_name = std::any_cast<std::string>(arguments.front().any_list.front());
+                        std::string handler_name = std::any_cast<std::string>(call.arguments.front().any_list.front());
                         std::cerr << handler_name << std::endl;
                         
                         std::hash<std::string> hash_fn;

@@ -71,9 +71,11 @@ struct call_data {
 };
 
 //bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT);
-std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Instruction*>*call_references);
+void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,argument_data argument,std::vector<llvm::Instruction*>*call_references);
 void debug_argument(argument_data argument);
 bool list_contains_element(std::list<std::size_t>* list, size_t target);
+call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference);
+
 namespace OS
 {
     class ABB;
@@ -250,10 +252,10 @@ namespace graph {
 		shared_vertex start_vertex;  // Entsprechende Set- und Get-Methoden
 		shared_vertex target_vertex; // Entsprechende Set- und Get-Methoden
 		bool is_syscall;       // Flag, ob Edge ein Syscall ist
-		std::string call;      // Entsprechende Set- und Get-Methoden
 		std::list<argument_data> arguments;
 		shared_abb atomic_basic_block_reference;
         llvm::Instruction* instruction_reference;
+        
 		call_data call;
 
 	  public:
@@ -285,6 +287,8 @@ namespace graph {
 		std::list<argument_data>* get_arguments();
 		void set_arguments(std::list<argument_data> arguments);
 		void set_argument(argument_data data);
+        void set_specific_call(call_data* call);
+        call_data get_specific_call();
 	};
 } // namespace graph
 
@@ -684,44 +688,6 @@ namespace OS {
 		static bool classof(const Vertex *S);
 	};
 
-	class Timer : public graph::Vertex {
-
-		OS::shared_function definition_function;
-		
-		
-		int periode;     // Periode in Ticks
-		timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
-		int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
-		              // same callback function is used by more software timers because it can be used to provide
-		              // timer-specific storage.
-		
-	  public:
-
-		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			this->vertex_type = typeid(Timer).hash_code();
-			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(Timer).name());
-		}
-
-		virtual Timer *clone() const{return new Timer(*this);};
-	
-		void print_information(){
-			
-		};
-		
-		void set_timer_type(timer_type type);
-		timer_type get_timer_type();
-		void set_timer_id(unsigned long timer_id);
-		void set_periode(unsigned long period);
-		
-		unsigned long get_timer_id();
-		unsigned long get_periode();
-		
-		bool set_definition_function(std::string definition_function_name);
-        shared_function get_definition_function();
-
-		static bool classof(const Vertex *S);
-	};
 
 	class ISR : public graph::Vertex {
 
@@ -1060,6 +1026,12 @@ namespace OS {
 			bool autostart;
 			unsigned int alarm_time;
 			unsigned int cycle_time;
+            
+            int periode;     // Periode in Ticks
+            timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
+            int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
+		              // same callback function is used by more software timers because it can be used to provide
+		              // timer-specific storage.
 			
 		public:
 			
@@ -1092,6 +1064,44 @@ namespace OS {
 	};
 	
 
+    class Timer : public graph::Vertex {
+
+		OS::shared_function definition_function;
+		
+		
+		int periode;     // Periode in Ticks
+		timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
+		int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
+		              // same callback function is used by more software timers because it can be used to provide
+		              // timer-specific storage.
+		
+	  public:
+
+		Timer(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+			this->vertex_type = typeid(Timer).hash_code();
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(Timer).name());
+		}
+
+		virtual Timer *clone() const{return new Timer(*this);};
+	
+		void print_information(){
+			
+		};
+		
+		void set_timer_type(timer_type type);
+		timer_type get_timer_type();
+		void set_timer_id(unsigned long timer_id);
+		void set_periode(unsigned long period);
+		
+		unsigned long get_timer_id();
+		unsigned long get_periode();
+		
+		bool set_definition_function(std::string definition_function_name);
+        shared_function get_definition_function();
+
+		static bool classof(const Vertex *S);
+	};
 	
 	
 	

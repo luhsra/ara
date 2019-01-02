@@ -668,6 +668,16 @@ OS::shared_abb graph::Edge::get_abb_reference(){
     
 }
 
+
+void graph::Edge::set_specific_call(call_data* call ){
+    this->call = *call;
+}
+
+
+call_data graph::Edge::get_specific_call(){
+    return this->call;
+}
+
 bool OS::Function::remove_abb(size_t seed){
 	
 	bool success = false;
