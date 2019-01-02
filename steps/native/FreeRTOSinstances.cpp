@@ -17,16 +17,21 @@
 #include <functional>
 #include "llvm/ADT/APFloat.h"
 #include "llvm/IR/TypeFinder.h"
+#include "CFG.h"
+#include "llvm/ADT/PostOrderIterator.h" 
+#include "llvm/ADT/SCCIterator.h"
 
 using namespace llvm;
 
 
+
+start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited);
 //print the argument
-void print_tmp(llvm::Value* val){
+std::string print_tmp(llvm::Value* val){
     std::string type_str;
 	llvm::raw_string_ostream rso(type_str);
 	val->print(rso);
-	std::cerr << rso.str() << std::endl ;
+	return rso.str() ;
 }
 
 void test_debug_argument(argument_data argument){
@@ -106,17 +111,30 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
 	return instruction_vector;
 }
 
-
-
-//return false if instruction is  before scheduler start or and the scheduler start does  dominate the instruction
-bool validate_start_scheduler_instruction_relations(std::vector<llvm::Instruction*> *start_scheduler_func_calls, llvm::Instruction* instruction,llvm::DominatorTree *dominator_tree){
+//return true if instruction is reachable from a instruction from the list
+bool validate_instructions_reachability(std::vector<llvm::Instruction*> *instruction_list, llvm::Instruction* instruction,llvm::DominatorTree *dominator_tree){
 	bool success = false;
-	for(auto * start_scheduler:*start_scheduler_func_calls){
-		if((dominator_tree->dominates(start_scheduler,instruction))){
+	for(auto * tmp_instruction:*instruction_list){
+        if(instruction == nullptr)std::cerr << "ERROR";
+		if(llvm::isPotentiallyReachable(tmp_instruction,instruction,dominator_tree,nullptr)){
 			success = true;
 			break;
 		}
 	}
+
+	return success;
+}
+
+//return true if instruction is dominated by all instructions from the list
+bool validate_instructions_dominance(std::vector<llvm::Instruction*> *instruction_list, llvm::Instruction* instruction,llvm::DominatorTree *dominator_tree){
+	bool success = true;
+	for(auto * tmp_instruction:*instruction_list){
+		if(!dominator_tree->dominates(tmp_instruction,instruction)){
+			success = false;
+			break;
+		}
+	}
+
 	return success;
 }
 
@@ -233,162 +251,6 @@ bool verify_instruction_order(llvm::Instruction* expected_front, llvm::Instructi
 	else return false;
 }
 
-//TODO case: where in func call uncertain start scheduler exists
-//TODO BFS instead of DFS for basic block order
-start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited){
-
-	
-	start_scheduler_relation state = uncertain;
-	
-	//check if valid function pointer was committed
-	if(function == nullptr) return not_defined;
-	
-	std::vector<llvm::Instruction*> start_scheduler_func_calls;
-	std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
-	std::vector<llvm::Instruction*> return_instructions;
-		
-	std::hash<std::string> hash_fn;
-
-	size_t hash_value = hash_fn(function->get_name());
-	
-	//search hash value in list of already visited basic blocks
-	for(auto hash : *already_visited){
-		if(hash_value == hash){
-			//function already visited
-			return not_defined;
-		}
-	}
-	//set function as already visited
-	already_visited->emplace_back(hash_value);
-	
-	//get all start scheduler instructions of the function
-	start_scheduler_func_calls = get_start_scheduler_instruction(function);
-	
-	//generate bfs order of basicblocks //TODO
-	//std::vector<std::tuple<int, llvm::BasicBlock*>> bfs = generate_bfs(function->get_llvm_reference());
-	
-	//generate dominator tree
-	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
-	
-	/*
-	std::string type_str;
-	llvm::raw_string_ostream rso(type_str);
-	*/
-    
-	//check if scheduler start instruction was after in function
-	if(start_scheduler_func_calls.size() == 0){
-		state = before;
-	}else{
-		
-		for(auto &abb : function->get_atomic_basic_blocks()){
-			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
-				for(auto &instr:*bb){
-					if(isa<ReturnInst>(instr)){
-						//std::cerr << "return instruction after" << std::endl;
-						return_instructions.emplace_back(&instr);
-					}
-				}
-			}
-		}
-		
-		//check TODO
-		for(auto& instruction:start_scheduler_func_calls){
-			if(dominator_tree->dominates(  &function->get_llvm_reference()->getEntryBlock(),instruction->getParent()))state= after;
-		}
-	}
-	
-	//iterate about the basic blocks of the abb
-	for(auto &abb : function->get_atomic_basic_blocks()){
-			
-        //TODO 
-		for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
-			
-			for(auto &instruction:*bb){
-				if(abb->get_call_type()== func_call){
-					start_scheduler_relation result;
-					for(auto *instr :abb->get_call_instruction_references()){
-						if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
-							llvm::Function* called_function = call_instruction->getCalledFunction();
-							if(called_function != nullptr){
-								graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
-								auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-								result = before_scheduler_instructions(graph,target_function  ,already_visited);
-								if(result == after){
-									start_scheduler_func_calls.emplace_back(call_instruction);
-									//state = after;
-								}
-								else{
-									if (result == uncertain){
-                                        uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
-                                        if (state != after)state = uncertain; 
-                                    }
-								}
-							}
-						}else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(instr)){
-							llvm::Function* called_function = call_instruction->getCalledFunction();
-							if(called_function != nullptr){
-								graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
-								auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-								result = before_scheduler_instructions(graph,target_function  ,already_visited);
-								if(result == after){
-									start_scheduler_func_calls.emplace_back(call_instruction);
-									//state = after;
-								}
-								else{
-									if (result == uncertain){
-                                        uncertain_start_scheduler_func_calls.emplace_back(call_instruction);
-                                        if (state != after)state = uncertain; 
-                                    }
-                                }
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	if(state !=before){
-		for(auto &abb : function->get_atomic_basic_blocks()){
-			for(llvm::BasicBlock* bb : abb->get_BasicBlocks()){
-				if(abb->get_call_type()== sys_call){
-					
-					for(auto &instruction:*bb){
-						//check if the abb contains a syscall
-						//continue if, no start scheduler syscall is in function, the instruction is before all the start scheduler instruction and the scheduler instrcutions dont dominate the instrcution 
-						if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,&instruction, dominator_tree )){
-							//if instruction is a syscall set the instruction in the before scheduler start list
-							abb->set_start_scheduler_relation(before);
-							
-						}else{
-							//check if the instruction is reachable from a start scheduler instruction 
-							std::vector<size_t> already_visited_abbs;
-							if(is_reachable(&start_scheduler_func_calls,instruction.getParent(),&already_visited_abbs)){
-								abb->set_start_scheduler_relation(uncertain);
-							}
-						}
-					}
-				}
-			}
-		}
-		//check return value if a start scheduler call is certainly or uncertainly called in the function
-		//a unceratain call exits if one return instruction has a start scheduler call as dominator
-		bool uncertain_flag = false;
-		//a certain call exists, if all return instructions have a start scheduler call as dominator
-		bool after_flag = true;
-		for(auto instr : return_instructions){
-			if(validate_start_scheduler_instruction_relations(&start_scheduler_func_calls,instr, dominator_tree ))uncertain_flag = true;
-			else after_flag = false;
-		}
-		
-		if(after_flag)state = after;
-		else{
-			if(uncertain_flag)state = uncertain;
-		}
-	}
-	
-	return state;
-	
-}
 
 
 
@@ -426,9 +288,166 @@ void update_called_functions(graph::Graph& graph,OS::shared_function function,st
     }
 }
 
+
+void recursive_before_scheduler_instructions(graph::Graph& graph,llvm::Instruction* instr,start_scheduler_relation& state,std::vector<std::size_t> *already_visited,std::vector<llvm::Instruction*>* start_scheduler_func_calls,std::vector<llvm::Instruction*>* uncertain_start_scheduler_func_calls){
+    
+    std::hash<std::string> hash_fn;
+    
+    llvm::Function* called_function = nullptr;
+    if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
+        called_function = call_instruction->getCalledFunction();
+    }else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(instr)){
+        called_function = call_instruction->getCalledFunction();
+    }
+   
+    start_scheduler_relation result;
+   
+    if(called_function != nullptr){
+        graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
+        auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
+        result = before_scheduler_instructions(graph,target_function  ,already_visited);
+        
+        
+        if(result == after){
+            //in the called function a start scheduler instruction is inevitably executed
+            start_scheduler_func_calls->emplace_back(instr);
+            if (state == before)state = uncertain; 
+        }
+        else{
+            if (result == uncertain){
+                //in the called function a start scheduler instruction is executed, but not inevitably
+                uncertain_start_scheduler_func_calls->emplace_back(instr);
+                //if the current state of the function is before and the result of the called function is uncertain, then set state to uncertain 
+                if (state == before)state = uncertain; 
+            }
+        }
+    }
+}
+
+//TODO case: where in func call uncertain start scheduler exists
+start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited){
+    
+	//default start scheduler relation state of the function 
+	start_scheduler_relation state = uncertain;
+	
+	//check if valid function pointer was committed
+	if(function == nullptr) return not_defined;
+	
+    
+	std::vector<llvm::Instruction*> start_scheduler_func_calls;
+	std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
+	std::vector<llvm::Instruction*> return_instructions;
+		
+	std::hash<std::string> hash_fn;
+    
+    
+    //generate hash value of the functionname
+	size_t hash_value = hash_fn(function->get_name());
+	
+	//search hash value in list of already visited basic blocks
+	for(auto hash : *already_visited){
+		if(hash_value == hash){
+			//function already visited
+			return not_defined;
+		}
+	}
+	//set function as already visited 
+	already_visited->emplace_back(hash_value);
+	
+	//get all start scheduler instructions of the current function (not the subfunctions)
+	start_scheduler_func_calls = get_start_scheduler_instruction(function);
+	
+	//generate dominator tree
+	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
+	
+	//check if a start scheduler call was found in current function
+	if(start_scheduler_func_calls.size() == 0){
+        //set scheduler relation state of function to before
+		state = before;
+	}else{
+        
+        //get all return instructions of the function and store them
+		for(auto &abb : function->get_atomic_basic_blocks()){
+			for(llvm::BasicBlock* bb : *abb->get_BasicBlocks()){
+				for(auto &instr:*bb){
+					if(isa<ReturnInst>(instr)){
+						return_instructions.emplace_back(&instr);
+					}
+				}
+			}
+		}
+	}
+	
+	//iterate about abbs which contain a func call and detect function calls and execute the recursive analysis for the called function
+	for(auto &abb : function->get_atomic_basic_blocks()){
+		for(llvm::BasicBlock* bb : *abb->get_BasicBlocks()){
+            for(auto &instruction:*bb){
+                for(auto *instr :abb->get_call_instruction_references()){
+                    //start the recursion for the called function
+                    recursive_before_scheduler_instructions( graph,instr, state,already_visited,&start_scheduler_func_calls,&uncertain_start_scheduler_func_calls);
+                }
+			}
+		}
+	}
+	
+	//check if certain und uncertain start scheduler calls exists
+	if(state ==uncertain){
+		for(auto &abb : function->get_atomic_basic_blocks()){
+            bool before_flag = false;
+            bool uncertain_flag = false;
+			for(llvm::BasicBlock* bb : *abb->get_BasicBlocks()){
+                for(auto &instruction:*bb){
+                    //check if the instruction is not reachable from all certain and uncertain start scheduler instructions
+                    if(!validate_instructions_reachability(&start_scheduler_func_calls,&instruction, dominator_tree ) && !validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&instruction, dominator_tree ) ){
+                         //instruction is not reachable from a uncertain or certain start scheduler instruction 
+                        before_flag = true;
+                        
+                    }else{
+                        before_flag = false;
+                        //check if the instruction is reachable from a uncertain start scheduler instruction
+                        if(validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&instruction,dominator_tree)){
+                            //instruction is reachable from a uncertain start scheduler instruction 
+                            uncertain_flag = true;
+                        }
+                    }
+                }
+			}
+			if(before_flag)abb->set_start_scheduler_relation(before);
+            else if(uncertain_flag)abb->set_start_scheduler_relation(uncertain);
+		}
+		
+		bool flag = true;
+		for(auto instr : return_instructions){
+            //check if return instruction is dominated by all certain start scheduler instructions
+			if(!validate_instructions_dominance(&start_scheduler_func_calls,instr, dominator_tree ))flag = false;
+		}
+		
+		//state is after if all retrun instructions were dominated by a certain start scheduler instruction
+		if(flag)state = after;
+	}
+	
+    std::vector<std::size_t> tmp_already_visited;
+    //iterate about the abbs of the function
+    for(auto &abb : function->get_atomic_basic_blocks()){
+        
+        if(abb->get_start_scheduler_relation() == after){
+            //iterate about the called functions of the abb
+            for (auto called_function : abb->get_called_functions()){
+                
+                //set all abbs, which are reachable from a after start scheduler abb from the main function, to after start scheduler 
+                update_called_functions(graph, called_function  ,&tmp_already_visited,after);
+            }
+        }
+    }
+	
+	return state;
+	
+}
+
+
+
 //function to extract the handler name of the instance
 std::string get_handler_name(llvm::Instruction * instruction, unsigned int argument_index){
-	//llvm::Instruction * next_instruction = instruction->getNextNonDebugInstruction();
 	
 	if(instruction == nullptr)std::cerr << "ERROR" << std::endl;
 	
@@ -583,8 +602,6 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
         }else{
             if(valid_candidates.size() == 0){
                  std::cerr << "no argument values are possible"<< std::endl;
-                 
-            //TODO
             }else{
                 //test_debug_argument(argument);
                 llvm::Value* old_value = std::get<llvm::Value*>(valid_candidates.front());
@@ -592,13 +609,12 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
                 for(auto data : valid_candidates){
                     if(old_value !=std::get<llvm::Value*>(data)){
                         success = false;
-                        std::cerr << "ERRROR" <<std::endl;
                         break;
                     }
                 }
                 if(success)return argument.any_list.front();
                 else{
-                     std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
+                    //std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
                     //TODO select the best 
                 }
             }
@@ -612,9 +628,8 @@ std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Ins
 
 
 //xTaskCreate
-bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>*call_references ){
+graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>*call_references ){
 	
-	bool success = true;
 	
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 	
@@ -623,7 +638,7 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	std::vector<argument_data>argument_list;
     
     
-	for(auto & argument : *(abb->get_syscall_arguments())){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 
@@ -687,7 +702,7 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 	std::cout << "task successfully created"<< std::endl;
    
     
-	return success;
+	return task;
 }
 
 
@@ -696,16 +711,16 @@ bool create_task(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_s
 
 //..Semaphore...Create
 //{ binary, counting, mutex, recursive_mutex }semaphore_type;
-bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type , bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references ){
+graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type , bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references ){
 	
-	bool success = true;
-	
+    bool success = false;
+    
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 		
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<argument_data>argument_list;
 	
-	for(auto & argument : *abb->get_syscall_arguments()){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 	
@@ -721,13 +736,17 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 	switch(type){
 		
 		case binary:{
-		
+            
+            success = true;
+            
 			std::cout << "binary semaphore successfully created"<< std::endl;
 			break;
 		}
 		
 		case counting:{
-			
+            
+			success = true;
+            
 			//load the arguments
 			argument_data argument  = argument_list.at(1);
             auto specific_argument = get_call_relative_argument(argument,call_references);
@@ -749,7 +768,8 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 		
 		case mutex:{
 			
-			
+			success = true;
+            
 			//load the arguments
 			argument_data argument  = argument_list.at(0);
 			auto specific_argument = get_call_relative_argument(argument,call_references);
@@ -766,20 +786,20 @@ bool create_semaphore(graph::Graph& graph,OS::shared_abb abb,semaphore_type type
 		
 		}
 		default:{
-			success = false;
 			std::cout << "wrong semaphore type" << std::endl;
 			break;
 		}
 	}
-	if(success)graph.set_vertex(semaphore);
-	return success;
+	if(success){
+        graph.set_vertex(semaphore);
+        return semaphore;
+    }else{
+        return nullptr;
+    }
 }
 
 //xQueueCreate
-bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
-	
-	bool success = true;
-	
+graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 	
@@ -787,7 +807,7 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<argument_data>argument_list;
 	
-	for(auto & argument : *abb->get_syscall_arguments()){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 	
@@ -806,6 +826,8 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 	
 	semaphore_type type = (semaphore_type) queue_type;
 	
+    graph::shared_vertex vertex = nullptr;
+    
 	if(type != binary){
 		
 		std::string handler_name = get_handler_name(instruction, 1);
@@ -819,20 +841,21 @@ bool create_queue(graph::Graph& graph, OS::shared_abb abb ,bool before_scheduler
 		queue->set_item_size(item_size);
 		queue->set_start_scheduler_creation_flag(before_scheduler_start);
 		graph.set_vertex(queue);
+       
+        vertex = queue;
 		
 		std::cout << "queue successfully created"<< std::endl;
 	}else{
-		success = create_semaphore(graph,abb,binary, before_scheduler_start,call_references);
+		vertex = create_semaphore(graph,abb,binary, before_scheduler_start,call_references);
 	}
 
-	return success;
+	return vertex;
 }
 
 
 //xQueueCreate
-bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
+graph::shared_vertex create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
-	bool success = true;
 	
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 	
@@ -840,7 +863,7 @@ bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_sche
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<argument_data>argument_list;
 	
-	for(auto & argument : *abb->get_syscall_arguments()){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 	//create queue and set properties 
@@ -854,16 +877,15 @@ bool create_event_group(graph::Graph& graph,OS::shared_abb abb, bool before_sche
 	std::cout << "event group successfully created" <<  std::endl;
 		
 	
-	return success;
+	return event_group;
 }
 
 
 
 
 //xQueueSet
-bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
+graph::shared_vertex create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
-	bool success = true;
 
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 	
@@ -871,7 +893,7 @@ bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_sche
 	//create reference list for all arguments types of the task creation syscall
 	std::vector<argument_data>argument_list;
 	
-	for(auto & argument : *abb->get_syscall_arguments()){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 	
@@ -893,17 +915,17 @@ bool create_queue_set(graph::Graph& graph, OS::shared_abb abb,  bool before_sche
 	queue_set->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(queue_set);
 	
-	return success;
+	return queue_set;
 }
 
 //xTimerCreate
-bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
+graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
-	bool success = true;
 	
+    abb->print_information();
 	std::vector<argument_data>argument_list;
 	
-	for(auto & argument : *abb->get_syscall_arguments()){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 	//load the arguments
@@ -934,7 +956,7 @@ bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_
 	//TODO extract timer id
 	//std::cout << timer_id << std::endl;
 	//timer->set_timer_id(timer_id);
-	timer->set_definition_function(timer_definition_function);
+    
 	if(timer_autoreload == 0) timer->set_timer_type(oneshot);
 	else timer->set_timer_type(autoreload);
 	std::cout << "timer successfully created"<< std::endl;
@@ -942,14 +964,16 @@ bool create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_
 	timer->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(timer);
     
-	return success;
+    std::cerr << "timer callback function " <<timer_definition_function << std::endl;
+	timer->set_definition_function(timer_definition_function);
+    
+	return timer;
 }
 
 
 //xTimerCreate
-bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
+graph::shared_vertex create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
-	bool success = true;
 	
 	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
 	//create reference list for all arguments types of the task creation syscall
@@ -958,7 +982,7 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 	//get the typeid hashcode of the expected arguments
 		std::vector<argument_data>argument_list;
 	
-	for(auto & argument : *abb->get_syscall_arguments()){
+	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
 			
@@ -994,7 +1018,7 @@ bool create_buffer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler
 	buffer->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(buffer);
 	
-	return success;
+	return buffer;
 }
 
 
@@ -1079,18 +1103,20 @@ bool detect_isrs(graph::Graph& graph){
 }
 
 
-bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls){
+bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_vertex,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls){
 
+    graph::shared_vertex created_vertex;
     //check which target should be generated
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
         //std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
-
-        if(!create_task(graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Task could not created" << std::endl;
+        created_vertex = create_task(graph,abb,before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Task could not created" << std::endl;
     }
     
         
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Queue).hash_code())){
-        if(!create_queue( graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Queue could not created" << std::endl;
+        created_vertex = create_queue( graph,abb,before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Queue could not created" << std::endl;
 
     }
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
@@ -1100,27 +1126,43 @@ bool create_abstraction_instance(graph::Graph& graph,OS::shared_abb abb,bool bef
         if(syscall_name =="xQueueCreateMutex")type = mutex;
         if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
         if(syscall_name =="xQueueCreateCountingSemaphore")type = counting;
-    
-        if(!create_semaphore(graph, abb, type, before_scheduler_start,already_visited_calls))std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
+        created_vertex = create_semaphore(graph, abb, type, before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "CountingSemaphore/Mutex could not created" << std::endl;
         
     }						
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
-
-        if(!create_timer( graph,abb,before_scheduler_start,already_visited_calls))std::cout << "Timer could not created" << std::endl;
+        created_vertex = create_timer( graph,abb,before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Timer could not created" << std::endl;
       
     }
 
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::EventGroup).hash_code())){
-        if(!create_event_group(graph, abb,before_scheduler_start,already_visited_calls))std::cout << "Event Group could not created" << std::endl;
+        created_vertex = create_event_group(graph, abb,before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Event Group could not created" << std::endl;
     }
     
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Buffer).hash_code())){
         //std::cout << callname << std::endl;
-        if(!create_buffer(graph, abb,before_scheduler_start,already_visited_calls))std::cout << "Buffer could not created" << std::endl;
+        created_vertex = create_buffer(graph, abb,before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Buffer could not created" << std::endl;
     }
     if(list_contains_element(abb->get_call_target_instances(),typeid(OS::QueueSet).hash_code())){
         //std::cout << callname << std::endl;
-        if(!create_queue_set(graph, abb,before_scheduler_start,already_visited_calls))std::cout << "Queue Set could not created" << std::endl;
+        created_vertex = create_queue_set(graph, abb,before_scheduler_start,already_visited_calls);
+        if(!created_vertex)std::cout << "Queue Set could not created" << std::endl;
+    }
+    
+    if(created_vertex){
+        auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,created_vertex,abb);
+        //store the edge in the graph
+        graph.set_edge(edge);
+        
+        start_vertex->set_outgoing_edge(edge);
+        created_vertex->set_ingoing_edge(edge);
+        edge->set_instruction_reference( abb->get_syscall_instruction_reference());
+        return true;
+    }else{
+        return false;
     }
 }
 
@@ -1147,7 +1189,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
     for(auto &abb : abb_list){
         
         //get the list of referenced llvm bb
-        std::list<llvm::BasicBlock*> llvm_bbs = abb->get_BasicBlocks();
+        std::vector<llvm::BasicBlock*>* llvm_bbs = abb->get_BasicBlocks();
             
         //check if abb has a syscall instruction
         if( abb->get_call_type()== sys_call){
@@ -1155,7 +1197,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             std::vector<std::size_t> already_visited;
 
             //validate if sysccall is in loop
-            if(validate_loop(llvm_bbs.front(),&already_visited)){
+            if(validate_loop(llvm_bbs->front(),&already_visited)){
             
                 bool before_scheduler_start = false;
                 
@@ -1164,9 +1206,11 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                 //check if abb syscall is creation syscall
                 if(abb->get_syscall_type() == create){
                     
+                    if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,already_visited_calls)){
+                        std::cerr << "instance could not created" << std::endl;
+                        abb->print_information();
+                    }
                     
-                    
-                    create_abstraction_instance( graph,abb,before_scheduler_start,already_visited_calls);
                 }
             }
         }
@@ -1176,12 +1220,170 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //std::cerr << "edge target " << vertex->get_name() << std::endl;
             if(typeid(OS::Function).hash_code() == vertex->get_type()){
                 auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-                iterate_called_functions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls  );
+                iterate_called_functions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls);
+                
             }
         }
     }
 }
 
+
+void sort_edges(std::list<graph::shared_edge>* unsorted_outgoing_edges,std::list<graph::shared_edge>* sorted_outgoing_edges,OS::shared_abb abb){
+    
+    for(auto bb :*abb->get_BasicBlocks()){
+        std::vector<graph::shared_edge> tmp_edges;
+        for(auto& edge :*unsorted_outgoing_edges){
+            if(bb==edge->get_instruction_reference()->getParent()){
+                tmp_edges.emplace_back(edge);
+            }
+        }
+        if(tmp_edges.size()==1)sorted_outgoing_edges->emplace_back(tmp_edges.front());
+        else{
+            //TODO sort edges of bb
+            //instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT)
+            
+            for(auto edge :tmp_edges){
+                sorted_outgoing_edges->emplace_back(edge);
+            }
+        }
+    }
+}
+
+void sort_abbs(graph::Graph& graph){
+    
+    std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+    
+    for (auto &vertex : vertex_list) {
+        
+        
+        std::cerr  << "---------------" <<  std::endl;
+        std::list<llvm::BasicBlock*> tmp_topological_order;
+        
+        //cast vertex to abb 
+        auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+        //std::cerr << "------------------------------------------------------" << std::endl;
+        
+        // Use LLVM's Strongly Connected Components (SCCs) iterator to produce
+        // a reverse topological sort of SCCs.
+        //std::cerr << "SCCs for " << function->get_name() << " in post-order:\n";
+        for (scc_iterator<Function *> I = scc_begin(function->get_llvm_reference()), IE = scc_end(function->get_llvm_reference());I != IE; ++I) {
+            // Obtain the vector of BBs in this SCC and print it out.
+            const std::vector<BasicBlock *> &SCCBBs = *I;
+            for (std::vector<BasicBlock *>::const_iterator BBI = SCCBBs.begin(), BBIE = SCCBBs.end(); BBI != BBIE; ++BBI) {
+                tmp_topological_order.emplace_front(*BBI);
+            }
+        }
+        
+        
+        std::vector<llvm::BasicBlock*> topological_order;
+         
+        for(auto element : tmp_topological_order){
+             //std::cerr  << "SCC: "<< element->getName().str() << std::endl;
+             topological_order.emplace_back(element);
+         }
+        
+        //generate dominator tree
+        llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
+        
+        std::string type_str;
+        llvm::raw_string_ostream rso(type_str);
+        //dominator_tree->print(rso);
+        //std::cerr << rso.str() << std::endl ;
+        
+        std::vector<std::tuple<unsigned int , OS::shared_abb>> test;
+        std::list<OS::shared_abb> abb_list = function->get_atomic_basic_blocks();
+        std::list<OS::shared_abb> sorted_abb_list;
+        int counter = 0;
+        
+        while(counter < topological_order.size()){
+            
+            auto order_reference = topological_order[counter];
+            
+            bool flag = false;
+            //iterate about the abb list
+            for(auto& abb: abb_list){
+                
+                std::vector<llvm::BasicBlock*>* unsorted_bb_list = abb->get_BasicBlocks();
+                
+                for(auto bb :*unsorted_bb_list){
+                    if(order_reference ==bb)flag = true;
+                }
+                
+                //check if the entry bb of the abb is equal to the topological bb reference
+                if(flag){
+                    
+                    auto unsorted_outgoing_edges = abb->get_outgoing_edges();
+                    std::list<graph::shared_edge> sorted_outgoing_edges;
+                    //std::cerr  << "abb entry " <<  abb->get_name()  << std::endl;   
+                    
+                    sorted_abb_list.emplace_back(abb);
+                    std::vector<llvm::BasicBlock*> sorted_bb_list(unsorted_bb_list->size());
+                    
+                    for(auto bb: *unsorted_bb_list){
+                        
+                        int tmp_counter = 0;
+                        //std::cerr << "counter: " << counter << "tmpcounter: " << tmp_counter << "listsize: " << unsorted_bb_list->size() << std::endl;
+                        bool tmp_flag = false;
+                        while((counter+tmp_counter) < topological_order.size() && tmp_counter < sorted_bb_list.size()){                             
+                            if(topological_order[counter + tmp_counter] ==bb){
+//                                 //std::cerr  << "bb" <<  (bb->getName().str()) << std::endl;
+                                sorted_bb_list.at(tmp_counter) = bb;
+                                tmp_flag = true;
+                                break;
+                             }
+                             ++tmp_counter;
+                        }
+                        
+                        if(!tmp_flag)std::cerr << "not found"  << std::endl;
+                    }
+                    
+                    counter += unsorted_bb_list->size();
+                    
+                    for(int i = 0; i < sorted_bb_list.size();++i){
+                        if(!sorted_bb_list.at(i)){
+                            //std::cerr  << (unsorted_bb_list->at(i)->getName().str()) << " : ERROR" <<  std::endl;
+                            for(auto bb :*unsorted_bb_list){
+                                //std::cerr  << "unsorted bb: " << bb->getName().str() << std::endl;
+                            }
+                            
+                        }
+                        //else std::cerr  << (unsorted_bb_list->at(i)->getName().str()) << " : " <<  (sorted_bb_list.at(i)->getName().str()) << std::endl;
+                    }
+                    //sort_edges(&unsorted_outgoing_edges,&sorted_outgoing_edges, abb);
+                    
+                    
+                    break;
+                }
+            }
+            if(!flag){
+                std::cerr << "EEEEEEEEEEEEERRROR" << (order_reference->getName().str()) << std::endl;
+                ++counter;
+            }
+        }
+        if(abb_list.size() == sorted_abb_list.size()){
+            function->set_atomic_basic_blocks(&sorted_abb_list);
+            //std::cerr << "sorted and unsorted abb lists have equal length" << std::endl;
+        }
+        else{
+
+            std::cerr << "sorted and unsorted abb lists have not equal length" << std::endl;
+            if(abb_list.size() > sorted_abb_list.size() && function->get_exit_abb() != nullptr && function->get_exit_abb()->get_seed() != sorted_abb_list.back()->get_seed()){
+                
+                std::cerr  << "success" << std::endl;
+                sorted_abb_list.emplace_back(function->get_exit_abb());
+                function->set_atomic_basic_blocks(&sorted_abb_list);
+            }else{
+                for(auto abb :abb_list){
+                    std::cerr  << "unsorted abb: " << abb->get_name() << std::endl;
+                }
+                for(auto abb :sorted_abb_list){
+                    std::cerr  << "sorted abb: " << abb->get_name() << std::endl;
+                }
+                
+            }
+        }
+    }
+}
 
 
 namespace step {
@@ -1196,6 +1398,8 @@ namespace step {
 
 	void FreeRTOSInstancesStep::run(graph::Graph& graph) {
 		
+        sort_abbs(graph);
+        
 		std::cout << "Run " << get_name() << std::endl;
 			
 		std::hash<std::string> hash_fn;
@@ -1212,16 +1416,6 @@ namespace step {
 			std::vector<std::size_t> already_visited;
 			main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
 			before_scheduler_instructions(graph, main_function  ,&already_visited);
-            already_visited.clear();
-            
-            //iterate about the abbs of the function
-            for(auto & abb : main_function->get_atomic_basic_blocks()){
-                //iterate about the called functions of the abb
-                for (auto called_function : abb->get_called_functions()){
-                    //update the values for the successor functions from func call
-                    update_called_functions(graph, called_function  ,&already_visited,abb->get_start_scheduler_relation());
-                }
-            }
             
             //iterate about the main function context and detect abstraction instances
             std::vector<llvm::Instruction*> already_visited_calls;
@@ -1283,7 +1477,39 @@ namespace step {
             
             
         }while(flag);
-	}
+
+	
+        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+            
+        for (auto &vertex : vertex_list) {
+                
+                auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+                
+                hook_type hook = no_hook;
+                if(function->get_name().find("PostTaskHook") != std::string::npos){
+                    hook = post_task;
+                }else if(function->get_name().find("PreTaskHook") != std::string::npos){
+                    hook = pre_task;
+                }else if(function->get_name().find("ErrorHook") != std::string::npos){
+                    hook = error;
+                }else if(function->get_name().find("ShutdownHook") != std::string::npos){
+                    hook = shut_down;
+                }else if(function->get_name().find("StartupHook") != std::string::npos){
+                    hook = start_up;
+                }else if(function->get_name().find("vApplicationMallocFailedHook") != std::string::npos){
+                    hook = failed;
+                }else if(function->get_name().find("vApplicationIdleHook") != std::string::npos){
+                    hook = idle;
+                }else if(function->get_name().find("vApplicationStackOverflowHook") != std::string::npos){
+                    hook = stack_overflow;
+                }else if(function->get_name().find("vApplicationTickHook") != std::string::npos){
+                    hook = tick;
+                }
+                
+                if(hook != no_hook)function->set_hook_type(hook);
+        }
+    }
+	
 	
 	std::vector<std::string> FreeRTOSInstancesStep::get_dependencies() {
 		return {"ABB_MergeStep"};

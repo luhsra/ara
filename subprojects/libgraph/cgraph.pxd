@@ -32,6 +32,8 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type activate
     cdef syscall_definition_type enable
     cdef syscall_definition_type disable
+    cdef syscall_definition_type add
+    cdef syscall_definition_type take_out
     
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
@@ -210,9 +212,9 @@ cdef extern from "graph.h" namespace "OS":
         void adapt_exit_bb(shared_ptr[ABB])
         bool is_mergeable()
         bool has_single_successor()
-        clist[string] get_call_names()
+        cvector[string] get_call_names()
         string get_syscall_name()
-        void set_syscall_name(string)
+
         bool convert_call_to_syscall(string)
         string get_name()
     
@@ -226,3 +228,5 @@ cdef extern from "graph.h" namespace "OS":
         
         shared_ptr[ABB] get_postdominator()
         shared_ptr[ABB] get_dominator()
+        
+        void set_handler_argument_index(size_t index)

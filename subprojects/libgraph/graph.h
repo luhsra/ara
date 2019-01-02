@@ -32,7 +32,7 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, no_call , has_call };
 
-enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out};
 
 enum ISR_type { ISR1, ISR2, basic };
 
@@ -41,6 +41,8 @@ enum timer_type { oneshot, autoreload };
 enum semaphore_type { binary = 3, counting = 2, mutex = 1 , recursive_mutex = 4 };
 
 enum buffer_type { stream = 0, message = 1 };
+
+enum hook_type { start_up, shut_down, pre_task, post_task, error, failed,idle,stack_overflow,tick,no_hook };
 
 enum alarm_action_type {activate_task, set_event, alarm_callback};
 
@@ -59,19 +61,34 @@ struct argument_data {
     std::vector<std::vector<llvm::Instruction*>> argument_calles_list;
     bool multiple = false;
 };
-		
+
+
+struct call_data {  
+		std::string call_name; // Name des Sycalls
+		std::vector<argument_data> arguments;
+		llvm::Instruction* call_instruction;
+        bool sys_call = false;
+};
+
+//bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT);
 std::any get_call_relative_argument(argument_data argument,std::vector<llvm::Instruction*>*call_references);
 void debug_argument(argument_data argument);
+bool list_contains_element(std::list<std::size_t>* list, size_t target);
+namespace OS
+{
+    class ABB;
+};
 
 namespace graph {
 
-
+    
 
 	class Graph;
 	class Vertex;
 	class Edge;
-	
-	
+	class OS::ABB;
+    
+	typedef std::shared_ptr<OS::ABB> shared_abb;
 	typedef std::shared_ptr<Vertex> shared_vertex;
 	typedef std::shared_ptr<Edge>  shared_edge;
 
@@ -235,9 +252,9 @@ namespace graph {
 		bool is_syscall;       // Flag, ob Edge ein Syscall ist
 		std::string call;      // Entsprechende Set- und Get-Methoden
 		std::list<argument_data> arguments;
-		shared_vertex atomic_basic_block_reference;
+		shared_abb atomic_basic_block_reference;
         llvm::Instruction* instruction_reference;
-		
+		call_data call;
 
 	  public:
 		
@@ -245,7 +262,7 @@ namespace graph {
 		
 		
 		Edge();
-		Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_vertex atomic_basic_block_reference);
+		Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_abb atomic_basic_block_reference);
 
 		std::string get_name(); // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
@@ -255,9 +272,12 @@ namespace graph {
 		shared_vertex get_start_vertex();
 		shared_vertex get_target_vertex();
         
+        void set_call(call_data call);
+        
         void set_instruction_reference(llvm::Instruction* reference);
 		llvm::Instruction* get_instruction_reference();
         
+        shared_abb get_abb_reference();
         
 		void set_syscall(bool syscall);
 		bool is_sycall();
@@ -341,6 +361,8 @@ namespace OS {
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 		
+		hook_type hook = no_hook;
+		
 		shared_abb entry_abb = nullptr;
 		shared_abb exit_abb = nullptr;
         
@@ -401,6 +423,7 @@ namespace OS {
 		llvm::Function *get_llvm_reference();
 
 		void set_atomic_basic_block(OS::shared_abb atomic_basic_block);
+        void set_atomic_basic_blocks(std::list<OS::shared_abb> * atomic_basic_blocks);
 		//std::list<graph::shared_vertex> get_atomic_basic_blocks();
 		
 		std::list<OS::shared_abb> get_atomic_basic_blocks();
@@ -416,8 +439,10 @@ namespace OS {
 		void set_function_name(std::string name);
 		std::string get_function_name();
                 
-		
-
+		void set_hook_type(hook_type hook){
+            this->hook = hook;
+        };
+        
 		std::list<llvm::Type*> get_argument_types();
 		void set_argument_type(llvm::Type* argument); // Setze Argument des SystemCalls in Argumentenliste
                 
@@ -445,14 +470,18 @@ namespace OS {
 		shared_function parent_function; // Zeiger auf Function, die den BasicBlock enthält
 		
 		
-		std::list<llvm::BasicBlock *> basic_blocks;
+		std::vector<llvm::BasicBlock *> basic_blocks;
 
+        /*
 		std::list<std::string> call_names; // Name des Sycalls
 		
 		std::string syscall_name;
-		
+		std::vector<llvm::Instruction*> call_instruction_references;
 		std::list<std::list<argument_data>> arguments;
-		
+        std::list<argument_data>syscall_arguments;
+        llvm::Instruction* syscall_instruction_reference = nullptr;
+        */
+        
         //the expected instance types which can be addressed with the syscall
 		std::list<std::size_t>  call_target_instances;
 		
@@ -461,15 +490,11 @@ namespace OS {
 		llvm::BasicBlock* exit;
 		
 		
-		
-		llvm::Instruction* syscall_instruction_reference = nullptr;
-		
-		std::list<argument_data>syscall_arguments;
-		
-		
-		std::vector<llvm::Instruction*> call_instruction_references;
+        std::vector<call_data> calls;
 		
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
+		
+		size_t syscall_handler_index;
 
 	  public:
               
@@ -487,14 +512,14 @@ namespace OS {
 			this->vertex_type = typeid(ABB).hash_code();
 		}
 		
+		void set_handler_argument_index(size_t index);
+		size_t get_handler_argument_index();
 		
-		
-		void set_call_instruction_reference(llvm::Instruction * call_instruction);
 		std::vector<llvm::Instruction*> get_call_instruction_references();
 		
         void set_start_scheduler_relation(start_scheduler_relation relation);
         start_scheduler_relation get_start_scheduler_relation( );
-		void set_syscall_instruction_reference(llvm::Instruction * call_instruction);
+		
 		llvm::Instruction* get_syscall_instruction_reference();
 		
 		syscall_definition_type get_syscall_type();
@@ -506,11 +531,15 @@ namespace OS {
 		std::list<std::size_t>*  get_call_target_instances();
 		void set_call_target_instance(size_t target_instance);
 		
-		void set_call_name(std::string call_name);
-		std::list<std::string> get_call_names();
 		
+        void set_call(call_data call);
+        
+        std::vector<call_data>*  get_calls();
+        
+		std::vector<std::string> get_call_names();
 		std::string get_syscall_name();
-		void set_syscall_name(std::string name );
+		
+        
 		void expend_call_sites(shared_abb abb);
 		llvm::BasicBlock* get_exit_bb();
 		llvm::BasicBlock* get_entry_bb();
@@ -534,10 +563,10 @@ namespace OS {
 		void set_critical(bool critical);
 
 		//std::list<std::tuple<std::any,llvm::Type*>> get_arguments_tmp();
-		std::list<std::list<argument_data>>* get_arguments();
-		void set_arguments(std::list<argument_data> new_arguments); // Setze Argument des SystemCalls in Argumentenliste
+		std::vector<std::vector<argument_data>> get_arguments();
 		
-		std::list<argument_data>* get_syscall_arguments();
+		
+		std::vector<argument_data> get_syscall_arguments();
 		
 		
 		bool set_ABB_successor(shared_abb basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
@@ -547,7 +576,7 @@ namespace OS {
 		std::list<shared_abb> get_ABB_predecessors();    // Gebe Referenz auf Vorgänger zurück
 
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
-		std::list<llvm::BasicBlock*> get_BasicBlocks();
+		std::vector<llvm::BasicBlock*>* get_BasicBlocks();
 		//std::list<size_t> get_expected_syscall_argument_types();
         
  		std::list<std::list<std::list<size_t>>> get_call_argument_types();
@@ -750,7 +779,7 @@ namespace OS {
 			virtual QueueSet *clone() const{return new QueueSet(*this);};
 
 			
-			bool set_queue_element(graph::shared_vertex element);
+			void set_queue_element(graph::shared_vertex element);
 			bool member_of_queueset(graph::shared_vertex element);
 			bool remove_from_queueset(graph::shared_vertex element);
 

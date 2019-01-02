@@ -52,16 +52,20 @@ class DotFileParser():
                     f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + " -> " + successor.get_name().decode("utf-8").replace(" ", "") + ";\n" )
                 
                 if abb.is_mergeable() == False:
+                    
+            
                     f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+
                     for callname in  abb.get_call_names():
+                         f.write("<FONT POINT-SIZE=\"10\">" + "call: " + callname.decode("utf-8")  + "</FONT>>")
                     
-                    
-                        if  callname.decode("utf-8") == abb.get_syscall_name().decode("utf-8"):
-                            f.write("<FONT POINT-SIZE=\"10\">" + "syscall: " + callname.decode("utf-8")  + "</FONT>>")
-                        else:
-                            f.write("<FONT POINT-SIZE=\"10\">" + "call: " + callname.decode("utf-8")  + "</FONT>>")
+                    if abb.get_call_type() == graph.call_definition_type.sys_call:
+                            f.write("<FONT POINT-SIZE=\"10\">" + "syscall: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
+ 
                 
                     f.write("];\n") 
+                        
+                
                 else:
                     f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
                         
@@ -123,8 +127,27 @@ class DotFileParser():
     def print_called_functions(self,g, f,element):
         for called_function in element.get_called_functions():
             f.write("\t\t"+element.get_name().decode("utf-8").replace(" ", "").replace(".", "_")  + " -> " + called_function.get_name().decode("utf-8").replace(" ", "").replace(".", "_")  +  "[color=black];\n" )
-            
+           
+           
+           
+    def print_main(self,g, f,color):
+        
+        element_list = g.get_type_vertices("Function")
+        
+        main = element_list.pop()
+        
+        for function in element_list:
+            if function.get_name().decode("utf-8") == "main":
+                element_list.clear()
+                main = function
+                print("main found")
+                break
     
+        name = main.get_name().decode("utf-8").replace(" ", "").replace(".", "_") 
+        
+        f.write("\t\t"+ name + "[fillcolor="+ color +" style=filled label=<" + name + "<BR />>];\n")
+        self.print_interactions(g,f,main)
+           
     
     def print_instance_class(self,g, f,instance_type, print_type,color):
         
@@ -163,7 +186,8 @@ class DotFileParser():
         self.print_instance_class( g,f,"EventGroup",0, "aquamarine")
         self.print_instance_class( g,f,"ISR",0, "ivory")
         self.print_instance_class( g,f,"Resource",0, "orange")
-        
+        self.print_instance_class( g,f,"QueueSet",0, "yellow")
+        self.print_main(g, f,"green")
         
         f.write("\n}" )
             

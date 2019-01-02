@@ -343,6 +343,134 @@ class ABB_MergeStep(Step):
     
     def merge_dominance(self,g: graph.PyGraph):
 
+        #for func in g.get_type_vertices("Function"):
+            ## Filter some functions
+            
+            #function_abbs = func.get_atomic_basic_blocks()
+            
+            ##TODO
+            ##if func.get_has_syscall() == False:
+            ##	continue
+            
+            
+            #if len(function_abbs) <= 3 or func.get_exit_abb() == None:
+                #continue
+
+            ## Forward analysis
+
+            ##print("dom" , func.get_entry_abb())
+            #dom = DominanceAnalysis(forward = True)
+            #dom.do(g,nodes=function_abbs,entry =func.get_entry_abb())
+
+            ## Backward analysis
+            ##print("post_dom" , func.get_exit_abb())
+            #post_dom = DominanceAnalysis(forward = False)
+            #post_dom.do(g,nodes=function_abbs,entry =func.get_exit_abb())
+            #removed = set()
+            ##print("HELLO")
+            ##print(dom.immdom_tree)
+            ##print(post_dom.immdom_tree)
+            
+            #for abb in function_abbs:
+                #if abb.get_seed() in removed:
+                    #continue
+                
+                ##if func.get_entry_abb().get_seed == abb.get_seed():
+                ##	continue
+                
+                ##print( dom.immdom_tree)
+                
+                ##start = dom.immdom_tree[abb.get_seed()]
+                ##end   = post_dom.immdom_tree[abb.get_seed()]
+
+                
+                #start = abb.get_dominator();
+                #end = abb.get_postdominator();
+                
+                ##print("abb", abb.get_name())
+                
+                ##if not start:
+                    ##print("no dominator")
+                ##else: 
+                    ##print("dominator", start.get_name()) 
+                
+                
+                ##if not end:
+                    ##print("no postdominator")
+                ##else: 
+                    ##print("postdominator", end.get_name())
+                
+                #if start and end and start != end:
+
+                    #region = self.find_region(start, end)
+                    
+
+                    #inner = set()
+                    
+                    #for element in region:
+                        #if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
+                            #inner.add(element)
+                    
+                    
+                    ## Was there already some subset removed?
+                    #if start.get_seed() in removed or end.get_seed() in removed:
+                        #continue
+                    
+                    #tmp_inner = inner
+                    #inner = set()
+                    
+                    #for inner_element in tmp_inner:
+                        ##print("tmp inner" , inner_element.get_name())
+                        #if not inner_element.get_seed() in removed:
+                            #inner.add(inner_element)
+
+                            
+                            
+                    ##print("start",start.get_name(),"end", end.get_name())
+                    
+                    ##for element in inner:
+                        ##print("inner",element.get_name())
+                    
+                    #if self.can_be_merged(start, end, inner):
+                        
+                        #self.do_merge(g,start, end, inner)
+                        ## Mark as removed
+                        #removed.add(end.get_seed())
+                        ##print(end.get_name())
+                        ##print(start.get_name())
+                        #for element in inner:
+                            ##print(element.get_name())
+                            #removed.add(element.get_seed())
+
+        ##self.merge_stats.after_dominance_merge = len(self.system_graph.abbs)
+        
+        
+                  #for abb in function_abbs:
+                    
+                    #start = abb.get_dominator();
+                    #end = abb.get_postdominator();
+                    
+                    #inner = set()
+                    
+                    #if start and end and start != end:
+                        #region = self.find_region(start, end)
+                    
+                        #for element in region:
+                            #if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
+                                #inner.add(element)
+                       
+                    #elif start and not end:
+                        #end = abb
+                    
+                    #elif end and not start: 
+                        #start = abb
+                        
+                    #if start and end and start != end:
+                        #if self.can_be_merged(start, end, inner):
+
+                            #self.do_merge(g,start, end, inner)
+                            #changes = True
+        
         for func in g.get_type_vertices("Function"):
             # Filter some functions
             
@@ -353,88 +481,39 @@ class ABB_MergeStep(Step):
             #	continue
             
             
-            if len(function_abbs) <= 3 or func.get_exit_abb() == None:
+            if func.get_exit_abb() == None:
                 continue
 
             # Forward analysis
 
-            #print("dom" , func.get_entry_abb())
-            dom = DominanceAnalysis(forward = True)
-            dom.do(g,nodes=function_abbs,entry =func.get_entry_abb())
-
-            # Backward analysis
-            #print("post_dom" , func.get_exit_abb())
-            post_dom = DominanceAnalysis(forward = False)
-            post_dom.do(g,nodes=function_abbs,entry =func.get_exit_abb())
-            removed = set()
-            #print("HELLO")
-            #print(dom.immdom_tree)
-            #print(post_dom.immdom_tree)
-            
             for abb in function_abbs:
-                if abb.get_seed() in removed:
-                    continue
-                
-                #if func.get_entry_abb().get_seed == abb.get_seed():
-                #	continue
-                
-                #print( dom.immdom_tree)
-                
-                #start = dom.immdom_tree[abb.get_seed()]
-                #end   = post_dom.immdom_tree[abb.get_seed()]
-                #TODO validate
-                
+                    
                 start = abb.get_dominator();
                 end = abb.get_postdominator();
                 
-                    
+                inner = set()
+                
                 if start and end and start != end:
-
-                    
                     region = self.find_region(start, end)
-                    
-                        
-                    
-                    inner = set()
-                    
+                
                     for element in region:
                         if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
                             inner.add(element)
                     
+                elif start and not end:
+                    end = abb
+                
+                elif end and not start: 
+                    start = abb
                     
-                    # Was there already some subset removed?
-                    if start.get_seed() in removed or end.get_seed() in removed:
-                        continue
-                    
-                    tmp_inner = inner
-                    inner = set()
-                    
-                    for inner_element in tmp_inner:
-                        #print("tmp inner" , inner_element.get_name())
-                        if not inner_element.get_seed() in removed:
-                            inner.add(inner_element)
-
-                            
-                            
-                    #print("start",start.get_name(),"end", end.get_name())
-                    
-                    #for element in inner:
-                        #print("inner",element.get_name())
-                    
+                if start and end and start != end:
                     if self.can_be_merged(start, end, inner):
-                        
+
                         self.do_merge(g,start, end, inner)
-                        # Mark as removed
-                        removed.add(end.get_seed())
-                        #print(end.get_name())
-                        #print(start.get_name())
-                        for element in inner:
-                            #print(element.get_name())
-                            removed.add(element.get_seed())
+                        changes = True
+                        
 
-        #self.merge_stats.after_dominance_merge = len(self.system_graph.abbs)
     
-
     def run(self, g: graph.PyGraph):
         
         
@@ -486,14 +565,17 @@ class ABB_MergeStep(Step):
         current_size = None
         
         initial_abb_count = len(initial_abb_list)
-        
+        print(initial_abb_count)
         #merge dominance regions
         self.merge_dominance(g)
         
         initial_abb_list = g.get_type_vertices("ABB")
         
         initial_abb_count = len(initial_abb_list)
-   
+        
+        print(initial_abb_count)
+        printer.print_functions(g,"after_dominance_merge")
+        
         while current_size != initial_abb_count:
             
             tmp_abb_list = g.get_type_vertices("ABB")
@@ -511,6 +593,7 @@ class ABB_MergeStep(Step):
             tmp_abb_list = g.get_type_vertices("ABB")
             current_size = len(tmp_abb_list)
         
+        print(len(g.get_type_vertices("ABB")))
         printer.print_functions(g,"after_merge")
 
 

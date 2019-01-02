@@ -26,9 +26,59 @@
 #include "llvm/Analysis/DependenceAnalysis.h"
 
 using namespace llvm;
+using namespace OS;
 
 
+bool is_reachable (shared_abb start, shared_abb end){
+    
+    std::list<size_t> already_visited;
+    //store coresponding basic block in ABB
+    //queue for new created ABBs
+    std::queue<shared_abb> queue; 
+
+    queue.push(start);
+
+    //iterate about the ABB queue
 	
+    while(!queue.empty()) {
+
+		//get first element of the queue
+		auto abb = queue.front();
+		queue.pop();
+        
+        if(end->get_seed() == abb->get_seed())return true;
+			
+        bool visited = false;
+        size_t abb_seed = abb->get_seed();
+        for(auto seed : already_visited){
+            if(seed == abb_seed)visited = true;
+        }
+			
+        //check if the successor abb is already stored in the list				
+        if(!visited) {
+            if(abb->get_call_type()== sys_call){
+                auto called_functions = abb->get_called_functions();
+                if(called_functions.size()==1){
+                    queue.push(called_functions.front()->get_entry_abb());
+                }
+            }
+            //iterate about the successors of the abb
+            for (auto successor: abb->get_ABB_successors()){
+                
+				//update the lists
+				queue.push(successor);
+            }
+        }
+    }
+    return false;
+}
+    
+
+
+
+
+
+
 //print the argument
 void debug_argument_test(std::any value){
 	
@@ -68,8 +118,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
-    std::hash<std::string> hash_fn;
-    
+
 
 	//search hash value in list of already visited basic blocks
 	for(auto tmp_call : *already_visited_calls){
@@ -98,38 +147,45 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
             //}
             
             bool success = false;
-            std::list<argument_data>* argument_list = abb->get_syscall_arguments();
+            std::vector<argument_data> argument_list = abb->get_syscall_arguments();
             std::list<std::size_t>*  target_list = abb->get_call_target_instances();
         
             //load the handler name
             std::string handler_name = "";
-            argument_data argument_candidats  = (argument_list->front());
             
+            argument_data argument_candidats;
             
-            if(argument_list->size() > 0 && argument_candidats.any_list.size() > 0 &&   argument_candidats.any_list.front().type().hash_code()== typeid(std::string).hash_code()){
-                
-                auto any_argument = argument_candidats.any_list.front();
-                if(argument_candidats.any_list.size() > 1){
-                
-                    std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
-                    any_argument = get_call_relative_argument( argument_candidats,already_visited_calls);                
-                }
-                
-                
-                
-                handler_name = std::any_cast<std::string>(any_argument);
-                std::cerr << handler_name << std::endl;
-                //check if the expected handler name occurs in the graph
-                bool handler_found = false;
-                for(auto &vertex : graph.get_vertices()){
-                    if(vertex->get_handler_name() == handler_name)handler_found = true;
-                }
-                
-                if(!handler_found){
-                    std::cerr << "handler does not exist in graph " << handler_name << std::endl;
+            if(abb->get_handler_argument_index() != 9999){
+                argument_candidats  = (argument_list.at(abb->get_handler_argument_index()));
+                if(argument_list.size() > 0 && argument_candidats.any_list.size() > 0){
+                    
+                    auto any_argument = argument_candidats.any_list.front();
+                    if(argument_candidats.any_list.size() > 1){
+                    
+                        std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
+                        any_argument = get_call_relative_argument( argument_candidats,already_visited_calls);                
+                    }
+                    
+                    
+                    if(any_argument.type().hash_code() ==  typeid(std::string).hash_code()){
+
+                        handler_name = std::any_cast<std::string>(any_argument);
+                        std::cerr << handler_name << std::endl;
+                        //check if the expected handler name occurs in the graph
+                        bool handler_found = false;
+                        for(auto &vertex : graph.get_vertices()){
+                            if(vertex->get_handler_name() == handler_name)handler_found = true;
+                        }
+                        
+                        if(!handler_found){
+                            std::cerr << "handler does not exist in graph " << handler_name << std::endl;
+                        }
+                    }else{
+                        std::cerr << "handler argument is no string" << std::endl;
+                        debug_argument_test(any_argument);
+                    }
                 }
             }
-
             //iterate about the possible refereneced(syscall targets) abstraction types
             for(auto& target: *target_list){
                 
@@ -163,7 +219,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 
                                 target_vertex->set_outgoing_edge(edge);
                                 start_vertex->set_ingoing_edge(edge);
-                                
+                                edge->set_instruction_reference( abb->get_syscall_instruction_reference());
                                 //set the success flag
                                 success = true;
                             
@@ -177,6 +233,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 
                                 start_vertex->set_outgoing_edge(edge);
                                 target_vertex->set_ingoing_edge(edge);
+                                edge->set_instruction_reference( abb->get_syscall_instruction_reference());
                                 //set the success flag
                                 success = true;
                                  //std::cerr << "start vertex: " << start_vertex->get_name() << " target vertex: " << target_vertex->get_name() << std::endl;
@@ -281,6 +338,177 @@ bool detect_interactions(graph::Graph& graph){
     
     
 }
+void verify_isrs(graph::Graph& graph){
+    
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::ISR).hash_code());
+    for (auto &vertex : vertex_list) {
+        auto isr = std::dynamic_pointer_cast<OS::ISR>(vertex);
+        
+        std::list<size_t> already_visited;
+        //store coresponding basic block in ABB
+        //queue for new created ABBs
+        std::queue<shared_abb> queue; 
+
+        queue.push(isr->get_definition_function()->get_entry_abb());
+
+        //iterate about the ABB queue
+        
+        while(!queue.empty()) {
+
+            //get first element of the queue
+            auto abb = queue.front();
+            queue.pop();
+            
+            if(abb->get_call_type()== sys_call){
+                
+                std::size_t found = abb->get_syscall_name().find("FromISR");
+                if(found==std::string::npos)std::cerr << "ISR syscall without FROMISR" << std::endl;
+                abb->print_information();
+            }
+            bool visited = false;
+            size_t abb_seed = abb->get_seed();
+            for(auto seed : already_visited){
+                if(seed == abb_seed)visited = true;
+            }
+                
+            //check if the successor abb is already stored in the list				
+            if(!visited) {
+                if(abb->get_call_type()== sys_call){
+                    auto called_functions = abb->get_called_functions();
+                    if(called_functions.size()==1){
+                        queue.push(called_functions.front()->get_entry_abb());
+                    }
+                }
+                //iterate about the successors of the abb
+                for (auto successor: abb->get_ABB_successors()){
+                    
+                    //update the lists
+                    queue.push(successor);
+                }
+            }
+        }
+    }
+}
+    
+void add_to_queue_set(graph::Graph& graph){
+    
+     //get all isrs, which are stored in the graph
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
+	//iterate about the isrs
+	for (auto &vertex : vertex_list) {
+        //std::cerr << "isr name: " << vertex->get_name() << std::endl;
+        
+        auto queueset = std::dynamic_pointer_cast<OS::QueueSet>(vertex);
+        
+        auto ingoing_edges = queueset->get_ingoing_edges();
+      
+        for(auto ingoing : ingoing_edges){
+            
+            if(ingoing->get_abb_reference()->get_syscall_type() == add){
+                
+                auto arguments = ingoing->get_abb_reference()->get_syscall_arguments();
+                
+                if(arguments.front().multiple ==false){
+                    
+                    if(arguments.front().any_list.front().type().hash_code() == typeid(std::string).hash_code()){
+                        
+                        std::string handler_name = std::any_cast<std::string>(arguments.front().any_list.front());
+                        std::cerr << handler_name << std::endl;
+                        
+                        std::hash<std::string> hash_fn;
+	
+                        graph::shared_vertex queue_set_element = nullptr;
+                        
+                        queue_set_element =  graph.get_vertex(hash_fn(handler_name +  typeid(OS::Semaphore).name()));
+                       
+                        if(queue_set_element== nullptr)queue_set_element = graph.get_vertex(hash_fn(handler_name +  typeid(OS::Queue).name()));
+                        
+                        if(queue_set_element!= nullptr)queueset->set_queue_element(queue_set_element);
+                        else std::cerr << "element " << handler_name << " could not added to queue set" << std::endl;
+                    }    
+                }else{
+                    
+                    //TODO 
+                }
+            }
+        }
+    }
+}
+
+    
+
+void verify_mutexes(graph::Graph& graph){
+    
+     //get all isrs, which are stored in the graph
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
+	//iterate about the isrs
+	for (auto &vertex : vertex_list) {
+        //std::cerr << "isr name: " << vertex->get_name() << std::endl;
+		std::vector<llvm::Instruction*> already_visited;
+        auto semaphore = std::dynamic_pointer_cast<OS::Semaphore> (vertex);
+        
+        
+        std::cerr << "mutex/semaphore:" <<  semaphore->get_name() << std::endl;
+        
+        bool create_call = false;
+        auto ingoing_edges = semaphore->get_ingoing_edges();
+        std::vector<graph::shared_edge> mutex_takes;
+        std::vector<graph::shared_edge> mutex_gives;
+        for(auto ingoing : ingoing_edges){
+            
+            if(ingoing->get_abb_reference()->get_syscall_type() == create)create_call = true;
+            if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
+            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+        }
+        
+        auto outgoing_edges = semaphore->get_outgoing_edges();
+        for(auto outgoing : outgoing_edges){
+            if(outgoing->get_abb_reference()->get_syscall_type() == receive)mutex_takes.emplace_back(outgoing);
+            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+        }
+        
+        
+        if(!create_call)std::cerr << "mutex/semaphore was not created" << std::endl;
+        else{
+            
+            if(semaphore->get_semaphore_type() == mutex  || semaphore->get_semaphore_type() == recursive_mutex){
+                std::list<std::size_t> parallel_takes;
+                
+                for(auto outgoing : outgoing_edges){
+                    for(auto tmp_outgoing : outgoing_edges){
+                        if(outgoing->get_seed() == tmp_outgoing->get_seed())continue;
+                        if(list_contains_element(&parallel_takes , tmp_outgoing->get_seed())&&list_contains_element(&parallel_takes ,outgoing->get_seed()))continue;
+                        if(!is_reachable(outgoing->get_abb_reference(),tmp_outgoing->get_abb_reference()) && !is_reachable(tmp_outgoing->get_abb_reference(),outgoing->get_abb_reference())){
+                            parallel_takes.emplace_back(outgoing->get_seed());
+                            parallel_takes.emplace_back(tmp_outgoing->get_seed());
+                        }
+                    }
+                }
+                
+                for(auto take : mutex_takes){
+                    bool mutex_flag = false;
+                    for(auto give :mutex_gives){
+                        if(give->get_start_vertex()->get_seed() == take->get_start_vertex()->get_seed()){
+                            if(is_reachable (take->get_abb_reference(), give->get_abb_reference()))mutex_flag = true;
+                        }
+                    }
+                    if(!mutex_flag)std::cerr << "mutex was not given after taken" << std::endl;
+                }
+            }else{
+                for(auto take : mutex_takes){
+                    bool semaphore_flag = false;
+                    for(auto give :mutex_gives){
+                        if(give->get_start_vertex()->get_seed() != take->get_start_vertex()->get_seed()){
+                            semaphore_flag = true;
+                        }
+                    }
+                    if(!semaphore_flag)std::cerr << "semaphore was not given in other instance/better use a mutex" << std::endl;
+                }
+            }
+            
+        } 
+    }
+}
 
 
 
@@ -302,7 +530,9 @@ namespace step {
 		
 		//graph.print_information();
 		detect_interactions(graph);
-		
+		verify_mutexes(graph);
+        verify_isrs(graph);
+        add_to_queue_set(graph);
 	}
 	
 	std::vector<std::string> DetectInteractionsStep::get_dependencies() {

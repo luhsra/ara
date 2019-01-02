@@ -78,7 +78,9 @@ class syscall_definition_type(IntEnum):
     reset = <int> cgraph.reset
     activate = <int> cgraph.activate
     enable = <int> cgraph.enable
+    add = <int> cgraph.add
     disable = <int> cgraph.disable
+    take_out = <int> cgraph.take_out
     
 class data_type(IntEnum):
     string = 1
@@ -142,7 +144,7 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         typeid(cgraph.RTOS).hash_code(): RTOS,
         typeid(cgraph.ISR).hash_code(): ISR,
         typeid(cgraph.Resource).hash_code(): Resource,
-        
+        typeid(cgraph.QueueSet).hash_code(): QueueSet,
     }
 
     
@@ -604,15 +606,6 @@ cdef class ABB(Vertex):
         cdef bytes py_string = c_string
         return py_string
 
-    def set_syscall_name(self,  name):
-        cdef bname
-        if isinstance(name, str):
-            bname = name.encode('UTF-8')
-        else:
-            bname = name
-        
-        return deref(self._c()).set_syscall_name(bname)
-
 
     def convert_call_to_syscall(self, name):
         cdef bname
@@ -624,10 +617,11 @@ cdef class ABB(Vertex):
         return deref(self._c()).convert_call_to_syscall(bname)
     
     def get_syscall_name(self):
+        cdef bytes name = deref(self._c()).get_syscall_name()
         return deref(self._c()).get_syscall_name()
 
     def get_call_names(self):
-        cdef clist[string] call_names =  deref(self._c()).get_call_names()
+        cdef cvector[string] call_names =  deref(self._c()).get_call_names()
         pylist = []
         cdef bytes tmp_name
         for name in call_names:
@@ -773,6 +767,10 @@ cdef class ABB(Vertex):
             return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
         else: 
             return None
+
+    def set_handler_argument_index(self,index):
+        return deref(self._c()).set_handler_argument_index(index)
+
         
     def  print_information(self):
         return deref(self._c()).print_information()
@@ -825,7 +823,16 @@ cdef class Buffer(Vertex):
             self._c_vertex = spc[cgraph.Vertex, cgraph.Buffer](make_shared[cgraph.Buffer](&graph._c_graph, bname))
         
         
-        
+cdef class QueueSet(Vertex):
+
+    cdef inline shared_ptr[cgraph.QueueSet] _c(self):
+        return spc[cgraph.QueueSet, cgraph.Vertex](self._c_vertex)
+
+    def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+        cdef string bname
+        if not _raw:
+            bname = name.encode('UTF-8')
+            self._c_vertex = spc[cgraph.Vertex, cgraph.QueueSet](make_shared[cgraph.QueueSet](&graph._c_graph, bname))
         
         
 cdef class Timer(Vertex):

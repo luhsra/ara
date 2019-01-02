@@ -12,7 +12,7 @@
 #include <tuple>
 
 using namespace graph;
-using namespace llvm;
+using namespace llvm; 
 
 /*graph::Graph::Graph(std::shared_ptr<llvm::Module> module){
     llvm_module = module;
@@ -321,9 +321,6 @@ bool graph::Graph::contain_edge(shared_edge edge){
 }
 
 
-
-
-
 graph::Vertex::Vertex(Graph *graph,std::string name){
 	
     this->graph = graph;
@@ -592,7 +589,7 @@ graph::Edge::Edge(){
 
 
 
-graph::Edge::Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_vertex atomic_basic_block_reference){
+graph::Edge::Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,shared_abb atomic_basic_block_reference){
     this->name = name;
     this->graph = graph;
     this->start_vertex = start;
@@ -665,6 +662,11 @@ llvm::Instruction* graph::Edge::get_instruction_reference(){
     
 }
 
+ 
+OS::shared_abb graph::Edge::get_abb_reference(){
+    return this->atomic_basic_block_reference;
+    
+}
 
 bool OS::Function::remove_abb(size_t seed){
 	
@@ -825,6 +827,11 @@ void OS::Function::set_atomic_basic_block(OS::shared_abb atomic_basic_block){
     this->atomic_basic_blocks.emplace_back(atomic_basic_block);
 }
 
+void OS::Function::set_atomic_basic_blocks(std::list<OS::shared_abb> * atomic_basic_blocks){
+    this->atomic_basic_blocks = *atomic_basic_blocks;
+}
+
+
 /*
 std::list<graph::shared_vertex> OS::Function::get_atomic_basic_blocks(){
 	std::list<graph::shared_vertex> tmp_list;
@@ -911,12 +918,30 @@ llvm::PostDominatorTree* OS::Function::get_postdominator_tree(){
 void OS::Function::initialize_dominator_tree(llvm::Function* function){
     this->dominator_tree.recalculate(*function);
 	this->dominator_tree.updateDFSNumbers();
+
 }
       
 void OS::Function::initialize_postdominator_tree(llvm::Function* function){
     this->postdominator_tree.recalculate(*function);
 	this->postdominator_tree.updateDFSNumbers();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 void OS::ABB::set_call_target_instance(size_t target_instance){
@@ -947,20 +972,28 @@ void OS::ABB::set_call_type(call_definition_type type){
 }
 
 
-
-
 bool OS::ABB::is_critical(){return this->critical_section;}
 void OS::ABB::set_critical(bool critical){this->critical_section = critical;}
 
 
-std::list<std::list<argument_data>>* OS::ABB::get_arguments(){
+
+std::vector<std::vector<argument_data>> OS::ABB::get_arguments(){
+    
+    std::vector<std::vector<argument_data>> argument_list;
+    
+    for(auto call :this->calls){
+        if(call.sys_call==false)argument_list.emplace_back(call.arguments);
+    }
 	//std::cerr << "length: " << this->arguments.size() << std::endl;
-	return &this->arguments;
+	return argument_list;
 }
 
-std::list<argument_data>* OS::ABB::get_syscall_arguments(){
-	//std::cerr << "length: " << this->arguments.size() << std::endl;
-	return &this->syscall_arguments;
+std::vector<argument_data> OS::ABB::get_syscall_arguments(){
+    std::vector<argument_data> syscall_arguments;
+	for(auto call :this->calls){
+        if(call.sys_call==true)syscall_arguments =  call.arguments;
+    }
+    return syscall_arguments;
 }
 
 /*
@@ -970,15 +1003,9 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 
-void OS::ABB::set_arguments(std::list<argument_data> new_arguments){
-    this->arguments.emplace_back(new_arguments);
-	
-	
-	//std::cout << std::endl;
-	
-	
-	
-} // Setze Argument des SystemCalls in Argumentenliste
+void OS::ABB::set_call(call_data call){
+    this->calls.emplace_back(call);
+}
 
 
 
@@ -1020,8 +1047,8 @@ bool OS::ABB::set_BasicBlock(llvm::BasicBlock *basic_block){
 
 
 
-std::list<llvm::BasicBlock*> OS::ABB::get_BasicBlocks(){
-	return this->basic_blocks;	
+std::vector<llvm::BasicBlock*>* OS::ABB::get_BasicBlocks(){
+	return &this->basic_blocks;	
 }
 
 
@@ -1044,55 +1071,53 @@ OS::shared_function OS::ABB::get_parent_function(){
 
 
 
-void OS::ABB::set_call_name(std::string call_name){
-	this->call_names.emplace_back(call_name);
-}
-std::list<std::string> OS::ABB::get_call_names(){
-	return this->call_names;
+
+std::vector<std::string> OS::ABB::get_call_names(){
+    std::vector<std::string> call_names;
+    for(auto call :this->calls){
+        if(!call.sys_call)call_names.emplace_back(call.call_name);
+    }
+    
+	return call_names;
 }
 
-
-
-void OS::ABB::set_call_instruction_reference(llvm::Instruction * call_instruction){
-	this->call_instruction_references.emplace_back(call_instruction);
-}
 
 std::vector<llvm::Instruction*> OS::ABB::get_call_instruction_references(){
-	return this->call_instruction_references;
+    std::vector<llvm::Instruction*> call_instructions;
+    for(auto call :this->calls){
+        if(!call.sys_call)call_instructions.emplace_back(call.call_instruction);
+    }
+	return call_instructions;
 }
+
 
 llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
-	return this->syscall_instruction_reference;
+    for(auto call :this->calls){
+        if(call.sys_call)return call.call_instruction;
+    }
+	return nullptr;
 }
 
 
-
-// std::list<size_t> OS::ABB::get_expected_syscall_argument_types(){
-// 	
-// 	return this->expected_argument_types;
-// }
 
 bool OS::ABB::convert_call_to_syscall(std::string name){
 	bool success = false;
 	
-	if(this->call_names.size() != this->arguments.size()){
-		return success;
-	}
-	
 	int index= 0;
-	for(auto& call_name: this->call_names){
-		if(call_name == name)break;
-		index++;
-	}
+    
+    for(auto call :this->calls){
+        if(call.call_name == name)break;
+        index++;
+    }
+
 	int tmp_index = 0;
 	
 	
-	for(auto& call_arguments: this->arguments){
+	for(auto& call :this->calls){
 		if(tmp_index == index){
-			this->syscall_arguments =call_arguments;
-			this->syscall_name = name;
-			this->syscall_instruction_reference = this->call_instruction_references.at(index);
-			success = true;
+			call.sys_call = true;
+            success = true;
+            break;
 		}
 		tmp_index++;
 	}
@@ -1104,12 +1129,11 @@ std::list<std::list<std::list<size_t>>> OS::ABB::get_call_argument_types(){
 	
 	std::list<std::list<std::list<size_t>>> different_calles_argument_types;
 
-	for(auto & tmp_list: this->arguments){
+	for(auto & call: this->calls){
 		
 		std::list<std::list<size_t>>  specific_call_argument_types;
-		for(auto & argument: tmp_list){
+		for(auto & argument: call.arguments){
             if(argument.any_list.empty())continue;
-            size_t id = argument.any_list.front().type().hash_code();
             std::list<size_t> argument_types;
             for(auto &any_element :argument.any_list){
                 argument_types.emplace_back(any_element.type().hash_code());
@@ -1167,7 +1191,7 @@ bool OS::ABB::append_basic_blocks(shared_abb  abb){
 	if(!(this->graph->contain_vertex(abb))){
 		return false;
 	}
-	for(auto& basic_block : abb->get_BasicBlocks()){
+	for(auto& basic_block : *abb->get_BasicBlocks()){
 		this->set_BasicBlock(basic_block);
 	}
 	return true;
@@ -1185,11 +1209,18 @@ bool OS::ABB::is_mergeable(){
 	}
 	//std::cout << syscall_flag << std::endl;
 	if(this->abb_type != sys_call  && syscall_flag ==false)return true;
-	else return false;
+	else{
+        if(this->calls.size() == 0){
+            std::cerr << "ERROR-----------------------------------------------------------------------------------------" << std::endl;
+            this->print_information();
+        }
+        return false;
+    }
 }
 
 void OS::ABB::expend_call_sites(shared_abb abb){
 	
+    /*
 	//check if the current and the to merged abb have both a syscall
 	if(this->syscall_instruction_reference != nullptr && abb->get_syscall_instruction_reference() != nullptr){
 		std::cerr << "ERROR, both abbs, which shall be merged, contain a syscall"<< std::endl;
@@ -1202,22 +1233,12 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 		this->syscall_arguments = *(abb->get_syscall_arguments());
 		this->syscall_name = abb->get_syscall_name();
 	}
-	
-	for(auto& call_name: abb->get_call_names()){
+	*/
+    
+	for(auto call_to_be_joined_abb: *(abb->get_calls())){
 		
-		this->call_names.emplace_back(call_name);
+		this->calls.emplace_back(call_to_be_joined_abb);
 	}
-	
-	for(auto& call_instruction_reference: abb->get_call_instruction_references()){
-		
-		this->call_instruction_references.emplace_back(call_instruction_reference);
-	}
-	
-	for(auto& tmp_argument: *(abb->get_arguments())){
-		
-		this->arguments.emplace_back(tmp_argument);
-	}
-	
 	
 	for(auto& call_target_instance: *(abb->get_call_target_instances())){
 		
@@ -1249,13 +1270,23 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 
 }
 
-std::string OS::ABB::get_syscall_name( ){
-	return this->syscall_name;
+
+std::vector<call_data>* OS::ABB::get_calls( ){
+	return &this->calls;
 }
 
-void OS::ABB::set_syscall_name(std::string name ){
-	this->syscall_name = name;
+
+
+std::string OS::ABB::get_syscall_name( ){
+    std::string call_name = "default";
+    for(auto call :this->calls){
+        if(call.sys_call)call_name = call.call_name;
+    }
+    
+    if(call_name == "")call_name = "default";
+	return call_name;
 }
+
 
 
 llvm::BasicBlock* OS::ABB::get_entry_bb(){
@@ -1314,9 +1345,15 @@ bool  OS::ABB::has_single_successor(){
 
 OS::shared_abb OS::ABB::get_postdominator(){
 	
-	llvm::BasicBlock* bb = this->entry;
+    //std::cerr << "abb " << this->name  << std::endl;
+    
+	llvm::BasicBlock* bb = this->exit;
 	llvm::PostDominatorTree * DT = this->parent_function->get_postdominator_tree();
 	
+    if(!DT->isPostDominator()){
+        //std::cerr << "postdominator_tree is not initialized successfully" << std::endl;
+        abort();
+    }
 	
 	std::hash<std::string> hash_fn;
     //get first basic block of the function
@@ -1340,9 +1377,12 @@ OS::shared_abb OS::ABB::get_postdominator(){
 
 		//get first element of the queue
 		auto abb = queue.front();
-		
-		if(bb != abb->get_entry_bb() && DT->dominates(abb->get_entry_bb(), bb))return abb;
-		queue.pop();
+		//if(abb->get_entry_bb()==nullptr) std::cerr << "no entry bb " << abb->get_name()  << std::endl;
+		if(bb != abb->get_exit_bb() && DT->dominates(abb->get_entry_bb(),bb)){
+            //std::cerr << "postdominator " << abb->get_name()  << std::endl;
+            return abb;
+        }
+        queue.pop();
 		
 		
 		bool visited =false;
@@ -1360,9 +1400,11 @@ OS::shared_abb OS::ABB::get_postdominator(){
 		
 		//iterate about the successors of the abb
 		for (auto successor:abb->get_ABB_successors()){
+            //std::cerr << "successor " << successor->get_name()  << std::endl;
 			queue.push(successor);
         }
     }
+    //std::cerr << "!!!!!!!!no postdominator!!!!!!!!" << std::endl;
     return nullptr;
 	
 }
@@ -1440,6 +1482,55 @@ void OS::ABB::set_start_scheduler_relation(start_scheduler_relation relation){
 start_scheduler_relation OS::ABB::get_start_scheduler_relation(){
     return this->start_scheduler_relative_position;
 }
+
+
+void OS::ABB::set_handler_argument_index(size_t index){
+    this->syscall_handler_index = index;
+}
+
+
+
+size_t OS::ABB::get_handler_argument_index(){
+        return this->syscall_handler_index;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) { 
 	this->max_allowed_value = max_allowed_value;
@@ -1806,11 +1897,18 @@ void OS::Semaphore::set_semaphore_type( semaphore_type type){
 	this->type = type;
 }
 
+semaphore_type OS::Semaphore::get_semaphore_type( ){
+	return this->type;
+}
+
 
 void OS::QueueSet::set_length(unsigned long length){
 	this->length = length;
 }
 
+void OS::QueueSet::set_queue_element(graph::shared_vertex element){
+	this->queueset_elements.emplace_back(element);
+}
 
 void OS::Buffer::set_buffer_type(buffer_type type){
 	this->type = type;
@@ -1892,31 +1990,19 @@ void OS::ABB::print_information(){
 		std::cerr <<  (this->abb_type);
 		std::cerr <<  "\n";
 	
-		if(this->call_names.size() != this->arguments.size()){
-			std::cerr <<  "ERROR: call names and call arguments size are different!\n";
-			std::cerr << "ERROR: call names size:" << std::to_string(this->call_names.size()) << ", call arguments size:" << std::to_string(this->arguments.size()) << "\n";
-			abort();
-		}
-		else{
-			
-			int i = 0;
-			for(auto& call_name : this->call_names){
-				std::cerr <<  "call: " << call_name << "\n";
-				std::cerr << "arguments: ";
-				int j = 0;
-				for (auto &arguments: * this->get_arguments()){
-					for(auto &data : arguments){
-						debug_argument(data);
-						std::cerr <<  ", ";
-					}
-					if(i == j) break;
-					++j;
-				}
-				std::cerr << "\n";
-				++i;
-			}
-		}
-	}
+	
+        
+        for(auto& call : this->calls){
+            std::cerr <<  "call: " << call.call_name << "\n";
+            
+            for (auto& data: call.arguments){
+                debug_argument(data);
+                std::cerr <<  std::endl;
+            }
+            std::cerr << "\n";
+        }
+    }
+	
 
 	std::cerr <<  "------------------------\n\n";
 
