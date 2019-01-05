@@ -1285,7 +1285,15 @@ std::vector<call_data>* OS::ABB::get_calls( ){
 	return &this->calls;
 }
 
-
+bool OS::ABB::set_syscall_name(std::string call_name){
+    for(auto call :this->calls){
+        if(call.sys_call){
+            call.call_name = call_name;
+            return true;
+        }   
+    }
+	return false;
+}
 
 std::string OS::ABB::get_syscall_name( ){
     std::string call_name = "default";
@@ -1604,6 +1612,20 @@ bool OS::Resource::set_resource_property(std::string type, std::string linked_re
 void OS::Task::set_priority(unsigned long priority) {
 	this->priority = priority;
 }
+
+unsigned long  OS::Task::get_priority() {
+	return this->priority;
+}
+
+void OS::Task::set_constant_priority(bool is_constant) {
+	this->constant_priority = is_constant;
+}
+
+bool OS::Task::has_constant_priority() {
+	return this->constant_priority;
+}
+
+
 
 void OS::Task::set_stacksize(unsigned long stacksize) {
 	this->stacksize = stacksize;

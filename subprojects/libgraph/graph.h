@@ -32,7 +32,7 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, no_call , has_call };
 
-enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical};
 
 enum ISR_type { ISR1, ISR2, basic };
 
@@ -54,6 +54,8 @@ enum event_type {automatic, mask};
 
 enum start_scheduler_relation { before , after , uncertain,not_defined };
 
+enum os_type {OSEK,FreeRTOS};
+
 
 struct argument_data {  
     std::vector<std::any> any_list;   
@@ -74,7 +76,7 @@ struct call_data {
 void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,argument_data argument,std::vector<llvm::Instruction*>*call_references);
 void debug_argument(argument_data argument);
 bool list_contains_element(std::list<std::size_t>* list, size_t target);
-call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference);
+call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference,std::string call_name);
 
 namespace OS
 {
@@ -104,7 +106,7 @@ namespace graph {
 			std::shared_ptr<llvm::Module> llvm_module;
 			
 
-
+            os_type type;
                 
 		public:
                 
@@ -143,6 +145,10 @@ namespace graph {
 			bool contain_edge(shared_edge edge);
 			
 			void print_information();
+            
+            os_type get_os_type(){return  this->type;};
+            
+            void set_os_type(os_type type){this->type = type;};
 			
 			
 			~Graph();
@@ -534,7 +540,7 @@ namespace OS {
         
 		std::vector<std::string> get_call_names();
 		std::string get_syscall_name();
-		
+		bool set_syscall_name(std::string call_name);
         
 		void expend_call_sites(shared_abb abb);
 		llvm::BasicBlock* get_exit_bb();
@@ -644,6 +650,8 @@ namespace OS {
 		unsigned int activation;
 		schedule_type scheduler; //NON/FULL defines preemptability of task
 		
+		bool constant_priority = true;
+		
 	public:
 		
 		Task(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -667,6 +675,7 @@ namespace OS {
         shared_function get_definition_function();
 
 		void set_priority(unsigned long priority);
+        unsigned long  get_priority();
 		void set_stacksize(unsigned long priority);
 		bool set_scheduler(std::string scheduler);
 		void set_activation(unsigned long activation);
@@ -675,8 +684,8 @@ namespace OS {
 		bool set_resource_reference(std::string resource);
 		bool set_event_reference(std::string event);
 		bool set_message_reference(std::string message);
-		
-		
+		void set_constant_priority(bool is_constant);
+		bool has_constant_priority();
 
 	};
 
@@ -793,8 +802,8 @@ namespace OS {
         unsigned int id;
         event_type mask_type;
 
-		std::list<int> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
-		std::list<int> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
+		//std::list<long> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
+		std::list<long> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
 		                             // müssen auch wieder gesetzt werden
 		std::list<graph::shared_vertex > synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 		
@@ -814,24 +823,16 @@ namespace OS {
 		bool wait_for_all_bits;
 		bool wait_for_any_bit;
 
-		bool set_writing_vertex(graph::shared_vertex vertex);
-		bool is_writing_vertex(graph::shared_vertex vertex);
+		bool set_bits(long bit);
+		bool set_cleared_bits(long bit);
 
-		bool set_reading_vertex(graph::shared_vertex vertex);
-		bool is_reading_vertex(graph::shared_vertex vertex);
+		bool remove_bits(long bit);
+		bool remove_cleared_bits(long bit);
 
-		bool set_synchronized_vertex(graph::shared_vertex vertex);
-		bool is_synchronized_vertex(graph::shared_vertex vertex);
+		bool is_set_bits(long bit);
+		bool is_cleared_bits(long bit);
 
-		bool set_bit(int bit);
-		bool set_cleared_bit(int bit);
-
-		bool remove_bit(int bit);
-		bool remove_cleared_bit(int bit);
-
-		bool is_set_bit(int bit);
-		bool is_cleared_bit(int bit);
-
+        
         bool set_task_reference(OS::shared_task task);
         std::list<OS::shared_task> get_task_references();
         void set_event_mask(unsigned long  mask);

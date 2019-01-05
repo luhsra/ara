@@ -24,6 +24,8 @@ from enum import IntEnum
 from libcpp.typeinfo cimport type_info
 
 
+
+
 cpdef get_type_hash(name):
     hash_type = 0
     if name== "Function":
@@ -77,6 +79,14 @@ class syscall_definition_type(IntEnum):
     add = <int> cgraph.add
     disable = <int> cgraph.disable
     take_out = <int> cgraph.take_out
+    wait = <int> cgraph.wait
+    take = <int> cgraph.take
+    synchronize = <int> cgraph.synchronize
+    set_priority = <int> cgraph.set_priority
+    resume = <int> cgraph.resume
+    suspend = <int> cgraph.suspend
+    exit_critical = <int> cgraph.exit_critical
+    enter_critical = <int> cgraph.enter_critical
     
 class data_type(IntEnum):
     string = 1
@@ -84,6 +94,10 @@ class data_type(IntEnum):
     unsigned_integer = 3
     long = 4
     
+class os_type(IntEnum):
+
+    FreeRTOS = <int> cgraph.FreeRTOS 
+    OSEK = <int> cgraph.OSEK 
     
 cpdef cast_expected_syscall_argument_types(argument_types ):
     
@@ -187,7 +201,10 @@ cdef class PyGraph:
         #print(pylist)
 
         return pylist
-
+    
+    def set_os_type(self, int type_os):
+        cdef cgraph.os_type tmp_type = <cgraph.os_type> type_os
+        return self._c_graph.set_os_type(tmp_type)
 
     
         

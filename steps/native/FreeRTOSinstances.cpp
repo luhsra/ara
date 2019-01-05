@@ -151,73 +151,6 @@ int bfs_level(std::vector<std::tuple<int, llvm::BasicBlock*>>*bfs_reference , ll
 
 
 
-//function to create all abbs in the graph
-//TODO adapt branches backwards if they merge with a branch with lower level
-std::vector<std::tuple<int, llvm::BasicBlock*>> generate_bfs(llvm::Function*  function ) {
-	
-	std::hash<std::string> hash_fn;
-	
-
-	std::vector<std::tuple<int,llvm::BasicBlock*>> bfs_reference;
-    //get first basic block of the function
-
-    //create ABB
-	llvm::BasicBlock& entry_bb = function->getEntryBlock();
-	
-    //store coresponding basic block in ABB
-    //queue for new created ABBs
-    std::queue<std::tuple<int, llvm::BasicBlock*>> queue; 
-	
-	auto tmp = std::make_tuple (0,&entry_bb);
-	
-	
-	bfs_reference.push_back(tmp);
-    queue.push(tmp);
-
-    //queue with information, which abbs were already analyzed
-    std::vector<size_t> visited_bbs;
-
-    //iterate about the ABB queue
-	
-
-    while(!queue.empty()) {
-
-		//get first element of the queue
-		auto tuple = queue.front();
-		queue.pop();
-		auto old_bb = std::get<llvm::BasicBlock*>(tuple);
-		auto old_bb_level = std::get<int>(tuple);
-        queue.front();
-
-		//iterate about the successors of the abb
-		for (auto it = succ_begin(old_bb); it != succ_end(old_bb); ++it){
-
-			//get sucessor basicblock reference
-			llvm::BasicBlock *succ = *it;
-			
-			bool visited =false;
-			
-			size_t succ_seed =  hash_fn(succ->getName().str());
-			
-			for(auto seed : visited_bbs){
-				if(seed ==  succ_seed)visited = true;
-				
-			}
-			
-			//check if the successor abb is already stored in the list				
-			if(!visited) {
-				auto tmp = std::make_tuple (old_bb_level+1,succ);
-				//update the lists
-				queue.push(tmp);
-				bfs_reference.push_back(tmp);
-				visited_bbs.push_back(succ_seed);
-            }
-        }
-    }
-    return bfs_reference;
-}
-
-
 bool is_reachable(std::vector<llvm::Instruction*> *start_scheduler_func_calls, llvm::BasicBlock *bb, std::vector<size_t> *already_visited){
 	
 	std::hash<std::string> hash_fn;
@@ -543,11 +476,11 @@ bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visit
 	return success;
 }
 
-call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference){
+call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference,std::string call_name){
     call_data specific_call_data;
     
     specific_call_data.sys_call = true;
-    
+    specific_call_data.call_name = call_name  ;
     specific_call_data.call_instruction = call_instruction_reference;
     
     for(auto argument : *arguments){
@@ -876,7 +809,7 @@ graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb ,bool 
 	//load the arguments
 	argument_data argument   = argument_list.at(0);
     
-    abb->print_information();
+   
     get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	long queue_length =  std::any_cast<long>(specific_argument);
 	
@@ -936,6 +869,8 @@ graph::shared_vertex create_event_group(graph::Graph& graph,OS::shared_abb abb, 
 		
 	//std::cerr <<  "EventGroupHandlerName" << handler_name << std::endl;
 	event_group->set_handler_name(handler_name);
+    
+    std::cerr << "event group handler name " << handler_name << std::endl;
 	event_group->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(event_group);
 	std::cout << "event group successfully created" <<  std::endl;
@@ -988,8 +923,8 @@ graph::shared_vertex create_queue_set(graph::Graph& graph, OS::shared_abb abb,  
 //xTimerCreate
 graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references){
 	
-	
-    abb->print_information();
+	llvm::Instruction* instruction = abb->get_syscall_instruction_reference();
+    
 	std::vector<argument_data>argument_list;
 	
 	for(auto & argument : abb->get_syscall_arguments()){
@@ -1020,6 +955,7 @@ graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool b
     get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
 	std::string timer_definition_function =  std::any_cast<std::string>(specific_argument);
 	
+    std::string handler_name = get_handler_name(instruction, 1);
 	//create timer and set properties 
 	auto timer = std::make_shared<OS::Timer>(&graph,timer_name);
 	
@@ -1027,6 +963,9 @@ graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool b
 	//TODO extract timer id
 	//std::cout << timer_id << std::endl;
 	//timer->set_timer_id(timer_id);
+    
+    std::cerr << "handler name " << handler_name << std::endl;
+    timer->set_handler_name(handler_name);
     
 	if(timer_autoreload == 0) timer->set_timer_type(oneshot);
 	else timer->set_timer_type(autoreload);
@@ -1094,7 +1033,6 @@ graph::shared_vertex create_buffer(graph::Graph& graph,OS::shared_abb abb, bool 
 	
 	return buffer;
 }
-
 
 
 // bool verify_isr_prefix(llvm::Function *function){
@@ -1237,7 +1175,7 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
         created_vertex = create_queue_set(graph, abb,before_scheduler_start,already_visited_calls);
         if(!created_vertex)std::cout << "Queue Set could not created" << std::endl;
     }
-    
+   
     if(created_vertex){
         auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,created_vertex,abb);
         //store the edge in the graph
@@ -1248,7 +1186,7 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
         edge->set_instruction_reference( abb->get_syscall_instruction_reference());
         auto arguments = abb->get_syscall_arguments();
         auto syscall_reference = abb->get_syscall_instruction_reference();
-        auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference);
+        auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
         edge->set_specific_call(&specific_arguments);
         return true;
     }else{

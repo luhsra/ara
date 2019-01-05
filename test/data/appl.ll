@@ -1,95 +1,77 @@
-; ModuleID = '../appl/FreeRTOS/timer.cc'
-source_filename = "../appl/FreeRTOS/timer.cc"
+; ModuleID = '../appl/FreeRTOS/wrong_scheduler_access.cc'
+source_filename = "../appl/FreeRTOS/wrong_scheduler_access.cc"
 target datalayout = "e-m:e-p:32:32-f64:32:64-f80:32-n8:16:32-S128"
 target triple = "i386-pc-linux-gnu"
 
-%struct.tmrTimerControl = type opaque
+%struct.tskTaskControlBlock = type opaque
 
-@xTimer = global %struct.tmrTimerControl* null, align 4
-@.str = private unnamed_addr constant [6 x i8] c"Timer\00", align 1
+@.str = private unnamed_addr constant [6 x i8] c"Task1\00", align 1
+@.str.1 = private unnamed_addr constant [6 x i8] c"Task2\00", align 1
 
 ; Function Attrs: noinline optnone
-define void @_Z14vTimerCallbackP15tmrTimerControl(%struct.tmrTimerControl* %xTimer) #0 {
-  %xTimer.addr = alloca %struct.tmrTimerControl*, align 4
-  %ulMaxExpiryCountBeforeStopping = alloca i32, align 4
-  %ulCount = alloca i32, align 4
-  store %struct.tmrTimerControl* %xTimer, %struct.tmrTimerControl** %xTimer.addr, align 4
-  store i32 10, i32* %ulMaxExpiryCountBeforeStopping, align 4
-  %1 = load %struct.tmrTimerControl*, %struct.tmrTimerControl** %xTimer.addr, align 4
-  %call = call i8* @pvTimerGetTimerID(%struct.tmrTimerControl* %1)
-  %2 = ptrtoint i8* %call to i32
-  store i32 %2, i32* %ulCount, align 4
-  %3 = load i32, i32* %ulCount, align 4
-  %inc = add i32 %3, 1
-  store i32 %inc, i32* %ulCount, align 4
-  %4 = load i32, i32* %ulCount, align 4
-  %cmp = icmp uge i32 %4, 10
-  br i1 %cmp, label %5, label %7
+define void @_Z12tmp_functioni(i32 %b) #0 {
+  %b.addr = alloca i32, align 4
+  store i32 %b, i32* %b.addr, align 4
+  %1 = load i32, i32* %b.addr, align 4
+  %cmp = icmp eq i32 %1, 23
+  br i1 %cmp, label %2, label %3
 
-; <label>:5:                                      ; preds = %0
-  %6 = load %struct.tmrTimerControl*, %struct.tmrTimerControl** %xTimer.addr, align 4
-  %call1 = call i32 @xTimerGenericCommand(%struct.tmrTimerControl* %6, i32 3, i16 zeroext 0, i32* null, i16 zeroext 0)
-  br label %11
+; <label>:2:                                      ; preds = %0
+  call void @vTaskExitCritical()
+  br label %4
 
-; <label>:7:                                      ; preds = %0
-  %8 = load %struct.tmrTimerControl*, %struct.tmrTimerControl** %xTimer.addr, align 4
-  %9 = load i32, i32* %ulCount, align 4
-  %10 = inttoptr i32 %9 to i8*
-  call void @vTimerSetTimerID(%struct.tmrTimerControl* %8, i8* %10)
-  br label %11
+; <label>:3:                                      ; preds = %0
+  call void @vTaskExitCritical()
+  br label %4
 
-; <label>:11:                                     ; preds = %7, %5
+; <label>:4:                                      ; preds = %3, %2
   ret void
 }
 
-declare i8* @pvTimerGetTimerID(%struct.tmrTimerControl*) #1
+declare void @vTaskExitCritical() #1
 
-declare i32 @xTimerGenericCommand(%struct.tmrTimerControl*, i32, i16 zeroext, i32*, i16 zeroext) #1
+; Function Attrs: noinline optnone
+define void @_Z5Task1Pv(i8* %pvParameters) #0 {
+  %pvParameters.addr = alloca i8*, align 4
+  %a = alloca i32, align 4
+  %b = alloca i32, align 4
+  store i8* %pvParameters, i8** %pvParameters.addr, align 4
+  call void @vTaskEnterCritical()
+  call void @_Z12tmp_functioni(i32 34)
+  store i32 0, i32* %a, align 4
+  %1 = load i32, i32* %a, align 4
+  %add = add nsw i32 %1, 1243
+  store i32 %add, i32* %b, align 4
+  ret void
+}
 
-declare void @vTimerSetTimerID(%struct.tmrTimerControl*, i8*) #1
+declare void @vTaskEnterCritical() #1
+
+; Function Attrs: noinline optnone
+define void @_Z5Task2Pv(i8* %pvParameters) #0 {
+  %pvParameters.addr = alloca i8*, align 4
+  store i8* %pvParameters, i8** %pvParameters.addr, align 4
+  call void @_Z12tmp_functioni(i32 43)
+  ret void
+}
 
 ; Function Attrs: noinline norecurse optnone
 define i32 @main() #2 {
   %retval = alloca i32, align 4
-  %x = alloca i32, align 4
   store i32 0, i32* %retval, align 4
-  store i32 10, i32* %x, align 4
-  %call = call %struct.tmrTimerControl* @xTimerCreate(i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0), i16 zeroext 100, i32 1, i8* null, void (%struct.tmrTimerControl*)* @_Z14vTimerCallbackP15tmrTimerControl)
-  store %struct.tmrTimerControl* %call, %struct.tmrTimerControl** @xTimer, align 4
-  %1 = load %struct.tmrTimerControl*, %struct.tmrTimerControl** @xTimer, align 4
-  %cmp = icmp eq %struct.tmrTimerControl* %1, null
-  br i1 %cmp, label %2, label %3
-
-; <label>:2:                                      ; preds = %0
-  br label %7
-
-; <label>:3:                                      ; preds = %0
-  %4 = load %struct.tmrTimerControl*, %struct.tmrTimerControl** @xTimer, align 4
-  %call1 = call zeroext i16 @xTaskGetTickCount()
-  %call2 = call i32 @xTimerGenericCommand(%struct.tmrTimerControl* %4, i32 1, i16 zeroext %call1, i32* null, i16 zeroext 0)
-  %cmp3 = icmp ne i32 %call2, 1
-  br i1 %cmp3, label %5, label %6
-
-; <label>:5:                                      ; preds = %3
-  br label %6
-
-; <label>:6:                                      ; preds = %5, %3
-  br label %7
-
-; <label>:7:                                      ; preds = %6, %2
+  %call = call i32 @xTaskCreate(void (i8*)* @_Z5Task1Pv, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str, i32 0, i32 0), i16 zeroext 1000, i8* null, i32 1, %struct.tskTaskControlBlock** null)
+  %call1 = call i32 @xTaskCreate(void (i8*)* @_Z5Task2Pv, i8* getelementptr inbounds ([6 x i8], [6 x i8]* @.str.1, i32 0, i32 0), i16 zeroext 1000, i8* null, i32 2, %struct.tskTaskControlBlock** null)
   call void @vTaskStartScheduler()
-  br label %8
+  br label %1
 
-; <label>:8:                                      ; preds = %8, %7
-  br label %8
+; <label>:1:                                      ; preds = %1, %0
+  br label %1
                                                   ; No predecessors!
-  %10 = load i32, i32* %retval, align 4
-  ret i32 %10
+  %3 = load i32, i32* %retval, align 4
+  ret i32 %3
 }
 
-declare %struct.tmrTimerControl* @xTimerCreate(i8*, i16 zeroext, i32, i8*, void (%struct.tmrTimerControl*)*) #1
-
-declare zeroext i16 @xTaskGetTickCount() #1
+declare i32 @xTaskCreate(void (i8*)*, i8*, i16 zeroext, i8*, i32, %struct.tskTaskControlBlock**) #1
 
 declare void @vTaskStartScheduler() #1
 

@@ -54,18 +54,18 @@ class SyscallStep(Step):
                 "OSEKOS_ChainTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")],0],
                 "OSEKOS_CancelAlarm":		[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Timer")],0],
                 
-                "OSEKOS_GetResource":				[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")],0],
-                "OSEKOS_ReleaseResource":			[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")],0],
+                "OSEKOS_GetResource":				[[graph.data_type.string],graph.syscall_definition_type.take,[graph.get_type_hash("Resource")],0],
+                "OSEKOS_ReleaseResource":			[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource")],0],
                 
-                "OSEKOS_DisableAllInterrupts":		[[],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")],0],
-                "OSEKOS_EnableAllInterrupts":		[[],graph.syscall_definition_type.activate,[graph.get_type_hash("RTOS")],0],
-                "OSEKOS_SuspendAllInterrupts":		[[],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")],0],
-                "OSEKOS_ResumeAllInterrupts":		[[],graph.syscall_definition_type.activate,[graph.get_type_hash("RTOS")],0],
-                "OSEKOS_SuspendOSInterrupts":		[[],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")],0],
-                "OSEKOS_ResumeOSInterrupts":		[[],graph.syscall_definition_type.activate,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_DisableAllInterrupts":		[[],graph.syscall_definition_type.disable,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_EnableAllInterrupts":		[[],graph.syscall_definition_type.enable,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_SuspendAllInterrupts":		[[],graph.syscall_definition_type.suspend,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_ResumeAllInterrupts":		[[],graph.syscall_definition_type.resume,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_SuspendOSInterrupts":		[[],graph.syscall_definition_type.suspend,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_ResumeOSInterrupts":		[[],graph.syscall_definition_type.resume,[graph.get_type_hash("RTOS")],0],
                 
                 "OSEKOS_GetAlarm":					[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Timer")],0],
-                "OSEKOS_AdvanceCounter":			[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Counter")],0],
+                "OSEKOS_AdvanceCounter":			[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Counter")],0],
                 
                 
                 
@@ -88,9 +88,7 @@ class SyscallStep(Step):
         elif os == "freertos":
 
             self.syscall_dict = { 	 	
-                # no syscall
-                #"Computation": 							[[],None,None] ,
-            
+  
                 # all syscall which creates abstaction instances
                 
                 
@@ -104,6 +102,7 @@ class SyscallStep(Step):
                 #"taskEXIT_CRITICAL_FROM_ISR": 21 ,
                 #"portSWITCH_TO_USER_MODE": 4 ,
                 #"vTaskGetTaskInfo": 33 ,
+                #"ulTaskNotifyTake" : 				[[graph.data_type.integer,graph.data_type.integer,graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 
                 "xTaskCreate": 							[[graph.data_type.string,graph.data_type.string,graph.data_type.integer,graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.create,[graph.get_type_hash("Task")],0],
                 "xTaskCreateStatic": 					[[],graph.syscall_definition_type.create,[graph.get_type_hash("Task")],0],
@@ -124,8 +123,8 @@ class SyscallStep(Step):
                 
                 "xTimerCreate": 						[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer,graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.create,[graph.get_type_hash("Timer")],0],
                 "xTimerCreateStatic": 					[[],graph.syscall_definition_type.create,[graph.get_type_hash("Timer")],0],
-                "xEventGroupCreate": 					[[],graph.syscall_definition_type.create,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupCreateStatic": 				[[],graph.syscall_definition_type.create,[graph.get_type_hash("EventGroup")],0],
+                "xEventGroupCreate": 					[[],graph.syscall_definition_type.create,[graph.get_type_hash("Event")],0],
+                "xEventGroupCreateStatic": 				[[],graph.syscall_definition_type.create,[graph.get_type_hash("Event")],0],
                 "xStreamBufferGenericCreate": 			[[graph.data_type.integer,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.create,[graph.get_type_hash("Buffer")],0],
                 "xStreamBufferCreateStatic": 			[[],graph.syscall_definition_type.create,[graph.get_type_hash("Buffer")],0],
                 "xMessageBufferCreateStatic": 			[[],graph.syscall_definition_type.create,[graph.get_type_hash("Buffer")],0],
@@ -142,13 +141,13 @@ class SyscallStep(Step):
                 "vTaskDelayUntil": 				[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],9999],
                 "vTaskDelete": 					[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Task")],0],
             
-                "portDISABLE_INTERRUPTS": 			[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "portENABLE_INTERRUPTS": 			[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "portENTER_CRITICAL": 				[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
+                "portDISABLE_INTERRUPTS": 			[[],graph.syscall_definition_type.disable,[graph.get_type_hash("RTOS")],0],
+                "portENABLE_INTERRUPTS": 			[[],graph.syscall_definition_type.enable,[graph.get_type_hash("RTOS")],0],
+                "vTaskEnterCritical": 				[[],graph.syscall_definition_type.enter_critical,[graph.get_type_hash("RTOS")],0],
                 "portSET_INTERRUPT_MASK_FROM_ISR": 	[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
             
                 
-                "portEXIT_CRITICAL": 				[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
+                "vTaskExitCritical": 				[[],graph.syscall_definition_type.exit_critical,[graph.get_type_hash("RTOS")],0],
                 
                 
                 "xTaskGetApplicationTaskTag": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Task")],0],
@@ -170,57 +169,42 @@ class SyscallStep(Step):
                 "vTaskList" : 						[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 "xTaskNotifyStateClear" : 				[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 "ulTaskNotifyTake" : 				[[graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                #TODO
-                #"ulTaskNotifyTake" : 				[[graph.data_type.integer,graph.data_type.integer,graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 "uxTaskPriorityGet" : 				[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Task")],0],
-                "vTaskPrioritySet" : 				[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
-                "vTaskResume" : 					[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "xTaskResumeAll" : 					[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "xTaskResumeFromISR" : 				[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
+                "vTaskPrioritySet" : 				[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.set_priority,[graph.get_type_hash("Task")],0],
+                "vTaskResume" : 					[[graph.data_type.string],graph.syscall_definition_type.resume,[graph.get_type_hash("RTOS")],0],
+                "xTaskResumeAll" : 					[[],graph.syscall_definition_type.resume,[graph.get_type_hash("RTOS")],0],
+                "xTaskResumeFromISR" : 				[[graph.data_type.string],graph.syscall_definition_type.resume,[graph.get_type_hash("Task")],0],
                 "vTaskSetApplicationTaskTag" : 		[[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 "vTaskSetThreadLocalStoragePointer" : 		[[graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 "vTaskSetTimeOutState" : 			[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 "vTaskStartScheduler" : 			[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 "vTaskStepTick" : 					[[graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "vTaskSuspend" : 					[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
-                "vTaskSuspendAll" : 				[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
+                "vTaskSuspend" : 					[[graph.data_type.string],graph.syscall_definition_type.suspend,[graph.get_type_hash("Task")],0],
+                "vTaskSuspendAll" : 				[[],graph.syscall_definition_type.suspend,[graph.get_type_hash("RTOS")],0],
                 "portYIELD" : 						[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 
                 #TODO xQueueOverwrite -> third argument = 0
                 "xQueueGenericSend":			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer], graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
                 "xQueueGenericSendFromISR": 	[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer], graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Queue")],0],
                 "xQueueReceive": 				[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
-                "xQueueReceiveFromISR":			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
+                "xQueueReceiveFromISR":			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue"),graph.get_type_hash("Semaphore")],0],
                 "xQueuePeek": 					[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
                 "xQueuePeekFromISR": 			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
                 "xQueueIsQueueEmptyFromISR": 	[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
                 "xQueueIsQueueFullFromISR":  	[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
-                "uxQueueMessagesWaiting": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
+                "uxQueueMessagesWaiting": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Semaphore"),graph.get_type_hash("Queue")],0],
                 "uxQueueSpacesAvailable": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
-                "vQueueDelete": 				[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
+                "vQueueDelete": 				[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue"),graph.get_type_hash("Semaphore")],0],
                 "pcQueueGetName": 	   			[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
-                "xQueueReset": 					[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
-                "xQueueGiveFromISR":			[[graph.data_type.string,[graph.data_type.integer,graph.data_type.string],0],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
+                "xQueueReset": 					[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("Queue")],0],
+                "xQueueGiveFromISR":			[[graph.data_type.string,[graph.data_type.integer,graph.data_type.string],0],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue"),graph.get_type_hash("Semaphore")],0],
+                "xQueueSemaphoreTake": 			[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.take,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue"),graph.get_type_hash("Semaphore")],0],
                 "xQueueGetMutexHolder": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")],0],
                 "xQueueGetMutexHolderFromISR": 	[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")],0],
                 "xQueueGiveMutexRecursive": 	[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource")],0],
-                "xQueueSemaphoreTake": 			[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")],0],
-                "xQueueTakeMutexRecursive": 	[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource")],0],
+                "xQueueTakeMutexRecursive": 	[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.take,[graph.get_type_hash("Resource")],0],
                 
-                #TODO second argument = command id xCommandID
-                #define tmrCOMMAND_EXECUTE_CALLBACK_FROM_ISR 	( ( BaseType_t ) -2 )
-                #define tmrCOMMAND_EXECUTE_CALLBACK				( ( BaseType_t ) -1 )
-                #define tmrCOMMAND_START_DONT_TRACE				( ( BaseType_t ) 0 )
-                #define tmrCOMMAND_START					    ( ( BaseType_t ) 1 )
-                #define tmrCOMMAND_RESET						( ( BaseType_t ) 2 )
-                #define tmrCOMMAND_STOP							( ( BaseType_t ) 3 )
-                #define tmrCOMMAND_CHANGE_PERIOD				( ( BaseType_t ) 4 )
-                #define tmrCOMMAND_DELETE						( ( BaseType_t ) 5 )
-                #define tmrFIRST_FROM_ISR_COMMAND				( ( BaseType_t ) 6 )
-                #define tmrCOMMAND_START_FROM_ISR				( ( BaseType_t ) 6 )
-                #define tmrCOMMAND_RESET_FROM_ISR				( ( BaseType_t ) 7 )
-                #define tmrCOMMAND_STOP_FROM_ISR				( ( BaseType_t ) 8 )
-                #define tmrCOMMAND_CHANGE_PERIOD_FROM_ISR		( ( BaseType_t ) 9 )
+
                 "xTimerGenericCommand": 			[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer,graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Timer")],0],
                 "xTimerGetExpiryTime": 				[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Timer")],0],
                 "pcTimerGetName": 					[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Timer")],0],
@@ -240,16 +224,15 @@ class SyscallStep(Step):
                 "xQueueSelectFromSetFromISR":	[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("QueueSet")],0],
                 "uxQueueSpacesAvailable":	[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Queue")],0],
                 
-                #TODO
-                #xEventGroupGetBits -> second argument : 0;
-                "xEventGroupClearBits": 			[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupClearBitsFromISR":		[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("EventGroup")],0],
-                "vEventGroupDelete": 				[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupGetBitsFromISR": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupSetBits" :				[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupSetBitsFromISR" : 		[[graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupSync" : 				[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("EventGroup")],0],
-                "xEventGroupWaitBits" : 			[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("EventGroup")],0],
+ 
+                "xEventGroupClearBits": 			[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("Event")],0],
+                "xEventGroupClearBitsFromISR":		[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("Event")],0],
+                "vEventGroupDelete": 				[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Event")],0],
+                "xEventGroupGetBitsFromISR": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Event")],0],
+                "xEventGroupSetBits" :				[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Event")],0],
+                "xEventGroupSetBitsFromISR" : 		[[graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Event")],0],
+                "xEventGroupSync" : 				[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.synchronize,[graph.get_type_hash("Event")],0],
+                "xEventGroupWaitBits" : 			[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.wait,[graph.get_type_hash("Event")],0],
             
                 "xStreamBufferBytesAvailable" : 	[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")],0],
                 "xStreamBufferBytesAvailable" :		[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")],0],
@@ -274,7 +257,12 @@ class SyscallStep(Step):
         print("I'm an SyscallStep")
         #get information which os is used
         os =  self._config["os"]
-
+    
+        if os == "osek":
+            g.set_os_type(graph.os_type.OSEK)
+        elif os == "freertos":
+            g.set_os_type(graph.os_type.FreeRTOS)
+            
         self.select_syscalls(os)
         
             

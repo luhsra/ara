@@ -13,11 +13,19 @@ cdef extern from "graph.h":
     cdef cppclass syscall_definition_type:
         pass
 
+cdef extern from "graph.h":
+    cdef cppclass os_type:
+        pass
+
 cdef extern from "graph.h" namespace "call_definition_type":
     cdef call_definition_type sys_call
     cdef call_definition_type func_call
     cdef call_definition_type no_call
     cdef call_definition_type has_call
+    
+cdef extern from "graph.h" namespace "os_type":
+    cdef os_type  OSEK
+    cdef os_type FreeRTOS
 
     
 cdef extern from "graph.h" namespace "syscall_definition_type":
@@ -34,6 +42,14 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type disable
     cdef syscall_definition_type add
     cdef syscall_definition_type take_out
+    cdef syscall_definition_type wait
+    cdef syscall_definition_type synchronize
+    cdef syscall_definition_type take
+    cdef syscall_definition_type set_priority
+    cdef syscall_definition_type resume
+    cdef syscall_definition_type suspend
+    cdef syscall_definition_type enter_critical
+    cdef syscall_definition_type exit_critical
     
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
@@ -44,6 +60,8 @@ cdef extern from "graph.h" namespace "graph":
         bool remove_vertex(size_t)
         
         shared_ptr[Vertex] get_vertex(size_t seed)
+        
+        void set_os_type(os_type)
         
     cdef cppclass Vertex:
         Vertex(Graph* graph, string name) except +

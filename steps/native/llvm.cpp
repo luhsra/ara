@@ -1,10 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
 
-
-//TODO extract missing arguments
-
-
 #include "llvm.h"
 #include "llvm/IR/TypeFinder.h"
 #include <string>
@@ -477,17 +473,30 @@ bool load_function_argument(std::stringstream &debug_out,argument_data* argument
             if(!flag)break;
             
             std::vector<llvm::Instruction*> tmp_already_visited = *already_visited;
-            tmp_already_visited.emplace_back(instr);
             
-            debug_out << "LOADFUNKTIONARGUMENT" << "\n";
-            if(!dump_argument(debug_out,argument_container, instr->getOperand(arg_counter), &tmp_already_visited))success = false;;
-            //std::cerr << "user of function argument " << print_argument(instr) << std::endl;
+            
+            if (isa<CallInst>(instr)){
+                if(cast<CallInst>(instr)->getCalledFunction() == function){
+                    tmp_already_visited.emplace_back(instr);
+                    debug_out << "LOADFUNKTIONARGUMENT " << arg_counter<<  "\n";
+                    if(!dump_argument(debug_out,argument_container, instr->getOperand(arg_counter), &tmp_already_visited))success = false;
+                }else{
+                    int counter = 0;
+                    for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
+                        if(arg_counter == counter){
+                            debug_out << "ARGUMENT" << i->getName().str()<<  "\n";
+                            argument_container->any_list.emplace_back(i->getName().str());
+                            argument_container->value_list.emplace_back(i);
+                            argument_container->argument_calles_list.emplace_back(*already_visited);
+                            success = true;
+                            break;
+                        }
+                        ++counter;
+                    }
+                }
+                //std::cerr << "user of function argument " << print_argument(instr) << std::endl;
+            }
         }
-    }
-    
-    for(auto element : (*argument_container).any_list){
-        //std::cerr << "element" << print_argument(element) << std::endl;
-        
     }
     debug_out << "ENDLOADFUNKTIONARGUMENT" << "\n";
     return success;
@@ -690,7 +699,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
     }
     
     
-    //TODO check generell if arg is one of the arguments
+    // check generell if arg is one of the arguments
     if(Instruction *instr = dyn_cast<Instruction>(arg)){
         llvm::Function * function = already_visited->back()->getParent()->getParent();
         
@@ -716,7 +725,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
 	
 	Type * Ty = arg->getType();
     
-    //TODO argument of function
+
 
     //check if argument is an instruction
     if(Instruction *instr = dyn_cast<Instruction>(arg)){
@@ -825,14 +834,16 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
         if(dump_argument(debug_out,argument_container,binop->getOperand(0), already_visited) && dump_argument(debug_out,argument_container,binop->getOperand(0), already_visited)){
             
             if (binop->getOpcode() == Instruction::BinaryOps::Or) {
-            //TODO adapt binary adapter
-            /*
-            out << "(";
-            dump_argument(debug_out,out, binop->getOperand(0));
-            out << ", ";
-            dump_argument(debug_out,out, binop->getOperand(1));
-            out << ")";
-            */
+                double value_0;
+                double value_1;
+                if(!operand_0.multiple && !operand_1.multiple){
+                    if(cast_any_to_double(operand_0.any_list.front(), value_0) &&  cast_any_to_double(operand_1.any_list.front(), value_1)){
+                        dump_success = true;
+                        value = (long)value_0 | (long)value_1;
+                        argument_container->any_list.emplace_back(value);
+                    }
+                }
+            
             }else if (binop->getOpcode() == Instruction::BinaryOps::Add){
                 double value_0;
                 double value_1;
@@ -1002,6 +1013,11 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
             if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
                 std::cerr << "argument container lists have different sizes" << std::endl;
                 abort();
+            }
+            
+            if(call.call_name.find("vTimerSetTimerID") != std::string::npos){
+                std::cerr <<  print_argument(instruction) << '\n';   
+                std::cerr << debug_out.str() << std::endl;
             }
 			//store the dumped argument in the abb with corresponding llvm type
 			arguments.emplace_back(argument_container);

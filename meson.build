@@ -17,6 +17,7 @@ test('ara tester',
 	py3_inst,
 	#args : [files('arsa.py', 'test/data/GPSLogger.ll','test/data/ScreenManager.ll','test/data/GPSThread.ll','test/data/SDThread.ll','test/data/LEDThread.ll','test/data/ButtonsThread.ll','test/data/SdFatSPIDriver.ll','test/data/GPSDataModel.ll','test/data/SpeedScreen.ll'), '--os', 'freertos','--application_file' , 'invalid_mutex.cc'],
 	
-	args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'timer.cc'],
+	#args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'timer.cc'],
+	args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'wrong_scheduler_access.cc'],
 	env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )
