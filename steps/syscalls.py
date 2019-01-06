@@ -88,7 +88,7 @@ class SyscallStep(Step):
         elif os == "freertos":
 
             self.syscall_dict = { 	 	
-  
+
                 # all syscall which creates abstaction instances
                 
                 
@@ -224,7 +224,7 @@ class SyscallStep(Step):
                 "xQueueSelectFromSetFromISR":	[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("QueueSet")],0],
                 "uxQueueSpacesAvailable":	[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Queue")],0],
                 
- 
+
                 "xEventGroupClearBits": 			[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("Event")],0],
                 "xEventGroupClearBitsFromISR":		[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.reset,[graph.get_type_hash("Event")],0],
                 "vEventGroupDelete": 				[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Event")],0],
@@ -281,93 +281,91 @@ class SyscallStep(Step):
                 if abb.get_call_type() == graph.call_definition_type.has_call:
                     
                     #get call name 
-                    call_name_list = abb.get_call_names()
+                    call_name = abb.get_call_name()
                     
-                    assert len(call_name_list) <= 1 , "more than one call in abb during syscall detection"
+                   
+                    #check if call is a function call or a sys call
+                    syscall = self.syscall_dict.get(call_name.decode('ascii'), "error")
+                    if syscall != "error":
                     
-                    for call_name in call_name_list:
                         
-                        
-                        #check if call is a function call or a sys call
-                        syscall = self.syscall_dict.get(call_name.decode('ascii'), "error")
-                        if syscall != "error":
-                        
+                        assert abb.convert_call_to_syscall(call_name) == True, "could not convert call to syscall"
                             
-                            assert abb.convert_call_to_syscall(call_name) == True, "could not convert call to syscall"
+                        
+                        function.set_has_syscall(True)
+                        
+                        expected_argument_types = graph.cast_expected_syscall_argument_types(syscall[0])
+                        
+                        #different_calles_argument_types = abb.get_call_argument_types()
+                        
+                        #assert len(different_calles_argument_types) <= 1, "more than one call in initial atomic basic block"
+                        
+                        
+                        #specific_call_argument_types = different_calles_argument_types[0]
+
+                        specific_call_argument_types = abb.get_call_argument_types()
+                    
+                        success = True
+                        counter = 0
+                        
+                        
                                 
+                        #verify the typeid_hash_values of the syscall arguments
+                        if len(expected_argument_types) != len(specific_call_argument_types):
+                            success = False
                             
-                            function.set_has_syscall(True)
-                            
-                            expected_argument_types = graph.cast_expected_syscall_argument_types(syscall[0])
-                            different_calles_argument_types = abb.get_call_argument_types()
-                            
-                            assert len(different_calles_argument_types) <= 1, "more than one call in initial atomic basic block"
-                            
-                            
-                            specific_call_argument_types = different_calles_argument_types[0]
-                        
-                        
-                            success = True
-                            counter = 0
+                        else:
                             
                             
                                     
-                            #verify the typeid_hash_values of the syscall arguments
-                            if len(expected_argument_types) != len(specific_call_argument_types):
-                                success = False
-                                
-                            else:
-                                
-                                
-                                        
-                                #iterate about the expected call types list 
-                                for expected_type in expected_argument_types:
-                                    #get argument types for this argument
-                                    argument_types = specific_call_argument_types[counter]
-                                 
-                                    #iterate about the types
-                                    for argument_type in argument_types:
-                                        tmp_success = False
-                                        #check if type is in expected types
-                                        
-                                        if isinstance(expected_type, Iterable):
-                                            for tmp_expected_type in expected_type:
-                                                #check if argument type is equal to expected type
-                                                if tmp_expected_type == argument_type:
-                                                  
-                                                    tmp_success = True
-                                                    break
-                                        else:
-                                             if expected_type == argument_type:
+                            #iterate about the expected call types list 
+                            for expected_type in expected_argument_types:
+                                #get argument types for this argument
+                                argument_types = specific_call_argument_types[counter]
+                            
+                                #iterate about the types
+                                for argument_type in argument_types:
+                                    tmp_success = False
+                                    #check if type is in expected types
+                                    
+                                    if isinstance(expected_type, Iterable):
+                                        for tmp_expected_type in expected_type:
+                                            #check if argument type is equal to expected type
+                                            if tmp_expected_type == argument_type:
+                                            
                                                 tmp_success = True
+                                                break
+                                    else:
+                                        if expected_type == argument_type:
+                                            tmp_success = True
 
-                                        
-                                                
-                                        success = tmp_success
-                                        if success == False:
-                                            break
-                                        
+                                    
+                                            
+                                    success = tmp_success
                                     if success == False:
                                         break
-    
-                                    counter+=1
-                            
-                            
-                            
-                            #check if lists dont match
-                            if success == False:
-                                print("TODO",call_name,counter)
-                                #sys.exit("unexpected argument type")
-                                abb.print_information();
-                            #print(call_name)
-                            abb.set_call_type(graph.call_definition_type.sys_call)
-                            abb.set_syscall_type(syscall[1])
-                            abb.set_call_target_instance(syscall[2])
-                            abb.set_handler_argument_index(syscall[3])
-                            
-                            
-                        #no syscall 
-                        else:
+                                    
+                                if success == False:
+                                    break
+
+                                counter+=1
+                        
+                        
+                        
+                        #check if lists dont match
+                        if success == False:
+                            print("TODO",call_name,counter)
+                            #sys.exit("unexpected argument type")
+                            abb.print_information();
+                        #print(call_name)
+                        abb.set_call_type(graph.call_definition_type.sys_call)
+                        abb.set_syscall_type(syscall[1])
+                        abb.set_call_target_instance(syscall[2])
+                        abb.set_handler_argument_index(syscall[3])
+                        
+                        
+                    #no syscall 
+                    else:
                             #set type to func call
                             abb.set_call_type(graph.call_definition_type.func_call)
                             

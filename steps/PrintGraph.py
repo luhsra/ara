@@ -51,18 +51,23 @@ class DotFileParser():
                 for successor in abb.get_successors():
                     f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + " -> " + successor.get_name().decode("utf-8").replace(" ", "") + ";\n" )
                 
-                if abb.is_mergeable() == False:
+                if  abb.get_call_type() != graph.call_definition_type.computation:
                     
-            
-                    f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                    
+                   
 
-                    for callname in  abb.get_call_names():
-                         f.write("<FONT POINT-SIZE=\"10\">" + "call: " + callname.decode("utf-8")  + "</FONT>>")
+                    if abb.get_call_type() == graph.call_definition_type.func_call:
+                         f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"palegreen\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                         f.write("<FONT POINT-SIZE=\"10\">" + "call: " +  abb.get_call_name().decode("utf-8")  + "</FONT>>")
                     
-                    if abb.get_call_type() == graph.call_definition_type.sys_call:
-                            f.write("<FONT POINT-SIZE=\"10\">" + "syscall: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
+                    elif abb.get_call_type() == graph.call_definition_type.sys_call:
+                        f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "syscall: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
  
-                
+                    else:
+                        f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "ERROR</FONT>>")
+                        
                     f.write("];\n") 
                         
                 

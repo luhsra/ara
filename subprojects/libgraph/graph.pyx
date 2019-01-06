@@ -61,6 +61,7 @@ class call_definition_type(IntEnum):
     func_call = <int> cgraph.func_call
     no_call   = <int> cgraph.no_call
     has_call  = <int> cgraph.has_call
+    computation  = <int> cgraph.computation 
 
 
 
@@ -592,15 +593,12 @@ cdef class ABB(Vertex):
         cdef bytes name = deref(self._c()).get_syscall_name()
         return deref(self._c()).get_syscall_name()
 
-    def get_call_names(self):
-        cdef cvector[string] call_names =  deref(self._c()).get_call_names()
-        pylist = []
-        cdef bytes tmp_name
-        for name in call_names:
-            tmp_name = name
-            pylist.append( tmp_name)
-            
-        return pylist
+    def get_call_name(self):
+        cdef call_name =  deref(self._c()).get_call_name()
+       
+        cdef bytes tmp_name = call_name
+
+        return tmp_name
         
     def get_call_type(self):
         cdef cgraph.call_definition_type t = deref(self._c()).get_call_type()
@@ -622,22 +620,20 @@ cdef class ABB(Vertex):
             
     def get_call_argument_types(self ):
         
-        cdef clist[clist[clist[size_t]]] different_calles_argument_types =  deref(self._c()).get_call_argument_types()
+        cdef clist[clist[size_t]] call_arguments_types =  deref(self._c()).get_call_argument_types()
             
-        tmp_different_calles_argument_types = []
+        tmp_call_argument_types = []
             
-        for	specific_call_argument_types in different_calles_argument_types:
-            tmp_specific_call_argument_types = []
-            for argument_types in specific_call_argument_types:
-                tmp_argument_types = []
-                for element_type in argument_types:
-                    tmp_argument_types.append(element_type)
-                
-                tmp_specific_call_argument_types.append(tmp_argument_types)
-                
-            tmp_different_calles_argument_types.append(tmp_specific_call_argument_types)
+
+        for argument in call_arguments_types:
+            argument_types = []
+            for argument_type in argument:
+                argument_types.append(argument_type)
             
-        return tmp_different_calles_argument_types
+            tmp_call_argument_types.append(argument_types)
+
+            
+        return tmp_call_argument_types
     
     
     def expend_call_sites(self,ABB abb):
@@ -655,12 +651,12 @@ cdef class ABB(Vertex):
     
     def get_called_functions(self):
         
-        cdef cvector[shared_ptr[cgraph.Function]] function_list  =  deref(self._c()).get_called_functions()
+        cdef shared_ptr[cgraph.Function] function  =  deref(self._c()).get_called_function()
         
         
         pylist = []
         
-        for function in function_list:
+        if function != NULL:
             pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)))
                 
         

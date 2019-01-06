@@ -30,7 +30,7 @@
 
 enum function_definition_type { Task, ISR, Timer, normal };
 
-enum call_definition_type { sys_call, func_call, no_call , has_call };
+enum call_definition_type { sys_call, func_call, computation , has_call ,no_call};
 
 enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical};
 
@@ -77,6 +77,7 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
 void debug_argument(argument_data argument);
 bool list_contains_element(std::list<std::size_t>* list, size_t target);
 call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference,std::string call_name);
+
 
 namespace OS
 {
@@ -495,9 +496,11 @@ namespace OS {
 		llvm::BasicBlock* entry;
 		llvm::BasicBlock* exit;
 		
+
+        //std::vector<call_data> calls;
+        call_data call;
 		
-        std::vector<call_data> calls;
-		
+        
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 		
 		size_t syscall_handler_index;
@@ -517,7 +520,8 @@ namespace OS {
 		void set_handler_argument_index(size_t index);
 		size_t get_handler_argument_index();
 		
-		std::vector<llvm::Instruction*> get_call_instruction_references();
+		//std::vector<llvm::Instruction*> get_call_instruction_references();
+		llvm::Instruction* get_call_instruction_reference();
 		
         void set_start_scheduler_relation(start_scheduler_relation relation);
         start_scheduler_relation get_start_scheduler_relation( );
@@ -536,9 +540,10 @@ namespace OS {
 		
         void set_call(call_data call);
         
-        std::vector<call_data>*  get_calls();
+        call_data get_call();
         
-		std::vector<std::string> get_call_names();
+		//std::vector<std::string> get_call_names();
+        std::string get_call_name();
 		std::string get_syscall_name();
 		bool set_syscall_name(std::string call_name);
         
@@ -556,7 +561,7 @@ namespace OS {
 		bool set_parent_function(shared_function function);
 		shared_function get_parent_function();
 				
-		std::vector<OS::shared_function> get_called_functions();
+		OS::shared_function get_called_function();
         
         
 		void set_called_function(OS::shared_function, llvm::Instruction* instr);
@@ -565,7 +570,7 @@ namespace OS {
 		void set_critical(bool critical);
 
 		//std::list<std::tuple<std::any,llvm::Type*>> get_arguments_tmp();
-		std::vector<std::vector<argument_data>> get_arguments();
+		std::vector<argument_data> get_arguments();
 		
 		
 		std::vector<argument_data> get_syscall_arguments();
@@ -581,7 +586,7 @@ namespace OS {
 		std::vector<llvm::BasicBlock*>* get_BasicBlocks();
 		//std::list<size_t> get_expected_syscall_argument_types();
         
- 		std::list<std::list<std::list<size_t>>> get_call_argument_types();
+ 		std::list<std::list<size_t>> get_call_argument_types();
 		
 		void remove_successor(shared_abb abb);
 		void remove_predecessor(shared_abb abb);

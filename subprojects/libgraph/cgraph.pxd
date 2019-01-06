@@ -22,6 +22,7 @@ cdef extern from "graph.h" namespace "call_definition_type":
     cdef call_definition_type func_call
     cdef call_definition_type no_call
     cdef call_definition_type has_call
+    cdef call_definition_type computation
     
 cdef extern from "graph.h" namespace "os_type":
     cdef os_type  OSEK
@@ -211,11 +212,11 @@ cdef extern from "graph.h" namespace "OS":
         void set_syscall_type(syscall_definition_type type)
         void set_call_target_instance(size_t target_instance)
         #void set_expected_syscall_argument_type(size_t data_type_hash)
-        cvector[shared_ptr[Function]] get_called_functions()
+        shared_ptr[Function] get_called_function()
         
         clist[shared_ptr[ABB]]  get_ABB_successors()
         
-        clist[clist[clist[size_t]]] get_call_argument_types()
+        clist[clist[size_t]] get_call_argument_types()
         
         shared_ptr[ABB]  get_single_ABB_successor()
         
@@ -224,7 +225,7 @@ cdef extern from "graph.h" namespace "OS":
         void adapt_exit_bb(shared_ptr[ABB])
         bool is_mergeable()
         bool has_single_successor()
-        cvector[string] get_call_names()
+        string get_call_name()
         string get_syscall_name()
 
         bool convert_call_to_syscall(string)

@@ -55,11 +55,8 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
 
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief get string representation of llvm value
+ * @param argument llvm value variable to print
  */
 std::string print_argument(llvm::Value* argument){
 	std::string type_str;
@@ -70,11 +67,8 @@ std::string print_argument(llvm::Value* argument){
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief get string representation of llvm type
+ * @param argument llvm::type to print
  */
 std::string print_type(llvm::Type* argument){
 	std::string type_str;
@@ -83,14 +77,12 @@ std::string print_type(llvm::Type* argument){
 	return rso.str() +  "\"\n";
 	
 }
-/**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
- */
 
+/**
+ * @brief check and cast any variable to double variable
+ * @param any_value reference to the any variable
+ * @param double_value reference to the double variable
+ */
 bool cast_any_to_double(std::any any_value, double& double_value){
     double tmp = 0;
     if(any_value.type().hash_code() == typeid(int).hash_code()){
@@ -102,14 +94,11 @@ bool cast_any_to_double(std::any any_value, double& double_value){
     }
     return false;
 }
+
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief check if the instruction is just llvm specific
+ * @param instr instrucion to analyze
  */
-//check if instruction calls a llvm specific function
 static bool isCallToLLVMIntrinsic(Instruction * inst) {
     if (CallInst* callInst = dyn_cast<CallInst>(inst)) {
         Function * func = callInst->getCalledFunction();
@@ -119,14 +108,13 @@ static bool isCallToLLVMIntrinsic(Instruction * inst) {
     }
     return false;
 }
+
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief check if the instruction A is before instruction B
+ * @param InstA first instruction
+ * @param InstB last instruction
+ * @param DT dominator tree of the function
  */
- //check if instruction a is before instruction b 
  bool instruction_before( Instruction *InstA,  Instruction *InstB,DominatorTree *DT) {
 	DenseMap< BasicBlock *, std::unique_ptr<OrderedBasicBlock>> OBBMap;
 	if (InstA->getParent() == InstB->getParent()){
@@ -143,14 +131,12 @@ static bool isCallToLLVMIntrinsic(Instruction * inst) {
 	//std::cout << "debug not same parents" <<  DA->getDFSNumIn() << ":" <<  DB->getDFSNumIn() << std::endl;
 	return DA->getDFSNumIn() < DB->getDFSNumIn();
  }
- /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ 
+/**
+ * @brief check if seed is in vector
+ * @param seed seed to analyze
+ * @param vector which contains reference seeds
  */
-//check if graph node is already visited
 bool visited(size_t seed, std::vector<size_t> *vector){
 	bool found = false;
     for (unsigned i=0; i < vector->size(); i++) {
@@ -163,15 +149,13 @@ bool visited(size_t seed, std::vector<size_t> *vector){
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief load the value of integer of floating point variable
+ * @param arg value which is analyzed
  */
 int load_index(Value *arg) {
 
     int index = 0;
+    //check if argument is a constant int
     if (ConstantInt * CI = dyn_cast<ConstantInt>(arg)) {
 
         index = CI->getSExtValue();
@@ -179,18 +163,18 @@ int load_index(Value *arg) {
     else if(ConstantFP  * constant_fp = dyn_cast<ConstantFP>(arg)){
 
         index = constant_fp->getValueAPF().convertToDouble();
-    }//check if argument is a binary operator
+    }
     return index;
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief check if instuction is an pointer to a constant null
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param inst get elementptr instruction, which corresponding loaded value should be determined
+ * @param already_visited list of all instructions, which were already visited
+ * @param arg value which is analyzed
  */
-
 bool check_nullptr(argument_data* argument_container,llvm::Value* arg,std::stringstream &debug_out ,std::vector<llvm::Instruction*>* already_visited){
 	bool load_success = false;
 	if(ConstantPointerNull  * constant_data = dyn_cast<ConstantPointerNull>(arg)){
@@ -198,34 +182,25 @@ bool check_nullptr(argument_data* argument_container,llvm::Value* arg,std::strin
 		std::string tmp = "&$%NULL&$%";
 		argument_container->any_list.emplace_back(tmp);
 		argument_container->value_list.emplace_back(constant_data);
-        argument_container->argument_calles_list.emplace_back(*already_visited);
-		////std::cerr << "[nullptr] type: " <<print_argument(value)  <<'\n';  
+        argument_container->argument_calles_list.emplace_back(*already_visited); 
 		load_success = true;
 	}
 	return load_success;
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief function checks if the function is a class method(first argument this) and the type is the same of the class 
+ * @param function vector reference which contains get element ptr instruction indizes
+ * @param type get element ptr instruction, which is compared to the referenced indizes
  */
 bool check_function_class_reference_type(llvm::Function* function, llvm::Type* type){
-    
-    
-    //std::cerr << print_type(type) << std::endl;
-    
-    if(type==nullptr || function==nullptr)return -1;
+    if(type==nullptr || function==nullptr)return false;
    
     for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
             if( (*i).getType()==type && (*i).getName().str()== "this"){
-                //std::cerr << "true" <<  print_type((*i).getType()) << std::endl;
                 return true;
             }
             else{
-                //std::cerr << "false" << print_type((*i).getType()) << std::endl;
                 return false;
             }
     }
@@ -233,11 +208,9 @@ bool check_function_class_reference_type(llvm::Function* function, llvm::Type* t
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief check if the reference indizes are equal to the indizes of the transmitted instruction
+ * @param reference vector reference which contains get element ptr instruction indizes
+ * @param instr get element ptr instruction, which is compared to the referenced indizes
  */
 bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElementPtrInst * instr){
     int counter = 0;
@@ -251,12 +224,15 @@ bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElem
     }
     return true;
 }
+
+
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief get all store instructions which store values in the specific class attribute variable
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param inst get elementptr instruction, which corresponding loaded value should be determined
+ * @param already_visited list of all instructions, which were already visited
+ * @param indizes indizes to distinguish between the class attribute variables
  */
 bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *inst,argument_data* argument_container, std::vector<llvm::Instruction*>* already_visited,std::vector<size_t>* indizes){
     bool success = true;
@@ -269,14 +245,13 @@ bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *i
         for (auto i = function.arg_begin(), ie = function.arg_end(); i != ie; ++i){
             //check if the function is a method of the class
             if( (*i).getType()==inst->getType()){
-                //std::cerr << "class specific get element ptr operation" << print_argument(inst);
                 //iterate about the basic blocks of the function
                 for (llvm::BasicBlock &bb : function){
                     //iterate about the instructions of the function
                     for (llvm::Instruction& instr : bb){
                         //get pointerelement instruction 
                         if(auto *get_pointer_element  = dyn_cast<llvm::GetElementPtrInst>(&instr)){  // U is of type User*
-                            //check if the get pointer operand instruction is a load instruciton
+                            //check if the get pointer operand instruction is a load instruction
                             if(check_function_class_reference_type(instr.getFunction(),get_pointer_element->getPointerOperandType())&& check_get_element_ptr_indizes(indizes,get_pointer_element)){  
                                 
                                 for(auto user : get_pointer_element->users()){  // U is of type User*
@@ -318,13 +293,12 @@ bool get_class_attribute_value(std::stringstream &debug_out,llvm::Instruction *i
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief dumpt the value of the GetElementPtrInst with corresponding indizes (important for class values)
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param inst get elementptr instruction, which corresponding loaded value should be determined
+ * @param already_visited list of all instructions, which were already visited
  */
-
 bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,argument_data* argument_container, std::vector<llvm::Instruction*>* already_visited){
     
     bool success = false;
@@ -344,14 +318,10 @@ bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,argume
             //check if the address is a class specific address
             if(check_function_class_reference_type(inst->getFunction(),get_pointer_element->getPointerOperandType())){
                 
-                
-                //std::cerr << "class specific get element ptr operation" << print_argument(inst);
                 debug_out << "GETCLASSATTRIBUTE" << std::endl;       
                 //get store instructions
                 success = get_class_attribute_value(debug_out,load,argument_container,already_visited, &indizes);
-                //std::cerr << success<< std::endl;
             }
-            
         };
     }
     return success;
@@ -360,11 +330,11 @@ bool get_element_ptr(std::stringstream &debug_out,llvm::Instruction *inst,argume
 
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief dump the nearest dominating store instruction of the load instruction to get the loaded value of the load
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param inst load instruction, which corresponding loaded value should be determined
+ * @param already_visited list of all instructions, which were already visited
  */
 bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,argument_data* argument_container,std::vector<llvm::Instruction*>* already_visited){
 	
@@ -380,16 +350,19 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
     TargetLibraryInfo TLI = TargetLibraryInfo(TLII);
     AAResults results = AAResults(TLI);
        
+    //memory walker llvm class
     MemorySSA ssa = MemorySSA (tmp_function, &results, &dominator_tree);
     ssa.verifyMemorySSA();
     MemorySSAWalker  *walker = ssa.getWalker();
     
     MemoryAccess* access = walker->getClobberingMemoryAccess(inst);
     
-    
+    //check if an access of the data structure was successfully
     if(access != nullptr){
         if(auto def_access = dyn_cast<MemoryDef>(access)){
             
+            //check if the load and the store instructions addresses the same memory
+            //TODO memory walke class seems sometimes to return no valid results
             if(StoreInst *store_inst = dyn_cast<StoreInst>(def_access->getMemoryInst())){
                 if(store_inst->getOperand(1) == inst->getOperand(0))success = dump_argument(debug_out,argument_container,store_inst->getOperand(0),already_visited);
             }
@@ -399,7 +372,10 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
 	bool pointer_flag = true;
 	llvm::Instruction* store_inst = nullptr;
     
+    //check if memory walker class does not return a acceptable load instruction
 	if(success == false){
+        
+        //get the nearest dominating store instruction of the load instruction
         if(AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(inst->getOperand(0))){
             Value::user_iterator sUse = alloca_instruction->user_begin();
             Value::user_iterator sEnd = alloca_instruction->user_end();
@@ -450,7 +426,14 @@ bool get_store_instruction(std::stringstream &debug_out,llvm::Instruction *inst,
 }
 
 
-
+/**
+ * @brief dump all call instructions, which calls the function or have the function as argument 
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param function llvm function of the arg
+ * @param already_visited list of all instructions, which were already visited
+ * @param arg_counter index of the value in call instruction of calling function
+ */
 bool load_function_argument(std::stringstream &debug_out,argument_data* argument_container,Function *function, std::vector<llvm::Instruction*>* already_visited,int arg_counter) {
     
     auto sUse = function->user_begin();
@@ -470,18 +453,27 @@ bool load_function_argument(std::stringstream &debug_out,argument_data* argument
                     break;
                 }
             }
-            if(!flag)break;
+            
+            //instruction was already visited
+            if(!flag)continue;
             
             std::vector<llvm::Instruction*> tmp_already_visited = *already_visited;
             
-            
+            //check if instruction is a call instruction
             if (isa<CallInst>(instr)){
+                //check if the call instruction calls the function
                 if(cast<CallInst>(instr)->getCalledFunction() == function){
                     tmp_already_visited.emplace_back(instr);
+                    
+                    //dump the call instruction
                     debug_out << "LOADFUNKTIONARGUMENT " << arg_counter<<  "\n";
                     if(!dump_argument(debug_out,argument_container, instr->getOperand(arg_counter), &tmp_already_visited))success = false;
                 }else{
+                    
+                    //function is probably an argument of the call instruction
                     int counter = 0;
+                    
+                    //load argument
                     for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i){
                         if(arg_counter == counter){
                             debug_out << "ARGUMENT" << i->getName().str()<<  "\n";
@@ -494,7 +486,6 @@ bool load_function_argument(std::stringstream &debug_out,argument_data* argument
                         ++counter;
                     }
                 }
-                //std::cerr << "user of function argument " << print_argument(instr) << std::endl;
             }
         }
     }
@@ -502,7 +493,16 @@ bool load_function_argument(std::stringstream &debug_out,argument_data* argument
     return success;
 }
 
-//function to get the global information of variable
+
+
+/**
+ * @brief load the std::any and llvm value of the global llvm arg
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param arg argument which has to be dumped
+ * @param prior_arg predecessor of the current arg
+ * @param already_visited list of all instructions, which were already visited
+ */
 bool load_value(std::stringstream &debug_out,argument_data* argument_container,Value *arg,Value *prior_arg,std::vector<llvm::Instruction*> * already_visited) {
 	
     //debug data
@@ -675,25 +675,25 @@ bool load_value(std::stringstream &debug_out,argument_data* argument_container,V
          }
      }
 	
-	
     debug_out << "EXITLOAD: " <<  load_success << "\n";     
     return load_success;
 
 }
 
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
- * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @brief set all possbile argument values and corresponding call history in a data structure. This 
+ * data structure is then stored in the abb.
+ * @param debug_out stringstream which contains the logical history of the argument dump 
+ * @param argument_container data structure where the dump result is stored(std::any value, llvm value, instruction call history)
+ * @param arg argument which has to be dumped
+ * @param already_visited list of all instructions, which were already visited
  */
 bool dump_argument(std::stringstream &debug_out,argument_data* argument_container, Value *arg, std::vector<Instruction*>* already_visited) {
     
     
-    
     if(arg==nullptr)return false;
     
+    //check if the value is an argument of the function
     if(Argument *argument = dyn_cast<Argument>(arg)){
         return load_function_argument(debug_out,argument_container,argument->getParent(),already_visited,argument->getArgNo());
     }
@@ -725,12 +725,8 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
 	
 	Type * Ty = arg->getType();
     
-
-
     //check if argument is an instruction
     if(Instruction *instr = dyn_cast<Instruction>(arg)){
-        
-        
         debug_out << "INSTRUCTION" << "\n";
         //check if argument is a load instruction
         if (LoadInst *load = dyn_cast<LoadInst>(instr)) {
@@ -745,8 +741,6 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
                
                 if(isa<AllocaInst>(load->getOperand(0))){
                     debug_out << "ALLOCAINSTRUCTIONLOAD" << "\n";
-                    //std::cerr << "---------------------" << std::endl << "function" << print_argument(load->getParent()->getParent()) << std::endl;
-                    //std::cerr << "---------------------" << std::endl << "alloca reference" << print_argument(load) << std::endl;
                     dump_success = get_store_instruction(debug_out,load,argument_container,already_visited );
                 }
                 else dump_success = dump_argument(debug_out,argument_container, load->getOperand(0), already_visited);
@@ -795,8 +789,6 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
                 if (auto store = dyn_cast<StoreInst>(user)){
                     if(store->getOperand(0) == call){
                         if(auto *geptr  = dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))){
-                            //debug_out << "TEST" << "\n";
-                            //std::cerr << "TEST--------------------------------" << "\n";
                             debug_out << print_type(geptr->getSourceElementType()) << "\n";
                             if(check_function_class_reference_type(geptr->getFunction(), geptr->getOperand(0)->getType())){
                                 debug_out << "CLASSTYPE" << "\n";
@@ -824,6 +816,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
         argument_container->value_list.emplace_back(constant_fp);
         argument_container->argument_calles_list.emplace_back(*already_visited);
         dump_success = true;
+        
     }//check if argument is a binary operator
     else if (BinaryOperator *binop = dyn_cast<BinaryOperator>(arg)) {
 
@@ -854,8 +847,6 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
                         argument_container->any_list.emplace_back(value);
                     }
                 }
-               
-                
             }else if (binop->getOpcode() == Instruction::BinaryOps::Mul){
                 double value_0;
                 double value_1;
@@ -888,8 +879,6 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
                     }
                 }
             }
-    
-    
         }
         
         argument_container->value_list.emplace_back(binop);
@@ -915,9 +904,9 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
             }
         }//check if pointer points to pointer
         else if (PT->getContainedType(0)->isPointerTy()){
+            
             debug_out << "POINTER TO POINTER" << "\n";
-            //check if pointer target is a global variable
-            debug_out << "Pointer to pointer: " << print_argument(arg);
+            
 			//load the global information
 			dump_success = load_value(debug_out,argument_container, arg,arg,already_visited);
 
@@ -936,6 +925,8 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
             }
 		
         }else{
+            
+            //TODO
 			debug_out << print_argument(arg);
 		}
     }
@@ -965,16 +956,17 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
     return dump_success;
 }
 
+
 /**
- * @brief function set all possbile argument values of the abb call in a data structure. This 
+ * @brief set all possbile argument std::any and llvm values of the abb call in a data structure. This 
  * data structure is then stored in each abb for each call.
- * @param abb abb which contains the call
- * @param func llvm function of the call instruction
- * @param instruction call instruction which is analyzed
+ * @param abb abb, which contains the call
+ * @param func llvm function, of the call instruction
+ * @param instruction call instruction, which is analyzed
  */
-//iterate about the arguments of the instruction and dump the value
 void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instruction){
     
+    //empty call data container
     call_data call;
     
 	//store the name of the called function
@@ -1002,51 +994,51 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 		
         
         argument_data argument_container;
-        
-		//std::cerr << "arg: " << print_argument(arg) << std::endl;
+    
 		//dump argument and check if it was successfull
 		if(dump_argument(debug_out,&argument_container, arg,&already_visited)){
             
+            //dump was successfull
             if(argument_container.any_list.size() > 1)argument_container.multiple = true;
             
             //argument container lists shall not have different sizes
             if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
+                
+                //error in argument dump
                 std::cerr << "argument container lists have different sizes" << std::endl;
                 abort();
             }
             
-            if(call.call_name.find("vTimerSetTimerID") != std::string::npos){
-                std::cerr <<  print_argument(instruction) << '\n';   
-                std::cerr << debug_out.str() << std::endl;
-            }
 			//store the dumped argument in the abb with corresponding llvm type
 			arguments.emplace_back(argument_container);
 		}else{
-			//TODO
-			/*std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
-			std::cerr <<  print_argument(instruction) << '\n';
-			std::cerr << debug_out.str() << std::endl;*/
+			
+            //dump was not successfull
+			//std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
+			//std::cerr <<  print_argument(instruction) << '\n';
+			
+            //TODO
 			//abort();
 		}
 	}
 	
+    //check if call has no arguments
 	if(arguments.size() == 0){
+        //generate empty argument container, if call has no arguments
 		argument_data tmp_arguments;
 		arguments.emplace_back(tmp_arguments);
 	}
 	
 	//store arguments
 	call.arguments = arguments;
-    
     abb->set_call(call);
     
-	//std::cout << abb->print_information();
 }
 
 
 /**
- * @brief set the arguments and argument types of the abb
- * @param abb abb instance, which should analyzed
+ * @brief set the arguments std::any and llvm values of the abb
+ * @param abb abb, which should be analyzed
  */
 void set_arguments(OS::shared_abb abb){
 
@@ -1098,9 +1090,8 @@ void set_arguments(OS::shared_abb abb){
 			std::cerr << abb->get_name() << " has more than one call instructions: "  << call_count << std::endl;
 			abort();
 		}
-		if(call_found){
-			abb->set_call_type(has_call);	
-		}
+		if(call_found)abb->set_call_type(has_call);	
+        else abb->set_call_type(computation);
 	}
 	if(bb_count > 1){
 		std::cerr << abb->get_name() << " has more than one llvm basic block: "  << bb_count << std::endl;
@@ -1111,12 +1102,11 @@ void set_arguments(OS::shared_abb abb){
 
 
 /**
- * @brief function generates all abbs of the transmitted graph function. All abbs are conntected with the 
+ * @brief  generates all abbs of the transmitted graph function. All abbs are conntected with the 
  * CFG predecessors and successors 
  * @param graph project data structure
- * @param function graph function which contains the llvm function reference
+ * @param function graph function, which contains the llvm function reference
  */
-
 void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
     //get llvm function reference
@@ -1138,7 +1128,8 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
     //store abb in graph
 	graph->set_vertex(abb);
-
+    
+    set_arguments(abb);
 	
     queue.push_back(abb);
 
@@ -1195,8 +1186,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
                     new_abb->set_BasicBlock(succ);
 					new_abb->set_exit_bb(succ);
 					new_abb->set_entry_bb(succ);
-			
-					
+
                     new_abb->set_ABB_predecessor(old_abb);
 
                     //set successor reference of old abb 
@@ -1209,7 +1199,6 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
 
 					//set the abb call`s argument values and types
 					set_arguments(new_abb);
-					
 					
                 }else{
 					
@@ -1225,12 +1214,12 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
         }
     }
 }
+
 /**
- * @brief this function splitts all bbs of the transmitted function, so that there is just on call in each bb
+ * @brief splitts all bbs of the transmitted function, so that there is just on call in each bb
  * @param function llvm function which is analyzed 
  * @param split_counter counter, whichs stores the number of splitted bbs
  */
-//split the basic blocks, so that just one call exists per instance
 void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
 	//store the basic blocks in a list
     std::list<llvm::BasicBlock *> bbs;
@@ -1262,10 +1251,10 @@ void split_basicblocks(llvm::Function *function,unsigned *split_counter) {
 }
 
 /**
- * @brief function loads the .ll file and returns the loaded llvm module
+ * @brief loads the .ll file and returns the parsed llvm module
  * @param FN path to the .ll file
  * @param Context llvm module context
- * @return unique module pointer which is 
+ * @return unique module pointer of the parsed .ll file
  */
 std::unique_ptr<Module> LoadFile( const std::string &FN,
                                                LLVMContext& Context) {
@@ -1282,6 +1271,112 @@ std::unique_ptr<Module> LoadFile( const std::string &FN,
 
 
 
+/**
+ * @brief connect each abb and function which the called function by inserting a edge in the graph
+ * @param graph project data structure
+ */
+void set_called_functions(graph::Graph& graph){
+    
+    //set called function for each abb
+    std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
+    for (auto &vertex : vertex_list) {
+
+        //cast vertex to abb 
+        auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+        
+        if(abb->get_call_type() != has_call)continue;
+        //get call instr of the abb
+        auto *instr = abb->get_call_instruction_reference();
+        
+        
+        if(CallInst* call = dyn_cast<CallInst>((instr))){
+            
+            llvm::Function* llvm_function = call->getCalledFunction();
+            std::hash<std::string> hash_fn;
+            // get function which is addressed by call
+            graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
+            if(vertex != nullptr){
+
+                vertex->get_type();
+
+                auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
+                abb->set_called_function(function,instr);
+                abb->get_parent_function()->set_called_function(function,abb);
+                
+            }
+        }else if(InvokeInst* invoke = dyn_cast<InvokeInst>((instr))){
+            
+            
+            llvm::Function* llvm_function = invoke->getCalledFunction();
+            std::hash<std::string> hash_fn;
+
+            if(llvm_function ==nullptr){
+                auto tmp_value = invoke->getCalledValue();
+                if (llvm::Constant* constant = dyn_cast<llvm::Constant>(tmp_value)) {
+                    if (llvm::Function* tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
+                        llvm_function = tmp_func;
+                    }
+                }
+            }
+            graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
+            if(vertex != nullptr){
+                //std::cout << "success" <<  vertex->get_name() << std::endl;
+                vertex->get_type();
+
+                auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
+                abb->set_called_function( function,instr);
+                
+                abb->get_parent_function()->set_called_function(function,abb);
+                
+            }
+        }
+    }    
+}
+
+
+/**
+ * @brief detects and set for each function in the graph an exit abb
+ * @param graph project data structure
+ * @param split_counter counter of all yet splitted bbs
+ */
+void set_exit_abb(graph::Graph& graph,unsigned int &split_counter){
+    
+    //set an exit abb for each function
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+    for (auto &vertex : vertex_list) {
+
+        //cast vertex to abb 
+        auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+
+        std::list<OS::shared_abb> return_abbs;
+        
+        //detect all abb with no sucessors(exit abbs)
+        for(auto abb : function->get_atomic_basic_blocks()){
+            if( abb->get_ABB_successors().size()== 0){
+                return_abbs.emplace_back(abb);
+            }
+        }
+        
+        if(return_abbs.size() >1){
+            //if more then one abbs with no successors are detected, create a new abb 
+            //as exit abb, which is connected with all "real" exit abbs
+            std::stringstream ss;
+            ss << "BB" << split_counter++;
+            auto new_abb = std::make_shared<OS::ABB>(&graph,function, ss.str());
+            graph.set_vertex(new_abb);
+            function->set_atomic_basic_block(new_abb);
+            for(auto ret : return_abbs){
+                ret->set_ABB_successor(new_abb);
+                new_abb->set_ABB_predecessor(ret);
+            }
+            function->set_exit_abb(new_abb);
+        }else{
+            //set the abb as exit abb of the function 
+            if(return_abbs.size() ==1) function->set_exit_abb(return_abbs.front());
+        }
+    }
+}
+
 namespace step {
 
 	std::string LLVMStep::get_name() {
@@ -1293,12 +1388,11 @@ namespace step {
 	}
 
         
-/**
- * @brief the run method of the llvm pass. This method collects all .ll raw informationen (bb,functions)
- * and store them in the graph data structure
- * 
- * @param graph project data structure
- */
+    /**
+    * @brief the run method of the llvm pass. This pass linkes all .ll files and collects all application raw information (functions and their containing abbs)
+    * and store them in the graph data structure. Also 
+    * @param graph project data structure
+    */
 	void LLVMStep::run(graph::Graph& graph) {
         
 
@@ -1365,7 +1459,6 @@ namespace step {
             }
         }
 
-		
 		//convert unique_ptr to shared_ptr
 		std::shared_ptr<llvm::Module> shared_module = std::move(Composite);
 
@@ -1373,7 +1466,7 @@ namespace step {
 		graph.set_llvm_module(shared_module);
 		
 		//initialize the split counter
-		unsigned split_counter = 0;
+		unsigned int split_counter = 0;
 		
 		//create and store the OS instance in the graph
 		auto rtos = std::make_shared<OS::RTOS>(&graph,"RTOS");
@@ -1385,8 +1478,6 @@ namespace step {
 			//check if llvm function has definition
 			if(!func.empty()){
                 
-                std::cerr << "function: " << func.getName().str() << std::endl;
-				
 				//intialize a graph function			
 				auto graph_function = std::make_shared<OS::Function>(&graph,func.getName().str());
 				
@@ -1429,96 +1520,11 @@ namespace step {
 				abb_generation(&graph, graph_function );
 			}
 		}
-		
-		
-		//set called functions for each abb
-		std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
-		for (auto &vertex : vertex_list) {
-
-			//cast vertex to abb 
-			auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
-			
-            //get call instr of the abb
-			for(auto *instr : abb->get_call_instruction_references()){
-				if(CallInst* call = dyn_cast<CallInst>((instr))){
-                 
-					llvm::Function* llvm_function = call->getCalledFunction();
-					std::hash<std::string> hash_fn;
-                    // get function which is addressed by call
-					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
-					if(vertex != nullptr){
-
-						vertex->get_type();
-	
-						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
-						abb->set_called_function(function,instr);
-                        abb->get_parent_function()->set_called_function(function,abb);
-                        
-					}
-				}
-				if(InvokeInst* invoke = dyn_cast<InvokeInst>((instr))){
-                    
-                   
-					llvm::Function* llvm_function = invoke->getCalledFunction();
-					std::hash<std::string> hash_fn;
-
-                    if(llvm_function ==nullptr){
-                        auto tmp_value = invoke->getCalledValue();
-                        if (llvm::Constant* constant = dyn_cast<llvm::Constant>(tmp_value)) {
-                            if (llvm::Function* tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
-                                llvm_function = tmp_func;
-                            }
-                        }
-                    }
-					graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
-					if(vertex != nullptr){
-						//std::cout << "success" <<  vertex->get_name() << std::endl;
-						vertex->get_type();
-
-						auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
-						abb->set_called_function( function,instr);
-                        
-                        abb->get_parent_function()->set_called_function(function,abb);
-                        
-					}
-				}
-			}
-		}
-		
-		//set an exit abb for each function
-		vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-		for (auto &vertex : vertex_list) {
-
-			//cast vertex to abb 
-			auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-	
-            std::list<OS::shared_abb> return_abbs;
-			
-            //detect all abb with no sucessors(exit abbs)
-            for(auto abb : function->get_atomic_basic_blocks()){
-				if( abb->get_ABB_successors().size()== 0){
-                    return_abbs.emplace_back(abb);
-				}
-			}
-			
-            if(return_abbs.size() >1){
-                //if more then one abbs with no successors are detected, create a new abb 
-                //as exit abb, which is connected with all real exit abbs
-				std::stringstream ss;
-				ss << "BB" << split_counter++;
-				auto new_abb = std::make_shared<OS::ABB>(&graph,function, ss.str());
-				graph.set_vertex(new_abb);
-                function->set_atomic_basic_block(new_abb);
-                for(auto ret : return_abbs){
-                    ret->set_ABB_successor(new_abb);
-					new_abb->set_ABB_predecessor(ret);
-				}
-                function->set_exit_abb(new_abb);
-			}else{
-                //set the abb as exit abb of the function 
-				if(return_abbs.size() ==1) function->set_exit_abb(return_abbs.front());
-			}
-		}
+		//connect the abbs and functions with the called function
+		set_called_functions(graph);
+        
+        //detect and set for each function one exit abb
+        set_exit_abb(graph,split_counter);
 	}
 	
 	

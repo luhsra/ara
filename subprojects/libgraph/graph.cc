@@ -783,7 +783,7 @@ std::vector<OS::shared_function> OS::Function::get_calling_functions(){
 bool OS::Function::set_called_function(OS::shared_function function, OS::shared_abb abb){
     
     //TODO first call name is used for edge name and check contains
-    auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_names().front(),abb->get_parent_function() ,function,abb);
+    auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_name(),abb->get_parent_function() ,function,abb);
 
     //store the edge in the graph
     this->graph->set_edge(edge);
@@ -987,22 +987,23 @@ void OS::ABB::set_critical(bool critical){this->critical_section = critical;}
 
 
 
-std::vector<std::vector<argument_data>> OS::ABB::get_arguments(){
+std::vector<argument_data> OS::ABB::get_arguments(){
     
-    std::vector<std::vector<argument_data>> argument_list;
+    return this->call.arguments;
+    /*
+    std::vector<argument_data> argument_list;
     
     for(auto call :this->calls){
         if(call.sys_call==false)argument_list.emplace_back(call.arguments);
     }
 	//std::cerr << "length: " << this->arguments.size() << std::endl;
-	return argument_list;
+	return argument_list;*/
 }
 
 std::vector<argument_data> OS::ABB::get_syscall_arguments(){
     std::vector<argument_data> syscall_arguments;
-	for(auto call :this->calls){
-        if(call.sys_call==true)syscall_arguments =  call.arguments;
-    }
+	
+    if(this->call.sys_call==true)syscall_arguments =  this->call.arguments;
     return syscall_arguments;
 }
 
@@ -1014,7 +1015,7 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 void OS::ABB::set_call(call_data call){
-    this->calls.emplace_back(call);
+    this->call = call;
 }
 
 
@@ -1082,29 +1083,27 @@ OS::shared_function OS::ABB::get_parent_function(){
 
 
 
-std::vector<std::string> OS::ABB::get_call_names(){
-    std::vector<std::string> call_names;
-    for(auto call :this->calls){
-        if(!call.sys_call)call_names.emplace_back(call.call_name);
-    }
+std::string OS::ABB::get_call_name(){
+    std::string call_name = "default";
     
-	return call_names;
+    if(!this->call.sys_call)call_name = this->call.call_name;
+    
+	return call_name;
 }
 
 
-std::vector<llvm::Instruction*> OS::ABB::get_call_instruction_references(){
-    std::vector<llvm::Instruction*> call_instructions;
-    for(auto call :this->calls){
-        if(!call.sys_call)call_instructions.emplace_back(call.call_instruction);
-    }
-	return call_instructions;
+llvm::Instruction* OS::ABB::get_call_instruction_reference(){
+
+    if(!call.sys_call)return this->call.call_instruction;
+    
+	return nullptr;
 }
 
 
 llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
-    for(auto call :this->calls){
-        if(call.sys_call)return call.call_instruction;
-    }
+    
+    if(call.sys_call)return this->call.call_instruction;
+    
 	return nullptr;
 }
 
@@ -1113,48 +1112,34 @@ llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
 bool OS::ABB::convert_call_to_syscall(std::string name){
 	bool success = false;
 	
-	int index= 0;
     
-    for(auto call :this->calls){
-        if(call.call_name == name)break;
-        index++;
+    if(this->call.call_name == name){
+        call.sys_call = true;
+        success = true;
     }
-
 	int tmp_index = 0;
 	
-	
-	for(auto& call :this->calls){
-		if(tmp_index == index){
-			call.sys_call = true;
-            success = true;
-            break;
-		}
-		tmp_index++;
-	}
 	return success;
 }
 
 //helper function to get call argument types of the abb to pyhton
-std::list<std::list<std::list<size_t>>> OS::ABB::get_call_argument_types(){
+std::list<std::list<size_t>> OS::ABB::get_call_argument_types(){
 	
-	std::list<std::list<std::list<size_t>>> different_calles_argument_types;
-
-	for(auto & call: this->calls){
 		
-		std::list<std::list<size_t>>  specific_call_argument_types;
-		for(auto & argument: call.arguments){
-            if(argument.any_list.empty())continue;
-            std::list<size_t> argument_types;
-            for(auto &any_element :argument.any_list){
-                argument_types.emplace_back(any_element.type().hash_code());
-            }
-            
-			specific_call_argument_types.emplace_back(argument_types);
-		}
-		different_calles_argument_types.emplace_back(specific_call_argument_types);
-	}
+    std::list<std::list<size_t>>  specific_call_argument_types;
+    for(auto & argument: this->call.arguments){
+        if(argument.any_list.empty())continue;
+        std::list<size_t> argument_types;
+        for(auto &any_element :argument.any_list){
+            argument_types.emplace_back(any_element.type().hash_code());
+        }
+        
+        specific_call_argument_types.emplace_back(argument_types);
+    }
+    
+
 	
-	return different_calles_argument_types;
+	return specific_call_argument_types;
 }
 
 void OS::ABB::set_called_function(OS::shared_function function,llvm::Instruction* instr){
@@ -1163,7 +1148,7 @@ void OS::ABB::set_called_function(OS::shared_function function,llvm::Instruction
 	if(vertex!=nullptr){
 		shared_abb abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
 		
-        auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_names().front(),abb ,function,abb);
+        auto edge = std::make_shared<graph::Edge>(this->graph,abb->get_call_name(),abb ,function,abb);
         
         edge->set_instruction_reference(instr);
         
@@ -1179,7 +1164,7 @@ void OS::ABB::set_called_function(OS::shared_function function,llvm::Instruction
     }
 }
 
-std::vector<OS::shared_function> OS::ABB::get_called_functions(){
+OS::shared_function OS::ABB::get_called_function(){
     
     std::vector<OS::shared_function> called_functions;
     
@@ -1191,7 +1176,12 @@ std::vector<OS::shared_function> OS::ABB::get_called_functions(){
             called_functions.emplace_back(function);
         }
     }
-    return called_functions;
+    
+    if(called_functions.size() > 2){
+        std::cerr << "abb " << this->get_name() << " calls more than one function" << std::endl;
+    }
+    else if(called_functions.size() == 0)return nullptr;
+    else return called_functions.front();
 }
 
 
@@ -1210,6 +1200,9 @@ bool OS::ABB::append_basic_blocks(shared_abb  abb){
 
 bool OS::ABB::is_mergeable(){
 	
+    if(this->get_call_type() == computation)return true;
+    else return false;
+    /*
 	bool syscall_flag = false;
 	for(auto& function : this->get_called_functions()){
 		if(function->has_syscall()){
@@ -1226,6 +1219,7 @@ bool OS::ABB::is_mergeable(){
         }
         return false;
     }
+    */
 }
 
 void OS::ABB::expend_call_sites(shared_abb abb){
@@ -1244,7 +1238,7 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 		this->syscall_name = abb->get_syscall_name();
 	}
 	*/
-    
+    /*
 	for(auto call_to_be_joined_abb: *(abb->get_calls())){
 		
 		this->calls.emplace_back(call_to_be_joined_abb);
@@ -1276,32 +1270,28 @@ void OS::ABB::expend_call_sites(shared_abb abb){
 	for(auto& ingoing_edge: abb->get_ingoing_edges()){
         ingoing_edge->set_target_vertex(self_reference);
         this->ingoing_edges.emplace_back(ingoing_edge);
-    }
-
+    }*/
 }
 
 
-std::vector<call_data>* OS::ABB::get_calls( ){
-	return &this->calls;
+call_data OS::ABB::get_call( ){
+	return this->call;
 }
 
 bool OS::ABB::set_syscall_name(std::string call_name){
-    for(auto call :this->calls){
-        if(call.sys_call){
-            call.call_name = call_name;
-            return true;
-        }   
-    }
+
+    if(this->call.sys_call){
+        this->call.call_name = call_name;
+        return true;
+    }   
+
 	return false;
 }
 
 std::string OS::ABB::get_syscall_name( ){
     std::string call_name = "default";
-    for(auto call :this->calls){
-        if(call.sys_call)call_name = call.call_name;
-    }
-    
-    if(call_name == "")call_name = "default";
+
+    if(this->call.sys_call)call_name = this->call.call_name;
 	return call_name;
 }
 
@@ -2037,15 +2027,15 @@ void OS::ABB::print_information(){
 	
 	
         
-        for(auto& call : this->calls){
-            std::cerr <<  "call: " << call.call_name << "\n";
-            
-            for (auto& data: call.arguments){
-                debug_argument(data);
-                std::cerr <<  std::endl;
-            }
-            std::cerr << "\n";
+        
+        std::cerr <<  "call: " << this->call.call_name << "\n";
+        
+        for (auto& data: this->call.arguments){
+            debug_argument(data);
+            std::cerr <<  std::endl;
         }
+        std::cerr << "\n";
+    
     }
 	
 
