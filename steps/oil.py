@@ -12,7 +12,7 @@ class OilStep(Step):
     
     def get_dependencies(self):
         
-        return ["LLVMStep"]
+        return ["IntermediateAnalysisStep"]
     
     def validate_linked_resource(self, element):
     
