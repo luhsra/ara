@@ -45,7 +45,7 @@ class SyscallStep(Step):
                 
 
                 "OSEKOS_ActivateTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")],0],
-                "StartOS": 					[[],graph.syscall_definition_type.schedule,[graph.get_type_hash("OS")],0],
+                "StartOS": 					[[],graph.syscall_definition_type.start_scheduler,[graph.get_type_hash("OS")],0],
                 "OSEKOS_TerminateTask": 	[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")],0],
                 
                 
@@ -177,7 +177,7 @@ class SyscallStep(Step):
                 "vTaskSetApplicationTaskTag" : 		[[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 "vTaskSetThreadLocalStoragePointer" : 		[[graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 "vTaskSetTimeOutState" : 			[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "vTaskStartScheduler" : 			[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
+                "vTaskStartScheduler" : 			[[],graph.syscall_definition_type.start_scheduler,[graph.get_type_hash("RTOS")],0],
                 "vTaskStepTick" : 					[[graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 "vTaskSuspend" : 					[[graph.data_type.string],graph.syscall_definition_type.suspend,[graph.get_type_hash("Task")],0],
                 "vTaskSuspendAll" : 				[[],graph.syscall_definition_type.suspend,[graph.get_type_hash("RTOS")],0],
@@ -247,6 +247,10 @@ class SyscallStep(Step):
                 "xStreamBufferSendFromISR" : 		[[graph.data_type.string,graph.data_type.string,graph.data_type.integer,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")],0],
                 "xStreamBufferSetTriggerLevel" : 	[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")],0],
                 "xStreamBufferSpacesAvailable" : 	[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Buffer")],0],
+                
+                "xCoRoutineCreate" : 	[[graph.data_type.string,graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.create,[graph.get_type_hash("CoRoutine")],9999],
+                "vCoRoutineSchedule" : 	[[],graph.syscall_definition_type.schedule,[graph.get_type_hash("CoRoutine")],0],
+                  
             }
         
 

@@ -13,6 +13,9 @@
  //
  //===----------------------------------------------------------------------===//
  
+#ifndef CFG_H
+#define CFG_H
+ 
  #include "llvm/Analysis/CFG.h"
  #include "llvm/ADT/SmallSet.h"
  #include "llvm/Analysis/LoopInfo.h"
@@ -264,3 +267,4 @@ namespace llvm {
  }
 }
 
+#endif // CFG_H

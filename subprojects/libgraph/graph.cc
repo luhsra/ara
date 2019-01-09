@@ -1958,6 +1958,51 @@ void OS::Buffer::set_trigger_level(unsigned long level){
 	this->trigger_level = level;
 }
 
+void OS::CoRoutine::set_priority(unsigned long priority) {
+	this->priority = priority;
+}
+
+unsigned long  OS::CoRoutine::get_priority() {
+	return this->priority;
+}
+
+void OS::CoRoutine::set_id(unsigned long priority) {
+	this->priority = priority;
+}
+
+unsigned long  OS::CoRoutine::get_id() {
+	return this->priority;
+}
+
+bool OS::CoRoutine::set_definition_function(std::string function_name){
+	bool result = false;
+    std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
+	auto self_vertex = this->graph->get_vertex(this->seed);
+    
+
+    if(self_vertex == nullptr){
+        std::cerr << "ERROR: task not found " << this->name << std::endl;
+        abort();
+    }
+	if(vertex != nullptr && self_vertex != nullptr){
+		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+		
+        if(function!=nullptr){
+			this->definition_function = function;
+			function->set_definition_vertex(self_vertex);
+			result = true;
+		}
+	}
+	return result;
+	
+}
+
+
+OS::shared_function OS::CoRoutine::get_definition_function(){
+    return this->definition_function;
+}
+
 
 
 void graph::Graph::print_information(){

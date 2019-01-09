@@ -52,7 +52,9 @@ cpdef get_type_hash(name):
         hash_type = typeid(cgraph.RTOS).hash_code()
     elif name == "ISR":
         hash_type = typeid(cgraph.ISR).hash_code()
-        
+    elif name == "CoRoutine":
+        hash_type = typeid(cgraph.CoRoutine).hash_code()
+    
     return  hash_type
 
 
@@ -88,7 +90,7 @@ class syscall_definition_type(IntEnum):
     suspend = <int> cgraph.suspend
     exit_critical = <int> cgraph.exit_critical
     enter_critical = <int> cgraph.enter_critical
-    
+    start_scheduler = <int> cgraph.start_scheduler
 class data_type(IntEnum):
     string = 1
     integer = 2
@@ -857,4 +859,13 @@ cdef class RTOS(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.RTOS](make_shared[cgraph.RTOS](&graph._c_graph, bname))
             
-            
+cdef class CoRoutine(Vertex):
+
+    cdef inline shared_ptr[cgraph.CoRoutine] _c(self):
+        return spc[cgraph.CoRoutine, cgraph.Vertex](self._c_vertex)
+
+    def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
+        cdef string bname
+        if not _raw:
+            bname = name.encode('UTF-8')
+            self._c_vertex = spc[cgraph.Vertex, cgraph.CoRoutine](make_shared[cgraph.CoRoutine](&graph._c_graph, bname))

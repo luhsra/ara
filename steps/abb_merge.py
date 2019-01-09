@@ -525,6 +525,8 @@ class ABB_MergeStep(Step):
         
         #iterate about the functions
         for function in function_list:
+            
+            
             if function.get_has_syscall() == False:
                 #iterate about the abbs of the function
                 already_visited = []
@@ -533,32 +535,44 @@ class ABB_MergeStep(Step):
 
                 #DFS for function
                 function_list.append(function)
-                
+        
+                #do DFS until the function self and all called functions are analyzed
                 while len(function_list) > 0:
+                    
                     tmp_function = function_list[-1]
                     del function_list[-1]
                     success = False
+                    
+                    #check if the tmp function was not visited yet
                     if not tmp_function.get_seed() in already_visited:
                         already_visited.append(tmp_function.get_seed())
                         
                         abb_list = tmp_function.get_atomic_basic_blocks()
                         
+                        #iterate about the abbs
                         for abb in abb_list:
                             
+                            #check if abb has function call
                             if abb.get_call_type() == graph.call_definition_type.func_call:
+                                #append function in functions to analyze list
                                 called_functions = abb.get_called_functions()
                                 for called_function in called_functions:
                                     function_list.append(called_function)
                                 
                             elif abb.get_call_type() == graph.call_definition_type.sys_call:
+                                #syscall was detected-> set has syscall and break search for this function
                                 function.set_has_syscall(True)
                                 success = True
                                 break
                             
                     if success == True:
+                        #syscall was detected, so continue with next function
                         break
+                    
                 
         printer = DotFileParser(g)
+        
+        printer.print_bb_functions(g,"bbs_before_merge")
         
         printer.print_functions(g,"before_merge")
         

@@ -32,7 +32,7 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, computation , has_call ,no_call};
 
-enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical,start_scheduler};
 
 enum ISR_type { ISR1, ISR2, basic };
 
@@ -77,6 +77,7 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
 void debug_argument(argument_data argument);
 bool list_contains_element(std::list<std::size_t>* list, size_t target);
 call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference,std::string call_name);
+
 
 
 namespace OS
@@ -161,8 +162,13 @@ namespace graph {
 	class Vertex {
 
 	  protected:
+          
+          
 		Graph *graph; // Referenz zum Graphen, in der der Vertex gespeichert ist
 
+		
+		bool static_create = false;
+		
 		std::size_t vertex_type;
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
@@ -241,8 +247,14 @@ namespace graph {
 		std::list<shared_edge> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
 		std::list<shared_edge>get_direct_edge(shared_vertex vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                   // falls keine vorhanden nullptr
-		                                   
+        
+        void set_static_create(bool create){
+            this->static_create = create;
+        }
 
+        bool get_static_create(){
+            return this->static_create;
+        }
 	};
 
 	
@@ -327,6 +339,44 @@ namespace OS {
 	
 	class RTOS : public graph::Vertex {
 
+        bool preemption = false;
+        bool time_slicing = false;
+        bool should_yield = false;
+        
+        
+        
+        unsigned int tick_rate_hz = 0;
+        unsigned int cpu_clock_hz = 0;
+        
+        bool idle_hook = false;
+        bool tick_hook = false;
+        bool malloc_failed_hook = false;
+        bool daemon_task_startup_hook = false;
+
+        bool support_static_allocation = false;
+        int heap_type = -1;
+        unsigned long total_heap_size = 0;
+        
+        bool startup_hook = false;
+        bool error_hook = false;       
+        bool shutdown_hook = false;
+        bool pretask_hook = false;
+        bool posttask_hook = false;
+                                
+        bool support_coroutines = false;
+        bool support_queue_sets = false;
+        bool support_counting_semaphores = false;
+        bool support_recursive_mutexes = false;
+        bool support_mutexes = false;
+        bool support_task_notification = false;
+    
+        
+        unsigned long max_coroutine_priorities = 0;
+        
+        bool scheduler_resource = false;
+;
+        
+        
 	
 	  public:
 
@@ -857,7 +907,6 @@ namespace OS {
 			unsigned long buffer_size;
 			unsigned long trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
 							// kann
-			bool static_buffer;
 
 		public:
 			
@@ -1051,6 +1100,41 @@ namespace OS {
             void set_cycle_time(unsigned int cycle_time);
             
             void set_appmode(std::string appmode);
+
+
+	};
+    
+    class CoRoutine : public graph::Vertex {
+
+        private:
+            
+            unsigned int id;
+            unsigned int priority;
+            OS::shared_function definition_function;
+            
+            
+        public:
+
+            CoRoutine(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+                this->vertex_type = typeid(CoRoutine).hash_code();
+                std::hash<std::string> hash_fn;
+                this->seed = hash_fn(name +  typeid(CoRoutine).name());
+            }
+
+        
+            void print_information(){
+                
+            };
+            
+
+            bool set_definition_function(std::string definition_function_name);
+            shared_function get_definition_function();
+            
+     		void set_priority(unsigned long priority);
+            unsigned long  get_priority();
+            
+            void set_id(unsigned long priority);
+            unsigned long  get_id();
 
 
 	};

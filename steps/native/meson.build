@@ -10,6 +10,8 @@ plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
   'FreeRTOSinstances.cpp',
   'DetectInteractions.cpp',
+  'Validation.cpp',
+  'IntermediateAnalysis.cpp',
   'llvm.cpp',
   'test.cpp',
   dependencies : [py3_inst.dependency(), libgraph, llvm_dep]

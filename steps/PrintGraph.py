@@ -89,6 +89,70 @@ class DotFileParser():
         f.close() 
         
     
+    def print_bb_functions(self, g, folder ):
+        
+        path = os.getcwd() + "/"+ folder +"/"
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+        
+        f = open(path+"functions_overview.dot","w+")
+        
+        f.write("digraph G {\n" )
+        
+        function_list = g.get_type_vertices("Function")
+        for function in function_list:
+            f.write("\tsubgraph " + function.get_name().decode("utf-8").replace(" ", "").replace(".", "_")  + "{\n") 
+            
+            f.write("\t\tnode [style=filled];\n")
+            abb_list = function.get_atomic_basic_blocks()
+            f.write("\t\t")
+            #iterate about the abbs of the function
+            for abb in abb_list:
+                f.write("\""+ abb.get_name().decode("utf-8").replace(" ", "")+"\" ")
+            
+            f.write(";\n") 
+            for abb in abb_list:
+                for successor in abb.get_successors():
+                    f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + " -> " + successor.get_name().decode("utf-8").replace(" ", "") + ";\n" )
+                
+                if  abb.get_call_type() != graph.call_definition_type.computation:
+                    
+                    
+                   
+
+                    if abb.get_call_type() == graph.call_definition_type.func_call:
+                         f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                         f.write("<FONT POINT-SIZE=\"10\">" + "call: " +  abb.get_call_name().decode("utf-8")  + "</FONT>>")
+                    
+                    elif abb.get_call_type() == graph.call_definition_type.sys_call:
+                        f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "call: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
+ 
+                    else:
+                        f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled label=<" +abb.get_name().decode("utf-8").replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "ERROR</FONT>>")
+                        
+                    f.write("];\n") 
+                        
+                
+                else:
+                    f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
+                        
+                for predecessor in abb.get_predecessors():
+                    f.write("\t\t"+abb.get_name().decode("utf-8").replace(" ", "") + " -> " + predecessor.get_name().decode("utf-8").replace(" ", "") +  "[color=grey];\n" )
+            
+            if function.get_exit_abb() != None:
+                f.write("\t\t"+function.get_exit_abb().get_name().decode("utf-8").replace(" ", "") + " [color=red style=filled] ;\n" )
+            if function.get_entry_abb() != None:
+                f.write("\t\t"+function.get_entry_abb().get_name().decode("utf-8").replace(" ", "") + " [color=green style=filled];\n" )
+                
+            f.write("\t\tlabel = \"" + function.get_name().decode("utf-8").replace(" ", "")  + "\";\n") 
+            f.write("\t}\n") 
+        f.write("}" )
+            
+        f.close() 
+    
     def print_function_definition_relation(self,g, f, element):
         
         function = element.get_definition_function()

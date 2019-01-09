@@ -51,6 +51,7 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type suspend
     cdef syscall_definition_type enter_critical
     cdef syscall_definition_type exit_critical
+    cdef syscall_definition_type start_scheduler
     
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
@@ -198,6 +199,8 @@ cdef extern from "graph.h" namespace "OS":
         RTOS(Graph* graph,string name) except +
 
 
+    cdef cppclass CoRoutine:
+        RTOS(Graph* graph,string name) except +
 
     cdef cppclass ABB:
         ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +

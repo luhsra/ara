@@ -84,6 +84,30 @@ SemaphoreHandle_t xBinarySemaphore;
 
 QueueSetHandle_t xQueueSet;
 
+void intialize_debuger(){
+    
+    int b= 0;
+    for (int a = 0;a < 100; ++a){
+	b = b + a;
+    }
+    intialize_debuger();
+    
+    if(b == 0){
+         for (int a = 0;a < 100; ++a){
+            b = b + a;
+         }
+        
+    }
+    else{
+        if(b == 3213){
+        
+            for (int a = 0;a < 100; ++a){
+                b = b + a;
+            }
+        }
+    }
+    
+}
 
 struct AMessage
  {
@@ -182,6 +206,8 @@ void vSenderTask1( void *pvParameters )
         /* Send this task's string to xQueue1. It is not necessary to use a block time, even though the queue can only hold one item. This is because the priority of the task that reads from the queue is higher than the priority of this task. As soon as this task writes to the queue, it will be preempted by the task that reads from the queue, so the queue will already be empty  again by the time the call to xQueueSend() returns. The block time is set to 0. */
 
         xQueueSend( xQueue1, &pcMessage, 0 );
+        
+        intialize_debuger();
          xSemaphoreGive( xBinaryMutex1);
     }
 }
@@ -194,7 +220,7 @@ void vSenderTask2( void *pvParameters )
     const TickType_t xBlockTime = pdMS_TO_TICKS( 200 );
 
     const char * const pcMessage = "Message from vSenderTask2\r\n";
-
+    intialize_debuger();
     /* As per most tasks, this task is implemented within an infinite loop. */
     for( ;; )
 
@@ -212,7 +238,6 @@ void vSenderTask2( void *pvParameters )
     
 
 }
-
 
 
 
@@ -312,7 +337,11 @@ int main( void ){
 		xQueue2 = xQueueCreate( 1, sizeof( char * ) );
 		}
 	}
-
+	
+    b= 0;
+    for (int a = 0;a < 100; ++a){
+	b = b + a;
+    }
     /* Add the two queues to the set. */
 
     xQueueAddToSet( xQueue1, xQueueSet );
