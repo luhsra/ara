@@ -28,6 +28,11 @@ foreach app : ['a', 'b', 'c', 'd', 'e', 'f', 'g',
                                                '-o', '@OUTPUT0@'] +
                                               clang_flags)
 endforeach
+
+# gpslogger is special
+subdir('FreeRTOS/GPSLogger')
+freertos_targets += gpslogger_targets
+
 freertos_examples = run_target('freertos-examples',
                                command: nop,
                                depends: freertos_targets)
