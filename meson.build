@@ -12,6 +12,7 @@ source_dir = meson.source_root()
 
 subdir('steps')
 subdir('test')
+subdir('appl')
 
 test('ara tester',
 	py3_inst,
