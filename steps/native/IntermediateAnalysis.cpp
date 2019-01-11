@@ -26,6 +26,7 @@
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/Passes/PassBuilder.h"
 #include <map>
+#include "llvm/IR/Module.h"
 
 using namespace llvm;
 
@@ -577,6 +578,137 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
 	return success;
 }
 
+
+
+void get_predefined_system_information(graph::Graph& graph){
+    
+    std::hash<std::string> hash_fn;
+    std::string rtos_name = "RTOS";
+    
+    auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
+    
+    if(rtos_vertex == nullptr){
+        std::cerr << "ERROR: RTOS could not load from graph" << std::endl;
+        abort();
+    }
+    auto rtos = std::dynamic_pointer_cast<OS::RTOS> (rtos_vertex);
+    
+    auto module = graph.get_llvm_module();
+    for(Module::global_iterator gi = module->global_begin(), gend = module->global_end();gi != gend; ++gi){
+        
+        auto global = &(*gi);
+    
+        
+        std::string s = global->getName().str();
+        std::string delimiter = "FreeRTOS_config";
+        
+        size_t pos = 0;
+        std::string token;
+        while ((pos = s.find(delimiter)) != std::string::npos) {
+            token = s.substr(0, pos);
+            std::cerr << token << std::endl;
+            s.erase(0, pos + delimiter.length());
+        
+        
+            if(global->hasInitializer()){
+                long config_value = -1;
+                
+                if (ConstantInt * CI = dyn_cast<ConstantInt>(global->getInitializer())) {
+
+                    config_value = CI->getSExtValue();
+                }
+                
+                if(s == "USE_PREEMPTION"){
+                    rtos->preemption = config_value;
+                }else if(s == "USE_PORT_OPTIMISED_TASK_SELECTION"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_TICKLESS_IDLE"){
+                    //rtos-> = config_value;
+                }else if(s == "CPU_CLOCK_HZ"){
+                    rtos->cpu_clock_hz = config_value;
+                }else if(s == "TICK_RATE_HZ"){
+                    rtos->tick_rate_hz = config_value;
+                }else if(s == "MAX_PRIORITIES"){
+                    //rtos-> = config_value;
+                }else if(s == "MINIMAL_STACK_SIZE"){
+                    //rtos-> = config_value;
+                }else if(s == "MAX_TASK_NAME_LEN"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_16_BIT_TICKS"){
+                    //rtos-> = config_value;
+                }else if(s == "IDLE_SHOULD_YIELD"){
+                    rtos->should_yield = config_value;
+                }else if(s == "USE_TASK_NOTIFICATIONS"){
+                    rtos->support_task_notification = config_value;
+                }else if(s == "USE_MUTEXES"){
+                    rtos->support_mutexes = config_value;
+                }else if(s == "USE_RECURSIVE_MUTEXES"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_COUNTING_SEMAPHORES"){
+                    rtos->support_counting_semaphores = config_value;
+                }else if(s == "USE_ALTERNATIVE_API"){
+                    //rtos-> = config_value;
+                }else if(s == "QUEUE_REGISTRY_SIZE"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_QUEUE_SETS"){
+                    rtos->support_queue_sets = config_value;
+                }else if(s == "USE_TIME_SLICING"){
+                    rtos->time_slicing = config_value;
+                }else if(s == "USE_NEWLIB_REENTRANT"){
+                    //rtos-> = config_value;
+                }else if(s == "ENABLE_BACKWARD_COMPATIBILITY"){
+                    //rtos-> = config_value;
+                }else if(s == "NUM_THREAD_LOCAL_STORAGE_POINTERS"){
+                    //rtos-> = config_value;
+                }else if(s == "SUPPORT_STATIC_ALLOCATION"){
+                    rtos->support_static_allocation = config_value;
+                }else if(s == "SUPPORT_DYNAMIC_ALLOCATION"){
+                    rtos->support_dynamic_allocation = config_value;
+                }else if(s == "TOTAL_HEAP_SIZE"){
+                    rtos->total_heap_size = config_value;
+                }else if(s == "APPLICATION_ALLOCATED_HEAP"){
+                    rtos->heap_type = config_value;
+                }else if(s == "USE_IDLE_HOOK"){
+                    rtos->idle_hook = config_value;
+                }else if(s == "USE_TICK_HOOK"){
+                    rtos->tick_hook = config_value;
+                }else if(s == "CHECK_FOR_STACK_OVERFLOW"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_MALLOC_FAILED_HOOK"){
+                    rtos->malloc_failed_hook = config_value;
+                }else if(s == "USE_DAEMON_TASK_STARTUP_HOOK"){
+                    rtos->daemon_task_startup_hook = config_value;
+                }else if(s == "GENERATE_RUN_TIME_STATS"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_TRACE_FACILITY"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_STATS_FORMATTING_FUNCTIONS"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_CO_ROUTINES"){
+                    rtos->support_coroutines = config_value;
+                }else if(s == "MAX_CO_ROUTINE_PRIORITIES"){
+                    //rtos-> = config_value;
+                }else if(s == "USE_TIMERS"){
+                    //rtos-> = config_value;
+                }else if(s == "TIMER_TASK_PRIORITY"){
+                    //rtos-> = config_value;
+                }else if(s == "TIMER_QUEUE_LENGTH"){
+                    //rtos-> = config_value;
+                }else if(s == "TIMER_TASK_STACK_DEPTH"){
+                    //rtos-> = config_value;
+                }else if(s == "KERNEL_INTERRUPT_PRIORITY"){
+                    //rtos-> = config_value;
+                }else if(s == "MAX_SYSCALL_INTERRUPT_PRIORITY"){
+                    //rtos-> = config_value;
+                }else if(s == "MAX_API_CALL_INTERRUPT_PRIORITY"){
+                    
+                }
+            }
+            break;
+        }
+    }
+}
+
 namespace step {
 
 	std::string IntermediateAnalysisStep::get_name() {
@@ -635,7 +767,9 @@ namespace step {
                 }
             }
         }
+        get_predefined_system_information(graph);
 	}
+
 	
 	std::vector<std::string> IntermediateAnalysisStep::get_dependencies() {
         

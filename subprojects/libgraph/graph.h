@@ -351,53 +351,48 @@ namespace OS {
 	
 	class RTOS : public graph::Vertex {
 
-        bool preemption = false;
-        bool time_slicing = false;
-        bool should_yield = false;
-        
-        
-        
-        unsigned int tick_rate_hz = 0;
-        unsigned int cpu_clock_hz = 0;
-        
-        bool idle_hook = false;
-        bool tick_hook = false;
-        bool malloc_failed_hook = false;
-        bool daemon_task_startup_hook = false;
+        public:
+            bool preemption = false;
+            bool time_slicing = false;
+            bool should_yield = false;
+            
+            unsigned int tick_rate_hz = 0;
+            unsigned int cpu_clock_hz = 0;
+            
+            bool idle_hook = false;
+            bool tick_hook = false;
+            bool malloc_failed_hook = false;
+            bool daemon_task_startup_hook = false;
 
-        bool support_static_allocation = false;
-        int heap_type = -1;
-        unsigned long total_heap_size = 0;
+            bool support_static_allocation = false;
+            bool support_dynamic_allocation = false;
+            int heap_type = -1;
+            unsigned long total_heap_size = 0;
+            
+            bool startup_hook = false;
+            bool error_hook = false;       
+            bool shutdown_hook = false;
+            bool pretask_hook = false;
+            bool posttask_hook = false;
+                                    
+            bool support_coroutines = false;
+            bool support_queue_sets = false;
+            bool support_counting_semaphores = false;
+            bool support_recursive_mutexes = false;
+            bool support_mutexes = false;
+            bool support_task_notification = false;
         
-        bool startup_hook = false;
-        bool error_hook = false;       
-        bool shutdown_hook = false;
-        bool pretask_hook = false;
-        bool posttask_hook = false;
-                                
-        bool support_coroutines = false;
-        bool support_queue_sets = false;
-        bool support_counting_semaphores = false;
-        bool support_recursive_mutexes = false;
-        bool support_mutexes = false;
-        bool support_task_notification = false;
-    
-        
-        unsigned long max_coroutine_priorities = 0;
-        
-        bool scheduler_resource = false;
-;
-        
-        
-	
-	  public:
+            
+            unsigned long max_coroutine_priorities = 0;
+            
+            bool scheduler_resource = false;
 
-		RTOS(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-			std::hash<std::string> hash_fn;
-			this->seed = hash_fn(name +  typeid(RTOS).name());
-			this->vertex_type =  typeid(RTOS).hash_code();
-			this->handler_name = "RTOS";
-		}
+            RTOS(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+                std::hash<std::string> hash_fn;
+                this->seed = hash_fn(name +  typeid(RTOS).name());
+                this->vertex_type =  typeid(RTOS).hash_code();
+                this->handler_name = "RTOS";
+            }
 	};
 	
 	
