@@ -29,7 +29,7 @@ class StepManager:
 		self._steps = {}
 		for step in provides(config):
 			self._steps[step.get_name()] = step
-			
+
 	def execute(self, steps: List[str]):
 		"""Executes all steps in correct order.
 
@@ -43,8 +43,12 @@ class StepManager:
 			for dep in self._steps[step].get_dependencies():
 				steps.append(dep)
 
-		executed = set()
+		execute = []
+
 		for step in reversed(steps):
-			if step not in executed:
-				self._steps[step].run(self._graph)
-				executed.add(step)
+			if step not in execute:
+				print("Steps to run:", step)
+				execute.append(step)
+
+		for step in execute:
+			self._steps[step].run(self._graph)
