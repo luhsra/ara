@@ -22,6 +22,7 @@
 #include <llvm/IR/DiagnosticInfo.h>
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/IR/Dominators.h"
+#include "llvm/Analysis/LoopInfo.h"
 
 #include <iostream>
 #include <sstream>
@@ -289,7 +290,7 @@ namespace graph {
 		shared_vertex get_start_vertex();
 		shared_vertex get_target_vertex();
         
-        void set_call(call_data call);
+        void set_call(call_data *call);
         
         void set_instruction_reference(llvm::Instruction* reference);
 		llvm::Instruction* get_instruction_reference();
@@ -425,6 +426,7 @@ namespace OS {
         
         llvm::DominatorTree dominator_tree = llvm::DominatorTree();
         llvm::PostDominatorTree  postdominator_tree = llvm::PostDominatorTree();
+        llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> loop_info_base;
                                                             
 	  public:
                               
@@ -459,10 +461,17 @@ namespace OS {
         llvm::PostDominatorTree* get_postdominator_tree();
         
         void initialize_dominator_tree(llvm::Function* function);
+
         void initialize_postdominator_tree(llvm::Function *function);
+        
+       
+        llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* get_loop_info_base();
+        
+        
         
 		bool set_definition_vertex(graph::shared_vertex vertex);
 		graph::shared_vertex get_definition_vertex();
+                
 		//Funktionen zurück, die diese Funktion benutzen
 		bool set_used_function(OS::Function *function); // Setze Funktion in std::liste aller Funktionen, die diese Funktion benutzen
 
@@ -554,6 +563,8 @@ namespace OS {
 		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 		
 		size_t syscall_handler_index;
+        
+        bool in_loop = false;
 
 	  public:
               		
@@ -588,7 +599,7 @@ namespace OS {
 		void set_call_target_instance(size_t target_instance);
 		
 		
-        void set_call(call_data call);
+        void set_call(call_data* call);
         
         call_data get_call();
         
@@ -651,6 +662,11 @@ namespace OS {
 		shared_abb get_dominator();
 		
 		shared_abb get_postdominator();
+        
+        void set_loop_information(bool flag);
+        
+        bool get_loop_information();
+        
 	};
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter

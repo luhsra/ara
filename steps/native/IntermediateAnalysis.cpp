@@ -25,6 +25,7 @@
 #include "llvm/ADT/PostOrderIterator.h" 
 #include "llvm/ADT/SCCIterator.h"
 #include "llvm/Passes/PassBuilder.h"
+#include <map>
 
 using namespace llvm;
 
@@ -463,6 +464,116 @@ void sort_abbs(graph::Graph& graph){
 }
 
 
+
+/**
+* @brief checks recursive if the basicblock is in a loop
+* @param bb basicblock which is analyzed
+* @param already_visited call instructions which were already visited
+* @return if bb is inside a loop false, else true
+**/
+
+bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited){
+    
+	//generate hash code of basic block name
+	size_t seed = abb->get_seed();
+
+    //check if seed in map of already visited basic blocks exist,
+    if ( already_visited->find(seed) != already_visited->end() ) {
+        //found -> recursion exists
+        return false;
+    } 
+    
+    already_visited->insert(std::make_pair(seed, seed));
+    
+	//set basic block hash value in already visited list
+
+	bool success = true;
+    
+	//search loop of function
+	
+    
+    
+    
+    auto LIB = abb->get_parent_function()->get_loop_info_base();
+    
+    llvm::Instruction* instr = nullptr;
+    
+    
+    if (abb->get_call_type() == sys_call)instr = abb->get_syscall_instruction_reference();
+    else  if (abb->get_call_type() == func_call)instr = abb->get_call_instruction_reference();
+    else{
+        std::cerr << "ERROR: syscall abb type " << std::endl;
+        abort();
+    }
+    if(instr == nullptr){
+     std::cerr << "ERROR: no syscall instruction reference " << std::endl;
+     abort();
+        
+    }
+    //std::cerr << print_tmp(instr->getParent()) << std::endl;
+    
+	llvm::Loop * L = LIB->getLoopFor(instr->getParent());
+    
+//     FunctionPassManager FPM;
+//     FPM.addPass(ScalarEvolutionAnalysis());
+// q
+//     FunctionAnalysisManager FAM;
+// 
+//     PassBuilder PB;
+//     PB.registerFunctionAnalyses(FAM);
+// 
+//     FPM.run(bb->getParent(), FAM);
+	//check if basic block is in loop
+	//TODO get loop count
+    
+    //std::cerr << "Loop analyse" << std::endl;
+	if(L != nullptr){
+        /*
+		AssumptionCache AC = AssumptionCache(*bb->getParent());
+		Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
+		TargetLibraryInfoImpl TLII(ModuleTriple);
+		
+		TLII.disableAllFunctions();
+		TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
+		LoopInfo LI = LoopInfo(DT);
+		LI.analyze (DT);
+		ScalarEvolution SE = ScalarEvolution(*bb->getParent(), TLI.getTLI(),AC, DT, LI);
+		//SE.verify();
+		SmallVector<BasicBlock *,10> blocks;
+		if(L->getExitingBlock()==nullptr){
+			//std::cout << "loop has more or no exiting blocks" << std::endl;
+		}
+		else{
+			//std::cout << "loop has one exiting block" << std::endl;
+			//const SCEVConstant *ExitCount = dyn_cast<SCEVConstant>(getExitCount(L, ExitingBlock));
+			//std::cout << "finaler Test" << SE.getSmallConstantTripCount (L, L->getExitingBlock()) << std::endl;
+		}
+		//auto  blocks;
+		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
+		//L->getUniqueExitBlocks(blocks);
+		*/
+        
+        //std::cerr << "Loop detected" << std::endl;
+		success = false;
+        
+	}else{
+        //std::cerr << "Loop not detected" << std::endl;
+        //abb is not direct in loop
+        auto function = abb->get_parent_function();
+        
+        //iterate about the abbs, which calls the function, that contains the abb, and execute recursive analysis 
+        for(auto edge : function->get_ingoing_edges()){
+			if(edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
+				//analyse basic block of call instruction 
+                auto call_abb = std::dynamic_pointer_cast<OS::ABB> (edge->get_start_vertex());
+				success = validate_loop(call_abb ,already_visited);
+				if(success == false)break;
+			}
+		}
+	}
+	return success;
+}
+
 namespace step {
 
 	std::string IntermediateAnalysisStep::get_name() {
@@ -482,9 +593,7 @@ namespace step {
 		std::cout << "Run IntermediateAnalysisStep" << std::endl;
 		
         sort_abbs(graph);
-        
-		std::cout << "Run " << get_name() << std::endl;
-			
+        		
 		std::hash<std::string> hash_fn;
 		
 		//get function with name main from graph
@@ -504,8 +613,25 @@ namespace step {
             std::cerr << "no main function in programm" << std::endl;
             abort();
         }
-		
+        
+        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 
+        for (auto &vertex : vertex_list) {
+        
+            //cast vertex to abb 
+            auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
+            
+            if(abb->get_call_type() == sys_call){
+                
+                std::map<size_t, size_t> already_visited;
+                std::cerr << "analyse" << abb->get_syscall_name() << std::endl;
+                
+                if(!validate_loop(abb, &already_visited)){
+                    abb->set_loop_information(true);
+                    std::cerr << "success" << std::endl;
+                }
+            }
+        }
 	}
 	
 	std::vector<std::string> IntermediateAnalysisStep::get_dependencies() {

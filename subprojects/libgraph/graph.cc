@@ -24,7 +24,7 @@ template< typename T > bool contains( std::any a ){
 	//std::cout <<  typeid( T ).hash_code() << "," <<a.type().hash_code()  << std::endl;
 	try
 	{
-		// we do the comparison with 'name' because across shared library boundries we get
+		// we do th::comparison with 'name' because across shared library boundries we get
 		// two different type_info objects
 		if(( typeid( T ).hash_code()==  a.type().hash_code() )){
 			success = true;
@@ -928,7 +928,7 @@ llvm::PostDominatorTree* OS::Function::get_postdominator_tree(){
 void OS::Function::initialize_dominator_tree(llvm::Function* function){
     this->dominator_tree.recalculate(*function);
 	this->dominator_tree.updateDFSNumbers();
-
+    this->loop_info_base.analyze(this->dominator_tree);
 }
       
 void OS::Function::initialize_postdominator_tree(llvm::Function* function){
@@ -937,6 +937,10 @@ void OS::Function::initialize_postdominator_tree(llvm::Function* function){
 }
 
 
+llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* OS::Function::get_loop_info_base(){
+
+    return &  this->loop_info_base;
+}
 
 
 
@@ -945,13 +949,13 @@ void OS::Function::initialize_postdominator_tree(llvm::Function* function){
 
 
 
+void OS::ABB::set_loop_information(bool flag){
+    this-> in_loop = flag;
+}
 
-
-
-
-
-
-
+bool OS::ABB::get_loop_information(){
+    return this->in_loop;
+}
 
 
 void OS::ABB::set_call_target_instance(size_t target_instance){
@@ -1014,8 +1018,8 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 
 
-void OS::ABB::set_call(call_data call){
-    this->call = call;
+void OS::ABB::set_call(call_data* call){
+    this->call = *call;
 }
 
 
@@ -1094,7 +1098,7 @@ std::string OS::ABB::get_call_name(){
 
 llvm::Instruction* OS::ABB::get_call_instruction_reference(){
 
-    if(!call.sys_call)return this->call.call_instruction;
+    if(call.sys_call == false)return this->call.call_instruction;
     
 	return nullptr;
 }
@@ -1102,8 +1106,7 @@ llvm::Instruction* OS::ABB::get_call_instruction_reference(){
 
 llvm::Instruction* OS::ABB::get_syscall_instruction_reference(){
     
-    if(call.sys_call)return this->call.call_instruction;
-    
+    if(call.sys_call == true)return this->call.call_instruction;
 	return nullptr;
 }
 
@@ -1114,11 +1117,15 @@ bool OS::ABB::convert_call_to_syscall(std::string name){
 	
     
     if(this->call.call_name == name){
-        call.sys_call = true;
+        this->call.sys_call = true;
         success = true;
     }
-	int tmp_index = 0;
-	
+    
+    if(success == false){
+        std::cerr << this->get_name() << " could not conver call to syscall" << std::endl;
+        abort();
+    }
+
 	return success;
 }
 

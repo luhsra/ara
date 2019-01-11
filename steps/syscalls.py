@@ -362,6 +362,7 @@ class SyscallStep(Step):
                             #sys.exit("unexpected argument type")
                             abb.print_information();
                         #print(call_name)
+                        
                         abb.set_call_type(graph.call_definition_type.sys_call)
                         abb.set_syscall_type(syscall[1])
                         abb.set_call_target_instance(syscall[2])

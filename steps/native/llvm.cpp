@@ -19,7 +19,7 @@
 #include <string>
 #include "llvm/ADT/PostOrderIterator.h" 
 #include "llvm/ADT/SCCIterator.h"
-
+#include "llvm/IR/InstrTypes.h"
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -964,7 +964,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
  * @param func llvm function, of the call instruction
  * @param instruction call instruction, which is analyzed
  */
-void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instruction){
+void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst  * instruction){
     
     //empty call data container
     call_data call;
@@ -974,7 +974,6 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 	
 	//store the llvm call instruction reference
 	call.call_instruction =instruction;
-	
     std::vector<argument_data> arguments;
     
 	//iterate about the arguments of the call
@@ -1031,10 +1030,94 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , auto& instructi
 	
 	//store arguments
 	call.arguments = arguments;
-    abb->set_call(call);
+    
+    if(call.call_instruction == nullptr)std::cerr << "ERROR" << std::endl;
+    std::cerr << print_argument(instruction) << std::endl;
+    abb->set_call(&call);
     
 }
 
+
+/**
+ * @brief set all possbile argument std::any and llvm values of the abb call in a data structure. This 
+ * data structure is then stored in each abb for each call.
+ * @param abb abb, which contains the call
+ * @param func llvm function, of the call instruction
+ * @param instruction call instruction, which is analyzed
+ */
+void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeInst  * instruction){
+    
+    //empty call data container
+    call_data call;
+    
+	//store the name of the called function
+	call.call_name = func->getName().str();
+	
+	//store the llvm call instruction reference
+	call.call_instruction =instruction;
+	
+    
+    std::vector<argument_data> arguments;
+    
+	//iterate about the arguments of the call
+	for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
+	
+		//debug string
+		std::stringstream debug_out;
+		debug_out <<  func->getName().str() << "\n";
+
+		std::vector<std::any> any_list; 
+		
+		std::vector<llvm::Value*> value_list;
+        std::vector<llvm::Instruction*> already_visited;
+        already_visited.emplace_back(instruction);
+		//get argument
+		Value *arg = instruction->getArgOperand(i);
+		
+        
+        argument_data argument_container;
+    
+		//dump argument and check if it was successfull
+		if(dump_argument(debug_out,&argument_container, arg,&already_visited)){
+            
+            //dump was successfull
+            if(argument_container.any_list.size() > 1)argument_container.multiple = true;
+            
+            //argument container lists shall not have different sizes
+            if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
+                
+                //error in argument dump
+                std::cerr << "argument container lists have different sizes" << std::endl;
+                abort();
+            }
+            
+			//store the dumped argument in the abb with corresponding llvm type
+			arguments.emplace_back(argument_container);
+		}else{
+			
+            //dump was not successfull
+			//std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
+			//std::cerr <<  print_argument(instruction) << '\n';
+			
+            //TODO
+			//abort();
+		}
+	}
+	
+    //check if call has no arguments
+	if(arguments.size() == 0){
+        //generate empty argument container, if call has no arguments
+		argument_data tmp_arguments;
+		arguments.emplace_back(tmp_arguments);
+	}
+	
+	//store arguments
+	call.arguments = arguments;
+    
+    if(call.call_instruction == nullptr)std::cerr << "ERROR" << std::endl;
+    abb->set_call(&call);
+    
+}
 
 /**
  * @brief set the arguments std::any and llvm values of the abb
@@ -1090,7 +1173,9 @@ void set_arguments(OS::shared_abb abb){
 			std::cerr << abb->get_name() << " has more than one call instructions: "  << call_count << std::endl;
 			abort();
 		}
-		if(call_found)abb->set_call_type(has_call);	
+		if(call_found){
+            abb->set_call_type(has_call);
+        }
         else abb->set_call_type(computation);
 	}
 	if(bb_count > 1){

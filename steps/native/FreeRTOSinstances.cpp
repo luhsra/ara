@@ -121,89 +121,6 @@ std::string get_handler_name(llvm::Instruction * instruction, unsigned int argum
 }
 
 
-/**
-* @brief checks recursive if the basicblock is in a loop
-* @param bb basicblock which is analyzed
-* @param already_visited call instructions which were already visited
-* @return if bb is inside a loop true, else false
-*/
-bool validate_loop(llvm::BasicBlock *bb, std::vector<std::size_t>* already_visited){
-    
-	//generate hash code of basic block name
-	std::hash<std::string> hash_fn;
-	size_t hash_value = hash_fn(bb->getName().str());
-
-    
-	//search hash value in list of already visited basic blocks
-	for(auto hash : *already_visited){
-		if(hash_value == hash){
-			//basic block already visited
-			return true;
-			break;
-		}
-	}
-	//set basic block hash value in already visited list
-	already_visited->push_back(hash_value);
-	bool success = true;
-	//search loop of function
-	llvm::DominatorTree DT = llvm::DominatorTree();
-	DT.recalculate(*bb->getParent());
-	DT.updateDFSNumbers();
-	llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>LIB;
-	LIB.analyze(DT);
-	llvm::Loop * L = LIB.getLoopFor(bb);
-    
-    
-//     FunctionPassManager FPM;
-//     FPM.addPass(ScalarEvolutionAnalysis());
-// 
-//     FunctionAnalysisManager FAM;
-// 
-//     PassBuilder PB;
-//     PB.registerFunctionAnalyses(FAM);
-// 
-//     FPM.run(bb->getParent(), FAM);
-	//check if basic block is in loop
-	//TODO get loop count
-	if(L != nullptr){
-        /*
-		AssumptionCache AC = AssumptionCache(*bb->getParent());
-		Triple ModuleTriple(llvm::sys::getDefaultTargetTriple());
-		TargetLibraryInfoImpl TLII(ModuleTriple);
-		
-		TLII.disableAllFunctions();
-		TargetLibraryInfoWrapperPass TLI = TargetLibraryInfoWrapperPass(TLII);
-		LoopInfo LI = LoopInfo(DT);
-		LI.analyze (DT);
-		ScalarEvolution SE = ScalarEvolution(*bb->getParent(), TLI.getTLI(),AC, DT, LI);
-		//SE.verify();
-		SmallVector<BasicBlock *,10> blocks;
-		if(L->getExitingBlock()==nullptr){
-			//std::cout << "loop has more or no exiting blocks" << std::endl;
-		}
-		else{
-			//std::cout << "loop has one exiting block" << std::endl;
-			//const SCEVConstant *ExitCount = dyn_cast<SCEVConstant>(getExitCount(L, ExitingBlock));
-			//std::cout << "finaler Test" << SE.getSmallConstantTripCount (L, L->getExitingBlock()) << std::endl;
-		}
-		//auto  blocks;
-		//llvm::SmallVectorImpl< llvm::BasicBlock *> blocks = llvm::SmallVectorImpl< llvm::BasicBlock *> ();
-		//L->getUniqueExitBlocks(blocks);
-		*/
-		success = false;
-        
-	}else{
-		//check if function of basic block is called in a loop of other function
-		for(auto user : bb->getParent()->users()){  // U is of type User*
-			if(CallInst* instruction = dyn_cast<CallInst>(user)){
-				//analyse basic block of call instruction 
-				success = validate_loop(instruction->getParent() ,already_visited);
-				if(success == false)break;
-			}
-		}
-	}
-	return success;
-}
 
 /**
 * @brief gets all of the specific argument of all possible varations, E.g if the call argument is also the function argument, there could be many possible values
@@ -1089,8 +1006,8 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             
             std::vector<std::size_t> already_visited;
 
-            //validate if sysccall is in loop
-            if(validate_loop(llvm_bbs->front(),&already_visited)){
+            //validate if sysccall is not in loop
+            if(!abb->get_loop_information()){
             
                 bool before_scheduler_start = false;
                 
@@ -1103,6 +1020,8 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
                         std::cerr << "instance could not created" << std::endl;
                     }
                 }
+            }else{
+                std::cerr << "abb " << abb->get_name() << " with syscall "<< abb->get_syscall_name() << "in loop" << std::endl;
             }
         }else if( abb->get_call_type()== func_call){
             //iterate about the called function
