@@ -480,6 +480,8 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
     //check if seed in map of already visited basic blocks exist,
     if ( already_visited->find(seed) != already_visited->end() ) {
         //found -> recursion exists
+        std::cerr << "recursive loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
+        
         return false;
     } 
     
@@ -554,6 +556,7 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
 		*/
         
         //std::cerr << "Loop detected" << std::endl;
+        std::cerr << "direct loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
 		success = false;
         
 	}else{
@@ -628,7 +631,7 @@ namespace step {
                 
                 if(!validate_loop(abb, &already_visited)){
                     abb->set_loop_information(true);
-                    std::cerr << "success" << std::endl;
+                    if(abb->get_syscall_type() == create)std::cerr << "!!!!!!!loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
                 }
             }
         }

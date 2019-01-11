@@ -100,23 +100,14 @@ void test_function_3(){
     vSenderTask2(nullptr);
 }
 
-
-
-
-
 void vSenderTask1( void *pvParameters )
 {
-  
-
-
     for( ;; )
     {
         xQueue1 = xQueueCreate( 100,1);
         
         test_function_1();
-
     }
-
 }
 
 void vSenderTask2( void *pvParameters )

@@ -876,9 +876,10 @@ void detect_isrs(graph::Graph& graph){
 * @param abb abb that contains the creation call
 * @param before_scheduler_start information about the instance relation in context of the function
 * @param already_visited call instructions which were already visited
+* @param multiple_create information if abb, which contains create call, is in loop
 * @return true, if the abstraction instance could created, else return false
 */
-bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_vertex,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls){
+bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_vertex,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls,bool multiple_create){
 
     graph::shared_vertex created_vertex;
     //check which target should be generated
@@ -945,6 +946,8 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
     }
     if(created_vertex){
         
+        //set information if created instance is created in loop
+        created_vertex->set_multiple_create(multiple_create);
         //set static flag, if the creatoin syscall contains Static substring
         if(abb->get_syscall_name().find("Static") !=  std::string::npos){
             created_vertex->set_static_create(true);
@@ -1005,24 +1008,26 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
         if( abb->get_call_type()== sys_call){
             
             std::vector<std::size_t> already_visited;
-
-            //validate if sysccall is not in loop
-            if(!abb->get_loop_information()){
             
-                bool before_scheduler_start = false;
-                
-                if(abb->get_start_scheduler_relation() == before)before_scheduler_start = true;
-                                        
-                //check if abb syscall is creation syscall
-                if(abb->get_syscall_type() == create){
-                    
-                    if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,already_visited_calls)){
-                        std::cerr << "instance could not created" << std::endl;
-                    }
-                }
-            }else{
+            bool multiple_create = false;
+            //validate if sysccall is not in loop
+            if(abb->get_loop_information()){
+                multiple_create = true;
                 std::cerr << "abb " << abb->get_name() << " with syscall "<< abb->get_syscall_name() << "in loop" << std::endl;
             }
+                
+            bool before_scheduler_start = false;
+            
+            if(abb->get_start_scheduler_relation() == before)before_scheduler_start = true;
+                                    
+            //check if abb syscall is creation syscall
+            if(abb->get_syscall_type() == create){
+                
+                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,already_visited_calls,multiple_create)){
+                    std::cerr << "instance could not created" << std::endl;
+                }
+            }
+            
         }else if( abb->get_call_type()== func_call){
             //iterate about the called function
             iterate_called_functions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls);

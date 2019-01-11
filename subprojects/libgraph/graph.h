@@ -169,7 +169,8 @@ namespace graph {
 
 		
 		bool static_create = false;
-		
+		bool multiple_create = false;
+        
 		std::size_t vertex_type;
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
@@ -183,6 +184,8 @@ namespace graph {
 		std::string handler_name;
 		
 		bool start_scheduler_creation_flag;
+        
+        
 					
 	  public:
               /*
@@ -255,6 +258,14 @@ namespace graph {
 
         bool get_static_create(){
             return this->static_create;
+        }
+        
+        void set_multiple_create(bool create){
+            this->multiple_create = create;
+        }
+
+        bool get_multiple_create(){
+            return this->multiple_create;
         }
 	};
 

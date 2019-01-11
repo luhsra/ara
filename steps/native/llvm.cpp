@@ -1032,7 +1032,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
 	call.arguments = arguments;
     
     if(call.call_instruction == nullptr)std::cerr << "ERROR" << std::endl;
-    std::cerr << print_argument(instruction) << std::endl;
+
     abb->set_call(&call);
     
 }
