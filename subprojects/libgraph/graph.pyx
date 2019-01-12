@@ -869,6 +869,74 @@ cdef class RTOS(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.RTOS](make_shared[cgraph.RTOS](&graph._c_graph, bname))
             
+
+    def enable_startup_hook(self, attribute):
+        
+        cdef bool enable = False
+        if attribute == "FALSE":
+            enable = False
+        elif attribute == "TRUE":
+            enable = True
+        else:
+            print("unexpected OSEK hook enable attribute value")
+        
+        deref(self._c()).enable_startup_hook(enable)
+        
+    def enable_posttask_hook(self, attribute):
+   
+        
+        cdef bool enable = False
+        if attribute == "FALSE":
+            enable = False
+        elif attribute == "TRUE":
+            enable = True
+        else:
+            print("unexpected OSEK hook enable attribute value")
+        
+        deref(self._c()).enable_posttask_hook(enable)
+        
+        
+    def enable_pretask_hook(self, attribute):
+    
+        
+        cdef bool enable = False
+        if attribute == "FALSE":
+            enable = False
+        elif attribute == "TRUE":
+            enable = True
+        else:
+            print("unexpected OSEK hook enable attribute value")
+        
+        deref(self._c()).enable_pretask_hook(enable)
+        
+    def enable_shutdown_hook(self, attribute):
+
+        
+        cdef bool enable = False
+        if attribute == "FALSE":
+            enable = False
+        elif attribute == "TRUE":
+            enable = True
+        else:
+            print("unexpected OSEK hook enable attribute value")
+        
+        deref(self._c()).enable_shutdown_hook(enable)
+        
+    def enable_error_hook(self, attribute):
+
+        
+        cdef bool enable = False
+        if attribute == "FALSE":
+            enable = False
+        elif attribute == "TRUE":
+            enable = True
+        else:
+            print("unexpected OSEK hook enable attribute value")
+        
+        deref(self._c()).enable_error_hook(enable)
+        
+    
+            
 cdef class CoRoutine(Vertex):
 
     cdef inline shared_ptr[cgraph.CoRoutine] _c(self):

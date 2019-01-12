@@ -374,7 +374,15 @@ namespace OS {
             bool shutdown_hook = false;
             bool pretask_hook = false;
             bool posttask_hook = false;
-                                    
+            
+            void enable_startup_hook(bool flag) {startup_hook = flag ;};
+            void enable_error_hook (bool flag) {error_hook = flag; };    
+            void enable_shutdown_hook(bool flag) {shutdown_hook = flag; };
+            void enable_pretask_hook (bool flag) {pretask_hook = flag; };
+            void enable_posttask_hook (bool flag) {posttask_hook = flag; };
+            
+            
+            
             bool support_coroutines = false;
             bool support_queue_sets = false;
             bool support_counting_semaphores = false;
@@ -382,6 +390,9 @@ namespace OS {
             bool support_mutexes = false;
             bool support_task_notification = false;
         
+            
+            std::string appmode;
+            
             
             unsigned long max_coroutine_priorities = 0;
             

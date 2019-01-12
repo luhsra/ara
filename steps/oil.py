@@ -94,6 +94,38 @@ class OilStep(Step):
         resource_list = {}
         alarm_list = {}
         
+        #get the rtos graph instances
+        rtos =  g.get_type_vertices("RTOS")
+        
+        #just one rtos instance should exist
+        if len(rtos) != 1:
+            print("rtos could not load")
+            sys.exit()
+            
+            
+        #get the os
+        os = dictionary.get("OS", "error")
+        if os != "error":
+            #iterate about the os attributes and store values in rtos instance
+            for attribute in os:
+                if attribute == "STATUS":
+                    rtos.set_status(os[attribute])
+                elif attribute == "ERRORHOOK":
+                    rtos.enable_error_hook(os[attribute])
+                elif attribute == "PRETASKHOOK":
+                    rtos.enable_pretask_hook(os[attribute])
+                elif attribute == "POSTTASKHOOK":
+                    rtos.enable_posttask_hook(os[attribute])
+                elif attribute == "STARTUPHOOK":
+                    rtos.enable_startup_hook(os[attribute])
+                elif attribute == "SHUTDOWNHOOK":
+                    rtos.enable_shutdown_hook(os[attribute])
+                else:
+                    print("unexpected os attribute",attribute)
+                    sys.exit()
+                  
+        #TODO get appmode from startos call
+        
         
         #get the isrs
         isrs = dictionary.get("ISR", "error")
@@ -194,7 +226,9 @@ class OilStep(Step):
                     else:
                         print(attribute ,";counter has other attribute than MAXALLOWEDVALUE or TICKSPERBASE or MINCYCLE")
                     
-                    
+        
+        
+        
                     
         #get the resources 
         resources = dictionary.get("RESOURCE", {})

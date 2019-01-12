@@ -309,9 +309,13 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
                 break;
             }
 			if(before_flag){
+                std::cerr <<  "before" << std::endl;
+                abb->print_information();
                 abb->set_start_scheduler_relation(before);
             }
             else if(uncertain_flag){
+                std::cerr <<  "uncertain" << std::endl;
+                abb->print_information();
                 abb->set_start_scheduler_relation(uncertain);
             }
         }

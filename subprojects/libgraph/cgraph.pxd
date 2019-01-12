@@ -93,10 +93,6 @@ cdef extern from "graph.h" namespace "graph":
 
 cdef extern from "graph.h" namespace "OS":
 
-    cdef cppclass RTOS:
-        RTOS(Graph* graph, string name) except +
-
-
     cdef cppclass Counter:
         Counter(Graph* graph, string name) except +
 
@@ -206,8 +202,14 @@ cdef extern from "graph.h" namespace "OS":
         
         
     cdef cppclass RTOS:
+    
         RTOS(Graph* graph,string name) except +
-
+        
+        void enable_startup_hook(bool flag) 
+        void enable_error_hook (bool flag) 
+        void enable_shutdown_hook(bool flag)
+        void enable_pretask_hook (bool flag) 
+        void enable_posttask_hook (bool flag) 
 
     cdef cppclass CoRoutine:
         RTOS(Graph* graph,string name) except +

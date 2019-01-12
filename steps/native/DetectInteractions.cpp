@@ -430,6 +430,9 @@ void add_to_queue_set(graph::Graph& graph){
 //TODO element in queueset is accessed directy must no allowed
 //TODO if configUSE_16_BIT_TICKS eventqueue size
 //TODO OSEK Schedule also resource
+//TODO just allow Analysis of global variables with one user, that change value
+
+
 namespace step {
 
 	std::string DetectInteractionsStep::get_name() {

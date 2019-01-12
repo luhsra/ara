@@ -59,6 +59,25 @@ void vPrintString( const char * string );
 void vPrintStringAndNumber( const char *string , int32_t number );
 
 
+void before(int b){
+    
+    if(b == 23)taskEXIT_CRITICAL( );
+    else  taskEXIT_CRITICAL();
+}
+
+
+void after(int b){
+    if(b == 23)taskEXIT_CRITICAL( );
+    else  taskEXIT_CRITICAL();
+}
+
+void uncertain(){
+    if(b == 23)taskEXIT_CRITICAL( );
+    else  taskEXIT_CRITICAL();   
+}
+
+
+
 void tmp_function(int b){
     
     if(b == 23)taskEXIT_CRITICAL( );
@@ -85,27 +104,37 @@ void Task1( void * pvParameters )
 }
 
 void test_func(int b){
-    if(b== 100)vTaskStartScheduler();
+    if(b== 100){
+        vTaskStartScheduler();
+        after(43);
+    }
+    uncertain(43);
+    if(b == 234){
+        uncertain(43);
+        return;
+    }
     vTaskStartScheduler();
+    after(43);
     return;
 }
 
-void test_func1(){
- return;   
-}
+
+
+
 int main( void ){
     
 
     int a  = 4;
     /* Create the tasks that send to the queues. */
-
+    before();
     if( 23423  == a){
+        before();
         test_func(324);
-        test_func1();
+        uncertain();
     }
-        
+    uncertain();
     xTaskCreate( Task1, "Task1", 1000, NULL, 1, NULL );
-   
+    after();
 
     
 

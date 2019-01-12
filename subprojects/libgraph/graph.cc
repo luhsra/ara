@@ -1576,7 +1576,6 @@ bool OS::Resource::set_resource_property(std::string type, std::string linked_re
 	
 	bool result = false;
 	
-	
 	switch(str2int(type.c_str())){
 		
 		case str2int("INTERNAL"):
@@ -1590,13 +1589,17 @@ bool OS::Resource::set_resource_property(std::string type, std::string linked_re
 				
 		case str2int("LINKED"):
 			shared_vertex vertex = this->graph->get_vertex(linked_resource);
+            shared_vertex self_vertex = this->graph->get_vertex(this->seed);
 			
 			shared_resource resource_reference = std::dynamic_pointer_cast<OS::Resource> (vertex);
+            shared_resource self_resource = std::dynamic_pointer_cast<OS::Resource> (self_vertex);
+            
 			if(resource_reference){
 				if(resource_reference->get_resource_type() == linked || resource_reference->get_resource_type() == standard){
 					this->type = linked;
 					result = true;
 					this->set_linked_resource(resource_reference);
+                    resource_reference->set_linked_resource(self_resource);
 				}
 			}
 	}
