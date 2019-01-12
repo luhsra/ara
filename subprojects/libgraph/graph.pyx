@@ -66,6 +66,12 @@ class call_definition_type(IntEnum):
     computation  = <int> cgraph.computation 
 
 
+class timer_type(IntEnum):
+    oneshot  = <int> cgraph.oneshot
+    autoreload = <int> cgraph.autoreload
+    autostart   = <int> cgraph.autostart
+
+
 
 
 class syscall_definition_type(IntEnum):
@@ -91,6 +97,8 @@ class syscall_definition_type(IntEnum):
     exit_critical = <int> cgraph.exit_critical
     enter_critical = <int> cgraph.enter_critical
     start_scheduler = <int> cgraph.start_scheduler
+    
+    
 class data_type(IntEnum):
     string = 1
     integer = 2
@@ -805,14 +813,14 @@ cdef class Timer(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Timer](make_shared[cgraph.Timer](&graph._c_graph, bname))
             
-    def get_definition_function(self):
-        cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_definition_function()
+    def get_callback_function(self):
+        cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_callback_function()
   
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
     
-    def set_definition_function(self, str function_name):
+    def set_callback_function(self, str function_name):
         cdef string c_function_name = function_name.encode('UTF-8')
-        return deref(self._c()).set_definition_function(c_function_name)
+        return deref(self._c()).set_callback_function(c_function_name)
     
     def set_task_reference(self, str task_name):
         cdef string c_task_name = task_name.encode('UTF-8')
@@ -826,16 +834,18 @@ cdef class Timer(Vertex):
         cdef string c_event_name = event_name.encode('UTF-8')
         deref(self._c()).set_event_reference(c_event_name)
 
-    def set_alarm_callback_reference(self, str callback_name):
+    def set_callback_reference(self, str callback_name):
         cdef string c_callback_name = callback_name.encode('UTF-8')
-        deref(self._c()).set_alarm_callback_reference(c_callback_name)
+        deref(self._c()).set_callback_function(c_callback_name)
 
     def set_appmode(self, str appmode_name):
         cdef string c_appmode_name = appmode_name.encode('UTF-8')
         deref(self._c()).set_appmode(c_appmode_name)
 
-    def set_autostart(self, bool autostart):
-        deref(self._c()).set_autostart(autostart)
+    def set_timer_type(self, int timer_type):
+        cdef cgraph.timer_type t = <cgraph.timer_type> timer_type
+        return deref(self._c()).set_timer_type(t)
+
 
     def set_alarm_time(self, unsigned int alarm_time):
         deref(self._c()).set_alarm_time(alarm_time)

@@ -49,6 +49,9 @@
 							"MEMORY_PROTECTION" : "FALSE"
 						}
 					}
+                "APPMODE" :{
+					"mode1" : 123213
+				}
 				}
 			}
 		}

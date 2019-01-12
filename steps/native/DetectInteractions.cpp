@@ -361,8 +361,8 @@ void detect_interactions(graph::Graph& graph){
 	for (auto &vertex : vertex_list) {
         //std::cerr << "timer name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*>  already_visited;
-        auto isr = std::dynamic_pointer_cast<OS::Timer> (vertex);
-        OS::shared_function isr_definition = isr->get_definition_function();
+        auto timer = std::dynamic_pointer_cast<OS::Timer> (vertex);
+        OS::shared_function isr_definition = timer->get_callback_function();
         //get all interactions of the instance
         iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, &already_visited);
     }

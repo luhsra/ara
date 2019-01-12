@@ -615,7 +615,7 @@ graph::shared_vertex create_queue_set(graph::Graph& graph, OS::shared_abb abb,  
 	queue_set->set_length(queue_set_size);
 	
 	std::cout << "queue set successfully created"<< std::endl;
-	//set timer to graph
+	//set queue to graph
 	queue_set->set_start_scheduler_creation_flag(before_scheduler_start);
 	graph.set_vertex(queue_set);
 	
@@ -685,7 +685,9 @@ graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool b
 	graph.set_vertex(timer);
     
     std::cerr << "timer callback function " <<timer_definition_function << std::endl;
-	timer->set_definition_function(timer_definition_function);
+	timer->set_callback_function(timer_definition_function);
+    timer->set_timer_action_type(alarm_callback);
+    
     
 	return timer;
 }
@@ -1143,7 +1145,7 @@ namespace step {
                 flag = true;
                 
                 auto timer = std::dynamic_pointer_cast<OS::Timer> (vertex);
-                OS::shared_function timer_definition = timer->get_definition_function();
+                OS::shared_function timer_definition = timer->get_callback_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
                 iterate_called_functions(graph, timer , timer_definition, nullptr ,&already_visited_calls);

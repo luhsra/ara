@@ -578,13 +578,16 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
 	return success;
 }
 
-
-
+/**
+* @brief stores all system informationm which are stored in global llvm values. This global value are generated with defines from the original configuration rtos configuration files with the preprocessor
+* @param bb basicblock which is analyzed
+**/
 void get_predefined_system_information(graph::Graph& graph){
     
     std::hash<std::string> hash_fn;
     std::string rtos_name = "RTOS";
     
+    //load the rtos graph instance
     auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
     
     if(rtos_vertex == nullptr){
@@ -593,23 +596,27 @@ void get_predefined_system_information(graph::Graph& graph){
     }
     auto rtos = std::dynamic_pointer_cast<OS::RTOS> (rtos_vertex);
     
+    //iterate about the global llvm values
     auto module = graph.get_llvm_module();
     for(Module::global_iterator gi = module->global_begin(), gend = module->global_end();gi != gend; ++gi){
         
         auto global = &(*gi);
     
         
+        //check if name of variable starts with self defined string
         std::string s = global->getName().str();
         std::string delimiter = "FreeRTOS_config";
         
         size_t pos = 0;
         std::string token;
+        //load the value from the global variable
         while ((pos = s.find(delimiter)) != std::string::npos) {
             token = s.substr(0, pos);
             std::cerr << token << std::endl;
             s.erase(0, pos + delimiter.length());
         
-        
+            
+            //check if variable has intial value
             if(global->hasInitializer()){
                 long config_value = -1;
                 

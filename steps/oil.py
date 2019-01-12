@@ -147,7 +147,7 @@ class OilStep(Step):
 
  
         #get the alarms
-        alarms = dictionary.get("Timer", "error")
+        alarms = dictionary.get("ALARM", "error")
         if alarms != "error":
             #iterate about the alarms
             for name in alarms:
@@ -546,7 +546,7 @@ class OilStep(Step):
                                     if alarmcallback_attribute == "ALARMCALLBACKNAME": 
                                         if isinstance(alarmcallback_attributes[alarmcallback_attribute], str):
                                             #print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
-                                            alarm.set_alarm_callback_reference(activatetask_attributes[activatetask_attribute])
+                                            alarm.set_callback_function(activatetask_attributes[activatetask_attribute])
                                         else:
                                             print("alarmcallback has no string attribute")
                                             sys.exit()
@@ -567,11 +567,11 @@ class OilStep(Step):
             
                         if isinstance(autostart_attribute, str):
                             if autostart_attribute == "FALSE":
-                                alarm.set_autostart(False)
+                                alarm.set_timer_type(graph.timer_type.autostart)
                         else:
                             for autostart in autostart_attribute:
                                 if autostart == "TRUE":
-                                    alarm.set_autostart(True)
+                                    alarm.set_timer_type(c)
                                     #print("autostart: ",autostart)
                                     autostart_dict =  autostart_attribute[autostart]
                                     if isinstance( autostart_dict, dict):

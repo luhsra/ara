@@ -50,7 +50,7 @@
 /* FreeRTOS.org includes. */
 #include "source/include/FreeRTOS.h"
 #include "source/include/task.h"
-#include "FreeRTOSconfig.h"
+#include "source/include/FreeRTOSConfig.h"
 
 /* Used as a loop counter to create a very crude delay. */
 #define mainDELAY_LOOP_COUNT		( 0xffffff )

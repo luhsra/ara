@@ -1828,14 +1828,7 @@ bool OS::Timer::set_event_reference(std::string event_name){
 	return result;
 }
 
-void OS::Timer::set_alarm_callback_reference(std::string callback_name){
-    
-	this->set_definition_function(callback_name);
-}
 
-void OS::Timer::set_autostart(bool flag){
-	this->autostart = flag;
-}
 void OS::Timer::set_alarm_time(unsigned int alarm_time){
 	this->alarm_time = alarm_time;
 }
@@ -1847,6 +1840,15 @@ void OS::Timer::set_cycle_time(unsigned int cycle_time){
 void OS::Timer::set_appmode(std::string appmode){
 	this->appmodes.emplace_back(appmode);
 }
+
+void OS::Timer::set_timer_action_type(timer_action_type type){
+	this->reaction = type;
+}
+
+timer_action_type OS::Timer::get_timer_action_type(){
+	return this->reaction;
+}
+
 
 void OS::Queue::set_item_size(unsigned long item_size){
 	this->item_size;
@@ -1882,7 +1884,7 @@ void OS::Timer::set_timer_type( timer_type type){
 
 
 
-bool OS::Timer::set_definition_function(std::string function_name){
+bool OS::Timer::set_callback_function(std::string function_name){
 	bool result = false;
     std::hash<std::string> hash_fn;
 	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
@@ -1896,7 +1898,7 @@ bool OS::Timer::set_definition_function(std::string function_name){
 	if(vertex != nullptr && self_vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
 		if(function!=nullptr){
-			this->definition_function = function;
+			this->callback_function = function;
 			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
@@ -1905,8 +1907,8 @@ bool OS::Timer::set_definition_function(std::string function_name){
 }
 
 
-OS::shared_function OS::Timer::get_definition_function(){
-    return this->definition_function;
+OS::shared_function OS::Timer::get_callback_function(){
+    return this->callback_function;
 }
 
 

@@ -6,6 +6,10 @@ from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
 cdef extern from "graph.h":
+    cdef cppclass timer_type:
+        pass
+
+cdef extern from "graph.h":
     cdef cppclass call_definition_type:
         pass
         
@@ -16,7 +20,13 @@ cdef extern from "graph.h":
 cdef extern from "graph.h":
     cdef cppclass os_type:
         pass
+cdef extern from "graph.h" namespace "timer_type":
+    cdef timer_type oneshot
+    cdef timer_type autoreload
+    cdef timer_type autostart
 
+    
+    
 cdef extern from "graph.h" namespace "call_definition_type":
     cdef call_definition_type sys_call
     cdef call_definition_type func_call
@@ -153,13 +163,13 @@ cdef extern from "graph.h" namespace "OS":
     
     cdef cppclass Timer:
         Timer(Graph* graph, string name) except +
-        shared_ptr[Function] get_definition_function()
-        bool set_definition_function(string function_name)
+        shared_ptr[Function] get_callback_function()
+        bool set_callback_function(string function_name)
         bool set_task_reference(string task)
         bool set_counter_reference(string counter)
         bool set_event_reference(string event)
         void set_alarm_callback_reference(string callback_name)
-        void set_autostart(bool flag)
+        void set_timer_type(timer_type type)
         void set_alarm_time(unsigned int alarm_time)
         void set_cycle_time(unsigned int cycle_time)
         void set_appmode(string appmode)

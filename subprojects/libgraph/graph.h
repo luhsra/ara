@@ -37,13 +37,13 @@ enum syscall_definition_type { computate ,create, destroy, reset ,receive, commi
 
 enum ISR_type { ISR1, ISR2, basic };
 
-enum timer_type { oneshot, autoreload };
+enum timer_type { oneshot, autoreload ,autostart};
 
 enum buffer_type { stream = 0, message = 1 };
 
 enum hook_type { start_up, shut_down, pre_task, post_task, error, failed,idle,stack_overflow,tick,no_hook };
 
-enum alarm_action_type {activate_task, set_event, alarm_callback};
+enum timer_action_type {activate_task, set_event, alarm_callback};
 
 enum resource_type {standard, linked, internal,binary_mutex = 1, recursive_mutex = 4 };
 
@@ -1061,20 +1061,16 @@ namespace OS {
             OS::shared_task referenced_task;
             OS::shared_event referenced_event;
             OS::shared_counter referenced_counter;
-                        
-            alarm_action_type action;
+            OS::shared_function callback_function;
+                           
+            timer_action_type reaction;
             
 
             
             std::list<std::string> appmodes;
             
-            bool autostart;
             unsigned int alarm_time;
             unsigned int cycle_time;
-            
-            OS::shared_function definition_function;
-            
-            
             int periode;     // Periode in Ticks
             timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
             int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
@@ -1102,11 +1098,10 @@ namespace OS {
             unsigned long get_timer_id();
             unsigned long get_periode();
             
-            bool set_definition_function(std::string definition_function_name);
-            shared_function get_definition_function();
+            bool set_callback_function(std::string definition_function_name);
+            shared_function get_callback_function();
             
             bool set_task_reference(std::string task);
-            
             OS::shared_task get_task_reference();
             
             bool set_counter_reference(std::string counter);
@@ -1114,15 +1109,14 @@ namespace OS {
             
             
             bool set_event_reference(std::string event);
-            
-            void set_alarm_callback_reference(std::string callback_name);
-            
-            void set_autostart(bool flag);
+                        
             void set_alarm_time(unsigned int alarm_time);
             void set_cycle_time(unsigned int cycle_time);
             
             void set_appmode(std::string appmode);
-
+            
+            void set_timer_action_type(timer_action_type type);
+            timer_action_type get_timer_action_type();
 
 	};
     
