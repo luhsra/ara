@@ -554,6 +554,7 @@ void get_osek_appmode(graph::Graph& graph){
 //TODO element in queueset is accessed directy must no allowed
 //TODO just allow Analysis of global variables with one user, that change value
 //TODO use of disabled abstactions (hooks, resources, etc.)
+//TODO use of osek instance in wrong appmode
 
 namespace step {
 
