@@ -138,7 +138,7 @@ void convert_syscall_name(call_data call,shared_abb abb){
 
 
 /**
-* @brief detect if in osek the scheduler is addressed as resource,  and create this resource if nececssary 
+* @brief detect if in osek the scheduler is addressed as resource,  and create this resource if not already in graph and addressed 
 * @param graph project data structure
 * @param abb which contains the syscall
 * @param already_visited call instructions which were already iterated
@@ -221,8 +221,8 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
         if(abb->get_call_type() == sys_call  && abb->get_syscall_type() != create ){
 
             
-            //check if osek scheduler is addressd a resource
-            
+            //check if osek scheduler is addressd a resource and create this resource if necessary
+            osek_scheduler_resource(graph, abb,already_visited_calls);
             
             bool success = false;
             std::vector<argument_data> argument_list = abb->get_syscall_arguments();
@@ -478,15 +478,81 @@ void add_to_queue_set(graph::Graph& graph){
     }
 }
 
+/**
+* @brief get the application mode of the start scheduler instruction in OSEK rtos. The appmode is the argument of the system call.
+* @param graph project data structure
+**/
+void get_osek_appmode(graph::Graph& graph){
+    
+    //check if rtos is a osek rtos
+    if(graph.get_os_type() != OSEK)return;
+    
+    std::hash<std::string> hash_fn;
+    
+    //get function with name main from graph
+    std::string start_function_name = "main";  
+    
+    graph::shared_vertex main_vertex = graph.get_vertex( hash_fn(start_function_name +  typeid(OS::Function).name())); 
+    
+    OS::shared_function main_function;
+    
+    //check if graph contains main function
+    if(main_vertex != nullptr){
+        std::vector<std::size_t> already_visited;
+        main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
+    
+    }else{
+        std::cerr << "no main function in programm" << std::endl;
+        abort();
+    }
+    
+    std::string rtos_name = "RTOS";
+    
+    //load the rtos graph instance
+    auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
+    
+    if(rtos_vertex == nullptr){
+        std::cerr << "ERROR: RTOS could not load from graph" << std::endl;
+        abort();
+    }
+    auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
+    
+    
+    std::string appmode = ""; 
+    //get the start scheduler instruction from main function
+    for(auto outgoing_edge: main_function->get_outgoing_edges()){
+        if(outgoing_edge->get_abb_reference()->get_syscall_type() == start_scheduler){
+            auto call_data = outgoing_edge->get_specific_call();
+            //load the argument , appmode is the only argument
+            if(call_data.arguments.size() != 1 || call_data.arguments.at(0).any_list.size() != 1){
+                std::cerr << "appmode from start scheduler call could not determined" << std::endl;
+                abort();
+            }
+            //cast argument to string and check if multiple appmodes exists
+            auto any_value= call_data.arguments.at(0).any_list.front();
+            std::string tmp_appmode = std::any_cast<std::string>(any_value);
+            if(appmode != "" && appmode != tmp_appmode){
+                std::cerr << "appmode could not certainly determined" << std::endl;
+                abort();
+            }else{
+                appmode = tmp_appmode;
+            }
+        }
+    }
+    //store appmode in rtos
+    if(appmode != "")rtos->appmode = appmode;
+    else {
+        std::cerr << "appmode could not certainly determined" << std::endl;
+        abort();
+    }
+}   
     
 
 //TODO uxBitsToWaitFor must not be set to 0
 //TODO message single write single read
 //TODO timer id
-//TODO appmode types
 //TODO element in queueset is accessed directy must no allowed
 //TODO if configUSE_16_BIT_TICKS eventqueue size
-//TODO OSEK Schedule also resource
 //TODO just allow Analysis of global variables with one user, that change value
 
 
@@ -511,7 +577,10 @@ namespace step {
 		
 		//graph.print_information();
 		detect_interactions(graph);
+        
+        //freertos or osek specific interaction analysis
         add_to_queue_set(graph);
+        get_osek_appmode( graph);
         
 	}
 	
