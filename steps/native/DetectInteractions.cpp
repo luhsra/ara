@@ -136,6 +136,55 @@ void convert_syscall_name(call_data call,shared_abb abb){
     }
 }
 
+
+/**
+* @brief detect if in osek the scheduler is addressed as resource,  and create this resource if nececssary 
+* @param graph project data structure
+* @param abb which contains the syscall
+* @param already_visited call instructions which were already iterated
+*/
+void osek_scheduler_resource(graph::Graph& graph,shared_abb abb,std::vector<llvm::Instruction*>* already_visited_calls){
+    
+    if(graph.get_os_type() != OSEK)return;
+    
+    
+    std::hash<std::string> hash_fn;
+
+    std::string scheduler_resource_name = "RES_SCHEDULER";  
+    
+    //check if scheduler exists as resource in graph
+    if(graph.get_vertex( hash_fn(scheduler_resource_name +  typeid(OS::Resource).name())) != nullptr)return; 
+    
+    if(abb->get_syscall_type() == receive){
+        //iterate about the possible refereneced(syscall targets) abstraction types
+        for(auto& target: *abb->get_call_target_instances()){
+            //the RTOS has the handler name RTOS
+            if(target == typeid(OS::Resource).hash_code()){
+                
+                //get the call specific arguments 
+                auto arguments = abb->get_syscall_arguments();
+                auto syscall_reference = abb->get_syscall_instruction_reference();
+                auto specific_arguments =  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
+            
+                //cast argument to string and check if internal scheduler is addressed as a resource
+                auto any_value= specific_arguments.arguments.at(0).any_list.front();
+                std::string addressed_resource = std::any_cast<std::string>(any_value);
+                if(addressed_resource == scheduler_resource_name ){
+                    //create the resource and store it in the graph
+                    auto resource = std::make_shared<OS::Resource>(&graph,scheduler_resource_name);
+	
+                    resource->set_handler_name(scheduler_resource_name);
+                    resource->set_start_scheduler_creation_flag(after);
+                    resource->set_resource_type(binary_mutex);
+                    graph.set_vertex(resource);
+                }
+            }
+        }
+    }
+}
+
+
+
 /**
 * @brief detect interactions of OS abstractions and create the corresponding edges in the graph
 * @param graph project data structure
@@ -171,6 +220,10 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
         //check if abb contains a syscall and it is not a creational syscall
         if(abb->get_call_type() == sys_call  && abb->get_syscall_type() != create ){
 
+            
+            //check if osek scheduler is addressd a resource
+            
+            
             bool success = false;
             std::vector<argument_data> argument_list = abb->get_syscall_arguments();
             std::list<std::size_t>*  target_list = abb->get_call_target_instances();
@@ -254,6 +307,8 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 auto arguments = abb->get_syscall_arguments();
                                 auto syscall_reference = abb->get_syscall_instruction_reference();
                                 auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
+                                
+                                //check if syscall is a generic call, which can transformed to more generic one
                                 convert_syscall_name(specific_arguments,abb);
                                 edge->set_specific_call(&specific_arguments);
                             
@@ -275,6 +330,8 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 auto arguments = abb->get_syscall_arguments();
                                 auto syscall_reference = abb->get_syscall_instruction_reference();
                                 auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
+                                
+                                //check if syscall is a generic call, which can transformed to more generic one
                                 convert_syscall_name(specific_arguments,abb);
                                 edge->set_specific_call(&specific_arguments);
                             }

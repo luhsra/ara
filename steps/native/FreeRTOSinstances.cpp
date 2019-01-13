@@ -1169,7 +1169,7 @@ namespace step {
                 hook = pre_task;
             }else if(function->get_name().find("ErrorHook") != std::string::npos){
                 hook = error;
-            }else if(function->get_name().find("ShutdownHook") != std::string::npos){
+//             }else if(function->get_name().find("ShutdownHook") != std::string::npos){
                 hook = shut_down;
             }else if(function->get_name().find("StartupHook") != std::string::npos){
                 hook = start_up;

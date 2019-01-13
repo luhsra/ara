@@ -584,7 +584,7 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
 
 /**
 * @brief stores all system informationm which are stored in global llvm values. This global value are generated with defines from the original configuration rtos configuration files with the preprocessor
-* @param bb basicblock which is analyzed
+* @param graph project data structure
 **/
 void get_predefined_system_information(graph::Graph& graph){
     
@@ -719,6 +719,7 @@ void get_predefined_system_information(graph::Graph& graph){
         }
     }
 }
+
 
 namespace step {
 

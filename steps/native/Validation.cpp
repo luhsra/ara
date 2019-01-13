@@ -683,6 +683,72 @@ void verify_isrs(graph::Graph& graph){
     }
 }
 
+/**
+* @brief get the application mode of the start scheduler instruction in OSEK rtos. The appmode is the argument of the system call.
+* @param graph project data structure
+**/
+void get_osek_appmode(graph::Graph& graph){
+    
+    std::hash<std::string> hash_fn;
+    
+    //get function with name main from graph
+    std::string start_function_name = "main";  
+    
+    graph::shared_vertex main_vertex = graph.get_vertex( hash_fn(start_function_name +  typeid(OS::Function).name())); 
+    
+    OS::shared_function main_function;
+    
+    //check if graph contains main function
+    if(main_vertex != nullptr){
+        std::vector<std::size_t> already_visited;
+        main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
+    
+    }else{
+        std::cerr << "no main function in programm" << std::endl;
+        abort();
+    }
+    
+    std::string rtos_name = "RTOS";
+    
+    //load the rtos graph instance
+    auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
+    
+    if(rtos_vertex == nullptr){
+        std::cerr << "ERROR: RTOS could not load from graph" << std::endl;
+        abort();
+    }
+    auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
+    
+    
+    std::string appmode = ""; 
+    //get the start scheduler instruction from main function
+    for(auto outgoing_edge: main_function->get_outgoing_edges()){
+        if(outgoing_edge->get_abb_reference()->get_syscall_type() == start_scheduler){
+            auto call_data = outgoing_edge->get_specific_call();
+            //load the argument , appmode is the only argument
+            if(call_data.arguments.size() != 1 || call_data.arguments.at(0).any_list.size() != 1){
+                std::cerr << "appmode from start scheduler call could not determined" << std::endl;
+                abort();
+            }
+            //cast argument to string and check if multiple appmodes exists
+            auto any_value= call_data.arguments.at(0).any_list.front();
+            std::string tmp_appmode = std::any_cast<std::string>(any_value);
+            if(appmode != "" && appmode != tmp_appmode){
+                std::cerr << "appmode could not certainly determined" << std::endl;
+                abort();
+            }else{
+                appmode = tmp_appmode;
+            }
+        }
+    }
+    //store appmode in rtos
+    if(appmode != "")rtos->appmode = appmode;
+    else {
+        std::cerr << "appmode could not certainly determined" << std::endl;
+        abort();
+    }
+}   
+
 namespace step {
 
 	std::string ValidationStep::get_name() {
