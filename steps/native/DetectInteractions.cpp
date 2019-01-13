@@ -552,9 +552,8 @@ void get_osek_appmode(graph::Graph& graph){
 //TODO message single write single read
 //TODO timer id
 //TODO element in queueset is accessed directy must no allowed
-//TODO if configUSE_16_BIT_TICKS eventqueue size
 //TODO just allow Analysis of global variables with one user, that change value
-
+//TODO use of disabled abstactions (hooks, resources, etc.)
 
 namespace step {
 

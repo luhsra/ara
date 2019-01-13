@@ -646,7 +646,8 @@ void get_predefined_system_information(graph::Graph& graph){
                 }else if(s == "MAX_TASK_NAME_LEN"){
                     //rtos-> = config_value;
                 }else if(s == "USE_16_BIT_TICKS"){
-                    //rtos-> = config_value;
+                    rtos->support_16_bit_ticks = config_value;
+                    
                 }else if(s == "IDLE_SHOULD_YIELD"){
                     rtos->should_yield = config_value;
                 }else if(s == "USE_TASK_NOTIFICATIONS"){

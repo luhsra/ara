@@ -382,7 +382,7 @@ namespace OS {
             void enable_posttask_hook (bool flag) {posttask_hook = flag; };
             
             
-            
+            bool support_16_bit_ticks = false;
             bool support_coroutines = false;
             bool support_queue_sets = false;
             bool support_counting_semaphores = false;

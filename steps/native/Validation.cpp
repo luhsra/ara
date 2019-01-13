@@ -319,7 +319,20 @@ void verify_semaphores(graph::Graph& graph){
 * @brief check if all event bits are set, which are waited for
 * @param graph project data structure
 */
-void verify_events(graph::Graph& graph){
+void verify_freertos_events(graph::Graph& graph){
+    
+    
+    std::hash<std::string> hash_fn;
+    std::string rtos_name = "RTOS";
+    
+    //load the rtos graph instance
+    auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
+    
+    if(rtos_vertex == nullptr){
+        std::cerr << "ERROR: RTOS could not load from graph" << std::endl;
+        abort();
+    }
+    auto rtos = std::dynamic_pointer_cast<OS::RTOS> (rtos_vertex);
     
      //get all isrs, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Event).hash_code());
@@ -357,8 +370,8 @@ void verify_events(graph::Graph& graph){
             auto call = wait_call->get_specific_call();
             bool wait_for_all_bits = true;
             bool clear_on_exit = true;
-            long wait_bits = 0;
-            long set_bits = 0;
+            unsigned long wait_bits = 0;
+            unsigned long set_bits = 0;
             
             auto type = wait_call->get_abb_reference()->get_syscall_type();
             if(type== synchronize){
@@ -394,6 +407,23 @@ void verify_events(graph::Graph& graph){
                     std::cerr << "set bits " << set_bits << std::endl;
                 }
             }
+            
+            if(rtos->support_16_bit_ticks == true){
+                //in this mode the event list is  8 bit large
+                if(set_bits >= 256|| wait_bits >= 256){
+                    std::cerr << event->get_name() << ": event list is used with to much bits "  << std::endl;
+                    
+                }
+                
+            }else{
+                 //in this mode the event list is 24 bit large
+                if(set_bits >= 16777216 || wait_bits >= 16777216){
+                    std::cerr << event->get_name() << ": event list is used with to much bits"  << std::endl;
+                }
+                
+                
+            }
+            
             if(wait_for_all_bits){
                 if(!((set_bits & wait_bits) == wait_bits))std::cerr << "event bits were not certainly set" << std::endl;
             }else{
@@ -706,11 +736,15 @@ namespace step {
 		
         verify_mutexes(graph);
         verify_semaphores(graph);
-        verify_isrs(graph);
-
-        verify_events(graph);
-        verify_deadlocks(graph);
-        verify_priority_inversion(graph);
+        
+        if(graph.get_os_type() ==FreeRTOS){
+            verify_isrs(graph);
+            verify_freertos_events(graph);
+            verify_deadlocks(graph);
+            verify_priority_inversion(graph);
+        }
+        
+        
         verify_scheduler_access(graph);
 	}
 	
