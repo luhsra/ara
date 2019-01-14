@@ -7,7 +7,9 @@
 
 
 EXTERN_C_DECL void os_main(void);
-EXTERN_C_DECL void StartOS(int);
+//EXTERN_C_DECL void StartOS(int);
+EXTERN_C_DECL void StartOS(char *);
+
 
 
 
