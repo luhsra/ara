@@ -821,7 +821,7 @@ namespace OS {
 
 			unsigned long length;
 		
-			std::list<graph::shared_vertex> queueset_elements; //  Queues, Semaphores
+			std::vector<graph::shared_vertex> queueset_elements; //  Queues, Semaphores
 
 	  public:
 	  
@@ -835,7 +835,7 @@ namespace OS {
 			bool member_of_queueset(graph::shared_vertex element);
 			bool remove_from_queueset(graph::shared_vertex element);
 
-			std::list<graph::shared_vertex> get_queueset_elements(); // gebe alle Elemente der Queueset zurück
+			std::vector<graph::shared_vertex>* get_queueset_elements(); // gebe alle Elemente der Queueset zurück
 		
 
 		

@@ -1957,6 +1957,10 @@ void OS::QueueSet::set_queue_element(graph::shared_vertex element){
 	this->queueset_elements.emplace_back(element);
 }
 
+std::vector<graph::shared_vertex>* OS::QueueSet::get_queueset_elements(){
+	return &this->queueset_elements;
+}
+
 void OS::Buffer::set_buffer_type(buffer_type type){
 	this->type = type;
 }
