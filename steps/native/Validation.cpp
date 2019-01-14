@@ -685,7 +685,7 @@ void verify_isrs(graph::Graph& graph){
             if(abb->get_call_type()== sys_call){
                 
                 std::size_t found = abb->get_syscall_name().find("FromISR");
-                if(found==std::string::npos)std::cerr << "ISR syscall without FROMISR" << std::endl;
+                if(found==std::string::npos)std::cerr << "ISR syscall without isr syscall api use (FROMISR)" << std::endl;
                 abb->print_information();
             }
             bool visited = false;
@@ -714,6 +714,140 @@ void verify_isrs(graph::Graph& graph){
 }
 
 
+
+/**
+* @brief check if abstraction instances are used without enable flag
+* @param graph project data structure
+*/
+void verify_abstraction_instances_use(graph::Graph& graph){
+    
+    std::hash<std::string> hash_fn;
+    std::string rtos_name = "RTOS";
+    
+    //load the rtos graph instance
+    auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
+    
+    if(rtos_vertex == nullptr){
+        std::cerr << "ERROR: RTOS could not load from graph" << std::endl;
+        abort();
+    }
+    auto rtos = std::dynamic_pointer_cast<OS::RTOS> (rtos_vertex);
+    
+    if(rtos->support_coroutines == false){
+        auto co_routines = graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
+        for(auto co_routine : co_routines){
+            std::cerr << "CoRoutine " << co_routine->get_name() << "is used in application without enable in configuration" << std::endl;
+        }
+    };
+    if(rtos->support_queue_sets == false){
+        auto queue_sets = graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
+        for(auto queue_set : queue_sets){
+            std::cerr << "QueueSet " << queue_set->get_name() << " is used in application without enable in configuration" << std::endl;
+        }
+    };
+    if(rtos->support_counting_semaphores == false){
+        
+        auto semaphores = graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
+        for(auto tmp_semaphore : semaphores){
+            auto semaphore = std::dynamic_pointer_cast<OS::Semaphore>(tmp_semaphore);
+            if(rtos->support_counting_semaphores == false  && semaphore->get_semaphore_type() == counting_semaphore){
+                std::cerr << "Counting semaphore " << semaphore->get_name() << " is used in application without enable in configuration" << std::endl;
+            }
+        }
+        
+    };
+    if(rtos->support_recursive_mutexes == false || rtos->support_mutexes == false){
+        
+        auto resources = graph.get_type_vertices(typeid(OS::Resource).hash_code());
+        for(auto tmp_resource : resources){
+            auto resource = std::dynamic_pointer_cast<OS::Resource>(tmp_resource);
+            if(rtos->support_recursive_mutexes == false  && resource->get_resource_type() == recursive_mutex){
+                std::cerr << "Recursive mutex " << resource->get_name() << " is used in application without enable in configuration" << std::endl;
+            }
+            if(rtos->support_mutexes == false  && resource->get_resource_type() == binary_mutex){
+                std::cerr << "Binary mutex " << resource->get_name() << " is used in application without enable in configuration" << std::endl;
+            }
+        }
+    };
+
+    if(rtos->support_task_notification == false){
+        
+    };
+    
+}
+
+/**
+* @brief check if members of queuesets are read, before the data are accessed;
+* Note: If  a  queue  is  a  member  of  a  queue  set  then  do  not  read  data
+* from  the  queue unless the queue’s handle has first been read from the queue set.
+* @param graph project data structure
+*/
+void verify_queueset_members(graph::Graph& graph){
+    
+    //get the queuesets of the graph
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
+    for (auto &vertex : vertex_list) {
+        auto queueset = std::dynamic_pointer_cast<OS::QueueSet>(vertex);
+        
+        //get the stored members of the queuset
+        auto queueset_elements = queueset->get_queueset_elements();
+        
+        //check if the queueset element is reveived or taken, and before the queueset element is taken
+        for(auto queueset_element :*queueset_elements){
+            
+
+            auto ingoing_edges = queueset_element->get_ingoing_edges();
+            for(auto ingoing_edge:ingoing_edges){
+                
+                if(ingoing_edge->get_abb_reference()->get_syscall_type() == take || ingoing_edge->get_abb_reference()->get_syscall_type() == receive){
+                    
+                    bool success = false;
+                    //TODO check outgoing /ingoing
+                    for(auto queueset_ingoing_edge:queueset->get_ingoing_edges()){
+                        if(queueset_ingoing_edge->get_abb_reference()->get_syscall_type() == take){
+                            
+                            //the queueset element get element syscall is reachable from the queueset get element syscall
+                            if(is_reachable(queueset_ingoing_edge->get_abb_reference(),ingoing_edge->get_abb_reference())){
+                                success = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(!success)std::cerr << "wrong access to member of queueset, element is not received from queueset" << std::endl;
+                }
+            }
+        }
+    }
+}
+
+
+/**
+* @brief check if a buffer is used in one reader and one writer mode
+* @param graph project data structure
+*/
+void verify_buffer_access(graph::Graph& graph){
+    
+    //get the buffers of the graph
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Buffer).hash_code());
+    for (auto &vertex : vertex_list) {
+        auto buffer = std::dynamic_pointer_cast<OS::Buffer>(vertex);
+        
+        std::map<size_t,size_t> accessed_elements;
+        for(auto outgoing_edge :buffer->get_outgoing_edges()){
+            if(outgoing_edge->get_abb_reference()->get_syscall_type() == commit ||  outgoing_edge->get_abb_reference()->get_syscall_type() == receive){
+                size_t seed = outgoing_edge->get_target_vertex()->get_seed();
+                accessed_elements.insert(std::pair<size_t,size_t>(seed, seed));
+            }
+        }
+        for(auto ingoing_edge :buffer->get_ingoing_edges()){
+            if(ingoing_edge->get_abb_reference()->get_syscall_type() == commit ||  ingoing_edge->get_abb_reference()->get_syscall_type() == receive){
+                size_t seed = ingoing_edge->get_start_vertex()->get_seed();
+                accessed_elements.insert(std::pair<size_t,size_t>(seed, seed));
+            }
+        }
+        if(accessed_elements.size() != 2)std::cerr << "Buffer " << buffer->get_name() << " is has no single reader single writer access" <<std::endl;
+    }
+}
 
 namespace step {
 
