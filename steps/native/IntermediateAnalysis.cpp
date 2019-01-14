@@ -299,10 +299,10 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
                 }else{
                     before_flag = false;
                     
-                    //check if the instruction is reachable from a uncertain start scheduler instruction
+
                     if(validate_one_instructions_dominance(&start_scheduler_func_calls,&instruction, dominator_tree ))uncertain_flag = false;
-                    else if(validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&instruction,dominator_tree) || validate_instructions_reachability(&start_scheduler_func_calls,&instruction,dominator_tree) ){
-                        //instruction is reachable from a uncertain start scheduler instruction 
+                    else{
+                        //instruction is reachable from a uncertain or certain start scheduler instruction, but is not dominated by on of them
                         uncertain_flag = true;
                     }
                 }
@@ -323,7 +323,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 		bool flag = true;
 		for(auto instr : return_instructions){
             //check if return instruction is dominated by all certain start scheduler instructions
-			if(!validate_instructions_dominance(&start_scheduler_func_calls,instr, dominator_tree ))flag = false;
+			if(!validate_one_instructions_dominance(&start_scheduler_func_calls,instr, dominator_tree ))flag = false;
 		}
 		
 		//state is after if all retrun instructions were dominated by a certain start scheduler instruction
