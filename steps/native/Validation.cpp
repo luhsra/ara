@@ -267,14 +267,63 @@ bool detect_critical_region_in_subfunction (shared_function function,std::list<s
     return reach_exit;
 }
 
+/**
+* @brief check if the current function is in the call tree of the definition_function of a abstraction instance
+* @param definition_function definition_function of vertex, where the reachbility is analyzed
+* @param current_function function which is searched in calltree
+* @return return true if the current function is reachable from definition_function, else false
+*/
+bool is_in_calltree(shared_function definition_function,shared_function current_function){
+    
+    std::map<size_t,size_t> already_visited;
+   
+    
+    std::queue<shared_function> queue; 
+    queue.push(definition_function);
+
+    //iterate about the ABB queue
+	
+    while(!queue.empty()) {
+
+		//get first element of the queue
+		auto function = queue.front();
+		queue.pop();
+        
+        if(current_function->get_seed() == function->get_seed())return true;
+			
+        bool visited = false;
+        size_t function_seed = function->get_seed();
+
+        
+        if ( already_visited.find(function_seed) != already_visited.end() ) {
+            visited = true;
+        } 
+    
+        
+			
+        //check if the successor abb is already stored in the list				
+        if(!visited) {
+            
+            already_visited.insert(std::make_pair(function_seed, function_seed));
+            
+            for(auto called_function :function->get_called_functions()){
+                
+                if(called_function!=nullptr)queue.push(called_function);
+            }
+        }
+    }
+    
+    return false;
+}
 
 /**
-* @brief check if the end abb is reachable via BFS from start abb in Global CFG
+* @brief check if the end abb is reachable via BFS from start abb in Global CFG of vertex
+* @param definition_function definition_function of vertex, where the reachbility is analyzed
 * @param start start abb
 * @param end target abb
 * @return returns if the end abb is reachable via BFS from start abb
 */
-bool is_reachable (shared_abb start, shared_abb end,     std::map<size_t,size_t> *already_visited){
+bool is_reachable (shared_function definition_function,shared_abb start, shared_abb end,  std::map<size_t,size_t> *already_visited){
     
     //store coresponding basic block in ABB
     //queue for new created ABBs
@@ -307,30 +356,39 @@ bool is_reachable (shared_abb start, shared_abb end,     std::map<size_t,size_t>
         //check if the successor abb is already stored in the list				
         if(!visited) {
             already_visited->insert(std::make_pair(abb_seed, abb_seed));
+            bool call_return = true;
             if(abb->get_call_type()== func_call){
                 auto called_function = abb->get_called_function();
+                if(called_function->get_exit_abb() == nullptr)call_return = false;
                 if(called_function!=nullptr)queue.push(called_function->get_entry_abb());
             }
             
-            //iterate about the successors of the abb
-            for (auto successor: abb->get_ABB_successors()){
-                
-				//update the lists
-				queue.push(successor);
+            if(call_return){
+                //iterate about the successors of the abb
+                for (auto successor: abb->get_ABB_successors()){
+                    
+                    //update the lists
+                    queue.push(successor);
+                }
             }
         }
     }
     
-    // get all abbs where the function of start abb is called
-    auto ingoing_edges = start->get_parent_function()->get_ingoing_edges();
-    
-    for(auto ingoing_edge : ingoing_edges){
+    //check if current function has a exit abb
+    if(start->get_parent_function()->get_exit_abb() !=nullptr){
+        // get all abbs where the function of start abb is called
+        auto ingoing_edges = start->get_parent_function()->get_ingoing_edges();
         
-        if(ingoing_edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
-            auto calling_abb = std::dynamic_pointer_cast<OS::ABB> (ingoing_edge->get_start_vertex());
-            for(auto successor : calling_abb->get_ABB_successors()){
-                if (already_visited->find(successor->get_seed()) == already_visited->end()) {
-                    if(is_reachable (successor, end, already_visited))return true;
+        for(auto ingoing_edge : ingoing_edges){
+            
+            if(ingoing_edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
+                auto calling_abb = std::dynamic_pointer_cast<OS::ABB> (ingoing_edge->get_start_vertex());
+                if(is_in_calltree(definition_function, calling_abb->get_parent_function())){
+                    for(auto successor : calling_abb->get_ABB_successors()){
+                        if (already_visited->find(successor->get_seed()) == already_visited->end()) {
+                            if(is_reachable (definition_function,successor, end, already_visited))return true;
+                        }
+                    }
                 }
             }
         }
@@ -338,7 +396,11 @@ bool is_reachable (shared_abb start, shared_abb end,     std::map<size_t,size_t>
     return false;
 }
     
-    
+/**
+* @brief returns the funccall or syscall llvm instruction
+* @param abb abb to analyze
+* @return returns the funccall or syscall llvm instruction, if abb computation abb return nullptr
+*/
 llvm::Instruction* get_instruction(shared_abb abb){
     
     if(abb->get_call_type() == sys_call)return abb->get_syscall_instruction_reference();
@@ -349,7 +411,26 @@ llvm::Instruction* get_instruction(shared_abb abb){
     
 }
 
+
+/**
+* @brief return the definition_function of a task, isr or coroutine
+* @param vertex vertex, which definition_function is searched
+* @return return the definition_function of a task, isr or coroutine, if vertex not a class of those return nullptr
+*/
+shared_function get_definition_function(shared_vertex vertex){
     
+    if(vertex->get_type() == typeid(OS::Task).hash_code()){
+        auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
+        return task->get_definition_function();
+    }else if(vertex->get_type() == typeid(OS::ISR).hash_code()){
+        auto isr = std::dynamic_pointer_cast<OS::ISR> (vertex);
+        return isr->get_definition_function();
+    }else if(vertex->get_type() == typeid(OS::CoRoutine).hash_code()){
+        auto coroutine = std::dynamic_pointer_cast<OS::CoRoutine> (vertex);
+        return coroutine->get_definition_function();
+    }
+    return nullptr;
+}
     
 /**
 * @brief check if the end abb is dominated by start abb
@@ -357,7 +438,7 @@ llvm::Instruction* get_instruction(shared_abb abb){
 * @param end target abb
 * @return returns true if the end abb is dominated via BFS from start abb,else false
 */
-bool is_dominated (shared_abb start, shared_abb end, std::map<size_t,size_t>* already_visited){
+bool is_dominated (shared_function function, shared_abb start, shared_abb end, std::map<size_t,size_t>* already_visited){
     
     if(start == nullptr || end == nullptr)return false;
     
@@ -409,47 +490,59 @@ bool is_dominated (shared_abb start, shared_abb end, std::map<size_t,size_t>* al
                 
                 already_visited->insert(std::pair<size_t,size_t>(abb_seed, abb_seed));
 
+                bool call_return = true;
                 
                 if(abb->get_call_type()== func_call){ 
                     
                     llvm::Instruction* start_instruction =  get_instruction(start);
                     llvm::Instruction* end_instruction = get_instruction(abb);
                     
+                    
+                    
+                    //if func call abb is dominated by start abb and called function is not already visited analyse dominance in called function recursive
                     if(dominator_tree->dominates(start_instruction,end_instruction)){
                         auto called_function = abb->get_called_function();
+                        if(called_function->get_exit_abb() == nullptr)call_return = false;
                         if(already_visited->find( called_function->get_entry_abb()->get_seed()) == already_visited->end()) {
-                            if(is_dominated ( called_function->get_entry_abb(),  end, already_visited)){
+                            if(is_dominated (function, called_function->get_entry_abb(),  end, already_visited)){
                                 return true;
                             }
                         }
                      }
                 }
-                
-                //iterate about the successors of the abb
-                for (auto successor: abb->get_ABB_successors()){
-                    
-                    //update the lists
-                    queue.push(successor);
+                if(call_return == true){
+                    //iterate about the successors of the abb
+                    for (auto successor: abb->get_ABB_successors()){
+                        
+                        //update the lists
+                        queue.push(successor);
+                    }
                 }
             }
         }
     }
     
-     // get all abbs where the function of start abb is called
-    auto ingoing_edges = start->get_parent_function()->get_ingoing_edges();
     
-    for(auto ingoing_edge : ingoing_edges){
-        
-        if(ingoing_edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
-            auto calling_abb = std::dynamic_pointer_cast<OS::ABB> (ingoing_edge->get_start_vertex());
-            for(auto successor : calling_abb->get_ABB_successors()){
-                if (already_visited->find(successor->get_seed()) == already_visited->end()) {
-                    if(is_dominated (successor, end, already_visited))return true;
-                }
-            }
-        }
-    }
-     return false;
+    
+    
+    
+//      // get all abbs where the function of start abb is called
+//     auto ingoing_edges = start->get_parent_function()->get_ingoing_edges();
+//     
+//     for(auto ingoing_edge : ingoing_edges){
+//         
+//         if(ingoing_edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
+//             auto calling_abb = std::dynamic_pointer_cast<OS::ABB> (ingoing_edge->get_start_vertex());
+//             if(is_in_calltree(definition_function, calling_abb->get_parent_function())){
+//                 for(auto successor : calling_abb->get_ABB_successors()){
+//                     if (already_visited->find(successor->get_seed()) == already_visited->end()) {
+//                         if(is_dominated (function,successor, end, already_visited))return true;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+    return false;
 }
     
 /**
@@ -555,22 +648,25 @@ void verify_mutexes(graph::Graph& graph){
             if(resource->get_resource_type() == binary_mutex  || resource->get_resource_type() == recursive_mutex){
                 std::list<std::size_t> parallel_takes;
                 
-                for(auto outgoing : outgoing_edges){
-                    for(auto tmp_outgoing : outgoing_edges){
-                        if(outgoing->get_seed() == tmp_outgoing->get_seed())continue;
-                        if(list_contains_element(&parallel_takes , tmp_outgoing->get_seed())&&list_contains_element(&parallel_takes ,outgoing->get_seed()))continue;
-                        if(!is_reachable(outgoing->get_abb_reference(),tmp_outgoing->get_abb_reference(),nullptr) && !is_reachable(tmp_outgoing->get_abb_reference(),outgoing->get_abb_reference(),nullptr)){
-                            parallel_takes.emplace_back(outgoing->get_seed());
-                            parallel_takes.emplace_back(tmp_outgoing->get_seed());
-                        }
-                    }
-                }
+//                 for(auto outgoing : outgoing_edges){
+//                     for(auto tmp_outgoing : outgoing_edges){
+//                         if(outgoing->get_seed() == tmp_outgoing->get_seed())continue;
+//                         
+//                         if(list_contains_element(&parallel_takes , tmp_outgoing->get_seed())&&list_contains_element(&parallel_takes ,outgoing->get_seed()))continue;
+//                         
+//                         if(!is_reachable(outgoing->get_abb_reference(),tmp_outgoing->get_abb_reference(),nullptr) && !is_reachable(tmp_outgoing->get_abb_reference(),outgoing->get_abb_reference(),nullptr)){
+//                             parallel_takes.emplace_back(outgoing->get_seed());
+//                             parallel_takes.emplace_back(tmp_outgoing->get_seed());
+//                         }
+//                     }
+//                 }
                 
                 for(auto take : mutex_takes){
                     bool mutex_flag = false;
                     for(auto give :mutex_gives){
                         if(give->get_start_vertex()->get_seed() == take->get_start_vertex()->get_seed()){
-                            if(is_reachable (take->get_abb_reference(), give->get_abb_reference(),nullptr))mutex_flag = true;
+                            auto definition_function = get_definition_function(take->get_start_vertex());
+                            if(is_reachable (definition_function,take->get_abb_reference(), give->get_abb_reference(),nullptr))mutex_flag = true;
                         }
                     }
                     if(!mutex_flag)std::cerr << "resource was not given after taken" << std::endl;
@@ -699,13 +795,17 @@ void verify_freertos_events(graph::Graph& graph){
                 wait_for_all_bits = (bool) std::any_cast<long>(call.arguments.at(3).any_list.front()); 
                 std::cerr << "wait bits " << wait_bits << ", clear on exit " << clear_on_exit << ", wait_for_all_bits " << wait_for_all_bits << std::endl;
             }
+            //iterate about the set calls
             for(auto set_call : set_calls){
+                
                 
                 auto set_instance = set_call->get_start_vertex()->get_seed();
                 
                 if(set_instance == wait_instance){
                     
-                    if(is_reachable(wait_call->get_abb_reference(),set_call->get_abb_reference(),nullptr))continue;
+                    auto definition_function = get_definition_function(set_call->get_start_vertex());
+                    
+                    if(is_reachable(definition_function,wait_call->get_abb_reference(),set_call->get_abb_reference(),nullptr))continue;
                 }
                 auto call = set_call->get_specific_call();
                 auto type = set_call->get_abb_reference()->get_syscall_type();
@@ -938,7 +1038,8 @@ void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex v
         for(auto start_interaction :start_interactions){
             bool flag = false;
             for(auto end_interaction :end_interactions){
-                if(is_reachable(start_interaction->get_abb_reference(), end_interaction->get_abb_reference(),nullptr)) flag = true;
+                auto definition_function = get_definition_function(vertex);
+                if(is_reachable(definition_function,start_interaction->get_abb_reference(), end_interaction->get_abb_reference(),nullptr)) flag = true;
             }
             //detect critical region between start and end
             if(flag)detect_critical_regions(&start_interactions,&end_interactions);
@@ -1119,8 +1220,10 @@ void verify_queueset_members(graph::Graph& graph){
                     for(auto queueset_ingoing_edge:queueset->get_ingoing_edges()){
                         if(queueset_ingoing_edge->get_abb_reference()->get_syscall_type() == take){
                             
+                            auto definition_function = get_definition_function(queueset_ingoing_edge->get_start_vertex());
+                            
                             //the queueset element get element syscall is reachable from the queueset get element syscall
-                            if(is_reachable(queueset_ingoing_edge->get_abb_reference(),ingoing_edge->get_abb_reference(),nullptr)){
+                            if(is_reachable(definition_function,queueset_ingoing_edge->get_abb_reference(),ingoing_edge->get_abb_reference(),nullptr)){
                                 success = true;
                                 break;
                             }
