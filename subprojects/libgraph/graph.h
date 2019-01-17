@@ -327,6 +327,7 @@ namespace OS {
 	class ABB;
 	class Task;
 	class ISR;
+    class Semaphore;
 	class QueueSet;
 	class Function;
 	class Resource;
@@ -334,7 +335,7 @@ namespace OS {
 	class Event;
 	class Counter;
 	class RTOS;
-	
+	class Buffer;
 	typedef std::shared_ptr<ABB> shared_abb;
 	typedef std::shared_ptr<Function> shared_function;
 	typedef std::shared_ptr<Task> shared_task;
@@ -344,6 +345,8 @@ namespace OS {
 	typedef std::shared_ptr<Message> shared_message;
 	typedef std::shared_ptr<Event> shared_event;
 	typedef std::shared_ptr<Counter> shared_counter;
+    typedef std::shared_ptr<Buffer> shared_buffer;
+    typedef std::shared_ptr<Semaphore> shared_semaphore;
 
 	
 		

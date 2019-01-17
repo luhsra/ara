@@ -54,9 +54,6 @@
 #include "source/include/semphr.h"
 
 #include <stdint.h>
-void vPrintString( const char * string );
-
-void vPrintStringAndNumber( const char *string , int32_t number );
 
 
 /* Declare two variables of type QueueHandle_t. Both queues are added to the same queue set. */
@@ -64,14 +61,6 @@ void vPrintStringAndNumber( const char *string , int32_t number );
 static QueueHandle_t xQueue1 = NULL, xQueue2 = NULL;
 
 
-
-/* The handle of the queue from which character pointers are received. */
-
-QueueHandle_t xCharPointerQueue;
-
-/* The handle of the queue from which uint32_t values are received.*/
-
-QueueHandle_t xUint32tQueue;
 
 /* The handle of the binary semaphore. */
 
@@ -81,23 +70,22 @@ SemaphoreHandle_t xBinaryMutex3;
 
 /* The queue set to which the two queues and the binary semaphore belong. */
 
-QueueSetHandle_t xQueueSet;
-
-
 
 
 
 void vSenderTask1( void *pvParameters )
 {
     xSemaphoreTake(  xBinaryMutex3,1000 );
-   // xSemaphoreTake(  xBinaryMutex2,1000 );
+    xSemaphoreTake(  xBinaryMutex1,1000 );
     const TickType_t xBlockTime = pdMS_TO_TICKS( 100 );
 
     const char * const pcMessage = "Message from vSenderTask1\r\n";
 
     /* As per most tasks, this task is implemented within an infinite loop. */
     xSemaphoreGive(  xBinaryMutex1);
-    xSemaphoreGive(  xBinaryMutex2);
+    xSemaphoreGive(  xBinaryMutex3);
+   
+    
     for( ;; )
 
     {
@@ -113,8 +101,7 @@ void vSenderTask1( void *pvParameters )
 
 /*-----------------------------------------------------------*/
 
-void vSenderTask2( void *pvParameters )
-{
+void vSenderTask2( void *pvParameters ){
     xSemaphoreTake(  xBinaryMutex1,1000 );
     xSemaphoreTake(  xBinaryMutex2,1000 );
     const TickType_t xBlockTime = pdMS_TO_TICKS( 200 );
@@ -140,8 +127,7 @@ void vSenderTask2( void *pvParameters )
 
 }
 
-void vSenderTask3( void *pvParameters )
-{
+void vSenderTask3( void *pvParameters ){
     xSemaphoreTake(  xBinaryMutex3,1000 );
     xSemaphoreTake(  xBinaryMutex2,1000 );
     const TickType_t xBlockTime = pdMS_TO_TICKS( 200 );
@@ -154,17 +140,10 @@ void vSenderTask3( void *pvParameters )
     for( ;; )
 
     {
-
         /* Block for 200ms. */
-
         vTaskDelay( xBlockTime );
-
         /* Send this task's string to xQueue2. It is not necessary to use a block time, even though the queue can only hold one item. This is because the priority of the task that reads from the queue is higher than the priority of this task. As soon as this task writes to the queue, it will be preempted by the task that reads from the queue, so the queue will already be empty again by the time the call to xQueueSend() returns. The block time is set to 0. */
-
-
     }
-    
-
 }
 
 int main( void ){
@@ -175,12 +154,11 @@ int main( void ){
 
 
     /* Create the tasks that send to the queues. */
-
     xTaskCreate( vSenderTask1, "Sender1", 1000, NULL, 1, NULL );
 
     xTaskCreate( vSenderTask2, "Sender2", 1000, NULL, 1, NULL );
     
-   xTaskCreate( vSenderTask3, "Sender3", 1000, NULL, 1, NULL );
+    xTaskCreate( vSenderTask3, "Sender3", 1000, NULL, 1, NULL );
     /* Start the scheduler so the created tasks start executing. */
 
     vTaskStartScheduler();

@@ -54,63 +54,50 @@
 #include "source/include/semphr.h"
 
 #include <stdint.h>
-void vPrintString( const char * string );
-
-void vPrintStringAndNumber( const char *string , int32_t number );
 
 
-/
-
-SemaphoreHandle_t xBinarySemaphore;
-
-
-SemaphoreHandle_t xSemaphore = NULL;
-
+SemaphoreHandle_t xSemaphore_valid = NULL;
+SemaphoreHandle_t xSemaphore_invalid = NULL;
 
 
 /* A task that uses the semaphore. */
-void vAnotherTask( void * pvParameters )
+void Task2( void * pvParameters )
 {
     /* ... Do other things. */
-
-   
-    if( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
-    {
-        /* We were able to obtain the semaphore and can now access the
-        shared resource. */
-
-        /* ... */
-
-        /* We have finished accessing the shared resource.  Release the
-        semaphore.*/
-        if (complex_function_that_is_always_true()) {
-            xSemaphoreGive( xSemaphore );
-        }
-    }
+    xSemaphoreGive( xSemaphore_valid ); // Semaphore is not given 
+    
 }
 
 
+void Task1( void *pvParameters )
+{ 
+    xSemaphoreTake( xSemaphore_valid, 0 );  /* Semaphore is  given after taken */
 
+}
 
-void vAMoreRealisticReceiverTask( void *pvParameters )
+/* A task that uses the semaphore. */
+void Task3( void * pvParameters )
 {
-	xBinarySemaphore = xSemaphoreCreateMutex();
-    xSemaphoreTake( xBinarySemaphore, 0 );
-
+    
+    xSemaphoreTake( xSemaphore_invalid ); //ERROR -> Semaphore is not given after taken 
 }
+
+
+
 
 int main( void )
 
 {
-    xSemaphore = xSemaphoreCreateMutex();
-  
+    xSemaphore_valid = xSemaphoreCreateBinary();
+    xSemaphore_invalid = xSemaphoreCreateBinary();
+    
     /* Create the tasks that send to the queues. */
-    xTaskCreate( vAnotherTask, "1", 1000, NULL, 1, NULL );
+    xTaskCreate( Task1, "1", 1000, NULL, 2, NULL );
 
     /* Create the task that reads from the queue set to determine which of the two queues contain data. */
 
-    xTaskCreate( vAMoreRealisticReceiverTask, "1", 1000, NULL, 2, NULL );
-
+    xTaskCreate( Task2, "2", 1000, NULL, 1, NULL );
+    xTaskCreate( Task3, "3", 1000, NULL, 3, NULL );
     /* Start the scheduler so the created tasks start executing. */
 
     vTaskStartScheduler();

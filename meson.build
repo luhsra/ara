@@ -27,3 +27,9 @@ test('ara tester',
 
 	env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )
+
+test('priority-inversion',
+  py3_inst,
+  args : [files('arsa.py'), '--os', 'freertos', freertos_targets[13]],
+  env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
+)

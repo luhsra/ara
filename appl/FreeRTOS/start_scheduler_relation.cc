@@ -19,7 +19,7 @@
 
 	A special exception to the GPL can be applied should you wish to distribute
 	a combined work that includes FreeRTOS.org, without being obliged to provide
-	the source code for any proprietary components.  See the licensing section 
+	the source code for any proprietary componene licensing section 
 	of http://www.FreeRTOS.org for full details of how and when the exception
 	can be applied.
 
@@ -59,67 +59,69 @@ void vPrintString( const char * string );
 void vPrintStringAndNumber( const char *string , int32_t number );
 
 
-void tmp_function(int b){
-    
-    if(b == 23)taskEXIT_CRITICAL( );
-    else  taskEXIT_CRITICAL();
+inline void tmp_function(int b){
+    int a = b;
+    b = a + 1243;
 }
+
 
 /* A task that uses the semaphore. */
 void Task1( void * pvParameters )
 {   
-    taskENTER_CRITICAL();
-    /* ... Do other things. */
- 
+    //abbs have after scheduler relation
     tmp_function(34);
     
-    int a = 0;
-    
-    int b = a + 1243;
+
 }
 
- void Task2( void *pvParameters ){
-    
-    tmp_function(43);
- 	
-}
 
-void test_func(int b){
+void start_scheduler_func(int b){
+    
     if(b== 100)vTaskStartScheduler();
+    
+    //abbs have uncertain scheduler relation
+    tmp_function(45);
+    
+        
     vTaskStartScheduler();
+    
+    //abbs have after scheduler relation
+    tmp_function(45);
+    
+
     return;
 }
 
-void test_func1(){
- return;   
-}
+
+
+
 int main( void ){
     
 
     int a  = 4;
-    /* Create the tasks that send to the queues. */
-
+     //abbs have before scheduler relation
+    tmp_function(435);
+    
     if( 23423  == a){
-        test_func(324);
-        test_func1();
-    }
         
-    xTaskCreate( Task1, "Task1", 1000, NULL, 1, NULL );
-   
+        //abbs have before scheduler relation
+        start_scheduler_func(324);
 
+    }
+
+    //abbs have uncertain scheduler relation
+    tmp_function(324);
     
 
-    /* Create the task that reads from the queue set to determine which of the two queues contain data. */
-
-    /* Start the scheduler so the created tasks start executing. */
+    
+    xTaskCreate( Task1, "Task1", 1000, NULL, 1, NULL );
+    
     
     vTaskStartScheduler();
     
+    //abbs have certain scheduler relation after start scheduler
+    tmp_function(435);
     
-    xTaskCreate( Task2, "Task2", 1000, NULL, 2, NULL );
-    
-    /* As normal, vTaskStartScheduler() should not return, so the following lines  will never execute. */
-
     for( ;; );
 
     return 0;

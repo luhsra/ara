@@ -59,95 +59,87 @@ void vPrintString( const char * string );
 void vPrintStringAndNumber( const char *string , int32_t number );
 
 
-void before(int b){
+inline void tmp_function(int b){
+    int a = b;
+    b = a + 1243;
+}
+
+void tmp_function_2(int b){
+    
+   taskEXIT_CRITICAL( );
+}
+
+
+void tmp_function_1(int b){
     
     if(b == 23)taskEXIT_CRITICAL( );
-    else  taskEXIT_CRITICAL();
-}
-
-
-void after(int b){
-    if(b == 23)taskEXIT_CRITICAL( );
-    else  taskEXIT_CRITICAL();
-}
-
-void uncertain(){
-    if(b == 23)taskEXIT_CRITICAL( );
-    else  taskEXIT_CRITICAL();   
-}
-
-
-
-void tmp_function(int b){
-    
-    if(b == 23)taskEXIT_CRITICAL( );
-    else  taskEXIT_CRITICAL();
 }
 
 /* A task that uses the semaphore. */
 void Task1( void * pvParameters )
 {   
     taskENTER_CRITICAL();
-    /* ... Do other things. */
+    
+    //critical region is not leaft certainly ->ERROR
+    tmp_function_1(34);
  
-    tmp_function(34);
-    
-    int a = 0;
-    
-    int b = a + 1243;
+
 }
 
  void Task2( void *pvParameters ){
     
-    tmp_function(43);
+    taskENTER_CRITICAL();
+    
+ 	//critical area is not leaft ->ERROR
+}
+
+
+
+ void Task3( void *pvParameters ){
+    
+    taskENTER_CRITICAL();
  	
-}
-
-void test_func(int b){
-    if(b== 100){
-        vTaskStartScheduler();
-        after(43);
-    }
-    uncertain(43);
-    if(b == 234){
-        uncertain(43);
-        return;
-    }
-    vTaskStartScheduler();
-    after(43);
-    return;
+    //abbs in critical area
+    
+    tmp_function(23);
+    taskEXIT_CRITICAL();
+    //critical area is leaft ->NO ERROR
 }
 
 
+ void Task4( void *pvParameters ){
+    
+    taskENTER_CRITICAL();
+ 	
+    //abbs in critical area
+    
+    tmp_function(23);
+}
+    
+void Task3( void *pvParameters ){
+    
+    taskENTER_CRITICAL();
+ 	
+    //abbs in critical area
+    
+    tmp_function_2();
+
+    //critical area is leaft ->NO ERROR
+}
 
 
 int main( void ){
     
 
-    int a  = 4;
-    /* Create the tasks that send to the queues. */
-    before();
-    if( 23423  == a){
-        before();
-        test_func(324);
-        uncertain();
-    }
-    uncertain();
+
     xTaskCreate( Task1, "Task1", 1000, NULL, 1, NULL );
-    after();
+    xTaskCreate( Task2, "Task2", 1000, NULL, 2, NULL );
+    xTaskCreate( Task3, "Task3", 1000, NULL, 1, NULL );
+    xTaskCreate( Task4, "Task4", 1000, NULL, 2, NULL );
 
-    
-
-    /* Create the task that reads from the queue set to determine which of the two queues contain data. */
-
-    /* Start the scheduler so the created tasks start executing. */
-    
+   
     vTaskStartScheduler();
     
-    
-    xTaskCreate( Task2, "Task2", 1000, NULL, 2, NULL );
-    
-    /* As normal, vTaskStartScheduler() should not return, so the following lines  will never execute. */
 
     for( ;; );
 
