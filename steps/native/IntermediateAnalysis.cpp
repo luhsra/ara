@@ -302,7 +302,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 
                     if(validate_one_instructions_dominance(&start_scheduler_func_calls,&instruction, dominator_tree ))uncertain_flag = false;
                     else{
-                        //instruction is reachable from a uncertain or certain start scheduler instruction, but is not dominated by on of them
+                        //instruction is reachable from a uncertain or certain start scheduler instruction, but is not dominated by on of the certain
                         uncertain_flag = true;
                     }
                 }
@@ -322,7 +322,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 		
 		bool flag = true;
 		for(auto instr : return_instructions){
-            //check if return instruction is dominated by all certain start scheduler instructions
+            //check if return instruction is dominated by a certain start scheduler instructions
 			if(!validate_one_instructions_dominance(&start_scheduler_func_calls,instr, dominator_tree ))flag = false;
 		}
 		
@@ -340,6 +340,9 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
             update_called_functions(graph, abb->get_called_function()  ,&tmp_already_visited,after);
         }
     }
+    //if the function has no exit abb, the function will not return -> state = after
+    if(function->get_exit_abb() == nullptr)state = after;
+    
 	return state;
 }
 

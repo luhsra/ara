@@ -18,10 +18,13 @@ namespace step {
 	class Step {
 	protected:
 		PyObject* config;
+        
+        
 
 	public:
-
-		/**
+        
+        std::vector<Warning> warning_list;
+        /**
 		 * Contruct a native step.
 		 *
 		 * @Args
