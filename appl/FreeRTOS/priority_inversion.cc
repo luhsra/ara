@@ -71,6 +71,9 @@ SemaphoreHandle_t xBinaryMutex1;
 
 /* The queue set to which the two queues and the binary semaphore belong. */
 
+// 500 ms
+const TickType_t xBlockTime = 500 / portTICK_PERIOD_MS;
+
 
 void Task3( void *pvParameters ){
 
