@@ -5,7 +5,7 @@ cython = find_program('cython')
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3')
 
-llvm_dep = dependency('llvm', version : '>=6.0')
+llvm_dep = dependency('llvm', version : '>=7.0')
 
 graph_pyx_cpp = custom_target('graph_pyx',
   output : 'graph_pyx.cpp',
