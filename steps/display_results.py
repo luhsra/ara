@@ -18,7 +18,7 @@ class DisplayResultsStep(Step):
                 
     def get_dependencies(self):
         
-        return ['ValidationStep']
+        return ['Python_ValidationStep']
 
     def run(self, g: graph.PyGraph):
         

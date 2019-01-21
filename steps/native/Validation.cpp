@@ -30,6 +30,11 @@ using namespace OS;
 using namespace graph;
 
 
+
+
+
+
+
 /**
 * @brief do a BFS in the function and set each reached abb to critical
 * @param function function which is analyzed
@@ -256,6 +261,7 @@ shared_function get_definition_function(shared_vertex vertex){
     return nullptr;
 }
     
+
 /**
 * @brief check if the end abb is dominated by start abb
 * @param start start abb
@@ -434,11 +440,12 @@ bool detect_critical_regions (std::list<graph::shared_edge>* start_calls, std::l
     return false;
 }
 
+
 /**
 * @brief check if all mutexes were given after taken from same instance
 * @param graph project data structure
 */
-void verify_mutexes(graph::Graph& graph,std::vector<Warning>* warning_list){
+void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
      //get all isrs, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
@@ -497,8 +504,7 @@ void verify_mutexes(graph::Graph& graph,std::vector<Warning>* warning_list){
                         }
                     }
                     if(!mutex_flag){
-
-                        ResourceUseWarning warning = ResourceUseWarning(resource, take->get_start_vertex(), take->get_abb_reference());
+                        auto warning = std::make_shared<ResourceUseWarning>(resource, take->get_start_vertex(), take->get_abb_reference());
                         warning_list->emplace_back(warning);
                     }
                 }
@@ -511,7 +517,7 @@ void verify_mutexes(graph::Graph& graph,std::vector<Warning>* warning_list){
 * @brief check if semaphore are given from other instances than the waiting instance
 * @param graph project data structure
 */
-void verify_semaphores(graph::Graph& graph,std::vector<Warning>* warning_list){
+void verify_semaphores(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
      //get all isrs, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
@@ -550,7 +556,7 @@ void verify_semaphores(graph::Graph& graph,std::vector<Warning>* warning_list){
                     }
                 }
                 if(!semaphore_flag){
-                    SemaphoreUseWarning warning = SemaphoreUseWarning(semaphore, take->get_start_vertex(), take->get_abb_reference());
+                    auto warning = std::make_shared<SemaphoreUseWarning>(semaphore, take->get_start_vertex(), take->get_abb_reference());
                     warning_list->emplace_back(warning);
                 }
             }
@@ -562,7 +568,7 @@ void verify_semaphores(graph::Graph& graph,std::vector<Warning>* warning_list){
 * @brief check if all event bits are set, which are waited for
 * @param graph project data structure
 */
-void verify_freertos_events(graph::Graph& graph,std::vector<Warning>* warning_list){
+void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     
     std::hash<std::string> hash_fn;
@@ -661,8 +667,7 @@ void verify_freertos_events(graph::Graph& graph,std::vector<Warning>* warning_li
                     unsigned long bits = 0;
                     if(set_bits > wait_bits)bits = set_bits;
                     else bits = wait_bits;
-                    
-                    EventWarningWrongListSize warning = EventWarningWrongListSize( event,wait_call->get_target_vertex(), bits, 8,nullptr);
+                    auto warning = std::make_shared<EventWarningWrongListSize>( event,wait_call->get_target_vertex(), bits, 8,nullptr);
                     warning_list->emplace_back(warning);
                     
                 }
@@ -673,8 +678,7 @@ void verify_freertos_events(graph::Graph& graph,std::vector<Warning>* warning_li
                     unsigned long bits = 0;
                     if(set_bits > wait_bits)bits = set_bits;
                     else bits = wait_bits;
-                    
-                    EventWarningWrongListSize warning = EventWarningWrongListSize( event,wait_call->get_target_vertex(), bits, 24,nullptr);
+                    auto warning = std::make_shared<EventWarningWrongListSize>( event,wait_call->get_target_vertex(), bits, 24,nullptr);
                     warning_list->emplace_back(warning);
                 }
                 
@@ -683,12 +687,13 @@ void verify_freertos_events(graph::Graph& graph,std::vector<Warning>* warning_li
             
             if(wait_for_all_bits){
                 if(!((set_bits & wait_bits) == wait_bits) ){
-                    EventWarning warning = EventWarning( event,wait_call->get_target_vertex(), wait_bits, set_bits,wait_call->get_abb_reference());
+                 
+                    auto warning = std::make_shared<EventWarning>( event,wait_call->get_target_vertex(), wait_bits, set_bits,wait_call->get_abb_reference());
                     warning_list->emplace_back(warning);
                 }
             }else{
                 if(!((set_bits | wait_bits))){
-                    EventWarning warning = EventWarning( event,wait_call->get_target_vertex(), wait_bits, set_bits,wait_call->get_abb_reference());
+                    auto warning = std::make_shared<EventWarning>( event,wait_call->get_target_vertex(), wait_bits, set_bits,wait_call->get_abb_reference());
                     warning_list->emplace_back(warning);
                 }
             }
@@ -750,7 +755,7 @@ bool find_cycle(graph::shared_vertex vertex, std::list<size_t>* visited,graph::G
 * @brief check if application contains a possible priority inversion
 * @param graph project data structure
 */
-void verify_priority_inversion(graph::Graph& graph,std::vector<Warning>* warning_list){
+void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //task which use resource have different priorities
     auto resource_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
@@ -813,8 +818,7 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<Warning>* warning
                 }
             }
         }
-        
-        PriorityInversionWarning warning = PriorityInversionWarning( &unbouded_task_list, min_priority_task, max_priority_task,  resource, nullptr);
+        auto warning = std::make_shared<PriorityInversionWarning>( &unbouded_task_list, min_priority_task, max_priority_task,  resource, nullptr);
         warning_list->emplace_back(warning);
     }
 }
@@ -823,7 +827,7 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<Warning>* warning
 * @brief check if application contians a possible deadlock
 * @param graph project data structure
 */
-void verify_deadlocks(graph::Graph& graph,std::vector<Warning>* warning_list){
+void verify_deadlocks(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //get all resources, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
@@ -843,8 +847,7 @@ void verify_deadlocks(graph::Graph& graph,std::vector<Warning>* warning_list){
                 deadlockchain.emplace_back(graph.get_vertex(element_seed));
                 
             }
-            
-            DeadLockWarning warning = DeadLockWarning(&deadlockchain, nullptr);
+            auto warning = std::make_shared<DeadLockWarning>(&deadlockchain, nullptr);
             warning_list->emplace_back(warning);
             
             break;
@@ -891,7 +894,7 @@ void verify_task_priority(graph::Graph& graph){
 * @param start_type type of syscalls for start abbs  
 * @param end_type type of sys_calls for end abbs
 */
-void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex vertex, syscall_definition_type start_type , syscall_definition_type end_type,std::vector<Warning>* warning_list){
+void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex vertex, syscall_definition_type start_type , syscall_definition_type end_type,std::vector<shared_warning>* warning_list){
     
     
     //get all edges from start end end type and store them in lists
@@ -925,19 +928,19 @@ void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex v
             else success = false;
             
             if(success == false){
-                CriticalRegionWarning warning = CriticalRegionWarning(vertex, start_interaction->get_abb_reference());
+                auto warning = std::make_shared<CriticalRegionWarning>(vertex, start_interaction->get_abb_reference());
                 warning_list->emplace_back(warning);
             }
         }
     }
 }
-
+/*
 /**
 * @brief //check if all interactions from type start (e.g disable) with the RTOS were removed certainly from interaction from type end(e.genable)
 *and determine critical abb regions (region between start and end)  
 * @param graph project data structure
 */
-void verify_scheduler_access(graph::Graph& graph,std::vector<Warning>* warning_list){
+void verify_scheduler_access(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //get all tasks, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Task).hash_code());
@@ -958,7 +961,8 @@ void verify_scheduler_access(graph::Graph& graph,std::vector<Warning>* warning_l
 * @brief check if all isrs use the freertos compatible api
 * @param graph project data structure
 */
-void verify_isrs(graph::Graph& graph,std::vector<Warning>* warning_list){
+
+void verify_isrs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     auto vertex_list =  graph.get_type_vertices(typeid(OS::ISR).hash_code());
     for (auto &vertex : vertex_list) {
@@ -983,8 +987,8 @@ void verify_isrs(graph::Graph& graph,std::vector<Warning>* warning_list){
             if(abb->get_call_type()== sys_call){
                 
                 std::size_t found = abb->get_syscall_name().find("FromISR");
-                if(found==std::string::npos){
-                    ISRSyscallWarning warning = ISRSyscallWarning( abb, isr);
+                if(found==std::string::npos){                   
+                    auto warning = std::make_shared<ISRSyscallWarning>( abb, isr);
                     warning_list->emplace_back(warning);
                 }
             }
@@ -1014,12 +1018,12 @@ void verify_isrs(graph::Graph& graph,std::vector<Warning>* warning_list){
 }
 
 
-
 /**
 * @brief check if abstraction instances are used without enable flag
 * @param graph project data structure
 */
-void verify_abstraction_instances_use(graph::Graph& graph,std::vector<Warning>* warning_list){
+
+void verify_abstraction_instances_use(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     std::hash<std::string> hash_fn;
     std::string rtos_name = "RTOS";
@@ -1036,14 +1040,14 @@ void verify_abstraction_instances_use(graph::Graph& graph,std::vector<Warning>* 
     if(rtos->support_coroutines == false){
         auto co_routines = graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
         for(auto co_routine : co_routines){
-            EnableWarning warning = EnableWarning("CoRoutine", co_routine, nullptr);
+            auto warning = std::make_shared<EnableWarning>("CoRoutine",co_routine, nullptr);
             warning_list->emplace_back(warning);;
         }
     };
     if(rtos->support_queue_sets == false){
         auto queue_sets = graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
         for(auto queue_set : queue_sets){
-            EnableWarning warning = EnableWarning("QueueSet", queue_set, nullptr);
+            auto warning = std::make_shared<EnableWarning>("QueueSet",queue_set, nullptr);
             warning_list->emplace_back(warning);
         }
     };
@@ -1053,7 +1057,7 @@ void verify_abstraction_instances_use(graph::Graph& graph,std::vector<Warning>* 
         for(auto tmp_semaphore : semaphores){
             auto semaphore = std::dynamic_pointer_cast<OS::Semaphore>(tmp_semaphore);
             if(rtos->support_counting_semaphores == false  && semaphore->get_semaphore_type() == counting_semaphore){
-                EnableWarning warning = EnableWarning("Counting semaphore", semaphore, nullptr);
+                auto warning = std::make_shared<EnableWarning>("Counting semaphore",semaphore, nullptr);
                 warning_list->emplace_back(warning);
             }
         }
@@ -1065,11 +1069,11 @@ void verify_abstraction_instances_use(graph::Graph& graph,std::vector<Warning>* 
         for(auto tmp_resource : resources){
             auto resource = std::dynamic_pointer_cast<OS::Resource>(tmp_resource);
             if(rtos->support_recursive_mutexes == false  && resource->get_resource_type() == recursive_mutex){
-                EnableWarning warning = EnableWarning("Recursive mutex", resource, nullptr);
+                auto warning = std::make_shared<EnableWarning>("Recursive mutex",resource, nullptr);
                 warning_list->emplace_back(warning);
             }
             if(rtos->support_mutexes == false  && resource->get_resource_type() == binary_mutex){
-               EnableWarning warning = EnableWarning("Binary mutex", resource, nullptr);
+                auto warning = std::make_shared<EnableWarning>("Binary mutex", resource, nullptr);
                 warning_list->emplace_back(warning);
             }
         }
@@ -1087,7 +1091,8 @@ void verify_abstraction_instances_use(graph::Graph& graph,std::vector<Warning>* 
 * from  the  queue unless the queue’s handle has first been read from the queue set.
 * @param graph project data structure
 */
-void verify_queueset_members(graph::Graph& graph,std::vector<Warning>* warning_list){
+
+void verify_queueset_members(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //get the queuesets of the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
@@ -1121,7 +1126,8 @@ void verify_queueset_members(graph::Graph& graph,std::vector<Warning>* warning_l
                         }
                     }
                     if(!success){
-                        QueueSetWarning warning = QueueSetWarning( queueset, queueset_element,ingoing_edge->get_abb_reference());
+                        
+                        auto warning = std::make_shared<QueueSetWarning>( queueset, queueset_element,ingoing_edge->get_abb_reference());
                         warning_list->emplace_back(warning);
                     }
                 }
@@ -1135,7 +1141,8 @@ void verify_queueset_members(graph::Graph& graph,std::vector<Warning>* warning_l
 * @brief check if a buffer is used in one reader and one writer mode
 * @param graph project data structure
 */
-void verify_buffer_access(graph::Graph& graph,std::vector<Warning>* warning_list){
+
+void verify_buffer_access(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //get the buffers of the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Buffer).hash_code());
@@ -1158,8 +1165,9 @@ void verify_buffer_access(graph::Graph& graph,std::vector<Warning>* warning_list
             }
         }
         if(accessed_elements.size() != 2){
-             BufferWarning warning = BufferWarning( buffer, abb);
-             warning_list->emplace_back(warning);
+            
+            auto warning = std::make_shared<BufferWarning>(buffer, abb);
+            warning_list->emplace_back(warning);
         }
     }
 }
@@ -1183,7 +1191,7 @@ namespace step {
 		std::cout << "Run ValidationStep" << std::endl;
 		//detect interactions of the OS abstraction instances
         
-        std::vector<Warning>* warning_list = &this->warning_list;
+        std::vector<shared_warning>* warning_list = &(this->warnings);
          
         verify_mutexes(graph,warning_list);
         verify_semaphores(graph,warning_list);
@@ -1191,12 +1199,13 @@ namespace step {
         if(graph.get_os_type() ==FreeRTOS){
             verify_isrs(graph,warning_list);
             verify_freertos_events(graph,warning_list);
-            verify_deadlocks(graph,warning_list);
+//             verify_deadlocks(graph,warning_list);
             verify_priority_inversion(graph,warning_list);
         }
         
         
         verify_scheduler_access(graph,warning_list);
+        
 	}
 	
 	std::vector<std::string> ValidationStep::get_dependencies() {

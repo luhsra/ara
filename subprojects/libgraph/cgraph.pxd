@@ -5,6 +5,7 @@ from libcpp.vector cimport vector as cvector
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
+    
 cdef extern from "graph.h":
     cdef cppclass timer_type:
         pass
@@ -88,6 +89,7 @@ cdef extern from "graph.h" namespace "graph":
         
         shared_ptr[Vertex] get_start_vertex()
         shared_ptr[Vertex] get_target_vertex()
+        shared_ptr[ABB] get_abb_reference() 
         string get_name()
         
 
@@ -117,10 +119,12 @@ cdef extern from "graph.h" namespace "OS":
         ISR(Graph* graph, string name) except +
 
         bool set_category(int category)
+        int get_category()
         bool set_resource_reference(string)
         shared_ptr[Function] get_definition_function()
         bool set_definition_function(string function_name)
         string get_name()
+
 
     cdef cppclass Resource:
         Resource(Graph* graph, string name) except +
@@ -242,7 +246,8 @@ cdef extern from "graph.h" namespace "OS":
         bool has_single_successor()
         string get_call_name()
         string get_syscall_name()
-
+        syscall_definition_type get_syscall_type()
+        
         bool convert_call_to_syscall(string)
         string get_name()
     

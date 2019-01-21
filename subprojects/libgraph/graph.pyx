@@ -165,6 +165,8 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         typeid(cgraph.Resource).hash_code(): Resource,
         typeid(cgraph.QueueSet).hash_code(): QueueSet,
     }
+    if (vertex == NULL):
+        return None
 
     
     cdef size_t type_id = deref(vertex).get_type()
@@ -265,6 +267,12 @@ cdef class Edge:
         cdef bytes py_string = c_string
         return py_string
     
+    def get_abb_reference(self):
+        
+        cdef shared_ptr[cgraph.ABB] abb_reference = deref(self._c_edge).get_abb_reference()
+        cdef shared_ptr[cgraph.Vertex] v_ref = spc[cgraph.Vertex, cgraph.ABB](abb_reference)
+        return create_from_pointer(v_ref)
+
 
 cdef class Vertex:
 
@@ -386,6 +394,10 @@ cdef class ISR(Vertex):
 
     def set_category(self, int category):
         deref(self._c()).set_category(category)
+        
+    def get_category(self):
+        cdef int category = deref(self._c()).get_category()
+        return category
 
     def set_resource_reference(self, str resource_name):
         cdef string c_resource_name = resource_name.encode('UTF-8')
@@ -621,6 +633,10 @@ cdef class ABB(Vertex):
     def set_syscall_type(self, int syscall_type ):
         cdef cgraph.syscall_definition_type t = <cgraph.syscall_definition_type> syscall_type
         return deref(self._c()).set_syscall_type(t)
+    
+    def get_syscall_type(self):
+        cdef cgraph.syscall_definition_type t = deref(self._c()).get_syscall_type()
+        return syscall_definition_type(<int> t)
     
     def set_call_target_instance(self, ptype ):
 

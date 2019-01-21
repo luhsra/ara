@@ -1752,6 +1752,11 @@ bool OS::ISR::set_definition_function(std::string function_name){
 	
 }
 
+int OS::ISR::get_category(){
+	return this->category;
+}
+
+
 OS::shared_function OS::ISR::get_definition_function(){
     return this->definition_function;
 }

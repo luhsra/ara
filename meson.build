@@ -21,9 +21,9 @@ test('ara tester',
 	#args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'timer.cc'],
 
     #args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'loop_detection.cc'],
-    args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'before_scheduler_validation.cc'],
+    #args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'before_scheduler_validation.cc'],
     # priority inversion test case
-    args : [files('arsa.py'), '--os', 'freertos', freertos_targets[13]],
+    args : [files('arsa.py'), '--os', 'freertos', freertos_targets[12]],
 
 	env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )
