@@ -1,4 +1,4 @@
-llvm_dep = dependency('llvm', version : '>=6.0')
+llvm_dep = dependency('llvm', version : '>=7.0')
 
 native_step_pyx_cpp = custom_target('native_step_pyx',
   output : 'native_step_pyx.cpp',
