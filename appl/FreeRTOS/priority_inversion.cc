@@ -79,7 +79,8 @@ void Task3( void *pvParameters ){
 }
 
 void Task2( void *pvParameters )
-{
+{     
+    const TickType_t xBlockTime = 0x20;
     xSemaphoreTake(  xBinaryMutex1,1000 );
 
     const char * const pcMessage = "Message from vSenderTask1\r\n";
@@ -101,6 +102,7 @@ void Task2( void *pvParameters )
 
 void Task1( void *pvParameters )
 {
+    const TickType_t xBlockTime = 0x20;
     xSemaphoreTake(  xBinaryMutex1,1000 );
     
     const char * const pcMessage = "Message from vSenderTask2\r\n";

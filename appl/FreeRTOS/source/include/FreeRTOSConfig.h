@@ -99,7 +99,7 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelay			1
 #define INCLUDE_uxTaskGetStackHighWaterMark 0 /* Do not use this option on the PC port. */
 
-#endif /* FREERTOS_CONFIG_H */
+
 
 #ifdef configUSE_PREEMPTION
 	int FreeRTOS_configUSE_PREEMPTION = configUSE_PREEMPTION;
@@ -358,3 +358,6 @@ to exclude the API function. */
 #else
 	int FreeRTOS_configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS = -1;
 #endif
+    
+    
+#endif /* FREERTOS_CONFIG_H */

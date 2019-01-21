@@ -116,13 +116,13 @@ void Task1( void * pvParameters )
     tmp_function(23);
 }
     
-void Task3( void *pvParameters ){
+void Task5( void *pvParameters ){
     
     taskENTER_CRITICAL();
  	
     //abbs in critical area
     
-    tmp_function_2();
+    tmp_function_2(342);
 
     //critical area is leaft ->NO ERROR
 }
@@ -136,7 +136,7 @@ int main( void ){
     xTaskCreate( Task2, "Task2", 1000, NULL, 2, NULL );
     xTaskCreate( Task3, "Task3", 1000, NULL, 1, NULL );
     xTaskCreate( Task4, "Task4", 1000, NULL, 2, NULL );
-
+    xTaskCreate( Task5, "Task5", 1000, NULL, 2, NULL );
    
     vTaskStartScheduler();
     

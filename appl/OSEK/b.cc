@@ -9,7 +9,7 @@
  * @brief Just a simple test application
  */
 #include "source/os/os.h"
-#include "test/test.h"
+#include "source/test/test.h"
 
 DeclareTask(Handler11);
 DeclareTask(Handler12);

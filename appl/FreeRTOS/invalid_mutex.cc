@@ -59,9 +59,7 @@ void vPrintString( const char * string );
 void vPrintStringAndNumber( const char *string , int32_t number );
 
 
-/
-
-SemaphoreHandle_t xBinarySemaphore;
+SemaphoreHandle_t xBinarySemaphore = NULL;
 
 
 SemaphoreHandle_t xSemaphore = NULL;
@@ -83,9 +81,9 @@ void vAnotherTask( void * pvParameters )
 
         /* We have finished accessing the shared resource.  Release the
         semaphore.*/
-        if (complex_function_that_is_always_true()) {
-            xSemaphoreGive( xSemaphore );
-        }
+
+        xSemaphoreGive( xSemaphore );
+        
     }
 }
 
