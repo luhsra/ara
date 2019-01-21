@@ -2,7 +2,7 @@ clang = find_program('clang-7')
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
-clang_flags = ['-S', '-g', '-emit-llvm', '--std=c++11', '-target', 'i386-pc-linux-gnu']
+clang_flags = ['-S', '-g', '-emit-llvm', '--std=c++11', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names']
 
 
 # FreeRTOS examples
