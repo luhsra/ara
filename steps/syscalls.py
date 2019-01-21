@@ -45,13 +45,14 @@ class SyscallStep(Step):
                 
 
                 "OSEKOS_ActivateTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")],0],
-                "StartOS": 					[[],graph.syscall_definition_type.start_scheduler,[graph.get_type_hash("OS")],0],
+                "OSEKOS_StartOS": 					[[],graph.syscall_definition_type.start_scheduler,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_ShutdownOS": 					[[],graph.syscall_definition_type.end_scheduler,[graph.get_type_hash("RTOS")],0],
                 "OSEKOS_TerminateTask": 	[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")],0],
                 
                 
                 
                 
-                "OSEKOS_ChainTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")],0],
+                "OSEKOS_ChainTask": 		[[graph.data_type.string],graph.syscall_definition_type.chain,[graph.get_type_hash("Task")],0],
                 "OSEKOS_CancelAlarm":		[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Timer")],0],
                 
                 "OSEKOS_GetResource":				[[graph.data_type.string],graph.syscall_definition_type.take,[graph.get_type_hash("Resource")],0],

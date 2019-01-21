@@ -43,11 +43,16 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Analysis/OrderedBasicBlock.h"
 #include "llvm/IR/Operator.h"
+#include "warning.h"
 
 
 
 namespace step {
 	class ValidationStep : public Step {
+        
+    private:
+        std::vector<shared_warning> warnings;
+        
 	public:
 		ValidationStep(PyObject* config) : Step(config) {}
 

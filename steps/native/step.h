@@ -23,7 +23,6 @@ namespace step {
 
 	public:
         
-        std::vector<Warning> warning_list;
         /**
 		 * Contruct a native step.
 		 *

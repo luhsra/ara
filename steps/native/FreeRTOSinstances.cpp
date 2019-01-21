@@ -296,7 +296,7 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
 	task->set_stacksize( stacksize);
 	task->set_priority( priority);
 	task->set_start_scheduler_creation_flag(before_scheduler_start);
-	graph.set_vertex(task);
+	
 	
     
     if(!task->set_definition_function(function_reference_name)){
@@ -319,6 +319,7 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
 	
 	std::cout << "task successfully created"<< std::endl;
    
+    graph.set_vertex(task);
     
 	return task;
 }
@@ -682,13 +683,13 @@ graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool b
 	std::cout << "timer successfully created"<< std::endl;
 	//set timer to graph
 	timer->set_start_scheduler_creation_flag(before_scheduler_start);
-	graph.set_vertex(timer);
-    
+
     std::cerr << "timer callback function " <<timer_definition_function << std::endl;
 	timer->set_callback_function(timer_definition_function);
     timer->set_timer_action_type(alarm_callback);
     
-    
+    graph.set_vertex(timer);
+        
 	return timer;
 }
 
@@ -803,6 +804,7 @@ graph::shared_vertex create_coroutine(graph::Graph& graph, OS::shared_abb abb,  
 	std::cout << "queue set successfully created"<< std::endl;
 	//set timer to graph
 	coroutine->set_start_scheduler_creation_flag(before_scheduler_start);
+    
 	graph.set_vertex(coroutine);
 	
 	return coroutine;
@@ -982,20 +984,20 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
 * @param call_reference function call instruction
 * @param already_visited call instructions which were already iterated
 */
-void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*>* already_visited_calls){
+void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
     std::hash<std::string> hash_fn;
     
 	//search hash value in list of already visited basic blocks
-	for(auto tmp_call : *already_visited_calls){
+	for(auto tmp_call : already_visited_calls){
 		if(call_reference == tmp_call){
 			//basic block already visited
 			return;
 		}
 	}
-    already_visited_calls->emplace_back(call_reference);
+    already_visited_calls.emplace_back(call_reference);
 
     //get the abbs of the function
     std::list<OS::shared_abb> abb_list = function->get_atomic_basic_blocks();
@@ -1025,7 +1027,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //check if abb syscall is creation syscall
             if(abb->get_syscall_type() == create){
                 
-                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,already_visited_calls,multiple_create)){
+                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,&already_visited_calls,multiple_create)){
                     std::cerr << "instance could not created" << std::endl;
                 }
             }
@@ -1081,7 +1083,7 @@ namespace step {
 			            
             //iterate about the main function context and detect abstraction instances
             std::vector<llvm::Instruction*> already_visited_calls;
-            iterate_called_functions(graph, main_vertex , main_function,nullptr,&already_visited_calls);
+            iterate_called_functions(graph, main_vertex , main_function,nullptr,already_visited_calls);
 		
             
         }else{
@@ -1111,7 +1113,7 @@ namespace step {
                 OS::shared_function task_definition = task->get_definition_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
-                iterate_called_functions(graph, task , task_definition, nullptr ,&already_visited_calls);
+                iterate_called_functions(graph, task , task_definition, nullptr ,already_visited_calls);
             }
         
         
@@ -1130,7 +1132,7 @@ namespace step {
                 OS::shared_function isr_definition = isr->get_definition_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
-                iterate_called_functions(graph, isr , isr_definition, nullptr ,&already_visited_calls);
+                iterate_called_functions(graph, isr , isr_definition, nullptr ,already_visited_calls);
             }
             
             
@@ -1148,7 +1150,7 @@ namespace step {
                 OS::shared_function timer_definition = timer->get_callback_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
-                iterate_called_functions(graph, timer , timer_definition, nullptr ,&already_visited_calls);
+                iterate_called_functions(graph, timer , timer_definition, nullptr ,already_visited_calls);
             }
             
             

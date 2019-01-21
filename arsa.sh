@@ -1,3 +1,3 @@
 #!/bin/bash
 
-PYTHONPATH=build/subprojects/libgraph/:build/subprojects/libpass ./arsa.py $@
+PYTHONPATH=build/subprojects/libgraph/:build/steps/native ./arsa.py $@

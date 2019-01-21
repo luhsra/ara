@@ -193,20 +193,20 @@ void osek_scheduler_resource(graph::Graph& graph,shared_abb abb,std::vector<llvm
 * @param call_reference function call instruction
 * @param already_visited call instructions which were already iterated
 */
-void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*>* already_visited_calls){
+void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
 
 
 	//search hash value in list of already visited basic blocks
-	for(auto tmp_call : *already_visited_calls){
+	for(auto tmp_call : already_visited_calls){
 		if(call_reference == tmp_call){
 			//basic block already visited
 			return;
 		}
 	}
-    already_visited_calls->emplace_back(call_reference);
+    already_visited_calls.emplace_back(call_reference);
     
     
 	
@@ -222,7 +222,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
 
             
             //check if osek scheduler is addressd a resource and create this resource if necessary
-            osek_scheduler_resource(graph, abb,already_visited_calls);
+            osek_scheduler_resource(graph, abb,&already_visited_calls);
             
             bool success = false;
             std::vector<argument_data> argument_list = abb->get_syscall_arguments();
@@ -243,7 +243,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                     if(argument_candidats.any_list.size() > 1){
                     
                         std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
-                        get_call_relative_argument(any_argument,llvm_argument_reference, argument_candidats,already_visited_calls);                
+                        get_call_relative_argument(any_argument,llvm_argument_reference, argument_candidats,&already_visited_calls);                
                     }
                     
                     
@@ -294,9 +294,6 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 //create the edge, which contains the start and target vertex and the arguments
                                 auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex,target_vertex ,abb);
                                 
-                                //store the edge in the graph
-                                graph.set_edge(edge);
-                                
                                 target_vertex->set_outgoing_edge(edge);
                                 start_vertex->set_ingoing_edge(edge);
                                 edge->set_instruction_reference( abb->get_syscall_instruction_reference());
@@ -306,19 +303,21 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 //get the call specific arguments 
                                 auto arguments = abb->get_syscall_arguments();
                                 auto syscall_reference = abb->get_syscall_instruction_reference();
-                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
+                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, &already_visited_calls,syscall_reference,abb->get_syscall_name());
                                 
                                 //check if syscall is a generic call, which can transformed to more generic one
                                 convert_syscall_name(specific_arguments,abb);
                                 edge->set_specific_call(&specific_arguments);
+                                
+                                //store the edge in the graph
+                                graph.set_edge(edge);
                             
                             }else{	//syscall set values
                                 
                                 //create the edge, which contains the start and target vertex and the arguments
                                 auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,target_vertex,abb);
     
-                                //store the edge in the graph
-                                graph.set_edge(edge);
+                              
                                 
                                 start_vertex->set_outgoing_edge(edge);
                                 target_vertex->set_ingoing_edge(edge);
@@ -329,11 +328,14 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 //get the call specific arguments 
                                 auto arguments = abb->get_syscall_arguments();
                                 auto syscall_reference = abb->get_syscall_instruction_reference();
-                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
+                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, &already_visited_calls,syscall_reference,abb->get_syscall_name());
                                 
                                 //check if syscall is a generic call, which can transformed to more generic one
                                 convert_syscall_name(specific_arguments,abb);
                                 edge->set_specific_call(&specific_arguments);
+                                
+                                //store the edge in the graph
+                                graph.set_edge(edge);
                             }
                         }
                         break;
@@ -384,7 +386,7 @@ void detect_interactions(graph::Graph& graph){
         auto main_function = std::dynamic_pointer_cast<OS::Function> (main_vertex);
         //get all interactions of the main functions and their called function with other os instances
         std::vector<llvm::Instruction*> already_visited;
-        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, &already_visited);
+        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, already_visited);
     }
     
     
@@ -397,7 +399,7 @@ void detect_interactions(graph::Graph& graph){
         auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
         OS::shared_function task_definition = task->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, &already_visited);
+        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, already_visited);
     }
     
     //get all isrs, which are stored in the graph
@@ -409,7 +411,7 @@ void detect_interactions(graph::Graph& graph){
         auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
         OS::shared_function timer_definition = timer->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, &already_visited);
+        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, already_visited);
     }
         
     //get all timers of the graph
@@ -421,7 +423,7 @@ void detect_interactions(graph::Graph& graph){
         auto timer = std::dynamic_pointer_cast<OS::Timer> (vertex);
         OS::shared_function isr_definition = timer->get_callback_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, &already_visited);
+        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, already_visited);
     }
 }
 
