@@ -19,13 +19,13 @@ class SyscallStep(Step):
         os =  self._config["os"]
         
         if os == "osek":
-            return ['OilStep']
+            return ['LLVMStep']
         
         elif os == "freertos":
             return ["LLVMStep"]
         
-        else:
-            return ["LLVMStep", 'OilStep']
+        #else:
+            #return ["LLVMStep", 'OilStep']
         
         
     
@@ -45,8 +45,8 @@ class SyscallStep(Step):
                 
 
                 "OSEKOS_ActivateTask": 		[[graph.data_type.string],graph.syscall_definition_type.activate,[graph.get_type_hash("Task")],0],
-                "OSEKOS_StartOS": 					[[],graph.syscall_definition_type.start_scheduler,[graph.get_type_hash("RTOS")],0],
-                "OSEKOS_ShutdownOS": 					[[],graph.syscall_definition_type.end_scheduler,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_StartOS": 			[[],graph.syscall_definition_type.start_scheduler,[graph.get_type_hash("RTOS")],0],
+                "OSEKOS_ShutdownOS": 		[[],graph.syscall_definition_type.end_scheduler,[graph.get_type_hash("RTOS")],0],
                 "OSEKOS_TerminateTask": 	[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("RTOS")],0],
                 
                 
@@ -99,7 +99,7 @@ class SyscallStep(Step):
                 #"xTaskNotifyAndQueryFromISR": 43 ,
                 #"xTaskNotifyFromISR": 44 ,
                 #"xTaskNotifyGive": 45 ,
-                "vTaskNotifyGiveFromISR": [[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
+                "vTaskNotifyGiveFromISR": [[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 #"taskEXIT_CRITICAL_FROM_ISR": 21 ,
                 #"portSWITCH_TO_USER_MODE": 4 ,
                 #"vTaskGetTaskInfo": 33 ,
@@ -363,7 +363,8 @@ class SyscallStep(Step):
                             #sys.exit("unexpected argument type")
                             abb.print_information();
                         #print(call_name)
-                        
+                        else:
+                            print(call_name)
                         abb.set_call_type(graph.call_definition_type.sys_call)
                         abb.set_syscall_type(syscall[1])
                         abb.set_call_target_instance(syscall[2])

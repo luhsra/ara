@@ -19,8 +19,8 @@ def validate_syscalls(valid_calls,vertex, inverse):
         valid = False
         
         for valid_call in valid_calls:
-            target_class = valid_calls[0]
-            syscall_type = valid_calls[1]
+            target_class = valid_call[0]
+            syscall_type = valid_call[1]
             
             abb = outgoing_edge.get_abb_reference()
             
@@ -31,8 +31,9 @@ def validate_syscalls(valid_calls,vertex, inverse):
                 valid = True
                 break
         
-        if invers == valid:
-            print("warning")
+        if inverse == valid:
+            #print("warning")
+            break
 
 
 
@@ -44,13 +45,11 @@ class Python_ValidationStep(Step):
         return ['ValidationStep']
     
     
-    
 
-    
     def run(self, g: graph.PyGraph):
         
         
-        print("Python validation")
+        print("Run PythonValidationStep")
         
         isr_list = g.get_type_vertices("ISR")
         
@@ -60,22 +59,22 @@ class Python_ValidationStep(Step):
             
             if isr.get_category() == 1:
                 
-                valid_calls = [ (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.enable),
-                                (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.disable),
-                                (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.suspend),
-                                (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.resume)
+                valid_calls = [ (graph.get_type_hash("RTOS"),graph.syscall_definition_type.enable),
+                                (graph.get_type_hash("RTOS"), graph.syscall_definition_type.disable),
+                                (graph.get_type_hash("RTOS"), graph.syscall_definition_type.suspend),
+                                (graph.get_type_hash("RTOS"), graph.syscall_definition_type.resume)
                 ]
                 validate_syscalls(valid_calls,isr,False)
 
             
             elif isr.get_category() == 2:
                 
-                valid_calls = [ (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.start_scheduler),
-                                (graph.get_type_hash("Event"), cgraph.graph.syscall_definition_type.receive),
-                                (graph.get_type_hash("Event"), cgraph.graph.syscall_definition_type.destroy),
-                                (graph.get_type_hash("Task"), cgraph.graph.syscall_definition_type.chain)
-                                (graph.get_type_hash("Task"), cgraph.graph.syscall_definition_type.destroy),
-                                (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.schedule)
+                valid_calls = [ (graph.get_type_hash("RTOS"), graph.syscall_definition_type.start_scheduler),
+                                (graph.get_type_hash("Event"), graph.syscall_definition_type.receive),
+                                (graph.get_type_hash("Event"), graph.syscall_definition_type.destroy),
+                                (graph.get_type_hash("Task"), graph.syscall_definition_type.chain)
+                                (graph.get_type_hash("Task"), graph.syscall_definition_type.destroy),
+                                (graph.get_type_hash("RTOS"), graph.syscall_definition_type.schedule)
                 ]
                 validate_syscalls(valid_calls,isr,True)
         
@@ -85,7 +84,7 @@ class Python_ValidationStep(Step):
         #iterate about the isrs
         for task in task_list:
             
-                valid_calls = [ (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.start_scheduler),
+                valid_calls = [ (graph.get_type_hash("RTOS"), graph.syscall_definition_type.start_scheduler),
 
                 ]
                 validate_syscalls(valid_calls,task,False)
@@ -94,12 +93,12 @@ class Python_ValidationStep(Step):
         
         for hook in hook_list:
             
-            if hook.get_hook_type() != cgraph.graph.hook_type.no_hook:
-                valid_calls = [ (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.start_scheduler),
-                                (graph.get_type_hash("Event"), cgraph.graph.syscall_definition_type.receive),
-                                (graph.get_type_hash("Alarm"), cgraph.graph.syscall_definition_type.receive)
-                                (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.suspend),
-                                (graph.get_type_hash("RTOS"), cgraph.graph.syscall_definition_type.receive)
+            if hook.get_hook_type() != graph.hook_type.no_hook:
+                valid_calls = [ (graph.get_type_hash("RTOS"), graph.syscall_definition_type.start_scheduler),
+                                (graph.get_type_hash("Event"), graph.syscall_definition_type.receive),
+                                (graph.get_type_hash("Alarm"), graph.syscall_definition_type.receive)
+                                (graph.get_type_hash("RTOS"), graph.syscall_definition_type.suspend),
+                                (graph.get_type_hash("RTOS"), graph.syscall_definition_type.receive)
                 ]
         
                 validate_syscalls(valid_calls,hook,False)

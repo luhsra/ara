@@ -104,24 +104,24 @@ class OilStep(Step):
             
             
         #get the os
-        os = dictionary.get("OS", "error")
-        if os != "error":
+        rtos = dictionary.get("OS", "error")
+        if rtos != "error":
             #iterate about the os attributes and store values in rtos instance
-            for attribute in os:
+            for attribute in rtos:
                 if attribute == "STATUS":
-                    rtos.set_status(os[attribute])
+                    rtos.set_status(rtos[attribute])
                 elif attribute == "ERRORHOOK":
-                    rtos.enable_error_hook(os[attribute])
+                    rtos.enable_error_hook(rtos[attribute])
                 elif attribute == "PRETASKHOOK":
-                    rtos.enable_pretask_hook(os[attribute])
+                    rtos.enable_pretask_hook(rtos[attribute])
                 elif attribute == "POSTTASKHOOK":
-                    rtos.enable_posttask_hook(os[attribute])
+                    rtos.enable_posttask_hook(rtos[attribute])
                 elif attribute == "STARTUPHOOK":
-                    rtos.enable_startup_hook(os[attribute])
+                    rtos.enable_startup_hook(rtos[attribute])
                 elif attribute == "SHUTDOWNHOOK":
-                    rtos.enable_shutdown_hook(os[attribute])
+                    rtos.enable_shutdown_hook(rtos[attribute])
                 else:
-                    print("unexpected os attribute",attribute)
+                    print("unexpected rtos attribute",attribute)
                     sys.exit()
                   
         #TODO get appmode from startos call
@@ -605,7 +605,7 @@ class OilStep(Step):
                         else:
                             for autostart in autostart_attribute:
                                 if autostart == "TRUE":
-                                    alarm.set_timer_type(c)
+                                    alarm.set_timer_type(graph.timer_type.autostart)
                                     #print("autostart: ",autostart)
                                     autostart_dict =  autostart_attribute[autostart]
                                     if isinstance( autostart_dict, dict):
