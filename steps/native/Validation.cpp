@@ -456,7 +456,7 @@ void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_lis
         auto resource = std::dynamic_pointer_cast<OS::Resource> (vertex);
         
         
-        std::cerr << "resource:" <<  resource->get_name() << std::endl;
+        //std::cerr << "resource:" <<  resource->get_name() << std::endl;
         
         bool create_call = false;
         auto ingoing_edges = resource->get_ingoing_edges();
@@ -466,13 +466,13 @@ void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_lis
             
             if(ingoing->get_abb_reference()->get_syscall_type() == create)create_call = true;
             if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
-            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
         auto outgoing_edges = resource->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             if(outgoing->get_abb_reference()->get_syscall_type() == take)mutex_takes.emplace_back(outgoing);
-            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
         
@@ -528,7 +528,7 @@ void verify_semaphores(graph::Graph& graph,std::vector<shared_warning>* warning_
         auto semaphore = std::dynamic_pointer_cast<OS::Semaphore> (vertex);
         
         
-        std::cerr << "semaphore:" <<  semaphore->get_name() << std::endl;
+        //std::cerr << "semaphore:" <<  semaphore->get_name() << std::endl;
         
         auto ingoing_edges = semaphore->get_ingoing_edges();
         std::vector<graph::shared_edge> mutex_takes;
@@ -536,13 +536,13 @@ void verify_semaphores(graph::Graph& graph,std::vector<shared_warning>* warning_
         for(auto ingoing : ingoing_edges){
     
             if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
-            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
         auto outgoing_edges = semaphore->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             if(outgoing->get_abb_reference()->get_syscall_type() == take)mutex_takes.emplace_back(outgoing);
-            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
         
@@ -592,7 +592,7 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
         auto event = std::dynamic_pointer_cast<OS::Event> (vertex);
         
         
-        std::cerr << "event:" <<  event->get_name() << std::endl;
+        //std::cerr << "event:" <<  event->get_name() << std::endl;
         
         auto ingoing_edges = event->get_ingoing_edges();
         std::vector<graph::shared_edge> set_calls;
@@ -602,14 +602,14 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
             auto type = ingoing->get_abb_reference()->get_syscall_type();
           
             if(type == commit || type == synchronize)set_calls.emplace_back(ingoing);
-            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
         auto outgoing_edges = event->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             auto type = outgoing->get_abb_reference()->get_syscall_type();
             if(type == wait || type == synchronize)wait_calls.emplace_back(outgoing);
-            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
         
@@ -626,14 +626,14 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
             if(type== synchronize){
                 wait_bits = std::any_cast<long>(call.arguments.at(2).any_list.front());
                 set_bits =  std::any_cast<long>(call.arguments.at(1).any_list.front());
-                std::cerr << "wait bits " << wait_bits << ", set bits " << set_bits << std::endl;
+                //std::cerr << "wait bits " << wait_bits << ", set bits " << set_bits << std::endl;
                 
             }else if(type == wait){
                 
                 wait_bits = std::any_cast<long>(call.arguments.at(1).any_list.front());
                 clear_on_exit = (bool) std::any_cast<long>(call.arguments.at(2).any_list.front()); 
                 wait_for_all_bits = (bool) std::any_cast<long>(call.arguments.at(3).any_list.front()); 
-                std::cerr << "wait bits " << wait_bits << ", clear on exit " << clear_on_exit << ", wait_for_all_bits " << wait_for_all_bits << std::endl;
+                //std::cerr << "wait bits " << wait_bits << ", clear on exit " << clear_on_exit << ", wait_for_all_bits " << wait_for_all_bits << std::endl;
             }
             //iterate about the set calls
             for(auto set_call : set_calls){
@@ -652,12 +652,12 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
                 
                 if(type== synchronize){
                     set_bits = set_bits | std::any_cast<long>(call.arguments.at(1).any_list.front());
-                    std::cerr << "set bits " << set_bits << std::endl;
+                    //std::cerr << "set bits " << set_bits << std::endl;
                 
                 }else if(type == commit){
                     
                     set_bits = set_bits |  std::any_cast<long>(call.arguments.at(1).any_list.front());
-                    std::cerr << "set bits " << set_bits << std::endl;
+                    //std::cerr << "set bits " << set_bits << std::endl;
                 }
             }
             
