@@ -309,13 +309,13 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
                 break;
             }
 			if(before_flag){
-                std::cerr <<  "before" << std::endl;
-                abb->print_information();
+                //std::cerr <<  "before" << std::endl;
+                //abb->print_information();
                 abb->set_start_scheduler_relation(before);
             }
             else if(uncertain_flag){
-                std::cerr <<  "uncertain" << std::endl;
-                abb->print_information();
+                //std::cerr <<  "uncertain" << std::endl;
+                //abb->print_information();
                 abb->set_start_scheduler_relation(uncertain);
             }
         }
@@ -564,7 +564,7 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
 		*/
         
         //std::cerr << "Loop detected" << std::endl;
-        std::cerr << "direct loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
+        //std::cerr << "direct loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
 		success = false;
         
 	}else{
@@ -619,7 +619,7 @@ void get_predefined_system_information(graph::Graph& graph){
         //load the value from the global variable
         while ((pos = s.find(delimiter)) != std::string::npos) {
             token = s.substr(0, pos);
-            std::cerr << token << std::endl;
+            //std::cerr << token << std::endl;
             s.erase(0, pos + delimiter.length());
         
             
@@ -741,6 +741,7 @@ namespace step {
     */
 	void IntermediateAnalysisStep::run(graph::Graph& graph) {
 		
+        
 		std::cout << "Run IntermediateAnalysisStep" << std::endl;
 		
         sort_abbs(graph);
@@ -766,36 +767,33 @@ namespace step {
         }
         
         std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
-
+        
+        //iterate about abbs
         for (auto &vertex : vertex_list) {
         
             //cast vertex to abb 
             auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
             
+            //check if abb is a syscall abb
             if(abb->get_call_type() == sys_call){
                 
+                //check if syscall ab is in direct, indirect or recursion loop
                 std::map<size_t, size_t> already_visited;
-                std::cerr << "analyse" << abb->get_syscall_name() << std::endl;
-                
+                               
                 if(!validate_loop(abb, &already_visited)){
+                    //set loop information
                     abb->set_loop_information(true);
-                    if(abb->get_syscall_type() == create)std::cerr << "!!!!!!!loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
                 }
             }
         }
+        //get confing information
         get_predefined_system_information(graph);
+        
 	}
 
 	
 	std::vector<std::string> IntermediateAnalysisStep::get_dependencies() {
         
-        // get file arguments from config
-		std::vector<std::string> files;
-        
-		PyObject* elem = PyDict_GetItemString(config, "os");
-        
-        if(elem != nullptr)std::cerr << "success" << std::endl;
-		assert(PyUnicode_Check(elem));
 		return {"ABB_MergeStep"};
 
 	}
