@@ -142,7 +142,7 @@ DeclareTask(MavlinkRecvTask);
 
 
 int  main(void){
-  StartOS(0);
+  StartOS("tmp");
   return 0;
 }
 
@@ -257,7 +257,7 @@ TASK(SignalGatherWaitTask) {
 
 	reply = spi_reply_idx;
 
-	ReleaseResource(SPIBusResource);
+	//ReleaseResource(SPIBusResource);
 
 	// static const TaskType sp_att = SignalProcessingAttitudeTask,
 	// sp_act = SignalProcessingActuateTask;
@@ -288,14 +288,14 @@ TASK(SignalGatherWaitTask) {
 	// variable. Therefore we have to use a big switch case to emulate
 	// the above table.
 	if (reply <= 3) {
-		CancelAlarm(SignalGatherTimeoutAlarm);
+		//CancelAlarm(SignalGatherTimeoutAlarm);
 	}
 
 	if (reply == 0 | reply == 1 | reply == 5) {
-		//SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent | SignalGatherDigital2bEvent);
-        SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
+		SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent | SignalGatherDigital2bEvent);
+        //SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
 	}
-	
+	/*
 	if (reply <= 4) {
 		SetEvent(SignalProcessingAttitudeTask, SignalGatherDigital1Event);
 	}
@@ -307,7 +307,7 @@ TASK(SignalGatherWaitTask) {
 	if (reply == 3)  {
 		SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
 	}
-
+    */
     TerminateTask();
 }
 

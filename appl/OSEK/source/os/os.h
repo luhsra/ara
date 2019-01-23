@@ -6,11 +6,6 @@
 #include "hooks.h"
 
 
-EXTERN_C_DECL void os_main(void);
-//EXTERN_C_DECL void StartOS(int);
-EXTERN_C_DECL void StartOS(char *);
-
-
 
 
 /******************************************************************************
@@ -132,6 +127,10 @@ EXTERN_C_DECL void StartOS(char *);
 
 #define DeactivateDevice(x)                      \
     OSEKOS_DeactivateDevice(OSEKOS_DEVICE_##x)
+    
+#define StartOS(x)				\
+	OSEKOS_StartOS(x)		\
+
 
 
 // #define DeclareMessage(x)						\
@@ -179,6 +178,14 @@ EXTERN_C_DECL void StartOS(char *);
 #ifdef __cplusplus
 extern "C" {
 #endif
+    
+    
+
+
+ void os_main(void);
+//EXTERN_C_DECL void StartOS(int);
+ void StartOS(char *);
+
 
 /**
  * \brief Artificial function at beginning of a subtask handler

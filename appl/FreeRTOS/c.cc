@@ -122,7 +122,7 @@ void vTask2( void *pvParameters )
         calling task". Setting the priority below that of Task 1 will cause
         Task 1 to immediately start running again – pre-empting this task. */
         vPrintString( "About to lower the Task 2 priority" );
-        vTaskPrioritySet( NULL, ( uxPriority - 2 ) );
+        //vTaskPrioritySet( vTask1, ( uxPriority - 2 ) );
     }
 }
 
