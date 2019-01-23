@@ -336,6 +336,8 @@ std::size_t graph::Vertex::get_seed(){
         return this->seed;
 }
 
+
+
 bool graph::Vertex::set_outgoing_edge(shared_edge edge){
 	bool success = false;
     if(this->graph->contain_edge(edge)){
@@ -1723,6 +1725,38 @@ bool OS::Task::set_definition_function(std::string function_name){
 OS::shared_function OS::Task::get_definition_function(){
     return this->definition_function;
 }
+
+void OS::Hook::set_hook_type(hook_type hook){
+    this->hook = hook;
+};
+
+
+bool OS::Hook::set_definition_function(std::string function_name){
+	bool result = false;
+    
+    std::hash<std::string> hash_fn;
+    
+
+	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
+	auto self_vertex = this->graph->get_vertex(this->seed);
+
+   if(self_vertex == nullptr){
+        std::cerr << "ERROR: isr not found " << this->name << std::endl;
+        abort();
+    }
+
+	if(vertex != nullptr && self_vertex != nullptr){
+        
+		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+		if(function!=nullptr){
+			this->definition_function = function;
+			function->set_definition_vertex(self_vertex);
+			result = true;
+		}
+	}
+	
+	return result;
+};
 
 bool OS::ISR::set_definition_function(std::string function_name){
 	bool result = false;

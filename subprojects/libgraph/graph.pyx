@@ -70,7 +70,7 @@ class timer_type(IntEnum):
     oneshot  = <int> cgraph.oneshot
     autoreload = <int> cgraph.autoreload
     autostart   = <int> cgraph.autostart
-
+    not_autostart   = <int> cgraph.autostart
 
 
 
@@ -97,7 +97,19 @@ class syscall_definition_type(IntEnum):
     exit_critical = <int> cgraph.exit_critical
     enter_critical = <int> cgraph.enter_critical
     start_scheduler = <int> cgraph.start_scheduler
+    end_scheduler = <int> cgraph.end_scheduler
+    chain = <int> cgraph.chain
     
+#class hook_type(IntEnum):
+    #start_up  = <int> cgraph.start_up
+    #shut_down = <int> cgraph.shut_down
+    #pre_task   = <int> cgraph.pre_task
+    #post_task  = <int> cgraph.post_task
+    #failed = <int> cgraph.failed
+    #error = <int> cgraph.error
+    #idle = <int> cgraph.idle
+    #tick = <int> cgraph.tick
+    #no_hook = <int> cgraph.no_hook
     
 class data_type(IntEnum):
     string = 1
@@ -829,7 +841,7 @@ cdef class Timer(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Timer](make_shared[cgraph.Timer](&graph._c_graph, bname))
             
-    def get_callback_function(self):
+    def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_callback_function()
   
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))

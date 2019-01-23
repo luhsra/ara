@@ -33,11 +33,11 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, computation , has_call ,no_call};
 
-enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical,start_scheduler};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical,start_scheduler,end_scheduler,chain};
 
 enum ISR_type { ISR1, ISR2, basic };
 
-enum timer_type { oneshot, autoreload ,autostart};
+enum timer_type { oneshot, autoreload ,autostart,not_autostart};
 
 enum buffer_type { stream = 0, message = 1 };
 
@@ -78,7 +78,7 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
 void debug_argument(argument_data argument);
 bool list_contains_element(std::list<std::size_t>* list, size_t target);
 call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,std::vector<llvm::Instruction*>*call_references,llvm::Instruction* call_instruction_reference,std::string call_name);
-
+std::string print_argument(llvm::Value* argument);
 
 
 namespace OS
@@ -439,7 +439,6 @@ namespace OS {
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         //sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 		
-		hook_type hook = no_hook;
 		
 		shared_abb entry_abb = nullptr;
 		shared_abb exit_abb = nullptr;
@@ -525,9 +524,6 @@ namespace OS {
 		void set_function_name(std::string name);
 		std::string get_function_name();
                 
-		void set_hook_type(hook_type hook){
-            this->hook = hook;
-        };
         
 		std::list<llvm::Type*> get_argument_types();
 		void set_argument_type(llvm::Type* argument); // Setze Argument des SystemCalls in Argumentenliste
@@ -813,6 +809,31 @@ namespace OS {
         int get_category();
 		bool set_message_reference(std::string);
 		bool set_resource_reference(std::string);
+		bool set_definition_function(std::string definition_function_name);
+        shared_function get_definition_function();
+	};
+    
+    class Hook : public graph::Vertex {
+
+		OS::shared_function definition_function;
+		
+		
+        hook_type hook = no_hook;
+		
+	  public:
+
+		Hook(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+			this->vertex_type = typeid(Hook).hash_code();
+			std::hash<std::string> hash_fn;
+			this->seed = hash_fn(name +  typeid(ISR).name());
+		}
+		
+		void print_information(){
+
+		};
+        
+        void set_hook_type(hook_type hook);
+
 		bool set_definition_function(std::string definition_function_name);
         shared_function get_definition_function();
 	};

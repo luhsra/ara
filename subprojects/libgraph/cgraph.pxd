@@ -25,7 +25,7 @@ cdef extern from "graph.h" namespace "timer_type":
     cdef timer_type oneshot
     cdef timer_type autoreload
     cdef timer_type autostart
-
+    cdef timer_type not_autostart
     
     
 cdef extern from "graph.h" namespace "call_definition_type":
@@ -63,6 +63,8 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type enter_critical
     cdef syscall_definition_type exit_critical
     cdef syscall_definition_type start_scheduler
+    cdef syscall_definition_type end_scheduler
+    cdef syscall_definition_type chain
     
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
@@ -263,3 +265,5 @@ cdef extern from "graph.h" namespace "OS":
         shared_ptr[ABB] get_dominator()
         
         void set_handler_argument_index(size_t index)
+        
+        
