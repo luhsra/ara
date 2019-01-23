@@ -193,7 +193,7 @@ void osek_scheduler_resource(graph::Graph& graph,shared_abb abb,std::vector<llvm
 * @param call_reference function call instruction
 * @param already_visited call instructions which were already iterated
 */
-void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls){
+void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls,std::vector<llvm::Instruction*>* calltree_references){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
@@ -206,7 +206,10 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
 			return;
 		}
 	}
-    already_visited_calls.emplace_back(call_reference);
+    if(call_reference != nullptr){
+        calltree_references->emplace_back(call_reference);
+        already_visited_calls.emplace_back(call_reference);
+    }
     
     
 	
@@ -219,7 +222,12 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
 
         //check if abb contains a syscall and it is not a creational syscall
         if(abb->get_call_type() == sys_call  && abb->get_syscall_type() != create ){
-
+            
+            
+            if(start_vertex->get_name() == "main"){
+                std::cerr << start_vertex->get_name() <<  "-------------------------"<<  std::endl;
+                abb->print_information();
+            }
             
             //check if osek scheduler is addressd a resource and create this resource if necessary
             osek_scheduler_resource(graph, abb,&already_visited_calls);
@@ -233,6 +241,8 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
             
             argument_data argument_candidats;
             
+            bool default_handler = false;
+            
             //get the handler name of the target instance
             if(abb->get_handler_argument_index() != 9999){
                 argument_candidats  = (argument_list.at(abb->get_handler_argument_index()));
@@ -242,15 +252,15 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                     llvm::Value* llvm_argument_reference = nullptr;
                     if(argument_candidats.any_list.size() > 1){
                     
-                        std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
-                        get_call_relative_argument(any_argument,llvm_argument_reference, argument_candidats,&already_visited_calls);                
+                        //std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
+                        get_call_relative_argument(any_argument,llvm_argument_reference, argument_candidats,calltree_references);                
                     }
                     
                     
                     if(any_argument.type().hash_code() ==  typeid(std::string).hash_code()){
 
                         handler_name = std::any_cast<std::string>(any_argument);
-                        std::cerr << handler_name << std::endl;
+                        //std::cerr << handler_name << std::endl;
                         //check if the expected handler name occurs in the graph
                         bool handler_found = false;
                         for(auto &vertex : graph.get_vertices()){
@@ -259,6 +269,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                         
                         if(!handler_found){
                             std::cerr << "handler does not exist in graph " << handler_name << std::endl;
+                            default_handler = true;
                         }
                     }else{
                         std::cerr << "handler argument is no string" << std::endl;
@@ -273,6 +284,15 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                 //the RTOS has the handler name RTOS
                 if(target == typeid(OS::RTOS).hash_code())handler_name = "RTOS";
                 
+                if(default_handler == true){
+                    handler_name = "RTOS";
+                    target = typeid(OS::RTOS).hash_code();
+                }
+                
+                if(start_vertex->get_name() == "SignalGatherWaitTask"){
+                    abb->print_information();
+                }
+                
                 //get the vertices of the specific type from the graph
                 std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(target);
                 
@@ -280,6 +300,10 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                 //iterate about the vertices
                 for (auto &target_vertex : vertex_list) {
                     
+                    if(start_vertex->get_name() == "main"){
+                    std::cerr <<"target " <<   target_vertex->get_name() << "-------------------------"<<  std::endl;
+               
+                    }
                    
                     //compare the referenced handler name with the handler name of the vertex
                     if(target_vertex->get_handler_name() == handler_name){
@@ -287,12 +311,21 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                        
                         //get the vertex abstraction of the function, where the syscall is called
                         if(start_vertex != nullptr && target_vertex !=nullptr){
+                            
+                            if(start_vertex->get_name() == "main"){
+                                std::cerr <<"no nullptr " << "-------------------------"<<  std::endl;
+                            }
+                                                        
                             //check if the syscall expect values from target or commits values to target
                             if(abb->get_syscall_type() == receive || abb->get_syscall_type() == wait ){
                                 
                                 
                                 //create the edge, which contains the start and target vertex and the arguments
                                 auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex,target_vertex ,abb);
+                                
+                                
+                                //store the edge in the graph
+                                graph.set_edge(edge);
                                 
                                 target_vertex->set_outgoing_edge(edge);
                                 start_vertex->set_ingoing_edge(edge);
@@ -303,21 +336,26 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 //get the call specific arguments 
                                 auto arguments = abb->get_syscall_arguments();
                                 auto syscall_reference = abb->get_syscall_instruction_reference();
-                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, &already_visited_calls,syscall_reference,abb->get_syscall_name());
+                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, calltree_references,syscall_reference,abb->get_syscall_name());
                                 
                                 //check if syscall is a generic call, which can transformed to more generic one
                                 convert_syscall_name(specific_arguments,abb);
                                 edge->set_specific_call(&specific_arguments);
                                 
-                                //store the edge in the graph
-                                graph.set_edge(edge);
+
                             
                             }else{	//syscall set values
+                                
+                                
+                                if(start_vertex->get_name() == "main"){
+                                    std::cerr <<"create_edge " << "-------------------------"<<  std::endl;
+                                }
                                 
                                 //create the edge, which contains the start and target vertex and the arguments
                                 auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,target_vertex,abb);
     
-                              
+                                //store the edge in the graph
+                                graph.set_edge(edge);
                                 
                                 start_vertex->set_outgoing_edge(edge);
                                 target_vertex->set_ingoing_edge(edge);
@@ -328,14 +366,13 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 //get the call specific arguments 
                                 auto arguments = abb->get_syscall_arguments();
                                 auto syscall_reference = abb->get_syscall_instruction_reference();
-                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, &already_visited_calls,syscall_reference,abb->get_syscall_name());
+                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, calltree_references,syscall_reference,abb->get_syscall_name());
                                 
                                 //check if syscall is a generic call, which can transformed to more generic one
                                 convert_syscall_name(specific_arguments,abb);
                                 edge->set_specific_call(&specific_arguments);
                                 
-                                //store the edge in the graph
-                                graph.set_edge(edge);
+                                
                             }
                         }
                         break;
@@ -352,16 +389,25 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                 if(start_vertex->get_type() == typeid(OS::Timer).hash_code()){
                 }
                 
-                std::cout << "edge could not created: " << abb->get_syscall_name() <<  " in function " <<  abb->get_parent_function()->get_name()  << " in vertex " << start_vertex->get_name() <<  std::endl;
+                std::cerr << "edge could not created: " << abb->get_syscall_name() <<  " in function " <<  abb->get_parent_function()->get_name()  << " in vertex " << start_vertex->get_name() <<  std::endl;
                 debug_argument_test(argument_candidats.any_list.front());                
                 std::cerr << "expected handler name " << handler_name	<< std::endl;
                 abb->print_information();
             }
         }else if( abb->get_call_type()== func_call){
             //iterate about the called function
-            iterate_called_functions_interactions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls  );
+            iterate_called_functions_interactions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls ,calltree_references );
         }
     }
+//     if(start_vertex->get_name() == "main"){
+//         for(auto edge : start_vertex->get_ingoing_edges()){
+//             std::cerr << edge->get_specific_call().call_name << std::endl;
+//         }
+//         
+//         for(auto edge : start_vertex->get_outgoing_edges()){
+//             std::cerr << edge->get_specific_call().call_name << std::endl;
+//         }
+//     }
 }
 
 
@@ -386,7 +432,8 @@ void detect_interactions(graph::Graph& graph){
         auto main_function = std::dynamic_pointer_cast<OS::Function> (main_vertex);
         //get all interactions of the main functions and their called function with other os instances
         std::vector<llvm::Instruction*> already_visited;
-        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, already_visited);
+        std::vector<llvm::Instruction*> calltree_references;
+        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, already_visited,&calltree_references);
     }
     
     
@@ -396,10 +443,11 @@ void detect_interactions(graph::Graph& graph){
 	for (auto &vertex : vertex_list) {
         //std::cerr << "task name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
+        std::vector<llvm::Instruction*> calltree_references;
         auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
         OS::shared_function task_definition = task->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, already_visited);
+        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, already_visited,&calltree_references);
     }
     
     //get all isrs, which are stored in the graph
@@ -408,10 +456,11 @@ void detect_interactions(graph::Graph& graph){
 	for (auto &vertex : vertex_list) {
         //std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
+        std::vector<llvm::Instruction*> calltree_references;
         auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
         OS::shared_function timer_definition = timer->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, already_visited);
+        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, already_visited,&calltree_references);
     }
         
     //get all timers of the graph
@@ -420,10 +469,11 @@ void detect_interactions(graph::Graph& graph){
 	for (auto &vertex : vertex_list) {
         //std::cerr << "timer name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*>  already_visited;
+        std::vector<llvm::Instruction*> calltree_references;
         auto timer = std::dynamic_pointer_cast<OS::Timer> (vertex);
         OS::shared_function isr_definition = timer->get_callback_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, already_visited);
+        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, already_visited,&calltree_references);
     }
 }
 
@@ -457,7 +507,8 @@ void add_to_queue_set(graph::Graph& graph){
                     if(call.arguments.front().any_list.front().type().hash_code() == typeid(std::string).hash_code()){
                         
                         std::string handler_name = std::any_cast<std::string>(call.arguments.front().any_list.front());
-                        std::cerr << handler_name << std::endl;
+                        
+                        //std::cerr << handler_name << std::endl;
                         
                         std::hash<std::string> hash_fn;
 	
@@ -520,10 +571,16 @@ void get_osek_appmode(graph::Graph& graph){
     auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
     
     
+
     std::string appmode = ""; 
     //get the start scheduler instruction from main function
     for(auto outgoing_edge: main_function->get_outgoing_edges()){
+        
+        std::cerr << "SUCCESS" << std::endl;
         if(outgoing_edge->get_abb_reference()->get_syscall_type() == start_scheduler){
+            
+            std::cerr << "SUCCESS" << std::endl;
+            
             auto call_data = outgoing_edge->get_specific_call();
             //load the argument , appmode is the only argument
             if(call_data.arguments.size() != 1 || call_data.arguments.at(0).any_list.size() != 1){
@@ -533,6 +590,7 @@ void get_osek_appmode(graph::Graph& graph){
             //cast argument to string and check if multiple appmodes exists
             auto any_value= call_data.arguments.at(0).any_list.front();
             std::string tmp_appmode = std::any_cast<std::string>(any_value);
+            std::cerr << "tmp_appmode" << tmp_appmode << std::endl;
             if(appmode != "" && appmode != tmp_appmode){
                 std::cerr << "appmode could not certainly determined" << std::endl;
                 abort();
@@ -545,7 +603,7 @@ void get_osek_appmode(graph::Graph& graph){
     if(appmode != "")rtos->appmode = appmode;
     else {
         std::cerr << "appmode could not certainly determined" << std::endl;
-        abort();
+        //abort();
     }
 }   
     
@@ -572,6 +630,7 @@ namespace step {
 	void DetectInteractionsStep::run(graph::Graph& graph) {
 		
 		std::cout << "Run DetectInteractionsStep" << std::endl;
+        
 		//detect interactions of the OS abstraction instances
 		
 		//graph.print_information();
