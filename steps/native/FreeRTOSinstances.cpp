@@ -34,7 +34,7 @@ using namespace llvm;
 // 	const std::size_t  tmp_int = typeid(int).hash_code();
 // 	const std::size_t  tmp_double = typeid(double).hash_code();
 // 	const std::size_t  tmp_string = typeid(std::string).hash_code();
-// 	const std::size_t tmp_long 	= typeid(long).hash_code();
+// 	const std::size_t tmp_long 	= typeid(long).hash_code();element.type().hash_code()
 // 	std::cerr << "Argument: ";
 // 	/*
 // 	std::string type_str;
@@ -164,31 +164,51 @@ call_data get_syscall_relative_arguments(std::vector<argument_data>* arguments,s
 */
 void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,argument_data argument,std::vector<llvm::Instruction*>*call_references){
    
+    std::stringstream stream;
     if( argument.any_list.size() == 0)return;
     
     //check if multiple argument values are possible
     if(argument.multiple ==false){
+        
+        //no multiple values are possible -> select front
         any_value =  argument.any_list.front();
         llvm_value =  argument.value_list.front();
         return;
     }
     else{
-        std::vector<std::tuple<std::any,llvm::Value*,std::vector<char>>> valid_candidates;
+        //multiple values are possible
+        std::vector<std::tuple<std::any,llvm::Value*,std::vector<int>>> valid_candidates;
         char index = 0;
+        stream << "-------------------------- " << std::endl;
+        for(auto tmp : *call_references){
+                if(tmp != nullptr)stream << "current: " << print_argument(tmp) << std::endl;
+                else stream << "nullptr" << std::endl;
+        }
+        stream << "-------------------------- " << std::endl;
+        
         
         //detect all arguments which argument calls of the possible value are also visited by the abstraction instance
         for(auto argument_calles :argument.argument_calles_list){
+            
+            for(auto tmp : argument_calles){
+                stream << "expected: " << print_argument(tmp) << std::endl;
+            }
+            stream << "-------------------------- " << std::endl;
 
             auto tmp_argument_calles = argument_calles;
+            
             //erase first call, not necassary in evaluation
             tmp_argument_calles.erase(tmp_argument_calles.begin());
-            std::vector<char> missmatch_list;
-            char missmatches = 0;
-            for(auto call_reference : *call_references){
-               
+            std::vector<int> missmatch_list;
+            int missmatches = 0;
+            
+            for (auto it = call_references->rbegin(); it != call_references->rend(); ++it){
+            //for(auto call_reference : *call_references){
+                llvm::Instruction* call_reference = *it;
                 if(call_reference == tmp_argument_calles.front()){
                     tmp_argument_calles.erase(tmp_argument_calles.begin());
                     missmatch_list.emplace_back(missmatches);
+                    stream << "missmatch" << missmatches << std::endl;
                     missmatches = 0;
                 }
                 else ++missmatches;
@@ -197,6 +217,7 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
             ++index;
         }
         
+        //check if juste one match betwenn current call tree and argument possibilites call trees was found
         if(valid_candidates.size() == 1){
             //just one matching candidate was detected
             any_value = std::get<std::any>(valid_candidates.front());
@@ -205,32 +226,98 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
         }else{
             if(valid_candidates.size() == 0){
                 //no matching candidate was detected
-                 std::cerr << "no argument values are possible"<< std::endl;
+                 stream << "no argument values are possible"<< std::endl;
             }else{
+                
+                std::cerr << "TEEEEEESET" << std::endl;
                 //check if all candidates have the same argument call reference order
                 llvm::Value* old_value = std::get<llvm::Value*>(valid_candidates.front());
                 bool success = true;
+                bool first = true;
+                stream << "first: " << print_argument(old_value) << std::endl;
+                
+                int counter = -1;
+                int index = 0;
+                //check if the values are equal
                 for(auto data : valid_candidates){
-                    if(old_value !=std::get<llvm::Value*>(data)){
+                    ++counter;
+                    if(dyn_cast<ConstantPointerNull>(std::get<llvm::Value*>(data))){
+                        if(first == false)success = false;
+                        else continue;
+                    }
+                
+                    if(first == false && old_value !=std::get<llvm::Value*>(data)){
                         success = false;
                         break;
                     }
+                    stream << "new: " << print_argument(std::get<llvm::Value*>(data)) << std::endl;
+                    index = counter;
+                    
+                    first = false;
                 }
                 if(success){
                     //all candidates have the same argument call reference order
-                    any_value = std::get<std::any>(valid_candidates.front());
-                    llvm_value = std::get<llvm::Value*>(valid_candidates.front());
+                    any_value = std::get<std::any>(valid_candidates.at(index));
+                    llvm_value = std::get<llvm::Value*>(valid_candidates.at(index));
                     return;
                     
                 }else{
+                    
+                    unsigned int min_missmatch = -1;
+                    int index = 0;
+                    int candidate_index = 0;
+                    bool flag = false;
+                    
+                    for(auto candidate : valid_candidates){
+                        auto missmatch_list = std::get<std::vector<int>>(candidate);
+                        
+                        if(missmatch_list.empty() ==false && missmatch_list.front() < min_missmatch){
+                            min_missmatch = missmatch_list.front();
+                            candidate_index = index;
+                            flag = true;
+                        }
+                        ++index;
+                    }
+                    
+                    if(flag){
+                        any_value = std::get<std::any>(valid_candidates.at(candidate_index));
+                        llvm_value = std::get<llvm::Value*>(valid_candidates.at(candidate_index));
+                        return;
+                    }
+                    //TODO algorithm to select best candidate
+//                     unsigned int min_missmatch = -1;
+//                     int index = 0;
+//                     int candidate = 0;
+//                     bool flag = false;
+//                     while(!flag){
+//                         int counter = 0;
+//                         
+//                         
+//                         for(auto candidate : valid_candidates){
+//                             auto missmatch_list = std::get<std::vector<int>>(candidate);
+//                             if(missmatch_list.at(index) < min_missmatch){
+//                                 min_missmatch = missmatch_list.at(index);
+//                                 candidate = counter;
+//                             }
+//                             
+//                             
+//                             for(int missmatch : missmatch_list){
+//                                 std::cerr << missmatch << std::endl;
+//                             }
+//                             std::cerr << "----------------------" << std::endl;
+//                             ++counter;
+//                         }
+//                     }
+                    
                     std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
-                    //TODO select the best 
+                    //ERROR 
                 }
             }
         }
     }
+    std::cerr << stream.str();
     //default value if no candidate was found
-    any_value = (std::string) "multiple argument values are possible";
+    any_value = (std::string) " ERROR multiple argument values are possible";
     llvm_value = nullptr;
 }
 
@@ -297,29 +384,15 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
 	task->set_priority( priority);
 	task->set_start_scheduler_creation_flag(before_scheduler_start);
 	
-	
+    graph.set_vertex(task);
     
     if(!task->set_definition_function(function_reference_name)){
         std::cerr << "ERROR setting defintion function!" << std::endl;
         abort();
     }
     
-	std::hash<std::string> hash_fn;
-	
-	graph::shared_vertex vertex = nullptr;
-	vertex =  graph.get_vertex(hash_fn(function_reference_name +  typeid(OS::Function).name()));
-
-	if(vertex != nullptr){
-		auto function_reference = std::dynamic_pointer_cast<OS::Function> (vertex);
-		function_reference->set_definition_vertex(task);
-	}else{
-		std::cerr << "ERROR task definition function does not exist " << function_reference_name << std::endl;
-		abort();
-	}
 	
 	std::cout << "task successfully created"<< std::endl;
-   
-    graph.set_vertex(task);
     
 	return task;
 }
@@ -683,12 +756,14 @@ graph::shared_vertex create_timer(graph::Graph& graph,OS::shared_abb abb, bool b
 	std::cout << "timer successfully created"<< std::endl;
 	//set timer to graph
 	timer->set_start_scheduler_creation_flag(before_scheduler_start);
-
+    
+    graph.set_vertex(timer);
+    
     std::cerr << "timer callback function " <<timer_definition_function << std::endl;
 	timer->set_callback_function(timer_definition_function);
     timer->set_timer_action_type(alarm_callback);
     
-    graph.set_vertex(timer);
+
         
 	return timer;
 }
@@ -798,6 +873,9 @@ graph::shared_vertex create_coroutine(graph::Graph& graph, OS::shared_abb abb,  
 	std::string handler_name = function_reference_name  + std::to_string(id);
 	auto coroutine = std::make_shared<OS::CoRoutine>(&graph,handler_name);
 	
+    
+    graph.set_vertex(coroutine);
+    
 	coroutine->set_id(id);
 	coroutine->set_priority(priority);
 	coroutine->set_definition_function(function_reference_name);
@@ -805,7 +883,7 @@ graph::shared_vertex create_coroutine(graph::Graph& graph, OS::shared_abb abb,  
 	//set timer to graph
 	coroutine->set_start_scheduler_creation_flag(before_scheduler_start);
     
-	graph.set_vertex(coroutine);
+
 	
 	return coroutine;
 }
@@ -917,6 +995,7 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
         if(syscall_name =="xQueueCreateMutex")type = binary_mutex;
         else if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
         
+        std::cerr << abb->get_parent_function()->get_name() << std::endl;
         created_vertex = create_resource(graph, abb, type, before_scheduler_start,already_visited_calls);
         if(!created_vertex)std::cout << "Mutex could not created" << std::endl;
         
@@ -983,8 +1062,9 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
 * @param function current function of abstraction instance
 * @param call_reference function call instruction
 * @param already_visited call instructions which were already iterated
+* @param calltree_references call history
 */
-void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls){
+void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls,std::vector<llvm::Instruction*>* calltree_references){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
@@ -997,8 +1077,12 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
 			return;
 		}
 	}
-    already_visited_calls.emplace_back(call_reference);
-
+  
+    if(call_reference != nullptr){
+        calltree_references->emplace_back(call_reference);
+        already_visited_calls.emplace_back(call_reference);
+    }
+        
     //get the abbs of the function
     std::list<OS::shared_abb> abb_list = function->get_atomic_basic_blocks();
     
@@ -1017,7 +1101,7 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //validate if sysccall is not in loop
             if(abb->get_loop_information()){
                 multiple_create = true;
-                std::cerr << "abb " << abb->get_name() << " with syscall "<< abb->get_syscall_name() << "in loop" << std::endl;
+                //std::cerr << "abb " << abb->get_name() << " with syscall "<< abb->get_syscall_name() << "in loop" << std::endl;
             }
                 
             bool before_scheduler_start = false;
@@ -1027,25 +1111,15 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //check if abb syscall is creation syscall
             if(abb->get_syscall_type() == create){
                 
-                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,&already_visited_calls,multiple_create)){
+                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,calltree_references,multiple_create)){
                     std::cerr << "instance could not created" << std::endl;
                 }
             }
             
         }else if( abb->get_call_type()== func_call){
             //iterate about the called function
-            iterate_called_functions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls);
+            iterate_called_functions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls,calltree_references);
         }
-        
-        /*for(auto& edge : abb->get_outgoing_edges()){
-            graph::shared_vertex vertex =edge->get_target_vertex();
-            //std::cerr << "edge target " << vertex->get_name() << std::endl;
-            if(typeid(OS::Function).hash_code() == vertex->get_type()){
-                auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-                iterate_called_functions(graph,start_vertex,function, edge->get_instruction_reference(),already_visited_calls);
-                
-            }
-        }*/
     }
 }
 
@@ -1065,6 +1139,8 @@ namespace step {
     */
 
 	void FreeRTOSInstancesStep::run(graph::Graph& graph) {
+        
+        std::cerr << "Run FreeRTOSInstancesStep" << std::endl;
     
         //detect isrs based of the isr specific freertos api 
         detect_isrs(graph);
@@ -1083,7 +1159,8 @@ namespace step {
 			            
             //iterate about the main function context and detect abstraction instances
             std::vector<llvm::Instruction*> already_visited_calls;
-            iterate_called_functions(graph, main_vertex , main_function,nullptr,already_visited_calls);
+            std::vector<llvm::Instruction*> calltree_references;
+            iterate_called_functions(graph, main_vertex , main_function,nullptr,already_visited_calls,&calltree_references);
 		
             
         }else{
@@ -1113,7 +1190,8 @@ namespace step {
                 OS::shared_function task_definition = task->get_definition_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
-                iterate_called_functions(graph, task , task_definition, nullptr ,already_visited_calls);
+                std::vector<llvm::Instruction*> calltree_references;
+                iterate_called_functions(graph, task , task_definition, nullptr ,already_visited_calls,&calltree_references);
             }
         
         
@@ -1132,7 +1210,8 @@ namespace step {
                 OS::shared_function isr_definition = isr->get_definition_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
-                iterate_called_functions(graph, isr , isr_definition, nullptr ,already_visited_calls);
+                std::vector<llvm::Instruction*> calltree_references;
+                iterate_called_functions(graph, isr , isr_definition, nullptr ,already_visited_calls,&calltree_references);
             }
             
             
@@ -1150,7 +1229,8 @@ namespace step {
                 OS::shared_function timer_definition = timer->get_callback_function();
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
-                iterate_called_functions(graph, timer , timer_definition, nullptr ,already_visited_calls);
+                std::vector<llvm::Instruction*> calltree_references;
+                iterate_called_functions(graph, timer , timer_definition, nullptr ,already_visited_calls,&calltree_references);
             }
             
             
@@ -1164,27 +1244,34 @@ namespace step {
                 
             auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
             
-            hook_type hook = no_hook;
+            hook_type type = no_hook;
             if(function->get_name().find("PostTaskHook") != std::string::npos){
-                hook = post_task;
+                type = post_task;
             }else if(function->get_name().find("PreTaskHook") != std::string::npos){
-                hook = pre_task;
+                type = pre_task;
             }else if(function->get_name().find("ErrorHook") != std::string::npos){
-                hook = error;
+                type = error;
 //             }else if(function->get_name().find("ShutdownHook") != std::string::npos){
-                hook = shut_down;
+                type = shut_down;
             }else if(function->get_name().find("StartupHook") != std::string::npos){
-                hook = start_up;
+                type = start_up;
             }else if(function->get_name().find("vApplicationMallocFailedHook") != std::string::npos){
-                hook = failed;
+                type = failed;
             }else if(function->get_name().find("vApplicationIdleHook") != std::string::npos){
-                hook = idle;
+                type = idle;
             }else if(function->get_name().find("vApplicationStackOverflowHook") != std::string::npos){
-                hook = stack_overflow;
+                type = stack_overflow;
             }else if(function->get_name().find("vApplicationTickHook") != std::string::npos){
-                hook = tick;
+                type = tick;
             }
-            if(hook != no_hook)function->set_hook_type(hook);
+            if(type != no_hook){
+
+                auto hook = std::make_shared<OS::Hook>(&graph,function->get_name());
+                hook->set_hook_type(type);
+                hook->set_definition_function(function->get_name());
+                //store the edge in the graph
+                graph.set_vertex(hook);
+            }
         }
     }
 	
