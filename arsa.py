@@ -32,6 +32,8 @@ def main():
     args = parser.parse_args()
 
     g = graph.PyGraph()
+    
+    print(args.input_files[0])
 
     p_manager = stepmanager.StepManager(g, vars(args))
 

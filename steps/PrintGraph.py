@@ -156,7 +156,8 @@ class DotFileParser():
     def print_function_definition_relation(self,g, f, element):
         
         function = element.get_definition_function()
-        f.write(element.get_name().decode("utf-8").replace(" ", "").replace(".", "_") + " -> " + function.get_name().decode("utf-8").replace(" ", "").replace(".", "_") + "\n")
+        if function != None:
+            f.write(element.get_name().decode("utf-8").replace(" ", "").replace(".", "_") + " -> " + function.get_name().decode("utf-8").replace(" ", "").replace(".", "_") + "\n")
         
         
     def print_os_instance_function_mapping(self,g, folder):
@@ -245,18 +246,22 @@ class DotFileParser():
         
         f.write("digraph G {\n" )
         
-        self.print_instance_class( g,f,"Task",0, "salmon")
-        self.print_instance_class( g,f,"Event", 0,"darkseagreen1")
-        self.print_instance_class( g,f,"Queue", 0,"deepskyblue")
+        self.print_instance_class( g,f,"Task",0, "darkseagreen3")
+        self.print_instance_class( g,f,"Event", 0,"green")
+        self.print_instance_class( g,f,"Queue", 0,"orange")
         self.print_instance_class( g,f,"Alarm", 0,"grey")
         self.print_instance_class( g,f,"Timer", 0,"gold")
         self.print_instance_class( g,f,"Semaphore", 0,"cadetblue1")
         self.print_instance_class( g,f,"Buffer",0, "chocolate1")
         self.print_instance_class( g,f,"EventGroup",0, "aquamarine")
-        self.print_instance_class( g,f,"ISR",0, "ivory")
-        self.print_instance_class( g,f,"Resource",0, "orange")
+        
+        
+        self.print_instance_class( g,f,"ISR",0, "deepskyblue")
+        self.print_instance_class( g,f,"Resource",0, "ivory")
+        
+        
         self.print_instance_class( g,f,"QueueSet",0, "yellow")
-        self.print_main(g, f,"green")
+        self.print_main(g, f,"salmon")
         
         f.write("\n}" )
             
