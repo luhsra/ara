@@ -17,7 +17,6 @@ class ABB_MergeStep(Step):
     """Merges the ABB."""
         
     def get_dependencies(self):
-        
         return ['SyscallStep']
     
     
