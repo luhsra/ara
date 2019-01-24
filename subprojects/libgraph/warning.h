@@ -14,7 +14,7 @@ class Warning{
             this->warning_position = abb;
         };
         
-        virtual std::string  print_warning()  const  {return "";};
+        virtual std::string  print_warning()  const  = 0;
             
         std::string  print() const{
             
