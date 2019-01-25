@@ -253,34 +253,32 @@ cdef class Edge:
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_edge = make_shared[cgraph.Edge](&graph._c_graph, bname,start_vertex._c_vertex ,target_vertex._c_vertex ,spc[cgraph.ABB, cgraph.Vertex](abb_reference._c_vertex))
-        
+
     def get_start_vertex(self):
-        
+
         cdef shared_ptr[cgraph.Vertex] start = deref(self._c_edge).get_start_vertex()
         if start!= NULL:
             return create_from_pointer(start)
-        else: 
+        else:
             return None
-        
+
     def get_target_vertex(self):
-        
-        
+
+
         cdef shared_ptr[cgraph.Vertex] target = deref(self._c_edge).get_target_vertex()
-        
+
         if target!= NULL:
 
             return create_from_pointer(target)
-        else: 
+        else:
             return None
-        
-        
+
+
     def get_name(self):
-        cdef c_string = deref(self._c_edge).get_name()
-        cdef bytes py_string = c_string
-        return py_string
-    
+        return deref(self._c_edge).get_name().decode('UTF-8')
+
     def get_abb_reference(self):
-        
+
         cdef shared_ptr[cgraph.ABB] abb_reference = deref(self._c_edge).get_abb_reference()
         cdef shared_ptr[cgraph.Vertex] v_ref = spc[cgraph.Vertex, cgraph.ABB](abb_reference)
         return create_from_pointer(v_ref)
@@ -307,42 +305,40 @@ cdef class Vertex:
         #return py_obj
 
     def get_name(self):
-        cdef c_string = deref(self._c_vertex).get_name()
-        cdef bytes py_string = c_string
-        return py_string
+        return deref(self._c_vertex).get_name().decode('UTF-8')
 
     def get_seed(self):
         return deref(self._c_vertex).get_seed()
-    
+
     def get_type(self):
         return deref(self._c_vertex).get_type()
 
     def	set_handler_name(self,str name):
         cdef string handlername = name.encode('UTF-8')
         deref(self._c_vertex).set_handler_name(handlername)
-            
+
     def	get_outgoing_edges(self):
-        
+
         cdef clist[shared_ptr[cgraph.Edge]] edges = deref(self._c_vertex).get_outgoing_edges()
         cdef shared_ptr[cgraph.Vertex] start
         pylist = []
         for edge in edges:
 
             py_obj= Edge(None, None,None,None,None,_raw=True)
-            
+
             py_obj._c_edge = edge
-            
+
             start = deref(edge).get_start_vertex()
-    
+
             pylist.append(py_obj)
-            
+
         return pylist
 
 
 
-   
 
-    
+
+
 
 
 cdef class Counter(Vertex):
@@ -365,9 +361,7 @@ cdef class Counter(Vertex):
         deref(self._c()).set_min_cycle(min_cycle)
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
+        return deref(self._c()).get_name().decode('UTF-8')
 
 
 cdef class Event(Vertex):
@@ -387,9 +381,7 @@ cdef class Event(Vertex):
         return deref(self._c()).set_event_mask_auto()
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
+        return deref(self._c()).get_name().decode('UTF-8')
 
 
 
@@ -416,14 +408,12 @@ cdef class ISR(Vertex):
         deref(self._c()).set_resource_reference(c_resource_name)
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
+        return deref(self._c()).get_name().decode('UTF-8')
 
     def get_definition_function(self):
         cdef shared_ptr [cgraph.Function] function = deref(self._c()).get_definition_function()
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
-                            
+
     def set_definition_function(self, str function_name):
         cdef string c_function_name = function_name.encode('UTF-8')
         return deref(self._c()).set_definition_function(c_function_name)
@@ -444,9 +434,7 @@ cdef class Resource(Vertex):
         deref(self._c()).set_resource_property(c_prop, c_linked_resource)
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
+        return deref(self._c()).get_name().decode('UTF-8')
 
 
 cdef class Task(Vertex):
@@ -490,10 +478,8 @@ cdef class Task(Vertex):
         return deref(self._c()).set_event_reference(c_event_name)
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
-    
+        return deref(self._c()).get_name().decode('UTF-8')
+
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_definition_function()
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
@@ -530,50 +516,48 @@ cdef class Function(Vertex):
 
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
-    
+        return deref(self._c()).get_name().decode('UTF-8')
+
     def set_has_syscall(self,flag):
         cdef bool has_syscall= flag
         return deref(self._c()).has_syscall(has_syscall)
-    
+
     def get_has_syscall(self):
-    
+
         return deref(self._c()).has_syscall()
-        
+
     def remove_abb(self,seed):
         return deref(self._c()).remove_abb(seed)
-        
+
     def set_exit_abb(self, ABB abb):
         return deref(self._c()).set_exit_abb(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
-    
+
     def get_exit_abb(self):
         cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_exit_abb()
         if abb!= NULL:
             return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
-        else: 
+        else:
             return None
-        
+
     def get_entry_abb(self):
         cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_entry_abb()
         if abb!= NULL:
             return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
-        else: 
+        else:
             return None
-        
+
 
     def get_called_functions(self):
-        
+
         cdef cvector[shared_ptr[cgraph.Function]] function_list  =  deref(self._c()).get_called_functions()
-        
-        
+
+
         pylist = []
-        
+
         for function in function_list:
             pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)))
-                
-        
+
+
         return pylist
     #def get_call_target_instance(self):
         #return deref(self._c()).get_call_target_instance()
@@ -602,17 +586,6 @@ cdef class ABB(Vertex):
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](&graph._c_graph,spc[cgraph.Function, cgraph.Vertex](function_reference._c_vertex) , bname))
-
-    def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
-    
-    def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
-
 
     def convert_call_to_syscall(self, name):
         cdef bname
@@ -882,10 +855,8 @@ cdef class Timer(Vertex):
         deref(self._c()).set_cycle_time(cycle_time)
 
     def get_name(self):
-        cdef string c_string = deref(self._c()).get_name()
-        cdef bytes py_string = c_string
-        return py_string
-        
+        return deref(self._c()).get_name().decode('UTF-8')
+
 cdef class RTOS(Vertex):
 
     cdef inline shared_ptr[cgraph.RTOS] _c(self):
