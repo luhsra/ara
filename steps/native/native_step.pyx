@@ -46,6 +46,15 @@ cdef class SuperStep:
         """
         raise Exception("Not implemented.")
 
+    def get_side_data(self):
+        """Provide arbitrary side data, that are not belonging to the system
+        graph. This can be used to make analysis based on the system graph and
+        extract some data not related to the graph itself.
+
+        Return some step specific kind of side data.
+        """
+        raise Exception("Not implemented.")
+
 class Step(SuperStep):
     """Python representation of a step. This is the superclass for all other
     steps."""
