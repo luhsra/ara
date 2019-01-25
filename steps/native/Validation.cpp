@@ -818,7 +818,14 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
                 }
             }
         }
-        auto warning = std::make_shared<PriorityInversionWarning>( &unbouded_task_list, min_priority_task, max_priority_task,  resource, nullptr);
+		shared_abb abb;
+		for (auto& edge : resource->get_ingoing_edges()) {
+			// quick and dirty compare, replace this with an OS independent version
+			if (edge->get_name() == "xQueueCreateMutex") {
+				abb = edge->get_abb_reference();
+			}
+		}
+        auto warning = std::make_shared<PriorityInversionWarning>( &unbouded_task_list, min_priority_task, max_priority_task,  resource, abb);
         warning_list->emplace_back(warning);
     }
 }

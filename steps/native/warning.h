@@ -3,6 +3,8 @@
 #ifndef Warning_H
 #define Warning_H
 
+#include <assert.h>
+
 #include "graph.h"
 class Warning{
     
@@ -11,6 +13,8 @@ class Warning{
          
         OS::shared_abb warning_position;
         Warning(OS::shared_abb abb){
+			// Warning must have a location
+			assert(abb != nullptr);
             this->warning_position = abb;
         };
         
