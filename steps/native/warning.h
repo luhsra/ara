@@ -18,7 +18,8 @@ class Warning{
             this->warning_position = abb;
         };
         
-        virtual std::string  print_warning()  const  = 0;
+        virtual std::string print_warning() const = 0;
+		virtual std::string get_type() const = 0;
             
         std::string  print() const{
             
@@ -42,6 +43,7 @@ class BufferWarning : public Warning {
         BufferWarning(OS::shared_buffer buffer,OS::shared_abb abb) : Warning(abb){
                 this->buffer = buffer;
         }
+	virtual std::string get_type() const override { return "Buffer"; }
         
     virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -60,6 +62,8 @@ class QueueSetWarning : public Warning {
             this->queueset = queueset;
             this->accessed_element = accessed_element;
         }
+
+	virtual std::string get_type() const override { return "QueueSet"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -82,6 +86,8 @@ class EventWarning : public Warning {
             this->set_bits = set_bits;
             this->expected_bits = expected_bits;
         }
+
+	virtual std::string get_type() const override { return "Event"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -109,6 +115,8 @@ class EventWarningWrongListSize : public Warning {
             this->eventlist_size = eventlist_size;
             this->set_expected_bits = set_expected_bits;
         }
+
+	virtual std::string get_type() const override { return "EventWrongListSize"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -135,6 +143,8 @@ class EnableWarning : public Warning {
             stream +=  "Abstraction instance " + instance->get_name() + " is used without enabling the abstraction class in rtos configuration" +"\n";
             return stream;
         };
+
+	virtual std::string get_type() const override { return "Enable"; }
 };
 
 
@@ -148,6 +158,8 @@ class ISRSyscallWarning : public Warning {
             this->abb = abb;
             this->isr = isr;
         }
+
+	virtual std::string get_type() const override { return "ISRSyscall"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -167,6 +179,8 @@ class CriticalRegionWarning : public Warning {
         CriticalRegionWarning(graph::shared_vertex vertex, OS::shared_abb abb):Warning(abb){
             this->vertex = vertex;
         };
+
+	virtual std::string get_type() const override { return "CriticalRegion"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -188,6 +202,8 @@ class SemaphoreUseWarning : public Warning {
             this->semaphore = semaphore;
             this->vertex = vertex;
         }
+
+	virtual std::string get_type() const override { return "SemphoreUse"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -206,6 +222,8 @@ class ResourceUseWarning : public Warning {
             this->resouce = resouce;
             this->vertex = vertex;
         }
+
+	virtual std::string get_type() const override { return "ResourceUse"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";
@@ -231,6 +249,8 @@ class PriorityInversionWarning : public Warning {
             this->max_prio_vertex = max_prio_vertex;
             this->resource = resource;
         }
+
+	virtual std::string get_type() const override { return "PriorityInversion"; }
         
         virtual std::string print_warning()  const override {
             std::string stream  = "";
@@ -259,6 +279,8 @@ class DeadLockWarning : public Warning {
         DeadLockWarning( std::vector<graph::shared_vertex> *input_deadlockchain, OS::shared_abb abb):Warning(abb){
             this->deadlockchain = *input_deadlockchain;
         }
+
+	virtual std::string get_type() const override { return "DeadLock"; }
         
         virtual std::string print_warning()  const override {
             std::string stream  = "";
