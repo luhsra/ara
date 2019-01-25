@@ -10,13 +10,14 @@ from native_step import Step
 
 def main():
     g = graph.PyGraph()
-    json_file = sys.argv[1]
-    i_file = sys.argv[2]
-    print("Testing with", i_file, "and json:", json_file)
-    with open(sys.argv[1]) as f:
+    os_name = sys.argv[1]
+    json_file = sys.argv[2]
+    i_file = sys.argv[3]
+    print("Testing with", i_file, "and json:", json_file, "and os: ", os_name)
+    with open(json_file) as f:
         warnings = json.load(f)
 
-    config = {'os': 'freertos',
+    config = {'os': os_name,
               'input_files': [i_file]}
     p_manager = stepmanager.StepManager(g, config)
 

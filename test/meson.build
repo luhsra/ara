@@ -6,7 +6,7 @@ test('dependency_resolving',
 
 test('priority_inversion',
         py3_inst,
-        args : [files('validation.py', 'priority_inversion.json'), freertos_targets[13]],
+        args : [files('validation.py'), 'freertos', files('priority_inversion.json'), freertos_targets[13]],
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )
 
