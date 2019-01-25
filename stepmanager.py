@@ -30,6 +30,10 @@ class StepManager:
 		for step in provides(config):
 			self._steps[step.get_name()] = step
 
+	def get_step(self, name):
+		"""Get the step with specified name or None."""
+		return self._steps.get(name, None)
+
 	def execute(self, steps: List[str]):
 		"""Executes all steps in correct order.
 
