@@ -15,6 +15,11 @@ cimport IntermediateAnalysis
 cimport Validation
 cimport test
 cimport graph
+cimport cgraph
+
+from cython.operator cimport dereference as deref
+from libcpp.memory cimport shared_ptr
+from backported_memory cimport static_pointer_cast as spc
 
 cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
@@ -83,6 +88,10 @@ ctypedef enum steps:
     TEST0_STEP,
     TEST2_STEP
 
+cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
+    cdef pyobj = graph.create_abb(location)
+    return pyobj
+
 cdef class NativeStep(SuperStep):
     """Constructs a dummy Python class for a C++ step."""
 
@@ -140,6 +149,16 @@ cdef class NativeStep(SuperStep):
 
     def get_description(self):
         return self._c_pass.get_description()
+
+    def get_side_data(self):
+        if self.get_name() == "ValidationStep":
+            warnings = []
+            for warning in (<Validation.ValidationStep*> self._c_pass).get_warnings():
+                p_warn = {'type': deref(warning).get_type().decode('UTF-8'),
+                          'location': get_warning_abb(deref(warning).warning_position)}
+                warnings.append(p_warn)
+            return warnings
+        super().get_side_data()
 
 def provide_steps(config: dict):
     """Provide a list of all native steps. This also constructs as many

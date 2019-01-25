@@ -189,7 +189,10 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
     return py_obj
 
 
-
+cdef create_abb(shared_ptr[cgraph.ABB] abb):
+    cdef Vertex py_obj = ABB(None, None, None, _raw=True)
+    py_obj._c_vertex = spc[cgraph.Vertex, cgraph.ABB](abb)
+    return py_obj
 
 
 cdef class PyGraph:

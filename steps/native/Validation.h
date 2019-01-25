@@ -63,6 +63,8 @@ namespace step {
 		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
+
+		std::vector<shared_warning>& get_warnings() { return warnings; }
 	};
 }
 
