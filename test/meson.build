@@ -4,4 +4,10 @@ test('dependency_resolving',
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )
 
+test('priority_inversion',
+        py3_inst,
+        args : [files('validation.py', 'priority_inversion.json'), freertos_targets[13]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
 subdir('native_step_test')

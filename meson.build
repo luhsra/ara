@@ -11,8 +11,8 @@ build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
 subdir('steps')
-subdir('test')
 subdir('appl')
+subdir('test')
 
 test('priority-inversion',
   py3_inst,
