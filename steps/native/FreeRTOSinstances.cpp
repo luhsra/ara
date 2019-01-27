@@ -213,7 +213,7 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
                 }
                 else ++missmatches;
             }
-            if(tmp_argument_calles.empty())valid_candidates.emplace_back( std::make_tuple(argument.any_list.at(index),argument.value_list.at(index),missmatch_list));
+            if(tmp_argument_calles.empty())valid_candidates.emplace_back(std::make_tuple(argument.any_list.at(index),argument.value_list.at(index),missmatch_list));
             ++index;
         }
         
@@ -263,54 +263,80 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
                     
                 }else{
                     
-                    unsigned int min_missmatch = -1;
+                    
                     int index = 0;
-                    int candidate_index = 0;
-                    bool flag = false;
+                    bool flag = true;
                     
-                    for(auto candidate : valid_candidates){
-                        auto missmatch_list = std::get<std::vector<int>>(candidate);
+                    //get the best candidate of all possible in relation to the calltree 
+                    while(flag){
                         
-                        if(missmatch_list.empty() ==false && missmatch_list.front() < min_missmatch){
-                            min_missmatch = missmatch_list.front();
-                            candidate_index = index;
-                            flag = true;
+                        
+                        auto first_missmatch_list = std::get<std::vector<int>>(valid_candidates.front());
+                    
+                        //get the first missmatch value from first candidate
+                        bool first_candidate = true;
+                        int candidate_index = 0;
+                        std::list<int> candidate_indexes;
+                        
+                        //intialize min missmatch with highest possible value
+                        unsigned int min_missmatch = -1; 
+                        
+                        //iterate about the candidates
+                        for(auto candidate : valid_candidates){
+                            
+                            //get the first element
+                            auto missmatch_list = std::get<std::vector<int>>(candidate);
+                            
+
+                            if(missmatch_list.empty() || missmatch_list.size() < index){
+                            	//if missmatch list is empty oder to small ->error detected    
+                                
+                            }else if(first_candidate || missmatch_list.at(index) < min_missmatch){
+                                //new best candidate detected or first element
+                                min_missmatch = missmatch_list.front();
+                        
+                                //set the current candidate list
+                                candidate_indexes.clear();
+                                candidate_indexes.emplace_back(candidate_index);
+                                
+                                //reset first candidate boolean
+                                if(first_candidate)first_candidate = false;
+                                
+                            }else if(missmatch_list.at(index) > min_missmatch){
+                                //so ignore ignore it
+                                
+           
+                            }else if(missmatch_list.at(index) == min_missmatch){ 
+                                //next possible candidate with equal min missmatch value detected, so store the candidate
+                                candidate_indexes.emplace_back(candidate_index);
+                            }
+                            ++candidate_index;
+                        }         
+                        
+                        //store all best candidates in tmp list
+                        std::vector<std::tuple<std::any,llvm::Value*,std::vector<int>>> tmp_valid_candidates;
+                        int tmp_counter = 0;
+                        for(auto candidate  : valid_candidates){
+                            //check if candidate is in candidate list
+                            if(find (candidate_indexes.begin(), candidate_indexes.end(), tmp_counter)!= candidate_indexes.end()){
+                                //store candidate in tmp list
+                                tmp_valid_candidates.emplace_back(valid_candidates.at(tmp_counter));
+                            };
+                            ++tmp_counter;
                         }
+                        valid_candidates = tmp_valid_candidates;
+                        
+                        //if candidate list has just size of 1 valid candidate was found
+                        if(valid_candidates.size()== 1){
+                            any_value = std::get<std::any>(valid_candidates.front());
+                            llvm_value = std::get<llvm::Value*>(valid_candidates.front());
+                            return;
+                        }else if (valid_candidates.size() == 0)flag = false;
+                        //error detected
+                        else if(index > 100)flag = false;
                         ++index;
-                    }
-                    
-                    if(flag){
-                        any_value = std::get<std::any>(valid_candidates.at(candidate_index));
-                        llvm_value = std::get<llvm::Value*>(valid_candidates.at(candidate_index));
-                        return;
-                    }
-                    //TODO algorithm to select best candidate
-//                     unsigned int min_missmatch = -1;
-//                     int index = 0;
-//                     int candidate = 0;
-//                     bool flag = false;
-//                     while(!flag){
-//                         int counter = 0;
-//                         
-//                         
-//                         for(auto candidate : valid_candidates){
-//                             auto missmatch_list = std::get<std::vector<int>>(candidate);
-//                             if(missmatch_list.at(index) < min_missmatch){
-//                                 min_missmatch = missmatch_list.at(index);
-//                                 candidate = counter;
-//                             }
-//                             
-//                             
-//                             for(int missmatch : missmatch_list){
-//                                 std::cerr << missmatch << std::endl;
-//                             }
-//                             std::cerr << "----------------------" << std::endl;
-//                             ++counter;
-//                         }
-//                     }
-                    
+                        }
                     std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
-                    //ERROR 
                 }
             }
         }
