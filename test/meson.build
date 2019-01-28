@@ -16,4 +16,16 @@ test('invalid_mutex',
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )
 
+test('start_scheduler_relation',
+        py3_inst,
+        args : [files('start_scheduler_relation.py'), 'freertos', files('start_scheduler_relation.json'), freertos_targets[8]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
+test('topological_sort',
+        py3_inst,
+        args : [files('topological_sort.py'), 'freertos', files('topological_sort.json'), freertos_targets[4]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
 subdir('native_step_test')

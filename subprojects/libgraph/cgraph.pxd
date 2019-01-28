@@ -5,6 +5,12 @@ from libcpp.vector cimport vector as cvector
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
+
+
+cdef extern from "graph.h":
+    cdef cppclass start_scheduler_relation:
+        pass
+
     
 cdef extern from "graph.h":
     cdef cppclass timer_type:
@@ -21,6 +27,14 @@ cdef extern from "graph.h":
 cdef extern from "graph.h":
     cdef cppclass os_type:
         pass
+        
+
+cdef extern from "graph.h" namespace "start_scheduler_relation":
+    cdef timer_type before
+    cdef timer_type after
+    cdef timer_type uncertain
+    cdef timer_type not_defined  
+        
 cdef extern from "graph.h" namespace "timer_type":
     cdef timer_type oneshot
     cdef timer_type autoreload
@@ -266,4 +280,4 @@ cdef extern from "graph.h" namespace "OS":
         
         void set_handler_argument_index(size_t index)
         
-        
+        start_scheduler_relation get_start_scheduler_relation()

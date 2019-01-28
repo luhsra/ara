@@ -57,7 +57,14 @@ cpdef get_type_hash(name):
     
     return  hash_type
 
+class start_scheduler_relation(IntEnum):
+    after  = <int> cgraph.after
+    uncertain = <int> cgraph.uncertain
+    before   = <int> cgraph.before
+    not_defined  = <int> cgraph.not_defined
 
+    
+    
 class call_definition_type(IntEnum):
     sys_call  = <int> cgraph.sys_call
     func_call = <int> cgraph.func_call
@@ -752,6 +759,11 @@ cdef class ABB(Vertex):
 
     def set_handler_argument_index(self,index):
         return deref(self._c()).set_handler_argument_index(index)
+    
+    def get_start_scheduler_relation(self):
+        
+        cdef cgraph.start_scheduler_relation relation = deref(self._c()).get_start_scheduler_relation()
+        return start_scheduler_relation(<int> relation)
 
         
     def  print_information(self):
