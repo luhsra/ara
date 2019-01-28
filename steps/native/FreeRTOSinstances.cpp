@@ -1293,10 +1293,11 @@ namespace step {
             if(type != no_hook){
 
                 auto hook = std::make_shared<OS::Hook>(&graph,function->get_name());
+                graph.set_vertex(hook);
                 hook->set_hook_type(type);
                 hook->set_definition_function(function->get_name());
                 //store the edge in the graph
-                graph.set_vertex(hook);
+
             }
         }
     }

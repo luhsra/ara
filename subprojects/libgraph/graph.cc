@@ -1741,7 +1741,7 @@ bool OS::Hook::set_definition_function(std::string function_name){
 	auto self_vertex = this->graph->get_vertex(this->seed);
 
    if(self_vertex == nullptr){
-        std::cerr << "ERROR: isr not found " << this->name << std::endl;
+        std::cerr << "ERROR: hook instance not found " << this->name << std::endl;
         abort();
     }
 
