@@ -394,7 +394,7 @@ void sort_abbs(graph::Graph& graph){
                 std::map<std::string,std::string> open_predecessors;
                 
             
-                SCCtopological_sort(first, &open_predecessors , &already_visited, &self_topological_order, first);
+                SCC_topological_sort(first, &open_predecessors , &already_visited, &self_topological_order, first);
                 
                 if(self_topological_order.size() == scc_topological_order.size()){
                     for(auto topological_element: self_topological_order){
