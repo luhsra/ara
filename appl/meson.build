@@ -18,7 +18,7 @@ freertos_includes = files(join_paths(freertos_path, 'croutine.h'),
                           join_paths(freertos_path, 'task.h'))
 
 freertos_targets = []
-foreach app : ['a', 'b', 'c', 'd', 'e', 'f', 'g',
+foreach app : ['a', 'b', 'c', 'd', 'topological_sort', 'f', 'g',
                'argument_load', 'start_scheduler_relation', 'deadlock', 'dominator',
                'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection']
   freertos_targets += custom_target('freertos-' + app,
