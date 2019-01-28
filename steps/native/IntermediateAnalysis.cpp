@@ -30,10 +30,6 @@
 
 using namespace llvm;
 
-
-start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited);
-
-
 /**
 * @brief returns the string representation of llvm value
 * @param val llvm value which string represantion is returned
@@ -163,59 +159,18 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
 	return instruction_vector;
 }
 
-/**
-* @brief set for each abb in the main function the information if the abb is before, uncertain oder behind the start scheduler call
-* @param graph project data structure
-* @param instr llvm instruction
-* @param already_visited call instruction which were alread visited
-* @param state relation of the abb to the start scheduler
-* @param start_scheduler_func_calls all calls with contain functions which the start scheduler is called certainly
-* @param uncertain_start_scheduler_func_calls all calls with addresses functions which the start scheduler is not called certainly
-* @return information if the last function abb is before, uncertain or after the start scheduler syscall
-*/
-void recursive_before_scheduler_instructions(graph::Graph& graph,llvm::Instruction* instr,start_scheduler_relation& state,std::vector<std::size_t> *already_visited,std::vector<llvm::Instruction*>* start_scheduler_func_calls,std::vector<llvm::Instruction*>* uncertain_start_scheduler_func_calls){
-    
-    std::hash<std::string> hash_fn;
-    
-    llvm::Function* called_function = nullptr;
-    if(llvm::CallInst* call_instruction = dyn_cast<CallInst>(instr)){
-        called_function = call_instruction->getCalledFunction();
-    }else if(llvm::InvokeInst* call_instruction = dyn_cast<InvokeInst>(instr)){
-        called_function = call_instruction->getCalledFunction();
-    }
-   
-    start_scheduler_relation result;
-   
-    if(called_function != nullptr){
-        graph::shared_vertex target_vertex = graph.get_vertex( hash_fn(called_function->getName().str() +  typeid(OS::Function).name())); 
-        auto target_function = std::dynamic_pointer_cast<OS::Function>(target_vertex);
-        result = before_scheduler_instructions(graph,target_function  ,already_visited);
-        
-        
-        if(result == after){
-            //in the called function a start scheduler instruction is inevitably executed
-            start_scheduler_func_calls->emplace_back(instr);
-            if (state == before)state = uncertain; 
-        }
-        else{
-            if (result == uncertain){
-                //in the called function a start scheduler instruction is executed, but not inevitably
-                uncertain_start_scheduler_func_calls->emplace_back(instr);
-                //if the current state of the function is before and the result of the called function is uncertain, then set state to uncertain 
-                if (state == before)state = uncertain; 
-            }
-        }
-    }
-}
+
 
 /**
 * @brief set for each abb in the main function the information if the abb is before, uncertain oder behind the start scheduler call
 * @param graph project data structure
-* @param already_visited call instruction which were alread visited
+* @param already_visited call instruction which were alread visited ->detect recursion
+* @param call_tree call instruction which were alread visited -> store call tree history
 * @param function main function
+* @param start_relation start_scheduler relation of entry abb of function
 * @return information if the last function abb is before, uncertain or after the start scheduler syscall
 */
-start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::vector<std::size_t> *already_visited){
+start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::shared_function function,std::map<std::size_t,std::size_t> already_visited,std::map<std::size_t,std::size_t>* call_tree,start_scheduler_relation start_relation){
     
 
 	//default start scheduler relation state of the function 
@@ -227,124 +182,111 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
     
 	std::vector<llvm::Instruction*> start_scheduler_func_calls;
 	std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
-	std::vector<llvm::Instruction*> return_instructions;
 		
 	std::hash<std::string> hash_fn;
     
+    //generate dominator tree
+	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
     
     //generate hash value of the functionname
 	size_t hash_value = hash_fn(function->get_name());
-	
+	bool visited_flag =  false;
+    bool calltree_flag = false;
+    
 	//search hash value in list of already visited basic blocks
-	for(auto hash : *already_visited){
-		if(hash_value == hash){
-			//function already visited
-			return not_defined;
-		}
-	}
-	//set function as already visited 
-	already_visited->emplace_back(hash_value);
-	
-	//get all start scheduler instructions of the current function (not the subfunctions)
-	start_scheduler_func_calls = get_start_scheduler_instruction(function);
+    if ( already_visited.find(hash_value) != already_visited.end() ) {
+        visited_flag = true;
+    }
     
-    
-	
-	//generate dominator tree
-	llvm::DominatorTree* dominator_tree = function->get_dominator_tree();
-	
-	//check if a start scheduler call was found in current function
-	if(start_scheduler_func_calls.size() == 0){
-        //set scheduler relation state of function to before
-		state = before;
-	}
-        
-    //get all return instructions of the function and store them
-    for(auto &abb : function->get_atomic_basic_blocks()){
-        for(llvm::BasicBlock* bb : *abb->get_BasicBlocks()){
-            for(auto &instr:*bb){
-                if(isa<ReturnInst>(instr)){
-                    return_instructions.emplace_back(&instr);
-                }
-            }
-        }
+    //search hash value in list of already visited basic blocks
+    if ( call_tree->find(hash_value) != call_tree->end() ) {
+        calltree_flag = true;
+        //std::cerr << "---------------------" << std::endl;
     }
 
-	
-	//iterate about abbs which contain a func call and detect function calls and execute the recursive analysis for the called function
-	for(auto &abb : function->get_atomic_basic_blocks()){
-        if(abb->get_call_type() != func_call)continue;
-		for(llvm::BasicBlock* bb : *abb->get_BasicBlocks()){
-            for(auto &instruction:*bb){
-                auto *instr = abb->get_call_instruction_reference();
-                //start the recursion for the called function
-                recursive_before_scheduler_instructions( graph,instr, state,already_visited,&start_scheduler_func_calls,&uncertain_start_scheduler_func_calls);
+    if(!visited_flag){//set function as already visited 
+        already_visited.insert(std::make_pair(hash_value, hash_value));
+        call_tree->insert(std::make_pair(hash_value, hash_value));
+        
+        std::vector<llvm::Instruction*> start_scheduler_func_calls;
+        std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
+        
+        auto entry_abb = function->get_entry_abb();
+        
+        if(entry_abb == nullptr){
+            std::cerr << "Function" << function->get_name() << "has no entry abb" <<std::endl;
+            abort();
+        }
+        
+        //iterate about the abbs of function in topoligal order
+        for(auto &abb : function->get_atomic_basic_blocks()){
+            
+            bool before_flag= false;
+            bool after_flag = false;
+            bool uncertain_flag =false;
+            for(auto predecessor :abb->get_ABB_predecessors()){
+                //std::cerr << "predecessor " << predecessor->get_name() << std::endl;
+                if(predecessor->get_start_scheduler_relation() == before)before_flag = true;
+                if(predecessor->get_start_scheduler_relation() == after)after_flag = true; 
+                if(predecessor->get_start_scheduler_relation() == uncertain)uncertain_flag = true; 
+            }
+            
+            start_scheduler_relation tmp_state = uncertain;
+            
+            if(abb->get_seed() == entry_abb->get_seed())tmp_state = start_relation;
+            else{
                 
-			}
-		}
-	}
-	
-	//check if certain und uncertain start scheduler calls exists
-	if(state ==uncertain){
-		for(auto &abb : function->get_atomic_basic_blocks()){
-            bool before_flag = false;
-            bool uncertain_flag = false;
-			
-            for(auto &instruction:*abb->get_entry_bb()){
-                //check if the instruction is not reachable from all certain and uncertain start scheduler instructions
-                if(!validate_instructions_reachability(&start_scheduler_func_calls,&instruction, dominator_tree ) && !validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&instruction, dominator_tree ) ){
-                        //instruction is not reachable from a uncertain or certain start scheduler instruction 
-                    before_flag = true;
+                if(before_flag && !after_flag && !uncertain_flag)tmp_state = before;
+                else if(!before_flag && after_flag && !uncertain_flag)tmp_state = after;
+            }
+            //std::cerr << abb->get_name() << "tmp 1 relation " << tmp_state  << std::endl;
+            
+            if(abb->get_call_type() == sys_call){
+                //std::cout << abb->get_call_name() << std::endl; 
+                if(start_scheduler == abb->get_syscall_type())tmp_state = after;
+            }else if(abb->get_call_type() == func_call){
+                if(tmp_state == after) before_scheduler_instructions(graph,abb->get_called_function(),already_visited,call_tree,tmp_state);
+                else tmp_state = before_scheduler_instructions(graph,abb->get_called_function(),already_visited,call_tree,tmp_state);
+            }
+            
+            //std::cerr << abb->get_name() << "tmp 2 relation " << tmp_state  << std::endl;
+            
+            if(tmp_state == uncertain){
+                if(abb->get_entry_bb() != nullptr){
                     
-                }else{
-                    before_flag = false;
-                    
-
-                    if(validate_one_instructions_dominance(&start_scheduler_func_calls,&instruction, dominator_tree ))uncertain_flag = false;
-                    else{
-                        //instruction is reachable from a uncertain or certain start scheduler instruction, but is not dominated by on of the certain
-                        uncertain_flag = true;
-                    }
+                    uncertain_start_scheduler_func_calls.emplace_back(&abb->get_entry_bb()->front());
                 }
-                break;
+            }else if(tmp_state == after){
+                if(abb->get_entry_bb() != nullptr){
+                    start_scheduler_func_calls.emplace_back(&(abb->get_entry_bb()->front()));
+                }
+            }else if(tmp_state == before){
+                if(abb->get_entry_bb()!=nullptr){
+                    if(validate_instructions_reachability(&start_scheduler_func_calls,&(abb->get_entry_bb()->front()), dominator_tree ) || validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&(abb->get_entry_bb()->front()), dominator_tree ))tmp_state = uncertain;
+                }
             }
-			if(before_flag){
-                //std::cerr <<  "before" << std::endl;
-                //abb->print_information();
-                abb->set_start_scheduler_relation(before);
-            }
-            else if(uncertain_flag){
-                //std::cerr <<  "uncertain" << std::endl;
-                //abb->print_information();
+            //std::cerr << abb->get_name() << "tmp 3 relation " << tmp_state  << std::endl;
+            
+            if(tmp_state == before && abb->get_start_scheduler_relation() == uncertain ){
+                //std::cerr << "variant1" << std::endl;
                 abb->set_start_scheduler_relation(uncertain);
-            }
-        }
-		
-		bool flag = true;
-		for(auto instr : return_instructions){
-            //check if return instruction is dominated by a certain start scheduler instructions
-			if(!validate_one_instructions_dominance(&start_scheduler_func_calls,instr, dominator_tree ))flag = false;
-		}
-		
-		//state is after if all retrun instructions were dominated by a certain start scheduler instruction
-		if(flag)state = after;
-	}
-	
-    std::vector<std::size_t> tmp_already_visited;
-    //iterate about the abbs of the function
-    for(auto &abb : function->get_atomic_basic_blocks()){
-        
-        if(abb->get_start_scheduler_relation() == after){
-            //iterate about the called function of the abb
-            //set all abbs, which are reachable from a after start scheduler abb from the main function, to after start scheduler 
-            update_called_functions(graph, abb->get_called_function()  ,&tmp_already_visited,after);
+            }else if (tmp_state == after && abb->get_start_scheduler_relation() != after ){
+                //std::cerr << "variant2" << std::endl;
+                abb->set_start_scheduler_relation(uncertain);
+            }else if (tmp_state == before && abb->get_start_scheduler_relation() == after && calltree_flag ){
+                //std::cerr << "variant3"<< std::endl;
+                abb->set_start_scheduler_relation(uncertain);
+            }else abb->set_start_scheduler_relation(tmp_state);
+            
+            //std::cerr << abb->get_name() << " relation " << abb->get_start_scheduler_relation()  << std::endl;
         }
     }
-    //if the function has no exit abb, the function will not return -> state = after
-    if(function->get_exit_abb() == nullptr)state = after;
-    
-	return state;
+        
+    if(function->get_exit_abb() != nullptr)return function->get_exit_abb()->get_start_scheduler_relation();
+    else return after;
 }
+
+
 
 
 
@@ -352,6 +294,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 * @brief sort the abbs of each function in topological order
 * @param graph project data structure
 */
+
 void sort_abbs(graph::Graph& graph){
     
     //get all functions of the application
@@ -757,9 +700,12 @@ namespace step {
         
 		//check if graph contains main function
 		if(main_vertex != nullptr){
-			std::vector<std::size_t> already_visited;
+
 			main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
-			before_scheduler_instructions(graph, main_function  ,&already_visited);
+            std::map<std::size_t,std::size_t> already_visited;
+            std::map<std::size_t,std::size_t> call_tree;
+            
+			before_scheduler_instructions(graph, main_function  ,already_visited,&call_tree,before);
       
         }else{
             std::cerr << "no main function in programm" << std::endl;
