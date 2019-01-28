@@ -63,7 +63,15 @@ class DotFileParser():
                     elif abb.get_call_type() == graph.call_definition_type.sys_call:
                         f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
                         f.write("<FONT POINT-SIZE=\"10\">" + "syscall: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
- 
+                    
+                    elif abb.get_call_type() == graph.call_definition_type.has_call:
+                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "HASCALL</FONT>>")
+                        
+                    elif abb.get_call_type() == graph.call_definition_type.no_call:
+                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "NOCALL</FONT>>")
+                        
                     else:
                         f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
                         f.write("<FONT POINT-SIZE=\"10\">" + "ERROR</FONT>>")
@@ -80,7 +88,9 @@ class DotFileParser():
             if function.get_exit_abb() != None:
                 f.write("\t\t"+function.get_exit_abb().get_name().replace(" ", "") + " [color=red style=filled] ;\n" )
             if function.get_entry_abb() != None:
-                f.write("\t\t"+function.get_entry_abb().get_name().replace(" ", "") + " [color=green style=filled];\n" )
+                f.write("\t\t"+function.get_entry_abb().get_name().replace(" ", "") + " [color=green style=filled label=<" +function.get_entry_abb().get_name().replace(" ", "") + "<BR />\n")
+                f.write("<FONT POINT-SIZE=\"10\">" + "function: " + function.get_name()  + "</FONT>>];\n")
+               
 
             f.write("\t\tlabel = \"" + function.get_name().replace(" ", "")  + "\";\n")
             f.write("\t}\n")
@@ -129,8 +139,16 @@ class DotFileParser():
                         f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
                         f.write("<FONT POINT-SIZE=\"10\">" + "call: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
  
+                    elif abb.get_call_type() == graph.call_definition_type.has_call:
+                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "HASCALL</FONT>>")
+                        
+                    elif abb.get_call_type() == graph.call_definition_type.no_call:
+                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                        f.write("<FONT POINT-SIZE=\"10\">" + "NOCALL</FONT>>")
+                        
                     else:
-                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
                         f.write("<FONT POINT-SIZE=\"10\">" + "ERROR</FONT>>")
                         
                     f.write("];\n") 
