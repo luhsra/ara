@@ -310,22 +310,77 @@ void sort_abbs(graph::Graph& graph){
        
         // Use LLVM's Strongly Connected Components (SCCs) iterator to produce
         // a reverse topological sort of SCCs.
-       
+        std::cerr << std::endl;
        
         //iterate about the bbs of the function in reversed topological order and store the bbs in vector
         for (scc_iterator<llvm::Function *> I = scc_begin(function->get_llvm_reference()), IE = scc_end(function->get_llvm_reference());I != IE; ++I) {
             // Obtain the vector of BBs in this SCC and print it out.
             const std::vector<BasicBlock *> &SCCBBs = *I;
+            std::cerr << std::endl;
+            llvm::BasicBlock* first =nullptr;
+            std::list<llvm::BasicBlock*> scc_topological_order;
+            std::list<llvm::BasicBlock*> self_topological_order;
+            
             for (std::vector<BasicBlock *>::const_iterator BBI = SCCBBs.begin(), BBIE = SCCBBs.end(); BBI != BBIE; ++BBI) {
-                tmp_topological_order.emplace_front(*BBI);
+                scc_topological_order.emplace_back(*BBI);
+                first = *BBI;
+                //std::cerr << "Iterator" << (*BBI)->getName().str() << std::endl;
             }
+            
+            bool success = false;
+            if(scc_topological_order.size()>1){
+                success = true;
+                std::map<std::string,std::string> already_visited;
+                std::map<std::string,std::string> open_predecessors;
+                
+            
+                SCCtopological_sort(first, &open_predecessors , &already_visited, &self_topological_order, first);
+                
+                if(self_topological_order.size() == scc_topological_order.size()){
+                    for(auto topological_element: self_topological_order){
+                        bool match = false;
+                        for(auto scc_element: scc_topological_order){
+                            if(scc_element == topological_element){
+                                match = true;
+                                break;
+                            }
+                        }
+                        if(match == false){
+                            success = false;
+                            break;
+                        }
+                        
+                    }
+                }else{
+                    success = false;
+                }
+            }
+            if(success){
+                for(auto topological_element: self_topological_order){
+                    //std::cerr << "selftopolical" << topological_element->getName().str() << std::endl;
+                    tmp_topological_order.emplace_back(topological_element);
+                }
+            }else{
+                for(auto topological_element: scc_topological_order){
+                    //std::cerr << "scctopolical" << topological_element->getName().str() << std::endl;
+                    tmp_topological_order.emplace_back(topological_element);
+                }
+            }
+            
+            
+            //if(success)std::cerr << "HEEEEEEEEEEEEEEEEEEEYA" << std::endl;
+            //if(success) tmp_topological_order.insert(tmp_topological_order.begin(),self_topological_order.begin(),self_topological_order.end());
+            //else tmp_topological_order.insert(tmp_topological_order.begin(),scc_topological_order.begin(),scc_topological_order.end());
         }
         
         std::vector<llvm::BasicBlock*> topological_order;
          
+        
         //bbs are sorted in inversed topological order, so reverse them
-        for(auto element : tmp_topological_order){
-             topological_order.emplace_back(element);
+        //for(auto element : tmp_topological_order){
+        for (auto it = tmp_topological_order.rbegin(); it != tmp_topological_order.rend(); it++){
+             topological_order.emplace_back(*it);
+             std::cerr << "topolical" << (*it)->getName().str() << std::endl;
          }
         
         //generate dominator tree
@@ -387,6 +442,9 @@ void sort_abbs(graph::Graph& graph){
         
         
         if(abb_list.size() == sorted_abb_list.size()){
+            for(auto tmp : sorted_abb_list){
+                std::cerr << tmp->get_name() << std::endl;
+            }
             //list of sorted and unsorted abbs are equal, so set the ordered list to the abb
             function->set_atomic_basic_blocks(&sorted_abb_list);
         }
@@ -399,6 +457,9 @@ void sort_abbs(graph::Graph& graph){
             //check if missing abb is the exit abb of the function (because the exit abb may contain no bb)
             if(flag && abb_list.size() > sorted_abb_list.size() && function->get_exit_abb() != nullptr && function->get_exit_abb()->get_seed() != sorted_abb_list.back()->get_seed()){
                 sorted_abb_list.emplace_back(function->get_exit_abb());
+                for(auto tmp : sorted_abb_list){
+                    std::cerr << tmp->get_name() << std::endl;
+                }
                 function->set_atomic_basic_blocks(&sorted_abb_list);
             }else{
                 
