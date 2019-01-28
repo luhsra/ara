@@ -290,6 +290,66 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
 
 
 
+
+/**
+* @brief sort the bbs of the SCC in topolical order -> is possible because loops are broken at entry bb
+* @param bb curren bb which shalle analyzed
+* @param open_predecessors map which contains the bbs which were visited but have unvisted precdessors
+* @param already_visited map which stores all bbs which were already visited
+* @param topological_order list which stores the topolical order of SCC
+* @param end basicblock with is at the end of SCC
+*/
+void SCC_topological_sort(llvm::BasicBlock* bb, std::map<std::string,std::string>* open_predecessors , std::map<std::string,std::string>* already_visited, std::list<llvm::BasicBlock*> * topological_order, llvm::BasicBlock* end){
+    
+    //search abb in open predecessor map
+    auto it_predecessor = open_predecessors->find(bb->getName().str());
+    auto it_already_visited = already_visited->find(bb->getName().str());
+    
+    //std::cerr << "TMP1 topological: " << bb->getName().str() << std::endl;
+    
+    bool predecessor_flag =false;
+    
+    if (it_predecessor != open_predecessors->end()){
+        predecessor_flag = true;
+    }else if(it_already_visited != already_visited->end()){
+        return;
+    }else{
+        already_visited->insert(std::pair<std::string,std::string>(bb->getName().str(),bb->getName().str()));
+    }
+    
+    //std::cerr << "TMP2 topological: " << bb->getName().str() << std::endl;
+    int predecessorcount = 0;
+    
+    
+    
+    for (pred_iterator pit = pred_begin(bb), pet = pred_end(bb); pit != pet; ++pit){
+    //for(auto predecessor : abb->get_ABB_predecessors()){
+        it_already_visited = already_visited->find((*pit)->getName().str());
+        if (it_already_visited == already_visited->end()){
+            ++predecessorcount;
+        }
+    }
+    //std::cerr << "TMP2 predecessor count : " << predecessorcount << std::endl;
+    if( predecessorcount > 0 && !predecessor_flag && bb != end){ 
+        open_predecessors->insert(std::pair<std::string,std::string>(bb->getName().str(),bb->getName().str()));
+        return;
+    }else if( predecessorcount == 0 && predecessor_flag){ 
+        open_predecessors->erase(it_predecessor);
+    }
+    
+    topological_order->emplace_front(bb);
+    //std::cerr << "TMP topological: " << bb->getName().str() << std::endl;
+    
+    //for(auto  successor : abb->get_ABB_sucessors()){
+    for (succ_iterator pit = succ_begin(bb), pet = succ_end(bb); pit != pet; ++pit){
+        //std::cerr << "TMP successor: " << (*pit)->getName().str() << std::endl;
+        if((*pit) == end)continue;
+        SCC_topological_sort((*pit) ,  open_predecessors, already_visited ,topological_order,end );
+    }
+}
+
+
+
 /**
 * @brief sort the abbs of each function in topological order
 * @param graph project data structure
