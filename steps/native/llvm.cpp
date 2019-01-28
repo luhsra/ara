@@ -1498,7 +1498,7 @@ void set_exit_abb(graph::Graph& graph,unsigned int &split_counter){
 
         //cast vertex to abb 
         auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-
+        
         std::list<OS::shared_abb> return_abbs;
         
         //detect all abb with no sucessors(exit abbs)
@@ -1523,7 +1523,9 @@ void set_exit_abb(graph::Graph& graph,unsigned int &split_counter){
             function->set_exit_abb(new_abb);
         }else{
             //set the abb as exit abb of the function 
-            if(return_abbs.size() ==1) function->set_exit_abb(return_abbs.front());
+            if(return_abbs.size() ==1){
+                function->set_exit_abb(return_abbs.front());
+            }
         }
     }
 }
