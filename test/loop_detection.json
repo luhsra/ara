@@ -1,12 +1,5 @@
 [
-	{
-		"location": "BB0"
-	},
-    {
-
-		"location": "BB2"
-	},
-	{
-		"location": "BB11"
-	}
+	"BB0",
+	"BB2",
+	"BB11"
 ]
