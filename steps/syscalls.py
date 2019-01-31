@@ -185,7 +185,7 @@ class SyscallStep(Step):
                 "portYIELD" : 						[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 
                 #TODO xQueueOverwrite -> third argument = 0
-                "xQueueGenericSend":			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer], graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue")],0],
+                "xQueueGenericSend":			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer], graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue"),graph.get_type_hash("Semaphore")],0],
                 "xQueueGenericSendFromISR": 	[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer], graph.data_type.integer,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("Queue")],0],
                 "xQueueReceive": 				[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Queue")],0],
                 "xQueueReceiveFromISR":			[[graph.data_type.string,[graph.data_type.string,graph.data_type.integer],graph.data_type.integer],graph.syscall_definition_type.receive,[graph.get_type_hash("Resource"),graph.get_type_hash("Queue"),graph.get_type_hash("Semaphore")],0],
