@@ -50,7 +50,6 @@ bool detect_critical_region_in_subfunction (shared_function function,std::list<s
     
     bool reach_exit = false;
     
-    
     size_t exit_seed = 0;
     
     if(function->get_exit_abb() != nullptr)exit_seed = function->get_exit_abb()->get_seed();
@@ -62,7 +61,7 @@ bool detect_critical_region_in_subfunction (shared_function function,std::list<s
 		auto abb = queue.front();
 		queue.pop();
         
-        if(exit_seed== abb->get_seed())reach_exit = true;
+        
 			
         bool visited = false;
         size_t abb_seed = abb->get_seed();
@@ -72,6 +71,7 @@ bool detect_critical_region_in_subfunction (shared_function function,std::list<s
 			
         //check if the successor abb is already stored in the list				
         if(!visited) {
+            
             std::cerr << "critical" << abb->get_name() << std::endl; 
             abb->set_critical(true);
             bool analyse_successors = true;
@@ -90,8 +90,10 @@ bool detect_critical_region_in_subfunction (shared_function function,std::list<s
                     queue.push(successor);
                 }
             }
+            if(exit_seed== abb->get_seed())reach_exit = analyse_successors;
         }
     }
+   
     std::cerr << "reach exit" << reach_exit << std::endl;
     return reach_exit;
 }
@@ -175,7 +177,6 @@ bool is_reachable (shared_function definition_function,shared_abb start, shared_
         bool visited = false;
         size_t abb_seed = abb->get_seed();
 
-        
         if ( already_visited->find(abb_seed) != already_visited->end() ) {
             visited = true;
         } 
@@ -188,8 +189,10 @@ bool is_reachable (shared_function definition_function,shared_abb start, shared_
             bool call_return = true;
             if(abb->get_call_type()== func_call){
                 auto called_function = abb->get_called_function();
-                if(called_function->get_exit_abb() == nullptr)call_return = false;
-                if(called_function!=nullptr)queue.push(called_function->get_entry_abb());
+                if(called_function!= nullptr){
+                    if(called_function->get_exit_abb() == nullptr)call_return = false;
+                    if(called_function!=nullptr)queue.push(called_function->get_entry_abb());
+                }
             }
             
             if(call_return){
@@ -379,10 +382,17 @@ bool is_dominated (shared_function function, shared_abb start, shared_abb end, s
 * @brief start from each start call a BFS and set reached abbs to critical section
 * @param start_calls start calls from which BFS  starts
 * @param end_calls end calls, which were set to in the already_visited list to stop BFS at that point
-* @return return true if the critical region is stopped certainly, else return false
+* @return return true if the critical region reacheas the exit abb, else return false
 */
-bool detect_critical_regions (std::list<graph::shared_edge>* start_calls, std::list<graph::shared_edge>* end_calls){
+bool detect_critical_regions (shared_function definition_function, std::list<graph::shared_edge>* start_calls, std::list<graph::shared_edge>* end_calls){
     
+    bool reach_exit = false;
+    size_t exit_seed = -1;
+    shared_abb exit_abb = nullptr;
+    if(definition_function!=nullptr){
+        exit_abb = definition_function->get_exit_abb();
+        if(exit_abb!= nullptr)exit_seed = exit_abb->get_seed();
+    }
     
     for(auto start_call : *start_calls){
         
@@ -413,9 +423,12 @@ bool detect_critical_regions (std::list<graph::shared_edge>* start_calls, std::l
                 if(seed == abb_seed)visited = true;
             }
             
-            
+           
             //check if the successor abb is already stored in the list				
             if(!visited) {
+                
+                
+            
                 abb->set_critical(true);
                 std::cerr << "critical" << abb->get_name() << std::endl; 
                 bool analyse_successors = true;
@@ -433,11 +446,16 @@ bool detect_critical_regions (std::list<graph::shared_edge>* start_calls, std::l
                         queue.push(successor);
                     }
                 }
+                
+                if(exit_seed== abb->get_seed())reach_exit = analyse_successors;
             }
         }
     }
     
-    return false;
+     
+    std::cerr << "reach exit main" << reach_exit << std::endl;
+    
+    return reach_exit;
 }
 
 
@@ -458,55 +476,40 @@ void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_lis
         
         //std::cerr << "resource:" <<  resource->get_name() << std::endl;
         
-        bool create_call = false;
         auto ingoing_edges = resource->get_ingoing_edges();
         std::vector<graph::shared_edge> mutex_takes;
         std::vector<graph::shared_edge> mutex_gives;
         for(auto ingoing : ingoing_edges){
             
-            if(ingoing->get_abb_reference()->get_syscall_type() == create)create_call = true;
             if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
-            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
         auto outgoing_edges = resource->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             if(outgoing->get_abb_reference()->get_syscall_type() == take)mutex_takes.emplace_back(outgoing);
-            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
-        
-        if(!create_call)std::cerr << "resource was not created" << std::endl;
-        else{
-            
-            if(resource->get_resource_type() == binary_mutex  || resource->get_resource_type() == recursive_mutex){
-                std::list<std::size_t> parallel_takes;
-                
-//                 for(auto outgoing : outgoing_edges){
-//                     for(auto tmp_outgoing : outgoing_edges){
-//                         if(outgoing->get_seed() == tmp_outgoing->get_seed())continue;
-//                         
-//                         if(list_contains_element(&parallel_takes , tmp_outgoing->get_seed())&&list_contains_element(&parallel_takes ,outgoing->get_seed()))continue;
-//                         
-//                         if(!is_reachable(outgoing->get_abb_reference(),tmp_outgoing->get_abb_reference(),nullptr) && !is_reachable(tmp_outgoing->get_abb_reference(),outgoing->get_abb_reference(),nullptr)){
-//                             parallel_takes.emplace_back(outgoing->get_seed());
-//                             parallel_takes.emplace_back(tmp_outgoing->get_seed());
-//                         }
-//                     }
-//                 }
-                
-                for(auto take : mutex_takes){
-                    bool mutex_flag = false;
-                    for(auto give :mutex_gives){
-                        if(give->get_start_vertex()->get_seed() == take->get_start_vertex()->get_seed()){
-                            auto definition_function = get_definition_function(take->get_start_vertex());
-                            if(is_reachable (definition_function,take->get_abb_reference(), give->get_abb_reference(),nullptr))mutex_flag = true;
-                        }
+
+        if(resource->get_resource_type() == binary_mutex  || resource->get_resource_type() == recursive_mutex){
+            std::list<std::size_t> parallel_takes;
+                        
+            //iterate about take instructions of resource
+            for(auto take : mutex_takes){
+                bool mutex_flag = false;
+                //iterate about give instructions of resource
+                for(auto give :mutex_gives){
+                    std::cerr <<  "start " << give->get_start_vertex()->get_name() <<  "end" <<   take->get_target_vertex()->get_name()  << std::endl;
+                    //check if take and give are done by same task
+                    if(give->get_start_vertex()->get_seed() == take->get_target_vertex()->get_seed()){
+                        auto definition_function = get_definition_function(take->get_target_vertex());
+                        if(is_reachable (definition_function,take->get_abb_reference(), give->get_abb_reference(),nullptr))mutex_flag = true;
                     }
-                    if(!mutex_flag){
-                        auto warning = std::make_shared<ResourceUseWarning>(resource, take->get_start_vertex(), take->get_abb_reference());
-                        warning_list->emplace_back(warning);
-                    }
+                }
+                if(!mutex_flag){
+                    auto warning = std::make_shared<ResourceUseWarning>(resource, take->get_start_vertex(), take->get_abb_reference());
+                    warning_list->emplace_back(warning);
                 }
             }
         } 
@@ -531,32 +534,58 @@ void verify_semaphores(graph::Graph& graph,std::vector<shared_warning>* warning_
         //std::cerr << "semaphore:" <<  semaphore->get_name() << std::endl;
         
         auto ingoing_edges = semaphore->get_ingoing_edges();
-        std::vector<graph::shared_edge> mutex_takes;
-        std::vector<graph::shared_edge> mutex_gives;
+        std::vector<graph::shared_edge> semaphore_takes;
+        std::vector<graph::shared_edge> semaphore_gives;
+        
+        //store all ingoing edges which gives the semaphore
         for(auto ingoing : ingoing_edges){
     
-            if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
-            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            if(ingoing->get_abb_reference()->get_syscall_type() == commit)semaphore_gives.emplace_back(ingoing);
+            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
+        //store all outgoing edges which takes the semaphore
         auto outgoing_edges = semaphore->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
-            if(outgoing->get_abb_reference()->get_syscall_type() == take)mutex_takes.emplace_back(outgoing);
-            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            if(outgoing->get_abb_reference()->get_syscall_type() == take)semaphore_takes.emplace_back(outgoing);
+            std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
         
-        
-        if(semaphore->get_semaphore_type() == binary_mutex  || semaphore->get_semaphore_type() == recursive_mutex){
-            for(auto take : mutex_takes){
+        //check if the semaphore is from right type
+        if(semaphore->get_semaphore_type() == binary_semaphore  || semaphore->get_semaphore_type() == counting_semaphore){
+            
+            //check if for each take a corresonding give exists
+            for(auto take : semaphore_takes){
                 bool semaphore_flag = false;
-                for(auto give :mutex_gives){
+                for(auto give :semaphore_gives){
+                    //check if the give and the take is done by different abstraction instances
                     if(give->get_start_vertex()->get_seed() != take->get_target_vertex()->get_seed()){
                         semaphore_flag = true;
                     }
                 }
+                
                 if(!semaphore_flag){
+                    //error no take and give from different abstraction instances-> store warning
                     auto warning = std::make_shared<SemaphoreUseWarning>(semaphore, take->get_start_vertex(), take->get_abb_reference());
+                    warning_list->emplace_back(warning);
+                }
+            }
+            
+            //check if for each give a corresonding take exists
+            for(auto give :semaphore_gives){
+                bool semaphore_flag = false;
+                for(auto take : semaphore_takes){
+
+                    //check if the give and the take is done by different abstraction instances
+                    if(give->get_start_vertex()->get_seed() != take->get_target_vertex()->get_seed()){
+                        semaphore_flag = true;
+                    }
+                }
+                
+                if(!semaphore_flag){
+                    //error no take and give from different abstraction instances-> store warning
+                    auto warning = std::make_shared<SemaphoreUseWarning>(semaphore, give->get_start_vertex(), give->get_abb_reference());
                     warning_list->emplace_back(warning);
                 }
             }
@@ -692,7 +721,10 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
                     warning_list->emplace_back(warning);
                 }
             }else{
-                if(!((set_bits | wait_bits))){
+                //std::cerr << "notwaitforall, set bits " << set_bits << std::endl;
+                //std::cerr << "wait bits " << wait_bits << ", clear on exit " << clear_on_exit << ", wait_for_all_bits " << wait_for_all_bits << std::endl;
+                //std::cerr << (set_bits & wait_bits) << std::endl;
+                if(!((set_bits & wait_bits))){
                     auto warning = std::make_shared<EventWarning>( event,wait_call->get_target_vertex(), wait_bits, set_bits,wait_call->get_abb_reference());
                     warning_list->emplace_back(warning);
                 }
@@ -721,31 +753,37 @@ bool find_cycle(graph::shared_vertex vertex, std::list<size_t>* visited,graph::G
     
     bool resource_perspective = false;
     
-    //check if the current vertex is a resource or a (taks or isr)
+    //check if the current vertex is a resource or a (task, isr) 
     if(vertex->get_type()== typeid(OS::Resource).hash_code()){
-        edges = vertex->get_ingoing_edges();
+        edges = vertex->get_outgoing_edges();
         resource_perspective = true;
     }else{
-        edges = vertex->get_outgoing_edges();
+        edges = vertex->get_ingoing_edges();
     }
     
     
     //from task perspective get the resource that is taken
     for (auto edge: edges) { 
-    
+        
+
+        
         if(edge->get_abb_reference()->get_syscall_type() != take)continue;
+        
         graph::shared_vertex target_vertex;
         if(resource_perspective){
-            target_vertex = edge->get_start_vertex();
-        }else{
+            //from resource perspective
             target_vertex = edge->get_target_vertex();
+        }else{
+            //from task or isr perspective
+            target_vertex = edge->get_start_vertex();
             if(target_vertex->get_type()!=typeid(OS::Resource).hash_code())continue;
         }
-             
+            
         //recursion
-        if (find_cycle(target_vertex,visited ,graph,depth + 1 ,start))return true; 
+        if (find_cycle(target_vertex,visited ,graph, depth +1  ,start))return true; 
     } 
     
+    //remove current seed
     visited->remove(seed);
     return false;
 }
@@ -767,68 +805,116 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
     //check if the resource is accessed by other instances (task,isr)  and their is another instance with a lower priority that doesnt access the resource 
 	
     for (auto &vertex : resource_list){
-        
-        unsigned long min_priority = -1;
-        unsigned long max_priority = 0;
-         
-        shared_task max_priority_task = nullptr;
-        shared_task min_priority_task = nullptr;
-        
-		std::vector<llvm::Instruction*> already_visited;
-        std::list<shared_task> resource_task_list;
+    
         auto resource = std::dynamic_pointer_cast<OS::Resource>(vertex);
-        bool flag = false;
+       
         
         //get all tasks with takes the resource
-        for(auto ingoing_edge : resource->get_ingoing_edges()){
-            auto accessed_vertex = ingoing_edge->get_start_vertex();
+        for(auto outgoing_edge : resource->get_outgoing_edges()){
+
+            auto accessed_vertex = outgoing_edge->get_target_vertex();
+            std::cerr << accessed_vertex->get_name() << std::endl;
+            
             if(typeid(OS::Task).hash_code() == accessed_vertex->get_type()){
+            
                 auto task = std::dynamic_pointer_cast<OS::Task>(accessed_vertex);
-                if(ingoing_edge->get_abb_reference()->get_syscall_type() != take || !task->has_constant_priority() )continue;
                 
-                //determine the task with max and min priority
-                flag =true;
-                unsigned long priority = task->get_priority();
-                if(priority > max_priority){
-                    max_priority = priority;
-                    max_priority_task = task;
-                }
-                if (priority < min_priority){
-                    min_priority = priority;
-                    min_priority_task = task;
-                }
+                //check if task has a constant priority and takes the resource -> continue if not
+                if(outgoing_edge->get_abb_reference()->get_syscall_type() != take  || !task->has_constant_priority() )continue;
+                
+                bool flag = false;
+                std::list<shared_task> resource_task_list;
                 resource_task_list.emplace_back(task);
-            }
-        }
-        if(flag && max_priority != min_priority){
-            //std::cerr << "possible bounded piority inversion: tasks of different priorities access resource " << resource->get_name() << std::endl;
-        }
-        
-        std::vector<shared_task> unbouded_task_list;
-        //check if there exists another task which doesnt access the resource and have a lower priority than the max priority
-        for(auto task_vertex:task_list){
-            auto task = std::dynamic_pointer_cast<OS::Task>(task_vertex);
-            bool flag = false;
-            for(auto resource_task:resource_task_list){
-                if(task->get_seed() == resource_task->get_seed())flag = true;
-            }
-            if(flag == false){
-                if(task->get_priority() <max_priority && task->get_priority() >min_priority){
-                    unbouded_task_list.emplace_back(task);
+                
+                unsigned long min_priority = task->get_priority();
+                unsigned long max_priority = task->get_priority();
+                
+                shared_task max_priority_task = task;
+                shared_task min_priority_task = task;
+                
+                //get all tasks with takes the resource
+                for(auto tmp_outgoing_edge : resource->get_outgoing_edges()){
+                    
+                    auto tmp_accessed_vertex = tmp_outgoing_edge->get_target_vertex();
+                    std::cerr << tmp_accessed_vertex->get_name() << std::endl;
+                    if(typeid(OS::Task).hash_code() == tmp_accessed_vertex->get_type()){
+                        
+                        auto tmp_task = std::dynamic_pointer_cast<OS::Task>(tmp_accessed_vertex);
+                
+                        if(tmp_outgoing_edge->get_abb_reference()->get_syscall_type() != take || !tmp_task->has_constant_priority() )continue;
+                        
+                        if(tmp_task->get_seed() == task->get_seed())continue;
+                        
+                        //determine the task with max and min priority
+                        flag =true;
+                        unsigned long priority = tmp_task->get_priority();
+                        if(priority > max_priority){
+                            max_priority = priority;
+                            max_priority_task = tmp_task;
+                        }
+                        if (priority < min_priority){
+                            min_priority = priority;
+                            min_priority_task = tmp_task;
+                        }
+                        resource_task_list.emplace_back(tmp_task);
+                    }
+                }
+                if(resource_task_list.size() >= 2 && max_priority != min_priority){
+                        //std::cerr << "possible bounded piority inversion: tasks of different priorities access resource " << resource->get_name() << std::endl;
+                    std::cerr << "min priority " << min_priority << " max priority " << max_priority << std::endl;
+                    std::vector<shared_task> unbouded_task_list;
+                    //check if there exists another task which doesnt access the resource and have a lower priority than the max priority
+                    for(auto task_vertex:task_list){
+                        auto task = std::dynamic_pointer_cast<OS::Task>(task_vertex);
+                        bool flag = false;
+                        for(auto resource_task:resource_task_list){
+                            if(task->get_seed() == resource_task->get_seed())flag = true;
+                        }
+                        if(flag == false){
+                            if(task->get_priority() <max_priority && task->get_priority() >min_priority){
+                                unbouded_task_list.emplace_back(task);
+                                 std::cerr << "unbouded task " << task->get_name() << std::endl;
+                            }
+                        }
+                    }
+                    if(unbouded_task_list.size() > 0){
+                        shared_abb abb;
+                        for (auto& edge : resource->get_ingoing_edges()) {
+                        
+                            if (edge->get_abb_reference()->get_syscall_type() == create) {
+                                abb = edge->get_abb_reference();
+                            }
+                        }
+                        auto warning = std::make_shared<PriorityInversionWarning>( &unbouded_task_list, min_priority_task, max_priority_task,  resource, abb);
+                        warning_list->emplace_back(warning);
+                    }
                 }
             }
         }
-		shared_abb abb;
-		for (auto& edge : resource->get_ingoing_edges()) {
-			// quick and dirty compare, replace this with an OS independent version
-			if (edge->get_name() == "xQueueCreateMutex") {
-				abb = edge->get_abb_reference();
-			}
-		}
-        auto warning = std::make_shared<PriorityInversionWarning>( &unbouded_task_list, min_priority_task, max_priority_task,  resource, abb);
-        warning_list->emplace_back(warning);
     }
 }
+
+// // contain same elements. 
+// bool areEqual(std::list<size_t>* list1, std::list<size_t>* list2) 
+// { 
+//     // If lengths of array are not equal means 
+//     // array are not equal 
+//     if (list2.size() != list1.size()) 
+//         return false; 
+//   
+//     // Sort both arrays 
+//     sort(arr1, arr1+n); 
+//     sort(arr2, arr2+m); 
+//   
+//     // Linearly compare elements 
+//     for (int i=0; i<n; i++) 
+//          if (arr1[i] != arr2[i]) 
+//             return false; 
+//   
+//     // If all elements were same. 
+//     return true; 
+// } 
+
 
 /**
 * @brief check if application contians a possible deadlock
@@ -847,14 +933,25 @@ void verify_deadlocks(graph::Graph& graph,std::vector<shared_warning>* warning_l
         std::list<size_t> visited;
         //check if there is cycle in the graph with starts and ends at the resource
         if(find_cycle(resource, &visited,graph,0,resource->get_seed())){
+            std::cerr << "-------------------------------------------------------" << std::endl;
             
             std::vector<graph::shared_vertex> deadlockchain;
             
             for(auto element_seed: visited){
+                std::cerr << "deadlockchain" << graph.get_vertex(element_seed)->get_name() << std::endl;
                 deadlockchain.emplace_back(graph.get_vertex(element_seed));
                 
             }
-            auto warning = std::make_shared<DeadLockWarning>(&deadlockchain, nullptr);
+             shared_abb abb;
+             for (auto& edge : resource->get_ingoing_edges()) {
+                        
+                if (edge->get_abb_reference()->get_syscall_type() == create) {
+                    abb = edge->get_abb_reference();
+                }
+            }
+            
+            std::cerr << abb->get_name() << std::endl;
+            auto warning = std::make_shared<DeadLockWarning>(&deadlockchain, abb);
             warning_list->emplace_back(warning);
             
             break;
@@ -919,25 +1016,29 @@ void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex v
     bool success = true;
     shared_abb abb = nullptr;
     //check if all calls from start were stopped certainly from end calls
-    if(start_interactions.size() > 0 && end_interactions.size() == 0)success = false;
-    else{
+    
+    
+    
+    for(auto start_interaction :start_interactions){
+        bool flag = false;
         
-        for(auto start_interaction :start_interactions){
-            bool flag = false;
+        if(start_interactions.size() > 0 && end_interactions.size() == 0)success = false;
+        else {
+            
+            shared_function definition_function = nullptr;
+        
             for(auto end_interaction :end_interactions){
-                auto definition_function = get_definition_function(vertex);
+                definition_function = get_definition_function(vertex);
                 if(is_reachable(definition_function,start_interaction->get_abb_reference(), end_interaction->get_abb_reference(),nullptr)) flag = true;
             }
             //detect critical region between start and end
-            if(flag){
-                if(!detect_critical_regions(&start_interactions,&end_interactions))success = false;
-            }
-            else success = false;
-            
-            if(success == false){
-                auto warning = std::make_shared<CriticalRegionWarning>(vertex, start_interaction->get_abb_reference());
-                warning_list->emplace_back(warning);
-            }
+            if(!flag)success = false;
+            else if(detect_critical_regions(definition_function,&start_interactions,&end_interactions))success = false;
+            std::cerr << std::endl;
+        }
+        if(success == false){
+            auto warning = std::make_shared<CriticalRegionWarning>(vertex, start_interaction->get_abb_reference());
+            warning_list->emplace_back(warning);
         }
     }
 }
@@ -993,6 +1094,7 @@ void verify_isrs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
             //check if the syscall of the isr contains the substring FromISR
             if(abb->get_call_type()== sys_call){
                 
+                std::cerr << "isr" << abb->get_syscall_name() << std::endl;
                 std::size_t found = abb->get_syscall_name().find("FromISR");
                 if(found==std::string::npos){                   
                     auto warning = std::make_shared<ISRSyscallWarning>( abb, isr);
@@ -1007,10 +1109,22 @@ void verify_isrs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
                 
             //check if the successor abb is already stored in the list				
             if(!visited) {
-                if(abb->get_call_type()== sys_call){
+                already_visited.emplace_back(abb_seed);
+                std::cerr << "abb" << abb->get_name() << std::endl;
+                
+                if(abb->get_call_type()== func_call){
                     auto called_function = abb->get_called_function();
                     if(called_function != nullptr){
-                        queue.push(called_function->get_entry_abb());
+                        visited = false;
+                        auto entry_seed = called_function->get_entry_abb()->get_seed();
+                        for(auto seed : already_visited){
+                            if(seed == entry_seed){
+                                visited = true;
+                                break;
+                            }
+                        }
+                        
+                        if(!visited)queue.push(called_function->get_entry_abb());
                     }
                 }
                 //iterate about the successors of the abb
@@ -1022,6 +1136,7 @@ void verify_isrs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
             }
         }
     }
+    
 }
 
 
@@ -1206,7 +1321,7 @@ namespace step {
         if(graph.get_os_type() ==FreeRTOS){
             verify_isrs(graph,warning_list);
             verify_freertos_events(graph,warning_list);
-//             verify_deadlocks(graph,warning_list);
+            verify_deadlocks(graph,warning_list);
             verify_priority_inversion(graph,warning_list);
         }
         
