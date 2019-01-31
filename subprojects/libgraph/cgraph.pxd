@@ -281,3 +281,4 @@ cdef extern from "graph.h" namespace "OS":
         void set_handler_argument_index(size_t index)
         
         start_scheduler_relation get_start_scheduler_relation()
+        bool get_loop_information()

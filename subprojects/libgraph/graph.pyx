@@ -765,6 +765,10 @@ cdef class ABB(Vertex):
         cdef cgraph.start_scheduler_relation relation = deref(self._c()).get_start_scheduler_relation()
         return start_scheduler_relation(<int> relation)
 
+    def get_loop_information(self):
+        
+        cdef bool loop_information = deref(self._c()).get_loop_information()
+        return loop_information
         
     def  print_information(self):
         return deref(self._c()).print_information()
