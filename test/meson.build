@@ -28,4 +28,42 @@ test('topological_sort',
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
 )
 
+test('deadlock',
+        py3_inst,
+        args : [files('validation.py'), 'freertos', files('deadlock.json'), freertos_targets[9]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
+test('invalid_semaphore',
+        py3_inst,
+        args : [files('validation.py'), 'freertos', files('invalid_semaphore.json'), freertos_targets[15]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
+test('eventlist_warning',
+        py3_inst,
+        args : [files('validation.py'), 'freertos', files('eventgroup.json'), freertos_targets[11]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
+test('critical_region_detection',
+        py3_inst,
+        args : [files('critical_region_detection.py'), 'freertos', files('critical_region_detection.json'), freertos_targets[14]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
+test('invalid_isr_syscall',
+        py3_inst,
+        args : [files('validation.py'), 'freertos', files('invalid_isr_syscall.json'), freertos_targets[1]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+test('loop_detection',
+        py3_inst,
+        args : [files('loop_detection.py'), 'freertos', files('loop_detection.json'), freertos_targets[3]],
+        env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+)
+
+
+
+
 subdir('native_step_test')

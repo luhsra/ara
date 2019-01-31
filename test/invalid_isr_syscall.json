@@ -1,0 +1,10 @@
+[
+	{
+		"type": "ISRSyscall",
+		"location": "BB16"
+	},
+    {
+		"type": "ISRSyscall",
+		"location": "BB19"
+	}
+]

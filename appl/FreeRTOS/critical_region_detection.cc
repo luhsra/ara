@@ -72,8 +72,12 @@ void tmp_function_2(int b){
 
 void tmp_function_1(int b){
     
-    if(b == 23)taskEXIT_CRITICAL( );
-}
+    if(b == 23){
+        taskEXIT_CRITICAL( );
+        tmp_function(346);
+    }
+    else tmp_function(23);
+}   
 
 /* A task that uses the semaphore. */
 void Task1( void * pvParameters )
@@ -83,7 +87,7 @@ void Task1( void * pvParameters )
     //critical region is not leaft certainly ->ERROR
     tmp_function_1(34);
  
-
+    vPrintStringAndNumber( "TEST" , 12345667 );
 }
 
  void Task2( void *pvParameters ){
@@ -127,6 +131,16 @@ void Task5( void *pvParameters ){
     //critical area is leaft ->NO ERROR
 }
 
+ void Task6( void *pvParameters ){
+    
+    taskENTER_CRITICAL();
+ 	
+    //abbs in critical area
+    
+    tmp_function_1(23);
+    vPrintStringAndNumber( "TEST" , 12345667 );
+}
+
 
 int main( void ){
     
@@ -137,7 +151,7 @@ int main( void ){
     xTaskCreate( Task3, "Task3", 1000, NULL, 1, NULL );
     xTaskCreate( Task4, "Task4", 1000, NULL, 2, NULL );
     xTaskCreate( Task5, "Task5", 1000, NULL, 2, NULL );
-   
+    xTaskCreate( Task6, "Task6", 1000, NULL, 2, NULL );
     vTaskStartScheduler();
     
 

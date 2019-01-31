@@ -1,0 +1,18 @@
+[
+	{
+		"type": "CriticalRegion",
+		"location": "BB10"
+	},
+    {
+		"type": "CriticalRegion",
+		"location": "BB14"
+    },
+    {
+		"type": "CriticalRegion",
+		"location": "BB20"
+    },
+    {
+		"type": "CriticalRegion",
+		"location": "BB26"
+	}
+]

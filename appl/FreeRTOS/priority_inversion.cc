@@ -75,6 +75,9 @@ SemaphoreHandle_t xBinaryMutex1;
 const TickType_t xBlockTime = 500 / portTICK_PERIOD_MS;
 
 
+
+
+
 void Task3( void *pvParameters ){
 
  	struct AMessage *pxMessage;
@@ -135,7 +138,9 @@ int main( void ){
     xBinaryMutex1 = xSemaphoreCreateMutex();
 
     
-	
+	/* Before a semaphore is used it must be explicitly created.
+    a binary semaphore is created. */
+
    
     /* Create the tasks */
 

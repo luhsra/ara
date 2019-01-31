@@ -21,12 +21,12 @@ def main():
               'input_files': [i_file]}
     p_manager = stepmanager.StepManager(g, config)
 
-    p_manager.execute(['ValidationStep','DisplayResultsStep'])
+    p_manager.execute(['ValidationStep'])
 
     val_step = p_manager.get_step('ValidationStep')
     side_data = val_step.get_side_data()
     
-  
+    #TODO ABB3 nicht im kritischen Bereich
     
     for tmp in side_data:
         print(tmp['location'].get_name())

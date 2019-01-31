@@ -1,6 +1,10 @@
 [
 	{
-		"type": "PriorityInversion",
-		"location": "BB8"
+		"type": "ResourceUse",
+		"location": "BB1"
+	},
+    {
+		"type": "ResourceUse",
+		"location": "BB11"
 	}
 ]

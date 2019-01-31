@@ -64,10 +64,32 @@ SemaphoreHandle_t xBinarySemaphore = NULL;
 
 SemaphoreHandle_t xSemaphore = NULL;
 
+/* A task that uses the semaphore. */
+void vAnotherTask1( void * pvParameters )
+{
+    /* ... Do other things. */
+    
+     xSemaphoreGive( xSemaphore );  // give before take ->invalid
+     
+   
+    if( xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE )
+    {
+        /* We were able to obtain the semaphore and can now access the
+        shared resource. */
+
+        /* ... */
+
+        /* We have finished accessing the shared resource.  Release the
+        semaphore.*/
+
+       
+        
+    }
+}
 
 
 /* A task that uses the semaphore. */
-void vAnotherTask( void * pvParameters )
+void vAnotherTask2( void * pvParameters )
 {
     /* ... Do other things. */
 
@@ -103,11 +125,11 @@ int main( void )
     xSemaphore = xSemaphoreCreateMutex();
   
     /* Create the tasks that send to the queues. */
-    xTaskCreate( vAnotherTask, "1", 1000, NULL, 1, NULL );
-
+    xTaskCreate( vAnotherTask1, "1", 1000, NULL, 2, NULL );
+    xTaskCreate( vAnotherTask2, "2", 1000, NULL, 2, NULL );
     /* Create the task that reads from the queue set to determine which of the two queues contain data. */
 
-    xTaskCreate( vAMoreRealisticReceiverTask, "1", 1000, NULL, 2, NULL );
+    xTaskCreate( vAMoreRealisticReceiverTask, "3", 1000, NULL, 2, NULL );
 
     /* Start the scheduler so the created tasks start executing. */
 

@@ -12,6 +12,7 @@
 
 void vPrintString(char const *string);
 EventGroupHandle_t xEventGroup;
+EventGroupHandle_t xEventGroupWaitForALL;
 
 static void vEventBitSettingTask( void *pvParameters )
 {
@@ -28,6 +29,7 @@ static void vEventBitSettingTask( void *pvParameters )
         /* Print out a message to say event bit 1 is about to be set by the task, then set event bit 1. */
         vPrintString( "Bit setting task -\t about to set bit 1.\r\n" );
         xEventGroupSetBits( xEventGroup, mainSECOND_TASK_BIT );
+       xEventGroupSync( xEventGroupWaitForALL, 0x08, 0x0A, 100 );
     }
 }
 
@@ -65,6 +67,9 @@ uint32_t ulEventBitSettingISR( void )
     return statement, which is why this function does not explicitly return a
     value. */
     
+     xEventGroupSetBitsFromISR( xEventGroupWaitForALL, 0x02,&xHigherPriorityTaskWoken );
+    
+    
     return 1;
 
 }
@@ -75,22 +80,14 @@ static void vEventBitReadingTask( void *pvParameters )
 {
     EventBits_t xEventGroupValue;
     const EventBits_t xBitsToWaitFor = ( mainFIRST_TASK_BIT |mainSECOND_TASK_BIT | mainISR_BIT );
+    
     for( ;; )
     {
         /* Block to wait for event bits to become set within the event group. */
-        xEventGroupValue = xEventGroupWaitBits( /* The event group to read. */
-        xEventGroup,
-        /* Bits to test. */
-        xBitsToWaitFor,
-        /* Clear bits on exit if the
-        unblock condition is met. */
-        pdTRUE,
-        /* Don't wait for all bits. This
-        parameter is set to pdTRUE for the
-        second execution. */
-        pdFALSE,
-        /* Don't time out. */
-        portMAX_DELAY );
+        xEventGroupValue = xEventGroupWaitBits( /* The event group to read. */    xEventGroup,    /* Bits to test. */     xBitsToWaitFor,    /* Clear bits on exit if the unblock condition is met. */   pdTRUE,    /* Don't wait for all bits. This    parameter is set to pdTRUE for the second execution. */   pdTRUE,  /* Don't time out. */ portMAX_DELAY );
+        
+        xEventGroupValue = xEventGroupWaitBits( /* The event group to read. */    xEventGroupWaitForALL,    /* Bits to test. */     0x04,    /* Clear bits on exit if the unblock condition is met. */   pdTRUE,    /* Don't wait for all bits. This    parameter is set to pdTRUE for the second execution. */   pdFALSE,  /* Don't time out. */ portMAX_DELAY );
+    
         /* Print a message for each bit that was set. */
         if( ( xEventGroupValue & mainFIRST_TASK_BIT ) != 0 )
         {
@@ -112,7 +109,11 @@ int main( void )
     /* Before an event group can be used it must first be created. */
 
     xEventGroup = xEventGroupCreate();
+    
+    
+    xEventGroupWaitForALL = xEventGroupCreate();
 
+    
     /* Create the task that sets event bits in the event group. */
 
     xTaskCreate( vEventBitSettingTask, "Bit Setter", 1000, NULL, 1, NULL );

@@ -85,6 +85,16 @@ void vSenderTask2( void *pvParameters );
 void test_function_2();
 void test_function_3();
 
+
+void tmp_function_1(){
+    xQueue2 = xQueueCreate( 100,1);
+}
+
+void tmp_function_2(){
+    xQueue2 = xQueueCreate( 100,1);
+}
+
+
 void test_function_1(){
     
     test_function_2();
@@ -97,7 +107,8 @@ void test_function_2(){
 
 void test_function_3(){
     
-    vSenderTask2(nullptr);
+    tmp_function_2();
+    test_function_1();
 }
 
 void vSenderTask1( void *pvParameters )
@@ -106,13 +117,18 @@ void vSenderTask1( void *pvParameters )
     {
         xQueue1 = xQueueCreate( 100,1);
         
-        test_function_1();
+
     }
+    test_function_1();
 }
 
-void vSenderTask2( void *pvParameters )
-{
-    xQueue2 = xQueueCreate( 100,1);
+
+
+void vSenderTask2( void *pvParameters ){
+    for( ;; )
+    {
+    tmp_function_1();
+    }
 }
 
 int main( void ){
