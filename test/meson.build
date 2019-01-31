@@ -48,8 +48,9 @@ test('eventlist_warning',
 
 test('critical_region_detection',
         py3_inst,
-        args : [files('critical_region_detection.py'), 'freertos', files('critical_region_detection.json'), freertos_targets[14]],
+        args : [files('validation.py'), 'freertos', files('critical_region_detection.json'), freertos_targets[14]],
         env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+        # TODO Test auf ABB3 nicht im kritischen Bereich
 )
 
 test('invalid_isr_syscall',
