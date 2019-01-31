@@ -920,7 +920,9 @@ graph::shared_vertex create_coroutine(graph::Graph& graph, OS::shared_abb abb,  
 void detect_isrs(graph::Graph& graph){
 	
     //iterate about the abbs
-    std::vector<size_t> visited_functions;
+
+    std::map<size_t,size_t> visited_functions;
+    
     
     std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::ABB).hash_code());
 
@@ -945,11 +947,14 @@ void detect_isrs(graph::Graph& graph){
                 stack.pop();
                 //check if the function was already visited by DFS
                 size_t seed =  function->get_seed();
-                for(auto tmp_seed : visited_functions){
-                    if(seed == tmp_seed)continue;
+                
+                if(visited_functions.find(seed) != visited_functions.end() ) {
+                    continue;
+                }else{
+                    visited_functions.insert(std::make_pair(seed, seed));
                 }
-                //set the function to the already visited functions
-                visited_functions.emplace_back(seed);
+
+            
 
                 //get the calling functions of the function
                 auto calling_functions =  function->get_calling_functions();
@@ -988,93 +993,98 @@ void detect_isrs(graph::Graph& graph){
 * @return true, if the abstraction instance could created, else return false
 */
 bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_vertex,OS::shared_abb abb,bool before_scheduler_start,std::vector<llvm::Instruction*>* already_visited_calls,bool multiple_create){
-
-    graph::shared_vertex created_vertex;
-    //check which target should be generated
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
-        //std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
-        created_vertex = create_task(graph,abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Task could not created" << std::endl;
-    }
-    
-        
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Queue).hash_code())){
-        created_vertex = create_queue( graph,abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Queue could not created" << std::endl;
-
-    }
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
-        //set semaphore
-        semaphore_type type = binary_semaphore;
-        std::string syscall_name = abb->get_syscall_name();
-       
-        if(syscall_name =="xQueueCreateCountingSemaphore")type = counting_semaphore;
-        created_vertex = create_semaphore(graph, abb, type, before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "CountingSemaphore could not created" << std::endl;
-        
-    }
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Resource).hash_code())){
-        //set semaphore
-       
-        resource_type type;
-        std::string syscall_name = abb->get_syscall_name();
-        if(syscall_name =="xQueueCreateMutex")type = binary_mutex;
-        else if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
-        
-        std::cerr << abb->get_parent_function()->get_name() << std::endl;
-        created_vertex = create_resource(graph, abb, type, before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Mutex could not created" << std::endl;
-        
-    }			
-    
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
-        created_vertex = create_timer( graph,abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Timer could not created" << std::endl;
-      
-    }
-
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Event).hash_code())){
-        created_vertex = create_event_group(graph, abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Event Group could not created" << std::endl;
-    }
-    
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Buffer).hash_code())){
-       
-        created_vertex = create_buffer(graph, abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Buffer could not created" << std::endl;
-    }
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::QueueSet).hash_code())){
-        ;
-        created_vertex = create_queue_set(graph, abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "Queue Set could not created" << std::endl;
-    }
-    if(list_contains_element(abb->get_call_target_instances(),typeid(OS::CoRoutine).hash_code())){
-      
-        created_vertex = create_coroutine(graph, abb,before_scheduler_start,already_visited_calls);
-        if(!created_vertex)std::cout << "CoRoutine could not created" << std::endl;
-    }
-    if(created_vertex){
-        
-        //set information if created instance is created in loop
-        created_vertex->set_multiple_create(multiple_create);
-        //set static flag, if the creatoin syscall contains Static substring
-        if(abb->get_syscall_name().find("Static") !=  std::string::npos){
-            created_vertex->set_static_create(true);
+    try{
+        graph::shared_vertex created_vertex;
+        //check which target should be generated
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Task).hash_code())){
+            //std::cout << "TASKCREATE" << name << ":" << tmp << std::endl;
+            created_vertex = create_task(graph,abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Task could not created" << std::endl;
         }
         
-        auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,created_vertex,abb);
-        //store the edge in the graph
-        graph.set_edge(edge);
+            
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Queue).hash_code())){
+            created_vertex = create_queue( graph,abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Queue could not created" << std::endl;
+
+        }
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Semaphore).hash_code())){
+            //set semaphore
+            semaphore_type type = binary_semaphore;
+            std::string syscall_name = abb->get_syscall_name();
         
-        start_vertex->set_outgoing_edge(edge);
-        created_vertex->set_ingoing_edge(edge);
-        edge->set_instruction_reference( abb->get_syscall_instruction_reference());
-        auto arguments = abb->get_syscall_arguments();
-        auto syscall_reference = abb->get_syscall_instruction_reference();
-        auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
-        edge->set_specific_call(&specific_arguments);
-        return true;
-    }else{
+            if(syscall_name =="xQueueCreateCountingSemaphore")type = counting_semaphore;
+            created_vertex = create_semaphore(graph, abb, type, before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "CountingSemaphore could not created" << std::endl;
+            
+        }
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Resource).hash_code())){
+            //set semaphore
+        
+            resource_type type;
+            std::string syscall_name = abb->get_syscall_name();
+            if(syscall_name =="xQueueCreateMutex")type = binary_mutex;
+            else if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
+            
+            std::cerr << abb->get_parent_function()->get_name() << std::endl;
+            created_vertex = create_resource(graph, abb, type, before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Mutex could not created" << std::endl;
+            
+        }			
+        
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Timer).hash_code())){
+            created_vertex = create_timer( graph,abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Timer could not created" << std::endl;
+        
+        }
+
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Event).hash_code())){
+            created_vertex = create_event_group(graph, abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Event Group could not created" << std::endl;
+        }
+        
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Buffer).hash_code())){
+        
+            created_vertex = create_buffer(graph, abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Buffer could not created" << std::endl;
+        }
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::QueueSet).hash_code())){
+            ;
+            created_vertex = create_queue_set(graph, abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "Queue Set could not created" << std::endl;
+        }
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::CoRoutine).hash_code())){
+        
+            created_vertex = create_coroutine(graph, abb,before_scheduler_start,already_visited_calls);
+            if(!created_vertex)std::cout << "CoRoutine could not created" << std::endl;
+        }
+        if(created_vertex){
+            
+            //set information if created instance is created in loop
+            created_vertex->set_multiple_create(multiple_create);
+            //set static flag, if the creatoin syscall contains Static substring
+            if(abb->get_syscall_name().find("Static") !=  std::string::npos){
+                created_vertex->set_static_create(true);
+            }
+            
+            auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,created_vertex,abb);
+            //store the edge in the graph
+            graph.set_edge(edge);
+            
+            start_vertex->set_outgoing_edge(edge);
+            created_vertex->set_ingoing_edge(edge);
+            edge->set_instruction_reference( abb->get_syscall_instruction_reference());
+            auto arguments = abb->get_syscall_arguments();
+            auto syscall_reference = abb->get_syscall_instruction_reference();
+            auto specific_arguments=  get_syscall_relative_arguments( &arguments, already_visited_calls,syscall_reference,abb->get_syscall_name());
+            edge->set_specific_call(&specific_arguments);
+            return true;
+        }else{
+            return false;
+        }
+    }
+    catch(...){
+        abb->print_information();
         return false;
     }
 }
