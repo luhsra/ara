@@ -317,11 +317,11 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                             }
                                                         
                             //check if the syscall expect values from target or commits values to target
-                            if(abb->get_syscall_type() == receive || abb->get_syscall_type() == wait ){
+                            if(abb->get_syscall_type() == receive || abb->get_syscall_type() == wait || abb->get_syscall_type() == take ){
                                 
                                 
                                 //create the edge, which contains the start and target vertex and the arguments
-                                auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),start_vertex,target_vertex ,abb);
+                                auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),target_vertex,start_vertex ,abb);
                                 
                                 
                                 //store the edge in the graph
@@ -387,6 +387,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
             if(success == false){
                 //edge could not created, print warning
                 if(start_vertex->get_type() == typeid(OS::Timer).hash_code()){
+                    
                 }
                 
                 std::cerr << "edge could not created: " << abb->get_syscall_name() <<  " in function " <<  abb->get_parent_function()->get_name()  << " in vertex " << start_vertex->get_name() <<  std::endl;
