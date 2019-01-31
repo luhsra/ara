@@ -23,27 +23,23 @@ def main():
 
     p_manager.execute(['ValidationStep'])
 
-    abbs  = g.get_type_vertices("ABB")
-    
+    abbs = g.get_type_vertices("ABB")
+
     for should in data:
-        
+
         scheduler_relation = should['scheduler_relation']
-        abb =  should['location']
-        
+        abb = should['location']
+
         for tmp_abb in abbs:
-                
+
             if tmp_abb != None and tmp_abb.get_name() == abb:
                 #print(tmp_abb.get_start_scheduler_relation())
                 #print(graph.start_scheduler_relation["after"])
 
-                
+
                 if graph.start_scheduler_relation[scheduler_relation]  != tmp_abb.get_start_scheduler_relation():
                     print(abb,"current relation",tmp_abb.get_start_scheduler_relation() ,"expected relation",scheduler_relation)
                     sys.exit()
-    
-        
-        
-    
 
 
 if __name__ == '__main__':

@@ -23,35 +23,30 @@ def main():
 
     p_manager.execute(['ValidationStep'])
 
-    functions  = g.get_type_vertices("Function")
-    
+    functions = g.get_type_vertices("Function")
+
     for json_function in data:
-        
-        expected_order = [] 
-        
+
+        expected_order = []
+
         for abb in data[json_function]:
             expected_order.append(abb)
-        
+
         for graph_function in functions:
-                
+
             if graph_function.get_name() == json_function:
-                
+
                 function_abbs = graph_function.get_atomic_basic_blocks()
                 function_order = []
-                
+
                 for abb in function_abbs:
                     function_order.append(abb.get_name())
-                    
+
                 assert len(function_order) == len(expected_order)
                 for should, have in zip(function_order, expected_order):
                     assert should == have
-                    
+
                 break
-
-
-        
-        
-    
 
 
 if __name__ == '__main__':

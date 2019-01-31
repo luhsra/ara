@@ -25,12 +25,12 @@ def main():
 
     val_step = p_manager.get_step('ValidationStep')
     side_data = val_step.get_side_data()
-    
+
     #TODO ABB3 nicht im kritischen Bereich
-    
+
     for tmp in side_data:
         print(tmp['location'].get_name())
-    
+
     assert len(warnings) == len(side_data)
     for should, have in zip(warnings, side_data):
         assert should['type'] == have['type']
