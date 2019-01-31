@@ -1,85 +1,22 @@
-[
-	{
-		"scheduler_relation": "before",
-		"location": "BB16"
-	},
-	{
-		"scheduler_relation": "before",
-		"location": "BB10"
-	},
-	{
-		"scheduler_relation": "before",
-		"location": "BB17"
-	},
-	{
-		"scheduler_relation": "after",
-		"location": "BB11"
-	},
-	{
-		"scheduler_relation": "uncertain",
-		"location": "BB18"
-	},
-	{
-		"scheduler_relation": "uncertain",
-		"location": "BB12"
-	},
-	{
-		"scheduler_relation": "uncertain",
-		"location": "BB13"
-	},
-	{
-		"scheduler_relation": "after",
-		"location": "BB14"
-	},
-	{
-		"scheduler_relation": "after",
-		"location": "BB15"
-	},
-	{
-		"scheduler_relation": "after",
-		"location": "BB19"
-	},
-	
-    {
-		"scheduler_relation": "after",
-		"location": "BB6"
-	},
-	
-	{
-		"scheduler_relation": "after",
-		"location": "BB3"
-	},
-    {
-		"scheduler_relation": "before",
-		"location": "BB7"
-	},
-	
-	{
-		"scheduler_relation": "before",
-		"location": "BB8"
-	},
-	{
-		"scheduler_relation": "uncertain",
-		"location": "BB9"
-	},
-	{
-		"scheduler_relation": "uncertain",
-		"location": "BB4"
-	},
-	{
-		"scheduler_relation": "after",
-		"location": "BB5"
-	},
-	{
-		"scheduler_relation": "uncertain",
-		"location": "BB2"
-	},
-		{
-		"scheduler_relation": "after",
-		"location": "BB1"
-	},
-	{
-		"scheduler_relation": "after",
-		"location": "BB0"
-	}
-]
+{
+	"BB16": "before",
+	"BB10": "before",
+	"BB17": "before",
+	"BB11": "after",
+	"BB18": "uncertain",
+	"BB12": "uncertain",
+	"BB13": "uncertain",
+	"BB14": "after",
+	"BB15": "after",
+	"BB19": "after",
+	"BB6": "after",
+	"BB3": "after",
+	"BB7": "before",
+	"BB8": "before",
+	"BB9": "uncertain",
+	"BB4": "uncertain",
+	"BB5": "after",
+	"BB2": "uncertain",
+	"BB1": "after",
+	"BB0": "after"
+}
