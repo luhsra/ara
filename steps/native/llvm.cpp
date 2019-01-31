@@ -1064,6 +1064,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
             if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
                 
                 //error in argument dump
+                std::cerr << print_argument(instruction) << std::endl;
                 std::cerr << "argument container lists have different sizes" << std::endl;
                 abort();
             }
