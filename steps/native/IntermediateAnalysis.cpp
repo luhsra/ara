@@ -821,6 +821,7 @@ namespace step {
         
 		//check if graph contains main function
 		if(main_vertex != nullptr){
+			graph.set_entry_point(main_vertex);
 
 			main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
             std::map<std::size_t,std::size_t> already_visited;

@@ -109,6 +109,8 @@ namespace graph {
 			std::shared_ptr<llvm::Module> llvm_module;
 			
 
+			std::vector<std::shared_ptr<Vertex>> entry_points;
+
             os_type type;
                 
 		public:
@@ -152,6 +154,9 @@ namespace graph {
             os_type get_os_type(){return  this->type;};
             
             void set_os_type(os_type type){this->type = type;};
+
+			void set_entry_point(std::shared_ptr<Vertex> entry_point) { entry_points.emplace_back(entry_point); }
+			std::vector<std::shared_ptr<Vertex>> get_entry_points() { return entry_points; }
 			
 			
 			~Graph();
