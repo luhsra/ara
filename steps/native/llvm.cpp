@@ -10,6 +10,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/IR/InstrTypes.h"
 #include "llvm/IR/TypeFinder.h"
+#include "llvm/IR/CFG.h"
 #include "llvm/Pass.h"
 #include <cassert>
 #include <fstream>
@@ -1313,106 +1314,35 @@ void abb_generation(graph::Graph *graph, OS::shared_function function, std::vect
 
 	llvm::Function *llvm_reference_function = function->get_llvm_reference();
 
-	// create ABB
-	auto abb = std::make_shared<OS::ABB>(graph, function, llvm_reference_function->front().getName());
+	std::map<const llvm::BasicBlock*, std::shared_ptr<OS::ABB>> bb_map;
 
-	// store coresponding basic block in ABB
-	abb->set_BasicBlock(&(llvm_reference_function->getEntryBlock()));
-	abb->set_exit_bb(&(llvm_reference_function->getEntryBlock()));
-	abb->set_entry_bb(&(llvm_reference_function->getEntryBlock()));
+	for (auto &bb : *llvm_reference_function) {
+		auto abb = std::make_shared<OS::ABB>(graph, function, bb.getName());
+		graph->set_vertex(abb);
+		function->set_atomic_basic_block(abb);
 
-	function->set_atomic_basic_block(abb);
+		abb->set_BasicBlock(&bb);
+		abb->set_exit_bb(&bb);
+		abb->set_entry_bb(&bb);
 
-	// queue for new created ABBs
-	std::deque<OS::shared_abb> queue;
+		set_arguments(abb, warning_list);
 
-	// store abb in graph
-	graph->set_vertex(abb);
+		bb_map.insert(std::pair<llvm::BasicBlock*, std::shared_ptr<OS::ABB>>(&bb, abb));
 
-	set_arguments(abb, warning_list);
-
-	queue.push_back(abb);
-
-	// queue with information, which abbs were already analyzed
-	std::vector<size_t> visited_abbs;
-
-	// store the first abb as front abb of the function
-
-	function->set_entry_abb(queue.front());
-
-	// iterate about the ABB queue
-	while (!queue.empty()) {
-
-		// get first element of the queue
-		OS::shared_abb old_abb = queue.front();
-		queue.pop_front();
-
-		// iterate about the successors of the ABB
-		std::list<llvm::BasicBlock *>::iterator it;
-
-		// iterate about the basic block of the abb
-		for (llvm::BasicBlock *bb : *old_abb->get_BasicBlocks()) {
-
-			// iterate about the successors of the abb
-			for (auto it = succ_begin(bb); it != succ_end(bb); ++it) {
-
-				// get sucessor basicblock reference
-				llvm::BasicBlock *succ = *it;
-
-				// create temporary basic block
-				auto new_abb = std::make_shared<OS::ABB>(graph, function, succ->getName());
-
-				// check if the successor abb is already stored in the list
-				if (!visited(new_abb->get_seed(), &visited_abbs)) {
-					if (succ->getName().str().empty()) {
-						std::cerr << "ERROR: basic block has no name" << '\n';
-						std::cerr << print_argument(succ) << '\n';
-						abort();
-					} else {
-						for (auto &tmp_bb : *llvm_reference_function) {
-							if (succ->getName().str() == tmp_bb.getName().str()) {
-								succ = &tmp_bb;
-								break;
-							}
-						}
-					}
-					// store new abb in graph
-					graph->set_vertex(new_abb);
-
-					function->set_atomic_basic_block(new_abb);
-
-					// set abb predecessor reference and bb reference
-					new_abb->set_BasicBlock(succ);
-					new_abb->set_exit_bb(succ);
-					new_abb->set_entry_bb(succ);
-
-					new_abb->set_ABB_predecessor(old_abb);
-
-					// set successor reference of old abb
-					old_abb->set_ABB_successor(new_abb);
-
-					// update the lists
-					queue.push_back(new_abb);
-
-					visited_abbs.push_back(new_abb->get_seed());
-
-					// set the abb call`s argument values and types
-					set_arguments(new_abb, warning_list);
-
-				} else {
-
-					// get the alread existing abb from the graph
-
-					std::shared_ptr<graph::Vertex> vertex = graph->get_vertex(new_abb->get_seed());
-					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB>(vertex);
-
-					// connect the abbs via reference
-					existing_abb->set_ABB_predecessor(old_abb);
-					old_abb->set_ABB_successor(existing_abb);
-				}
+		// connect already mapped successors and predecessors
+		for (const BasicBlock* succ_b : successors(&bb)) {
+			if (bb_map.find(succ_b) != bb_map.end()) {
+				abb->set_ABB_successor(bb_map[succ_b]);
+			}
+		}
+		for (const BasicBlock* pred_b : predecessors(&bb)) {
+			if (bb_map.find(pred_b) != bb_map.end()) {
+				abb->set_ABB_predecessor(bb_map[pred_b]);
 			}
 		}
 	}
+
+	function->set_entry_abb(bb_map[&llvm_reference_function->front()]);
 }
 
 /**
