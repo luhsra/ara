@@ -148,7 +148,7 @@ cdef class NativeStep(SuperStep):
         return self._c_pass.get_name().decode('UTF-8')
 
     def get_description(self):
-        return self._c_pass.get_description()
+        return self._c_pass.get_description().decode('UTF-8')
 
     def get_side_data(self):
         if self.get_name() == "ValidationStep":
