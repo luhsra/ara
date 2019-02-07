@@ -659,6 +659,7 @@ namespace OS {
 		shared_abb get_single_ABB_successor();
 		std::list<shared_abb> get_ABB_predecessors();    // Gebe Referenz auf Vorgänger zurück
 
+		// TODO entry and exit block should be enough, implement an iterator over basic blocks
 		bool set_BasicBlock(llvm::BasicBlock* basic_block);
 		std::vector<llvm::BasicBlock*>* get_BasicBlocks();
 		//std::list<size_t> get_expected_syscall_argument_types();

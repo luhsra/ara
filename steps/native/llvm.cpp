@@ -1310,7 +1310,6 @@ void set_arguments(OS::shared_abb abb) {
  */
 void abb_generation(graph::Graph *graph, OS::shared_function function) {
 
-	// get llvm function reference
 	llvm::Function *llvm_reference_function = function->get_llvm_reference();
 
 	// create ABB
@@ -1414,15 +1413,15 @@ void abb_generation(graph::Graph *graph, OS::shared_function function) {
 }
 
 /**
- * @brief splitts all bbs of the transmitted function, so that there is just on call in each bb
+ * @brief splits all bbs of the transmitted function, so that there is just on call in each bb
  * @param function llvm function which is analyzed
  * @param split_counter counter, whichs stores the number of splitted bbs
  */
-void split_basicblocks(llvm::Function *function, unsigned *split_counter) {
+void split_basicblocks(llvm::Function &function, unsigned &split_counter) {
 	// store the basic blocks in a list
 	std::list<llvm::BasicBlock *> bbs;
-	for (llvm::BasicBlock &_bb : *function) {
-		bbs.push_back(&_bb);
+	for (llvm::BasicBlock &bb : function) {
+		bbs.push_back(&bb);
 	}
 	// iterate about the basic blocks
 	for (llvm::BasicBlock *bb : bbs) {
@@ -1439,7 +1438,7 @@ void split_basicblocks(llvm::Function *function, unsigned *split_counter) {
 				}
 				// split the basic block and rename it
 				std::stringstream ss;
-				ss << "BB" << (*split_counter)++;
+				ss << "BB" << split_counter++;
 				bb = bb->splitBasicBlock(it, ss.str());
 				it = bb->begin();
 			}
@@ -1593,8 +1592,6 @@ namespace step {
 
 		// get file arguments from config
 		std::vector<std::string> files;
-		std::cout << "Run " << get_name() << std::endl;
-
 		PyObject *input_files = PyDict_GetItemString(config, "input_files");
 		assert(input_files != nullptr && PyList_Check(input_files));
 		for (Py_ssize_t i = 0; i < PyList_Size(input_files); ++i) {
@@ -1603,20 +1600,20 @@ namespace step {
 			files.push_back(std::string(PyUnicode_AsUTF8(elem)));
 		}
 
-		unsigned BaseArg = 0;
 		std::string ErrorMessage;
 
 		// link the modules
-		auto Composite = LoadFile(files.at(BaseArg), context);
+		// use first module a main module
+		auto Composite = LoadFile(files.at(0), context);
 		if (Composite.get() == 0) {
-			std::cerr << "error loading file '" << files.at(BaseArg) << "'\n";
+			std::cerr << "error loading file '" << files.at(0) << "'\n";
 			abort();
 		}
 
 		Linker L(*Composite);
 
 		// resolve link errors
-		for (unsigned i = BaseArg + 1; i < files.size(); ++i) {
+		for (unsigned i = 1; i < files.size(); ++i) {
 			auto M = LoadFile(files.at(i), context);
 			if (M.get() == 0) {
 				std::cerr << "error loading file '" << files.at(i) << "'\n";
@@ -1654,39 +1651,34 @@ namespace step {
 		// convert unique_ptr to shared_ptr
 		std::shared_ptr<llvm::Module> shared_module = std::move(Composite);
 
-		// set llvm module in the graph object
 		graph.set_llvm_module(shared_module);
 
-		// initialize the split counter
-		unsigned int split_counter = 0;
 
 		// create and store the OS instance in the graph
 		auto rtos = std::make_shared<OS::RTOS>(&graph, "RTOS");
 		graph.set_vertex(rtos);
 
-		// iterate about llvm functions of llvm module
+		// count the amount of basic blocks, name the basic block with the split_counter
+		unsigned int split_counter = 0;
+
 		for (auto &func : *shared_module) {
 
 			// check if llvm function has definition
 			if (!func.empty()) {
 
-				// intialize a graph function
 				auto graph_function = std::make_shared<OS::Function>(&graph, func.getName().str());
 
-				// get defined arguments of  function
+				// extract arguments
 				llvm::FunctionType *argList = func.getFunctionType();
-
-				// iterate about  arguments
 				for (unsigned int i = 0; i < argList->getNumParams(); i++) {
-					// store  argument references in  argument list
 					graph_function->set_argument_type(argList->getParamType(i));
 				}
 
-				// store  return type of  function
+				// extract return type
 				graph_function->set_return_type(func.getReturnType());
 
-				// split  llvm basic blocks, so that just one call exits per instance
-				split_basicblocks(&(func), &split_counter);
+				// split llvm basic blocks, so that just one call exits per instance
+				split_basicblocks(func, split_counter);
 
 				// store llvm function reference
 				graph_function->set_llvm_reference(&(func));
@@ -1694,7 +1686,7 @@ namespace step {
 				// update dominator tree and postdominator tree
 				graph_function->initialize_dominator_tree(&(func));
 				graph_function->initialize_postdominator_tree(&(func));
-				// iterate about  splitted llvm basic blocks of llvm function an set their name
+				// name BB if not already done
 				for (auto &bb : func) {
 
 					// name all basic blocks
