@@ -24,7 +24,9 @@ def print_avail_steps(avail_steps):
         name = "{}{{:<{}}}".format(indent * ' ', max_len + 2)
         name = name.format(step[0] + ':')
 
-        desc = textwrap.wrap(step[1], width=term_width - max_len - 2 - indent)
+        desc = []
+        for line in step[1].splitlines():
+            desc += textwrap.wrap(line, width=term_width-max_len-2-indent)
         second_line_desc = textwrap.indent('\n'.join(desc[1:]),
                                            (max_len + 2 + indent) * ' ')
         desc = '\n'.join([desc[0], second_line_desc]).strip()
