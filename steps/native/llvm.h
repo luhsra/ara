@@ -49,7 +49,7 @@ namespace step {
 	  public:
 		LLVMStep(PyObject *config) : Step(config) {}
 
-		virtual std::string get_name() override;
+		virtual std::string get_name() override { return "LLVMStep"; }
 
 		virtual std::string get_description() override;
 

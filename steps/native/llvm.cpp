@@ -1578,9 +1578,11 @@ void set_exit_abb(graph::Graph &graph, unsigned int &split_counter) {
 
 namespace step {
 
-	std::string LLVMStep::get_name() { return "LLVMStep"; }
-
-	std::string LLVMStep::get_description() { return "Extracts out of LLVM."; }
+	std::string LLVMStep::get_description() {
+		return "Extracts initial objects out of the ll-files.\n"
+		       "Initializes all functions and unmerged ABBs. Also tries to extract all arguments out of function "
+		       "calls.";
+	}
 
 	/**
 	 * @brief the run method of the llvm pass. This pass linkes all .ll files and collects all application raw
