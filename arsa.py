@@ -44,7 +44,7 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('--os', '-O', help="specify the operation system",
                         choices=['freertos', 'osek'], default='osek')
-    parser.add_argument('--step', '-s', default=['DisplayResultsStep'],
+    parser.add_argument('--step', '-s',
                         help="choose steps that will be executed",
                         action='append')
     parser.add_argument('--list-steps', '-l', action="store_true",
@@ -65,12 +65,18 @@ def main():
         parser.error('input_files are required (except -l or -h is set)')
 
     print("Processing files:", args.input_files[0])
-    if len(set(args.step) & set([s.get_name() for s in avail_steps])) > 0:
+
+    if args.step is None:
+        args.step = ['DisplayResultsStep']
+
+    if len(set(args.step) & set([s.get_name() for s in avail_steps])) == 0:
         msg = 'Invalid step for --step. {}'.format(
             print_avail_steps(avail_steps))
         parser.error(msg)
 
-    s_manager.execute(['DisplayResultsStep'])
+    print("Executing: {}".format(', '.join(args.step)))
+
+    s_manager.execute(args.step)
 
 
 if __name__ == '__main__':
