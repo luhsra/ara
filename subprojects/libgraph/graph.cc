@@ -38,10 +38,10 @@ template <typename T> bool contains(std::any a) {
 // print methods -------------------------------------------------------------------------------
 void debug_argument(argument_data argument) {
 
-	const std::size_t tmp_int = typeid(int).hash_code();
-	const std::size_t tmp_double = typeid(double).hash_code();
-	const std::size_t tmp_string = typeid(std::string).hash_code();
-	const std::size_t tmp_long = typeid(long).hash_code();
+	// const std::size_t tmp_int = typeid(int).hash_code();
+	// const std::size_t tmp_double = typeid(double).hash_code();
+	// const std::size_t tmp_string = typeid(std::string).hash_code();
+	// const std::size_t tmp_long = typeid(long).hash_code();
 	std::cerr << "Argument: ";
 	/*
 	std::string type_str;
@@ -112,12 +112,6 @@ graph::Graph::Graph() {}
 
 void graph::Graph::set_llvm_module(std::shared_ptr<llvm::Module> module) { llvm_module = module; }
 
-void load_llvm_module(std::string file) {
-
-	llvm::SMDiagnostic Err;
-	// this->tmp_module = parseIRFile(file, Err, *(this->llvm_context)).get();
-}
-
 std::shared_ptr<llvm::Module> graph::Graph::get_llvm_module() { return this->llvm_module; }
 
 void graph::Graph::set_vertex(shared_vertex vertex) {
@@ -174,7 +168,6 @@ shared_vertex graph::Graph::get_vertex(size_t seed) {
 
 shared_vertex graph::Graph::get_vertex(std::string name) {
 	// gebe Vertex mit dem entsprechenden hashValue zurück
-	std::list<shared_vertex>::iterator it = this->vertices.begin(); // iterate about the list elements
 
 	shared_vertex return_vertex;
 	int counter = 0;

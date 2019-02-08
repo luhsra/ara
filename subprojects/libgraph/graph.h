@@ -111,14 +111,13 @@ std::string print_argument(llvm::Value *argument);
 
 namespace OS {
 	class ABB;
-};
+}
 
 namespace graph {
 
 	class Graph;
 	class Vertex;
 	class Edge;
-	class OS::ABB;
 
 	typedef std::shared_ptr<OS::ABB> shared_abb;
 	typedef std::shared_ptr<Vertex> shared_vertex;
@@ -142,7 +141,6 @@ namespace graph {
 
 		Graph();
 
-		void load_llvm_module(std::string file);
 		void set_llvm_module(std::shared_ptr<llvm::Module> module);
 
 		std::shared_ptr<llvm::Module> get_llvm_module();
@@ -237,6 +235,7 @@ namespace graph {
 		}
 
 		Vertex(Graph *graph, std::string name); // Constructor
+		virtual ~Vertex() {};
 
 
 		void set_start_scheduler_creation_flag(bool flag);
