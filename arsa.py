@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--list-steps', '-l', action="store_true",
                         default=False, help="list all available steps")
     parser.add_argument('input_files', help="all LLVM-IR input files",
-                        nargs='?')
+                        nargs='*')
 
     args = parser.parse_args()
 
