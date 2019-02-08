@@ -229,6 +229,10 @@ namespace graph {
 
 		};
 
+		virtual std::ostream& print(std::ostream& stream) const {
+			return stream << "Vertex(" << get_name() << ")";
+		}
+
 		Vertex(Graph *graph, std::string name); // Constructor
 
 		void set_start_scheduler_creation_flag(bool flag);
@@ -237,7 +241,7 @@ namespace graph {
 		void set_type(std::size_t type);
 		std::size_t get_type();
 
-		std::string get_name(); // gebe Namen des Vertexes zurück
+		std::string get_name() const; // gebe Namen des Vertexes zurück
 		std::size_t get_seed(); // gebe den Hash des Vertexes zurück
 
 		// VertexKind getKind(); // LLVM-style RTTI const {return Kind}
@@ -283,6 +287,9 @@ namespace graph {
 
 		bool get_multiple_create() { return this->multiple_create; }
 	};
+	inline std::ostream& operator<<(std::ostream& stream, const Vertex& vertex) {
+		return vertex.print(stream);
+	}
 
 	// Klasse Edge verbindet zwei Betriebssystemabstraktionen über einen Syscall/Call mit entsprechenden Argumenten
 	// Da jeder Edge der Start und Ziel Vertex zugeordnet ist, kann der Graph durchlaufen werden

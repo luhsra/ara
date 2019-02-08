@@ -301,7 +301,7 @@ graph::Vertex::Vertex(Graph *graph, std::string name) {
 	// std::cerr  << "name: " << this->name << "\n";
 }
 
-std::string graph::Vertex::get_name() { return this->name; }
+std::string graph::Vertex::get_name() const { return this->name; }
 
 std::size_t graph::Vertex::get_seed() { return this->seed; }
 
