@@ -54,7 +54,7 @@ cpdef get_type_hash(name):
         hash_type = typeid(cgraph.ISR).hash_code()
     elif name == "CoRoutine":
         hash_type = typeid(cgraph.CoRoutine).hash_code()
-    
+
     return  hash_type
 
 class start_scheduler_relation(IntEnum):
@@ -63,14 +63,14 @@ class start_scheduler_relation(IntEnum):
     before   = <int> cgraph.before
     not_defined  = <int> cgraph.not_defined
 
-    
-    
+
+
 class call_definition_type(IntEnum):
     sys_call  = <int> cgraph.sys_call
     func_call = <int> cgraph.func_call
     no_call   = <int> cgraph.no_call
     has_call  = <int> cgraph.has_call
-    computation  = <int> cgraph.computation 
+    computation  = <int> cgraph.computation
 
 
 class timer_type(IntEnum):
@@ -106,7 +106,7 @@ class syscall_definition_type(IntEnum):
     start_scheduler = <int> cgraph.start_scheduler
     end_scheduler = <int> cgraph.end_scheduler
     chain = <int> cgraph.chain
-    
+
 #class hook_type(IntEnum):
     #start_up  = <int> cgraph.start_up
     #shut_down = <int> cgraph.shut_down
@@ -117,41 +117,41 @@ class syscall_definition_type(IntEnum):
     #idle = <int> cgraph.idle
     #tick = <int> cgraph.tick
     #no_hook = <int> cgraph.no_hook
-    
+
 class data_type(IntEnum):
     string = 1
     integer = 2
     unsigned_integer = 3
     long = 4
-    
+
 class os_type(IntEnum):
 
-    FreeRTOS = <int> cgraph.FreeRTOS 
-    OSEK = <int> cgraph.OSEK 
-    
+    FreeRTOS = <int> cgraph.FreeRTOS
+    OSEK = <int> cgraph.OSEK
+
 cpdef cast_expected_syscall_argument_types(argument_types ):
-    
+
     cdef data_type_hash
-    
+
     pylist = []
 
     for argument_type in argument_types:
         if isinstance(argument_type, list):
-            
+
             pylist.append(cast_expected_syscall_argument_types(argument_type))
-            
+
         else:
-            
+
             if argument_type == data_type.integer:
                 data_type_hash = typeid(long).hash_code()
             elif argument_type == data_type.string:
                 data_type_hash = typeid(string).hash_code()
             elif argument_type == data_type.long:
                 data_type_hash = typeid(long).hash_code()
-            
+
             pylist.append(data_type_hash)
 
-    
+
     return pylist
 
 cdef extern from "<typeinfo>" namespace "std" nogil:
@@ -187,7 +187,7 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
     if (vertex == NULL):
         return None
 
-    
+
     cdef size_t type_id = deref(vertex).get_type()
 
     cdef Vertex py_obj = a[type_id](None, None,None,_raw=True)
@@ -209,18 +209,18 @@ cdef class PyGraph:
 
     def set_vertex(self, Vertex vertex):
         self._c_graph.set_vertex(vertex._c_vertex)
-        
+
     def get_vertex(self, seed ):
         cdef shared_ptr[cgraph.Vertex]  vertex = self._c_graph.get_vertex(seed)
         return create_from_pointer(vertex)
-    
+
     def remove_vertex(self,seed):
         return self._c_graph.remove_vertex(seed)
-            
-    
+
+
     def get_type_vertices(self, name):
 
-        
+
         cdef c_hash_type = get_type_hash(name)
 
         cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(c_hash_type)
@@ -236,24 +236,24 @@ cdef class PyGraph:
         #print(pylist)
 
         return pylist
-    
+
     def set_os_type(self, int type_os):
         cdef cgraph.os_type tmp_type = <cgraph.os_type> type_os
         return self._c_graph.set_os_type(tmp_type)
 
-    
-        
-        
+
+
+
     #@staticmethod
     #cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         #py_obj = Vertex(None, "empty", _raw=True)
         #py_obj._c_vertex = vertex
         #return py_obj
-        
+
 cdef class Edge:
 
     cdef shared_ptr[cgraph.Edge] _c_edge
-    
+
     def __cinit__(self, PyGraph graph, name,Vertex start_vertex , Vertex target_vertex , ABB abb_reference , *args, _raw=False, **kwargs):
         # prevent double constructions
         # https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
@@ -408,7 +408,7 @@ cdef class ISR(Vertex):
 
     def set_category(self, int category):
         deref(self._c()).set_category(category)
-        
+
     def get_category(self):
         cdef int category = deref(self._c()).get_category()
         return category
@@ -603,177 +603,177 @@ cdef class ABB(Vertex):
             bname = name.encode('UTF-8')
         else:
             bname = name
-        
+
         return deref(self._c()).convert_call_to_syscall(bname)
-    
+
     def get_syscall_name(self):
         cdef bytes name = deref(self._c()).get_syscall_name()
         return deref(self._c()).get_syscall_name()
 
     def get_call_name(self):
         cdef call_name =  deref(self._c()).get_call_name()
-       
+
         cdef bytes tmp_name = call_name
 
         return tmp_name
-        
+
     def get_call_type(self):
         cdef cgraph.call_definition_type t = deref(self._c()).get_call_type()
         return call_definition_type(<int> t)
-    
+
     def set_call_type(self, int syscall_type ):
         cdef cgraph.call_definition_type t = <cgraph.call_definition_type> syscall_type
         return deref(self._c()).set_call_type(t)
-    
+
     def set_syscall_type(self, int syscall_type ):
         cdef cgraph.syscall_definition_type t = <cgraph.syscall_definition_type> syscall_type
         return deref(self._c()).set_syscall_type(t)
-    
+
     def get_syscall_type(self):
         cdef cgraph.syscall_definition_type t = deref(self._c()).get_syscall_type()
         return syscall_definition_type(<int> t)
-    
+
     def set_call_target_instance(self, ptype ):
 
         for hash_type in ptype:
             deref(self._c()).set_call_target_instance( <size_t>  hash_type)
-        
-            
+
+
     def get_call_argument_types(self ):
-        
+
         cdef clist[clist[size_t]] call_arguments_types =  deref(self._c()).get_call_argument_types()
-            
+
         tmp_call_argument_types = []
-            
+
 
         for argument in call_arguments_types:
             argument_types = []
             for argument_type in argument:
                 argument_types.append(argument_type)
-            
+
             tmp_call_argument_types.append(argument_types)
 
-            
+
         return tmp_call_argument_types
-    
-    
+
+
     def expend_call_sites(self,ABB abb):
         return deref(self._c()).expend_call_sites(abb._c())
-    
+
     def remove_successor(self,ABB abb):
         return deref(self._c()).remove_successor(abb._c())
-    
+
     def remove_predecessor(self,ABB abb):
         return deref(self._c()).remove_predecessor(abb._c())
 
     def adapt_exit_bb(self,ABB abb):
         return deref(self._c()).adapt_exit_bb(abb._c())
-    
-    
+
+
     def get_called_functions(self):
-        
+
         cdef shared_ptr[cgraph.Function] function  =  deref(self._c()).get_called_function()
-        
-        
+
+
         pylist = []
-        
+
         if function != NULL:
             pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)))
-                
-        
+
+
         return pylist
-    
+
     def get_successors(self):
-        
+
         cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_successors()
-            
+
         pylist = []
-        
+
         for abb in abb_list:
             pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
-            
+
         return pylist
-    
+
     def get_predecessors(self):
-        
+
         cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_predecessors()
-            
+
         pylist = []
-        
+
         for abb in abb_list:
             pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
-            
+
         return pylist
-    
+
     def get_single_successor(self):
-        
+
         cdef shared_ptr[cgraph.ABB] abb =  deref(self._c()).get_single_ABB_successor()
-    
+
         if abb == NULL:
-            print("error in getting single abb successor") 
-        
+            print("error in getting single abb successor")
+
         return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
-    
-    
+
+
     def is_mergeable(self):
         return deref(self._c()).is_mergeable()
-    
+
     def has_single_successor(self):
         return deref(self._c()).has_single_successor()
-    
-    def append_basic_blocks(self, ABB  abb):	
+
+    def append_basic_blocks(self, ABB  abb):
         return deref(self._c()).append_basic_blocks(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
-    
-    
-    def set_successor(self, ABB  abb):	
+
+
+    def set_successor(self, ABB  abb):
         return deref(self._c()).set_ABB_successor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
-    
-    
-    
-    def set_predecessor(self, ABB  abb):	
+
+
+
+    def set_predecessor(self, ABB  abb):
         return deref(self._c()).set_ABB_predecessor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
-    
-        
+
+
     def get_parent_function(self):
-    
+
         cdef shared_ptr[cgraph.Function] function =  deref(self._c()).get_parent_function()
-    
+
         if function == NULL:
-            print("error in getting function parent") 
-                
-        return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function)) 
-        
+            print("error in getting function parent")
+
+        return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
+
     def get_dominator(self):
         cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_dominator()
         if abb!= NULL:
             return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
-        else: 
+        else:
             return None
-        
+
     def get_postdominator(self):
         cdef shared_ptr[cgraph.ABB] abb = deref(self._c()).get_postdominator()
         if abb!= NULL:
             return create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb))
-        else: 
+        else:
             return None
 
     def set_handler_argument_index(self,index):
         return deref(self._c()).set_handler_argument_index(index)
-    
+
     def get_start_scheduler_relation(self):
-        
+
         cdef cgraph.start_scheduler_relation relation = deref(self._c()).get_start_scheduler_relation()
         return start_scheduler_relation(<int> relation)
 
     def get_loop_information(self):
-        
+
         cdef bool loop_information = deref(self._c()).get_loop_information()
         return loop_information
-        
+
     def  print_information(self):
         return deref(self._c()).print_information()
 
-        
+
 cdef class Queue(Vertex):
 
     cdef inline shared_ptr[cgraph.Queue] _c(self):
@@ -796,8 +796,8 @@ cdef class Semaphore(Vertex):
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Semaphore](make_shared[cgraph.Semaphore](&graph._c_graph, bname))
-            
-        
+
+
 cdef class Buffer(Vertex):
 
     cdef inline shared_ptr[cgraph.Buffer] _c(self):
@@ -808,8 +808,8 @@ cdef class Buffer(Vertex):
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Buffer](make_shared[cgraph.Buffer](&graph._c_graph, bname))
-        
-        
+
+
 cdef class QueueSet(Vertex):
 
     cdef inline shared_ptr[cgraph.QueueSet] _c(self):
@@ -820,8 +820,8 @@ cdef class QueueSet(Vertex):
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.QueueSet](make_shared[cgraph.QueueSet](&graph._c_graph, bname))
-        
-        
+
+
 cdef class Timer(Vertex):
 
     cdef inline shared_ptr[cgraph.Timer] _c(self):
@@ -832,16 +832,16 @@ cdef class Timer(Vertex):
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Timer](make_shared[cgraph.Timer](&graph._c_graph, bname))
-            
+
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_callback_function()
-  
+
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
-    
+
     def set_callback_function(self, str function_name):
         cdef string c_function_name = function_name.encode('UTF-8')
         return deref(self._c()).set_callback_function(c_function_name)
-    
+
     def set_task_reference(self, str task_name):
         cdef string c_task_name = task_name.encode('UTF-8')
         deref(self._c()).set_task_reference(c_task_name)
@@ -886,10 +886,10 @@ cdef class RTOS(Vertex):
         if not _raw:
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.RTOS](make_shared[cgraph.RTOS](&graph._c_graph, bname))
-            
+
 
     def enable_startup_hook(self, attribute):
-        
+
         cdef bool enable = False
         if attribute == "FALSE":
             enable = False
@@ -897,12 +897,12 @@ cdef class RTOS(Vertex):
             enable = True
         else:
             print("unexpected OSEK hook enable attribute value")
-        
+
         deref(self._c()).enable_startup_hook(enable)
-        
+
     def enable_posttask_hook(self, attribute):
-   
-        
+
+
         cdef bool enable = False
         if attribute == "FALSE":
             enable = False
@@ -910,13 +910,13 @@ cdef class RTOS(Vertex):
             enable = True
         else:
             print("unexpected OSEK hook enable attribute value")
-        
+
         deref(self._c()).enable_posttask_hook(enable)
-        
-        
+
+
     def enable_pretask_hook(self, attribute):
-    
-        
+
+
         cdef bool enable = False
         if attribute == "FALSE":
             enable = False
@@ -924,12 +924,12 @@ cdef class RTOS(Vertex):
             enable = True
         else:
             print("unexpected OSEK hook enable attribute value")
-        
+
         deref(self._c()).enable_pretask_hook(enable)
-        
+
     def enable_shutdown_hook(self, attribute):
 
-        
+
         cdef bool enable = False
         if attribute == "FALSE":
             enable = False
@@ -937,12 +937,12 @@ cdef class RTOS(Vertex):
             enable = True
         else:
             print("unexpected OSEK hook enable attribute value")
-        
+
         deref(self._c()).enable_shutdown_hook(enable)
-        
+
     def enable_error_hook(self, attribute):
 
-        
+
         cdef bool enable = False
         if attribute == "FALSE":
             enable = False
@@ -950,11 +950,11 @@ cdef class RTOS(Vertex):
             enable = True
         else:
             print("unexpected OSEK hook enable attribute value")
-        
+
         deref(self._c()).enable_error_hook(enable)
-        
-    
-            
+
+
+
 cdef class CoRoutine(Vertex):
 
     cdef inline shared_ptr[cgraph.CoRoutine] _c(self):
