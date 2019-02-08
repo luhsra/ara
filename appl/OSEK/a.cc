@@ -43,75 +43,76 @@ TASK(Handler13) {
 }
 
 ISR2(isr_button_start){
-	
+
 	for(int i = 0;i< 100 ; ++i)int a =+ 20;
-	
+
 }
 
 
 int main(void) {
-	Schedule();
+	// call the test function, improve this by specifing entry points
+	test();
 	return 0;
-}				
-					
- 
+}
+
+
 /* noinline extern void OSEKOS_TASK_FUNC_Handler11(void){
- 
+
         volatile int i = 1;
         while (i <  200000) i++;
-        
-        
+
+
         OSEKOS_ActivateTask(OSEKOS_TASK_Handler12)
-        
+
         i = 0;
         while (i <  200000) i++;
-        
+
 
         OSEKOS_ActivateTask(OSEKOS_TASK_Handler13)
 
         OSEKOS_TerminateTask();
-        
+
     }
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
  * */
