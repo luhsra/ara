@@ -1538,7 +1538,7 @@ namespace step {
 	}
 
 	std::string LLVMStep::get_description() {
-		return "Extracts out of LLVM.";
+		return "Links all IR files in one module. Fills the graph with the programm structure (ABBs, Functions). For each abb which contain a call, the dataflow of arguments is analyzed to get the values.";
 	}
 
         

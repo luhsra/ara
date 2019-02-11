@@ -8,7 +8,8 @@ from native_step import Step
 
 
 class OilStep(Step):
-    """Reads an oil file and writes all information to the graph."""
+    """Reads an oil file and writes all information to the graph. OSEK abstraction
+    instances with specified properties are generated and stored in graph."""
     
     def get_dependencies(self):
         

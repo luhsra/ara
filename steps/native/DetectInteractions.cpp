@@ -621,7 +621,7 @@ namespace step {
 	}
 
 	std::string DetectInteractionsStep::get_description() {
-		return "Extracts out of FreeRTOS abstraction instances";
+		return "Extracts out of FreeRTOS abstraction instances. Iterates about the GCFG of each abstraktion instance which is defined by functions. For each abb from type syscall a edge is generated from the start, instance which contains the abb, to the target vertex, instance which is addressed by the syscall.";
 	}
 	
     /**

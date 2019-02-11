@@ -14,7 +14,9 @@ from collections import Iterable
 from functools import reduce
 
 class ABB_MergeStep(Step):
-    """Merges the ABB."""
+    """Merges the ABB. ABBs from type computational which are alligned in a single entry 
+    and single exit region are merged to one ABB. Entry and Exit of such regions are detected
+    with dominator and postdominator llvm class."""
         
     def get_dependencies(self):
         return ['SyscallStep']

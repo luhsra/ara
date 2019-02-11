@@ -13,9 +13,8 @@ from collections import Iterable
 from functools import reduce
 
 class DotFileParser():
-    """Implements a dominator analysis on the system level control flow
-    graph. A quadradic algorithm for determining the immdoms is used.
-
+    """Prints all relevant graph information in .dot files.
+    Control flow of functions, instances and their interactions and function calltree are shown.
     """
 
     def __init__(self,graph = None):
@@ -33,11 +32,11 @@ class DotFileParser():
         
         f = open(path+"functions_overview.dot","w+")
         
-        f.write("digraph G {\n" )
+        f.write("strict digraph G {\n" )
         
         function_list = g.get_type_vertices("Function")
         for function in function_list:
-            f.write("\tsubgraph " + function.get_name().replace(" ", "").replace(".", "_")  + "{\n")
+            f.write("\tsubgraph cluster" + function.get_name().replace(" ", "").replace(".", "_")  + "{\n")
 
             f.write("\t\tnode [style=filled];\n")
             abb_list = function.get_atomic_basic_blocks()
@@ -108,11 +107,11 @@ class DotFileParser():
         
         f = open(path+"functions_overview.dot","w+")
         
-        f.write("digraph G {\n" )
+        f.write("strict digraph G {\n" )
         
         function_list = g.get_type_vertices("Function")
         for function in function_list:
-            f.write("\tsubgraph " + function.get_name().replace(" ", "").replace(".", "_") + "{\n")
+            f.write("\tsubgraph cluster" + function.get_name().replace(" ", "").replace(".", "_") + "{\n")
 
             f.write("\t\tnode [style=filled];\n")
             abb_list = function.get_atomic_basic_blocks()
@@ -187,7 +186,7 @@ class DotFileParser():
         
         f = open(path+"instance_function_mapping.dot","w+")
         
-        f.write("digraph G {\n" )
+        f.write("strict digraph G {\n" )
         
         self.print_instance_class( g,f,"Task",1,"salmon")
         self.print_instance_class( g,f,"Timer",1, "gold")
@@ -262,17 +261,17 @@ class DotFileParser():
         
         f = open(path+"instances_overview.dot","w+")
         
-        f.write("digraph G {\n" )
+        f.write("strict digraph G {\n" )
         
         self.print_instance_class( g,f,"Task",0, "darkseagreen3")
-        self.print_instance_class( g,f,"Event", 0,"green")
+        self.print_instance_class( g,f,"Event", 0,"cyan2")
         self.print_instance_class( g,f,"Queue", 0,"orange")
         self.print_instance_class( g,f,"Alarm", 0,"grey")
         self.print_instance_class( g,f,"Timer", 0,"gold")
         self.print_instance_class( g,f,"Semaphore", 0,"cadetblue1")
         self.print_instance_class( g,f,"Buffer",0, "chocolate1")
         self.print_instance_class( g,f,"EventGroup",0, "aquamarine")
-        
+       
         
         self.print_instance_class( g,f,"ISR",0, "deepskyblue")
         self.print_instance_class( g,f,"Resource",0, "ivory")

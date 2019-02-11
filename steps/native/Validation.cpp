@@ -1301,7 +1301,7 @@ namespace step {
 	}
 
 	std::string ValidationStep::get_description() {
-		return "Extracts out of FreeRTOS abstraction instances";
+		return "Validates the ARSA graph regarding the right use of abstraction instances. Deadlocks, priority inversions are detected and the right use of mutexes, events and semaphore is checked. Also critical regions are determined.";
 	}
 	
     /**
