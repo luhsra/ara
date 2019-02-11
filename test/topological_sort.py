@@ -25,15 +25,19 @@ def main():
 
     functions  = g.get_type_vertices("Function")
     
+    
+    
     for json_function in data:
         
         expected_order = [] 
-        
+            
         for abb in data[json_function]:
             expected_order.append(abb)
         
         for graph_function in functions:
                 
+            print(graph_function.get_name())
+            
             if graph_function.get_name() == json_function:
                 
                 function_abbs = graph_function.get_atomic_basic_blocks()

@@ -26,10 +26,11 @@ def main():
     val_step = p_manager.get_step('ValidationStep')
     side_data = val_step.get_side_data()
     
-  
+    
     
     for tmp in side_data:
         print(tmp['location'].get_name())
+        print(tmp['type'])
     
     assert len(warnings) == len(side_data)
     for should, have in zip(warnings, side_data):

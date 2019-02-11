@@ -21,7 +21,7 @@ def main():
               'input_files': [i_file]}
     p_manager = stepmanager.StepManager(g, config)
 
-    p_manager.execute(['ValidationStep'])
+    p_manager.execute(['ValidationStep','DisplayResultsStep'])
 
     abbs  = g.get_type_vertices("ABB")
     
@@ -32,14 +32,9 @@ def main():
         for tmp_abb in abbs:
                 
             if tmp_abb != None and tmp_abb.get_name() == abb:
-                #print(tmp_abb.get_start_scheduler_relation())
-                #print(graph.start_scheduler_relation["after"])
-                
-                
-                if tmp_abb.get_loop_information() == False:
-                    print(abb,"current loop relation", tmp_abb.get_loop_information() ,"expected loop relation",True)
-                    sys.exit()
-    
+     
+                assert tmp_abb.get_loop_information() == True
+                    
         
         
     
