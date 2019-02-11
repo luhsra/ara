@@ -106,6 +106,7 @@ class syscall_definition_type(IntEnum):
     start_scheduler = <int> cgraph.start_scheduler
     end_scheduler = <int> cgraph.end_scheduler
     chain = <int> cgraph.chain
+    delay = <int> cgraph.delay
     
 #class hook_type(IntEnum):
     #start_up  = <int> cgraph.start_up
@@ -569,6 +570,13 @@ cdef class Function(Vertex):
 
 
         return pylist
+    
+    
+    def set_definition_vertex(self,Vertex vertex):
+        return deref(self._c()).set_definition_vertex(vertex._c_vertex)
+    
+    
+    
     #def get_call_target_instance(self):
         #return deref(self._c()).get_call_target_instance()
 
@@ -612,7 +620,7 @@ cdef class ABB(Vertex):
 
     def get_call_name(self):
         cdef call_name =  deref(self._c()).get_call_name()
-       
+    
         cdef bytes tmp_name = call_name
 
         return tmp_name
@@ -730,6 +738,9 @@ cdef class ABB(Vertex):
     
     
     
+    
+    
+    
     def set_predecessor(self, ABB  abb):	
         return deref(self._c()).set_ABB_predecessor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
     
@@ -769,6 +780,8 @@ cdef class ABB(Vertex):
         
         cdef bool loop_information = deref(self._c()).get_loop_information()
         return loop_information
+            
+        
         
     def  print_information(self):
         return deref(self._c()).print_information()
@@ -835,7 +848,7 @@ cdef class Timer(Vertex):
             
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_callback_function()
-  
+
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
     
     def set_callback_function(self, str function_name):
@@ -901,7 +914,7 @@ cdef class RTOS(Vertex):
         deref(self._c()).enable_startup_hook(enable)
         
     def enable_posttask_hook(self, attribute):
-   
+
         
         cdef bool enable = False
         if attribute == "FALSE":

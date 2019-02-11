@@ -322,10 +322,17 @@ class OilStep(Step):
                 #print (name, 'corresponds to', tasks[name])
                 function_list = g.get_type_vertices(type(graph.Function))
                 
+               
+                    
+                
                 #set and check function reference of task
                 if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
                     print("Task ", name, " has no reference in data")
                     sys.exit()
+                    
+                for function in function_list:
+                    if function.get_name() == ("OSEKOS_TASK_FUNC_" + name):
+                        function.set_definition_vertex(task)
                     
                 task.set_handler_name("OSEKOS_TASK_" +name)
                 
@@ -447,6 +454,10 @@ class OilStep(Step):
                 if not isr.set_definition_function(reference_function):
                     print("ISR ", name, " has no definition reference in data")
                     sys.exit()
+                
+                for function in function_list:
+                    if function.get_name() == ("OSEKOS_TASK_FUNC_" + name):
+                        function.set_definition_vertex(isr)
                 
                 #iterate about the attributes of the isr
                 for attribute in oil_isr:

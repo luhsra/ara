@@ -79,6 +79,7 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type start_scheduler
     cdef syscall_definition_type end_scheduler
     cdef syscall_definition_type chain
+    cdef syscall_definition_type delay
     
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
@@ -219,6 +220,8 @@ cdef extern from "graph.h" namespace "OS":
         shared_ptr[ABB] get_entry_abb()
         
         cvector[shared_ptr[Function]] get_called_functions()
+        
+        bool set_definition_vertex(shared_ptr[Vertex])
         
         
     cdef cppclass RTOS:

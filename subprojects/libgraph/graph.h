@@ -33,7 +33,7 @@ enum function_definition_type { Task, ISR, Timer, normal };
 
 enum call_definition_type { sys_call, func_call, computation , has_call ,no_call};
 
-enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical,start_scheduler,end_scheduler,chain};
+enum syscall_definition_type { computate ,create, destroy, reset ,receive, commit ,release ,schedule,activate,enable,disable,take,add,take_out,wait,synchronize,set_priority,resume,suspend,enter_critical,exit_critical,start_scheduler,end_scheduler,chain,delay};
 
 enum ISR_type { ISR1, ISR2, basic };
 
@@ -182,33 +182,24 @@ namespace graph {
 		std::list<shared_vertex> ingoing_vertices;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
 
 		std::string handler_name;
+        llvm::Value* handler_value;
 		
 		bool start_scheduler_creation_flag;
         
         
 					
 	  public:
-              /*
-		// Discriminator for LLVM-style RTTI (dyn_cast<> et al.)
-		enum VertexKind {
-			Function,
-			ISR,
-			Timer,
-			Task,
-			Queue,
-			EventGroups,
-			Semaphore,
-			Buffer,
-			QueueSet
-
-		};
-		const VertexKind Kind;
-		*/
-		
+       
 		virtual void print_information(){
 			
 		};
-                
+        
+        
+        virtual bool isEqual( const Vertex& vertex ){
+            
+        };
+
+                    
 		Vertex(Graph *graph,std::string name); // Constructor
     
 		
@@ -224,7 +215,9 @@ namespace graph {
 		//VertexKind getKind(); // LLVM-style RTTI const {return Kind}
 
 		void set_handler_name(std::string handler_name);
+        void set_handler_name(std::string handler_name,llvm::Value* handler_value);
 		std::string get_handler_name();
+        llvm::Value* get_handler_value();
 		bool set_outgoing_edge(shared_edge edge);
 		bool set_ingoing_edge(shared_edge edge);
 
@@ -336,6 +329,9 @@ namespace OS {
 	class Counter;
 	class RTOS;
 	class Buffer;
+    class Queue;
+    class Timer;
+    class CoRoutine;
 	typedef std::shared_ptr<ABB> shared_abb;
 	typedef std::shared_ptr<Function> shared_function;
 	typedef std::shared_ptr<Task> shared_task;
@@ -347,7 +343,9 @@ namespace OS {
 	typedef std::shared_ptr<Counter> shared_counter;
     typedef std::shared_ptr<Buffer> shared_buffer;
     typedef std::shared_ptr<Semaphore> shared_semaphore;
-
+    typedef std::shared_ptr<Queue> shared_queue;
+    typedef std::shared_ptr<Timer> shared_timer;
+    typedef std::shared_ptr<CoRoutine> shared_coroutine;
 	
 		
 	typedef std::shared_ptr<RTOS> shared_os;
@@ -576,7 +574,7 @@ namespace OS {
         call_data call;
 		
         
-		bool critical_section; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
+		bool critical_section = false; // flag, ob AtomicBasicBlock in einer ḱritischen Sektion liegt
 		
 		size_t syscall_handler_index;
         
@@ -749,12 +747,28 @@ namespace OS {
 		}
 		
 		
+		bool isEqual( graph::shared_vertex vertex ){
+            shared_task task =  std::dynamic_pointer_cast< Task >( vertex );
+            bool equal =true;
+            if(task != NULL){
+                if(task->get_seed() != this->seed)equal = false;
+                else if(task->get_handler_name() != this->handler_name)equal = false;
+                else if(task->get_handler_value() != this->handler_value)equal = false;
+                else if(task->get_stacksize() != this->stacksize)equal = false;
+                else if(task->get_priority() != this->priority)equal = false;
+                else if(task->get_definition_function()->get_seed() != this->definition_function->get_seed())equal = false;
+                
+            }else equal = false;
+            
+            return equal;
+        };
+		
+		
 		void print_information(){
 		
 		};
 		
-
-		
+        
 		
 		bool set_task_group(std::string taskgroup); //name of TaskGroup
 		bool set_definition_function(std::string function_name);
@@ -764,6 +778,7 @@ namespace OS {
 		void set_priority(unsigned long priority);
         unsigned long  get_priority();
 		void set_stacksize(unsigned long priority);
+        unsigned long get_stacksize();
 		bool set_scheduler(std::string scheduler);
 		void set_activation(unsigned long activation);
 		void set_autostart(bool autostart);
@@ -854,7 +869,23 @@ namespace OS {
 				std::hash<std::string> hash_fn;
 				this->seed = hash_fn(name +  typeid(QueueSet).name());
 			}
-
+            
+            
+            bool isEqual( graph::shared_vertex vertex ){
+                shared_queueset queueset =  std::dynamic_pointer_cast< QueueSet >( vertex );
+                bool equal =true;
+                if(queueset != NULL){
+                    if(queueset->get_seed() != this->seed)equal = false;
+                    else if(queueset->get_handler_name() != this->handler_name)equal = false;
+                    else if(queueset->get_handler_value() != this->handler_value)equal = false;
+                    else if(queueset->get_length() != this->length)equal = false;
+                    
+                }else equal = false;
+                
+                return equal;
+            };
+            
+            
 			void set_queue_element(graph::shared_vertex element);
 			bool member_of_queueset(graph::shared_vertex element);
 			bool remove_from_queueset(graph::shared_vertex element);
@@ -864,6 +895,7 @@ namespace OS {
 
 		
 			void set_length (unsigned long length);
+            unsigned long get_length();
 
 	};
 
@@ -888,7 +920,20 @@ namespace OS {
 			
 			};
 			
-		
+            bool isEqual( graph::shared_vertex vertex ){
+                shared_queue queue =  std::dynamic_pointer_cast< Queue >( vertex );
+                bool equal =true;
+                if(queue != NULL){
+                    if(queue->get_seed() != this->seed)equal = false;
+                    else if(queue->get_length() != this->length)equal = false;
+                    else if(queue->get_item_size() != this->item_size)equal = false;
+                    else if(queue->get_handler_name() != this->handler_name)equal = false;
+                    else if(queue->get_handler_value() != this->handler_value)equal = false;
+                    
+                }else equal = false;
+                
+                return equal;
+            };
 			
 			
 			unsigned long get_item_size();
@@ -916,7 +961,7 @@ namespace OS {
 
 		//std::list<long> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
 		std::list<long> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
-		                             // müssen auch wieder gesetzt werden
+                                            // müssen auch wieder gesetzt werden
 		std::list<graph::shared_vertex > synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 		
 	  public:
@@ -930,7 +975,21 @@ namespace OS {
 		void print_information(){
 			
 		};
-			
+        
+        bool isEqual( graph::shared_vertex vertex ){
+            
+            shared_event event =  std::dynamic_pointer_cast< Event >( vertex );
+            bool equal =true;
+            if(event != NULL){
+                if(event->get_seed() != this->seed)equal = false;
+                else if(event->get_handler_name() != this->handler_name)equal = false;
+                else if(event->get_handler_value() != this->handler_value)equal = false;
+                
+            }else equal = false;
+            
+            return equal;
+        };
+        
 		
 		bool wait_for_all_bits;
 		bool wait_for_any_bit;
@@ -958,11 +1017,11 @@ namespace OS {
 	  
 		private:
 			
-			buffer_type type; // enum buffer_type {stream, message}
+			buffer_type type = stream; // enum buffer_type {stream, message}
 			graph::shared_vertex reader;   // Buffer sind als single reader und single writer objekte gedacht
 			graph::shared_vertex writer;
-			unsigned long buffer_size;
-			unsigned long trigger_level; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
+			unsigned long buffer_size = 0;
+			unsigned long trigger_level = 0; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
 							// kann
 
 		public:
@@ -973,12 +1032,34 @@ namespace OS {
 				this->seed = hash_fn(name +  typeid(Buffer).name());
 		
 			};
+            
+            
+             bool isEqual( graph::shared_vertex vertex ){
+                 
+                shared_buffer buffer =  std::dynamic_pointer_cast< Buffer >( vertex );
+                
+                bool equal =true;
+                if(buffer != NULL){
+                    if(buffer->get_seed() != this->seed)equal = false;
+                    else if(buffer->get_buffer_type() != this->type)equal = false;
+                    else if(buffer->get_buffer_size() != this->buffer_size)equal = false;
+                    else if(buffer->get_trigger_level() != this->trigger_level) equal = false;
+                    else if(buffer->get_handler_name() != this->handler_name)equal = false;
+                    else if(buffer->get_handler_value() != this->handler_value)equal = false;
+
+                    
+                }else equal = false;
+                
+                return equal;
+            };
 			
 			void set_trigger_level(unsigned long level);
 			void set_buffer_size(unsigned long size);
 			void set_buffer_type(buffer_type type);
 		
-		
+            unsigned long get_trigger_level();
+			unsigned long get_buffer_size();
+			buffer_type get_buffer_type();
 			
 			void print_information(){
 			
@@ -993,8 +1074,8 @@ namespace OS {
             
             semaphore_type type; // enum semaphore_type {binary, counting, mutex, recursive_mutex}
 		
-			unsigned long max_count;
-			unsigned long initial_count;
+			unsigned long max_count = 1;
+			unsigned long initial_count = 0;
             
 		
 		public:
@@ -1004,6 +1085,25 @@ namespace OS {
 				this->seed = hash_fn(name +  typeid(Semaphore).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
+            
+             bool isEqual( graph::shared_vertex vertex ){
+                 
+                shared_semaphore semaphore =  std::dynamic_pointer_cast< Semaphore >( vertex );
+                
+                bool equal =true;
+                if(semaphore != NULL){
+                    if(semaphore->get_seed() != this->seed)equal = false;
+                    else if(semaphore->get_semaphore_type() != this->type)equal = false;
+                    else if(semaphore->get_max_count() != this->max_count)equal = false;
+                    else if(semaphore->get_initial_count() != this->initial_count) equal = false;
+                    else if(semaphore->get_handler_name() != this->handler_name)equal = false;
+                    else if(semaphore->get_handler_value() != this->handler_value)equal = false;
+
+                    
+                }else equal = false;
+                
+                return equal;
+            };
 			
             void set_semaphore_type(semaphore_type type);
 			semaphore_type get_semaphore_type();
@@ -1036,6 +1136,24 @@ namespace OS {
 				this->seed = hash_fn(name +  typeid(Resource).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
+            
+            
+            bool isEqual( graph::shared_vertex vertex ){
+                shared_resource resource =  std::dynamic_pointer_cast< Resource >( vertex );
+                bool equal =true;
+                if(resource != NULL){
+                    if(resource->get_seed() != this->seed)equal = false;
+                    else if(resource->get_max_count() != this->max_count)equal = false;
+                    else if(resource->get_resource_type() != this->type)equal = false;
+                    else if(resource->get_initial_count() != this->initial_count) equal = false;
+                    else if(resource->get_handler_name() != this->handler_name)equal = false;
+                    else if(resource->get_handler_value() != this->handler_value)equal = false;
+                    
+                }else equal = false;
+                
+                return equal;
+            };
+            
 			bool set_task_reference(OS::shared_task task);
 			std::list<OS::shared_task> get_task_references();
 			
@@ -1125,6 +1243,25 @@ namespace OS {
                 
             };
             
+            bool isEqual( graph::shared_vertex vertex ){
+                shared_timer timer =  std::dynamic_pointer_cast< Timer >( vertex );
+                bool equal =true;
+                if(timer != NULL){
+                    if(timer->get_seed() != this->seed)equal = false;
+                    else if(timer->get_timer_action_type() != this->reaction)equal = false;
+                    else if(timer->get_timer_type() != this->type)equal = false;
+                    else if(timer->get_periode() != this->periode) equal = false;
+                    else if(timer->get_handler_name() != this->handler_name)equal = false;
+                    else if(timer->get_handler_value() != this->handler_value)equal = false;
+                    
+                    //TODO callback function compare
+                    
+                }else equal = false;
+                
+                return equal;
+            };
+            
+            
             void set_timer_type(timer_type type);
             timer_type get_timer_type();
             void set_timer_id(unsigned long timer_id);
@@ -1172,7 +1309,24 @@ namespace OS {
                 this->seed = hash_fn(name +  typeid(CoRoutine).name());
             }
 
-        
+            bool isEqual( graph::shared_vertex vertex ){
+                shared_coroutine coroutine =  std::dynamic_pointer_cast< CoRoutine >( vertex );
+                bool equal =true;
+                if(coroutine != NULL){
+                    if(coroutine->get_seed() != this->seed)equal = false;
+                    else if(coroutine->get_priority() != this->priority)equal = false;
+                    else if(coroutine->get_id() != this->id)equal = false;
+                    else if(coroutine->get_definition_function()->get_seed() != this->definition_function->get_seed()) equal = false;
+                    else if(coroutine->get_handler_name() != this->handler_name)equal = false;
+                    else if(coroutine->get_handler_value() != this->handler_value)equal = false;
+
+                    
+                }else equal = false;
+                
+                return equal;
+            };
+            
+            
             void print_information(){
                 
             };
@@ -1184,7 +1338,7 @@ namespace OS {
      		void set_priority(unsigned long priority);
             unsigned long  get_priority();
             
-            void set_id(unsigned long priority);
+            void set_id(unsigned long id);
             unsigned long  get_id();
 
 
@@ -1193,6 +1347,11 @@ namespace OS {
 	
 
 } // namespace OS
+
+
+
+
+
 
 
 #endif // GRAPH_H

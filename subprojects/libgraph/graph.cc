@@ -563,9 +563,19 @@ std::string graph::Vertex::get_handler_name(){
     return this->handler_name;
 }
 
+llvm::Value* graph::Vertex::get_handler_value(){
+    return this->handler_value;
+}
+
 
 void graph::Vertex::set_handler_name(std::string handler_name){
      this->handler_name = handler_name;
+}
+
+
+void graph::Vertex::set_handler_name(std::string handler_name,llvm::Value* handler_value){
+    this->handler_value = handler_value;
+    this->handler_name = handler_name;
 }
 
 void graph::Vertex::set_start_scheduler_creation_flag(bool flag){
@@ -1632,7 +1642,9 @@ bool OS::Task::has_constant_priority() {
 void OS::Task::set_stacksize(unsigned long stacksize) {
 	this->stacksize = stacksize;
 }
-
+unsigned long OS::Task::get_stacksize() {
+	return this->stacksize;
+}
 
 bool OS::Task::set_message_reference(std::string message) { 
 	return false; 
@@ -1699,22 +1711,15 @@ bool OS::Task::set_event_reference(std::string event_name){
 
 
 bool OS::Task::set_definition_function(std::string function_name){
-	bool result = false;
+    bool result = false;
     std::hash<std::string> hash_fn;
 	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-	auto self_vertex = this->graph->get_vertex(this->seed);
     
-
-    if(self_vertex == nullptr){
-        std::cerr << "ERROR: task not found " << this->name << std::endl;
-        abort();
-    }
-	if(vertex != nullptr && self_vertex != nullptr){
+	if(vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
 		
         if(function!=nullptr){
 			this->definition_function = function;
-			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
@@ -1732,56 +1737,41 @@ void OS::Hook::set_hook_type(hook_type hook){
 
 
 bool OS::Hook::set_definition_function(std::string function_name){
-	bool result = false;
     
+    bool result = false;
     std::hash<std::string> hash_fn;
-    
-
 	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-	auto self_vertex = this->graph->get_vertex(this->seed);
-
-   if(self_vertex == nullptr){
-        std::cerr << "ERROR: hook instance not found " << this->name << std::endl;
-        abort();
-    }
-
-	if(vertex != nullptr && self_vertex != nullptr){
-        
+    
+	if(vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function!=nullptr){
+		
+        if(function!=nullptr){
 			this->definition_function = function;
-			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
-	
 	return result;
-};
+	
+}
+
+
+OS::shared_function OS::Hook::get_definition_function(){
+    return this->definition_function;
+}
 
 bool OS::ISR::set_definition_function(std::string function_name){
 	bool result = false;
-    
     std::hash<std::string> hash_fn;
-    
-
 	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-	auto self_vertex = this->graph->get_vertex(this->seed);
-
-   if(self_vertex == nullptr){
-        std::cerr << "ERROR: isr not found " << this->name << std::endl;
-        abort();
-    }
-
-	if(vertex != nullptr && self_vertex != nullptr){
-        
+    
+	if(vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function!=nullptr){
+		
+        if(function!=nullptr){
 			this->definition_function = function;
-			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
-	
 	return result;
 	
 }
@@ -1891,6 +1881,12 @@ timer_action_type OS::Timer::get_timer_action_type(){
 	return this->reaction;
 }
 
+timer_type OS::Timer::get_timer_type(){
+	return this->type;
+}
+
+
+
 
 void OS::Queue::set_item_size(unsigned long item_size){
 	this->item_size;
@@ -1917,6 +1913,9 @@ void OS::Timer::set_periode(unsigned long periode){
 	this->periode = periode;
 }
 
+unsigned long OS::Timer::get_periode(){
+	return this->periode;
+}
 
 
 void OS::Timer::set_timer_type( timer_type type){
@@ -1930,22 +1929,17 @@ bool OS::Timer::set_callback_function(std::string function_name){
 	bool result = false;
     std::hash<std::string> hash_fn;
 	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-	auto self_vertex = this->graph->get_vertex(this->seed);
     
-    if(self_vertex == nullptr){
-        std::cerr << "ERROR: timer not found " << this->name << std::endl;
-        abort();
-    }
-    
-	if(vertex != nullptr && self_vertex != nullptr){
+	if(vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		if(function!=nullptr){
+		
+        if(function!=nullptr){
 			this->callback_function = function;
-			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}
 	return result;
+	
 }
 
 
@@ -1958,9 +1952,19 @@ void OS::Resource::set_max_count(unsigned long max_count){
 	this->max_count = max_count;
 }
 
+unsigned long OS::Resource::get_max_count(){
+	return this->max_count;
+}
+
+
 void OS::Resource::set_initial_count(unsigned long initial_count){
 	this->initial_count = initial_count;
 }
+
+unsigned long OS::Resource::get_initial_count(){
+	return this->initial_count;
+}
+
 
 
 void OS::Resource::set_resource_type( resource_type type){
@@ -1975,10 +1979,17 @@ void OS::Semaphore::set_max_count(unsigned long max_count){
 	this->max_count = max_count;
 }
 
+unsigned long  OS::Semaphore::get_max_count(){
+	return this->max_count;
+}
+
 void OS::Semaphore::set_initial_count(unsigned long initial_count){
 	this->initial_count = initial_count;
 }
 
+unsigned long  OS::Semaphore::get_initial_count(){
+	return this->max_count;
+}
 
 void OS::Semaphore::set_semaphore_type( semaphore_type type){
 	this->type = type;
@@ -1990,6 +2001,10 @@ semaphore_type OS::Semaphore::get_semaphore_type( ){
 
 void OS::QueueSet::set_length(unsigned long length){
 	this->length = length;
+}
+
+unsigned long OS::QueueSet::get_length(){
+    return this->length;
 }
 
 void OS::QueueSet::set_queue_element(graph::shared_vertex element){
@@ -2013,6 +2028,22 @@ void OS::Buffer::set_trigger_level(unsigned long level){
 	this->trigger_level = level;
 }
 
+buffer_type OS::Buffer::get_buffer_type(){
+	return  this->type;
+}
+
+
+unsigned long OS::Buffer::get_buffer_size( ){
+	return this->buffer_size;
+}
+
+unsigned long OS::Buffer::get_trigger_level( ){
+	return this->trigger_level;
+}
+
+
+
+
 void OS::CoRoutine::set_priority(unsigned long priority) {
 	this->priority = priority;
 }
@@ -2033,19 +2064,12 @@ bool OS::CoRoutine::set_definition_function(std::string function_name){
 	bool result = false;
     std::hash<std::string> hash_fn;
 	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-	auto self_vertex = this->graph->get_vertex(this->seed);
     
-
-    if(self_vertex == nullptr){
-        std::cerr << "ERROR: task not found " << this->name << std::endl;
-        abort();
-    }
-	if(vertex != nullptr && self_vertex != nullptr){
+	if(vertex != nullptr){
 		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
 		
         if(function!=nullptr){
 			this->definition_function = function;
-			function->set_definition_vertex(self_vertex);
 			result = true;
 		}
 	}

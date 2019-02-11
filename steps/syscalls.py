@@ -12,7 +12,8 @@ from native_step import Step
 
 
 class SyscallStep(Step):
-    """Detects the syscalls from the calls and validates the arguments."""
+    """Detects the syscalls from the abb calls and validates the arguments.
+    Each syscall are information about semantik, type of arguments, target abstraction class and index of handler argument given."""
         
     def get_dependencies(self):
         
@@ -135,10 +136,10 @@ class SyscallStep(Step):
                 
                 
                 "vTaskAllocateMPURegions": 		[[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
-                "xTaskAbortDelay": 				[[graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
+                "xTaskAbortDelay": 				[[graph.data_type.string],graph.syscall_definition_type.delay,[graph.get_type_hash("Task")],0],
                 "xTaskCallApplicationTaskHook": [[graph.data_type.string,graph.data_type.string],graph.syscall_definition_type.commit,[graph.get_type_hash("Task")],0],
                 "xTaskCheckForTimeOut": 		[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
-                "vTaskDelay": 					[[graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],9999],
+                "vTaskDelay": 					[[graph.data_type.integer],graph.syscall_definition_type.delay,[graph.get_type_hash("RTOS")],9999],
                 "vTaskDelayUntil": 				[[graph.data_type.string,graph.data_type.integer],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],9999],
                 "vTaskDelete": 					[[graph.data_type.string],graph.syscall_definition_type.destroy,[graph.get_type_hash("Task")],0],
             
@@ -152,7 +153,7 @@ class SyscallStep(Step):
                 
                 
                 "xTaskGetApplicationTaskTag": 		[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("Task")],0],
-                "xTaskGetCurrentTaskHandle":		[[],graph.syscall_definition_type.receive,[graph.get_type_hash("RTOS")],0],
+                "xTaskGetCurrentTaskHandle":		[[],graph.syscall_definition_type.commit,[graph.get_type_hash("RTOS")],0],
                 "xTaskGetIdleTaskHandle": 			[[],graph.syscall_definition_type.receive,[graph.get_type_hash("RTOS")],0],
                 "xTaskGetHandle": 					[[graph.data_type.string],graph.syscall_definition_type.receive,[graph.get_type_hash("RTOS")],0],
                 "uxTaskGetNumberOfTasks": 			[[],graph.syscall_definition_type.receive,[graph.get_type_hash("RTOS")],0],
@@ -361,10 +362,8 @@ class SyscallStep(Step):
                         if success == False:
                             print("TODO",call_name,counter)
                             #sys.exit("unexpected argument type")
-                            abb.print_information();
-                        #print(call_name)
-                        else:
-                            print(call_name)
+                            #abb.print_information();
+
                         abb.set_call_type(graph.call_definition_type.sys_call)
                         abb.set_syscall_type(syscall[1])
                         abb.set_call_target_instance(syscall[2])
