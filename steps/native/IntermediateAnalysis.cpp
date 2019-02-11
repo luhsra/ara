@@ -217,71 +217,80 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph,OS::s
             std::cerr << "Function" << function->get_name() << "has no entry abb" <<std::endl;
             abort();
         }
-       
-        //iterate about the abbs of function in topoligal order
-        for(auto &abb : function->get_atomic_basic_blocks()){
-            
-            bool before_flag= false;
-            bool after_flag = false;
-            bool uncertain_flag =false;
-            for(auto predecessor :abb->get_ABB_predecessors()){
-                //std::cerr << "predecessor " << predecessor->get_name() << std::endl;
-                if(predecessor->get_start_scheduler_relation() == before)before_flag = true;
-                if(predecessor->get_start_scheduler_relation() == after)after_flag = true; 
-                if(predecessor->get_start_scheduler_relation() == uncertain)uncertain_flag = true; 
-            }
-            
-            start_scheduler_relation tmp_state = uncertain;
-            
-            if(abb->get_seed() == entry_abb->get_seed())tmp_state = start_relation;
-            else{
+        std::map<std::size_t,std::size_t> already_visited_abbs;
+        
+        //repead interation while changes are done 
+        bool changes = true;
+        while(changes){
+            changes = false;
+            //iterate about the abbs of function in topoligal order
+            for(auto &abb : function->get_atomic_basic_blocks()){
                 
-                if(before_flag && !after_flag && !uncertain_flag)tmp_state = before;
-                else if(!before_flag && after_flag && !uncertain_flag)tmp_state = after;
-            }
-            //std::cerr << abb->get_name() << "tmp 1 relation " << tmp_state  << std::endl;
-            
-            if(abb->get_call_type() == sys_call){
-                //std::cout << abb->get_call_name() << std::endl; 
-                if(start_scheduler == abb->get_syscall_type())tmp_state = after;
-            }else if(abb->get_call_type() == func_call){
-                if(tmp_state == after) before_scheduler_instructions(graph,abb->get_called_function(),already_visited,call_tree,tmp_state);
-                else tmp_state = before_scheduler_instructions(graph,abb->get_called_function(),already_visited,call_tree,tmp_state);
-            }
-            
-            //std::cerr << abb->get_name() << "tmp 2 relation " << tmp_state  << std::endl;
-            
-            if(tmp_state == uncertain){
-                if(abb->get_entry_bb() != nullptr){
+                already_visited_abbs.insert(std::make_pair(abb->get_seed(),abb->get_seed()));
+                bool before_flag= false;
+                bool after_flag = false;
+                bool uncertain_flag =false;
+                for(auto predecessor :abb->get_ABB_predecessors()){
+                    if ( already_visited_abbs.find(predecessor->get_seed()) == already_visited.end())continue;
+                    if(predecessor->get_start_scheduler_relation() == before)before_flag = true;
+                    if(predecessor->get_start_scheduler_relation() == after)after_flag = true; 
+                    if(predecessor->get_start_scheduler_relation() == uncertain)uncertain_flag = true; 
+                }
+                
+                start_scheduler_relation tmp_state = uncertain;
+                
+                if(abb->get_seed() == entry_abb->get_seed())tmp_state = start_relation;
+                else{
                     
-                    uncertain_start_scheduler_func_calls.emplace_back(&abb->get_entry_bb()->front());
+                    if(before_flag && !after_flag && !uncertain_flag)tmp_state = before;
+                    else if(!before_flag && after_flag && !uncertain_flag)tmp_state = after;
                 }
-            }else if(tmp_state == after){
-                if(abb->get_entry_bb() != nullptr){
-                    start_scheduler_func_calls.emplace_back(&(abb->get_entry_bb()->front()));
+             
+                
+                if(abb->get_call_type() == sys_call){
+
+                    if(start_scheduler == abb->get_syscall_type())tmp_state = after;
+                }else if(abb->get_call_type() == func_call){
+                    if(tmp_state == after) before_scheduler_instructions(graph,abb->get_called_function(),already_visited,call_tree,tmp_state);
+                    else tmp_state = before_scheduler_instructions(graph,abb->get_called_function(),already_visited,call_tree,tmp_state);
                 }
-            }else if(tmp_state == before){
-                if(abb->get_entry_bb()!=nullptr){
-                    if(validate_instructions_reachability(&start_scheduler_func_calls,&(abb->get_entry_bb()->front()), dominator_tree ) || validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&(abb->get_entry_bb()->front()), dominator_tree ))tmp_state = uncertain;
-                }
+                
+
+                
+                if(tmp_state == uncertain){
+                    if(abb->get_entry_bb() != nullptr){
+                        
+                        uncertain_start_scheduler_func_calls.emplace_back(&abb->get_entry_bb()->front());
+                    }
+                }else if(tmp_state == after){
+                    if(abb->get_entry_bb() != nullptr){
+                            start_scheduler_func_calls.emplace_back(&(abb->get_entry_bb()->front()));
+                    }
+                }else if(tmp_state == before){
+                        if(abb->get_entry_bb()!=nullptr){
+                            if(validate_instructions_reachability(&start_scheduler_func_calls,&(abb->get_entry_bb()->front()), dominator_tree ) || validate_instructions_reachability(&uncertain_start_scheduler_func_calls,&(abb->get_entry_bb()->front()), dominator_tree ))tmp_state = uncertain;
+                        }
+                    }
+              
+                
+                    if(tmp_state == before && abb->get_start_scheduler_relation() == uncertain ){
+                
+                        tmp_state = uncertain;
+                    }else if (tmp_state == after && abb->get_start_scheduler_relation() != after ){
+
+                        tmp_state = uncertain;
+                    }else if (tmp_state == before && abb->get_start_scheduler_relation() == after && calltree_flag ){
+                     
+                        tmp_state = uncertain;
+                    }
+                if(abb->get_start_scheduler_relation() != tmp_state)changes = true;
+            
+                abb->set_start_scheduler_relation(tmp_state);
+              
             }
-            //std::cerr << abb->get_name() << "tmp 3 relation " << tmp_state  << std::endl;
-            
-            if(tmp_state == before && abb->get_start_scheduler_relation() == uncertain ){
-                //std::cerr << "variant1" << std::endl;
-                abb->set_start_scheduler_relation(uncertain);
-            }else if (tmp_state == after && abb->get_start_scheduler_relation() != after ){
-                //std::cerr << "variant2" << std::endl;
-                abb->set_start_scheduler_relation(uncertain);
-            }else if (tmp_state == before && abb->get_start_scheduler_relation() == after && calltree_flag ){
-                //std::cerr << "variant3"<< std::endl;
-                abb->set_start_scheduler_relation(uncertain);
-            }else abb->set_start_scheduler_relation(tmp_state);
-            
-            //std::cerr << abb->get_name() << " relation " << abb->get_start_scheduler_relation()  << std::endl;
         }
     }
-        
+
     if(function->get_exit_abb() != nullptr)return function->get_exit_abb()->get_start_scheduler_relation();
     else return after;
 }
@@ -847,6 +856,44 @@ namespace step {
         //get confing information
         get_predefined_system_information(graph);
         
+        
+         //identifiy hooks and mark corresponding functions
+        vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
+        for (auto &vertex : vertex_list) {
+                
+            auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
+            
+            hook_type type = no_hook;
+            if(function->get_name().find("PostTaskHook") != std::string::npos){
+                type = post_task;
+            }else if(function->get_name().find("PreTaskHook") != std::string::npos){
+                type = pre_task;
+            }else if(function->get_name().find("ErrorHook") != std::string::npos){
+                type = error;
+//             }else if(function->get_name().find("ShutdownHook") != std::string::npos){
+                type = shut_down;
+            }else if(function->get_name().find("StartupHook") != std::string::npos){
+                type = start_up;
+            }else if(function->get_name().find("vApplicationMallocFailedHook") != std::string::npos){
+                type = failed;
+            }else if(function->get_name().find("vApplicationIdleHook") != std::string::npos){
+                type = idle;
+            }else if(function->get_name().find("vApplicationStackOverflowHook") != std::string::npos){
+                type = stack_overflow;
+            }else if(function->get_name().find("vApplicationTickHook") != std::string::npos){
+                type = tick;
+            }
+            if(type != no_hook){
+
+                auto hook = std::make_shared<OS::Hook>(&graph,function->get_name());
+                graph.set_vertex(hook);
+                hook->set_hook_type(type);
+                hook->set_definition_function(function->get_name());
+                function->set_definition_vertex(hook);
+                //store the edge in the graph
+
+            }
+        }
 	}
 
 	
