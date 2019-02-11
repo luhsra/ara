@@ -55,6 +55,32 @@ void debug_argument_test(std::any value){
 
 
 
+/**
+* @brief split a string at delimeter string
+* @param stringToBeSplitted string to splitt
+* @param delimeter delemiter to splitt
+*/
+std::vector<std::string> split(std::string stringToBeSplitted, std::string delimeter)
+{
+     std::vector<std::string> splittedString;
+     int startIndex = 0;
+     int  endIndex = 0;
+    //std::cerr << "start handler name " << stringToBeSplitted << std::endl;
+     while( (endIndex = stringToBeSplitted.find(delimeter, startIndex)) < stringToBeSplitted.size() )
+    {
+       std::string val = stringToBeSplitted.substr(startIndex, endIndex - startIndex);
+       //std::cerr << "handler name " << val << std::endl;
+       splittedString.push_back(val);
+       startIndex = endIndex + delimeter.size();
+     }
+     if(startIndex < stringToBeSplitted.size())
+     {
+       std::string val = stringToBeSplitted.substr(startIndex);
+       //std::cerr << "handler name " << val << std::endl;
+       splittedString.push_back(val);
+     }
+     return splittedString;
+}
 
 /**
 * @brief cast specific generic api calls to their corresponding individual name
@@ -222,20 +248,17 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
         if(abb->get_call_type() == sys_call  && abb->get_syscall_type() != create ){
             
             
-            if(start_vertex->get_name() == "main"){
-                std::cerr << start_vertex->get_name() <<  "-------------------------"<<  std::endl;
-                abb->print_information();
-            }
-            
+           
             //check if osek scheduler is addressd a resource and create this resource if necessary
             osek_scheduler_resource(graph, abb,&already_visited_calls);
             
             bool success = false;
+            
             std::vector<argument_data> argument_list = abb->get_syscall_arguments();
             std::list<std::size_t>*  target_list = abb->get_call_target_instances();
         
-            //load the handler name
-            std::string handler_name = "";
+            //load the handler names
+            std::vector<std::string> handler_names;
             
             argument_data argument_candidats;
             
@@ -250,127 +273,123 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                     llvm::Value* llvm_argument_reference = nullptr;
                     if(argument_candidats.any_list.size() > 1){
                     
-                        //std::cerr << abb->get_syscall_name() << argument_candidats.any_list.size() << std::endl;
+                        //get the argument value regarding the current call tree path
                         get_call_relative_argument(any_argument,llvm_argument_reference, argument_candidats,calltree_references);                
                     }
                     
                     
                     if(any_argument.type().hash_code() ==  typeid(std::string).hash_code()){
 
-                        handler_name = std::any_cast<std::string>(any_argument);
-                        //std::cerr << handler_name << std::endl;
+                        std::string tmp_handler_names = std::any_cast<std::string>(any_argument);
                         //check if the expected handler name occurs in the graph
-                        bool handler_found = false;
-                        for(auto &vertex : graph.get_vertices()){
-                            if(vertex->get_handler_name() == handler_name)handler_found = true;
-                        }
-                        
-                        if(!handler_found){
-                            std::cerr << "handler does not exist in graph " << handler_name << std::endl;
-                            default_handler = true;
-                        }
+                        handler_names = split(tmp_handler_names, "(OR)");
+                       
                     }else{
-                        std::cerr << "handler argument is no string" << std::endl;
-                        debug_argument_test(any_argument);
+                        //TODO
+                        //std::cerr << "handler argument is no string" << std::endl;
+                        //debug_argument_test(any_argument);
                     }
                 }
             }
-            //iterate about the possible refereneced(syscall targets) abstraction types
-            for(auto& target: *target_list){
-                
-                
-                //the RTOS has the handler name RTOS
-                if(target == typeid(OS::RTOS).hash_code())handler_name = "RTOS";
-                
-                if(default_handler == true){
-                    handler_name = "RTOS";
-                    target = typeid(OS::RTOS).hash_code();
+            
+            if(handler_names.empty())handler_names.emplace_back("RTOS");
+            
+            for(auto handler_name : handler_names){
+                bool handler_found = false;
+                for(auto &vertex : graph.get_vertices()){
+                    if(vertex->get_handler_name() == handler_name)handler_found = true;
                 }
                 
-                if(start_vertex->get_name() == "SignalGatherWaitTask"){
-                    abb->print_information();
-                }
-                
-                //get the vertices of the specific type from the graph
-                std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(target);
-                
-                
-                //iterate about the vertices
-                for (auto &target_vertex : vertex_list) {
-                    
-                    if(start_vertex->get_name() == "main"){
-                    std::cerr <<"target " <<   target_vertex->get_name() << "-------------------------"<<  std::endl;
-               
-                    }
+                if(!handler_found){
                    
-                    //compare the referenced handler name with the handler name of the vertex
-                    if(target_vertex->get_handler_name() == handler_name){
+                    default_handler = true;
+                }
+            
+                //iterate about the possible refereneced(syscall targets) abstraction types
+                for(auto& target: *target_list){
+                    
+                    
+                    //the RTOS has the handler name RTOS
+                    if(target == typeid(OS::RTOS).hash_code())handler_name = "RTOS";
+                    
+                    if(default_handler == true){
+                        handler_name = "RTOS";
+                        target = typeid(OS::RTOS).hash_code();
+                    }
+                    
+                    
+                    //get the vertices of the specific type from the graph
+                    std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(target);
+                    
+                    
+                    //iterate about the vertices
+                    for (auto &target_vertex : vertex_list) {
                         
-                       
-                        //get the vertex abstraction of the function, where the syscall is called
-                        if(start_vertex != nullptr && target_vertex !=nullptr){
+                        
+                        //compare the referenced handler name with the handler name of the vertex
+                        if(target_vertex->get_handler_name() == handler_name){
                             
-                            if(start_vertex->get_name() == "main"){
-                                std::cerr <<"no nullptr " << "-------------------------"<<  std::endl;
-                            }
-                                                        
-                            //check if the syscall expect values from target or commits values to target
-                            if(abb->get_syscall_type() == receive || abb->get_syscall_type() == wait || abb->get_syscall_type() == take ){
+                        
+                            //get the vertex abstraction of the function, where the syscall is called
+                            if(start_vertex != nullptr && target_vertex !=nullptr){
                                 
                                 
-                                //create the edge, which contains the start and target vertex and the arguments
-                                auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),target_vertex,start_vertex ,abb);
                                 
-                                
-                                //store the edge in the graph
-                                graph.set_edge(edge);
-                                
-                                target_vertex->set_outgoing_edge(edge);
-                                start_vertex->set_ingoing_edge(edge);
-                                edge->set_instruction_reference( abb->get_syscall_instruction_reference());
-                                //set the success flag
-                                success = true;
-                                
-                                //get the call specific arguments 
-                                auto arguments = abb->get_syscall_arguments();
-                                auto syscall_reference = abb->get_syscall_instruction_reference();
-                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, calltree_references,syscall_reference,abb->get_syscall_name());
-                                
-                                //check if syscall is a generic call, which can transformed to more generic one
-                                convert_syscall_name(specific_arguments,abb);
-                                edge->set_specific_call(&specific_arguments);
-                                
-
-                            
-                            }else{	//syscall set values
-                                
-                                
-                                if(start_vertex->get_name() == "main"){
-                                    std::cerr <<"create_edge " << "-------------------------"<<  std::endl;
+                                if((abb->get_syscall_type() == delay || abb->get_syscall_type() == destroy) && target == typeid(OS::RTOS).hash_code()){
+                                    target_vertex = start_vertex;
                                 }
+                                //check if the syscall expect values from target or commits values to target
+                                if(abb->get_syscall_type() == receive || abb->get_syscall_type() == wait || abb->get_syscall_type() == take ){
+                                    
+                                    
+                                    //create the edge, which contains the start and target vertex and the arguments
+                                    auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(),target_vertex,start_vertex ,abb);
+                                    
+                                     
+                                    //store the edge in the graph
+                                    graph.set_edge(edge);
+                                    
+                                    target_vertex->set_outgoing_edge(edge);
+                                    start_vertex->set_ingoing_edge(edge);
+                                    edge->set_instruction_reference( abb->get_syscall_instruction_reference());
+                                    //set the success flag
+                                    success = true;
+                                    
+                                    //get the call specific arguments 
+                                    auto arguments = abb->get_syscall_arguments();
+                                    auto syscall_reference = abb->get_syscall_instruction_reference();
+                                    auto specific_arguments=  get_syscall_relative_arguments( &arguments, calltree_references,syscall_reference,abb->get_syscall_name());
+                                    
+                                    //check if syscall is a generic call, which can transformed to more generic one
+                                    convert_syscall_name(specific_arguments,abb);
+                                    edge->set_specific_call(&specific_arguments);
+                                    
                                 
-                                //create the edge, which contains the start and target vertex and the arguments
-                                auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,target_vertex,abb);
-    
-                                //store the edge in the graph
-                                graph.set_edge(edge);
-                                
-                                start_vertex->set_outgoing_edge(edge);
-                                target_vertex->set_ingoing_edge(edge);
-                                edge->set_instruction_reference( abb->get_syscall_instruction_reference());
-                                //set the success flag
-                                success = true;
-                                
-                                //get the call specific arguments 
-                                auto arguments = abb->get_syscall_arguments();
-                                auto syscall_reference = abb->get_syscall_instruction_reference();
-                                auto specific_arguments=  get_syscall_relative_arguments( &arguments, calltree_references,syscall_reference,abb->get_syscall_name());
-                                
-                                //check if syscall is a generic call, which can transformed to more generic one
-                                convert_syscall_name(specific_arguments,abb);
-                                edge->set_specific_call(&specific_arguments);
-                                
-                                
+                                }else{	//syscall set values
+                                    
+                                    //create the edge, which contains the start and target vertex and the arguments
+                                    auto edge = std::make_shared<graph::Edge>(&graph,abb->get_syscall_name(), start_vertex,target_vertex,abb);
+        
+                                    //store the edge in the graph
+                                    graph.set_edge(edge);
+                                    
+                                    start_vertex->set_outgoing_edge(edge);
+                                    target_vertex->set_ingoing_edge(edge);
+                                    edge->set_instruction_reference( abb->get_syscall_instruction_reference());
+                                    //set the success flag
+                                    success = true;
+                                    
+                                    //get the call specific arguments 
+                                    auto arguments = abb->get_syscall_arguments();
+                                    auto syscall_reference = abb->get_syscall_instruction_reference();
+                                    auto specific_arguments=  get_syscall_relative_arguments( &arguments, calltree_references,syscall_reference,abb->get_syscall_name());
+                                    
+                                    //check if syscall is a generic call, which can transformed to more generic one
+                                    convert_syscall_name(specific_arguments,abb);
+                                    edge->set_specific_call(&specific_arguments);
+                                    
+                                    
+                                }
                             }
                             break;
                         }
