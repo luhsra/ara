@@ -30,73 +30,18 @@ using namespace OS;
 using namespace graph;
 
 
-
-
-
-
-
-/**
-* @brief do a BFS in the function and set each reached abb to critical
-* @param function function which is analyzed
-* @param already_visited call instruction references which were alread visited
-* @return if the critical region reaches exit abb, return true, else false
-*/
-bool detect_critical_region_in_subfunction (shared_function function,std::list<size_t>* already_visited){
-    
-    if(function == nullptr) return false;
-    std::queue<shared_abb> queue; 
-
-    queue.push(function->get_entry_abb());
-    
-    bool reach_exit = false;
-    
-    size_t exit_seed = 0;
-    
-    if(function->get_exit_abb() != nullptr)exit_seed = function->get_exit_abb()->get_seed();
-    //iterate about the ABB queue
-	
-    while(!queue.empty()) {
-
-		//get first element of the queue
-		auto abb = queue.front();
-		queue.pop();
-        
-        
-			
-        bool visited = false;
-        size_t abb_seed = abb->get_seed();
-        for(auto seed : *already_visited){
-            if(seed == abb_seed)visited = true;
-        }
-			
-        //check if the successor abb is already stored in the list				
-        if(!visited) {
-            
-            std::cerr << "critical" << abb->get_name() << std::endl; 
-            abb->set_critical(true);
-            bool analyse_successors = true;
-            already_visited->emplace_back(abb->get_seed());
-            if(abb->get_call_type()== func_call){
-                auto called_function = abb->get_called_function();
-                //do recursion of called function
-                //if false returned, dont continue with successors of current abb
-                if(called_function != nullptr && !detect_critical_region_in_subfunction(called_function,already_visited))analyse_successors = false;
-
-            }
-            if(analyse_successors){
-                //iterate about the successors of the abb
-                for (auto successor: abb->get_ABB_successors()){
-                    //update the queue
-                    queue.push(successor);
-                }
-            }
-            if(exit_seed== abb->get_seed())reach_exit = analyse_successors;
+shared_abb get_creation_Abb(shared_vertex vertex){
+    for (auto& edge : vertex->get_ingoing_edges()) {
+                            
+        if (edge->get_abb_reference()->get_syscall_type() == create) {
+            return edge->get_abb_reference();
         }
     }
-   
-    std::cerr << "reach exit" << reach_exit << std::endl;
-    return reach_exit;
+    return nullptr;
 }
+
+
+
 
 /**
 * @brief check if the current function is in the call tree of the definition_function of a abstraction instance
@@ -355,107 +300,171 @@ bool is_dominated (shared_function function, shared_abb start, shared_abb end, s
         }
     }
     
-    
-    
-    
-    
-//      // get all abbs where the function of start abb is called
-//     auto ingoing_edges = start->get_parent_function()->get_ingoing_edges();
-//     
-//     for(auto ingoing_edge : ingoing_edges){
-//         
-//         if(ingoing_edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
-//             auto calling_abb = std::dynamic_pointer_cast<OS::ABB> (ingoing_edge->get_start_vertex());
-//             if(is_in_calltree(definition_function, calling_abb->get_parent_function())){
-//                 for(auto successor : calling_abb->get_ABB_successors()){
-//                     if (already_visited->find(successor->get_seed()) == already_visited->end()) {
-//                         if(is_dominated (function,successor, end, already_visited))return true;
-//                     }
-//                 }
-//             }
-//         }
-//     }
     return false;
+}
+
+
+
+/**
+* @brief do a BFS in the function and set each reached abb to critical
+* @param function function which is analyzed
+* @param already_visited call instruction references which were alread visited
+* @param recursion_upside flag if recursion upside is allowed in call tree of vertex
+* @param exit_definition_function flag if end of definition function was reached with DFS
+* @return if the critical region reaches exit abb, return true, else false
+*/
+bool detect_critical_region_in_function (shared_function definition_function,shared_function function,shared_abb entry_abb,std::map<size_t,size_t>* already_visited,bool recursion_upside, bool& exit_definition_function){
+    
+    if(function == nullptr) return true;
+    std::queue<shared_abb> queue; 
+
+    queue.push(entry_abb);
+    
+    bool reaches_exit_abb = false;
+    
+    shared_abb exit_abb  = nullptr;
+    shared_abb definition_exit_abb = nullptr;
+    
+    if(function->get_exit_abb() != nullptr)exit_abb = function->get_exit_abb();
+    if(definition_function->get_exit_abb() != nullptr)definition_exit_abb = definition_function->get_exit_abb();
+    
+    //iterate about the ABB queue
+    while(!queue.empty()) {
+
+		//get first element of the queue
+		auto abb = queue.front();
+		queue.pop();
+        
+        
+			
+        bool visited = false;
+        size_t abb_seed = abb->get_seed();
+	 
+        if ( already_visited->find(abb_seed) != already_visited->end() ) {
+            visited = true;
+        }		
+        //check if the successor abb is already stored in the list				
+        if(!visited) {
+            
+            //check if DFS reaches the exit abb of function and store information
+            if(exit_abb != nullptr && exit_abb->get_seed() == abb->get_seed())reaches_exit_abb = true;
+            if(definition_exit_abb != nullptr && definition_exit_abb->get_seed() == abb->get_seed())exit_definition_function = true;
+            
+            already_visited->insert(std::make_pair(abb_seed, abb_seed));
+            
+            //std::cerr << "critical" << abb->get_name() << std::endl; 
+            abb->set_critical(true);
+            
+            bool analyse_successors = true;
+        
+            if(abb->get_call_type()== func_call){
+                auto called_function = abb->get_called_function();
+                //do recursion of called function
+                //if false returned, dont continue with successors of current abb
+                if(called_function != nullptr)entry_abb = called_function->get_entry_abb(); 
+                if(!detect_critical_region_in_function(definition_function,called_function,entry_abb,already_visited,false,exit_definition_function))analyse_successors = false;
+
+            }
+            if(analyse_successors){
+                //iterate about the successors of the abb
+                for (auto successor: abb->get_ABB_successors()){
+                    //update the queue
+                    queue.push(successor);
+                }
+            }
+            
+            if(exit_abb != nullptr && exit_abb->get_seed() == abb->get_seed() && !analyse_successors){
+                reaches_exit_abb = false;
+                abb->set_critical(false);
+            }
+            
+            if(definition_exit_abb != nullptr && definition_exit_abb->get_seed() == abb->get_seed() && !analyse_successors){
+                exit_definition_function = false;
+                abb->set_critical(false);
+            }
+        }
+    }
+     //check if current function has a exit abb and upwards recursion in call tree is allowed
+    if(reaches_exit_abb && recursion_upside){
+        
+        // get all abbs where the function of start abb is called
+        auto ingoing_edges = exit_abb->get_parent_function()->get_ingoing_edges();
+        
+        for(auto ingoing_edge : ingoing_edges){
+            
+            if(ingoing_edge->get_start_vertex()->get_type() == typeid(OS::ABB).hash_code()){
+                auto calling_abb = std::dynamic_pointer_cast<OS::ABB> (ingoing_edge->get_start_vertex());
+                //check if calling abb is function call tree of vertex
+                if(is_in_calltree(definition_function, calling_abb->get_parent_function())){
+                    for(auto successor : calling_abb->get_ABB_successors()){
+                        //check if successors of calling abb are not already visited
+                        if (already_visited->find(successor->get_seed()) == already_visited->end()) {
+                            //continue at place where the function is called
+                            //std::cerr <<"exit abb upwards: " <<  exit_abb->get_name() << " " << reaches_exit_abb << std::endl;
+                            detect_critical_region_in_function(definition_function,calling_abb->get_parent_function(),successor,already_visited,true,exit_definition_function);
+                        }
+                    }
+                }
+            }
+        }
+        return true;
+        
+        
+    }else{
+        //std::cerr <<"exit abb downwards: " << reaches_exit_abb << std::endl;
+        return reaches_exit_abb;
+    }
 }
     
 /**
 * @brief start from each start call a BFS and set reached abbs to critical section
+* @param definition_function definition_function of vertex which is analyzed
 * @param start_calls start calls from which BFS  starts
 * @param end_calls end calls, which were set to in the already_visited list to stop BFS at that point
 * @return return true if the critical region reacheas the exit abb, else return false
 */
 bool detect_critical_regions (shared_function definition_function, std::list<graph::shared_edge>* start_calls, std::list<graph::shared_edge>* end_calls){
     
-    bool reach_exit = false;
-    size_t exit_seed = -1;
+
+    //get exit abb of definition function
     shared_abb exit_abb = nullptr;
     if(definition_function!=nullptr){
         exit_abb = definition_function->get_exit_abb();
-        if(exit_abb!= nullptr)exit_seed = exit_abb->get_seed();
     }
     
+    bool exit_definition_function = false;
+    
+    //iterate about start calls of critical region and do dfs till end call  is reached
     for(auto start_call : *start_calls){
         
-        std::list<size_t> already_visited;
+        std::map<size_t,size_t> already_visited;
         
+        //set the exit calls of critical region in alread visited list to stop DFS at these vertices
         for(auto end_call : *end_calls){
-            end_call->get_abb_reference()->set_critical(true);
-            already_visited.emplace_back(end_call->get_abb_reference()->get_seed());
+            already_visited.insert(std::make_pair(end_call->get_abb_reference()->get_seed(), end_call->get_abb_reference()->get_seed()));
         }
-        //store coresponding basic block in ABB
-        //queue for new created ABBs
-        std::queue<shared_abb> queue; 
+        //start DFS at start of critical region
+        shared_abb start_abb = start_call->get_abb_reference();
         
-        start_call->get_abb_reference()->set_critical(true);
-        queue.push(start_call->get_abb_reference());
-
-        //iterate about the ABB queue
+        //do DFS 
         
-        while(!queue.empty()) {
+       
+        detect_critical_region_in_function(definition_function,start_abb->get_parent_function(),start_abb,&already_visited,true,exit_definition_function);
 
-            //get first element of the queue
-            auto abb = queue.front();
-            queue.pop();
-                          
-            bool visited = false;
-            size_t abb_seed = abb->get_seed();
-            for(auto seed : already_visited){
-                if(seed == abb_seed)visited = true;
-            }
-            
-           
-            //check if the successor abb is already stored in the list				
-            if(!visited) {
-                
-                
-            
-                abb->set_critical(true);
-                std::cerr << "critical" << abb->get_name() << std::endl; 
-                bool analyse_successors = true;
-                already_visited.emplace_back(abb->get_seed());
-                
-                if(abb->get_call_type()== func_call){ 
-                    auto called_function = abb->get_called_function();
-
-                    if(called_function != nullptr && !detect_critical_region_in_subfunction(called_function,&already_visited))analyse_successors = false;
-                }
-                if(analyse_successors){
-                    //iterate about the successors of the abb
-                    for (auto successor: abb->get_ABB_successors()){
-                        //update the lists
-                        queue.push(successor);
-                    }
-                }
-                
-                if(exit_seed== abb->get_seed())reach_exit = analyse_successors;
-            }
-        }
+        
     }
     
-     
-    std::cerr << "reach exit main" << reach_exit << std::endl;
+    for(auto end_call : *end_calls){
+        end_call->get_abb_reference()->set_critical(true);
+    }               
     
-    return reach_exit;
+   
+    //check if critical region reached exit abb of defintiion function
+    if(exit_abb!= nullptr){
+        //std::cerr <<"end exit abb master: " <<  exit_abb->get_name() << " " << exit_definition_function << std::endl;
+        return exit_definition_function;
+    }
+    else return false;
 }
 
 
@@ -482,13 +491,13 @@ void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_lis
         for(auto ingoing : ingoing_edges){
             
             if(ingoing->get_abb_reference()->get_syscall_type() == commit)mutex_gives.emplace_back(ingoing);
-            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
         auto outgoing_edges = resource->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             if(outgoing->get_abb_reference()->get_syscall_type() == take)mutex_takes.emplace_back(outgoing);
-            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
 
@@ -500,7 +509,7 @@ void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_lis
                 bool mutex_flag = false;
                 //iterate about give instructions of resource
                 for(auto give :mutex_gives){
-                    std::cerr <<  "start " << give->get_start_vertex()->get_name() <<  "end" <<   take->get_target_vertex()->get_name()  << std::endl;
+                    //std::cerr <<  "start " << give->get_start_vertex()->get_name() <<  "end" <<   take->get_target_vertex()->get_name()  << std::endl;
                     //check if take and give are done by same task
                     if(give->get_start_vertex()->get_seed() == take->get_target_vertex()->get_seed()){
                         auto definition_function = get_definition_function(take->get_target_vertex());
@@ -541,14 +550,14 @@ void verify_semaphores(graph::Graph& graph,std::vector<shared_warning>* warning_
         for(auto ingoing : ingoing_edges){
     
             if(ingoing->get_abb_reference()->get_syscall_type() == commit)semaphore_gives.emplace_back(ingoing);
-            std::cerr  << "in " <<  ingoing->get_name() << std::endl;
+            //std::cerr  << "in " <<  ingoing->get_name() << std::endl;
         }
         
         //store all outgoing edges which takes the semaphore
         auto outgoing_edges = semaphore->get_outgoing_edges();
         for(auto outgoing : outgoing_edges){
             if(outgoing->get_abb_reference()->get_syscall_type() == take)semaphore_takes.emplace_back(outgoing);
-            std::cerr <<  "out " << outgoing->get_name() << std::endl;
+            //std::cerr <<  "out " << outgoing->get_name() << std::endl;
         }
         
         
@@ -734,60 +743,6 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
 }
 
 
-/**
-* @brief check if application contains a possible cycle
-* @param graph project data structure
-* @return true if the graph contains a cycle
-*/
-bool find_cycle(graph::shared_vertex vertex, std::list<size_t>* visited,graph::Graph& graph,int depth,size_t start){
-    
-    
-    //check if the current vertex is the start vertex and if the cycle size big enough (min. 2)
-    size_t seed = vertex->get_seed();
-    if(list_contains_element(visited,seed)){
-        if(start == seed && depth > 2)return true;
-        else return false;
-    }
-    visited->emplace_back(seed);
-    std::list<graph::shared_edge> edges;
-    
-    bool resource_perspective = false;
-    
-    //check if the current vertex is a resource or a (task, isr) 
-    if(vertex->get_type()== typeid(OS::Resource).hash_code()){
-        edges = vertex->get_outgoing_edges();
-        resource_perspective = true;
-    }else{
-        edges = vertex->get_ingoing_edges();
-    }
-    
-    
-    //from task perspective get the resource that is taken
-    for (auto edge: edges) { 
-        
-
-        
-        if(edge->get_abb_reference()->get_syscall_type() != take)continue;
-        
-        graph::shared_vertex target_vertex;
-        if(resource_perspective){
-            //from resource perspective
-            target_vertex = edge->get_target_vertex();
-        }else{
-            //from task or isr perspective
-            target_vertex = edge->get_start_vertex();
-            if(target_vertex->get_type()!=typeid(OS::Resource).hash_code())continue;
-        }
-            
-        //recursion
-        if (find_cycle(target_vertex,visited ,graph, depth +1  ,start))return true; 
-    } 
-    
-    //remove current seed
-    visited->remove(seed);
-    return false;
-}
-
 
 /**
 * @brief check if application contains a possible priority inversion
@@ -813,7 +768,7 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
         for(auto outgoing_edge : resource->get_outgoing_edges()){
 
             auto accessed_vertex = outgoing_edge->get_target_vertex();
-            std::cerr << accessed_vertex->get_name() << std::endl;
+            //std::cerr << accessed_vertex->get_name() << std::endl;
             
             if(typeid(OS::Task).hash_code() == accessed_vertex->get_type()){
             
@@ -836,7 +791,7 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
                 for(auto tmp_outgoing_edge : resource->get_outgoing_edges()){
                     
                     auto tmp_accessed_vertex = tmp_outgoing_edge->get_target_vertex();
-                    std::cerr << tmp_accessed_vertex->get_name() << std::endl;
+                    //std::cerr << tmp_accessed_vertex->get_name() << std::endl;
                     if(typeid(OS::Task).hash_code() == tmp_accessed_vertex->get_type()){
                         
                         auto tmp_task = std::dynamic_pointer_cast<OS::Task>(tmp_accessed_vertex);
@@ -860,8 +815,8 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
                     }
                 }
                 if(resource_task_list.size() >= 2 && max_priority != min_priority){
-                        //std::cerr << "possible bounded piority inversion: tasks of different priorities access resource " << resource->get_name() << std::endl;
-                    std::cerr << "min priority " << min_priority << " max priority " << max_priority << std::endl;
+                    //std::cerr << "possible bounded piority inversion: tasks of different priorities access resource " << resource->get_name() << std::endl;
+                    //std::cerr << "min priority " << min_priority << " max priority " << max_priority << std::endl;
                     std::vector<shared_task> unbouded_task_list;
                     //check if there exists another task which doesnt access the resource and have a lower priority than the max priority
                     for(auto task_vertex:task_list){
@@ -873,7 +828,7 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
                         if(flag == false){
                             if(task->get_priority() <max_priority && task->get_priority() >min_priority){
                                 unbouded_task_list.emplace_back(task);
-                                 std::cerr << "unbouded task " << task->get_name() << std::endl;
+                                //std::cerr << "unbouded task " << task->get_name() << std::endl;
                             }
                         }
                     }
@@ -894,27 +849,61 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
     }
 }
 
-// // contain same elements. 
-// bool areEqual(std::list<size_t>* list1, std::list<size_t>* list2) 
-// { 
-//     // If lengths of array are not equal means 
-//     // array are not equal 
-//     if (list2.size() != list1.size()) 
-//         return false; 
-//   
-//     // Sort both arrays 
-//     sort(arr1, arr1+n); 
-//     sort(arr2, arr2+m); 
-//   
-//     // Linearly compare elements 
-//     for (int i=0; i<n; i++) 
-//          if (arr1[i] != arr2[i]) 
-//             return false; 
-//   
-//     // If all elements were same. 
-//     return true; 
-// } 
 
+
+/**
+* @brief check if application contains a possible cycle
+* @param graph project data structure
+* @return true if the graph contains a cycle
+*/
+bool find_cycle(graph::shared_vertex vertex,shared_abb abb,std::list<size_t>* visited,graph::Graph& graph,int depth,size_t start){
+    
+   
+    //check if the current vertex is the start vertex and if the cycle size big enough (min. 2)
+    size_t seed = vertex->get_seed();
+    if(list_contains_element(visited,seed)){
+        if(start == seed && depth > 2)return true;
+        else return false;
+    }
+    visited->emplace_back(seed);
+    std::list<graph::shared_edge> edges;
+    
+    bool resource_perspective = false;
+    
+    //check if the current vertex is a resource or a (task, isr) 
+    if(vertex->get_type()== typeid(OS::Resource).hash_code()){
+        edges = vertex->get_outgoing_edges();
+        resource_perspective = true;
+    }else{
+        edges = vertex->get_ingoing_edges();
+    }
+    
+        
+    //from task perspective get the resource that is taken
+    for (auto edge: edges) { 
+               
+        if(edge->get_abb_reference()->get_syscall_type() != take)continue;
+        
+        graph::shared_vertex target_vertex;
+        if(resource_perspective){
+            //from resource perspective
+            target_vertex = edge->get_target_vertex();
+        }else{
+            //from task or isr perspective
+            target_vertex = edge->get_start_vertex();
+            shared_function definition_function = get_definition_function(target_vertex);
+            if(target_vertex->get_type()!=typeid(OS::Resource).hash_code())continue;
+            if(!is_reachable(definition_function,abb,edge->get_abb_reference(),nullptr))continue;
+        }
+       
+        //recursion
+        if (find_cycle(target_vertex,edge->get_abb_reference(),visited ,graph, depth +1  ,start))return true; 
+    } 
+    
+    //remove current seed.
+    visited->remove(seed);
+    return false;
+}
 
 /**
 * @brief check if application contians a possible deadlock
@@ -932,13 +921,12 @@ void verify_deadlocks(graph::Graph& graph,std::vector<shared_warning>* warning_l
         auto resource = std::dynamic_pointer_cast<OS::Resource> (vertex);
         std::list<size_t> visited;
         //check if there is cycle in the graph with starts and ends at the resource
-        if(find_cycle(resource, &visited,graph,0,resource->get_seed())){
-            std::cerr << "-------------------------------------------------------" << std::endl;
-            
+        if(find_cycle(resource,nullptr, &visited,graph,0,resource->get_seed())){
+          
             std::vector<graph::shared_vertex> deadlockchain;
             
             for(auto element_seed: visited){
-                std::cerr << "deadlockchain" << graph.get_vertex(element_seed)->get_name() << std::endl;
+            
                 deadlockchain.emplace_back(graph.get_vertex(element_seed));
                 
             }
@@ -950,7 +938,7 @@ void verify_deadlocks(graph::Graph& graph,std::vector<shared_warning>* warning_l
                 }
             }
             
-            std::cerr << abb->get_name() << std::endl;
+            //std::cerr << abb->get_name() << std::endl;
             auto warning = std::make_shared<DeadLockWarning>(&deadlockchain, abb);
             warning_list->emplace_back(warning);
             
@@ -998,19 +986,40 @@ void verify_task_priority(graph::Graph& graph){
 * @param start_type type of syscalls for start abbs  
 * @param end_type type of sys_calls for end abbs
 */
-void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex vertex, syscall_definition_type start_type , syscall_definition_type end_type,std::vector<shared_warning>* warning_list){
+void verify_specific_critical_region(graph::Graph& graph,graph::shared_vertex vertex, syscall_definition_type start_type , syscall_definition_type end_type,std::vector<shared_warning>* warning_list, size_t target,bool same_direction){
     
     
     //get all edges from start end end type and store them in lists
     std::list<graph::shared_edge> start_interactions;
     std::list<graph::shared_edge> end_interactions;
-    
-    for(auto outgoing_edge : vertex->get_outgoing_edges()){
-        //check if the interaction addresses the OS
-        if(outgoing_edge->get_target_vertex()->get_type() != typeid(OS::RTOS).hash_code())continue;
-        //check if the interaction disables functionalities
-        if(outgoing_edge->get_abb_reference()->get_syscall_type() == start_type)start_interactions.emplace_back(outgoing_edge);
-        else if(outgoing_edge->get_abb_reference()->get_syscall_type() == end_type)end_interactions.emplace_back(outgoing_edge);
+    if(same_direction){
+        for(auto outgoing_edge : vertex->get_outgoing_edges()){
+            //check if the interaction addresses the OS
+            if(outgoing_edge->get_target_vertex()->get_seed() != target)continue;
+            //check if the interaction disables functionalities
+            if(outgoing_edge->get_abb_reference()->get_syscall_type() == start_type)start_interactions.emplace_back(outgoing_edge);
+            else if(outgoing_edge->get_abb_reference()->get_syscall_type() == end_type)end_interactions.emplace_back(outgoing_edge);
+        }
+    }else{
+        //std::cerr << "---------------------------------------------------------------------------------------------------------------------------- "  << std::endl;
+         for(auto outgoing_edge : vertex->get_outgoing_edges()){
+            //check if the interaction addresses the OS
+            if(outgoing_edge->get_target_vertex()->get_seed() != target)continue;
+            //check if the interaction disables functionalities
+            if(outgoing_edge->get_abb_reference()->get_syscall_type() == end_type){
+                end_interactions.emplace_back(outgoing_edge);
+                //std::cerr << "end " << outgoing_edge->get_abb_reference()->get_syscall_name() << std::endl;
+            }
+        }
+        for(auto ingoing_edge : vertex->get_ingoing_edges()){
+            //check if the interaction addresses the OS
+            if(ingoing_edge->get_start_vertex()->get_seed() != target)continue;
+            //check if the interaction disables functionalities
+            if(ingoing_edge->get_abb_reference()->get_syscall_type() == start_type){
+                start_interactions.emplace_back(ingoing_edge);
+                //std::cerr << "start " << ingoing_edge->get_abb_reference()->get_syscall_name() << std::endl;
+            }
+        }
     }
     
     bool success = true;
@@ -1022,9 +1031,11 @@ void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex v
     for(auto start_interaction :start_interactions){
         bool flag = false;
         
+        //check if start critical region calls exits but no end critical region call
         if(start_interactions.size() > 0 && end_interactions.size() == 0)success = false;
         else {
             
+
             shared_function definition_function = nullptr;
         
             for(auto end_interaction :end_interactions){
@@ -1033,14 +1044,18 @@ void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex v
             }
             //detect critical region between start and end
             if(!flag)success = false;
-            else if(detect_critical_regions(definition_function,&start_interactions,&end_interactions))success = false;
-            std::cerr << std::endl;
+            if(detect_critical_regions(definition_function,&start_interactions,&end_interactions))success = false;
+           
         }
         if(success == false){
+            
+            //std::cerr << "critical region " << start_interaction->get_abb_reference()->get_name() << std::endl;
+            //generate warning if critical region reaches exit abb of definition function
             auto warning = std::make_shared<CriticalRegionWarning>(vertex, start_interaction->get_abb_reference());
             warning_list->emplace_back(warning);
         }
     }
+
 }
 /*
 /**
@@ -1048,10 +1063,22 @@ void verify_specific_scheduler_access(graph::Graph& graph,graph::shared_vertex v
 *and determine critical abb regions (region between start and end)  
 * @param graph project data structure
 */
-void verify_scheduler_access(graph::Graph& graph,std::vector<shared_warning>* warning_list){
+void verify_critical_region(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
+    std::string rtos_name = "RTOS";
+    std::hash<std::string> hash_fn;
     //get all tasks, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::Task).hash_code());
+    
+    //load the rtos graph instance
+    auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name +  typeid(OS::RTOS).name()));
+    
+    if(rtos_vertex == nullptr){
+        std::cerr << "ERROR: RTOS could not load from graph" << std::endl;
+        abort();
+    }
+    auto rtos = std::dynamic_pointer_cast<OS::RTOS> (rtos_vertex);
+    
     
     //iterate about the tasks
     for (auto &vertex : vertex_list) {
@@ -1059,9 +1086,19 @@ void verify_scheduler_access(graph::Graph& graph,std::vector<shared_warning>* wa
         auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
         
         //check if all interactions from type start (e.g disable) with the RTOS were removed certainly from interaction from type end(e.genable)
-        verify_specific_scheduler_access(graph,task, disable, enable,warning_list);
-        verify_specific_scheduler_access(graph,task, suspend, resume,warning_list);
-        verify_specific_scheduler_access(graph,task, enter_critical, exit_critical,warning_list);
+        verify_specific_critical_region(graph,task, disable, enable,warning_list,rtos->get_seed(),true);
+        verify_specific_critical_region(graph,task, suspend, resume,warning_list,rtos->get_seed(),true);
+        verify_specific_critical_region(graph,task, enter_critical, exit_critical,warning_list,rtos->get_seed(),true);
+        
+        //check if mutex is successfully ends
+        for(auto edge: vertex->get_outgoing_edges()){
+            
+            if(edge->get_target_vertex()->get_type() == typeid(OS::Resource).hash_code()){
+                
+                verify_specific_critical_region(graph,task, take, commit,warning_list,edge->get_target_vertex()->get_seed(),false);
+                
+            }
+        }
     }
 }
 
@@ -1094,7 +1131,7 @@ void verify_isrs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
             //check if the syscall of the isr contains the substring FromISR
             if(abb->get_call_type()== sys_call){
                 
-                std::cerr << "isr" << abb->get_syscall_name() << std::endl;
+                
                 std::size_t found = abb->get_syscall_name().find("FromISR");
                 if(found==std::string::npos){                   
                     auto warning = std::make_shared<ISRSyscallWarning>( abb, isr);
@@ -1110,7 +1147,7 @@ void verify_isrs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
             //check if the successor abb is already stored in the list				
             if(!visited) {
                 already_visited.emplace_back(abb_seed);
-                std::cerr << "abb" << abb->get_name() << std::endl;
+             
                 
                 if(abb->get_call_type()== func_call){
                     auto called_function = abb->get_called_function();
@@ -1317,16 +1354,11 @@ namespace step {
          
         verify_mutexes(graph,warning_list);
         verify_semaphores(graph,warning_list);
-        
-        if(graph.get_os_type() ==FreeRTOS){
-            verify_isrs(graph,warning_list);
-            verify_freertos_events(graph,warning_list);
-            verify_deadlocks(graph,warning_list);
-            verify_priority_inversion(graph,warning_list);
-        }
-        
-        
-        verify_scheduler_access(graph,warning_list);
+        verify_isrs(graph,warning_list);
+        verify_freertos_events(graph,warning_list);
+        verify_deadlocks(graph,warning_list);
+        verify_priority_inversion(graph,warning_list);
+        verify_critical_region(graph,warning_list);
         
 	}
 	
