@@ -75,15 +75,15 @@ SemaphoreHandle_t xBinaryMutex3;
 
 void vSenderTask1( void *pvParameters )
 {
-    xSemaphoreTake(  xBinaryMutex3,1000 );
     xSemaphoreTake(  xBinaryMutex1,1000 );
+    xSemaphoreTake(  xBinaryMutex2,1000 );
     const TickType_t xBlockTime = pdMS_TO_TICKS( 100 );
 
     const char * const pcMessage = "Message from vSenderTask1\r\n";
 
     /* As per most tasks, this task is implemented within an infinite loop. */
+    xSemaphoreGive(  xBinaryMutex2);
     xSemaphoreGive(  xBinaryMutex1);
-    xSemaphoreGive(  xBinaryMutex3);
    
     
     for( ;; )
@@ -102,15 +102,15 @@ void vSenderTask1( void *pvParameters )
 /*-----------------------------------------------------------*/
 
 void vSenderTask2( void *pvParameters ){
-    xSemaphoreTake(  xBinaryMutex1,1000 );
     xSemaphoreTake(  xBinaryMutex2,1000 );
+    xSemaphoreTake(  xBinaryMutex3,1000 );
     const TickType_t xBlockTime = pdMS_TO_TICKS( 200 );
 
     const char * const pcMessage = "Message from vSenderTask2\r\n";
 
     /* As per most tasks, this task is implemented within an infinite loop. */
+    xSemaphoreGive(  xBinaryMutex3);
     xSemaphoreGive(  xBinaryMutex2);
-    xSemaphoreGive(  xBinaryMutex1);
     for( ;; )
 
     {
@@ -129,13 +129,13 @@ void vSenderTask2( void *pvParameters ){
 
 void vSenderTask3( void *pvParameters ){
     xSemaphoreTake(  xBinaryMutex3,1000 );
-    xSemaphoreTake(  xBinaryMutex2,1000 );
+    xSemaphoreTake(  xBinaryMutex1,1000 );
     const TickType_t xBlockTime = pdMS_TO_TICKS( 200 );
 
     const char * const pcMessage = "Message from vSenderTask2\r\n";
 
     /* As per most tasks, this task is implemented within an infinite loop. */
-    xSemaphoreGive(  xBinaryMutex2);
+    xSemaphoreGive(  xBinaryMutex1);
     xSemaphoreGive(  xBinaryMutex3);
     for( ;; )
 

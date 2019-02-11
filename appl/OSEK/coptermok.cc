@@ -2,104 +2,6 @@
 #include "source/test/test.h"
 
 
-// DeclareResource(SPIBusResource);
-// 
-// DeclareAlarm(SamplingAlarm);
-// 
-// DeclareEvent(CopterControlReceiveEvent);
-// 
-// 
-// 
-// DeclareTask(InitTask);
-// DeclareTask(SignalGatherInitiateTask);
-// 
-// ISR2(isr_button_start){
-// 	int a = 0;
-// 	int b = 0;
-// 	
-// }
-// 
-// int main(void) {
-// 	Schedule();
-// 	return 0;
-// }		
-// 
-// static unsigned int time_counter = 0;
-// 
-// static int spi_reply_idx;
-// 
-// 
-// // autostarted by dOSEK!
-// TASK(InitTask) {
-//    
-// 	//test_trace(INIT_TASK);
-// 
-// 	// We set up a period alarm for initate the sampling task. This
-//     // Task runs every 3 ms. This activates the SignalGatherInitateTask.
-//     SetRelAlarm(SamplingAlarm, 100, 3);
-// 	
-// 	unsigned short tmp = 100;
-// 	GetAlarm(SamplingAlarm,&tmp);
-//     ActivateTask(InitTask);
-// 	ClearEvent(CopterControlReceiveEvent);
-//     TerminateTask();
-// }
-// 
-// 
-// TASK(SignalGatherInitiateTask) {
-//     time_counter++;
-// 	test_trace('2');
-// 
-//     // Our benchmark should do exactly  actuate rounds.
-//     if (time_counter >  3 * 3 + 1) {
-// 		Machine::disable_interrupts();
-//         CancelAlarm(SamplingAlarm);
-//         //CancelAlarm(ActuateAlarm);
-//         //CancelAlarm(CopterControlWatchdogAlarm);
-//         //test_trace(SHUTDOWN);
-// 		test_trace('3');
-// 		ShutdownMachine();
-//     }
-// 
-//     // Activate the processing tasks, they clear their event masks
-//     // immediatly, and then go to sleep.
-//     ActivateTask(InitTask);
-//    
-//     // First of all we would sample our analog sensors, which is done
-//     // imediately. Therefore the event can be set.
-//     SetEvent(InitTask, CopterControlReceiveEvent);
-// 
-//     // Before we send our data to "SPI", we set up a timeout alarm to
-//     // activate the signal processing after an exact time.
-//     CancelAlarm(SamplingAlarm); // after 2 ms
-//     SetRelAlarm(SamplingAlarm, 2, 0); // after 2 ms
-// 
-//     {
-//         GetResource(SPIBusResource);
-// 
-// 		spi_reply_idx = (time_counter - 1) % 7;
-// 
-//         ReleaseResource(SPIBusResource);
-//     }
-//     unsigned long  *tmp ;
-//     GetEvent(InitTask,tmp);
-// 	WaitEvent(CopterControlReceiveEvent);
-//     //static int ethernet_events[] = { 1, 7, -1};
-// 	if (time_counter == 1 | time_counter == 7) {
-// 		SetEvent(SignalGatherInitiateTask, CopterControlReceiveEvent);
-// 	}
-// 
-// 	ChainTask(SignalGatherInitiateTask);
-// }
-
-
-//typedef struct spi_reply_message {
-//    TaskType event1_task;
-//    EventMaskType event1_mask;
-//    TaskType event2_task;
-//    EventMaskType event2_mask;
-//} spi_reply_message_t;
-
 
 
 DeclareResource(SPIBusResource);
@@ -142,8 +44,9 @@ DeclareTask(MavlinkRecvTask);
 
 
 int  main(void){
-  StartOS("tmp");
-  return 0;
+    char * appmode = {"tmp"};
+    StartOS(appmode);
+    return 0;
 }
 
 typedef enum {
@@ -257,7 +160,7 @@ TASK(SignalGatherWaitTask) {
 
 	reply = spi_reply_idx;
 
-	//ReleaseResource(SPIBusResource);
+	ReleaseResource(SPIBusResource);
 
 	// static const TaskType sp_att = SignalProcessingAttitudeTask,
 	// sp_act = SignalProcessingActuateTask;
@@ -288,14 +191,14 @@ TASK(SignalGatherWaitTask) {
 	// variable. Therefore we have to use a big switch case to emulate
 	// the above table.
 	if (reply <= 3) {
-		//CancelAlarm(SignalGatherTimeoutAlarm);
+		CancelAlarm(SignalGatherTimeoutAlarm);
 	}
 
 	if (reply == 0 | reply == 1 | reply == 5) {
 		SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent | SignalGatherDigital2bEvent);
-        //SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
+        SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
 	}
-	/*
+	
 	if (reply <= 4) {
 		SetEvent(SignalProcessingAttitudeTask, SignalGatherDigital1Event);
 	}
@@ -307,7 +210,7 @@ TASK(SignalGatherWaitTask) {
 	if (reply == 3)  {
 		SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
 	}
-    */
+    
     TerminateTask();
 }
 
@@ -322,25 +225,25 @@ TASK(SignalGatherTimeoutTask) {
 
 TASK(SignalProcessingActuateTask) {
     ClearEvent(SignalGatherDigital2bTimeoutEvent);
-//     ClearEvent(SignalGatherDigital2aEvent
-//                    | SignalGatherDigital2bEvent
-//                    | SignalGatherDigital2aTimeoutEvent
-//                    | SignalGatherDigital2bTimeoutEvent);
-    WaitEvent(SignalGatherDigital2aTimeoutEvent);
-//     WaitEvent(SignalGatherDigital2aEvent
-//                   | SignalGatherDigital2bEvent
-//                   | SignalGatherDigital2aTimeoutEvent
-//                   | SignalGatherDigital2bTimeoutEvent);
+     ClearEvent(SignalGatherDigital2aEvent
+                    | SignalGatherDigital2bEvent
+                    | SignalGatherDigital2aTimeoutEvent
+                    | SignalGatherDigital2bTimeoutEvent);
+
+     WaitEvent(SignalGatherDigital2aEvent
+                   | SignalGatherDigital2bEvent
+                   | SignalGatherDigital2aTimeoutEvent
+                   | SignalGatherDigital2bTimeoutEvent);
 
     EventMaskType events;
     GetEvent(SignalProcessingActuateTask, &events);
     int not_timeout = events & (SignalGatherDigital2aEvent | SignalGatherDigital2bEvent);
 
-//     ClearEvent(SignalGatherDigital2aEvent
-//                    | SignalGatherDigital2bEvent
-//                    | SignalGatherDigital2aTimeoutEvent
-//                    | SignalGatherDigital2bTimeoutEvent);
-    ClearEvent(SignalGatherDigital2aEvent);
+     ClearEvent(SignalGatherDigital2aEvent
+                    | SignalGatherDigital2bEvent
+                    | SignalGatherDigital2aTimeoutEvent
+                    | SignalGatherDigital2bTimeoutEvent);
+  
     if (not_timeout) {
         test_trace(SP_ACTUATE_TASK);
     } else {
@@ -353,18 +256,18 @@ TASK(SignalProcessingActuateTask) {
 
 TASK(SignalProcessingAttitudeTask) {
     
-    //ClearEvent(SignalGatherAnalogEvent | SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
-    ClearEvent( SignalGatherDigital1Event );
-    //WaitEvent(SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
-    WaitEvent(SignalGatherDigital1TimeoutEvent);
+    ClearEvent(SignalGatherAnalogEvent | SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
+  
+    WaitEvent(SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
+
     WaitEvent(SignalGatherAnalogEvent);
 
     EventMaskType events;
     GetEvent(SignalProcessingAttitudeTask, &events);
     int not_timeout = events & SignalGatherDigital1Event;
 
-    //ClearEvent(SignalGatherAnalogEvent | SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
-    ClearEvent(SignalGatherAnalogEvent );
+    ClearEvent(SignalGatherAnalogEvent | SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
+
     if (not_timeout)
         test_trace(SP_ATTITUDE_TASK);
     else
