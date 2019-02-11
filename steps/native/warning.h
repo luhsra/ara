@@ -14,7 +14,7 @@ class Warning{
         OS::shared_abb warning_position;
         Warning(OS::shared_abb abb){
 			// Warning must have a location
-			assert(abb != nullptr);
+			//assert(abb != nullptr);
             this->warning_position = abb;
         };
         
@@ -34,6 +34,137 @@ class Warning{
 };
 
 typedef std::shared_ptr<Warning> shared_warning;
+
+
+class DumbArgumentWarning : public Warning {
+    
+    private:
+        int argument_index = 0;
+        
+    public:
+        DumbArgumentWarning(int index,OS::shared_abb abb) : Warning(abb){
+            this->argument_index = index;
+        }
+	virtual std::string get_type() const override { return "DumpArgument"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "Argument at index "+ std::to_string(argument_index) + " in abb "  + warning_position->get_name() + " could not dump" + "\n";
+            return stream;
+        };
+};
+
+
+class QueueSetMemberWarning : public Warning {
+    
+    private:
+        graph::shared_vertex queueset;
+        std::string handler_name;
+        
+    public:
+        QueueSetMemberWarning(graph::shared_vertex queueset,std::string handler_name,OS::shared_abb abb) : Warning(abb){
+            this->handler_name = handler_name;
+            this->queueset = queueset;
+        }
+	virtual std::string get_type() const override { return "QueueSetMember"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "Element "+ handler_name + " could not add to QueueSet " +   queueset->get_name() +"\n";
+            return stream;
+        };
+};
+
+
+class AppModeWarning : public Warning {
+    
+        
+    public:
+        AppModeWarning(OS::shared_abb abb) : Warning(abb){
+        }
+	virtual std::string get_type() const override { return "OSEKAppmode"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "Could not load OSEK appmode in start schedule syscall in  " + warning_position->get_name() +"\n";
+            return stream;
+        };
+};
+
+class EdgeCreateWarning : public Warning {
+    
+    private:
+        graph::shared_vertex start_vertex;
+        
+    public:
+        EdgeCreateWarning(graph::shared_vertex start_vertex,OS::shared_abb abb) : Warning(abb){
+            this->start_vertex = start_vertex;
+        }
+	virtual std::string get_type() const override { return "CreateEdge"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "Edge from " + warning_position->get_name() + " in vertex " +  start_vertex->get_name()  + " could not created" + "\n";
+            return stream;
+        };
+};
+
+
+class TopologicalOrderWarning : public Warning {
+    
+    private:
+       OS::shared_function function; 
+        
+    public:
+        TopologicalOrderWarning( OS::shared_function function,OS::shared_abb abb) : Warning(abb){
+            this->function = function;
+        }
+	virtual std::string get_type() const override { return "TopologicalOrder"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "Function " + function->get_name()  + " could not topolicial sorted at abb "  + warning_position->get_name() + "\n";
+            return stream;
+        };
+};
+
+
+
+class FreeRTOSCreateInstanceWarning : public Warning {
+    
+    private:
+       std::string instance_class; 
+        
+    public:
+        FreeRTOSCreateInstanceWarning( std::string instance_class,OS::shared_abb abb) : Warning(abb){
+            this->instance_class = instance_class;
+        }
+	virtual std::string get_type() const override { return "FreeRTOSCreateInstance"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "In abb " + warning_position->get_name()  + " FreeRTOS instance from class"  + instance_class + "could not created\n";
+            return stream;
+        };
+};
+
+
+class AnyCastWarning : public Warning {
+    
+   
+    
+    public:
+        AnyCastWarning(OS::shared_abb abb) : Warning(abb){
+        }
+	virtual std::string get_type() const override { return "FreeRTOSCreateInstance"; }
+        
+    virtual std::string print_warning()  const override {
+            std::string stream = "";
+            stream + "In abb " + warning_position->get_name()  + " a any cast could not done to create FreeRTOS instance\n";
+            return stream;
+        };
+};
+
 
 class BufferWarning : public Warning {
     private:

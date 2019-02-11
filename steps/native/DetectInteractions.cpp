@@ -74,7 +74,6 @@ void convert_syscall_name(call_data call,shared_abb abb){
             switch(command_id){
             
                 /*
-                #TODO second argument = command id xCommandID
                 #define tmrCOMMAND_EXECUTE_CALLBACK_FROM_ISR 	( ( BaseType_t ) -2 )
                 #define tmrCOMMAND_EXECUTE_CALLBACK				( ( BaseType_t ) -1 )
                 #define tmrCOMMAND_START_DONT_TRACE				( ( BaseType_t ) 0 )
@@ -83,7 +82,6 @@ void convert_syscall_name(call_data call,shared_abb abb){
                 #define tmrCOMMAND_STOP							( ( BaseType_t ) 3 )
                 #define tmrCOMMAND_CHANGE_PERIOD				( ( BaseType_t ) 4 )
                 #define tmrCOMMAND_DELETE						( ( BaseType_t ) 5 )
-                #define tmrFIRST_FROM_ISR_COMMAND				( ( BaseType_t ) 6 )
                 #define tmrCOMMAND_START_FROM_ISR				( ( BaseType_t ) 6 )
                 #define tmrCOMMAND_RESET_FROM_ISR				( ( BaseType_t ) 7 )
                 #define tmrCOMMAND_STOP_FROM_ISR				( ( BaseType_t ) 8 )
@@ -97,11 +95,10 @@ void convert_syscall_name(call_data call,shared_abb abb){
                 case 3: call_name = "tmrCOMMAND_STOP"; break;
                 case 4: call_name = "tmrCOMMAND_CHANGE_PERIOD"; break;
                 case 5: call_name = "tmrCOMMAND_DELETE"; break;
-                case 6: call_name = "tmrFIRST_FROM_ISR_COMMAND"; break;
-                case 7: call_name = "tmrCOMMAND_START_FROM_ISR"; break;
-                case 8: call_name = "tmrCOMMAND_RESET_FROM_ISR"; break;
-                case 9: call_name = "tmrCOMMAND_STOP_FROM_ISR"; break;
-                case 10: call_name = "tmrCOMMAND_CHANGE_PERIOD_FROM_ISR"; break;
+                case 6: call_name = "tmrCOMMAND_START_FROM_ISR"; break;
+                case 7: call_name = "tmrCOMMAND_RESET_FROM_ISR"; break;
+                case 8: call_name = "tmrCOMMAND_STOP_FROM_ISR"; break;
+                case 9: call_name = "tmrCOMMAND_CHANGE_PERIOD_FROM_ISR"; break;
                 default: call_name = call.call_name; break;
             }
             abb->set_syscall_name(call_name);
@@ -192,8 +189,9 @@ void osek_scheduler_resource(graph::Graph& graph,shared_abb abb,std::vector<llvm
 * @param function current function of abstraction instance
 * @param call_reference function call instruction
 * @param already_visited call instructions which were already iterated
+* @param warning_list list to store warning
 */
-void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls,std::vector<llvm::Instruction*>* calltree_references){
+void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function,  llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls,std::vector<llvm::Instruction*>* calltree_references,std::vector<shared_warning>* warning_list){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
@@ -374,41 +372,27 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                                 
                                 
                             }
+                            break;
                         }
+                    }
+                    //check if target vertex with corresponding handler name was detected
+                    if(success){
+                        //break the loop iteration about the possible syscall target instances
                         break;
                     }
                 }
-                //check if target vertex with corresponding handler name was detected
-                if(success){
-                    //break the loop iteration about the possible syscall target instances
-                    break;
-                }
-            }
-            if(success == false){
-                //edge could not created, print warning
-                if(start_vertex->get_type() == typeid(OS::Timer).hash_code()){
+                if(success == false){
+                    //edge could not created, generate warning
+                    auto warning = std::make_shared<EdgeCreateWarning>( start_vertex, abb);
+                    warning_list->emplace_back(warning);
                     
                 }
-                
-                std::cerr << "edge could not created: " << abb->get_syscall_name() <<  " in function " <<  abb->get_parent_function()->get_name()  << " in vertex " << start_vertex->get_name() <<  std::endl;
-                debug_argument_test(argument_candidats.any_list.front());                
-                std::cerr << "expected handler name " << handler_name	<< std::endl;
-                abb->print_information();
             }
         }else if( abb->get_call_type()== func_call){
             //iterate about the called function
-            iterate_called_functions_interactions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls ,calltree_references );
+            iterate_called_functions_interactions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls ,calltree_references,warning_list );
         }
     }
-//     if(start_vertex->get_name() == "main"){
-//         for(auto edge : start_vertex->get_ingoing_edges()){
-//             std::cerr << edge->get_specific_call().call_name << std::endl;
-//         }
-//         
-//         for(auto edge : start_vertex->get_outgoing_edges()){
-//             std::cerr << edge->get_specific_call().call_name << std::endl;
-//         }
-//     }
 }
 
 
@@ -416,11 +400,12 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
 /**
 * @brief detect interactions of OS abstractions and create the corresponding edges in the graph
 * @param graph project data structure
+* @param warning_list list to store warning
 */
-void detect_interactions(graph::Graph& graph){
+void detect_interactions(graph::Graph& graph,std::vector<shared_warning>* warning_list){
 	
     
-    //TODO maybe differen main functions in OSEK and FreeRTOS
+  
     //get main function from the graph
     std::string main_function_name = "main";
     std::hash<std::string> hash_fn;
@@ -434,7 +419,7 @@ void detect_interactions(graph::Graph& graph){
         //get all interactions of the main functions and their called function with other os instances
         std::vector<llvm::Instruction*> already_visited;
         std::vector<llvm::Instruction*> calltree_references;
-        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, already_visited,&calltree_references);
+        iterate_called_functions_interactions(graph, main_function, main_function,nullptr, already_visited,&calltree_references,warning_list);
     }
     
     
@@ -448,7 +433,7 @@ void detect_interactions(graph::Graph& graph){
         auto task = std::dynamic_pointer_cast<OS::Task> (vertex);
         OS::shared_function task_definition = task->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, already_visited,&calltree_references);
+        iterate_called_functions_interactions(graph, vertex, task_definition,nullptr, already_visited,&calltree_references,warning_list);
     }
     
     //get all isrs, which are stored in the graph
@@ -461,7 +446,7 @@ void detect_interactions(graph::Graph& graph){
         auto timer = std::dynamic_pointer_cast<OS::ISR> (vertex);
         OS::shared_function timer_definition = timer->get_definition_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, already_visited,&calltree_references);
+        iterate_called_functions_interactions(graph, vertex, timer_definition,nullptr, already_visited,&calltree_references,warning_list);
     }
         
     //get all timers of the graph
@@ -474,22 +459,35 @@ void detect_interactions(graph::Graph& graph){
         auto timer = std::dynamic_pointer_cast<OS::Timer> (vertex);
         OS::shared_function isr_definition = timer->get_callback_function();
         //get all interactions of the instance
-        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, already_visited,&calltree_references);
+        iterate_called_functions_interactions(graph, vertex, isr_definition,nullptr, already_visited,&calltree_references, warning_list);
+    }
+    
+     //get all hooks of the graph
+    vertex_list =  graph.get_type_vertices(typeid(OS::Hook).hash_code());
+	//iterate about the hooks
+	for (auto &vertex : vertex_list) {
+        //std::cerr << "timer name: " << vertex->get_name() << std::endl;
+		std::vector<llvm::Instruction*>  already_visited;
+        std::vector<llvm::Instruction*> calltree_references;
+        auto hook = std::dynamic_pointer_cast<OS::Hook> (vertex);
+        OS::shared_function hook_definition = hook->get_definition_function();
+        //get all interactions of the instance
+        iterate_called_functions_interactions(graph, vertex, hook_definition ,nullptr, already_visited,&calltree_references, warning_list);
     }
 }
 
 /**
 * @brief add all instances to a queueset
 * @param graph project data structure
+* @param warning_list list to store warning
 */
-void add_to_queue_set(graph::Graph& graph){
+void add_to_queue_set(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
      //get all queuesets, which are stored in the graph
     auto vertex_list =  graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
 	//iterate about the queuesets
 	for (auto &vertex : vertex_list) {
-        //std::cerr << "isr name: " << vertex->get_name() << std::endl;
-        
+     
         auto queueset = std::dynamic_pointer_cast<OS::QueueSet>(vertex);
         
         auto ingoing_edges = queueset->get_ingoing_edges();
@@ -509,8 +507,7 @@ void add_to_queue_set(graph::Graph& graph){
                         
                         std::string handler_name = std::any_cast<std::string>(call.arguments.front().any_list.front());
                         
-                        //std::cerr << handler_name << std::endl;
-                        
+                
                         std::hash<std::string> hash_fn;
 	
                         graph::shared_vertex queue_set_element = nullptr;
@@ -522,10 +519,17 @@ void add_to_queue_set(graph::Graph& graph){
                         
                         //set element to queueset
                         if(queue_set_element!= nullptr)queueset->set_queue_element(queue_set_element);
-                        else std::cerr << "element " << handler_name << " could not added to queue set" << std::endl;
+                        else{
+                            
+                            //Element to store in queueset could not found in graph
+                            auto warning = std::make_shared<QueueSetMemberWarning>( queueset, handler_name ,ingoing->get_abb_reference());
+                            warning_list->emplace_back(warning);
+                            
+                        }
                     }    
                 }else{
-                    //ERROR 
+                    std::cerr << "ERROR: edge contains multiple possible values" << std::endl;
+                    abort();
                 }
             }
         }
@@ -535,8 +539,9 @@ void add_to_queue_set(graph::Graph& graph){
 /**
 * @brief get the application mode of the start scheduler instruction in OSEK rtos. The appmode is the argument of the system call.
 * @param graph project data structure
+* @param warning_list list to store warning
 **/
-void get_osek_appmode(graph::Graph& graph){
+void get_osek_appmode(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //check if rtos is a osek rtos
     if(graph.get_os_type() != OSEK)return;
@@ -556,7 +561,7 @@ void get_osek_appmode(graph::Graph& graph){
         main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
     
     }else{
-        std::cerr << "no main function in programm" << std::endl;
+        std::cerr << "ERROR: no main function in programm" << std::endl;
         abort();
     }
     
@@ -572,28 +577,24 @@ void get_osek_appmode(graph::Graph& graph){
     auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
     
     
-
+    
     std::string appmode = ""; 
     //get the start scheduler instruction from main function
     for(auto outgoing_edge: main_function->get_outgoing_edges()){
         
-        std::cerr << "SUCCESS" << std::endl;
+       
         if(outgoing_edge->get_abb_reference()->get_syscall_type() == start_scheduler){
-            
-            std::cerr << "SUCCESS" << std::endl;
-            
+
             auto call_data = outgoing_edge->get_specific_call();
             //load the argument , appmode is the only argument
             if(call_data.arguments.size() != 1 || call_data.arguments.at(0).any_list.size() != 1){
-                std::cerr << "appmode from start scheduler call could not determined" << std::endl;
                 abort();
             }
             //cast argument to string and check if multiple appmodes exists
             auto any_value= call_data.arguments.at(0).any_list.front();
             std::string tmp_appmode = std::any_cast<std::string>(any_value);
-            std::cerr << "tmp_appmode" << tmp_appmode << std::endl;
+
             if(appmode != "" && appmode != tmp_appmode){
-                std::cerr << "appmode could not certainly determined" << std::endl;
                 abort();
             }else{
                 appmode = tmp_appmode;
@@ -603,16 +604,14 @@ void get_osek_appmode(graph::Graph& graph){
     //store appmode in rtos
     if(appmode != "")rtos->appmode = appmode;
     else {
-        std::cerr << "appmode could not certainly determined" << std::endl;
-        //abort();
+       //Appmodes are different or empty in application
+        auto warning = std::make_shared<AppModeWarning>( nullptr);
+        warning_list->emplace_back(warning);
+        
     }
 }   
     
 
-//TODO uxBitsToWaitFor must not be set to 0
-//TODO timer id
-//TODO just allow Analysis of global variables with one user, that change value
-//TODO use of osek instance in wrong appmode
 
 namespace step {
 
@@ -634,12 +633,14 @@ namespace step {
         
 		//detect interactions of the OS abstraction instances
 		
-		//graph.print_information();
-		detect_interactions(graph);
+        
+        std::vector<shared_warning>* warning_list = &(this->warnings);
+         
+		detect_interactions(graph,warning_list);
         
         //freertos or osek specific interaction analysis
-        add_to_queue_set(graph);
-        get_osek_appmode( graph);
+        add_to_queue_set(graph,warning_list);
+        get_osek_appmode( graph,warning_list);
         
 	}
 	

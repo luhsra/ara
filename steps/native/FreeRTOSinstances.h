@@ -43,11 +43,14 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Analysis/OrderedBasicBlock.h"
 #include "llvm/IR/Operator.h"
-
+#include "warning.h"
 
 
 namespace step {
 	class FreeRTOSInstancesStep : public Step {
+    private:
+        std::vector<shared_warning> warnings;
+        
 	public:
 		FreeRTOSInstancesStep(PyObject* config) : Step(config) {}
 

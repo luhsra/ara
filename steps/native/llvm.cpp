@@ -840,7 +840,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
 
             argument_data operand_0;
             argument_data operand_1;
-            std::cerr << print_argument(binop) << std::endl;
+            //std::cerr << print_argument(binop) << std::endl;
             
             
             std::any value;
@@ -857,7 +857,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
                     std::string string_value_0;
                     std::string string_value_1;
                     
-                    std::cerr << print_argument(binop) << std::endl;
+                    //std::cerr << print_argument(binop) << std::endl;
                     if(!operand_0.multiple && !operand_1.multiple && !operand_0.any_list.empty() && !operand_1.any_list.empty()){
 
                         if(typeid(long).hash_code() == operand_0.any_list.front().type().hash_code() && typeid(long).hash_code() == operand_0.any_list.front().type().hash_code()){
@@ -873,7 +873,7 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
                                 dump_success = true;
                                 value = (std::string)string_value_0 + "(OR)" + (std::string)string_value_1;
                                 
-                                std::cerr <<  (std::string)string_value_0 <<"(OR)"<< (std::string)string_value_1 << std::endl;
+                                //std::cerr <<  (std::string)string_value_0 <<"(OR)"<< (std::string)string_value_1 << std::endl;
                                 argument_container->any_list.emplace_back(value);
                             }
                             
@@ -1023,8 +1023,9 @@ bool dump_argument(std::stringstream &debug_out,argument_data* argument_containe
  * @param abb abb, which contains the call
  * @param func llvm function, of the call instruction
  * @param instruction call instruction, which is analyzed
+ * @param warning_list list to store warning
  */
-void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst  * instruction){
+void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst  * instruction,std::vector<shared_warning>* warning_list){
     
     //empty call data container
     call_data call;
@@ -1064,26 +1065,19 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
             if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
                 
                 //error in argument dump
-                std::cerr << print_argument(instruction) << std::endl;
-                std::cerr << "argument container lists have different sizes" << std::endl;
-                abort();
+                auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+                warning_list->emplace_back(warning);
             }
             
 			//store the dumped argument in the abb with corresponding llvm type
 			arguments.emplace_back(argument_container);
             
-            if(call.call_name == "OSEKOS_SetEvent" && abb->get_name() == "BB38" ){
-                std::cerr << print_argument(instruction) << std::endl;
-                std::cerr << debug_out.str() << std::endl;
-            }
+    
 		}else{
 			
             //dump was not successfull
-			std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
-			std::cerr <<  print_argument(instruction) << '\n';
-			
-            //TODO
-			//abort();
+            auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+            warning_list->emplace_back(warning);
 		}
 	}
 	
@@ -1110,8 +1104,9 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
  * @param abb abb, which contains the call
  * @param func llvm function, of the call instruction
  * @param instruction call instruction, which is analyzed
+ * @param warning_list list to store warning
  */
-void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeInst  * instruction){
+void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeInst  * instruction,std::vector<shared_warning>* warning_list){
     
     //empty call data container
     call_data call;
@@ -1152,9 +1147,9 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeIns
             //argument container lists shall not have different sizes
             if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
                 
-                //error in argument dump
-                std::cerr << "argument container lists have different sizes" << std::endl;
-                abort();
+               //dump was not successfull
+                auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+                warning_list->emplace_back(warning);
             }
             
 			//store the dumped argument in the abb with corresponding llvm type
@@ -1162,11 +1157,8 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeIns
 		}else{
 			
             //dump was not successfull
-			//std::cerr << "ERROR: instruction argument dump was not successfull, Operand: " << i << '\n';
-			//std::cerr <<  print_argument(instruction) << '\n';
-			
-            //TODO
-			//abort();
+            auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+            warning_list->emplace_back(warning);
 		}
 	}
 	
@@ -1188,8 +1180,9 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeIns
 /**
  * @brief set the arguments std::any and llvm values of the abb
  * @param abb abb, which should be analyzed
+ * @param warning_list list to store warning
  */
-void set_arguments(OS::shared_abb abb){
+void set_arguments(OS::shared_abb abb,std::vector<shared_warning>* warning_list){
 
 	int bb_count = 0;
 	
@@ -1212,7 +1205,7 @@ void set_arguments(OS::shared_abb abb){
 				if (func && !isCallToLLVMIntrinsic(call)) {
 					call_found = true;
 					//get and store the called arguments values
-					dump_instruction(abb,func , call);
+					dump_instruction(abb,func , call,warning_list);
 					++call_count;
 				}
 			}else if (InvokeInst *invoke = dyn_cast<InvokeInst>(&inst)) {
@@ -1230,7 +1223,7 @@ void set_arguments(OS::shared_abb abb){
 				if (func && !isCallToLLVMIntrinsic(invoke)) {
 					call_found = true;
 					//get and store the called arguments values
-					dump_instruction(abb,func , invoke);
+					dump_instruction(abb,func , invoke,warning_list);
 					++call_count;
  				}
 			}
@@ -1257,8 +1250,9 @@ void set_arguments(OS::shared_abb abb){
  * CFG predecessors and successors 
  * @param graph project data structure
  * @param function graph function, which contains the llvm function reference
+ * @param warning_list list to store warning
  */
-void abb_generation(graph::Graph *graph, OS::shared_function function ) {
+void abb_generation(graph::Graph *graph, OS::shared_function function , std::vector<shared_warning>* warning_list) {
 
     //get llvm function reference
     llvm::Function* llvm_reference_function = function->get_llvm_reference();
@@ -1280,7 +1274,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
     //store abb in graph
 	graph->set_vertex(abb);
     
-    set_arguments(abb);
+    set_arguments(abb,warning_list);
 	
     queue.push_back(abb);
 
@@ -1349,7 +1343,7 @@ void abb_generation(graph::Graph *graph, OS::shared_function function ) {
                     visited_abbs.push_back(new_abb->get_seed());
 
 					//set the abb call`s argument values and types
-					set_arguments(new_abb);
+					set_arguments(new_abb,warning_list);
 					
                 }else{
 					
@@ -1448,8 +1442,7 @@ void set_called_functions(graph::Graph& graph){
             graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
             if(vertex != nullptr){
 
-                if(vertex->get_name() == "_ZN12GPSDataModelC2Ev")std::cerr << "ERROR" <<  print_argument(call)  << std::endl;
-                
+                            
                 auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
                 abb->set_called_function(function,instr);
                 abb->get_parent_function()->set_called_function(function,abb);
@@ -1472,8 +1465,6 @@ void set_called_functions(graph::Graph& graph){
             graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() +  typeid(OS::Function).name()));
             if(vertex != nullptr){
                 //std::cout << "success" <<  vertex->get_name() << std::endl;
-                
-                if(vertex->get_name() == "_ZN12GPSDataModelC2Ev")std::cerr << "ERROR" <<  print_argument(invoke)  << std::endl;
 
                 auto function =  std::dynamic_pointer_cast<OS::Function>(vertex);
                 abb->set_called_function( function,instr);
@@ -1549,6 +1540,8 @@ namespace step {
     */
 	void LLVMStep::run(graph::Graph& graph) {
         
+        //get reference of warning list of step
+        std::vector<shared_warning>* warning_list = &(this->warnings);
     
 		// get file arguments from config
 		std::vector<std::string> files;
@@ -1671,7 +1664,7 @@ namespace step {
 				graph.set_vertex(graph_function);
 				
 				//generate and store the abbs of the function in the graph datatstructure
-				abb_generation(&graph, graph_function );
+				abb_generation(&graph, graph_function,warning_list );
 			}
 		}
 		//connect the abbs and functions with the called function

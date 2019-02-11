@@ -229,7 +229,7 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
                  stream << "no argument values are possible"<< std::endl;
             }else{
                 
-                std::cerr << "TEEEEEESET" << std::endl;
+               
                 //check if all candidates have the same argument call reference order
                 llvm::Value* old_value = std::get<llvm::Value*>(valid_candidates.front());
                 bool success = true;
@@ -336,12 +336,14 @@ void get_call_relative_argument(std::any &any_value,llvm::Value* &llvm_value,arg
                         else if(index > 100)flag = false;
                         ++index;
                         }
+                        
+                        
                     std::cerr << "multiple argument values are possible" <<  valid_candidates.size() << std::endl;
                 }
             }
         }
     }
-    std::cerr << stream.str();
+    //std::cerr << stream.str();
     //default value if no candidate was found
     any_value = (std::string) " ERROR multiple argument values are possible";
     llvm_value = nullptr;
@@ -1080,11 +1082,17 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
             edge->set_specific_call(&specific_arguments);
             return true;
         }else{
+            
+            //function creation was not successfull
+            auto warning = std::make_shared<FreeRTOSCreateInstanceWarning>(target_class, abb);
+            warning_list->emplace_back(warning);
+            
             return false;
         }
     }
     catch(...){
-        abb->print_information();
+        auto warning = std::make_shared<AnyCastWarning>(abb);
+        warning_list->emplace_back(warning);
         return false;
     }
 }
@@ -1099,8 +1107,9 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
 * @param call_reference function call instruction
 * @param already_visited call instructions which were already iterated
 * @param calltree_references call history
+* @param warning_list list to store warning
 */
-void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls,std::vector<llvm::Instruction*>* calltree_references){
+void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_vertex, OS::shared_function function, llvm::Instruction* call_reference ,std::vector<llvm::Instruction*> already_visited_calls,std::vector<llvm::Instruction*>* calltree_references,std::vector<shared_warning>* warning_list){
     
     //return if function does not contain a syscall
     if(function == nullptr || function->has_syscall() ==false)return;
@@ -1147,14 +1156,14 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
             //check if abb syscall is creation syscall
             if(abb->get_syscall_type() == create){
                 
-                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,calltree_references,multiple_create)){
-                    std::cerr << "instance could not created" << std::endl;
+                if(!create_abstraction_instance( graph,start_vertex,abb,before_scheduler_start,calltree_references,multiple_create,warning_list)){
+                    //std::cerr << "instance could not created" << std::endl;
                 }
             }
             
         }else if( abb->get_call_type()== func_call){
             //iterate about the called function
-            iterate_called_functions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls,calltree_references);
+            iterate_called_functions(graph,start_vertex,abb->get_called_function(), abb->get_call_instruction_reference(),already_visited_calls,calltree_references,warning_list);
         }
     }
 }
@@ -1166,7 +1175,7 @@ namespace step {
 	}
 
 	std::string FreeRTOSInstancesStep::get_description() {
-		return "Extracts out of FreeRTOS abstraction instances";
+		return "Extracts out of FreeRTOS abstraction instances. For each abb in ARSA-Graph which contains a create syscall a corresponding abstraction instance is generated. All initial properties are stored in the generated instances";
 	}
 	
     /**
@@ -1178,6 +1187,9 @@ namespace step {
         
         std::cerr << "Run FreeRTOSInstancesStep" << std::endl;
     
+        
+        std::vector<shared_warning>* warning_list = &(this->warnings);
+        
         //detect isrs based of the isr specific freertos api 
         detect_isrs(graph);
         
@@ -1196,7 +1208,7 @@ namespace step {
             //iterate about the main function context and detect abstraction instances
             std::vector<llvm::Instruction*> already_visited_calls;
             std::vector<llvm::Instruction*> calltree_references;
-            iterate_called_functions(graph, main_vertex , main_function,nullptr,already_visited_calls,&calltree_references);
+            iterate_called_functions(graph, main_vertex , main_function,nullptr,already_visited_calls,&calltree_references,warning_list);
 		
             
         }else{
@@ -1227,7 +1239,7 @@ namespace step {
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
                 std::vector<llvm::Instruction*> calltree_references;
-                iterate_called_functions(graph, task , task_definition, nullptr ,already_visited_calls,&calltree_references);
+                iterate_called_functions(graph, task , task_definition, nullptr ,already_visited_calls,&calltree_references,warning_list);
             }
         
         
@@ -1247,7 +1259,7 @@ namespace step {
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
                 std::vector<llvm::Instruction*> calltree_references;
-                iterate_called_functions(graph, isr , isr_definition, nullptr ,already_visited_calls,&calltree_references);
+                iterate_called_functions(graph, isr , isr_definition, nullptr ,already_visited_calls,&calltree_references,warning_list);
             }
             
             
@@ -1266,7 +1278,7 @@ namespace step {
                 //get all interactions of the instance
                 std::vector<llvm::Instruction*> already_visited_calls;
                 std::vector<llvm::Instruction*> calltree_references;
-                iterate_called_functions(graph, timer , timer_definition, nullptr ,already_visited_calls,&calltree_references);
+                iterate_called_functions(graph, timer , timer_definition, nullptr ,already_visited_calls,&calltree_references,warning_list);
             }
             
             
@@ -1274,42 +1286,7 @@ namespace step {
 
 	
         
-        //identifiy hooks and mark corresponding functions
-        std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
-        for (auto &vertex : vertex_list) {
-                
-            auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-            
-            hook_type type = no_hook;
-            if(function->get_name().find("PostTaskHook") != std::string::npos){
-                type = post_task;
-            }else if(function->get_name().find("PreTaskHook") != std::string::npos){
-                type = pre_task;
-            }else if(function->get_name().find("ErrorHook") != std::string::npos){
-                type = error;
-//             }else if(function->get_name().find("ShutdownHook") != std::string::npos){
-                type = shut_down;
-            }else if(function->get_name().find("StartupHook") != std::string::npos){
-                type = start_up;
-            }else if(function->get_name().find("vApplicationMallocFailedHook") != std::string::npos){
-                type = failed;
-            }else if(function->get_name().find("vApplicationIdleHook") != std::string::npos){
-                type = idle;
-            }else if(function->get_name().find("vApplicationStackOverflowHook") != std::string::npos){
-                type = stack_overflow;
-            }else if(function->get_name().find("vApplicationTickHook") != std::string::npos){
-                type = tick;
-            }
-            if(type != no_hook){
-
-                auto hook = std::make_shared<OS::Hook>(&graph,function->get_name());
-                graph.set_vertex(hook);
-                hook->set_hook_type(type);
-                hook->set_definition_function(function->get_name());
-                //store the edge in the graph
-
-            }
-        }
+       
     }
 	
 	

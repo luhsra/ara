@@ -353,13 +353,15 @@ void SCC_topological_sort(llvm::BasicBlock* bb, std::map<std::string,std::string
 /**
 * @brief sort the abbs of each function in topological order
 * @param graph project data structure
+* @param warning_list list to store warning
 */
 
-void sort_abbs(graph::Graph& graph){
+void sort_abbs(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //get all functions of the application
     std::list<graph::shared_vertex> vertex_list =  graph.get_type_vertices(typeid(OS::Function).hash_code());
     
+    OS::shared_abb error; 
     //iterate about the application
     for (auto &vertex : vertex_list) {
         
@@ -370,13 +372,13 @@ void sort_abbs(graph::Graph& graph){
        
         // Use LLVM's Strongly Connected Components (SCCs) iterator to produce
         // a reverse topological sort of SCCs.
-        std::cerr << std::endl;
+       
        
         //iterate about the bbs of the function in reversed topological order and store the bbs in vector
         for (scc_iterator<llvm::Function *> I = scc_begin(function->get_llvm_reference()), IE = scc_end(function->get_llvm_reference());I != IE; ++I) {
             // Obtain the vector of BBs in this SCC and print it out.
             const std::vector<BasicBlock *> &SCCBBs = *I;
-            std::cerr << std::endl;
+        
             llvm::BasicBlock* first =nullptr;
             std::list<llvm::BasicBlock*> scc_topological_order;
             std::list<llvm::BasicBlock*> self_topological_order;
@@ -384,7 +386,6 @@ void sort_abbs(graph::Graph& graph){
             for (std::vector<BasicBlock *>::const_iterator BBI = SCCBBs.begin(), BBIE = SCCBBs.end(); BBI != BBIE; ++BBI) {
                 scc_topological_order.emplace_back(*BBI);
                 first = *BBI;
-                //std::cerr << "Iterator" << (*BBI)->getName().str() << std::endl;
             }
             
             bool success = false;
@@ -417,20 +418,14 @@ void sort_abbs(graph::Graph& graph){
             }
             if(success){
                 for(auto topological_element: self_topological_order){
-                    //std::cerr << "selftopolical" << topological_element->getName().str() << std::endl;
                     tmp_topological_order.emplace_back(topological_element);
                 }
             }else{
                 for(auto topological_element: scc_topological_order){
-                    //std::cerr << "scctopolical" << topological_element->getName().str() << std::endl;
                     tmp_topological_order.emplace_back(topological_element);
                 }
             }
-            
-            
-            //if(success)std::cerr << "HEEEEEEEEEEEEEEEEEEEYA" << std::endl;
-            //if(success) tmp_topological_order.insert(tmp_topological_order.begin(),self_topological_order.begin(),self_topological_order.end());
-            //else tmp_topological_order.insert(tmp_topological_order.begin(),scc_topological_order.begin(),scc_topological_order.end());
+        
         }
         
         std::vector<llvm::BasicBlock*> topological_order;
@@ -440,7 +435,6 @@ void sort_abbs(graph::Graph& graph){
         //for(auto element : tmp_topological_order){
         for (auto it = tmp_topological_order.rbegin(); it != tmp_topological_order.rend(); it++){
              topological_order.emplace_back(*it);
-             std::cerr << "topolical" << (*it)->getName().str() << std::endl;
          }
         
         //generate dominator tree
@@ -486,7 +480,12 @@ void sort_abbs(graph::Graph& graph){
                              }
                              ++tmp_counter;
                         }
-                        if(!tmp_flag)std::cerr << "ERROR abb " << abb->get_name() << "contains wrong bb "   << print_tmp(bb) <<  std::endl;
+                        if(!tmp_flag){
+                            //error in topological order
+                            auto warning = std::make_shared<TopologicalOrderWarning>(function, abb);
+                            warning_list->emplace_back(warning);
+                         
+                        }
                     }
                     
                     counter += unsorted_bb_list->size();
@@ -494,7 +493,6 @@ void sort_abbs(graph::Graph& graph){
                 }
             }
             if(!flag){
-                std::cerr << "ERROR in topological ordering of bb " << (order_reference->getName().str()) << std::endl;
                 ++counter;
             }
         }
@@ -502,9 +500,7 @@ void sort_abbs(graph::Graph& graph){
         
         
         if(abb_list.size() == sorted_abb_list.size()){
-            for(auto tmp : sorted_abb_list){
-                std::cerr << tmp->get_name() << std::endl;
-            }
+          
             //list of sorted and unsorted abbs are equal, so set the ordered list to the abb
             function->set_atomic_basic_blocks(&sorted_abb_list);
         }
@@ -517,19 +513,12 @@ void sort_abbs(graph::Graph& graph){
             //check if missing abb is the exit abb of the function (because the exit abb may contain no bb)
             if(flag && abb_list.size() > sorted_abb_list.size() && function->get_exit_abb() != nullptr && function->get_exit_abb()->get_seed() != sorted_abb_list.back()->get_seed()){
                 sorted_abb_list.emplace_back(function->get_exit_abb());
-                for(auto tmp : sorted_abb_list){
-                    std::cerr << tmp->get_name() << std::endl;
-                }
                 function->set_atomic_basic_blocks(&sorted_abb_list);
             }else{
                 
-                std::cerr << "could not sort the abbs of function " << function->get_name() << " in topological order" << std::endl;
-//                 for(auto abb :abb_list){
-//                     std::cerr  << "unsorted abb: " << abb->get_name() << std::endl;
-//                 }
-//                 for(auto abb :sorted_abb_list){
-//                     std::cerr  << "sorted abb: " << abb->get_name() << std::endl;
-//                 }
+                //error in topological order
+                auto warning = std::make_shared<TopologicalOrderWarning>(function, function->get_exit_abb());
+                warning_list->emplace_back(warning);
             }
         }
     }
@@ -552,7 +541,7 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
     //check if seed in map of already visited basic blocks exist,
     if ( already_visited->find(seed) != already_visited->end() ) {
         //found -> recursion exists
-        std::cerr << "recursive loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
+        //std::cerr << "recursive loop detected " << abb->get_parent_function()->get_name()<<   std::endl;
         
         return false;
     } 
@@ -576,11 +565,11 @@ bool validate_loop(OS::shared_abb abb, std::map<size_t, size_t>* already_visited
     if (abb->get_call_type() == sys_call)instr = abb->get_syscall_instruction_reference();
     else  if (abb->get_call_type() == func_call)instr = abb->get_call_instruction_reference();
     else{
-        std::cerr << "ERROR: syscall abb type " << std::endl;
+        std::cerr << "ERROR: syscall abb type " <<  abb->get_call_type()<< std::endl;
         abort();
     }
     if(instr == nullptr){
-     std::cerr << "ERROR: no syscall instruction reference " << std::endl;
+     std::cerr << "ERROR: no syscall instruction reference in abb " << abb->get_name() << std::endl;
      abort();
         
     }
@@ -683,7 +672,7 @@ void get_predefined_system_information(graph::Graph& graph){
         //load the value from the global variable
         while ((pos = s.find(delimiter)) != std::string::npos) {
             token = s.substr(0, pos);
-            //std::cerr << token << std::endl;
+        
             s.erase(0, pos + delimiter.length());
         
             
@@ -796,7 +785,7 @@ namespace step {
 	}
 
 	std::string IntermediateAnalysisStep::get_description() {
-		return "Extracts out of FreeRTOS abstraction instances";
+		return "Intermediate analysis are done in this step. The abb lists of each function are ordered in topolical order, loops are detected and system configuration informations are loaded. Also hook instances are generated.";
 	}
 	
     /**
@@ -807,8 +796,10 @@ namespace step {
 		
         
 		std::cout << "Run IntermediateAnalysisStep" << std::endl;
+        
+        std::vector<shared_warning>* warning_list = &(this->warnings);
 		
-        sort_abbs(graph);
+        sort_abbs(graph,warning_list);
         		
 		std::hash<std::string> hash_fn;
 		
