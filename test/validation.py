@@ -1,37 +1,15 @@
 #!/usr/bin/env python3.6
 
-import json
-import stepmanager
-import graph
-import sys
-
-from native_step import Step
+from init_test import init_test
 
 
 def main():
-    g = graph.PyGraph()
-    os_name = sys.argv[1]
-    json_file = sys.argv[2]
-    i_file = sys.argv[3]
-    print("Testing with", i_file, "and json:", json_file, "and os: ", os_name)
-    with open(json_file) as f:
-        warnings = json.load(f)
-
-    config = {'os': os_name,
-              'input_files': [i_file]}
-    p_manager = stepmanager.StepManager(g, config)
-
-    p_manager.execute(['ValidationStep','DisplayResultsStep'])
+    """Test for correction warnings in ValidationStep."""
+    _, warnings, p_manager = init_test()
 
     val_step = p_manager.get_step('ValidationStep')
     side_data = val_step.get_side_data()
-    
-    
-    
-    for tmp in side_data:
-        print(tmp['location'].get_name())
-        print(tmp['type'])
-    
+
     assert len(warnings) == len(side_data)
     for should, have in zip(warnings, side_data):
         assert should['type'] == have['type']

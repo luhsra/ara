@@ -1,60 +1,57 @@
 {
-	"main": {
-            "BB6": "BB6",
-            "BB1": "BB1",
-            "BB8": "BB8",
-            "BB7": "BB7",
-            "BB2": "BB2",
-            "BB3": "BB3",
-            "BB4": "BB4",
-            "BB5": "BB5",
-            "BB9": "BB9",
-            "BB10": "BB10"
-            
-	},
-	
-   	"_ZL11vSenderTaskPv": {
-            "BB15": "BB15",
-            "BB16": "BB16",
-            "BB12": "BB12",
-            "BB17": "BB17",
-            "BB18": "BB18",
-            "BB13": "BB13",
-            "BB19": "BB19",
-            "BB14": "BB14",
-            "BB20": "BB20",
-            "BB22": "BB22"
-	},
-	
-	   	"_ZL11vSenderTaskPv": {
-            "BB15": "BB15",
-            "BB16": "BB16",
-            "BB12": "BB12",
-            "BB17": "BB17",
-            "BB18": "BB18",
-            "BB13": "BB13",
-            "BB19": "BB19",
-            "BB14": "BB14",
-            "BB20": "BB20",
-            "BB22": "BB22"
-	},
-	
-    "_ZL13vReceiverTaskPv": {
-            "BB29": "BB29",
-            "BB30": "BB30",
-            "BB24": "BB24",
-            "BB31": "BB31",
-            "BB25": "BB25",
-            "BB32": "BB32",
-            "BB26": "BB26",
-            "BB33": "BB33",
-            "BB27": "BB27",
-            "BB34": "BB34",
-            "BB28": "BB28",
-            "BB35": "BB35"
-	},
-	
-    "_Z20vApplicationIdleHookv": {
-            "BB0": "BB0"
-	}
+
+	"main": [
+		"BB6",
+		"BB1",
+		"BB8",
+		"BB7",
+		"BB2",
+		"BB3",
+		"BB4",
+		"BB5",
+		"BB9",
+		"BB10"
+	],
+	"_ZL11vSenderTaskPv": [
+		"BB15",
+		"BB16",
+		"BB12",
+		"BB17",
+		"BB18",
+		"BB13",
+		"BB19",
+		"BB14",
+		"BB20",
+		"BB22"
+	],
+	"_ZL11vSenderTaskPv": [
+		"BB15",
+		"BB16",
+		"BB12",
+		"BB17",
+		"BB18",
+		"BB13",
+		"BB19",
+		"BB14",
+		"BB20",
+		"BB22"
+	],
+	"_ZL13vReceiverTaskPv": [
+		"BB29",
+		"BB30",
+		"BB24",
+		"BB31",
+		"BB25",
+		"BB32",
+		"BB26",
+		"BB33",
+		"BB27",
+		"BB34",
+		"BB28",
+		"BB35"
+	],
+	"_Z20vApplicationIdleHookv": [
+		"BB0"
+	]
+
 }

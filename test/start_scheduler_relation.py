@@ -1,49 +1,22 @@
 #!/usr/bin/env python3.6
-
-import json
-import stepmanager
 import graph
-import sys
 
-from native_step import Step
+from init_test import init_test, fail_with
 
 
 def main():
-    g = graph.PyGraph()
-    os_name = sys.argv[1]
-    json_file = sys.argv[2]
-    i_file = sys.argv[3]
-    print("Testing with", i_file, "and json:", json_file, "and os: ", os_name)
-    with open(json_file) as f:
-        data = json.load(f)
+    """Test for correct detection of the start scheduler relation.
 
-    config = {'os': os_name,
-              'input_files': [i_file]}
-    p_manager = stepmanager.StepManager(g, config)
+    An abb can be before or after the scheduler call or it is uncertain."""
+    m_graph, data, _ = init_test()
 
-    p_manager.execute(['ValidationStep'])
+    abbs = [x for x in m_graph.get_type_vertices("ABB") if x is not None]
 
-    abbs  = g.get_type_vertices("ABB")
-    
-    for should in data:
-        
-        scheduler_relation = should['scheduler_relation']
-        abb =  should['location']
-        
-        for tmp_abb in abbs:
-                
-            if tmp_abb != None and tmp_abb.get_name() == abb:
-                #print(tmp_abb.get_start_scheduler_relation())
-                #print(graph.start_scheduler_relation["after"])
-
-                
-                if graph.start_scheduler_relation[scheduler_relation]  != tmp_abb.get_start_scheduler_relation():
-                    print(abb,"current relation",tmp_abb.get_start_scheduler_relation() ,"expected relation",scheduler_relation)
-                    sys.exit()
-    
-        
-        
-    
+    for abb in abbs:
+        relation = data[abb.get_name()]
+        if (graph.start_scheduler_relation[relation] is not
+                abb.get_start_scheduler_relation()):
+            fail_with("Expected relation {relation} at {abb.get_name()}")
 
 
 if __name__ == '__main__':
