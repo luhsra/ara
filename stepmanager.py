@@ -1,6 +1,8 @@
 """Manages all steps."""
 from typing import List
 
+import logging
+
 import steps
 import graph
 
@@ -28,6 +30,7 @@ class StepManager:
         self._graph = g
         self._config = config
         self._steps = {}
+        self._log = logging.getLogger(self.__class__.__name__)
         for step in provides(config):
             self._steps[step.get_name()] = step
 
@@ -54,10 +57,12 @@ class StepManager:
 
         execute = []
 
+        self._log.debug("The following steps will be executed:")
         for step in reversed(esteps):
             if step not in execute:
-                print("Steps to run:", step)
+                self._log.debug(step)
                 execute.append(step)
 
         for step in execute:
+            self._log.info("Executing %s", step)
             self._steps[step].run(self._graph)

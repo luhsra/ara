@@ -63,8 +63,8 @@ def main():
     log_levels = {'debug': logging.DEBUG,
                   'info': logging.INFO,
                   'warn': logging.WARNING}
-    FORMAT = '%(asctime)s %(levelname)-7s %(name)-11s%(message)s'
-    logging.basicConfig(format=FORMAT, level=log_levels[args.log_level])
+    _format = '%(asctime)s %(levelname)-7s %(name)-12s%(message)s'
+    logging.basicConfig(format=_format, level=log_levels[args.log_level])
 
     g = graph.PyGraph()
     s_manager = stepmanager.StepManager(g, vars(args))
@@ -76,7 +76,7 @@ def main():
     elif not args.input_files:
         parser.error('input_files are required (except -l or -h is set)')
 
-    print("Processing files:", args.input_files[0])
+    logging.debug("Processing files: %s", ', '.join(args.input_files))
 
     if args.step is None:
         args.step = ['DisplayResultsStep']
@@ -86,7 +86,7 @@ def main():
             print_avail_steps(avail_steps))
         parser.error(msg)
 
-    print("Executing: {}".format(', '.join(args.step)))
+    logging.debug("Executing steps: %s", ', '.join(args.step))
 
     s_manager.execute(args.step)
 
