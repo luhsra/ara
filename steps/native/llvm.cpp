@@ -453,7 +453,7 @@ bool get_store_instruction(std::stringstream &debug_out, llvm::Instruction *inst
 					}
 
 				} else {
-					
+
 					// std::cout << "local variable was set after value" << std::endl;
 				}
 				// no load between allocation and call reference
@@ -847,146 +847,155 @@ bool dump_argument(std::stringstream &debug_out, argument_data *argument_contain
 			          << "\n";
 			dump_success = load_value(debug_out, argument_container, store->getOperand(0), arg, already_visited);
 			debug_out << print_argument(store);
-		
-        }else if(auto *geptr  = dyn_cast<llvm::GetElementPtrInst>(instr)){
-            debug_out << "ELEMENTPTRINST INSTRUCTION" << "\n";
-            debug_out << print_argument(geptr);
-            dump_success  = get_element_ptr(debug_out,geptr, argument_container, already_visited);
-        }else if(auto *call  = dyn_cast<llvm::CallInst>(instr)){
-            debug_out << "CALLINSTRUCTION" << "\n";
-            debug_out << print_argument(call);
-            
-            for(auto user : call->users()){  // U is of type User*
-                //get all users of get pointer element instruction
-                if (auto store = dyn_cast<StoreInst>(user)){
-                    if(store->getOperand(0) == call){
-                        if(auto *geptr  = dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))){
-                            debug_out << print_type(geptr->getSourceElementType()) << "\n";
-                            if(check_function_class_reference_type(geptr->getFunction(), geptr->getOperand(0)->getType())){
-                                debug_out << "CLASSTYPE" << "\n";
-                                argument_container->any_list.emplace_back(geptr->getName().str());
-                                argument_container->value_list.emplace_back(geptr);
-                                argument_container->argument_calles_list.emplace_back(*already_visited);
-                                dump_success = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else if (BinaryOperator *binop = dyn_cast<BinaryOperator>(arg)) {
 
-            argument_data operand_0;
-            argument_data operand_1;
-            //std::cerr << print_argument(binop) << std::endl;
-            
-            
-            std::any value;
-            if(dump_argument(debug_out,&operand_0,binop->getOperand(0), already_visited) && dump_argument(debug_out,&operand_1,binop->getOperand(1), already_visited)){
-                
-                
-                
-                
-                if (binop->getOpcode() == Instruction::BinaryOps::Or) {
-                    double value_0;
-                    double value_1;
-                    
-                    
-                    std::string string_value_0;
-                    std::string string_value_1;
-                    
-                    //std::cerr << print_argument(binop) << std::endl;
-                    if(!operand_0.multiple && !operand_1.multiple && !operand_0.any_list.empty() && !operand_1.any_list.empty()){
+		} else if (auto *geptr = dyn_cast<llvm::GetElementPtrInst>(instr)) {
+			debug_out << "ELEMENTPTRINST INSTRUCTION"
+			          << "\n";
+			debug_out << print_argument(geptr);
+			dump_success = get_element_ptr(debug_out, geptr, argument_container, already_visited);
+		} else if (auto *call = dyn_cast<llvm::CallInst>(instr)) {
+			debug_out << "CALLINSTRUCTION"
+			          << "\n";
+			debug_out << print_argument(call);
 
-                        if(typeid(long).hash_code() == operand_0.any_list.front().type().hash_code() && typeid(long).hash_code() == operand_0.any_list.front().type().hash_code()){
-                            
-                            if(cast_any_to_double(operand_0.any_list.front(), value_0) &&  cast_any_to_double(operand_1.any_list.front(), value_1)){
-                                dump_success = true;
-                                value = (long)value_0 | (long)value_1;
-                                argument_container->any_list.emplace_back(value);
-                            }
-                        }else if(typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code() && typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code()){
-                            
-                            if(cast_any_to_string(operand_0.any_list.front(), string_value_0) &&  cast_any_to_string(operand_1.any_list.front(), string_value_1)){
-                                dump_success = true;
-                                value = (std::string)string_value_0 + "(OR)" + (std::string)string_value_1;
-                                
-                                //std::cerr <<  (std::string)string_value_0 <<"(OR)"<< (std::string)string_value_1 << std::endl;
-                                argument_container->any_list.emplace_back(value);
-                            }
-                            
-                        }
-                    }
-                
-                }
-//                 else if (binop->getOpcode() == Instruction::BinaryOps::Add){
-//                     double value_0;
-//                     double value_1;
-//                     if(!operand_0.multiple && !operand_1.multiple){
-//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&  cast_any_to_double(operand_1.any_list.front(), value_1)){
-//                             dump_success = true;
-//                             value = value_0 + value_1;
-//                             argument_container->any_list.emplace_back(value);
-//                         }
-//                     }
-//                 }else if (binop->getOpcode() == Instruction::BinaryOps::Mul){
-//                     double value_0;
-//                     double value_1;
-//                     if(!operand_0.multiple && !operand_1.multiple){
-//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&  cast_any_to_double(operand_1.any_list.front(), value_1)){
-//                             dump_success = true;
-//                             value = value_0 * value_1;
-//                             argument_container->any_list.emplace_back(value);
-//                         }
-//                     }
-//                         
-//                 }else if (binop->getOpcode() == Instruction::BinaryOps::Sub){
-//                                 double value_0;
-//                     double value_1;
-//                     if(!operand_0.multiple && !operand_1.multiple){
-//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&  cast_any_to_double(operand_1.any_list.front(), value_1)){
-//                             dump_success = true;
-//                             value = value_0 - value_1;
-//                             argument_container->any_list.emplace_back(value);
-//                         }
-//                     }
-//                 }else if (binop->getOpcode() == Instruction::BinaryOps::UDiv){
-//                     double value_0;
-//                     double value_1;
-//                     if(!operand_0.multiple && !operand_1.multiple){
-//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&  cast_any_to_double(operand_1.any_list.front(), value_1)){
-//                             dump_success = true;
-//                             value = value_0 /value_1;
-//                             argument_container->any_list.emplace_back(value);
-//                         }
-//                     }
-//                 }
-            }
-            argument_container->value_list.emplace_back(binop);
-            argument_container->argument_calles_list.emplace_back(*already_visited);
-            
-        }
-    }//check if argument is a constant integer
-    else if (ConstantInt * CI = dyn_cast<ConstantInt>(arg)) {
-        debug_out << "CONSTANT INT" << "\n";
-        argument_container->any_list.emplace_back(CI->getSExtValue());
-        argument_container->value_list.emplace_back(CI);
-        argument_container->argument_calles_list.emplace_back(*already_visited);
-        dump_success = true;
-    }//check if argument is a constant floating point
-    else if(ConstantFP  * constant_fp = dyn_cast<ConstantFP>(arg)){
-        debug_out << "CONSTANT FP" << "\n";
-        argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble ());
-        argument_container->value_list.emplace_back(constant_fp);
-        argument_container->argument_calles_list.emplace_back(*already_visited);
-        dump_success = true;
-        
-    }//check if argument is a pointer
-    else if (PointerType * PT = dyn_cast<PointerType>(Ty)) {       
-        debug_out << "POINTER" << "\n";
-        Type* elementType = PT->getElementType();
-		//check if arg is a null ptr
-		if(check_nullptr(argument_container,arg,debug_out,already_visited)){
+			for (auto user : call->users()) { // U is of type User*
+				// get all users of get pointer element instruction
+				if (auto store = dyn_cast<StoreInst>(user)) {
+					if (store->getOperand(0) == call) {
+						if (auto *geptr = dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))) {
+							debug_out << print_type(geptr->getSourceElementType()) << "\n";
+							if (check_function_class_reference_type(geptr->getFunction(),
+							                                        geptr->getOperand(0)->getType())) {
+								debug_out << "CLASSTYPE"
+								          << "\n";
+								argument_container->any_list.emplace_back(geptr->getName().str());
+								argument_container->value_list.emplace_back(geptr);
+								argument_container->argument_calles_list.emplace_back(*already_visited);
+								dump_success = true;
+							}
+						}
+					}
+				}
+			}
+		} else if (BinaryOperator *binop = dyn_cast<BinaryOperator>(arg)) {
+
+			argument_data operand_0;
+			argument_data operand_1;
+			// std::cerr << print_argument(binop) << std::endl;
+
+			std::any value;
+			if (dump_argument(debug_out, &operand_0, binop->getOperand(0), already_visited) &&
+			    dump_argument(debug_out, &operand_1, binop->getOperand(1), already_visited)) {
+
+				if (binop->getOpcode() == Instruction::BinaryOps::Or) {
+					double value_0;
+					double value_1;
+
+					std::string string_value_0;
+					std::string string_value_1;
+
+					// std::cerr << print_argument(binop) << std::endl;
+					if (!operand_0.multiple && !operand_1.multiple && !operand_0.any_list.empty() &&
+					    !operand_1.any_list.empty()) {
+
+						if (typeid(long).hash_code() == operand_0.any_list.front().type().hash_code() &&
+						    typeid(long).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+							if (cast_any_to_double(operand_0.any_list.front(), value_0) &&
+							    cast_any_to_double(operand_1.any_list.front(), value_1)) {
+								dump_success = true;
+								value = (long)value_0 | (long)value_1;
+								argument_container->any_list.emplace_back(value);
+							}
+						} else if (typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code() &&
+						           typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+							if (cast_any_to_string(operand_0.any_list.front(), string_value_0) &&
+							    cast_any_to_string(operand_1.any_list.front(), string_value_1)) {
+								dump_success = true;
+								value = (std::string)string_value_0 + "(OR)" + (std::string)string_value_1;
+
+								// std::cerr <<  (std::string)string_value_0 <<"(OR)"<< (std::string)string_value_1 <<
+								// std::endl;
+								argument_container->any_list.emplace_back(value);
+							}
+						}
+					}
+				}
+				//                 else if (binop->getOpcode() == Instruction::BinaryOps::Add){
+				//                     double value_0;
+				//                     double value_1;
+				//                     if(!operand_0.multiple && !operand_1.multiple){
+				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
+				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
+				//                             dump_success = true;
+				//                             value = value_0 + value_1;
+				//                             argument_container->any_list.emplace_back(value);
+				//                         }
+				//                     }
+				//                 }else if (binop->getOpcode() == Instruction::BinaryOps::Mul){
+				//                     double value_0;
+				//                     double value_1;
+				//                     if(!operand_0.multiple && !operand_1.multiple){
+				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
+				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
+				//                             dump_success = true;
+				//                             value = value_0 * value_1;
+				//                             argument_container->any_list.emplace_back(value);
+				//                         }
+				//                     }
+				//
+				//                 }else if (binop->getOpcode() == Instruction::BinaryOps::Sub){
+				//                                 double value_0;
+				//                     double value_1;
+				//                     if(!operand_0.multiple && !operand_1.multiple){
+				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
+				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
+				//                             dump_success = true;
+				//                             value = value_0 - value_1;
+				//                             argument_container->any_list.emplace_back(value);
+				//                         }
+				//                     }
+				//                 }else if (binop->getOpcode() == Instruction::BinaryOps::UDiv){
+				//                     double value_0;
+				//                     double value_1;
+				//                     if(!operand_0.multiple && !operand_1.multiple){
+				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
+				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
+				//                             dump_success = true;
+				//                             value = value_0 /value_1;
+				//                             argument_container->any_list.emplace_back(value);
+				//                         }
+				//                     }
+				//                 }
+			}
+			argument_container->value_list.emplace_back(binop);
+			argument_container->argument_calles_list.emplace_back(*already_visited);
+		}
+	} // check if argument is a constant integer
+	else if (ConstantInt *CI = dyn_cast<ConstantInt>(arg)) {
+		debug_out << "CONSTANT INT"
+		          << "\n";
+		argument_container->any_list.emplace_back(CI->getSExtValue());
+		argument_container->value_list.emplace_back(CI);
+		argument_container->argument_calles_list.emplace_back(*already_visited);
+		dump_success = true;
+	} // check if argument is a constant floating point
+	else if (ConstantFP *constant_fp = dyn_cast<ConstantFP>(arg)) {
+		debug_out << "CONSTANT FP"
+		          << "\n";
+		argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+		argument_container->value_list.emplace_back(constant_fp);
+		argument_container->argument_calles_list.emplace_back(*already_visited);
+		dump_success = true;
+
+	} // check if argument is a pointer
+	else if (PointerType *PT = dyn_cast<PointerType>(Ty)) {
+		debug_out << "POINTER"
+		          << "\n";
+		Type *elementType = PT->getElementType();
+		// check if arg is a null ptr
+		if (check_nullptr(argument_container, arg, debug_out, already_visited)) {
 
 			return true;
 		}
@@ -1068,12 +1077,13 @@ bool dump_argument(std::stringstream &debug_out, argument_data *argument_contain
  * @param instruction call instruction, which is analyzed
  * @param warning_list list to store warning
  */
-void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst  * instruction,std::vector<shared_warning>* warning_list){
-    
-    //empty call data container
-    call_data call;
-    
-	//store the name of the called function
+void dump_instruction(OS::shared_abb abb, llvm::Function *func, llvm::CallInst *instruction,
+                      std::vector<shared_warning> *warning_list) {
+
+	// empty call data container
+	call_data call;
+
+	// store the name of the called function
 
 	call.call_name = func->getName().str();
 
@@ -1096,33 +1106,33 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
 		// get argument
 		Value *arg = instruction->getArgOperand(i);
 
-		
-        
-        argument_data argument_container;
-    
-		//dump argument and check if it was successfull
-		if(dump_argument(debug_out,&argument_container, arg,&already_visited)){
-            
-            //dump was successfull
-            if(argument_container.any_list.size() > 1)argument_container.multiple = true;
-            
-            //argument container lists shall not have different sizes
-            if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
-                
-                //error in argument dump
-                auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
-                warning_list->emplace_back(warning);
-            }
-            
-			//store the dumped argument in the abb with corresponding llvm type
+		argument_data argument_container;
+
+		// dump argument and check if it was successfull
+		if (dump_argument(debug_out, &argument_container, arg, &already_visited)) {
+
+			// dump was successfull
+			if (argument_container.any_list.size() > 1)
+				argument_container.multiple = true;
+
+			// argument container lists shall not have different sizes
+			if (argument_container.any_list.size() != argument_container.value_list.size() ||
+			    argument_container.any_list.size() != argument_container.argument_calles_list.size() ||
+			    argument_container.argument_calles_list.size() != argument_container.value_list.size()) {
+
+				// error in argument dump
+				auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+				warning_list->emplace_back(warning);
+			}
+
+			// store the dumped argument in the abb with corresponding llvm type
 			arguments.emplace_back(argument_container);
-            
-    
-		}else{
-			
-            //dump was not successfull
-            auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
-            warning_list->emplace_back(warning);
+
+		} else {
+
+			// dump was not successfull
+			auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+			warning_list->emplace_back(warning);
 		}
 	}
 
@@ -1149,12 +1159,13 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
  * @param instruction call instruction, which is analyzed
  * @param warning_list list to store warning
  */
-void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeInst  * instruction,std::vector<shared_warning>* warning_list){
-    
-    //empty call data container
-    call_data call;
-    
-	//store the name of the called function
+void dump_instruction(OS::shared_abb abb, llvm::Function *func, llvm::InvokeInst *instruction,
+                      std::vector<shared_warning> *warning_list) {
+
+	// empty call data container
+	call_data call;
+
+	// store the name of the called function
 
 	call.call_name = func->getName().str();
 
@@ -1178,32 +1189,32 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeIns
 		// get argument
 		Value *arg = instruction->getArgOperand(i);
 
-		
-        
-        argument_data argument_container;
-    
-		//dump argument and check if it was successfull
-		if(dump_argument(debug_out,&argument_container, arg,&already_visited)){
-            
-            //dump was successfull
-            if(argument_container.any_list.size() > 1)argument_container.multiple = true;
-            
-            //argument container lists shall not have different sizes
-            if(argument_container.any_list.size() != argument_container.value_list.size() || argument_container.any_list.size() != argument_container.argument_calles_list.size() || argument_container.argument_calles_list.size() != argument_container.value_list.size()){
-                
-               //dump was not successfull
-                auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
-                warning_list->emplace_back(warning);
-            }
-            
-			//store the dumped argument in the abb with corresponding llvm type
-			arguments.emplace_back(argument_container);
-		}else{
-			
-            //dump was not successfull
-            auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
-            warning_list->emplace_back(warning);
+		argument_data argument_container;
 
+		// dump argument and check if it was successfull
+		if (dump_argument(debug_out, &argument_container, arg, &already_visited)) {
+
+			// dump was successfull
+			if (argument_container.any_list.size() > 1)
+				argument_container.multiple = true;
+
+			// argument container lists shall not have different sizes
+			if (argument_container.any_list.size() != argument_container.value_list.size() ||
+			    argument_container.any_list.size() != argument_container.argument_calles_list.size() ||
+			    argument_container.argument_calles_list.size() != argument_container.value_list.size()) {
+
+				// dump was not successfull
+				auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+				warning_list->emplace_back(warning);
+			}
+
+			// store the dumped argument in the abb with corresponding llvm type
+			arguments.emplace_back(argument_container);
+		} else {
+
+			// dump was not successfull
+			auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
+			warning_list->emplace_back(warning);
 		}
 	}
 
@@ -1226,8 +1237,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeIns
  * @param abb abb, which should be analyzed
  * @param warning_list list to store warning
  */
-void set_arguments(OS::shared_abb abb,std::vector<shared_warning>* warning_list){
-
+void set_arguments(OS::shared_abb abb, std::vector<shared_warning> *warning_list) {
 
 	int bb_count = 0;
 
@@ -1248,9 +1258,9 @@ void set_arguments(OS::shared_abb abb,std::vector<shared_warning>* warning_list)
 				Function *func = call->getCalledFunction();
 				if (func && !isCallToLLVMIntrinsic(call)) {
 					call_found = true;
-                    
-					//get and store the called arguments values
-					dump_instruction(abb,func , call,warning_list);
+
+					// get and store the called arguments values
+					dump_instruction(abb, func, call, warning_list);
 
 					++call_count;
 				}
@@ -1269,8 +1279,8 @@ void set_arguments(OS::shared_abb abb,std::vector<shared_warning>* warning_list)
 				if (func && !isCallToLLVMIntrinsic(invoke)) {
 					call_found = true;
 
-					//get and store the called arguments values
-					dump_instruction(abb,func , invoke,warning_list);
+					// get and store the called arguments values
+					dump_instruction(abb, func, invoke, warning_list);
 
 					++call_count;
 				}
@@ -1299,7 +1309,7 @@ void set_arguments(OS::shared_abb abb,std::vector<shared_warning>* warning_list)
  * @param warning_list list to store warning
  */
 
-void abb_generation(graph::Graph *graph, OS::shared_function function , std::vector<shared_warning>* warning_list) {
+void abb_generation(graph::Graph *graph, OS::shared_function function, std::vector<shared_warning> *warning_list) {
 
 	llvm::Function *llvm_reference_function = function->get_llvm_reference();
 
@@ -1319,15 +1329,14 @@ void abb_generation(graph::Graph *graph, OS::shared_function function , std::vec
 	// store abb in graph
 	graph->set_vertex(abb);
 
-    
-    set_arguments(abb,warning_list);
-	
-    queue.push_back(abb);
+	set_arguments(abb, warning_list);
 
-    //queue with information, which abbs were already analyzed
-    std::vector<size_t> visited_abbs;
-	
-	//store the first abb as front abb of the function
+	queue.push_back(abb);
+
+	// queue with information, which abbs were already analyzed
+	std::vector<size_t> visited_abbs;
+
+	// store the first abb as front abb of the function
 
 	function->set_entry_abb(queue.front());
 
@@ -1387,12 +1396,12 @@ void abb_generation(graph::Graph *graph, OS::shared_function function , std::vec
 
 					visited_abbs.push_back(new_abb->get_seed());
 
-					//set the abb call`s argument values and types
-					set_arguments(new_abb,warning_list);
-					
-                }else{
-					
-                    //get the alread existing abb from the graph
+					// set the abb call`s argument values and types
+					set_arguments(new_abb, warning_list);
+
+				} else {
+
+					// get the alread existing abb from the graph
 
 					std::shared_ptr<graph::Vertex> vertex = graph->get_vertex(new_abb->get_seed());
 					std::shared_ptr<OS::ABB> existing_abb = std::dynamic_pointer_cast<OS::ABB>(vertex);
@@ -1579,7 +1588,6 @@ namespace step {
 		       "calls.";
 	}
 
-        
 	/**
 	 * @brief the run method of the llvm pass. This pass linkes all .ll files and collects all application raw
 	 * information (functions and their containing abbs) and store them in the graph data structure. Also
@@ -1587,8 +1595,8 @@ namespace step {
 	 */
 	void LLVMStep::run(graph::Graph &graph) {
 
-        std::vector<shared_warning>* warning_list = &(this->warnings);
-          
+		std::vector<shared_warning> *warning_list = &(this->warnings);
+
 		// get file arguments from config
 		std::vector<std::string> files;
 		PyObject *input_files = PyDict_GetItemString(config, "input_files");
@@ -1652,7 +1660,6 @@ namespace step {
 
 		graph.set_llvm_module(shared_module);
 
-
 		// create and store the OS instance in the graph
 		auto rtos = std::make_shared<OS::RTOS>(&graph, "RTOS");
 		graph.set_vertex(rtos);
@@ -1698,10 +1705,8 @@ namespace step {
 				// store the generated function in the graph datastructure
 				graph.set_vertex(graph_function);
 
-				
-				//generate and store the abbs of the function in the graph datatstructure
-				abb_generation(&graph, graph_function,warning_list );
-
+				// generate and store the abbs of the function in the graph datatstructure
+				abb_generation(&graph, graph_function, warning_list);
 			}
 		}
 		// connect the abbs and functions with the called function

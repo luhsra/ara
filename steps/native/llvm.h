@@ -6,6 +6,7 @@
 #include "graph.h"
 #include "step.h"
 
+#include "warning.h"
 #include "llvm/Analysis/OrderedBasicBlock.h"
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/Constants.h"
@@ -39,23 +40,16 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/SystemUtils.h>
 #include <llvm/Support/ToolOutputFile.h>
-#include <llvm/Support/FileSystem.h>
-#include <llvm/Analysis/Interval.h>
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Analysis/OrderedBasicBlock.h"
-#include "llvm/IR/Operator.h"
-#include "warning.h"
 
 namespace step {
-    
+
 	class LLVMStep : public Step {
 
-    private:
-        std::vector<shared_warning> warnings;
-        
-	public:
-		LLVMStep(PyObject* config) : Step(config) {}
+	  private:
+		std::vector<shared_warning> warnings;
 
+	  public:
+		LLVMStep(PyObject *config) : Step(config) {}
 
 		virtual std::string get_name() override { return "LLVMStep"; }
 
