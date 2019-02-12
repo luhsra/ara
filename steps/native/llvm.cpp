@@ -1137,7 +1137,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
 	call.arguments = arguments;
 
 	if (call.call_instruction == nullptr)
-		std::cerr << "ERROR" << std::endl;
+		logger.err() << "call_instruction should not be NULL.\n";
 
 	abb->set_call(&call);
 }
@@ -1219,7 +1219,7 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::InvokeIns
 	call.arguments = arguments;
 
 	if (call.call_instruction == nullptr)
-		std::cerr << "ERROR" << std::endl;
+		logger.err() << "call instruction should not be NULL.\n"
 	abb->set_call(&call);
 }
 

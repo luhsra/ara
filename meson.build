@@ -19,7 +19,7 @@ test('arsa_tester',
   #args: [files('arsa.py', 'test/data/GPSLogger.ll','test/data/ScreenManager.ll','test/data/GPSThread.ll','test/data/SDThread.ll','test/data/LEDThread.ll','test/data/ButtonsThread.ll','test/data/SdFatSPIDriver.ll','test/data/GPSDataModel.ll','test/data/SpeedScreen.ll'), '--os', 'freertos'],
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[2]],
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[16]],
-  args : [files('arsa.py'), '--os', 'osek', osek_targets[3]],
+  args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug', osek_targets[3]],
   env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )
 
