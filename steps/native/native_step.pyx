@@ -22,6 +22,7 @@ from libcpp.memory cimport shared_ptr
 from backported_memory cimport static_pointer_cast as spc
 
 import logging
+import inspect
 
 cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
@@ -84,7 +85,7 @@ class Step(SuperStep):
         return self.__class__.__name__
 
     def get_description(self) -> str:
-        return self.__doc__
+        return inspect.cleandoc(self.__doc__)
 
 ctypedef enum steps:
     FreeRTOSInstances_STEP
