@@ -1,11 +1,7 @@
-llvm_dep = dependency('llvm', version : '>=7.0')
-
-cython_flags = ['-Wextra', '--cplus', '-3']
-
 native_step_pyx_cpp = custom_target('native_step_pyx',
   output : ['native_step_pyx.cpp'],
   input : files('native_step.pyx'),
-  command : [cython, '-I', '../subprojects/libgraph', '@INPUT@', '-o', '@OUTPUT@'] + cython_flags,
+  command : [cython, '-I', graph_cython_inc, '@INPUT@', '-o', '@OUTPUT@'] + cython_flags,
 )
 
 py_logging_pyx_cpp = custom_target('py_logging_pyx',
@@ -28,7 +24,7 @@ plib = py3_inst.extension_module('native_step',
         'llvm.cpp',
         'test.cpp'),
   link_with: log_bridge,
-  dependencies: [py3_inst.dependency(), libgraph, llvm_dep]
+  dependencies: [py3_inst.dependency(), graph_dep, llvm_dep]
 )
 
 passdir = meson.current_build_dir()

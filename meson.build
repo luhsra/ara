@@ -5,11 +5,14 @@ cython = find_program('cython')
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3')
 
-libgraph = dependency('libgraph', fallback : ['libgraph', 'graph_dep'])
+llvm_dep = dependency('llvm', version : '>=7.0')
+
+cython_flags = ['-Wextra', '--cplus', '-3']
 
 build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
+subdir('libgraph')
 subdir('steps')
 subdir('appl')
 subdir('test')
