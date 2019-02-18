@@ -11,7 +11,7 @@ cdef extern from "graph.h":
     cdef cppclass start_scheduler_relation:
         pass
 
-    
+
 cdef extern from "graph.h":
     cdef cppclass timer_type:
         pass
@@ -19,7 +19,7 @@ cdef extern from "graph.h":
 cdef extern from "graph.h":
     cdef cppclass call_definition_type:
         pass
-        
+
 cdef extern from "graph.h":
     cdef cppclass syscall_definition_type:
         pass
@@ -27,33 +27,33 @@ cdef extern from "graph.h":
 cdef extern from "graph.h":
     cdef cppclass os_type:
         pass
-        
+
 
 cdef extern from "graph.h" namespace "start_scheduler_relation":
     cdef timer_type before
     cdef timer_type after
     cdef timer_type uncertain
-    cdef timer_type not_defined  
-        
+    cdef timer_type not_defined
+
 cdef extern from "graph.h" namespace "timer_type":
     cdef timer_type oneshot
     cdef timer_type autoreload
     cdef timer_type autostart
     cdef timer_type not_autostart
-    
-    
+
+
 cdef extern from "graph.h" namespace "call_definition_type":
     cdef call_definition_type sys_call
     cdef call_definition_type func_call
     cdef call_definition_type no_call
     cdef call_definition_type has_call
     cdef call_definition_type computation
-    
+
 cdef extern from "graph.h" namespace "os_type":
     cdef os_type  OSEK
     cdef os_type FreeRTOS
 
-    
+
 cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type computate
     cdef syscall_definition_type create
@@ -80,7 +80,7 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type end_scheduler
     cdef syscall_definition_type chain
     cdef syscall_definition_type delay
-    
+
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
         Graph() except +
@@ -88,11 +88,11 @@ cdef extern from "graph.h" namespace "graph":
         void set_vertex(shared_ptr[Vertex] vertex)
         clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info)
         bool remove_vertex(size_t)
-        
+
         shared_ptr[Vertex] get_vertex(size_t seed)
-        
+
         void set_os_type(os_type)
-        
+
     cdef cppclass Vertex:
         Vertex(Graph* graph, string name) except +
         size_t get_seed()
@@ -100,15 +100,15 @@ cdef extern from "graph.h" namespace "graph":
         string get_name()
         void set_handler_name(string)
         clist[shared_ptr[Edge]] get_outgoing_edges()
-        
+
     cdef cppclass Edge:
         Edge(Graph* graph,string name , shared_ptr[Vertex] start , shared_ptr[Vertex] target ,shared_ptr[ABB] abb_reference) except +
-        
+
         shared_ptr[Vertex] get_start_vertex()
         shared_ptr[Vertex] get_target_vertex()
-        shared_ptr[ABB] get_abb_reference() 
+        shared_ptr[ABB] get_abb_reference()
         string get_name()
-        
+
 
 cdef extern from "graph.h" namespace "OS":
 
@@ -163,21 +163,21 @@ cdef extern from "graph.h" namespace "OS":
         bool set_scheduler(string scheduler)
         bool set_resource_reference(string resource)
         bool set_event_reference(string event)
-        
+
         shared_ptr[Function] get_definition_function()
         string get_name()
-        
-        
+
+
     cdef cppclass Queue:
         Queue(Graph* graph, string name) except +
 
     cdef cppclass QueueSet:
         QueueSet(Graph* graph, string name) except +
-        
+
     cdef cppclass Semaphore:
         Semaphore(Graph* graph, string name) except +
 
-    
+
     cdef cppclass Timer:
         Timer(Graph* graph, string name) except +
         shared_ptr[Function] get_callback_function()
@@ -192,12 +192,12 @@ cdef extern from "graph.h" namespace "OS":
         void set_appmode(string appmode)
 
         string get_name()
-        
+
     cdef cppclass Event:
         Event(Graph* graph, string name) except +
-        
-        
-        
+
+
+
     cdef cppclass Buffer:
         Buffer(Graph* graph, string name) except +
 
@@ -212,27 +212,27 @@ cdef extern from "graph.h" namespace "OS":
         string get_name()
         void has_syscall(bool flag)
         bool has_syscall()
-        
+
         bool remove_abb(size_t seed)
-        
+
         void set_exit_abb(shared_ptr[ABB])
         shared_ptr[ABB] get_exit_abb()
         shared_ptr[ABB] get_entry_abb()
-        
+
         cvector[shared_ptr[Function]] get_called_functions()
-        
+
         bool set_definition_vertex(shared_ptr[Vertex])
-        
-        
+
+
     cdef cppclass RTOS:
-    
+
         RTOS(Graph* graph,string name) except +
-        
-        void enable_startup_hook(bool flag) 
-        void enable_error_hook (bool flag) 
+
+        void enable_startup_hook(bool flag)
+        void enable_error_hook (bool flag)
         void enable_shutdown_hook(bool flag)
-        void enable_pretask_hook (bool flag) 
-        void enable_posttask_hook (bool flag) 
+        void enable_pretask_hook (bool flag)
+        void enable_posttask_hook (bool flag)
 
     cdef cppclass CoRoutine:
         RTOS(Graph* graph,string name) except +
@@ -240,9 +240,9 @@ cdef extern from "graph.h" namespace "OS":
     cdef cppclass ABB:
         ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
 
-        
+
         call_definition_type get_call_type()
-        
+
         void expend_call_sites(shared_ptr[ABB])
         void remove_successor(shared_ptr[ABB])
         void remove_predecessor(shared_ptr[ABB])
@@ -266,10 +266,10 @@ cdef extern from "graph.h" namespace "OS":
         string get_call_name()
         string get_syscall_name()
         syscall_definition_type get_syscall_type()
-        
+
         bool convert_call_to_syscall(string)
         string get_name()
-    
+
         void append_basic_blocks(shared_ptr[ABB] abb)
 
         bool set_ABB_successor(shared_ptr[ABB] abb)
@@ -277,11 +277,11 @@ cdef extern from "graph.h" namespace "OS":
             
         void print_information()
         shared_ptr[Function] get_parent_function()
-        
+
         shared_ptr[ABB] get_postdominator()
         shared_ptr[ABB] get_dominator()
-        
+
         void set_handler_argument_index(size_t index)
-        
+
         start_scheduler_relation get_start_scheduler_relation()
         bool get_loop_information()
