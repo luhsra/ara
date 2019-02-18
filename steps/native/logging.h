@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-#include "native_step_pyx.h"
+#include "py_logging.h"
 
 class Logger {
 private:
