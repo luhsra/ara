@@ -856,10 +856,18 @@ void OS::ABB::set_call(call_data *call) { this->call = *call; }
 
 void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
 	successors.insert(basicblock);
+	auto preds = basicblock->get_ABB_predecessors();
+	if (preds.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == preds.end()) {
+		basicblock->set_ABB_predecessor(std::static_pointer_cast<OS::ABB>(shared_from_this()));
+	}
 }
 
 void OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
 	predecessors.insert(basicblock);
+	auto succs = basicblock->get_ABB_successors();
+	if (succs.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == succs.end()) {
+		basicblock->set_ABB_successor(std::static_pointer_cast<OS::ABB>(shared_from_this()));
+	}
 }
 
 std::set<OS::shared_abb> OS::ABB::get_ABB_successors() {

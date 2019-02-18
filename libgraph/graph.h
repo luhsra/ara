@@ -188,7 +188,7 @@ namespace graph {
 	};
 
 	// Basis Klasse für alle Vertexes
-	class Vertex {
+	class Vertex : public std::enable_shared_from_this<Vertex> {
 
 	  protected:
 		Graph *graph; // Referenz zum Graphen, in der der Vertex gespeichert ist
