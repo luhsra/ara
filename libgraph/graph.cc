@@ -854,31 +854,28 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 
 void OS::ABB::set_call(call_data *call) { this->call = *call; }
 
-bool OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
-	this->successors.emplace_back(basicblock);
-	// TODO check if basic_block exists in module
-	return true;
-} // Speicher Referenz auf Nachfolger des BasicBlocks
-bool OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
-	this->predecessors.emplace_back(basicblock);
-	// TODO check if basic_block exists in module
-	return true;
-} // Speicher Referenz auf Vorgänger des BasicBlocks
+void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
+	successors.insert(basicblock);
+}
 
-std::list<OS::shared_abb> OS::ABB::get_ABB_successors() {
+void OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
+	predecessors.insert(basicblock);
+}
+
+std::set<OS::shared_abb> OS::ABB::get_ABB_successors() {
 	return this->successors;
-} // Gebe Referenz auf Nachfolger zurück
+}
 
 OS::shared_abb OS::ABB::get_single_ABB_successor() {
 	if (this->successors.size() == 1)
-		return this->successors.front();
+		return *(this->successors.begin());
 	else
 		return nullptr;
-} // Gebe Referenz auf Nachfolger zurück
+}
 
-std::list<OS::shared_abb> OS::ABB::get_ABB_predecessors() {
+std::set<OS::shared_abb> OS::ABB::get_ABB_predecessors() {
 	return this->predecessors;
-} // Gebe Referenz auf Vorgänger zurück
+}
 
 bool OS::ABB::set_BasicBlock(llvm::BasicBlock *basic_block) {
 	bool success = false;
@@ -1119,24 +1116,11 @@ llvm::BasicBlock *OS::ABB::get_entry_bb() { return this->entry; }
 llvm::BasicBlock *OS::ABB::get_exit_bb() { return this->exit; }
 
 void OS::ABB::remove_successor(shared_abb abb) {
-	for (std::list<shared_abb>::iterator itr = this->successors.begin(); itr != this->successors.end();) {
-		if ((*itr)->get_seed() == abb->get_seed()) {
-			itr = this->successors.erase(itr);
-		} else {
-			++itr;
-		}
-	}
+	successors.erase(abb);
 }
 
 void OS::ABB::remove_predecessor(shared_abb abb) {
-
-	for (std::list<shared_abb>::iterator itr = this->predecessors.begin(); itr != this->predecessors.end();) {
-		if ((*itr)->get_seed() == abb->get_seed()) {
-			itr = this->predecessors.erase(itr);
-		} else {
-			++itr;
-		}
-	}
+	predecessors.erase(abb);
 }
 
 void OS::ABB::set_entry_bb(llvm::BasicBlock *bb) { this->entry = bb; }

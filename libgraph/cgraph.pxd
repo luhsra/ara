@@ -1,6 +1,7 @@
 # vim: set et ts=4 sw=4:
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
+from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
@@ -251,14 +252,14 @@ cdef extern from "graph.h" namespace "OS":
         void set_call_target_instance(size_t target_instance)
         #void set_expected_syscall_argument_type(size_t data_type_hash)
         shared_ptr[Function] get_called_function()
-        
-        clist[shared_ptr[ABB]]  get_ABB_successors()
-        
+
+        cset[shared_ptr[ABB]]  get_ABB_successors()
+
         clist[clist[size_t]] get_call_argument_types()
-        
+
         shared_ptr[ABB]  get_single_ABB_successor()
-        
-        clist[shared_ptr[ABB]]  get_ABB_predecessors()
+
+        cset[shared_ptr[ABB]]  get_ABB_predecessors()
         clist[size_t] get_syscall_argument_types()
         void adapt_exit_bb(shared_ptr[ABB])
         bool is_mergeable()
@@ -272,9 +273,9 @@ cdef extern from "graph.h" namespace "OS":
 
         void append_basic_blocks(shared_ptr[ABB] abb)
 
-        bool set_ABB_successor(shared_ptr[ABB] abb)
-        bool set_ABB_predecessor(shared_ptr[ABB] abb)
-            
+        void set_ABB_successor(shared_ptr[ABB] abb)
+        void set_ABB_predecessor(shared_ptr[ABB] abb)
+
         void print_information()
         shared_ptr[Function] get_parent_function()
 
