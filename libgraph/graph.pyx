@@ -1,4 +1,5 @@
 # distutils: language = c++
+# cython: language_level=3
 # vim: set et ts=4 sw=4:
 
 cimport cgraph
@@ -570,13 +571,13 @@ cdef class Function(Vertex):
 
 
         return pylist
-    
-    
+
+
     def set_definition_vertex(self,Vertex vertex):
         return deref(self._c()).set_definition_vertex(vertex._c_vertex)
-    
-    
-    
+
+
+
     #def get_call_target_instance(self):
         #return deref(self._c()).get_call_target_instance()
 
