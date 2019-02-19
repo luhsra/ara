@@ -301,7 +301,7 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                 }
                 
                 if(!handler_found){
-                   
+                 
                     default_handler = true;
                 }
             
@@ -404,7 +404,6 @@ void iterate_called_functions_interactions(graph::Graph& graph, graph::shared_ve
                     //edge could not created, generate warning
                     auto warning = std::make_shared<EdgeCreateWarning>( start_vertex, abb);
                     warning_list->emplace_back(warning);
-                    
                 }
             }
         }else if( abb->get_call_type()== func_call){
@@ -540,6 +539,7 @@ void add_to_queue_set(graph::Graph& graph,std::vector<shared_warning>* warning_l
                         if(queue_set_element!= nullptr)queueset->set_queue_element(queue_set_element);
                         else{
                             
+                           
                             //Element to store in queueset could not found in graph
                             auto warning = std::make_shared<QueueSetMemberWarning>( queueset, handler_name ,ingoing->get_abb_reference());
                             warning_list->emplace_back(warning);

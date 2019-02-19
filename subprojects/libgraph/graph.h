@@ -877,7 +877,7 @@ namespace OS {
                     else if(queueset->get_handler_name() != this->handler_name)equal = false;
                     else if(queueset->get_handler_value() != this->handler_value)equal = false;
                     else if(queueset->get_length() != this->length)equal = false;
-                    
+//                     
                 }else equal = false;
                 
                 return equal;

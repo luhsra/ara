@@ -377,6 +377,7 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
 	for(auto & argument : abb->get_syscall_arguments()){
 		argument_list.emplace_back(argument);
 	}
+	
     std::any specific_argument;
     llvm::Value* argument_reference;
 	//load the arguments
@@ -402,7 +403,6 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
 	unsigned long priority =  std::any_cast<long>(specific_argument);
 	
 	argument = argument_list.at(5);
-
 	get_call_relative_argument(specific_argument, argument_reference,argument,call_references);
     llvm::Value* llvm_handler = argument_reference;
 	std::string handler_name =  std::any_cast<std::string>(specific_argument);
@@ -411,7 +411,16 @@ graph::shared_vertex create_task(graph::Graph& graph,OS::shared_abb abb, bool be
     if(handler_name == "&$%NULL&$%"){
         handler_name =function_reference_name;
     }
-	
+/*    
+    std::cerr <<  std::endl;
+    std::cerr << abb->get_name() <<  ", "  << abb->get_parent_function()->get_name() <<std::endl;
+    std::cerr << "task name " << task_name << std::endl;
+    std::cerr << "function name " << function_reference_name << std::endl;
+    std::cerr << "task priority " << priority << std::endl;
+    std::cerr << "task handler name  " << handler_name << std::endl;*/
+    
+    
+    
 	//create task and set properties
 	auto task = std::make_shared<OS::Task>(&graph,task_name);
 	task->set_handler_name( handler_name,llvm_handler);
