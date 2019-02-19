@@ -47,14 +47,11 @@ class ABB_MergeStep(Step):
                         self.do_merge(g,abb, successor)
                         anyChanges = True
 
-
     def find_branches_to_merge(self, abb):
-        successors = abb.get_successors()
-        if not len(successors) == 2:
+        try:
+            left_succ, right_succ = abb.get_successors()
+        except ValueError:
             return None
-
-        left_succ = successors[0]
-        right_succ = successors[1]
 
         #   O abb
         #  | \
@@ -122,12 +119,10 @@ class ABB_MergeStep(Step):
         # |
         # o<--->o
         # |
-        successors = abb.get_successors()
-        if not len(successors) == 2:
+        try:
+            left_succ, right_succ = abb.get_successors()
+        except ValueError:
             return None
-
-        left_succ = successors[0]
-        right_succ = successors[1]
 
         if left_succ.has_single_successor():
             succ = left_succ.get_single_successor()
