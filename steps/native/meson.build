@@ -27,4 +27,4 @@ plib = py3_inst.extension_module('native_step',
   dependencies: [py3_inst.dependency(), graph_dep, llvm_dep]
 )
 
-passdir = meson.current_build_dir()
+stepdir = meson.current_build_dir()
