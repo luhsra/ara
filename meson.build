@@ -5,11 +5,14 @@ cython = find_program('cython')
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3')
 
-libgraph = dependency('libgraph', fallback : ['libgraph', 'graph_dep'])
+llvm_dep = dependency('llvm', version : '>=7.0')
+
+cython_flags = ['-Wextra', '--cplus', '-3']
 
 build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
+subdir('libgraph')
 subdir('steps')
 subdir('appl')
 subdir('test')
@@ -20,7 +23,11 @@ test('arsa_tester',
   args: [files('arsa.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[2]],
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[16]],
+
   #args : [files('arsa.py'), '--os', 'osek', osek_targets[3]],
+
+  #args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug', osek_targets[3]],
+
   env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 )
 

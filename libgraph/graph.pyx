@@ -1,4 +1,5 @@
 # distutils: language = c++
+# cython: language_level=3
 # vim: set et ts=4 sw=4:
 
 cimport cgraph
@@ -9,6 +10,7 @@ cimport graph
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
+from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 
 from libcpp cimport bool
@@ -570,13 +572,13 @@ cdef class Function(Vertex):
 
 
         return pylist
-    
-    
+
+
     def set_definition_vertex(self,Vertex vertex):
         return deref(self._c()).set_definition_vertex(vertex._c_vertex)
-    
-    
-    
+
+
+
     #def get_call_target_instance(self):
         #return deref(self._c()).get_call_target_instance()
 
@@ -693,23 +695,23 @@ cdef class ABB(Vertex):
 
     def get_successors(self):
 
-        cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_successors()
+        cdef cset[shared_ptr[cgraph.ABB]] abb_set =  deref(self._c()).get_ABB_successors()
 
-        pylist = []
+        pylist = set()
 
-        for abb in abb_list:
-            pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
+        for abb in abb_set:
+            pylist.add(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
 
         return pylist
 
     def get_predecessors(self):
 
-        cdef clist[shared_ptr[cgraph.ABB]] abb_list =  deref(self._c()).get_ABB_predecessors()
+        cdef cset[shared_ptr[cgraph.ABB]] abb_set =  deref(self._c()).get_ABB_predecessors()
 
-        pylist = []
+        pylist = set()
 
-        for abb in abb_list:
-            pylist.append(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
+        for abb in abb_set:
+            pylist.add(create_from_pointer(spc[cgraph.Vertex, cgraph.ABB](abb)))
 
         return pylist
 
@@ -734,12 +736,12 @@ cdef class ABB(Vertex):
 
 
     def set_successor(self, ABB  abb):
-        return deref(self._c()).set_ABB_successor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+        deref(self._c()).set_ABB_successor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
-    
-    
-    def set_predecessor(self, ABB  abb):	
-        return deref(self._c()).set_ABB_predecessor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+
+
+    def set_predecessor(self, ABB  abb):
+        deref(self._c()).set_ABB_predecessor(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
 
     def get_parent_function(self):

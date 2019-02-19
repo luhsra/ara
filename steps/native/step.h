@@ -5,6 +5,7 @@
 
 #include "graph.h"
 #include "Python.h"
+#include "logging.h"
 
 #include <string>
 #include <stdexcept>
@@ -18,11 +19,9 @@ namespace step {
 	class Step {
 	protected:
 		PyObject* config;
-        
-        
+		Logger logger;
 
 	public:
-        
         /**
 		 * Contruct a native step.
 		 *
@@ -31,9 +30,17 @@ namespace step {
 		 */
 		Step(PyObject* config) : config(config) {
 			if (!PyDict_Check(config)) {
-				throw std::invalid_argument("Pass: Need a dict as config.");
+				throw std::invalid_argument("Step: Need a dict as config.");
 			}
 		}
+
+		/**
+		 * Set the python logger object, this must be called directly after the constructor.
+		 */
+		void set_logger(PyObject* py_logger) {
+			logger = Logger(py_logger);
+		}
+
 		virtual ~Step() {}
 
 		/**

@@ -32,7 +32,6 @@ using namespace graph;
 
 shared_abb get_creation_Abb(shared_vertex vertex){
     for (auto& edge : vertex->get_ingoing_edges()) {
-                            
         if (edge->get_abb_reference()->get_syscall_type() == create) {
             return edge->get_abb_reference();
         }

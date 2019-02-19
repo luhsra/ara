@@ -111,14 +111,13 @@ std::string print_argument(llvm::Value *argument);
 
 namespace OS {
 	class ABB;
-};
+}
 
 namespace graph {
 
 	class Graph;
 	class Vertex;
 	class Edge;
-	class OS::ABB;
 
 	typedef std::shared_ptr<OS::ABB> shared_abb;
 	typedef std::shared_ptr<Vertex> shared_vertex;
@@ -142,7 +141,6 @@ namespace graph {
 
 		Graph();
 
-		void load_llvm_module(std::string file);
 		void set_llvm_module(std::shared_ptr<llvm::Module> module);
 
 		std::shared_ptr<llvm::Module> get_llvm_module();
@@ -190,7 +188,7 @@ namespace graph {
 	};
 
 	// Basis Klasse für alle Vertexes
-	class Vertex {
+	class Vertex : public std::enable_shared_from_this<Vertex> {
 
 	  protected:
 		Graph *graph; // Referenz zum Graphen, in der der Vertex gespeichert ist
@@ -237,6 +235,7 @@ namespace graph {
 		}
 
 		Vertex(Graph *graph, std::string name); // Constructor
+		virtual ~Vertex() {};
 
 
 		void set_start_scheduler_creation_flag(bool flag);
@@ -557,8 +556,8 @@ namespace OS {
 		              // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 
 		syscall_definition_type abb_syscall_type;
-		std::list<shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
-		std::list<shared_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
+		std::set<shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
+		std::set<shared_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
 		shared_function parent_function;    // Zeiger auf Function, die den BasicBlock enthält
 
 		std::vector<llvm::BasicBlock *> basic_blocks;
@@ -662,11 +661,18 @@ namespace OS {
 
 		std::vector<argument_data> get_syscall_arguments();
 
-		bool set_ABB_successor(shared_abb basicblock);   // Speicher Referenz auf Nachfolger des BasicBlocks
-		bool set_ABB_predecessor(shared_abb basicblock); // Speicher Referenz auf Vorgänger des BasicBlocks
-		std::list<shared_abb> get_ABB_successors();      // Gebe Referenz auf Nachfolger zurück
+		/**
+		 * Set ABB successor.
+		 */
+		void set_ABB_successor(shared_abb basicblock);
+		/**
+		 * Set ABB predecessor.
+		 */
+		void set_ABB_predecessor(shared_abb basicblock);
+
+		std::set<shared_abb> get_ABB_successors();      // Gebe Referenz auf Nachfolger zurück
 		shared_abb get_single_ABB_successor();
-		std::list<shared_abb> get_ABB_predecessors(); // Gebe Referenz auf Vorgänger zurück
+		std::set<shared_abb> get_ABB_predecessors(); // Gebe Referenz auf Vorgänger zurück
 
 		// TODO entry and exit block should be enough, implement an iterator over basic blocks
 		bool set_BasicBlock(llvm::BasicBlock *basic_block);

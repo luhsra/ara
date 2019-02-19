@@ -6,6 +6,7 @@ import argparse
 import sys
 import shutil
 import textwrap
+import logging
 
 import graph
 import stepmanager
@@ -40,8 +41,10 @@ def main():
         prog=sys.argv[0],
         description=sys.modules[__name__].__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--verbose', '-v', help="be verbose",
+    parser.add_argument('--verbose', '-v', help="alias for --log-level=info",
                         action="store_true", default=False)
+    parser.add_argument('--log-level', help="choose the log level",
+                        choices=['warn', 'info', 'debug'], default='warn')
     parser.add_argument('--os', '-O', help="specify the operation system",
                         choices=['freertos', 'osek'], default='osek')
     parser.add_argument('--step', '-s',
@@ -54,6 +57,15 @@ def main():
 
     args = parser.parse_args()
 
+    # logging
+    if args.log_level != 'debug' and args.verbose:
+        args.log_level = 'info'
+    log_levels = {'debug': logging.DEBUG,
+                  'info': logging.INFO,
+                  'warn': logging.WARNING}
+    _format = '%(asctime)s %(levelname)-7s %(name)-12s%(message)s'
+    logging.basicConfig(format=_format, level=log_levels[args.log_level])
+
     g = graph.PyGraph()
     s_manager = stepmanager.StepManager(g, vars(args))
     avail_steps = s_manager.get_steps()
@@ -64,7 +76,7 @@ def main():
     elif not args.input_files:
         parser.error('input_files are required (except -l or -h is set)')
 
-    print("Processing files:", args.input_files[0])
+    logging.debug("Processing files: %s", ', '.join(args.input_files))
 
     if args.step is None:
         args.step = ['DisplayResultsStep']
@@ -74,7 +86,7 @@ def main():
             print_avail_steps(avail_steps))
         parser.error(msg)
 
-    print("Executing: {}".format(', '.join(args.step)))
+    logging.debug("Executing steps: %s", ', '.join(args.step))
 
     s_manager.execute(args.step)
 
