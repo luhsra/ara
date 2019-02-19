@@ -122,7 +122,12 @@ namespace graph {
 	typedef std::shared_ptr<OS::ABB> shared_abb;
 	typedef std::shared_ptr<Vertex> shared_vertex;
 	typedef std::shared_ptr<Edge> shared_edge;
+    typedef std::weak_ptr<OS::ABB> weak_abb;
+	typedef std::weak_ptr<Vertex> weak_vertex;
+	typedef std::weak_ptr<Edge> weak_edge;
 
+    
+    
 	// Basis Klasse des Graphen
 	class Graph {
 
@@ -200,12 +205,18 @@ namespace graph {
 		std::string name; // spezifischer Name des Vertexes
 		std::size_t seed; // für jedes Element spezifischer hashValue
 
-		std::list<shared_edge> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
-		std::list<shared_edge> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
+// 		std::list<shared_edge> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
+// 		std::list<shared_edge> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
+// 
+// 		std::list<shared_vertex> outgoing_vertices; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
+// 		std::list<shared_vertex> ingoing_vertices;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
 
-		std::list<shared_vertex> outgoing_vertices; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
-		std::list<shared_vertex> ingoing_vertices;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
+        std::list<weak_edge> outgoing_edges; // std::liste mit allen ausgehenden Kanten zu anderen Vertexes
+		std::list<weak_edge> ingoing_edges;  // std::liste mit allen eingehenden Kanten von anderen Vertexes
 
+		std::list<weak_vertex> outgoing_vertices; // std::liste mit allen ausgehenden Vertexes zu anderen Vertexes
+		std::list<weak_vertex> ingoing_vertices;  // std::liste mit allen eingehenden Vertexes von anderen Vertexes
+        
 		std::string handler_name;
 
         llvm::Value* handler_value;
@@ -264,24 +275,18 @@ namespace graph {
 
 		Graph *get_graph();
 
-		std::list<shared_vertex>
-		get_specific_connected_vertices(size_t type_info); // get elements from graph with specific type
+		std::list<shared_vertex> get_specific_connected_vertices(size_t type_info); // get elements from graph with specific type
 
-		std::list<shared_vertex> get_vertex_chain(
-		    shared_vertex
-		        target_vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
+		std::list<shared_vertex> get_vertex_chain(    shared_vertex  target_vertex); // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
 		                        // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
-		std::list<shared_vertex>
-		get_connected_vertices(); // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
+		std::list<shared_vertex> get_connected_vertices(); // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
 		std::list<shared_edge> get_connected_edges(); // Methode, die die mit diesem Knoten verbundenen Edges zurückgibt
 		std::list<shared_vertex> get_ingoing_vertices(); // Methode, die die mit diesem Knoten eingehenden Vertexes
 		                                                 // zurückgibt
 		std::list<shared_edge> get_ingoing_edges(); // Methode, die die mit diesem Knoten eingehenden Edges zurückgibt
-		std::list<shared_vertex>
-		get_outgoing_vertices(); // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
+		std::list<shared_vertex> get_outgoing_vertices(); // Methode, die die mit diesem Knoten ausgehenden Vertexes zurückgibt
 		std::list<shared_edge> get_outgoing_edges(); // Methode, die die mit diesem Knoten ausgehenden Edges zurückgibt
-		std::list<shared_edge>
-		get_direct_edge(shared_vertex vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
+		std::list<shared_edge> 	get_direct_edge(shared_vertex vertex); // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
 		                                       // falls keine vorhanden nullptr
 
 		void set_static_create(bool create) { this->static_create = create; }
@@ -304,11 +309,19 @@ namespace graph {
 		std::string name;
 		Graph *graph;                // Referenz zum Graphen, in der der Vertex gespeichert ist
 		std::size_t seed;            // für jedes Element spezifischer hashValue
-		shared_vertex start_vertex;  // Entsprechende Set- und Get-Methoden
-		shared_vertex target_vertex; // Entsprechende Set- und Get-Methoden
-		bool is_syscall;             // Flag, ob Edge ein Syscall ist
+		
+		
+		//shared_vertex start_vertex;  // Entsprechende Set- und Get-Methoden
+		//shared_vertex target_vertex; // Entsprechende Set- und Get-Methoden
+		
+		weak_vertex start_vertex;
+		weak_vertex target_vertex;
+
+		
+        
+        bool is_syscall;             // Flag, ob Edge ein Syscall ist
 		std::list<argument_data> arguments;
-		shared_abb atomic_basic_block_reference;
+		weak_abb atomic_basic_block_reference;
 		llvm::Instruction *instruction_reference;
 
 		call_data call;
@@ -376,6 +389,23 @@ namespace OS {
     typedef std::shared_ptr<Timer> shared_timer;
     typedef std::shared_ptr<CoRoutine> shared_coroutine;
 	typedef std::shared_ptr<RTOS> shared_os;
+    
+    typedef std::weak_ptr<ABB> weak_abb;
+	typedef std::weak_ptr<Function> weak_function;
+	typedef std::weak_ptr<Task> weak_task;
+	typedef std::weak_ptr<ISR> weak_isr;
+	typedef std::weak_ptr<QueueSet> weak_queueset;
+	typedef std::weak_ptr<Resource> weak_resource;
+	typedef std::weak_ptr<Message> weak_message;
+	typedef std::weak_ptr<Event> weak_event;
+	typedef std::weak_ptr<Counter> weak_counter;
+    typedef std::weak_ptr<Buffer> weak_buffer;
+    typedef std::weak_ptr<Semaphore> weak_semaphore;
+    typedef std::weak_ptr<Queue> weak_queue;
+    typedef std::weak_ptr<Timer> weak_timer;
+    typedef std::weak_ptr<CoRoutine> weak_coroutine;
+	typedef std::weak_ptr<RTOS> weak_os;
+    
 
 	class RTOS : public graph::Vertex {
 
