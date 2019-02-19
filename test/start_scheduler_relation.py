@@ -16,7 +16,7 @@ def main():
         relation = data[abb.get_name()]
         if (graph.start_scheduler_relation[relation] is not
                 abb.get_start_scheduler_relation()):
-            fail_with("Expected relation {relation} at {abb.get_name()}")
+            fail_with(f"Expected relation '{relation}'at {abb.get_name()}")
 
 
 if __name__ == '__main__':
