@@ -1124,6 +1124,13 @@ void dump_instruction(OS::shared_abb abb,llvm::Function * func , llvm::CallInst 
             auto warning = std::make_shared<DumbArgumentWarning>(i, abb);
             warning_list->emplace_back(warning);
 		}
+		
+// 		if(abb->get_name() == "BB93"){
+//             
+//             std::cerr << debug_out.str() << std::endl; 
+//             
+//         }
+// 		
 	}
 
 	// check if call has no arguments
@@ -1242,10 +1249,15 @@ void set_arguments(OS::shared_abb abb,std::vector<shared_warning>* warning_list)
 		// call found flag
 		bool call_found = false;
 
+    
+        
 		// iterate about the instructions of the bb
 		for (auto &inst : *bb) {
+            
+            // if( bb->getName().str() == "BB51") std::cerr << print_argument(&inst) << std::endl;
 			// check if instruction is a call instruction
 			if (isa<CallInst>(inst)) {
+             
 				CallInst *call = (CallInst *)&inst;
 				Function *func = call->getCalledFunction();
 				if (func && !isCallToLLVMIntrinsic(call)) {
@@ -1479,6 +1491,7 @@ void set_called_functions(graph::Graph &graph) {
 		if (abb->get_call_type() != has_call)
 			continue;
 		// get call instr of the abb
+        
 		auto *instr = abb->get_call_instruction_reference();
 
 		if (CallInst *call = dyn_cast<CallInst>((instr))) {
@@ -1624,7 +1637,7 @@ namespace step {
 			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
 				GlobalVariable &gv = *it;
 				if (!gv.isDeclaration())
-					gv.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+                    gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
 			}
 
 			for (auto it = M->alias_begin(); it != M->alias_end(); ++it) {
@@ -1663,10 +1676,13 @@ namespace step {
 		unsigned int split_counter = 0;
 
 		for (auto &func : *shared_module) {
+            
+           
 
 			// check if llvm function has definition
 			if (!func.empty()) {
-
+                
+                
 				auto graph_function = std::make_shared<OS::Function>(&graph, func.getName().str());
 
 				// extract arguments
@@ -1699,7 +1715,8 @@ namespace step {
 				}
 				// store the generated function in the graph datastructure
 				graph.set_vertex(graph_function);
-
+                
+               
 				
 				//generate and store the abbs of the function in the graph datatstructure
 				abb_generation(&graph, graph_function,warning_list );
