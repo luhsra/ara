@@ -30,7 +30,7 @@ test('arsa_tester',
 
   #args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug', osek_targets[3]],
 
-  env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
+  env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 
