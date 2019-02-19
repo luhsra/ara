@@ -1,0 +1,200 @@
+CPU CopterMock {
+
+	"OIL_VERSION" : ["2.5","test"], 	
+
+	
+	"IMPLEMENTATION" :  {
+			
+		"trampoline" : {
+			"TASK" : {
+				"STACKSIZE" :  500,
+				"PRIORITY" : 1
+			},
+			"ISR" : {
+				"STACKSIZE" : 500
+			}
+		}
+	},
+	
+	"CPU" :{
+		"test": { 
+			"OS": {
+				"config" : {
+					"STATUS" : "EXTENDED",
+					"ERRORHOOK" : "FALSE",
+					"PRETASKHOOK" : "FALSE",
+					"POSTTASKHOOK" : "FALSE",
+					"STARTUPHOOK" : "FALSE",
+					"SHUTDOWNHOOK" : "FALSE",
+					"SYSTEM_CALL" : "TRUE",
+					"APP_SRC" : "TP.c",
+					"APP_NAME" : "TP_exe",
+					"TRAMPOLINE_BASE_PATH" : "/Users/puaut/Home/Sources/trampoline",
+					"CFLAGS" : "-g -c -ffreestanding -fsigned-char -mcpu=arm7tdmi -Os -Winline -Wall -Werror-implicit-function-declaration --param max-inline-insns-single=1000 -ffunction-sections -fdata-sections -std=gnu99",
+					"ASFLAGS" : "-mcpu=arm7tdmi --fatal-warnings ",
+					"LDFLAGS" : "-g --cref --allow-multiple-definition --gc-sections",
+					"LDFLAGS" : "-L/usr/local/arm/lib/gcc/arm-elf/4.1.0 -lgcc -L/usr/local/arm/arm-elf/lib -lc",
+					"COMPILER" : "arm-elf-gcc",
+					"ASSEMBLER" : "arm-elf-as",
+					"LINKER" : "arm-elf-ld",
+					"MEMMAP" : {
+						"TRUE" : { 
+							"COMPILER" : "gcc",
+							"LINKER" : {
+								"gnu_ld" : { 
+									"SCRIPT" : "script.ld"
+								}
+							},
+							"ASSEMBLER" : "gnu_as",
+							"MEMORY_PROTECTION" : "FALSE"
+						}
+					}
+				}
+			}
+		}
+	},
+
+	"TASK" : {
+	
+        "SignalGatherInitiateTask":{
+                "PRIORITY" : 24,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+                "RESOURCE" : ["SPIBusResource"],
+                "EVENT" : ["CopterControlReceiveEvent"]
+        },
+        
+         "SignalGatherFinishedTask":{
+                "PRIORITY" : 25,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+                "RESOURCE" : ["SPIBusResource"],
+        },
+        
+           "SignalGatherTimeoutTask":{
+                "PRIORITY" : 23,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+                "RESOURCE" : ["SPIBusResource"],
+        },
+	
+         "SignalProcessingActuateTask":{
+                "PRIORITY" : 22,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+        },
+        
+         "SignalProcessingAttitudeTask":{
+                "PRIORITY" : 21,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+        },
+        
+          "FlightControlTask":{
+                "PRIORITY" : 11,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "NON",
+        },
+        
+          "FlightControlAttitudeTask":{
+                "PRIORITY" : 12,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+        },
+        
+        
+          "FlightControlActuateTask":{
+                "PRIORITY" : 13,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+        },
+        
+        
+          "MavlinkSendTask":{
+                "PRIORITY" : 10,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+        },
+        
+        
+          "CopterControlWatchdogTask":{
+                "PRIORITY" : 1,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "NON",
+        },
+        
+        
+        
+          "CopterControlTask":{
+                "PRIORITY" : 5,
+                "AUTOSTART" : "FALSE",
+                "ACTIVATION" : 1,
+                "SCHEDULE" : "FULL",
+        },
+	},
+    
+    
+    //ISR objects represent OSEK interrupt service routines
+	"ISR" : {
+		"MavlinkRecvHandler" : {
+			//category of isr (UINT32, but only values 1 and 2 are allowed)
+			"CATEGORY" : 2,
+			"PRIORITY" : 100,
+
+			
+		},
+		"AlarmSignalGatherInitiateTask" : {
+			//category of isr (UINT32, but only values 1 and 2 are allowed)
+			"CATEGORY" : 2,
+			//list of RESOURCES accessed by ISR
+			"RESOURCE" : ["SPIBusResource"],
+			//list of messages accessed by ISR
+			"MESSAGE" : ["button_start"]
+		}
+		"AlarmFlightControlTask" : {
+			//category of isr (UINT32, but only values 1 and 2 are allowed)
+			"CATEGORY" : 2,
+			"PRIORITY" : 100,
+
+			
+		},
+		"AlarmCopterControlWatchdogTask" : {
+			//category of isr (UINT32, but only values 1 and 2 are allowed)
+			"CATEGORY" : 2,
+			//list of RESOURCES accessed by ISR
+			"RESOURCE" : ["SPIBusResource"],
+			//list of messages accessed by ISR
+			"MESSAGE" : ["button_start"]
+		}
+	},
+    
+    
+    "RESOURCE" : {
+		"SPIBusResource" : {
+			//RESOURCEPROPERTY (STANDARD, LINKED, INTERNAL)
+			//STANDARD, a normal RESOURCE that is not linked to another internal RESOURCE
+			//LINKED, RESOURCE that is linked to another RESOURCE with property STANDARD or LINKED
+			//the  resource  to  which  the  linking  shall  be  performed  is  defined  by  the  subattribute 
+			//LINKEDRESOURCE  of  type  RESOURCE_TYPE
+			//
+			//"RESOURCEPROPERTY" : "STANDARD"
+			//"RESOURCEPROPERTY" : {
+			//	"LINKED" = "test"
+			//}
+			//INTERNAL, RESOURCE cannot accessed by the application
+			"RESOURCEPROPERTY" : "STANDARD"
+		}
+	}
+  
+};
+

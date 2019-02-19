@@ -49,7 +49,7 @@ osek_includes = files(join_paths(osek_path, 'alarm.h'),
                       join_paths(osek_path, 'osek_types.h'))
 
 osek_targets = []
-foreach app : ['a', 'b', 'c', 'coptermok']
+foreach app : ['a', 'b', 'c', 'coptermok','copter-without-alarms']
   osek_targets += custom_target('osek-' + app,
                                 input : ['OSEK/' + app + '.cc'] + osek_includes,
                                 output : ['osek-' + app + '.ll'],
