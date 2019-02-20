@@ -683,8 +683,9 @@ std::vector<OS::shared_function> OS::Function::get_calling_functions() {
 	std::vector<OS::shared_function> called_functions;
 
 	for (auto &edge : this->ingoing_edges) {
+
         if (edge.expired())continue;
-		shared_vertex vertex = edge.lock()->get_target_vertex();
+		shared_vertex vertex = edge.lock()->get_start_vertex();
 		// std::cerr << "edge target " << vertex->get_name() << std::endl;
 		if (vertex != nullptr && typeid(OS::Function).hash_code() == vertex->get_type()) {
 			auto function = std::dynamic_pointer_cast<OS::Function>(vertex);

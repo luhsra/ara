@@ -1234,10 +1234,12 @@ void detect_isrs(graph::Graph& graph){
 
     for (auto &vertex : vertex_list) {
         
+       
         //cast vertex to abb 
         auto abb = std::dynamic_pointer_cast<OS::ABB> (vertex);
         //check if syscall is isr specific 
         if(abb->get_syscall_name().find("FromISR") != std::string::npos){
+            
             
             bool success = false;
             //queue for functions
@@ -1259,14 +1261,14 @@ void detect_isrs(graph::Graph& graph){
                 }else{
                     visited_functions.insert(std::make_pair(seed, seed));
                 }
-
-            
+                
+                    
 
                 //get the calling functions of the function
                 auto calling_functions =  function->get_calling_functions();
                 //check if function has no calling functions
                 if(calling_functions.size() == 0){
-                    
+                 
                     std::string isr_name = function->get_name();
                     auto isr = std::make_shared<OS::ISR>(&graph,isr_name);
                     graph.set_vertex(isr);

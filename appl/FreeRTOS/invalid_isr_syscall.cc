@@ -84,7 +84,8 @@ void vTaskFunction( void *pvParameters )
         }
         xSemaphoreTake(xBinarySemaphore, 12323);
         vTaskDelay(xDelay250ms );
-        vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 ));    
+        vTaskDelayUntil( &xLastWakeTime, pdMS_TO_TICKS( 250 )); 
+        
         
     }
         
