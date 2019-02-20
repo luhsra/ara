@@ -4,11 +4,8 @@ from init_test import init_test
 
 
 def main():
-
     """Test for topological sort."""
     graph, data, _ = init_test()
-    
-    print(data)
 
     functions = graph.get_type_vertices("Function")
 

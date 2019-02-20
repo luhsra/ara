@@ -1,5 +1,7 @@
 project('arsa', 'cpp',
-  default_options : ['warning_level=3', 'cpp_std=c++17'])
+  default_options : ['warning_level=3',
+                     'cpp_std=c++17',
+                     'buildtype=debugoptimized'])
 
 cython = find_program('cython')
 py3_mod = import('python')
@@ -29,7 +31,7 @@ test('arsa_tester',
 
   #args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug', osek_targets[3]],
 
-  env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
+  env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 

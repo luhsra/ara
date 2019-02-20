@@ -1328,11 +1328,9 @@ void abb_generation(graph::Graph *graph, OS::shared_function function, std::vect
 
 	std::map<const llvm::BasicBlock*, std::shared_ptr<OS::ABB>> bb_map;
 
+	bool first_run = true;
 	for (auto &bb : *llvm_reference_function) {
 		auto abb = std::make_shared<OS::ABB>(graph, function, bb.getName());
-		graph->set_vertex(abb);
-		function->set_atomic_basic_block(abb);
-
 		abb->set_BasicBlock(&bb);
 		abb->set_exit_bb(&bb);
 		abb->set_entry_bb(&bb);
@@ -1341,19 +1339,27 @@ void abb_generation(graph::Graph *graph, OS::shared_function function, std::vect
 
 		bb_map.insert(std::pair<llvm::BasicBlock*, std::shared_ptr<OS::ABB>>(&bb, abb));
 
+		bool single = true;
 		// connect already mapped successors and predecessors
 		for (const BasicBlock* succ_b : successors(&bb)) {
 			if (bb_map.find(succ_b) != bb_map.end()) {
 				abb->set_ABB_successor(bb_map[succ_b]);
+				single = false;
 			}
 		}
 		for (const BasicBlock* pred_b : predecessors(&bb)) {
 			if (bb_map.find(pred_b) != bb_map.end()) {
 				abb->set_ABB_predecessor(bb_map[pred_b]);
+				single = false;
 			}
 		}
-	}
 
+		if (!single || first_run) {
+			graph->set_vertex(abb);
+			function->set_atomic_basic_block(abb);
+		}
+		first_run = false;
+	}
 	function->set_entry_abb(bb_map[&llvm_reference_function->front()]);
 }
 

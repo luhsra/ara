@@ -9,11 +9,19 @@ py_logging_pyx_cpp = custom_target('py_logging_pyx',
   input : files('py_logging.pyx'),
   command : [cython, '@INPUT@', '-o', '@OUTPUT0@'] + cython_flags,
 )
+py_logging_header = py_logging_pyx_cpp[1]
 
 log_bridge = py3_inst.extension_module('py_logging',
   py_logging_pyx_cpp,
   dependencies: py3_inst.dependency()
 )
+
+log_bridge_incl = include_directories('.')
+
+log_dep = declare_dependency(
+  include_directories: log_bridge_incl,
+  link_with: log_bridge,
+  sources: py_logging_header)
 
 plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
@@ -23,8 +31,7 @@ plib = py3_inst.extension_module('native_step',
         'IntermediateAnalysis.cpp',
         'llvm.cpp',
         'test.cpp'),
-  link_with: log_bridge,
-  dependencies: [py3_inst.dependency(), graph_dep, llvm_dep]
+  dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep]
 )
 
-passdir = meson.current_build_dir()
+stepdir = meson.current_build_dir()
