@@ -24,7 +24,6 @@
             "POSTTASKHOOK" : "FALSE",
             "STARTUPHOOK" : "FALSE",
             "SHUTDOWNHOOK" : "FALSE",
-        }
 	},
 	
 	"APPMODE" : {
