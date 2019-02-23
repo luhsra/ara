@@ -374,6 +374,7 @@ namespace OS {
     class Queue;
     class Timer;
     class CoRoutine;
+    class TaskGroup;
 	typedef std::shared_ptr<ABB> shared_abb;
 	typedef std::shared_ptr<Function> shared_function;
 	typedef std::shared_ptr<Task> shared_task;
@@ -389,7 +390,8 @@ namespace OS {
     typedef std::shared_ptr<Timer> shared_timer;
     typedef std::shared_ptr<CoRoutine> shared_coroutine;
 	typedef std::shared_ptr<RTOS> shared_os;
-    
+    typedef std::shared_ptr<TaskGroup> shared_taskgroup;
+        
     typedef std::weak_ptr<ABB> weak_abb;
 	typedef std::weak_ptr<Function> weak_function;
 	typedef std::weak_ptr<Task> weak_task;
@@ -405,7 +407,7 @@ namespace OS {
     typedef std::weak_ptr<Timer> weak_timer;
     typedef std::weak_ptr<CoRoutine> weak_coroutine;
 	typedef std::weak_ptr<RTOS> weak_os;
-    
+    typedef std::weak_ptr<TaskGroup> weak_taskgroup;
 
 	class RTOS : public graph::Vertex {
 
@@ -573,6 +575,8 @@ namespace OS {
 
 		bool remove_abb(size_t seed);
 	};
+    
+   
 
 	// Klasse AtomicBasicBlock
 	class ABB : public graph::Vertex {
@@ -585,9 +589,9 @@ namespace OS {
 		              // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 
 		syscall_definition_type abb_syscall_type;
-		std::set<shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
-		std::set<shared_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
-		shared_function parent_function;    // Zeiger auf Function, die den BasicBlock enthält
+		std::set<OS::shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
+		std::set<OS::shared_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
+		weak_function parent_function;    // Zeiger auf Function, die den BasicBlock enthält
 
 		std::vector<llvm::BasicBlock *> basic_blocks;
 
@@ -728,6 +732,8 @@ namespace OS {
 
 		bool get_loop_information();
 	};
+    
+
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter
 	// Zugriff erlaubt. Vielmehr wird der Zugriff auf interne Listen durch Methoden ermöglicht.
@@ -735,7 +741,7 @@ namespace OS {
 	class TaskGroup : public graph::Vertex {
 
 	  private:
-		std::list<OS::shared_task> task_group;
+		std::list<OS::weak_task> task_group;
 
 	  public:
 		TaskGroup(graph::Graph *graph, std::string name) : graph::Vertex(graph, name) {
@@ -756,12 +762,13 @@ namespace OS {
 	class Task : public graph::Vertex {
 
 	  private:
-		OS::shared_function definition_function;
-		TaskGroup *task_group;
+		OS::weak_function definition_function;
+        
+        OS::weak_taskgroup task_group;
 
-		std::list<shared_resource> resources;
-		std::list<shared_event> events;
-		std::list<shared_message> messages;
+		std::list<weak_resource> resources;
+		std::list<weak_event> events;
+		std::list<weak_message> messages;
 		std::list<std::string> app_modes;
 
 		int stacksize;
@@ -797,7 +804,8 @@ namespace OS {
                 else if(task->get_handler_value() != this->handler_value)equal = false;
                 else if(task->get_stacksize() != this->stacksize)equal = false;
                 else if(task->get_priority() != this->priority)equal = false;
-                else if(task->get_definition_function()->get_seed() != this->definition_function->get_seed())equal = false;
+                else if(task->get_definition_function() == nullptr || this->definition_function.lock() == nullptr ) equal = false;
+                else if(task->get_definition_function()->get_seed() != this->definition_function.lock()->get_seed())equal = false;
                 
             }else equal = false;
             

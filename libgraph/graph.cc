@@ -889,6 +889,7 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 void OS::ABB::set_call(call_data *call) { this->call = *call; }
 
 void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
+    
 	successors.insert(basicblock);
 	auto preds = basicblock->get_ABB_predecessors();
 	if (preds.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == preds.end()) {
@@ -905,7 +906,11 @@ void OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
 }
 
 std::set<OS::shared_abb> OS::ABB::get_ABB_successors() {
-	return this->successors;
+    std::set<OS::shared_abb> tmp_set;
+    for(auto successor : this->successors){
+        if(successor != nullptr)tmp_set.insert(successor);
+    }
+	return tmp_set;
 }
 
 OS::shared_abb OS::ABB::get_single_ABB_successor() {
@@ -916,12 +921,17 @@ OS::shared_abb OS::ABB::get_single_ABB_successor() {
 }
 
 std::set<OS::shared_abb> OS::ABB::get_ABB_predecessors() {
-	return this->predecessors;
+    
+    std::set<OS::shared_abb> tmp_set;
+    for(auto predecessor : this->predecessors){
+        if(predecessor != nullptr)tmp_set.insert(predecessor);
+    }
+	return tmp_set;
 }
 
 bool OS::ABB::set_BasicBlock(llvm::BasicBlock *basic_block) {
 	bool success = false;
-	if (this->parent_function->get_llvm_reference() == basic_block->getParent()) {
+	if (this->parent_function.lock() != nullptr && this->parent_function.lock()->get_llvm_reference() == basic_block->getParent()) {
 		this->basic_blocks.emplace_back(basic_block);
 		success = true;
 	}
@@ -940,7 +950,7 @@ bool OS::ABB::set_parent_function(OS::shared_function function) {
 	return success;
 }
 
-OS::shared_function OS::ABB::get_parent_function() { return this->parent_function; }
+OS::shared_function OS::ABB::get_parent_function() { return this->parent_function.lock(); }
 
 std::string OS::ABB::get_call_name() {
 	std::string call_name = "default";
@@ -1185,7 +1195,10 @@ OS::shared_abb OS::ABB::get_postdominator() {
 	// std::cerr << "abb " << this->name  << std::endl;
 
 	llvm::BasicBlock *bb = this->exit;
-	llvm::PostDominatorTree *DT = this->parent_function->get_postdominator_tree();
+
+    if(this->parent_function.lock()== nullptr)abort();
+    
+	llvm::PostDominatorTree *DT = this->parent_function.lock()->get_postdominator_tree();
 
 	if (!DT->isPostDominator()) {
 		// std::cerr << "postdominator_tree is not initialized successfully" << std::endl;
@@ -1250,7 +1263,8 @@ OS::shared_abb OS::ABB::get_dominator() {
 
 llvm:
 	BasicBlock *bb = this->entry;
-	llvm::DominatorTree *DT = this->parent_function->get_dominator_tree();
+    if(this->parent_function.lock()== nullptr)abort();
+	llvm::DominatorTree *DT = this->parent_function.lock()->get_dominator_tree();
 
 	std::hash<std::string> hash_fn;
 	// get first basic block of the function
@@ -1462,7 +1476,7 @@ bool OS::Task::set_definition_function(std::string function_name){
 	return result;
 }
 
-OS::shared_function OS::Task::get_definition_function() { return this->definition_function; }
+OS::shared_function OS::Task::get_definition_function() { return this->definition_function.lock(); }
 
 void OS::Hook::set_hook_type(hook_type hook) { this->hook = hook; };
 
@@ -1777,12 +1791,12 @@ void OS::ABB::print_information() {
 	std::cerr << "abb name: " << this->name << "\n";
 	std::cerr << "successors: ";
 	for (auto &successor : this->successors) {
-		std::cerr << "\t" << successor->get_name();
+		if(successor != nullptr)std::cerr << "\t" << successor->get_name();
 	}
 
 	std::cerr << "\npredecessors: ";
 	for (auto &predecessor : this->predecessors) {
-		std::cerr << "\t" + predecessor->get_name();
+		if(predecessor != nullptr)std::cerr << "\t" + predecessor->get_name();
 	}
 	std::cerr << "\n";
 	if (this->abb_type != no_call) {
