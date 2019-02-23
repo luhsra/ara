@@ -919,56 +919,103 @@ bool dump_argument(std::stringstream &debug_out, argument_data *argument_contain
 								// std::cerr <<  (std::string)string_value_0 <<"(OR)"<< (std::string)string_value_1 <<
 								// std::endl;
 								argument_container->any_list.emplace_back(value);
-							}
-						}
-					}
+                            }
+                        }
+                    };
+                } else if (binop->getOpcode() == Instruction::BinaryOps::And) {
+                double value_0;
+                double value_1;
+
+                std::string string_value_0;
+                std::string string_value_1;
+
+                // std::cerr << print_argument(binop) << std::endl;
+                if (!operand_0.multiple && !operand_1.multiple && !operand_0.any_list.empty() &&
+                    !operand_1.any_list.empty()) {
+
+                    if (typeid(long).hash_code() == operand_0.any_list.front().type().hash_code() &&
+                        typeid(long).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+                        if (cast_any_to_double(operand_0.any_list.front(), value_0) &&
+                            cast_any_to_double(operand_1.any_list.front(), value_1)) {
+                            dump_success = true;
+                            value = (long)value_0 & (long)value_1;
+                            argument_container->any_list.emplace_back(value);
+                        }
+                    } else if (typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code() &&
+                                typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+                        if (cast_any_to_string(operand_0.any_list.front(), string_value_0) &&
+                            cast_any_to_string(operand_1.any_list.front(), string_value_1)) {
+                            dump_success = true;
+                            value = (std::string)string_value_0 + "(AND)" + (std::string)string_value_1;
+                            argument_container->any_list.emplace_back(value);
+                            }
+                        }
+                    }
+				} else if (binop->getOpcode() == Instruction::BinaryOps::Add) {
+                double value_0;
+                double value_1;
+
+                std::string string_value_0;
+                std::string string_value_1;
+
+                // std::cerr << print_argument(binop) << std::endl;
+                if (!operand_0.multiple && !operand_1.multiple && !operand_0.any_list.empty() &&
+                    !operand_1.any_list.empty()) {
+
+                    if (typeid(long).hash_code() == operand_0.any_list.front().type().hash_code() &&
+                        typeid(long).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+                        if (cast_any_to_double(operand_0.any_list.front(), value_0) &&
+                            cast_any_to_double(operand_1.any_list.front(), value_1)) {
+                            dump_success = true;
+                            value = (long)value_0 + (long)value_1;
+                            argument_container->any_list.emplace_back(value);
+                        }
+                    } else if (typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code() &&
+                                typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+                        if (cast_any_to_string(operand_0.any_list.front(), string_value_0) &&
+                            cast_any_to_string(operand_1.any_list.front(), string_value_1)) {
+                            dump_success = true;
+                            value = (std::string)string_value_0 + "(ADD)" + (std::string)string_value_1;
+                            argument_container->any_list.emplace_back(value);
+                            }
+                        }
+                    }
+				} else if (binop->getOpcode() == Instruction::BinaryOps::Mul) {
+                double value_0;
+                double value_1;
+
+                std::string string_value_0;
+                std::string string_value_1;
+
+                // std::cerr << print_argument(binop) << std::endl;
+                if (!operand_0.multiple && !operand_1.multiple && !operand_0.any_list.empty() &&
+                    !operand_1.any_list.empty()) {
+
+                    if (typeid(long).hash_code() == operand_0.any_list.front().type().hash_code() &&
+                        typeid(long).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+                        if (cast_any_to_double(operand_0.any_list.front(), value_0) &&
+                            cast_any_to_double(operand_1.any_list.front(), value_1)) {
+                            dump_success = true;
+                            value = (long)value_0 * (long)value_1;
+                            argument_container->any_list.emplace_back(value);
+                        }
+                    } else if (typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code() &&
+                                typeid(std::string).hash_code() == operand_0.any_list.front().type().hash_code()) {
+
+                        if (cast_any_to_string(operand_0.any_list.front(), string_value_0) &&
+                            cast_any_to_string(operand_1.any_list.front(), string_value_1)) {
+                            dump_success = true;
+                            value = (std::string)string_value_0 + "(MUL)" + (std::string)string_value_1;
+                            argument_container->any_list.emplace_back(value);
+                            }
+                        }
+                    }
 				}
-				//                 else if (binop->getOpcode() == Instruction::BinaryOps::Add){
-				//                     double value_0;
-				//                     double value_1;
-				//                     if(!operand_0.multiple && !operand_1.multiple){
-				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
-				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
-				//                             dump_success = true;
-				//                             value = value_0 + value_1;
-				//                             argument_container->any_list.emplace_back(value);
-				//                         }
-				//                     }
-				//                 }else if (binop->getOpcode() == Instruction::BinaryOps::Mul){
-				//                     double value_0;
-				//                     double value_1;
-				//                     if(!operand_0.multiple && !operand_1.multiple){
-				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
-				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
-				//                             dump_success = true;
-				//                             value = value_0 * value_1;
-				//                             argument_container->any_list.emplace_back(value);
-				//                         }
-				//                     }
-				//
-				//                 }else if (binop->getOpcode() == Instruction::BinaryOps::Sub){
-				//                                 double value_0;
-				//                     double value_1;
-				//                     if(!operand_0.multiple && !operand_1.multiple){
-				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
-				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
-				//                             dump_success = true;
-				//                             value = value_0 - value_1;
-				//                             argument_container->any_list.emplace_back(value);
-				//                         }
-				//                     }
-				//                 }else if (binop->getOpcode() == Instruction::BinaryOps::UDiv){
-				//                     double value_0;
-				//                     double value_1;
-				//                     if(!operand_0.multiple && !operand_1.multiple){
-				//                         if(cast_any_to_double(operand_0.any_list.front(), value_0) &&
-				//                         cast_any_to_double(operand_1.any_list.front(), value_1)){
-				//                             dump_success = true;
-				//                             value = value_0 /value_1;
-				//                             argument_container->any_list.emplace_back(value);
-				//                         }
-				//                     }
-				//                 }
 			}
 			argument_container->value_list.emplace_back(binop);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
