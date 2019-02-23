@@ -629,10 +629,10 @@ bool OS::Function::remove_abb(size_t seed) {
 			++itr;
 		}
 	}
-	if (this->entry_abb != nullptr && this->entry_abb->get_seed() == seed)
-		this->entry_abb = nullptr;
-	if (this->exit_abb != nullptr && this->exit_abb->get_seed() == seed)
-		this->exit_abb = nullptr;
+	if (this->entry_abb.lock() != nullptr && this->entry_abb.lock()->get_seed() == seed)
+		this->entry_abb.reset();
+	if (this->exit_abb.lock() != nullptr && this->exit_abb.lock()->get_seed() == seed)
+		this->exit_abb.reset();
 
 	return success;
 }
@@ -792,9 +792,9 @@ void OS::Function::set_entry_abb(OS::shared_abb abb) { this->entry_abb = abb; }
 
 void OS::Function::set_exit_abb(OS::shared_abb abb) { this->exit_abb = abb; }
 
-OS::shared_abb OS::Function::get_exit_abb() { return this->exit_abb; }
+OS::shared_abb OS::Function::get_exit_abb() { return this->exit_abb.lock(); }
 
-OS::shared_abb OS::Function::get_entry_abb() { return this->entry_abb; }
+OS::shared_abb OS::Function::get_entry_abb() { return this->entry_abb.lock(); }
 
 llvm::DominatorTree *OS::Function::get_dominator_tree() { return &this->dominator_tree; }
 
@@ -1189,7 +1189,7 @@ OS::shared_abb OS::ABB::get_postdominator() {
 		// get first element of the queue
 		auto abb = queue.front();
 		// if(abb->get_entry_bb()==nullptr) std::cerr << "no entry bb " << abb->get_name()  << std::endl;
-		if (bb != abb->get_exit_bb() && DT->dominates(abb->get_entry_bb(), bb)) {
+		if (bb != abb->get_exit_bb()  &&  DT->dominates(abb->get_entry_bb(), bb)) {
 			// std::cerr << "postdominator " << abb->get_name()  << std::endl;
 			return abb;
 		}
@@ -1733,10 +1733,10 @@ void OS::Function::print_information() {
 	// if(definition_element != nullptr)information += "OS definition instance name:" +
 	// this->definition_element->get_name() + "\n";
 
-	if (this->entry_abb != nullptr)
-		information += "first abb: " + this->entry_abb->get_name() + "\n";
-	if (this->exit_abb != nullptr)
-		information += "last abb: " + this->exit_abb->get_name() + "\n";
+	if (this->entry_abb.lock() != nullptr)
+		information += "first abb: " + this->entry_abb.lock()->get_name() + "\n";
+	if (this->exit_abb.lock() != nullptr)
+		information += "last abb: " + this->exit_abb.lock()->get_name() + "\n";
 	information += "abbs: ";
 	std::cerr << information;
 	for (auto &abb : this->atomic_basic_blocks) {

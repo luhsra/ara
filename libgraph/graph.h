@@ -470,8 +470,8 @@ namespace OS {
 		// TODO make a list of this
 		graph::shared_vertex definition_element = nullptr;
 
-		std::string function_name;              // name der Funktion
-		std::list<llvm::Type *> argument_types; // Argumente des Functionsaufrufes
+		std::string function_name;              // Name der Funktion
+		std::list<llvm::Type *> argument_types; // Argumente des Funktionsaufrufes
 		llvm::Type *return_type;
 
 		std::list<OS::shared_abb> atomic_basic_blocks; // Liste der AtomicBasicBlocks, die die Funktion definieren
@@ -487,8 +487,8 @@ namespace OS {
 		llvm::Function *LLVM_function_reference; //*Referenz zum LLVM Function Object LLVM:Function -> Dadurch sind die
 		                                         // sind auch die LLVM:BasicBlocks erreichbar und iterierbar*/
 
-		shared_abb entry_abb = nullptr;
-		shared_abb exit_abb = nullptr;
+		weak_abb entry_abb;
+		weak_abb exit_abb;
 
 		llvm::DominatorTree dominator_tree = llvm::DominatorTree();
 		llvm::PostDominatorTree postdominator_tree = llvm::PostDominatorTree();
