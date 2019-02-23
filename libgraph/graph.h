@@ -840,14 +840,14 @@ namespace OS {
 
 	class ISR : public graph::Vertex {
 
-		OS::shared_function definition_function;
+		OS::weak_function definition_function;
 
 		// OSEK attributes
 		int category; // OSEK just values 2 and 1 are allowed
 		int stacksize;
 
-		std::list<shared_resource> resources;
-		std::list<shared_message> messages;
+		std::list<weak_resource> resources;
+		std::list<weak_message> messages;
 
 		// FreeRTOS attributes
 		std::string interrupt_source;
@@ -874,7 +874,7 @@ namespace OS {
 
 	class Hook : public graph::Vertex {
 
-		OS::shared_function definition_function;
+		OS::weak_function definition_function;
 
 		hook_type hook = no_hook;
 
@@ -900,7 +900,7 @@ namespace OS {
 	  private:
 		unsigned long length;
 
-		std::vector<graph::shared_vertex> queueset_elements; //  Queues, Semaphores
+		std::vector<graph::weak_vertex> queueset_elements; //  Queues, Semaphores
 
 	  public:
 
@@ -937,7 +937,7 @@ namespace OS {
         void set_length (unsigned long length);
         unsigned long get_length();
 
-		std::vector<graph::shared_vertex> *get_queueset_elements(); // gebe alle Elemente der Queueset zurück
+		std::vector<graph::shared_vertex> get_queueset_elements(); // gebe alle Elemente der Queueset zurück
 
 	};
 
@@ -945,7 +945,7 @@ namespace OS {
 
 		private:
 			
-			OS::shared_queueset queueset_reference; // Referenz zur Queueset
+			OS::weak_queueset queueset_reference; // Referenz zur Queueset
 
 		
 			int length;              // Länger der Queue
@@ -995,7 +995,7 @@ namespace OS {
 	class Event : public graph::Vertex {
 
 	  private:
-		std::list<OS::shared_task> task_reference;
+		std::list<OS::weak_task> task_reference;
 		unsigned long event_mask;
 		unsigned int id;
 		event_type mask_type;
@@ -1004,7 +1004,7 @@ namespace OS {
 		std::list<long> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
 
 		                              // müssen auch wieder gesetzt werden
-		std::list<graph::shared_vertex> synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
+		std::list<graph::weak_vertex> synchronized_vertices; // Alle Vertexes die durch den EventGroupSynchronized Aufruf synchronisiert werden
 
 	  public:
 		Event(graph::Graph *graph, std::string name) : graph::Vertex(graph, name) {
@@ -1057,8 +1057,8 @@ namespace OS {
 		private:
 			
 			buffer_type type = stream; // enum buffer_type {stream, message}
-			graph::shared_vertex reader;   // Buffer sind als single reader und single writer objekte gedacht
-			graph::shared_vertex writer;
+			graph::weak_vertex reader;   // Buffer sind als single reader und single writer objekte gedacht
+			graph::weak_vertex writer;
 			unsigned long buffer_size = 0;
 			unsigned long trigger_level = 0; // Anzahl an Bytesm, die in buffer liegen müssen, bevor der Task den block status verlassen
 							// kann
@@ -1164,9 +1164,9 @@ namespace OS {
 			unsigned long max_count;
 			unsigned long initial_count;
             
-			std::list<OS::shared_task> tasks;
-			std::list<OS::shared_isr> irs;
-			std::list<OS::shared_resource> resources;
+			std::list<OS::weak_task> tasks;
+			std::list<OS::weak_isr> irs;
+			std::list<OS::weak_resource> resources;
 			
 		public:
 			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -1244,10 +1244,10 @@ namespace OS {
 
         private:
             
-            OS::shared_task referenced_task;
-            OS::shared_event referenced_event;
-            OS::shared_counter referenced_counter;
-            OS::shared_function callback_function;
+            OS::weak_task referenced_task;
+            OS::weak_event referenced_event;
+            OS::weak_counter referenced_counter;
+            OS::weak_function callback_function;
                            
             timer_action_type reaction;
             
@@ -1331,7 +1331,7 @@ namespace OS {
             
             unsigned int id;
             unsigned int priority;
-            OS::shared_function definition_function;
+            OS::weak_function definition_function;
             
             
         public:
@@ -1349,7 +1349,8 @@ namespace OS {
                     if(coroutine->get_seed() != this->seed)equal = false;
                     else if(coroutine->get_priority() != this->priority)equal = false;
                     else if(coroutine->get_id() != this->id)equal = false;
-                    else if(coroutine->get_definition_function()->get_seed() != this->definition_function->get_seed()) equal = false;
+                    else if(coroutine->get_definition_function() == nullptr || this->definition_function.lock() == nullptr ) equal = false;
+                    else if(coroutine->get_definition_function()->get_seed() != this->definition_function.lock()->get_seed()) equal = false;
                     else if(coroutine->get_handler_name() != this->handler_name)equal = false;
                     else if(coroutine->get_handler_value() != this->handler_value)equal = false;
 

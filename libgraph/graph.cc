@@ -1503,7 +1503,7 @@ bool OS::Hook::set_definition_function(std::string function_name){
 
 
 OS::shared_function OS::Hook::get_definition_function(){
-    return this->definition_function;
+    return this->definition_function.lock();
 }
 
 bool OS::ISR::set_definition_function(std::string function_name) {
@@ -1526,7 +1526,7 @@ bool OS::ISR::set_definition_function(std::string function_name) {
 
 int OS::ISR::get_category() { return this->category; }
 
-OS::shared_function OS::ISR::get_definition_function() { return this->definition_function; }
+OS::shared_function OS::ISR::get_definition_function() { return this->definition_function.lock(); }
 
 void OS::Event::set_event_mask(unsigned long mask) { this->event_mask = mask; }
 
@@ -1649,7 +1649,7 @@ bool OS::Timer::set_callback_function(std::string function_name) {
 	
 }
 
-OS::shared_function OS::Timer::get_callback_function() { return this->callback_function; }
+OS::shared_function OS::Timer::get_callback_function() { return this->callback_function.lock(); }
 
 
 unsigned long OS::Resource::get_max_count(){return this->max_count;}
@@ -1693,7 +1693,13 @@ void OS::QueueSet::set_queue_element(graph::shared_vertex element){	this->queues
 void OS::QueueSet::set_length(unsigned long length) { this->length = length; }
 
 
-std::vector<graph::shared_vertex> *OS::QueueSet::get_queueset_elements() { return &this->queueset_elements; }
+std::vector<graph::shared_vertex> OS::QueueSet::get_queueset_elements() {
+    std::vector<graph::shared_vertex> tmp_vector;
+    for(auto element: this->queueset_elements){
+        if(element.lock() != nullptr)tmp_vector.emplace_back(element.lock());
+    }
+    return tmp_vector;
+}
 
 void OS::Buffer::set_buffer_type(buffer_type type) { this->type = type; }
 
@@ -1738,7 +1744,7 @@ bool OS::CoRoutine::set_definition_function(std::string function_name) {
 	return result;
 }
 
-OS::shared_function OS::CoRoutine::get_definition_function() { return this->definition_function; }
+OS::shared_function OS::CoRoutine::get_definition_function() { return this->definition_function.lock(); }
 
 void graph::Graph::print_information() {
 	std::string information = "\n------------------------\nGraph:\n";

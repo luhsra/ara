@@ -1261,7 +1261,7 @@ void verify_queueset_members(graph::Graph& graph,std::vector<shared_warning>* wa
         auto queueset_elements = queueset->get_queueset_elements();
         
         //check if the queueset element is reveived or taken, and before the queueset element is taken
-        for(auto queueset_element :*queueset_elements){
+        for(auto queueset_element :queueset_elements){
             
 
             auto ingoing_edges = queueset_element->get_ingoing_edges();
