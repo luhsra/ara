@@ -622,7 +622,9 @@ bool OS::Function::remove_abb(size_t seed) {
 
 	bool success = false;
 	for (auto itr = this->atomic_basic_blocks.begin(); itr != this->atomic_basic_blocks.end();) {
-		if ((*itr)->get_seed() == seed) {
+        
+        
+		if ((*itr).lock() != nullptr && (*itr).lock()->get_seed() == seed) {
 			success = true;
 			itr = this->atomic_basic_blocks.erase(itr);
 		} else {
@@ -641,13 +643,21 @@ bool OS::Function::set_definition_vertex(graph::shared_vertex vertex) {
 
 	bool success = false;
 	if (this->graph->contain_vertex(vertex)) {
-		this->definition_element = vertex;
+		this->definition_elements.emplace_back(vertex);
 		success = true;
 	}
 	return success;
 }
 
-graph::shared_vertex OS::Function::get_definition_vertex() { return this->definition_element; }
+std::vector<graph::shared_vertex> OS::Function::get_definition_vertices() { 
+    std::vector<graph::shared_vertex>  tmp_vector;
+    
+    for(auto vertex : this->definition_elements){
+        if(vertex.lock() == nullptr)continue;
+        else tmp_vector.emplace_back(vertex.lock()); 
+    }
+    return tmp_vector;
+}
 
 void OS::Function::has_syscall(bool flag) { this->syscall_flag = flag; }
 
@@ -749,7 +759,10 @@ void OS::Function::set_atomic_basic_block(OS::shared_abb atomic_basic_block) {
 }
 
 void OS::Function::set_atomic_basic_blocks(std::list<OS::shared_abb> *atomic_basic_blocks) {
-	this->atomic_basic_blocks = *atomic_basic_blocks;
+	this->atomic_basic_blocks.clear();
+    for (auto abb :*atomic_basic_blocks){
+        this->atomic_basic_blocks.emplace_back(abb); 
+    }
 }
 
 /*
@@ -763,10 +776,23 @@ std::list<graph::shared_vertex> OS::Function::get_atomic_basic_blocks(){
 
 std::list<OS::shared_abb> OS::Function::get_atomic_basic_blocks() {
 	// std::cerr << this->atomic_basic_blocks.size() << std::endl;
-	return this->atomic_basic_blocks;
+    
+    std::list<OS::shared_abb> tmp_list;
+    for(auto abb :this->atomic_basic_blocks){
+        if(abb.lock() != nullptr)tmp_list.emplace_back(abb.lock());
+    }
+    
+	return tmp_list;
 }
 
-std::list<OS::shared_task> OS::Function::get_referenced_tasks() { return this->referenced_tasks; }
+std::list<OS::shared_task> OS::Function::get_referenced_tasks() {
+   std::list<OS::shared_task> tmp_list;
+    for(auto task :this->referenced_tasks){
+        if(task.lock() != nullptr)tmp_list.emplace_back(task.lock());
+    }
+	return tmp_list;
+}
+
 
 bool OS::Function::set_referenced_task(OS::shared_task task) {
 	bool success = false;
@@ -1740,7 +1766,7 @@ void OS::Function::print_information() {
 	information += "abbs: ";
 	std::cerr << information;
 	for (auto &abb : this->atomic_basic_blocks) {
-		std::cerr << abb->get_name() << ", ";
+        if(abb.lock() != nullptr)std::cerr << abb.lock()->get_name() << ", ";
 	}
 
 	std::cerr << "\n------------------------\n\n";

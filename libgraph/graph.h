@@ -467,16 +467,15 @@ namespace OS {
 	  private:
 		bool syscall_flag = false;
 
-		// TODO make a list of this
-		graph::shared_vertex definition_element = nullptr;
+		std::vector<graph::weak_vertex> definition_elements;
 
 		std::string function_name;              // Name der Funktion
 		std::list<llvm::Type *> argument_types; // Argumente des Funktionsaufrufes
 		llvm::Type *return_type;
 
-		std::list<OS::shared_abb> atomic_basic_blocks; // Liste der AtomicBasicBlocks, die die Funktion definieren
-		std::list<OS::shared_task> referenced_tasks;   // Liste aller Task, die diese Function aufrufen
-		std::list<OS::ISR *> referenced_ISRs;
+		std::list<OS::weak_abb> atomic_basic_blocks; // Liste der AtomicBasicBlocks, die die Funktion definieren
+		std::list<OS::weak_task> referenced_tasks;   // Liste aller Task, die diese Function aufrufen
+		std::list<OS::weak_isr> referenced_ISRs;
 		function_definition_type definition; // information, ob task ,isr, timer durch die Funktion definiert wird
 
 		bool contains_critical_section = false;
@@ -529,7 +528,7 @@ namespace OS {
 		llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> *get_loop_info_base();
 
 		bool set_definition_vertex(graph::shared_vertex vertex);
-		graph::shared_vertex get_definition_vertex();
+		std::vector<graph::shared_vertex> get_definition_vertices();
 
 		// Funktionen zurück, die diese Funktion benutzen
 		bool set_used_function(
