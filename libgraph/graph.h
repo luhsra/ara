@@ -589,9 +589,13 @@ namespace OS {
 		              // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 
 		syscall_definition_type abb_syscall_type;
-		std::set<OS::shared_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
-		std::set<OS::shared_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
-		weak_function parent_function;    // Zeiger auf Function, die den BasicBlock enthält
+		//std::vector<OS::weak_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
+		//std::vector<OS::weak_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
+		
+        std::map<size_t, weak_abb> successors;
+        std::map<size_t, weak_abb> predecessors;
+                
+        weak_function parent_function;    // Zeiger auf Function, die den BasicBlock enthält
 
 		std::vector<llvm::BasicBlock *> basic_blocks;
 

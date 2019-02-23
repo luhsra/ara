@@ -889,8 +889,7 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
 void OS::ABB::set_call(call_data *call) { this->call = *call; }
 
 void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
-    
-	successors.insert(basicblock);
+    successors.insert(std::pair<size_t,OS::weak_abb>(basicblock->get_seed(),basicblock));
 	auto preds = basicblock->get_ABB_predecessors();
 	if (preds.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == preds.end()) {
 		basicblock->set_ABB_predecessor(std::static_pointer_cast<OS::ABB>(shared_from_this()));
@@ -898,8 +897,8 @@ void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
 }
 
 void OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
-	predecessors.insert(basicblock);
-	auto succs = basicblock->get_ABB_successors();
+	predecessors.insert(std::pair<size_t,OS::weak_abb>(basicblock->get_seed(),basicblock));
+    auto succs = basicblock->get_ABB_successors();
 	if (succs.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == succs.end()) {
 		basicblock->set_ABB_successor(std::static_pointer_cast<OS::ABB>(shared_from_this()));
 	}
@@ -907,15 +906,15 @@ void OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
 
 std::set<OS::shared_abb> OS::ABB::get_ABB_successors() {
     std::set<OS::shared_abb> tmp_set;
-    for(auto successor : this->successors){
-        if(successor != nullptr)tmp_set.insert(successor);
+    for(auto &successor  : this->successors){
+        if(successor.second.lock() != nullptr)tmp_set.insert(successor.second.lock());
     }
 	return tmp_set;
 }
 
 OS::shared_abb OS::ABB::get_single_ABB_successor() {
 	if (this->successors.size() == 1)
-		return *(this->successors.begin());
+		return (*(this->successors.begin())).second.lock();
 	else
 		return nullptr;
 }
@@ -924,7 +923,7 @@ std::set<OS::shared_abb> OS::ABB::get_ABB_predecessors() {
     
     std::set<OS::shared_abb> tmp_set;
     for(auto predecessor : this->predecessors){
-        if(predecessor != nullptr)tmp_set.insert(predecessor);
+        if(predecessor.second.lock() != nullptr)tmp_set.insert(predecessor.second.lock());
     }
 	return tmp_set;
 }
@@ -1170,11 +1169,12 @@ llvm::BasicBlock *OS::ABB::get_entry_bb() { return this->entry; }
 llvm::BasicBlock *OS::ABB::get_exit_bb() { return this->exit; }
 
 void OS::ABB::remove_successor(shared_abb abb) {
-	successors.erase(abb);
+    if(abb!=nullptr)successors.erase(abb->get_seed());
 }
+    
 
 void OS::ABB::remove_predecessor(shared_abb abb) {
-	predecessors.erase(abb);
+	if(abb!=nullptr)predecessors.erase(abb->get_seed());
 }
 
 void OS::ABB::set_entry_bb(llvm::BasicBlock *bb) { this->entry = bb; }
@@ -1797,12 +1797,12 @@ void OS::ABB::print_information() {
 	std::cerr << "abb name: " << this->name << "\n";
 	std::cerr << "successors: ";
 	for (auto &successor : this->successors) {
-		if(successor != nullptr)std::cerr << "\t" << successor->get_name();
+		if(successor.second.lock() != nullptr)std::cerr << "\t" << successor.second.lock()->get_name();
 	}
 
 	std::cerr << "\npredecessors: ";
 	for (auto &predecessor : this->predecessors) {
-		if(predecessor != nullptr)std::cerr << "\t" + predecessor->get_name();
+		if(predecessor.second.lock() != nullptr)std::cerr << "\t" + predecessor.second.lock()->get_name();
 	}
 	std::cerr << "\n";
 	if (this->abb_type != no_call) {
