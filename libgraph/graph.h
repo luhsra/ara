@@ -735,6 +735,9 @@ namespace OS {
 		void set_loop_information(bool flag);
 
 		bool get_loop_information();
+        
+        bool dominates(shared_abb abb);
+        bool postdominates(shared_abb abb);
 	};
     
 

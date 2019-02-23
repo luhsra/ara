@@ -149,11 +149,22 @@ class ABB_MergeStep(Step):
             
     def do_merge( self,g: graph.PyGraph,entry_abb, exit_abb, inner_abbs = set()):
         
+        
+        
         #print("merge entry abb" , entry_abb.get_name())
         #print("merge exit abb" , exit_abb.get_name())
         #entry_abb.print_information()
         #exit_abb.print_information()
-        #print('Trying to merge:', inner_abbs, exit_abb, 'into', entry_abb)
+        #if entry_abb.get_name() == "BB351":
+            #print('Trying to merge:')
+            #print("entry" ,entry_abb.get_name())
+            
+            #for inner_abb in inner_abbs:
+                #print("inner",inner_abb.get_name())
+                
+            #print("exit",exit_abb.get_name())
+            
+        
         assert not entry_abb.get_seed() == exit_abb.get_seed(), 'Entry ABB cannot merge itself into itself'
         #assert not entry_abb in inner_abbs
         
@@ -179,6 +190,8 @@ class ABB_MergeStep(Step):
         # Therefore, we just update the exit node of the entry to
         # preserve a correct entry/exit region
         entry_abb.adapt_exit_bb(exit_abb)
+        
+       
 
         
         # adopt outgoing edges
@@ -189,7 +202,8 @@ class ABB_MergeStep(Step):
                 entry_abb.set_successor(successor)
                 successor.set_predecessor(entry_abb)
                 successor.remove_predecessor(exit_abb)
-                
+        
+        
         # Remove edges between entry and inner_abbs/exit
         for abb in inner_abbs | {entry_abb}:
             for successor in abb.get_successors():
@@ -198,6 +212,8 @@ class ABB_MergeStep(Step):
                     if element.get_seed() == seed:
                         abb.remove_successor(successor)
                         successor.remove_predecessor(abb)
+                        
+      
                         
         # remove conflict when entry abb has the exit abb as predecessor 
         for predecessor in entry_abb.get_predecessors():
@@ -216,15 +232,20 @@ class ABB_MergeStep(Step):
         # Remove merged successors from any existing list
         for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
             
-            if not parent_function.remove_abb(abb.get_seed()):
-                sys.exit("abb could not removed from function"+abb.get_name().decode("utf-8") )
-                
-            if not g.remove_vertex(abb.get_seed()):
-                sys.exit("abb could not removed from graph")
+            parent_function.remove_abb(abb.get_seed())
+            #if not parent_function.remove_abb(abb.get_seed()):
+             #  print("Probem")
+               #sys.exit("abb could not removed from function"+abb.get_name().decode("utf-8") )
+            g.remove_vertex(abb.get_seed())
+            #if not g.remove_vertex(abb.get_seed()):
+             #   print("Probem")
+                #sys.exit("abb could not removed from graph")
     
         
+    
         #entry_abb.print_information()
-
+        
+       
         
         #print("Merged: ", successor, "into:", abb)
         #print(abb.outgoing_edges)
@@ -334,6 +355,16 @@ class ABB_MergeStep(Step):
                     #print("append" , node.get_name(),node.get_seed())
                     ws.append(node)
         
+        for successor in end.get_successors():
+            if start.postdominates(successor):
+                
+                
+                tmp_region = set (self.find_region(successor,start))
+                
+                region =  region | tmp_region
+                
+                #for tmp_abb in tmp_region:
+                #    print("detected region", tmp_abb.get_name())
         
         return region
     

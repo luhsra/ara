@@ -286,3 +286,5 @@ cdef extern from "graph.h" namespace "OS":
 
         start_scheduler_relation get_start_scheduler_relation()
         bool get_loop_information()
+        bool dominates(shared_ptr[ABB])
+        bool postdominates(shared_ptr[ABB])

@@ -779,6 +779,13 @@ cdef class ABB(Vertex):
 
         cdef bool loop_information = deref(self._c()).get_loop_information()
         return loop_information
+    
+    
+    def dominates(self,ABB abb):
+        return deref(self._c()).dominates(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
+
+    def postdominates(self,ABB abb):
+        return deref(self._c()).postdominates(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
     def  print_information(self):
         return deref(self._c()).print_information()

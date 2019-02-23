@@ -1259,6 +1259,24 @@ OS::shared_abb OS::ABB::get_postdominator() {
 	return nullptr;
 }
 
+bool OS::ABB::dominates(shared_abb abb){
+    llvm:BasicBlock *bb = this->entry;
+    if(this->parent_function.lock()== nullptr)abort();
+	llvm::DominatorTree *DT = this->parent_function.lock()->get_dominator_tree();
+    
+    if (DT->properlyDominates(bb,abb->get_entry_bb()))return true;
+    else return false;
+}
+
+bool OS::ABB::postdominates(shared_abb abb){
+    llvm:BasicBlock *bb = this->entry;
+    if(this->parent_function.lock()== nullptr)abort();
+	llvm::PostDominatorTree *PDT = this->parent_function.lock()->get_postdominator_tree();
+    
+    if (PDT->properlyDominates(bb,abb->get_entry_bb()))return true;
+    else return false;
+}
+
 OS::shared_abb OS::ABB::get_dominator() {
 
 llvm:
