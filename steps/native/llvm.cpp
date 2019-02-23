@@ -1249,6 +1249,8 @@ void set_arguments(OS::shared_abb abb, std::vector<shared_warning> *warning_list
 
 	int bb_count = 0;
 
+    call_data call_info;
+    
 	// iterate about the basic blocks of the abb
 	for (auto &bb : *abb->get_BasicBlocks()) {
 
@@ -1266,37 +1268,51 @@ void set_arguments(OS::shared_abb abb, std::vector<shared_warning> *warning_list
             // if( bb->getName().str() == "BB51") std::cerr << print_argument(&inst) << std::endl;
 			// check if instruction is a call instruction
 			if (isa<CallInst>(inst)) {
-             
-				CallInst *call = (CallInst *)&inst;
-				Function *func = call->getCalledFunction();
-				if (func && !isCallToLLVMIntrinsic(call)) {
-					call_found = true;
+                CallInst *call = (CallInst *)&inst;
+                if(!isCallToLLVMIntrinsic(call)){
+                    Function *func = call->getCalledFunction();
+                    call_found = true;
+                    
+                    if(func){
+                        // get and store the called arguments values
+                        dump_instruction(abb, func, call, warning_list);
 
-					// get and store the called arguments values
-					dump_instruction(abb, func, call, warning_list);
-
-					++call_count;
-				}
+                        ++call_count;
+                    }else{
+                        // store the name of the called function
+                        call_info.call_name = print_argument(call->getCalledValue());
+                        // store the llvm call instruction reference
+                        call_info.call_instruction = call;     
+                        abb->set_call(&call_info);
+                    }
+                }
 			} else if (InvokeInst *invoke = dyn_cast<InvokeInst>(&inst)) {
-				Function *func = invoke->getCalledFunction();
+                
+                if (!isCallToLLVMIntrinsic(invoke)){
+                    
+                    call_found = true;
+                    Function *func = invoke->getCalledFunction();
 
-				if (func == nullptr) {
-					auto tmp_value = invoke->getCalledValue();
-					if (llvm::Constant *constant = dyn_cast<llvm::Constant>(tmp_value)) {
-						if (llvm::Function *tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
-							func = tmp_func;
-						}
-					}
-				}
-
-				if (func && !isCallToLLVMIntrinsic(invoke)) {
-					call_found = true;
-
-					// get and store the called arguments values
-					dump_instruction(abb, func, invoke, warning_list);
-
-					++call_count;
-				}
+                    if (func == nullptr) {
+                        auto tmp_value = invoke->getCalledValue();
+                        if (llvm::Constant *constant = dyn_cast<llvm::Constant>(tmp_value)) {
+                            if (llvm::Function *tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
+                                func = tmp_func;
+                            }
+                        }
+                    }
+                    if(func) {
+                        // get and store the called arguments values
+                        dump_instruction(abb, func, invoke, warning_list);
+                        ++call_count;
+                    }else{
+                        // store the name of the called function
+                        call_info.call_name = print_argument(invoke->getCalledValue());
+                        // store the llvm call instruction reference
+                        call_info.call_instruction = invoke;  
+                        abb->set_call(&call_info);
+                    }
+                }
 			}
 		}
 		if (call_count > 1) {
@@ -1423,7 +1439,9 @@ std::unique_ptr<Module> LoadFile(const std::string &FN, LLVMContext &Context) {
  */
 
 void set_called_functions(graph::Graph &graph) {
-
+    
+    std::hash<std::string> hash_fn;
+    
 	// set called function for each abb
 	std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::ABB).hash_code());
 	for (auto &vertex : vertex_list) {
@@ -1440,10 +1458,25 @@ void set_called_functions(graph::Graph &graph) {
 		if (CallInst *call = dyn_cast<CallInst>((instr))) {
 
 			llvm::Function *llvm_function = call->getCalledFunction();
-			std::hash<std::string> hash_fn;
+            
+            
+            if (llvm_function == nullptr) {
+            
+                //get function which is addressed with function pointer
+                auto tmp_value = call->getCalledValue();  
+                std::stringstream debug_out;
+                std::vector<llvm::Instruction *> already_visited;
+                already_visited.emplace_back(call);
+                argument_data argument_container;
+                if(dump_argument(debug_out, &argument_container, tmp_value, &already_visited)){
+                    if(argument_container.value_list.size() == 1){
+                        if(Function *tmp_function = dyn_cast<Function>(argument_container.value_list.front()))llvm_function = tmp_function;
+                    };
+                };
+            };
+
 			// get function which is addressed by call
-			graph::shared_vertex vertex =
-			    graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
+			graph::shared_vertex vertex =  graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
 			if (vertex != nullptr) {
 
 				if (vertex->get_name() == "_ZN12GPSDataModelC2Ev")
@@ -1456,18 +1489,31 @@ void set_called_functions(graph::Graph &graph) {
 		} else if (InvokeInst *invoke = dyn_cast<InvokeInst>((instr))) {
 
 			llvm::Function *llvm_function = invoke->getCalledFunction();
-			std::hash<std::string> hash_fn;
 
-			if (llvm_function == nullptr) {
-				auto tmp_value = invoke->getCalledValue();
-				if (llvm::Constant *constant = dyn_cast<llvm::Constant>(tmp_value)) {
-					if (llvm::Function *tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
-						llvm_function = tmp_func;
-					}
-				}
+
+            if (llvm_function == nullptr) {
+            
+                //get function which is addressed with function pointer
+                auto tmp_value = invoke->getCalledValue();  
+                std::stringstream debug_out;
+                std::vector<llvm::Instruction *> already_visited;
+                already_visited.emplace_back(invoke);
+                argument_data argument_container;
+                if(dump_argument(debug_out, &argument_container, tmp_value, &already_visited)){
+                    if(argument_container.value_list.size() == 1){
+                        if(Function *tmp_function = dyn_cast<Function>(argument_container.value_list.front()))llvm_function = tmp_function;
+                    }
+                };
+                if (llvm_function == nullptr) {
+                    if (llvm::Constant *constant = dyn_cast<llvm::Constant>(tmp_value)) {
+                        if (llvm::Function *tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
+                            llvm_function = tmp_func;
+                        }
+                    }
+                }
 			}
-			graph::shared_vertex vertex =
-			    graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
+			
+			graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
 			if (vertex != nullptr) {
 				// std::cout << "success" <<  vertex->get_name() << std::endl;
 
