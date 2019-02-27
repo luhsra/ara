@@ -21,8 +21,8 @@ subdir('test')
 
 test('arsa_tester',
   py3_inst,
-  args: [files('arsa.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
-  #args: [files('arsa.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
+  #args: [files('arsa.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
+  args: [files('arsa.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
   
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[1]],
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[16]],
