@@ -1016,6 +1016,8 @@ bool dump_argument(std::stringstream &debug_out, argument_data *argument_contain
                         }
                     }
 				}
+				
+				//TODO set more binary operators
 			}
 			argument_container->value_list.emplace_back(binop);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
@@ -1521,18 +1523,19 @@ void set_called_functions(graph::Graph &graph) {
                     };
                 };
             };
+            if(llvm_function != nullptr){
+                // get function which is addressed by call
+                graph::shared_vertex vertex =  graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
+                if (vertex != nullptr) {
 
-			// get function which is addressed by call
-			graph::shared_vertex vertex =  graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
-			if (vertex != nullptr) {
+                    if (vertex->get_name() == "_ZN12GPSDataModelC2Ev")
+                        std::cerr << "ERROR" << print_argument(call) << std::endl;
 
-				if (vertex->get_name() == "_ZN12GPSDataModelC2Ev")
-					std::cerr << "ERROR" << print_argument(call) << std::endl;
-
-				auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
-				abb->set_called_function(function, instr);
-				abb->get_parent_function()->set_called_function(function, abb);
-			}
+                    auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+                    abb->set_called_function(function, instr);
+                    abb->get_parent_function()->set_called_function(function, abb);
+                }
+            }
 		} else if (InvokeInst *invoke = dyn_cast<InvokeInst>((instr))) {
 
 			llvm::Function *llvm_function = invoke->getCalledFunction();
@@ -1559,20 +1562,21 @@ void set_called_functions(graph::Graph &graph) {
                     }
                 }
 			}
-			
-			graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
-			if (vertex != nullptr) {
-				// std::cout << "success" <<  vertex->get_name() << std::endl;
+			if(llvm_function != nullptr){
+                graph::shared_vertex vertex = graph.get_vertex(hash_fn(llvm_function->getName().str() + typeid(OS::Function).name()));
+                if (vertex != nullptr) {
+                    // std::cout << "success" <<  vertex->get_name() << std::endl;
 
-				if (vertex->get_name() == "_ZN12GPSDataModelC2Ev")
-					std::cerr << "ERROR" << print_argument(invoke) << std::endl;
+                    if (vertex->get_name() == "_ZN12GPSDataModelC2Ev")
+                        std::cerr << "ERROR" << print_argument(invoke) << std::endl;
 
-				auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
-				abb->set_called_function(function, instr);
+                    auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+                    abb->set_called_function(function, instr);
 
-				abb->get_parent_function()->set_called_function(function, abb);
-			}
-		}
+                    abb->get_parent_function()->set_called_function(function, abb);
+                }
+            }
+        }
 	}
 }
 
