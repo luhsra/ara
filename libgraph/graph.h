@@ -81,9 +81,20 @@ enum schedule_type { full, none };
 
 enum event_type { automatic, mask };
 
+enum class protocol_type { priority_inheritance, priority_ceiling ,none};
+
 enum start_scheduler_relation { before, after, uncertain, not_defined };
 
 enum os_type { OSEK, FreeRTOS };
+
+
+enum class message_property { none,  SEND_STATIC_INTERNAL, SEND_STATIC_EXTERNAL,SEND_DYNAMIC_EXTERNAL,SEND_ZERO_INTERNAL,SEND_ZERO_EXTERNAL,RECEIVE_ZERO_INTERNAL,RECEIVE_ZERO_EXTERNAL,
+                                RECEIVE_UNQUEUED_INTERNAL,RECEIVE_QUEUED_INTERNAL,RECEIVE_UNQUEUED_EXTERNAL,RECEIVE_QUEUED_EXTERNAL,RECEIVE_DYNAMIC_EXTERNAL,RECEIVE_ZERO_SENDERS};
+
+
+
+
+
 
 struct argument_data {
 	std::vector<std::any> any_list;
@@ -953,7 +964,8 @@ namespace OS {
 		private:
 			
 			OS::weak_queueset queueset_reference; // Referenz zur Queueset
-
+            
+            message_property property = message_property::none;
 		
 			int length;              // Länger der Queue
 			int item_size;
@@ -984,7 +996,10 @@ namespace OS {
                 return equal;
             };
 			
-			
+			message_property get_message_property();
+			void set_message_property(message_property property);
+            
+            
 			unsigned long get_item_size();
 			void set_item_size(unsigned long size);
 			
@@ -995,7 +1010,6 @@ namespace OS {
 			shared_queueset get_queueset_reference();
 			std::list<graph::shared_vertex> get_accessed_elements(); // gebe ISR/Task zurück, die mit der Queue interagieren
 
-			static bool classof(const Vertex *S);
 	};
 
 
@@ -1174,6 +1188,8 @@ namespace OS {
 			std::list<OS::weak_task> tasks;
 			std::list<OS::weak_isr> irs;
 			std::list<OS::weak_resource> resources;
+            
+            protocol_type protocol = protocol_type::none;
 			
 		public:
 			Mutex(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
@@ -1213,6 +1229,9 @@ namespace OS {
             
             void set_resource_type(resource_type type);
 			resource_type get_resource_type();
+            
+            void set_protocol_type(protocol_type type);
+			protocol_type get_protocol_type();
 			
 			void set_max_count(unsigned long count);
 			unsigned long get_max_count();

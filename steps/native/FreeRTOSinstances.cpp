@@ -593,7 +593,7 @@ graph::shared_vertex create_semaphore(graph::Graph& graph,OS::shared_abb abb,sem
 * @param call_references call instructions which were already visited
 * @return a shared pointer of the created abstraction instance
 */
-graph::shared_vertex create_resource(graph::Graph& graph,OS::shared_abb abb,resource_type type , bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references ){
+graph::shared_vertex create_mutex(graph::Graph& graph,OS::shared_abb abb,resource_type type , bool before_scheduler_start,std::vector<llvm::Instruction*>* call_references ){
 	
     bool success = false;
     
@@ -613,7 +613,7 @@ graph::shared_vertex create_resource(graph::Graph& graph,OS::shared_abb abb,reso
 	
 	resource->set_handler_name(handler_name,llvm_handler);
 	resource->set_start_scheduler_creation_flag(before_scheduler_start);
-	
+	resource->set_protocol_type(protocol_type::priority_inheritance);
 	
 	switch(type){
 		
@@ -1340,7 +1340,7 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
             else if(syscall_name =="xSemaphoreCreateRecursiveMutex")type = recursive_mutex;
             
             //std::cerr << abb->get_parent_function()->get_name() << std::endl;
-            created_vertex = create_resource(graph, abb, type, before_scheduler_start,already_visited_calls);
+            created_vertex = create_mutex(graph, abb, type, before_scheduler_start,already_visited_calls);
             if(!created_vertex)target_class = "Mutex";
             
         }			

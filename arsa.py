@@ -54,7 +54,9 @@ def main():
                         default=False, help="list all available steps")
     parser.add_argument('input_files', help="all LLVM-IR input files",
                         nargs='*')
-
+    parser.add_argument('--oilfile', help="name of oilfile",
+                        default='oilfile.oil')
+    
     args = parser.parse_args()
 
     # logging

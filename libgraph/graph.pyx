@@ -120,6 +120,30 @@ class syscall_definition_type(IntEnum):
     #idle = <int> cgraph.idle
     #tick = <int> cgraph.tick
     #no_hook = <int> cgraph.no_hook
+    
+    
+class protocol_type(IntEnum):
+    none  = <int> cgraph.none
+    priority_inheritance = <int> cgraph.priority_inheritance
+    priority_ceiling   = <int> cgraph.priority_ceiling
+
+
+class message_property(IntEnum):
+    none  = <int> cgraph.none
+    SEND_STATIC_INTERNAL = <int> cgraph.SEND_STATIC_INTERNAL
+    SEND_STATIC_EXTERNAL   = <int> cgraph.SEND_STATIC_EXTERNAL
+    SEND_DYNAMIC_EXTERNAL  = <int> cgraph.SEND_DYNAMIC_EXTERNAL
+    SEND_ZERO_INTERNAL = <int> cgraph.SEND_ZERO_INTERNAL
+    SEND_ZERO_EXTERNAL = <int> cgraph.SEND_ZERO_EXTERNAL
+    RECEIVE_ZERO_INTERNAL = <int> cgraph.RECEIVE_ZERO_INTERNAL
+    RECEIVE_ZERO_EXTERNAL = <int> cgraph.RECEIVE_ZERO_EXTERNAL
+    RECEIVE_UNQUEUED_INTERNAL = <int> cgraph.RECEIVE_UNQUEUED_INTERNAL
+    RECEIVE_QUEUED_INTERNAL = <int> cgraph.RECEIVE_QUEUED_INTERNAL
+    RECEIVE_QUEUED_EXTERNAL = <int> cgraph.RECEIVE_QUEUED_EXTERNAL
+    RECEIVE_UNQUEUED_EXTERNAL = <int> cgraph.RECEIVE_UNQUEUED_EXTERNAL
+    RECEIVE_DYNAMIC_EXTERNAL = <int> cgraph.RECEIVE_DYNAMIC_EXTERNAL
+    RECEIVE_ZERO_SENDERS = <int> cgraph.RECEIVE_ZERO_SENDERS
+
 
 class data_type(IntEnum):
     string = 1
@@ -445,6 +469,10 @@ cdef class Mutex(Vertex):
         cdef string c_prop= prop.encode('UTF-8')
         cdef string c_linked_resource = linked_resource.encode('UTF-8')
         deref(self._c()).set_resource_property(c_prop, c_linked_resource)
+        
+    def set_protocol_type(self,int protocol ):
+        cdef cgraph.protocol_type t = <cgraph.protocol_type> protocol
+        deref(self._c()).set_protocol_type(t)
 
     def get_name(self):
         return deref(self._c()).get_name().decode('UTF-8')
@@ -802,7 +830,16 @@ cdef class Queue(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Queue](make_shared[cgraph.Queue](&graph._c_graph, bname))
 
+    def set_message_property(self, int input_property):
+        cdef cgraph.message_property t = <cgraph.message_property> input_property
+        deref(self._c()).set_message_property(t)
 
+    def set_length(self, int length):
+        deref(self._c()).set_length(length)
+
+
+            	
+            	
 cdef class Semaphore(Vertex):
 
     cdef inline shared_ptr[cgraph.Semaphore] _c(self):

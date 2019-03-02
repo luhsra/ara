@@ -58,7 +58,9 @@ class OilStep(Step):
     
         print("Run ", self.get_name())
         
-        structure_file = '../appl/OSEK/coptermok.oil'
+        oilfile =  self._config["oilfile"]
+        
+        structure_file = '../appl/OSEK/'+oilfile
         tmp_file = '../tmp.txt'
         
         #open oil file
@@ -94,6 +96,7 @@ class OilStep(Step):
         event_list = {}
         resource_list = {}
         alarm_list = {}
+        queue_list = {}
         
         #get the rtos graph instances
         rtos =  g.get_type_vertices("RTOS")
@@ -176,6 +179,7 @@ class OilStep(Step):
             for name in resources:
                 resource = graph.Mutex(g, name)
                 resource_list[name] = resource
+                resource.set_protocol_type(graph.protocol_type.priority_ceiling)
                 g.set_vertex(resource)
 
  
@@ -187,6 +191,16 @@ class OilStep(Step):
                 alarm = graph.Timer(g, name)
                 alarm_list[name] = alarm
                 g.set_vertex(alarm)
+                
+        #get the alarms
+        queues = dictionary.get("MESSAGE", "error")
+        if queues != "error":
+            #iterate about the alarms
+            for name in queues:
+                queue = graph.Queue(g, name)
+                queue_list[name] = queue
+                g.set_vertex(queue)
+
 
 
         #get the counters 
@@ -660,4 +674,39 @@ class OilStep(Step):
                                     print("autostart is no boolean")
                                     sys.exit()
             
+                    
+                    
+            #get the queues (OSEK messages) 
+            queues = dictionary.get("MESSAGE", "error")
+            if queues != "error":
 
+                #iterate about the events
+                for name in queues:
+                    
+                    queue = queue_list[name]
+                
+                    oil_qeue = queues[name]
+                    
+                    queue.set_handler_name("OSEKOS_MESSAGE_" + name);
+                    
+                    #iterate about the attributes of the events
+                    for attribute in oil_event:
+                        
+                        if attribute == "QUEUESIZE":
+                            
+                            if isinstance(oil_qeue[attribute] , int):
+                                queue.set_length(oil_qeue[attribute])
+                                #print(oil_event[attribute])
+                            else:
+                                print("message length is no integer")
+                                
+                        elif attribute == "MESSAGEPROPERTY":
+                                oil_property = graph.message_property[oil_qeue[attribute]]
+                                if oil_property != None:
+                                    queue.set_message_property(oil_property)
+                                    
+                                else:
+                                     print(name,"invalid message property")
+                       
+                        else:
+                            print(name,"queue has different attributes in oil")

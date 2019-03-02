@@ -1642,6 +1642,12 @@ unsigned long OS::Queue::get_length() { return this->length; }
 
 void OS::Queue::set_length(unsigned long length) { this->length = length; }
 
+message_property OS::Queue::get_message_property() {return this->property ; }
+
+
+void OS::Queue::set_message_property(message_property property) { this->property = property ; }
+
+
 void OS::Timer::set_timer_id(unsigned long timer_id) { this->timer_id = timer_id; }
 
 void OS::Timer::set_periode(unsigned long periode) { this->periode = periode; }
@@ -1682,6 +1688,9 @@ void OS::Mutex::set_resource_type( resource_type type){	this->type = type;}
 void OS::Mutex::set_max_count(unsigned long max_count) { this->max_count = max_count; }
 
 
+void OS::Mutex::set_protocol_type( protocol_type type){	this->protocol = type;}
+
+
 
 
 void OS::Mutex::set_initial_count(unsigned long initial_count) { this->initial_count = initial_count; }
@@ -1694,6 +1703,8 @@ unsigned long  OS::Semaphore::get_max_count(){	return this->max_count;}
 unsigned long  OS::Semaphore::get_initial_count(){	return this->max_count;}
 
 resource_type OS::Mutex::get_resource_type() { return this->type; }
+
+protocol_type OS::Mutex::get_protocol_type() { return this->protocol; }
 
 void OS::Semaphore::set_max_count(unsigned long max_count) { this->max_count = max_count; }
 

@@ -29,6 +29,13 @@ cdef extern from "graph.h":
     cdef cppclass os_type:
         pass
 
+cdef extern from "graph.h":
+    cdef cppclass protocol_type:
+        pass
+        
+cdef extern from "graph.h":
+    cdef cppclass message_property:
+        pass
 
 cdef extern from "graph.h" namespace "start_scheduler_relation":
     cdef timer_type before
@@ -54,7 +61,11 @@ cdef extern from "graph.h" namespace "os_type":
     cdef os_type  OSEK
     cdef os_type FreeRTOS
 
-
+cdef extern from "graph.h" namespace "protocol_type":
+    cdef protocol_type priority_ceiling
+    cdef protocol_type priority_inheritance
+    cdef protocol_type none
+    
 cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type computate
     cdef syscall_definition_type create
@@ -81,6 +92,23 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type end_scheduler
     cdef syscall_definition_type chain
     cdef syscall_definition_type delay
+    
+cdef extern from "graph.h" namespace "message_property":
+    cdef message_property none
+    cdef message_property SEND_STATIC_INTERNAL
+    cdef message_property SEND_STATIC_EXTERNAL
+    cdef message_property SEND_DYNAMIC_EXTERNAL
+    cdef message_property SEND_ZERO_INTERNAL
+    cdef message_property SEND_ZERO_EXTERNAL
+    cdef message_property RECEIVE_ZERO_INTERNAL
+    cdef message_property RECEIVE_ZERO_EXTERNAL
+    cdef message_property RECEIVE_UNQUEUED_INTERNAL
+    cdef message_property RECEIVE_QUEUED_INTERNAL
+    cdef message_property RECEIVE_UNQUEUED_EXTERNAL
+    cdef message_property RECEIVE_QUEUED_EXTERNAL
+    cdef message_property RECEIVE_DYNAMIC_EXTERNAL
+    cdef message_property RECEIVE_ZERO_SENDERS
+
 
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
@@ -148,7 +176,7 @@ cdef extern from "graph.h" namespace "OS":
         Mutex(Graph* graph, string name) except +
 
         void set_resource_property(string prop, string linked_resource)
-
+        void set_protocol_type(protocol_type type)
         string get_name()
 
     cdef cppclass Task:
@@ -171,6 +199,9 @@ cdef extern from "graph.h" namespace "OS":
 
     cdef cppclass Queue:
         Queue(Graph* graph, string name) except +
+        
+        void set_message_property(message_property property)
+        void set_length(unsigned long size)
 
     cdef cppclass QueueSet:
         QueueSet(Graph* graph, string name) except +
