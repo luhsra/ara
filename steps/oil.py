@@ -174,7 +174,7 @@ class OilStep(Step):
         if resources != "error":
             #iterate about the isr
             for name in resources:
-                resource = graph.Resource(g, name)
+                resource = graph.Mutex(g, name)
                 resource_list[name] = resource
                 g.set_vertex(resource)
 

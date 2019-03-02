@@ -609,7 +609,7 @@ graph::shared_vertex create_resource(graph::Graph& graph,OS::shared_abb abb,reso
 	llvm::Value* llvm_handler = nullptr;
 	std::string handler_name = get_handler_name(instruction, 1,llvm_handler);
 	
-	auto resource = std::make_shared<OS::Resource>(&graph,handler_name);
+	auto resource = std::make_shared<OS::Mutex>(&graph,handler_name);
 	
 	resource->set_handler_name(handler_name,llvm_handler);
 	resource->set_start_scheduler_creation_flag(before_scheduler_start);
@@ -649,8 +649,8 @@ graph::shared_vertex create_resource(graph::Graph& graph,OS::shared_abb abb,reso
         bool initial = true;
         bool error = false;
         
-        for(auto resource_vertex :graph.get_type_vertices((typeid(OS::Resource).hash_code()))){
-            auto tmp_resource = std::dynamic_pointer_cast<OS::Resource>(resource_vertex);
+        for(auto resource_vertex :graph.get_type_vertices((typeid(OS::Mutex).hash_code()))){
+            auto tmp_resource = std::dynamic_pointer_cast<OS::Mutex>(resource_vertex);
             if(resource->get_seed() == tmp_resource->get_seed()){
                 
                 if(resource->isEqual(tmp_resource)){
@@ -1331,7 +1331,7 @@ bool create_abstraction_instance(graph::Graph& graph,graph::shared_vertex start_
             if(!created_vertex)target_class = "CountingSemaphore";
             
         }
-        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Resource).hash_code())){
+        if(list_contains_element(abb->get_call_target_instances(),typeid(OS::Mutex).hash_code())){
             //set semaphore
         
             resource_type type;

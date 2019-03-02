@@ -1363,7 +1363,7 @@ void OS::Counter::set_ticks_per_base(unsigned long ticks_per_base) { this->min_c
 
 void OS::Counter::set_min_cycle(unsigned long min_cycle) { this->ticks_per_base = ticks_per_base; }
 
-bool OS::Resource::set_linked_resource(OS::shared_resource resource) {
+bool OS::Mutex::set_linked_resource(OS::shared_resource resource) {
 
 	bool result = false;
 	if (this->graph->contain_vertex(resource)) {
@@ -1373,7 +1373,7 @@ bool OS::Resource::set_linked_resource(OS::shared_resource resource) {
 	return result;
 }
 
-bool OS::Resource::set_resource_property(std::string type, std::string linked_resource) {
+bool OS::Mutex::set_resource_property(std::string type, std::string linked_resource) {
 
 	bool result = false;
 
@@ -1392,8 +1392,8 @@ bool OS::Resource::set_resource_property(std::string type, std::string linked_re
 		shared_vertex vertex = this->graph->get_vertex(linked_resource);
 		shared_vertex self_vertex = this->graph->get_vertex(this->seed);
 
-		shared_resource resource_reference = std::dynamic_pointer_cast<OS::Resource>(vertex);
-		shared_resource self_resource = std::dynamic_pointer_cast<OS::Resource>(self_vertex);
+		shared_resource resource_reference = std::dynamic_pointer_cast<OS::Mutex>(vertex);
+		shared_resource self_resource = std::dynamic_pointer_cast<OS::Mutex>(self_vertex);
 
 		if (resource_reference) {
 			if (resource_reference->get_resource_type() == linked ||
@@ -1454,7 +1454,7 @@ bool OS::Task::set_resource_reference(std::string resource_name) {
 	bool result = false;
 	auto resource = this->graph->get_vertex(resource_name);
 	if (resource != nullptr) {
-		auto resource_cast = std::dynamic_pointer_cast<OS::Resource>(resource);
+		auto resource_cast = std::dynamic_pointer_cast<OS::Mutex>(resource);
 		if (resource_cast) {
 			this->resources.emplace_back(resource_cast);
 			result = true;
@@ -1564,7 +1564,7 @@ bool OS::ISR::set_resource_reference(std::string resource_name) {
 	bool result = false;
 	auto resource = this->graph->get_vertex(resource_name);
 	if (resource != nullptr) {
-		auto resource_cast = std::dynamic_pointer_cast<OS::Resource>(resource);
+		auto resource_cast = std::dynamic_pointer_cast<OS::Mutex>(resource);
 		if (resource_cast) {
 			this->resources.emplace_back(resource_cast);
 			result = true;
@@ -1670,21 +1670,21 @@ bool OS::Timer::set_callback_function(std::string function_name) {
 OS::shared_function OS::Timer::get_callback_function() { return this->callback_function.lock(); }
 
 
-unsigned long OS::Resource::get_max_count(){return this->max_count;}
+unsigned long OS::Mutex::get_max_count(){return this->max_count;}
 
 
-unsigned long OS::Resource::get_initial_count(){return this->initial_count;}
-
-
-
-void OS::Resource::set_resource_type( resource_type type){	this->type = type;}
-
-void OS::Resource::set_max_count(unsigned long max_count) { this->max_count = max_count; }
+unsigned long OS::Mutex::get_initial_count(){return this->initial_count;}
 
 
 
+void OS::Mutex::set_resource_type( resource_type type){	this->type = type;}
 
-void OS::Resource::set_initial_count(unsigned long initial_count) { this->initial_count = initial_count; }
+void OS::Mutex::set_max_count(unsigned long max_count) { this->max_count = max_count; }
+
+
+
+
+void OS::Mutex::set_initial_count(unsigned long initial_count) { this->initial_count = initial_count; }
 
 
 unsigned long  OS::Semaphore::get_max_count(){	return this->max_count;}
@@ -1693,7 +1693,7 @@ unsigned long  OS::Semaphore::get_max_count(){	return this->max_count;}
 
 unsigned long  OS::Semaphore::get_initial_count(){	return this->max_count;}
 
-resource_type OS::Resource::get_resource_type() { return this->type; }
+resource_type OS::Mutex::get_resource_type() { return this->type; }
 
 void OS::Semaphore::set_max_count(unsigned long max_count) { this->max_count = max_count; }
 

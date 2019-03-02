@@ -176,13 +176,13 @@ void osek_scheduler_resource(graph::Graph& graph,shared_abb abb,std::vector<llvm
     std::string scheduler_resource_name = "RES_SCHEDULER";  
     
     //check if scheduler exists as resource in graph
-    if(graph.get_vertex( hash_fn(scheduler_resource_name +  typeid(OS::Resource).name())) != nullptr)return; 
+    if(graph.get_vertex( hash_fn(scheduler_resource_name +  typeid(OS::Mutex).name())) != nullptr)return; 
     
     if(abb->get_syscall_type() == receive){
         //iterate about the possible refereneced(syscall targets) abstraction types
         for(auto& target: *abb->get_call_target_instances()){
             //the RTOS has the handler name RTOS
-            if(target == typeid(OS::Resource).hash_code()){
+            if(target == typeid(OS::Mutex).hash_code()){
                 
                 //get the call specific arguments 
                 auto arguments = abb->get_syscall_arguments();
@@ -194,7 +194,7 @@ void osek_scheduler_resource(graph::Graph& graph,shared_abb abb,std::vector<llvm
                 std::string addressed_resource = std::any_cast<std::string>(any_value);
                 if(addressed_resource == scheduler_resource_name ){
                     //create the resource and store it in the graph
-                    auto resource = std::make_shared<OS::Resource>(&graph,scheduler_resource_name);
+                    auto resource = std::make_shared<OS::Mutex>(&graph,scheduler_resource_name);
 	
                     resource->set_handler_name(scheduler_resource_name);
                     resource->set_start_scheduler_creation_flag(after);
@@ -530,7 +530,7 @@ void add_to_queue_set(graph::Graph& graph,std::vector<shared_warning>* warning_l
 	
                         graph::shared_vertex queue_set_element = nullptr;
                         
-                        queue_set_element =  graph.get_vertex(hash_fn(handler_name +  typeid(OS::Resource).name()));
+                        queue_set_element =  graph.get_vertex(hash_fn(handler_name +  typeid(OS::Mutex).name()));
                         if(queue_set_element== nullptr)queue_set_element = graph.get_vertex(hash_fn(handler_name +  typeid(OS::Queue).name()));
                         if(queue_set_element== nullptr)queue_set_element = graph.get_vertex(hash_fn(handler_name +  typeid(OS::Semaphore).name()));
                         

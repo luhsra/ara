@@ -474,12 +474,12 @@ bool detect_critical_regions (shared_function definition_function, std::list<gra
 void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
      //get all isrs, which are stored in the graph
-    auto vertex_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Mutex).hash_code());
 	//iterate about the isrs
 	for (auto &vertex : vertex_list) {
         //std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
-        auto resource = std::dynamic_pointer_cast<OS::Resource> (vertex);
+        auto resource = std::dynamic_pointer_cast<OS::Mutex> (vertex);
         
         
         //std::cerr << "resource:" <<  resource->get_name() << std::endl;
@@ -516,7 +516,7 @@ void verify_mutexes(graph::Graph& graph,std::vector<shared_warning>* warning_lis
                     }
                 }
                 if(!mutex_flag){
-                    auto warning = std::make_shared<ResourceUseWarning>(resource, take->get_start_vertex(), take->get_abb_reference());
+                    auto warning = std::make_shared<MutexUseWarning>(resource, take->get_start_vertex(), take->get_abb_reference());
                     warning_list->emplace_back(warning);
                 }
             }
@@ -750,7 +750,7 @@ void verify_freertos_events(graph::Graph& graph,std::vector<shared_warning>* war
 void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //task which use resource have different priorities
-    auto resource_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
+    auto resource_list =  graph.get_type_vertices(typeid(OS::Mutex).hash_code());
     
     auto task_list = graph.get_type_vertices(typeid(OS::Task).hash_code());
     
@@ -760,7 +760,7 @@ void verify_priority_inversion(graph::Graph& graph,std::vector<shared_warning>* 
 	
     for (auto &vertex : resource_list){
     
-        auto resource = std::dynamic_pointer_cast<OS::Resource>(vertex);
+        auto resource = std::dynamic_pointer_cast<OS::Mutex>(vertex);
        
         
         //get all tasks with takes the resource
@@ -870,7 +870,7 @@ bool find_cycle(graph::shared_vertex vertex,shared_abb abb,std::list<size_t>* vi
     bool resource_perspective = false;
     
     //check if the current vertex is a resource or a (task, isr) 
-    if(vertex->get_type()== typeid(OS::Resource).hash_code()){
+    if(vertex->get_type()== typeid(OS::Mutex).hash_code()){
         edges = vertex->get_outgoing_edges();
         resource_perspective = true;
     }else{
@@ -891,7 +891,7 @@ bool find_cycle(graph::shared_vertex vertex,shared_abb abb,std::list<size_t>* vi
             //from task or isr perspective
             target_vertex = edge->get_start_vertex();
             shared_function definition_function = get_definition_function(target_vertex);
-            if(target_vertex->get_type()!=typeid(OS::Resource).hash_code())continue;
+            if(target_vertex->get_type()!=typeid(OS::Mutex).hash_code())continue;
             if(!is_reachable(definition_function,abb,edge->get_abb_reference(),nullptr))continue;
         }
        
@@ -911,13 +911,13 @@ bool find_cycle(graph::shared_vertex vertex,shared_abb abb,std::list<size_t>* vi
 void verify_deadlocks(graph::Graph& graph,std::vector<shared_warning>* warning_list){
     
     //get all resources, which are stored in the graph
-    auto vertex_list =  graph.get_type_vertices(typeid(OS::Resource).hash_code());
+    auto vertex_list =  graph.get_type_vertices(typeid(OS::Mutex).hash_code());
     
 	//iterate about the resources
 	for (auto &vertex : vertex_list) {
         //std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
-        auto resource = std::dynamic_pointer_cast<OS::Resource> (vertex);
+        auto resource = std::dynamic_pointer_cast<OS::Mutex> (vertex);
         std::list<size_t> visited;
         //check if there is cycle in the graph with starts and ends at the resource
         if(find_cycle(resource,nullptr, &visited,graph,0,resource->get_seed())){
@@ -1092,7 +1092,7 @@ void verify_critical_region(graph::Graph& graph,std::vector<shared_warning>* war
         //check if mutex is successfully ends
         for(auto edge: vertex->get_outgoing_edges()){
             
-            if(edge->get_target_vertex()->get_type() == typeid(OS::Resource).hash_code()){
+            if(edge->get_target_vertex()->get_type() == typeid(OS::Mutex).hash_code()){
                 
                 verify_specific_critical_region(graph,task, take, commit,warning_list,edge->get_target_vertex()->get_seed(),false);
                 
@@ -1223,9 +1223,9 @@ void verify_abstraction_instances_use(graph::Graph& graph,std::vector<shared_war
     };
     if(rtos->support_recursive_mutexes == false || rtos->support_mutexes == false){
         
-        auto resources = graph.get_type_vertices(typeid(OS::Resource).hash_code());
+        auto resources = graph.get_type_vertices(typeid(OS::Mutex).hash_code());
         for(auto tmp_resource : resources){
-            auto resource = std::dynamic_pointer_cast<OS::Resource>(tmp_resource);
+            auto resource = std::dynamic_pointer_cast<OS::Mutex>(tmp_resource);
             if(rtos->support_recursive_mutexes == false  && resource->get_resource_type() == recursive_mutex){
                 auto warning = std::make_shared<EnableWarning>("Recursive mutex",resource, nullptr);
                 warning_list->emplace_back(warning);

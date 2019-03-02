@@ -343,18 +343,18 @@ class SemaphoreUseWarning : public Warning {
         }
 };
 
-class ResourceUseWarning : public Warning {
+class MutexUseWarning : public Warning {
     private:
         OS::shared_resource resouce;
         graph::shared_vertex vertex;
     
     public:
-        ResourceUseWarning(OS::shared_resource resouce,graph::shared_vertex vertex, OS::shared_abb abb):Warning(abb){
+        MutexUseWarning(OS::shared_resource resouce,graph::shared_vertex vertex, OS::shared_abb abb):Warning(abb){
             this->resouce = resouce;
             this->vertex = vertex;
         }
 
-	virtual std::string get_type() const override { return "ResourceUse"; }
+	virtual std::string get_type() const override { return "MutexUse"; }
         
         virtual std::string print_warning()  const override {
             std::string stream = "";

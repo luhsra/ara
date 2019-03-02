@@ -274,7 +274,7 @@ class DotFileParser():
        
         
         self.print_instance_class( g,f,"ISR",0, "deepskyblue")
-        self.print_instance_class( g,f,"Resource",0, "ivory")
+        self.print_instance_class( g,f,"Mutex",0, "ivory")
         
         
         self.print_instance_class( g,f,"QueueSet",0, "yellow")

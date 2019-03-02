@@ -144,8 +144,8 @@ cdef extern from "graph.h" namespace "OS":
         string get_name()
 
 
-    cdef cppclass Resource:
-        Resource(Graph* graph, string name) except +
+    cdef cppclass Mutex:
+        Mutex(Graph* graph, string name) except +
 
         void set_resource_property(string prop, string linked_resource)
 

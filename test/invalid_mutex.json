@@ -1,10 +1,10 @@
 [
 	{
-		"type": "ResourceUse",
+		"type": "MutexUse",
 		"location": "BB1"
 	},
     {
-		"type": "ResourceUse",
+		"type": "MutexUse",
 		"location": "BB11"
 	},
 	{

@@ -42,8 +42,8 @@ cpdef get_type_hash(name):
         hash_type = typeid(cgraph.Event).hash_code()
     elif name == "Queue":
         hash_type = typeid(cgraph.Queue).hash_code()
-    elif name == "Resource":
-        hash_type = typeid(cgraph.Resource).hash_code()
+    elif name == "Mutex":
+        hash_type = typeid(cgraph.Mutex).hash_code()
     elif name == "Timer":
         hash_type = typeid(cgraph.Timer).hash_code()
     elif name == "Buffer":
@@ -184,7 +184,7 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
         typeid(cgraph.Edge).hash_code(): Edge,
         typeid(cgraph.RTOS).hash_code(): RTOS,
         typeid(cgraph.ISR).hash_code(): ISR,
-        typeid(cgraph.Resource).hash_code(): Resource,
+        typeid(cgraph.Mutex).hash_code(): Mutex,
         typeid(cgraph.QueueSet).hash_code(): QueueSet,
     }
     if (vertex == NULL):
@@ -431,15 +431,15 @@ cdef class ISR(Vertex):
         cdef string c_function_name = function_name.encode('UTF-8')
         return deref(self._c()).set_definition_function(c_function_name)
 
-cdef class Resource(Vertex):
-    cdef inline shared_ptr[cgraph.Resource] _c(self):
-        return spc[cgraph.Resource, cgraph.Vertex](self._c_vertex)
+cdef class Mutex(Vertex):
+    cdef inline shared_ptr[cgraph.Mutex] _c(self):
+        return spc[cgraph.Mutex, cgraph.Vertex](self._c_vertex)
 
     def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Resource](make_shared[cgraph.Resource](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Mutex](make_shared[cgraph.Mutex](&graph._c_graph, bname))
 
     def set_resource_property(self, str prop, str linked_resource):
         cdef string c_prop= prop.encode('UTF-8')

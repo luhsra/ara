@@ -365,7 +365,7 @@ namespace OS {
 	class Semaphore;
 	class QueueSet;
 	class Function;
-	class Resource;
+	class Mutex;
 	class Message;
 	class Event;
 	class Counter;
@@ -380,7 +380,7 @@ namespace OS {
 	typedef std::shared_ptr<Task> shared_task;
 	typedef std::shared_ptr<ISR> shared_isr;
 	typedef std::shared_ptr<QueueSet> shared_queueset;
-	typedef std::shared_ptr<Resource> shared_resource;
+	typedef std::shared_ptr<Mutex> shared_resource;
 	typedef std::shared_ptr<Message> shared_message;
 	typedef std::shared_ptr<Event> shared_event;
 	typedef std::shared_ptr<Counter> shared_counter;
@@ -397,7 +397,7 @@ namespace OS {
 	typedef std::weak_ptr<Task> weak_task;
 	typedef std::weak_ptr<ISR> weak_isr;
 	typedef std::weak_ptr<QueueSet> weak_queueset;
-	typedef std::weak_ptr<Resource> weak_resource;
+	typedef std::weak_ptr<Mutex> weak_resource;
 	typedef std::weak_ptr<Message> weak_message;
 	typedef std::weak_ptr<Event> weak_event;
 	typedef std::weak_ptr<Counter> weak_counter;
@@ -1162,7 +1162,7 @@ namespace OS {
 	};
 	
 	
-	class Resource :public graph::Vertex{
+	class Mutex :public graph::Vertex{
 		
 		private:
             
@@ -1176,16 +1176,16 @@ namespace OS {
 			std::list<OS::weak_resource> resources;
 			
 		public:
-			Resource(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
-				this->vertex_type = typeid(Resource).hash_code();
+			Mutex(graph::Graph *graph,std::string name) : graph::Vertex(graph,name){
+				this->vertex_type = typeid(Mutex).hash_code();
 				std::hash<std::string> hash_fn;
-				this->seed = hash_fn(name +  typeid(Resource).name());
+				this->seed = hash_fn(name +  typeid(Mutex).name());
 				//std::cerr << "name subclass: " << name << std::endl;
 			};
             
             
             bool isEqual( graph::shared_vertex vertex ){
-                shared_resource resource =  std::dynamic_pointer_cast< Resource >( vertex );
+                shared_resource resource =  std::dynamic_pointer_cast< Mutex >( vertex );
                 bool equal =true;
                 if(resource != NULL){
                     if(resource->get_seed() != this->seed)equal = false;
