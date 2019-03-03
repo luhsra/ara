@@ -1560,6 +1560,11 @@ bool OS::ISR::set_category(int category) {
 	return result;
 }
 
+bool OS::ISR::set_priority(int priority) {
+    this->priority = priority;
+    return;
+}
+
 bool OS::ISR::set_resource_reference(std::string resource_name) {
 	bool result = false;
 	auto resource = this->graph->get_vertex(resource_name);

@@ -435,6 +435,9 @@ cdef class ISR(Vertex):
 
     def set_category(self, int category):
         deref(self._c()).set_category(category)
+        
+     def set_priority(self, int priority):
+        deref(self._c()).set_priority(priority)
 
     def get_category(self):
         cdef int category = deref(self._c()).get_category()

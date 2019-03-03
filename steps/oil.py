@@ -488,6 +488,13 @@ class OilStep(Step):
                             print("category is no string")
                             sys.exit()
                             
+                    if attribute ==	"PRIORITY":
+                        if isinstance(oil_isr[attribute], int):
+                            isr.set_priority(oil_isr[attribute])
+                        else:
+                            print("priority is no int")
+                            sys.exit()
+                            
                     elif attribute ==	"RESOURCE":
                         if isinstance(oil_isr[attribute], list):
                             for resource in oil_isr[attribute]:

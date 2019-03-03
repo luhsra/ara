@@ -165,6 +165,9 @@ cdef extern from "graph.h" namespace "OS":
         ISR(Graph* graph, string name) except +
 
         bool set_category(int category)
+        
+        void set_priority(int priority)
+        
         int get_category()
         bool set_resource_reference(string)
         shared_ptr[Function] get_definition_function()

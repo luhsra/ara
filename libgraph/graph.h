@@ -883,6 +883,7 @@ namespace OS {
 		};
 
 		bool set_category(int category);
+        void set_priority(int priority);
 		int get_category();
 		bool set_message_reference(std::string);
 		bool set_resource_reference(std::string);
