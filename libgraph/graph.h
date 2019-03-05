@@ -171,6 +171,15 @@ namespace graph {
 
 		std::list<shared_vertex>
 		get_type_vertices(size_t type_info);   // gebe alle Vertexes eines Types (Task, ISR, etc.) zurück
+		template<typename T, typename = std::enable_if<std::is_base_of<Vertex, T>::value>>
+		std::vector<std::shared_ptr<T>>
+		get_type_vertices() {
+			std::vector<std::shared_ptr<T>> ret;
+			for (auto& vertex : get_type_vertices(typeid(T).hash_code())) {
+				ret.emplace_back(std::static_pointer_cast<T, Vertex>(vertex));
+			}
+			return ret;
+		}
 		shared_vertex get_vertex(size_t seed); // gebe Vertex mit dem entsprechenden hashValue zurück
 		shared_edge get_edge(size_t seed);     // gebe Edge mit dem entsprechenden hashValue zurück
 
