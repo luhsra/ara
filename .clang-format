@@ -7,5 +7,9 @@ TabWidth:             4
 UseTab:               ForIndentation
 NamespaceIndentation: All
 ColumnLimit:          120
+FixNamespaceComments: true
+IncludeBlocks:        Regroup
+SortIncludes:         true
+PointerAlignment:     Left
 ...
 

@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "graph.h"
+
 #include <cassert>
 #include <fstream>
 #include <functional>
@@ -102,7 +103,7 @@ void debug_argument(argument_data argument) {
 }
 
 // help function to use string in switch case statements
-constexpr unsigned int str2int(const char *str, int h = 0) {
+constexpr unsigned int str2int(const char* str, int h = 0) {
 	return !str[h] ? 5381 : (str2int(str, h + 1) * 33) ^ str[h];
 }
 
@@ -157,7 +158,7 @@ std::list<shared_vertex> graph::Graph::get_type_vertices(size_t type_info) {
 shared_vertex graph::Graph::get_vertex(size_t seed) {
 	// gebe Vertex mit dem entsprechenden hashValue zurück
 
-	for (auto &vertex : this->vertices) {
+	for (auto& vertex : this->vertices) {
 		// gesuchter vertex gefunden
 		if (seed == vertex->get_seed()) { // check if vertex is from wanted type
 			return (vertex);
@@ -173,7 +174,7 @@ shared_vertex graph::Graph::get_vertex(std::string name) {
 	int counter = 0;
 	// std::cerr << "_______________________" << std::endl;
 	// std::cerr << "searched name: " <<  name << std::endl;
-	for (auto &vertex : this->vertices) {
+	for (auto& vertex : this->vertices) {
 		//	std::cerr << vertex->get_name() << std::endl;
 		if (name == vertex->get_name()) {
 			counter++;
@@ -249,7 +250,7 @@ bool graph::Graph::remove_vertex(graph::shared_vertex vertex) {
 	return success;
 }
 
-bool graph::Graph::remove_edge(shared_edge *edge) {
+bool graph::Graph::remove_edge(shared_edge* edge) {
 	bool success = false;
 	std::list<shared_edge>::iterator it = this->edges.begin(); // iterate about the list elements
 	for (; it != this->edges.end(); ++it) {
@@ -287,7 +288,7 @@ bool graph::Graph::contain_edge(shared_edge edge) {
 	return success;
 }
 
-graph::Vertex::Vertex(Graph *graph, std::string name) {
+graph::Vertex::Vertex(Graph* graph, std::string name) {
 
 	this->graph = graph;
 	this->name = name;
@@ -338,15 +339,15 @@ bool graph::Vertex::remove_edge(shared_edge edge) {
 	bool success = false;
 	std::list<weak_edge>::iterator it = this->outgoing_edges.begin(); // iterate about the list elements
 	for (; it != this->outgoing_edges.end(); ++it) {
-        auto tmp_edge = (*it).lock();
- 		if (edge == tmp_edge) {
+		auto tmp_edge = (*it).lock();
+		if (edge == tmp_edge) {
 			it = this->outgoing_edges.erase(it--);
 			success = true;
 			break;
 		}
 	}
 	for (it = this->ingoing_edges.begin(); it != this->ingoing_edges.end(); ++it) {
-        auto tmp_edge = (*it).lock();
+		auto tmp_edge = (*it).lock();
 		if (edge == tmp_edge) {
 			it = this->ingoing_edges.erase(it--);
 			success = true;
@@ -361,7 +362,7 @@ bool graph::Vertex::remove_vertex(shared_vertex vertex) {
 	std::list<weak_vertex>::iterator it = this->outgoing_vertices.begin(); // iterate about the list elements
 	// iterate about the outgoing vertices
 	for (; it != this->outgoing_vertices.end(); ++it) {
-        auto tmp_vertex = (*it).lock();
+		auto tmp_vertex = (*it).lock();
 		if (vertex->get_seed() == tmp_vertex->get_seed()) {
 			it = this->outgoing_vertices.erase(it--);
 			success = true;
@@ -370,7 +371,7 @@ bool graph::Vertex::remove_vertex(shared_vertex vertex) {
 	}
 	// iterate about the ingoing vertices
 	for (it = this->ingoing_vertices.begin(); it != this->ingoing_vertices.end(); ++it) {
-        auto tmp_vertex = (*it).lock();
+		auto tmp_vertex = (*it).lock();
 		if (vertex->get_seed() == tmp_vertex->get_seed()) {
 			it = this->ingoing_vertices.erase(it--);
 			success = true;
@@ -385,14 +386,14 @@ std::list<graph::shared_vertex> graph::Vertex::get_specific_connected_vertices(s
 	std::list<weak_vertex>::iterator it = this->outgoing_vertices.begin(); // iterate about the list elements
 	// iterate about the outgoing vertices
 	for (; it != this->outgoing_vertices.end(); ++it) {
-        auto tmp_vertex = (*it).lock();
+		auto tmp_vertex = (*it).lock();
 		if (tmp_vertex->get_type() == type_info) {
 			tmp_list.emplace_back(tmp_vertex);
 		}
 	}
 	// iterate about the ingoing vertices
 	for (it = this->ingoing_vertices.begin(); it != this->ingoing_vertices.end(); ++it) {
-        auto tmp_vertex = (*it).lock();
+		auto tmp_vertex = (*it).lock();
 		if (tmp_vertex->get_type() == type_info) {
 			tmp_list.emplace_back(tmp_vertex);
 		}
@@ -401,7 +402,7 @@ std::list<graph::shared_vertex> graph::Vertex::get_specific_connected_vertices(s
 }
 
 // width search
-std::list<graph::shared_vertex> wide_search(Vertex *start, graph::shared_vertex end) {
+std::list<graph::shared_vertex> wide_search(Vertex* start, graph::shared_vertex end) {
 	std::list<graph::shared_vertex> tmp_list;
 	/*//TODO
 	std::queue<graph::shared_vertex> queue;
@@ -428,11 +429,14 @@ std::list<graph::shared_vertex> wide_search(Vertex *start, graph::shared_vertex 
 	return tmp_list;
 }
 
-std::list<graph::shared_vertex> graph::Vertex::get_vertex_chain(graph::shared_vertex vertex) { // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
-	return wide_search(this,  vertex); // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
+std::list<graph::shared_vertex> graph::Vertex::get_vertex_chain(
+    graph::shared_vertex vertex) { // Methode, die die Kette der Elemente vom Start bis zum Ziel Vertex zurück gibt,
+	return wide_search(this,
+	                   vertex); // interagieren die Betriebssystemabstrakionen nicht miteinader gebe nullptr zurück
 }
 
-std::list<graph::shared_vertex> graph::Vertex::get_connected_vertices() { // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
+std::list<graph::shared_vertex>
+graph::Vertex::get_connected_vertices() { // Methode, die die mit diesem Knoten verbundenen Vertexes zurückgibt
 	std::list<graph::shared_vertex> tmp_list;
 	std::list<graph::weak_vertex>::iterator it = this->outgoing_vertices.begin(); // iterate about the list elements
 	// iterate about the outgoing vertices
@@ -462,9 +466,8 @@ graph::Vertex::get_connected_edges() { // Methode, die die mit diesem Knoten ver
 	return tmp_list;
 }
 
-std::list<graph::shared_vertex>
-graph::Vertex::get_ingoing_vertices() { // Methode, die die mit diesem Knoten eingehenden Vertexes
-	                                    // zurückgibt
+std::list<graph::shared_vertex> graph::Vertex::get_ingoing_vertices() { // Methode, die die mit diesem Knoten
+	                                                                    // eingehenden Vertexes zurückgibt
 	std::list<graph::shared_vertex> tmp_list;
 	std::list<graph::weak_vertex>::iterator it = this->ingoing_vertices.begin();
 	for (; it != this->ingoing_vertices.end(); ++it) {
@@ -503,20 +506,12 @@ graph::Vertex::get_outgoing_edges() { // Methode, die die mit diesem Knoten ausg
 	return tmp_list;
 }
 
+llvm::Value* graph::Vertex::get_handler_value() { return this->handler_value; }
 
-llvm::Value* graph::Vertex::get_handler_value(){
-    return this->handler_value;
+void graph::Vertex::set_handler_name(std::string handler_name, llvm::Value* handler_value) {
+	this->handler_value = handler_value;
+	this->handler_name = handler_name;
 }
-
-
-
-
-void graph::Vertex::set_handler_name(std::string handler_name,llvm::Value* handler_value){
-    this->handler_value = handler_value;
-    this->handler_name = handler_name;
-}
-
-
 
 std::list<graph::shared_edge> graph::Vertex::get_direct_edge(
     graph::shared_vertex vertex) { // Methode, die direkte Kante zwischen Start und Ziel Vertex zurückgibt,
@@ -524,14 +519,14 @@ std::list<graph::shared_edge> graph::Vertex::get_direct_edge(
 	std::list<graph::weak_edge>::iterator it = this->outgoing_edges.begin(); // iterate about the list elements
 	// iterate about the outgoing vertices
 	for (; it != this->outgoing_edges.end(); ++it) {
-        auto tmp_edge = (*it).lock();
+		auto tmp_edge = (*it).lock();
 		if (vertex->get_seed() == (tmp_edge->get_target_vertex()->get_seed())) {
 			tmp_list.emplace_back(tmp_edge);
 		}
 	}
 	// iterate about the ingoing verticesget
 	for (it = this->ingoing_edges.begin(); it != this->ingoing_edges.end(); ++it) {
-        auto tmp_edge = (*it).lock();
+		auto tmp_edge = (*it).lock();
 		if (vertex->get_seed() == (tmp_edge->get_start_vertex()->get_seed())) {
 			tmp_list.emplace_back(tmp_edge);
 		}
@@ -540,7 +535,6 @@ std::list<graph::shared_edge> graph::Vertex::get_direct_edge(
 }
 
 void graph::Vertex::set_type(std::size_t type) { this->vertex_type = type; }
-
 
 std::size_t graph::Vertex::get_type() { return this->vertex_type; }
 
@@ -557,7 +551,7 @@ graph::Edge::Edge() {
 	this->graph = nullptr;
 }
 
-graph::Edge::Edge(Graph *graph, std::string name, shared_vertex start, shared_vertex target,
+graph::Edge::Edge(Graph* graph, std::string name, shared_vertex start, shared_vertex target,
                   shared_abb atomic_basic_block_reference) {
 	this->name = name;
 	this->graph = graph;
@@ -593,7 +587,7 @@ graph::shared_vertex graph::Edge::get_target_vertex() { return (this->target_ver
 void graph::Edge::set_syscall(bool syscall) { this->is_syscall = syscall; }
 bool graph::Edge::is_sycall() { return this->is_syscall; }
 
-std::list<argument_data> *graph::Edge::get_arguments() {
+std::list<argument_data>* graph::Edge::get_arguments() {
 	std::cout << "TEST";
 	return &this->arguments;
 }
@@ -608,13 +602,13 @@ void graph::Edge::set_argument(argument_data argument) {
 	return;
 }
 
-void graph::Edge::set_instruction_reference(llvm::Instruction *reference) { this->instruction_reference = reference; }
+void graph::Edge::set_instruction_reference(llvm::Instruction* reference) { this->instruction_reference = reference; }
 
-llvm::Instruction *graph::Edge::get_instruction_reference() { return this->instruction_reference; }
+llvm::Instruction* graph::Edge::get_instruction_reference() { return this->instruction_reference; }
 
 OS::shared_abb graph::Edge::get_abb_reference() { return (this->atomic_basic_block_reference).lock(); }
 
-void graph::Edge::set_specific_call(call_data *call) { this->call = *call; }
+void graph::Edge::set_specific_call(call_data* call) { this->call = *call; }
 
 call_data graph::Edge::get_specific_call() { return this->call; }
 
@@ -622,8 +616,7 @@ bool OS::Function::remove_abb(size_t seed) {
 
 	bool success = false;
 	for (auto itr = this->atomic_basic_blocks.begin(); itr != this->atomic_basic_blocks.end();) {
-        
-        
+
 		if ((*itr).lock() != nullptr && (*itr).lock()->get_seed() == seed) {
 			success = true;
 			itr = this->atomic_basic_blocks.erase(itr);
@@ -649,14 +642,16 @@ bool OS::Function::set_definition_vertex(graph::shared_vertex vertex) {
 	return success;
 }
 
-std::vector<graph::shared_vertex> OS::Function::get_definition_vertices() { 
-    std::vector<graph::shared_vertex>  tmp_vector;
-    
-    for(auto vertex : this->definition_elements){
-        if(vertex.lock() == nullptr)continue;
-        else tmp_vector.emplace_back(vertex.lock()); 
-    }
-    return tmp_vector;
+std::vector<graph::shared_vertex> OS::Function::get_definition_vertices() {
+	std::vector<graph::shared_vertex> tmp_vector;
+
+	for (auto vertex : this->definition_elements) {
+		if (vertex.lock() == nullptr)
+			continue;
+		else
+			tmp_vector.emplace_back(vertex.lock());
+	}
+	return tmp_vector;
 }
 
 void OS::Function::has_syscall(bool flag) { this->syscall_flag = flag; }
@@ -674,8 +669,9 @@ function_definition_type OS::Function::get_definition() { return this->definitio
 std::vector<OS::shared_function> OS::Function::get_called_functions() {
 	std::vector<OS::shared_function> called_functions;
 
-	for (auto &edge : this->outgoing_edges) {
-        if (edge.expired())continue;
+	for (auto& edge : this->outgoing_edges) {
+		if (edge.expired())
+			continue;
 		shared_vertex vertex = edge.lock()->get_target_vertex();
 		// std::cerr << "edge target " << vertex->get_name() << std::endl;
 		if (typeid(OS::Function).hash_code() == vertex->get_type()) {
@@ -692,9 +688,10 @@ std::vector<OS::shared_function> OS::Function::get_called_functions() {
 std::vector<OS::shared_function> OS::Function::get_calling_functions() {
 	std::vector<OS::shared_function> called_functions;
 
-	for (auto &edge : this->ingoing_edges) {
+	for (auto& edge : this->ingoing_edges) {
 
-        if (edge.expired())continue;
+		if (edge.expired())
+			continue;
 		shared_vertex vertex = edge.lock()->get_start_vertex();
 		// std::cerr << "edge target " << vertex->get_name() << std::endl;
 		if (vertex != nullptr && typeid(OS::Function).hash_code() == vertex->get_type()) {
@@ -724,19 +721,19 @@ bool OS::Function::set_called_function(OS::shared_function function, OS::shared_
 	return true;
 } // Setze Funktion in std::liste aller Funktionen, die diese Funktion benutzen
 
-bool OS::Function::set_start_critical_section_block(llvm::BasicBlock *basic_block) {
+bool OS::Function::set_start_critical_section_block(llvm::BasicBlock* basic_block) {
 	// TODO check if llvm function exists in module
 	this->start_critical_section_block = basic_block;
 	return true;
 }
-bool OS::Function::set_end_critical_section_block(llvm::BasicBlock *basic_block) {
+bool OS::Function::set_end_critical_section_block(llvm::BasicBlock* basic_block) {
 	// TODO check if llvm function exists in module
 	this->end_critical_section_block = basic_block;
 	return true;
 }
 
-llvm::BasicBlock *OS::Function::get_start_critical_section_block() { return this->start_critical_section_block; }
-llvm::BasicBlock *OS::Function::get_end_critical_section_block() { return this->end_critical_section_block; }
+llvm::BasicBlock* OS::Function::get_start_critical_section_block() { return this->start_critical_section_block; }
+llvm::BasicBlock* OS::Function::get_end_critical_section_block() { return this->end_critical_section_block; }
 
 bool OS::Function::has_critical_section() { return this->contains_critical_section; }
 
@@ -745,24 +742,24 @@ void OS::Function::set_critical_section(bool flag) {
 	return;
 }
 
-bool OS::Function::set_llvm_reference(llvm::Function *function) {
+bool OS::Function::set_llvm_reference(llvm::Function* function) {
 
 	// TODO check if llvm function exists in module
 	this->LLVM_function_reference = function;
 	return true;
 }
 
-llvm::Function *OS::Function::get_llvm_reference() { return this->LLVM_function_reference; }
+llvm::Function* OS::Function::get_llvm_reference() { return this->LLVM_function_reference; }
 
 void OS::Function::set_atomic_basic_block(OS::shared_abb atomic_basic_block) {
 	this->atomic_basic_blocks.emplace_back(atomic_basic_block);
 }
 
-void OS::Function::set_atomic_basic_blocks(std::list<OS::shared_abb> *atomic_basic_blocks) {
+void OS::Function::set_atomic_basic_blocks(std::list<OS::shared_abb>* atomic_basic_blocks) {
 	this->atomic_basic_blocks.clear();
-    for (auto abb :*atomic_basic_blocks){
-        this->atomic_basic_blocks.emplace_back(abb); 
-    }
+	for (auto abb : *atomic_basic_blocks) {
+		this->atomic_basic_blocks.emplace_back(abb);
+	}
 }
 
 /*
@@ -776,23 +773,24 @@ std::list<graph::shared_vertex> OS::Function::get_atomic_basic_blocks(){
 
 std::list<OS::shared_abb> OS::Function::get_atomic_basic_blocks() {
 	// std::cerr << this->atomic_basic_blocks.size() << std::endl;
-    
-    std::list<OS::shared_abb> tmp_list;
-    for(auto abb :this->atomic_basic_blocks){
-        if(abb.lock() != nullptr)tmp_list.emplace_back(abb.lock());
-    }
-    
+
+	std::list<OS::shared_abb> tmp_list;
+	for (auto abb : this->atomic_basic_blocks) {
+		if (abb.lock() != nullptr)
+			tmp_list.emplace_back(abb.lock());
+	}
+
 	return tmp_list;
 }
 
 std::list<OS::shared_task> OS::Function::get_referenced_tasks() {
-   std::list<OS::shared_task> tmp_list;
-    for(auto task :this->referenced_tasks){
-        if(task.lock() != nullptr)tmp_list.emplace_back(task.lock());
-    }
+	std::list<OS::shared_task> tmp_list;
+	for (auto task : this->referenced_tasks) {
+		if (task.lock() != nullptr)
+			tmp_list.emplace_back(task.lock());
+	}
 	return tmp_list;
 }
-
 
 bool OS::Function::set_referenced_task(OS::shared_task task) {
 	bool success = false;
@@ -804,15 +802,15 @@ bool OS::Function::set_referenced_task(OS::shared_task task) {
 	return success;
 }
 
-std::list<llvm::Type *> OS::Function::get_argument_types() { return this->argument_types; }
+std::list<llvm::Type*> OS::Function::get_argument_types() { return this->argument_types; }
 
-void OS::Function::set_argument_type(llvm::Type *argument) { // Setze Argument des SystemCalls in Argumentenliste
+void OS::Function::set_argument_type(llvm::Type* argument) { // Setze Argument des SystemCalls in Argumentenliste
 	this->argument_types.emplace_back(argument);
 }
 
-void OS::Function::set_return_type(llvm::Type *type) { return_type = type; }
+void OS::Function::set_return_type(llvm::Type* type) { return_type = type; }
 
-llvm::Type *OS::Function::get_return_type() { return return_type; }
+llvm::Type* OS::Function::get_return_type() { return return_type; }
 
 void OS::Function::set_entry_abb(OS::shared_abb abb) { this->entry_abb = abb; }
 
@@ -822,22 +820,22 @@ OS::shared_abb OS::Function::get_exit_abb() { return this->exit_abb.lock(); }
 
 OS::shared_abb OS::Function::get_entry_abb() { return this->entry_abb.lock(); }
 
-llvm::DominatorTree *OS::Function::get_dominator_tree() { return &this->dominator_tree; }
+llvm::DominatorTree* OS::Function::get_dominator_tree() { return &this->dominator_tree; }
 
-llvm::PostDominatorTree *OS::Function::get_postdominator_tree() { return &this->postdominator_tree; }
+llvm::PostDominatorTree* OS::Function::get_postdominator_tree() { return &this->postdominator_tree; }
 
-void OS::Function::initialize_dominator_tree(llvm::Function *function) {
+void OS::Function::initialize_dominator_tree(llvm::Function* function) {
 	this->dominator_tree.recalculate(*function);
 	this->dominator_tree.updateDFSNumbers();
 	this->loop_info_base.analyze(this->dominator_tree);
 }
 
-void OS::Function::initialize_postdominator_tree(llvm::Function *function) {
+void OS::Function::initialize_postdominator_tree(llvm::Function* function) {
 	this->postdominator_tree.recalculate(*function);
 	this->postdominator_tree.updateDFSNumbers();
 }
 
-llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> *OS::Function::get_loop_info_base() { return &this->loop_info_base; }
+llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* OS::Function::get_loop_info_base() { return &this->loop_info_base; }
 
 void OS::ABB::set_loop_information(bool flag) { this->in_loop = flag; }
 
@@ -851,7 +849,7 @@ syscall_definition_type OS::ABB::get_syscall_type() { return this->abb_syscall_t
 
 void OS::ABB::set_syscall_type(syscall_definition_type type) { this->abb_syscall_type = type; }
 
-std::list<std::size_t> *OS::ABB::get_call_target_instances() { return &(this->call_target_instances); }
+std::list<std::size_t>* OS::ABB::get_call_target_instances() { return &(this->call_target_instances); }
 
 call_definition_type OS::ABB::get_call_type() { return this->abb_type; }
 
@@ -886,10 +884,10 @@ std::list<std::tuple< std::any,llvm::Type*>> OS::ABB::get_arguments_tmp(){
     return this->arguments;
 }*/
 
-void OS::ABB::set_call(call_data *call) { this->call = *call; }
+void OS::ABB::set_call(call_data* call) { this->call = *call; }
 
 void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
-    successors.insert(std::pair<size_t,OS::weak_abb>(basicblock->get_seed(),basicblock));
+	successors.insert(std::pair<size_t, OS::weak_abb>(basicblock->get_seed(), basicblock));
 	auto preds = basicblock->get_ABB_predecessors();
 	if (preds.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == preds.end()) {
 		basicblock->set_ABB_predecessor(std::static_pointer_cast<OS::ABB>(shared_from_this()));
@@ -897,18 +895,19 @@ void OS::ABB::set_ABB_successor(OS::shared_abb basicblock) {
 }
 
 void OS::ABB::set_ABB_predecessor(OS::shared_abb basicblock) {
-	predecessors.insert(std::pair<size_t,OS::weak_abb>(basicblock->get_seed(),basicblock));
-    auto succs = basicblock->get_ABB_successors();
+	predecessors.insert(std::pair<size_t, OS::weak_abb>(basicblock->get_seed(), basicblock));
+	auto succs = basicblock->get_ABB_successors();
 	if (succs.find(std::static_pointer_cast<OS::ABB>(shared_from_this())) == succs.end()) {
 		basicblock->set_ABB_successor(std::static_pointer_cast<OS::ABB>(shared_from_this()));
 	}
 }
 
 std::set<OS::shared_abb> OS::ABB::get_ABB_successors() {
-    std::set<OS::shared_abb> tmp_set;
-    for(auto &successor  : this->successors){
-        if(successor.second.lock() != nullptr)tmp_set.insert(successor.second.lock());
-    }
+	std::set<OS::shared_abb> tmp_set;
+	for (auto& successor : this->successors) {
+		if (successor.second.lock() != nullptr)
+			tmp_set.insert(successor.second.lock());
+	}
 	return tmp_set;
 }
 
@@ -920,24 +919,26 @@ OS::shared_abb OS::ABB::get_single_ABB_successor() {
 }
 
 std::set<OS::shared_abb> OS::ABB::get_ABB_predecessors() {
-    
-    std::set<OS::shared_abb> tmp_set;
-    for(auto predecessor : this->predecessors){
-        if(predecessor.second.lock() != nullptr)tmp_set.insert(predecessor.second.lock());
-    }
+
+	std::set<OS::shared_abb> tmp_set;
+	for (auto predecessor : this->predecessors) {
+		if (predecessor.second.lock() != nullptr)
+			tmp_set.insert(predecessor.second.lock());
+	}
 	return tmp_set;
 }
 
-bool OS::ABB::set_BasicBlock(llvm::BasicBlock *basic_block) {
+bool OS::ABB::set_BasicBlock(llvm::BasicBlock* basic_block) {
 	bool success = false;
-	if (this->parent_function.lock() != nullptr && this->parent_function.lock()->get_llvm_reference() == basic_block->getParent()) {
+	if (this->parent_function.lock() != nullptr &&
+	    this->parent_function.lock()->get_llvm_reference() == basic_block->getParent()) {
 		this->basic_blocks.emplace_back(basic_block);
 		success = true;
 	}
 	return success;
 }
 
-std::vector<llvm::BasicBlock *> *OS::ABB::get_BasicBlocks() { return &this->basic_blocks; }
+std::vector<llvm::BasicBlock*>* OS::ABB::get_BasicBlocks() { return &this->basic_blocks; }
 
 bool OS::ABB::set_parent_function(OS::shared_function function) {
 
@@ -960,7 +961,7 @@ std::string OS::ABB::get_call_name() {
 	return call_name;
 }
 
-llvm::Instruction *OS::ABB::get_call_instruction_reference() {
+llvm::Instruction* OS::ABB::get_call_instruction_reference() {
 
 	if (call.sys_call == false)
 		return this->call.call_instruction;
@@ -968,7 +969,7 @@ llvm::Instruction *OS::ABB::get_call_instruction_reference() {
 	return nullptr;
 }
 
-llvm::Instruction *OS::ABB::get_syscall_instruction_reference() {
+llvm::Instruction* OS::ABB::get_syscall_instruction_reference() {
 
 	if (call.sys_call == true)
 		return this->call.call_instruction;
@@ -995,11 +996,11 @@ bool OS::ABB::convert_call_to_syscall(std::string name) {
 std::list<std::list<size_t>> OS::ABB::get_call_argument_types() {
 
 	std::list<std::list<size_t>> specific_call_argument_types;
-	for (auto &argument : this->call.arguments) {
+	for (auto& argument : this->call.arguments) {
 		if (argument.any_list.empty())
 			continue;
 		std::list<size_t> argument_types;
-		for (auto &any_element : argument.any_list) {
+		for (auto& any_element : argument.any_list) {
 			argument_types.emplace_back(any_element.type().hash_code());
 		}
 
@@ -1009,7 +1010,7 @@ std::list<std::list<size_t>> OS::ABB::get_call_argument_types() {
 	return specific_call_argument_types;
 }
 
-void OS::ABB::set_called_function(OS::shared_function function, llvm::Instruction *instr) {
+void OS::ABB::set_called_function(OS::shared_function function, llvm::Instruction* instr) {
 
 	shared_vertex vertex = this->graph->get_vertex(this->seed);
 	if (vertex != nullptr) {
@@ -1035,9 +1036,10 @@ OS::shared_function OS::ABB::get_called_function() {
 
 	std::vector<OS::shared_function> called_functions;
 
-	for (auto &edge : this->outgoing_edges) {
-        
-        if(edge.expired())continue;
+	for (auto& edge : this->outgoing_edges) {
+
+		if (edge.expired())
+			continue;
 		shared_vertex vertex = edge.lock()->get_target_vertex();
 		// std::cerr << "edge target " << vertex->get_name() << std::endl;
 		if (typeid(OS::Function).hash_code() == vertex->get_type()) {
@@ -1060,7 +1062,7 @@ bool OS::ABB::append_basic_blocks(shared_abb abb) {
 	if (!(this->graph->contain_vertex(abb))) {
 		return false;
 	}
-	for (auto &basic_block : *abb->get_BasicBlocks()) {
+	for (auto& basic_block : *abb->get_BasicBlocks()) {
 		this->set_BasicBlock(basic_block);
 	}
 	return true;
@@ -1164,22 +1166,23 @@ std::string OS::ABB::get_syscall_name() {
 	return call_name;
 }
 
-llvm::BasicBlock *OS::ABB::get_entry_bb() { return this->entry; }
+llvm::BasicBlock* OS::ABB::get_entry_bb() { return this->entry; }
 
-llvm::BasicBlock *OS::ABB::get_exit_bb() { return this->exit; }
+llvm::BasicBlock* OS::ABB::get_exit_bb() { return this->exit; }
 
 void OS::ABB::remove_successor(shared_abb abb) {
-    if(abb!=nullptr)successors.erase(abb->get_seed());
+	if (abb != nullptr)
+		successors.erase(abb->get_seed());
 }
-    
 
 void OS::ABB::remove_predecessor(shared_abb abb) {
-	if(abb!=nullptr)predecessors.erase(abb->get_seed());
+	if (abb != nullptr)
+		predecessors.erase(abb->get_seed());
 }
 
-void OS::ABB::set_entry_bb(llvm::BasicBlock *bb) { this->entry = bb; }
+void OS::ABB::set_entry_bb(llvm::BasicBlock* bb) { this->entry = bb; }
 
-void OS::ABB::set_exit_bb(llvm::BasicBlock *bb) { this->exit = bb; }
+void OS::ABB::set_exit_bb(llvm::BasicBlock* bb) { this->exit = bb; }
 
 void OS::ABB::adapt_exit_bb(shared_abb abb) { this->exit = abb->get_exit_bb(); }
 
@@ -1194,11 +1197,12 @@ OS::shared_abb OS::ABB::get_postdominator() {
 
 	// std::cerr << "abb " << this->name  << std::endl;
 
-	llvm::BasicBlock *bb = this->exit;
+	llvm::BasicBlock* bb = this->exit;
 
-    if(this->parent_function.lock()== nullptr)abort();
-    
-	llvm::PostDominatorTree *DT = this->parent_function.lock()->get_postdominator_tree();
+	if (this->parent_function.lock() == nullptr)
+		abort();
+
+	llvm::PostDominatorTree* DT = this->parent_function.lock()->get_postdominator_tree();
 
 	if (!DT->isPostDominator()) {
 		// std::cerr << "postdominator_tree is not initialized successfully" << std::endl;
@@ -1228,7 +1232,7 @@ OS::shared_abb OS::ABB::get_postdominator() {
 		// get first element of the queue
 		auto abb = queue.front();
 		// if(abb->get_entry_bb()==nullptr) std::cerr << "no entry bb " << abb->get_name()  << std::endl;
-		if (bb != abb->get_exit_bb()  &&  DT->dominates(abb->get_entry_bb(), bb)) {
+		if (bb != abb->get_exit_bb() && DT->dominates(abb->get_entry_bb(), bb)) {
 			// std::cerr << "postdominator " << abb->get_name()  << std::endl;
 			return abb;
 		}
@@ -1259,30 +1263,39 @@ OS::shared_abb OS::ABB::get_postdominator() {
 	return nullptr;
 }
 
-bool OS::ABB::dominates(shared_abb abb){
-    llvm:BasicBlock *bb = this->entry;
-    if(this->parent_function.lock()== nullptr)abort();
-	llvm::DominatorTree *DT = this->parent_function.lock()->get_dominator_tree();
-    
-    if (DT->properlyDominates(bb,abb->get_entry_bb()))return true;
-    else return false;
+bool OS::ABB::dominates(shared_abb abb) {
+llvm:
+	BasicBlock* bb = this->entry;
+	if (this->parent_function.lock() == nullptr)
+		abort();
+	llvm::DominatorTree* DT = this->parent_function.lock()->get_dominator_tree();
+
+	if (DT->properlyDominates(bb, abb->get_entry_bb()))
+		return true;
+	else
+		return false;
 }
 
-bool OS::ABB::postdominates(shared_abb abb){
-    llvm:BasicBlock *bb = this->entry;
-    if(this->parent_function.lock()== nullptr)abort();
-	llvm::PostDominatorTree *PDT = this->parent_function.lock()->get_postdominator_tree();
-    
-    if (PDT->properlyDominates(bb,abb->get_entry_bb()))return true;
-    else return false;
+bool OS::ABB::postdominates(shared_abb abb) {
+llvm:
+	BasicBlock* bb = this->entry;
+	if (this->parent_function.lock() == nullptr)
+		abort();
+	llvm::PostDominatorTree* PDT = this->parent_function.lock()->get_postdominator_tree();
+
+	if (PDT->properlyDominates(bb, abb->get_entry_bb()))
+		return true;
+	else
+		return false;
 }
 
 OS::shared_abb OS::ABB::get_dominator() {
 
 llvm:
-	BasicBlock *bb = this->entry;
-    if(this->parent_function.lock()== nullptr)abort();
-	llvm::DominatorTree *DT = this->parent_function.lock()->get_dominator_tree();
+	BasicBlock* bb = this->entry;
+	if (this->parent_function.lock() == nullptr)
+		abort();
+	llvm::DominatorTree* DT = this->parent_function.lock()->get_dominator_tree();
 
 	std::hash<std::string> hash_fn;
 	// get first basic block of the function
@@ -1423,15 +1436,11 @@ unsigned long OS::Task::get_priority() {
     else return -1;
 }
 
-
-unsigned long OS::Task::get_stacksize() {
-	return this->stacksize;
-}
+unsigned long OS::Task::get_stacksize() { return this->stacksize; }
 
 void OS::Task::set_constant_priority(bool is_constant) { this->constant_priority = is_constant; }
 
 bool OS::Task::has_constant_priority() { return this->constant_priority; }
-
 
 void OS::Task::set_stacksize(unsigned long stacksize) { this->stacksize = stacksize; }
 
@@ -1486,17 +1495,15 @@ bool OS::Task::set_event_reference(std::string event_name) {
 	return result;
 }
 
+bool OS::Task::set_definition_function(std::string function_name) {
+	bool result = false;
+	std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name + typeid(OS::Function).name()));
 
+	if (vertex != nullptr) {
+		auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
 
-bool OS::Task::set_definition_function(std::string function_name){
-    bool result = false;
-    std::hash<std::string> hash_fn;
-	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-    
-	if(vertex != nullptr){
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		
-        if(function!=nullptr){
+		if (function != nullptr) {
 			this->definition_function = function;
 			result = true;
 		}
@@ -1508,42 +1515,36 @@ OS::shared_function OS::Task::get_definition_function() { return this->definitio
 
 void OS::Hook::set_hook_type(hook_type hook) { this->hook = hook; };
 
+bool OS::Hook::set_definition_function(std::string function_name) {
 
-bool OS::Hook::set_definition_function(std::string function_name){
-    
-    bool result = false;
-    std::hash<std::string> hash_fn;
-	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-    
-	if(vertex != nullptr){
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		
-        if(function!=nullptr){
+	bool result = false;
+	std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name + typeid(OS::Function).name()));
+
+	if (vertex != nullptr) {
+		auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+
+		if (function != nullptr) {
 			this->definition_function = function;
 			result = true;
 		}
 	}
-	
 
 	return result;
-	
 }
 
-
-OS::shared_function OS::Hook::get_definition_function(){
-    return this->definition_function.lock();
-}
+OS::shared_function OS::Hook::get_definition_function() { return this->definition_function.lock(); }
 
 bool OS::ISR::set_definition_function(std::string function_name) {
 	bool result = false;
 
-    std::hash<std::string> hash_fn;
-	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-    
-	if(vertex != nullptr){
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		
-        if(function!=nullptr){
+	std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name + typeid(OS::Function).name()));
+
+	if (vertex != nullptr) {
+		auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+
+		if (function != nullptr) {
 
 			this->definition_function = function;
 			result = true;
@@ -1629,13 +1630,9 @@ bool OS::Timer::set_event_reference(std::string event_name) {
 
 void OS::Timer::set_alarm_time(unsigned int alarm_time) { this->alarm_time = alarm_time; }
 
-
-timer_type OS::Timer::get_timer_type(){
-	return this->type;
-}
+timer_type OS::Timer::get_timer_type() { return this->type; }
 
 void OS::Timer::set_cycle_time(unsigned int cycle_time) { this->cycle_time = cycle_time; }
-
 
 void OS::Timer::set_appmode(std::string appmode) { this->appmodes.emplace_back(appmode); }
 
@@ -1645,23 +1642,17 @@ timer_action_type OS::Timer::get_timer_action_type() { return this->reaction; }
 
 void OS::Queue::set_item_size(unsigned long item_size) { this->item_size; }
 
-
-unsigned long OS::Timer::get_periode(){
-	return this->periode;
-}
+unsigned long OS::Timer::get_periode() { return this->periode; }
 
 unsigned long OS::Queue::get_item_size() { return this->item_size = item_size; }
-
 
 unsigned long OS::Queue::get_length() { return this->length; }
 
 void OS::Queue::set_length(unsigned long length) { this->length = length; }
 
-message_property OS::Queue::get_message_property() {return this->property ; }
+message_property OS::Queue::get_message_property() { return this->property; }
 
-
-void OS::Queue::set_message_property(message_property property) { this->property = property ; }
-
+void OS::Queue::set_message_property(message_property property) { this->property = property; }
 
 void OS::Timer::set_timer_id(unsigned long timer_id) { this->timer_id = timer_id; }
 
@@ -1669,53 +1660,40 @@ void OS::Timer::set_periode(unsigned long periode) { this->periode = periode; }
 
 void OS::Timer::set_timer_type(timer_type type) { this->type = type; }
 
-
 bool OS::Timer::set_callback_function(std::string function_name) {
 	bool result = false;
-    std::hash<std::string> hash_fn;
-	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-    
-	if(vertex != nullptr){
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		
-        if(function!=nullptr){
+	std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name + typeid(OS::Function).name()));
+
+	if (vertex != nullptr) {
+		auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+
+		if (function != nullptr) {
 
 			this->callback_function = function;
 			result = true;
 		}
 	}
 	return result;
-	
 }
 
 OS::shared_function OS::Timer::get_callback_function() { return this->callback_function.lock(); }
 
+unsigned long OS::Mutex::get_max_count() { return this->max_count; }
 
-unsigned long OS::Mutex::get_max_count(){return this->max_count;}
+unsigned long OS::Mutex::get_initial_count() { return this->initial_count; }
 
-
-unsigned long OS::Mutex::get_initial_count(){return this->initial_count;}
-
-
-
-void OS::Mutex::set_resource_type( resource_type type){	this->type = type;}
+void OS::Mutex::set_resource_type(resource_type type) { this->type = type; }
 
 void OS::Mutex::set_max_count(unsigned long max_count) { this->max_count = max_count; }
 
-
-void OS::Mutex::set_protocol_type( protocol_type type){	this->protocol = type;}
-
-
-
+void OS::Mutex::set_protocol_type(protocol_type type) { this->protocol = type; }
 
 void OS::Mutex::set_initial_count(unsigned long initial_count) { this->initial_count = initial_count; }
 
+unsigned long OS::Semaphore::get_max_count() { return this->max_count; }
 
-unsigned long  OS::Semaphore::get_max_count(){	return this->max_count;}
-
-
-
-unsigned long  OS::Semaphore::get_initial_count(){	return this->max_count;}
+unsigned long OS::Semaphore::get_initial_count() { return this->max_count; }
 
 resource_type OS::Mutex::get_resource_type() { return this->type; }
 
@@ -1723,26 +1701,25 @@ protocol_type OS::Mutex::get_protocol_type() { return this->protocol; }
 
 void OS::Semaphore::set_max_count(unsigned long max_count) { this->max_count = max_count; }
 
-
 void OS::Semaphore::set_initial_count(unsigned long initial_count) { this->initial_count = initial_count; }
 
 void OS::Semaphore::set_semaphore_type(semaphore_type type) { this->type = type; }
 
 semaphore_type OS::Semaphore::get_semaphore_type() { return this->type; }
 
-unsigned long OS::QueueSet::get_length(){    return this->length;}
+unsigned long OS::QueueSet::get_length() { return this->length; }
 
-void OS::QueueSet::set_queue_element(graph::shared_vertex element){	this->queueset_elements.emplace_back(element);}
+void OS::QueueSet::set_queue_element(graph::shared_vertex element) { this->queueset_elements.emplace_back(element); }
 
 void OS::QueueSet::set_length(unsigned long length) { this->length = length; }
 
-
 std::vector<graph::shared_vertex> OS::QueueSet::get_queueset_elements() {
-    std::vector<graph::shared_vertex> tmp_vector;
-    for(auto element: this->queueset_elements){
-        if(element.lock() != nullptr)tmp_vector.emplace_back(element.lock());
-    }
-    return tmp_vector;
+	std::vector<graph::shared_vertex> tmp_vector;
+	for (auto element : this->queueset_elements) {
+		if (element.lock() != nullptr)
+			tmp_vector.emplace_back(element.lock());
+	}
+	return tmp_vector;
 }
 
 void OS::Buffer::set_buffer_type(buffer_type type) { this->type = type; }
@@ -1751,15 +1728,11 @@ void OS::Buffer::set_buffer_size(unsigned long size) { this->buffer_size = size;
 
 void OS::Buffer::set_trigger_level(unsigned long level) { this->trigger_level = level; }
 
+buffer_type OS::Buffer::get_buffer_type() { return this->type; }
 
-buffer_type OS::Buffer::get_buffer_type(){return  this->type;}
+unsigned long OS::Buffer::get_buffer_size() { return this->buffer_size; }
 
-
-unsigned long OS::Buffer::get_buffer_size( ){return this->buffer_size;}
-
-unsigned long OS::Buffer::get_trigger_level( ){	return this->trigger_level;}
-
-
+unsigned long OS::Buffer::get_trigger_level() { return this->trigger_level; }
 
 void OS::CoRoutine::set_priority(unsigned long priority) { this->priority = priority; }
 
@@ -1769,17 +1742,15 @@ void OS::CoRoutine::set_id(unsigned long priority) { this->priority = priority; 
 
 unsigned long OS::CoRoutine::get_id() { return this->priority; }
 
-
-
 bool OS::CoRoutine::set_definition_function(std::string function_name) {
 	bool result = false;
-    std::hash<std::string> hash_fn;
-	auto vertex = this->graph->get_vertex(hash_fn(function_name +  typeid(OS::Function).name()));
-    
-	if(vertex != nullptr){
-		auto function = std::dynamic_pointer_cast<OS::Function> (vertex);
-		
-        if(function!=nullptr){
+	std::hash<std::string> hash_fn;
+	auto vertex = this->graph->get_vertex(hash_fn(function_name + typeid(OS::Function).name()));
+
+	if (vertex != nullptr) {
+		auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+
+		if (function != nullptr) {
 
 			this->definition_function = function;
 			result = true;
@@ -1794,7 +1765,7 @@ void graph::Graph::print_information() {
 	std::string information = "\n------------------------\nGraph:\n";
 	information += "Vertices:\n";
 	std::cerr << information;
-	for (auto &vertex : this->vertices) {
+	for (auto& vertex : this->vertices) {
 		vertex->print_information();
 	}
 	std::cerr << "\n------------------------\n\n";
@@ -1805,7 +1776,7 @@ void OS::Function::print_information() {
 	information += "name:" + this->name + "\n";
 	information += "function name:" + this->function_name + "\n";
 	information += "argument types: ";
-	for (auto &argument : this->argument_types) {
+	for (auto& argument : this->argument_types) {
 		std::string type_str;
 		llvm::raw_string_ostream rso(type_str);
 		argument->print(rso);
@@ -1829,8 +1800,9 @@ void OS::Function::print_information() {
 		information += "last abb: " + this->exit_abb.lock()->get_name() + "\n";
 	information += "abbs: ";
 	std::cerr << information;
-	for (auto &abb : this->atomic_basic_blocks) {
-        if(abb.lock() != nullptr)std::cerr << abb.lock()->get_name() << ", ";
+	for (auto& abb : this->atomic_basic_blocks) {
+		if (abb.lock() != nullptr)
+			std::cerr << abb.lock()->get_name() << ", ";
 	}
 
 	std::cerr << "\n------------------------\n\n";
@@ -1840,13 +1812,15 @@ void OS::ABB::print_information() {
 	std::cerr << "\n------------------------\nABB:\n";
 	std::cerr << "abb name: " << this->name << "\n";
 	std::cerr << "successors: ";
-	for (auto &successor : this->successors) {
-		if(successor.second.lock() != nullptr)std::cerr << "\t" << successor.second.lock()->get_name();
+	for (auto& successor : this->successors) {
+		if (successor.second.lock() != nullptr)
+			std::cerr << "\t" << successor.second.lock()->get_name();
 	}
 
 	std::cerr << "\npredecessors: ";
-	for (auto &predecessor : this->predecessors) {
-		if(predecessor.second.lock() != nullptr)std::cerr << "\t" + predecessor.second.lock()->get_name();
+	for (auto& predecessor : this->predecessors) {
+		if (predecessor.second.lock() != nullptr)
+			std::cerr << "\t" + predecessor.second.lock()->get_name();
 	}
 	std::cerr << "\n";
 	if (this->abb_type != no_call) {
@@ -1857,7 +1831,7 @@ void OS::ABB::print_information() {
 
 		std::cerr << "call: " << this->call.call_name << "\n";
 
-		for (auto &data : this->call.arguments) {
+		for (auto& data : this->call.arguments) {
 			debug_argument(data);
 			std::cerr << std::endl;
 		}
