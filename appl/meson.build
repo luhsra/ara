@@ -21,12 +21,14 @@ freertos_targets = []
 foreach app : ['a', 'invalid_isr_syscall', 'c', 'loop_detection', 'topological_sort', 'f', 'g',
                'argument_load', 'start_scheduler_relation', 'deadlock', 'dominator',
                'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore','thesis_print' ]
-  freertos_targets += custom_target('freertos-' + app,
-                                    input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
-                                    output : ['freertos-' + app + '.ll'],
-                                    command : [clang, '@INPUT0@',
-                                               '-o', '@OUTPUT0@'] +
-                                              clang_flags)
+   ll_target = custom_target('freertos-' + app,
+                             input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
+                             output : ['freertos-' + app + '.ll'],
+                             command : [clang, '@INPUT0@',
+                                        '-o', '@OUTPUT0@'] +
+                                        clang_flags)
+   set_variable('freertos_' + app.underscorify(), ll_target)
+   freertos_targets += ll_target
 endforeach
 
 # gpslogger is special
@@ -50,13 +52,14 @@ osek_includes = files(join_paths(osek_path, 'alarm.h'),
 
 osek_targets = []
 foreach app : ['a', 'b', 'c', 'coptermok','copter-without-alarms']
-  osek_targets += custom_target('osek-' + app,
-                                input : ['OSEK/' + app + '.cc'] + osek_includes,
-                                output : ['osek-' + app + '.ll'],
-                                command : [clang, '@INPUT0@',
-                                           '-o', '@OUTPUT0@'] +
-                                           clang_flags)
-
+    ll_target = custom_target('osek-' + app,
+                              input : ['OSEK/' + app + '.cc'] + osek_includes,
+                              output : ['osek-' + app + '.ll'],
+                              command : [clang, '@INPUT0@',
+                                         '-o', '@OUTPUT0@'] +
+                                         clang_flags)
+    set_variable('osek_' + app.underscorify(), ll_target)
+    osek_targets += ll_target
 endforeach
 
 osek_examples = run_target('osek-examples',
