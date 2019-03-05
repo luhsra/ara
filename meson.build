@@ -21,7 +21,7 @@ subdir('test')
 
 test('arsa_tester',
   py3_inst,
-  args: [files('arsa.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
+  #args: [files('arsa.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
   #args: [files('arsa.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
   
   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[1]],
@@ -29,7 +29,7 @@ test('arsa_tester',
 
   #args : [files('arsa.py'), '--os', 'osek', osek_targets[4]],
 
-  #args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'oilfile.oil',  osek_targets[3]],
+  args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
 
   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )

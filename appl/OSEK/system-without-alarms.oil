@@ -1,4 +1,4 @@
-CPU CopterMock {
+{
 
 	"OIL_VERSION" : ["2.5","test"], 	
 
@@ -61,8 +61,8 @@ CPU CopterMock {
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
                 "SCHEDULE" : "FULL",
-                "RESOURCE" : ["SPIBusResource"],
-                "EVENT" : ["CopterControlReceiveEvent"]
+                "RESOURCE" : ["SPIBusResource"]
+    
         },
         
          "SignalGatherFinishedTask":{
@@ -70,7 +70,7 @@ CPU CopterMock {
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
                 "SCHEDULE" : "FULL",
-                "RESOURCE" : ["SPIBusResource"],
+                "RESOURCE" : ["SPIBusResource"]
         },
         
            "SignalGatherTimeoutTask":{
@@ -78,35 +78,35 @@ CPU CopterMock {
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
                 "SCHEDULE" : "FULL",
-                "RESOURCE" : ["SPIBusResource"],
+                "RESOURCE" : ["SPIBusResource"]
         },
 	
          "SignalProcessingActuateTask":{
                 "PRIORITY" : 22,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
+                "SCHEDULE" : "FULL"
         },
         
          "SignalProcessingAttitudeTask":{
                 "PRIORITY" : 21,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
+                "SCHEDULE" : "FULL"
         },
         
           "FlightControlTask":{
                 "PRIORITY" : 11,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "NON",
+                "SCHEDULE" : "NONE"
         },
         
           "FlightControlAttitudeTask":{
                 "PRIORITY" : 12,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
+                "SCHEDULE" : "FULL"
         },
         
         
@@ -114,7 +114,7 @@ CPU CopterMock {
                 "PRIORITY" : 13,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
+                "SCHEDULE" : "FULL"
         },
         
         
@@ -122,7 +122,7 @@ CPU CopterMock {
                 "PRIORITY" : 10,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
+                "SCHEDULE" : "FULL"
         },
         
         
@@ -130,7 +130,7 @@ CPU CopterMock {
                 "PRIORITY" : 1,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "NON",
+                "SCHEDULE" : "NONE"
         },
         
         
@@ -139,8 +139,8 @@ CPU CopterMock {
                 "PRIORITY" : 5,
                 "AUTOSTART" : "FALSE",
                 "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
-        },
+                "SCHEDULE" : "FULL"
+        }
 	},
     
     
@@ -149,7 +149,7 @@ CPU CopterMock {
 		"MavlinkRecvHandler" : {
 			//category of isr (UINT32, but only values 1 and 2 are allowed)
 			"CATEGORY" : 2,
-			"PRIORITY" : 100,
+			"PRIORITY" : 100
 
 			
 		},
@@ -157,14 +157,14 @@ CPU CopterMock {
 			//category of isr (UINT32, but only values 1 and 2 are allowed)
 			"CATEGORY" : 2,
 			//list of RESOURCES accessed by ISR
-			"RESOURCE" : ["SPIBusResource"],
+			"RESOURCE" : ["SPIBus"],
 			//list of messages accessed by ISR
 			"MESSAGE" : ["button_start"]
-		}
+		},
 		"AlarmFlightControlTask" : {
 			//category of isr (UINT32, but only values 1 and 2 are allowed)
 			"CATEGORY" : 2,
-			"PRIORITY" : 100,
+			"PRIORITY" : 100
 
 			
 		},
@@ -172,7 +172,7 @@ CPU CopterMock {
 			//category of isr (UINT32, but only values 1 and 2 are allowed)
 			"CATEGORY" : 2,
 			//list of RESOURCES accessed by ISR
-			"RESOURCE" : ["SPIBusResource"],
+			"RESOURCE" : ["SPIBus"],
 			//list of messages accessed by ISR
 			"MESSAGE" : ["button_start"]
 		}
@@ -180,7 +180,7 @@ CPU CopterMock {
     
     
     "RESOURCE" : {
-		"SPIBusResource" : {
+		"SPIBus" : {
 			//RESOURCEPROPERTY (STANDARD, LINKED, INTERNAL)
 			//STANDARD, a normal RESOURCE that is not linked to another internal RESOURCE
 			//LINKED, RESOURCE that is linked to another RESOURCE with property STANDARD or LINKED
@@ -196,5 +196,5 @@ CPU CopterMock {
 		}
 	}
   
-};
+}
 
