@@ -5,8 +5,8 @@
 
 #include "graph.h"
 #include "step.h"
-
 #include "warning.h"
+
 #include "llvm/Analysis/OrderedBasicBlock.h"
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/Constants.h"
@@ -16,6 +16,7 @@
 #include "llvm/IR/Use.h"
 #include "llvm/IR/User.h"
 #include "llvm/Support/raw_ostream.h"
+
 #include <cassert>
 #include <iostream>
 #include <llvm/Analysis/Interval.h>
@@ -49,7 +50,7 @@ namespace step {
 		std::vector<shared_warning> warnings;
 
 	  public:
-		LLVMStep(PyObject *config) : Step(config) {}
+		LLVMStep(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override { return "LLVMStep"; }
 
@@ -57,7 +58,7 @@ namespace step {
 
 		virtual std::vector<std::string> get_dependencies() override;
 
-		virtual void run(graph::Graph &graph) override;
+		virtual void run(graph::Graph& graph) override;
 	};
 } // namespace step
 

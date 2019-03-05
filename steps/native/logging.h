@@ -1,22 +1,21 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <sstream>
-
 #include "py_logging.h"
 
+#include <sstream>
+
 class Logger {
-private:
-	class LogBuf: public std::streambuf {
-	public:
+  private:
+	class LogBuf : public std::streambuf {
+	  public:
 		LogBuf(LogLevel level, PyLogger& logger) : level(level), logger(logger) {}
 
-	private:
+	  private:
 		virtual int overflow(int c) override {
 			if (c == EOF) {
 				return !EOF;
-			}
-			else {
+			} else {
 				o_stream.put(c);
 				return (o_stream.eof()) ? EOF : c;
 			}
@@ -34,15 +33,16 @@ private:
 	};
 
 	class LogStream : public std::ostream {
-	public:
-	    LogStream(LogLevel level, PyLogger& logger) : std::ostream(&buf), buf(level, logger) {}
-	private:
-	    LogBuf buf;
+	  public:
+		LogStream(LogLevel level, PyLogger& logger) : std::ostream(&buf), buf(level, logger) {}
+
+	  private:
+		LogBuf buf;
 	};
 
 	PyLogger logger;
 
-public:
+  public:
 	Logger() {
 		logger.logger = nullptr;
 		logger.level = LogLevel::NOTSET;
@@ -78,7 +78,6 @@ public:
 		assert(logger.logger != nullptr);
 		return Logger::LogStream(LogLevel::DEBUG, logger);
 	}
-
 };
 
-#endif //LOGGER_H
+#endif // LOGGER_H

@@ -3,12 +3,12 @@
 #ifndef STEP_H
 #define STEP_H
 
-#include "graph.h"
 #include "Python.h"
+#include "graph.h"
 #include "logging.h"
 
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace step {
@@ -17,12 +17,12 @@ namespace step {
 	 * Superclass for constructing arbitrary steps in C++.
 	 */
 	class Step {
-	protected:
+	  protected:
 		PyObject* config;
 		Logger logger;
 
-	public:
-        /**
+	  public:
+		/**
 		 * Contruct a native step.
 		 *
 		 * @Args
@@ -37,9 +37,7 @@ namespace step {
 		/**
 		 * Set the python logger object, this must be called directly after the constructor.
 		 */
-		void set_logger(PyObject* py_logger) {
-			logger = Logger(py_logger);
-		}
+		void set_logger(PyObject* py_logger) { logger = Logger(py_logger); }
 
 		virtual ~Step() {}
 
@@ -64,8 +62,7 @@ namespace step {
 		 * This method is called, when the pass is invoked.
 		 */
 		virtual void run(graph::Graph& graph) = 0;
-
 	};
-}
+} // namespace step
 
-#endif //STEP_H
+#endif // STEP_H

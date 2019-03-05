@@ -10,7 +10,7 @@
 
 namespace step {
 	class Test0Step : public Step {
-	public:
+	  public:
 		Test0Step(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
@@ -23,7 +23,7 @@ namespace step {
 	};
 
 	class Test2Step : public Step {
-	public:
+	  public:
 		Test2Step(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
@@ -34,6 +34,6 @@ namespace step {
 
 		virtual void run(graph::Graph& graph) override;
 	};
-}
+} // namespace step
 
-#endif //TEST_STEP_H
+#endif // TEST_STEP_H

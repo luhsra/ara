@@ -2,5 +2,4 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-
-#endif //STEP_H
+#endif // STEP_H
