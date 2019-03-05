@@ -1409,9 +1409,19 @@ bool OS::Mutex::set_resource_property(std::string type, std::string linked_resou
 	return result;
 }
 
-void OS::Task::set_priority(unsigned long priority) { this->priority = priority; }
+void OS::Task::set_priority(unsigned long priority) { 
+    this->priority.clear();
+    this->priority.emplace_back(priority); 
+    
+}
 
-unsigned long OS::Task::get_priority() { return this->priority; }
+void OS::Task::append_priority(unsigned long priority) { this->priority.emplace_back(priority); }
+
+unsigned long OS::Task::get_priority() { 
+    
+    if(priority.size() == 1) return this->priority.back() ; 
+    else return -1;
+}
 
 
 unsigned long OS::Task::get_stacksize() {

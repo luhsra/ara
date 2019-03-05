@@ -970,7 +970,10 @@ void verify_task_priority(graph::Graph& graph){
                     auto priority = std::any_cast<long>(call.arguments.at(1).any_list.front());
                     
                     //set constant priority flag false if priority is different than initial priority
-                    if(priority != task->get_priority())task->set_constant_priority(false);
+                    if(priority != task->get_priority()){
+                        task->set_constant_priority(false);
+                        task->append_priority(priority);
+                    }
                 }
             }
         }
@@ -1349,8 +1352,9 @@ namespace step {
 		std::cout << "Run ValidationStep" << std::endl;
 		//detect interactions of the OS abstraction instances
         
+        verify_task_priority(graph);
+        
         std::vector<shared_warning>* warning_list = &(this->warnings);
-         
         verify_mutexes(graph,warning_list);
         verify_semaphores(graph,warning_list);
         verify_isrs(graph,warning_list);
@@ -1358,6 +1362,7 @@ namespace step {
         verify_deadlocks(graph,warning_list);
         verify_priority_inversion(graph,warning_list);
         verify_critical_region(graph,warning_list);
+
         
 	}
 	

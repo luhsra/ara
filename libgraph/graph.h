@@ -790,7 +790,7 @@ namespace OS {
 		std::list<std::string> app_modes;
 
 		int stacksize;
-		int priority;
+		std::vector<unsigned long> priority;
 
 		// FreeRTOS attributes
 		llvm::Type *parameter;
@@ -821,7 +821,7 @@ namespace OS {
                 else if(task->get_handler_name() != this->handler_name)equal = false;
                 else if(task->get_handler_value() != this->handler_value)equal = false;
                 else if(task->get_stacksize() != this->stacksize)equal = false;
-                else if(task->get_priority() != this->priority)equal = false;
+                else if(task->get_priority() != this->priority.back())equal = false;
                 else if(task->get_definition_function() == nullptr || this->definition_function.lock() == nullptr ) equal = false;
                 else if(task->get_definition_function()->get_seed() != this->definition_function.lock()->get_seed())equal = false;
                 
@@ -842,6 +842,8 @@ namespace OS {
 		shared_function get_definition_function();
 
 		void set_priority(unsigned long priority);
+        void append_priority(unsigned long priority);
+        
 		unsigned long get_priority();
 		void set_stacksize(unsigned long priority);
         unsigned long get_stacksize();
@@ -869,7 +871,7 @@ namespace OS {
 
 		// FreeRTOS attributes
 		std::string interrupt_source;
-		int priority;
+		unsigned long priority;
 
 	  public:
 		ISR(graph::Graph *graph, std::string name) : graph::Vertex(graph, name) {

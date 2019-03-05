@@ -492,6 +492,20 @@ void detect_interactions(graph::Graph& graph,std::vector<shared_warning>* warnin
         //get all interactions of the instance
         iterate_called_functions_interactions(graph, vertex, hook_definition ,nullptr, already_visited,&calltree_references, warning_list);
     }
+    
+    
+     //get all coroutines of the graph
+    vertex_list =  graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
+	//iterate about the coroutines
+	for (auto &vertex : vertex_list) {
+        //std::cerr << "timer name: " << vertex->get_name() << std::endl;
+		std::vector<llvm::Instruction*>  already_visited;
+        std::vector<llvm::Instruction*> calltree_references;
+        auto coroutine = std::dynamic_pointer_cast<OS::CoRoutine> (vertex);
+        OS::shared_function coroutine_definition = coroutine->get_definition_function();
+        //get all interactions of the instance
+        iterate_called_functions_interactions(graph, vertex, coroutine_definition ,nullptr, already_visited,&calltree_references, warning_list);
+    }
 }
 
 /**

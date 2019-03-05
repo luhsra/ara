@@ -1593,6 +1593,25 @@ namespace step {
             }
             
             
+            //get all coroutines, which are stored in the graph
+            vertex_list =  graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
+            //iterate about the timers
+            for (auto &vertex : vertex_list) {
+                
+                if(list_contains_element(&already_visited, vertex->get_seed()))continue;
+                else already_visited.emplace_back(vertex->get_seed());
+                
+                flag = true;
+                
+                auto coroutine = std::dynamic_pointer_cast<OS::CoRoutine> (vertex);
+                OS::shared_function coroutine_definition = coroutine->get_definition_function();
+                //get all interactions of the instance
+                std::vector<llvm::Instruction*> already_visited_calls;
+                std::vector<llvm::Instruction*> calltree_references;
+                iterate_called_functions(graph, coroutine , coroutine_definition, nullptr ,already_visited_calls,&calltree_references,warning_list);
+            }
+            
+            
         }while(flag);
 
 	
