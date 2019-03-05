@@ -1,3 +1,4 @@
+# cython: language_level=3
 from libcpp.memory cimport shared_ptr
 
 cdef extern from "<memory>" namespace "std" nogil:

@@ -7,11 +7,9 @@ from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 
 
-
 cdef extern from "graph.h":
     cdef cppclass start_scheduler_relation:
         pass
-
 
 cdef extern from "graph.h":
     cdef cppclass timer_type:
@@ -32,7 +30,7 @@ cdef extern from "graph.h":
 cdef extern from "graph.h":
     cdef cppclass protocol_type:
         pass
-        
+
 cdef extern from "graph.h":
     cdef cppclass message_property:
         pass
@@ -65,7 +63,7 @@ cdef extern from "graph.h" namespace "protocol_type":
     cdef protocol_type priority_ceiling
     cdef protocol_type priority_inheritance
     cdef protocol_type none
-    
+
 cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type computate
     cdef syscall_definition_type create
@@ -92,7 +90,7 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type end_scheduler
     cdef syscall_definition_type chain
     cdef syscall_definition_type delay
-    
+
 cdef extern from "graph.h" namespace "message_property":
     cdef message_property none
     cdef message_property SEND_STATIC_INTERNAL
@@ -131,7 +129,7 @@ cdef extern from "graph.h" namespace "graph":
         clist[shared_ptr[Edge]] get_outgoing_edges()
 
     cdef cppclass Edge:
-        Edge(Graph* graph,string name , shared_ptr[Vertex] start , shared_ptr[Vertex] target ,shared_ptr[ABB] abb_reference) except +
+        Edge(Graph* graph, string name, shared_ptr[Vertex] start, shared_ptr[Vertex] target, shared_ptr[ABB] abb_reference) except +
 
         shared_ptr[Vertex] get_start_vertex()
         shared_ptr[Vertex] get_target_vertex()
@@ -160,7 +158,6 @@ cdef extern from "graph.h" namespace "OS":
 
         string get_name()
 
-
     cdef cppclass ISR:
         ISR(Graph* graph, string name) except +
 
@@ -174,7 +171,6 @@ cdef extern from "graph.h" namespace "OS":
         bool set_definition_function(string function_name)
         string get_name()
 
-
     cdef cppclass Mutex:
         Mutex(Graph* graph, string name) except +
 
@@ -184,7 +180,6 @@ cdef extern from "graph.h" namespace "OS":
 
     cdef cppclass Task:
         Task(Graph* graph, string name) except +
-
 
         void set_priority(unsigned long priority)
         void set_activation(unsigned long activation)
@@ -199,10 +194,9 @@ cdef extern from "graph.h" namespace "OS":
         shared_ptr[Function] get_definition_function()
         string get_name()
 
-
     cdef cppclass Queue:
         Queue(Graph* graph, string name) except +
-        
+
         void set_message_property(message_property property)
         void set_length(unsigned long size)
 
@@ -211,7 +205,6 @@ cdef extern from "graph.h" namespace "OS":
 
     cdef cppclass Semaphore:
         Semaphore(Graph* graph, string name) except +
-
 
     cdef cppclass Timer:
         Timer(Graph* graph, string name) except +
@@ -231,14 +224,8 @@ cdef extern from "graph.h" namespace "OS":
     cdef cppclass Event:
         Event(Graph* graph, string name) except +
 
-
-
     cdef cppclass Buffer:
         Buffer(Graph* graph, string name) except +
-
-
-
-
 
     cdef cppclass Function:
         Function(Graph* graph, string name) except +
@@ -258,23 +245,21 @@ cdef extern from "graph.h" namespace "OS":
 
         bool set_definition_vertex(shared_ptr[Vertex])
 
-
     cdef cppclass RTOS:
 
-        RTOS(Graph* graph,string name) except +
+        RTOS(Graph* graph, string name) except +
 
         void enable_startup_hook(bool flag)
-        void enable_error_hook (bool flag)
+        void enable_error_hook(bool flag)
         void enable_shutdown_hook(bool flag)
-        void enable_pretask_hook (bool flag)
-        void enable_posttask_hook (bool flag)
+        void enable_pretask_hook(bool flag)
+        void enable_posttask_hook(bool flag)
 
     cdef cppclass CoRoutine:
-        RTOS(Graph* graph,string name) except +
+        RTOS(Graph* graph, string name) except +
 
     cdef cppclass ABB:
-        ABB(Graph* graph, shared_ptr[Function] function_reference ,string name) except +
-
+        ABB(Graph* graph, shared_ptr[Function] function_reference, string name) except +
 
         call_definition_type get_call_type()
 
@@ -284,7 +269,7 @@ cdef extern from "graph.h" namespace "OS":
         void set_call_type(call_definition_type type)
         void set_syscall_type(syscall_definition_type type)
         void set_call_target_instance(size_t target_instance)
-        #void set_expected_syscall_argument_type(size_t data_type_hash)
+        # void set_expected_syscall_argument_type(size_t data_type_hash)
         shared_ptr[Function] get_called_function()
 
         cset[shared_ptr[ABB]]  get_ABB_successors()
