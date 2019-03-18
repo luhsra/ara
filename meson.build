@@ -1,7 +1,7 @@
 project('ara', 'cpp',
-  default_options : ['warning_level=3',
-                     'cpp_std=c++17',
-                     'buildtype=debugoptimized'])
+	default_options : ['warning_level=3',
+	                   'cpp_std=c++17',
+	                   'buildtype=debugoptimized'])
 
 cython = find_program('cython')
 py3_mod = import('python')
@@ -23,9 +23,10 @@ dump_cmds = files('utils/dump_cmds.py')
 ara = files('ara.py')
 
 sh = custom_target('ara-sh',
-    input: ara,
-    output : 'ara.sh',
-    command : [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\nPYTHONPATH=' + graphdir + ':' + stepdir + ' ' + (source_dir / 'ara.py') + ' $@\n']
+	input: ara,
+	output: 'ara.sh',
+	command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\nPYTHONPATH=' + graphdir + ':' + stepdir + ' ' + (source_dir / 'ara.py') + ' $@\n'],
+	build_by_default: true
 )
 
 # TODO convert this into a proper test
