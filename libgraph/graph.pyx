@@ -414,7 +414,7 @@ cdef class ISR(Vertex):
 
     def set_category(self, int category):
         deref(self._c()).set_category(category)
-        
+
     def set_priority(self, int priority):
         deref(self._c()).set_priority(priority)
 
@@ -506,6 +506,9 @@ cdef class Task(Vertex):
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_definition_function()
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
+
+    def get_stacksize(self):
+        return deref(self._c()).get_stacksize()
 
 
 cdef class Function(Vertex):

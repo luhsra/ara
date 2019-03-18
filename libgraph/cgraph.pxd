@@ -162,9 +162,9 @@ cdef extern from "graph.h" namespace "OS":
         ISR(Graph* graph, string name) except +
 
         bool set_category(int category)
-        
+
         void set_priority(int priority)
-        
+
         int get_category()
         bool set_resource_reference(string)
         shared_ptr[Function] get_definition_function()
@@ -190,6 +190,8 @@ cdef extern from "graph.h" namespace "OS":
         bool set_scheduler(string scheduler)
         bool set_resource_reference(string resource)
         bool set_event_reference(string event)
+
+        unsigned long get_stacksize()
 
         shared_ptr[Function] get_definition_function()
         string get_name()
