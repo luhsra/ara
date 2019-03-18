@@ -508,6 +508,9 @@ cdef class Task(Vertex):
     def get_stacksize(self):
         return deref(self._c()).get_stacksize()
 
+    def get_priority(self):
+        return deref(self._c()).get_priority()
+
 
 cdef class Function(Vertex):
 

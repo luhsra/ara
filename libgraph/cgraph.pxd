@@ -192,6 +192,7 @@ cdef extern from "graph.h" namespace "OS":
         bool set_event_reference(string event)
 
         unsigned long get_stacksize()
+        unsigned long get_priority();
 
         shared_ptr[Function] get_definition_function()
         string get_name()
