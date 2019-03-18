@@ -1,4 +1,4 @@
-project('arsa', 'cpp',
+project('ara', 'cpp',
   default_options : ['warning_level=3',
                      'cpp_std=c++17',
                      'buildtype=debugoptimized'])
@@ -20,26 +20,26 @@ subdir('appl')
 subdir('test')
 
 dump_cmds = files('utils/dump_cmds.py')
-arsa = files('arsa.py')
+ara = files('ara.py')
 
-sh = custom_target('arsa-sh',
-    input: arsa,
-    output : 'arsa.sh',
-    command : [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\nPYTHONPATH=' + graphdir + ':' + stepdir + ' ' + (source_dir / 'arsa.py') + ' $@\n']
+sh = custom_target('ara-sh',
+    input: ara,
+    output : 'ara.sh',
+    command : [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\nPYTHONPATH=' + graphdir + ':' + stepdir + ' ' + (source_dir / 'ara.py') + ' $@\n']
 )
 
 # TODO convert this into a proper test
-# test('arsa_tester',
+# test('ara_tester',
 #   py3_inst,
-#   args: [files('arsa.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
-#   #args: [files('arsa.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
+#   args: [files('ara.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
+#   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
 #   
-#   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[1]],
-#   #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[16]],
+#   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[1]],
+#   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[16]],
 # 
-#   #args : [files('arsa.py'), '--os', 'osek', osek_targets[4]],
+#   #args : [files('ara.py'), '--os', 'osek', osek_targets[4]],
 # 
-#   #args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
+#   #args : [files('ara.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
 # 
 #   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 # )
@@ -47,14 +47,14 @@ sh = custom_target('arsa-sh',
 
 #test('ara tester',
 	#py3_inst,
-	#args : [files('arsa.py', 'test/data/GPSLogger.ll','test/data/ScreenManager.ll','test/data/GPSThread.ll','test/data/SDThread.ll','test/data/LEDThread.ll','test/data/ButtonsThread.ll','test/data/SdFatSPIDriver.ll','test/data/GPSDataModel.ll','test/data/SpeedScreen.ll'), '--os', 'freertos','--application_file' , 'invalid_mutex.cc'],
+	#args : [files('ara.py', 'test/data/GPSLogger.ll','test/data/ScreenManager.ll','test/data/GPSThread.ll','test/data/SDThread.ll','test/data/LEDThread.ll','test/data/ButtonsThread.ll','test/data/SdFatSPIDriver.ll','test/data/GPSDataModel.ll','test/data/SpeedScreen.ll'), '--os', 'freertos','--application_file' , 'invalid_mutex.cc'],
 	
-	#args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'timer.cc'],
+	#args : [files('ara.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'timer.cc'],
 
-    #args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'loop_detection.cc'],
-    #args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'before_scheduler_validation.cc'],
+    #args : [files('ara.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'loop_detection.cc'],
+    #args : [files('ara.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'before_scheduler_validation.cc'],
     # priority inversion test case
-    #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[2]],
+    #args : [files('ara.py'), '--os', 'freertos', freertos_targets[2]],
 
 	#env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
 #)

@@ -5,8 +5,6 @@
 cimport cgraph
 cimport graph
 
-#from arsa.steps.enumerations import Type
-
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
