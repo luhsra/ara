@@ -19,6 +19,15 @@ subdir('steps')
 subdir('appl')
 subdir('test')
 
+dump_cmds = files('utils/dump_cmds.py')
+arsa = files('arsa.py')
+
+sh = custom_target('arsa-sh',
+    input: arsa,
+    output : 'arsa.sh',
+    command : [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\nPYTHONPATH=' + graphdir + ':' + stepdir + ' ' + (source_dir / 'arsa.py') + ' $@\n']
+)
+
 # TODO convert this into a proper test
 # test('arsa_tester',
 #   py3_inst,
