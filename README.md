@@ -14,6 +14,13 @@ The following dependencies are needed:
 - [cython](https://cython.org/) (>=0.26.1)
 - [python](https://www.python.org/) (>=3.6)
 
+Getting packages in SRA lab:
+```
+addpackage llvm-7.0
+export LD_LIBRARY_PATH=/proj/opt/llvm-7.0/lib:$LD_LIBRARY_PATH
+pip3 install --user meson
+```
+
 
 To build the program type:
 ```
