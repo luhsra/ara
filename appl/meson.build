@@ -20,7 +20,7 @@ freertos_includes = files(join_paths(freertos_path, 'croutine.h'),
 freertos_targets = []
 foreach app : ['a', 'invalid_isr_syscall', 'c', 'loop_detection', 'topological_sort', 'f', 'g',
                'argument_load', 'start_scheduler_relation', 'deadlock', 'dominator',
-               'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore','thesis_print' ]
+               'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore', 'thesis_print' ]
    ll_target = custom_target('freertos-' + app,
                              input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
                              output : ['freertos-' + app + '.ll'],

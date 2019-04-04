@@ -60,12 +60,7 @@ void vPrintString( const char * string );
 
 void vPrintStringAndNumber( const char *string , int32_t number );
 
-void vTask1( void *pvParameters );
-void vTask2( void *pvParameters );
 QueueHandle_t xQueue;
-
-/* Declare a variable that is used to hold the handle of Task 2. */
-TaskHandle_t xTask2Handle = NULL;
 
 /* Declare a variable that will be incremented by the hook function. */
 volatile uint32_t ulIdleCycleCount = 0UL;
@@ -118,12 +113,18 @@ static void SenderTask( void *pvParameters )
 
 }
 
+static void foobar( void *pvParameters ) {
+	while (1);
+}
+
+
 static void ReceiverTask( void *pvParameters )
 {
     /* Declare the variable that will hold the values received from the queue. */
     int32_t lReceivedValue;
     BaseType_t xStatus;
     const TickType_t xTicksToWait = pdMS_TO_TICKS( 100 );
+    xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
     /* This task is also defined within an infinite loop. */
     for( ;; )
     {
@@ -175,6 +176,7 @@ int main( void )
     /* Create the task that will read from the queue. The task is created with
     priority 2, so above the priority of the sender tasks. */
     xTaskCreate( ReceiverTask, "Receiver", 1000, NULL, 2, NULL );
+
     /* Start the scheduler so the created tasks start executing. */
     vTaskStartScheduler();
     

@@ -30,9 +30,9 @@ sh = custom_target('ara-sh',
 )
 
 # TODO convert this into a proper test
-# test('ara_tester',
-#   py3_inst,
-#   args: [files('ara.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
+test('ara_tester',
+   py3_inst,
+   args: [files('ara.py'), freertos_thesis_print, '--os', 'freertos'],
 #   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
 #   
 #   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[1]],
@@ -42,8 +42,8 @@ sh = custom_target('ara-sh',
 # 
 #   #args : [files('ara.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
 # 
-#   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
-# )
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
 
 
 #test('ara tester',
