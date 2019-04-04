@@ -163,6 +163,7 @@ namespace graph {
 
 		std::shared_ptr<llvm::Module> get_llvm_module();
 
+		[[deprecated]]
 		void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse
 		                                       // Graph zu speichern
 		void set_edge(
