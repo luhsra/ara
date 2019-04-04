@@ -125,6 +125,7 @@ cdef extern from "graph.h" namespace "graph":
         size_t get_seed()
         size_t get_type()
         string get_name()
+        bool get_multiple_create()
         void set_handler_name(string)
         clist[shared_ptr[Edge]] get_outgoing_edges()
 

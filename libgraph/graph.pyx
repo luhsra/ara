@@ -335,6 +335,9 @@ cdef class Vertex:
     def get_type(self):
         return deref(self._c_vertex).get_type()
 
+    def get_multiple_create(self):
+        return deref(self._c_vertex).get_multiple_create()
+
     def set_handler_name(self, str name):
         cdef string handlername = name.encode('UTF-8')
         deref(self._c_vertex).set_handler_name(handlername)

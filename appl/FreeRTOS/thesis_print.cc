@@ -124,10 +124,10 @@ static void ReceiverTask( void *pvParameters )
     int32_t lReceivedValue;
     BaseType_t xStatus;
     const TickType_t xTicksToWait = pdMS_TO_TICKS( 100 );
-    xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
     /* This task is also defined within an infinite loop. */
     for( ;; )
     {
+        xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
         /* This call should always find the queue empty because this task will
         immediately remove any data that is written to the queue. */
         if( uxQueueMessagesWaiting( xQueue ) != 0 )
