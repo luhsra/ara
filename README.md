@@ -16,8 +16,10 @@ The following dependencies are needed:
 
 Getting packages in SRA lab:
 ```
-addpackage llvm-7.0
-export LD_LIBRARY_PATH=/proj/opt/llvm-7.0/lib:$LD_LIBRARY_PATH
+echo addpackage llvm-7.0 >> ~/.bashrc
+echo export LD_LIBRARY_PATH=/proj/opt/llvm-7.0/lib:\$LD_LIBRARY_PATH >> ~/.bashrc
+echo export PATH=`pwd`/.local/bin:\$PATH >> ~/.bashrc
+. ~/.bashrc
 pip3 install --user meson
 ```
 
