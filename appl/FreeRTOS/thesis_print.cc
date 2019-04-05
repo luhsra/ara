@@ -127,7 +127,6 @@ static void ReceiverTask( void *pvParameters )
     /* This task is also defined within an infinite loop. */
     for( ;; )
     {
-        xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
         /* This call should always find the queue empty because this task will
         immediately remove any data that is written to the queue. */
         if( uxQueueMessagesWaiting( xQueue ) != 0 )
@@ -166,16 +165,23 @@ int main( void )
     /* The queue is created to hold a maximum of 5 values, each of which is
     large enough to hold a variable of type int32_t. */
     xQueue = xQueueCreate( 5, sizeof( int32_t ) );
-    
+
+	int a = 5;
+
     /* Create two instances of the task that will send to the queue. The task
     parameter is used to pass the value that the task will write to the queue,
     so one task will continuously write 100 to the queue while the other task
     will continuously write 200 to the queue. Both tasks are created at
     priority 1. */
     xTaskCreate( SenderTask, "Sender1", 1000, NULL, 1, NULL );
+	a++;
     /* Create the task that will read from the queue. The task is created with
     priority 2, so above the priority of the sender tasks. */
     xTaskCreate( ReceiverTask, "Receiver", 1000, NULL, 2, NULL );
+
+	if (a >= 8) {
+	    xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
+	}
 
     /* Start the scheduler so the created tasks start executing. */
     vTaskStartScheduler();

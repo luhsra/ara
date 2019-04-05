@@ -359,6 +359,9 @@ cdef class Vertex:
 
         return pylist
 
+    def get_start_scheduler_creation_flag(self):
+        return deref(self._c_vertex).get_start_scheduler_creation_flag()
+
 
 cdef class Counter(Vertex):
     cdef inline shared_ptr[cgraph.Counter] _c(self):

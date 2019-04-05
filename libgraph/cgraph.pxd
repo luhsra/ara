@@ -129,6 +129,8 @@ cdef extern from "graph.h" namespace "graph":
         void set_handler_name(string)
         clist[shared_ptr[Edge]] get_outgoing_edges()
 
+        bool get_start_scheduler_creation_flag()
+
     cdef cppclass Edge:
         Edge(Graph* graph, string name, shared_ptr[Vertex] start, shared_ptr[Vertex] target, shared_ptr[ABB] abb_reference) except +
 

@@ -236,13 +236,15 @@ class DotFileParser():
         self.print_interactions(g,f,main)
 
 
-    def print_instance_class(self,g, f,instance_type, print_type,color, danger_color='red'):
+    def print_instance_class(self,g, f,instance_type, print_type,color, danger_color='red', scheduler_color='magenta'):
 
         element_list = g.get_type_vertices(instance_type)
 
         for element in element_list:
             if element.get_multiple_create():
                 col = danger_color
+            elif not element.get_start_scheduler_creation_flag():
+                col = scheduler_color
             else:
                 col = color
 
