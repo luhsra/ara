@@ -241,7 +241,7 @@ class DotFileParser():
         element_list = g.get_type_vertices(instance_type)
 
         for element in element_list:
-            if element.get_multiple_create():
+            if element.get_multiple_create() or element.get_unsure_create():
                 col = danger_color
             elif not element.get_start_scheduler_creation_flag():
                 col = scheduler_color

@@ -160,6 +160,10 @@ static void ReceiverTask( void *pvParameters )
     }
 }
 
+void test_create() {
+	xTaskCreate( foobar, "Wild Task2", 1000, NULL, 3, NULL );
+}
+
 int main( void )
 {
     /* The queue is created to hold a maximum of 5 values, each of which is
@@ -182,14 +186,23 @@ int main( void )
 	if (a >= 8) {
 	    xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
 	}
+	test_create();
 
     /* Start the scheduler so the created tasks start executing. */
     vTaskStartScheduler();
     
     
+	for (int i = 0; i < a; ++i) {
+		vTaskDelay(4);
+	}
+
     /* If all is well then main() will never reach here as the scheduler will
     now be running the tasks. If main() does reach here then it is likely that
     there was insufficient FreeRTOS heap memory available for the idle task to be
     created. Chapter 2 provides more information on heap memory management. */
-    for( ;; );
+	//if (a > 10) {
+	//	return 8;
+	//} else {
+		for( ;; ) { }
+	//}
 }

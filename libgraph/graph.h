@@ -588,6 +588,8 @@ namespace OS {
 		bool has_single_successor();
 
 		bool remove_abb(size_t seed);
+
+		std::set<shared_abb> get_endless_loops();
 	};
 
 	// Klasse AtomicBasicBlock
@@ -640,6 +642,7 @@ namespace OS {
 		size_t syscall_handler_index;
 
 		bool in_loop = false;
+		bool in_branch = false;
 
 	  public:
 		void print_information();
@@ -740,11 +743,17 @@ namespace OS {
 		shared_abb get_postdominator();
 
 		void set_loop_information(bool flag);
-
 		bool get_loop_information();
+
+		void set_branch(bool flag) { in_branch = flag; }
+		bool is_in_branch() { return in_branch; }
 
 		bool dominates(shared_abb abb);
 		bool postdominates(shared_abb abb);
+
+		bool operator==(const ABB& other) {
+			return get_name() == other.get_name();
+		}
 	};
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter

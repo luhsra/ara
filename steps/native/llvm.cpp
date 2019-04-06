@@ -174,6 +174,7 @@ namespace step {
 	void LLVMStep::abb_generation(graph::Graph* graph, OS::shared_function function,
 	                              std::vector<shared_warning>* warning_list) {
 
+		logger.debug() << "Generate ABBs for " << *function << std::endl;
 		llvm::Function* llvm_reference_function = function->get_llvm_reference();
 
 		std::map<const llvm::BasicBlock*, std::shared_ptr<OS::ABB>> bb_map;
@@ -300,14 +301,8 @@ namespace step {
 	}
 
 	void LLVMStep::set_exit_abb(graph::Graph& graph, unsigned int& split_counter) {
-
 		// set an exit abb for each function
-		auto vertex_list = graph.get_type_vertices(typeid(OS::Function).hash_code());
-		for (auto& vertex : vertex_list) {
-
-			// cast vertex to abb
-			auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
-
+		for (auto& function : graph.get_type_vertices<OS::Function>()) {
 			std::list<OS::shared_abb> return_abbs;
 
 			// detect all abb with no sucessors(exit abbs)

@@ -801,6 +801,34 @@ namespace step {
 		       "generated.";
 	}
 
+	bool IntermediateAnalysisStep::set_branch(OS::shared_abb abb, std::set<size_t>& already_visited) {
+		if (already_visited.find(abb->get_seed()) != already_visited.end()) {
+			return false;
+		}
+		already_visited.insert(abb->get_seed());
+		auto func = abb->get_parent_function();
+		std::set<OS::shared_abb> l = func->get_endless_loops();
+		std::vector<OS::shared_abb> endings(l.begin(), l.end());
+		auto ending = abb->get_parent_function()->get_exit_abb();
+		if (ending != nullptr) {
+			endings.emplace_back(ending);
+		}
+		for (auto eabb : endings) {
+			if (!(abb->dominates(eabb) || *abb == *eabb)) {
+				return true;
+			}
+		}
+
+		// recursive search to calling blocks
+		for (auto edge : func->get_ingoing_edges()) {
+			auto call_abb = std::dynamic_pointer_cast<OS::ABB>(edge->get_start_vertex());
+			if (call_abb != nullptr && set_branch(call_abb, already_visited)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * @brief the run method of the IntermediateAnalysisStep pass. This pass detects all interactions of the instances
 	 * via the RTOS.
@@ -838,14 +866,8 @@ namespace step {
 			abort();
 		}
 
-		std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::ABB).hash_code());
-
 		// iterate about abbs
-		for (auto& vertex : vertex_list) {
-
-			// cast vertex to abb
-			auto abb = std::dynamic_pointer_cast<OS::ABB>(vertex);
-
+		for (auto abb : graph.get_type_vertices<OS::ABB>()) {
 			// check if abb is a syscall abb
 			if (abb->get_call_type() == sys_call) {
 
@@ -856,16 +878,15 @@ namespace step {
 					// set loop information
 					abb->set_loop_information(true);
 				}
+				std::set<size_t> already_vis;
+				abb->set_branch(set_branch(abb, already_vis));
 			}
 		}
 		// get confing information
 		get_predefined_system_information(graph);
 
 		// identifiy hooks and mark corresponding functions
-		vertex_list = graph.get_type_vertices(typeid(OS::Function).hash_code());
-		for (auto& vertex : vertex_list) {
-
-			auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+		for (auto function : graph.get_type_vertices<OS::Function>()) {
 
 			hook_type type = no_hook;
 			if (function->get_name().find("PostTaskHook") != std::string::npos) {

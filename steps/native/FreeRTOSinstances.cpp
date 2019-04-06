@@ -1336,7 +1336,9 @@ bool create_abstraction_instance(graph::Graph& graph, graph::shared_vertex start
 		}
 		if (created_vertex) {
 			// check if abb is in some kind of branch
-			std::cout << "-------------" << *abb << " " << abb->get_parent_function()->get_exit_abb() << std::endl;
+			if (abb->is_in_branch()) {
+				created_vertex->set_unsure_create(true);
+			}
 
 			// set information if created instance is created in loop
 			created_vertex->set_multiple_create(multiple_create);
