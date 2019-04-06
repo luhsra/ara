@@ -221,6 +221,7 @@ namespace graph {
 
 		bool static_create = false;
 		bool multiple_create = false;
+		bool unsure_create = false; //created in condition
 
 		std::size_t vertex_type;
 		std::string name; // spezifischer Name des Vertexes
@@ -310,8 +311,10 @@ namespace graph {
 		bool get_static_create() { return this->static_create; }
 
 		void set_multiple_create(bool create) { this->multiple_create = create; }
-
 		bool get_multiple_create() { return this->multiple_create; }
+
+		void set_unsure_create(bool create) { this->unsure_create = create; }
+		bool get_unsure_create() { return this->unsure_create; }
 	};
 	inline std::ostream& operator<<(std::ostream& stream, const Vertex& vertex) { return vertex.print(stream); }
 
