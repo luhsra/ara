@@ -32,7 +32,7 @@ sh = custom_target('ara-sh',
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
-   args: [files('ara.py'), freertos_thesis_print, '--os', 'freertos'],
+   args: [files('ara.py'), freertos_thesis_print, '--os', 'freertos', '--log-level', 'debug'],
 #   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
 #   
 #   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[1]],
