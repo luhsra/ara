@@ -1335,6 +1335,8 @@ bool create_abstraction_instance(graph::Graph& graph, graph::shared_vertex start
 				target_class = "CoRoutine";
 		}
 		if (created_vertex) {
+			// check if abb is in some kind of branch
+			std::cout << "-------------" << *abb << " " << abb->get_parent_function()->get_exit_abb() << std::endl;
 
 			// set information if created instance is created in loop
 			created_vertex->set_multiple_create(multiple_create);
