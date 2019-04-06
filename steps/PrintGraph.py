@@ -81,8 +81,8 @@ class DotFileParser():
                 else:
                     f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
 
-                for predecessor in abb.get_predecessors():
-                    f.write("\t\t"+abb.get_name().replace(" ", "") + " -> " + predecessor.get_name().replace(" ", "") +  "[color=grey];\n" )
+                #for predecessor in abb.get_predecessors():
+                #    f.write("\t\t"+abb.get_name().replace(" ", "") + " -> " + predecessor.get_name().replace(" ", "") +  "[color=grey];\n" )
 
             if function.get_exit_abb() != None:
                 f.write("\t\t"+function.get_exit_abb().get_name().replace(" ", "") + " [color=red style=filled] ;\n" )
