@@ -1,10 +1,14 @@
 #ifndef DISPLAYDRIVER_H
 #define DISPLAYDRIVER_H
 
+#define ARDUINO 100
+
 #include <Arduino_FreeRTOS.h>
 #include <Adafruit_SSD1306.h>
 
 #define SSD1306_I2C_ADDRESS   0x3C
+
+#include "fake_stm.h"
 
 class DisplayDriver : public ISSD1306Driver
 {
