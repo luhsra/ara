@@ -263,12 +263,15 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 					if (start_scheduler == abb->get_syscall_type())
 						tmp_state = after;
 				} else if (abb->get_call_type() == func_call) {
-					if (tmp_state == after)
-						before_scheduler_instructions(graph, abb->get_called_function(), already_visited, call_tree,
-						                              tmp_state);
-					else
-						tmp_state = before_scheduler_instructions(graph, abb->get_called_function(), already_visited,
-						                                          call_tree, tmp_state);
+					if (abb->get_called_function() != nullptr) {
+						if (tmp_state == after) {
+							before_scheduler_instructions(graph, abb->get_called_function(), already_visited, call_tree,
+							                              tmp_state);
+						} else {
+							tmp_state = before_scheduler_instructions(graph, abb->get_called_function(), already_visited,
+							                                          call_tree, tmp_state);
+						}
+					}
 				}
 
 				if (tmp_state == uncertain) {
