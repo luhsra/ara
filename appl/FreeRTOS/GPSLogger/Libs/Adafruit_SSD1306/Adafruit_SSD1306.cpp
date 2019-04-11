@@ -16,6 +16,8 @@ BSD license, check license.txt for more information
 All text above, and the splash screen below must be included in any redistribution
 *********************************************************************/
 
+#define ARDUINO 100
+
 #ifdef __AVR__
   #include <avr/pgmspace.h>
 #elif defined(ESP8266) || defined(ESP32)
@@ -29,6 +31,7 @@ All text above, and the splash screen below must be included in any redistributi
 #endif
 
 #include <stdlib.h>
+#include "types.h"
 
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1306.h"

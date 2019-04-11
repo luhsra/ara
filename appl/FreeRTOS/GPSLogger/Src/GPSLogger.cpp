@@ -51,23 +51,6 @@ uint32_t m_startSched;
 //     DWT_CTRL |= CYCCNTENA;
 // }
 
-void tmp_tmp(){
-    
-    
-	xTaskCreate(vDisplayTask, "Display Task", 768, NULL, tskIDLE_PRIORITY + 2, NULL);
-	xTaskCreate(vButtonsThread, "Buttons Thread", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
-	//	xTaskCreate(xSDIOThread, "SD IO executor", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
-	//xTaskCreate(xSDTestThread, "SD test thread", 200, NULL, tskIDLE_PRIORITY + 3, NULL);
-	xTaskCreate(vGPSTask, "GPS Task", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
-}
-
-void tmp(){
-    xTaskCreate(vSDThread, "SD Thread", 512, NULL, tskIDLE_PRIORITY +4 , NULL);
-	xTaskCreate(vLEDThread, "LED Thread",	configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
-    tmp_tmp();
-}
-
-
 int main(void)
 {
   //  stopwatch_reset();
@@ -112,20 +95,23 @@ int main(void)
 	//initSDThread();
 	//initGPS();
         initButtons();
-        
-    tmp();
 
 		//	serialDebugWrite("creating Threads\r\n");
 	m_startInits = CPU_CYCLES;
 	// Set up threads
 	// TODO: Consider encapsulating init and task functions into a class(es)
-	
+	xTaskCreate(vSDThread, "SD Thread", 512, NULL, tskIDLE_PRIORITY +4 , NULL);
+	xTaskCreate(vLEDThread, "LED Thread",	configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 
+	xTaskCreate(vDisplayTask, "Display Task", 768, NULL, tskIDLE_PRIORITY + 2, NULL);
+	xTaskCreate(vButtonsThread, "Buttons Thread", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+	//	xTaskCreate(xSDIOThread, "SD IO executor", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
+	//xTaskCreate(xSDTestThread, "SD test thread", 200, NULL, tskIDLE_PRIORITY + 3, NULL);
+	xTaskCreate(vGPSTask, "GPS Task", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
 	m_startSched = CPU_CYCLES;
 	//usbDebugWrite("Test\n");
 	//	serialDebugWrite("SerialTest\n\r");
 	//	serialDebugWrite("m_start, m_startInits, m_startSched: %d %d %d\r\n",m_start, m_startInits, m_startSched);
-
 
 	// Run scheduler and all the threads
 	vTaskStartScheduler();

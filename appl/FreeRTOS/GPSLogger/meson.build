@@ -1,5 +1,3 @@
-src_path = 'Src'
-
 gpslogger_dir = meson.current_source_dir()
 
 gpslogger_includes = [join_paths([gpslogger_dir, 'Libs', 'AdafruitGFX']),
@@ -8,11 +6,25 @@ gpslogger_includes = [join_paths([gpslogger_dir, 'Libs', 'AdafruitGFX']),
                       join_paths([gpslogger_dir, 'Libs', 'FreeRTOS'])]
 
 gpslogger_targets = []
-foreach file : ['GPSLogger', 'SDThread', 'LEDThread', 'ButtonsThread', 'SdFatSPIDriver',
-                'Screens/ScreenManager', 'Screens/SpeedScreen', 'Screens/DisplayDriver',
-                'GPS/GPSThread', 'GPS/GPSDataModel']
+
+src_files = [
+	'Src/GPSLogger',
+	'Src/SDThread',
+	'Src/LEDThread',
+	'Src/ButtonsThread',
+	'Src/SdFatSPIDriver',
+	'Src/Screens/ScreenManager',
+	'Src/Screens/SpeedScreen',
+	'Src/Screens/DisplayDriver',
+	'Src/GPS/GPSThread',
+	'Src/GPS/GPSDataModel',
+	'Libs/Adafruit_SSD1306/Adafruit_SSD1306'
+]
+
+
+foreach file : src_files
   gpslogger_targets += custom_target('gpslogger-' + file.underscorify(),
-                                    input: join_paths(src_path, file + '.cpp'),
+                                    input: file + '.cpp',
                                     depend_files: freertos_includes,
                                     output: 'gpslogger-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',

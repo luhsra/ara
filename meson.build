@@ -45,7 +45,7 @@ test('ara_tester',
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
-test('gps_logger',
+test('gpslogger',
    py3_inst,
    args: [files('ara.py'), gpslogger_targets, '--os', 'freertos', '--log-level', 'debug'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
