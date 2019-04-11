@@ -282,10 +282,15 @@ namespace step {
 					argument_data argument_container;
 					if (dumper.dump_argument(debug_out, &argument_container, tmp_value, &already_visited)) {
 						if (argument_container.value_list.size() == 1) {
-							if (Function* tmp_function = dyn_cast<Function>(argument_container.value_list.front()))
+							if (GlobalAlias* al = dyn_cast<GlobalAlias>(argument_container.value_list.front())) {
+								if (Function* tmp_function = dyn_cast<Function>(al->getIndirectSymbol())) {
+									llvm_function = tmp_function;
+								}
+							} else if (Function* tmp_function = dyn_cast<Function>(argument_container.value_list.front())) {
 								llvm_function = tmp_function;
-						};
-					};
+							}
+						}
+					}
 				}
 				if (llvm_function != nullptr) {
 					// get function which is addressed by call

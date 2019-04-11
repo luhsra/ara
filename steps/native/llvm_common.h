@@ -4,6 +4,7 @@
 #include "llvm/IR/Instructions.h"
 
 #include <memory>
+#include <cassert>
 
 /**
  * wrapper for CallBase that will be introduced with newer LLVM, delete this class once CallBase will exist
@@ -29,6 +30,7 @@ class FakeCallBase {
 			return c->getCalledFunction();
 		if (v)
 			return v->getCalledFunction();
+		assert(true);
 		return nullptr;
 	}
 
@@ -37,6 +39,7 @@ class FakeCallBase {
 			return c->getCalledValue();
 		if (v)
 			return v->getCalledValue();
+		assert(true);
 		return nullptr;
 	}
 };
