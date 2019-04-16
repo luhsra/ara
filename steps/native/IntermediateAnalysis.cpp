@@ -230,14 +230,19 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 			changes = false;
 			// iterate about the abbs of function in topoligal order
 			for (auto& abb : function->get_atomic_basic_blocks()) {
+				std::cout << "sched ABB: " << *abb << std::endl;
 
 				already_visited_abbs.insert(std::make_pair(abb->get_seed(), abb->get_seed()));
 				bool before_flag = false;
 				bool after_flag = false;
 				bool uncertain_flag = false;
 				for (auto predecessor : abb->get_ABB_predecessors()) {
-					if (already_visited_abbs.find(predecessor->get_seed()) == already_visited.end())
+					if (already_visited_abbs.find(predecessor->get_seed()) == already_visited.end()) {
+						std::cout << "not found: " << *predecessor << std::endl;
 						continue;
+					}
+					std::cout << "Pred: " << *predecessor << " " << predecessor->get_start_scheduler_relation() << std::endl;
+
 					if (predecessor->get_start_scheduler_relation() == before)
 						before_flag = true;
 					if (predecessor->get_start_scheduler_relation() == after)
@@ -252,11 +257,13 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 					tmp_state = start_relation;
 				else {
 
+					//versagt bei BB257
 					if (before_flag && !after_flag && !uncertain_flag)
 						tmp_state = before;
 					else if (!before_flag && after_flag && !uncertain_flag)
 						tmp_state = after;
 				}
+				std::cout << "Zwischenstatus: " << tmp_state << std::endl;
 
 				if (abb->get_call_type() == sys_call) {
 
@@ -306,6 +313,7 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 				if (abb->get_start_scheduler_relation() != tmp_state)
 					changes = true;
 
+				std::cout << "sched ABB: " << *abb << " relation: " << tmp_state << std::endl;
 				abb->set_start_scheduler_relation(tmp_state);
 			}
 		}
