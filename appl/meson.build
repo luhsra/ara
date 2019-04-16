@@ -18,6 +18,7 @@ freertos_includes = files(join_paths(freertos_path, 'croutine.h'),
                           join_paths(freertos_path, 'list.h'),
                           join_paths(freertos_path, 'queue.h'),
                           join_paths(freertos_path, 'task.h'))
+subdir(freertos_path)
 
 freertos_targets = []
 foreach app : ['a', 'invalid_isr_syscall', 'c', 'loop_detection', 'topological_sort', 'f', 'g',
