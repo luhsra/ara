@@ -1,0 +1,26 @@
+h1 {
+    font-size: 36px;
+    line-height: 50px
+}
+
+h2 {
+    font-size: 28px;
+    line-height: 46px
+}
+
+div.sub {
+    margin-bottom: 20px;
+}
+
+table.table {
+    margin-bottom: 20px;
+}
+
+table tr td {
+    padding-left: 25px;
+    padding-right: 25px;
+}
+
+.alert_td {
+    color: red;
+}

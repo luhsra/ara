@@ -38,6 +38,9 @@ endforeach
 subdir('FreeRTOS/GPSLogger')
 freertos_targets += gpslogger_targets
 
+subdir('FreeRTOS/SmartPlug')
+freertos_targets += smartplug_targets
+
 freertos_examples = run_target('freertos-examples',
                                command: nop,
                                depends: freertos_targets)

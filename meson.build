@@ -51,6 +51,12 @@ test('gpslogger',
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
+test('smartplug',
+   py3_inst,
+   args: [files('ara.py'), smartplug_targets, '--os', 'freertos', '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
 test('ospert',
    py3_inst,
    args: [files('ara.py'), freertos_ospert, '--os', 'freertos', '--log-level', 'debug'],
