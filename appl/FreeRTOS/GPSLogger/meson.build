@@ -34,7 +34,7 @@ foreach file : src_files
                                                '-I', gpslogger_includes[2],
                                                '-I', gpslogger_includes[3],
                                                '@INPUT0@',
-                                               '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@'] +
+                                               '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@', cxx_std] +
                                               clang_flags)
 endforeach
 

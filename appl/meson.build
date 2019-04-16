@@ -2,7 +2,9 @@ clang = find_program('clang-7')
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
-clang_flags = ['-S', '-g', '-emit-llvm', '--std=c++11', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names']
+clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names']
+c_std = '-std=c11'
+cxx_std = '-std=c++11'
 
 
 # FreeRTOS examples
@@ -25,7 +27,7 @@ foreach app : ['a', 'invalid_isr_syscall', 'c', 'loop_detection', 'topological_s
                              input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
                              output : ['freertos-' + app + '.ll'],
                              command : [clang, '@INPUT0@',
-                                        '-o', '@OUTPUT0@'] +
+                                        '-o', '@OUTPUT0@', cxx_std] +
                                         clang_flags)
    set_variable('freertos_' + app.underscorify(), ll_target)
    freertos_targets += ll_target
@@ -56,7 +58,7 @@ foreach app : ['a', 'b', 'c', 'coptermok','copter-without-alarms']
                               input : ['OSEK/' + app + '.cc'] + osek_includes,
                               output : ['osek-' + app + '.ll'],
                               command : [clang, '@INPUT0@',
-                                         '-o', '@OUTPUT0@'] +
+                                         '-o', '@OUTPUT0@', cxx_std] +
                                          clang_flags)
     set_variable('osek_' + app.underscorify(), ll_target)
     osek_targets += ll_target
