@@ -175,7 +175,7 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
  */
 start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::shared_function function,
                                                        std::map<std::size_t, std::size_t> already_visited,
-                                                       std::map<std::size_t, std::size_t>* call_tree,
+                                                       std::set<const OS::Function*>& call_tree,
                                                        start_scheduler_relation start_relation) {
 
 	// default start scheduler relation state of the function
@@ -196,7 +196,6 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 	// generate hash value of the functionname
 	size_t hash_value = hash_fn(function->get_name());
 	bool visited_flag = false;
-	bool calltree_flag = false;
 
 	// search hash value in list of already visited basic blocks
 	if (already_visited.find(hash_value) != already_visited.end()) {
@@ -204,14 +203,11 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 	}
 
 	// search hash value in list of already visited basic blocks
-	if (call_tree->find(hash_value) != call_tree->end()) {
-		calltree_flag = true;
-		// std::cerr << "---------------------" << std::endl;
-	}
+	bool calltree_flag = (call_tree.find(function.get()) != call_tree.end());
 
 	if (!visited_flag) { // set function as already visited
 		already_visited.insert(std::make_pair(hash_value, hash_value));
-		call_tree->insert(std::make_pair(hash_value, hash_value));
+		call_tree.insert(function.get());
 
 		std::vector<llvm::Instruction*> start_scheduler_func_calls;
 		std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
@@ -230,7 +226,6 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 			changes = false;
 			// iterate about the abbs of function in topoligal order
 			for (auto& abb : function->get_atomic_basic_blocks()) {
-				std::cout << "sched ABB: " << *abb << std::endl;
 
 				already_visited_abbs.insert(std::make_pair(abb->get_seed(), abb->get_seed()));
 				bool before_flag = false;
@@ -238,10 +233,8 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 				bool uncertain_flag = false;
 				for (auto predecessor : abb->get_ABB_predecessors()) {
 					if (already_visited_abbs.find(predecessor->get_seed()) == already_visited.end()) {
-						std::cout << "not found: " << *predecessor << std::endl;
 						continue;
 					}
-					std::cout << "Pred: " << *predecessor << " " << predecessor->get_start_scheduler_relation() << std::endl;
 
 					if (predecessor->get_start_scheduler_relation() == before)
 						before_flag = true;
@@ -257,13 +250,11 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 					tmp_state = start_relation;
 				else {
 
-					//versagt bei BB257
 					if (before_flag && !after_flag && !uncertain_flag)
 						tmp_state = before;
 					else if (!before_flag && after_flag && !uncertain_flag)
 						tmp_state = after;
 				}
-				std::cout << "Zwischenstatus: " << tmp_state << std::endl;
 
 				if (abb->get_call_type() == sys_call) {
 
@@ -313,7 +304,6 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 				if (abb->get_start_scheduler_relation() != tmp_state)
 					changes = true;
 
-				std::cout << "sched ABB: " << *abb << " relation: " << tmp_state << std::endl;
 				abb->set_start_scheduler_relation(tmp_state);
 			}
 		}
@@ -868,9 +858,9 @@ namespace step {
 
 			main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
 			std::map<std::size_t, std::size_t> already_visited;
-			std::map<std::size_t, std::size_t> call_tree;
+			std::set<const OS::Function*> call_tree;
 
-			before_scheduler_instructions(graph, main_function, already_visited, &call_tree, before);
+			before_scheduler_instructions(graph, main_function, already_visited, call_tree, before);
 
 		} else {
 			std::cerr << "no main function in programm" << std::endl;

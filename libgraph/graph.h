@@ -596,7 +596,7 @@ namespace OS {
 	class ABB : public graph::Vertex {
 
 	  private:
-		start_scheduler_relation start_scheduler_relative_position = after;
+		start_scheduler_relation start_scheduler_relative_position = not_defined;
 
 		call_definition_type
 		    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
