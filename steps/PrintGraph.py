@@ -79,15 +79,15 @@ class DotFileParser():
 
 
                 else:
-                    f.write("\t\t"+abb.get_name().replace(" ", "") + "[shape=box fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
+                    f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
 
                 #for predecessor in abb.get_predecessors():
                 #    f.write("\t\t"+abb.get_name().replace(" ", "") + " -> " + predecessor.get_name().replace(" ", "") +  "[color=grey];\n" )
 
             if function.get_exit_abb() != None:
-                f.write("\t\t"+function.get_exit_abb().get_name().replace(" ", "") + " [shape=box color=red style=filled] ;\n" )
+                f.write("\t\t"+function.get_exit_abb().get_name().replace(" ", "") + " [color=red style=filled] ;\n" )
             if function.get_entry_abb() != None:
-                f.write("\t\t"+function.get_entry_abb().get_name().replace(" ", "") + " [shape=box color=green style=filled label=<" +function.get_entry_abb().get_name().replace(" ", "") + "<BR />\n")
+                f.write("\t\t"+function.get_entry_abb().get_name().replace(" ", "") + " [color=green style=filled label=<" +function.get_entry_abb().get_name().replace(" ", "") + "<BR />\n")
                 f.write("<FONT POINT-SIZE=\"10\">" + "function: " + function.get_name()  + "</FONT>>];\n")
 
 
