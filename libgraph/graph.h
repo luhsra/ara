@@ -32,6 +32,8 @@ enum function_definition_type { Task, ISR, Timer, normal };
 enum call_definition_type { sys_call, func_call, computation, has_call, no_call };
 
 enum syscall_definition_type {
+	undefined,
+
 	computate,
 	create,
 	destroy,
@@ -56,7 +58,7 @@ enum syscall_definition_type {
 	start_scheduler,
 	end_scheduler,
 	chain,
-	delay
+	delay,
 };
 
 enum ISR_type { ISR1, ISR2, basic };
@@ -602,7 +604,7 @@ namespace OS {
 		    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
 		              // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 
-		syscall_definition_type abb_syscall_type;
+		syscall_definition_type abb_syscall_type = undefined;
 		// std::vector<OS::weak_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
 		// std::vector<OS::weak_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
 

@@ -65,6 +65,7 @@ cdef extern from "graph.h" namespace "protocol_type":
     cdef protocol_type none
 
 cdef extern from "graph.h" namespace "syscall_definition_type":
+    cdef syscall_definition_type undefined
     cdef syscall_definition_type computate
     cdef syscall_definition_type create
     cdef syscall_definition_type destroy

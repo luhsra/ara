@@ -78,6 +78,7 @@ class timer_type(IntEnum):
 
 
 class syscall_definition_type(IntEnum):
+    undefined = <int> cgraph.undefined
     computate = <int> cgraph.computate
     create = <int> cgraph.create
     destroy = <int> cgraph.destroy
@@ -652,7 +653,8 @@ cdef class ABB(Vertex):
 
     def get_syscall_type(self):
         cdef cgraph.syscall_definition_type t = deref(self._c()).get_syscall_type()
-        return syscall_definition_type(<int> t)
+        cdef int num = <int> t
+        return syscall_definition_type(num)
 
     def set_call_target_instance(self, ptype):
 
