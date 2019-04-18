@@ -29,6 +29,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Support/raw_os_ostream.h"
 
 #include <cassert>
 #include <fstream>
@@ -365,6 +366,8 @@ namespace step {
 
 		Linker L(*Composite);
 
+		llvm::raw_os_ostream llog(std::cout);
+
 		// resolve link errors
 		for (unsigned i = 1; i < files.size(); ++i) {
 			auto M = LoadFile(files.at(i), context);
@@ -375,25 +378,25 @@ namespace step {
 
 			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
 				GlobalVariable& gv = *it;
-				if (!gv.isDeclaration())
-					gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
+				if (!gv.isDeclaration() && !gv.hasPrivateLinkage())
+				   gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
 			}
 
-			for (auto it = M->alias_begin(); it != M->alias_end(); ++it) {
-				GlobalAlias& ga = *it;
-				if (!ga.isDeclaration())
-					ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
-			}
+			//for (auto it = M->alias_begin(); it != M->alias_end(); ++it) {
+			//	GlobalAlias& ga = *it;
+			//	if (!ga.isDeclaration())
+			//		ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+			//}
 
-			// set linkage information of all functions
-			for (auto& F : *M) {
-				StringRef Name = F.getName();
-				// leave library functions alone because their presence or absence
-				// could affect the behaviour of other passes
-				if (F.isDeclaration())
-					continue;
-				F.setLinkage(GlobalValue::WeakAnyLinkage);
-			}
+			//// set linkage information of all functions
+			//for (auto& F : *M) {
+			//	StringRef Name = F.getName();
+			//	// leave library functions alone because their presence or absence
+			//	// could affect the behaviour of other passes
+			//	if (F.isDeclaration())
+			//		continue;
+			//	F.setLinkage(GlobalValue::WeakAnyLinkage);
+			//}
 
 			if (L.linkInModule(std::move(M))) {
 				std::cerr << "link error in '" << files.at(i);
