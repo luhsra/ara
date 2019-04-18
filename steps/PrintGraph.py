@@ -198,6 +198,7 @@ class DotFileParser():
 
 
     def print_interactions(self,g, f, element):
+        buf = []
         interactions = element.get_outgoing_edges()
         for interaction in interactions:
             edge_name = interaction.get_name().replace(" ", "").replace(".", "_")
@@ -209,7 +210,9 @@ class DotFileParser():
             if start.get_type() != graph.get_type_hash("ABB") and target.get_type() != graph.get_type_hash("Function"):
                 target_name = target.get_name().replace(" ", "").replace(".", "_")
                 start_name = start.get_name().replace(" ", "").replace(".", "_")
-                f.write(start_name + " -> " + target_name +  " [ label=\"" + edge_name  +   "\"];\n")
+                buf.append(start_name + " -> " + target_name +  " [ label=\"" + edge_name  +   "\"];")
+        for i in sorted(buf):
+            f.write(i + '\n')
 
 
     def print_called_functions(self,g, f,element):
@@ -254,6 +257,24 @@ class DotFileParser():
             elif print_type == 2:
                 self.print_called_functions(g,f,element)
 
+    # TODO: remove this hack
+    class DedubFile:
+        def __init__(self, path):
+            self.f = open(path, 'w+')
+            self.buf = ''
+
+        def write(self, text):
+            self.buf += text
+
+        def close(self):
+            oldline = ""
+            for line in self.buf.split('\n'):
+                if line != oldline:
+                    self.f.write(line + '\n')
+                    oldline = line
+            self.f.close()
+
+
     def print_instances(self, g, folder ):
 
         path = os.getcwd()+"/"+ folder +"/"
@@ -261,9 +282,10 @@ class DotFileParser():
         if not os.path.exists(path):
             os.makedirs(path)
 
-        f = open(path+"instances_overview.dot","w+")
+        #f = open(path+"instances_overview.dot","w+")
+        f = DotFileParser.DedubFile(path+"instances_overview.dot")
 
-        f.write("strict digraph G {\n" )
+        f.write("digraph G {\n" )
 
         f.write("graph[rankdir=LR]\nRTOS[shape=box];\n")
 

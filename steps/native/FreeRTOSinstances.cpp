@@ -1341,7 +1341,9 @@ bool create_abstraction_instance(graph::Graph& graph, graph::shared_vertex start
 			}
 
 			// set information if created instance is created in loop
-			created_vertex->set_multiple_create(multiple_create);
+			if (!created_vertex->get_multiple_create()) {
+				created_vertex->set_multiple_create(multiple_create);
+			}
 			// set static flag, if the creatoin syscall contains Static substring
 			if (abb->get_syscall_name().find("Static") != std::string::npos) {
 				created_vertex->set_static_create(true);
