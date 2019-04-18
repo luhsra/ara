@@ -54,13 +54,9 @@ class OilStep(Step):
 
 
     def run(self, g: graph.PyGraph):
-
-
-        print("Run ", self.get_name())
-
         oilfile =  self._config["oilfile"]
 
-        structure_file = '../appl/OSEK/'+oilfile
+        structure_file = oilfile
         tmp_file = '../tmp.txt'
 
         #open oil file
@@ -342,7 +338,7 @@ class OilStep(Step):
                 #set and check function reference of task
                 if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
                     print("Task", name, "has no reference in data")
-                    sys.exit()
+                    sys.exit(1)
 
                 for function in function_list:
                     if function.get_name() == ("OSEKOS_TASK_FUNC_" + name):

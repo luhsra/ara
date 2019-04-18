@@ -57,6 +57,19 @@ test('smartplug',
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
+test('copter-without-alarms',
+   py3_inst,
+   args: [files('ara.py'), osek_copter_without_alarms[0], '--os', 'osek', '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
+test('copter',
+   py3_inst,
+   args: [files('ara.py'), osek_coptermok[0], '--os', 'osek', '--oilfile', osek_coptermok[1], '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
+
 test('ospert',
    py3_inst,
    args: [files('ara.py'), freertos_ospert, '--os', 'freertos', '--log-level', 'debug'],

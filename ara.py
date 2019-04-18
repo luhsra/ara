@@ -54,9 +54,8 @@ def main():
                         default=False, help="list all available steps")
     parser.add_argument('input_files', help="all LLVM-IR input files",
                         nargs='*')
-    parser.add_argument('--oilfile', help="name of oilfile",
-                        default='oilfile.oil')
-    
+    parser.add_argument('--oilfile', help="name of oilfile")
+
     args = parser.parse_args()
 
     # logging
@@ -77,6 +76,8 @@ def main():
         sys.exit(0)
     elif not args.input_files:
         parser.error('input_files are required (except -l or -h is set)')
+    elif args.os == 'OSEK' and not args.oilfile:
+        parser.error('when analyzing OSEK and oilfile is required')
 
     logging.debug("Processing files: %s", ', '.join(args.input_files))
 

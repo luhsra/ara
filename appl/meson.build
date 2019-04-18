@@ -56,15 +56,21 @@ osek_includes = files(join_paths(osek_path, 'alarm.h'),
                       join_paths(osek_path, 'timing.h'),
                       join_paths(osek_path, 'osek_types.h'))
 
+osek_folder = 'OSEK'
+
 osek_targets = []
-foreach app : ['a', 'b', 'c', 'coptermok','copter-without-alarms']
-    ll_target = custom_target('osek-' + app,
-                              input : ['OSEK/' + app + '.cc'] + osek_includes,
-                              output : ['osek-' + app + '.ll'],
+foreach app : [['a',                     'a.oil'],
+               ['b',                     'oilfile.oil'],
+               ['c',                     'oilfile.oil'],
+               ['coptermok',             'coptermok.oil'],
+               ['copter-without-alarms', 'copter-without-alarms.oil']]
+    ll_target = custom_target('osek-' + app[0],
+                              input : [join_paths([osek_folder, app[0] + '.cc'])] + osek_includes,
+                              output : ['osek-' + app[0] + '.ll'],
                               command : [clang, '@INPUT0@',
                                          '-o', '@OUTPUT0@', cxx_std] +
                                          clang_flags)
-    set_variable('osek_' + app.underscorify(), ll_target)
+    set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
     osek_targets += ll_target
 endforeach
 
