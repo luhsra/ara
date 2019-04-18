@@ -341,7 +341,7 @@ class OilStep(Step):
 
                 #set and check function reference of task
                 if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
-                    print("Task ", name, " has no reference in data")
+                    print("Task", name, "has no reference in data")
                     sys.exit()
 
                 for function in function_list:
