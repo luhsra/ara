@@ -79,15 +79,15 @@ class DotFileParser():
 
 
                 else:
-                    f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
+                    f.write("\t\t"+abb.get_name().replace(" ", "") + "[shape=box fillcolor=\"#9ACEEB\" style=filled]" + ";\n" )
 
                 #for predecessor in abb.get_predecessors():
                 #    f.write("\t\t"+abb.get_name().replace(" ", "") + " -> " + predecessor.get_name().replace(" ", "") +  "[color=grey];\n" )
 
             if function.get_exit_abb() != None:
-                f.write("\t\t"+function.get_exit_abb().get_name().replace(" ", "") + " [color=red style=filled] ;\n" )
+                f.write("\t\t"+function.get_exit_abb().get_name().replace(" ", "") + " [shape=box color=red style=filled] ;\n" )
             if function.get_entry_abb() != None:
-                f.write("\t\t"+function.get_entry_abb().get_name().replace(" ", "") + " [color=green style=filled label=<" +function.get_entry_abb().get_name().replace(" ", "") + "<BR />\n")
+                f.write("\t\t"+function.get_entry_abb().get_name().replace(" ", "") + " [shape=box color=green style=filled label=<" +function.get_entry_abb().get_name().replace(" ", "") + "<BR />\n")
                 f.write("<FONT POINT-SIZE=\"10\">" + "function: " + function.get_name()  + "</FONT>>];\n")
 
 
@@ -198,13 +198,14 @@ class DotFileParser():
 
 
     def print_interactions(self,g, f, element):
-
-
         interactions = element.get_outgoing_edges()
         for interaction in interactions:
             edge_name = interaction.get_name().replace(" ", "").replace(".", "_")
             target = interaction.get_target_vertex()
             start = interaction.get_start_vertex()
+            if interaction.get_abb_reference().get_syscall_type() == graph.syscall_definition_type.create:
+                if target.get_multiple_create() or element.get_unsure_create():
+                    edge_name += "?"
             if start.get_type() != graph.get_type_hash("ABB") and target.get_type() != graph.get_type_hash("Function"):
                 target_name = target.get_name().replace(" ", "").replace(".", "_")
                 start_name = start.get_name().replace(" ", "").replace(".", "_")
@@ -232,25 +233,20 @@ class DotFileParser():
 
         name = main.get_name().replace(" ", "").replace(".", "_")
 
-        f.write("\t\t"+ name + "[fillcolor="+ color +" style=filled label=<" + name + "<BR />>];\n")
+        f.write("\t\t"+ name + "[shape=box fillcolor="+ color +" style=filled label=<" + name + "<BR />>];\n")
         self.print_interactions(g,f,main)
 
 
-    def print_instance_class(self,g, f,instance_type, print_type,color, danger_color='red', scheduler_color='magenta'):
+    def print_instance_class(self,g, f,instance_type, print_type,color):
 
         element_list = g.get_type_vertices(instance_type)
 
         for element in element_list:
-            if element.get_multiple_create() or element.get_unsure_create():
-                col = danger_color
-            elif not element.get_start_scheduler_creation_flag():
-                col = scheduler_color
-            else:
-                col = color
+            col = color
 
             name = element.get_name().replace(" ", "").replace(".", "_")
 
-            f.write("\t\t"+ name + "[fillcolor="+ col +" style=filled label=<" + name + "<BR />>];\n")
+            f.write("\t\t"+ name + "[shape=record fillcolor="+ col + ' style=filled label="' + name + ' | late: ' + str(not element.get_start_scheduler_creation_flag()) + '"];\n')
             if print_type == 0:
                 self.print_interactions(g,f,element)
             elif print_type == 1:
@@ -268,6 +264,8 @@ class DotFileParser():
         f = open(path+"instances_overview.dot","w+")
 
         f.write("strict digraph G {\n" )
+
+        f.write("graph[rankdir=LR]\nRTOS[shape=box];\n")
 
         self.print_instance_class( g,f,"Task",0, "darkseagreen3")
         self.print_instance_class( g,f,"Event", 0,"cyan2")
