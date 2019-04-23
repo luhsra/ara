@@ -56,11 +56,11 @@ class DotFileParser():
 
 
                     if abb.get_call_type() == graph.call_definition_type.func_call:
-                         f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"palegreen\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                         f.write("\t\t"+abb.get_name().replace(" ", "") + '[shape=box style="rounded, filled" fillcolor="palegreen" label=<' +abb.get_name().replace(" ", "") + "<BR />\n")
                          f.write("<FONT POINT-SIZE=\"10\">" + "call: " +  abb.get_call_name().decode("utf-8")  + "</FONT>>")
 
                     elif abb.get_call_type() == graph.call_definition_type.sys_call:
-                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
+                        f.write("\t\t"+abb.get_name().replace(" ", "") + "[shape=box, fillcolor=\"#FCD975\" style=filled label=<" +abb.get_name().replace(" ", "") + "<BR />\n")
                         f.write("<FONT POINT-SIZE=\"10\">" + "syscall: " + abb.get_syscall_name().decode("utf-8")  + "</FONT>>")
 
                     elif abb.get_call_type() == graph.call_definition_type.has_call:
@@ -249,7 +249,7 @@ class DotFileParser():
 
             name = element.get_name().replace(" ", "").replace(".", "_")
 
-            f.write("\t\t"+ name + "[shape=record fillcolor="+ col + ' style=filled label="' + name + ' | late: ' + str(not element.get_start_scheduler_creation_flag()) + '"];\n')
+            f.write("\t\t"+ name + '[shape=record fillcolor="'+ col + '" style=filled label="' + name + ' | late: ' + str(not element.get_start_scheduler_creation_flag()) + '"];\n')
             if print_type == 0:
                 self.print_interactions(g,f,element)
             elif print_type == 1:
@@ -289,9 +289,9 @@ class DotFileParser():
 
         f.write("graph[rankdir=LR]\nRTOS[shape=box];\n")
 
-        self.print_instance_class( g,f,"Task",0, "darkseagreen3")
+        self.print_instance_class( g,f,"Task",0, "#6fbf87")
         self.print_instance_class( g,f,"Event", 0,"cyan2")
-        self.print_instance_class( g,f,"Queue", 0,"orange")
+        self.print_instance_class( g,f,"Queue", 0,"#fdbb9b")
         self.print_instance_class( g,f,"Alarm", 0,"grey")
         self.print_instance_class( g,f,"Timer", 0,"gold")
         self.print_instance_class( g,f,"Semaphore", 0,"cadetblue1")
@@ -299,8 +299,8 @@ class DotFileParser():
         self.print_instance_class( g,f,"EventGroup",0, "aquamarine")
 
 
-        self.print_instance_class( g,f,"ISR",0, "deepskyblue")
-        self.print_instance_class( g,f,"Mutex",0, "ivory")
+        self.print_instance_class( g,f,"ISR",0, "#6696c3")
+        self.print_instance_class( g,f,"Mutex",0, "#ffffd9")
 
 
         self.print_instance_class( g,f,"QueueSet",0, "yellow")
