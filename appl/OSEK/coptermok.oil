@@ -76,9 +76,9 @@
 			//preemptibility of task (NONE,FULL)
 			"SCHEDULE" : "FULL",
 			//list of resources accessed by the task
-			"RESOURCE" : ["SPIBusResource"],
+			"RESOURCE" : ["SPIBusResource"]
 			//list of events the extended task may react to
-			"EVENT" : ["CopterControlReceiveEvent"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 			//list of messages accessed by the task
 			//"MESSAGE" : "
 		},
@@ -88,87 +88,87 @@
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"SignalGatherWaitTask":{
 			"PRIORITY" : 2,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"SignalGatherTimeoutTask":{
 			"PRIORITY" : 23,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"SignalProcessingActuateTask":{
 			"PRIORITY" : 22,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
-			"SCHEDULE" : "FULL",
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"SCHEDULE" : "FULL"
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"SignalProcessingAttitudeTask":{
 			"PRIORITY" : 21,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"FlightControlAttitudeTask":{
 			"PRIORITY" : 9,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"FlightControlActuateTask":{
 			"PRIORITY" : 9,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"ActuateTask":{
 			"PRIORITY" : 9,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"MavlinkSendTask":{
 			"PRIORITY" : 9,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
         },
 		"MavlinkRecvTask":{
-			"PRIORITY" : 9,
+			"PRIORITY" : 4,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"CopterControlWatchdogTask":{
 			"PRIORITY" : 9,
 			"AUTOSTART" : "FALSE",
 			"ACTIVATION" : 1,
 			"SCHEDULE" : "FULL",
-			"RESOURCE" : ["SPIBusResource"],
-			"EVENT" : ["CopterControlReceiveEvent"]
+			"RESOURCE" : ["SPIBusResource"]
+			//"EVENT" : ["CopterControlReceiveEvent"]
 		},
 		"CopterControlTask":{
 			"PRIORITY" : 9,
@@ -315,10 +315,10 @@
 
 	//EVENT object is represented by its mask, the name of the event is a synonym for its mask
 	"EVENT" : {
-		"CopterControlReceiveEvent" : {
-			//integer number MASK (UINT64 or AUTO)
-			"MASK" : "AUTO"
-		},
+		//"CopterControlReceiveEvent" : {
+		//	//integer number MASK (UINT64 or AUTO)
+		//	"MASK" : "AUTO"
+		//},
         "MavMsgReceiveEvent" : {
 			//integer number MASK (UINT64 or AUTO)
 			"MASK" : "AUTO"
@@ -351,6 +351,10 @@
 			//integer number MASK (UINT64 or AUTO)
 			"MASK" : "AUTO"
 		},
+        "SignalGatherDigital2bTimeoutEvent" : {
+			//integer number MASK (UINT64 or AUTO)
+			"MASK" : "AUTO"
+		},
         "FlightControlActuateEvent" : {
 			//integer number MASK (UINT64 or AUTO)
 			"MASK" : "AUTO"
@@ -379,27 +383,6 @@
 			//}
 			//INTERNAL, RESOURCE cannot accessed by the application
 			"RESOURCEPROPERTY" : "STANDARD"
-		}
-	},
-	
-	//ISR objects represent OSEK interrupt service routines
-	"ISR" : {
-		"isr_button_start" : {
-			//category of isr (UINT32, but only values 1 and 2 are allowed)
-			"CATEGORY" : 2,
-			//list of RESOURCES accessed by ISR
-			"RESOURCE" : ["SPIBusResource"],
-			//list of messages accessed by ISR
-			"MESSAGE" : ["button_start"]
-		},
-		"isr1_tmp" : {
-			//category of isr (UINT32, but only values 1 and 2 are allowed)
-			"CATEGORY" : 1,
-			//list of RESOURCES accessed by ISR
-			"RESOURCE" : ["SPIBusResource"],
-			//list of messages accessed by ISR
-			"MESSAGE" : ["button_start"]
-			
 		}
 	}
 }
