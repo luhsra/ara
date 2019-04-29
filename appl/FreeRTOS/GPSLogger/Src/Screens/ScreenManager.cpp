@@ -2,15 +2,17 @@
 
 #include "../../Libs/FreeRTOS/Arduino_FreeRTOS.h"
 
-//#include <Adafruit_GFX.h>
-//#include <Adafruit_SSD1306.h>
+#define ARDUINO 100
 
-//#include "8x12Font.h"
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#include "../8x12Font.h"
 #include "Screen.h"
 #include "ScreenManager.h"
 #include "../ButtonsThread.h"
 
-//#include "DisplayDriver.h"
+#include "DisplayDriver.h"
 #include "CurrentPositionScreen.h"
 #include "CurrentTimeScreen.h"
 #include "SpeedScreen.h"
@@ -19,8 +21,8 @@
 #include "SettingsGroupScreen.h"
 #include "../SerialDebugLogger.h"
 
-//extern DisplayDriver displayDriver;
-//Adafruit_SSD1306 display(&displayDriver, -1);
+extern DisplayDriver displayDriver;
+Adafruit_SSD1306 display(&displayDriver, -1);
 
 //#if (SSD1306_LCDHEIGHT != 64)
 //#error("Height incorrect, please fix Adafruit_SSD1306.h!");
@@ -69,8 +71,8 @@ void backToParentScreen()
 void initDisplay()
 {
 	// by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-	//display.begin(SSD1306_SWITCHCAPVCC, false);  // initialize with the I2C addr 0x3C (for the 128x32)
-	//display.setTextColor(WHITE);				// Assuming all subsequent commands draw in white color
+	display.begin(SSD1306_SWITCHCAPVCC, false);  // initialize with the I2C addr 0x3C (for the 128x32)
+	display.setTextColor(WHITE);				// Assuming all subsequent commands draw in white color
 }
 
 void initScreens()
@@ -87,11 +89,11 @@ void initScreens()
 // Display information according to current state and screen
 void drawDisplay()
 {
-	//display.clearDisplay();
+	display.clearDisplay();
 	Screen * currentScreen = getCurrentScreen();
 	currentScreen->drawHeader();
 	currentScreen->drawScreen();
-	//display.display();
+	display.display();
 }
 
 void showMessageBox(const char * text)
@@ -100,13 +102,12 @@ void showMessageBox(const char * text)
 	uint8_t x = 128/2 - strlen_P(text)*8/2 + 1;
 			
 	// Draw the message
-	/*display.clearDisplay();
+	display.clearDisplay();
 	display.setFont(&Monospace8x12Font);
 	display.drawRect(1, 1, 126, 30, 1);
 	display.setCursor(x, 22);
 	display.print(text);
 	display.display();
-	*/
 	// Wait required duration
 	vTaskDelay(MESSAGE_BOX_DURATION);
 }
@@ -144,13 +145,13 @@ void vDisplayTask(void *pvParameters)
 		if(xTaskGetTickCount() - lastActionTicks > 10000) // TODO Store display off duration in settings
 		{
 			// Turn off the display
-			//display.ssd1306_command(SSD1306_DISPLAYOFF);
+			display.ssd1306_command(SSD1306_DISPLAYOFF);
 			
 			// Wait for a button
 			waitForButtonMessage(&msg, portMAX_DELAY);
 			
 			// Resume
-			//display.ssd1306_command(SSD1306_DISPLAYON);
+			display.ssd1306_command(SSD1306_DISPLAYON);
 			lastActionTicks = xTaskGetTickCount();
 		}
 		

@@ -175,7 +175,7 @@ std::vector<llvm::Instruction*> get_start_scheduler_instruction(OS::shared_funct
  */
 start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::shared_function function,
                                                        std::map<std::size_t, std::size_t> already_visited,
-                                                       std::map<std::size_t, std::size_t>* call_tree,
+                                                       std::set<const OS::Function*>& call_tree,
                                                        start_scheduler_relation start_relation) {
 
 	// default start scheduler relation state of the function
@@ -196,7 +196,6 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 	// generate hash value of the functionname
 	size_t hash_value = hash_fn(function->get_name());
 	bool visited_flag = false;
-	bool calltree_flag = false;
 
 	// search hash value in list of already visited basic blocks
 	if (already_visited.find(hash_value) != already_visited.end()) {
@@ -204,14 +203,11 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 	}
 
 	// search hash value in list of already visited basic blocks
-	if (call_tree->find(hash_value) != call_tree->end()) {
-		calltree_flag = true;
-		// std::cerr << "---------------------" << std::endl;
-	}
+	bool calltree_flag = (call_tree.find(function.get()) != call_tree.end());
 
 	if (!visited_flag) { // set function as already visited
 		already_visited.insert(std::make_pair(hash_value, hash_value));
-		call_tree->insert(std::make_pair(hash_value, hash_value));
+		call_tree.insert(function.get());
 
 		std::vector<llvm::Instruction*> start_scheduler_func_calls;
 		std::vector<llvm::Instruction*> uncertain_start_scheduler_func_calls;
@@ -236,8 +232,10 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 				bool after_flag = false;
 				bool uncertain_flag = false;
 				for (auto predecessor : abb->get_ABB_predecessors()) {
-					if (already_visited_abbs.find(predecessor->get_seed()) == already_visited.end())
+					if (already_visited_abbs.find(predecessor->get_seed()) == already_visited.end()) {
 						continue;
+					}
+
 					if (predecessor->get_start_scheduler_relation() == before)
 						before_flag = true;
 					if (predecessor->get_start_scheduler_relation() == after)
@@ -263,12 +261,15 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 					if (start_scheduler == abb->get_syscall_type())
 						tmp_state = after;
 				} else if (abb->get_call_type() == func_call) {
-					if (tmp_state == after)
-						before_scheduler_instructions(graph, abb->get_called_function(), already_visited, call_tree,
-						                              tmp_state);
-					else
-						tmp_state = before_scheduler_instructions(graph, abb->get_called_function(), already_visited,
-						                                          call_tree, tmp_state);
+					if (abb->get_called_function() != nullptr) {
+						if (tmp_state == after) {
+							before_scheduler_instructions(graph, abb->get_called_function(), already_visited, call_tree,
+							                              tmp_state);
+						} else {
+							tmp_state = before_scheduler_instructions(graph, abb->get_called_function(), already_visited,
+							                                          call_tree, tmp_state);
+						}
+					}
 				}
 
 				if (tmp_state == uncertain) {
@@ -801,6 +802,34 @@ namespace step {
 		       "generated.";
 	}
 
+	bool IntermediateAnalysisStep::set_branch(OS::shared_abb abb, std::set<size_t>& already_visited) {
+		if (already_visited.find(abb->get_seed()) != already_visited.end()) {
+			return false;
+		}
+		already_visited.insert(abb->get_seed());
+		auto func = abb->get_parent_function();
+		std::set<OS::shared_abb> l = func->get_endless_loops();
+		std::vector<OS::shared_abb> endings(l.begin(), l.end());
+		auto ending = abb->get_parent_function()->get_exit_abb();
+		if (ending != nullptr) {
+			endings.emplace_back(ending);
+		}
+		for (auto eabb : endings) {
+			if (!(abb->dominates(eabb) || *abb == *eabb)) {
+				return true;
+			}
+		}
+
+		// recursive search to calling blocks
+		for (auto edge : func->get_ingoing_edges()) {
+			auto call_abb = std::dynamic_pointer_cast<OS::ABB>(edge->get_start_vertex());
+			if (call_abb != nullptr && set_branch(call_abb, already_visited)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * @brief the run method of the IntermediateAnalysisStep pass. This pass detects all interactions of the instances
 	 * via the RTOS.
@@ -829,23 +858,17 @@ namespace step {
 
 			main_function = std::dynamic_pointer_cast<OS::Function>(main_vertex);
 			std::map<std::size_t, std::size_t> already_visited;
-			std::map<std::size_t, std::size_t> call_tree;
+			std::set<const OS::Function*> call_tree;
 
-			before_scheduler_instructions(graph, main_function, already_visited, &call_tree, before);
+			before_scheduler_instructions(graph, main_function, already_visited, call_tree, before);
 
 		} else {
 			std::cerr << "no main function in programm" << std::endl;
 			abort();
 		}
 
-		std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::ABB).hash_code());
-
 		// iterate about abbs
-		for (auto& vertex : vertex_list) {
-
-			// cast vertex to abb
-			auto abb = std::dynamic_pointer_cast<OS::ABB>(vertex);
-
+		for (auto abb : graph.get_type_vertices<OS::ABB>()) {
 			// check if abb is a syscall abb
 			if (abb->get_call_type() == sys_call) {
 
@@ -856,16 +879,15 @@ namespace step {
 					// set loop information
 					abb->set_loop_information(true);
 				}
+				std::set<size_t> already_vis;
+				abb->set_branch(set_branch(abb, already_vis));
 			}
 		}
 		// get confing information
 		get_predefined_system_information(graph);
 
 		// identifiy hooks and mark corresponding functions
-		vertex_list = graph.get_type_vertices(typeid(OS::Function).hash_code());
-		for (auto& vertex : vertex_list) {
-
-			auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
+		for (auto function : graph.get_type_vertices<OS::Function>()) {
 
 			hook_type type = no_hook;
 			if (function->get_name().find("PostTaskHook") != std::string::npos) {

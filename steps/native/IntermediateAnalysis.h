@@ -51,6 +51,12 @@ namespace step {
 	  private:
 		std::vector<shared_warning> warnings;
 
+		/**
+		 * set branch information for a given abb:
+		 * Is this abb in a branch?
+		 */
+		bool set_branch(OS::shared_abb abb, std::set<size_t>& already_visited);
+
 	  public:
 		IntermediateAnalysisStep(PyObject* config) : Step(config) {}
 

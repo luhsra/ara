@@ -1,0 +1,10 @@
+build/
+firmware/
+.vscode/
+temp/
+.editorconfig
+GPATH
+GRTAGS
+GTAGS
+spiffs_files/
+private_credentials.h

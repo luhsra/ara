@@ -2,7 +2,9 @@ clang = find_program('clang-7')
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
-clang_flags = ['-S', '-g', '-emit-llvm', '--std=c++11', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names']
+clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names']
+c_std = '-std=c11'
+cxx_std = '-std=c++11'
 
 
 # FreeRTOS examples
@@ -16,16 +18,17 @@ freertos_includes = files(join_paths(freertos_path, 'croutine.h'),
                           join_paths(freertos_path, 'list.h'),
                           join_paths(freertos_path, 'queue.h'),
                           join_paths(freertos_path, 'task.h'))
+subdir(freertos_path)
 
 freertos_targets = []
 foreach app : ['a', 'invalid_isr_syscall', 'c', 'loop_detection', 'topological_sort', 'f', 'g',
                'argument_load', 'start_scheduler_relation', 'deadlock', 'dominator',
-               'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore','thesis_print' ]
+               'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore', 'thesis_print', 'ospert']
    ll_target = custom_target('freertos-' + app,
                              input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
                              output : ['freertos-' + app + '.ll'],
                              command : [clang, '@INPUT0@',
-                                        '-o', '@OUTPUT0@'] +
+                                        '-o', '@OUTPUT0@', cxx_std] +
                                         clang_flags)
    set_variable('freertos_' + app.underscorify(), ll_target)
    freertos_targets += ll_target
@@ -34,6 +37,9 @@ endforeach
 # gpslogger is special
 subdir('FreeRTOS/GPSLogger')
 freertos_targets += gpslogger_targets
+
+subdir('FreeRTOS/SmartPlug')
+freertos_targets += smartplug_targets
 
 freertos_examples = run_target('freertos-examples',
                                command: nop,
@@ -50,15 +56,21 @@ osek_includes = files(join_paths(osek_path, 'alarm.h'),
                       join_paths(osek_path, 'timing.h'),
                       join_paths(osek_path, 'osek_types.h'))
 
+osek_folder = 'OSEK'
+
 osek_targets = []
-foreach app : ['a', 'b', 'c', 'coptermok','copter-without-alarms']
-    ll_target = custom_target('osek-' + app,
-                              input : ['OSEK/' + app + '.cc'] + osek_includes,
-                              output : ['osek-' + app + '.ll'],
+foreach app : [['a',                     'a.oil'],
+               ['b',                     'oilfile.oil'],
+               ['c',                     'oilfile.oil'],
+               ['coptermok',             'coptermok.oil'],
+               ['copter-without-alarms', 'copter-without-alarms.oil']]
+    ll_target = custom_target('osek-' + app[0],
+                              input : [join_paths([osek_folder, app[0] + '.cc'])] + osek_includes,
+                              output : ['osek-' + app[0] + '.ll'],
                               command : [clang, '@INPUT0@',
-                                         '-o', '@OUTPUT0@'] +
+                                         '-o', '@OUTPUT0@', cxx_std] +
                                          clang_flags)
-    set_variable('osek_' + app.underscorify(), ll_target)
+    set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
     osek_targets += ll_target
 endforeach
 

@@ -10,36 +10,36 @@ from native_step import Step
 class OilStep(Step):
     """Reads an oil file and writes all information to the graph. OSEK abstraction
     instances with specified properties are generated and stored in graph."""
-    
+
     def get_dependencies(self):
-        
+
         return ["IntermediateAnalysisStep"]
-    
+
     def validate_linked_resource(self, element):
-    
+
         result = false
         #iterate about the attributes of the events
         for attribute in element:
-            
+
             if attribute == "RESOURCEPROPERTY":
-                
+
                 if isinstance(element[attribute] , dict):
                     linked_dict = element[attribute]
                     for linked_attribute in linked_dict:
                         if linked_attribute == "LINKED":
                             result = true
                             break
-                        
+
                 if isinstance(element[attribute] , str):
                     #print(oil_counter[attribute])
                     if element[attribute] == "STANDARD":
                         result = true
                         break
-                    
+
     def get_category_ISR(self,attributes):
-    
+
         attribute = attributes.get("CATEGORY", "error")
-        
+
         if attribute != "error":
             if isinstance(attribute, int):
                 if not (attribute == 1 or attribute == 2):
@@ -48,47 +48,43 @@ class OilStep(Step):
                 print("category is no int")
         else:
             print("ISR has no category attribute")
-        
+
         return attribute
 
 
 
     def run(self, g: graph.PyGraph):
-
-    
-        print("Run ", self.get_name())
-        
         oilfile =  self._config["oilfile"]
-        
-        structure_file = '../appl/OSEK/'+oilfile
+
+        structure_file = oilfile
         tmp_file = '../tmp.txt'
-        
+
         #open oil file
         f_old = open(structure_file)
-        
+
         #print(f_old)
-        
+
         #generate tmp file
         f_new = open(tmp_file, 'w')
-        
-        
+
+
         #ignore // comments
         for i in f_old.readlines():
             if not "//" in i:
                 f_new.write(i)
-                
+
         #close the files
         f_new.close()
         f_old.close()
-        
+
         #load the json outputstructure with json
         with open(tmp_file) as f:
             dictionary = json.load(f)
-        
-        
+
+
         #remove tmp file
         os.remove(tmp_file)
-        
+
         #generate instances
         counter_list = {}
         isr_list = {}
@@ -97,16 +93,16 @@ class OilStep(Step):
         resource_list = {}
         alarm_list = {}
         queue_list = {}
-        
+
         #get the rtos graph instances
         rtos =  g.get_type_vertices("RTOS")
-        
+
         #just one rtos instance should exist
         if len(rtos) != 1:
             print("rtos could not load")
             sys.exit()
-            
-            
+
+
         #get the os
         rtos = dictionary.get("OS", "error")
         if rtos != "error":
@@ -127,10 +123,10 @@ class OilStep(Step):
                 else:
                     print("unexpected rtos attribute",attribute)
                     sys.exit()
-                  
+
         #TODO get appmode from startos call
-        
-        
+
+
         #get the isrs
         isrs = dictionary.get("ISR", "error")
         if isrs != "error":
@@ -140,9 +136,9 @@ class OilStep(Step):
                 #print("name of isr: ", isr.get_name())
                 isr_list[name]= isr
                 g.set_vertex(isr)
-             
-        
-        #get the counters 
+
+
+        #get the counters
         counters = dictionary.get("COUNTER", "error")
         if counters != "error":
             #iterate about the counter
@@ -150,8 +146,8 @@ class OilStep(Step):
                 counter = graph.Counter(g, name)
                 counter_list[name] = counter
                 g.set_vertex(counter)
-           
-                
+
+
         #get the events
         events = dictionary.get("EVENT", "error")
         if events != "error":
@@ -160,18 +156,18 @@ class OilStep(Step):
                 event = graph.Event(g, name)
                 event_list[name] = event
                 g.set_vertex(event)
-   
-                
+
+
         #get the tasks
         tasks = dictionary.get("TASK", "error")
         if tasks != "error":
             #iterate about the tasks
             for name in tasks:
-                
+
                 task = graph.Task(g, name)
                 task_list[name] = task
                 g.set_vertex(task)
-     
+
         #get the resources
         resources = dictionary.get("RESOURCE", "error")
         if resources != "error":
@@ -182,7 +178,7 @@ class OilStep(Step):
                 resource.set_protocol_type(graph.protocol_type.priority_ceiling)
                 g.set_vertex(resource)
 
- 
+
         #get the alarms
         alarms = dictionary.get("ALARM", "error")
         if alarms != "error":
@@ -191,7 +187,7 @@ class OilStep(Step):
                 alarm = graph.Timer(g, name)
                 alarm_list[name] = alarm
                 g.set_vertex(alarm)
-                
+
         #get the alarms
         queues = dictionary.get("MESSAGE", "error")
         if queues != "error":
@@ -203,67 +199,67 @@ class OilStep(Step):
 
 
 
-        #get the counters 
+        #get the counters
         counters = dictionary.get("COUNTER", "error")
         if counters != "error":
 
             #iterate about the counter
             for name in counters:
-                
+
                 #shared pointer counter reference
                 counter = counter_list[name]
-                
+
                 oil_counter = counters[name]
-                
+
                 #iterate about the attributes of the counter
                 for attribute in oil_counter:
-                    
+
                     if attribute == "MAXALLOWEDVALUE":
                         if isinstance(oil_counter[attribute] , int):
                             counter.set_max_allowed_value(oil_counter[attribute])
-                            
+
                         else:
                             print("maxallowed value is no digit")
-                            
+
                     elif attribute == "TICKSPERBASE":
                         if isinstance(oil_counter[attribute] , int):
                             counter.set_ticks_per_base(oil_counter[attribute])
-                            
+
                         else:
                             print("ticksperbase value is no digit")
-                            
+
                     elif attribute == "MINCYCLE":
                         if isinstance(oil_counter[attribute] , int):
                             counter.set_min_cycle(oil_counter[attribute])
-                    
+
                         else:
                             print("mincycle value is no digit")
                     else:
                         print(attribute ,";counter has other attribute than MAXALLOWEDVALUE or TICKSPERBASE or MINCYCLE")
-                    
-        
-        
-        
-                    
-        #get the resources 
+
+
+
+
+
+        #get the resources
         resources = dictionary.get("RESOURCE", {})
         if resources != "error":
 
             #iterate about the events
             for name in resources:
-                
+
                 resource = resource_list[name]
-                
+
                 #print (name, 'corresponds to', resources[name])
                 oil_resource = resources[name]
-                
+
                 resource.set_handler_name("OSEKOS_RESOURCE_" + name)
-                
+
                 #iterate about the attributes of the events
                 for attribute in oil_resource:
-                    
+
                     if attribute == "RESOURCEPROPERTY":
-                        
+
                         if isinstance(oil_resource[attribute] , dict):
                             linked_dict = oil_resource[attribute]
                             for linked_attribute in linked_dict:
@@ -292,25 +288,25 @@ class OilStep(Step):
                             print("resourceproperty is no string or dictionary")
                     else:
                         print("resource has other attribute than RESOURCEPROPERTY")
-        
-        
-        #get the events 
+
+
+        #get the events
         events = dictionary.get("EVENT", "error")
         if events != "error":
 
             #iterate about the events
             for name in events:
-                
+
                 event = event_list[name]
-                
+
                 #print (name, 'corresponds to', events[name])
                 oil_event = events[name]
-                
+
                 event.set_handler_name("OSEKOS_EVENT_" + name);
-                
+
                 #iterate about the attributes of the events
                 for attribute in oil_event:
-                    
+
                     if attribute == "MASK":
                         if oil_event[attribute] == "AUTO":
                             event.set_event_mask_auto();
@@ -320,50 +316,50 @@ class OilStep(Step):
                             #print(oil_event[attribute])
                         else:
                             print("eventmask is not auto or digit")
-                            
+
                     else:
                         print("event has no different attribute than mask")
-                    
-                    
+
+
         #get the tasks
-        tasks = dictionary.get("TASK", "error")		
+        tasks = dictionary.get("TASK", "error")
         if tasks != "error":
-            
+
             #iterate about the tasks
             for name in tasks:
-                
+
                 task = task_list[name]
                 #print (name, 'corresponds to', tasks[name])
                 function_list = g.get_type_vertices(type(graph.Function))
-                
-               
-                    
-                
+
+
+
+
                 #set and check function reference of task
                 if not task.set_definition_function("OSEKOS_TASK_FUNC_" + name):
-                    print("Task ", name, " has no reference in data")
-                    sys.exit()
-                    
+                    print("Task", name, "has no reference in data")
+                    sys.exit(1)
+
                 for function in function_list:
                     if function.get_name() == ("OSEKOS_TASK_FUNC_" + name):
                         function.set_definition_vertex(task)
-                    
+
                 task.set_handler_name("OSEKOS_TASK_" +name)
-                
+
                 #iterate about the attributes of the task
                 oil_task = tasks[name]
                 for attribute in oil_task:
-                    
+
                     #print (attribute, 'is = ', oil_task[attribute])
-                    
+
                     if attribute ==	"PRIORITY":
-                        
+
                         if isinstance(oil_task[attribute], int):
                             #print("priority: ", oil_task[attribute])
                             task.set_priority(oil_task[attribute])
                         else:
                             print("priority is no digit")
-                            
+
                     elif attribute ==	"AUTOSTART":
                         autostart_attribute = oil_task[attribute]
                         if isinstance(autostart_attribute,dict):
@@ -385,15 +381,15 @@ class OilStep(Step):
                             else:
                                 print("autostart is no boolean")
                                 sys.exit()
-                                
-                    elif attribute ==	"ACTIVATION": 	
+
+                    elif attribute ==	"ACTIVATION":
                         if isinstance(oil_task[attribute], int):
                             #print("activation: ", oil_task[attribute])
                             task.set_activation(oil_task[attribute])
                         else:
                             print("activation is no digit")
                             sys.exit()
-                            
+
                     elif attribute ==	"SCHEDULE":
                         if oil_task[attribute] == "NONE" or oil_task[attribute] == "FULL":
                             #print("schedule: ", oil_task[attribute])
@@ -401,7 +397,7 @@ class OilStep(Step):
                         else:
                             print("schedule is not none or full")
                             sys.exit()
-                    
+
                     elif attribute ==	"RESOURCE":
                         if isinstance(oil_task[attribute], list):
                             for resource in oil_task[attribute]:
@@ -410,7 +406,7 @@ class OilStep(Step):
                                     task.set_resource_reference(resource)
                                 else:
                                     print("resource is no string")
-                                
+
                     elif attribute ==	"EVENT":
                         if isinstance(oil_task[attribute], list):
                             for event in oil_task[attribute]:
@@ -424,7 +420,7 @@ class OilStep(Step):
                                 else:
                                     print("event is no string")
                                     sys.exit()
-                                
+
                     elif attribute ==	"MESSAGE":
                         if isinstance(oil_task[attribute], list):
                             for message in oil_task[attribute]:
@@ -439,43 +435,43 @@ class OilStep(Step):
                                 else:
                                     print("message is no string")
                                     sys.exit()
-                                    
-                                    
-            
-        
+
+
+
+
         #get the isrs
         isrs = dictionary.get("ISR", "error")
         if isrs != "error":
-            
+
             #iterate about the isrs
             for name in isrs:
-                
+
                 #create isr
                 isr = isr_list[name]
-                
-            
+
+
                 #print (name, 'corresponds to', isrs[name])
                 oil_isr = isrs[name]
-            
+
                 isr.set_handler_name("OSEKOS_ISR_" +name)
-            
+
                 function_list = g.get_type_vertices(type(graph.Function))
-                
+
                 reference_function = name
                 if self.get_category_ISR(oil_isr) == 2:
                     reference_function = "OSEKOS_ISR_" + name
-                
+
                 if not isr.set_definition_function(reference_function):
                     print("ISR ", name, " has no definition reference in data")
                     sys.exit()
-                
+
                 for function in function_list:
                     if function.get_name() == ("OSEKOS_TASK_FUNC_" + name):
                         function.set_definition_vertex(isr)
-                
+
                 #iterate about the attributes of the isr
                 for attribute in oil_isr:
-                    
+
                     if attribute ==	"CATEGORY":
                         if isinstance(oil_isr[attribute], int):
                             if oil_isr[attribute] == 1 or oil_isr[attribute] == 2:
@@ -487,14 +483,14 @@ class OilStep(Step):
                         else:
                             print("category is no string")
                             sys.exit()
-                            
+
                     if attribute ==	"PRIORITY":
                         if isinstance(oil_isr[attribute], int):
                             isr.set_priority(oil_isr[attribute])
                         else:
                             print("priority is no int")
                             sys.exit()
-                            
+
                     elif attribute ==	"RESOURCE":
                         if isinstance(oil_isr[attribute], list):
                             for resource in oil_isr[attribute]:
@@ -508,7 +504,7 @@ class OilStep(Step):
                                 else:
                                     print("resource is no string")
                                     sys.exit()
-                                
+
                     elif attribute ==	"MESSAGE":
                         if isinstance(oil_isr[attribute], list):
                             for message in oil_isr[attribute]:
@@ -517,34 +513,34 @@ class OilStep(Step):
                                     print("message is no string")
                                     sys.exit()
                                     #if message in message_list:
-                                        
+
                                         #isr.set_message_reference(message)
                                     #else:
                                     #	print("message was not defined in OIL: ", message)
-                                
-                                    
-                                            
-                
-            
-                    
-        #get the alarms 
+
+
+
+
+
+
+        #get the alarms
         alarms = dictionary.get("ALARM", "error")
         if alarms != "error":
 
             #iterate about the alarms
             for name in alarms:
-                
+
                 alarm = alarm_list[name]
-                
+
                 #print (name, 'corresponds to', alarms[name])
                 oil_alarm = alarms[name]
-                
+
                 alarm.set_handler_name("OSEKOS_ALARM_" +name)
-                
-                
+
+
                 #iterate about the attributes of the alarms
                 for attribute in oil_alarm:
-                    
+
                     if attribute ==	"COUNTER":
                         if isinstance(oil_alarm[attribute], str):
                             #print("counter: " , oil_alarm[attribute])
@@ -552,16 +548,16 @@ class OilStep(Step):
                         else:
                             print("counter is no string")
                             sys.exit()
-                        
+
                     elif attribute ==	"ACTION":
                         for action_attribute in oil_alarm[attribute]:
                             if action_attribute == "ACTIVATETASK":
-                                
+
                                 activatetask_attributes = oil_alarm[attribute][action_attribute]
                                 print(activatetask_attributes)
                                 for activatetask_attribute in activatetask_attributes:
                                     #print(activatetask_attribute)
-                                    if activatetask_attribute == "TASK": 
+                                    if activatetask_attribute == "TASK":
                                         if isinstance(activatetask_attributes[activatetask_attribute], str):
                                             if activatetask_attributes[activatetask_attribute] in task_list:
                                                 #print("activatetask: " , activatetask_attributes[activatetask_attribute])
@@ -575,23 +571,23 @@ class OilStep(Step):
                                     else:
                                         print("activatetask has no attribute task")
                                         sys.exit()
-                                        
+
                             elif action_attribute == "SETEVENT":
                                 set_event_attributes = oil_alarm[attribute]
                                 for set_event_attribute in set_event_attributes:
-                                    if set_event_attribute == "TASK": 
+                                    if set_event_attribute == "TASK":
                                         if isinstance(set_event_attributes[set_event_attribute], str):
                                             if set_event_attributes[set_event_attribute] in event_list:
                                                 #print("setevent task: " ,set_event_attributes[set_event_attribute])
                                                 alarm.set_task_reference(set_event_attributes[set_event_attribute])
-                                            else: 
+                                            else:
                                                 print("event was not defined in OIL file: ", set_event_attributes[set_event_attribute])
                                                 sys.exit()
                                         else:
                                             print("setevent has no string attribute")
                                             sys.exit()
-                                            
-                                    elif activatetask_attribute == "EVENT": 	
+
+                                    elif activatetask_attribute == "EVENT":
                                         if isinstance(set_event_attributes[set_event_attribute], str):
                                             if set_event_attributes[set_event_attribute] in event_list:
                                                 #print("setevent event: " ,set_event_attributes[set_event_attribute])
@@ -602,15 +598,15 @@ class OilStep(Step):
                                         else:
                                             print("setevent has no string attribute")
                                             sys.exit()
-                                                
+
                                     else:
                                         print("activatetask has no attribute task")
                                         sys.exit()
-                            
+
                             elif action_attribute == "ALARMCALLBACK)":
                                 alarmcallback_attributes = oil_alarm[attribute]
                                 for alarmcallback_attribute in alarmcallback_attributes:
-                                    if alarmcallback_attribute == "ALARMCALLBACKNAME": 
+                                    if alarmcallback_attribute == "ALARMCALLBACKNAME":
                                         if isinstance(alarmcallback_attributes[alarmcallback_attribute], str):
                                             #print("alarmcallback alarmcallbackname: " , activatetask_attributes[activatetask_attribute])
                                             alarm.set_callback_function(activatetask_attributes[activatetask_attribute])
@@ -620,18 +616,18 @@ class OilStep(Step):
                                     else:
                                         print("alarmcallback has no attribute alarmcallbackname")
                                         sys.exit()
-                                
-                                
+
+
                             else:
                                 print("counter is not ACTIVATETASK or SETEVENT or ALARMCALLBACK",print(attribute))
                                 sys.exit()
-                            
-    
+
+
 
                     elif attribute ==	"AUTOSTART":
-                       
+
                         autostart_attribute = oil_alarm[attribute]
-            
+
                         if isinstance(autostart_attribute, str):
                             if autostart_attribute == "FALSE":
                                 alarm.set_timer_type(graph.timer_type.autostart)
@@ -643,7 +639,7 @@ class OilStep(Step):
                                     autostart_dict =  autostart_attribute[autostart]
                                     if isinstance( autostart_dict, dict):
                                         for tmp_attribute in autostart_dict:
-                                            
+
                                             if tmp_attribute == "ALARMTIME":
                                                 if isinstance(autostart_dict[tmp_attribute], int):
                                                     alarm.set_alarm_time(autostart_dict[tmp_attribute])
@@ -654,7 +650,7 @@ class OilStep(Step):
                                             elif tmp_attribute == "CYCLETIME":
                                                 if isinstance(autostart_dict[tmp_attribute], int):
                                                     alarm.set_cycle_time(autostart_dict[tmp_attribute])
-                                            
+
                                                 else:
                                                     print("autostart cycletime is no int")
                                             elif tmp_attribute == "APPMODE":
@@ -663,7 +659,7 @@ class OilStep(Step):
                                                         if isinstance(appmode, str):
                                                             #("appmode: ",appmode)
                                                             alarm.set_appmode(appmode)
-        
+
                                                         else:
                                                             print("appmode is no string")
                                                             sys.exit()
@@ -676,44 +672,44 @@ class OilStep(Step):
                                     else:
                                         print("autostart is no dict")
                                         sys.exit()
-                                    
+
                                 else:
                                     print("autostart is no boolean")
                                     sys.exit()
-            
-                    
-                    
-            #get the queues (OSEK messages) 
+
+
+
+            #get the queues (OSEK messages)
             queues = dictionary.get("MESSAGE", "error")
             if queues != "error":
 
                 #iterate about the events
                 for name in queues:
-                    
+
                     queue = queue_list[name]
-                
+
                     oil_qeue = queues[name]
-                    
+
                     queue.set_handler_name("OSEKOS_MESSAGE_" + name);
-                    
+
                     #iterate about the attributes of the events
                     for attribute in oil_event:
-                        
+
                         if attribute == "QUEUESIZE":
-                            
+
                             if isinstance(oil_qeue[attribute] , int):
                                 queue.set_length(oil_qeue[attribute])
                                 #print(oil_event[attribute])
                             else:
                                 print("message length is no integer")
-                                
+
                         elif attribute == "MESSAGEPROPERTY":
                                 oil_property = graph.message_property[oil_qeue[attribute]]
                                 if oil_property != None:
                                     queue.set_message_property(oil_property)
-                                    
+
                                 else:
                                      print(name,"invalid message property")
-                       
+
                         else:
                             print(name,"queue has different attributes in oil")

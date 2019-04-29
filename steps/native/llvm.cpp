@@ -29,6 +29,7 @@
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Support/raw_os_ostream.h"
 
 #include <cassert>
 #include <fstream>
@@ -174,6 +175,7 @@ namespace step {
 	void LLVMStep::abb_generation(graph::Graph* graph, OS::shared_function function,
 	                              std::vector<shared_warning>* warning_list) {
 
+		logger.debug() << "Generate ABBs for " << *function << std::endl;
 		llvm::Function* llvm_reference_function = function->get_llvm_reference();
 
 		std::map<const llvm::BasicBlock*, std::shared_ptr<OS::ABB>> bb_map;
@@ -280,10 +282,15 @@ namespace step {
 					argument_data argument_container;
 					if (dumper.dump_argument(debug_out, &argument_container, tmp_value, &already_visited)) {
 						if (argument_container.value_list.size() == 1) {
-							if (Function* tmp_function = dyn_cast<Function>(argument_container.value_list.front()))
+							if (GlobalAlias* al = dyn_cast<GlobalAlias>(argument_container.value_list.front())) {
+								if (Function* tmp_function = dyn_cast<Function>(al->getIndirectSymbol())) {
+									llvm_function = tmp_function;
+								}
+							} else if (Function* tmp_function = dyn_cast<Function>(argument_container.value_list.front())) {
 								llvm_function = tmp_function;
-						};
-					};
+							}
+						}
+					}
 				}
 				if (llvm_function != nullptr) {
 					// get function which is addressed by call
@@ -300,14 +307,8 @@ namespace step {
 	}
 
 	void LLVMStep::set_exit_abb(graph::Graph& graph, unsigned int& split_counter) {
-
 		// set an exit abb for each function
-		auto vertex_list = graph.get_type_vertices(typeid(OS::Function).hash_code());
-		for (auto& vertex : vertex_list) {
-
-			// cast vertex to abb
-			auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
-
+		for (auto& function : graph.get_type_vertices<OS::Function>()) {
 			std::list<OS::shared_abb> return_abbs;
 
 			// detect all abb with no sucessors(exit abbs)
@@ -370,6 +371,8 @@ namespace step {
 
 		Linker L(*Composite);
 
+		llvm::raw_os_ostream llog(std::cout);
+
 		// resolve link errors
 		for (unsigned i = 1; i < files.size(); ++i) {
 			auto M = LoadFile(files.at(i), context);
@@ -380,25 +383,25 @@ namespace step {
 
 			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
 				GlobalVariable& gv = *it;
-				if (!gv.isDeclaration())
-					gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
+				if (!gv.isDeclaration() && !gv.hasPrivateLinkage())
+				   gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
 			}
 
-			for (auto it = M->alias_begin(); it != M->alias_end(); ++it) {
-				GlobalAlias& ga = *it;
-				if (!ga.isDeclaration())
-					ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
-			}
+			//for (auto it = M->alias_begin(); it != M->alias_end(); ++it) {
+			//	GlobalAlias& ga = *it;
+			//	if (!ga.isDeclaration())
+			//		ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
+			//}
 
-			// set linkage information of all functions
-			for (auto& F : *M) {
-				StringRef Name = F.getName();
-				// leave library functions alone because their presence or absence
-				// could affect the behaviour of other passes
-				if (F.isDeclaration())
-					continue;
-				F.setLinkage(GlobalValue::WeakAnyLinkage);
-			}
+			//// set linkage information of all functions
+			//for (auto& F : *M) {
+			//	StringRef Name = F.getName();
+			//	// leave library functions alone because their presence or absence
+			//	// could affect the behaviour of other passes
+			//	if (F.isDeclaration())
+			//		continue;
+			//	F.setLinkage(GlobalValue::WeakAnyLinkage);
+			//}
 
 			if (L.linkInModule(std::move(M))) {
 				std::cerr << "link error in '" << files.at(i);

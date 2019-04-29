@@ -32,6 +32,8 @@ enum function_definition_type { Task, ISR, Timer, normal };
 enum call_definition_type { sys_call, func_call, computation, has_call, no_call };
 
 enum syscall_definition_type {
+	undefined,
+
 	computate,
 	create,
 	destroy,
@@ -56,7 +58,7 @@ enum syscall_definition_type {
 	start_scheduler,
 	end_scheduler,
 	chain,
-	delay
+	delay,
 };
 
 enum ISR_type { ISR1, ISR2, basic };
@@ -222,6 +224,7 @@ namespace graph {
 
 		bool static_create = false;
 		bool multiple_create = false;
+		bool unsure_create = false; //created in condition
 
 		std::size_t vertex_type;
 		std::string name; // spezifischer Name des Vertexes
@@ -311,8 +314,10 @@ namespace graph {
 		bool get_static_create() { return this->static_create; }
 
 		void set_multiple_create(bool create) { this->multiple_create = create; }
-
 		bool get_multiple_create() { return this->multiple_create; }
+
+		void set_unsure_create(bool create) { this->unsure_create = create; }
+		bool get_unsure_create() { return this->unsure_create; }
 	};
 	inline std::ostream& operator<<(std::ostream& stream, const Vertex& vertex) { return vertex.print(stream); }
 
@@ -586,19 +591,21 @@ namespace OS {
 		bool has_single_successor();
 
 		bool remove_abb(size_t seed);
+
+		std::set<shared_abb> get_endless_loops();
 	};
 
 	// Klasse AtomicBasicBlock
 	class ABB : public graph::Vertex {
 
 	  private:
-		start_scheduler_relation start_scheduler_relative_position = after;
+		start_scheduler_relation start_scheduler_relative_position = not_defined;
 
 		call_definition_type
 		    abb_type; // Information, welcher Syscall Typ, bzw. ob Computation Typ vorliegt (Computation, generate Task,
 		              // generate Queue, ....; jeder Typ hat einen anderen integer Wert)
 
-		syscall_definition_type abb_syscall_type;
+		syscall_definition_type abb_syscall_type = undefined;
 		// std::vector<OS::weak_abb> successors;   // AtomicBasicBlocks die dem BasicBlock folgen
 		// std::vector<OS::weak_abb> predecessors; // AtomicBasicBlocks die dem BasicBlock vorhergehen
 
@@ -638,6 +645,7 @@ namespace OS {
 		size_t syscall_handler_index;
 
 		bool in_loop = false;
+		bool in_branch = false;
 
 	  public:
 		void print_information();
@@ -738,11 +746,17 @@ namespace OS {
 		shared_abb get_postdominator();
 
 		void set_loop_information(bool flag);
-
 		bool get_loop_information();
+
+		void set_branch(bool flag) { in_branch = flag; }
+		bool is_in_branch() { return in_branch; }
 
 		bool dominates(shared_abb abb);
 		bool postdominates(shared_abb abb);
+
+		bool operator==(const ABB& other) {
+			return get_name() == other.get_name();
+		}
 	};
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter

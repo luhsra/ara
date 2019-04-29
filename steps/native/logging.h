@@ -23,7 +23,11 @@ class Logger {
 
 		virtual int sync() override {
 			o_stream.flush();
-			py_log(level, logger, o_stream.str());
+			std::string msg = o_stream.str();
+			if (msg.back() == '\n') {
+				msg.pop_back();
+			}
+			py_log(level, logger, msg);
 			return (o_stream.good()) ? 0 : -1;
 		}
 
