@@ -3,6 +3,7 @@ import graph
 import json
 
 from functools import partial
+from typing import Dict, Any
 
 from native_step import Step
 
@@ -11,7 +12,19 @@ class OilStep(Step):
     """Reads an oil file and writes all information to the graph."""
 
     @staticmethod
-    def fill_graph(g, oil, inst, inst_class, attrs=None):
+    def fill_graph(g, oil: Dict[str, Any], inst, inst_class, attrs=None):
+        """Create new graph instance.
+
+        Arguments:
+        g   -- graph
+        oil -- oilfile
+        inst -- key of the instance in the oilfile
+        inst_class -- class of the instance in the graph
+
+        Keyword arguments:
+        attrs -- optional dict of attributes and setter functions
+                 Used to set all instance attributes.
+        """
         for elem in oil.get(inst, []):
             vertex = inst_class(g, elem['name'])
             if attrs is not None:
@@ -20,8 +33,6 @@ class OilStep(Step):
             g.set_vertex(vertex)
 
     def run(self, g: graph.PyGraph):
-        print("Run ", self.get_name())
-
         # load the json outputstructure with json
         with open(self._config['oil']) as f:
             oil = json.load(f)
@@ -43,5 +54,5 @@ class OilStep(Step):
         fill_graph('counters', graph.Counter, attrs=counter_m)
         fill_graph('events', graph.Event)
         fill_graph('tasks', graph.Task, attrs=task_m)
-        fill_graph('resources', graph.Resource)
-        fill_graph('alarms', graph.Alarm)
+        fill_graph('resources', graph.Mutex)
+        fill_graph('alarms', graph.Timer)
