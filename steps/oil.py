@@ -35,7 +35,7 @@ class OilStep(Step):
 
     def run(self, g: graph.PyGraph):
         # load the json outputstructure with json
-        with open(self._config['oil']) as f:
+        with open(self._config['oilfile']) as f:
             oil = json.load(f)
         assert("cpu" in oil)
         oil = oil["cpu"]

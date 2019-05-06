@@ -50,7 +50,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     for oil, validate in TESTS:
         g = graph.PyGraph()
-        config = {'oil': os.path.join(s_dir, oil), 'os': 'osek'}
+        config = {'oilfile': os.path.join(s_dir, oil), 'os': 'osek'}
         p_manager = stepmanager.StepManager(g, config)
 
         p_manager.execute(['OilStep'])
