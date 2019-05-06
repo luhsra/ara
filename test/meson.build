@@ -67,7 +67,7 @@ test('loop_detection',
 test('oil-parsing',
   py3_inst,
   args : files('oil/oil.py', 'oil/1.oil'),
-  env : ['PYTHONPATH=' + ':'.join([source_dir, passdir, 'subprojects/libgraph'])]
+  env : ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 
 
