@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.6
 
+import logging
 import sys
 
 import stepmanager
@@ -8,6 +9,7 @@ import graph
 from native_step import Step
 
 def main():
+    logging.basicConfig(level=logging.DEBUG)
     g = graph.PyGraph()
     config = {'oil': sys.argv[1], 'os': 'osek'}
     p_manager = stepmanager.StepManager(g, config)
