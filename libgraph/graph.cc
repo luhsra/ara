@@ -128,6 +128,15 @@ void graph::Graph::set_vertex(shared_vertex vertex) {
 
 void graph::Graph::set_edge(shared_edge edge) { this->edges.emplace_back(edge); }
 
+std::ostream& graph::operator<<(std::ostream& stream, const Graph& graph) {
+	stream << "Graph:\n";
+	stream << "All vertices:\n";
+	for (const auto vertex : graph.vertices) {
+		stream << ' ' << vertex << '\n';
+	}
+	return stream;
+}
+
 shared_vertex graph::Graph::create_vertex() {
 	shared_vertex vertex = std::make_shared<Vertex>(this, ""); // create shared po
 	this->vertices.emplace_back(vertex);                       // store the shared pointer in the internal list

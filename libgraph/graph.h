@@ -214,6 +214,8 @@ namespace graph {
 		std::vector<std::shared_ptr<Vertex>> get_entry_points() { return entry_points; }
 
 		~Graph();
+
+		friend std::ostream& operator<<(std::ostream& stream, const Graph& graph);
 	};
 
 	// Basis Klasse für alle Vertexes

@@ -15,6 +15,7 @@ from libcpp cimport bool
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
+from util cimport to_string
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
@@ -227,6 +228,9 @@ cdef class PyGraph:
 
     def __cinit__(self):
         self._c_graph = cgraph.Graph()
+
+    def __str__(self):
+        return to_string(self._c_graph).decode('utf-8')
 
     def set_vertex(self, Vertex vertex):
         self._c_graph.set_vertex(vertex._c_vertex)
