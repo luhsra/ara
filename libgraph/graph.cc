@@ -132,7 +132,7 @@ std::ostream& graph::operator<<(std::ostream& stream, const Graph& graph) {
 	stream << "Graph:\n";
 	stream << "All vertices:\n";
 	for (const auto vertex : graph.vertices) {
-		stream << ' ' << vertex << '\n';
+		stream << ' ' << *vertex << '\n';
 	}
 	return stream;
 }
