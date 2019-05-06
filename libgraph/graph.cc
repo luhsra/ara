@@ -1479,7 +1479,7 @@ void OS::Task::set_stacksize(unsigned long stacksize) { this->stacksize = stacks
 bool OS::Task::set_message_reference(std::string message) { return false; }
 
 void OS::Task::set_schedule(bool schedule) {
-	this->schedule = schedule;
+	this->scheduled = schedule;
 }
 
 void OS::Task::set_activation(unsigned long activation) { this->activation = activation; }

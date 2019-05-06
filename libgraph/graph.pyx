@@ -489,8 +489,14 @@ cdef class Task(Vertex):
     def set_activation(self, unsigned long activation):
         return deref(self._c()).set_activation(activation)
 
+    def get_activation(self):
+        return deref(self._c()).get_activation()
+
     def set_autostart(self, bool autostart):
         return deref(self._c()).set_autostart(autostart)
+
+    def is_autostarted(self):
+        return deref(self._c()).is_autostarted()
 
     def set_definition_function(self, str function_name):
         cdef string c_function_name = function_name.encode('UTF-8')
@@ -502,6 +508,9 @@ cdef class Task(Vertex):
 
     def set_scheduler(self, bool schedule):
         return deref(self._c()).set_schedule(schedule)
+
+    def is_scheduled(self):
+        return deref(self._c()).is_scheduled()
 
     def set_resource_reference(self, str resource_name):
         cdef string c_resource_name = resource_name.encode('UTF-8')

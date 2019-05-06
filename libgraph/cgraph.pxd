@@ -188,11 +188,14 @@ cdef extern from "graph.h" namespace "OS":
 
         void set_priority(unsigned long priority)
         void set_activation(unsigned long activation)
+        bool get_activation()
         void set_autostart(bool autostart)
+        bool is_autostarted()
         bool set_definition_function(string function_name)
         void set_appmode(string app_mode)
 
         void set_schedule(bool schedule)
+        bool is_scheduled()
         bool set_resource_reference(string resource)
         bool set_event_reference(string event)
 

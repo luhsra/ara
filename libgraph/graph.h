@@ -805,7 +805,7 @@ namespace OS {
 		// OSEK attributes
 		bool autostart; // Information if Task is activated during system start or or application mode
 		unsigned int activation;
-		bool schedule; // NON/FULL defines preemptability of task
+		bool scheduled; // true if schedules = FULL, otherwise false
 
 		bool constant_priority = true;
 
@@ -856,9 +856,12 @@ namespace OS {
 		unsigned long get_priority();
 		void set_stacksize(unsigned long priority);
 		unsigned long get_stacksize();
-		void set_schedule(bool schedule);
+		void set_schedule(bool scheduled);
+		bool is_scheduled() { return scheduled; }
 		void set_activation(unsigned long activation);
+		unsigned long get_activation() { return activation; }
 		void set_autostart(bool autostart);
+		bool is_autostarted() { return autostart; }
 		void set_appmode(std::string app_mode);
 		bool set_resource_reference(std::string resource);
 		bool set_event_reference(std::string event);
