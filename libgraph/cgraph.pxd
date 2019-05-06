@@ -192,7 +192,7 @@ cdef extern from "graph.h" namespace "OS":
         bool set_definition_function(string function_name)
         void set_appmode(string app_mode)
 
-        bool set_scheduler(string scheduler)
+        void set_schedule(bool schedule)
         bool set_resource_reference(string resource)
         bool set_event_reference(string event)
 

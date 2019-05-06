@@ -75,8 +75,6 @@ enum resource_type { standard, linked, internal, binary_mutex = 1, recursive_mut
 
 enum semaphore_type { binary_semaphore = 3, counting_semaphore = 2 };
 
-enum schedule_type { full, none };
-
 enum event_type { automatic, mask };
 
 enum class protocol_type { priority_inheritance, priority_ceiling, none };
@@ -807,7 +805,7 @@ namespace OS {
 		// OSEK attributes
 		bool autostart; // Information if Task is activated during system start or or application mode
 		unsigned int activation;
-		schedule_type scheduler; // NON/FULL defines preemptability of task
+		bool schedule; // NON/FULL defines preemptability of task
 
 		bool constant_priority = true;
 
@@ -858,7 +856,7 @@ namespace OS {
 		unsigned long get_priority();
 		void set_stacksize(unsigned long priority);
 		unsigned long get_stacksize();
-		bool set_scheduler(std::string scheduler);
+		void set_schedule(bool schedule);
 		void set_activation(unsigned long activation);
 		void set_autostart(bool autostart);
 		void set_appmode(std::string app_mode);

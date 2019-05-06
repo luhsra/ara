@@ -500,9 +500,8 @@ cdef class Task(Vertex):
         cdef string c_appmode_name = appmode_name.encode('UTF-8')
         return deref(self._c()).set_appmode(c_appmode_name)
 
-    def set_scheduler(self, str scheduler_name):
-        cdef string c_scheduler_name = scheduler_name.encode('UTF-8')
-        return deref(self._c()).set_scheduler(c_scheduler_name)
+    def set_scheduler(self, bool schedule):
+        return deref(self._c()).set_schedule(schedule)
 
     def set_resource_reference(self, str resource_name):
         cdef string c_resource_name = resource_name.encode('UTF-8')

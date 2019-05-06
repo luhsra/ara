@@ -1478,21 +1478,8 @@ void OS::Task::set_stacksize(unsigned long stacksize) { this->stacksize = stacks
 
 bool OS::Task::set_message_reference(std::string message) { return false; }
 
-bool OS::Task::set_scheduler(std::string scheduler) {
-
-	bool result = false;
-	switch (str2int(scheduler.c_str())) {
-
-	case str2int("NONE"):
-		this->scheduler = none;
-		result = true;
-		break;
-	case str2int("FULL"):
-		result = true;
-		this->scheduler = full;
-		break;
-	}
-	return result;
+void OS::Task::set_schedule(bool schedule) {
+	this->schedule = schedule;
 }
 
 void OS::Task::set_activation(unsigned long activation) { this->activation = activation; }
