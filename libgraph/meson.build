@@ -1,7 +1,9 @@
+pygraph_includes = files('cgraph.pxd', 'util.pxd', 'graph.pxd')
+
 graph_pyx_cpp = custom_target('graph_pyx',
 	output : 'graph_pyx.cpp',
-	input : 'graph.pyx',
-	command : [cython, '@INPUT@', '--cplus', '-o', '@OUTPUT@'],
+	input : ['graph.pyx', pygraph_includes],
+	command : [cython, '@INPUT0@', '--cplus', '-o', '@OUTPUT@'],
 )
 
 libgraph = py3_inst.extension_module('graph',
