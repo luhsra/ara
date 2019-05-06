@@ -14,31 +14,31 @@ from collections import Iterable
 from functools import reduce
 
 class ABB_MergeStep(Step):
-    """Merges the ABB. ABBs from type computational which are alligned in a single entry 
+    """Merges the ABB. ABBs from type computational which are alligned in a single entry
     and single exit region are merged to one ABB. Entry and Exit of such regions are detected
     with dominator and postdominator llvm class."""
-        
+
     def get_dependencies(self):
         return ['SyscallStep']
-    
-    
+
+
     MergeCandidates = namedtuple('MergeCandidates', 'entry_abb exit_abb inner_abbs')
-    
+
     def merge_linear_abbs(self,g: graph.PyGraph):
         anyChanges = True
         while anyChanges:
             anyChanges = False
             # copy original dict
-                            
+
             abb_list = g.get_type_vertices("ABB")
-            
+
             for abb in abb_list:
-                
+
                 # Iterate over list of abbs dict KeysView
                 #if abb.has_single_successor(E.function_level):
                 #    successor = abb.definite_after(E.function_level)
                 #print("abb",abb.get_name())
-                
+
                 for successor in abb.get_successors():
                     #print(successor.get_name())
                     #print("successor",successor.get_name())
@@ -146,11 +146,8 @@ class ABB_MergeStep(Step):
                     anyChanges = True
 
         #self.merge_stats.after_loop_merge = len(g.get_type_vertices("ABB"))
-            
+
     def do_merge( self,g: graph.PyGraph,entry_abb, exit_abb, inner_abbs = set()):
-        
-        
-        
         #print("merge entry abb" , entry_abb.get_name())
         #print("merge exit abb" , exit_abb.get_name())
         #entry_abb.print_information()
@@ -158,42 +155,42 @@ class ABB_MergeStep(Step):
         #if entry_abb.get_name() == "BB351":
             #print('Trying to merge:')
             #print("entry" ,entry_abb.get_name())
-            
+
             #for inner_abb in inner_abbs:
                 #print("inner",inner_abb.get_name())
-                
+
             #print("exit",exit_abb.get_name())
-            
-        
+
+
         assert not entry_abb.get_seed() == exit_abb.get_seed(), 'Entry ABB cannot merge itself into itself'
         #assert not entry_abb in inner_abbs
-        
+
         #assert not entry_abb.relevant_callees and not exit_abb.relevant_callees, 'Mergeable ABBs may not call relevant functions'
 
         parent_function = entry_abb.get_parent_function()
-        
-        
+
+
         # adopt basic blocks and call sites
         for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
             if abb.get_seed() != entry_abb.get_seed():
 
                 if entry_abb.append_basic_blocks(abb) == False:
                     print("ERROR: abb to merge not in graph")
-                    
+
                 # Collect all call sites
                 entry_abb.expend_call_sites(abb)
-        
-        
-        
-            
+
+
+
+
         # We merge everything into the entry block of a region.
         # Therefore, we just update the exit node of the entry to
         # preserve a correct entry/exit region
         entry_abb.adapt_exit_bb(exit_abb)
-        
-       
 
-        
+
+
+
         # adopt outgoing edges
         for successor in exit_abb.get_successors():
             exit_abb.remove_successor(successor)
@@ -202,8 +199,8 @@ class ABB_MergeStep(Step):
                 entry_abb.set_successor(successor)
                 successor.set_predecessor(entry_abb)
                 successor.remove_predecessor(exit_abb)
-        
-        
+
+
         # Remove edges between entry and inner_abbs/exit
         for abb in inner_abbs | {entry_abb}:
             for successor in abb.get_successors():
@@ -212,10 +209,10 @@ class ABB_MergeStep(Step):
                     if element.get_seed() == seed:
                         abb.remove_successor(successor)
                         successor.remove_predecessor(abb)
-                        
-      
-                        
-        # remove conflict when entry abb has the exit abb as predecessor 
+
+
+
+        # remove conflict when entry abb has the exit abb as predecessor
         for predecessor in entry_abb.get_predecessors():
             seed = predecessor.get_seed()
             if exit_abb.get_seed() == seed:
@@ -224,14 +221,14 @@ class ABB_MergeStep(Step):
         for abb in (inner_abbs | {exit_abb}):
             # Adapt exit ABB in corresponding function
             function_exit_abb = parent_function.get_exit_abb()
-            
-            if function_exit_abb!= None and function_exit_abb.get_seed() == abb.get_seed():
+
+            if function_exit_abb != None and function_exit_abb.get_seed() == abb.get_seed():
                 parent_function.set_exit_abb(entry_abb)
 
 
         # Remove merged successors from any existing list
         for abb in (inner_abbs | {exit_abb}) - {entry_abb}:
-            
+
             parent_function.remove_abb(abb.get_seed())
             #if not parent_function.remove_abb(abb.get_seed()):
              #  print("Probem")
@@ -240,33 +237,33 @@ class ABB_MergeStep(Step):
             #if not g.remove_vertex(abb.get_seed()):
              #   print("Probem")
                 #sys.exit("abb could not removed from graph")
-    
-        
-    
+
+
+
         #entry_abb.print_information()
-        
-       
-        
+
+
+
         #print("Merged: ", successor, "into:", abb)
         #print(abb.outgoing_edges)
-        
+
 
     def can_be_merged(self,  entry_abb,  exit_abb, inner_abbs = set()):
         #print("can be merged entry")
-        #Checks if a set of ABBs can be merged 
-        
+        #Checks if a set of ABBs can be merged
+
         for abb in inner_abbs:
             if not abb.is_mergeable() or entry_abb == None:
                 return False
-            
+
         for abb in  { entry_abb, exit_abb}:
             if not abb.is_mergeable() or entry_abb == None:
                 return False
-            
-        
-        
+
+
+
         if entry_abb.get_seed() != exit_abb.get_seed():
-            
+
             for exit_successor in exit_abb.get_successors():
                 #The exit node may not have any edge to an inner ABB
                 seed = exit_successor.get_seed()
@@ -282,13 +279,13 @@ class ABB_MergeStep(Step):
                     if element.get_seed() == seed:
                         flag = True
                         break
-                    
+
                 if entry_abb.get_seed() == seed:
                         flag = True
-                
+
                 if flag == False:
                     return False
-                
+
             for entry_successor in entry_abb.get_successors():
                 # The entry node may only be followed by any inner ABB or the exit ABB
                 seed = entry_successor.get_seed()
@@ -297,22 +294,22 @@ class ABB_MergeStep(Step):
                     if seed == element.get_seed():
                         flag = True
                         break
-                        
+
                 if seed == exit_abb.get_seed():
                     flag = True
-                    
+
                 if flag == False:
                     return False
-                
+
         else: # entry_abb == exit_abb
             #TODO bug
             #if len(inner_abbs) == 0:
             return False
             # Intentionally left blank:
             # We can only check if "some" predecessors are within the inner_abb region
-        
+
         for inner_abb in inner_abbs:
-            
+
             # Any inner ABB may only succeed any other inner ABB or the entry ABB
             for inner_predecessor in inner_abb.get_predecessors():
                 flag = False
@@ -322,11 +319,11 @@ class ABB_MergeStep(Step):
                         flag = True
                 if entry_abb.get_seed() == seed:
                     flag = True
-                
+
                 #if flag == False:
                 if not flag:
                     return False
-            
+
         return True
 
 
@@ -335,7 +332,7 @@ class ABB_MergeStep(Step):
         region = set([start, end])
         ws = []
         visited = set()
-        
+
         visited.add(start.get_name())
         visited.add(end.get_name())
         ws.append(start)
@@ -350,36 +347,36 @@ class ABB_MergeStep(Step):
                     if element == node.get_name():
                         flag = False
                         break
-                    
+
                 if  flag == True:
                     #print("append" , node.get_name(),node.get_seed())
                     ws.append(node)
-        
+
         for successor in end.get_successors():
             if start.postdominates(successor):
-                
-                
+
+
                 tmp_region = set (self.find_region(successor,start))
-                
+
                 region =  region | tmp_region
-                
+
                 #for tmp_abb in tmp_region:
                 #    print("detected region", tmp_abb.get_name())
-        
+
         return region
-    
+
     def merge_dominance(self,g: graph.PyGraph):
 
         #for func in g.get_type_vertices("Function"):
             ## Filter some functions
-            
+
             #function_abbs = func.get_atomic_basic_blocks()
-            
+
             ##TODO
             ##if func.get_has_syscall() == False:
             ##	continue
-            
-            
+
+
             #if len(function_abbs) <= 3 or func.get_exit_abb() == None:
                 #continue
 
@@ -397,69 +394,69 @@ class ABB_MergeStep(Step):
             ##print("HELLO")
             ##print(dom.immdom_tree)
             ##print(post_dom.immdom_tree)
-            
+
             #for abb in function_abbs:
                 #if abb.get_seed() in removed:
                     #continue
-                
+
                 ##if func.get_entry_abb().get_seed == abb.get_seed():
                 ##	continue
-                
+
                 ##print( dom.immdom_tree)
-                
+
                 ##start = dom.immdom_tree[abb.get_seed()]
                 ##end   = post_dom.immdom_tree[abb.get_seed()]
 
-                
+
                 #start = abb.get_dominator();
                 #end = abb.get_postdominator();
-                
+
                 ##print("abb", abb.get_name())
-                
+
                 ##if not start:
                     ##print("no dominator")
-                ##else: 
-                    ##print("dominator", start.get_name()) 
-                
-                
+                ##else:
+                    ##print("dominator", start.get_name())
+
+
                 ##if not end:
                     ##print("no postdominator")
-                ##else: 
+                ##else:
                     ##print("postdominator", end.get_name())
-                
+
                 #if start and end and start != end:
 
                     #region = self.find_region(start, end)
-                    
+
 
                     #inner = set()
-                    
+
                     #for element in region:
                         #if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
                             #inner.add(element)
-                    
-                    
+
+
                     ## Was there already some subset removed?
                     #if start.get_seed() in removed or end.get_seed() in removed:
                         #continue
-                    
+
                     #tmp_inner = inner
                     #inner = set()
-                    
+
                     #for inner_element in tmp_inner:
                         ##print("tmp inner" , inner_element.get_name())
                         #if not inner_element.get_seed() in removed:
                             #inner.add(inner_element)
 
-                            
-                            
+
+
                     ##print("start",start.get_name(),"end", end.get_name())
-                    
+
                     ##for element in inner:
                         ##print("inner",element.get_name())
-                    
+
                     #if self.can_be_merged(start, end, inner):
-                        
+
                         #self.do_merge(g,start, end, inner)
                         ## Mark as removed
                         #removed.add(end.get_seed())
@@ -470,161 +467,161 @@ class ABB_MergeStep(Step):
                             #removed.add(element.get_seed())
 
         ##self.merge_stats.after_dominance_merge = len(self.system_graph.abbs)
-        
-        
+
+
                   #for abb in function_abbs:
-                    
+
                     #start = abb.get_dominator();
                     #end = abb.get_postdominator();
-                    
+
                     #inner = set()
-                    
+
                     #if start and end and start != end:
                         #region = self.find_region(start, end)
-                    
+
                         #for element in region:
                             #if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
                                 #inner.add(element)
-                       
+
                     #elif start and not end:
                         #end = abb
-                    
-                    #elif end and not start: 
+
+                    #elif end and not start:
                         #start = abb
-                        
+
                     #if start and end and start != end:
                         #if self.can_be_merged(start, end, inner):
 
                             #self.do_merge(g,start, end, inner)
                             #changes = True
-        
+
         for func in g.get_type_vertices("Function"):
             # Filter some functions
-            
+
             function_abbs = func.get_atomic_basic_blocks()
-            
+
             #TODO
             #if func.get_has_syscall() == False:
             #	continue
-            
-            
+
+
             if func.get_exit_abb() == None:
                 continue
 
             # Forward analysis
 
             for abb in function_abbs:
-                    
+
                 start = abb.get_dominator();
                 end = abb.get_postdominator();
-                
+
                 inner = set()
-                
+
                 if start and end and start != end:
                     region = self.find_region(start, end)
-                
+
                     for element in region:
                         if element.get_seed() != start.get_seed() and element.get_seed() != end.get_seed():
                             inner.add(element)
-                    
+
                 elif start and not end:
                     end = abb
-                
-                elif end and not start: 
+
+                elif end and not start:
                     start = abb
-                    
+
                 if start and end and start != end:
                     if self.can_be_merged(start, end, inner):
 
                         self.do_merge(g,start, end, inner)
                         changes = True
-                        
 
-    
+
+
     def run(self, g: graph.PyGraph):
-        
-        
+
+
         print("Run abb merge")
-        
+
         function_list = g.get_type_vertices("Function")
         initial_abb_list = g.get_type_vertices("ABB")
-        
-        
+
+
         #iterate about the functions
         for function in function_list:
-            
-            
+
+
             if function.get_has_syscall() == False:
                 #iterate about the abbs of the function
                 already_visited = []
                 function_list = []
-                
+
 
                 #DFS for function
                 function_list.append(function)
-        
+
                 #do DFS until the function self and all called functions are analyzed
                 while len(function_list) > 0:
-                    
+
                     tmp_function = function_list[-1]
                     del function_list[-1]
                     success = False
-                    
+
                     #check if the tmp function was not visited yet
                     if not tmp_function.get_seed() in already_visited:
                         already_visited.append(tmp_function.get_seed())
-                        
+
                         abb_list = tmp_function.get_atomic_basic_blocks()
-                        
+
                         #iterate about the abbs
                         for abb in abb_list:
-                            
+
                             #check if abb has function call
                             if abb.get_call_type() == graph.call_definition_type.func_call:
                                 #append function in functions to analyze list
                                 called_functions = abb.get_called_functions()
                                 for called_function in called_functions:
                                     function_list.append(called_function)
-                                
+
                             elif abb.get_call_type() == graph.call_definition_type.sys_call:
                                 #syscall was detected-> set has syscall and break search for this function
                                 function.set_has_syscall(True)
                                 success = True
                                 break
-                            
+
                     if success == True:
                         #syscall was detected, so continue with next function
                         break
-                    
-                
+
+
         printer = DotFileParser(g)
-        
+
         printer.print_bb_functions(g,"bbs_before_merge")
-        
+
         printer.print_functions(g,"before_merge")
-        
+
         current_size = None
-        
+
         initial_abb_count = len(initial_abb_list)
         print(initial_abb_count)
         #merge dominance regions
         self.merge_dominance(g)
-        
+
         initial_abb_list = g.get_type_vertices("ABB")
-        
+
         initial_abb_count = len(initial_abb_list)
-        
+
         print(initial_abb_count)
         printer.print_functions(g,"after_dominance_merge")
-        
+
         while current_size != initial_abb_count:
-            
+
             tmp_abb_list = g.get_type_vertices("ABB")
             initial_abb_count = len(tmp_abb_list)
-            
+
             # linear merging:
             self.merge_linear_abbs(g)
-            
+
             # try to merge if-else branches
             self.merge_branches(g)
 
@@ -633,10 +630,10 @@ class ABB_MergeStep(Step):
 
             tmp_abb_list = g.get_type_vertices("ABB")
             current_size = len(tmp_abb_list)
-        
+
         print(len(g.get_type_vertices("ABB")))
         printer.print_functions(g,"after_merge")
 
 
-        
-        
+
+

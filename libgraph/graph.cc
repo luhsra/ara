@@ -642,6 +642,29 @@ bool OS::Function::set_definition_vertex(graph::shared_vertex vertex) {
 	return success;
 }
 
+std::set<shared_abb> OS::Function::get_endless_loops() {
+	std::set<shared_abb> ret;
+	for (const llvm::Loop* loop : loop_info_base) {
+		SmallVector<BasicBlock*, 6> vec;
+		loop->getExitBlocks(vec);
+		if (vec.size() != 0) {
+			continue;
+		}
+		//We have an endless loop
+		auto bb = loop->getHeader();
+		// TODO currently no way for back mapping
+		for (auto abb : get_atomic_basic_blocks()) {
+			for (const auto other_bb : *abb->get_BasicBlocks()) {
+				if (bb == other_bb) {
+					ret.insert(abb);
+				}
+			}
+		}
+	}
+
+	return ret;
+}
+
 std::vector<graph::shared_vertex> OS::Function::get_definition_vertices() {
 	std::vector<graph::shared_vertex> tmp_vector;
 

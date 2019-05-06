@@ -1,7 +1,7 @@
-project('arsa', 'cpp',
-  default_options : ['warning_level=3',
-                     'cpp_std=c++17',
-                     'buildtype=debugoptimized'])
+project('ara', 'cpp',
+	default_options : ['warning_level=3',
+	                   'cpp_std=c++17',
+	                   'buildtype=debugoptimized'])
 
 cython = find_program('cython')
 py3_mod = import('python')
@@ -19,33 +19,59 @@ subdir('steps')
 subdir('appl')
 subdir('test')
 
-test('arsa_tester',
-  py3_inst,
-  args: [files('arsa.py', 'GPSLogger/GPSLogger.ll','GPSLogger/ScreenManager.ll','GPSLogger/GPSThread.ll','GPSLogger/SDThread.ll','GPSLogger/LEDThread.ll','GPSLogger/ButtonsThread.ll','GPSLogger/SdFatSPIDriver.ll','GPSLogger/GPSDataModel.ll','GPSLogger/SpeedScreen.ll'), '--os', 'freertos'],
-  #args: [files('arsa.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
-  
-  #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[1]],
-  #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[16]],
+dump_cmds = files('utils/dump_cmds.py')
+ara = files('ara.py')
 
-  #args : [files('arsa.py'), '--os', 'osek', osek_targets[4]],
+sh = custom_target('ara-sh',
+	input: ara,
+	output: 'ara.sh',
+	command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\nPYTHONPATH=' + graphdir + ':' + stepdir + ' ' + (source_dir / 'ara.py') + ' $@\n'],
+	build_by_default: true
+)
 
-  #args : [files('arsa.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
+# TODO convert this into a proper test
+test('ara_tester',
+   py3_inst,
+   args: [files('ara.py'), freertos_thesis_print, '--os', 'freertos', '--log-level', 'debug'],
+#   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
+#   
+#   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[1]],
+#   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[16]],
+# 
+#   #args : [files('ara.py'), '--os', 'osek', osek_targets[4]],
+# 
+#   #args : [files('ara.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
+# 
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
 
-  env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+test('gpslogger',
+   py3_inst,
+   args: [files('ara.py'), gpslogger_targets, '--os', 'freertos', '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
+test('smartplug',
+   py3_inst,
+   args: [files('ara.py'), smartplug_targets, '--os', 'freertos', '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
+test('copter-without-alarms',
+   py3_inst,
+   args: [files('ara.py'), osek_copter_without_alarms[0], '--os', 'osek', '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
+test('copter',
+   py3_inst,
+   args: [files('ara.py'), osek_coptermok[0], '--os', 'osek', '--oilfile', osek_coptermok[1], '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 
-#test('ara tester',
-	#py3_inst,
-	#args : [files('arsa.py', 'test/data/GPSLogger.ll','test/data/ScreenManager.ll','test/data/GPSThread.ll','test/data/SDThread.ll','test/data/LEDThread.ll','test/data/ButtonsThread.ll','test/data/SdFatSPIDriver.ll','test/data/GPSDataModel.ll','test/data/SpeedScreen.ll'), '--os', 'freertos','--application_file' , 'invalid_mutex.cc'],
-	
-	#args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'timer.cc'],
-
-    #args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'loop_detection.cc'],
-    #args : [files('arsa.py','test/data/appl.ll'), '--os', 'freertos','--application_file' , 'before_scheduler_validation.cc'],
-    # priority inversion test case
-    #args : [files('arsa.py'), '--os', 'freertos', freertos_targets[2]],
-
-	#env : ['PYTHONPATH=' + passdir + ':' + 'subprojects/libgraph']
-#)
-
+test('ospert',
+   py3_inst,
+   args: [files('ara.py'), freertos_ospert, '--os', 'freertos', '--log-level', 'debug'],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)

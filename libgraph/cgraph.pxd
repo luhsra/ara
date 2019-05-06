@@ -65,6 +65,7 @@ cdef extern from "graph.h" namespace "protocol_type":
     cdef protocol_type none
 
 cdef extern from "graph.h" namespace "syscall_definition_type":
+    cdef syscall_definition_type undefined
     cdef syscall_definition_type computate
     cdef syscall_definition_type create
     cdef syscall_definition_type destroy
@@ -125,8 +126,12 @@ cdef extern from "graph.h" namespace "graph":
         size_t get_seed()
         size_t get_type()
         string get_name()
+        bool get_multiple_create()
+        bool get_unsure_create()
         void set_handler_name(string)
         clist[shared_ptr[Edge]] get_outgoing_edges()
+
+        bool get_start_scheduler_creation_flag()
 
     cdef cppclass Edge:
         Edge(Graph* graph, string name, shared_ptr[Vertex] start, shared_ptr[Vertex] target, shared_ptr[ABB] abb_reference) except +
@@ -162,9 +167,9 @@ cdef extern from "graph.h" namespace "OS":
         ISR(Graph* graph, string name) except +
 
         bool set_category(int category)
-        
+
         void set_priority(int priority)
-        
+
         int get_category()
         bool set_resource_reference(string)
         shared_ptr[Function] get_definition_function()
@@ -190,6 +195,9 @@ cdef extern from "graph.h" namespace "OS":
         bool set_scheduler(string scheduler)
         bool set_resource_reference(string resource)
         bool set_event_reference(string event)
+
+        unsigned long get_stacksize()
+        unsigned long get_priority();
 
         shared_ptr[Function] get_definition_function()
         string get_name()

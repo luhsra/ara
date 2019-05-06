@@ -11,7 +11,7 @@ DeclareAlarm(SignalGatherTimeoutAlarm);
 DeclareAlarm(ActuateAlarm);
 DeclareAlarm(CopterControlWatchdogAlarm);
 
-DeclareEvent(CopterControlReceiveEvent);
+//DeclareEvent(CopterControlReceiveEvent);
 DeclareEvent(MavMsgReceiveEvent);
 DeclareEvent(EthernetReceiveEvent);
 DeclareEvent(SPIReceiveEvent);

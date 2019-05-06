@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <link rel="shortcut icon" href="img/favicon.png">
+    <title>HTTP Server</title>
+</head>
+
+<body>
+    <div class="main">
+        <div align="center">
+            <h1>Smartplug configuration panel</h1>
+        </div>
+        <div class="sub" align="center" id="status_box"></div>
+        <hr width="60%" color="gray">
+        <div class="sub" align="center">
+            <h2>Gateway mode</h2>
+            <table class="table" cellspacing="10">
+                <tr>
+                    <td><b>Target SSID:</b></td>
+                    <td><input type="text" id="ssid"></td>
+                    <td id="ssid_alert" class="alert_td"></td>
+                </tr>
+                <tr>
+                    <td><b>Target password:</b></td>
+                    <td><input type="text" id="password"></td>
+                    <td id="password_alert" class="alert_td"></td>
+                </tr>
+                <tr>
+                    <td><b>Thingsboard access token:</b></td>
+                    <td><input type="text" id="thingsboard_token"></td>
+                    <td id="thingsboard_token_alert" class="alert_td"></td>
+                </tr>
+                <tr>
+                    <td><b>Device name:</b></td>
+                    <td><input type="text" id="gateway_device_name"></td>
+                    <td id="gateway_device_name_alert" class="alert_td"></td>
+                </tr>
+            </table>
+            <input type="button" id="wifi-opts" value="Set gateway mode" onclick="setGatewayMode()">
+        </div>
+        <hr width="60%" color="gray">
+        <div class="sub" align="center">
+            <h2>Client mode</h2>
+            <table class="table" cellspacing="10">
+                <tr>
+                    <td><b>Gateway PLC PHY Address:</b></td>
+                    <td><input type="text" id="plc_phy_addr"></td>
+                    <td id="plc_phy_addr_alert" class="alert_td"></td>
+                </tr>
+                <tr>
+                    <td><b>Device name:</b></td>
+                    <td><input type="text" id="client_device_name"></td>
+                    <td id="client_device_name_alert" class="alert_td"></td>
+                </tr>
+            </table>
+            <input type="button" name="ok-butt-plc-opts" id="plc-opts" value="Set client mode" onclick="setClientMode()">
+        </div>
+        <hr width="60%" color="gray">
+    </div>
+
+    <script type="text/javascript"></script>
+    <script>
+        var ws;
+        var retries;
+        var wsKeepAliveTimerID = 0;
+
+        function wsKeepAlive() {
+            var timeout = 10000;
+            if (ws.readyState == 1) {
+                ws.send('');
+                console.log("Sending keep alive message");
+            } else {
+                wsOpen(null);
+                console.log("Opening WS - WS not kept alive.");
+            }
+            wsKeepAliveTimerID = setTimeout(wsKeepAlive, timeout);
+        }
+
+        function cancelWsKeepAlive() {
+            if (wsKeepAliveTimerID) {
+                clearTimeout(wsKeepAliveTimerID);
+            }
+        }
+
+        window.onload = function() {
+            wsOpen(null);
+            wsKeepAlive();
+            enableButtons();
+        }
+
+        window.onunload = function() {
+            cancelWsKeepAlive();
+        }
+
+        function setMsg(text) {
+            sbox = document.getElementById('status_box');
+            sbox.innerHTML = text;
+            console.log(text);
+        }
+
+        function setAlertMsg(text, id) {
+            console.log(id);
+            var alertBox = document.getElementById(id);
+            alertBox.innerHTML = text;
+        }
+
+        function clearAlertMsgs() {
+            var alertBoxes = document.getElementsByClassName('alert_td');
+            for (var i = 0; i < alertBoxes.length; i++)
+                alertBoxes[i].innerHTML = "";
+        }
+
+        function disableButtons() {
+            document.getElementById('wifi-opts').disabled = true;
+            document.getElementById('plc-opts').disabled = true;
+        }
+
+        function enableButtons() {
+            document.getElementById('wifi-opts').disabled = false;
+            document.getElementById('plc-opts').disabled = false;
+        }
+
+        function onMessage(evt) {
+            retries = 0;
+            var data = evt.data;
+            console.log(data);
+            var content = JSON.parse(data);
+            if (content.data == "enableButtons") {
+                enableButtons();
+                wsWrite("ACK");
+            } else if (content.data == "stopWs") {
+                cancelWsKeepAlive();
+                wsWrite("ACK");
+            }
+            setMsg(content.msg);
+        }
+
+        function wsOpen(data) {
+            if (ws === undefined || ws.readyState != 0) {
+                if (retries)
+                    setMsg("Problems occured while connecting to device, retrying...");
+                var resource = "/set-config";
+                ws = new WebSocket("ws://" + location.host + resource);
+                ws.binaryType = 'arraybuffer';
+                ws.onopen = function(evt) {
+                    retries = 0;
+                    if (data !== null)
+                        wsWrite(data);
+                    else
+                        setMsg("Ready to set configuration.");
+                };
+                ws.onerror = function(evt) {
+                    setMsg("Error while connecting to device...");
+                };
+                ws.onmessage = function(evt) {
+                    onMessage(evt);
+                };
+                retries = 0;
+            }
+        }
+
+        function wsWrite(data) {
+            if (ws.readyState == 3 || retries++ > 5)
+                wsOpen(data);
+            if (ws.readyState == 1) {
+                ws.send(data);
+            }
+        }
+
+        function setGatewayMode() {
+            var gatewayCreds = new Object();
+            clearAlertMsgs();
+            gatewayCreds.ssid = document.getElementById('ssid').value;
+            if (gatewayCreds.ssid == "") {
+                setAlertMsg("WiFi SSID not provided.", 'ssid_alert');
+                return;
+            }
+            if (gatewayCreds.ssid.length > 32) {
+                setAlertMsg("Wifi SSID too long.", 'ssid_alert');
+                return;
+            }
+            gatewayCreds.password = document.getElementById('password').value;
+            if (gatewayCreds.password == "") {
+                setAlertMsg("WiFi password not provided.", 'password_alert');
+                return;
+            }
+            if (gatewayCreds.password.length > 64) {
+                setAlertMsg("WiFi password too long.", 'password_alert');
+                return;
+            }
+            gatewayCreds.tb_token = document.getElementById('thingsboard_token').value;
+            if (gatewayCreds.tb_token == "") {
+                setAlertMsg("Thinsgboard device token not provided.", 'thingsboard_token_alert');
+                return;
+            }
+            if (gatewayCreds.tb_token.length != 20) {
+                setAlertMsg("Thingsboard token must be 20 characters long.", 'thingsboard_token_alert');
+                return;
+            }
+            gatewayCreds.device_name = document.getElementById('gateway_device_name').value;
+            if (gatewayCreds.device_name == "") {
+                setAlertMsg("Device name not provided.", 'gateway_device_name_alert');
+                return;
+            }
+            if (gatewayCreds.device_name.length > 32) {
+                setAlertMsg("Maximum length of device name must not exceed 32 characters.", 'gateway_device_name_alert');
+                return;
+            }
+            var jsonString = JSON.stringify(gatewayCreds);
+            console.log(jsonString);
+            wsWrite(jsonString);
+            disableButtons();
+            setMsg("Configuring...");
+        }
+
+        function setClientMode() {
+            var clientCreds = new Object();
+            clearAlertMsgs();
+            clientCreds.phyaddr = document.getElementById('plc_phy_addr').value;
+            if (clientCreds.phyaddr == "") {
+                setAlertMsg("Gateway PLC physical address not provided.", 'plc_phy_addr_alert');
+                return;
+            }
+            if (clientCreds.phyaddr.length != 16) {
+                setAlertMsg("Gateway PLC physical address must be 16 characters long", 'plc_phy_addr_alert');
+                return;
+            }
+            clientCreds.device_name = document.getElementById('client_device_name').value;
+            if (clientCreds.device_name == "") {
+                setAlertMsg("Device name not provided.", 'client_device_name_alert');
+                return;
+            }
+            if (clientCreds.device_name.length > 32) {
+                setAlertMsg("Maximum length of device name must not exceed 32 characters.", 'client_device_name_alert');
+                return;
+            }
+            var jsonString = JSON.stringify(clientCreds);
+            console.log(jsonString);
+            wsWrite(jsonString);
+            disableButtons();
+            setMsg("Configuring...");
+        }
+    </script>
+</body>
+
+</html>

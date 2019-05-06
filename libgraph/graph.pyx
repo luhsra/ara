@@ -5,8 +5,6 @@
 cimport cgraph
 cimport graph
 
-#from arsa.steps.enumerations import Type
-
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
@@ -80,6 +78,7 @@ class timer_type(IntEnum):
 
 
 class syscall_definition_type(IntEnum):
+    undefined = <int> cgraph.undefined
     computate = <int> cgraph.computate
     create = <int> cgraph.create
     destroy = <int> cgraph.destroy
@@ -337,6 +336,12 @@ cdef class Vertex:
     def get_type(self):
         return deref(self._c_vertex).get_type()
 
+    def get_multiple_create(self):
+        return deref(self._c_vertex).get_multiple_create()
+
+    def get_unsure_create(self):
+        return deref(self._c_vertex).get_unsure_create()
+
     def set_handler_name(self, str name):
         cdef string handlername = name.encode('UTF-8')
         deref(self._c_vertex).set_handler_name(handlername)
@@ -357,6 +362,9 @@ cdef class Vertex:
             pylist.append(py_obj)
 
         return pylist
+
+    def get_start_scheduler_creation_flag(self):
+        return deref(self._c_vertex).get_start_scheduler_creation_flag()
 
 
 cdef class Counter(Vertex):
@@ -414,7 +422,7 @@ cdef class ISR(Vertex):
 
     def set_category(self, int category):
         deref(self._c()).set_category(category)
-        
+
     def set_priority(self, int priority):
         deref(self._c()).set_priority(priority)
 
@@ -506,6 +514,12 @@ cdef class Task(Vertex):
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_definition_function()
         return create_from_pointer(spc[cgraph.Vertex, cgraph.Function](function))
+
+    def get_stacksize(self):
+        return deref(self._c()).get_stacksize()
+
+    def get_priority(self):
+        return deref(self._c()).get_priority()
 
 
 cdef class Function(Vertex):
@@ -639,7 +653,8 @@ cdef class ABB(Vertex):
 
     def get_syscall_type(self):
         cdef cgraph.syscall_definition_type t = deref(self._c()).get_syscall_type()
-        return syscall_definition_type(<int> t)
+        cdef int num = <int> t
+        return syscall_definition_type(num)
 
     def set_call_target_instance(self, ptype):
 

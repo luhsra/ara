@@ -60,12 +60,7 @@ void vPrintString( const char * string );
 
 void vPrintStringAndNumber( const char *string , int32_t number );
 
-void vTask1( void *pvParameters );
-void vTask2( void *pvParameters );
 QueueHandle_t xQueue;
-
-/* Declare a variable that is used to hold the handle of Task 2. */
-TaskHandle_t xTask2Handle = NULL;
 
 /* Declare a variable that will be incremented by the hook function. */
 volatile uint32_t ulIdleCycleCount = 0UL;
@@ -118,6 +113,11 @@ static void SenderTask( void *pvParameters )
 
 }
 
+static void foobar( void *pvParameters ) {
+	while (1);
+}
+
+
 static void ReceiverTask( void *pvParameters )
 {
     /* Declare the variable that will hold the values received from the queue. */
@@ -160,28 +160,49 @@ static void ReceiverTask( void *pvParameters )
     }
 }
 
+void test_create() {
+	xTaskCreate( foobar, "Wild Task2", 1000, NULL, 3, NULL );
+}
+
 int main( void )
 {
     /* The queue is created to hold a maximum of 5 values, each of which is
     large enough to hold a variable of type int32_t. */
     xQueue = xQueueCreate( 5, sizeof( int32_t ) );
-    
+
+	int a = 5;
+
     /* Create two instances of the task that will send to the queue. The task
     parameter is used to pass the value that the task will write to the queue,
     so one task will continuously write 100 to the queue while the other task
     will continuously write 200 to the queue. Both tasks are created at
     priority 1. */
     xTaskCreate( SenderTask, "Sender1", 1000, NULL, 1, NULL );
+	a++;
     /* Create the task that will read from the queue. The task is created with
     priority 2, so above the priority of the sender tasks. */
     xTaskCreate( ReceiverTask, "Receiver", 1000, NULL, 2, NULL );
+
+	if (a >= 8) {
+	    xTaskCreate( foobar, "Wild Task", 1000, NULL, 3, NULL );
+	}
+	test_create();
+
     /* Start the scheduler so the created tasks start executing. */
     vTaskStartScheduler();
     
     
+	for (int i = 0; i < a; ++i) {
+		vTaskDelay(4);
+	}
+
     /* If all is well then main() will never reach here as the scheduler will
     now be running the tasks. If main() does reach here then it is likely that
     there was insufficient FreeRTOS heap memory available for the idle task to be
     created. Chapter 2 provides more information on heap memory management. */
-    for( ;; );
+	//if (a > 10) {
+	//	return 8;
+	//} else {
+		for( ;; ) { }
+	//}
 }
