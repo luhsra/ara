@@ -61,3 +61,18 @@ build/ara.sh -l
 ```
 Steps can be written into Python (defined in `steps`) or in C++ (defined in `steps/native`).
 The model is written in C++ with Python bindings (defined in `libgraph`).
+
+Troubleshooting
+---------------
+
+### LLVM is not found
+Sometime Meson is unable to find the correct LLVM libraries because detection of the `llvm-config` file fails.
+In this case, add a file `native.txt` with this content:
+```
+[binaries]
+llvm-config = '/path/to/llvm-config'
+```
+Then configure your build directory with:
+```
+meson build --native-file native.txt
+```
