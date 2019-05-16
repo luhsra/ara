@@ -365,7 +365,7 @@ namespace step {
 		// use first module a main module
 		auto Composite = LoadFile(files.at(0), context);
 		if (Composite.get() == 0) {
-			std::cerr << "error loading file '" << files.at(0) << "'\n";
+			logger.err() << "Error loading file '" << files.at(0) << "'" << std::endl;
 			abort();
 		}
 
