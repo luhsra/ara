@@ -5,6 +5,7 @@ from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
+from libc.stdint cimport int64_t
 
 
 cdef extern from "graph.h":
@@ -141,6 +142,8 @@ cdef extern from "graph.h" namespace "graph":
         shared_ptr[ABB] get_abb_reference()
         string get_name()
 
+cdef extern from "graph.h" namespace "OS::Event":
+    int64_t MASK_AUTO
 
 cdef extern from "graph.h" namespace "OS":
 
@@ -158,8 +161,7 @@ cdef extern from "graph.h" namespace "OS":
     cdef cppclass Event:
         Event(Graph* graph, string name) except +
 
-        void set_event_mask_auto()
-        void set_event_mask(unsigned long mask)
+        void set_event_mask(int64_t mask)
 
         string get_name()
 

@@ -75,8 +75,6 @@ enum resource_type { standard, linked, internal, binary_mutex = 1, recursive_mut
 
 enum semaphore_type { binary_semaphore = 3, counting_semaphore = 2 };
 
-enum event_type { automatic, mask };
-
 enum class protocol_type { priority_inheritance, priority_ceiling, none };
 
 enum start_scheduler_relation { before, after, uncertain, not_defined };
@@ -1027,12 +1025,13 @@ namespace OS {
 	};
 
 	class Event : public graph::Vertex {
+	  public:
+		static const int64_t MASK_AUTO = -1;
 
 	  private:
 		std::list<OS::weak_task> task_reference;
-		unsigned long event_mask;
+		int64_t event_mask;
 		unsigned int id;
-		event_type mask_type;
 
 		// std::list<long> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
 		std::list<long> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
@@ -1084,8 +1083,7 @@ namespace OS {
 
 		bool set_task_reference(OS::shared_task task);
 		std::list<OS::shared_task> get_task_references();
-		void set_event_mask(unsigned long mask);
-		void set_event_mask_auto();
+		void set_event_mask(int64_t mask) { event_mask = mask; }
 		void set_id(unsigned int id);
 	};
 

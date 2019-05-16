@@ -1576,10 +1576,6 @@ int OS::ISR::get_category() { return this->category; }
 
 OS::shared_function OS::ISR::get_definition_function() { return this->definition_function.lock(); }
 
-void OS::Event::set_event_mask(unsigned long mask) { this->event_mask = mask; }
-
-void OS::Event::set_event_mask_auto() { this->mask_type = automatic; }
-
 bool OS::ISR::set_category(int category) {
 	bool result = false;
 

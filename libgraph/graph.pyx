@@ -12,6 +12,7 @@ from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 
 from libcpp cimport bool
+from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
@@ -243,19 +244,12 @@ cdef class PyGraph:
         return self._c_graph.remove_vertex(seed)
 
     def get_type_vertices(self, name):
-
         cdef c_hash_type = get_type_hash(name)
-
         cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(c_hash_type)
-
         pylist = []
-
-        #print("-------------------Size of Vertices:", vertices.size())
 
         for vertex in vertices:
             pylist.append(create_from_pointer(vertex))
-
-        # print(pylist)
 
         return pylist
 
@@ -395,6 +389,8 @@ cdef class Counter(Vertex):
 
 
 cdef class Event(Vertex):
+    MASK_AUTO = cgraph.MASK_AUTO
+
     cdef inline shared_ptr[cgraph.Event] _c(self):
         return spc[cgraph.Event, cgraph.Vertex](self._c_vertex)
 
@@ -404,11 +400,8 @@ cdef class Event(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
 
-    def set_event_mask(self, unsigned long mask):
+    def set_event_mask(self, int64_t mask):
         return deref(self._c()).set_event_mask(mask)
-
-    def set_event_mask_auto(self):
-        return deref(self._c()).set_event_mask_auto()
 
     def get_name(self):
         return deref(self._c()).get_name().decode('UTF-8')
