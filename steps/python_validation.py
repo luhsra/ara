@@ -103,6 +103,8 @@ def validate_osek_task_termination(g: graph.PyGraph ):
     for task in task_list:
         #get last outgoing syscall 
         edges = task.get_outgoing_edges()
+        if not edges:
+            continue
         last_syscall = edges[-1]
         #get abb reference from syscall
         abb_reference = last_syscall.get_abb_reference()
