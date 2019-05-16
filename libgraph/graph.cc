@@ -869,6 +869,10 @@ void OS::Function::initialize_postdominator_tree(llvm::Function* function) {
 
 llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* OS::Function::get_loop_info_base() { return &this->loop_info_base; }
 
+std::ostream& OS::Function::print(std::ostream& stream) const {
+	return stream << "Function(" << get_name() << ")";
+}
+
 void OS::ABB::set_loop_information(bool flag) { this->in_loop = flag; }
 
 bool OS::ABB::get_loop_information() { return this->in_loop; }

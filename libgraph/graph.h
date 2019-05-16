@@ -591,6 +591,8 @@ namespace OS {
 		bool remove_abb(size_t seed);
 
 		std::set<shared_abb> get_endless_loops();
+
+		virtual std::ostream& print(std::ostream& stream) const override;
 	};
 
 	// Klasse AtomicBasicBlock
