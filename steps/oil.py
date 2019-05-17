@@ -36,23 +36,32 @@ class OilStep(Step):
         vertex.set_protocol_type(graph.protocol_type.priority_ceiling)
         vertex.set_handler_name("OSEKOS_RESOURCE_" + vertex.get_name())
 
-    def task_init(self, vertex):
-        """Link OSEK task with function."""
-        vertex.set_handler_name("OSEKOS_TASK_" + vertex.get_name())
-        codename = "OSEKOS_TASK_FUNC_" + vertex.get_name()
+    def link_function_to_instance(self, vertex, prefix):
+        """For ISRs and tasks: Link function to instance and vice versa."""
+        codename = prefix + vertex.get_name()
         func = self.functions[codename]
 
         if not vertex.set_definition_function(codename):
             raise Exception("Could not find reference for {vertex} in code")
         func.set_definition_vertex(vertex)
 
+    def task_init(self, vertex):
+        """Link OSEK task with code instance."""
+        vertex.set_handler_name("OSEKOS_TASK_" + vertex.get_name())
+        self.link_function_to_instance(vertex, "OSEKOS_TASK_FUNC_")
+
     def event_init(self, vertex):
-        """Link OSEK event with function."""
+        """Link OSEK event with code instance."""
         vertex.set_handler_name("OSEKOS_EVENT_" + vertex.get_name())
 
     def alarm_init(self, vertex):
-        """Link OSEK alarm with function."""
+        """Link OSEK alarm with code instance."""
         vertex.set_handler_name("OSEKOS_ALARM_" + vertex.get_name())
+
+    def isr_init(self, vertex):
+        """Link OSEK ISR with code instance."""
+        vertex.set_handler_name("OSEKOS_ISR_" + vertex.get_name())
+        self.link_function_to_instance(vertex, "OSEKOS_ISR_")
 
     @staticmethod
     def alarm_action(vertex, value):
@@ -84,7 +93,8 @@ class OilStep(Step):
             vertex = inst_class(g, elem['name'])
             if attrs is not None:
                 for attr in attrs:
-                    attrs[attr](vertex, elem[attr])
+                    if attr in elem:
+                        attrs[attr](vertex, elem[attr])
             if inits is not None:
                 for init in inits:
                     init(vertex)
@@ -106,6 +116,8 @@ class OilStep(Step):
         # prepare graph functions:
         funcs = g.get_type_vertices("Function")
         self.functions = dict([(x.get_name(), x) for x in funcs])
+        for f in self.functions:
+            print(f, self.functions[f])
 
         counter_m = {'maxallowedvalue': graph.Counter.set_max_allowed_value,
                      'ticksperbase': graph.Counter.set_ticks_per_base,
@@ -118,16 +130,25 @@ class OilStep(Step):
         event_m = {'mask': OilStep.event_set_mask}
         resources_m = {'type': OilStep.resource_type}
         alarm_m = {'action': OilStep.alarm_action}
+        isr_m = {'category': graph.ISR.set_category,
+                 'priority': graph.ISR.set_priority}
 
         fill_graph = partial(self.fill_graph, g, oil)
 
-        fill_graph('isrs', graph.ISR)
-        fill_graph('counters', graph.Counter, attrs=counter_m)
+        # fill the graph, according to the OIL specification some dependencies
+        # must be met:
+        # FOO -> BAR: FOO depends on BAR
+        # alarm -> counter
+        # alarm -> task
+        # ISR -> resource
         fill_graph('events', graph.Event, attrs=event_m,
                    inits=[self.event_init])
+        fill_graph('counters', graph.Counter, attrs=counter_m)
         fill_graph('tasks', graph.Task, attrs=task_m,
                    inits=[self.task_init])
-        fill_graph('resources', graph.Mutex, attrs=resources_m,
-                   inits=[OilStep.resource_init])
         fill_graph('alarms', graph.Timer, attrs=alarm_m,
                    inits=[self.alarm_init])
+        fill_graph('resources', graph.Mutex, attrs=resources_m,
+                   inits=[OilStep.resource_init])
+        fill_graph('isrs', graph.ISR, attrs=isr_m,
+                   inits=[self.isr_init])

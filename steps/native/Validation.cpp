@@ -1150,7 +1150,14 @@ void verify_isrs(graph::Graph& graph, std::vector<shared_warning>* warning_list)
 		// queue for new created ABBs
 		std::queue<shared_abb> queue;
 
-		queue.push(isr->get_definition_function()->get_entry_abb());
+		auto func = isr->get_definition_function();
+		if (func == nullptr) {
+			// TODO
+			std::cerr << "ISR " << *isr << " has no correlated Function." << std::endl;
+			continue;
+		}
+
+		queue.push(func->get_entry_abb());
 
 		// iterate about the ABB queue
 
