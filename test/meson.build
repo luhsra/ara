@@ -66,7 +66,7 @@ test('loop_detection',
 
 test('oil-parsing',
   py3_inst,
-  args : files('oil/oil.py'),
+  args : [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
   env : ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 

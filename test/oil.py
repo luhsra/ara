@@ -2,6 +2,7 @@
 
 import logging
 import os.path
+import sys
 
 import stepmanager
 import graph
@@ -42,15 +43,17 @@ def validate_1(g):
         assert t.get_activation() == task['activation']
 
 
-TESTS = [('1.oil', validate_1)]
+TESTS = [(sys.argv[1], sys.argv[2], validate_1)]
 
 def main():
     s_dir = os.path.dirname(os.path.realpath(__file__))
 
     logging.basicConfig(level=logging.DEBUG)
-    for oil, validate in TESTS:
+    for file, oil, validate in TESTS:
         g = graph.PyGraph()
-        config = {'oilfile': os.path.join(s_dir, oil), 'os': 'osek'}
+        config = {'oilfile': oil,
+                  'os': 'osek',
+                  'input_files': [file]}
         p_manager = stepmanager.StepManager(g, config)
 
         p_manager.execute(['OilStep'])

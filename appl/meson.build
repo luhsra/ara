@@ -63,7 +63,8 @@ foreach app : [['a',                     'a.oil'],
                ['b',                     'oilfile.oil'],
                ['c',                     'oilfile.oil'],
                ['coptermok',             'coptermok.oil'],
-               ['copter-without-alarms', 'copter-without-alarms.oil']]
+               ['copter-without-alarms', 'copter-without-alarms.oil'],
+               ['oiltest',               'oiltest.oil']]
     ll_target = custom_target('osek-' + app[0],
                               input : [join_paths([osek_folder, app[0] + '.cc'])] + osek_includes,
                               output : ['osek-' + app[0] + '.ll'],
