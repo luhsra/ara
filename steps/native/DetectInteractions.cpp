@@ -701,15 +701,9 @@ namespace step {
 	}
 
 	std::vector<std::string> DetectInteractionsStep::get_dependencies() {
-
-		// get file arguments from config
-		std::vector<std::string> files;
-
 		PyObject* elem = PyDict_GetItemString(config, "os");
-
-		if (elem != nullptr)
-			std::cerr << "success" << std::endl;
 		assert(PyUnicode_Check(elem));
+
 		if (strcmp("freertos", PyUnicode_AsUTF8(elem)) == 0)
 			return {"FreeRTOSInstancesStep"};
 		else if (strcmp("osek", PyUnicode_AsUTF8(elem)) == 0)

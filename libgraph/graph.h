@@ -75,10 +75,6 @@ enum resource_type { standard, linked, internal, binary_mutex = 1, recursive_mut
 
 enum semaphore_type { binary_semaphore = 3, counting_semaphore = 2 };
 
-enum schedule_type { full, none };
-
-enum event_type { automatic, mask };
-
 enum class protocol_type { priority_inheritance, priority_ceiling, none };
 
 enum start_scheduler_relation { before, after, uncertain, not_defined };
@@ -214,6 +210,8 @@ namespace graph {
 		std::vector<std::shared_ptr<Vertex>> get_entry_points() { return entry_points; }
 
 		~Graph();
+
+		friend std::ostream& operator<<(std::ostream& stream, const Graph& graph);
 	};
 
 	// Basis Klasse für alle Vertexes
@@ -593,6 +591,8 @@ namespace OS {
 		bool remove_abb(size_t seed);
 
 		std::set<shared_abb> get_endless_loops();
+
+		virtual std::ostream& print(std::ostream& stream) const override;
 	};
 
 	// Klasse AtomicBasicBlock
@@ -805,7 +805,7 @@ namespace OS {
 		// OSEK attributes
 		bool autostart; // Information if Task is activated during system start or or application mode
 		unsigned int activation;
-		schedule_type scheduler; // NON/FULL defines preemptability of task
+		bool scheduled; // true if schedules = FULL, otherwise false
 
 		bool constant_priority = true;
 
@@ -856,9 +856,12 @@ namespace OS {
 		unsigned long get_priority();
 		void set_stacksize(unsigned long priority);
 		unsigned long get_stacksize();
-		bool set_scheduler(std::string scheduler);
+		void set_schedule(bool scheduled);
+		bool is_scheduled() { return scheduled; }
 		void set_activation(unsigned long activation);
+		unsigned long get_activation() { return activation; }
 		void set_autostart(bool autostart);
+		bool is_autostarted() { return autostart; }
 		void set_appmode(std::string app_mode);
 		bool set_resource_reference(std::string resource);
 		bool set_event_reference(std::string event);
@@ -1024,12 +1027,13 @@ namespace OS {
 	};
 
 	class Event : public graph::Vertex {
+	  public:
+		static const int64_t MASK_AUTO = -1;
 
 	  private:
 		std::list<OS::weak_task> task_reference;
-		unsigned long event_mask;
+		int64_t event_mask;
 		unsigned int id;
-		event_type mask_type;
 
 		// std::list<long> set_bits;     // Auflisten aller gesetzen Bits des Event durch Funktionen
 		std::list<long> cleared_bits; // Auflisten aller gelöschten Bits des Event durch Funktionen, gelöschte Bits
@@ -1081,8 +1085,7 @@ namespace OS {
 
 		bool set_task_reference(OS::shared_task task);
 		std::list<OS::shared_task> get_task_references();
-		void set_event_mask(unsigned long mask);
-		void set_event_mask_auto();
+		void set_event_mask(int64_t mask) { event_mask = mask; }
 		void set_id(unsigned int id);
 	};
 

@@ -128,6 +128,15 @@ void graph::Graph::set_vertex(shared_vertex vertex) {
 
 void graph::Graph::set_edge(shared_edge edge) { this->edges.emplace_back(edge); }
 
+std::ostream& graph::operator<<(std::ostream& stream, const Graph& graph) {
+	stream << "Graph:\n";
+	stream << "All vertices:\n";
+	for (const auto vertex : graph.vertices) {
+		stream << ' ' << *vertex << '\n';
+	}
+	return stream;
+}
+
 shared_vertex graph::Graph::create_vertex() {
 	shared_vertex vertex = std::make_shared<Vertex>(this, ""); // create shared po
 	this->vertices.emplace_back(vertex);                       // store the shared pointer in the internal list
@@ -860,6 +869,10 @@ void OS::Function::initialize_postdominator_tree(llvm::Function* function) {
 
 llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* OS::Function::get_loop_info_base() { return &this->loop_info_base; }
 
+std::ostream& OS::Function::print(std::ostream& stream) const {
+	return stream << "Function(" << get_name() << ")";
+}
+
 void OS::ABB::set_loop_information(bool flag) { this->in_loop = flag; }
 
 bool OS::ABB::get_loop_information() { return this->in_loop; }
@@ -1469,21 +1482,8 @@ void OS::Task::set_stacksize(unsigned long stacksize) { this->stacksize = stacks
 
 bool OS::Task::set_message_reference(std::string message) { return false; }
 
-bool OS::Task::set_scheduler(std::string scheduler) {
-
-	bool result = false;
-	switch (str2int(scheduler.c_str())) {
-
-	case str2int("NONE"):
-		this->scheduler = none;
-		result = true;
-		break;
-	case str2int("FULL"):
-		result = true;
-		this->scheduler = full;
-		break;
-	}
-	return result;
+void OS::Task::set_schedule(bool schedule) {
+	this->scheduled = schedule;
 }
 
 void OS::Task::set_activation(unsigned long activation) { this->activation = activation; }
@@ -1579,10 +1579,6 @@ bool OS::ISR::set_definition_function(std::string function_name) {
 int OS::ISR::get_category() { return this->category; }
 
 OS::shared_function OS::ISR::get_definition_function() { return this->definition_function.lock(); }
-
-void OS::Event::set_event_mask(unsigned long mask) { this->event_mask = mask; }
-
-void OS::Event::set_event_mask_auto() { this->mask_type = automatic; }
 
 bool OS::ISR::set_category(int category) {
 	bool result = false;

@@ -64,7 +64,11 @@ test('loop_detection',
         env : ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 
-
+test('oil-parsing',
+  py3_inst,
+  args : [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
+  env : ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
+)
 
 
 subdir('native_step_test')

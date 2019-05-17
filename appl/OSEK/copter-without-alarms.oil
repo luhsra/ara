@@ -1,200 +1,115 @@
 {
-
-	"OIL_VERSION" : ["2.5","test"], 	
-
-	
-	"IMPLEMENTATION" :  {
-			
-		"trampoline" : {
-			"TASK" : {
-				"STACKSIZE" :  500,
-				"PRIORITY" : 1
+	"cpu": {
+		"isrs": [
+			{
+				"category": 2,
+				"name": "MavlinkRecvHandler",
+				"priority": 100
 			},
-			"ISR" : {
-				"STACKSIZE" : 500
+			{
+				"category": 2,
+				"name": "AlarmSignalGatherInitiateTask",
+				"resource": [
+					"SPIBus"
+				]
+			},
+			{
+				"category": 2,
+				"name": "AlarmFlightControlTask",
+				"priority": 100
+			},
+			{
+				"category": 2,
+				"name": "AlarmCopterControlWatchdogTask",
+				"resource": [
+					"SPIBus"
+				]
 			}
-		}
-	},
-	
-	"CPU" :{
-		"test": { 
-			"OS": {
-				"config" : {
-					"STATUS" : "EXTENDED",
-					"ERRORHOOK" : "FALSE",
-					"PRETASKHOOK" : "FALSE",
-					"POSTTASKHOOK" : "FALSE",
-					"STARTUPHOOK" : "FALSE",
-					"SHUTDOWNHOOK" : "FALSE",
-					"SYSTEM_CALL" : "TRUE",
-					"APP_SRC" : "TP.c",
-					"APP_NAME" : "TP_exe",
-					"TRAMPOLINE_BASE_PATH" : "/Users/puaut/Home/Sources/trampoline",
-					"CFLAGS" : "-g -c -ffreestanding -fsigned-char -mcpu=arm7tdmi -Os -Winline -Wall -Werror-implicit-function-declaration --param max-inline-insns-single=1000 -ffunction-sections -fdata-sections -std=gnu99",
-					"ASFLAGS" : "-mcpu=arm7tdmi --fatal-warnings ",
-					"LDFLAGS" : "-g --cref --allow-multiple-definition --gc-sections",
-					"LDFLAGS" : "-L/usr/local/arm/lib/gcc/arm-elf/4.1.0 -lgcc -L/usr/local/arm/arm-elf/lib -lc",
-					"COMPILER" : "arm-elf-gcc",
-					"ASSEMBLER" : "arm-elf-as",
-					"LINKER" : "arm-elf-ld",
-					"MEMMAP" : {
-						"TRUE" : { 
-							"COMPILER" : "gcc",
-							"LINKER" : {
-								"gnu_ld" : { 
-									"SCRIPT" : "script.ld"
-								}
-							},
-							"ASSEMBLER" : "gnu_as",
-							"MEMORY_PROTECTION" : "FALSE"
-						}
-					}
-				}
+		],
+		"resources": [
+			{
+				"type": "standard",
+				"name": "SPIBus"
 			}
-		}
-	},
-
-	"TASK" : {
-	
-        "SignalGatherInitiateTask":{
-                "PRIORITY" : 24,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
-                "RESOURCE" : ["SPIBusResource"]
-    
-        },
-        
-         "SignalGatherFinishedTask":{
-                "PRIORITY" : 25,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
-                "RESOURCE" : ["SPIBusResource"]
-        },
-        
-           "SignalGatherTimeoutTask":{
-                "PRIORITY" : 23,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL",
-                "RESOURCE" : ["SPIBusResource"]
-        },
-	
-         "SignalProcessingActuateTask":{
-                "PRIORITY" : 22,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL"
-        },
-        
-         "SignalProcessingAttitudeTask":{
-                "PRIORITY" : 21,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL"
-        },
-        
-          "FlightControlTask":{
-                "PRIORITY" : 11,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "NONE"
-        },
-        
-          "FlightControlAttitudeTask":{
-                "PRIORITY" : 12,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL"
-        },
-        
-        
-          "FlightControlActuateTask":{
-                "PRIORITY" : 13,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL"
-        },
-        
-        
-          "MavlinkSendTask":{
-                "PRIORITY" : 10,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL"
-        },
-        
-        
-          "CopterControlWatchdogTask":{
-                "PRIORITY" : 1,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "NONE"
-        },
-        
-        
-        
-          "CopterControlTask":{
-                "PRIORITY" : 5,
-                "AUTOSTART" : "FALSE",
-                "ACTIVATION" : 1,
-                "SCHEDULE" : "FULL"
-        }
-	},
-    
-    
-    //ISR objects represent OSEK interrupt service routines
-	"ISR" : {
-		"MavlinkRecvHandler" : {
-			//category of isr (UINT32, but only values 1 and 2 are allowed)
-			"CATEGORY" : 2,
-			"PRIORITY" : 100
-
-			
-		},
-		"AlarmSignalGatherInitiateTask" : {
-			//category of isr (UINT32, but only values 1 and 2 are allowed)
-			"CATEGORY" : 2,
-			//list of RESOURCES accessed by ISR
-			"RESOURCE" : ["SPIBus"],
-			//list of messages accessed by ISR
-			"MESSAGE" : ["button_start"]
-		},
-		"AlarmFlightControlTask" : {
-			//category of isr (UINT32, but only values 1 and 2 are allowed)
-			"CATEGORY" : 2,
-			"PRIORITY" : 100
-
-			
-		},
-		"AlarmCopterControlWatchdogTask" : {
-			//category of isr (UINT32, but only values 1 and 2 are allowed)
-			"CATEGORY" : 2,
-			//list of RESOURCES accessed by ISR
-			"RESOURCE" : ["SPIBus"],
-			//list of messages accessed by ISR
-			"MESSAGE" : ["button_start"]
-		}
-	},
-    
-    
-    "RESOURCE" : {
-		"SPIBus" : {
-			//RESOURCEPROPERTY (STANDARD, LINKED, INTERNAL)
-			//STANDARD, a normal RESOURCE that is not linked to another internal RESOURCE
-			//LINKED, RESOURCE that is linked to another RESOURCE with property STANDARD or LINKED
-			//the  resource  to  which  the  linking  shall  be  performed  is  defined  by  the  subattribute 
-			//LINKEDRESOURCE  of  type  RESOURCE_TYPE
-			//
-			//"RESOURCEPROPERTY" : "STANDARD"
-			//"RESOURCEPROPERTY" : {
-			//	"LINKED" = "test"
-			//}
-			//INTERNAL, RESOURCE cannot accessed by the application
-			"RESOURCEPROPERTY" : "STANDARD"
-		}
+		],
+		"tasks": [
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "SignalGatherInitiateTask",
+				"priority": 24,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "SignalGatherFinishedTask",
+				"priority": 25,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "SignalGatherTimeoutTask",
+				"priority": 23,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "SignalProcessingActuateTask",
+				"priority": 22,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "SignalProcessingAttitudeTask",
+				"priority": 21,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "FlightControlTask",
+				"priority": 11,
+				"schedule": false
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "FlightControlAttitudeTask",
+				"priority": 12,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "FlightControlActuateTask",
+				"priority": 13,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "MavlinkSendTask",
+				"priority": 10,
+				"schedule": true
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "CopterControlWatchdogTask",
+				"priority": 1,
+				"schedule": false
+			},
+			{
+				"activation": 1,
+				"autostart": false,
+				"name": "CopterControlTask",
+				"priority": 5,
+				"schedule": true
+			}
+		]
 	}
-  
 }
-

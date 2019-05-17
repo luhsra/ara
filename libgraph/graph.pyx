@@ -12,9 +12,11 @@ from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 
 from libcpp cimport bool
+from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
+from util cimport to_string
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
@@ -228,6 +230,9 @@ cdef class PyGraph:
     def __cinit__(self):
         self._c_graph = cgraph.Graph()
 
+    def __str__(self):
+        return to_string(self._c_graph).decode('utf-8')
+
     def set_vertex(self, Vertex vertex):
         self._c_graph.set_vertex(vertex._c_vertex)
 
@@ -239,19 +244,12 @@ cdef class PyGraph:
         return self._c_graph.remove_vertex(seed)
 
     def get_type_vertices(self, name):
-
         cdef c_hash_type = get_type_hash(name)
-
         cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(c_hash_type)
-
         pylist = []
-
-        #print("-------------------Size of Vertices:", vertices.size())
 
         for vertex in vertices:
             pylist.append(create_from_pointer(vertex))
-
-        # print(pylist)
 
         return pylist
 
@@ -391,6 +389,8 @@ cdef class Counter(Vertex):
 
 
 cdef class Event(Vertex):
+    MASK_AUTO = cgraph.MASK_AUTO
+
     cdef inline shared_ptr[cgraph.Event] _c(self):
         return spc[cgraph.Event, cgraph.Vertex](self._c_vertex)
 
@@ -400,11 +400,8 @@ cdef class Event(Vertex):
             bname = name.encode('UTF-8')
             self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
 
-    def set_event_mask(self, unsigned long mask):
+    def set_event_mask(self, int64_t mask):
         return deref(self._c()).set_event_mask(mask)
-
-    def set_event_mask_auto(self):
-        return deref(self._c()).set_event_mask_auto()
 
     def get_name(self):
         return deref(self._c()).get_name().decode('UTF-8')
@@ -485,8 +482,14 @@ cdef class Task(Vertex):
     def set_activation(self, unsigned long activation):
         return deref(self._c()).set_activation(activation)
 
+    def get_activation(self):
+        return deref(self._c()).get_activation()
+
     def set_autostart(self, bool autostart):
         return deref(self._c()).set_autostart(autostart)
+
+    def is_autostarted(self):
+        return deref(self._c()).is_autostarted()
 
     def set_definition_function(self, str function_name):
         cdef string c_function_name = function_name.encode('UTF-8')
@@ -496,9 +499,11 @@ cdef class Task(Vertex):
         cdef string c_appmode_name = appmode_name.encode('UTF-8')
         return deref(self._c()).set_appmode(c_appmode_name)
 
-    def set_scheduler(self, str scheduler_name):
-        cdef string c_scheduler_name = scheduler_name.encode('UTF-8')
-        return deref(self._c()).set_scheduler(c_scheduler_name)
+    def set_scheduler(self, bool schedule):
+        return deref(self._c()).set_schedule(schedule)
+
+    def is_scheduled(self):
+        return deref(self._c()).is_scheduled()
 
     def set_resource_reference(self, str resource_name):
         cdef string c_resource_name = resource_name.encode('UTF-8')

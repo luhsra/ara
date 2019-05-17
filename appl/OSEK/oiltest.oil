@@ -1,0 +1,37 @@
+{
+	"cpu": {
+		"name": "TestSystem",
+		"os": {
+			"name": "TestSystem",
+			"status_extended": false,
+			"errorhook": false,
+			"startuphook": false,
+			"shutdownhook": false,
+			"pretaskhook": false,
+			"posttaskhook": false
+		},
+		"tasks": [
+			{
+				"name": "Handler11",
+				"schedule": true,
+				"priority": 4,
+				"activation": 1,
+				"autostart": true
+			},
+			{
+				"name": "Handler12",
+				"schedule": true,
+				"priority": 3,
+				"activation": 1,
+				"autostart": false
+			},
+			{
+				"name": "Handler13",
+				"schedule": true,
+				"priority": 5,
+				"activation": 1,
+				"autostart": false
+			}
+		]
+	}
+}
