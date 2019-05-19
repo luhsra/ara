@@ -7,7 +7,7 @@ Steps can have dependencies respectively depend on other steps, the
 stepmanager then fulfils this dependencies.
 """
 
-cimport cpass
+cimport cstep
 cimport llvm
 cimport FreeRTOSinstances
 cimport DetectInteractions
@@ -92,8 +92,8 @@ ctypedef enum steps:
     DetectInteractions_STEP
     Validation_STEP
     IntermediateAnalysis_STEP
-    LLVM_STEP,
-    TEST0_STEP,
+    LLVM_STEP
+    TEST0_STEP
     TEST2_STEP
 
 cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
@@ -104,11 +104,11 @@ cdef class NativeStep(SuperStep):
     """Constructs a dummy Python class for a C++ step."""
 
     # the pointer attribute that holds the C++ object
-    cdef cpass.Step* _c_pass
+    cdef cstep.Step* _c_pass
 
     def __cinit__(self, config: dict, steps step_cls):
         """Constructs an arbitrary C++ step object, that inherits from
-        cpass.Step. This has the advantage, that only one Python class is
+        cstep.Step. This has the advantage, that only one Python class is
         necessary to wrap arbitrary C++ steps.
 
         Arguments:
@@ -119,20 +119,20 @@ cdef class NativeStep(SuperStep):
         """
         # select here what specific step should be constructed
         if step_cls == LLVM_STEP:
-            self._c_pass = <cpass.Step*> new llvm.LLVMStep(config)
+            self._c_pass = <cstep.Step*> new llvm.LLVMStep(config)
         elif  step_cls == FreeRTOSInstances_STEP:
-            self._c_pass = <cpass.Step*> new FreeRTOSinstances.FreeRTOSInstancesStep(config)
+            self._c_pass = <cstep.Step*> new FreeRTOSinstances.FreeRTOSInstancesStep(config)
         elif  step_cls == DetectInteractions_STEP:
-            self._c_pass = <cpass.Step*> new DetectInteractions.DetectInteractionsStep(config)
+            self._c_pass = <cstep.Step*> new DetectInteractions.DetectInteractionsStep(config)
         elif  step_cls == Validation_STEP:
-            self._c_pass = <cpass.Step*> new Validation.ValidationStep(config)
+            self._c_pass = <cstep.Step*> new Validation.ValidationStep(config)
         elif  step_cls == IntermediateAnalysis_STEP:
-            self._c_pass = <cpass.Step*> new IntermediateAnalysis.IntermediateAnalysisStep(config)
+            self._c_pass = <cstep.Step*> new IntermediateAnalysis.IntermediateAnalysisStep(config)
         # for testing purposes (can not be transferred into seperate file)
         elif step_cls == TEST0_STEP:
-            self._c_pass = <cpass.Step*> new test.Test0Step(config)
+            self._c_pass = <cstep.Step*> new test.Test0Step(config)
         elif step_cls == TEST2_STEP:
-            self._c_pass = <cpass.Step*> new test.Test2Step(config)
+            self._c_pass = <cstep.Step*> new test.Test2Step(config)
         else:
             raise("Unknown step class")
 
