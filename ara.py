@@ -71,6 +71,8 @@ def main():
     s_manager = stepmanager.StepManager(g, vars(args))
     avail_steps = s_manager.get_steps()
 
+    # TODO set logging format to longest steps
+
     if args.list_steps:
         print(print_avail_steps(avail_steps))
         sys.exit(0)
