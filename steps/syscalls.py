@@ -16,25 +16,9 @@ class SyscallStep(Step):
     Each syscall are information about semantik, type of arguments, target abstraction class and index of handler argument given."""
 
     def get_dependencies(self):
+        return ['LLVMStep']
 
-        os =  self._config["os"]
-
-        if os == "osek":
-            return ['LLVMStep']
-
-        elif os == "freertos":
-            return ["LLVMStep"]
-
-        #else:
-            #return ["LLVMStep", 'OilStep']
-
-
-
-    syscall_dict = {}
-
-
-
-    def select_syscalls(self,os):
+    def select_syscalls(self, os):
 
         if os == "osek":
 
@@ -255,12 +239,7 @@ class SyscallStep(Step):
 
             }
 
-
-
-
-
     def run(self, g: graph.PyGraph):
-        print("I'm an SyscallStep")
         #get information which os is used
         os =  self._config["os"]
 
@@ -270,7 +249,6 @@ class SyscallStep(Step):
             g.set_os_type(graph.os_type.FreeRTOS)
 
         self.select_syscalls(os)
-
 
         #iterate about the functions of the graph
         function_list = g.get_type_vertices("Function")
@@ -372,8 +350,8 @@ class SyscallStep(Step):
 
                     #no syscall
                     else:
-                            #set type to func call
-                            abb.set_call_type(graph.call_definition_type.func_call)
+                         #set type to func call
+                         abb.set_call_type(graph.call_definition_type.func_call)
 
 
 
