@@ -1,6 +1,7 @@
 """Common init function for tests."""
 import sys
 import json
+import logging
 
 import graph
 import stepmanager
@@ -24,20 +25,25 @@ def fail_if(condition, *arg, dry=False):
             sys.exit(1)
 
 
-def init_test():
+def init_test(steps=None):
     """CLI usage: your_program <os_name> <json_file> <ll_file>"""
+    if steps is None:
+        steps = ['ValidationStep']
     g = graph.PyGraph()
+    logging.basicConfig(level=logging.DEBUG)
     os_name = sys.argv[1]
     json_file = sys.argv[2]
-    i_file = sys.argv[3]
-    print("Testing with", i_file, "and json:", json_file, "and os: ", os_name)
+    i_files = sys.argv[3:]
+    print(f"Testing with JSON: '{json_file}', OS: '{os_name}'" +
+          f", and files: {i_files}")
+    print(f"Executing steps: {steps}")
     with open(json_file) as f:
         data = json.load(f)
 
     config = {'os': os_name,
-              'input_files': [i_file]}
+              'input_files': i_files}
     s_manager = stepmanager.StepManager(g, config)
 
-    s_manager.execute(['ValidationStep'])
+    s_manager.execute(steps)
 
     return g, data, s_manager
