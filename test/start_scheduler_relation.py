@@ -1,7 +1,7 @@
 #!/usr/bin/env python3.6
 import graph
 
-from init_test import init_test, fail_with
+from init_test import init_test, fail_if
 
 
 def main():
@@ -14,9 +14,10 @@ def main():
 
     for abb in abbs:
         relation = data[abb.get_name()]
-        if (graph.start_scheduler_relation[relation] is not
-                abb.get_start_scheduler_relation()):
-            fail_with(f"Expected relation '{relation}'at {abb.get_name()}")
+        fail_if(graph.start_scheduler_relation[relation] is not
+                abb.get_start_scheduler_relation(),
+                f"Expected relation '{relation}' at {abb.get_name()}, got " +
+                f"'{abb.get_start_scheduler_relation().name}")
 
 
 if __name__ == '__main__':
