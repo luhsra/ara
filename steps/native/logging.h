@@ -36,11 +36,12 @@ class Logger {
 		std::ostringstream o_stream;
 	};
 
+  public:
 	class LogStream : public std::ostream {
-	  public:
+	  private:
+		friend Logger;
 		LogStream(LogLevel level, PyLogger& logger) : std::ostream(&buf), buf(level, logger) {}
 
-	  private:
 		LogBuf buf;
 	};
 
