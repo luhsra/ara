@@ -377,9 +377,11 @@ namespace step {
 		for (unsigned i = 1; i < files.size(); ++i) {
 			auto M = LoadFile(files.at(i), context);
 			if (M.get() == 0) {
-				std::cerr << "error loading file '" << files.at(i) << "'\n";
+				logger.err() << "Error loading file '" << files.at(i) << "'" << std::endl;
 				abort();
 			}
+
+			logger.debug() << "Linking in '" << files.at(i) << "'" << std::endl;
 
 			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
 				GlobalVariable& gv = *it;
@@ -387,24 +389,8 @@ namespace step {
 				   gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
 			}
 
-			//for (auto it = M->alias_begin(); it != M->alias_end(); ++it) {
-			//	GlobalAlias& ga = *it;
-			//	if (!ga.isDeclaration())
-			//		ga.setLinkage(GlobalValue::LinkOnceAnyLinkage);
-			//}
-
-			//// set linkage information of all functions
-			//for (auto& F : *M) {
-			//	StringRef Name = F.getName();
-			//	// leave library functions alone because their presence or absence
-			//	// could affect the behaviour of other passes
-			//	if (F.isDeclaration())
-			//		continue;
-			//	F.setLinkage(GlobalValue::WeakAnyLinkage);
-			//}
-
 			if (L.linkInModule(std::move(M))) {
-				std::cerr << "link error in '" << files.at(i);
+				logger.err() << "Link error in '" << files.at(i) << "'" << std::endl;
 				abort();
 			}
 		}
