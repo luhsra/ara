@@ -12,6 +12,18 @@ def fail_with(*arg):
     sys.exit(1)
 
 
+def fail_if(condition, *arg, dry=False):
+    """Exit with error message, if condition is met.
+
+    Keyword argument:
+    dry -- Don't check and fail, only print message
+    """
+    if condition or dry:
+        print("ERROR:", *arg, file=sys.stderr)
+        if condition and not dry:
+            sys.exit(1)
+
+
 def init_test():
     """CLI usage: your_program <os_name> <json_file> <ll_file>"""
     g = graph.PyGraph()
