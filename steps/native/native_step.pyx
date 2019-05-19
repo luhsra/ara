@@ -13,6 +13,7 @@ cimport FreeRTOSinstances
 cimport DetectInteractions
 cimport IntermediateAnalysis
 cimport Validation
+cimport ir_reader
 cimport test
 cimport graph
 cimport cgraph
@@ -91,6 +92,7 @@ ctypedef enum steps:
     FreeRTOSInstances_STEP
     DetectInteractions_STEP
     Validation_STEP
+    IRReader_STEP
     IntermediateAnalysis_STEP
     LLVM_STEP
     TEST0_STEP
@@ -126,6 +128,8 @@ cdef class NativeStep(SuperStep):
             self._c_pass = <cstep.Step*> new DetectInteractions.DetectInteractionsStep(config)
         elif  step_cls == Validation_STEP:
             self._c_pass = <cstep.Step*> new Validation.ValidationStep(config)
+        elif  step_cls == IRReader_STEP:
+            self._c_pass = <cstep.Step*> new ir_reader.IRReader(config)
         elif  step_cls == IntermediateAnalysis_STEP:
             self._c_pass = <cstep.Step*> new IntermediateAnalysis.IntermediateAnalysisStep(config)
         # for testing purposes (can not be transferred into seperate file)
@@ -179,7 +183,12 @@ def provide_steps(config: dict):
     Arguments:
     config -- a configuration dict like the one Step.__init__() needs.
     """
-    return [NativeStep(config, LLVM_STEP),NativeStep(config, FreeRTOSInstances_STEP),NativeStep(config, DetectInteractions_STEP),NativeStep(config, Validation_STEP),NativeStep(config, IntermediateAnalysis_STEP)]
+    return [NativeStep(config, LLVM_STEP),
+            NativeStep(config, FreeRTOSInstances_STEP),
+            NativeStep(config, DetectInteractions_STEP),
+            NativeStep(config, Validation_STEP),
+            NativeStep(config, IRReader_STEP),
+            NativeStep(config, IntermediateAnalysis_STEP)]
 
 def provide_test_steps(config: dict):
     """Do not use this, only for testing purposes."""
