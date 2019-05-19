@@ -1,0 +1,13 @@
+LLVM-IR-Ebene:
+- BBs splitten
+- computation blöcke einfügen
+- exit nodes einfügen
+- funktionen unique machen
+- syscalls labeln
+- argumente finden
+- bbs zu abbs mergen
+- scheduler relation von creation syscalls finden
+
+abb graphen, nur system relevante funktionen, bezug zum scheduler
+
+		llvm::raw_os_ostream llog(std::cout);
