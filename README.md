@@ -1,5 +1,5 @@
-ARA - Automatic Realtime-System Analyzer
-========================================
+ARA - Automatic Real-time System Analyzer
+=========================================
 
 Tool to automatically analyse realtime-systems.
 Currently capable of FreeRTOS and OSEK.
