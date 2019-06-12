@@ -426,8 +426,8 @@ graph::shared_vertex create_task(graph::Graph& graph, OS::shared_abb abb, bool b
 	bool initial = true;
 	bool error = false;
 
-	for (auto task_vertex : graph.get_type_vertices((typeid(OS::Task).hash_code()))) {
-		auto tmp_task = std::dynamic_pointer_cast<OS::Task>(task_vertex);
+	for (auto task_vertex : graph.get_type_vertices<OS::Task>()) {
+	  auto tmp_task = std::dynamic_pointer_cast<OS::Task>(task_vertex);
 		if (task->get_seed() == tmp_task->get_seed()) {
 
 			if (task->isEqual(tmp_task)) {
@@ -537,7 +537,7 @@ graph::shared_vertex create_semaphore(graph::Graph& graph, OS::shared_abb abb, s
 		bool initial = true;
 		bool error = false;
 
-		for (auto semaphore_vertex : graph.get_type_vertices((typeid(OS::Semaphore).hash_code()))) {
+		for (auto semaphore_vertex : graph.get_type_vertices<OS::Semaphore>()) {
 			auto tmp_semaphore = std::dynamic_pointer_cast<OS::Semaphore>(semaphore_vertex);
 			if (semaphore->get_seed() == tmp_semaphore->get_seed()) {
 
@@ -633,7 +633,7 @@ graph::shared_vertex create_mutex(graph::Graph& graph, OS::shared_abb abb, resou
 		bool initial = true;
 		bool error = false;
 
-		for (auto resource_vertex : graph.get_type_vertices((typeid(OS::Mutex).hash_code()))) {
+		for (auto resource_vertex : graph.get_type_vertices<OS::Mutex>()) {
 			auto tmp_resource = std::dynamic_pointer_cast<OS::Mutex>(resource_vertex);
 			if (resource->get_seed() == tmp_resource->get_seed()) {
 
@@ -723,7 +723,7 @@ graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb, bool 
 		bool initial = true;
 		bool error = false;
 
-		for (auto queue_vertex : graph.get_type_vertices((typeid(OS::Queue).hash_code()))) {
+		for (auto queue_vertex : graph.get_type_vertices<OS::Queue>()) {
 			auto tmp_queue = std::dynamic_pointer_cast<OS::Queue>(queue_vertex);
 			if (queue->get_seed() == tmp_queue->get_seed()) {
 
@@ -793,7 +793,7 @@ graph::shared_vertex create_event_group(graph::Graph& graph, OS::shared_abb abb,
 	bool initial = true;
 	bool error = false;
 
-	for (auto event_vertex : graph.get_type_vertices((typeid(OS::Event).hash_code()))) {
+	for (auto event_vertex : graph.get_type_vertices<OS::Event>()) {
 		auto tmp_eventgroup = std::dynamic_pointer_cast<OS::Event>(event_vertex);
 		if (event_group->get_seed() == tmp_eventgroup->get_seed()) {
 
@@ -868,7 +868,7 @@ graph::shared_vertex create_queue_set(graph::Graph& graph, OS::shared_abb abb, b
 	bool initial = true;
 	bool error = false;
 
-	for (auto queueset_vertex : graph.get_type_vertices((typeid(OS::QueueSet).hash_code()))) {
+	for (auto queueset_vertex : graph.get_type_vertices<OS::QueueSet>()) {
 		auto tmp_queueset = std::dynamic_pointer_cast<OS::QueueSet>(queueset_vertex);
 		if (queue_set->get_seed() == tmp_queueset->get_seed()) {
 
@@ -970,7 +970,7 @@ graph::shared_vertex create_timer(graph::Graph& graph, OS::shared_abb abb, bool 
 	bool initial = true;
 	bool error = false;
 
-	for (auto timer_vertex : graph.get_type_vertices((typeid(OS::Timer).hash_code()))) {
+	for (auto timer_vertex : graph.get_type_vertices<OS::Timer>()) {
 		auto tmp_timer = std::dynamic_pointer_cast<OS::Timer>(timer_vertex);
 		if (timer->get_seed() == tmp_timer->get_seed()) {
 
@@ -1064,7 +1064,7 @@ graph::shared_vertex create_buffer(graph::Graph& graph, OS::shared_abb abb, bool
 	bool initial = true;
 	bool error = false;
 
-	for (auto buffer_vertex : graph.get_type_vertices((typeid(OS::Buffer).hash_code()))) {
+	for (auto buffer_vertex : graph.get_type_vertices<OS::Buffer>()) {
 		auto tmp_buffer = std::dynamic_pointer_cast<OS::Buffer>(buffer_vertex);
 		if (buffer->get_seed() == tmp_buffer->get_seed()) {
 
@@ -1146,7 +1146,7 @@ graph::shared_vertex create_coroutine(graph::Graph& graph, OS::shared_abb abb, b
 	bool initial = true;
 	bool error = false;
 
-	for (auto coroutine_vertex : graph.get_type_vertices((typeid(OS::CoRoutine).hash_code()))) {
+	for (auto coroutine_vertex : graph.get_type_vertices<OS::CoRoutine>()) {
 		auto tmp_coroutine = std::dynamic_pointer_cast<OS::CoRoutine>(coroutine_vertex);
 		if (coroutine->get_seed() == tmp_coroutine->get_seed()) {
 
@@ -1191,9 +1191,7 @@ void detect_isrs(graph::Graph& graph) {
 
 	std::map<size_t, size_t> visited_functions;
 
-	std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::ABB).hash_code());
-
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::ABB>()) {
 
 		// cast vertex to abb
 		auto abb = std::dynamic_pointer_cast<OS::ABB>(vertex);
@@ -1514,9 +1512,7 @@ namespace step {
 			flag = false;
 
 			// get all tasks, which are stored in the graph
-			std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::Task).hash_code());
-
-			for (auto& vertex : vertex_list) {
+			for (auto& vertex : graph.get_type_vertices<OS::Task>()) {
 
 				if (list_contains_element(&already_visited, vertex->get_seed()))
 					continue;
@@ -1536,9 +1532,7 @@ namespace step {
 			}
 
 			// get all isrs, which are stored in the graph
-			vertex_list = graph.get_type_vertices(typeid(OS::ISR).hash_code());
-			// iterate about the isrs
-			for (auto& vertex : vertex_list) {
+			for (auto& vertex : graph.get_type_vertices<OS::ISR>()) {
 
 				if (list_contains_element(&already_visited, vertex->get_seed()))
 					continue;
@@ -1557,9 +1551,7 @@ namespace step {
 			}
 
 			// get all timers, which are stored in the graph
-			vertex_list = graph.get_type_vertices(typeid(OS::Timer).hash_code());
-			// iterate about the timers
-			for (auto& vertex : vertex_list) {
+			for (auto& vertex : graph.get_type_vertices<OS::Timer>()) {
 
 				if (list_contains_element(&already_visited, vertex->get_seed()))
 					continue;
@@ -1578,9 +1570,7 @@ namespace step {
 			}
 
 			// get all coroutines, which are stored in the graph
-			vertex_list = graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
-			// iterate about the timers
-			for (auto& vertex : vertex_list) {
+			for (auto& vertex : graph.get_type_vertices<OS::CoRoutine>()) {
 
 				if (list_contains_element(&already_visited, vertex->get_seed()))
 					continue;

@@ -466,9 +466,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 	}
 
 	// get all tasks, which are stored in the graph
-	std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::Task).hash_code());
-	// iterate about the isrs
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Task>()) {
 		// std::cerr << "task name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
@@ -480,9 +478,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 	}
 
 	// get all isrs, which are stored in the graph
-	vertex_list = graph.get_type_vertices(typeid(OS::ISR).hash_code());
-	// iterate about the isrs
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::ISR>()) {
 		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
@@ -494,9 +490,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 	}
 
 	// get all timers of the graph
-	vertex_list = graph.get_type_vertices(typeid(OS::Timer).hash_code());
-	// iterate about the timers
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Timer>()) {
 		// std::cerr << "timer name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
@@ -508,9 +502,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 	}
 
 	// get all hooks of the graph
-	vertex_list = graph.get_type_vertices(typeid(OS::Hook).hash_code());
-	// iterate about the hooks
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Hook>()) {
 		// std::cerr << "timer name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
@@ -522,9 +514,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 	}
 
 	// get all coroutines of the graph
-	vertex_list = graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
-	// iterate about the coroutines
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::CoRoutine>()) {
 		// std::cerr << "timer name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
@@ -544,9 +534,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 void add_to_queue_set(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get all queuesets, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
-	// iterate about the queuesets
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::QueueSet>()) {
 
 		auto queueset = std::dynamic_pointer_cast<OS::QueueSet>(vertex);
 
