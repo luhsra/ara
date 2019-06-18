@@ -7,7 +7,7 @@ cython = find_program('cython')
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3')
 
-llvm_dep = dependency('llvm', version : '>=7.0')
+llvm_dep = dependency('llvm', version : ['>=7', '<8'])
 
 cython_flags = ['-Wextra', '--cplus', '-3']
 
