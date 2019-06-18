@@ -434,8 +434,10 @@ graph::shared_vertex create_task(graph::Graph& graph, OS::shared_abb abb, bool b
 				initial = false;
 				task = tmp_task;
 			} else
+				// TODO this is not an error
 				error = true;
 		} else {
+			// TODO this is not an error
 			if (tmp_task->get_handler_value() == llvm_handler) {
 				if (!isa<ConstantPointerNull>(llvm_handler))
 					error = true;
