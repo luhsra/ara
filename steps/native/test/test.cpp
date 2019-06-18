@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include "graph.h"
+
 namespace step {
 
 	std::string Test0Step::get_name() { return "Test0Step"; }

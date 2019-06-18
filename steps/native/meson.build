@@ -33,7 +33,9 @@ plib = py3_inst.extension_module('native_step',
         'llvm_dumper.cpp',
         'llvm_common.cpp',
         'ir_reader.cpp',
-        'test.cpp'),
+        'test/test.cpp',
+        'test/BBSplitTest.cpp',
+        'bb_split.cpp'),
   dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep]
 )
 

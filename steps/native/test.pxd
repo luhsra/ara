@@ -17,3 +17,10 @@ cdef extern from "test.h" namespace "step":
         string get_description()
         vector[string] get_dependencies()
         void run(cgraph.Graph a)
+
+    cdef cppclass BBSplitTest:
+        BBSplitTest(dict config) except +
+        string get_name()
+        string get_description()
+        vector[string] get_dependencies()
+        void run(cgraph.Graph a)

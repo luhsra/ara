@@ -14,6 +14,7 @@ cimport DetectInteractions
 cimport IntermediateAnalysis
 cimport Validation
 cimport ir_reader
+cimport bb_split
 cimport test
 cimport graph
 cimport cgraph
@@ -92,11 +93,13 @@ ctypedef enum steps:
     FreeRTOSInstances_STEP
     DetectInteractions_STEP
     Validation_STEP
+    BBSplit_STEP
     IRReader_STEP
     IntermediateAnalysis_STEP
     LLVM_STEP
     TEST0_STEP
     TEST2_STEP
+    BBSplitTest_STEP
 
 cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
     cdef pyobj = graph.create_abb(location)
@@ -130,6 +133,8 @@ cdef class NativeStep(SuperStep):
             self._c_pass = <cstep.Step*> new Validation.ValidationStep(config)
         elif  step_cls == IRReader_STEP:
             self._c_pass = <cstep.Step*> new ir_reader.IRReader(config)
+        elif  step_cls == BBSplit_STEP:
+            self._c_pass = <cstep.Step*> new bb_split.BBSplit(config)
         elif  step_cls == IntermediateAnalysis_STEP:
             self._c_pass = <cstep.Step*> new IntermediateAnalysis.IntermediateAnalysisStep(config)
         # for testing purposes (can not be transferred into seperate file)
@@ -137,6 +142,8 @@ cdef class NativeStep(SuperStep):
             self._c_pass = <cstep.Step*> new test.Test0Step(config)
         elif step_cls == TEST2_STEP:
             self._c_pass = <cstep.Step*> new test.Test2Step(config)
+        elif step_cls == BBSplitTest_STEP:
+            self._c_pass = <cstep.Step*> new test.BBSplitTest(config)
         else:
             raise ValueError("Unknown step class")
 
@@ -187,10 +194,12 @@ def provide_steps(config: dict):
             NativeStep(config, FreeRTOSInstances_STEP),
             NativeStep(config, DetectInteractions_STEP),
             NativeStep(config, Validation_STEP),
+            NativeStep(config, BBSplit_STEP),
             NativeStep(config, IRReader_STEP),
             NativeStep(config, IntermediateAnalysis_STEP)]
 
 def provide_test_steps(config: dict):
     """Do not use this, only for testing purposes."""
     return [NativeStep(config, TEST0_STEP),
+            NativeStep(config, BBSplitTest_STEP),
             NativeStep(config, TEST2_STEP)]
