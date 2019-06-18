@@ -28,6 +28,8 @@ class Logger {
 				msg.pop_back();
 			}
 			py_log(level, logger, msg);
+			o_stream.str(std::string());
+			o_stream.clear();
 			return (o_stream.good()) ? 0 : -1;
 		}
 
