@@ -72,21 +72,20 @@ test('oil-parsing',
 
 test('ir-reader',
   py3_inst,
-  args: [files('ir_reader.py'), 'freertos', files('ir_reader.json'), gpslogger_targets],
+  args: [files('ir_reader.py'), 'freertos', files('empty.json'), gpslogger_targets],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 test('ir-reader-false-syntax',
   py3_inst,
-  args: [files('ir_reader.py'), 'freertos', files('ir_reader.json'), gpslogger_targets, files('ir_reader.false_syntax.ll')],
+  args: [files('ir_reader.py'), 'freertos', files('empty.json'), gpslogger_targets, files('ir_reader.false_syntax.ll')],
   should_fail: true,
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 test('ir-reader-multiple-symbols',
   py3_inst,
-  args: [files('ir_reader.py'), 'freertos', files('ir_reader.json'), gpslogger_targets, files('ir_reader.multiple_symbols.ll')],
+  args: [files('ir_reader.py'), 'freertos', files('empty.json'), gpslogger_targets, files('ir_reader.multiple_symbols.ll')],
   should_fail: true,
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
-
 
 subdir('native_step_test')
