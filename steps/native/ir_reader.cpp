@@ -25,6 +25,8 @@ namespace step {
 		Logger::LogStream debug_logger = logger.debug();
 		llvm::raw_os_ostream llog(debug_logger);
 		err.print("IRReader", llog);
+		llog.flush();
+		debug_logger.flush();
 		return NULL;
 	}
 
