@@ -65,7 +65,7 @@ cdef class SuperStep:
         Arguments:
         g -- the system graph.
         """
-        raise Exception("Not implemented.")
+        raise NotImplementedError()
 
     def get_side_data(self):
         """Provide arbitrary side data, that are not belonging to the system
@@ -74,7 +74,7 @@ cdef class SuperStep:
 
         Return some step specific kind of side data.
         """
-        raise Exception("Not implemented.")
+        raise NotImplementedError()
 
 class Step(SuperStep):
     """Python representation of a step. This is the superclass for all other
@@ -138,7 +138,7 @@ cdef class NativeStep(SuperStep):
         elif step_cls == TEST2_STEP:
             self._c_pass = <cstep.Step*> new test.Test2Step(config)
         else:
-            raise("Unknown step class")
+            raise ValueError("Unknown step class")
 
         if self._c_pass is NULL:
             raise MemoryError()
