@@ -43,6 +43,7 @@ namespace step {
 
 		// link the modules
 		// use first module a main module
+		logger.debug() << "Startfile: '" << files.at(0) << "'" << std::endl;
 		auto composite = load_file(files.at(0), context);
 		if (composite.get() == 0) {
 			logger.err() << "Error loading file '" << files.at(0) << "'" << std::endl;
