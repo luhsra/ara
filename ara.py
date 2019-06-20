@@ -68,8 +68,8 @@ def main():
     s_manager = stepmanager.StepManager(g, vars(args))
     avail_steps = s_manager.get_steps()
 
-    max_s = max([len(s.get_name()) for s in avail_steps])
-    util.init_logging(level=args.log_level, max_stepname=max_s)
+    util.init_logging(level=args.log_level,
+                      max_stepname=s_manager.get_name_length())
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
