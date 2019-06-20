@@ -49,7 +49,7 @@ plib = py3_inst.extension_module('native_step',
         'llvm_dumper.cpp',
         'test/bb_split_test.cpp',
         'test/comp_insert_test.cpp',
-        'test/FnSingleExitTest.cpp',
+        'test/fn_single_exit_test.cpp',
         'test/test.cpp'),
   dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep]
 )
