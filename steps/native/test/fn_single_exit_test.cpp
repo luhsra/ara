@@ -12,7 +12,7 @@
 #include "graph.h"
 
 namespace step {
-	std::string FnSingleExitTest::get_name() { return "FnSingleExitTestStep"; }
+	std::string FnSingleExitTest::get_name() { return "FnSingleExitTest"; }
 
 	std::string FnSingleExitTest::get_description() { return "Step for testing the FnSingleExit step"; }
 
@@ -44,5 +44,5 @@ namespace step {
 		}
 	}
 
-	std::vector<std::string> FnSingleExitTest::get_dependencies() { return {"FnSingleExitStep"}; }
+	std::vector<std::string> FnSingleExitTest::get_dependencies() { return {"FnSingleExit"}; }
 } // namespace step

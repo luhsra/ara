@@ -26,7 +26,7 @@ def main():
     p_manager = stepmanager.StepManager(g, config,
                                         provides=provide)
 
-    step = 'FnSingleExitTestStep'
+    step = 'FnSingleExitTest'
     init_logging(logging.DEBUG, len(step))
 
     p_manager.execute([step])
