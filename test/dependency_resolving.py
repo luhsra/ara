@@ -132,11 +132,11 @@ Run: Test8Step
 
 
 def main():
+    init_logging(level=logging.DEBUG)
     g = graph.PyGraph()
     config = {}
     p_manager = stepmanager.StepManager(g, config,
                                               provides=provide)
-    init_logging(level=logging.DEBUG, max_stepname=p_manager.get_name_length())
 
     global shared_state
 

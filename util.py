@@ -4,7 +4,7 @@
 import logging
 
 
-def init_logging(level=logging.DEBUG, max_stepname=30):
+def init_logging(level=logging.DEBUG, max_stepname=20):
     """Init logging with color and timestamps."""
     if logging.root.handlers:
         raise RuntimeWarning("Logging already setup")

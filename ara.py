@@ -64,12 +64,11 @@ def main():
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
 
+    util.init_logging(level=args.log_level)
+
     g = graph.PyGraph()
     s_manager = stepmanager.StepManager(g, vars(args))
     avail_steps = s_manager.get_steps()
-
-    util.init_logging(level=args.log_level,
-                      max_stepname=s_manager.get_name_length())
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))

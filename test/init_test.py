@@ -29,6 +29,7 @@ def fail_if(condition, *arg, dry=False):
 
 def init_test(steps=None):
     """CLI usage: your_program <os_name> <json_file> <ll_file>"""
+    init_logging(level=logging.DEBUG)
     if steps is None:
         steps = ['ValidationStep']
     g = graph.PyGraph()
@@ -44,8 +45,6 @@ def init_test(steps=None):
     config = {'os': os_name,
               'input_files': i_files}
     s_manager = stepmanager.StepManager(g, config)
-
-    init_logging(level=logging.DEBUG, max_stepname=s_manager.get_name_length())
 
     s_manager.execute(steps)
 

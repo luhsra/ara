@@ -19,6 +19,7 @@ def provide(config):
 
 def main():
     """Test for correct splitting of basic blocks."""
+    init_logging(level=logging.DEBUG)
     g = graph.PyGraph()
     os_name = sys.argv[1]
     test_step = sys.argv[2]
@@ -27,7 +28,6 @@ def main():
               'input_files': i_files}
     p_manager = stepmanager.StepManager(g, config,
                                         provides=provide)
-    init_logging(level=logging.DEBUG, max_stepname=p_manager.get_name_length())
 
     p_manager.execute([test_step])
 
