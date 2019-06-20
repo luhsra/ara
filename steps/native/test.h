@@ -14,11 +14,8 @@ namespace step {
 		Test0Step(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
-
 		virtual std::string get_description() override;
-
 		virtual std::vector<std::string> get_dependencies() override;
-
 		virtual void run(graph::Graph& graph) override;
 	};
 
@@ -27,11 +24,8 @@ namespace step {
 		Test2Step(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
-
 		virtual std::string get_description() override;
-
 		virtual std::vector<std::string> get_dependencies() override;
-
 		virtual void run(graph::Graph& graph) override;
 	};
 
@@ -40,9 +34,7 @@ namespace step {
 		BBSplitTest(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
-
 		virtual std::string get_description() override;
-
 		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
