@@ -40,6 +40,8 @@ namespace step {
 						} else {
 							found_call = true;
 						}
+					} else {
+						found_call = false;
 					}
 				}
 				if (found_call) {
