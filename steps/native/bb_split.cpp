@@ -15,7 +15,7 @@ namespace step {
 
 	std::string BBSplit::get_description() { return "Split basic blocks in function call and computation blocks."; }
 
-	std::vector<std::string> BBSplit::get_dependencies() { return {"IRReader"}; }
+	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
 
 	void BBSplit::run(graph::Graph& graph) {
 		auto module = graph.get_llvm_module();
