@@ -35,7 +35,10 @@ plib = py3_inst.extension_module('native_step',
         'ir_reader.cpp',
         'test/test.cpp',
         'test/BBSplitTest.cpp',
-        'bb_split.cpp'),
+        'bb_split.cpp',
+		'test/FnSingleExitTest.cpp',
+        'fn_single_exit.cpp',
+		),
   dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep]
 )
 
