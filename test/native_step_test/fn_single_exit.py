@@ -4,6 +4,8 @@ import stepmanager
 import logging
 import sys
 
+from ara import init_logging
+
 from native_step import Step, provide_test_steps, provide_steps
 
 def provide(config):
@@ -24,7 +26,10 @@ def main():
     p_manager = stepmanager.StepManager(g, config,
                                         provides=provide)
 
-    p_manager.execute(['FnSingleExitTestStep'])
+    step = 'FnSingleExitTestStep'
+    init_logging(logging.DEBUG, len(step))
+
+    p_manager.execute([step])
 
 
 if __name__ == '__main__':
