@@ -55,7 +55,7 @@ gps_fix GPSDataModel::getGPSFix() const
 GPSSatellitesData GPSDataModel::getSattelitesData() const
 {
 	MutexLocker lock(xGPSDataMutex);
-	//return sattelitesData;
+	return sattelitesData;
 }
 
 float GPSDataModel::getVerticalSpeed() const
