@@ -18,6 +18,6 @@ test('comp-insert',
 
 test('fn-single-exit',
   py3_inst,
-  args: [files('fn_single_exit.py'), 'freertos', freertos_multi_exit],
+  args: [files('run_test_step.py'), 'freertos', 'FnSingleExitTest', freertos_multi_exit],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
