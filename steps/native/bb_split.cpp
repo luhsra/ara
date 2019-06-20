@@ -2,36 +2,32 @@
 
 #include "bb_split.h"
 
-#include <list>
 #include <iostream>
+#include <list>
 #include <llvm/IR/BasicBlock.h>
-#include <llvm/IR/Module.h>
 #include <llvm/IR/Instructions.h>
-#include <llvm/Support/raw_os_ostream.h>
+#include <llvm/IR/Module.h>
 #include <llvm/Support/Casting.h>
+#include <llvm/Support/raw_os_ostream.h>
 
 namespace step {
 	using namespace llvm;
 
-	std::string BBSplit::get_description() {
-		return "Split basic blocks in function call and computation blocks.";
-	}
+	std::string BBSplit::get_description() { return "Split basic blocks in function call and computation blocks."; }
 
-	std::vector<std::string> BBSplit::get_dependencies() {
-		return {"IRReader"};
-	}
+	std::vector<std::string> BBSplit::get_dependencies() { return {"IRReader"}; }
 
 	void BBSplit::run(graph::Graph& graph) {
 		auto module = graph.get_llvm_module();
 		unsigned split_counter = 0;
 
-		for (auto &function : *module) {
-			std::list<BasicBlock *> bbs;
+		for (auto& function : *module) {
+			std::list<BasicBlock*> bbs;
 			for (BasicBlock& _bb : function) {
 				bbs.push_back(&_bb);
 			}
 
-			for (BasicBlock *bb : bbs) {
+			for (BasicBlock* bb : bbs) {
 				BasicBlock::iterator it = bb->begin();
 				while (it != bb->end()) {
 					while (isa<InvokeInst>(*it) || isa<CallInst>(*it)) {
@@ -57,7 +53,7 @@ namespace step {
 						it = bb->begin();
 					}
 					++it;
-					while_end: ;
+				while_end:;
 				}
 			}
 		}

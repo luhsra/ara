@@ -3,15 +3,13 @@
 #include "ir_reader.h"
 
 #include <llvm/Linker/Linker.h>
-#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
+#include <llvm/Support/raw_os_ostream.h>
 
 static llvm::LLVMContext context;
 
 namespace step {
-	std::string IRReader::get_description() {
-		return "Parser IR files and link together to an LLVM module";
-	}
+	std::string IRReader::get_description() { return "Parser IR files and link together to an LLVM module"; }
 
 	std::unique_ptr<llvm::Module> IRReader::load_file(const std::string& filepath, llvm::LLVMContext& Context) {
 		llvm::SMDiagnostic err;
@@ -64,7 +62,7 @@ namespace step {
 			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
 				llvm::GlobalVariable& gv = *it;
 				if (!gv.isDeclaration() && !gv.hasPrivateLinkage())
-				   gv.setLinkage(llvm::GlobalValue::AvailableExternallyLinkage);
+					gv.setLinkage(llvm::GlobalValue::AvailableExternallyLinkage);
 			}
 
 			if (linker.linkInModule(std::move(M))) {

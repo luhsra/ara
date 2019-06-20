@@ -5,8 +5,8 @@
 #include "graph.h"
 #include "step.h"
 
-#include <string>
 #include <llvm/IR/Module.h>
+#include <string>
 
 namespace step {
 
