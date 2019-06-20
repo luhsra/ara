@@ -25,7 +25,15 @@ class FakeCallBase {
 	 */
 	static std::unique_ptr<FakeCallBase> create(llvm::Instruction* inst);
 
-	llvm::Function* getCalledFunction() {
+	static bool isa(const llvm::Instruction* I) {
+		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
+	}
+
+	static bool isa(const llvm::Instruction& I) {
+		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
+	}
+
+	llvm::Function* getCalledFunction() const {
 		if (c)
 			return c->getCalledFunction();
 		if (v)
@@ -34,7 +42,7 @@ class FakeCallBase {
 		return nullptr;
 	}
 
-	llvm::Value* getCalledValue() {
+	llvm::Value* getCalledValue() const {
 		if (c)
 			return c->getCalledValue();
 		if (v)
@@ -55,5 +63,12 @@ std::string print_argument(llvm::Value* argument);
  * @param argument llvm::type to print
  */
 std::string print_type(llvm::Type* argument);
+
+/**
+ * @brief check if the instruction is just llvm specific
+ * @param instr instrucion to analyze
+ */
+// TODO make this const
+bool isCallToLLVMIntrinsic(llvm::Instruction* inst);
 
 #endif

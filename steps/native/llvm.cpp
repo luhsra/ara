@@ -46,20 +46,6 @@ using namespace llvm;
 static llvm::LLVMContext context;
 
 /**
- * @brief check if the instruction is just llvm specific
- * @param instr instrucion to analyze
- */
-static bool isCallToLLVMIntrinsic(Instruction* inst) {
-	if (CallInst* callInst = dyn_cast<CallInst>(inst)) {
-		Function* func = callInst->getCalledFunction();
-		if (func && func->getName().startswith("llvm.")) {
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
  * @brief check if seed is in vector
  * @param seed seed to analyze
  * @param vector which contains reference seeds
