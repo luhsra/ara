@@ -34,6 +34,14 @@ class StepManager:
         for step in provides(config):
             self._steps[step.get_name()] = step
 
+    def get_name_length(self):
+        """Get the longest length of all step names and the manager itself.
+
+        Mainly to setup logging.
+        """
+        return max(map(len,
+                       list(self._steps.keys()) + [self.__class__.__name__]))
+
     def get_step(self, name):
         """Get the step with specified name or None."""
         return self._steps.get(name, None)
