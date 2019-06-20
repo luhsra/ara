@@ -116,8 +116,6 @@ class OilStep(Step):
         # prepare graph functions:
         funcs = g.get_type_vertices("Function")
         self.functions = dict([(x.get_name(), x) for x in funcs])
-        for f in self.functions:
-            print(f, self.functions[f])
 
         counter_m = {'maxallowedvalue': graph.Counter.set_max_allowed_value,
                      'ticksperbase': graph.Counter.set_ticks_per_base,
