@@ -383,12 +383,9 @@ void sort_abbs(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	OS::shared_abb error;
 	// iterate about the application
-	for (auto& vertex : graph.get_type_vertices<OS::Function>()) {
+	for (auto& function : graph.get_type_vertices<OS::Function>()) {
 
 		std::list<llvm::BasicBlock*> tmp_topological_order;
-
-		// cast vertex to abb
-		auto function = std::dynamic_pointer_cast<OS::Function>(vertex);
 
 		// Use LLVM's Strongly Connected Components (SCCs) iterator to produce
 		// a reverse topological sort of SCCs.

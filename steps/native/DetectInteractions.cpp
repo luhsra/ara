@@ -466,62 +466,52 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 	}
 
 	// get all tasks, which are stored in the graph
-	for (auto& vertex : graph.get_type_vertices<OS::Task>()) {
-		// std::cerr << "task name: " << vertex->get_name() << std::endl;
+	for (auto& task : graph.get_type_vertices<OS::Task>()) {
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
-		auto task = std::dynamic_pointer_cast<OS::Task>(vertex);
 		OS::shared_function task_definition = task->get_definition_function();
 		// get all interactions of the instance
-		iterate_called_functions_interactions(graph, vertex, task_definition, nullptr, already_visited,
+		iterate_called_functions_interactions(graph, task, task_definition, nullptr, already_visited,
 		                                      &calltree_references, warning_list);
 	}
 
 	// get all isrs, which are stored in the graph
-	for (auto& vertex : graph.get_type_vertices<OS::ISR>()) {
-		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
+	for (auto& isr : graph.get_type_vertices<OS::ISR>()) {
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
-		auto timer = std::dynamic_pointer_cast<OS::ISR>(vertex);
-		OS::shared_function timer_definition = timer->get_definition_function();
+		OS::shared_function isr_definition = isr->get_definition_function();
 		// get all interactions of the instance
-		iterate_called_functions_interactions(graph, vertex, timer_definition, nullptr, already_visited,
+		iterate_called_functions_interactions(graph, isr, isr_definition, nullptr, already_visited,
 		                                      &calltree_references, warning_list);
 	}
 
 	// get all timers of the graph
-	for (auto& vertex : graph.get_type_vertices<OS::Timer>()) {
-		// std::cerr << "timer name: " << vertex->get_name() << std::endl;
+	for (auto& timer : graph.get_type_vertices<OS::Timer>()) {
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
-		auto timer = std::dynamic_pointer_cast<OS::Timer>(vertex);
-		OS::shared_function isr_definition = timer->get_callback_function();
+		OS::shared_function timer_definition = timer->get_callback_function();
 		// get all interactions of the instance
-		iterate_called_functions_interactions(graph, vertex, isr_definition, nullptr, already_visited,
+		iterate_called_functions_interactions(graph, timer, timer_definition, nullptr, already_visited,
 		                                      &calltree_references, warning_list);
 	}
 
 	// get all hooks of the graph
-	for (auto& vertex : graph.get_type_vertices<OS::Hook>()) {
-		// std::cerr << "timer name: " << vertex->get_name() << std::endl;
+	for (auto& hook : graph.get_type_vertices<OS::Hook>()) {
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
-		auto hook = std::dynamic_pointer_cast<OS::Hook>(vertex);
 		OS::shared_function hook_definition = hook->get_definition_function();
 		// get all interactions of the instance
-		iterate_called_functions_interactions(graph, vertex, hook_definition, nullptr, already_visited,
+		iterate_called_functions_interactions(graph, hook, hook_definition, nullptr, already_visited,
 		                                      &calltree_references, warning_list);
 	}
 
 	// get all coroutines of the graph
-	for (auto& vertex : graph.get_type_vertices<OS::CoRoutine>()) {
-		// std::cerr << "timer name: " << vertex->get_name() << std::endl;
+	for (auto& coroutine : graph.get_type_vertices<OS::CoRoutine>()) {
 		std::vector<llvm::Instruction*> already_visited;
 		std::vector<llvm::Instruction*> calltree_references;
-		auto coroutine = std::dynamic_pointer_cast<OS::CoRoutine>(vertex);
 		OS::shared_function coroutine_definition = coroutine->get_definition_function();
 		// get all interactions of the instance
-		iterate_called_functions_interactions(graph, vertex, coroutine_definition, nullptr, already_visited,
+		iterate_called_functions_interactions(graph, coroutine, coroutine_definition, nullptr, already_visited,
 		                                      &calltree_references, warning_list);
 	}
 }
@@ -534,9 +524,7 @@ void detect_interactions(graph::Graph& graph, std::vector<shared_warning>* warni
 void add_to_queue_set(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get all queuesets, which are stored in the graph
-	for (auto& vertex : graph.get_type_vertices<OS::QueueSet>()) {
-
-		auto queueset = std::dynamic_pointer_cast<OS::QueueSet>(vertex);
+	for (auto& queueset : graph.get_type_vertices<OS::QueueSet>()) {
 
 		auto ingoing_edges = queueset->get_ingoing_edges();
 

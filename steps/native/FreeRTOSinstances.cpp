@@ -537,8 +537,7 @@ graph::shared_vertex create_semaphore(graph::Graph& graph, OS::shared_abb abb, s
 		bool initial = true;
 		bool error = false;
 
-		for (auto semaphore_vertex : graph.get_type_vertices<OS::Semaphore>()) {
-			auto tmp_semaphore = std::dynamic_pointer_cast<OS::Semaphore>(semaphore_vertex);
+		for (auto tmp_semaphore : graph.get_type_vertices<OS::Semaphore>()) {
 			if (semaphore->get_seed() == tmp_semaphore->get_seed()) {
 
 				if (semaphore->isEqual(tmp_semaphore)) {
@@ -633,8 +632,7 @@ graph::shared_vertex create_mutex(graph::Graph& graph, OS::shared_abb abb, resou
 		bool initial = true;
 		bool error = false;
 
-		for (auto resource_vertex : graph.get_type_vertices<OS::Mutex>()) {
-			auto tmp_resource = std::dynamic_pointer_cast<OS::Mutex>(resource_vertex);
+		for (auto tmp_resource : graph.get_type_vertices<OS::Mutex>()) {
 			if (resource->get_seed() == tmp_resource->get_seed()) {
 
 				if (resource->isEqual(tmp_resource)) {
@@ -723,8 +721,7 @@ graph::shared_vertex create_queue(graph::Graph& graph, OS::shared_abb abb, bool 
 		bool initial = true;
 		bool error = false;
 
-		for (auto queue_vertex : graph.get_type_vertices<OS::Queue>()) {
-			auto tmp_queue = std::dynamic_pointer_cast<OS::Queue>(queue_vertex);
+		for (auto tmp_queue : graph.get_type_vertices<OS::Queue>()) {
 			if (queue->get_seed() == tmp_queue->get_seed()) {
 
 				if (queue->isEqual(tmp_queue)) {
@@ -793,8 +790,7 @@ graph::shared_vertex create_event_group(graph::Graph& graph, OS::shared_abb abb,
 	bool initial = true;
 	bool error = false;
 
-	for (auto event_vertex : graph.get_type_vertices<OS::Event>()) {
-		auto tmp_eventgroup = std::dynamic_pointer_cast<OS::Event>(event_vertex);
+	for (auto tmp_eventgroup : graph.get_type_vertices<OS::Event>()) {
 		if (event_group->get_seed() == tmp_eventgroup->get_seed()) {
 
 			if (event_group->isEqual(tmp_eventgroup)) {
@@ -868,8 +864,7 @@ graph::shared_vertex create_queue_set(graph::Graph& graph, OS::shared_abb abb, b
 	bool initial = true;
 	bool error = false;
 
-	for (auto queueset_vertex : graph.get_type_vertices<OS::QueueSet>()) {
-		auto tmp_queueset = std::dynamic_pointer_cast<OS::QueueSet>(queueset_vertex);
+	for (auto tmp_queueset : graph.get_type_vertices<OS::QueueSet>()) {
 		if (queue_set->get_seed() == tmp_queueset->get_seed()) {
 
 			if (queue_set->isEqual(tmp_queueset)) {
@@ -970,8 +965,7 @@ graph::shared_vertex create_timer(graph::Graph& graph, OS::shared_abb abb, bool 
 	bool initial = true;
 	bool error = false;
 
-	for (auto timer_vertex : graph.get_type_vertices<OS::Timer>()) {
-		auto tmp_timer = std::dynamic_pointer_cast<OS::Timer>(timer_vertex);
+	for (auto tmp_timer : graph.get_type_vertices<OS::Timer>()) {
 		if (timer->get_seed() == tmp_timer->get_seed()) {
 
 			if (timer->isEqual(tmp_timer)) {
@@ -1064,8 +1058,7 @@ graph::shared_vertex create_buffer(graph::Graph& graph, OS::shared_abb abb, bool
 	bool initial = true;
 	bool error = false;
 
-	for (auto buffer_vertex : graph.get_type_vertices<OS::Buffer>()) {
-		auto tmp_buffer = std::dynamic_pointer_cast<OS::Buffer>(buffer_vertex);
+	for (auto tmp_buffer : graph.get_type_vertices<OS::Buffer>()) {
 		if (buffer->get_seed() == tmp_buffer->get_seed()) {
 
 			if (buffer->isEqual(tmp_buffer)) {
@@ -1146,8 +1139,7 @@ graph::shared_vertex create_coroutine(graph::Graph& graph, OS::shared_abb abb, b
 	bool initial = true;
 	bool error = false;
 
-	for (auto coroutine_vertex : graph.get_type_vertices<OS::CoRoutine>()) {
-		auto tmp_coroutine = std::dynamic_pointer_cast<OS::CoRoutine>(coroutine_vertex);
+	for (auto tmp_coroutine : graph.get_type_vertices<OS::CoRoutine>()) {
 		if (coroutine->get_seed() == tmp_coroutine->get_seed()) {
 
 			if (coroutine->isEqual(tmp_coroutine)) {
@@ -1191,10 +1183,7 @@ void detect_isrs(graph::Graph& graph) {
 
 	std::map<size_t, size_t> visited_functions;
 
-	for (auto& vertex : graph.get_type_vertices<OS::ABB>()) {
-
-		// cast vertex to abb
-		auto abb = std::dynamic_pointer_cast<OS::ABB>(vertex);
+	for (auto& abb : graph.get_type_vertices<OS::ABB>()) {
 		// check if syscall is isr specific
 		if (abb->get_syscall_name().find("FromISR") != std::string::npos) {
 
@@ -1512,17 +1501,15 @@ namespace step {
 			flag = false;
 
 			// get all tasks, which are stored in the graph
-			for (auto& vertex : graph.get_type_vertices<OS::Task>()) {
+			for (auto& task : graph.get_type_vertices<OS::Task>()) {
 
-				if (list_contains_element(&already_visited, vertex->get_seed()))
+				if (list_contains_element(&already_visited, task->get_seed()))
 					continue;
 				else
-					already_visited.emplace_back(vertex->get_seed());
+					already_visited.emplace_back(task->get_seed());
 
 				flag = true;
 
-				// std::cerr << "task name: " << vertex->get_name() << std::endl;
-				auto task = std::dynamic_pointer_cast<OS::Task>(vertex);
 				OS::shared_function task_definition = task->get_definition_function();
 				// get all interactions of the instance
 				std::vector<llvm::Instruction*> already_visited_calls;
@@ -1532,16 +1519,15 @@ namespace step {
 			}
 
 			// get all isrs, which are stored in the graph
-			for (auto& vertex : graph.get_type_vertices<OS::ISR>()) {
+			for (auto& isr : graph.get_type_vertices<OS::ISR>()) {
 
-				if (list_contains_element(&already_visited, vertex->get_seed()))
+				if (list_contains_element(&already_visited, isr->get_seed()))
 					continue;
 				else
-					already_visited.emplace_back(vertex->get_seed());
+					already_visited.emplace_back(isr->get_seed());
 
 				flag = true;
 
-				auto isr = std::dynamic_pointer_cast<OS::ISR>(vertex);
 				OS::shared_function isr_definition = isr->get_definition_function();
 				// get all interactions of the instance
 				std::vector<llvm::Instruction*> already_visited_calls;
@@ -1551,16 +1537,15 @@ namespace step {
 			}
 
 			// get all timers, which are stored in the graph
-			for (auto& vertex : graph.get_type_vertices<OS::Timer>()) {
+			for (auto& timer : graph.get_type_vertices<OS::Timer>()) {
 
-				if (list_contains_element(&already_visited, vertex->get_seed()))
+				if (list_contains_element(&already_visited, timer->get_seed()))
 					continue;
 				else
-					already_visited.emplace_back(vertex->get_seed());
+					already_visited.emplace_back(timer->get_seed());
 
 				flag = true;
 
-				auto timer = std::dynamic_pointer_cast<OS::Timer>(vertex);
 				OS::shared_function timer_definition = timer->get_callback_function();
 				// get all interactions of the instance
 				std::vector<llvm::Instruction*> already_visited_calls;
@@ -1570,16 +1555,15 @@ namespace step {
 			}
 
 			// get all coroutines, which are stored in the graph
-			for (auto& vertex : graph.get_type_vertices<OS::CoRoutine>()) {
+			for (auto& coroutine : graph.get_type_vertices<OS::CoRoutine>()) {
 
-				if (list_contains_element(&already_visited, vertex->get_seed()))
+				if (list_contains_element(&already_visited, coroutine->get_seed()))
 					continue;
 				else
-					already_visited.emplace_back(vertex->get_seed());
+					already_visited.emplace_back(coroutine->get_seed());
 
 				flag = true;
 
-				auto coroutine = std::dynamic_pointer_cast<OS::CoRoutine>(vertex);
 				OS::shared_function coroutine_definition = coroutine->get_definition_function();
 				// get all interactions of the instance
 				std::vector<llvm::Instruction*> already_visited_calls;
