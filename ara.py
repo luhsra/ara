@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # vim: set et ts=4 sw=4:
-"""Automated Realtime System Analysis"""
+"""Automated Real-time System Analysis"""
 
 import argparse
 import sys
