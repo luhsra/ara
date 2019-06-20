@@ -57,5 +57,6 @@ namespace step {
 				}
 			}
 		}
+		logger.debug() << "Split " << split_counter << " basic blocks." << std::endl;
 	}
 } // namespace step
