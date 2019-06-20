@@ -18,13 +18,14 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     g = graph.PyGraph()
     os_name = sys.argv[1]
-    i_files = sys.argv[2:]
+    test_step = sys.argv[2]
+    i_files = sys.argv[3:]
     config = {'os': os_name,
               'input_files': i_files}
     p_manager = stepmanager.StepManager(g, config,
                                         provides=provide)
 
-    p_manager.execute(['BBSplitTest'])
+    p_manager.execute([test_step])
 
 
 if __name__ == '__main__':

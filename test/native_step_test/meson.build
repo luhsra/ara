@@ -6,6 +6,6 @@ test('native-steps',
 
 test('bb-split',
   py3_inst,
-  args: [files('bb_split.py'), 'freertos', gpslogger_targets],
+  args: [files('run_test_step.py'), 'freertos', 'BBSplitTest', gpslogger_targets],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
