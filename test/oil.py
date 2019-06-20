@@ -7,6 +7,8 @@ import sys
 import stepmanager
 import graph
 
+from util import init_logging
+
 from native_step import Step
 
 TASKS_1 = {
@@ -45,10 +47,10 @@ def validate_1(g):
 
 TESTS = [(sys.argv[1], sys.argv[2], validate_1)]
 
-def main():
-    s_dir = os.path.dirname(os.path.realpath(__file__))
 
-    logging.basicConfig(level=logging.DEBUG)
+def main():
+    init_logging(level=logging.DEBUG, max_stepname=len("StepManager"))
+
     for file, oil, validate in TESTS:
         g = graph.PyGraph()
         config = {'oilfile': oil,

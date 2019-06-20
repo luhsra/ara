@@ -1,38 +1,23 @@
 #!/usr/bin/env python3.6
 
-import json
-import stepmanager
-import graph
-import sys
+import logging
 
-from native_step import Step
+from init_test import init_test
 
 
 def main():
-    g = graph.PyGraph()
-    os_name = sys.argv[1]
-    json_file = sys.argv[2]
-    i_file = sys.argv[3]
-    print("Testing with", i_file, "and json:", json_file, "and os: ", os_name)
-    with open(json_file) as f:
-        warnings = json.load(f)
+    graph, data, manager = init_test(['ValidationStep', 'DisplayResultsStep'])
 
-    config = {'os': os_name,
-              'input_files': [i_file]}
-    p_manager = stepmanager.StepManager(g, config)
+    side_data = manager.get_step('ValidationStep').get_side_data()
 
-    p_manager.execute(['ValidationStep','DisplayResultsStep'])
-
-    val_step = p_manager.get_step('ValidationStep')
-    side_data = val_step.get_side_data()
-    
     #TODO ABB3 nicht im kritischen Bereich
-    
+
+    log = logging.getLogger('test')
     for tmp in side_data:
-        print('critical side data',tmp['location'].get_name())
-    
-    assert len(warnings) == len(side_data)
-    for should, have in zip(warnings, side_data):
+        log.debug(f"critical side data {tmp['location'].get_name()}")
+
+    assert len(data) == len(side_data)
+    for should, have in zip(data, side_data):
         assert should['type'] == have['type']
         assert should['location'] == have['location'].get_name()
 

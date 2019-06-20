@@ -3,7 +3,6 @@ from init_test import init_test, fail_with
 
 
 def main():
-
     """Test for false or not detected loops."""
     graph, data, _ = init_test()
 

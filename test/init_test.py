@@ -3,6 +3,8 @@ import sys
 import json
 import logging
 
+from util import init_logging
+
 import graph
 import stepmanager
 
@@ -30,7 +32,6 @@ def init_test(steps=None):
     if steps is None:
         steps = ['ValidationStep']
     g = graph.PyGraph()
-    logging.basicConfig(level=logging.DEBUG)
     os_name = sys.argv[1]
     json_file = sys.argv[2]
     i_files = sys.argv[3:]
@@ -43,6 +44,8 @@ def init_test(steps=None):
     config = {'os': os_name,
               'input_files': i_files}
     s_manager = stepmanager.StepManager(g, config)
+
+    init_logging(level=logging.DEBUG, max_stepname=s_manager.get_name_length())
 
     s_manager.execute(steps)
 

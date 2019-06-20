@@ -3,6 +3,7 @@
 
 import stepmanager
 import graph
+import logging
 
 from native_step import Step, provide_test_steps
 
@@ -20,7 +21,8 @@ class Test3Step(Step):
         return ["Test2Step"]
 
     def run(self, graph: graph.PyGraph):
-        print("Test3Step")
+        log = logging.getLogger(self.__class__.__name__)
+        log.info("Running...")
 
 
 class Test1Step(Step):
@@ -28,7 +30,8 @@ class Test1Step(Step):
         return ["Test0Step"]
 
     def run(self, graph: graph.PyGraph):
-        print("Test1Step")
+        log = logging.getLogger(self.__class__.__name__)
+        log.info("Running...")
 
 
 def provide(config):

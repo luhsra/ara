@@ -27,8 +27,7 @@ def main():
               'input_files': i_files}
     p_manager = stepmanager.StepManager(g, config,
                                         provides=provide)
-    max_l = max([len(x.get_name()) for x in p_manager.get_steps()])
-    init_logging(logging.DEBUG, max_l)
+    init_logging(level=logging.DEBUG, max_stepname=p_manager.get_name_length())
 
     p_manager.execute([test_step])
 

@@ -2,8 +2,10 @@
 
 import stepmanager
 import graph
+import logging
 
 from native_step import Step
+from util import init_logging
 
 shared_state = ""
 
@@ -134,6 +136,7 @@ def main():
     config = {}
     p_manager = stepmanager.StepManager(g, config,
                                               provides=provide)
+    init_logging(level=logging.DEBUG, max_stepname=p_manager.get_name_length())
 
     global shared_state
 
