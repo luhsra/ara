@@ -13,6 +13,8 @@ import stepmanager
 
 
 def init_logging(level=logging.DEBUG, max_stepname=30):
+    if logging.root.handlers:
+        raise RuntimeWarning("Logging already setup")
     logging.addLevelName(logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
     logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
     logging.addLevelName(logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
