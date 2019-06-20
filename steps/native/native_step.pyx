@@ -16,6 +16,7 @@ cimport Validation
 cimport ir_reader
 cimport bb_split
 cimport comp_insert
+cimport fn_single_exit
 cimport test
 cimport graph
 cimport cgraph
@@ -95,6 +96,7 @@ ctypedef enum steps:
     BBSplit_STEP
     CompInsert_STEP
     DetectInteractions_STEP
+    FnSingleExit_STEP
     FreeRTOSInstances_STEP
     IRReader_STEP
     IntermediateAnalysis_STEP
@@ -103,6 +105,7 @@ ctypedef enum steps:
     # Tests
     BBSplitTest_STEP
     CompInsertTest_STEP
+    FnSingleExitTest_STEP
     TEST0_STEP
     TEST2_STEP
 
@@ -135,6 +138,8 @@ cdef class NativeStep(SuperStep):
             self._c_pass = <cstep.Step*> new comp_insert.CompInsert(config)
         elif step_cls == DetectInteractions_STEP:
             self._c_pass = <cstep.Step*> new DetectInteractions.DetectInteractionsStep(config)
+        elif  step_cls == FnSingleExit_STEP:
+            self._c_pass = <cstep.Step*> new fn_single_exit.FnSingleExit(config)
         elif step_cls == FreeRTOSInstances_STEP:
             self._c_pass = <cstep.Step*> new FreeRTOSinstances.FreeRTOSInstancesStep(config)
         elif step_cls == IRReader_STEP:
@@ -150,6 +155,8 @@ cdef class NativeStep(SuperStep):
             self._c_pass = <cstep.Step*> new test.BBSplitTest(config)
         elif step_cls == CompInsertTest_STEP:
             self._c_pass = <cstep.Step*> new test.CompInsertTest(config)
+        elif step_cls == FnSingleExitTest_STEP:
+            self._c_pass = <cstep.Step*> new test.FnSingleExitTest(config)
         elif step_cls == TEST0_STEP:
             self._c_pass = <cstep.Step*> new test.Test0Step(config)
         elif step_cls == TEST2_STEP:
@@ -203,6 +210,7 @@ def provide_steps(config: dict):
     return [NativeStep(config, BBSplit_STEP),
             NativeStep(config, CompInsert_STEP),
             NativeStep(config, DetectInteractions_STEP),
+            NativeStep(config, FnSingleExit_STEP),
             NativeStep(config, FreeRTOSInstances_STEP),
             NativeStep(config, IRReader_STEP),
             NativeStep(config, IntermediateAnalysis_STEP),
@@ -213,5 +221,6 @@ def provide_test_steps(config: dict):
     """Do not use this, only for testing purposes."""
     return [NativeStep(config, BBSplitTest_STEP),
             NativeStep(config, CompInsertTest_STEP),
+            NativeStep(config, FnSingleExitTest_STEP),
             NativeStep(config, TEST0_STEP),
             NativeStep(config, TEST2_STEP)]

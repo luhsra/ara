@@ -48,6 +48,19 @@ namespace step {
 		virtual std::vector<std::string> get_dependencies() override;
 		virtual void run(graph::Graph& graph) override;
 	};
+
+	class FnSingleExitTest : public Step {
+	  public:
+		FnSingleExitTest(PyObject* config) : Step(config) {}
+
+		virtual std::string get_name() override;
+
+		virtual std::string get_description() override;
+
+		virtual std::vector<std::string> get_dependencies() override;
+
+		virtual void run(graph::Graph& graph) override;
+	};
 } // namespace step
 
 #endif // TEST_STEP_H

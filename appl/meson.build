@@ -2,7 +2,7 @@ clang = find_program('clang-7')
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
-clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names']
+clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names', '-fno-exceptions']
 c_std = '-std=c11'
 cxx_std = '-std=c++11'
 
@@ -23,7 +23,8 @@ subdir(freertos_path)
 freertos_targets = []
 foreach app : ['a', 'invalid_isr_syscall', 'c', 'loop_detection', 'topological_sort', 'f', 'g',
                'argument_load', 'start_scheduler_relation', 'deadlock', 'dominator',
-               'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore', 'thesis_print', 'ospert']
+               'eventgroup', 'invalid_mutex', 'priority_inversion', 'critical_region_detection', 'invalid_semaphore', 'thesis_print', 'ospert',
+               'multi_exit']
    ll_target = custom_target('freertos-' + app,
                              input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
                              output : ['freertos-' + app + '.ll'],

@@ -381,12 +381,9 @@ void SCC_topological_sort(llvm::BasicBlock* bb, std::map<std::string, std::strin
 
 void sort_abbs(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
-	// get all functions of the application
-	std::list<graph::shared_vertex> vertex_list = graph.get_type_vertices(typeid(OS::Function).hash_code());
-
 	OS::shared_abb error;
 	// iterate about the application
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Function>()) {
 
 		std::list<llvm::BasicBlock*> tmp_topological_order;
 

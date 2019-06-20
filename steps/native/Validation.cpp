@@ -477,9 +477,7 @@ bool detect_critical_regions(shared_function definition_function, std::list<grap
 void verify_mutexes(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get all isrs, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Mutex).hash_code());
-	// iterate about the isrs
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Mutex>()) {
 		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		auto resource = std::dynamic_pointer_cast<OS::Mutex>(vertex);
@@ -537,9 +535,7 @@ void verify_mutexes(graph::Graph& graph, std::vector<shared_warning>* warning_li
 void verify_semaphores(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get all isrs, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
-	// iterate about the isrs
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Semaphore>()) {
 		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		auto semaphore = std::dynamic_pointer_cast<OS::Semaphore>(vertex);
@@ -629,9 +625,7 @@ void verify_freertos_events(graph::Graph& graph, std::vector<shared_warning>* wa
 	auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
 
 	// get all isrs, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Event).hash_code());
-	// iterate about the isrs
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Event>()) {
 		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		auto event = std::dynamic_pointer_cast<OS::Event>(vertex);
@@ -762,9 +756,9 @@ void verify_freertos_events(graph::Graph& graph, std::vector<shared_warning>* wa
 void verify_priority_inversion(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// task which use resource have different priorities
-	auto resource_list = graph.get_type_vertices(typeid(OS::Mutex).hash_code());
+    auto resource_list = graph.get_type_vertices<OS::Mutex>();
 
-	auto task_list = graph.get_type_vertices(typeid(OS::Task).hash_code());
+	auto task_list = graph.get_type_vertices<OS::Task>();
 
 	// iterate about the resources and
 	// check if the resource is accessed by other instances (task,isr) with different priorities bounded piority
@@ -934,10 +928,7 @@ bool find_cycle(graph::shared_vertex vertex, shared_abb abb, std::list<size_t>* 
 void verify_deadlocks(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get all resources, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Mutex).hash_code());
-
-	// iterate about the resources
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Mutex>()) {
 		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		std::vector<llvm::Instruction*> already_visited;
 		auto resource = std::dynamic_pointer_cast<OS::Mutex>(vertex);
@@ -975,10 +966,7 @@ void verify_deadlocks(graph::Graph& graph, std::vector<shared_warning>* warning_
 void verify_task_priority(graph::Graph& graph) {
 
 	// get all resources, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Task).hash_code());
-
-	// iterate about the tasks
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Task>()) {
 		std::vector<llvm::Instruction*> already_visited;
 		auto task = std::dynamic_pointer_cast<OS::Task>(vertex);
 		for (auto ingoing_edge : task->get_ingoing_edges()) {
@@ -1098,8 +1086,6 @@ void verify_critical_region(graph::Graph& graph, std::vector<shared_warning>* wa
 
 	std::string rtos_name = "RTOS";
 	std::hash<std::string> hash_fn;
-	// get all tasks, which are stored in the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Task).hash_code());
 
 	// load the rtos graph instance
 	auto rtos_vertex = graph.get_vertex(hash_fn(rtos_name + typeid(OS::RTOS).name()));
@@ -1111,7 +1097,7 @@ void verify_critical_region(graph::Graph& graph, std::vector<shared_warning>* wa
 	auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
 
 	// iterate about the tasks
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Task>()) {
 		// std::cerr << "isr name: " << vertex->get_name() << std::endl;
 		auto task = std::dynamic_pointer_cast<OS::Task>(vertex);
 
@@ -1141,8 +1127,7 @@ void verify_critical_region(graph::Graph& graph, std::vector<shared_warning>* wa
 
 void verify_isrs(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
-	auto vertex_list = graph.get_type_vertices(typeid(OS::ISR).hash_code());
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::ISR>()) {
 		auto isr = std::dynamic_pointer_cast<OS::ISR>(vertex);
 
 		std::list<size_t> already_visited;
@@ -1234,7 +1219,7 @@ void verify_abstraction_instances_use(graph::Graph& graph, std::vector<shared_wa
 	auto rtos = std::dynamic_pointer_cast<OS::RTOS>(rtos_vertex);
 
 	if (rtos->support_coroutines == false) {
-		auto co_routines = graph.get_type_vertices(typeid(OS::CoRoutine).hash_code());
+		auto co_routines = graph.get_type_vertices<OS::CoRoutine>();
 		for (auto co_routine : co_routines) {
 			auto warning = std::make_shared<EnableWarning>("CoRoutine", co_routine, nullptr);
 			warning_list->emplace_back(warning);
@@ -1242,7 +1227,7 @@ void verify_abstraction_instances_use(graph::Graph& graph, std::vector<shared_wa
 		}
 	};
 	if (rtos->support_queue_sets == false) {
-		auto queue_sets = graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
+		auto queue_sets = graph.get_type_vertices<OS::QueueSet>();
 		for (auto queue_set : queue_sets) {
 			auto warning = std::make_shared<EnableWarning>("QueueSet", queue_set, nullptr);
 			warning_list->emplace_back(warning);
@@ -1250,7 +1235,7 @@ void verify_abstraction_instances_use(graph::Graph& graph, std::vector<shared_wa
 	};
 	if (rtos->support_counting_semaphores == false) {
 
-		auto semaphores = graph.get_type_vertices(typeid(OS::Semaphore).hash_code());
+		auto semaphores = graph.get_type_vertices<OS::Semaphore>();
 		for (auto tmp_semaphore : semaphores) {
 			auto semaphore = std::dynamic_pointer_cast<OS::Semaphore>(tmp_semaphore);
 			if (rtos->support_counting_semaphores == false && semaphore->get_semaphore_type() == counting_semaphore) {
@@ -1261,7 +1246,7 @@ void verify_abstraction_instances_use(graph::Graph& graph, std::vector<shared_wa
 	};
 	if (rtos->support_recursive_mutexes == false || rtos->support_mutexes == false) {
 
-		auto resources = graph.get_type_vertices(typeid(OS::Mutex).hash_code());
+		auto resources = graph.get_type_vertices<OS::Mutex>();
 		for (auto tmp_resource : resources) {
 			auto resource = std::dynamic_pointer_cast<OS::Mutex>(tmp_resource);
 			if (rtos->support_recursive_mutexes == false && resource->get_resource_type() == recursive_mutex) {
@@ -1289,8 +1274,7 @@ void verify_abstraction_instances_use(graph::Graph& graph, std::vector<shared_wa
 void verify_queueset_members(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get the queuesets of the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::QueueSet).hash_code());
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::QueueSet>()) {
 		auto queueset = std::dynamic_pointer_cast<OS::QueueSet>(vertex);
 
 		// get the stored members of the queuset
@@ -1342,8 +1326,7 @@ void verify_queueset_members(graph::Graph& graph, std::vector<shared_warning>* w
 void verify_buffer_access(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// get the buffers of the graph
-	auto vertex_list = graph.get_type_vertices(typeid(OS::Buffer).hash_code());
-	for (auto& vertex : vertex_list) {
+	for (auto& vertex : graph.get_type_vertices<OS::Buffer>()) {
 		auto buffer = std::dynamic_pointer_cast<OS::Buffer>(vertex);
 		shared_abb abb;
 		std::map<size_t, size_t> accessed_elements;
