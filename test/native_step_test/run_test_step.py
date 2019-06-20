@@ -4,7 +4,7 @@ import stepmanager
 import logging
 import sys
 
-from ara import init_logging
+from util import init_logging
 
 from native_step import Step, provide_test_steps, provide_steps
 

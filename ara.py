@@ -7,27 +7,12 @@ import sys
 import shutil
 import textwrap
 import logging
+import util
 
 import graph
 import stepmanager
 
 
-def init_logging(level=logging.DEBUG, max_stepname=30):
-    if logging.root.handlers:
-        raise RuntimeWarning("Logging already setup")
-    logging.addLevelName(logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
-    logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
-    logging.addLevelName(logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
-    logging.addLevelName(logging.INFO, "\033[1;34m%s\033[1;0m" % logging.getLevelName(logging.INFO))
-    max_l = max([len(logging.getLevelName(l)) for l in range(logging.CRITICAL)])
-    _format = f'%(asctime)s %(levelname)-{max_l}s %(name)-{max_stepname}s%(message)s'
-    if type(level) == str:
-        log_levels = {'debug': logging.DEBUG,
-                      'info': logging.INFO,
-                      'warn': logging.WARNING}
-        level = log_levels[level]
-
-    logging.basicConfig(format=_format, level=level)
 
 
 def print_avail_steps(avail_steps):
@@ -84,7 +69,7 @@ def main():
     avail_steps = s_manager.get_steps()
 
     max_s = max([len(s.get_name()) for s in avail_steps])
-    init_logging(level=args.log_level, max_stepname=max_s)
+    util.init_logging(level=args.log_level, max_stepname=max_s)
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
