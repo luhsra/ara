@@ -62,6 +62,26 @@ build/ara.sh -l
 Steps can be written into Python (defined in `steps`) or in C++ (defined in `steps/native`).
 The model is written in C++ with Python bindings (defined in `libgraph`).
 
+Developing
+----------
+If you want to develop with ARA, some common actions are usual.
+
+### Adding a new Python step
+
+- Create the step in the `steps` directory. You can use `steps/dummy.py` as template.
+- Add the step to `steps/__init__.py`.
+  - Add to the `__all__`-attribute.
+  - Add to the `provide_steps()` function.
+- Create a test case for this step in the `test` directory. See the existing tests and `test/meson.build` for hints how to achieve this.
+
+### Adding a new C++ step
+
+- Create the step in the `steps/native` directory. You can use `steps/native/cdummy.{cpp,h,pxd}` as template.
+- Add the step to `steps/native/meson.build` (both the `pxd` and the `cpp` file) to enable compilation.
+- Add the step to `steps/native/native_step.pyx` to create a Python wrapper. Add an `cimport` and add the step to `provide_steps`.
+- Create a test case for this step in the `test/native_step_test` directory. Usually, it is enough to add your test to `test/native_step_test/meson.build`.
+  - C++ steps often need other C++ code to test it. For that add an extra test step in `steps/native/test.h` and `steps/native/test/` and call it from your test case.
+
 Troubleshooting
 ---------------
 

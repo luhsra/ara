@@ -20,6 +20,7 @@ from intermediate_analysis cimport IntermediateAnalysisStep
 from ir_reader cimport IRReader
 from validation cimport ValidationStep
 from llvm cimport LLVMStep
+from cdummy cimport CDummy
 
 from test cimport (BBSplitTest,
                    CompInsertTest,
@@ -179,6 +180,7 @@ def provide_steps(config: dict):
     config -- a configuration dict like the one Step.__init__() needs.
     """
     return [_native_fac(config, step_fac[BBSplit](config)),
+            _native_fac(config, step_fac[CDummy](config)),
             _native_fac(config, step_fac[CompInsert](config)),
             _native_fac(config, step_fac[DetectInteractionsStep](config)),
             _native_fac(config, step_fac[FnSingleExit](config)),
