@@ -1,7 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef IntermediateAnalysis_STEP_H
-#define IntermediateAnalysis_STEP_H
+#pragma once
 
 #include "graph.h"
 #include "step.h"
@@ -46,19 +45,13 @@
 #include <vector>
 
 namespace step {
-	class IntermediateAnalysisStep : public Step {
+	class DetectInteractionsStep : public Step {
 
 	  private:
 		std::vector<shared_warning> warnings;
 
-		/**
-		 * set branch information for a given abb:
-		 * Is this abb in a branch?
-		 */
-		bool set_branch(OS::shared_abb abb, std::set<size_t>& already_visited);
-
 	  public:
-		IntermediateAnalysisStep(PyObject* config) : Step(config) {}
+		DetectInteractionsStep(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
 
@@ -69,5 +62,3 @@ namespace step {
 		virtual void run(graph::Graph& graph) override;
 	};
 } // namespace step
-
-#endif // IntermediateAnalysis_STEP_H

@@ -63,6 +63,12 @@ namespace step {
 		 */
 		virtual void run(graph::Graph& graph) = 0;
 	};
+
+	template<class S>
+	Step* step_fac(PyObject* config)
+	{
+	    return new S(config);
+	}
 } // namespace step
 
 #endif // STEP_H

@@ -1,6 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#include "FreeRTOSinstances.h"
+#include "freertos_instances.h"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/PostOrderIterator.h"

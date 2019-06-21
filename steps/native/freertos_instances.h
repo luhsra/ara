@@ -1,7 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef Validation_STEP_H
-#define Validation_STEP_H
+#pragma once
 
 #include "graph.h"
 #include "step.h"
@@ -46,13 +45,12 @@
 #include <vector>
 
 namespace step {
-	class ValidationStep : public Step {
-
+	class FreeRTOSInstancesStep : public Step {
 	  private:
 		std::vector<shared_warning> warnings;
 
 	  public:
-		ValidationStep(PyObject* config) : Step(config) {}
+		FreeRTOSInstancesStep(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
 
@@ -61,9 +59,5 @@ namespace step {
 		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
-
-		std::vector<shared_warning>& get_warnings() { return warnings; }
 	};
 } // namespace step
-
-#endif // Validation_STEP_H

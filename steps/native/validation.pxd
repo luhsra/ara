@@ -5,7 +5,7 @@ from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.memory cimport shared_ptr
 
-cdef extern from "Validation.h" namespace "step":
+cdef extern from "validation.h" namespace "step":
     cdef cppclass ValidationStep:
         ValidationStep(dict config) except +
         string get_name()

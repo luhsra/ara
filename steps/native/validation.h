@@ -1,7 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef DetectInteractions_STEP_H
-#define DetectInteractions_STEP_H
+#pragma once
 
 #include "graph.h"
 #include "step.h"
@@ -46,13 +45,13 @@
 #include <vector>
 
 namespace step {
-	class DetectInteractionsStep : public Step {
+	class ValidationStep : public Step {
 
 	  private:
 		std::vector<shared_warning> warnings;
 
 	  public:
-		DetectInteractionsStep(PyObject* config) : Step(config) {}
+		ValidationStep(PyObject* config) : Step(config) {}
 
 		virtual std::string get_name() override;
 
@@ -61,7 +60,7 @@ namespace step {
 		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
+
+		std::vector<shared_warning>& get_warnings() { return warnings; }
 	};
 } // namespace step
-
-#endif // DetectInteractions_STEP_H

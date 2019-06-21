@@ -11,3 +11,5 @@ cdef extern from "step.h" namespace "step":
         string get_description()
         vector[string] get_dependencies()
         void run(cgraph.Graph a)
+
+    Step* step_fac[T](dict)

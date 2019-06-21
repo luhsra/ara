@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "FreeRTOSinstances.h" namespace "step":
+cdef extern from "freertos_instances.h" namespace "step":
     cdef cppclass FreeRTOSInstancesStep:
         FreeRTOSInstancesStep(dict config) except +
         string get_name()

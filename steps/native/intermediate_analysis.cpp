@@ -1,8 +1,8 @@
 // vim: set noet ts=4 sw=4:
 
-#include "IntermediateAnalysis.h"
+#include "intermediate_analysis.h"
 
-#include "FreeRTOSinstances.h"
+//#include "FreeRTOSinstances.h"
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AssumptionCache.h"

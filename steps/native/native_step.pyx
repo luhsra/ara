@@ -8,22 +8,29 @@ stepmanager then fulfils this dependencies.
 """
 
 cimport cstep
-cimport llvm
-cimport FreeRTOSinstances
-cimport DetectInteractions
-cimport IntermediateAnalysis
-cimport Validation
-cimport ir_reader
-cimport bb_split
-cimport comp_insert
-cimport fn_single_exit
-cimport test
 cimport graph
 cimport cgraph
+
+from bb_split cimport BBSplit
+from comp_insert cimport CompInsert
+from detect_interactions cimport DetectInteractionsStep
+from fn_single_exit cimport FnSingleExit
+from freertos_instances cimport FreeRTOSInstancesStep
+from intermediate_analysis cimport IntermediateAnalysisStep
+from ir_reader cimport IRReader
+from validation cimport ValidationStep
+from llvm cimport LLVMStep
+
+from test cimport (BBSplitTest,
+                   CompInsertTest,
+                   FnSingleExitTest,
+                   Test0Step,
+                   Test2Step)
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
 from backported_memory cimport static_pointer_cast as spc
+from cstep cimport step_fac
 
 import logging
 import inspect
@@ -91,83 +98,34 @@ class Step(SuperStep):
     def get_description(self) -> str:
         return inspect.cleandoc(self.__doc__)
 
-# sort alphabetically
-ctypedef enum steps:
-    BBSplit_STEP
-    CompInsert_STEP
-    DetectInteractions_STEP
-    FnSingleExit_STEP
-    FreeRTOSInstances_STEP
-    IRReader_STEP
-    IntermediateAnalysis_STEP
-    LLVM_STEP
-    Validation_STEP
-    # Tests
-    BBSplitTest_STEP
-    CompInsertTest_STEP
-    FnSingleExitTest_STEP
-    TEST0_STEP
-    TEST2_STEP
 
 cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
     cdef pyobj = graph.create_abb(location)
     return pyobj
 
+
 cdef class NativeStep(SuperStep):
-    """Constructs a dummy Python class for a C++ step."""
+    """Constructs a dummy Python class for a C++ step.
+
+    Use native_fac() to construct a NativeStep.
+    """
 
     # the pointer attribute that holds the C++ object
     cdef cstep.Step* _c_pass
 
-    def __cinit__(self, config: dict, steps step_cls):
-        """Constructs an arbitrary C++ step object, that inherits from
-        cstep.Step. This has the advantage, that only one Python class is
-        necessary to wrap arbitrary C++ steps.
-
-        Arguments:
-        config      -- a configuration dict like the one Step.__init__()
-                    needs.
-        step_cls -- an identifier what specific C++ step the object
-                    should wrap.
-        """
-        # select here what specific step should be constructed
-        # sort alphabetically
-        if step_cls == BBSplit_STEP:
-            self._c_pass = <cstep.Step*> new bb_split.BBSplit(config)
-        elif step_cls == CompInsert_STEP:
-            self._c_pass = <cstep.Step*> new comp_insert.CompInsert(config)
-        elif step_cls == DetectInteractions_STEP:
-            self._c_pass = <cstep.Step*> new DetectInteractions.DetectInteractionsStep(config)
-        elif  step_cls == FnSingleExit_STEP:
-            self._c_pass = <cstep.Step*> new fn_single_exit.FnSingleExit(config)
-        elif step_cls == FreeRTOSInstances_STEP:
-            self._c_pass = <cstep.Step*> new FreeRTOSinstances.FreeRTOSInstancesStep(config)
-        elif step_cls == IRReader_STEP:
-            self._c_pass = <cstep.Step*> new ir_reader.IRReader(config)
-        elif step_cls == IntermediateAnalysis_STEP:
-            self._c_pass = <cstep.Step*> new IntermediateAnalysis.IntermediateAnalysisStep(config)
-        elif step_cls == LLVM_STEP:
-            self._c_pass = <cstep.Step*> new llvm.LLVMStep(config)
-        elif step_cls == Validation_STEP:
-            self._c_pass = <cstep.Step*> new Validation.ValidationStep(config)
-        # for testing purposes (can not be transferred into separate file)
-        elif step_cls == BBSplitTest_STEP:
-            self._c_pass = <cstep.Step*> new test.BBSplitTest(config)
-        elif step_cls == CompInsertTest_STEP:
-            self._c_pass = <cstep.Step*> new test.CompInsertTest(config)
-        elif step_cls == FnSingleExitTest_STEP:
-            self._c_pass = <cstep.Step*> new test.FnSingleExitTest(config)
-        elif step_cls == TEST0_STEP:
-            self._c_pass = <cstep.Step*> new test.Test0Step(config)
-        elif step_cls == TEST2_STEP:
-            self._c_pass = <cstep.Step*> new test.Test2Step(config)
-        else:
-            raise ValueError("Unknown step class")
-
-        if self._c_pass is NULL:
-            raise MemoryError()
-
     def __init__(self, config: dict, *args):
+        """Fake constructor. Prevent usage of super constructor. Must not
+        calle directly
+
+        Use native_fac() to construct a NativeStep.
+        """
+        pass
+
+    def init(self, config: dict):
+        """The actual constructor function. Must not called directly.
+
+        Use native_fac() to construct a NativeStep.
+        """
         super().__init__(config)
         self._c_pass.set_logger(self._log)
 
@@ -193,12 +151,25 @@ cdef class NativeStep(SuperStep):
     def get_side_data(self):
         if self.get_name() == "ValidationStep":
             warnings = []
-            for warning in (<Validation.ValidationStep*> self._c_pass).get_warnings():
+            for warning in (<ValidationStep*> self._c_pass).get_warnings():
                 p_warn = {'type': deref(warning).get_type().decode('UTF-8'),
                           'location': get_warning_abb(deref(warning).warning_position)}
                 warnings.append(p_warn)
             return warnings
         super().get_side_data()
+
+
+cdef _native_fac(config: dict, cstep.Step* step):
+    """Construct a NativeStep. Expects an already constructed C++-Step pointer.
+    This pointer can be retrieved with step_fac[...](config).
+
+    Don't use this function. Use provide_steps to get all steps.
+    """
+    n_step = NativeStep(config)
+    n_step._c_pass = step
+    n_step.init(config)
+    return n_step
+
 
 def provide_steps(config: dict):
     """Provide a list of all native steps. This also constructs as many
@@ -207,20 +178,21 @@ def provide_steps(config: dict):
     Arguments:
     config -- a configuration dict like the one Step.__init__() needs.
     """
-    return [NativeStep(config, BBSplit_STEP),
-            NativeStep(config, CompInsert_STEP),
-            NativeStep(config, DetectInteractions_STEP),
-            NativeStep(config, FnSingleExit_STEP),
-            NativeStep(config, FreeRTOSInstances_STEP),
-            NativeStep(config, IRReader_STEP),
-            NativeStep(config, IntermediateAnalysis_STEP),
-            NativeStep(config, LLVM_STEP),
-            NativeStep(config, Validation_STEP)]
+    return [_native_fac(config, step_fac[BBSplit](config)),
+            _native_fac(config, step_fac[CompInsert](config)),
+            _native_fac(config, step_fac[DetectInteractionsStep](config)),
+            _native_fac(config, step_fac[FnSingleExit](config)),
+            _native_fac(config, step_fac[FreeRTOSInstancesStep](config)),
+            _native_fac(config, step_fac[IRReader](config)),
+            _native_fac(config, step_fac[IntermediateAnalysisStep](config)),
+            _native_fac(config, step_fac[LLVMStep](config)),
+            _native_fac(config, step_fac[ValidationStep](config))]
+
 
 def provide_test_steps(config: dict):
     """Do not use this, only for testing purposes."""
-    return [NativeStep(config, BBSplitTest_STEP),
-            NativeStep(config, CompInsertTest_STEP),
-            NativeStep(config, FnSingleExitTest_STEP),
-            NativeStep(config, TEST0_STEP),
-            NativeStep(config, TEST2_STEP)]
+    return [_native_fac(config, step_fac[BBSplitTest](config)),
+            _native_fac(config, step_fac[CompInsertTest](config)),
+            _native_fac(config, step_fac[FnSingleExitTest](config)),
+            _native_fac(config, step_fac[Test0Step](config)),
+            _native_fac(config, step_fac[Test2Step](config))]

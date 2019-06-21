@@ -1,6 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#include "DetectInteractions.h"
+#include "detect_interactions.h"
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/Analysis/AliasAnalysis.h"
