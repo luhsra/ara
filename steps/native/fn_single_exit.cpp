@@ -36,18 +36,14 @@ namespace step {
 
 			if (exit_blocks.size() > 1) {
 				logger.debug() << "Function has " << exit_blocks.size() << " exit blocks: " << function.getName().str() << std::endl;
-				for (BasicBlock* bb: exit_blocks) {
-					// no predecessors
-					auto start = pred_begin(bb);
-					auto end  = pred_end(bb);
-					if (pred_begin(bb) == pred_end(bb)) {
-						DeleteDeadBlock(bb);
-						exit_blocks.remove(bb);
+				if (exit_blocks.size() > 1) {
+					LLVMContext &C = function.getContext();
+					BasicBlock *new_exit = BasicBlock::Create(C, "combined_exit", &function, NULL);
+					new UnreachableInst(C, new_exit);
+					for (auto &EB : exit_blocks) {
+						BranchInst::Create(new_exit, EB);
 					}
 				}
-				function.viewCFG();
-				asm("int $3");
-				assert((exit_blocks.size() == 1) && "There are leftover double-ending functions");
 			}
 		}
 	}

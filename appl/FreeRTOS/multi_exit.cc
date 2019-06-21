@@ -3,8 +3,11 @@
 volatile int always_false = 0;
 
 extern int do_stuff();
+extern int init_a();
 
 extern __attribute__((noreturn)) int start_scheduler();
+extern __attribute__((noreturn)) int Terminate();
+extern int config_option;
 
 int main( void ){
 // 	if (always_false) {
@@ -16,5 +19,11 @@ int main( void ){
 // 	}
 
   do_stuff();
-  start_scheduler();
+  if (config_option) {
+	Terminate();
+  } else {
+	init_a();
+  }
+	start_scheduler();
+
 }
