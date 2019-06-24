@@ -1,7 +1,5 @@
 LLVM-IR-Ebene:
-- BBs splitten
-- computation blöcke einfügen
-- exit nodes einfügen
+- auf OS:: Dinge mappen
 - funktionen unique machen
 - syscalls labeln
 - argumente finden
