@@ -20,6 +20,7 @@ from intermediate_analysis cimport IntermediateAnalysisStep
 from ir_reader cimport IRReader
 from validation cimport ValidationStep
 from llvm cimport LLVMStep
+from llvm_map cimport LLVMMap
 from cdummy cimport CDummy
 
 from test cimport (BBSplitTest,
@@ -188,6 +189,7 @@ def provide_steps(config: dict):
             _native_fac(config, step_fac[IRReader](config)),
             _native_fac(config, step_fac[IntermediateAnalysisStep](config)),
             _native_fac(config, step_fac[LLVMStep](config)),
+            _native_fac(config, step_fac[LLVMMap](config)),
             _native_fac(config, step_fac[ValidationStep](config))]
 
 
