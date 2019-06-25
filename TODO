@@ -1,3 +1,5 @@
+# Vorgehen
+
 LLVM-IR-Ebene:
 - auf OS:: Dinge mappen
 - funktionen unique machen
@@ -8,4 +10,67 @@ LLVM-IR-Ebene:
 
 abb graphen, nur system relevante funktionen, bezug zum scheduler
 
-		llvm::raw_os_ostream llog(std::cout);
+# Graphstrukturen in ARA:
+
+Es gibt verschiedenen Graphstrukturen in ARA, die nicht zwangsläufig zusammenhängen. Idealerweise spiegelt das Modell die wieder.
+
+## LLVM CFG-Strukturen
+
+Vorgegeben: Einfach so lassen, liegen in effizient vor
+
+## Eigene CFG-Strukturen
+
+Betrifft Funktionen und ABBs. Sollen idealerweise eine Erweiterung des LLVM-Modells sein, ist aber mE nicht möglich.
+Anforderungen:
+- Funktionen beinhalten ABBs
+- ABBs beinhalten BBs
+- BBs linken auf ABB
+- Flag, ob systemrelevant (fraglich, ob das notwendig ist, nach dem ABB-Merge sind alle anderen Funktionen weg)
+- Flag, ob Systemcall
+
+### Implementierung im LLVM-Modell
+
+Man könnte von einer LLVM::Function erben, die original Funktionen dahin clonen und um die ABBs erweitern.
+Dann noch eine ABB-Klasse schreiben, die auf BBs referenziert.
+
+Vorteile: schönere Architektur, weil nur ein CFG-Struktur?
+Nachteile:
+  - muss wahrscheinlich mit Boost zusammenspielen
+  - höchst unklar, ob man noch was anderes als ABBs und Funktionen später brauchen wird
+  - vor allem bei nicht-Analyse-Passes von LLVM kann es neue BasicBlöcke erzeugen, die dann wieder keine ABBs referenzieren etc.
+
+### Implementierung außerhalb des LLVM-Modells
+
+Eine eigene ABB- und Function-Klasse schreiben, die verlinken und nur auf LLVM-Zeug referenzieren.
+
+Vorteile:
+   - Klare Trennung von LLVM und Rest, wahrscheinlich einfacheres Mapping zu Python
+Nachteile:
+   - Backmapping-Tabellen notwendig.
+
+## OS Level Strukturen
+
+- Instanzgraph
+
+## Graphalgorithmen
+
+Graphbibliotheken gibt es schon mehrere. Die Frage ist, bei welchen Strukturen es sinnvoll ist, diese mit so einer Bibliothek zu implementieren.
+D.h., wo werden Graphalgorithmen für diese Strukturen gebraucht und welche Graphen muss man drucken können.
+
+CFG-Graph:
+- Drucken: ja
+- Algorithmen: ja
+
+Instanzgraph:
+- Drucken: ja
+- Algorithmen: Nein?
+
+## Graphmodell extended
+
+- Grundidee: Engine kann OS unabhängigen Kram, OS-Modell beschreibt den Rest, d.h., OS-Abstraktionen sind dynamisch!
+- idealerweise dynamisch oder Standard-Boost-Graph
+
+## Lösung
+
+CFG in Boost-Modell, seperater Graph
+Instanzgraph in Boost-Modell, seperater Graph
