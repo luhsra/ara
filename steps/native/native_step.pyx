@@ -18,6 +18,7 @@ from fn_single_exit cimport FnSingleExit
 from freertos_instances cimport FreeRTOSInstancesStep
 from intermediate_analysis cimport IntermediateAnalysisStep
 from ir_reader cimport IRReader
+from llvm_basic_optimization cimport LLVMBasicOptimization
 from validation cimport ValidationStep
 from llvm cimport LLVMStep
 from cdummy cimport CDummy
@@ -188,6 +189,7 @@ def provide_steps(config: dict):
             _native_fac(config, step_fac[IRReader](config)),
             _native_fac(config, step_fac[IntermediateAnalysisStep](config)),
             _native_fac(config, step_fac[LLVMStep](config)),
+            _native_fac(config, step_fac[LLVMBasicOptimization](config)),
             _native_fac(config, step_fac[ValidationStep](config))]
 
 
