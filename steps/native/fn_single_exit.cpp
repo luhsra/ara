@@ -24,9 +24,9 @@ namespace step {
 
 	void FnSingleExit::run(graph::Graph& graph) {
  		auto module = graph.get_llvm_module();
- 		unsigned split_counter = 0;
+		unsigned insert_counter = 0;
 
- 		for (auto &function : *module) {
+		for (auto& function : *module) {
 			std::list<BasicBlock *> exit_blocks;
 			for (BasicBlock& _bb : function) {
 				if (succ_begin(&_bb) == succ_end(&_bb)) {
@@ -43,8 +43,10 @@ namespace step {
 					for (auto &EB : exit_blocks) {
 						BranchInst::Create(new_exit, EB);
 					}
+					insert_counter++;
 				}
 			}
 		}
+		logger.debug() << "Inserted  " << insert_counter << " new common exit blocks." << std::endl;
 	}
 } // namespace step
