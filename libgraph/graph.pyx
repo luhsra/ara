@@ -228,24 +228,24 @@ cdef create_abb(shared_ptr[cgraph.ABB] abb):
 cdef class PyGraph:
 
     def __cinit__(self):
-        self._c_graph = cgraph.Graph()
+        self._c_graph = make_shared[cgraph.Graph]()
 
     def __str__(self):
-        return to_string(self._c_graph).decode('utf-8')
+        return to_string(deref(self._c_graph)).decode('utf-8')
 
     def set_vertex(self, Vertex vertex):
-        self._c_graph.set_vertex(vertex._c_vertex)
+        deref(self._c_graph).set_vertex(vertex._c_vertex)
 
     def get_vertex(self, seed):
-        cdef shared_ptr[cgraph.Vertex]  vertex = self._c_graph.get_vertex(seed)
+        cdef shared_ptr[cgraph.Vertex]  vertex = deref(self._c_graph).get_vertex(seed)
         return create_from_pointer(vertex)
 
     def remove_vertex(self, seed):
-        return self._c_graph.remove_vertex(seed)
+        return deref(self._c_graph).remove_vertex(seed)
 
     def get_type_vertices(self, name):
         cdef c_hash_type = get_type_hash(name)
-        cdef clist[shared_ptr[cgraph.Vertex]] vertices = self._c_graph.get_type_vertices(c_hash_type)
+        cdef clist[shared_ptr[cgraph.Vertex]] vertices = deref(self._c_graph).get_type_vertices(c_hash_type)
         pylist = []
 
         for vertex in vertices:
@@ -255,7 +255,7 @@ cdef class PyGraph:
 
     def set_os_type(self, int type_os):
         cdef cgraph.os_type tmp_type = <cgraph.os_type> type_os
-        return self._c_graph.set_os_type(tmp_type)
+        return deref(self._c_graph).set_os_type(tmp_type)
 
     #@staticmethod
     # cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
@@ -275,7 +275,7 @@ cdef class Edge:
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_edge = make_shared[cgraph.Edge](&graph._c_graph, bname, start_vertex._c_vertex, target_vertex._c_vertex, spc[cgraph.ABB, cgraph.Vertex](abb_reference._c_vertex))
+            self._c_edge = make_shared[cgraph.Edge](graph._c_graph.get(), bname, start_vertex._c_vertex, target_vertex._c_vertex, spc[cgraph.ABB, cgraph.Vertex](abb_reference._c_vertex))
 
     def get_start_vertex(self):
 
@@ -317,7 +317,7 @@ cdef class Vertex:
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = make_shared[cgraph.Vertex](&graph._c_graph, bname)
+            self._c_vertex = make_shared[cgraph.Vertex](graph._c_graph.get(), bname)
 
     #@staticmethod
     # cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
@@ -373,7 +373,7 @@ cdef class Counter(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Counter](make_shared[cgraph.Counter](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Counter](make_shared[cgraph.Counter](graph._c_graph.get(), bname))
 
     def set_max_allowed_value(self, unsigned long max_allowed_value):
         deref(self._c()).set_max_allowed_value(max_allowed_value)
@@ -398,7 +398,7 @@ cdef class Event(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Event](make_shared[cgraph.Event](graph._c_graph.get(), bname))
 
     def set_event_mask(self, int64_t mask):
         return deref(self._c()).set_event_mask(mask)
@@ -415,7 +415,7 @@ cdef class ISR(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.ISR](make_shared[cgraph.ISR](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.ISR](make_shared[cgraph.ISR](graph._c_graph.get(), bname))
 
     def set_category(self, int category):
         deref(self._c()).set_category(category)
@@ -450,7 +450,7 @@ cdef class Mutex(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Mutex](make_shared[cgraph.Mutex](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Mutex](make_shared[cgraph.Mutex](graph._c_graph.get(), bname))
 
     def set_resource_property(self, str prop, str linked_resource):
         cdef string c_prop = prop.encode('UTF-8')
@@ -474,7 +474,7 @@ cdef class Task(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Task](make_shared[cgraph.Task](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Task](make_shared[cgraph.Task](graph._c_graph.get(), bname))
 
     def set_priority(self, unsigned long priority):
         return deref(self._c()).set_priority(priority)
@@ -536,7 +536,7 @@ cdef class Function(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Function](make_shared[cgraph.Function](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Function](make_shared[cgraph.Function](graph._c_graph.get(), bname))
 
     def get_atomic_basic_blocks(self):
 
@@ -622,7 +622,7 @@ cdef class ABB(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](&graph._c_graph, spc[cgraph.Function, cgraph.Vertex](function_reference._c_vertex), bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.ABB](make_shared[cgraph.ABB](graph._c_graph.get(), spc[cgraph.Function, cgraph.Vertex](function_reference._c_vertex), bname))
 
     def convert_call_to_syscall(self, name):
         cdef bname
@@ -810,7 +810,7 @@ cdef class Queue(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Queue](make_shared[cgraph.Queue](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Queue](make_shared[cgraph.Queue](graph._c_graph.get(), bname))
 
     def set_message_property(self, int input_property):
         cdef cgraph.message_property t = <cgraph.message_property> input_property
@@ -829,7 +829,7 @@ cdef class Semaphore(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Semaphore](make_shared[cgraph.Semaphore](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Semaphore](make_shared[cgraph.Semaphore](graph._c_graph.get(), bname))
 
 
 cdef class Buffer(Vertex):
@@ -841,7 +841,7 @@ cdef class Buffer(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Buffer](make_shared[cgraph.Buffer](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Buffer](make_shared[cgraph.Buffer](graph._c_graph.get(), bname))
 
 
 cdef class QueueSet(Vertex):
@@ -853,7 +853,7 @@ cdef class QueueSet(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.QueueSet](make_shared[cgraph.QueueSet](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.QueueSet](make_shared[cgraph.QueueSet](graph._c_graph.get(), bname))
 
 
 cdef class Timer(Vertex):
@@ -865,7 +865,7 @@ cdef class Timer(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.Timer](make_shared[cgraph.Timer](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.Timer](make_shared[cgraph.Timer](graph._c_graph.get(), bname))
 
     def get_definition_function(self):
         cdef shared_ptr[cgraph.Function] function = deref(self._c()).get_callback_function()
@@ -918,7 +918,7 @@ cdef class RTOS(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.RTOS](make_shared[cgraph.RTOS](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.RTOS](make_shared[cgraph.RTOS](graph._c_graph.get(), bname))
 
     def enable_startup_hook(self, attribute):
 
@@ -990,4 +990,4 @@ cdef class CoRoutine(Vertex):
         cdef string bname
         if not _raw:
             bname = name.encode('UTF-8')
-            self._c_vertex = spc[cgraph.Vertex, cgraph.CoRoutine](make_shared[cgraph.CoRoutine](&graph._c_graph, bname))
+            self._c_vertex = spc[cgraph.Vertex, cgraph.CoRoutine](make_shared[cgraph.CoRoutine](graph._c_graph.get(), bname))

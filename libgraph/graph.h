@@ -1,8 +1,62 @@
 // vim: set noet ts=4 sw=4:
 
-#ifndef GRAPH_H
-#define GRAPH_H
+#pragma once
 
+#include <llvm/IR/Module.h>
+#include <llvm/IR/BasicBlock.h>
+#include <boost/graph/adjacency_list.hpp>
+
+#include <memory>
+
+namespace ara::cfg {
+
+	enum ABBType { syscall, call, computation };
+
+	/**
+	 * Represents an atomic basic block.
+	 *
+	 * Linkage with other ABBs is done via BGL, see ara::graph::ABBGraph.
+	 */
+	struct ABB {
+		std::string name;
+
+		ABBType type;
+
+		llvm::BasicBlock* entry_bb;
+		llvm::BasicBlock* exit_bb;
+	};
+}
+
+
+namespace ara::graph {
+
+	/**
+	 * Holds all ABBs.
+	 */
+	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, ara::cfg::ABB> ABBGraph;
+
+	/**
+	 * Holds all the collected knowledge. Composed of subgraphs.
+	 *
+	 * Is also responsible for the lifetime of all objects.
+	 */
+	class Graph {
+		private:
+			std::unique_ptr<llvm::Module> module;
+			ABBGraph abbs;
+
+		public:
+
+			Graph() = default;
+
+			llvm::Module& get_module() const { return *module; }
+			void set_module(std::unique_ptr<llvm::Module> module) { this->module = std::move(module); }
+	};
+
+}
+
+
+// here begins the old part, delete it as soon as not needed anymore
 #include "llvm/Analysis/LoopInfo.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/IR/BasicBlock.h"
@@ -156,6 +210,9 @@ namespace graph {
 		// Graph(std::shared_ptr<llvm::Module>module);
 
 		Graph();
+
+		// horrible hack, remove once transition is done
+		ara::graph::Graph new_graph;
 
 		void set_llvm_module(std::shared_ptr<llvm::Module> module);
 
@@ -1426,5 +1483,3 @@ namespace OS {
 	};
 
 } // namespace OS
-
-#endif // GRAPH_H

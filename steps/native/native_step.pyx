@@ -143,7 +143,7 @@ cdef class NativeStep(SuperStep):
         return [x.decode('UTF-8') for x in deps]
 
     def run(self, graph.PyGraph g):
-        self._c_pass.run(g._c_graph)
+        self._c_pass.run(deref(g._c_graph))
 
     def get_name(self) -> str:
         return self._c_pass.get_name().decode('UTF-8')

@@ -8,7 +8,7 @@ graph_pyx_cpp = custom_target('graph_pyx',
 
 libgraph = py3_inst.extension_module('graph',
 	'graph.h', graph_pyx_cpp, 'graph.cc',
-	dependencies : [py3_inst.dependency(), llvm_dep]
+	dependencies : [py3_inst.dependency(), llvm_dep, boost_dep]
 )
 
 graph_inc = include_directories('.')
