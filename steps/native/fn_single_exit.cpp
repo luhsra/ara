@@ -23,10 +23,10 @@ namespace step {
 	}
 
 	void FnSingleExit::run(graph::Graph& graph) {
- 		auto module = graph.get_llvm_module();
+		llvm::Module& module = graph.new_graph.get_module();
 		unsigned insert_counter = 0;
 
-		for (auto& function : *module) {
+		for (auto& function : module) {
 			std::list<BasicBlock *> exit_blocks;
 			for (BasicBlock& _bb : function) {
 				if (succ_begin(&_bb) == succ_end(&_bb)) {

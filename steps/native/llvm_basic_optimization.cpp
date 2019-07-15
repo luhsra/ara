@@ -38,8 +38,8 @@ namespace step {
 
 	void LLVMBasicOptimization::run(graph::Graph& graph) {
 		//		DebugFlag = true; // enable llvm passes output
-		auto module = graph.get_llvm_module();
-		auto& theContext = module->getContext();
+		llvm::Module& module = graph.new_graph.get_module();
+		auto& theContext = module.getContext();
 
 		// Collect own set of transformations
 		FunctionPassManager fpm(true);
@@ -67,7 +67,7 @@ namespace step {
 		auto fpm2 = PB.buildFunctionSimplificationPipeline(PassBuilder::OptimizationLevel::O1,
 		                                                   PassBuilder::ThinLTOPhase::None, true);
 
-		for (auto& function : *module) {
+		for (auto& function : module) {
 			if (function.empty())
 				continue;
 			// function.viewCFG();

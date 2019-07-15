@@ -19,8 +19,8 @@ namespace step {
 	std::string CompInsertTest::get_description() { return "Step for testing the CompInsert step"; }
 
 	void CompInsertTest::run(graph::Graph& graph) {
-		std::shared_ptr<llvm::Module> module = graph.get_llvm_module();
-		for (auto &f : *module) {
+		llvm::Module& module = graph.new_graph.get_module();
+		for (auto &f : module) {
 			for (auto &b : f) {
 				for (auto &i : b) {
 					bool found_double_call = false;

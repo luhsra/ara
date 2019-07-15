@@ -73,7 +73,6 @@ namespace step {
 		}
 
 		// convert unique_ptr to shared_ptr
-		std::shared_ptr<llvm::Module> shared_module = std::move(composite);
-		graph.set_llvm_module(shared_module);
+		graph.new_graph.set_module(std::move(composite));
 	}
 } // namespace step

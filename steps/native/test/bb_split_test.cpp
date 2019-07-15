@@ -17,8 +17,8 @@ namespace step {
 	std::string BBSplitTest::get_description() { return "Step for testing the BBSplit step"; }
 
 	void BBSplitTest::run(graph::Graph& graph) {
-		std::shared_ptr<llvm::Module> module = graph.get_llvm_module();
-		for (auto &F : *module) {
+		llvm::Module& module = graph.new_graph.get_module();
+		for (auto &F : module) {
 			for (auto &B : F) {
 				for (auto &I : B) {
 					if (!(llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I))) continue;

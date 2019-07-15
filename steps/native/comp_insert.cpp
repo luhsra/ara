@@ -25,9 +25,9 @@ namespace step {
 	}
 
 	void CompInsert::run(graph::Graph& graph) {
-		auto module = graph.get_llvm_module();
+		llvm::Module& module = graph.new_graph.get_module();
 		unsigned nop_count = 0;
-		for (auto &function : *module) {
+		for (auto &function : module) {
 			for (BasicBlock& bb : function) {
 				bool found_call = false;
 				for (Instruction& i : bb) {

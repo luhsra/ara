@@ -18,10 +18,10 @@ namespace step {
 	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
 
 	void BBSplit::run(graph::Graph& graph) {
-		auto module = graph.get_llvm_module();
+		llvm::Module& module = graph.new_graph.get_module();
 		unsigned split_counter = 0;
 
-		for (auto& function : *module) {
+		for (auto& function : module) {
 			std::list<BasicBlock*> bbs;
 			for (BasicBlock& _bb : function) {
 				bbs.push_back(&_bb);
