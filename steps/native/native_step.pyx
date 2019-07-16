@@ -27,6 +27,7 @@ from cdummy cimport CDummy
 from test cimport (BBSplitTest,
                    CompInsertTest,
                    FnSingleExitTest,
+                   LLVMMapTest,
                    Test0Step,
                    Test2Step)
 
@@ -200,5 +201,6 @@ def provide_test_steps(config: dict):
     return [_native_fac(config, step_fac[BBSplitTest](config)),
             _native_fac(config, step_fac[CompInsertTest](config)),
             _native_fac(config, step_fac[FnSingleExitTest](config)),
+            _native_fac(config, step_fac[LLVMMapTest](config)),
             _native_fac(config, step_fac[Test0Step](config)),
             _native_fac(config, step_fac[Test2Step](config))]
