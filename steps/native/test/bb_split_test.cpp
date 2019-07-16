@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "test.h"
+#include "llvm_common.h"
 
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/Casting.h"
@@ -21,7 +22,7 @@ namespace step {
 		for (auto &F : module) {
 			for (auto &B : F) {
 				for (auto &I : B) {
-					if (!(llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I))) continue;
+					if (!(FakeCallBase::isa(I))) continue;
 					if ((std::distance(B.begin(), B.end()) == 2) &&
 					   (&B.front() == &I)) {
 						if (llvm::BranchInst* b = llvm::dyn_cast<llvm::BranchInst>(&B.back())) {

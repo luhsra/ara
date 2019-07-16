@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "bb_split.h"
+#include "llvm_common.h"
 
 #include <iostream>
 #include <list>
@@ -30,7 +31,7 @@ namespace step {
 			for (BasicBlock* bb : bbs) {
 				BasicBlock::iterator it = bb->begin();
 				while (it != bb->end()) {
-					while (isa<InvokeInst>(*it) || isa<CallInst>(*it)) {
+					while (FakeCallBase::isa(*it)) {
 						// split before call instruction
 						std::stringstream ss;
 						ss << "BB" << split_counter++;
