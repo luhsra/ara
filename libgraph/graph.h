@@ -28,7 +28,7 @@ namespace ara::cfg {
 	/**
 	 * Holds all ABBs.
 	 */
-	class ABBGraph : public boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, ara::cfg::ABB> {
+	class ABBGraph : public boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ara::cfg::ABB> {
 	  private:
 		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
 
