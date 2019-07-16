@@ -2,10 +2,9 @@
 
 #pragma once
 
-#include <llvm/IR/Module.h>
-#include <llvm/IR/BasicBlock.h>
 #include <boost/graph/adjacency_list.hpp>
-
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Module.h>
 #include <memory>
 
 namespace ara::cfg {
@@ -30,35 +29,36 @@ namespace ara::cfg {
 	 * Holds all ABBs.
 	 */
 	class ABBGraph : public boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, ara::cfg::ABB> {
-		private:
-			std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
+	  private:
+		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
 
-		public:
-			/**
-			 * Add a vertex.
-			 */
-			ABBGraph::vertex_descriptor add_vertex(std::string name, ABBType type, llvm::BasicBlock* entry_bb, llvm::BasicBlock* exit_bb);
+	  public:
+		/**
+		 * Add a vertex.
+		 */
+		ABBGraph::vertex_descriptor add_vertex(std::string name, ABBType type, llvm::BasicBlock* entry_bb,
+		                                       llvm::BasicBlock* exit_bb);
 
-			/**
-			 * Add an directed edge between v1 and v2.
-			 */
-			std::pair<ABBGraph::edge_descriptor, bool> add_edge(ABBGraph::vertex_descriptor v1, ABBGraph::vertex_descriptor v2);
+		/**
+		 * Add an directed edge between v1 and v2.
+		 */
+		std::pair<ABBGraph::edge_descriptor, bool> add_edge(ABBGraph::vertex_descriptor v1,
+		                                                    ABBGraph::vertex_descriptor v2);
 
-			/**
-			 * Check, if graph contains bb.
-			 */
-			bool contain(const llvm::BasicBlock* bb) { return abb_map.find(bb) != abb_map.end(); }
+		/**
+		 * Check, if graph contains bb.
+		 */
+		bool contain(const llvm::BasicBlock* bb) { return abb_map.find(bb) != abb_map.end(); }
 
-			/**
-			 * Return ABB that belongs to bb.
-			 *
-			 * Throws exception, if bb cannot be mapped.
-			 */
-			ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
+		/**
+		 * Return ABB that belongs to bb.
+		 *
+		 * Throws exception, if bb cannot be mapped.
+		 */
+		ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
 	};
 
-}
-
+} // namespace ara::cfg
 
 namespace ara::graph {
 
@@ -68,23 +68,20 @@ namespace ara::graph {
 	 * Is also responsible for the lifetime of all objects.
 	 */
 	class Graph {
-		private:
-			std::unique_ptr<llvm::Module> module;
-			ara::cfg::ABBGraph abb_graph;
+	  private:
+		std::unique_ptr<llvm::Module> module;
+		ara::cfg::ABBGraph abb_graph;
 
-		public:
+	  public:
+		Graph() = default;
 
-			Graph() = default;
+		llvm::Module& get_module() const { return *module; }
+		void set_module(std::unique_ptr<llvm::Module> module) { this->module = std::move(module); }
 
-			llvm::Module& get_module() const { return *module; }
-			void set_module(std::unique_ptr<llvm::Module> module) { this->module = std::move(module); }
-
-			ara::cfg::ABBGraph& abbs() { return abb_graph; }
-
+		ara::cfg::ABBGraph& abbs() { return abb_graph; }
 	};
 
-}
-
+} // namespace ara::graph
 
 // here begins the old part, delete it as soon as not needed anymore
 #include "llvm/Analysis/LoopInfo.h"
@@ -248,9 +245,8 @@ namespace graph {
 
 		std::shared_ptr<llvm::Module> get_llvm_module();
 
-		[[deprecated]]
-		void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für die Klasse
-		                                       // Graph zu speichern
+		[[deprecated]] void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für
+		                                                      // die Klasse Graph zu speichern
 		void set_edge(
 		    shared_edge edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
 
@@ -309,7 +305,7 @@ namespace graph {
 
 		bool static_create = false;
 		bool multiple_create = false;
-		bool unsure_create = false; //created in condition
+		bool unsure_create = false; // created in condition
 
 		std::size_t vertex_type;
 		std::string name; // spezifischer Name des Vertexes
@@ -841,9 +837,7 @@ namespace OS {
 		bool dominates(shared_abb abb);
 		bool postdominates(shared_abb abb);
 
-		bool operator==(const ABB& other) {
-			return get_name() == other.get_name();
-		}
+		bool operator==(const ABB& other) { return get_name() == other.get_name(); }
 	};
 
 	// Bei Betriebssystem Abstraktionen wurden für die Attribute, die get- und set-Methoden ausgelassen und ein direkter
