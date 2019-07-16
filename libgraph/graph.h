@@ -25,15 +25,42 @@ namespace ara::cfg {
 		llvm::BasicBlock* entry_bb;
 		llvm::BasicBlock* exit_bb;
 	};
-}
-
-
-namespace ara::graph {
 
 	/**
 	 * Holds all ABBs.
 	 */
-	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, ara::cfg::ABB> ABBGraph;
+	class ABBGraph : public boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, ara::cfg::ABB> {
+		private:
+			std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
+
+		public:
+			/**
+			 * Add a vertex.
+			 */
+			ABBGraph::vertex_descriptor add_vertex(std::string name, ABBType type, llvm::BasicBlock* entry_bb, llvm::BasicBlock* exit_bb);
+
+			/**
+			 * Add an directed edge between v1 and v2.
+			 */
+			std::pair<ABBGraph::edge_descriptor, bool> add_edge(ABBGraph::vertex_descriptor v1, ABBGraph::vertex_descriptor v2);
+
+			/**
+			 * Check, if graph contains bb.
+			 */
+			bool contain(const llvm::BasicBlock* bb) { return abb_map.find(bb) != abb_map.end(); }
+
+			/**
+			 * Return ABB that belongs to bb.
+			 *
+			 * Throws exception, if bb cannot be mapped.
+			 */
+			ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
+	};
+
+}
+
+
+namespace ara::graph {
 
 	/**
 	 * Holds all the collected knowledge. Composed of subgraphs.
@@ -43,7 +70,7 @@ namespace ara::graph {
 	class Graph {
 		private:
 			std::unique_ptr<llvm::Module> module;
-			ABBGraph abbs;
+			ara::cfg::ABBGraph abb_graph;
 
 		public:
 
@@ -51,6 +78,9 @@ namespace ara::graph {
 
 			llvm::Module& get_module() const { return *module; }
 			void set_module(std::unique_ptr<llvm::Module> module) { this->module = std::move(module); }
+
+			ara::cfg::ABBGraph& abbs() { return abb_graph; }
+
 	};
 
 }
