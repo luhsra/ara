@@ -47,6 +47,6 @@ namespace step {
 				}
 			}
 		}
-		logger.debug() << "Inserted  " << insert_counter << " new common exit blocks." << std::endl;
+		logger.debug() << "Inserted " << insert_counter << " new common exit blocks." << std::endl;
 	}
 } // namespace step
