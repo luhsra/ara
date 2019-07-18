@@ -3,8 +3,17 @@
 
 #include "py_logging.h"
 
+#include <boost/type_traits.hpp>
+#include <llvm/Support/raw_os_ostream.h>
 #include <sstream>
 
+/**
+ * Provide an output stream that dumps its output with py_logging.
+ *
+ * You can use it with:
+ * Logger logger;
+ * logger.debug() << "foo" << std::endl;
+ */
 class Logger {
   private:
 	class LogBuf : public std::streambuf {
@@ -39,12 +48,62 @@ class Logger {
 	};
 
   public:
-	class LogStream : public std::ostream {
+	/**
+	 * Class that behaves like a std::ostream. There is some magic in this class so it is able to handle logging of llvm
+	 * classes and std classes.
+	 *
+	 * The problem is that LLVM has its own logging infrastructure with llvm::raw_ostream.
+	 * This wrapper class therefore contains a std::ostream object with operator<< overloads for all objects enabled for
+	 * std::ostream logging and a std::raw_ostream object with operator<< overloads for all LLVM classes.
+	 */
+	class LogStream {
+	  public:
+		/**
+		 * Enable operator<< for LLVM types (compatible with llvm::raw_ostream).
+		 */
+		template <typename T, std::enable_if_t<boost::has_left_shift<llvm::raw_ostream, T>::value, int> = 0>
+		LogStream& operator<<(T& x) {
+			llvm_stream << x;
+			llvm_stream.flush();
+			return *this;
+		}
+
+		/**
+		 * Enable operator<< for standard C++ types (compatible with std::ostream).
+		 */
+		template <typename T> LogStream& operator<<(T&& x) {
+			stream << std::forward<T>(x);
+			return *this;
+		}
+
+		/**
+		 * Enable operator<< for special functions like std::endl.
+		 */
+		LogStream& operator<<(std::ostream& (*manip)(std::ostream&)) {
+			stream << manip;
+			return *this;
+		}
+
+		/**
+		 * Get a reference to the llvm_ostream logger
+		 */
+		llvm::raw_os_ostream& llvm_ostream() { return llvm_stream; }
+
+		/**
+		 * Flush the std::ostream and llvm::raw_ostream logger.
+		 */
+		void flush() {
+			llvm_stream.flush();
+			stream.flush();
+		}
+
 	  private:
 		friend Logger;
-		LogStream(LogLevel level, PyLogger& logger) : std::ostream(&buf), buf(level, logger) {}
+		LogStream(LogLevel level, PyLogger& logger) : buf(level, logger), stream(&buf), llvm_stream(stream) {}
 
 		LogBuf buf;
+		std::ostream stream;
+		llvm::raw_os_ostream llvm_stream;
 	};
 
 	PyLogger logger;
