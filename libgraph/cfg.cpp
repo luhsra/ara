@@ -4,13 +4,36 @@
 using namespace llvm;
 
 namespace ara::cfg {
+	// ABBType functions
+	std::ostream& operator<<(std::ostream& str, const ABBType& ty) {
+		switch (ty) {
+			case syscall:
+				return (str << "syscall");
+			case call:
+				return (str << "syscall");
+			case computation:
+				return (str << "computation");
+		};
+	}
+
+	// ABB functions
+	std::ostream& operator<<(std::ostream& str, const ABB& abb) {
+		return (str << abb.name);
+	}
+
+	// Function functions
+	std::ostream& operator<<(std::ostream& str, const Function& func) {
+		return (str << func.name);
+	}
+
+	// ABBGraph functions
 	ABBGraph::vertex_descriptor ABBGraph::add_vertex(std::string name, ABBType type, llvm::BasicBlock* entry_bb,
-	                                                 llvm::BasicBlock* exit_bb) {
-		ABBGraph::vertex_descriptor vertex = boost::add_vertex(*this);
-		(*this)[vertex].name = name;
-		(*this)[vertex].type = type;
-		(*this)[vertex].entry_bb = entry_bb;
-		(*this)[vertex].exit_bb = exit_bb;
+	                                                 llvm::BasicBlock* exit_bb, FunctionDescriptor& function) {
+		ABBGraph::vertex_descriptor vertex = boost::add_vertex(function);
+		function[vertex].name = name;
+		function[vertex].type = type;
+		function[vertex].entry_bb = entry_bb;
+		function[vertex].exit_bb = exit_bb;
 
 		abb_map.insert(std::pair<const BasicBlock*, ABBGraph::vertex_descriptor>(entry_bb, vertex));
 		abb_map.insert(std::pair<const BasicBlock*, ABBGraph::vertex_descriptor>(exit_bb, vertex));
@@ -30,4 +53,9 @@ namespace ara::cfg {
 		}
 		return (*it).second;
 	}
+
+	std::ostream& operator<<(std::ostream& str, const ABBGraph& graph) {
+		return (str << "ABBGraph()");
+	}
+
 } // namespace ara::cfg

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/subgraph.hpp>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Module.h>
 #include <memory>
@@ -10,6 +11,7 @@
 namespace ara::cfg {
 
 	enum ABBType { syscall, call, computation };
+	std::ostream& operator<<(std::ostream&, const ABBType&);
 
 	/**
 	 * Represents an atomic basic block.
@@ -24,20 +26,35 @@ namespace ara::cfg {
 		llvm::BasicBlock* entry_bb;
 		llvm::BasicBlock* exit_bb;
 	};
+	std::ostream& operator<<(std::ostream&, const ABB&);
+	typedef boost::property<boost::vertex_index_t, std::size_t, ABB> vertex_prop;
+
+	struct Function {
+		std::string name;
+
+		llvm::Function* func;
+	};
+	std::ostream& operator<<(std::ostream&, const Function&);
+
+	// TODO
+	//template<class G, class P = G::graph_bundled>
+	//P& graph_prop(G g) {
+	//	return boost::get_property(g, boost::graph_bundle);
+	//}
+
+	typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_prop, boost::property< boost::edge_index_t, std::size_t>, Function>> CFGraph;
+	typedef CFGraph FunctionDescriptor;
 
 	/**
 	 * Holds all ABBs.
 	 */
-	class ABBGraph : public boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, ara::cfg::ABB> {
-	  private:
-		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
-
+	class ABBGraph : public CFGraph {
 	  public:
 		/**
 		 * Add a vertex.
 		 */
 		ABBGraph::vertex_descriptor add_vertex(std::string name, ABBType type, llvm::BasicBlock* entry_bb,
-		                                       llvm::BasicBlock* exit_bb);
+		                                       llvm::BasicBlock* exit_bb, FunctionDescriptor& function);
 
 		/**
 		 * Add an directed edge between v1 and v2.
@@ -56,7 +73,13 @@ namespace ara::cfg {
 		 * Throws exception, if bb cannot be mapped.
 		 */
 		ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
+
+	  private:
+		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
+		//std::map<const llvm::Function*, CFGraph> abb_map;
+
 	};
+	std::ostream& operator<<(std::ostream&, const ABBGraph&);
 
 } // namespace ara::cfg
 

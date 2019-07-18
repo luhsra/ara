@@ -26,13 +26,17 @@ namespace step {
 		unsigned name_counter = 0;
 
 		for (Function& func : mod) {
-			bool first_run = true;
+			ara::cfg::FunctionDescriptor& function = abbs.create_subgraph();
+			boost::get_property(function, boost::graph_bundle).name = func.getName();
+			boost::get_property(function, boost::graph_bundle).func = &func;
 			for (BasicBlock& bb : func) {
 				std::stringstream ss;
 				ss << "ABB" << name_counter++;
-				ara::cfg::ABBType ty =
-				    (FakeCallBase::isa(bb.front())) ? ara::cfg::ABBType::call : ara::cfg::ABBType::computation;
-				auto vertex = abbs.add_vertex(ss.str(), ty, &bb, &bb);
+				ara::cfg::ABBType ty = ara::cfg::ABBType::computation;
+				if (FakeCallBase::isa(bb.front()) && !isCallToLLVMIntrinsic(&bb.front())) {
+					ty = ara::cfg::ABBType::call;
+				}
+				auto vertex = abbs.add_vertex(ss.str(), ty, &bb, &bb, function);
 
 				// connect already mapped successors and predecessors
 				for (const BasicBlock* succ_b : successors(&bb)) {

@@ -23,7 +23,9 @@ namespace step {
 	void LLVMMapTest::run(graph::Graph& graph) {
 		Module& module = graph.new_graph.get_module();
 		std::set<BasicBlock*> bbs;
+		std::set<llvm::Function*> lfuncs;
 		for (auto &F : module) {
+			lfuncs.insert(&F);
 			for (auto &B : F) {
 				bbs.insert(&B);
 			}
@@ -78,6 +80,17 @@ namespace step {
 
 			abb_count++;
 		}
+
+		for (auto func : boost::make_iterator_range(abbs.children())) {
+			llvm::Function* lfunc = boost::get_property(func, boost::graph_bundle).func;
+			if (lfuncs.find(lfunc) == lfuncs.end()) {
+				logger.err() << "LLVM function (" << lfunc << ") not found in ABBGraph." << std::endl;
+				throw std::runtime_error("LLVM function not found.");
+			}
+
+			logger.debug() << "Name: " << lfunc << std::endl;
+		}
+
 
 		if (abb_count != bbs.size()) {
 			logger.err() << "Amount of ABBs (" << abb_count << ") does not match count of BBs (" << bbs.size() << ")." << std::endl;
