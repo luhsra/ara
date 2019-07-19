@@ -24,6 +24,6 @@ test('fn-single-exit',
 
 test('llvm-map',
   py3_inst,
-  args: [files('run_test_step.py'), 'freertos', 'LLVMMapTest', freertos_multi_exit],
+  args: [files('run_test_step.py'), 'freertos', 'LLVMMapTest', gpslogger_targets],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
