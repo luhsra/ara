@@ -74,6 +74,12 @@ namespace ara::cfg {
 		 */
 		ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
 
+
+		/**
+		 * Return the function that contains the vertex.
+		 */
+		const FunctionDescriptor& get_subgraph(const ABBGraph::vertex_descriptor) const;
+
 	  private:
 		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
 		//std::map<const llvm::Function*, CFGraph> abb_map;

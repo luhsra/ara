@@ -78,17 +78,25 @@ namespace step {
 				throw std::runtime_error("Predecessor sets are not equivalent.");
 			}
 
+			// functions match
+			const FunctionDescriptor& function = abbs.get_subgraph(abb);
+			llvm::Function* lfunc = boost::get_property(function).func;
+			if (lfunc != entry->getParent()) {
+				logger.err() << "LLVM Function of BB" << entry << " and ABB " << abbs[abb].name << " do not match." << std::endl;
+				throw std::runtime_error("Functions do not match.");
+			}
+
 			abb_count++;
 		}
 
-		for (auto func : boost::make_iterator_range(abbs.children())) {
-			llvm::Function* lfunc = boost::get_property(func, boost::graph_bundle).func;
+		for (auto& func : boost::make_iterator_range(abbs.children())) {
+			ara::cfg::Function& afunc = boost::get_property(func);
+			llvm::Function* lfunc = afunc.func;
+
 			if (lfuncs.find(lfunc) == lfuncs.end()) {
 				logger.err() << "LLVM function (" << lfunc << ") not found in ABBGraph." << std::endl;
 				throw std::runtime_error("LLVM function not found.");
 			}
-
-			logger.debug() << "Name: " << lfunc << std::endl;
 		}
 
 

@@ -54,6 +54,16 @@ namespace ara::cfg {
 		return (*it).second;
 	}
 
+	const FunctionDescriptor& ABBGraph::get_subgraph(const ABBGraph::vertex_descriptor v) const {
+		// TODO more efficient algorithm?
+		for (auto& function : boost::make_iterator_range(this->children())) {
+			auto result = function.find_vertex(v);
+			if (result.second) {
+				return function;
+			}
+		}
+	}
+
 	std::ostream& operator<<(std::ostream& str, const ABBGraph& graph) {
 		return (str << "ABBGraph()");
 	}
