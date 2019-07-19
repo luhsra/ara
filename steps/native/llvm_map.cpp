@@ -27,9 +27,12 @@ namespace step {
 
 		for (Function& func : mod) {
 			ara::cfg::FunctionDescriptor& function = abbs.create_subgraph();
+
 			ara::cfg::Function& f = boost::get_property(function);
 			f.name = func.getName();
 			f.func = &func;
+
+			logger.debug() << "Inserted new function " << f.name << "." << std::endl;
 
 			for (BasicBlock& bb : func) {
 				std::stringstream ss;
@@ -53,5 +56,7 @@ namespace step {
 				}
 			}
 		}
+
+		logger.debug() << "Inserted " << name_counter << " ABBs." << std::endl;
 	}
 } // namespace step

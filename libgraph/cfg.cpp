@@ -18,12 +18,12 @@ namespace ara::cfg {
 
 	// ABB functions
 	std::ostream& operator<<(std::ostream& str, const ABB& abb) {
-		return (str << abb.name);
+		return (str << "ABB(" << abb.name << ")");
 	}
 
 	// Function functions
 	std::ostream& operator<<(std::ostream& str, const Function& func) {
-		return (str << func.name);
+		return (str << "Function(" << func.name << ")");
 	}
 
 	// ABBGraph functions
@@ -34,6 +34,8 @@ namespace ara::cfg {
 		function[vertex].type = type;
 		function[vertex].entry_bb = entry_bb;
 		function[vertex].exit_bb = exit_bb;
+
+		vertex = function.local_to_global(vertex);
 
 		abb_map.insert(std::pair<const BasicBlock*, ABBGraph::vertex_descriptor>(entry_bb, vertex));
 		abb_map.insert(std::pair<const BasicBlock*, ABBGraph::vertex_descriptor>(exit_bb, vertex));

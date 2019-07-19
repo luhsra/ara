@@ -52,6 +52,8 @@ namespace ara::cfg {
 	  public:
 		/**
 		 * Add a vertex.
+		 *
+		 * Return the global vertex descriptor (referring to the ABBGraph itself).
 		 */
 		ABBGraph::vertex_descriptor add_vertex(std::string name, ABBType type, llvm::BasicBlock* entry_bb,
 		                                       llvm::BasicBlock* exit_bb, FunctionDescriptor& function);
