@@ -38,6 +38,13 @@ from cstep cimport step_fac
 
 import logging
 import inspect
+from collections import namedtuple
+from typing import List
+
+
+# TODO: make this to a dataclass, once Python 3.7 is available in Ubuntu LTS
+Option = namedtuple('Option', ['name', 'help'])
+
 
 cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
@@ -90,6 +97,11 @@ cdef class SuperStep:
         """
         raise NotImplementedError()
 
+    def config_help(self) -> List[Option]:
+        """Get information about accepted per step configuration options."""
+        return []
+
+
 class Step(SuperStep):
     """Python representation of a step. This is the superclass for all other
     steps."""
@@ -101,6 +113,12 @@ class Step(SuperStep):
 
     def get_description(self) -> str:
         return inspect.cleandoc(self.__doc__)
+
+    def _get_config(self, key: str):
+        """Get step configuration option for key."""
+        if self.get_name() in self._config['_per_step_config']:
+            return self._config['_per_step_config'][self.get_name()].get(key,
+                self._config.get(key, None))
 
 
 cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
@@ -161,6 +179,15 @@ cdef class NativeStep(SuperStep):
                 warnings.append(p_warn)
             return warnings
         super().get_side_data()
+
+    def config_help(self):
+        chelps = self._c_pass.config_help()
+        config_help = []
+
+        for entry in chelps:
+            config_help.append(Option(name=entry.name.decode('UTF-8'),
+                                      help=entry.help.decode('UTF-8')))
+        return config_help
 
 
 cdef _native_fac(config: dict, cstep.Step* step):

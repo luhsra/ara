@@ -14,6 +14,8 @@ namespace step {
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {}; }
 
+		virtual std::vector<Option> config_help() const override;
+
 		virtual void run(graph::Graph& graph) override;
 	};
 } // namespace step

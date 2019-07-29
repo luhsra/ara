@@ -14,6 +14,17 @@
 namespace step {
 
 	/**
+	 * Description object for options
+	 */
+	struct Option {
+		std::string name;
+		std::string help;
+
+		Option(std::string name, std::string help) : name(name), help(help) {}
+		Option() = default;
+	};
+
+	/**
 	 * Superclass for constructing arbitrary steps in C++.
 	 */
 	class Step {
@@ -62,6 +73,11 @@ namespace step {
 		 * This method is called, when the pass is invoked.
 		 */
 		virtual void run(graph::Graph& graph) = 0;
+
+		/**
+		 * Return information about extra per step options.
+		 */
+		virtual std::vector<Option> config_help() const { return {}; }
 	};
 
 	template <class S> Step* step_fac(PyObject* config) { return new S(config); }

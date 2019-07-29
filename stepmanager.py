@@ -15,13 +15,14 @@ class StepManager:
     with a list of step that should be executed.
     """
 
-    def __init__(self, g: graph.PyGraph, config: dict,
+    def __init__(self, g: graph.PyGraph, config: dict, extra_config: dict,
                  provides=steps.provide_steps):
         """Construct a StepManager.
 
         Arguments:
-        g      -- the system graph
-        config -- the program configuration. This should be a dict.
+        g            -- the system graph
+        config       -- the program configuration
+        extra_config -- per step configuration
 
         Keyword arguments:
         provides -- An optional provides function to announce the passes to
@@ -29,9 +30,10 @@ class StepManager:
         """
         self._graph = g
         self._config = config
+        self._config['_per_step_config'] = extra_config
         self._steps = {}
         self._log = logging.getLogger(self.__class__.__name__)
-        for step in provides(config):
+        for step in provides(self._config):
             self._steps[step.get_name()] = step
 
     def get_step(self, name):
