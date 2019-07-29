@@ -14,7 +14,7 @@
 namespace step {
 	using namespace llvm;
 
-	std::string CompInsert::get_description() {
+	std::string CompInsert::get_description() const {
 		return "Insert a nop (computation block) after calls so that every call is followed by a non call."
 			   "\n"
 			   "Insert the nop only, if the call is followed by another call or at the end. ";

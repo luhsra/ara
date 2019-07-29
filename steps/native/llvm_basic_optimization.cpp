@@ -27,7 +27,7 @@
 namespace step {
 	using namespace llvm;
 
-	std::string LLVMBasicOptimization::get_description() {
+	std::string LLVMBasicOptimization::get_description() const {
 		return "Perform some basic optimizations passes from llvm."
 		  "\n";
 	}

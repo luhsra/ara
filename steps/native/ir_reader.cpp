@@ -9,7 +9,7 @@
 static llvm::LLVMContext context;
 
 namespace step {
-	std::string IRReader::get_description() { return "Parser IR files and link together to an LLVM module"; }
+	std::string IRReader::get_description() const { return "Parser IR files and link together to an LLVM module"; }
 
 	std::unique_ptr<llvm::Module> IRReader::load_file(const std::string& filepath, llvm::LLVMContext& Context) {
 		llvm::SMDiagnostic err;

@@ -3,7 +3,7 @@
 #include "cdummy.h"
 
 namespace step {
-	std::string CDummy::get_description() {
+	std::string CDummy::get_description() const {
 		return "Template for a C++ step."
 		       "\n"
 		       "Add a meaningful description of your step here.";

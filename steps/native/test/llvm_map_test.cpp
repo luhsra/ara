@@ -16,9 +16,9 @@ using namespace llvm;
 using namespace ara::cfg;
 
 namespace step {
-	std::string LLVMMapTest::get_name() { return "LLVMMapTest"; }
+	std::string LLVMMapTest::get_name() const { return "LLVMMapTest"; }
 
-	std::string LLVMMapTest::get_description() { return "Step for testing the LLVMMap step"; }
+	std::string LLVMMapTest::get_description() const { return "Step for testing the LLVMMap step"; }
 
 	void LLVMMapTest::run(graph::Graph& graph) {
 		Module& module = graph.new_graph.get_module();

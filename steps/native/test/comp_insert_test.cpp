@@ -14,9 +14,9 @@
 #include "graph.h"
 
 namespace step {
-	std::string CompInsertTest::get_name() { return "CompInsertTest"; }
+	std::string CompInsertTest::get_name() const { return "CompInsertTest"; }
 
-	std::string CompInsertTest::get_description() { return "Step for testing the CompInsert step"; }
+	std::string CompInsertTest::get_description() const { return "Step for testing the CompInsert step"; }
 
 	void CompInsertTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.new_graph.get_module();

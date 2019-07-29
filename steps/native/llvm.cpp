@@ -151,7 +151,7 @@ namespace step {
 		}
 	}
 
-	std::string LLVMStep::get_description() {
+	std::string LLVMStep::get_description() const {
 
 		return "Extracts initial objects out of the ll-files.\n"
 		       "Initializes all functions and unmerged ABBs. Also tries to extract all arguments out of function "

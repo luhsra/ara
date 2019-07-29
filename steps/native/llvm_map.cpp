@@ -10,7 +10,7 @@ using namespace llvm;
 using namespace std;
 
 namespace step {
-	std::string LLVMMap::get_description() {
+	std::string LLVMMap::get_description() const {
 		return "Map llvm::Basicblock and ara::cfg::ABB"
 		       "\n"
 		       "Maps in a one to one mapping.";

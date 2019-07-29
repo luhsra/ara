@@ -1356,9 +1356,9 @@ void verify_buffer_access(graph::Graph& graph, std::vector<shared_warning>* warn
 
 namespace step {
 
-	std::string ValidationStep::get_name() { return "ValidationStep"; }
+	std::string ValidationStep::get_name() const { return "ValidationStep"; }
 
-	std::string ValidationStep::get_description() {
+	std::string ValidationStep::get_description() const {
 		return "Validates the ARSA graph regarding the right use of abstraction instances. Deadlocks, priority "
 		       "inversions are detected and the right use of mutexes, events and semaphore is checked. Also critical "
 		       "regions are determined.";

@@ -788,9 +788,9 @@ void get_predefined_system_information(graph::Graph& graph) {
 
 namespace step {
 
-	std::string IntermediateAnalysisStep::get_name() { return "IntermediateAnalysisStep"; }
+	std::string IntermediateAnalysisStep::get_name() const { return "IntermediateAnalysisStep"; }
 
-	std::string IntermediateAnalysisStep::get_description() {
+	std::string IntermediateAnalysisStep::get_description() const {
 		return "Intermediate analysis are done in this step. The abb lists of each function are ordered in topolical "
 		       "order, loops are detected and system configuration informations are loaded. Also hook instances are "
 		       "generated.";

@@ -12,9 +12,9 @@
 #include "graph.h"
 
 namespace step {
-	std::string FnSingleExitTest::get_name() { return "FnSingleExitTest"; }
+	std::string FnSingleExitTest::get_name() const { return "FnSingleExitTest"; }
 
-	std::string FnSingleExitTest::get_description() { return "Step for testing the FnSingleExit step"; }
+	std::string FnSingleExitTest::get_description() const { return "Step for testing the FnSingleExit step"; }
 
 	void FnSingleExitTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.new_graph.get_module();

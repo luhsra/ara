@@ -44,15 +44,15 @@ namespace step {
 		/**
 		 * Return a unique name of this step. This acts as ID for the step.
 		 */
-		virtual std::string get_name() = 0;
+		virtual std::string get_name() const = 0;
 
 		/**
 		 * Get a descriptive string of the step that says what the step is doing.
 		 */
-		virtual std::string get_description() = 0;
+		virtual std::string get_description() const = 0;
 
 		/**
-		 * Get all depencies of this step.
+		 * Get all dependencies of this step.
 		 *
 		 * @Return: A list of step names (the ones that are returned with get_name().
 		 */
@@ -64,11 +64,7 @@ namespace step {
 		virtual void run(graph::Graph& graph) = 0;
 	};
 
-	template<class S>
-	Step* step_fac(PyObject* config)
-	{
-	    return new S(config);
-	}
+	template <class S> Step* step_fac(PyObject* config) { return new S(config); }
 } // namespace step
 
 #endif // STEP_H

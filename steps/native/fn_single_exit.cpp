@@ -14,7 +14,7 @@
 namespace step {
 	using namespace llvm;
 
-	std::string FnSingleExit::get_description() {
+	std::string FnSingleExit::get_description() const {
 		return "Insert empty exit BB for functions having multiple exit BBs";
 	}
 

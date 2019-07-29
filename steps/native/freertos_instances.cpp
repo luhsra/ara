@@ -1447,9 +1447,9 @@ void iterate_called_functions(graph::Graph& graph, graph::shared_vertex start_ve
 
 namespace step {
 
-	std::string FreeRTOSInstancesStep::get_name() { return "FreeRTOSInstancesStep"; }
+	std::string FreeRTOSInstancesStep::get_name() const { return "FreeRTOSInstancesStep"; }
 
-	std::string FreeRTOSInstancesStep::get_description() {
+	std::string FreeRTOSInstancesStep::get_description() const {
 		return "Extracts out of FreeRTOS abstraction instances. For each abb in ARSA-Graph which contains a create "
 		       "syscall a corresponding abstraction instance is generated. All initial properties are stored in the "
 		       "generated instances";

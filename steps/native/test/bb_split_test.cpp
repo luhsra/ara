@@ -13,9 +13,9 @@
 #include "graph.h"
 
 namespace step {
-	std::string BBSplitTest::get_name() { return "BBSplitTest"; }
+	std::string BBSplitTest::get_name() const { return "BBSplitTest"; }
 
-	std::string BBSplitTest::get_description() { return "Step for testing the BBSplit step"; }
+	std::string BBSplitTest::get_description() const { return "Step for testing the BBSplit step"; }
 
 	void BBSplitTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.new_graph.get_module();

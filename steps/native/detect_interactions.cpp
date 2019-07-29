@@ -648,9 +648,9 @@ void get_osek_appmode(graph::Graph& graph, std::vector<shared_warning>* warning_
 
 namespace step {
 
-	std::string DetectInteractionsStep::get_name() { return "DetectInteractionsStep"; }
+	std::string DetectInteractionsStep::get_name() const { return "DetectInteractionsStep"; }
 
-	std::string DetectInteractionsStep::get_description() {
+	std::string DetectInteractionsStep::get_description() const {
 		return "Extracts out of FreeRTOS abstraction instances. Iterates about the GCFG of each abstraktion instance "
 		       "which is defined by functions. For each abb from type syscall a edge is generated from the start, "
 		       "instance which contains the abb, to the target vertex, instance which is addressed by the syscall.";

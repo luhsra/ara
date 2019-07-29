@@ -13,8 +13,8 @@ namespace step {
 	  public:
 		Test0Step(PyObject* config) : Step(config) {}
 
-		virtual std::string get_name() override;
-		virtual std::string get_description() override;
+		virtual std::string get_name() const override;
+		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 		virtual void run(graph::Graph& graph) override;
 	};
@@ -23,8 +23,8 @@ namespace step {
 	  public:
 		Test2Step(PyObject* config) : Step(config) {}
 
-		virtual std::string get_name() override;
-		virtual std::string get_description() override;
+		virtual std::string get_name() const override;
+		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 		virtual void run(graph::Graph& graph) override;
 	};
@@ -33,8 +33,8 @@ namespace step {
 	  public:
 		BBSplitTest(PyObject* config) : Step(config) {}
 
-		virtual std::string get_name() override;
-		virtual std::string get_description() override;
+		virtual std::string get_name() const override;
+		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 		virtual void run(graph::Graph& graph) override;
 	};
@@ -43,8 +43,8 @@ namespace step {
 	  public:
 		CompInsertTest(PyObject* config) : Step(config) {}
 
-		virtual std::string get_name() override;
-		virtual std::string get_description() override;
+		virtual std::string get_name() const override;
+		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 		virtual void run(graph::Graph& graph) override;
 	};
@@ -52,8 +52,8 @@ namespace step {
 	class FnSingleExitTest : public Step {
 	  public:
 		FnSingleExitTest(PyObject* config) : Step(config) {}
-		virtual std::string get_name() override;
-		virtual std::string get_description() override;
+		virtual std::string get_name() const override;
+		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
@@ -62,8 +62,8 @@ namespace step {
 	class LLVMMapTest : public Step {
 	  public:
 		LLVMMapTest(PyObject* config) : Step(config) {}
-		virtual std::string get_name() override;
-		virtual std::string get_description() override;
+		virtual std::string get_name() const override;
+		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
