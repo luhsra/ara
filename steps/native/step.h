@@ -28,15 +28,18 @@ namespace step {
 		Logger logger;
 
 		ara::option::TOption<ara::option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
-				ara::option::makeChoice("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG")};
+				ara::option::makeChoice("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
+				/* global = */ true};
 		ara::option::TOption<ara::option::Choice<2>> os{"os", "Select the operating system.",
-				ara::option::makeChoice("FreeRTOS", "OSEK")};
-		ara::option::TOption<ara::option::String> after{"after", "Queue step directly after the mentioned step."};
+				ara::option::makeChoice("FreeRTOS", "OSEK"),
+				/* global = */ true};
+		ara::option::TOption<ara::option::String> after{"after", "Queue step directly after the mentioned step.",
+			ara::option::String(), /* global = */ true};
 
 		/**
 		 * Fill with all used options.
 		 */
-		virtual void fill_options(std::vector<option_ref>& opts) {}
+		virtual void fill_options(std::vector<option_ref>&) {}
 
 	  public:
 		/**
@@ -54,6 +57,7 @@ namespace step {
 			fill_options(opts);
 
 			for (ara::option::Option& option : opts) {
+				option.set_step_name(this->get_name());
 				option.check(config);
 			}
 		}

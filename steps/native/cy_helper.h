@@ -12,6 +12,7 @@ std::vector<ara::option::Option*> repack(const step::Step& step) {
 	for (ara::option::Option& opt : step.options()) {
 		rep.emplace_back(&opt);
 	}
+	return rep;
 }
 
 template <class S> step::Step* step_fac(PyObject* config) { return new S(config); }
