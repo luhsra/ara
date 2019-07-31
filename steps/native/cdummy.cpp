@@ -9,9 +9,18 @@ namespace step {
 		       "Add a meaningful description of your step here.";
 	}
 
-	std::vector<Option> CDummy::config_help() const {
-		return {Option("dummy_option", "Just an option to demonstrate options.")};
+	void CDummy::fill_options(std::vector<option_ref>& opts) {
+		opts.emplace_back(dummy_option);
 	}
 
-	void CDummy::run(graph::Graph& graph) { logger.info() << "Execute C++ dummy step." << std::endl; }
+	void CDummy::run(graph::Graph& graph) {
+		logger.info() << "Execute C++ dummy step";
+
+		std::pair<int64_t, bool> dopt = dummy_option.get();
+		if (dopt.second) {
+			logger.info() << " with option value: " << dopt.first;
+		}
+
+		logger.info() << std::endl;
+	}
 } // namespace step

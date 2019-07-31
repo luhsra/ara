@@ -677,13 +677,13 @@ namespace step {
 	}
 
 	std::vector<std::string> DetectInteractionsStep::get_dependencies() {
-		PyObject* elem = PyDict_GetItemString(config, "os");
-		assert(PyUnicode_Check(elem));
-
-		if (strcmp("freertos", PyUnicode_AsUTF8(elem)) == 0)
+		assert(os.get().second);
+		if (os.get().first == "FreeRTOS") {
 			return {"FreeRTOSInstancesStep"};
-		else if (strcmp("osek", PyUnicode_AsUTF8(elem)) == 0)
+		} else if (os.get().first == "OSEK") {
 			return {"OilStep"};
+		}
+		assert(false);
 	}
 } // namespace step
 // RAII

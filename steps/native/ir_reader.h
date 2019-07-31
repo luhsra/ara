@@ -18,6 +18,10 @@ namespace step {
 		 */
 		std::unique_ptr<llvm::Module> load_file(const std::string& FN, llvm::LLVMContext& Context);
 
+		ara::option::TOption<ara::option::List<ara::option::String>> input_files{"input_files", "Get input files."};
+
+		virtual void fill_options(std::vector<option_ref>& opts) override { opts.emplace_back(input_files); }
+
 	  public:
 		IRReader(PyObject* config) : Step(config) {}
 

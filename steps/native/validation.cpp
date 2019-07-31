@@ -1387,15 +1387,6 @@ namespace step {
 	}
 
 	std::vector<std::string> ValidationStep::get_dependencies() {
-
-		// get file arguments from config
-		std::vector<std::string> files;
-
-		PyObject* elem = PyDict_GetItemString(config, "os");
-
-		if (elem != nullptr)
-			std::cerr << "success" << std::endl;
-		assert(PyUnicode_Check(elem));
 		return {"DetectInteractionsStep"};
 	}
 } // namespace step

@@ -40,7 +40,8 @@ log_dep = declare_dependency(
 
 plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
-  files('detect_interactions.cpp',
+  files('option.cpp',
+        'detect_interactions.cpp',
         'freertos_instances.cpp',
         'intermediate_analysis.cpp',
         'validation.cpp',

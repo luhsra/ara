@@ -6,31 +6,37 @@
 #include "Python.h"
 #include "graph.h"
 #include "logging.h"
+#include "option.h"
 
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace step {
-
-	/**
-	 * Description object for options
-	 */
-	struct Option {
-		std::string name;
-		std::string help;
-
-		Option(std::string name, std::string help) : name(name), help(help) {}
-		Option() = default;
-	};
 
 	/**
 	 * Superclass for constructing arbitrary steps in C++.
 	 */
 	class Step {
+		public:
+		using option_ref = std::reference_wrapper<ara::option::Option>;
+		private:
+		  std::vector<option_ref> opts;
+
 	  protected:
-		PyObject* config;
 		Logger logger;
+
+		ara::option::TOption<ara::option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
+				ara::option::makeChoice("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG")};
+		ara::option::TOption<ara::option::Choice<2>> os{"os", "Select the operating system.",
+				ara::option::makeChoice("FreeRTOS", "OSEK")};
+		ara::option::TOption<ara::option::String> after{"after", "Queue step directly after the mentioned step."};
+
+		/**
+		 * Fill with all used options.
+		 */
+		virtual void fill_options(std::vector<option_ref>& opts) {}
 
 	  public:
 		/**
@@ -39,9 +45,16 @@ namespace step {
 		 * @Args
 		 * config -- a Python dictionary, that holds the configuration of the whole program.
 		 */
-		Step(PyObject* config) : config(config) {
+		Step(PyObject* config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Step: Need a dict as config.");
+			}
+
+			std::vector<std::reference_wrapper<ara::option::Option>> opts = {log_level, after};
+			fill_options(opts);
+
+			for (ara::option::Option& option : opts) {
+				option.check(config);
 			}
 		}
 
@@ -75,12 +88,11 @@ namespace step {
 		virtual void run(graph::Graph& graph) = 0;
 
 		/**
-		 * Return information about extra per step options.
+		 * Return a vector with all options.
 		 */
-		virtual std::vector<Option> config_help() const { return {}; }
+		const std::vector<option_ref>& options() const { return opts; }
 	};
 
-	template <class S> Step* step_fac(PyObject* config) { return new S(config); }
 } // namespace step
 
 #endif // STEP_H

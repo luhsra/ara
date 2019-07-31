@@ -180,14 +180,14 @@ cdef class NativeStep(SuperStep):
             return warnings
         super().get_side_data()
 
-    def config_help(self):
-        chelps = self._c_pass.config_help()
-        config_help = []
+    def options(self):
+        opts = cstep.repack(deref(self._c_pass))
+        options = []
 
-        for entry in chelps:
-            config_help.append(Option(name=entry.name.decode('UTF-8'),
-                                      help=entry.help.decode('UTF-8')))
-        return config_help
+        for entry in opts:
+            options.append(Option(name=entry.name.decode('UTF-8'),
+                                  help=entry.help.decode('UTF-8')))
+        return options
 
 
 cdef _native_fac(config: dict, cstep.Step* step):

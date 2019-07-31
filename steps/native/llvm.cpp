@@ -336,14 +336,8 @@ namespace step {
 		std::vector<shared_warning>* warning_list = &(this->warnings);
 
 		// get file arguments from config
-		std::vector<std::string> files;
-		PyObject* input_files = PyDict_GetItemString(config, "input_files");
-		assert(input_files != nullptr && PyList_Check(input_files));
-		for (Py_ssize_t i = 0; i < PyList_Size(input_files); ++i) {
-			PyObject* elem = PyList_GetItem(input_files, i);
-			assert(PyUnicode_Check(elem));
-			files.push_back(std::string(PyUnicode_AsUTF8(elem)));
-		}
+		assert(input_files.get().second);
+		std::vector<std::string> files = input_files.get().first;
 
 		std::string ErrorMessage;
 
