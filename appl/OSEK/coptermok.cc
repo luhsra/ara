@@ -196,7 +196,6 @@ TASK(SignalGatherWaitTask) {
 
 	if (reply == 0 | reply == 1 | reply == 5) {
 		SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent | SignalGatherDigital2bEvent);
-        SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
 	}
 	
 	if (reply <= 4) {
@@ -210,40 +209,37 @@ TASK(SignalGatherWaitTask) {
 	if (reply == 3)  {
 		SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aEvent);
 	}
-    
+
     TerminateTask();
 }
 
 TASK(SignalGatherTimeoutTask) {
     test_trace(SG_TIMEOUT_TASK);
-    //SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aTimeoutEvent | SignalGatherDigital2bTimeoutEvent);
-    SetEvent(SignalProcessingActuateTask,  SignalGatherDigital2bTimeoutEvent);
+    SetEvent(SignalProcessingActuateTask, SignalGatherDigital2aTimeoutEvent | SignalGatherDigital2bTimeoutEvent);
     SetEvent(SignalProcessingAttitudeTask, SignalGatherDigital1TimeoutEvent);
     TerminateTask();
 }
 
 
 TASK(SignalProcessingActuateTask) {
-    ClearEvent(SignalGatherDigital2bTimeoutEvent);
-     ClearEvent(SignalGatherDigital2aEvent
-                    | SignalGatherDigital2bEvent
-                    | SignalGatherDigital2aTimeoutEvent
-                    | SignalGatherDigital2bTimeoutEvent);
-
-     WaitEvent(SignalGatherDigital2aEvent
+    ClearEvent(SignalGatherDigital2aEvent
                    | SignalGatherDigital2bEvent
                    | SignalGatherDigital2aTimeoutEvent
                    | SignalGatherDigital2bTimeoutEvent);
+    WaitEvent(SignalGatherDigital2aEvent
+                  | SignalGatherDigital2bEvent
+                  | SignalGatherDigital2aTimeoutEvent
+                  | SignalGatherDigital2bTimeoutEvent);
 
     EventMaskType events;
     GetEvent(SignalProcessingActuateTask, &events);
     int not_timeout = events & (SignalGatherDigital2aEvent | SignalGatherDigital2bEvent);
 
-     ClearEvent(SignalGatherDigital2aEvent
-                    | SignalGatherDigital2bEvent
-                    | SignalGatherDigital2aTimeoutEvent
-                    | SignalGatherDigital2bTimeoutEvent);
-  
+    ClearEvent(SignalGatherDigital2aEvent
+                   | SignalGatherDigital2bEvent
+                   | SignalGatherDigital2aTimeoutEvent
+                   | SignalGatherDigital2bTimeoutEvent);
+
     if (not_timeout) {
         test_trace(SP_ACTUATE_TASK);
     } else {
@@ -255,11 +251,8 @@ TASK(SignalProcessingActuateTask) {
 }
 
 TASK(SignalProcessingAttitudeTask) {
-    
     ClearEvent(SignalGatherAnalogEvent | SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
-  
     WaitEvent(SignalGatherDigital1Event | SignalGatherDigital1TimeoutEvent);
-
     WaitEvent(SignalGatherAnalogEvent);
 
     EventMaskType events;
@@ -351,5 +344,4 @@ void FaultDetectedHook() {
 
 	ShutdownMachine();
 }
-
 

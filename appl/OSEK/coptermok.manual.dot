@@ -1,0 +1,185 @@
+digraph coptermock {
+
+##Resources
+{
+node [style=filled color="#ffffd9" shape=box];
+SPIBusResource
+}
+
+## Tasks
+{
+node [style=filled color=mediumseagreen shape=record];
+InitTask [label="{\N | activation: 1| autostart: 0| prio: 31| sched: 1}"];
+SignalGatherInitiateTask [label="{\N | activation: 1| autostart: 0| prio: 9| sched: 1}"];
+SignalGatherWaitTask [label="{\N | activation: 1| autostart: 0| prio: 10| sched: 1}"];
+SignalGatherTimeoutTask [label="{\N | activation: 1| autostart: 0| prio: 11| sched: 1}"];
+SignalProcessingActuateTask [label="{\N | activation: 1| autostart: 0| prio: 13| sched: 1}"];
+SignalProcessingAttitudeTask [label="{\N | activation: 1| autostart: 0| prio: 12| sched: 1}"];
+FlightControlAttitudeTask [label="{\N | activation: 1| autostart: 0| prio: 14| sched: 1}"];
+FlightControlActuateTask [label="{\N | activation: 1| autostart: 0| prio: 15| sched: 1}"];
+ActuateTask [label="{\N | activation: 1| autostart: 0| prio: 16| sched: 1}"];
+MavlinkSendTask [label="{\N | activation: 1| autostart: 0| prio: 0| sched: 1}"];
+MavlinkRecvTask [label="{\N | activation: 1| autostart: 0| prio: 4| sched: 1}"];
+CopterControlWatchdogTask [label="{\N | activation: 1| autostart: 0| prio: 7| sched: 1}"];
+CopterControlTask [label="{\N | activation: 1| autostart: 0| prio: 6| sched: 1}"];
+EthernetTask [label="{\N | activation: 1| autostart: 0| prio: 5| sched: 1}"];
+}
+
+## Alarms
+{
+node [style=filled color=gold];
+SamplingAlarm
+SignalGatherTimeoutAlarm
+ActuateAlarm
+CopterControlWatchdogAlarm
+}
+
+// ## Events
+{
+node [color="cyan" shape=box style=filled];
+SignalProcessingActuateTask__SignalGatherDigital2bTimeoutEvent
+SignalProcessingActuateTask__SignalGatherDigital2aTimeoutEvent
+SignalProcessingActuateTask__SignalGatherDigital2aEvent
+SignalProcessingActuateTask__SignalGatherDigital2bEvent
+SignalProcessingAttitudeTask__SignalGatherAnalogEvent
+SignalProcessingAttitudeTask__SignalGatherDigital1Event
+SignalProcessingAttitudeTask__SignalGatherDigital1TimeoutEvent
+EthernetTask__EthernetReceiveEvent
+}
+
+subgraph cluster_4 {
+SignalProcessingActuateTask
+SignalProcessingActuateTask__SignalGatherDigital2bTimeoutEvent
+SignalProcessingActuateTask__SignalGatherDigital2aTimeoutEvent
+SignalProcessingActuateTask__SignalGatherDigital2aEvent
+SignalProcessingActuateTask__SignalGatherDigital2bEvent
+_t1 [style=invis, shape=point]
+_t2 [style=invis, shape=point]
+_t3 [style=invis, shape=point]
+_t4 [style=invis, shape=point]
+}
+subgraph cluster_2 {
+SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask__SignalGatherAnalogEvent
+SignalProcessingAttitudeTask__SignalGatherDigital1Event
+SignalProcessingAttitudeTask__SignalGatherDigital1TimeoutEvent
+_t5 [style=invis, shape=point]
+_t6 [style=invis, shape=point]
+_t7 [style=invis, shape=point]
+}
+subgraph cluster_1 {
+EthernetTask
+EthernetTask__EthernetReceiveEvent
+}
+
+
+O -> InitTask [label="init"];
+InitTask -> SamplingAlarm [label="SetRelAlarm 100 3"];
+InitTask -> ActuateAlarm [label="SetRelAlarm 103 9"];
+InitTask -> CopterControlWatchdogAlarm [label="SetRelAlarm 100 1"];
+InitTask -> EthernetTask [label="activate"];
+InitTask -> InitTask [label="terminate"];
+
+SignalGatherInitiateTask -> OS [label="shutdown"];
+SignalGatherInitiateTask -> SignalProcessingActuateTask [label="activate"];
+SignalGatherInitiateTask -> SignalProcessingAttitudeTask [label="activate"];
+SignalGatherInitiateTask -> SignalProcessingAttitudeTask__SignalGatherAnalogEvent [label="set"];
+SignalGatherInitiateTask -> SignalGatherTimeoutAlarm [label="cancel"];
+SignalGatherInitiateTask -> SignalGatherTimeoutAlarm [label="setRelalarm 2 0"];
+SignalGatherInitiateTask -> SPIBusResource [label="get"];
+SignalGatherInitiateTask -> SPIBusResource [label="release"];
+SignalGatherInitiateTask -> EthernetTask__EthernetReceiveEvent [label="set"];
+SignalGatherInitiateTask -> SignalGatherWaitTask [label="chain"];
+
+SignalGatherWaitTask -> SPIBusResource [label="get"];
+SignalGatherWaitTask -> SPIBusResource [label="release"];
+SignalGatherWaitTask -> SignalGatherTimeoutAlarm [label="cancle"];
+SignalGatherWaitTask -> _t1
+_t1-> SignalProcessingActuateTask__SignalGatherDigital2aEvent [label="set"];
+_t1-> SignalProcessingActuateTask__SignalGatherDigital2bEvent [label="set"];
+SignalGatherWaitTask -> SignalProcessingAttitudeTask__SignalGatherDigital1Event [label="set"];
+SignalGatherWaitTask -> SignalProcessingActuateTask__SignalGatherDigital2bEvent [label="set"];
+SignalGatherWaitTask -> SignalProcessingActuateTask__SignalGatherDigital2aEvent [label="set"];
+SignalGatherWaitTask -> SignalGatherWaitTask [label="terminate"];
+
+SignalGatherTimeoutTask -> SignalProcessingActuateTask__SignalGatherDigital2bEvent [label=" set"];
+SignalGatherTimeoutTask -> SignalProcessingAttitudeTask__SignalGatherDigital1Event [label=" set"];
+SignalGatherTimeoutTask -> SignalGatherTimeoutTask [label="terminate"];
+
+
+
+SignalProcessingActuateTask -> SignalProcessingActuateTask__SignalGatherDigital2bTimeoutEvent [label="clear"];
+SignalProcessingActuateTask -> _t2
+_t2 -> SignalProcessingActuateTask__SignalGatherDigital2aEvent [label="clear"];
+_t2 -> SignalProcessingActuateTask__SignalGatherDigital2bEvent [label="clear"];
+_t2 -> SignalProcessingActuateTask__SignalGatherDigital2aTimeoutEvent [label="clear"];
+_t2 -> SignalProcessingActuateTask__SignalGatherDigital2bTimeoutEvent [label="clear"];
+
+
+
+SignalProcessingActuateTask -> _t3
+_t3 -> SignalProcessingActuateTask__SignalGatherDigital2aEvent [label="wait"];
+_t3 -> SignalProcessingActuateTask__SignalGatherDigital2bEvent [label="wait"];
+_t3 -> SignalProcessingActuateTask__SignalGatherDigital2aTimeoutEvent [label="wait"];
+_t3 -> SignalProcessingActuateTask__SignalGatherDigital2bTimeoutEvent [label="wait"];
+
+
+SignalProcessingActuateTask -> SignalProcessingActuateTask [label="getEvent"];
+SignalProcessingActuateTask -> _t4
+_t4 -> SignalProcessingActuateTask__SignalGatherDigital2aEvent [label="clear"];
+_t4 -> SignalProcessingActuateTask__SignalGatherDigital2bEvent [label="clear"];
+_t4 -> SignalProcessingActuateTask__SignalGatherDigital2aTimeoutEvent [label="clear"];
+_t4 -> SignalProcessingActuateTask__SignalGatherDigital2bTimeoutEvent [label="clear"];
+
+
+SignalProcessingActuateTask -> FlightControlActuateTask [label="chain"];
+
+
+
+
+SignalProcessingAttitudeTask -> _t5
+_t5 -> SignalProcessingAttitudeTask__SignalGatherAnalogEvent [label="clear"];
+_t5 -> SignalProcessingAttitudeTask__SignalGatherDigital1Event [label="clear"];
+_t5 -> SignalProcessingAttitudeTask__SignalGatherDigital1TimeoutEvent [label="clear"];
+
+SignalProcessingAttitudeTask -> _t6
+_t6 -> SignalProcessingAttitudeTask__SignalGatherDigital1Event [label="wait"];
+_t6 -> SignalProcessingAttitudeTask__SignalGatherDigital1TimeoutEvent [label="wait"];
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask__SignalGatherAnalogEvent [label="wait"];
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask [label="getEvent"];
+SignalProcessingAttitudeTask -> _t7
+_t7 -> SignalProcessingAttitudeTask__SignalGatherAnalogEvent [label="clear"];
+_t7 -> SignalProcessingAttitudeTask__SignalGatherDigital1Event [label="clear"];
+_t7 -> SignalProcessingAttitudeTask__SignalGatherDigital1TimeoutEvent [label="clear"];
+
+SignalProcessingAttitudeTask -> FlightControlAttitudeTask [label="chain"];
+
+
+FlightControlActuateTask -> FlightControlActuateTask [label="terminate"];
+FlightControlAttitudeTask -> FlightControlAttitudeTask [label="terminate"];
+ActuateTask -> MavlinkSendTask [label="activate"];
+ActuateTask -> ActuateTask [label="terminate"];
+MavlinkSendTask -> MavlinkSendTask [label="terminate"];
+MavlinkRecvTask -> CopterControlTask [label="activate"];
+MavlinkRecvTask -> MavlinkRecvTask [label="terminate"];
+
+
+CopterControlTask -> CopterControlTask [label="terminate"];
+CopterControlWatchdogTask -> CopterControlWatchdogTask [label="terminate"];
+EthernetTask -> EthernetTask__EthernetReceiveEvent [label="set"];
+EthernetTask -> EthernetTask__EthernetReceiveEvent [label="clear"];
+EthernetTask -> MavlinkRecvTask [label="activate"];
+EthernetTask -> EthernetTask [label="terminate"];
+
+
+
+
+
+
+## alarms
+SamplingAlarm -> SignalGatherInitiateTask [label="activate"];
+SignalGatherTimeoutAlarm -> SignalGatherTimeoutTask [label="activate"];
+ActuateAlarm -> ActuateTask [label="activate"];
+CopterControlWatchdogAlarm -> CopterControlWatchdogTask [label="activate"];
+
+}

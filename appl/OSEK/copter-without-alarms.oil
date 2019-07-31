@@ -4,26 +4,30 @@
 			{
 				"category": 2,
 				"name": "MavlinkRecvHandler",
-				"priority": 100
+				"priority": 100,
+				"device": 37
 			},
 			{
 				"category": 2,
 				"name": "AlarmSignalGatherInitiateTask",
 				"resource": [
 					"SPIBus"
-				]
+				],
+				"device": 40
 			},
 			{
 				"category": 2,
 				"name": "AlarmFlightControlTask",
-				"priority": 100
+				"priority": 100,
+				"device": 41
 			},
 			{
 				"category": 2,
 				"name": "AlarmCopterControlWatchdogTask",
 				"resource": [
 					"SPIBus"
-				]
+				],
+				"device": 42
 			}
 		],
 		"resources": [

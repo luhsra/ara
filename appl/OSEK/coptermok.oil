@@ -115,63 +115,63 @@
 				"activation": 1,
 				"autostart": false,
 				"name": "SignalGatherInitiateTask",
-				"priority": 24,
+				"priority": 9,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "SignalGatherWaitTask",
-				"priority": 2,
-				"schedule": true
+				"priority": 10,
+				"schedule": false
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "SignalGatherTimeoutTask",
-				"priority": 23,
+				"priority": 11,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "SignalProcessingActuateTask",
-				"priority": 22,
+				"priority": 13,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "SignalProcessingAttitudeTask",
-				"priority": 21,
+				"priority": 12,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "FlightControlAttitudeTask",
-				"priority": 9,
+				"priority": 14,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "FlightControlActuateTask",
-				"priority": 9,
+				"priority": 15,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "ActuateTask",
-				"priority": 9,
+				"priority": 16,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "MavlinkSendTask",
-				"priority": 9,
+				"priority": 0,
 				"schedule": true
 			},
 			{
@@ -185,21 +185,21 @@
 				"activation": 1,
 				"autostart": false,
 				"name": "CopterControlWatchdogTask",
-				"priority": 9,
-				"schedule": true
+				"priority": 7,
+				"schedule": false
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "CopterControlTask",
-				"priority": 9,
+				"priority": 6,
 				"schedule": true
 			},
 			{
 				"activation": 1,
 				"autostart": false,
 				"name": "EthernetTask",
-				"priority": 9,
+				"priority": 5,
 				"schedule": true
 			}
 		]

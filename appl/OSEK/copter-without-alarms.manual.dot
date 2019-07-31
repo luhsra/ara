@@ -1,0 +1,89 @@
+digraph coptermock {
+
+##Resources
+{
+node [style=filled color="#ffffd9" shape=box];
+SPIBusResource
+}
+
+## Tasks
+{
+node [style=filled color=mediumseagreen shape=record];
+SignalGatherInitiateTask [label="{\N | activation: 1| autostart: 0| prio: 24| sched: 1}"];
+SignalGatherFinishedTask [label="{\N | activation: 1| autostart: 0| prio: 25| sched: 1}"];
+SignalGatherTimeoutTask [label="{\N | activation: 1| autostart: 0| prio: 23| sched: 1}"];
+SignalProcessingActuateTask [label="{\N | activation: 1| autostart: 0| prio: 22| sched: 1}"];
+SignalProcessingAttitudeTask [label="{\N | activation: 1| autostart: 0| prio: 21| sched: 1}"];
+FlightControlTask [label="{\N | activation: 1| autostart: 0| prio: 11| sched: 1}"];
+FlightControlAttitudeTask [label="{\N | activation: 1| autostart: 0| prio: 12| sched: 1}"];
+FlightControlActuateTask [label="{\N | activation: 1| autostart: 0| prio: 13| sched: 1}"];
+MavlinkSendTask [label="{\N | activation: 1| autostart: 0| prio: 10| sched: 1}"];
+CopterControlWatchdogTask [label="{\N | activation: 1| autostart: 0| prio: 1| sched: 1}"];
+CopterControlTask [label="{\N | activation: 1| autostart: 0| prio: 5| sched: 1}"];
+PreIdleHook [label="{\N | activation: 0|autostart: 1| prio: -1| shed: 1}"];
+}
+
+## ISRs
+{
+node [color="coral" shape=record style=filled];
+MavlinkRecvHandler
+AlarmSignalGatherInitiateTask
+AlarmFlightControlTask
+AlarmCopterControlWatchdogTask
+}
+
+
+
+SignalGatherInitiateTask -> OS [label="shutdown"];
+SignalGatherInitiateTask -> SPIBusResource [label="get"];
+SignalGatherInitiateTask -> SignalGatherTimeoutTask [label="activate"];
+SignalGatherInitiateTask -> SignalGatherFinishedTask [label="activate"];
+SignalGatherInitiateTask -> SPIBusResource [label="release"];
+SignalGatherInitiateTask -> SignalGatherInitiateTask [label="terminate"];
+
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask [label="activate"];
+SignalGatherFinishedTask -> SignalProcessingActuateTask [label="activate"];
+SignalGatherFinishedTask -> SignalGatherFinishedTask [label="terminate"];
+
+SignalGatherTimeoutTask -> SPIBusResource [label="get"];
+SignalGatherTimeoutTask -> SPIBusResource [label="release"];
+SignalGatherTimeoutTask -> SignalGatherTimeoutTask [label="terminate"];
+
+
+SignalProcessingActuateTask -> SignalProcessingActuateTask [label="terminate"];
+
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask [label="terminate"];
+
+FlightControlTask -> FlightControlAttitudeTask [label="activate"];
+FlightControlTask -> FlightControlActuateTask [label="activate"];
+FlightControlTask -> MavlinkSendTask [label="activate"];
+FlightControlTask -> FlightControlTask [label="terminate"];
+
+FlightControlAttitudeTask -> FlightControlAttitudeTask [label="terminate"];
+
+FlightControlActuateTask -> FlightControlActuateTask [label="terminate"];
+
+MavlinkSendTask -> SPIBusResource [label="get"];
+MavlinkSendTask -> MACHINE_INT_37 [label=trigger];
+MavlinkSendTask -> SPIBusResource [label="release"];
+MavlinkSendTask -> MavlinkSendTask [label="terminate"];
+
+
+CopterControlTask -> OS [label="disable interrupts"];
+CopterControlTask -> OS [label="enable interrupts"];
+CopterControlTask -> CopterControlTask [label="terminate"];
+
+CopterControlWatchdogTask -> CopterControlWatchdogTask [label="terminate"];
+
+MavlinkRecvHandler -> CopterControlTask [label="activate"];
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask [label="activate"];
+AlarmFlightControlTask -> FlightControlTask [label="activate"];
+AlarmCopterControlWatchdogTask -> CopterControlWatchdogTask [label="activate"];
+
+PreIdleHook -> AlarmSignalGatherInitiateTask [label=trigger];
+PreIdleHook -> AlarmFlightControlTask [label=trigger];
+PreIdleHook -> AlarmCopterControlWatchdogTask [label=trigger];
+MACHINE_INT_37 -> MavlinkRecvHandler [label=trigger];
+
+
+}
