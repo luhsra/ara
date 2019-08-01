@@ -1,16 +1,15 @@
 // vim: set noet ts=4 sw=4:
 
-#include "test.h"
+#include "graph.h"
 #include "llvm_common.h"
+#include "test.h"
 
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/Casting.h"
 
 #include <iostream>
-#include <string>
 #include <stdexcept>
-
-#include "graph.h"
+#include <string>
 
 namespace step {
 	std::string BBSplitTest::get_name() const { return "BBSplitTest"; }
@@ -19,20 +18,19 @@ namespace step {
 
 	void BBSplitTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.new_graph.get_module();
-		for (auto &F : module) {
-			for (auto &B : F) {
-				for (auto &I : B) {
-					if (!(FakeCallBase::isa(I))) continue;
-					if ((std::distance(B.begin(), B.end()) == 2) &&
-					   (&B.front() == &I)) {
+		for (auto& F : module) {
+			for (auto& B : F) {
+				for (auto& I : B) {
+					if (!(FakeCallBase::isa(I)))
+						continue;
+					if ((std::distance(B.begin(), B.end()) == 2) && (&B.front() == &I)) {
 						if (llvm::BranchInst* b = llvm::dyn_cast<llvm::BranchInst>(&B.back())) {
 							if (b->isUnconditional()) {
 								continue;
 							}
 						}
 					}
-					if ((std::distance(B.begin(), B.end()) == 1) &&
-					   (&B.front() == &I) && (&B.back() == &I)) {
+					if ((std::distance(B.begin(), B.end()) == 1) && (&B.front() == &I) && (&B.back() == &I)) {
 						continue;
 					}
 					std::string call;

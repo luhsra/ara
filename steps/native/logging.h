@@ -71,7 +71,8 @@ class Logger {
 		/**
 		 * Enable operator<< for standard C++ types (compatible with std::ostream).
 		 */
-		template <typename T> LogStream& operator<<(T&& x) {
+		template <typename T>
+		LogStream& operator<<(T&& x) {
 			stream << std::forward<T>(x);
 			return *this;
 		}

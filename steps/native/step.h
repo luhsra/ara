@@ -8,10 +8,10 @@
 #include "logging.h"
 #include "option.h"
 
+#include <functional>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <functional>
 
 namespace step {
 
@@ -19,22 +19,26 @@ namespace step {
 	 * Superclass for constructing arbitrary steps in C++.
 	 */
 	class Step {
-		public:
+	  public:
 		using option_ref = std::reference_wrapper<ara::option::Option>;
-		private:
-		  std::vector<option_ref> opts;
+
+	  private:
+		std::vector<option_ref> opts;
 
 	  protected:
 		Logger logger;
 
-		ara::option::TOption<ara::option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
-				ara::option::makeChoice("critical", "error", "warn", "info", "debug"),
-				/* global = */ true};
+		ara::option::TOption<ara::option::Choice<5>> log_level{
+		    "log_level", "Adjust the log level of this step.",
+		    ara::option::makeChoice("critical", "error", "warn", "info", "debug"),
+		    /* global = */ true};
+
 		ara::option::TOption<ara::option::Choice<2>> os{"os", "Select the operating system.",
-				ara::option::makeChoice("FreeRTOS", "OSEK"),
-				/* global = */ true};
+		                                                ara::option::makeChoice("FreeRTOS", "OSEK"),
+		                                                /* global = */ true};
+
 		ara::option::TOption<ara::option::String> after{"after", "Queue step directly after the mentioned step.",
-			ara::option::String(), /* global = */ true};
+		                                                ara::option::String(), /* global = */ true};
 
 		/**
 		 * Fill with all used options.

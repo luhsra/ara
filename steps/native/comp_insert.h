@@ -11,7 +11,7 @@
 
 namespace step {
 	class CompInsert : public Step {
-		private:
+	  private:
 		/**
 		 * Insert a Nop at anchor.
 		 * Anchor can be a basic block. in this case the nop is inserted at the end of the basic block.
@@ -19,10 +19,10 @@ namespace step {
 		 *
 		 * The inserted nop is a call do llvm.donothing().
 		 */
-		template<class A>
+		template <class A>
 		void insertNop(A anchor) {
 			llvm::Module* m = anchor->getModule();
-			llvm::Function *f = llvm::Intrinsic::getDeclaration(m, llvm::Intrinsic::donothing);
+			llvm::Function* f = llvm::Intrinsic::getDeclaration(m, llvm::Intrinsic::donothing);
 			llvm::CallInst::Create(f, {}, "", anchor);
 		}
 
@@ -30,7 +30,6 @@ namespace step {
 		virtual std::string get_name() const override { return "CompInsert"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
-
 
 		virtual void run(graph::Graph& graph) override;
 	};

@@ -3,8 +3,8 @@
 
 #include "llvm/IR/Instructions.h"
 
-#include <memory>
 #include <cassert>
+#include <memory>
 
 /**
  * wrapper for CallBase that will be introduced with newer LLVM, delete this class once CallBase will exist

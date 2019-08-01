@@ -1,21 +1,21 @@
 #pragma once
 
+#include "Python.h"
+
+#include <cassert>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
-#include <cassert>
-#include <sstream>
-
-#include "Python.h"
 
 namespace ara::option {
-	template<typename T>
+	template <typename T>
 	class RawType {
-		public:
+	  public:
 		typedef T type;
 
-		protected:
+	  protected:
 		bool valid = false;
 		type value;
 
@@ -39,9 +39,8 @@ namespace ara::option {
 
 		std::string step_name;
 
-		public:
-
-		virtual void from_pointer(PyObject*, std::string) {};
+	  public:
+		virtual void from_pointer(PyObject*, std::string){};
 
 		void check(PyObject* obj, std::string name) {
 			PyObject* scoped_obj = get_scoped_object(obj, name);
@@ -54,9 +53,7 @@ namespace ara::option {
 
 		void set_step_name(std::string step_name) { this->step_name = step_name; }
 
-		std::pair<type, bool> get() {
-			return std::make_pair(value, valid);
-		}
+		std::pair<type, bool> get() { return std::make_pair(value, valid); }
 	};
 
 	struct Integer : public RawType<int64_t> {
@@ -79,18 +76,27 @@ namespace ara::option {
 		using RawType<std::string>::RawType;
 	};
 
-	template <typename T> struct allowed_in_range          { static const bool value = false; };
-	template <>           struct allowed_in_range<Integer> { static const bool value = true; };
-	template <>           struct allowed_in_range<Float>   { static const bool value = true; };
+	template <typename T>
+	struct allowed_in_range {
+		static const bool value = false;
+	};
+	template <>
+	struct allowed_in_range<Integer> {
+		static const bool value = true;
+	};
+	template <>
+	struct allowed_in_range<Float> {
+		static const bool value = true;
+	};
 
-	template<class T>
+	template <class T>
 	class Range : public RawType<typename T::type> {
 		static_assert(allowed_in_range<T>::value, "Range of this type not allowed to be constructed.");
 
 		typename T::type low;
 		typename T::type high;
 
-		public:
+	  public:
 		Range(typename T::type low, typename T::type high) : RawType<typename T::type>(), low(low), high(high) {}
 
 		void check(PyObject* obj, std::string name) {
@@ -108,7 +114,8 @@ namespace ara::option {
 
 			if (this->value < low || this->value > high) {
 				std::stringstream ss;
-				ss << name << ": Range argument " << this->value << "has to be between " << low << " and " << high << "!" << std::flush;
+				ss << name << ": Range argument " << this->value << "has to be between " << low << " and " << high
+				   << "!" << std::flush;
 				throw std::invalid_argument(ss.str());
 			}
 
@@ -116,16 +123,28 @@ namespace ara::option {
 		}
 	};
 
-	template <typename T> struct allowed_in_list          { static const bool value = false; };
-	template <>           struct allowed_in_list<Integer> { static const bool value = true; };
-	template <>           struct allowed_in_list<Float>   { static const bool value = true; };
-	template <>           struct allowed_in_list<String>  { static const bool value = true; };
+	template <typename T>
+	struct allowed_in_list {
+		static const bool value = false;
+	};
+	template <>
+	struct allowed_in_list<Integer> {
+		static const bool value = true;
+	};
+	template <>
+	struct allowed_in_list<Float> {
+		static const bool value = true;
+	};
+	template <>
+	struct allowed_in_list<String> {
+		static const bool value = true;
+	};
 
-	template<class T>
+	template <class T>
 	class List : public RawType<std::vector<typename T::type>> {
 		static_assert(allowed_in_list<T>::value, "List of this type not allowed to be constructed.");
 
-		public:
+	  public:
 		using RawType<std::vector<typename T::type>>::RawType;
 
 		void check(PyObject* obj, std::string name) {
@@ -162,7 +181,7 @@ namespace ara::option {
 		int64_t index;
 		std::array<String::type, N> choices;
 
-		public:
+	  public:
 		Choice(std::array<String::type, N> choices) : RawType<typename String::type>(), choices(choices) {}
 
 		void check(PyObject* obj, std::string name) {
@@ -201,12 +220,11 @@ namespace ara::option {
 		int64_t getIndex() { return index; }
 	};
 
-	template<class...T2, int N = sizeof...(T2)>
+	template <class... T2, int N = sizeof...(T2)>
 	constexpr auto makeChoice(T2... args) -> Choice<N> {
-		std::array<String::type, N> arr = { args... };
+		std::array<String::type, N> arr = {args...};
 		return Choice<N>(std::move(arr));
 	}
-
 
 	/**
 	 * Description object for options
@@ -233,31 +251,25 @@ namespace ara::option {
 	/**
 	 * A Typed Option, aka an option with option which also stores its type.
 	 */
-	template<class T>
+	template <class T>
 	class TOption : public Option {
-		private:
+	  private:
 		T ty;
 		bool global;
 
+	  public:
+		TOption(std::string name, std::string help, T ty = T(), bool global = false)
+		    : Option(name, help), ty(ty), global(global) {}
 
-		public:
-		TOption(std::string name, std::string help, T ty = T(), bool global = false) : Option(name, help), ty(ty), global(global) {}
+		virtual void set_step_name(std::string step_name) override { ty.set_step_name(step_name); }
 
-		virtual void set_step_name(std::string step_name) override {
-			ty.set_step_name(step_name);
-		}
-
-		virtual void check(PyObject* obj) override {
-			ty.check(obj, name);
-		}
+		virtual void check(PyObject* obj) override { ty.check(obj, name); }
 
 		virtual bool is_global() override { return global; }
 
 		/**
 		 * get value of option.
 		 */
-		std::pair<typename T::type, bool> get() {
-			return ty.get();
-		}
+		std::pair<typename T::type, bool> get() { return ty.get(); }
 	};
 } // namespace ara::option

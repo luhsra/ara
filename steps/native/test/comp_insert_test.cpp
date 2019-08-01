@@ -1,17 +1,15 @@
 // vim: set noet ts=4 sw=4:
 
+#include "graph.h"
+#include "llvm_common.h"
 #include "test.h"
 
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/Casting.h"
 
-#include "llvm_common.h"
-
 #include <iostream>
-#include <string>
 #include <stdexcept>
-
-#include "graph.h"
+#include <string>
 
 namespace step {
 	std::string CompInsertTest::get_name() const { return "CompInsertTest"; }
@@ -20,9 +18,9 @@ namespace step {
 
 	void CompInsertTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.new_graph.get_module();
-		for (auto &f : module) {
-			for (auto &b : f) {
-				for (auto &i : b) {
+		for (auto& f : module) {
+			for (auto& b : f) {
+				for (auto& i : b) {
 					bool found_double_call = false;
 					if (FakeCallBase::isa(i) && !isCallToLLVMIntrinsic(&i)) {
 						if (found_double_call) {

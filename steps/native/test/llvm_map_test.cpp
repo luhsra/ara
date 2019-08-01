@@ -1,16 +1,15 @@
 // vim: set noet ts=4 sw=4:
 
-#include "test.h"
+#include "graph.h"
 #include "llvm_common.h"
+#include "test.h"
 
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/Casting.h"
 
 #include <iostream>
-#include <string>
 #include <stdexcept>
-
-#include "graph.h"
+#include <string>
 
 using namespace llvm;
 using namespace ara::cfg;
@@ -24,9 +23,9 @@ namespace step {
 		Module& module = graph.new_graph.get_module();
 		std::set<BasicBlock*> bbs;
 		std::set<llvm::Function*> lfuncs;
-		for (auto &F : module) {
+		for (auto& F : module) {
 			lfuncs.insert(&F);
-			for (auto &B : F) {
+			for (auto& B : F) {
 				bbs.insert(&B);
 			}
 		}
@@ -46,7 +45,8 @@ namespace step {
 
 			// all basicblocks can be find with LLVM
 			if (bbs.find(entry) == bbs.end()) {
-				logger.err() << "Found linked BasicBlock that is not in the LLVM model, in ABB: " << abbs[abb].name << std::endl;
+				logger.err() << "Found linked BasicBlock that is not in the LLVM model, in ABB: " << abbs[abb].name
+				             << std::endl;
 				throw std::runtime_error("Found linked BasicBlock that is not in the LLVM model");
 			}
 
@@ -82,7 +82,8 @@ namespace step {
 			const FunctionDescriptor& function = abbs.get_subgraph(abb);
 			llvm::Function* lfunc = boost::get_property(function).func;
 			if (lfunc != entry->getParent()) {
-				logger.err() << "LLVM Function of BB" << entry << " and ABB " << abbs[abb].name << " do not match." << std::endl;
+				logger.err() << "LLVM Function of BB" << entry << " and ABB " << abbs[abb].name << " do not match."
+				             << std::endl;
 				throw std::runtime_error("Functions do not match.");
 			}
 
@@ -99,9 +100,9 @@ namespace step {
 			}
 		}
 
-
 		if (abb_count != bbs.size()) {
-			logger.err() << "Amount of ABBs (" << abb_count << ") does not match count of BBs (" << bbs.size() << ")." << std::endl;
+			logger.err() << "Amount of ABBs (" << abb_count << ") does not match count of BBs (" << bbs.size() << ")."
+			             << std::endl;
 			throw std::runtime_error("Size mismatch of ABBs and BBs");
 		}
 	}

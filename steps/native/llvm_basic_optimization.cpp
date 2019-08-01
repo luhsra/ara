@@ -29,12 +29,10 @@ namespace step {
 
 	std::string LLVMBasicOptimization::get_description() const {
 		return "Perform some basic optimizations passes from llvm."
-		  "\n";
+		       "\n";
 	}
 
-	std::vector<std::string> LLVMBasicOptimization::get_dependencies() {
-		return {"IRReader"};
-	}
+	std::vector<std::string> LLVMBasicOptimization::get_dependencies() { return {"IRReader"}; }
 
 	void LLVMBasicOptimization::run(graph::Graph& graph) {
 		//		DebugFlag = true; // enable llvm passes output

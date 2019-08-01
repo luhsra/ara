@@ -3,7 +3,8 @@
 using namespace llvm;
 
 struct FakeCallBase::make_shared_enabler : public FakeCallBase {
-	template <typename... Args> make_shared_enabler(Args&&... args) : FakeCallBase(std::forward<Args>(args)...) {}
+	template <typename... Args>
+	make_shared_enabler(Args&&... args) : FakeCallBase(std::forward<Args>(args)...) {}
 };
 
 std::unique_ptr<FakeCallBase> FakeCallBase::create(Instruction* inst) {

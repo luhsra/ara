@@ -427,7 +427,7 @@ graph::shared_vertex create_task(graph::Graph& graph, OS::shared_abb abb, bool b
 	bool error = false;
 
 	for (auto task_vertex : graph.get_type_vertices<OS::Task>()) {
-	  auto tmp_task = std::dynamic_pointer_cast<OS::Task>(task_vertex);
+		auto tmp_task = std::dynamic_pointer_cast<OS::Task>(task_vertex);
 		if (task->get_seed() == tmp_task->get_seed()) {
 
 			if (task->isEqual(tmp_task)) {

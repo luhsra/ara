@@ -2,11 +2,10 @@
 
 #include "ir_reader.h"
 
+#include <cassert>
 #include <llvm/Linker/Linker.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
-
-#include <cassert>
 
 static llvm::LLVMContext context;
 

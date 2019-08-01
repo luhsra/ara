@@ -756,7 +756,7 @@ void verify_freertos_events(graph::Graph& graph, std::vector<shared_warning>* wa
 void verify_priority_inversion(graph::Graph& graph, std::vector<shared_warning>* warning_list) {
 
 	// task which use resource have different priorities
-    auto resource_list = graph.get_type_vertices<OS::Mutex>();
+	auto resource_list = graph.get_type_vertices<OS::Mutex>();
 
 	auto task_list = graph.get_type_vertices<OS::Task>();
 
@@ -1386,8 +1386,6 @@ namespace step {
 		verify_critical_region(graph, warning_list);
 	}
 
-	std::vector<std::string> ValidationStep::get_dependencies() {
-		return {"DetectInteractionsStep"};
-	}
+	std::vector<std::string> ValidationStep::get_dependencies() { return {"DetectInteractionsStep"}; }
 } // namespace step
 // RAII

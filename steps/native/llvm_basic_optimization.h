@@ -11,13 +11,10 @@
 
 namespace step {
 	class LLVMBasicOptimization : public Step {
-		private:
-
 	  public:
 		virtual std::string get_name() const override { return "LLVMBasicOptimization"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
-
 
 		virtual void run(graph::Graph& graph) override;
 	};

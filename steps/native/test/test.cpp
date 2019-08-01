@@ -2,10 +2,10 @@
 
 #include "test.h"
 
+#include "graph.h"
+
 #include <iostream>
 #include <string>
-
-#include "graph.h"
 
 namespace step {
 

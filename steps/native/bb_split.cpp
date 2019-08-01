@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "bb_split.h"
+
 #include "llvm_common.h"
 
 #include <iostream>
@@ -14,7 +15,9 @@
 namespace step {
 	using namespace llvm;
 
-	std::string BBSplit::get_description() const { return "Split basic blocks in function call and computation blocks."; }
+	std::string BBSplit::get_description() const {
+		return "Split basic blocks in function call and computation blocks.";
+	}
 
 	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
 

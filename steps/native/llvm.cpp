@@ -27,9 +27,9 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/TypeFinder.h"
 #include "llvm/Pass.h"
+#include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
-#include "llvm/Support/raw_os_ostream.h"
 
 #include <cassert>
 #include <fstream>
@@ -272,7 +272,8 @@ namespace step {
 								if (Function* tmp_function = dyn_cast<Function>(al->getIndirectSymbol())) {
 									llvm_function = tmp_function;
 								}
-							} else if (Function* tmp_function = dyn_cast<Function>(argument_container.value_list.front())) {
+							} else if (Function* tmp_function =
+							               dyn_cast<Function>(argument_container.value_list.front())) {
 								llvm_function = tmp_function;
 							}
 						}
@@ -366,7 +367,7 @@ namespace step {
 			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
 				GlobalVariable& gv = *it;
 				if (!gv.isDeclaration() && !gv.hasPrivateLinkage())
-				   gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
+					gv.setLinkage(GlobalValue::AvailableExternallyLinkage);
 			}
 
 			if (L.linkInModule(std::move(M))) {

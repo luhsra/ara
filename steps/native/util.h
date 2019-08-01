@@ -5,7 +5,7 @@
 
 // print std container
 
-template<class T>
+template <class T>
 inline std::ostream& operator<<(std::ostream& str, const std::vector<T>& vec) {
 	str << "std::vector(";
 	bool first = true;

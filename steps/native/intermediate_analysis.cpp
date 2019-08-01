@@ -266,8 +266,8 @@ start_scheduler_relation before_scheduler_instructions(graph::Graph& graph, OS::
 							before_scheduler_instructions(graph, abb->get_called_function(), already_visited, call_tree,
 							                              tmp_state);
 						} else {
-							tmp_state = before_scheduler_instructions(graph, abb->get_called_function(), already_visited,
-							                                          call_tree, tmp_state);
+							tmp_state = before_scheduler_instructions(graph, abb->get_called_function(),
+							                                          already_visited, call_tree, tmp_state);
 						}
 					}
 				}
