@@ -3,65 +3,14 @@
 """Automated Real-time System Analysis"""
 
 import argparse
-import sys
-import shutil
-import textwrap
-import logging
-import util
 import json
+import logging
+import sys
+import util
 
 import graph
 import stepmanager
-
-
-EXTRA_LEN = len(': ')
-
-
-def format_steps(name, desc, indent, max_len, width):
-    # format name
-
-    if name != '':
-        namef = "{}{{:<{}}}".format(indent * ' ', max_len + EXTRA_LEN)
-        namef = namef.format(name + ':')
-    else:
-        namef = (indent + max_len + EXTRA_LEN) * ' '
-
-    # format description
-    descl = []
-    for line in desc.splitlines():
-        descl += textwrap.wrap(line, width=width-max_len-EXTRA_LEN-indent)
-    second_line_desc = textwrap.indent('\n'.join(descl[1:]),
-                                       (max_len + 2 + indent) * ' ')
-    descl = '\n'.join([descl[0], second_line_desc]).strip()
-
-    return namef + descl + '\n'
-
-
-def print_avail_steps(avail_steps):
-    """Return a nice formatted string with all available steps."""
-    indent = 2
-    ret = "Available Steps:\n"
-    steps = sorted([(x.get_name(), x.get_description(), x.options())
-                    for x in avail_steps])
-    max_len = max([len(x[0]) for x in steps])
-
-    term_width = shutil.get_terminal_size((80, 20)).columns
-
-    for step in steps:
-        step_text = format_steps(step[0], step[1], indent, max_len, term_width)
-
-        # format extra options
-        opt_len = max([0] + [len(x.get_name()) for x in step[2]])
-        if step[2]:
-            intro = "The step accepts the following options:\n"
-            step_text += format_steps("", intro, indent, max_len, term_width)
-        for opt in step[2]:
-            step_text += format_steps(opt.get_name(), opt.get_help(),
-                                      2 * indent + max_len + EXTRA_LEN,
-                                      opt_len,
-                                      term_width)
-        ret += step_text
-    return ret.strip()
+from steplisting import print_avail_steps
 
 
 def main():

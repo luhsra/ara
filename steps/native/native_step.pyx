@@ -179,8 +179,6 @@ cdef class NativeStep(SuperStep):
         super().get_side_data()
 
     cdef getTy(self, unsigned ctype, coption.Option* opt):
-        cdef int64_t ilow = 0, ihigh = 0
-        cdef double dlow = 0, dhigh = 0
         if ctype == <unsigned> coption.INT:
             return option.Integer()
         if ctype == <unsigned> coption.FLOAT:
@@ -190,19 +188,15 @@ cdef class NativeStep(SuperStep):
         if ctype == <unsigned> coption.STRING:
             return option.String()
         if ctype == <unsigned> coption.CHOICE:
-            return option.Choice()
-
+            args = cstep.get_type_args(opt).decode('UTF-8')
+            return option.Choice(*args.split(':'))
         if (ctype & (<unsigned> coption.LIST)) == <unsigned> coption.LIST:
             ty = self.getTy(ctype & ~(<unsigned> coption.LIST), opt)
             return option.List(ty)
         if ctype == <unsigned> coption.RANGE:
-            ty = self.getTy(ctype & ~(<unsigned> coption.RANGE), opt)
-            if type(ty) == option.Integer:
-                cstep.get_range_arguments(opt, ilow, ihigh);
-                return option.Range(ilow, ihigh)
-            if type(ty) == option.Float:
-                cstep.get_range_arguments(opt, dlow, dhigh);
-                return option.Range(dlow, dhigh)
+            args = cstep.get_type_args(opt).decode('UTF-8')
+            low, high = args.split(':')
+            return option.Range(low, high)
         return None
 
     def options(self):

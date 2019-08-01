@@ -61,6 +61,8 @@ namespace ara::option {
 			this->from_pointer(scoped_obj, name);
 		}
 
+		std::string serialize_args() { return ""; }
+
 		void set_step_name(std::string step_name) { this->step_name = step_name; }
 
 		std::pair<type, bool> get() { return std::make_pair(value, valid); }
@@ -111,9 +113,10 @@ namespace ara::option {
 		typename T::type high;
 
 	  public:
-		void get_args(typename T::type& low, typename T::type& high) {
-			low = this->low;
-			high = this->high;
+		std::string serialize_args() {
+			std::stringstream ss;
+			ss << low << ":" << high;
+			return ss.str();
 		}
 
 		Range(typename T::type low, typename T::type high) : RawType<typename T::type>(), low(low), high(high) {}
@@ -209,6 +212,22 @@ namespace ara::option {
 
 		static unsigned get_type() { return OptionType::CHOICE; }
 
+		std::string serialize_args() {
+			std::stringstream ss;
+			const char delim = ':';
+			bool first = true;
+			for (typename String::type& choice : choices) {
+				assert(choice.find(delim) == std::string::npos);
+				if (first) {
+					first = false;
+				} else {
+					ss << delim;
+				}
+				ss << choice;
+			}
+			return ss.str();
+		}
+
 		void check(PyObject* obj, std::string name) {
 			String cont;
 			cont.set_step_name(this->step_name);
@@ -259,7 +278,12 @@ namespace ara::option {
 		const std::string name;
 		const std::string help;
 
+		virtual std::string get_type_args() = 0;
+
 		public:
+		// only for Python bridging, sed cy_helper.h
+		friend std::string get_type_args(ara::option::Option* opt);
+
 
 		Option(std::string name, std::string help) : name(name), help(help) {}
 		Option() = default;
@@ -279,6 +303,7 @@ namespace ara::option {
 
 		std::string get_name() { return name; }
 		std::string get_help() { return help; }
+
 	};
 
 	/**
@@ -290,10 +315,9 @@ namespace ara::option {
 		T ty;
 		bool global;
 
-	  public:
-		friend bool get_range_arguments(ara::option::Option* opt, int64_t& low, int64_t& high);
-		friend bool get_range_arguments(ara::option::Option* opt, double& low, double& high);
+		virtual std::string get_type_args() { return ty.serialize_args(); }
 
+	  public:
 		TOption(std::string name, std::string help, T ty = T(), bool global = false)
 		    : Option(name, help), ty(ty), global(global) {}
 

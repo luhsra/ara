@@ -22,5 +22,4 @@ cdef extern from "cy_helper.h":
     vector[option.Option*] repack(Step& step)
 
 cdef extern from "cy_helper.h" namespace "ara::option":
-    bool get_range_arguments(option.Option*, int64_t&, int64_t&)
-    bool get_range_arguments(option.Option*, double&, double&)
+    string get_type_args(option.Option*)

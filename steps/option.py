@@ -19,6 +19,9 @@ class Option:
     def check(self, config):
         self._ty.check(config, self.step_name, self._name)
 
+    def get_type_help(self):
+        return self._ty.get_help()
+
     def get(self):
         return self._ty.get()
 
@@ -50,12 +53,16 @@ class OptionType:
     def _validate(self, val, name):
         raise NotImplementedError
 
+    def get_help(self):
+        return self.__class__.__name__
+
 
 class Bool(OptionType):
     def _validate(self, val, name):
         if not isinstance(bool, val):
             raise ValueError(f"{name}: {val} must be a boolean.")
         return val
+
 
 
 class Integer(OptionType):
@@ -91,8 +98,11 @@ class Range(OptionType):
             raise ValueError(err)
         return val
 
+    def get_help(self):
+        return f"Range between {self.low} and {self.high}"
 
-class List(list, OptionType):
+
+class List(OptionType):
     def __init__(self, ty):
         super().__init__()
         self.ty = ty
@@ -105,8 +115,11 @@ class List(list, OptionType):
             ty._validate(elem, name)
         return val
 
+    def get_help(self):
+        return f"List of {self.ty.get_help()}s"
 
-class Choice(tuple, OptionType):
+
+class Choice(OptionType):
     def __init__(self, *args):
         super().__init__()
         self.choices = args
@@ -115,3 +128,7 @@ class Choice(tuple, OptionType):
         if val not in self.choices:
             raise ValueError(f"{name}: {val} must be one of {self.choices}.")
         return val
+
+    def get_help(self):
+        choices = ', '.join([f'"{x}"' for x in self.choices])
+        return f"Any of {choices}"

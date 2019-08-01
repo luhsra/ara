@@ -12,7 +12,7 @@ class Dummy(Step):
         return [Option(name="dummy_option",
                        help="Just an option to demonstrate options.",
                        step_name=self.get_name(),
-                       ty=Integer)]
+                       ty=Integer())]
 
     def get_dependencies(self):
         return []
