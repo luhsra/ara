@@ -75,7 +75,7 @@ def main():
     parser.add_argument('--log-level', help="choose the log level",
                         choices=['warn', 'info', 'debug'], default='warn')
     parser.add_argument('--os', '-O', help="specify the operation system",
-                        choices=['freertos', 'osek'], default='osek')
+                        choices=['FreeRTOS', 'OSEK'], default='OSEK')
     parser.add_argument('--step', '-s',
                         help="choose steps that will be executed",
                         action='append')
