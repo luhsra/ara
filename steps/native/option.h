@@ -10,6 +10,16 @@
 #include <vector>
 
 namespace ara::option {
+	enum OptionType {
+		INT = 0b1,
+		FLOAT = 0b10,
+		BOOL = 0b100,
+		STRING = 0b1000,
+		CHOICE = 0b10000,
+		LIST = 0b100000,
+		RANGE = 0b1000000
+	};
+
 	template <typename T>
 	class RawType {
 	  public:
@@ -57,21 +67,25 @@ namespace ara::option {
 	};
 
 	struct Integer : public RawType<int64_t> {
+		static unsigned get_type() { return OptionType::INT; }
 		virtual void from_pointer(PyObject* obj, std::string name) override;
 		using RawType<int64_t>::RawType;
 	};
 
 	struct Float : public RawType<double> {
+		static unsigned get_type() { return OptionType::FLOAT; }
 		virtual void from_pointer(PyObject* obj, std::string name) override;
 		using RawType<double>::RawType;
 	};
 
 	struct Bool : public RawType<bool> {
+		static unsigned get_type() { return OptionType::BOOL; }
 		virtual void from_pointer(PyObject* obj, std::string name) override;
 		using RawType<bool>::RawType;
 	};
 
 	struct String : public RawType<std::string> {
+		static unsigned get_type() { return OptionType::STRING; }
 		virtual void from_pointer(PyObject* obj, std::string name) override;
 		using RawType<std::string>::RawType;
 	};
@@ -97,7 +111,14 @@ namespace ara::option {
 		typename T::type high;
 
 	  public:
+		void get_args(typename T::type& low, typename T::type& high) {
+			low = this->low;
+			high = this->high;
+		}
+
 		Range(typename T::type low, typename T::type high) : RawType<typename T::type>(), low(low), high(high) {}
+
+		static unsigned get_type() { return OptionType::RANGE | T::get_type(); }
 
 		void check(PyObject* obj, std::string name) {
 			T cont;
@@ -147,6 +168,8 @@ namespace ara::option {
 	  public:
 		using RawType<std::vector<typename T::type>>::RawType;
 
+		static unsigned get_type() { return OptionType::LIST | T::get_type(); }
+
 		void check(PyObject* obj, std::string name) {
 			PyObject* scoped_obj = this->get_scoped_object(obj, name);
 
@@ -183,6 +206,8 @@ namespace ara::option {
 
 	  public:
 		Choice(std::array<String::type, N> choices) : RawType<typename String::type>(), choices(choices) {}
+
+		static unsigned get_type() { return OptionType::CHOICE; }
 
 		void check(PyObject* obj, std::string name) {
 			String cont;
@@ -230,8 +255,11 @@ namespace ara::option {
 	 * Description object for options
 	 */
 	struct Option {
+		protected:
 		const std::string name;
 		const std::string help;
+
+		public:
 
 		Option(std::string name, std::string help) : name(name), help(help) {}
 		Option() = default;
@@ -246,6 +274,11 @@ namespace ara::option {
 		virtual void set_step_name(std::string step_name) = 0;
 
 		virtual bool is_global() = 0;
+
+		virtual unsigned get_type() = 0;
+
+		std::string get_name() { return name; }
+		std::string get_help() { return help; }
 	};
 
 	/**
@@ -258,6 +291,9 @@ namespace ara::option {
 		bool global;
 
 	  public:
+		friend bool get_range_arguments(ara::option::Option* opt, int64_t& low, int64_t& high);
+		friend bool get_range_arguments(ara::option::Option* opt, double& low, double& high);
+
 		TOption(std::string name, std::string help, T ty = T(), bool global = false)
 		    : Option(name, help), ty(ty), global(global) {}
 
@@ -267,6 +303,7 @@ namespace ara::option {
 
 		virtual bool is_global() override { return global; }
 
+		virtual unsigned get_type() { return T::get_type(); }
 		/**
 		 * get value of option.
 		 */

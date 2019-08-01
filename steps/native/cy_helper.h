@@ -21,3 +21,21 @@ step::Step* step_fac(PyObject* config) {
 	s->parse_options(config);
 	return s;
 }
+
+namespace ara::option {
+bool get_range_arguments(ara::option::Option* opt, int64_t& low, int64_t& high) {
+	if (opt->get_type() == (ara::option::OptionType::RANGE | ara::option::OptionType::INT)) {
+		static_cast<ara::option::TOption<ara::option::Range<ara::option::Integer>>*>(opt)->ty.get_args(low, high);
+		return true;
+	}
+	return false;
+}
+
+bool get_range_arguments(ara::option::Option* opt, double& low, double& high) {
+	if (opt->get_type() == (ara::option::OptionType::RANGE | ara::option::OptionType::FLOAT)) {
+		static_cast<ara::option::TOption<ara::option::Range<ara::option::Float>>*>(opt)->ty.get_args(low, high);
+		return true;
+	}
+	return false;
+}
+}

@@ -41,7 +41,7 @@ def print_avail_steps(avail_steps):
     """Return a nice formatted string with all available steps."""
     indent = 2
     ret = "Available Steps:\n"
-    steps = sorted([(x.get_name(), x.get_description(), x.config_help())
+    steps = sorted([(x.get_name(), x.get_description(), x.options())
                     for x in avail_steps])
     max_len = max([len(x[0]) for x in steps])
 
@@ -51,12 +51,12 @@ def print_avail_steps(avail_steps):
         step_text = format_steps(step[0], step[1], indent, max_len, term_width)
 
         # format extra options
-        opt_len = max([0] + [len(x.name) for x in step[2]])
+        opt_len = max([0] + [len(x.get_name()) for x in step[2]])
         if step[2]:
             intro = "The step accepts the following options:\n"
             step_text += format_steps("", intro, indent, max_len, term_width)
         for opt in step[2]:
-            step_text += format_steps(opt.name, opt.help,
+            step_text += format_steps(opt.get_name(), opt.get_help(),
                                       2 * indent + max_len + EXTRA_LEN,
                                       opt_len,
                                       term_width)

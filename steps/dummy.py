@@ -1,15 +1,18 @@
 """Container for Dummy."""
 import graph
 
-from native_step import Step, Option
+from native_step import Step
+from .option import Option, Integer
 
 
 class Dummy(Step):
     """Template for a new Python step."""
 
-    def config_help(self):
+    def options(self):
         return [Option(name="dummy_option",
-                       help="Just an option to demonstrate options.")]
+                       help="Just an option to demonstrate options.",
+                       step_name=self.get_name(),
+                       ty=Integer)]
 
     def get_dependencies(self):
         return []

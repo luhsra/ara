@@ -33,18 +33,16 @@ from test cimport (BBSplitTest,
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
+from libc.stdint cimport int64_t
 from backported_memory cimport static_pointer_cast as spc
 from cstep cimport step_fac
+cimport option as coption
 
 import logging
 import inspect
-from collections import namedtuple
 from typing import List
 
-
-# TODO: make this to a dataclass, once Python 3.7 is available in Ubuntu LTS
-Option = namedtuple('Option', ['name', 'help'])
-
+from steps import option
 
 cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
@@ -97,8 +95,8 @@ cdef class SuperStep:
         """
         raise NotImplementedError()
 
-    def config_help(self) -> List[Option]:
-        """Get information about accepted per step configuration options."""
+    def options(self) -> List[option.Option]:
+        """Get per step configuration options."""
         return []
 
 
@@ -180,14 +178,44 @@ cdef class NativeStep(SuperStep):
             return warnings
         super().get_side_data()
 
+    cdef getTy(self, unsigned ctype, coption.Option* opt):
+        cdef int64_t ilow = 0, ihigh = 0
+        cdef double dlow = 0, dhigh = 0
+        if ctype == <unsigned> coption.INT:
+            return option.Integer()
+        if ctype == <unsigned> coption.FLOAT:
+            return option.Float()
+        if ctype == <unsigned> coption.BOOL:
+            return option.Bool()
+        if ctype == <unsigned> coption.STRING:
+            return option.String()
+        if ctype == <unsigned> coption.CHOICE:
+            return option.Choice()
+
+        if (ctype & (<unsigned> coption.LIST)) == <unsigned> coption.LIST:
+            ty = self.getTy(ctype & ~(<unsigned> coption.LIST), opt)
+            return option.List(ty)
+        if ctype == <unsigned> coption.RANGE:
+            ty = self.getTy(ctype & ~(<unsigned> coption.RANGE), opt)
+            if type(ty) == option.Integer:
+                cstep.get_range_arguments(opt, ilow, ihigh);
+                return option.Range(ilow, ihigh)
+            if type(ty) == option.Float:
+                cstep.get_range_arguments(opt, dlow, dhigh);
+                return option.Range(dlow, dhigh)
+        return None
+
     def options(self):
         opts = cstep.repack(deref(self._c_pass))
-        options = []
+        pyopts = []
 
         for entry in opts:
-            options.append(Option(name=entry.name.decode('UTF-8'),
-                                  help=entry.help.decode('UTF-8')))
-        return options
+            pyopts.append(option.Option(name=entry.get_name().decode('UTF-8'),
+                                        help=entry.get_help().decode('UTF-8'),
+                                        step_name=self.get_name(),
+                                        ty = self.getTy(entry.get_type(), entry),
+                                        glob=entry.is_global()))
+        return pyopts
 
 
 cdef _native_fac(config: dict, cstep.Step* step):

@@ -1,6 +1,7 @@
 native_step_pyx_cpp = custom_target('native_step_pyx',
   output : ['native_step_pyx.cpp'],
   input : files('native_step.pyx',
+                'option.pxd',
                 'detect_interactions.pxd',
                 'freertos_instances.pxd',
                 'intermediate_analysis.pxd',

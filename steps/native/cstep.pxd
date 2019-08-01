@@ -1,13 +1,12 @@
 # cython: language_level=3
 cimport cgraph
 
+cimport option
+
 from libcpp.string cimport string
 from libcpp.vector cimport vector
-
-cdef extern from "option.h" namespace "ara::option":
-    cdef cppclass Option:
-        string name
-        string help
+from libcpp cimport bool
+from libc.stdint cimport int64_t
 
 cdef extern from "step.h" namespace "step":
     cdef cppclass Step:
@@ -20,4 +19,8 @@ cdef extern from "step.h" namespace "step":
 
 cdef extern from "cy_helper.h":
     Step* step_fac[T](dict)
-    vector[Option*] repack(Step& step)
+    vector[option.Option*] repack(Step& step)
+
+cdef extern from "cy_helper.h" namespace "ara::option":
+    bool get_range_arguments(option.Option*, int64_t&, int64_t&)
+    bool get_range_arguments(option.Option*, double&, double&)
