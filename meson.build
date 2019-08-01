@@ -33,11 +33,11 @@ sh = custom_target('ara-sh',
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
-   args: [files('ara.py'), freertos_thesis_print, '--os', 'freertos', '--log-level', 'debug'],
-#   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'freertos'],
+   args: [files('ara.py'), freertos_thesis_print, '--os', 'FreeRTOS', '--log-level', 'debug'],
+#   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'FreeRTOS'],
 #   
-#   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[1]],
-#   #args : [files('ara.py'), '--os', 'freertos', freertos_targets[16]],
+#   #args : [files('ara.py'), '--os', 'FreeRTOS', freertos_targets[1]],
+#   #args : [files('ara.py'), '--os', 'FreeRTOS', freertos_targets[16]],
 # 
 #   #args : [files('ara.py'), '--os', 'osek', osek_targets[4]],
 # 
@@ -48,31 +48,31 @@ test('ara_tester',
 
 test('gpslogger',
    py3_inst,
-   args: [files('ara.py'), gpslogger_targets, '--os', 'freertos', '--log-level', 'debug'],
+   args: [files('ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--log-level', 'debug'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 test('smartplug',
    py3_inst,
-   args: [files('ara.py'), smartplug_targets, '--os', 'freertos', '--log-level', 'debug'],
+   args: [files('ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--log-level', 'debug'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 test('copter-without-alarms',
    py3_inst,
-   args: [files('ara.py'), osek_copter_without_alarms[0], '--os', 'osek', '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug'],
+   args: [files('ara.py'), osek_copter_without_alarms[0], '--os', 'OSEK', '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 test('copter',
    py3_inst,
-   args: [files('ara.py'), osek_coptermok[0], '--os', 'osek', '--oilfile', osek_coptermok[1], '--log-level', 'debug'],
+   args: [files('ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--log-level', 'debug'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
 
 test('ospert',
    py3_inst,
-   args: [files('ara.py'), freertos_ospert, '--os', 'freertos', '--log-level', 'debug'],
+   args: [files('ara.py'), freertos_ospert, '--os', 'FreeRTOS', '--log-level', 'debug'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )

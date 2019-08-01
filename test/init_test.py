@@ -43,8 +43,10 @@ def init_test(steps=None):
         data = json.load(f)
 
     config = {'os': os_name,
+              'log_level': 'debug',
               'input_files': i_files}
-    s_manager = stepmanager.StepManager(g, config)
+    extra_config = {}
+    s_manager = stepmanager.StepManager(g, config, extra_config)
 
     s_manager.execute(steps)
 

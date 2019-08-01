@@ -20,7 +20,7 @@ class SyscallStep(Step):
 
     def select_syscalls(self, os):
 
-        if os == "osek":
+        if os == "OSEK":
 
             self.syscall_dict = {
 
@@ -71,7 +71,7 @@ class SyscallStep(Step):
                 #"CheckIRQ":[1,None,None],
                 #"
                 }
-        elif os == "freertos":
+        elif os == "FreeRTOS":
 
             self.syscall_dict = {
 

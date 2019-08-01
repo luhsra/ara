@@ -6,24 +6,24 @@ test('native-steps',
 
 test('bb-split',
   py3_inst,
-  args: [files('run_test_step.py'), 'freertos', 'BBSplitTest', gpslogger_targets],
+  args: [files('run_test_step.py'), 'FreeRTOS', 'BBSplitTest', gpslogger_targets],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 
 test('comp-insert',
   py3_inst,
-  args: [files('run_test_step.py'), 'freertos', 'CompInsertTest', gpslogger_targets],
+  args: [files('run_test_step.py'), 'FreeRTOS', 'CompInsertTest', gpslogger_targets],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 
 test('fn-single-exit',
   py3_inst,
-  args: [files('run_test_step.py'), 'freertos', 'FnSingleExitTest', freertos_multi_exit],
+  args: [files('run_test_step.py'), 'FreeRTOS', 'FnSingleExitTest', freertos_multi_exit],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 
 test('llvm-map',
   py3_inst,
-  args: [files('run_test_step.py'), 'freertos', 'LLVMMapTest', gpslogger_targets],
+  args: [files('run_test_step.py'), 'FreeRTOS', 'LLVMMapTest', gpslogger_targets],
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )

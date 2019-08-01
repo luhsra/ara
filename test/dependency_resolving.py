@@ -135,8 +135,9 @@ def main():
     init_logging(level=logging.DEBUG)
     g = graph.PyGraph()
     config = {}
-    p_manager = stepmanager.StepManager(g, config,
-                                              provides=provide)
+    extra_config = {}
+    p_manager = stepmanager.StepManager(g, config, extra_config,
+                                        provides=provide)
 
     global shared_state
 

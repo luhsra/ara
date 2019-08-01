@@ -257,7 +257,7 @@ namespace ara::option {
 		 * get value of option.
 		 */
 		std::pair<typename T::type, bool> get() {
-			ty.get();
+			return ty.get();
 		}
 	};
 } // namespace ara::option

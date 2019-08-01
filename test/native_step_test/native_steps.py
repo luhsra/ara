@@ -46,8 +46,9 @@ def main():
     """Checks the interoperability of Python and C++ passes."""
     g = graph.PyGraph()
     config = {}
-    p_manager = stepmanager.StepManager(g, config,
-                                              provides=provide)
+    extra_config = {}
+    p_manager = stepmanager.StepManager(g, config, extra_config,
+                                        provides=provide)
 
     p_manager.execute(['Test3Step'])
 

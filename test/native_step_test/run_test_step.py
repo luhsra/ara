@@ -26,7 +26,7 @@ def main():
     i_files = sys.argv[3:]
     config = {'os': os_name,
               'input_files': i_files}
-    p_manager = stepmanager.StepManager(g, config,
+    p_manager = stepmanager.StepManager(g, config, {},
                                         provides=provide)
 
     p_manager.execute([test_step])

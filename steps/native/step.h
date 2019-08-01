@@ -49,8 +49,6 @@ namespace step {
 			opts.emplace_back(log_level);
 			opts.emplace_back(os);
 			opts.emplace_back(after);
-
-			fill_options(opts);
 		}
 
 		/**
@@ -58,6 +56,8 @@ namespace step {
 		 * Must be called after the constructor.
 		 */
 		void parse_options(PyObject* config) {
+			fill_options(opts);
+
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Step: Need a dict as config.");
 			}

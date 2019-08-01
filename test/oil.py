@@ -54,9 +54,10 @@ def main():
     for file, oil, validate in TESTS:
         g = graph.PyGraph()
         config = {'oilfile': oil,
-                  'os': 'osek',
+                  'os': 'OSEK',
                   'input_files': [file]}
-        p_manager = stepmanager.StepManager(g, config)
+        extra_config = {}
+        p_manager = stepmanager.StepManager(g, config, extra_config)
 
         p_manager.execute(['OilStep'])
 

@@ -11,5 +11,6 @@ FixNamespaceComments: true
 IncludeBlocks:        Regroup
 SortIncludes:         true
 PointerAlignment:     Left
+AlwaysBreakTemplateDeclarations: BTDS_Yes
 ...
 

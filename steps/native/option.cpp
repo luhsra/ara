@@ -9,6 +9,7 @@ void Integer::from_pointer(PyObject* obj, std::string name) {
 		throw std::invalid_argument(ss.str());
 	}
 	this->value = PyLong_AsLongLong(obj);
+	assert(this->value != -1 || PyErr_Occurred() == NULL);
 	this->valid = true;
 }
 
