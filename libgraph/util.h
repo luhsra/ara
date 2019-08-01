@@ -1,10 +1,10 @@
 #pragma once
 
-#include <string>
-#include <sstream>
 #include <iostream>
+#include <sstream>
+#include <string>
 
-template<class T>
+template <class T>
 std::string to_string(const T& obj) {
 	std::stringstream st;
 	st << obj;

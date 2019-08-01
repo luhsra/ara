@@ -274,16 +274,15 @@ namespace ara::option {
 	 * Description object for options
 	 */
 	struct Option {
-		protected:
+	  protected:
 		const std::string name;
 		const std::string help;
 
 		virtual std::string get_type_args() = 0;
 
-		public:
+	  public:
 		// only for Python bridging, sed cy_helper.h
 		friend std::string get_type_args(ara::option::Option* opt);
-
 
 		Option(std::string name, std::string help) : name(name), help(help) {}
 		Option() = default;
@@ -303,7 +302,6 @@ namespace ara::option {
 
 		std::string get_name() { return name; }
 		std::string get_help() { return help; }
-
 	};
 
 	/**

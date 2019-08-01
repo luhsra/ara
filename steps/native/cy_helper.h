@@ -23,7 +23,5 @@ step::Step* step_fac(PyObject* config) {
 }
 
 namespace ara::option {
-	std::string get_type_args(ara::option::Option* opt) {
-		return opt->get_type_args();
-	}
-}
+	std::string get_type_args(ara::option::Option* opt) { return opt->get_type_args(); }
+} // namespace ara::option

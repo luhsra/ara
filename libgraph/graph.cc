@@ -19,7 +19,8 @@ using namespace llvm;
 }
 */
 
-template <typename T> bool contains(std::any a) {
+template <typename T>
+bool contains(std::any a) {
 	bool success = false;
 	// std::cout <<  typeid( T ).hash_code() << "," <<a.type().hash_code()  << std::endl;
 	try {
@@ -659,7 +660,7 @@ std::set<shared_abb> OS::Function::get_endless_loops() {
 		if (vec.size() != 0) {
 			continue;
 		}
-		//We have an endless loop
+		// We have an endless loop
 		auto bb = loop->getHeader();
 		// TODO currently no way for back mapping
 		for (auto abb : get_atomic_basic_blocks()) {
@@ -869,9 +870,7 @@ void OS::Function::initialize_postdominator_tree(llvm::Function* function) {
 
 llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop>* OS::Function::get_loop_info_base() { return &this->loop_info_base; }
 
-std::ostream& OS::Function::print(std::ostream& stream) const {
-	return stream << "Function(" << get_name() << ")";
-}
+std::ostream& OS::Function::print(std::ostream& stream) const { return stream << "Function(" << get_name() << ")"; }
 
 void OS::ABB::set_loop_information(bool flag) { this->in_loop = flag; }
 
@@ -1458,18 +1457,19 @@ bool OS::Mutex::set_resource_property(std::string type, std::string linked_resou
 	return result;
 }
 
-void OS::Task::set_priority(unsigned long priority) { 
-    this->priority.clear();
-    this->priority.emplace_back(priority); 
-    
+void OS::Task::set_priority(unsigned long priority) {
+	this->priority.clear();
+	this->priority.emplace_back(priority);
 }
 
 void OS::Task::append_priority(unsigned long priority) { this->priority.emplace_back(priority); }
 
-unsigned long OS::Task::get_priority() { 
-    
-    if(priority.size() == 1) return this->priority.back() ; 
-    else return -1;
+unsigned long OS::Task::get_priority() {
+
+	if (priority.size() == 1)
+		return this->priority.back();
+	else
+		return -1;
 }
 
 unsigned long OS::Task::get_stacksize() { return this->stacksize; }
@@ -1482,9 +1482,7 @@ void OS::Task::set_stacksize(unsigned long stacksize) { this->stacksize = stacks
 
 bool OS::Task::set_message_reference(std::string message) { return false; }
 
-void OS::Task::set_schedule(bool schedule) {
-	this->scheduled = schedule;
-}
+void OS::Task::set_schedule(bool schedule) { this->scheduled = schedule; }
 
 void OS::Task::set_activation(unsigned long activation) { this->activation = activation; }
 
@@ -1591,8 +1589,8 @@ bool OS::ISR::set_category(int category) {
 }
 
 void OS::ISR::set_priority(int priority) {
-    this->priority = priority;
-    return;
+	this->priority = priority;
+	return;
 }
 
 bool OS::ISR::set_resource_reference(std::string resource_name) {

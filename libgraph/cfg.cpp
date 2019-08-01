@@ -7,19 +7,17 @@ namespace ara::cfg {
 	// ABBType functions
 	std::ostream& operator<<(std::ostream& str, const ABBType& ty) {
 		switch (ty) {
-			case syscall:
-				return (str << "syscall");
-			case call:
-				return (str << "syscall");
-			case computation:
-				return (str << "computation");
+		case syscall:
+			return (str << "syscall");
+		case call:
+			return (str << "syscall");
+		case computation:
+			return (str << "computation");
 		};
 	}
 
 	// ABB functions
-	std::ostream& operator<<(std::ostream& str, const ABB& abb) {
-		return (str << "ABB(" << abb.name << ")");
-	}
+	std::ostream& operator<<(std::ostream& str, const ABB& abb) { return (str << "ABB(" << abb.name << ")"); }
 
 	// Function functions
 	std::ostream& operator<<(std::ostream& str, const Function& func) {
@@ -66,8 +64,6 @@ namespace ara::cfg {
 		}
 	}
 
-	std::ostream& operator<<(std::ostream& str, const ABBGraph& graph) {
-		return (str << "ABBGraph()");
-	}
+	std::ostream& operator<<(std::ostream& str, const ABBGraph& graph) { return (str << "ABBGraph()"); }
 
 } // namespace ara::cfg

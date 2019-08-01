@@ -37,12 +37,14 @@ namespace ara::cfg {
 	std::ostream& operator<<(std::ostream&, const Function&);
 
 	// TODO
-	//template<class G, class P = G::graph_bundled>
-	//P& graph_prop(G g) {
+	// template<class G, class P = G::graph_bundled>
+	// P& graph_prop(G g) {
 	//	return boost::get_property(g, boost::graph_bundle);
 	//}
 
-	typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_prop, boost::property< boost::edge_index_t, std::size_t>, Function>> CFGraph;
+	typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_prop,
+	                                              boost::property<boost::edge_index_t, std::size_t>, Function>>
+	    CFGraph;
 	typedef CFGraph FunctionDescriptor;
 
 	/**
@@ -76,7 +78,6 @@ namespace ara::cfg {
 		 */
 		ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
 
-
 		/**
 		 * Return the function that contains the vertex.
 		 */
@@ -84,8 +85,6 @@ namespace ara::cfg {
 
 	  private:
 		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
-		//std::map<const llvm::Function*, CFGraph> abb_map;
-
 	};
 	std::ostream& operator<<(std::ostream&, const ABBGraph&);
 
