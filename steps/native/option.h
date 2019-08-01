@@ -37,7 +37,6 @@ namespace ara::option {
 			return PyDict_GetItemString(config, name.c_str());
 		}
 
-		private:
 		std::string step_name;
 
 		public:
@@ -46,6 +45,10 @@ namespace ara::option {
 
 		void check(PyObject* obj, std::string name) {
 			PyObject* scoped_obj = get_scoped_object(obj, name);
+			if (!scoped_obj) {
+				this->valid = false;
+				return;
+			}
 			this->from_pointer(scoped_obj, name);
 		}
 
@@ -92,6 +95,7 @@ namespace ara::option {
 
 		void check(PyObject* obj, std::string name) {
 			T cont;
+			cont.set_step_name(this->step_name);
 			cont.check(obj, name);
 
 			auto ret = cont.get();
@@ -163,6 +167,7 @@ namespace ara::option {
 
 		void check(PyObject* obj, std::string name) {
 			String cont;
+			cont.set_step_name(this->step_name);
 			cont.check(obj, name);
 
 			auto ret = cont.get();
@@ -221,6 +226,8 @@ namespace ara::option {
 		virtual void check(PyObject*) = 0;
 
 		virtual void set_step_name(std::string step_name) = 0;
+
+		virtual bool is_global() = 0;
 	};
 
 	/**
@@ -243,6 +250,8 @@ namespace ara::option {
 		virtual void check(PyObject* obj) override {
 			ty.check(obj, name);
 		}
+
+		virtual bool is_global() override { return global; }
 
 		/**
 		 * get value of option.

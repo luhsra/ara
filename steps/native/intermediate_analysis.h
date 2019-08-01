@@ -57,8 +57,6 @@ namespace step {
 		bool set_branch(OS::shared_abb abb, std::set<size_t>& already_visited);
 
 	  public:
-		IntermediateAnalysisStep(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override;
 
 		virtual std::string get_description() const override;

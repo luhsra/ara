@@ -28,7 +28,7 @@ namespace step {
 		Logger logger;
 
 		ara::option::TOption<ara::option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
-				ara::option::makeChoice("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"),
+				ara::option::makeChoice("critical", "error", "warn", "info", "debug"),
 				/* global = */ true};
 		ara::option::TOption<ara::option::Choice<2>> os{"os", "Select the operating system.",
 				ara::option::makeChoice("FreeRTOS", "OSEK"),
@@ -44,17 +44,23 @@ namespace step {
 	  public:
 		/**
 		 * Contruct a native step.
-		 *
-		 * @Args
-		 * config -- a Python dictionary, that holds the configuration of the whole program.
 		 */
-		Step(PyObject* config) {
+		Step() {
+			opts.emplace_back(log_level);
+			opts.emplace_back(os);
+			opts.emplace_back(after);
+
+			fill_options(opts);
+		}
+
+		/**
+		 * Apply configuration to the step.
+		 * Must be called after the constructor.
+		 */
+		void parse_options(PyObject* config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Step: Need a dict as config.");
 			}
-
-			std::vector<std::reference_wrapper<ara::option::Option>> opts = {log_level, after};
-			fill_options(opts);
 
 			for (ara::option::Option& option : opts) {
 				option.set_step_name(this->get_name());

@@ -11,8 +11,6 @@ namespace step {
 
 	class FnSingleExit : public Step {
 	  public:
-		FnSingleExit(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override { return "FnSingleExit"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;

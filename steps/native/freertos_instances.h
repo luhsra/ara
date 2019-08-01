@@ -50,8 +50,6 @@ namespace step {
 		std::vector<shared_warning> warnings;
 
 	  public:
-		FreeRTOSInstancesStep(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override;
 
 		virtual std::string get_description() const override;

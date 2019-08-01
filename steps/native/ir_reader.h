@@ -23,8 +23,6 @@ namespace step {
 		virtual void fill_options(std::vector<option_ref>& opts) override { opts.emplace_back(input_files); }
 
 	  public:
-		IRReader(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override { return "IRReader"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {}; }

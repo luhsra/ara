@@ -11,8 +11,6 @@
 namespace step {
 	class Test0Step : public Step {
 	  public:
-		Test0Step(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override;
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
@@ -21,8 +19,6 @@ namespace step {
 
 	class Test2Step : public Step {
 	  public:
-		Test2Step(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override;
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
@@ -31,8 +27,6 @@ namespace step {
 
 	class BBSplitTest : public Step {
 	  public:
-		BBSplitTest(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override;
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
@@ -41,8 +35,6 @@ namespace step {
 
 	class CompInsertTest : public Step {
 	  public:
-		CompInsertTest(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override;
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
@@ -51,7 +43,6 @@ namespace step {
 
 	class FnSingleExitTest : public Step {
 	  public:
-		FnSingleExitTest(PyObject* config) : Step(config) {}
 		virtual std::string get_name() const override;
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
@@ -61,7 +52,6 @@ namespace step {
 
 	class LLVMMapTest : public Step {
 	  public:
-		LLVMMapTest(PyObject* config) : Step(config) {}
 		virtual std::string get_name() const override;
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;

@@ -8,8 +8,6 @@
 namespace step {
 	class LLVMMap : public Step {
 	  public:
-		LLVMMap(PyObject* config) : Step(config) {}
-
 		virtual std::string get_name() const override { return "LLVMMap"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {"FnSingleExit"}; }
