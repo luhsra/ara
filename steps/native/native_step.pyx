@@ -105,6 +105,24 @@ class Step(SuperStep):
     steps."""
     def __init__(self, config: dict):
         super().__init__(config)
+        self.log_level = option.Option("log_level",
+                                       "Adjust the log level of this step.",
+                                       self.get_name(),
+                                       option.Choice("critical", "error",
+                                                     "warn", "info", "debug"),
+                                       glob=True)
+        self.os = option.Option("os",
+                                "Select the operating system.",
+                                self.get_name(),
+                                option.Choice("FreeRTOS", "OSEK"),
+                                glob=True)
+        self.after = option.Option("log_level",
+                                   "Queue step directly after the mentioned step.",
+                                   self.get_name(),
+                                   option.String(),
+                                   glob=True)
+        self.opts = [self.log_level, self.os, self.after]
+        self._fill_options()
 
     def get_name(self):
         return self.__class__.__name__
@@ -112,11 +130,11 @@ class Step(SuperStep):
     def get_description(self) -> str:
         return inspect.cleandoc(self.__doc__)
 
-    def _get_config(self, key: str):
-        """Get step configuration option for key."""
-        if self.get_name() in self._config['_per_step_config']:
-            return self._config['_per_step_config'][self.get_name()].get(key,
-                self._config.get(key, None))
+    def _fill_options(self):
+        pass
+
+    def options(self):
+        return self.opts
 
 
 cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
