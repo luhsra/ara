@@ -31,17 +31,8 @@ class OptionType:
         self.valid = False
         self.value = None
 
-    @staticmethod
-    def _get_value(config, step_name, name):
-        assert '_per_step_config' in config
-
-        pconf = config['_per_step_config']
-        if step_name in pconf and name in pconf:
-            return pconf[name]
-        return config.get(name, None)
-
     def check(self, config, step_name, name):
-        val = self._get_value(config, step_name, name)
+        val = config.get(name, None)
         if not val:
             return
         self.value = self._validate(val, name)

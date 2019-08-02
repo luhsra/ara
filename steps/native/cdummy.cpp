@@ -9,7 +9,7 @@ namespace step {
 		       "Add a meaningful description of your step here.";
 	}
 
-	void CDummy::fill_options(std::vector<option_ref>& opts) { opts.emplace_back(dummy_option); }
+	void CDummy::fill_options() { opts.emplace_back(dummy_option); }
 
 	void CDummy::run(graph::Graph& graph) {
 		logger.info() << "Execute C++ dummy step";

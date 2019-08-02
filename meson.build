@@ -30,19 +30,15 @@ sh = custom_target('ara-sh',
 	build_by_default: true
 )
 
+extra_settings = files('extra_settings.json')
+
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
-   args: [files('ara.py'), freertos_thesis_print, '--os', 'FreeRTOS', '--log-level', 'debug'],
-#   #args: [files('ara.py', 'Smartplug/main.ll','Smartplug/cloud.ll','Smartplug/http_server.ll','Smartplug/plc.ll','Smartplug/power_meter.ll','Smartplug/system.ll'), '--os', 'FreeRTOS'],
-#   
-#   #args : [files('ara.py'), '--os', 'FreeRTOS', freertos_targets[1]],
-#   #args : [files('ara.py'), '--os', 'FreeRTOS', freertos_targets[16]],
-# 
-#   #args : [files('ara.py'), '--os', 'osek', osek_targets[4]],
-# 
-#   #args : [files('ara.py'), '--os', 'osek', '--log-level', 'debug','--oilfile' , 'system-without-alarms.oil',  osek_targets[4]],
-# 
+   args: [files('ara.py'), gpslogger_targets, '--os', 'FreeRTOS',
+          '--log-level', 'debug',
+          '--step-settings', extra_settings,
+          '--step', 'LLVMMap'],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 

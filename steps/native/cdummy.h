@@ -9,8 +9,8 @@
 namespace step {
 	class CDummy : public Step {
 	  private:
-		virtual void fill_options(std::vector<option_ref>& opts) override;
 		ara::option::TOption<ara::option::Integer> dummy_option{"dummy_option", "This is the help for dummy_option."};
+		virtual void fill_options() override;
 
 	  public:
 		virtual std::string get_name() const override { return "CDummy"; }

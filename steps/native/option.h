@@ -32,19 +32,10 @@ namespace ara::option {
 		RawType() : step_name("") {}
 		virtual ~RawType() {}
 
-		PyObject* get_scoped_object(PyObject* config, std::string name) {
+		PyObject* get_value(PyObject* config, std::string key) {
+			assert(PyDict_Check(config));
 			assert(step_name != "");
-			PyObject* ret;
-			ret = PyDict_GetItemString(config, "_per_step_config");
-			assert(ret);
-			ret = PyDict_GetItemString(ret, step_name.c_str());
-			if (ret) {
-				ret = PyDict_GetItemString(ret, name.c_str());
-				if (ret) {
-					return ret;
-				}
-			}
-			return PyDict_GetItemString(config, name.c_str());
+			return PyDict_GetItemString(config, key.c_str());
 		}
 
 		std::string step_name;
@@ -52,13 +43,13 @@ namespace ara::option {
 	  public:
 		virtual void from_pointer(PyObject*, std::string){};
 
-		void check(PyObject* obj, std::string name) {
-			PyObject* scoped_obj = get_scoped_object(obj, name);
+		void check(PyObject* obj, std::string key) {
+			PyObject* scoped_obj = get_value(obj, key);
 			if (!scoped_obj) {
 				this->valid = false;
 				return;
 			}
-			this->from_pointer(scoped_obj, name);
+			this->from_pointer(scoped_obj, key);
 		}
 
 		std::string serialize_args() { return ""; }
@@ -173,8 +164,8 @@ namespace ara::option {
 
 		static unsigned get_type() { return OptionType::LIST | T::get_type(); }
 
-		void check(PyObject* obj, std::string name) {
-			PyObject* scoped_obj = this->get_scoped_object(obj, name);
+		void check(PyObject* obj, std::string key) {
+			PyObject* scoped_obj = this->get_value(obj, key);
 
 			if (!scoped_obj) {
 				this->valid = false;
@@ -183,13 +174,13 @@ namespace ara::option {
 
 			if (!PyList_Check(scoped_obj)) {
 				std::stringstream ss;
-				ss << name << ": Must be a list" << std::flush;
+				ss << key << ": Must be a list" << std::flush;
 				throw std::invalid_argument(ss.str());
 			}
 
 			for (Py_ssize_t i = 0; i < PyList_Size(scoped_obj); ++i) {
 				T cont;
-				cont.from_pointer(PyList_GetItem(scoped_obj, i), name);
+				cont.from_pointer(PyList_GetItem(scoped_obj, i), key);
 				auto ret = cont.get();
 
 				if (!ret.second) {

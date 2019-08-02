@@ -10,15 +10,16 @@ from libc.stdint cimport int64_t
 
 cdef extern from "step.h" namespace "step":
     cdef cppclass Step:
-        Step(dict config) except +
+        Step() except +
         void set_logger(object logger)
         string get_name()
         string get_description()
         vector[string] get_dependencies()
+        void apply_config(dict config)
         void run(cgraph.Graph a)
 
 cdef extern from "cy_helper.h":
-    Step* step_fac[T](dict)
+    Step* step_fac[T]()
     vector[option.Option*] repack(Step& step)
 
 cdef extern from "cy_helper.h" namespace "ara::option":

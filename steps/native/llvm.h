@@ -121,8 +121,7 @@ namespace step {
 		void set_exit_abb(graph::Graph& graph, unsigned int& split_counter);
 
 		ara::option::TOption<ara::option::List<ara::option::String>> input_files{"input_files", "Get input files."};
-
-		virtual void fill_options(std::vector<option_ref>& opts) override { opts.emplace_back(input_files); }
+		virtual void fill_options() override { opts.emplace_back(input_files); }
 
 	  public:
 		virtual std::string get_name() const override { return "LLVMStep"; }

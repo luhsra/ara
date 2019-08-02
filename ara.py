@@ -34,7 +34,7 @@ def main():
                         nargs='*')
     parser.add_argument('--oilfile', help="name of oilfile")
     parser.add_argument('--step-settings', metavar="FILE",
-                        help="settings for individual steps")
+                        help="settings for individual steps. '-' is STDIN")
 
     args = parser.parse_args()
 

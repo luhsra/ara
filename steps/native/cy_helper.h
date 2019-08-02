@@ -16,9 +16,9 @@ std::vector<ara::option::Option*> repack(const step::Step& step) {
 }
 
 template <class S>
-step::Step* step_fac(PyObject* config) {
+step::Step* step_fac() {
 	step::Step* s = new S();
-	s->parse_options(config);
+	s->init_options();
 	return s;
 }
 

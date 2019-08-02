@@ -22,10 +22,8 @@ namespace step {
 	  public:
 		using option_ref = std::reference_wrapper<ara::option::Option>;
 
-	  private:
-		std::vector<option_ref> opts;
-
 	  protected:
+		std::vector<option_ref> opts;
 		Logger logger;
 
 		ara::option::TOption<ara::option::Choice<5>> log_level{
@@ -39,11 +37,10 @@ namespace step {
 
 		ara::option::TOption<ara::option::String> after{"after", "Queue step directly after the mentioned step.",
 		                                                ara::option::String(), /* global = */ true};
-
 		/**
 		 * Fill with all used options.
 		 */
-		virtual void fill_options(std::vector<option_ref>&) {}
+		virtual void fill_options() {}
 
 	  public:
 		/**
@@ -56,18 +53,25 @@ namespace step {
 		}
 
 		/**
-		 * Apply configuration to the step.
-		 * Must be called after the constructor.
+		 * Init options. Must be called after the constructor.
 		 */
-		void parse_options(PyObject* config) {
-			fill_options(opts);
+		void init_options() {
+			fill_options();
+			for (ara::option::Option& option : opts) {
+				option.set_step_name(get_name());
+			}
+		}
 
+		/**
+		 * Apply a configuration to the step.
+		 * Can be run multiple times.
+		 */
+		void apply_config(PyObject* config) {
 			if (!PyDict_Check(config)) {
 				throw std::invalid_argument("Step: Need a dict as config.");
 			}
 
 			for (ara::option::Option& option : opts) {
-				option.set_step_name(this->get_name());
 				option.check(config);
 			}
 		}

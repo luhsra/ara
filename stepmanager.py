@@ -30,10 +30,10 @@ class StepManager:
         """
         self._graph = g
         self._config = config
-        self._config['_per_step_config'] = extra_config
+        self._extra_config = extra_config
         self._steps = {}
         self._log = logging.getLogger(self.__class__.__name__)
-        for step in provides(self._config):
+        for step in provides():
             self._steps[step.get_name()] = step
 
     def get_step(self, name):
