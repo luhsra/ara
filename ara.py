@@ -43,20 +43,8 @@ def main():
 
     util.init_logging(level=args.log_level)
 
-    extra_settings = {}
-
-    if args.step_settings:
-        try:
-            if args.step_settings == '-':
-                extra_settings = json.load(sys.stdin)
-            else:
-                with open(args.step_settings) as efile:
-                    extra_settings = json.load(efile)
-        except Exception as e:
-            parser.error(f'File for --step-settings is malformed: {e}')
-
     g = graph.PyGraph()
-    s_manager = stepmanager.StepManager(g, vars(args), extra_settings)
+    s_manager = stepmanager.StepManager(g)
     avail_steps = s_manager.get_steps()
 
     if args.list_steps:
@@ -69,17 +57,25 @@ def main():
 
     logging.debug("Processing files: %s", ', '.join(args.input_files))
 
-    if args.step is None:
+    extra_settings = {}
+
+    if args.step_settings:
+        try:
+            if args.step_settings == '-':
+                extra_settings = json.load(sys.stdin)
+            else:
+                with open(args.step_settings) as efile:
+                    extra_settings = json.load(efile)
+        except Exception as e:
+            parser.error(f'File for --step-settings is malformed: {e}')
+
+    if extra_settings.get("steps", None) and args.step:
+        parser.error("Provide steps either with '--step' or in '--step-settings'.")
+
+    if args.step is None and not extra_settings.get("steps", None):
         args.step = ['DisplayResultsStep']
 
-    if len(set(args.step) & set([s.get_name() for s in avail_steps])) == 0:
-        msg = 'Invalid step for --step. {}'.format(
-            print_avail_steps(avail_steps))
-        parser.error(msg)
-
-    logging.debug("Executing steps: %s", ', '.join(args.step))
-
-    s_manager.execute(args.step)
+    s_manager.execute(vars(args), extra_settings, args.step)
 
 
 if __name__ == '__main__':

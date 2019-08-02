@@ -1,0 +1,13 @@
+{
+	"steps": [
+		"LLVMMap",
+		{
+			"name": "Printer",
+			"file": "foo.dot"
+		}
+	],
+
+	"LLVMMap": {
+		"log_level": "info"
+	}
+}

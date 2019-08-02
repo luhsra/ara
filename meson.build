@@ -30,15 +30,14 @@ sh = custom_target('ara-sh',
 	build_by_default: true
 )
 
-extra_settings = files('extra_settings.json')
+extra_settings = files('test/extra_settings.json')
 
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
    args: [files('ara.py'), gpslogger_targets, '--os', 'FreeRTOS',
           '--log-level', 'debug',
-          '--step-settings', extra_settings,
-          '--step', 'LLVMMap'],
+          '--step-settings', extra_settings],
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 

@@ -17,7 +17,7 @@ class Option:
         return self._global
 
     def check(self, config):
-        self._ty.check(config, self.step_name, self._name)
+        self._ty.check(config, self._step_name, self._name)
 
     def get_type_help(self):
         return self._ty.get_help()
@@ -50,7 +50,7 @@ class OptionType:
 
 class Bool(OptionType):
     def _validate(self, val, name):
-        if not isinstance(bool, val):
+        if not isinstance(val, bool):
             raise ValueError(f"{name}: {val} must be a boolean.")
         return val
 
@@ -58,21 +58,21 @@ class Bool(OptionType):
 
 class Integer(OptionType):
     def _validate(self, val, name):
-        if not isinstance(int, val):
+        if not isinstance(val, int):
             raise ValueError(f"{name}: {val} must be an integer.")
         return val
 
 
 class String(OptionType):
     def _validate(self, val, name):
-        if not isinstance(str, val):
+        if not isinstance(val, str):
             raise ValueError(f"{name}: {val} must be a string.")
         return val
 
 
 class Float(OptionType):
     def _validate(self, val, name):
-        if not isinstance(float, val):
+        if not isinstance(val, float):
             raise ValueError(f"{name}: {val} must be a float.")
         return val
 
@@ -99,7 +99,7 @@ class List(OptionType):
         self.ty = ty
 
     def _validate(self, val, name):
-        if not isinstance(list, val):
+        if not isinstance(val, list):
             raise ValueError(f"{name}: {val} must be a list.")
         for elem in val:
             ty = self.ty()

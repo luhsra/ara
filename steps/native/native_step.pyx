@@ -132,7 +132,9 @@ class Step(SuperStep):
     def apply_config(self, config):
         for option in self.opts:
             option.check(config)
-        self._log.setLevel(LEVEL[self.log_level.get()])
+        level, valid = self.log_level.get()
+        if valid:
+            self._log.setLevel(LEVEL[level])
 
     def get_name(self):
         return self.__class__.__name__
