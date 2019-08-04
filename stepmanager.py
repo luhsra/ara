@@ -159,5 +159,5 @@ class StepManager:
             if isinstance(step, ConfigEvent):
                 config_manager.apply_new_config(step)
             else:
-                self._log.info(f"Executing {step.name} (UUID: {step.uuid}")
+                self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
                 self._steps[step.name].run(self._graph)
