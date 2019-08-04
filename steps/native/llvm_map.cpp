@@ -57,6 +57,6 @@ namespace step {
 			}
 		}
 
-		logger.debug() << "Inserted " << name_counter << " ABBs." << std::endl;
+		logger.info() << "Mapped " << name_counter << " ABBs." << std::endl;
 	}
 } // namespace step
