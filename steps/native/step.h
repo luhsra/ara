@@ -74,6 +74,10 @@ namespace step {
 			for (ara::option::Option& option : opts) {
 				option.check(config);
 			}
+			auto lvl = log_level.get();
+			if (lvl.second) {
+				logger.set_level(translate_level(lvl.first));
+			}
 		}
 
 		/**

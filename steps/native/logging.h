@@ -121,6 +121,10 @@ class Logger {
 		logger.level = get_level(py_logger);
 	}
 
+	void set_level(LogLevel level) {
+		logger.level = level;
+	}
+
 	Logger::LogStream crit() {
 		assert(logger.logger != nullptr);
 		return Logger::LogStream(LogLevel::CRITICAL, logger);
@@ -146,5 +150,24 @@ class Logger {
 		return Logger::LogStream(LogLevel::DEBUG, logger);
 	}
 };
+
+inline LogLevel translate_level(std::string lvl) {
+	if (lvl == "critical") {
+		return LogLevel::CRITICAL;
+	}
+	if (lvl == "error") {
+		return LogLevel::ERROR;
+	}
+	if (lvl == "warn") {
+		return LogLevel::WARNING;
+	}
+	if (lvl == "info") {
+		return LogLevel::INFO;
+	}
+	if (lvl == "debug") {
+		return LogLevel::DEBUG;
+	}
+	return LogLevel::NOTSET;
+}
 
 #endif // LOGGER_H
