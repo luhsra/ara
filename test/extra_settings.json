@@ -3,7 +3,10 @@
 		"LLVMMap",
 		{
 			"name": "Printer",
-			"file": "foo.dot"
+			"dot": "initial_map.dot",
+			"graph_name": "Initial Map",
+			"dump": true,
+			"subgraph": "abbs"
 		}
 	],
 

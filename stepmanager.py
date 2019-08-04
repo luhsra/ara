@@ -12,6 +12,7 @@ import copy
 import sys
 
 StepEvent = namedtuple('StepEvent', ['name', 'uuid'])
+ConfigEvent = namedtuple('ConfigEvent', ['uuid'])
 
 
 class Solver:
@@ -20,12 +21,34 @@ class Solver:
         self.steps = steps
 
     def solve(self):
-        print("solve")
-        sys.exit(1)
-        pass
+        steps = [StepEvent(name=x["name"], uuid=x["uuid"])
+                 for x in reversed(self.esteps)]
+        esteps_uuids = {}
+        for step in self.esteps:
+            config_keys = step.keys() - (step.keys() & set(['name', 'uuid']))
+            esteps_uuids[step["uuid"]] = bool(config_keys)
 
+        for step in steps:
+            for dep in self.steps[step.name].get_dependencies():
+                steps.append(StepEvent(name=dep, uuid=uuid.uuid4()))
 
-ConfigEvent = namedtuple('ConfigEvent', ['uuid'])
+        execute = []
+        exec_names = set()
+
+        for step in reversed(steps):
+            if step.name in exec_names and step.uuid not in esteps_uuids:
+                continue
+            execute.append(step)
+            exec_names.add(step.name)
+
+        # apply config events
+        exec_with_config = []
+        for step in execute:
+            if esteps_uuids.get(step.uuid, False):
+                exec_with_config.append(ConfigEvent(uuid=step.uuid))
+            exec_with_config.append(step)
+
+        return exec_with_config
 
 
 class ConfigManager:
@@ -33,6 +56,7 @@ class ConfigManager:
         self.p_config = program_config
         self.e_config = extra_config
         self.t_config = time_config
+        self.t_uuids = dict([(x['uuid'], x) for x in self.t_config])
         self.steps = steps
 
     def apply_initial_config(self):
@@ -41,10 +65,15 @@ class ConfigManager:
             config = {**self.p_config, **(self.e_config.get(step, {}))}
             self.steps[step].apply_config(config)
 
+    def set_execution_chain(self, execute):
+        self.execute = execute
+
     def apply_new_config(self, config_event):
-        print("newconf")
-        sys.exit(1)
-        pass
+        step_config = self.t_uuids[config_event.uuid]
+        config = {**self.p_config,
+                  **(self.e_config.get(step_config['name'], {})),
+                  **step_config}
+        self.steps[step_config['name']].apply_config(config)
 
 
 class StepManager:
@@ -125,18 +154,6 @@ class StepManager:
         for step in execute:
             if isinstance(step, StepEvent):
                 self._log.debug(f"{step.name} (UUID: {step.uuid})")
-
-        # for step in esteps:
-        #     for dep in self._steps[step].get_dependencies():
-        #         esteps.append(dep)
-
-        # execute = []
-
-        # self._log.debug("The following steps will be executed:")
-        # for step in reversed(esteps):
-        #     if step not in execute:
-        #         self._log.debug(step)
-        #         execute.append(step)
 
         for step in execute:
             if isinstance(step, ConfigEvent):
