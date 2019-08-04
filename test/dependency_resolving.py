@@ -6,6 +6,7 @@ import logging
 
 from native_step import Step
 from util import init_logging
+from steps.option import Option, Bool
 
 shared_state = ""
 
@@ -85,25 +86,34 @@ class TestDep0(TestStep):
 
 
 class TestDep1(TestStep):
+    def _fill_options(self):
+        self.cond = Option(name="cond",
+                           help="Testopt",
+                           step_name=self.get_name(),
+                           ty=Bool())
+        self.opts.append(self.cond)
+
     def get_dependencies(self):
-        if self._config['cond']:
+        opt, valid = self.cond.get()
+        print(opt, valid)
+        if opt and valid:
             return ["TestDep0"]
         return []
 
 
-def provide(config):
-    yield Test0Step(config)
-    yield Test1Step(config)
-    yield Test2Step(config)
-    yield Test3Step(config)
-    yield Test4Step(config)
-    yield Test5Step(config)
-    yield Test6Step(config)
-    yield Test7Step(config)
-    yield Test8Step(config)
-    yield Test9Step(config)
-    yield TestDep0(config)
-    yield TestDep1(config)
+def provide():
+    yield Test0Step()
+    yield Test1Step()
+    yield Test2Step()
+    yield Test3Step()
+    yield Test4Step()
+    yield Test5Step()
+    yield Test6Step()
+    yield Test7Step()
+    yield Test8Step()
+    yield Test9Step()
+    yield TestDep0()
+    yield TestDep1()
 
 
 tests = ["""
@@ -122,12 +132,12 @@ Run: Test9Step
 Run: Test1Step
 Run: Test0Step
 Run: Test4Step
-Run: Test3Step
 Run: Test7Step
 Run: Test6Step
 Run: Test5Step
-Run: Test9Step
+Run: Test3Step
 Run: Test8Step
+Run: Test9Step
 """[1:]]
 
 
@@ -136,32 +146,31 @@ def main():
     g = graph.PyGraph()
     config = {}
     extra_config = {}
-    p_manager = stepmanager.StepManager(g, config, extra_config,
-                                        provides=provide)
+    p_manager = stepmanager.StepManager(g, provides=provide)
 
     global shared_state
 
     # standard tests
-    p_manager.execute(['Test8Step'])
+    p_manager.execute(config, extra_config, ['Test8Step'])
     assert(shared_state == tests[0])
     shared_state = ""
 
-    p_manager.execute(['Test9Step'])
+    p_manager.execute(config, extra_config, ['Test9Step'])
     assert(shared_state == tests[1])
     shared_state = ""
 
-    p_manager.execute(['Test8Step', 'Test9Step'])
+    p_manager.execute(config, extra_config, ['Test8Step', 'Test9Step'])
     assert(shared_state == tests[2])
     shared_state = ""
 
-    # conditinal tests
+    # conditional tests
     config['cond'] = False
-    p_manager.execute(['TestDep1'])
+    p_manager.execute(config, extra_config, ['TestDep1'])
     assert(shared_state == 'Run: TestDep1\n')
     shared_state = ""
 
     config['cond'] = True
-    p_manager.execute(['TestDep1'])
+    p_manager.execute(config, extra_config, ['TestDep1'])
     assert(shared_state == 'Run: TestDep0\nRun: TestDep1\n')
     shared_state = ""
 

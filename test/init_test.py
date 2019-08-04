@@ -42,12 +42,12 @@ def init_test(steps=None):
     with open(json_file) as f:
         data = json.load(f)
 
+    s_manager = stepmanager.StepManager(g)
+
     config = {'os': os_name,
               'log_level': 'debug',
               'input_files': i_files}
     extra_config = {}
-    s_manager = stepmanager.StepManager(g, config, extra_config)
-
-    s_manager.execute(steps)
+    s_manager.execute(config, extra_config, steps)
 
     return g, data, s_manager
