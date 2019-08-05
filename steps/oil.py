@@ -5,6 +5,8 @@ import json
 from functools import partial
 from typing import Dict, Any
 
+from .option import Option, String
+
 from native_step import Step
 
 
@@ -100,13 +102,24 @@ class OilStep(Step):
                     init(vertex)
             g.set_vertex(vertex)
 
+    def _fill_options(self):
+        self.oilfile = Option(name="oilfile",
+                              help="Path to JSON oil file.",
+                              step_name=self.get_name(),
+                              ty=String())
+        self.opts.append(self.oilfile)
+
     def get_dependencies(self):
         return ['ABB_MergeStep']
 
     def run(self, g: graph.PyGraph):
         # load the json outputstructure with json
-        self._log.info(f"Reading oil file {self._config['oilfile']}")
-        with open(self._config['oilfile']) as f:
+        oilfile, valid = self.oilfile.get()
+        if not valid:
+            self._log.error("No oilfile provided.")
+            raise RuntimeError("No oilfile provided.")
+        self._log.info(f"Reading oil file {oilfile}")
+        with open(oilfile) as f:
             oil = json.load(f)
         assert("cpu" in oil)
         oil = oil["cpu"]

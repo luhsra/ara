@@ -57,9 +57,9 @@ def main():
                   'os': 'OSEK',
                   'input_files': [file]}
         extra_config = {}
-        p_manager = stepmanager.StepManager(g, config, extra_config)
+        p_manager = stepmanager.StepManager(g)
 
-        p_manager.execute(['OilStep'])
+        p_manager.execute(config, extra_config, ['OilStep'])
 
         validate(g)
 
