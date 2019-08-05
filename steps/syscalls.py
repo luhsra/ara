@@ -241,12 +241,14 @@ class SyscallStep(Step):
 
     def run(self, g: graph.PyGraph):
         #get information which os is used
-        os =  self._config["os"]
+        os, valid = self.os.get()
 
-        if os == "osek":
+        if valid and os == "OSEK":
             g.set_os_type(graph.os_type.OSEK)
-        elif os == "freertos":
+        elif valid and os == "FreeRTOS":
             g.set_os_type(graph.os_type.FreeRTOS)
+        else:
+            assert False
 
         self.select_syscalls(os)
 
