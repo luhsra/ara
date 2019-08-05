@@ -27,12 +27,12 @@ class Printer(Step):
                                ty=Choice("abbs"))
         self.opts += [self.dot, self.dump, self.subgraph]
 
-    def print_abbs(self):
+    def print_abbs(self, graph):
         dump, valid = self.dump.get()
         if valid and dump:
-            print("dump graph")
+            print(graph.new_graph.abbs())
 
     def run(self, g: graph.PyGraph):
         subgraph, valid = self.subgraph.get()
         if valid and subgraph == 'abbs':
-            self.print_abbs()
+            self.print_abbs(g)

@@ -3,6 +3,7 @@
 # vim: set et ts=4 sw=4:
 
 cimport cgraph
+cimport newgraph
 cimport graph
 
 from libcpp.memory cimport shared_ptr, make_shared
@@ -16,7 +17,7 @@ from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
-from util cimport to_string
+from cy_helper cimport to_string
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
@@ -225,10 +226,50 @@ cdef create_abb(shared_ptr[cgraph.ABB] abb):
     return py_obj
 
 
+cdef class ABBGraph:
+    """NEVER EVER construct this by yourself. Instead, use Graph.abbs()."""
+
+    # This should be a reference, since the lifetime is assosiated to the graph
+    # object and it should only be constructable with Graph.abbs(). However,
+    # Cython is not able to achieve this, so instead use a pointer.
+    cdef newgraph.ABBGraph* _c_abbgraph
+
+    def __str__(self):
+        return to_string(deref(self._c_abbgraph)).decode('utf-8')
+
+
+cdef class Graph:
+
+    # TODO make this a unique pointer once the graph transition is done
+    cdef newgraph.Graph* _c_graph
+
+    # def __cinit__(self):
+    #     self._c_graph = make_unique[cgraph.Graph]()
+
+    def abbs(self):
+        cdef ABBGraph g = ABBGraph()
+        g._c_abbgraph = &self._c_graph.abbs()
+        return g
+
+
 cdef class PyGraph:
 
     def __cinit__(self):
         self._c_graph = make_shared[cgraph.Graph]()
+
+    @property
+    def new_graph(self):
+        cdef Graph g = Graph()
+        g._c_graph = &deref(self._c_graph).new_graph
+        return g
+
+    @new_graph.setter
+    def new_graph(self, value):
+        raise RuntimeError("Must not happen.")
+
+    @new_graph.deleter
+    def new_graph(self):
+        raise RuntimeError("Must not happen.")
 
     def __str__(self):
         return to_string(deref(self._c_graph)).decode('utf-8')

@@ -7,6 +7,8 @@ from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 from libc.stdint cimport int64_t
 
+cimport newgraph
+
 
 cdef extern from "graph.h":
     cdef cppclass start_scheduler_relation:
@@ -113,6 +115,8 @@ cdef extern from "graph.h" namespace "message_property":
 cdef extern from "graph.h" namespace "graph":
     cdef cppclass Graph:
         Graph() except +
+
+        newgraph.Graph new_graph
 
         void set_vertex(shared_ptr[Vertex] vertex)
         clist[shared_ptr[Vertex]] get_type_vertices(size_t type_info)

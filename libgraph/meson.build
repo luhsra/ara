@@ -1,4 +1,4 @@
-pygraph_includes = files('cgraph.pxd', 'util.pxd', 'graph.pxd')
+pygraph_includes = files('cgraph.pxd', 'newgraph.pxd', 'cy_helper.pxd', 'graph.pxd')
 
 graph_pyx_cpp = custom_target('graph_pyx',
 	output : 'graph_pyx.cpp',

@@ -3,5 +3,5 @@
 from libcpp.string cimport string
 cimport cgraph
 
-cdef extern from "util.h" nogil:
+cdef extern from "cy_helper.h" nogil:
     cdef string to_string[T](T& obj)
