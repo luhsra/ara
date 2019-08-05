@@ -6,6 +6,7 @@ from functools import partial
 from typing import Dict, Any
 
 from .option import Option, String
+from .util import raise_and_error
 
 from native_step import Step
 
@@ -116,8 +117,7 @@ class OilStep(Step):
         # load the json outputstructure with json
         oilfile, valid = self.oilfile.get()
         if not valid:
-            self._log.error("No oilfile provided.")
-            raise RuntimeError("No oilfile provided.")
+            raise_and_error(self._log, "No oilfile provided")
         self._log.info(f"Reading oil file {oilfile}")
         with open(oilfile) as f:
             oil = json.load(f)

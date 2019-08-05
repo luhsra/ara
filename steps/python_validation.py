@@ -5,6 +5,7 @@ from collections import namedtuple
 
 import logging
 #import syscalls_references
+from .util import raise_and_error
 
 from native_step import Step
 from itertools import chain
@@ -145,9 +146,12 @@ class Python_ValidationStep(Step):
 
         print("Run PythonValidationStep")
 
-        os =  self._config["os"]
+        os, valid = self.os.get()
 
-        if os == "osek":
+        if not valid:
+            raise_and_error(self._log, "OS not set correctly")
+
+        if os == "OSEK":
             validate_osek_syscalls_in_different_abstractions(g)
 
             validate_osek_task_termination(g)
