@@ -21,9 +21,7 @@ namespace ara::cfg {
 	ostream& operator<<(ostream& str, const ABB& abb) { return (str << "ABB(" << abb.name << ")"); }
 
 	// Function functions
-	ostream& operator<<(ostream& str, const Function& func) {
-		return (str << "Function(" << func.name << ")");
-	}
+	ostream& operator<<(ostream& str, const Function& func) { return (str << "Function(" << func.name << ")"); }
 
 	// ABBGraph functions
 	ABBGraph::vertex_descriptor ABBGraph::add_vertex(string name, ABBType type, llvm::BasicBlock* entry_bb,
@@ -43,7 +41,7 @@ namespace ara::cfg {
 	}
 
 	pair<ABBGraph::edge_descriptor, bool> ABBGraph::add_edge(ABBGraph::vertex_descriptor v1,
-	                                                              ABBGraph::vertex_descriptor v2) {
+	                                                         ABBGraph::vertex_descriptor v2) {
 		return boost::add_edge(v1, v2, *this);
 	}
 
@@ -88,9 +86,8 @@ namespace ara::cfg {
 			str << "\n" << string(indent * 1, ' ') << "Edges:\n";
 		}
 		for (auto edge : boost::make_iterator_range(edges(graph))) {
-			str << string(indent * 2, ' ') << "Edge "
-				<< graph[source(edge, graph)] << " -> "
-				<< graph[target(edge, graph)] << "\n";
+			str << string(indent * 2, ' ') << "Edge " << graph[source(edge, graph)] << " -> "
+			    << graph[target(edge, graph)] << "\n";
 		}
 
 		str << ")";
