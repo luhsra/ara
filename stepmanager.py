@@ -9,14 +9,21 @@ import graph
 import uuid
 import copy
 
+from steps.util import raise_and_error as rae
+
 import sys
 
 StepEvent = namedtuple('StepEvent', ['name', 'uuid'])
 ConfigEvent = namedtuple('ConfigEvent', ['uuid'])
 
 
+class SolverException(Exception):
+    """An exception occured in stepmanager.Solver."""
+
+
 class Solver:
     def __init__(self, esteps, steps):
+        self._log = logging.getLogger(self.__class__.__name__)
         self.esteps = esteps
         self.steps = steps
 
@@ -28,9 +35,15 @@ class Solver:
             config_keys = step.keys() - (step.keys() & set(['name', 'uuid']))
             esteps_uuids[step["uuid"]] = bool(config_keys)
 
-        for step in steps:
+        orig_esteps = [x.name for x in steps]
+        for idx, step in enumerate(steps):
             for dep in self.steps[step.name].get_dependencies():
-                steps.append(StepEvent(name=dep, uuid=uuid.uuid4()))
+                if dep not in orig_esteps[idx:]:
+                    if dep in orig_esteps:
+                        rae(self._log, f"{step.name} depends on {dep} "
+                                       "but is scheduled after it",
+                            exception=SolverException)
+                    steps.append(StepEvent(name=dep, uuid=uuid.uuid4()))
 
         execute = []
         exec_names = set()
