@@ -34,12 +34,12 @@ class Test1Step(Step):
         log.info("Running...")
 
 
-def provide(config):
+def provide():
     """Provide all classes for the StepManager."""
-    for step in provide_test_steps(config):
+    for step in provide_test_steps():
         yield step
-    yield Test1Step(config)
-    yield Test3Step(config)
+    yield Test1Step()
+    yield Test3Step()
 
 
 def main():
@@ -47,10 +47,9 @@ def main():
     g = graph.PyGraph()
     config = {}
     extra_config = {}
-    p_manager = stepmanager.StepManager(g, config, extra_config,
-                                        provides=provide)
+    p_manager = stepmanager.StepManager(g, provides=provide)
 
-    p_manager.execute(['Test3Step'])
+    p_manager.execute(config, extra_config, ['Test3Step'])
 
 
 if __name__ == '__main__':
