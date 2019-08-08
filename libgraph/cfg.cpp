@@ -90,7 +90,6 @@ namespace ara::cfg {
 		for (auto edge : boost::make_iterator_range(edges(graph))) {
 			str << string(indent * 2, ' ') << "Edge " << graph[source(edge, graph)] << " -> "
 			    << graph[target(edge, graph)] << "\n";
-			++it;
 		}
 
 		str << ")";
