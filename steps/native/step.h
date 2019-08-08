@@ -34,9 +34,6 @@ namespace step {
 		ara::option::TOption<ara::option::Choice<2>> os{"os", "Select the operating system.",
 		                                                ara::option::makeChoice("FreeRTOS", "OSEK"),
 		                                                /* global = */ true};
-
-		ara::option::TOption<ara::option::String> after{"after", "Queue step directly after the mentioned step.",
-		                                                ara::option::String(), /* global = */ true};
 		/**
 		 * Fill with all used options.
 		 */
@@ -49,7 +46,6 @@ namespace step {
 		Step() {
 			opts.emplace_back(log_level);
 			opts.emplace_back(os);
-			opts.emplace_back(after);
 		}
 
 		/**

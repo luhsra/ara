@@ -121,12 +121,7 @@ class Step(SuperStep):
                                 self.get_name(),
                                 option.Choice("FreeRTOS", "OSEK"),
                                 glob=True)
-        self.after = option.Option("log_level",
-                                   "Queue step directly after the mentioned step.",
-                                   self.get_name(),
-                                   option.String(),
-                                   glob=True)
-        self.opts = [self.log_level, self.os, self.after]
+        self.opts = [self.log_level, self.os]
         self._fill_options()
 
     def apply_config(self, config):
