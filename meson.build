@@ -5,7 +5,7 @@ project('ara', 'cpp',
 
 cython = find_program('cython')
 py3_mod = import('python')
-py3_inst = py3_mod.find_installation('python3')
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot'])
 
 llvm_dep = dependency('llvm', version : ['>=7', '<8'])
 boost_dep = dependency('boost', modules : ['graph'])

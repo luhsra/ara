@@ -26,6 +26,9 @@ namespace step {
 		unsigned name_counter = 0;
 
 		for (Function& func : mod) {
+			if (func.isIntrinsic()) {
+				continue;
+			}
 			ara::cfg::FunctionDescriptor& function = abbs.create_subgraph();
 
 			ara::cfg::Function& f = boost::get_property(function);

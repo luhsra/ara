@@ -5,25 +5,181 @@
 cimport cgraph
 cimport newgraph
 cimport graph
+cimport cy_helper
+cimport boost
 
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
+from libcpp.utility cimport pair
 
 from libcpp cimport bool
 from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
-from cy_helper cimport to_string
+from cy_helper cimport to_string, make_ptr_range, get_subgraph_prop
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
 
+from newgraph cimport ChildrenIterator as ChildIter
+from newgraph cimport FunctionDescriptor as FuncDesc
+from newgraph cimport ABBGraph as CABBGraph
 
 from libcpp.typeinfo cimport type_info
+
+ctypedef CABBGraph.edge_descriptor EdgeDesc
+
+cdef class ABB:
+    cdef long unsigned int _c_graph_id
+    cdef newgraph.ABBGraph* _c_abbgraph
+
+    def __hash__(self):
+        return self._c_graph_id
+
+    def __init__(self, __raw=False):
+        if not __raw:
+            raise ValueError("Must not be directly constructed.")
+
+    def __eq__(self, other):
+        return self.graph_id == other.graph_id
+
+    @property
+    def graph_id(self):
+        return self._c_graph_id
+
+    @property
+    def name(self):
+        return deref(self._c_abbgraph)[self._c_graph_id].name.decode('utf-8')
+
+
+cdef abb_factory(long unsigned int graph_id, newgraph.ABBGraph* abbgraph):
+    abb = ABB(__raw=True)
+    abb._c_graph_id = graph_id
+    abb._c_abbgraph = abbgraph
+    return abb
+
+
+cdef class Function:
+    cdef FuncDesc* _c_func
+    cdef newgraph.ABBGraph* _c_abbgraph
+
+    def __init__(self, __raw=False):
+        if not __raw:
+            raise ValueError("Must not be directly constructed.")
+
+    @property
+    def name(self):
+        return deref(get_subgraph_prop(self._c_func)).name.decode('utf-8')
+
+    @name.setter
+    def name(self, value):
+        deref(get_subgraph_prop(self._c_func)).name = value
+
+    def vertices(self):
+        cdef cy_helper.SubgraphRange[FuncDesc] ra = cy_helper.SubgraphRange[FuncDesc](deref(self._c_func))
+        for vertex in ra:
+            py_abb = abb_factory(vertex, self._c_abbgraph)
+            yield py_abb
+
+
+cdef function_factory(FuncDesc* func, newgraph.ABBGraph* abbgraph):
+    py_func = Function(__raw=True)
+    py_func._c_func = func
+    py_func._c_abbgraph = abbgraph
+    return py_func
+
+
+ctypedef long unsigned int vert_desc;
+
+
+cdef class ABBEdge:
+    cdef EdgeDesc _c_edge_id
+    cdef newgraph.ABBGraph* _c_abbgraph
+
+    def __init__(self, __raw=False):
+        if not __raw:
+            raise ValueError("Must not be directly constructed.")
+
+    # def __eq__(self, other):
+    #     return self._c_edge_id == other._c_edge_id
+
+    def source(self):
+        cdef long unsigned int other
+        other = cy_helper.source[EdgeDesc,
+                                 vert_desc,
+                                 newgraph.ABBGraph](self._c_edge_id,
+                                                    deref(self._c_abbgraph))
+        return abb_factory(other, self._c_abbgraph)
+
+    def target(self):
+        cdef long unsigned int other
+        other = cy_helper.target[EdgeDesc,
+                                 vert_desc,
+                                 newgraph.ABBGraph](self._c_edge_id,
+                                                    deref(self._c_abbgraph))
+        return abb_factory(other, self._c_abbgraph)
+
+
+cdef abbedge_factory(EdgeDesc edge_id, newgraph.ABBGraph* abbgraph):
+    edge = ABBEdge(__raw=True)
+    edge._c_edge_id = edge_id
+    edge._c_abbgraph = abbgraph
+    return edge
+
+
+cdef class ABBGraph:
+    """NEVER EVER construct this by yourself. Instead, use Graph.abbs()."""
+
+    # This should be a reference, since the lifetime is associated to the graph
+    # object and it should only be constructable with Graph.abbs(). However,
+    # Cython is not able to achieve this, so instead use a pointer.
+    cdef newgraph.ABBGraph* _c_abbgraph
+
+    def __str__(self):
+        return to_string(deref(self._c_abbgraph)).decode('utf-8')
+
+    def edges(self):
+        cdef EdgeDesc edge
+        cdef boost.iterator_range[newgraph.ABBGraph.edge_iterator] ran
+        cdef pair[newgraph.ABBGraph.edge_iterator, newgraph.ABBGraph.edge_iterator] it_pair
+        it_pair = cy_helper.edges[newgraph.ABBGraph.edge_iterator,
+                                  newgraph.ABBGraph](deref(self._c_abbgraph))
+        ran = boost.make_iterator_range[newgraph.ABBGraph.edge_iterator](it_pair.first, it_pair.second)
+        for edge in ran:
+            yield abbedge_factory(edge, self._c_abbgraph)
+
+
+    def vertices(self):
+        cdef cy_helper.SubgraphRange[newgraph.ABBGraph] ra = cy_helper.SubgraphRange[newgraph.ABBGraph](deref(self._c_abbgraph))
+        for vertex in ra:
+            py_abb = abb_factory(vertex, self._c_abbgraph)
+            yield py_abb
+
+    def functions(self):
+        cdef py_func
+        cdef FuncDesc* func_ptr
+        cdef cy_helper.PtrRange[newgraph.ChildrenIterator, FuncDesc] ra = make_ptr_range[ChildIter, FuncDesc](deref(self._c_abbgraph).children())
+        for func_ptr in ra:
+            py_func = function_factory(func_ptr, self._c_abbgraph)
+            yield py_func
+
+
+cdef class Graph:
+
+    # TODO make this a unique pointer once the graph transition is done
+    cdef newgraph.Graph* _c_graph
+
+    # def __cinit__(self):
+    #     self._c_graph = make_unique[cgraph.Graph]()
+
+    def abbs(self):
+        cdef ABBGraph g = ABBGraph()
+        g._c_abbgraph = &self._c_graph.abbs()
+        return g
 
 
 cpdef get_type_hash(name):
@@ -194,8 +350,8 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
 
     # cdef const type_info* info = &typeid(cgraph.Vertex())
     a = {typeid(cgraph.Vertex).hash_code(): Vertex,
-         typeid(cgraph.Function).hash_code(): Function,
-         typeid(cgraph.ABB).hash_code(): ABB,
+         typeid(cgraph.Function).hash_code(): PyFunction,
+         typeid(cgraph.ABB).hash_code(): PyABB,
          typeid(cgraph.Counter).hash_code(): Counter,
          typeid(cgraph.Task).hash_code(): Task,
          typeid(cgraph.Queue).hash_code(): Queue,
@@ -221,35 +377,9 @@ cdef create_from_pointer(shared_ptr[cgraph.Vertex] vertex):
 
 
 cdef create_abb(shared_ptr[cgraph.ABB] abb):
-    cdef Vertex py_obj = ABB(None, None, None, _raw=True)
+    cdef Vertex py_obj = PyABB(None, None, None, _raw=True)
     py_obj._c_vertex = spc[cgraph.Vertex, cgraph.ABB](abb)
     return py_obj
-
-
-cdef class ABBGraph:
-    """NEVER EVER construct this by yourself. Instead, use Graph.abbs()."""
-
-    # This should be a reference, since the lifetime is assosiated to the graph
-    # object and it should only be constructable with Graph.abbs(). However,
-    # Cython is not able to achieve this, so instead use a pointer.
-    cdef newgraph.ABBGraph* _c_abbgraph
-
-    def __str__(self):
-        return to_string(deref(self._c_abbgraph)).decode('utf-8')
-
-
-cdef class Graph:
-
-    # TODO make this a unique pointer once the graph transition is done
-    cdef newgraph.Graph* _c_graph
-
-    # def __cinit__(self):
-    #     self._c_graph = make_unique[cgraph.Graph]()
-
-    def abbs(self):
-        cdef ABBGraph g = ABBGraph()
-        g._c_abbgraph = &self._c_graph.abbs()
-        return g
 
 
 cdef class PyGraph:
@@ -262,14 +392,6 @@ cdef class PyGraph:
         cdef Graph g = Graph()
         g._c_graph = &deref(self._c_graph).new_graph
         return g
-
-    @new_graph.setter
-    def new_graph(self, value):
-        raise RuntimeError("Must not happen.")
-
-    @new_graph.deleter
-    def new_graph(self):
-        raise RuntimeError("Must not happen.")
 
     def __str__(self):
         return to_string(deref(self._c_graph)).decode('utf-8')
@@ -308,7 +430,7 @@ cdef class Edge:
 
     cdef shared_ptr[cgraph.Edge] _c_edge
 
-    def __cinit__(self, PyGraph graph, name, Vertex start_vertex, Vertex target_vertex, ABB abb_reference, *args, _raw=False, **kwargs):
+    def __cinit__(self, PyGraph graph, name, Vertex start_vertex, Vertex target_vertex, PyABB abb_reference, *args, _raw=False, **kwargs):
         # prevent double constructions
         # https://github.com/cython/cython/wiki/WrappingSetOfCppClasses
         if type(self) != Edge:
@@ -568,7 +690,7 @@ cdef class Task(Vertex):
         return deref(self._c()).get_priority()
 
 
-cdef class Function(Vertex):
+cdef class PyFunction(Vertex):
 
     cdef inline shared_ptr[cgraph.Function] _c(self):
         return spc[cgraph.Function, cgraph.Vertex](self._c_vertex)
@@ -607,7 +729,7 @@ cdef class Function(Vertex):
     def remove_abb(self, seed):
         return deref(self._c()).remove_abb(seed)
 
-    def set_exit_abb(self, ABB abb):
+    def set_exit_abb(self, PyABB abb):
         return deref(self._c()).set_exit_abb(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
     def get_exit_abb(self):
@@ -653,12 +775,12 @@ cdef class Function(Vertex):
     #	return py_obj
 
 
-cdef class ABB(Vertex):
+cdef class PyABB(Vertex):
 
     cdef inline shared_ptr[cgraph.ABB] _c(self):
         return spc[cgraph.ABB, cgraph.Vertex](self._c_vertex)
 
-    def __cinit__(self, PyGraph graph,  str name, Function function_reference, *args, _raw=False, **kwargs):
+    def __cinit__(self, PyGraph graph,  str name, PyFunction function_reference, *args, _raw=False, **kwargs):
         # def __cinit__(self, PyGraph graph, str name, *args, _raw=False, **kwargs):
         cdef string bname
         if not _raw:
@@ -722,16 +844,16 @@ cdef class ABB(Vertex):
 
         return tmp_call_argument_types
 
-    def expend_call_sites(self, ABB abb):
+    def expend_call_sites(self, PyABB abb):
         return deref(self._c()).expend_call_sites(abb._c())
 
-    def remove_successor(self, ABB abb):
+    def remove_successor(self, PyABB abb):
         return deref(self._c()).remove_successor(abb._c())
 
-    def remove_predecessor(self, ABB abb):
+    def remove_predecessor(self, PyABB abb):
         return deref(self._c()).remove_predecessor(abb._c())
 
-    def adapt_exit_bb(self, ABB abb):
+    def adapt_exit_bb(self, PyABB abb):
         return deref(self._c()).adapt_exit_bb(abb._c())
 
     def get_called_functions(self):
@@ -785,14 +907,14 @@ cdef class ABB(Vertex):
     def has_single_successor(self):
         return deref(self._c()).has_single_successor()
 
-    def append_basic_blocks(self, ABB  abb):
+    def append_basic_blocks(self, PyABB  abb):
         return deref(self._c()).append_basic_blocks(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
-    def set_successor(self, ABB  abb):
+    def set_successor(self, PyABB  abb):
         deref(self._c()).set_ABB_successor(
             spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
-    def set_predecessor(self, ABB  abb):
+    def set_predecessor(self, PyABB  abb):
         deref(self._c()).set_ABB_predecessor(
             spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
@@ -832,10 +954,10 @@ cdef class ABB(Vertex):
         cdef bool loop_information = deref(self._c()).get_loop_information()
         return loop_information
 
-    def dominates(self, ABB abb):
+    def dominates(self, PyABB abb):
         return deref(self._c()).dominates(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
-    def postdominates(self, ABB abb):
+    def postdominates(self, PyABB abb):
         return deref(self._c()).postdominates(spc[cgraph.ABB, cgraph.Vertex](abb._c_vertex))
 
     def print_information(self):

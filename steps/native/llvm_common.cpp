@@ -34,7 +34,7 @@ std::string print_type(Type* argument) {
 bool isCallToLLVMIntrinsic(Instruction* inst) {
 	if (auto call = FakeCallBase::create(inst)) {
 		Function* func = call->getCalledFunction();
-		if (func && func->getName().startswith("llvm.")) {
+		if (func && func->isIntrinsic()) {
 			return true;
 		}
 	}

@@ -7,6 +7,11 @@
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Module.h>
 #include <memory>
+#include <type_traits>
+
+namespace ara::graph {
+	class Graph;
+}
 
 namespace ara::cfg {
 
@@ -46,12 +51,14 @@ namespace ara::cfg {
 	                                              boost::property<boost::edge_index_t, std::size_t>, Function>>
 	    CFGraph;
 	typedef CFGraph FunctionDescriptor;
+	typedef CFGraph::children_iterator ChildrenIterator;
 
 	/**
 	 * Holds all ABBs.
 	 */
 	class ABBGraph : public CFGraph {
 	  public:
+		ABBGraph(const ABBGraph&) = delete;
 		/**
 		 * Add a vertex.
 		 *
@@ -84,9 +91,16 @@ namespace ara::cfg {
 		const FunctionDescriptor& get_subgraph(const ABBGraph::vertex_descriptor) const;
 
 	  private:
+		friend class ara::graph::Graph;
+		ABBGraph() = default;
+
 		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
 	};
 	std::ostream& operator<<(std::ostream&, const ABBGraph&);
+
+	// check that vertex descriptor is a number, this is used in the python bridge to simplify code
+	static_assert(std::is_same<long unsigned int, ABBGraph::vertex_descriptor>::value,
+	              "Vertex descriptor is not a number anymore.");
 
 } // namespace ara::cfg
 

@@ -5,7 +5,6 @@
 			"name": "Printer",
 			"dot": "initial_map.dot",
 			"graph_name": "Initial Map",
-			"dump": true,
 			"subgraph": "abbs"
 		}
 	],
