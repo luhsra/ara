@@ -12,13 +12,11 @@ namespace step {
 	void CDummy::fill_options() { opts.emplace_back(dummy_option); }
 
 	void CDummy::run(graph::Graph& graph) {
-		logger.info() << "Execute C++ dummy step";
+		logger.info() << "Execute CDummy step." << std::endl;
 
 		std::pair<int64_t, bool> dopt = dummy_option.get();
 		if (dopt.second) {
-			logger.info() << " with option value: " << dopt.first;
+			logger.info() << "Option is " << dopt.first << '.' << std::endl;
 		}
-
-		logger.info() << std::endl;
 	}
 } // namespace step
