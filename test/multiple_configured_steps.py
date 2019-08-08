@@ -21,10 +21,10 @@ class TestStep(Step):
 
     def run(self, graph: graph.PyGraph):
         """Write unique string for testing."""
-        opt, valid = self.opt.get()
+        opt = self.opt.get()
         global shared_state
         shared_state += f"Run: {self.get_name()}\n"
-        if valid:
+        if opt:
             shared_state += f"Opt: {opt}\n"
 
 

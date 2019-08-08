@@ -1,4 +1,3 @@
-# TODO: make this to a dataclass, once Python 3.7 is available in Ubuntu LTS
 class Option:
     def __init__(self, name, help, step_name, ty, glob=False):
         self._name = name
@@ -39,7 +38,9 @@ class OptionType:
         self.valid = True
 
     def get(self):
-        return self.value, self.valid
+        if self.valid:
+            return self.value
+        return None
 
     def _validate(self, val, name):
         raise NotImplementedError
@@ -53,7 +54,6 @@ class Bool(OptionType):
         if not isinstance(val, bool):
             raise ValueError(f"{name}: {val} must be a boolean.")
         return val
-
 
 
 class Integer(OptionType):

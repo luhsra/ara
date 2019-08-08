@@ -115,8 +115,8 @@ class OilStep(Step):
 
     def run(self, g: graph.PyGraph):
         # load the json outputstructure with json
-        oilfile, valid = self.oilfile.get()
-        if not valid:
+        oilfile = self.oilfile.get()
+        if not oilfile:
             raise_and_error(self._log, "No oilfile provided")
         self._log.info(f"Reading oil file {oilfile}")
         with open(oilfile) as f:

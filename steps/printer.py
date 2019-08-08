@@ -32,16 +32,14 @@ class Printer(Step):
     def print_abbs(self, graph):
         abbs = graph.new_graph.abbs()
 
-        dump, valid = self.dump.get()
-        if valid and dump:
+        if self.dump.get():
             for line in str(abbs).splitlines():
                 self._log.info(line)
-        dot, valid = self.dot.get()
-        if not valid:
+        dot = self.dot.get()
+        if not dot:
             return
-        name, valid = self.graph_name.get()
-        print(name, valid)
-        if not valid:
+        name = self.graph_name.get()
+        if not name:
             name = ''
         graph = pydot.Dot(graph_type='digraph', label=name)
         empty_count = 0
@@ -67,6 +65,6 @@ class Printer(Step):
         self._log.info(f"Write dot file to {dot}.")
 
     def run(self, g: graph.PyGraph):
-        subgraph, valid = self.subgraph.get()
-        if valid and subgraph == 'abbs':
+        subgraph = self.subgraph.get()
+        if subgraph == 'abbs':
             self.print_abbs(g)

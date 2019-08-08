@@ -94,9 +94,8 @@ class TestDep1(TestStep):
         self.opts.append(self.cond)
 
     def get_dependencies(self):
-        opt, valid = self.cond.get()
-        print(opt, valid)
-        if opt and valid:
+        print(self.cond.get())
+        if self.cond.get():
             return ["TestDep0"]
         return []
 

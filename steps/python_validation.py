@@ -146,9 +146,9 @@ class Python_ValidationStep(Step):
 
         print("Run PythonValidationStep")
 
-        os, valid = self.os.get()
+        os = self.os.get()
 
-        if not valid:
+        if not os:
             raise_and_error(self._log, "OS not set correctly")
 
         if os == "OSEK":
