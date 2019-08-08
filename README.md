@@ -55,12 +55,68 @@ meson test
 Architecture
 ------------
 
-ARA is devided into steps that operate on the same system model. When starting the program the correct chain of steps is calculated and then executed. A listing of the steps can be retrieved by:
+ARA is divided into steps that operate on the same system model. When starting the program the correct chain of steps is calculated and then executed. A listing of the steps can be retrieved by:
 ```
 build/ara.sh -l
 ```
 Steps can be written into Python (defined in `steps`) or in C++ (defined in `steps/native`).
 The model is written in C++ with Python bindings (defined in `libgraph`).
+
+Program configuration
+---------------------
+
+ARA con be configured in multiple ways:
+
+1. Globally applied options: Normally specified options at the command line. See `build/ara.sh -h` for all available options.
+2. Per step applied options: See the following text.
+
+Steps can define their own options. See `build/ara.sh -l` for a list of steps and their options.
+Step wise configuration can be configured with the `--step-settings` command line switch.
+
+Input must be a JSON file with this syntax:
+```
+{
+	"Stepname1": {
+		"key1": "value",
+		"key2": 45
+	},
+	"Stepname2": {
+		"other_key1": "other_value",
+	},
+	...
+}
+```
+Additionally to that with the step-settings file steps can be configured to run multiple times with different options. In this case the settings file get an additional entry `steps` that can be a list of steps that should be executed:
+```
+{
+	"steps": ["MyStep1", "MyStep2", ...],
+	"MyStep1": {
+		"key": "value"
+	}
+}
+```
+or a list of step configurations or a mix of both:
+```
+{
+	"steps": [
+		"MyStep1",
+		{
+			"name": "MyStep2"
+			"key": "value"
+		}
+		{
+			"name": "MyStep2"
+			"key": "value2"
+		}
+	],
+	"MyStep1": {
+		"key": "value"
+	}
+}
+```
+In this case *MyStep2* is executed two times with different options.
+
+Applying of options goes from local to global. So a step get the configuration in `steps` first, then the per step configuration and then the global configuration.
 
 Developing
 ----------
