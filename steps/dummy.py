@@ -20,6 +20,6 @@ class Dummy(Step):
 
     def run(self, g: graph.PyGraph):
         self._log.info("Executing Dummy step.")
-        opt, valid = self.dummy_option.get()
-        if valid:
+        opt = self.dummy_option.get()
+        if opt:
             self._log.info(f"Option is {opt}.")

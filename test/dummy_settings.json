@@ -1,0 +1,9 @@
+{
+	"steps": [
+		"Dummy",
+		{
+			"name": "Dummy",
+			"dummy_option": 42
+		}
+	]
+}

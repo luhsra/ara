@@ -94,4 +94,12 @@ test('ir-reader-multiple-symbols',
   env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
 )
 
+test('dummy-test',
+   py3_inst,
+   args: [files('../ara.py'), 'empty', '--os', 'FreeRTOS',
+          '-v',
+          '--step-settings', files('dummy_settings.json')],
+   env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
+)
+
 subdir('native_step_test')
