@@ -258,7 +258,7 @@ namespace step {
 
 			// TODO: with newer llvm: if (std::unique_ptr<CallBase> call = dyn_cast<CallBase>(instr)) {
 			if (std::unique_ptr<FakeCallBase> call = FakeCallBase::create(instr)) {
-				llvm::Function* llvm_function = call->getCalledFunction();
+				const llvm::Function* llvm_function = call->getCalledFunction();
 				if (llvm_function == nullptr) {
 					// get function which is addressed with function pointer
 					auto tmp_value = call->getCalledValue();

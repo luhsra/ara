@@ -9,8 +9,12 @@
 
 using namespace llvm;
 
-bool LLVMDumper::dump_argument(std::stringstream& debug_out, argument_data* argument_container, Value* arg,
+bool LLVMDumper::dump_argument(std::stringstream& debug_out, argument_data* argument_container, const Value* carg,
                                std::vector<Instruction*>* already_visited) {
+
+	// TODO this is a horrible hack and should be eliminated ASAP
+	// speak with the author of this code, if you see this comment
+	Value* arg = const_cast<Value*>(carg);
 
 	if (arg == nullptr)
 		return false;

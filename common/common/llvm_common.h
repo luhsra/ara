@@ -11,10 +11,10 @@
  */
 class FakeCallBase {
   private:
-	llvm::CallInst* c;
-	llvm::InvokeInst* v;
+	const llvm::CallInst* c;
+	const llvm::InvokeInst* v;
 
-	FakeCallBase(llvm::CallInst* c, llvm::InvokeInst* v) : c(c), v(v) {}
+	FakeCallBase(const llvm::CallInst* c, const llvm::InvokeInst* v) : c(c), v(v) {}
 
 	struct make_shared_enabler;
 
@@ -23,7 +23,7 @@ class FakeCallBase {
 	/**
 	 * equivalent to llvm::CallBase* = llvm::dyn_cast<llvm::CallBase>(inst)
 	 */
-	static std::unique_ptr<FakeCallBase> create(llvm::Instruction* inst);
+	static std::unique_ptr<FakeCallBase> create(const llvm::Instruction* inst);
 
 	static bool isa(const llvm::Instruction* I) {
 		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
@@ -33,22 +33,43 @@ class FakeCallBase {
 		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
 	}
 
-	llvm::Function* getCalledFunction() const {
+	const llvm::Function* getCalledFunction() const {
 		if (c)
 			return c->getCalledFunction();
 		if (v)
 			return v->getCalledFunction();
-		assert(true);
+		assert(false);
 		return nullptr;
 	}
 
-	llvm::Value* getCalledValue() const {
+	const llvm::Value* getCalledValue() const {
 		if (c)
 			return c->getCalledValue();
 		if (v)
 			return v->getCalledValue();
-		assert(true);
+		assert(false);
 		return nullptr;
+	}
+
+	// copied from LLVM
+	bool isIndirectCall() const {
+		const llvm::Value *V = getCalledValue();
+		if (llvm::isa<llvm::Function>(V) || llvm::isa<llvm::Constant>(V))
+			return false;
+		if (c && c->isInlineAsm())
+			return false;
+		return true;
+	}
+
+
+	bool isInlineAsm() const {
+		if (c)
+			return c->isInlineAsm();
+		if (v)
+			assert(false);
+			return false;
+		assert(false);
+		return false;
 	}
 };
 
@@ -68,7 +89,7 @@ std::string print_type(llvm::Type* argument);
  * @brief check if the instruction is just llvm specific
  * @param instr instrucion to analyze
  */
-// TODO make this const
-bool isCallToLLVMIntrinsic(llvm::Instruction* inst);
+bool isCallToLLVMIntrinsic(const llvm::Instruction* inst);
+bool isInlineAsm(const llvm::Instruction* inst);
 
 #endif

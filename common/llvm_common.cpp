@@ -7,11 +7,11 @@ struct FakeCallBase::make_shared_enabler : public FakeCallBase {
 	make_shared_enabler(Args&&... args) : FakeCallBase(std::forward<Args>(args)...) {}
 };
 
-std::unique_ptr<FakeCallBase> FakeCallBase::create(Instruction* inst) {
-	if (CallInst* c = dyn_cast<CallInst>(inst)) {
+std::unique_ptr<FakeCallBase> FakeCallBase::create(const Instruction* inst) {
+	if (const CallInst* c = dyn_cast<CallInst>(inst)) {
 		return std::make_unique<make_shared_enabler>(c, nullptr);
 	}
-	if (InvokeInst* v = dyn_cast<InvokeInst>(inst)) {
+	if (const InvokeInst* v = dyn_cast<InvokeInst>(inst)) {
 		return std::make_unique<make_shared_enabler>(nullptr, v);
 	}
 	return nullptr;
@@ -31,12 +31,19 @@ std::string print_type(Type* argument) {
 	return rso.str() + "\"\n";
 }
 
-bool isCallToLLVMIntrinsic(Instruction* inst) {
+bool isCallToLLVMIntrinsic(const Instruction* inst) {
 	if (auto call = FakeCallBase::create(inst)) {
-		Function* func = call->getCalledFunction();
+		const Function* func = call->getCalledFunction();
 		if (func && func->isIntrinsic()) {
 			return true;
 		}
+	}
+	return false;
+}
+
+bool isInlineAsm(const Instruction* inst) {
+	if (auto call = FakeCallBase::create(inst)) {
+		return call->isInlineAsm();
 	}
 	return false;
 }

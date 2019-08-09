@@ -18,7 +18,7 @@ class LLVMDumper {
 	 * @param arg argument which has to be dumped
 	 * @param already_visited list of all instructions, which were already visited
 	 */
-	bool dump_argument(std::stringstream& debug_out, argument_data* argument_container, llvm::Value* arg,
+	bool dump_argument(std::stringstream& debug_out, argument_data* argument_container, const llvm::Value* arg,
 	                   std::vector<llvm::Instruction*>* already_visited);
 
 	/**
