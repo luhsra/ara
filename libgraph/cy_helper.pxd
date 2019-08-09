@@ -57,3 +57,5 @@ cdef extern from "cy_helper.h" namespace "cy_helper":
 
     pair[E, E] edges[E, G](G g)
     pair[V, V] vertices[V, G](G g)
+
+    void assign_enum[E](E& e, int i)

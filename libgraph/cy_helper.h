@@ -128,4 +128,10 @@ namespace cy_helper {
 	std::pair<V, V> vertices(G& graph) {
 		return std::move(boost::vertices(graph));
 	}
+
+	template <class Enum>
+	inline void assign_enum(Enum& e, int i) {
+		e = static_cast<Enum>(i);
+	}
+
 } // namespace cy_helper
