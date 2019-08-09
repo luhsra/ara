@@ -41,7 +41,7 @@ namespace step {
 				std::stringstream ss;
 				ss << "ABB" << name_counter++;
 				ara::cfg::ABBType ty = ara::cfg::ABBType::computation;
-				if (FakeCallBase::isa(bb.front()) && !isCallToLLVMIntrinsic(&bb.front())) {
+				if (FakeCallBase::isa(bb.front()) && !isInlineAsm(&bb.front()) && !isCallToLLVMIntrinsic(&bb.front())) {
 					ty = ara::cfg::ABBType::call;
 				}
 				auto vertex = abbs.add_vertex(ss.str(), ty, &bb, &bb, function);
