@@ -27,11 +27,13 @@ def fail_if(condition, *arg, dry=False):
             sys.exit(1)
 
 
-def init_test(steps=None):
-    """CLI usage: your_program <os_name> <json_file> <ll_file>"""
+def init_test(steps=None, extra_config=None):
+    """CLI usage: your_program <os_name> <json_file> <ll_files>"""
     init_logging(level=logging.DEBUG)
     if steps is None:
         steps = ['ValidationStep']
+    if not extra_config:
+        extra_config = {}
     g = graph.PyGraph()
     os_name = sys.argv[1]
     json_file = sys.argv[2]
@@ -47,7 +49,6 @@ def init_test(steps=None):
     config = {'os': os_name,
               'log_level': 'debug',
               'input_files': i_files}
-    extra_config = {}
     s_manager.execute(config, extra_config, steps)
 
     return g, data, s_manager
