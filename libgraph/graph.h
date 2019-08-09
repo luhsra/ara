@@ -51,7 +51,6 @@ namespace ara::cfg {
 	                                              boost::property<boost::edge_index_t, std::size_t>, Function>>
 	    CFGraph;
 	typedef CFGraph FunctionDescriptor;
-	typedef CFGraph::children_iterator ChildrenIterator;
 
 	/**
 	 * Holds all ABBs.

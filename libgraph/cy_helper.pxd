@@ -4,7 +4,7 @@ from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 cimport cgraph
-cimport newgraph as ng
+cimport cfg
 
 cdef extern from "cy_helper.h" namespace "cy_helper":
     cdef cppclass PtrIterator[T, P]:
@@ -30,7 +30,7 @@ cdef extern from "cy_helper.h" namespace "cy_helper":
 
     string to_string[T](T& obj)
 
-    ng.Function* get_subgraph_prop(ng.FunctionDescriptor*)
+    cfg.Function* get_subgraph_prop(cfg.FunctionDescriptor*)
 
     cdef cppclass SubgraphIterator[T]:
         long unsigned int& operator*()

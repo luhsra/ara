@@ -4,6 +4,8 @@
 
 cimport cgraph
 cimport newgraph
+cimport cfg
+cimport cfg.abbtype
 cimport graph
 cimport cy_helper
 cimport boost
@@ -25,17 +27,18 @@ from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
 
-from newgraph cimport ChildrenIterator as ChildIter
-from newgraph cimport FunctionDescriptor as FuncDesc
-from newgraph cimport ABBGraph as CABBGraph
+from cfg cimport FunctionDescriptor as FuncDesc
+from cfg cimport ABBGraph as CABBGraph
 
 from libcpp.typeinfo cimport type_info
 
 ctypedef CABBGraph.edge_descriptor EdgeDesc
+ctypedef CABBGraph.edge_iterator EdgeIter
+ctypedef CABBGraph.children_iterator ChildIter
 
 cdef class ABB:
     cdef long unsigned int _c_graph_id
-    cdef newgraph.ABBGraph* _c_abbgraph
+    cdef cfg.ABBGraph* _c_abbgraph
 
     def __hash__(self):
         return self._c_graph_id
@@ -56,7 +59,7 @@ cdef class ABB:
         return deref(self._c_abbgraph)[self._c_graph_id].name.decode('utf-8')
 
 
-cdef abb_factory(long unsigned int graph_id, newgraph.ABBGraph* abbgraph):
+cdef abb_factory(long unsigned int graph_id, cfg.ABBGraph* abbgraph):
     abb = ABB(__raw=True)
     abb._c_graph_id = graph_id
     abb._c_abbgraph = abbgraph
@@ -65,7 +68,7 @@ cdef abb_factory(long unsigned int graph_id, newgraph.ABBGraph* abbgraph):
 
 cdef class Function:
     cdef FuncDesc* _c_func
-    cdef newgraph.ABBGraph* _c_abbgraph
+    cdef cfg.ABBGraph* _c_abbgraph
 
     def __init__(self, __raw=False):
         if not __raw:
@@ -86,7 +89,7 @@ cdef class Function:
             yield py_abb
 
 
-cdef function_factory(FuncDesc* func, newgraph.ABBGraph* abbgraph):
+cdef function_factory(FuncDesc* func, cfg.ABBGraph* abbgraph):
     py_func = Function(__raw=True)
     py_func._c_func = func
     py_func._c_abbgraph = abbgraph
@@ -98,7 +101,7 @@ ctypedef long unsigned int vert_desc;
 
 cdef class ABBEdge:
     cdef EdgeDesc _c_edge_id
-    cdef newgraph.ABBGraph* _c_abbgraph
+    cdef cfg.ABBGraph* _c_abbgraph
 
     def __init__(self, __raw=False):
         if not __raw:
@@ -111,20 +114,20 @@ cdef class ABBEdge:
         cdef long unsigned int other
         other = cy_helper.source[EdgeDesc,
                                  vert_desc,
-                                 newgraph.ABBGraph](self._c_edge_id,
-                                                    deref(self._c_abbgraph))
+                                 cfg.ABBGraph](self._c_edge_id,
+                                               deref(self._c_abbgraph))
         return abb_factory(other, self._c_abbgraph)
 
     def target(self):
         cdef long unsigned int other
         other = cy_helper.target[EdgeDesc,
                                  vert_desc,
-                                 newgraph.ABBGraph](self._c_edge_id,
-                                                    deref(self._c_abbgraph))
+                                 cfg.ABBGraph](self._c_edge_id,
+                                               deref(self._c_abbgraph))
         return abb_factory(other, self._c_abbgraph)
 
 
-cdef abbedge_factory(EdgeDesc edge_id, newgraph.ABBGraph* abbgraph):
+cdef abbedge_factory(EdgeDesc edge_id, cfg.ABBGraph* abbgraph):
     edge = ABBEdge(__raw=True)
     edge._c_edge_id = edge_id
     edge._c_abbgraph = abbgraph
@@ -137,24 +140,24 @@ cdef class ABBGraph:
     # This should be a reference, since the lifetime is associated to the graph
     # object and it should only be constructable with Graph.abbs(). However,
     # Cython is not able to achieve this, so instead use a pointer.
-    cdef newgraph.ABBGraph* _c_abbgraph
+    cdef cfg.ABBGraph* _c_abbgraph
 
     def __str__(self):
         return to_string(deref(self._c_abbgraph)).decode('utf-8')
 
     def edges(self):
         cdef EdgeDesc edge
-        cdef boost.iterator_range[newgraph.ABBGraph.edge_iterator] ran
-        cdef pair[newgraph.ABBGraph.edge_iterator, newgraph.ABBGraph.edge_iterator] it_pair
-        it_pair = cy_helper.edges[newgraph.ABBGraph.edge_iterator,
-                                  newgraph.ABBGraph](deref(self._c_abbgraph))
-        ran = boost.make_iterator_range[newgraph.ABBGraph.edge_iterator](it_pair.first, it_pair.second)
+        cdef boost.iterator_range[EdgeIter] ran
+        cdef pair[EdgeIter, EdgeIter] it_pair
+        it_pair = cy_helper.edges[EdgeIter,
+                                  cfg.ABBGraph](deref(self._c_abbgraph))
+        ran = boost.make_iterator_range[EdgeIter](it_pair.first, it_pair.second)
         for edge in ran:
             yield abbedge_factory(edge, self._c_abbgraph)
 
 
     def vertices(self):
-        cdef cy_helper.SubgraphRange[newgraph.ABBGraph] ra = cy_helper.SubgraphRange[newgraph.ABBGraph](deref(self._c_abbgraph))
+        cdef cy_helper.SubgraphRange[cfg.ABBGraph] ra = cy_helper.SubgraphRange[cfg.ABBGraph](deref(self._c_abbgraph))
         for vertex in ra:
             py_abb = abb_factory(vertex, self._c_abbgraph)
             yield py_abb
@@ -162,7 +165,7 @@ cdef class ABBGraph:
     def functions(self):
         cdef py_func
         cdef FuncDesc* func_ptr
-        cdef cy_helper.PtrRange[newgraph.ChildrenIterator, FuncDesc] ra = make_ptr_range[ChildIter, FuncDesc](deref(self._c_abbgraph).children())
+        cdef cy_helper.PtrRange[CABBGraph.children_iterator, FuncDesc] ra = make_ptr_range[CABBGraph.children_iterator, FuncDesc](deref(self._c_abbgraph).children())
         for func_ptr in ra:
             py_func = function_factory(func_ptr, self._c_abbgraph)
             yield py_func
