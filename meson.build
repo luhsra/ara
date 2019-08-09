@@ -15,6 +15,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
+subdir('common')
 subdir('libgraph')
 subdir('steps')
 subdir('appl')

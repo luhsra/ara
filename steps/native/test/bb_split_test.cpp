@@ -1,7 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "graph.h"
-#include "llvm_common.h"
+#include "common/llvm_common.h"
 #include "test.h"
 
 #include "llvm/IR/Instructions.h"

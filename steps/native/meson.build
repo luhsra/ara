@@ -53,7 +53,6 @@ plib = py3_inst.extension_module('native_step',
         'ir_reader.cpp',
         'llvm.cpp',
         'llvm_basic_optimization.cpp',
-        'llvm_common.cpp',
         'llvm_dumper.cpp',
         'llvm_map.cpp',
         'test/bb_split_test.cpp',
@@ -61,7 +60,7 @@ plib = py3_inst.extension_module('native_step',
         'test/fn_single_exit_test.cpp',
         'test/llvm_map_test.cpp',
         'test/test.cpp'),
-  dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep]
+  dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep, common_dep]
 )
 
 stepdir = meson.current_build_dir()

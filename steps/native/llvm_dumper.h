@@ -2,7 +2,6 @@
 #define LLVM_DUMPER_H
 
 #include "graph.h"
-#include "llvm_common.h"
 
 #include "llvm/IR/Instructions.h"
 

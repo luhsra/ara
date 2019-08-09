@@ -2,8 +2,6 @@
 
 #include "llvm_basic_optimization.h"
 
-#include "llvm_common.h"
-
 #include <iostream>
 #include <list>
 #include <llvm/Analysis/AssumptionCache.h>

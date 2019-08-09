@@ -1,5 +1,7 @@
 #include "llvm_dumper.h"
 
+#include "common/llvm_common.h"
+
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/MemorySSA.h"
 #include "llvm/Analysis/OrderedBasicBlock.h"
