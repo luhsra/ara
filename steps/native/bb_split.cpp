@@ -35,6 +35,10 @@ namespace step {
 				BasicBlock::iterator it = bb->begin();
 				while (it != bb->end()) {
 					while (FakeCallBase::isa(*it)) {
+						if (isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)) {
+							++it;
+							continue;
+						}
 						// split before call instruction
 						std::stringstream ss;
 						ss << "BB" << split_counter++;
@@ -47,8 +51,10 @@ namespace step {
 							goto while_end;
 						}
 
-						if (isa<InvokeInst>(*it) || isa<CallInst>(*it))
+						if (FakeCallBase::isa(*it) &&
+								(!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
 							continue;
+						}
 
 						// split after call instruction
 						ss.str("");

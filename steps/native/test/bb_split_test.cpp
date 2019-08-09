@@ -21,8 +21,12 @@ namespace step {
 		for (auto& F : module) {
 			for (auto& B : F) {
 				for (auto& I : B) {
-					if (!(FakeCallBase::isa(I)))
+					if (!(FakeCallBase::isa(I))) {
 						continue;
+					}
+					if (isCallToLLVMIntrinsic(&I) || isInlineAsm(&I)) {
+						continue;
+					}
 					if ((std::distance(B.begin(), B.end()) == 2) && (&B.front() == &I)) {
 						if (llvm::BranchInst* b = llvm::dyn_cast<llvm::BranchInst>(&B.back())) {
 							if (b->isUnconditional()) {
@@ -33,18 +37,9 @@ namespace step {
 					if ((std::distance(B.begin(), B.end()) == 1) && (&B.front() == &I) && (&B.back() == &I)) {
 						continue;
 					}
-					std::string call;
-					llvm::raw_string_ostream rso(call);
-					I.print(rso);
-					std::string front;
-					llvm::raw_string_ostream rso2(front);
-					I.getParent()->front().print(rso2);
-					std::string back;
-					llvm::raw_string_ostream rso3(back);
-					I.getParent()->back().print(rso3);
-					logger.err() << "Found call that is not in extra basic block: " << call << std::endl;
-					logger.err() << "Front: " << front << std::endl;
-					logger.err() << "Back:  " << back << std::endl;
+					logger.err() << "Found call that is not in extra basic block: " << I << std::endl;
+					logger.err() << "Front: " << I.getParent()->front() << std::endl;
+					logger.err() << "Back:  " << I.getParent()->back() << std::endl;
 					throw std::runtime_error("Found call that is not in extra basic block.");
 				}
 			}
