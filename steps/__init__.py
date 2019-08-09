@@ -1,5 +1,6 @@
 from .oil import OilStep
 from .old_syscalls import SyscallStep
+from .syscall import Syscall
 from .abb_merge import ABB_MergeStep
 from .display_results import DisplayResultsStep
 from .printer import Printer
@@ -14,6 +15,7 @@ from native_step import provide_steps as _native_provide
 __all__ = ['Step',
            'ABB_MergeStep',
            'Dummy',
+           'Syscall',
            'OilStep',
            'Python_ValidationStep'
            'SyscallStep']
@@ -25,6 +27,7 @@ def provide_steps():
 
     yield OilStep()
     yield SyscallStep()
+    yield Syscall()
     yield ABB_MergeStep()
     yield DisplayResultsStep()
     yield Printer()

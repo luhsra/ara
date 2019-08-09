@@ -102,4 +102,10 @@ test('dummy-test',
    env : ['PYTHONPATH=' + stepdir + ':' + graphdir]
 )
 
+test('syscall',
+  py3_inst,
+  args: [files('syscall.py'), 'FreeRTOS', files('empty.json'), gpslogger_targets],
+  env: ['PYTHONPATH=' + ':'.join([source_dir, stepdir, graphdir])]
+)
+
 subdir('native_step_test')
