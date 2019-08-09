@@ -238,6 +238,8 @@ class SyscallStep(Step):
                 "vCoRoutineSchedule" : 	[[],graph.syscall_definition_type.schedule,[graph.get_type_hash("CoRoutine")],0],
 
             }
+        print(repr(list(self.syscall_dict.keys())))
+
 
     def run(self, g: graph.PyGraph):
         #get information which os is used

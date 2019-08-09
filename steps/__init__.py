@@ -1,5 +1,5 @@
 from .oil import OilStep
-from .syscalls import SyscallStep
+from .old_syscalls import SyscallStep
 from .abb_merge import ABB_MergeStep
 from .display_results import DisplayResultsStep
 from .printer import Printer
