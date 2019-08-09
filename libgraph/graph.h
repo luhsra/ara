@@ -30,6 +30,9 @@ namespace ara::cfg {
 
 		llvm::BasicBlock* entry_bb;
 		llvm::BasicBlock* exit_bb;
+
+		std::string get_call() const;
+		bool is_indirect() const;
 	};
 	std::ostream& operator<<(std::ostream&, const ABB&);
 	typedef boost::property<boost::vertex_index_t, std::size_t, ABB> vertex_prop;

@@ -36,6 +36,11 @@ ctypedef CABBGraph.edge_descriptor EdgeDesc
 ctypedef CABBGraph.edge_iterator EdgeIter
 ctypedef CABBGraph.children_iterator ChildIter
 
+class ABBType(IntEnum):
+    computation = <int> cfg.abbtype.computation
+    syscall = <int> cfg.abbtype.syscall
+    call = <int> cfg.abbtype.call
+
 cdef class ABB:
     cdef long unsigned int _c_graph_id
     cdef cfg.ABBGraph* _c_abbgraph
@@ -50,9 +55,30 @@ cdef class ABB:
     def __eq__(self, other):
         return self.graph_id == other.graph_id
 
+    def __str__(self):
+        # return to_string(deref(self._c_abbgraph)[self._c_graph_id]).decode('utf-8')
+        # do not use C++ print because the Python type has the additional
+        # graph_id
+        return f"ABB({self.graph_id}, {self.name})"
+
+    def get_call(self):
+        return deref(self._c_abbgraph)[self._c_graph_id].get_call().decode('utf-8')
+
+    def is_indirect(self):
+        return deref(self._c_abbgraph)[self._c_graph_id].is_indirect()
+
     @property
     def graph_id(self):
         return self._c_graph_id
+
+    @property
+    def type(self):
+        return ABBType(<int> deref(self._c_abbgraph)[self._c_graph_id].type)
+
+    @type.setter
+    def type(self, value):
+        cy_helper.assign_enum[cfg.abbtype.ABBType](deref(self._c_abbgraph)[self._c_graph_id].type,
+                                                   int(value))
 
     @property
     def name(self):

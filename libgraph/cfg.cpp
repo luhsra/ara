@@ -1,10 +1,12 @@
 #include "exceptions.h"
 #include "graph.h"
 
+#include "common/llvm_common.h"
+
+#include <cassert>
+
 using namespace llvm;
 using namespace std;
-
-#include <iostream>
 
 namespace ara::cfg {
 	// ABBType functions
@@ -17,9 +19,40 @@ namespace ara::cfg {
 		case computation:
 			return (str << "computation");
 		};
+		assert(false);
+		return str;
 	}
 
 	// ABB functions
+	std::unique_ptr<FakeCallBase> get_call_base(const ABBType type, const BasicBlock& bb) {
+		if (type == ABBType::computation) {
+			return nullptr;
+		}
+		auto call = FakeCallBase::create(&bb.front());
+		assert(call);
+		return std::move(call);
+	}
+
+	std::string ABB::get_call() const {
+		auto call = get_call_base(type, *entry_bb);
+		if (!call) {
+			return "";
+		}
+		const llvm::Function* func = call->getCalledFunction();
+		if (!func) {
+			return "";
+		}
+		return func->getName();
+	}
+
+	bool ABB::is_indirect() const {
+		auto call = get_call_base(type, *entry_bb);
+		if (!call) {
+			return false;
+		}
+		return call->isIndirectCall();
+	}
+
 	ostream& operator<<(ostream& str, const ABB& abb) { return (str << "ABB(" << abb.name << ")"); }
 
 	// Function functions
