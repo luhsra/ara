@@ -109,6 +109,16 @@ namespace ara::cfg {
 		}
 	}
 
+	const FunctionDescriptor& ABBGraph::get_function_by_name(const std::string name) const {
+		// TODO more efficient algorithm?
+		for (auto& function : boost::make_iterator_range(this->children())) {
+			if (boost::get_property(function).name == name) {
+				return function;
+			}
+		}
+		throw ara::function_not_found;
+	}
+
 	ostream& operator<<(ostream& str, const ABBGraph& graph) {
 		// probably not the best dump format, feel free to improve
 		const unsigned indent = 2;

@@ -98,6 +98,11 @@ namespace ara::cfg {
 		 */
 		const FunctionDescriptor& get_subgraph(const ABBGraph::vertex_descriptor) const;
 
+		/**
+		 * Return the function with a specific name.
+		 */
+		const FunctionDescriptor& get_function_by_name(const std::string name) const;
+
 	  private:
 		friend class ara::graph::Graph;
 		ABBGraph() = default;
