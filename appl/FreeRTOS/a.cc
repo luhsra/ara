@@ -19,7 +19,7 @@
 
 	A special exception to the GPL can be applied should you wish to distribute
 	a combined work that includes FreeRTOS.org, without being obliged to provide
-	the source code for any proprietary components.  See the licensing section 
+	the source code for any proprietary components.  See the licensing section
 	of http://www.FreeRTOS.org for full details of how and when the exception
 	can be applied.
 
@@ -37,33 +37,26 @@
 	Please ensure to read the configuration and relevant port sections of the
 	online documentation.
 
-	http://www.FreeRTOS.org - Documentation, latest information, license and 
+	http://www.FreeRTOS.org - Documentation, latest information, license and
 	contact details.
 
-	http://www.SafeRTOS.com - A version that is certified for use in safety 
+	http://www.SafeRTOS.com - A version that is certified for use in safety
 	critical systems.
 
-	http://www.OpenRTOS.com - Commercial support, development, porting, 
+	http://www.OpenRTOS.com - Commercial support, development, porting,
 	licensing and training services.
 */
 
-/* FreeRTOS.org includes. */
 #include "source/include/FreeRTOS.h"
 #include "source/include/task.h"
 #include "source/include/FreeRTOSConfig.h"
 
-/* Used as a loop counter to create a very crude delay. */
 #define mainDELAY_LOOP_COUNT		( 0xffffff )
 
-/* The task functions. */
 void vTask1( void *pvParameters );
 void vTask2( void *pvParameters );
 
-/*-----------------------------------------------------------*/
-
-int main( void )
-{
-	/* Create one of the two tasks. */
+int main( void ) {
 	xTaskCreate(	vTask1,		/* Pointer to the function that implements the task. */
 					"Task 1",	/* Text name for the task.  This is to facilitate debugging only. */
 					1000,		/* Stack depth - most small microcontrollers will use much less stack than this. */
@@ -71,55 +64,31 @@ int main( void )
 					1,			/* This task will run at priority 1. */
 					NULL );		/* We are not using the task handle. */
 
-	/* Create the other task in exactly the same way. */
 	xTaskCreate( vTask2, "Task 2", 1000, NULL, 1, NULL );
+	vTaskStartScheduler();
 
-	/* Start the scheduler so our tasks start executing. */
-	vTaskStartScheduler();	
-	
-	/* If all is well we will never reach here as the scheduler will now be
-	running.  If we do reach here then it is likely that there was insufficient
-	heap available for the idle task to be created. */
 	for( ;; );
 	return 0;
 }
-/*-----------------------------------------------------------*/
 
-
-
-void vTask1( void *pvParameters )
-{
-volatile unsigned long ul;
-
-	/* As per most tasks, this task is implemented in an infinite loop. */
+void vTask1( void *pvParameters ) {
+	volatile unsigned long ul;
 	for( ;; )
 	{
-		
+
 		/* Delay for a period. */
 		for( ul = 0; ul < mainDELAY_LOOP_COUNT; ul++ )
-		{
-			/* This loop is just a very crude delay implementation.  There is
-			nothing to do in here.  Later exercises will replace this crude
-			loop with a proper delay/sleep function. */
-		}
+		{ }
 	}
 }
-/*-----------------------------------------------------------*/
 
-void vTask2( void *pvParameters )
-{
-volatile unsigned long ul;
-
-	/* As per most tasks, this task is implemented in an infinite loop. */
+void vTask2( void *pvParameters ) {
+	volatile unsigned long ul;
 	for( ;; )
 	{
 		/* Delay for a period. */
 		for( ul = 0; ul < mainDELAY_LOOP_COUNT; ul++ )
-		{
-			/* This loop is just a very crude delay implementation.  There is
-			nothing to do in here.  Later exercises will replace this crude
-			loop with a proper delay/sleep function. */
-		}
+		{ }
 	}
 }
 
