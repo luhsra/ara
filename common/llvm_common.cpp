@@ -37,7 +37,7 @@ const llvm::Value* FakeCallBase::getCalledValue() const {
 
 // copied from LLVM
 bool FakeCallBase::isIndirectCall() const {
-	const llvm::Value *V = getCalledValue();
+	const llvm::Value* V = getCalledValue();
 	if (llvm::isa<llvm::Function>(V) || llvm::isa<llvm::Constant>(V))
 		return false;
 	if (c && c->isInlineAsm())
@@ -48,9 +48,10 @@ bool FakeCallBase::isIndirectCall() const {
 bool FakeCallBase::isInlineAsm() const {
 	if (c)
 		return c->isInlineAsm();
-	if (v)
+	if (v) {
 		assert(false);
 		return false;
+	}
 	assert(false);
 	return false;
 }

@@ -15,12 +15,7 @@ namespace ara::graph {
 
 namespace ara::cfg {
 
-	enum ABBType {
-		not_implemented = 0,
-		syscall = 0b1,
-		call = 0b10,
-		computation = 0b100
-	};
+	enum ABBType { not_implemented = 0, syscall = 0b1, call = 0b10, computation = 0b100 };
 	std::ostream& operator<<(std::ostream&, const ABBType&);
 
 	/**
@@ -67,7 +62,6 @@ namespace ara::cfg {
 	    CFGraph;
 	typedef CFGraph FunctionDescriptor;
 
-
 	class ABBGraph;
 
 	/**
@@ -78,14 +72,15 @@ namespace ara::cfg {
 	 * boost::filter_graph<ABBGraph, boost::keep_all, ABBfilter> foo(g, boost::keep_all(), f);
 	 */
 	class ABBFilter {
-		public:
+	  public:
 		ABBFilter() : type_filter(0), g(nullptr) {}
 		ABBFilter(const unsigned type_filter, const ABBGraph* g) : type_filter(type_filter), g(g) {}
-		template<class Vertex>
+		template <class Vertex>
 		bool operator()(const Vertex& v) const {
 			return ((*g)[v].type & type_filter) != 0;
 		}
-		private:
+
+	  private:
 		const unsigned type_filter;
 		const ABBGraph* g;
 	};
