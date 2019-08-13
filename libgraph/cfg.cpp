@@ -41,6 +41,15 @@ namespace ara::cfg {
 			return "";
 		}
 		const llvm::Function* func = call->getCalledFunction();
+		// function are sometimes values with alias to a function
+		if (!func) {
+			const llvm::Value* value = call->getCalledValue();
+			if (const llvm::Constant* alias = dyn_cast<Constant>(value)) {
+				if (llvm::Function* tmp_func = dyn_cast<llvm::Function>(alias->getOperand(0))) {
+					func = tmp_func;
+				}
+			}
+		}
 		if (!func) {
 			return "";
 		}
