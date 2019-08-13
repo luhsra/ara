@@ -16,6 +16,7 @@ class FakeCallBase {
 
 	FakeCallBase(const llvm::CallInst* c, const llvm::InvokeInst* v) : c(c), v(v) {}
 
+	// workaround to be able to construct FakeCallBase with private constructor
 	struct make_shared_enabler;
 
   public:
@@ -33,44 +34,10 @@ class FakeCallBase {
 		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
 	}
 
-	const llvm::Function* getCalledFunction() const {
-		if (c)
-			return c->getCalledFunction();
-		if (v)
-			return v->getCalledFunction();
-		assert(false);
-		return nullptr;
-	}
-
-	const llvm::Value* getCalledValue() const {
-		if (c)
-			return c->getCalledValue();
-		if (v)
-			return v->getCalledValue();
-		assert(false);
-		return nullptr;
-	}
-
-	// copied from LLVM
-	bool isIndirectCall() const {
-		const llvm::Value *V = getCalledValue();
-		if (llvm::isa<llvm::Function>(V) || llvm::isa<llvm::Constant>(V))
-			return false;
-		if (c && c->isInlineAsm())
-			return false;
-		return true;
-	}
-
-
-	bool isInlineAsm() const {
-		if (c)
-			return c->isInlineAsm();
-		if (v)
-			assert(false);
-			return false;
-		assert(false);
-		return false;
-	}
+	const llvm::Function* getCalledFunction() const;
+	const llvm::Value* getCalledValue() const;
+	bool isIndirectCall() const;
+	bool isInlineAsm() const;
 };
 
 /**
