@@ -36,12 +36,24 @@ namespace ara::cfg {
 		llvm::BasicBlock* entry_bb;
 		llvm::BasicBlock* exit_bb;
 
+		/**
+		 * Return the name to the call that this ABB calls.
+		 *
+		 * Only valid in call or syscall ABBs, return "" otherwise.
+		 */
 		std::string get_call() const;
+
+		/**
+		 * Return, if the call in a call or syscall ABB is an indirect call.
+		 */
 		bool is_indirect() const;
 	};
 	std::ostream& operator<<(std::ostream&, const ABB&);
 	typedef boost::property<boost::vertex_index_t, std::size_t, ABB> vertex_prop;
 
+	/**
+	 * Represents a function object. (Technically a bundled (sub)graph property.)
+	 */
 	struct Function {
 		std::string name;
 		bool implemented; /* has this functions ABBs or is it a stub */
@@ -49,12 +61,6 @@ namespace ara::cfg {
 		llvm::Function* func;
 	};
 	std::ostream& operator<<(std::ostream&, const Function&);
-
-	// TODO
-	// template<class G, class P = G::graph_bundled>
-	// P& graph_prop(G g) {
-	//	return boost::get_property(g, boost::graph_bundle);
-	//}
 
 	typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_prop,
 	                                              boost::property<boost::edge_index_t, std::size_t>, Function>>
