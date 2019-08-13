@@ -67,6 +67,29 @@ namespace ara::cfg {
 	    CFGraph;
 	typedef CFGraph FunctionDescriptor;
 
+
+	class ABBGraph;
+
+	/**
+	 * Predicate object for boost::filtered_graph. Can filter ABB by their types.
+	 *
+	 * Usage:
+	 * ABBFilter f(<abb_type_mask>);
+	 * boost::filter_graph<ABBGraph, boost::keep_all, ABBfilter> foo(g, boost::keep_all(), f);
+	 */
+	class ABBFilter {
+		public:
+		ABBFilter() : type_filter(0), g(nullptr) {}
+		ABBFilter(const unsigned type_filter, const ABBGraph* g) : type_filter(type_filter), g(g) {}
+		template<class Vertex>
+		bool operator()(const Vertex& v) const {
+			return ((*g)[v].type & type_filter) != 0;
+		}
+		private:
+		const unsigned type_filter;
+		const ABBGraph* g;
+	};
+
 	/**
 	 * Holds all ABBs.
 	 */
