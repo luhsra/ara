@@ -15,9 +15,11 @@ namespace ara::cfg {
 		case syscall:
 			return (str << "syscall");
 		case call:
-			return (str << "syscall");
+			return (str << "call");
 		case computation:
 			return (str << "computation");
+		case not_implemented:
+			return (str << "not_implemented");
 		};
 		assert(false);
 		return str;
@@ -25,7 +27,7 @@ namespace ara::cfg {
 
 	// ABB functions
 	std::unique_ptr<FakeCallBase> get_call_base(const ABBType type, const BasicBlock& bb) {
-		if (type == ABBType::computation) {
+		if (!(type == ABBType::call || type == ABBType::syscall)) {
 			return nullptr;
 		}
 		auto call = FakeCallBase::create(&bb.front());

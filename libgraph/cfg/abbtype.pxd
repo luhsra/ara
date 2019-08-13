@@ -8,3 +8,4 @@ cdef extern from "graph.h" namespace "ara::cfg::ABBType":
     cdef ABBType syscall
     cdef ABBType call
     cdef ABBType computation
+    cdef ABBType not_implemented

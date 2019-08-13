@@ -10,6 +10,12 @@ import pydot
 class Printer(Step):
     """Print graphs to dot."""
 
+    SHAPES = {
+        graph.ABBType.computation: ("oval", "", "blue"),
+        graph.ABBType.call: ("box", "", "red"),
+        graph.ABBType.syscall: ("box", "rounded", "green")
+    }
+
     def _fill_options(self):
         self.dot = Option(name="dot",
                           help="Path to a dot file, '-' will write to stdout.",
@@ -29,8 +35,8 @@ class Printer(Step):
                                ty=Choice("abbs"))
         self.opts += [self.dot, self.graph_name, self.dump, self.subgraph]
 
-    def print_abbs(self, graph):
-        abbs = graph.new_graph.abbs()
+    def print_abbs(self, g):
+        abbs = g.new_graph.abbs()
 
         if self.dump.get():
             for line in str(abbs).splitlines():
@@ -41,27 +47,29 @@ class Printer(Step):
         name = self.graph_name.get()
         if not name:
             name = ''
-        graph = pydot.Dot(graph_type='digraph', label=name)
-        empty_count = 0
+        dot_graph = pydot.Dot(graph_type='digraph', label=name)
         for function in abbs.functions():
             dot_func = pydot.Cluster(function.name, label=function.name)
-            graph.add_subgraph(dot_func)
-            abb = None
+            dot_graph.add_subgraph(dot_func)
             for abb in function.vertices():
-                dot_abb = pydot.Node(str(abb.graph_id), label=abb.name)
+                if abb.type == graph.ABBType.not_implemented:
+                    assert not function.implemented
+                    dot_abb = pydot.Node(str(abb.graph_id),
+                                         label="",
+                                         shape="box")
+                    dot_func.set('style', 'filled')
+                    dot_func.set('color', '#eeeeee')
+                else:
+                    dot_abb = pydot.Node(str(abb.graph_id),
+                                         label=abb.name,
+                                         shape=self.SHAPES[abb.type][0],
+                                         style=self.SHAPES[abb.type][1],
+                                         color=self.SHAPES[abb.type][2])
                 dot_func.add_node(dot_abb)
-            if not abb:
-                dot_func.set('style', 'filled')
-                dot_func.set('color', '#eeeeee')
-                dot_func.add_node(pydot.Node("empty-" + str(empty_count),
-                                             label="",
-                                             shape="none"))
-                empty_count += 1
-
         for edge in abbs.edges():
-            graph.add_edge(pydot.Edge(str(edge.source().graph_id),
-                                      str(edge.target().graph_id)))
-        graph.write(dot)
+            dot_graph.add_edge(pydot.Edge(str(edge.source().graph_id),
+                                          str(edge.target().graph_id)))
+        dot_graph.write(dot)
         self._log.info(f"Write dot file to {dot}.")
 
     def run(self, g: graph.PyGraph):

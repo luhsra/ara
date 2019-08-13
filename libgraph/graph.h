@@ -15,7 +15,12 @@ namespace ara::graph {
 
 namespace ara::cfg {
 
-	enum ABBType { syscall, call, computation };
+	enum ABBType {
+		not_implemented = 0,
+		syscall = 0b1,
+		call = 0b10,
+		computation = 0b100
+	};
 	std::ostream& operator<<(std::ostream&, const ABBType&);
 
 	/**
@@ -39,6 +44,7 @@ namespace ara::cfg {
 
 	struct Function {
 		std::string name;
+		bool implemented; /* has this functions ABBs or is it a stub */
 
 		llvm::Function* func;
 	};

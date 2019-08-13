@@ -13,6 +13,7 @@ cdef extern from "graph.h" namespace "ara::cfg":
 
     cdef cppclass Function:
         string name
+        bool implemented
 
     cdef cppclass ABB:
         string name

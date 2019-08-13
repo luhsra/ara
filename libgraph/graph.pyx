@@ -40,6 +40,7 @@ class ABBType(IntEnum):
     computation = <int> cfg.abbtype.computation
     syscall = <int> cfg.abbtype.syscall
     call = <int> cfg.abbtype.call
+    not_implemented = <int> cfg.abbtype.not_implemented
 
 cdef class ABB:
     cdef long unsigned int _c_graph_id
@@ -107,6 +108,10 @@ cdef class Function:
     @name.setter
     def name(self, value):
         deref(get_subgraph_prop(self._c_func)).name = value
+
+    @property
+    def implemented(self):
+        return deref(get_subgraph_prop(self._c_func)).implemented
 
     def vertices(self):
         cdef cy_helper.SubgraphRange[FuncDesc] ra = cy_helper.SubgraphRange[FuncDesc](deref(self._c_func))

@@ -34,9 +34,11 @@ namespace step {
 			ara::cfg::Function& f = boost::get_property(function);
 			f.name = func.getName();
 			f.func = &func;
+			f.implemented = true;
 
 			logger.debug() << "Inserted new function " << f.name << "." << std::endl;
 
+			unsigned bb_counter = 0;
 			for (BasicBlock& bb : func) {
 				std::stringstream ss;
 				ss << "ABB" << name_counter++;
@@ -45,6 +47,7 @@ namespace step {
 					ty = ara::cfg::ABBType::call;
 				}
 				auto vertex = abbs.add_vertex(ss.str(), ty, &bb, &bb, function);
+				bb_counter++;
 
 				// connect already mapped successors and predecessors
 				for (const BasicBlock* succ_b : successors(&bb)) {
@@ -57,6 +60,10 @@ namespace step {
 						abbs.add_edge(abbs.back_map(pred_b), vertex);
 					}
 				}
+			}
+			if (bb_counter == 0) {
+				abbs.add_vertex("empty", ara::cfg::ABBType::not_implemented, nullptr, nullptr, function);
+				f.implemented = false;
 			}
 		}
 
