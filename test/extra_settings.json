@@ -1,9 +1,16 @@
 {
 	"steps": [
-		"LLVMMap",
+		"Syscall",
 		{
 			"name": "Printer",
-			"dot": "initial_map.dot",
+			"dot": "syscall.dot",
+			"graph_name": "Initial Map",
+			"subgraph": "abbs"
+		},
+		"ICFG",
+		{
+			"name": "Printer",
+			"dot": "icfg.dot",
 			"graph_name": "Initial Map",
 			"subgraph": "abbs"
 		}

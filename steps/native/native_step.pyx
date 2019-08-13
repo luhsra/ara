@@ -16,6 +16,7 @@ from comp_insert cimport CompInsert
 from detect_interactions cimport DetectInteractionsStep
 from fn_single_exit cimport FnSingleExit
 from freertos_instances cimport FreeRTOSInstancesStep
+from icfg cimport ICFG
 from intermediate_analysis cimport IntermediateAnalysisStep
 from ir_reader cimport IRReader
 from llvm_basic_optimization cimport LLVMBasicOptimization
@@ -262,6 +263,7 @@ def provide_steps():
             _native_fac(step_fac[DetectInteractionsStep]()),
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[FreeRTOSInstancesStep]()),
+            _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[IntermediateAnalysisStep]()),
             _native_fac(step_fac[LLVMStep]()),
