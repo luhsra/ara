@@ -10,4 +10,8 @@ namespace ara {
 	class FunctionNotFound : public std::exception {
 		virtual const char* what() const throw() { return "Function not found in Graph"; }
 	} function_not_found;
-}; // namespace ara
+
+	class NotImplemented : public std::exception {
+		virtual const char* what() const throw() { return "Not implemented."; }
+	} not_implemented;
+} // namespace ara

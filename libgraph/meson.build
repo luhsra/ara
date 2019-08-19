@@ -1,3 +1,5 @@
+subdir('bgl')
+
 pygraph_includes = files('cgraph.pxd', 'newgraph.pxd', 'cy_helper.pxd', 'boost.pxd', 'graph.pxd')
 
 graph_pyx_cpp = custom_target('graph_pyx',
