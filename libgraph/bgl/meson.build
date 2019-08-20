@@ -2,8 +2,8 @@ pybgl_includes = files('bgl.pxd', 'move.pxd', 'bgl_wrapper.pxd')
 
 bgl_pyx_cpp = custom_target('bgl_pyx',
     output : 'bgl_pyx.cpp',
-    input : ['bgl.pyx', pybgl_includes],
-    command : [cython, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags
+    input : ['bgl.pyx', pybgl_includes, common_cython_files],
+    command : [cython, '-I', common_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags
 )
 
 bgl = py3_inst.extension_module('bgl',

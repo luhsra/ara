@@ -7,12 +7,13 @@ from move cimport move
 
 from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as pp
-from libcpp.memory cimport unique_ptr
+from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.utility cimport pair
+from common.cy_helper cimport to_shared_ptr
 
 cdef class EdgeIterator:
-    cdef unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]] _iter
-    cdef unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]] _end
+    cdef shared_ptr[bgl.GraphIterator[bgl.EdgeWrapper]] _iter
+    cdef shared_ptr[bgl.GraphIterator[bgl.EdgeWrapper]] _end
 
     def __iter__(self):
         return self
@@ -20,21 +21,21 @@ cdef class EdgeIterator:
     def next(self):
         if self._iter == self._end:
             raise StopIteration
-        cdef unique_ptr[bgl.EdgeWrapper] e = deref(deref(self._iter))
+        cdef shared_ptr[bgl.EdgeWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
-        return edge_fac(move(e))
+        return edge_fac(e)
 
 
 cdef make_edge_it(pair[unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]], unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]]] its):
     it = EdgeIterator()
-    it._iter = move(its.first)
-    it._end = move(its.second)
+    it._iter = to_shared_ptr(move(its.first))
+    it._end = to_shared_ptr(move(its.second))
     return it
 
 
 cdef class VertexIterator:
-    cdef unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]] _iter
-    cdef unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]] _end
+    cdef shared_ptr[bgl.GraphIterator[bgl.VertexWrapper]] _iter
+    cdef shared_ptr[bgl.GraphIterator[bgl.VertexWrapper]] _end
 
     def __iter__(self):
         return self
@@ -42,21 +43,21 @@ cdef class VertexIterator:
     def next(self):
         if self._iter == self._end:
             raise StopIteration
-        cdef unique_ptr[bgl.VertexWrapper] e = deref(deref(self._iter))
+        cdef shared_ptr[bgl.VertexWrapper] v = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
-        return vertex_fac(move(e))
+        return vertex_fac(v)
 
 
 cdef make_vertex_it(pair[unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]], unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]]] its):
     it = VertexIterator()
-    it._iter = move(its.first)
-    it._end = move(its.second)
+    it._iter = to_shared_ptr(move(its.first))
+    it._end = to_shared_ptr(move(its.second))
     return it
 
 
 cdef class GraphIterator:
-    cdef unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]] _iter
-    cdef unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]] _end
+    cdef shared_ptr[bgl.GraphIterator[bgl.GraphWrapper]] _iter
+    cdef shared_ptr[bgl.GraphIterator[bgl.GraphWrapper]] _end
 
     def __iter__(self):
         return self
@@ -64,15 +65,15 @@ cdef class GraphIterator:
     def next(self):
         if self._iter == self._end:
             raise StopIteration
-        cdef unique_ptr[bgl.GraphWrapper] e = deref(deref(self._iter))
+        cdef shared_ptr[bgl.GraphWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
-        return graph_fac(move(e))
+        return graph_fac(e)
 
 
 cdef make_graph_it(pair[unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]], unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]]] its):
     it = GraphIterator()
-    it._iter = move(its.first)
-    it._end = move(its.second)
+    it._iter = to_shared_ptr(move(its.first))
+    it._end = to_shared_ptr(move(its.second))
     return it
 
 
@@ -107,21 +108,21 @@ cdef class Vertex:
     def clear_edges(self):
         deref(self._c_vertex).clear_edges()
 
-cdef vertex_fac(unique_ptr[bgl_wrapper.VertexWrapper] v):
+cdef vertex_fac(shared_ptr[bgl_wrapper.VertexWrapper] v):
     vert = Vertex()
-    vert._c_vertex = move(v)
+    vert._c_vertex = v
     return vert
 
 cdef class Edge:
     def source(self):
-        return vertex_fac(deref(self._c_edge).source())
+        return vertex_fac(to_shared_ptr(deref(self._c_edge).source()))
 
     def target(self):
-        return vertex_fac(deref(self._c_edge).target())
+        return vertex_fac(to_shared_ptr(deref(self._c_edge).target()))
 
-cdef edge_fac(unique_ptr[bgl_wrapper.EdgeWrapper] e):
+cdef edge_fac(shared_ptr[bgl_wrapper.EdgeWrapper] e):
     edge = Edge()
-    edge._c_edge = move(e)
+    edge._c_edge = e
     return edge
 
 cdef class Graph:
@@ -138,7 +139,7 @@ cdef class Graph:
         return deref(self._c_graph).num_edges()
 
     def add_vertex(self):
-        return vertex_fac(deref(self._c_graph).add_vertex())
+        return vertex_fac(to_shared_ptr(deref(self._c_graph).add_vertex()))
 
     # TODO not supported by boost subgraph
     # def remove_vertex(self, vertex):
@@ -156,16 +157,16 @@ cdef class Graph:
 
     # subgraph functions
     def create_subgraph(self):
-        return graph_fac(deref(self._c_graph).create_subgraph())
+        return graph_fac(to_shared_ptr(deref(self._c_graph).create_subgraph()))
 
     def is_root(self):
         return deref(self._c_graph).is_root()
 
     def root(self):
-        return graph_fac(deref(self._c_graph).root())
+        return graph_fac(to_shared_ptr(deref(self._c_graph).root()))
 
     def parent(self):
-        return graph_fac(deref(self._c_graph).parent())
+        return graph_fac(to_shared_ptr(deref(self._c_graph).parent()))
 
     def children(self):
         return make_graph_it(deref(self._c_graph).children())
@@ -175,25 +176,25 @@ cdef class Graph:
         cdef Vertex v
         if isinstance(obj, Edge):
             e = obj
-            return edge_fac(deref(self._c_graph).local_to_global(deref(e._c_edge)))
+            return edge_fac(to_shared_ptr(deref(self._c_graph).local_to_global(deref(e._c_edge))))
         if isinstance(obj, Vertex):
             v = obj
-            return vertex_fac(deref(self._c_graph).local_to_global(deref(v._c_vertex)))
+            return vertex_fac(to_shared_ptr(deref(self._c_graph).local_to_global(deref(v._c_vertex))))
 
     def global_to_local(self, obj):
         cdef Edge e
         cdef Vertex v
         if isinstance(obj, Edge):
             e = obj
-            return edge_fac(deref(self._c_graph).global_to_local(deref(e._c_edge)))
+            return edge_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(e._c_edge))))
         if isinstance(obj, Vertex):
             v = obj
-            return vertex_fac(deref(self._c_graph).global_to_local(deref(v._c_vertex)))
+            return vertex_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(v._c_vertex))))
 
     def filter_by(self, vertex=None, edge=None):
         pass
 
-cdef graph_fac(unique_ptr[bgl_wrapper.GraphWrapper] g):
+cdef graph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
     graph = Graph()
-    graph._c_graph = move(g)
+    graph._c_graph = g
     return graph

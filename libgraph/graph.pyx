@@ -8,7 +8,7 @@ cimport cfg
 cimport cfg_wrapper
 cimport cfg.abbtype
 cimport graph
-cimport cy_helper
+cimport common.cy_helper
 cimport boost
 
 from libcpp.memory cimport shared_ptr, make_shared, unique_ptr, make_unique
@@ -24,7 +24,7 @@ from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
-from cy_helper cimport to_string, cast_unique_ptr #, make_ptr_range, get_subgraph_prop
+from common.cy_helper cimport to_string #, cast_unique_ptr #, make_ptr_range, get_subgraph_prop
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
@@ -51,17 +51,17 @@ class ABBType(IntEnum):
 
 cdef class ABB(bgl.Vertex):
     def __cinit__(self, bgl.Vertex vertex):
-        self._c_vertex = move(vertex._c_vertex)
+        self._c_vertex = vertex._c_vertex
 
 
 cdef class ABBEdge(bgl.Edge):
     def __cinit__(self, bgl.Edge edge):
-        self._c_edge = move(edge._c_edge)
+        self._c_edge = edge._c_edge
 
 
 cdef class Function(bgl.Graph):
     def __cinit__(self, bgl.Graph graph):
-        self._c_graph = move(graph._c_graph)
+        self._c_graph = graph._c_graph
 
 
 ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr
@@ -84,9 +84,9 @@ cdef class ABBGraph(bgl.Graph):
              yield Function(child)
 
 
-cdef abbgraph_fac(unique_ptr[bgl_wrapper.GraphWrapper] g):
+cdef abbgraph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
     graph = ABBGraph()
-    graph._c_graph = move(g)
+    graph._c_graph = g
 
 # cdef class ABB:
 #     cdef long unsigned int _c_graph_id
@@ -211,42 +211,6 @@ cdef abbgraph_fac(unique_ptr[bgl_wrapper.GraphWrapper] g):
 #     return edge
 #
 #
-# cdef class ABBGraph:
-#     """NEVER EVER construct this by yourself. Instead, use Graph.abbs()."""
-#
-#     # This should be a reference, since the lifetime is associated to the graph
-#     # object and it should only be constructable with Graph.abbs(). However,
-#     # Cython is not able to achieve this, so instead use a pointer.
-#     cdef cfg.ABBGraph* _c_abbgraph
-#
-#     def __str__(self):
-#         return to_string(deref(self._c_abbgraph)).decode('utf-8')
-#
-#     def edges(self):
-#         cdef EdgeDesc edge
-#         cdef boost.iterator_range[EdgeIter] ran
-#         cdef pair[EdgeIter, EdgeIter] it_pair
-#         it_pair = cy_helper.edges[EdgeIter,
-#                                   cfg.ABBGraph](deref(self._c_abbgraph))
-#         ran = boost.make_iterator_range[EdgeIter](it_pair.first, it_pair.second)
-#         for edge in ran:
-#             yield abbedge_factory(edge, self._c_abbgraph)
-#
-#
-#     def vertices(self):
-#         cdef cy_helper.SubgraphRange[cfg.ABBGraph] ra = cy_helper.SubgraphRange[cfg.ABBGraph](deref(self._c_abbgraph))
-#         for vertex in ra:
-#             py_abb = abb_factory(vertex, self._c_abbgraph)
-#             yield py_abb
-#
-#     def functions(self):
-#         cdef py_func
-#         cdef FuncDesc* func_ptr
-#         cdef cy_helper.PtrRange[CABBGraph.children_iterator, FuncDesc] ra = make_ptr_range[CABBGraph.children_iterator, FuncDesc](deref(self._c_abbgraph).children())
-#         for func_ptr in ra:
-#             py_func = function_factory(func_ptr, self._c_abbgraph)
-#             yield py_func
-
 
 cdef class Graph:
     # TODO make this a unique pointer once the graph transition is done
@@ -256,9 +220,8 @@ cdef class Graph:
     #     self._c_graph = make_unique[cgraph.Graph]()
 
     def abbs(self):
-        cdef unique_ptr[cfg_wrapper.ABBGraph] ptr = make_unique[cfg_wrapper.ABBGraph](self._c_graph.abbs())
-        cdef unique_ptr[bgl_wrapper.GraphWrapper] gptr = cast_unique_ptr[bgl_wrapper.GraphWrapper, cfg_wrapper.ABBGraph](move(ptr))
-        return abbgraph_fac(move(gptr))
+        cdef shared_ptr[bgl_wrapper.GraphWrapper] ptr = spc[bgl_wrapper.GraphWrapper, cfg_wrapper.ABBGraph](make_shared[cfg_wrapper.ABBGraph](self._c_graph.abbs()))
+        return abbgraph_fac(ptr)
 
 
 cpdef get_type_hash(name):

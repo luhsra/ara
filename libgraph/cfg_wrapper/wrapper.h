@@ -2,7 +2,7 @@
 
 #include "bgl/bgl_bridge.h"
 #include "graph.h"
-#include "cy_helper.h"
+#include "common/cy_helper.h"
 
 namespace ara::cfg_wrapper {
 	class ABBGraph : public ara::bgl_wrapper::SubGraphImpl<ara::cfg::ABBGraph, ara::cfg::FunctionDescriptor> {
