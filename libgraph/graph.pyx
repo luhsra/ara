@@ -55,7 +55,7 @@ class ABBType(IntEnum):
 #     pass
 
 cdef class ABBGraph(bgl.Graph):
-    cdef unique_ptr[cfg_wrapper.ABBGraph] _c_graph
+    cdef unique_ptr[cfg_wrapper.ABBGraph] _c_abbgraph
 
     pass
 
@@ -228,7 +228,7 @@ cdef class Graph:
 
     def abbs(self):
         cdef ABBGraph g = ABBGraph()
-        g._c_graph = make_unique[cfg_wrapper.ABBGraph](cfg_wrapper.ABBGraph(self._c_graph.abbs()))
+        g._c_abbgraph = make_unique[cfg_wrapper.ABBGraph](cfg_wrapper.ABBGraph(self._c_graph.abbs()))
         return g
 
 

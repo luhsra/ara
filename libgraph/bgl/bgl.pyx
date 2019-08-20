@@ -78,122 +78,122 @@ cdef make_graph_it(pair[unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]], unique_
 
 cdef class Vertex:
     def in_edges(self):
-        return make_edge_it(deref(self.vertex).in_edges())
+        return make_edge_it(deref(self._c_vertex).in_edges())
 
     def out_edges(self):
-        return make_edge_it(deref(self.vertex).out_edges())
+        return make_edge_it(deref(self._c_vertex).out_edges())
 
     def in_degree(self):
-        return deref(self.vertex).in_degree()
+        return deref(self._c_vertex).in_degree()
 
     def out_degree(self):
-        return deref(self.vertex).out_degree()
+        return deref(self._c_vertex).out_degree()
 
     def degree(self):
-        return deref(self.vertex).degree()
+        return deref(self._c_vertex).degree()
 
     def adjacent_vertices(self):
-        return make_vertex_it(deref(self.vertex).adjacent_vertices())
+        return make_vertex_it(deref(self._c_vertex).adjacent_vertices())
 
     def inv_adjacent_vertices(self):
-        return make_vertex_it(deref(self.vertex).inv_adjacent_vertices())
+        return make_vertex_it(deref(self._c_vertex).inv_adjacent_vertices())
 
     def clear_in_edges(self):
-        deref(self.vertex).clear_in_edges()
+        deref(self._c_vertex).clear_in_edges()
 
     def clear_out_edges(self):
-        deref(self.vertex).clear_out_edges()
+        deref(self._c_vertex).clear_out_edges()
 
     def clear_edges(self):
-        deref(self.vertex).clear_edges()
+        deref(self._c_vertex).clear_edges()
 
 cdef vertex_fac(unique_ptr[bgl_wrapper.VertexWrapper] v):
     vert = Vertex()
-    vert.vertex = move(v)
+    vert._c_vertex = move(v)
     return vert
 
 cdef class Edge:
     def source(self):
-        return vertex_fac(deref(self.edge).source())
+        return vertex_fac(deref(self._c_edge).source())
 
     def target(self):
-        return vertex_fac(deref(self.edge).target())
+        return vertex_fac(deref(self._c_edge).target())
 
 cdef edge_fac(unique_ptr[bgl_wrapper.EdgeWrapper] e):
     edge = Edge()
-    edge.edge = move(e)
+    edge._c_edge = move(e)
     return edge
 
 cdef class Graph:
     def vertices(self):
-        return make_vertex_it(deref(self.graph).vertices())
+        return make_vertex_it(deref(self._c_graph).vertices())
 
     def num_vertices(self):
-        return deref(self.graph).num_vertices()
+        return deref(self._c_graph).num_vertices()
 
     def edges(self):
-        return make_edge_it(deref(self.graph).edges())
+        return make_edge_it(deref(self._c_graph).edges())
 
     def num_edges(self):
-        return deref(self.graph).num_edges()
+        return deref(self._c_graph).num_edges()
 
     def add_vertex(self):
-        return vertex_fac(deref(self.graph).add_vertex())
+        return vertex_fac(deref(self._c_graph).add_vertex())
 
     # TODO not supported by boost subgraph
     # def remove_vertex(self, vertex):
     #     cdef Vertex v = vertex
-    #     deref(self.graph).remove_vertex(deref(v.vertex))
+    #     deref(self._c_graph).remove_vertex(deref(v.vertex))
 
     def add_edge(self, source, target):
         cdef Vertex s = source
         cdef Vertex t = target
-        deref(self.graph).add_edge(deref(s.vertex), deref(t.vertex))
+        deref(self._c_graph).add_edge(deref(s._c_vertex), deref(t._c_vertex))
 
     def remove_edge(self, edge):
         cdef Edge e = edge
-        deref(self.graph).remove_edge(deref(e.edge))
+        deref(self._c_graph).remove_edge(deref(e._c_edge))
 
     # subgraph functions
     def create_subgraph(self):
-        return graph_fac(deref(self.graph).create_subgraph())
+        return graph_fac(deref(self._c_graph).create_subgraph())
 
     def is_root(self):
-        return deref(self.graph).is_root()
+        return deref(self._c_graph).is_root()
 
     def root(self):
-        return graph_fac(deref(self.graph).root())
+        return graph_fac(deref(self._c_graph).root())
 
     def parent(self):
-        return graph_fac(deref(self.graph).parent())
+        return graph_fac(deref(self._c_graph).parent())
 
     def children(self):
-        return make_graph_it(deref(self.graph).children())
+        return make_graph_it(deref(self._c_graph).children())
 
     def local_to_global(self, obj):
         cdef Edge e
         cdef Vertex v
         if isinstance(obj, Edge):
             e = obj
-            return edge_fac(deref(self.graph).local_to_global(deref(e.edge)))
+            return edge_fac(deref(self._c_graph).local_to_global(deref(e._c_edge)))
         if isinstance(obj, Vertex):
             v = obj
-            return vertex_fac(deref(self.graph).local_to_global(deref(v.vertex)))
+            return vertex_fac(deref(self._c_graph).local_to_global(deref(v._c_vertex)))
 
     def global_to_local(self, obj):
         cdef Edge e
         cdef Vertex v
         if isinstance(obj, Edge):
             e = obj
-            return edge_fac(deref(self.graph).global_to_local(deref(e.edge)))
+            return edge_fac(deref(self._c_graph).global_to_local(deref(e._c_edge)))
         if isinstance(obj, Vertex):
             v = obj
-            return vertex_fac(deref(self.graph).global_to_local(deref(v.vertex)))
+            return vertex_fac(deref(self._c_graph).global_to_local(deref(v._c_vertex)))
 
     def filter_by(self, vertex=None, edge=None):
         pass
 
 cdef graph_fac(unique_ptr[bgl_wrapper.GraphWrapper] g):
     graph = Graph()
-    graph.graph = move(g)
+    graph._c_graph = move(g)
     return graph
