@@ -3,10 +3,11 @@
 from libcpp.string cimport string
 from libcpp.utility cimport pair
 from libcpp.vector cimport vector
+from libcpp.memory cimport unique_ptr
 cimport cgraph
 cimport cfg
 
-cdef extern from "cy_helper.h" namespace "cy_helper":
+cdef extern from "cy_helper.h" namespace "ara::cy_helper":
     cdef cppclass PtrIterator[T, P]:
         P* operator*()
         PtrIterator[T, P] operator++()
@@ -59,3 +60,5 @@ cdef extern from "cy_helper.h" namespace "cy_helper":
     pair[V, V] vertices[V, G](G g)
 
     void assign_enum[E](E& e, int i)
+
+    unique_ptr[B] cast_unique_ptr[B, D](unique_ptr[D])

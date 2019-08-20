@@ -17,18 +17,22 @@ from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 from libcpp.utility cimport pair
+from libcpp.cast cimport dynamic_cast
 
 from libcpp cimport bool
 from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
-from cy_helper cimport to_string #, make_ptr_range, get_subgraph_prop
+from cy_helper cimport to_string, cast_unique_ptr #, make_ptr_range, get_subgraph_prop
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
 
 cimport bgl
+cimport bgl_wrapper
+
+from move cimport move
 
 # from cfg cimport FunctionDescriptor as FuncDesc
 # from cfg cimport ABBGraph as CABBGraph
@@ -45,19 +49,44 @@ class ABBType(IntEnum):
     call = <int> cfg.abbtype.call
     not_implemented = <int> cfg.abbtype.not_implemented
 
-# cdef class ABB(bgl.Vertex):
-#     pass
-#
-# cdef class ABBEdge(bgl.Edge):
-#     pass
-#
-# cdef class Function(bgl.Graph):
-#     pass
+cdef class ABB(bgl.Vertex):
+    def __cinit__(self, bgl.Vertex vertex):
+        self._c_vertex = move(vertex._c_vertex)
+
+
+cdef class ABBEdge(bgl.Edge):
+    def __cinit__(self, bgl.Edge edge):
+        self._c_edge = move(edge._c_edge)
+
+
+cdef class Function(bgl.Graph):
+    def __cinit__(self, bgl.Graph graph):
+        self._c_graph = move(graph._c_graph)
+
+
+ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr
 
 cdef class ABBGraph(bgl.Graph):
-    cdef unique_ptr[cfg_wrapper.ABBGraph] _c_abbgraph
+     def __str__(self):
+         cdef bgl_wrapper.GraphWrapper* b = self._c_graph.get()
+         return deref(dynamic_cast[ABBGraphPtr](b)).to_string().decode('utf-8')
 
-    pass
+     def edges(self):
+         for edge in super().edges():
+             yield ABBEdge(edge);
+
+     def vertices(self):
+         for vertex in super().vertices():
+             yield ABB(vertex);
+
+     def functions(self):
+         for child in super().children():
+             yield Function(child)
+
+
+cdef abbgraph_fac(unique_ptr[bgl_wrapper.GraphWrapper] g):
+    graph = ABBGraph()
+    graph._c_graph = move(g)
 
 # cdef class ABB:
 #     cdef long unsigned int _c_graph_id
@@ -227,9 +256,9 @@ cdef class Graph:
     #     self._c_graph = make_unique[cgraph.Graph]()
 
     def abbs(self):
-        cdef ABBGraph g = ABBGraph()
-        g._c_abbgraph = make_unique[cfg_wrapper.ABBGraph](cfg_wrapper.ABBGraph(self._c_graph.abbs()))
-        return g
+        cdef unique_ptr[cfg_wrapper.ABBGraph] ptr = make_unique[cfg_wrapper.ABBGraph](self._c_graph.abbs())
+        cdef unique_ptr[bgl_wrapper.GraphWrapper] gptr = cast_unique_ptr[bgl_wrapper.GraphWrapper, cfg_wrapper.ABBGraph](move(ptr))
+        return abbgraph_fac(move(gptr))
 
 
 cpdef get_type_hash(name):

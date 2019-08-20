@@ -6,7 +6,7 @@
 #include <sstream>
 #include <string>
 
-namespace cy_helper {
+namespace ara::cy_helper {
 
 	template <class T>
 	std::string to_string(const T& obj) {
@@ -134,4 +134,8 @@ namespace cy_helper {
 		e = static_cast<Enum>(i);
 	}
 
+	template <class Base, class Derived>
+	inline std::unique_ptr<Base> cast_unique_ptr(std::unique_ptr<Derived> d) {
+		return std::move(d);
+	}
 } // namespace cy_helper
