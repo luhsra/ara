@@ -13,17 +13,17 @@ namespace ara::bgl_wrapper {
 	struct GraphIterator {
 		virtual ~GraphIterator() {}
 
-        virtual std::unique_ptr<T> operator*() { throw ara::not_implemented; }
-        virtual GraphIterator<T>& operator++() { throw ara::not_implemented; }
-        virtual GraphIterator<T>& operator--() { throw ara::not_implemented; }
-        virtual GraphIterator<T>& operator+(size_t) { throw ara::not_implemented; }
-        virtual GraphIterator<T>& operator-(size_t) { throw ara::not_implemented; }
-        virtual bool operator==(const GraphIterator<T>&) { throw ara::not_implemented; }
-        virtual bool operator!=(const GraphIterator<T>&) { throw ara::not_implemented; }
-        virtual bool operator<(const GraphIterator<T>&) { throw ara::not_implemented; }
-        virtual bool operator>(const GraphIterator<T>&) { throw ara::not_implemented; }
-        virtual bool operator<=(const GraphIterator<T>&) { throw ara::not_implemented; }
-        virtual bool operator>=(const GraphIterator<T>&) { throw ara::not_implemented; }
+		virtual std::unique_ptr<T> operator*() { throw ara::NotImplemented(); }
+		virtual GraphIterator<T>& operator++() { throw ara::NotImplemented(); }
+		virtual GraphIterator<T>& operator--() { throw ara::NotImplemented(); }
+		virtual GraphIterator<T>& operator+(size_t) { throw ara::NotImplemented(); }
+		virtual GraphIterator<T>& operator-(size_t) { throw ara::NotImplemented(); }
+		virtual bool operator==(const GraphIterator<T>&) { throw ara::NotImplemented(); }
+		virtual bool operator!=(const GraphIterator<T>&) { throw ara::NotImplemented(); }
+		virtual bool operator<(const GraphIterator<T>&) { throw ara::NotImplemented(); }
+		virtual bool operator>(const GraphIterator<T>&) { throw ara::NotImplemented(); }
+		virtual bool operator<=(const GraphIterator<T>&) { throw ara::NotImplemented(); }
+		virtual bool operator>=(const GraphIterator<T>&) { throw ara::NotImplemented(); }
 	};
 
 	struct Predicate {};
@@ -41,10 +41,12 @@ namespace ara::bgl_wrapper {
 		virtual uint64_t degree() = 0;
 
 		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> adjacent_vertices() = 0;
-		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> inv_adjacent_vertices() = 0;
+		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> inv_adjacent_vertices() {
+			throw ara::NotImplemented();
+		}
 
-		virtual void clear_in_edges() = 0;
-		virtual void clear_out_edges() = 0;
+		virtual void clear_in_edges() { throw ara::NotImplemented(); }
+		virtual void clear_out_edges() { throw ara::NotImplemented(); }
 		virtual void clear_edges() = 0;
 	};
 
@@ -65,30 +67,29 @@ namespace ara::bgl_wrapper {
 		virtual uint64_t num_edges() = 0;
 
 		virtual std::unique_ptr<VertexWrapper> add_vertex() = 0;
-		virtual void remove_vertex(VertexWrapper& vertex) = 0;
+		/* TODO not supported by boost subgraph */
+		// virtual void remove_vertex(VertexWrapper& vertex) = 0;
 
 		virtual std::unique_ptr<EdgeWrapper> add_edge(VertexWrapper& source, VertexWrapper& target) = 0;
 		virtual void remove_edge(EdgeWrapper& edge) = 0;
 
 		/* subgraph functions */
-		virtual std::unique_ptr<GraphWrapper> create_subgraph() {
-			throw ara::not_implemented;
-		}
+		virtual std::unique_ptr<GraphWrapper> create_subgraph() { throw ara::NotImplemented(); }
 
-		virtual bool is_root() { throw ara::not_implemented; }
+		virtual bool is_root() { throw ara::NotImplemented(); }
 
-		virtual std::unique_ptr<GraphWrapper> root() { throw ara::not_implemented; }
+		virtual std::unique_ptr<GraphWrapper> root() { throw ara::NotImplemented(); }
 
-		virtual std::unique_ptr<GraphWrapper> parent() { throw ara::not_implemented; }
+		virtual std::unique_ptr<GraphWrapper> parent() { throw ara::NotImplemented(); }
 
-		virtual SamePair<std::unique_ptr<GraphIterator<GraphWrapper>>> children() { throw ara::not_implemented; }
+		virtual SamePair<std::unique_ptr<GraphIterator<GraphWrapper>>> children() { throw ara::NotImplemented(); }
 
-		virtual std::unique_ptr<VertexWrapper> local_to_global(VertexWrapper&) { throw ara::not_implemented; }
-		virtual std::unique_ptr<EdgeWrapper> local_to_global(EdgeWrapper&) { throw ara::not_implemented; }
+		virtual std::unique_ptr<VertexWrapper> local_to_global(VertexWrapper&) { throw ara::NotImplemented(); }
+		virtual std::unique_ptr<EdgeWrapper> local_to_global(EdgeWrapper&) { throw ara::NotImplemented(); }
 
-		virtual std::unique_ptr<VertexWrapper> global_to_local(VertexWrapper&) { throw ara::not_implemented; }
-		virtual std::unique_ptr<EdgeWrapper> global_to_local(EdgeWrapper&) { throw ara::not_implemented; }
+		virtual std::unique_ptr<VertexWrapper> global_to_local(VertexWrapper&) { throw ara::NotImplemented(); }
+		virtual std::unique_ptr<EdgeWrapper> global_to_local(EdgeWrapper&) { throw ara::NotImplemented(); }
 
-		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) { throw ara::not_implemented; }
+		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) { throw ara::NotImplemented(); }
 	};
 } // namespace bgl_wrapper

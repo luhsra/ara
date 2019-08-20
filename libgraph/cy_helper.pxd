@@ -30,7 +30,7 @@ cdef extern from "cy_helper.h" namespace "cy_helper":
 
     string to_string[T](T& obj)
 
-    cfg.Function* get_subgraph_prop(cfg.FunctionDescriptor*)
+    # cfg.Function* get_subgraph_prop(cfg.FunctionDescriptor*)
 
     cdef cppclass SubgraphIterator[T]:
         long unsigned int& operator*()

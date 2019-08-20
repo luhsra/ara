@@ -1,16 +1,19 @@
 subdir('bgl')
 
-pygraph_includes = files('cgraph.pxd', 'newgraph.pxd', 'cy_helper.pxd', 'boost.pxd', 'graph.pxd')
+pygraph_includes = files('cgraph.pxd', 'newgraph.pxd', 'cy_helper.pxd', 'boost.pxd', 'graph.pxd',
+                         'cfg_wrapper/__init__.pxd',
+                         'cfg/__init__.pxd',
+                         'cfg/abbtype.pxd')
 
 graph_pyx_cpp = custom_target('graph_pyx',
-	output : 'graph_pyx.cpp',
-	input : ['graph.pyx', pygraph_includes],
-	command : [cython, '@INPUT0@', '--cplus', '-o', '@OUTPUT@'],
+    output : 'graph_pyx.cpp',
+    input : ['graph.pyx', pygraph_includes],
+    command : [cython, '-I', bgl_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
 )
 
 libgraph = py3_inst.extension_module('graph',
-	graph_pyx_cpp, 'graph.cc', 'cfg.cpp',
-	dependencies : [py3_inst.dependency(), llvm_dep, boost_dep, common_dep]
+    graph_pyx_cpp, 'graph.cc', 'cfg.cpp',
+    dependencies : [py3_inst.dependency(), llvm_dep, boost_dep, common_dep, bgl_dep]
 )
 
 graph_inc = include_directories('.')

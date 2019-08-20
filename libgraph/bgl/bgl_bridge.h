@@ -1,184 +1,157 @@
 #pragma once
 
-#define BOOST_RESULT_OF_USE_DECLTYPE
-
 #include "bgl_wrapper.h"
-
-#include <memory>
-
-#include "boost/range/iterator_range.hpp"
 #include "boost/graph/graph_concepts.hpp"
 #include "boost/graph/subgraph.hpp"
-#include <boost/iterator/transform_iterator.hpp>
+#include "boost/iterator/transform_iterator.hpp"
+
+#include <functional>
+#include <memory>
 
 namespace ara::bgl_wrapper {
 
-	template<typename T, typename boost_iterator, typename value_type>
-	class GraphIter : public GraphIterator<T> {
-		private:
-			boost::transform_iterator<boost_iterator, int> iter;
+	template <typename Wrapper, typename BoostIterator>
+	class GraphIter : public GraphIterator<Wrapper> {
+	  private:
+		BoostIterator iter;
 
-			static std::unique_ptr<typename value_type> convert_to_ptr(value_type& obj) {
-				return std::move(std::make_unique<value_type>(T(obj)));
-			}
-		public:
-			GraphIter(boost_iterator it) : iter(boost::make_transform_iterator(it, convert_to_ptr)) {}
+	  public:
+		GraphIter(BoostIterator it) : iter(std::move(it)) {}
 
-
-        virtual std::unique_ptr<T> operator*() override {
-			return *iter;
-		}
-        virtual GraphIterator<T>& operator++() override {
-			iter->operator++;
+		virtual std::unique_ptr<Wrapper> operator*() override { return *iter; }
+		virtual GraphIterator<Wrapper>& operator++() override {
+			iter.operator++();
 			return *this;
 		}
-        virtual GraphIterator<T>& operator--() override {
-			iter->operator--;
-			return *this;
-		}
-        virtual GraphIterator<T>& operator+(size_t s) override {
-			iter->operator+(s);
-			return *this;
-		}
-        virtual GraphIterator<T>& operator-(size_t s) override {
-			iter->operator-(s);
+		virtual GraphIterator<Wrapper>& operator--() override {
+			iter.operator--();
 			return *this;
 		}
 
-        virtual bool operator==(const GraphIterator<T>& o) override {
-			return this->iter == o.iter;
+		virtual bool operator==(const GraphIterator<Wrapper>& o) override {
+			const auto& ot = static_cast<const GraphIter<Wrapper, BoostIterator>&>(o);
+			return this->iter == ot.iter;
 		}
-        virtual bool operator!=(const GraphIterator<T>& o) override {
-			return this->iter != o.iter;
-		}
-        virtual bool operator<(const GraphIterator<T>& o) override {
-			return this->iter < o.iter;
-		}
-        virtual bool operator>(const GraphIterator<T>& o) override {
-			return this->iter > o.iter;
-		}
-        virtual bool operator<=(const GraphIterator<T>& o) override {
-			return this->iter <= o.iter;
-		}
-        virtual bool operator>=(const GraphIterator<T>& o) override {
-			return this->iter >= o.iter;
+		virtual bool operator!=(const GraphIterator<Wrapper>& o) override {
+			const auto& ot = static_cast<const GraphIter<Wrapper, BoostIterator>&>(o);
+			return this->iter != ot.iter;
 		}
 	};
 
-
-// First, define a lambda to get the second element of a pair:
-auto get_second = [](const std::pair<const int,std::string>& p){ return p.second; };
-
-// Then, we can convert a map iterator into an iterator that automatically dereferences the second element
-auto beg = boost::make_transform_iterator(m.begin(),get_second);
-auto end = boost::make_transform_iterator(m.end(),get_second);
-f(beg,end); // ok, works!
-
 	class PredicateImpl {};
 
-	// template<typename W, typename I, typename V>
-	// static inline boost::iterator_range<GraphIterator<W>> convert_it(std::pair<I, I> its) {
-	// 	GraphIter<W, I, V> first(its.first);
-	// 	GraphIter<W, I, V> second(its.second);
-	// 	return boost::make_iterator_range(first, second);
-	// }
+	template <typename Wrapper, typename WrapperT, typename Graph, typename BoostIterator, typename ValueType>
+	static inline std::pair<std::unique_ptr<GraphIterator<Wrapper>>, std::unique_ptr<GraphIterator<Wrapper>>>
+	convert_it(Graph& g, const SamePair<BoostIterator>& its) {
+		using TransformIterator =
+		    boost::transform_iterator<std::function<std::unique_ptr<WrapperT>(const ValueType&)>, BoostIterator>;
+		std::function<std::unique_ptr<WrapperT>(const ValueType&)> convert_to_ptr =
+		    [&](const ValueType& p) -> std::unique_ptr<WrapperT> { return std::make_unique<WrapperT>(g, p); };
 
-	template<typename W, typename I, typename V>
-	static inline boost::iterator_range<GraphIterator<W>> convert_it(std::pair<I, I> its) {
-		auto first = std::make_unique<GraphIter<W, I, V>>(its.first);
-		auto second = std::make_unique<GraphIter<W, I, V>>(its.second);
-		return std::make_pair(first, second);
+		TransformIterator tfirst = boost::make_transform_iterator(std::move(its.first), convert_to_ptr);
+		TransformIterator tsecond = boost::make_transform_iterator(std::move(its.second), convert_to_ptr);
+		std::unique_ptr<GraphIterator<Wrapper>> first = std::make_unique<GraphIter<Wrapper, TransformIterator>>(tfirst);
+		std::unique_ptr<GraphIterator<Wrapper>> second =
+		    std::make_unique<GraphIter<Wrapper, TransformIterator>>(tsecond);
+		return std::make_pair(std::move(first), std::move(second));
 	}
 
 	template<typename Graph> class GraphImpl;
+	template <typename Graph, typename SubGraph>
+	class SubGraphImpl;
+	template <typename Graph>
+	class EdgeImpl;
 
 	template<typename Graph>
 	class VertexImpl : public VertexWrapper {
 		public:
-		virtual ~VertexImpl() {}
+		  VertexImpl(Graph& g, typename Graph::vertex_descriptor v) : g(g), v(std::move(v)) {}
+		  virtual ~VertexImpl() {}
 
-		VertexImpl(Graph& g, typename Graph::vertex_descriptor& v) : g(g), v(v) {}
-
-		virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> in_edges() override {
-			return convert_it<EdgeWrapper, typename Graph::edge_iterator, typename Graph::edge_descriptor>(boost::in_edges(g, v));
+		  virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> in_edges() override {
+			  return convert_it<EdgeWrapper, EdgeImpl<Graph>, Graph, typename Graph::in_edge_iterator,
+			                    typename Graph::edge_descriptor>(g, boost::in_edges(v, g));
 		}
 
 		virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> out_edges() override {
-			return convert_it<EdgeWrapper, typename Graph::edge_iterator, typename Graph::edge_descriptor>(boost::out_edges(g, v));
+			return convert_it<EdgeWrapper, EdgeImpl<Graph>, Graph, typename Graph::out_edge_iterator,
+			                  typename Graph::edge_descriptor>(g, boost::out_edges(v, g));
 		}
 
-		virtual uint64_t in_degree() override{
-			return convert_size(boost::in_degree(g, v));
-		}
+		virtual uint64_t in_degree() override { return convert_size(boost::in_degree(v, g)); }
 
-		virtual uint64_t out_degree() override {
-			return convert_size(boost::out_degree(g, v));
-		}
+		virtual uint64_t out_degree() override { return convert_size(boost::out_degree(v, g)); }
 
-		virtual uint64_t degree()override  {
-			return convert_size(boost::degree(g, v));
-		}
+		virtual uint64_t degree() override { return convert_size(boost::degree(v, g)); }
 
 		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> adjacent_vertices() override {
-			return convert_it<VertexWrapper, typename Graph::vertex_iterator, typename Graph::vertex_descriptor>(boost::adjacent_vertices(g, v));
+			return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, typename Graph::adjacency_iterator,
+			                  typename Graph::vertex_descriptor>(g, boost::adjacent_vertices(v, g));
 		}
 
+		// virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> inv_adjacent_vertices() override {
+		// 	return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, boost::adjacency_list::inv_adjacency_iterator,
+		// typename Graph::vertex_descriptor>(g, boost::inv_adjacent_vertices(v, g));
+		// }
 
-		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> inv_adjacent_vertices() override {
-			return convert_it<VertexWrapper, typename Graph::vertex_iterator, typename Graph::vertex_descriptor>(boost::adjacent_vertices(g, v));
-		}
+		// virtual void clear_in_edges() override {
+		// 	boost::clear_in_edges(v, g);
+		// }
 
-		virtual void clear_in_edges() override {
-			boost::clear_in_edges(g, v);
-		}
+		// virtual void clear_out_edges() override {
+		// 	boost::clear_out_edges(v, g);
+		// }
 
-		virtual void clear_out_edges() override {
-			boost::clear_out_edges(g, v);
-		}
+		virtual void clear_edges() override { boost::clear_vertex(v, g); }
 
-		virtual void clear_edges() override {
-			boost::clear_edges(g, v);
-		}
-
-		private:
 		friend class GraphImpl<Graph>;
+		template <class G, class T>
+		friend class SubGraphImpl;
 
+	  private:
 		uint64_t convert_size(typename boost::graph_traits<Graph>::degree_size_type size) {
 			return static_cast<uint64_t>(size);
 		}
 
 		Graph& g;
-		typename Graph::vertex_descriptor& v;
+		typename Graph::vertex_descriptor v;
 	};
 
-	template<typename Graph>
-	class EdgeImpl {
-		public:
+	template <typename Graph>
+	class EdgeImpl : public EdgeWrapper {
+	  public:
+		EdgeImpl(Graph& g, typename Graph::edge_descriptor e) : g(g), e(std::move(e)) {}
 		virtual ~EdgeImpl() {}
 
 		virtual std::unique_ptr<VertexWrapper> source() override {
-			return std::make_unique<VertexImpl<Graph>>(boost::source(g, e));
+			return std::make_unique<VertexImpl<Graph>>(g, boost::source(e, g));
 		}
 
-		virtual VertexWrapper& target() override {
-			return std::make_unique<VertexImpl<Graph>>(boost::target(g, e));
+		virtual std::unique_ptr<VertexWrapper> target() override {
+			return std::make_unique<VertexImpl<Graph>>(g, boost::target(e, g));
 		}
 
-		private:
 		friend class GraphImpl<Graph>;
+		template <class G, class T>
+		friend class SubGraphImpl;
 
+	  private:
 		Graph& g;
-		typename Graph::edge_descriptor& e;
+		typename Graph::edge_descriptor e;
 	};
 
 	template<typename Graph>
 	class GraphImpl : public GraphWrapper{
 		public:
-		virtual ~GraphImpl() {}
+		  GraphImpl(Graph& g) : graph(g) {}
+		  virtual ~GraphImpl() {}
 
-		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> vertices() override {
-			return convert_it<VertexWrapper, typename Graph::vertex_iterator, typename Graph::vertex_descriptor>(boost::vertices(graph));
-		}
+		  virtual std::pair<std::unique_ptr<GraphIterator<VertexWrapper>>,
+		                    std::unique_ptr<GraphIterator<VertexWrapper>>>
+		  vertices() override {
+			  return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, typename Graph::vertex_iterator,
+			                    typename Graph::vertex_descriptor>(graph, boost::vertices(graph));
+		  }
 
 		virtual uint64_t num_vertices() override {
 			auto size = boost::num_vertices(graph);
@@ -186,7 +159,8 @@ f(beg,end); // ok, works!
 		}
 
 		virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> edges() override {
-			return convert_it<EdgeWrapper, typename Graph::edge_iterator, typename Graph::edge_descriptor>(boost::edges(graph));
+			return convert_it<EdgeWrapper, EdgeImpl<Graph>, Graph, typename Graph::edge_iterator,
+			                  typename Graph::edge_descriptor>(graph, boost::edges(graph));
 		}
 
 		virtual uint64_t num_edges() override {
@@ -199,72 +173,96 @@ f(beg,end); // ok, works!
 			return std::make_unique<VertexImpl<Graph>>(graph, v);
 		}
 
+		/* TODO under construction (in Boost!), see boost/graph/subgraph.h */
+		/*
 		virtual void remove_vertex(VertexWrapper& vertex) override {
-			auto v = static_cast<VertexImpl<Graph>>(vertex);
-			boost::remove_vertex(v.v, graph);
+		    auto& v = static_cast<VertexImpl<Graph>&>(vertex);
+		    boost::remove_vertex(v.v, graph);
 		}
+		*/
 
 		virtual std::unique_ptr<EdgeWrapper> add_edge(VertexWrapper& source, VertexWrapper& target) override {
-			auto s = static_cast<VertexImpl<Graph>>(source);
-			auto t = static_cast<VertexImpl<Graph>>(target);
-			auto e = boost::add_edge(graph, s, t);
-			return std::make_unique<EdgeImpl<Graph>>(graph, e);
+			auto& s = static_cast<VertexImpl<Graph>&>(source);
+			auto& t = static_cast<VertexImpl<Graph>&>(target);
+			auto e = boost::add_edge(s.v, t.v, graph);
+			/* TODO use the bool type of add_edge */
+			return std::make_unique<EdgeImpl<Graph>>(graph, e.first);
 		}
 
 		virtual void remove_edge(EdgeWrapper& edge) override {
-			auto e = static_cast<EdgeImpl<Graph>>(edge);
+			auto& e = static_cast<EdgeImpl<Graph>&>(edge);
 			boost::remove_edge(e.e, graph);
 		}
 			protected:
 		Graph& graph;
 	};
 
-	template<typename Graph>
-	class SubGraphImpl : public GraphImpl<Graph>{
-		public:
+	template <typename Graph, typename SubGraph>
+	class SubGraphImpl : public GraphImpl<Graph> {
+
+	  public:
+		using GraphImpl<Graph>::GraphImpl;
 
 		//subgraph functions
 		virtual std::unique_ptr<GraphWrapper> create_subgraph() override {
-			auto& g = graph.create_subgraph();
-			return std::make_unique<SubGraphImpl<Graph>>(g);
+			auto& g = this->graph.create_subgraph();
+			return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(g);
 		}
 
-		virtual bool is_root() override {
-			return graph.is_root();
-		}
+		virtual bool is_root() override { return this->graph.is_root(); }
 
 		virtual std::unique_ptr<GraphWrapper> root() override {
-			auto& g = graph.root();
-			return std::make_unique<SubGraphImpl<Graph>>(g);
+			auto& g = this->graph.root();
+			return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(g);
 		}
 
 		virtual std::unique_ptr<GraphWrapper> parent() override {
-			auto& g = graph.parent();
-			return std::make_unique<SubGraphImpl<Graph>>(g);
+			auto& g = this->graph.parent();
+			return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(g);
 		}
 
 		virtual SamePair<std::unique_ptr<GraphIterator<GraphWrapper>>> children() override {
-			return convert_it<GraphWrapper, typename Graph::children_iterator, typename Graph>(graph.children(graph));
+			// slightly different logic of convert_to_ptr here, so avoiding convert_it
+			auto its = this->graph.children();
+
+			using TransformIterator =
+			    boost::transform_iterator<std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph>>(SubGraph&)>,
+			                              typename Graph::children_iterator>;
+			std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph>>(SubGraph&)> convert_to_ptr =
+			    [&](SubGraph& p) -> std::unique_ptr<SubGraphImpl<SubGraph, SubGraph>> {
+				return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(p);
+			};
+
+			TransformIterator tfirst = boost::make_transform_iterator(std::move(its.first), convert_to_ptr);
+			TransformIterator tsecond = boost::make_transform_iterator(std::move(its.second), convert_to_ptr);
+			std::unique_ptr<GraphIterator<GraphWrapper>> first =
+			    std::make_unique<GraphIter<GraphWrapper, TransformIterator>>(tfirst);
+			std::unique_ptr<GraphIterator<GraphWrapper>> second =
+			    std::make_unique<GraphIter<GraphWrapper, TransformIterator>>(tsecond);
+			return std::make_pair(std::move(first), std::move(second));
 		}
 
 		virtual std::unique_ptr<VertexWrapper> local_to_global(VertexWrapper& vertex) override {
-			return std::make_unique<VertexImpl<Graph>>(local_to_global(vertex.v));
+			auto& v = static_cast<VertexImpl<Graph>&>(vertex);
+			return std::make_unique<VertexImpl<Graph>>(this->graph, this->graph.local_to_global(v.v));
 		}
 		virtual std::unique_ptr<EdgeWrapper> local_to_global(EdgeWrapper& edge) override {
-			return std::make_unique<EdgeImpl<Graph>>(local_to_global(edge.e));
+			auto& e = static_cast<EdgeImpl<Graph>&>(edge);
+			return std::make_unique<EdgeImpl<Graph>>(this->graph, this->graph.local_to_global(e.e));
 		}
 
 		virtual std::unique_ptr<VertexWrapper> global_to_local(VertexWrapper& vertex) override {
-			return std::make_unique<VertexImpl<Graph>>(global_to_local(vertex.v));
+			auto& v = static_cast<VertexImpl<Graph>&>(vertex);
+			return std::make_unique<VertexImpl<Graph>>(this->graph, this->graph.global_to_local(v.v));
 		}
 		virtual std::unique_ptr<EdgeWrapper> global_to_local(EdgeWrapper& edge) override {
-			return std::make_unique<EdgeImpl<Graph>>(global_to_local(edge.e));
+			auto& e = static_cast<EdgeImpl<Graph>&>(edge);
+			return std::make_unique<EdgeImpl<Graph>>(this->graph, this->graph.global_to_local(e.e));
 		}
 
-		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate vertex, Predicate edge) override {
+		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) override {
 			/* TODO */
 			return nullptr;
 		}
-
 	};
 }

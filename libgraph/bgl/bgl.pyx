@@ -140,9 +140,10 @@ cdef class Graph:
     def add_vertex(self):
         return vertex_fac(deref(self.graph).add_vertex())
 
-    def remove_vertex(self, vertex):
-        cdef Vertex v = vertex
-        deref(self.graph).remove_vertex(deref(v.vertex))
+    # TODO not supported by boost subgraph
+    # def remove_vertex(self, vertex):
+    #     cdef Vertex v = vertex
+    #     deref(self.graph).remove_vertex(deref(v.vertex))
 
     def add_edge(self, source, target):
         cdef Vertex s = source

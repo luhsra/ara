@@ -94,7 +94,7 @@ namespace ara::cfg {
 	ABBGraph::vertex_descriptor ABBGraph::back_map(const llvm::BasicBlock* bb) {
 		auto it = abb_map.find(bb);
 		if (it == abb_map.end()) {
-			throw vertex_not_found;
+			throw VertexNotFound();
 		}
 		return (*it).second;
 	}
@@ -116,7 +116,7 @@ namespace ara::cfg {
 				return function;
 			}
 		}
-		throw ara::function_not_found;
+		throw ara::FunctionNotFound();
 	}
 
 	ostream& operator<<(ostream& str, const ABBGraph& graph) {

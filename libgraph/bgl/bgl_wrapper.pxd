@@ -59,7 +59,7 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         uint64_t num_edges()
 
         unique_ptr[VertexWrapper] add_vertex()
-        void remove_vertex(VertexWrapper& vertex)
+        # void remove_vertex(VertexWrapper& vertex)
 
         unique_ptr[EdgeWrapper] add_edge(VertexWrapper& source, VertexWrapper& target)
         void remove_edge(EdgeWrapper& edge)
