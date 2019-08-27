@@ -107,6 +107,7 @@ namespace ara::cfg {
 				return function;
 			}
 		}
+		throw ara::FunctionNotFound();
 	}
 
 	const FunctionDescriptor& ABBGraph::get_function_by_name(const std::string name) const {
