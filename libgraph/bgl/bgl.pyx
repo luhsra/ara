@@ -2,7 +2,9 @@
 # cython: language_level=3
 # vim: set et ts=4 sw=4:
 
-cimport bgl_wrapper as bgl
+"""Generic python wrapper classes for the boost graph library."""
+
+cimport bgl_wrapper as bgl_w
 from move cimport move
 
 from cython.operator cimport dereference as deref
@@ -23,8 +25,8 @@ cdef class SubTypeMaker:
 
 
 cdef class EdgeIterator(SubTypeMaker):
-    cdef shared_ptr[bgl.GraphIterator[bgl.EdgeWrapper]] _iter
-    cdef shared_ptr[bgl.GraphIterator[bgl.EdgeWrapper]] _end
+    cdef shared_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]] _iter
+    cdef shared_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]] _end
 
     def __init__(self, edge_type=None):
         self.n_type = edge_type
@@ -35,12 +37,12 @@ cdef class EdgeIterator(SubTypeMaker):
     def next(self):
         if self._iter == self._end:
             raise StopIteration
-        cdef shared_ptr[bgl.EdgeWrapper] e = to_shared_ptr(deref(deref(self._iter)))
+        cdef shared_ptr[bgl_w.EdgeWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
         return self.gen_type(edge_fac(e), self.vertex_type)
 
 
-cdef make_edge_it(pair[unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]], unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]]] its, edge_type):
+cdef make_edge_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]]] its, edge_type):
     it = EdgeIterator(edge_type)
     it._iter = to_shared_ptr(move(its.first))
     it._end = to_shared_ptr(move(its.second))
@@ -48,8 +50,8 @@ cdef make_edge_it(pair[unique_ptr[bgl.GraphIterator[bgl.EdgeWrapper]], unique_pt
 
 
 cdef class VertexIterator(SubTypeMaker):
-    cdef shared_ptr[bgl.GraphIterator[bgl.VertexWrapper]] _iter
-    cdef shared_ptr[bgl.GraphIterator[bgl.VertexWrapper]] _end
+    cdef shared_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]] _iter
+    cdef shared_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]] _end
 
     def __init__(self, vertex_type=None):
         self.n_type = vertex_type
@@ -60,12 +62,12 @@ cdef class VertexIterator(SubTypeMaker):
     def next(self):
         if self._iter == self._end:
             raise StopIteration
-        cdef shared_ptr[bgl.VertexWrapper] v = to_shared_ptr(deref(deref(self._iter)))
+        cdef shared_ptr[bgl_w.VertexWrapper] v = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
         return self.gen_type(vertex_fac(v))
 
 
-cdef make_vertex_it(pair[unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]], unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]]] its, vertex_type):
+cdef make_vertex_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]]] its, vertex_type):
     it = VertexIterator(vertex_type)
     it._iter = to_shared_ptr(move(its.first))
     it._end = to_shared_ptr(move(its.second))
@@ -73,8 +75,8 @@ cdef make_vertex_it(pair[unique_ptr[bgl.GraphIterator[bgl.VertexWrapper]], uniqu
 
 
 cdef class GraphIterator(SubTypeMaker):
-    cdef shared_ptr[bgl.GraphIterator[bgl.GraphWrapper]] _iter
-    cdef shared_ptr[bgl.GraphIterator[bgl.GraphWrapper]] _end
+    cdef shared_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]] _iter
+    cdef shared_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]] _end
 
     def __init__(self, graph_type=None):
         self.n_type = graph_type
@@ -85,12 +87,12 @@ cdef class GraphIterator(SubTypeMaker):
     def next(self):
         if self._iter == self._end:
             raise StopIteration
-        cdef shared_ptr[bgl.GraphWrapper] e = to_shared_ptr(deref(deref(self._iter)))
+        cdef shared_ptr[bgl_w.GraphWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
         return self.gen_graph(graph_fac(e))
 
 
-cdef make_graph_it(pair[unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]], unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]]] its, graph_type):
+cdef make_graph_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]]] its, graph_type):
     it = GraphIterator(graph_type)
     it._iter = to_shared_ptr(move(its.first))
     it._end = to_shared_ptr(move(its.second))
@@ -231,7 +233,7 @@ cdef class Graph(SubTypeMaker):
     def filter_by(self, vertex=None, edge=None):
         pass
 
-cdef graph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
+cdef graph_fac(shared_ptr[bgl_w.GraphWrapper] g):
     graph = Graph()
     graph._c_graph = g
     return graph
