@@ -15,12 +15,13 @@ cdef extern from "graph.h" namespace "ara::cfg":
     #     string name
     #     bool implemented
 
-    # cdef cppclass ABB:
-    #     string name
-    #     cfg.abbtype.ABBType type
+    cdef cppclass ABB:
+        string name
+        cfg.abbtype.ABBType type
 
-    #     string get_call()
-    #     bool is_indirect()
+        string get_call()
+        bool is_indirect()
+
 
     cdef cppclass ABBGraph:
         pass

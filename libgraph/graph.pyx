@@ -25,7 +25,7 @@ from libc.stdint cimport int64_t
 
 from backported_memory cimport static_pointer_cast as spc
 from backported_memory cimport dynamic_pointer_cast as dpc
-from common.cy_helper cimport to_string #, cast_unique_ptr #, make_ptr_range, get_subgraph_prop
+from common.cy_helper cimport to_string, assign_enum #, cast_unique_ptr #, make_ptr_range, get_subgraph_prop
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
@@ -50,104 +50,41 @@ class ABBType(IntEnum):
     call = <int> cfg.abbtype.call
     not_implemented = <int> cfg.abbtype.not_implemented
 
+ctypedef cfg.ABB* ABBPtr
+
 cdef class ABB(bgl.Vertex):
+    cdef cfg.ABB* get_abb(self):
+        return dynamic_cast[ABBPtr](&deref(self._c_vertex).get_property_obj())
+
     def __cinit__(self, bgl.Vertex vertex):
         self._c_vertex = vertex._c_vertex
 
+    def __str__(self):
+        return to_string(deref(self.get_abb()))
 
-cdef class ABBEdge(bgl.Edge):
-    def __cinit__(self, bgl.Edge edge):
-        self._c_edge = edge._c_edge
+    def get_call(self):
+        return to_string(deref(self.get_abb())).decode('utf-8')
+
+    def is_indirect(self):
+        return deref(self.get_abb()).is_indirect()
+
+    @property
+    def type(self):
+        return ABBType(<int> deref(self.get_abb()).type)
+
+    @type.setter
+    def type(self, value):
+        assign_enum[cfg.abbtype.ABBType](deref(self.get_abb()).type, int(value))
+
+    @property
+    def name(self):
+        return deref(self.get_abb()).name.decode('utf-8')
 
 
 cdef class Function(bgl.Graph):
     def __cinit__(self, bgl.Graph graph):
         self._c_graph = graph._c_graph
 
-
-ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr
-
-cdef class ABBGraph(bgl.Graph):
-     def __str__(self):
-         cdef bgl_wrapper.GraphWrapper* b = self._c_graph.get()
-         return deref(dynamic_cast[ABBGraphPtr](b)).to_string().decode('utf-8')
-
-     def edges(self):
-         for edge in super().edges():
-             yield ABBEdge(edge);
-
-     def vertices(self):
-         for vertex in super().vertices():
-             yield ABB(vertex);
-
-     def functions(self):
-         for child in super().children():
-             yield Function(child)
-
-
-cdef abbgraph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
-    graph = ABBGraph()
-    graph._c_graph = g
-
-# cdef class ABB:
-#     cdef long unsigned int _c_graph_id
-#     cdef cfg.ABBGraph* _c_abbgraph
-#
-#     def __hash__(self):
-#         return self._c_graph_id
-#
-#     def __init__(self, __raw=False):
-#         if not __raw:
-#             raise ValueError("Must not be directly constructed.")
-#
-#     def __eq__(self, other):
-#         return self.graph_id == other.graph_id
-#
-#     def __str__(self):
-#         # return to_string(deref(self._c_abbgraph)[self._c_graph_id]).decode('utf-8')
-#         # do not use C++ print because the Python type has the additional
-#         # graph_id
-#         return f"ABB({self.graph_id}, {self.name})"
-#
-#     def get_call(self):
-#         return deref(self._c_abbgraph)[self._c_graph_id].get_call().decode('utf-8')
-#
-#     def is_indirect(self):
-#         return deref(self._c_abbgraph)[self._c_graph_id].is_indirect()
-#
-#     @property
-#     def graph_id(self):
-#         return self._c_graph_id
-#
-#     @property
-#     def type(self):
-#         return ABBType(<int> deref(self._c_abbgraph)[self._c_graph_id].type)
-#
-#     @type.setter
-#     def type(self, value):
-#         cy_helper.assign_enum[cfg.abbtype.ABBType](deref(self._c_abbgraph)[self._c_graph_id].type,
-#                                                    int(value))
-#
-#     @property
-#     def name(self):
-#         return deref(self._c_abbgraph)[self._c_graph_id].name.decode('utf-8')
-#
-#
-# cdef abb_factory(long unsigned int graph_id, cfg.ABBGraph* abbgraph):
-#     abb = ABB(__raw=True)
-#     abb._c_graph_id = graph_id
-#     abb._c_abbgraph = abbgraph
-#     return abb
-#
-#
-# cdef class Function:
-#     cdef FuncDesc* _c_func
-#     cdef cfg.ABBGraph* _c_abbgraph
-#
-#     def __init__(self, __raw=False):
-#         if not __raw:
-#             raise ValueError("Must not be directly constructed.")
-#
 #     @property
 #     def name(self):
 #         return deref(get_subgraph_prop(self._c_func)).name.decode('utf-8')
@@ -165,53 +102,26 @@ cdef abbgraph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
 #         for vertex in ra:
 #             py_abb = abb_factory(vertex, self._c_abbgraph)
 #             yield py_abb
-#
-#
-# cdef function_factory(FuncDesc* func, cfg.ABBGraph* abbgraph):
-#     py_func = Function(__raw=True)
-#     py_func._c_func = func
-#     py_func._c_abbgraph = abbgraph
-#     return py_func
-#
-#
-# ctypedef long unsigned int vert_desc;
-#
-#
-# cdef class ABBEdge:
-#     cdef EdgeDesc _c_edge_id
-#     cdef cfg.ABBGraph* _c_abbgraph
-#
-#     def __init__(self, __raw=False):
-#         if not __raw:
-#             raise ValueError("Must not be directly constructed.")
-#
-#     # def __eq__(self, other):
-#     #     return self._c_edge_id == other._c_edge_id
-#
-#     def source(self):
-#         cdef long unsigned int other
-#         other = cy_helper.source[EdgeDesc,
-#                                  vert_desc,
-#                                  cfg.ABBGraph](self._c_edge_id,
-#                                                deref(self._c_abbgraph))
-#         return abb_factory(other, self._c_abbgraph)
-#
-#     def target(self):
-#         cdef long unsigned int other
-#         other = cy_helper.target[EdgeDesc,
-#                                  vert_desc,
-#                                  cfg.ABBGraph](self._c_edge_id,
-#                                                deref(self._c_abbgraph))
-#         return abb_factory(other, self._c_abbgraph)
-#
-#
-# cdef abbedge_factory(EdgeDesc edge_id, cfg.ABBGraph* abbgraph):
-#     edge = ABBEdge(__raw=True)
-#     edge._c_edge_id = edge_id
-#     edge._c_abbgraph = abbgraph
-#     return edge
-#
-#
+
+
+ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr
+
+cdef class ABBGraph(bgl.Graph):
+    def __init__(self):
+        self.wrap_vertex(ABB)
+        self.wrap_subgraph(Function)
+
+    def __str__(self):
+        return deref(dynamic_cast[ABBGraphPtr](self._c_graph.get())).to_string().decode('utf-8')
+
+    def functions(self):
+        return self.children()
+
+
+cdef abbgraph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
+    graph = ABBGraph()
+    graph._c_graph = g
+
 
 cdef class Graph:
     # TODO make this a unique pointer once the graph transition is done
