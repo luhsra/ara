@@ -52,23 +52,24 @@ class Printer(Step):
             dot_func = pydot.Cluster(function.name, label=function.name)
             dot_graph.add_subgraph(dot_func)
             for abb in function.vertices():
+                abb = function.local_to_global(abb)
                 if abb.type == graph.ABBType.not_implemented:
                     assert not function.implemented
-                    dot_abb = pydot.Node(str(abb.graph_id),
+                    dot_abb = pydot.Node(str(hash(abb)),
                                          label="",
                                          shape="box")
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
-                    dot_abb = pydot.Node(str(abb.graph_id),
+                    dot_abb = pydot.Node(str(hash(abb)),
                                          label=abb.name,
                                          shape=self.SHAPES[abb.type][0],
                                          style=self.SHAPES[abb.type][1],
                                          color=self.SHAPES[abb.type][2])
                 dot_func.add_node(dot_abb)
         for edge in abbs.edges():
-            dot_graph.add_edge(pydot.Edge(str(edge.source().graph_id),
-                                          str(edge.target().graph_id)))
+            dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
+                                          str(hash(edge.target()))))
         dot_graph.write(dot)
         self._log.info(f"Write dot file to {dot}.")
 
