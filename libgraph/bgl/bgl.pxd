@@ -6,11 +6,14 @@ from libcpp.memory cimport shared_ptr
 
 cimport bgl_wrapper
 
-cdef class Vertex:
+cdef class SubTypeMaker:
+    cdef type n_type
+
+cdef class Vertex(SubTypeMaker):
     cdef shared_ptr[bgl_wrapper.VertexWrapper] _c_vertex
 
-cdef class Edge:
+cdef class Edge(SubTypeMaker):
     cdef shared_ptr[bgl_wrapper.EdgeWrapper] _c_edge
 
-cdef class Graph:
+cdef class Graph(SubTypeMaker):
     cdef shared_ptr[bgl_wrapper.GraphWrapper] _c_graph
