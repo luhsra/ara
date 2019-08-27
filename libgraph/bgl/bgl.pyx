@@ -34,8 +34,8 @@ cdef class EdgeIterator(SubTypeMaker):
     def __iter__(self):
         return self
 
-    def next(self):
-        if self._iter == self._end:
+    def __next__(self):
+        if deref(self._iter) == deref(self._end):
             raise StopIteration
         cdef shared_ptr[bgl_w.EdgeWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
@@ -59,8 +59,8 @@ cdef class VertexIterator(SubTypeMaker):
     def __iter__(self):
         return self
 
-    def next(self):
-        if self._iter == self._end:
+    def __next__(self):
+        if deref(self._iter) == deref(self._end):
             raise StopIteration
         cdef shared_ptr[bgl_w.VertexWrapper] v = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
@@ -84,8 +84,8 @@ cdef class GraphIterator(SubTypeMaker):
     def __iter__(self):
         return self
 
-    def next(self):
-        if self._iter == self._end:
+    def __next__(self):
+        if deref(self._iter) == deref(self._end):
             raise StopIteration
         cdef shared_ptr[bgl_w.GraphWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
