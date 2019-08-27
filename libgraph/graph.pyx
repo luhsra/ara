@@ -104,9 +104,9 @@ cdef class Function(bgl.Graph):
 ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr
 
 cdef class ABBGraph(bgl.Graph):
-    def __init__(self):
-        self.wrap_vertex(ABB)
-        self.wrap_subgraph(Function)
+    def __cinit__(self):
+        self.graph.n_type = Function
+        self.vert.n_type = ABB
 
     def __str__(self):
         return deref(dynamic_cast[ABBGraphPtr](self._c_graph.get())).to_string().decode('utf-8')
