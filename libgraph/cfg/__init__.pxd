@@ -8,8 +8,8 @@ from libcpp cimport bool
 cimport cfg.abbtype
 
 cdef extern from "graph.h" namespace "ara::cfg":
-    # cdef cppclass FunctionDescriptor:
-    #     pass
+    cdef cppclass FunctionDescriptor:
+        pass
 
     cdef cppclass Function:
         string name

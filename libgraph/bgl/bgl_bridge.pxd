@@ -8,3 +8,6 @@ from libcpp.utility cimport pair
 cdef extern from "bgl_bridge.h" namespace "ara::bgl_wrapper":
     cdef cppclass BoostPropImpl[T]:
         T& get()
+
+    cdef cppclass SubGraphImpl[G, S, R]:
+        const G& get_graph()

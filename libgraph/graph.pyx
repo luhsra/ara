@@ -5,7 +5,6 @@
 cimport cgraph
 cimport newgraph
 cimport cfg
-cimport cfg_wrapper
 cimport cfg.abbtype
 cimport graph
 cimport common.cy_helper
@@ -101,7 +100,7 @@ cdef class Function(bgl.Graph):
         return deref(self.get_func()).implemented
 
 
-ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr
+ctypedef bgl_bridge.SubGraphImpl[cfg.ABBGraph, cfg.FunctionDescriptor, cfg.ABBGraph] ABBGraphWrapper
 
 cdef class ABBGraph(bgl.Graph):
     def __cinit__(self):
@@ -109,7 +108,8 @@ cdef class ABBGraph(bgl.Graph):
         self.vert.n_type = ABB
 
     def __str__(self):
-        return deref(dynamic_cast[ABBGraphPtr](self._c_graph.get())).to_string().decode('utf-8')
+        cdef shared_ptr[ABBGraphWrapper] ptr = spc[ABBGraphWrapper, bgl_wrapper.GraphWrapper](self._c_graph)
+        return to_string(deref(ptr).get_graph()).decode('utf-8')
 
     def functions(self):
         return self.children()
@@ -129,7 +129,10 @@ cdef class Graph:
     #     self._c_graph = make_unique[cgraph.Graph]()
 
     def abbs(self):
-        cdef shared_ptr[bgl_wrapper.GraphWrapper] ptr = spc[bgl_wrapper.GraphWrapper, cfg_wrapper.ABBGraph](make_shared[cfg_wrapper.ABBGraph](self._c_graph.abbs(), self._c_graph.abbs()))
+        cdef shared_ptr[bgl_wrapper.GraphWrapper] ptr
+        ptr = spc[bgl_wrapper.GraphWrapper,
+                  ABBGraphWrapper](
+                      make_shared[ABBGraphWrapper](self._c_graph.abbs(), self._c_graph.abbs()))
         return abbgraph_fac(ptr)
 
 

@@ -27,7 +27,7 @@ cdef extern from "common/cy_helper.h" namespace "ara::cy_helper":
 
     # PtrRange[T, P] make_ptr_range[T, P](pair[T, T] iterators)
 
-    string to_string[T](T& obj)
+    string to_string[T](const T& obj)
 
     # cdef cppclass SubgraphIterator[T]:
     #     long unsigned int& operator*()
