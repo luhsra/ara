@@ -135,6 +135,9 @@ cdef class Graph:
         return abbgraph_fac(ptr)
 
 
+# -------------------------------------------
+# HERE BEGINS THE OLD GRAPH API
+# -------------------------------------------
 cpdef get_type_hash(name):
     hash_type = 0
     if name == "Function":
