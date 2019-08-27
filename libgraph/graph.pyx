@@ -32,7 +32,7 @@ cimport bgl
 cimport bgl_wrapper
 cimport bgl_bridge
 
-from move cimport move
+from common.move cimport move
 
 # from cfg cimport FunctionDescriptor as FuncDesc
 # from cfg cimport ABBGraph as CABBGraph

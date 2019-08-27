@@ -5,7 +5,7 @@
 """Generic python wrapper classes for the boost graph library."""
 
 cimport bgl_wrapper as bgl_w
-from move cimport move
+from common.move cimport move
 
 from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as pp
