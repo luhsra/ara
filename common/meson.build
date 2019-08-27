@@ -6,6 +6,7 @@ libcommon = static_library('libcommon',
 common_inc = include_directories('.')
 common_cython_inc = meson.current_source_dir()
 common_cython_files = files('common/__init__.pxd',
+                            'common/backported_memory.pxd',
                             'common/cy_helper.pxd',
                             'common/move.pxd')
 

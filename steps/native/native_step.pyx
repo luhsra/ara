@@ -35,7 +35,7 @@ from test cimport (BBSplitTest,
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
 from libc.stdint cimport int64_t
-from backported_memory cimport static_pointer_cast as spc
+from common.backported_memory cimport static_pointer_cast as spc
 from cstep cimport step_fac
 cimport option as coption
 
