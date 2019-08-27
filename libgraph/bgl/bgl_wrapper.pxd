@@ -4,6 +4,7 @@ from libc.stdint cimport uint64_t
 from libcpp cimport bool
 from libcpp.memory cimport unique_ptr
 from libcpp.utility cimport pair
+from common.common cimport BoostProperty
 
 cdef extern from "bgl_wrapper.h" namespace "boost":
     cdef cppclass iterator_range[I]:
@@ -46,6 +47,9 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         void clear_in_edges()
         void clear_out_edges()
         void clear_edges()
+
+        uint64_t get_id()
+        BoostProperty& get_property_obj()
 
     cdef cppclass EdgeWrapper:
         unique_ptr[VertexWrapper] source()

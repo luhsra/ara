@@ -104,6 +104,15 @@ namespace ara::bgl_wrapper {
 
 		virtual void clear_edges() override { boost::clear_vertex(v, g); }
 
+		virtual ara::graph::BoostProperty& get_property_obj() override {
+			return g[v];
+		}
+
+		virtual uint64_t get_id() override {
+			/* TODO only unique with regard to the Graph g, hash somehow the graph also in */
+			return static_cast<uint64_t>(v);
+		}
+
 		friend class GraphImpl<Graph>;
 		template <class G, class T>
 		friend class SubGraphImpl;

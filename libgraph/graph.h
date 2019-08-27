@@ -8,13 +8,13 @@
 #include <llvm/IR/Module.h>
 #include <memory>
 #include <type_traits>
+#include "common/common.h"
 
 namespace ara::graph {
 	class Graph;
 }
 
 namespace ara::cfg {
-
 	enum ABBType { not_implemented = 0, syscall = 0b1, call = 0b10, computation = 0b100 };
 	std::ostream& operator<<(std::ostream&, const ABBType&);
 
@@ -23,7 +23,7 @@ namespace ara::cfg {
 	 *
 	 * Linkage with other ABBs is done via BGL, see ara::graph::ABBGraph.
 	 */
-	struct ABB {
+	struct ABB : public ara::graph::BoostProperty {
 		std::string name;
 
 		ABBType type;

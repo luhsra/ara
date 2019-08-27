@@ -18,6 +18,7 @@ from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 from libcpp.utility cimport pair
 from libcpp.cast cimport dynamic_cast
+from common.common cimport BoostProperty
 
 from libcpp cimport bool
 from libc.stdint cimport int64_t

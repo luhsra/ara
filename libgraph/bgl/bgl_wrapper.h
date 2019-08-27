@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/exceptions.h"
+#include "common/common.h"
 #include "boost/range/iterator.hpp"
 #include <memory>
 
@@ -48,6 +49,9 @@ namespace ara::bgl_wrapper {
 		virtual void clear_in_edges() { throw ara::NotImplemented(); }
 		virtual void clear_out_edges() { throw ara::NotImplemented(); }
 		virtual void clear_edges() = 0;
+
+		virtual uint64_t get_id() = 0;
+		virtual ara::graph::BoostProperty& get_property_obj() = 0;
 	};
 
 	struct EdgeWrapper {
