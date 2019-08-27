@@ -23,7 +23,7 @@ from libc.stdint cimport int64_t
 
 from common.backported_memory cimport static_pointer_cast as spc
 from common.backported_memory cimport dynamic_pointer_cast as dpc
-from common.cy_helper cimport to_string, assign_enum #, cast_unique_ptr #, make_ptr_range, get_subgraph_prop
+from common.cy_helper cimport to_string, assign_enum
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
 from enum import IntEnum
@@ -34,14 +34,7 @@ cimport bgl_bridge
 
 from common.move cimport move
 
-# from cfg cimport FunctionDescriptor as FuncDesc
-# from cfg cimport ABBGraph as CABBGraph
-
 from libcpp.typeinfo cimport type_info
-
-# ctypedef CABBGraph.edge_descriptor EdgeDesc
-# ctypedef CABBGraph.edge_iterator EdgeIter
-# ctypedef CABBGraph.children_iterator ChildIter
 
 class ABBType(IntEnum):
     computation = <int> cfg.abbtype.computation
