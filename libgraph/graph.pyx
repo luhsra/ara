@@ -128,7 +128,7 @@ cdef class Graph:
     #     self._c_graph = make_unique[cgraph.Graph]()
 
     def abbs(self):
-        cdef shared_ptr[bgl_wrapper.GraphWrapper] ptr = spc[bgl_wrapper.GraphWrapper, cfg_wrapper.ABBGraph](make_shared[cfg_wrapper.ABBGraph](self._c_graph.abbs()))
+        cdef shared_ptr[bgl_wrapper.GraphWrapper] ptr = spc[bgl_wrapper.GraphWrapper, cfg_wrapper.ABBGraph](make_shared[cfg_wrapper.ABBGraph](self._c_graph.abbs(), self._c_graph.abbs()))
         return abbgraph_fac(ptr)
 
 

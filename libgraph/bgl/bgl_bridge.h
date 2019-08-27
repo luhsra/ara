@@ -68,7 +68,7 @@ namespace ara::bgl_wrapper {
 	}
 
 	template<typename Graph> class GraphImpl;
-	template <typename Graph, typename SubGraph>
+	template <typename Graph, typename SubGraph, typename RootGraph>
 	class SubGraphImpl;
 	template <typename Graph>
 	class EdgeImpl;
@@ -125,7 +125,7 @@ namespace ara::bgl_wrapper {
 		}
 
 		friend class GraphImpl<Graph>;
-		template <class G, class T>
+		template <class G, class T, class R>
 		friend class SubGraphImpl;
 
 	  private:
@@ -152,7 +152,7 @@ namespace ara::bgl_wrapper {
 		}
 
 		friend class GraphImpl<Graph>;
-		template <class G, class T>
+		template <class G, class T, class R>
 		friend class SubGraphImpl;
 
 	  private:
@@ -234,40 +234,65 @@ namespace ara::bgl_wrapper {
 		Graph& graph;
 	};
 
-	template <typename Graph, typename SubGraph>
+	template<typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
+			 typename = std::enable_if_t<std::is_same<Graph, PGraph>::value> >
+	std::unique_ptr<GraphWrapper> parent_wrap(Graph& p, RootGraph& r) {
+		return std::make_unique<SubGraphImpl<Graph, SubGraph, RootGraph>>(p, r);
+	}
+
+	template<typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
+			 typename = std::enable_if_t<std::negation<std::is_same<Graph, PGraph>>::value> >
+	std::unique_ptr<GraphWrapper> parent_wrap(PGraph&, RootGraph&) {
+		/* this cannot be called because runtime logic must take the other return path */
+		assert(false);
+		return nullptr;
+	}
+
+	/**
+	 * Template Argument:
+	 * Graph     -- type of actual Graph
+	 * SubGraph  -- type of call to Graph.children()
+	 * RootGraph -- type of call to Graph.root()
+	 */
+	template <typename Graph, typename SubGraph, typename RootGraph>
 	class SubGraphImpl : public GraphImpl<Graph> {
 
 	  public:
-		using GraphImpl<Graph>::GraphImpl;
+		SubGraphImpl(Graph& g, RootGraph& rg) : GraphImpl<Graph>::GraphImpl(g), root_graph(rg) {}
 
 		//subgraph functions
 		virtual std::unique_ptr<GraphWrapper> create_subgraph() override {
 			auto& g = this->graph.create_subgraph();
-			return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(g);
+			return std::make_unique<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(g, this->root_graph);
 		}
 
 		virtual bool is_root() override { return this->graph.is_root(); }
 
 		virtual std::unique_ptr<GraphWrapper> root() override {
-			auto& g = this->graph.root();
-			return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(g);
+			// auto& g = this->graph.root();
+			return std::make_unique<SubGraphImpl<RootGraph, SubGraph, RootGraph>>(this->root_graph, this->root_graph);
 		}
 
 		virtual std::unique_ptr<GraphWrapper> parent() override {
 			auto& g = this->graph.parent();
-			return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(g);
+			if (g.is_root()) {
+				return std::make_unique<SubGraphImpl<RootGraph, SubGraph, RootGraph>>(this->root_graph, this->root_graph);
+			}
+			return std::move(parent_wrap<Graph, SubGraph, RootGraph, typename std::remove_reference<decltype(g)>::type>(g, this->root_graph));
 		}
 
 		virtual SamePair<std::unique_ptr<GraphIterator<GraphWrapper>>> children() override {
-			// slightly different logic of convert_to_ptr here, so avoiding convert_it
+			// slightly different logic of convert_to_ptr here wrt to VertexImpl, so avoiding convert_it
 			auto its = this->graph.children();
 
+			// first template argument is the transform function type of convert_to_ptr, second one is the original
+			// iterator
 			using TransformIterator =
-			    boost::transform_iterator<std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph>>(SubGraph&)>,
+			    boost::transform_iterator<std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(SubGraph&)>,
 			                              typename Graph::children_iterator>;
-			std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph>>(SubGraph&)> convert_to_ptr =
-			    [&](SubGraph& p) -> std::unique_ptr<SubGraphImpl<SubGraph, SubGraph>> {
-				return std::make_unique<SubGraphImpl<SubGraph, SubGraph>>(p);
+			std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(SubGraph&)> convert_to_ptr =
+			    [&](SubGraph& p) -> std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>> {
+				return std::make_unique<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(p, this->root_graph);
 			};
 
 			TransformIterator tfirst = boost::make_transform_iterator(std::move(its.first), convert_to_ptr);
@@ -281,25 +306,28 @@ namespace ara::bgl_wrapper {
 
 		virtual std::unique_ptr<VertexWrapper> local_to_global(VertexWrapper& vertex) override {
 			auto& v = static_cast<VertexImpl<Graph>&>(vertex);
-			return std::make_unique<VertexImpl<Graph>>(this->graph, this->graph.local_to_global(v.v));
+			return std::make_unique<VertexImpl<RootGraph>>(this->root_graph, this->graph.local_to_global(v.v));
 		}
 		virtual std::unique_ptr<EdgeWrapper> local_to_global(EdgeWrapper& edge) override {
 			auto& e = static_cast<EdgeImpl<Graph>&>(edge);
-			return std::make_unique<EdgeImpl<Graph>>(this->graph, this->graph.local_to_global(e.e));
+			return std::make_unique<EdgeImpl<RootGraph>>(this->root_graph, this->graph.local_to_global(e.e));
 		}
 
 		virtual std::unique_ptr<VertexWrapper> global_to_local(VertexWrapper& vertex) override {
-			auto& v = static_cast<VertexImpl<Graph>&>(vertex);
-			return std::make_unique<VertexImpl<Graph>>(this->graph, this->graph.global_to_local(v.v));
+			auto& v = static_cast<VertexImpl<RootGraph>&>(vertex);
+			return std::make_unique<VertexImpl<Graph>>(this->graph, this->root_graph.global_to_local(v.v));
 		}
 		virtual std::unique_ptr<EdgeWrapper> global_to_local(EdgeWrapper& edge) override {
-			auto& e = static_cast<EdgeImpl<Graph>&>(edge);
-			return std::make_unique<EdgeImpl<Graph>>(this->graph, this->graph.global_to_local(e.e));
+			auto& e = static_cast<EdgeImpl<RootGraph>&>(edge);
+			return std::make_unique<EdgeImpl<Graph>>(this->graph, this->root_graph.global_to_local(e.e));
 		}
 
 		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) override {
 			/* TODO */
 			return nullptr;
 		}
+
+	  protected:
+		RootGraph& root_graph;
 	};
 }
