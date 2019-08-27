@@ -4,14 +4,14 @@
 		{
 			"name": "Printer",
 			"dot": "syscall.dot",
-			"graph_name": "Initial Map",
+			"graph_name": "Syscalls",
 			"subgraph": "abbs"
 		},
 		"ICFG",
 		{
 			"name": "Printer",
 			"dot": "icfg.dot",
-			"graph_name": "Initial Map",
+			"graph_name": "ICFG",
 			"subgraph": "abbs"
 		}
 	],
