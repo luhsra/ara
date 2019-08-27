@@ -9,7 +9,7 @@ from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as pp
 from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.utility cimport pair
-from common.cy_helper cimport to_shared_ptr
+from common.cy_helper cimport to_shared_ptr, to_string
 
 
 cdef class SubTypeMaker:
@@ -98,6 +98,20 @@ cdef make_graph_it(pair[unique_ptr[bgl.GraphIterator[bgl.GraphWrapper]], unique_
 
 
 cdef class Vertex(SubTypeMaker):
+    def __hash__(self):
+        return deref(self._c_vertex).get_id()
+
+    def __eq__(self, other):
+        cdef Vertex o
+        if isinstance(other, Vertex):
+            o = other
+            return deref(self._c_vertex).get_id() == deref(o._c_vertex).get_id()
+        return False
+
+    def __str__(self):
+        vid = to_string(deref(self._c_vertex).get_id()).decode('utf-8')
+        return f"Vertex({vid})"
+
     def in_edges(self):
         return make_edge_it(deref(self._c_vertex).in_edges(), self.edge_type)
 
