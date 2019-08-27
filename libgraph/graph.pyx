@@ -118,6 +118,7 @@ cdef class ABBGraph(bgl.Graph):
 cdef abbgraph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):
     graph = ABBGraph()
     graph._c_graph = g
+    return graph
 
 
 cdef class Graph:
