@@ -1,11 +1,13 @@
 #pragma once
 
 #include "common/exceptions.h"
-#include "common/common.h"
 #include "boost/range/iterator.hpp"
 #include <memory>
 
 namespace ara::bgl_wrapper {
+	struct BoostProperty {
+		virtual ~BoostProperty() {}
+	};
 
 	template<class T>
 	using SamePair = std::pair<T, T>;
@@ -51,7 +53,7 @@ namespace ara::bgl_wrapper {
 		virtual void clear_edges() = 0;
 
 		virtual uint64_t get_id() = 0;
-		virtual ara::graph::BoostProperty& get_property_obj() = 0;
+		virtual std::unique_ptr<BoostProperty> get_property_obj() { return nullptr; }
 	};
 
 	struct EdgeWrapper {
@@ -59,6 +61,8 @@ namespace ara::bgl_wrapper {
 
 		virtual std::unique_ptr<VertexWrapper> source() = 0;
 		virtual std::unique_ptr<VertexWrapper> target() = 0;
+
+		virtual std::unique_ptr<BoostProperty> get_property_obj() { return nullptr; }
 	};
 
 	struct GraphWrapper {
@@ -95,5 +99,7 @@ namespace ara::bgl_wrapper {
 		virtual std::unique_ptr<EdgeWrapper> global_to_local(EdgeWrapper&) { throw ara::NotImplemented(); }
 
 		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) { throw ara::NotImplemented(); }
+
+		virtual std::unique_ptr<BoostProperty> get_property_obj() { return nullptr; }
 	};
 } // namespace bgl_wrapper

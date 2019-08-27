@@ -10,6 +10,17 @@
 
 namespace ara::bgl_wrapper {
 
+	template <typename Bundle>
+	class BoostPropImpl : public BoostProperty {
+	  public:
+		BoostPropImpl(Bundle& b) : b(b) {}
+
+		Bundle& get() { return b; }
+
+	  private:
+		Bundle& b;
+	};
+
 	template <typename Wrapper, typename BoostIterator>
 	class GraphIter : public GraphIterator<Wrapper> {
 	  private:
@@ -104,8 +115,8 @@ namespace ara::bgl_wrapper {
 
 		virtual void clear_edges() override { boost::clear_vertex(v, g); }
 
-		virtual ara::graph::BoostProperty& get_property_obj() override {
-			return g[v];
+		virtual std::unique_ptr<BoostProperty> get_property_obj() override {
+			return std::make_unique<BoostPropImpl<typename boost::vertex_bundle_type<Graph>::type>>(g[v]);
 		}
 
 		virtual uint64_t get_id() override {
@@ -148,6 +159,18 @@ namespace ara::bgl_wrapper {
 		Graph& g;
 		typename Graph::edge_descriptor e;
 	};
+
+	template <typename Graph>
+	std::unique_ptr<BoostProperty> get_property_obj_wrap(Graph& graph) {
+		typename boost::graph_bundle_type<Graph>::type& prop = boost::get_property(graph);
+		return std::make_unique<BoostPropImpl<typename boost::graph_bundle_type<Graph>::type>>(prop);
+	}
+
+	// boost get_property for ara::cfg::ABBGraph does not work, so provide a special implementation for this case
+	template <>
+	std::unique_ptr<BoostProperty> get_property_obj_wrap<ara::cfg::ABBGraph>(ara::cfg::ABBGraph&) {
+		return nullptr;
+	}
 
 	template<typename Graph>
 	class GraphImpl : public GraphWrapper{
@@ -202,7 +225,12 @@ namespace ara::bgl_wrapper {
 			auto& e = static_cast<EdgeImpl<Graph>&>(edge);
 			boost::remove_edge(e.e, graph);
 		}
-			protected:
+
+		virtual std::unique_ptr<BoostProperty> get_property_obj() override {
+			return std::move(get_property_obj_wrap(graph));
+		}
+
+	  protected:
 		Graph& graph;
 	};
 

@@ -18,7 +18,6 @@ from libcpp.set cimport set as cset
 from libcpp.vector cimport vector as cvector
 from libcpp.utility cimport pair
 from libcpp.cast cimport dynamic_cast
-from common.common cimport BoostProperty
 
 from libcpp cimport bool
 from libc.stdint cimport int64_t
@@ -32,6 +31,7 @@ from enum import IntEnum
 
 cimport bgl
 cimport bgl_wrapper
+cimport bgl_bridge
 
 from move cimport move
 
@@ -50,17 +50,16 @@ class ABBType(IntEnum):
     call = <int> cfg.abbtype.call
     not_implemented = <int> cfg.abbtype.not_implemented
 
-ctypedef cfg.ABB* ABBPtr
+ctypedef bgl_bridge.BoostPropImpl[cfg.ABB]* ABBPropPtr
 
 cdef class ABB(bgl.Vertex):
     cdef cfg.ABB* get_abb(self):
-        return dynamic_cast[ABBPtr](&deref(self._c_vertex).get_property_obj())
-
-    def __cinit__(self, bgl.Vertex vertex):
-        self._c_vertex = vertex._c_vertex
+        cdef unique_ptr[bgl_wrapper.BoostProperty] gprop = deref(self._c_vertex).get_property_obj()
+        cdef ABBPropPtr prop = dynamic_cast[ABBPropPtr](gprop.get())
+        return &deref(prop).get()
 
     def __str__(self):
-        return to_string(deref(self.get_abb()))
+        return to_string(deref(self.get_abb())).decode('utf-8')
 
     def get_call(self):
         return to_string(deref(self.get_abb())).decode('utf-8')
@@ -81,27 +80,25 @@ cdef class ABB(bgl.Vertex):
         return deref(self.get_abb()).name.decode('utf-8')
 
 
-cdef class Function(bgl.Graph):
-    def __cinit__(self, bgl.Graph graph):
-        self._c_graph = graph._c_graph
+ctypedef bgl_bridge.BoostPropImpl[cfg.Function]* FunctionPropPtr
 
-#     @property
-#     def name(self):
-#         return deref(get_subgraph_prop(self._c_func)).name.decode('utf-8')
-#
-#     @name.setter
-#     def name(self, value):
-#         deref(get_subgraph_prop(self._c_func)).name = value
-#
-#     @property
-#     def implemented(self):
-#         return deref(get_subgraph_prop(self._c_func)).implemented
-#
-#     def vertices(self):
-#         cdef cy_helper.SubgraphRange[FuncDesc] ra = cy_helper.SubgraphRange[FuncDesc](deref(self._c_func))
-#         for vertex in ra:
-#             py_abb = abb_factory(vertex, self._c_abbgraph)
-#             yield py_abb
+cdef class Function(bgl.Graph):
+    cdef cfg.Function* get_func(self):
+        cdef unique_ptr[bgl_wrapper.BoostProperty] gprop = deref(self._c_graph).get_property_obj()
+        cdef FunctionPropPtr prop = dynamic_cast[FunctionPropPtr](gprop.get())
+        return &deref(prop).get()
+
+    @property
+    def name(self):
+        return deref(self.get_func()).name.decode('utf-8')
+
+    @name.setter
+    def name(self, value):
+        deref(self.get_func()).name = value
+
+    @property
+    def implemented(self):
+        return deref(self.get_func()).implemented
 
 
 ctypedef cfg_wrapper.ABBGraph* ABBGraphPtr

@@ -4,7 +4,6 @@ from libc.stdint cimport uint64_t
 from libcpp cimport bool
 from libcpp.memory cimport unique_ptr
 from libcpp.utility cimport pair
-from common.common cimport BoostProperty
 
 cdef extern from "bgl_wrapper.h" namespace "boost":
     cdef cppclass iterator_range[I]:
@@ -14,6 +13,9 @@ cdef extern from "bgl_wrapper.h" namespace "boost":
     iterator_range[I] make_iterator_range[I](I begin, I end)
 
 cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
+    cdef cppclass BoostProperty:
+        pass
+
     ctypedef ptrdiff_t difference_type
 
     cdef cppclass GraphIterator[T]:
@@ -49,11 +51,13 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         void clear_edges()
 
         uint64_t get_id()
-        BoostProperty& get_property_obj()
+        unique_ptr[BoostProperty] get_property_obj()
 
     cdef cppclass EdgeWrapper:
         unique_ptr[VertexWrapper] source()
         unique_ptr[VertexWrapper] target()
+
+        unique_ptr[BoostProperty] get_property_obj()
 
     cdef cppclass GraphWrapper:
         pair[unique_ptr[GraphIterator[VertexWrapper]], unique_ptr[GraphIterator[VertexWrapper]]] vertices()
@@ -85,3 +89,5 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         unique_ptr[EdgeWrapper] global_to_local(EdgeWrapper& vertex)
 
         unique_ptr[GraphWrapper] filter_by(Predicate vertex, Predicate edge)
+
+        unique_ptr[BoostProperty] get_property_obj()

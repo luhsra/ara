@@ -8,7 +8,6 @@
 #include <llvm/IR/Module.h>
 #include <memory>
 #include <type_traits>
-#include "common/common.h"
 
 namespace ara::graph {
 	class Graph;
@@ -23,7 +22,7 @@ namespace ara::cfg {
 	 *
 	 * Linkage with other ABBs is done via BGL, see ara::graph::ABBGraph.
 	 */
-	struct ABB : public ara::graph::BoostProperty {
+	struct ABB {
 		std::string name;
 
 		ABBType type;
@@ -90,6 +89,14 @@ namespace ara::cfg {
 	 */
 	class ABBGraph : public CFGraph {
 	  public:
+		/**
+		 * Enable the correct function of boost::vertex_bundle_type<ABBGraph>::type
+		 *
+		 * Normally Boost specialize vertex_bundle_type for subgraph (see subgraph.h) but since ABBGraph inherit from
+		 * subgraph<Graph> the compiler does not detect the specialization.
+		 */
+		using vertex_bundled = ABB;
+
 		ABBGraph(const ABBGraph&) = delete;
 		/**
 		 * Add a vertex.

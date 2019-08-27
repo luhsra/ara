@@ -1,4 +1,4 @@
-pybgl_includes = files('bgl.pxd', 'move.pxd', 'bgl_wrapper.pxd')
+pybgl_includes = files('bgl.pxd', 'move.pxd', 'bgl_wrapper.pxd', 'bgl_bridge.pxd')
 
 bgl_pyx_cpp = custom_target('bgl_pyx',
     output : 'bgl_pyx.cpp',
