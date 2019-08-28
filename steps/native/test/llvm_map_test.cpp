@@ -34,6 +34,12 @@ namespace step {
 
 		size_t abb_count = 0;
 		for (auto abb : boost::make_iterator_range(vertices(abbs))) {
+			if (abbs[abb].name == "empty") {
+				if (abbs[abb].entry_bb != nullptr || abbs[abb].exit_bb != nullptr) {
+					throw std::runtime_error("Found empty ABB with linked LLVM BB.");
+				}
+				continue;
+			}
 			BasicBlock* entry = abbs[abb].entry_bb;
 			BasicBlock* exit = abbs[abb].exit_bb;
 
