@@ -16,8 +16,8 @@ namespace step {
 	void ICFG::run(graph::Graph& graph) {
 		ABBGraph& abbs = graph.new_graph.abbs();
 
-		ABBFilter filter(ABBType::call | ABBType::syscall, &abbs);
-		boost::filtered_graph<ABBGraph, boost::keep_all, ABBFilter> calls(abbs, boost::keep_all(), filter);
+		ABBTypeFilter<ABBGraph> filter(ABBType::call | ABBType::syscall, &abbs);
+		boost::filtered_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> calls(abbs, boost::keep_all(), filter);
 
 		for (auto abbi : boost::make_iterator_range(vertices(calls))) {
 			const ara::cfg::ABB& abb = abbs[abbi];
