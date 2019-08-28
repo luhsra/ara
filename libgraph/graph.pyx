@@ -275,12 +275,9 @@ cpdef cast_expected_syscall_argument_types(argument_types):
 
         else:
 
-            if argument_type == data_type.integer:
-                data_type_hash = typeid(long).hash_code()
-            elif argument_type == data_type.string:
+            data_type_hash = typeid(long).hash_code()
+            if argument_type == data_type.string:
                 data_type_hash = typeid(string).hash_code()
-            elif argument_type == data_type.long:
-                data_type_hash = typeid(long).hash_code()
 
             pylist.append(data_type_hash)
 
@@ -460,15 +457,12 @@ cdef class Vertex:
     def get_outgoing_edges(self):
 
         cdef clist[shared_ptr[cgraph.Edge]] edges = deref(self._c_vertex).get_outgoing_edges()
-        cdef shared_ptr[cgraph.Vertex] start
         pylist = []
         for edge in edges:
 
             py_obj = Edge(None, None, None, None, None, _raw=True)
 
             py_obj._c_edge = edge
-
-            start = deref(edge).get_start_vertex()
 
             pylist.append(py_obj)
 
@@ -747,7 +741,6 @@ cdef class PyABB(Vertex):
         return deref(self._c()).convert_call_to_syscall(bname)
 
     def get_syscall_name(self):
-        cdef bytes name = deref(self._c()).get_syscall_name()
         return deref(self._c()).get_syscall_name()
 
     def get_call_name(self):

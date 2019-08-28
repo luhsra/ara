@@ -96,7 +96,6 @@ cdef extern from "graph.h" namespace "syscall_definition_type":
     cdef syscall_definition_type delay
 
 cdef extern from "graph.h" namespace "message_property":
-    cdef message_property none
     cdef message_property SEND_STATIC_INTERNAL
     cdef message_property SEND_STATIC_EXTERNAL
     cdef message_property SEND_DYNAMIC_EXTERNAL
