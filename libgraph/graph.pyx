@@ -54,7 +54,7 @@ cdef class ABB(bgl.Vertex):
         return to_string(deref(self.get_abb())).decode('utf-8')
 
     def get_call(self):
-        return to_string(deref(self.get_abb())).decode('utf-8')
+        return deref(self.get_abb()).get_call().decode('utf-8')
 
     def is_indirect(self):
         return deref(self.get_abb()).is_indirect()
