@@ -104,7 +104,7 @@ test('dummy-test',
 
 test('syscall',
   py3_inst,
-  args: [files('syscall.py'), 'FreeRTOS', files('empty.json'), gpslogger_targets],
+  args: [files('syscall.py'), 'FreeRTOS', files('syscall.json'), freertos_icfg],
   env: [python_path]
 )
 
