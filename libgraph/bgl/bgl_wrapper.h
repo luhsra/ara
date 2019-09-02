@@ -1,7 +1,8 @@
 #pragma once
 
-#include "common/exceptions.h"
 #include "boost/range/iterator.hpp"
+#include "common/exceptions.h"
+
 #include <memory>
 
 namespace ara::bgl_wrapper {
@@ -9,10 +10,10 @@ namespace ara::bgl_wrapper {
 		virtual ~BoostProperty() {}
 	};
 
-	template<class T>
+	template <class T>
 	using SamePair = std::pair<T, T>;
 
-	template<class T>
+	template <class T>
 	struct GraphIterator {
 		virtual ~GraphIterator() {}
 
@@ -102,4 +103,4 @@ namespace ara::bgl_wrapper {
 
 		virtual std::unique_ptr<BoostProperty> get_property_obj() { return nullptr; }
 	};
-} // namespace bgl_wrapper
+} // namespace ara::bgl_wrapper

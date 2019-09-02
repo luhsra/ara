@@ -51,8 +51,7 @@ namespace step {
 							goto while_end;
 						}
 
-						if (FakeCallBase::isa(*it) &&
-								(!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
+						if (FakeCallBase::isa(*it) && (!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
 							continue;
 						}
 

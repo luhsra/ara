@@ -121,9 +121,7 @@ class Logger {
 		logger.level = get_level(py_logger);
 	}
 
-	void set_level(LogLevel level) {
-		logger.level = level;
-	}
+	void set_level(LogLevel level) { logger.level = level; }
 
 	Logger::LogStream crit() {
 		assert(logger.logger != nullptr);

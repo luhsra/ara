@@ -67,21 +67,22 @@ namespace ara::bgl_wrapper {
 		return std::make_pair(std::move(first), std::move(second));
 	}
 
-	template<typename Graph> class GraphImpl;
+	template <typename Graph>
+	class GraphImpl;
 	template <typename Graph, typename SubGraph, typename RootGraph>
 	class SubGraphImpl;
 	template <typename Graph>
 	class EdgeImpl;
 
-	template<typename Graph>
+	template <typename Graph>
 	class VertexImpl : public VertexWrapper {
-		public:
-		  VertexImpl(Graph& g, typename Graph::vertex_descriptor v) : g(g), v(std::move(v)) {}
-		  virtual ~VertexImpl() {}
+	  public:
+		VertexImpl(Graph& g, typename Graph::vertex_descriptor v) : g(g), v(std::move(v)) {}
+		virtual ~VertexImpl() {}
 
-		  virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> in_edges() override {
-			  return convert_it<EdgeWrapper, EdgeImpl<Graph>, Graph, typename Graph::in_edge_iterator,
-			                    typename Graph::edge_descriptor>(g, boost::in_edges(v, g));
+		virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> in_edges() override {
+			return convert_it<EdgeWrapper, EdgeImpl<Graph>, Graph, typename Graph::in_edge_iterator,
+			                  typename Graph::edge_descriptor>(g, boost::in_edges(v, g));
 		}
 
 		virtual SamePair<std::unique_ptr<GraphIterator<EdgeWrapper>>> out_edges() override {
@@ -172,18 +173,17 @@ namespace ara::bgl_wrapper {
 		return nullptr;
 	}
 
-	template<typename Graph>
-	class GraphImpl : public GraphWrapper{
-		public:
-		  GraphImpl(Graph& g) : graph(g) {}
-		  virtual ~GraphImpl() {}
+	template <typename Graph>
+	class GraphImpl : public GraphWrapper {
+	  public:
+		GraphImpl(Graph& g) : graph(g) {}
+		virtual ~GraphImpl() {}
 
-		  virtual std::pair<std::unique_ptr<GraphIterator<VertexWrapper>>,
-		                    std::unique_ptr<GraphIterator<VertexWrapper>>>
-		  vertices() override {
-			  return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, typename Graph::vertex_iterator,
-			                    typename Graph::vertex_descriptor>(graph, boost::vertices(graph));
-		  }
+		virtual std::pair<std::unique_ptr<GraphIterator<VertexWrapper>>, std::unique_ptr<GraphIterator<VertexWrapper>>>
+		vertices() override {
+			return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, typename Graph::vertex_iterator,
+			                  typename Graph::vertex_descriptor>(graph, boost::vertices(graph));
+		}
 
 		virtual uint64_t num_vertices() override {
 			auto size = boost::num_vertices(graph);
@@ -230,22 +230,20 @@ namespace ara::bgl_wrapper {
 			return std::move(get_property_obj_wrap(graph));
 		}
 
-		virtual const Graph& get_graph() {
-			return graph;
-		}
+		virtual const Graph& get_graph() { return graph; }
 
 	  protected:
 		Graph& graph;
 	};
 
-	template<typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
-			 typename = std::enable_if_t<std::is_same<Graph, PGraph>::value> >
+	template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
+	          typename = std::enable_if_t<std::is_same<Graph, PGraph>::value>>
 	std::unique_ptr<GraphWrapper> parent_wrap(Graph& p, RootGraph& r) {
 		return std::make_unique<SubGraphImpl<Graph, SubGraph, RootGraph>>(p, r);
 	}
 
-	template<typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
-			 typename = std::enable_if_t<std::negation<std::is_same<Graph, PGraph>>::value> >
+	template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
+	          typename = std::enable_if_t<std::negation<std::is_same<Graph, PGraph>>::value>>
 	std::unique_ptr<GraphWrapper> parent_wrap(PGraph&, RootGraph&) {
 		/* this cannot be called because runtime logic must take the other return path */
 		assert(false);
@@ -264,7 +262,7 @@ namespace ara::bgl_wrapper {
 	  public:
 		SubGraphImpl(Graph& g, RootGraph& rg) : GraphImpl<Graph>::GraphImpl(g), root_graph(rg) {}
 
-		//subgraph functions
+		// subgraph functions
 		virtual std::unique_ptr<GraphWrapper> create_subgraph() override {
 			auto& g = this->graph.create_subgraph();
 			return std::make_unique<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(g, this->root_graph);
@@ -280,9 +278,11 @@ namespace ara::bgl_wrapper {
 		virtual std::unique_ptr<GraphWrapper> parent() override {
 			auto& g = this->graph.parent();
 			if (g.is_root()) {
-				return std::make_unique<SubGraphImpl<RootGraph, SubGraph, RootGraph>>(this->root_graph, this->root_graph);
+				return std::make_unique<SubGraphImpl<RootGraph, SubGraph, RootGraph>>(this->root_graph,
+				                                                                      this->root_graph);
 			}
-			return std::move(parent_wrap<Graph, SubGraph, RootGraph, typename std::remove_reference<decltype(g)>::type>(g, this->root_graph));
+			return std::move(parent_wrap<Graph, SubGraph, RootGraph, typename std::remove_reference<decltype(g)>::type>(
+			    g, this->root_graph));
 		}
 
 		virtual SamePair<std::unique_ptr<GraphIterator<GraphWrapper>>> children() override {
@@ -291,9 +291,9 @@ namespace ara::bgl_wrapper {
 
 			// first template argument is the transform function type of convert_to_ptr, second one is the original
 			// iterator
-			using TransformIterator =
-			    boost::transform_iterator<std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(SubGraph&)>,
-			                              typename Graph::children_iterator>;
+			using TransformIterator = boost::transform_iterator<
+			    std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(SubGraph&)>,
+			    typename Graph::children_iterator>;
 			std::function<std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(SubGraph&)> convert_to_ptr =
 			    [&](SubGraph& p) -> std::unique_ptr<SubGraphImpl<SubGraph, SubGraph, RootGraph>> {
 				return std::make_unique<SubGraphImpl<SubGraph, SubGraph, RootGraph>>(p, this->root_graph);
@@ -334,4 +334,4 @@ namespace ara::bgl_wrapper {
 	  protected:
 		RootGraph& root_graph;
 	};
-}
+} // namespace ara::bgl_wrapper

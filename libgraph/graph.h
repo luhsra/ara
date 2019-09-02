@@ -68,7 +68,7 @@ namespace ara::cfg {
 	 * ABBTypeFilter<ABBGraph> f(<abb_type_mask>);
 	 * boost::filter_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> foo(g, boost::keep_all(), f);
 	 */
-	template<typename Graph>
+	template <typename Graph>
 	class ABBTypeFilter {
 	  public:
 		ABBTypeFilter() : type_filter(0), g(nullptr) {}

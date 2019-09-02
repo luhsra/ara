@@ -1,7 +1,6 @@
 #include "common/exceptions.h"
-#include "graph.h"
-
 #include "common/llvm_common.h"
+#include "graph.h"
 
 #include <cassert>
 

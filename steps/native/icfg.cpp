@@ -17,7 +17,8 @@ namespace step {
 		ABBGraph& abbs = graph.new_graph.abbs();
 
 		ABBTypeFilter<ABBGraph> filter(ABBType::call | ABBType::syscall, &abbs);
-		boost::filtered_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> calls(abbs, boost::keep_all(), filter);
+		boost::filtered_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> calls(abbs, boost::keep_all(),
+		                                                                                filter);
 
 		for (auto abbi : boost::make_iterator_range(vertices(calls))) {
 			const ara::cfg::ABB& abb = abbs[abbi];
