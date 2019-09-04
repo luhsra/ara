@@ -46,18 +46,19 @@ namespace step {
 				if (FakeCallBase::isa(bb.front()) && !isInlineAsm(&bb.front()) && !isCallToLLVMIntrinsic(&bb.front())) {
 					ty = ara::cfg::ABBType::call;
 				}
-				auto vertex = abbs.add_vertex(ss.str(), ty, &bb, &bb, function);
+				auto global_vertex = abbs.add_vertex(ss.str(), ty, &bb, &bb, function);
+				auto local_vertex = function.global_to_local(global_vertex);
 				bb_counter++;
 
 				// connect already mapped successors and predecessors
 				for (const BasicBlock* succ_b : successors(&bb)) {
 					if (abbs.contain(succ_b)) {
-						boost::add_edge(vertex, abbs.back_map(succ_b), function);
+						boost::add_edge(local_vertex, function.global_to_local(abbs.back_map(succ_b)), function);
 					}
 				}
 				for (const BasicBlock* pred_b : predecessors(&bb)) {
 					if (abbs.contain(pred_b)) {
-						boost::add_edge(abbs.back_map(pred_b), vertex, function);
+						boost::add_edge(function.global_to_local(abbs.back_map(pred_b)), local_vertex, function);
 					}
 				}
 			}
