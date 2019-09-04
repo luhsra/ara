@@ -82,11 +82,11 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
 
         pair[unique_ptr[GraphIterator[GraphWrapper]], unique_ptr[GraphIterator[GraphWrapper]]] children()
 
-        unique_ptr[VertexWrapper] local_to_global(VertexWrapper& vertex)
-        unique_ptr[EdgeWrapper] local_to_global(EdgeWrapper& vertex)
+        unique_ptr[VertexWrapper] local_to_global(VertexWrapper&)
+        unique_ptr[EdgeWrapper] local_to_global(EdgeWrapper&)
 
-        unique_ptr[VertexWrapper] global_to_local(VertexWrapper& vertex)
-        unique_ptr[EdgeWrapper] global_to_local(EdgeWrapper& vertex)
+        unique_ptr[VertexWrapper] global_to_local(VertexWrapper&)
+        unique_ptr[EdgeWrapper] global_to_local(EdgeWrapper&)
 
         pair[unique_ptr[EdgeWrapper], bool] find_edge(EdgeWrapper&)
         pair[unique_ptr[VertexWrapper], bool] find_vertex(VertexWrapper&)
