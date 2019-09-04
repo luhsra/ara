@@ -106,12 +106,6 @@ namespace ara::cfg {
 		                                       llvm::BasicBlock* exit_bb, FunctionDescriptor& function);
 
 		/**
-		 * Add an directed edge between v1 and v2.
-		 */
-		std::pair<ABBGraph::edge_descriptor, bool> add_edge(ABBGraph::vertex_descriptor v1,
-		                                                    ABBGraph::vertex_descriptor v2);
-
-		/**
 		 * Check, if graph contains bb.
 		 */
 		bool contain(const llvm::BasicBlock* bb) { return abb_map.find(bb) != abb_map.end(); }

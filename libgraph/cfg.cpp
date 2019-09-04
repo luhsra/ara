@@ -85,11 +85,6 @@ namespace ara::cfg {
 		return vertex;
 	}
 
-	pair<ABBGraph::edge_descriptor, bool> ABBGraph::add_edge(ABBGraph::vertex_descriptor v1,
-	                                                         ABBGraph::vertex_descriptor v2) {
-		return boost::add_edge(v1, v2, *this);
-	}
-
 	ABBGraph::vertex_descriptor ABBGraph::back_map(const llvm::BasicBlock* bb) {
 		auto it = abb_map.find(bb);
 		if (it == abb_map.end()) {

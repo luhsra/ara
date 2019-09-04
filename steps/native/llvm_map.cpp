@@ -52,12 +52,12 @@ namespace step {
 				// connect already mapped successors and predecessors
 				for (const BasicBlock* succ_b : successors(&bb)) {
 					if (abbs.contain(succ_b)) {
-						abbs.add_edge(vertex, abbs.back_map(succ_b));
+						boost::add_edge(vertex, abbs.back_map(succ_b), function);
 					}
 				}
 				for (const BasicBlock* pred_b : predecessors(&bb)) {
 					if (abbs.contain(pred_b)) {
-						abbs.add_edge(abbs.back_map(pred_b), vertex);
+						boost::add_edge(abbs.back_map(pred_b), vertex, function);
 					}
 				}
 			}
