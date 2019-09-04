@@ -174,8 +174,8 @@ cdef class Edge:
     def __cinit__(self, edge_type=None, vertex_type=None, Edge copy=None):
         if copy:
             self._c_edge = copy._c_edge
-            self.edge = copy.vert
-            self.vert = copy.edge
+            self.edge = copy.edge
+            self.vert = copy.vert
         else:
             self.edge = SubTypeMaker(edge_type)
             self.vert = SubTypeMaker(vertex_type)
