@@ -53,12 +53,14 @@ namespace step {
 				// connect already mapped successors and predecessors
 				for (const BasicBlock* succ_b : successors(&bb)) {
 					if (abbs.contain(succ_b)) {
-						boost::add_edge(local_vertex, function.global_to_local(abbs.back_map(succ_b)), function);
+						auto edge = boost::add_edge(local_vertex, function.global_to_local(abbs.back_map(succ_b)), function);
+						function[edge.first].type = ara::cfg::CFType::lcf;
 					}
 				}
 				for (const BasicBlock* pred_b : predecessors(&bb)) {
 					if (abbs.contain(pred_b)) {
-						boost::add_edge(function.global_to_local(abbs.back_map(pred_b)), local_vertex, function);
+						auto edge = boost::add_edge(function.global_to_local(abbs.back_map(pred_b)), local_vertex, function);
+						function[edge.first].type = ara::cfg::CFType::lcf;
 					}
 				}
 			}

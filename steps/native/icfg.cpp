@@ -26,7 +26,8 @@ namespace step {
 			if (!abb.is_indirect()) {
 				auto& func = abbs.get_function_by_name(abb.get_call());
 				auto other_abb = func.local_to_global(*(vertices(func).first));
-				boost::add_edge(abbi, other_abb, abbs);
+				auto edge = boost::add_edge(abbi, other_abb, abbs);
+				abbs[edge.first].type = CFType::icf;
 				logger.debug() << "Add a direct edge from " << abb << " (" << abbi << ") to " << abbs[other_abb] << " ("
 				               << other_abb << ")." << std::endl;
 			}

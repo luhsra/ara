@@ -68,8 +68,14 @@ class Printer(Step):
                                          color=self.SHAPES[abb.type][2])
                 dot_func.add_node(dot_abb)
         for edge in abbs.edges():
+            color = "black"
+            if edge.type == graph.CFType.lcf:
+                color = "red"
+            if edge.type == graph.CFType.icf:
+                color = "blue"
             dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
-                                          str(hash(edge.target()))))
+                                          str(hash(edge.target())),
+                                          color=color))
         dot_graph.write(dot)
         self._log.info(f"Write dot file to {dot}.")
 
