@@ -80,7 +80,9 @@ namespace ara::cfg {
 	ostream& operator<<(ostream& str, const ABB& abb) { return (str << "ABB(" << abb.name << ")"); }
 
 	// ABBEdge functions
-	ostream& operator<<(ostream& str, const ABBEdge& abb_edge) { return (str << "ABBEdge(type=" << abb_edge.type << ")"); }
+	ostream& operator<<(ostream& str, const ABBEdge& abb_edge) {
+		return (str << "ABBEdge(type=" << abb_edge.type << ")");
+	}
 
 	// Function functions
 	ostream& operator<<(ostream& str, const Function& func) { return (str << "Function(" << func.name << ")"); }

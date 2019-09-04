@@ -17,9 +17,11 @@ namespace ara::cfg {
 	enum ABBType { not_implemented = 0, syscall = 0b1, call = 0b10, computation = 0b100 };
 	std::ostream& operator<<(std::ostream&, const ABBType&);
 
-	enum CFType { lcf = 0 /* local control flow */,
-	              icf = 1 /* interprocedural control flow */,
-	              gcf = 2 /* global control flow */ };
+	enum CFType {
+		lcf = 0 /* local control flow */,
+		icf = 1 /* interprocedural control flow */,
+		gcf = 2 /* global control flow */
+	};
 	std::ostream& operator<<(std::ostream&, const CFType&);
 
 	/**
@@ -70,8 +72,8 @@ namespace ara::cfg {
 	};
 	std::ostream& operator<<(std::ostream&, const Function&);
 
-	typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_prop,
-	                                              edge_prop, Function>>
+	typedef boost::subgraph<
+	    boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, vertex_prop, edge_prop, Function>>
 	    CFGraph;
 	typedef CFGraph FunctionDescriptor;
 
@@ -103,10 +105,11 @@ namespace ara::cfg {
 	class ABBGraph : public CFGraph {
 	  public:
 		/**
-		 * Enable the correct function of boost::vertex_bundle_type<ABBGraph>::type and boost::edge_bundle_type<ABBGraph>::type
+		 * Enable the correct function of boost::vertex_bundle_type<ABBGraph>::type and
+		 * boost::edge_bundle_type<ABBGraph>::type
 		 *
-		 * Normally Boost specialize vertex_bundle_type and edge_bundle_type for subgraph (see subgraph.h) but since ABBGraph inherit from
-		 * subgraph<Graph> the compiler does not detect the specialization.
+		 * Normally Boost specialize vertex_bundle_type and edge_bundle_type for subgraph (see subgraph.h) but since
+		 * ABBGraph inherit from subgraph<Graph> the compiler does not detect the specialization.
 		 */
 		using vertex_bundled = ABB;
 		using edge_bundled = ABBEdge;

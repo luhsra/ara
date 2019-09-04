@@ -99,7 +99,9 @@ namespace ara::bgl_wrapper {
 		virtual std::unique_ptr<VertexWrapper> global_to_local(VertexWrapper&) { throw ara::NotImplemented(); }
 		virtual std::unique_ptr<EdgeWrapper> global_to_local(EdgeWrapper&) { throw ara::NotImplemented(); }
 
-		virtual std::pair<std::unique_ptr<VertexWrapper>, bool> find_vertex(VertexWrapper&) { throw ara::NotImplemented(); }
+		virtual std::pair<std::unique_ptr<VertexWrapper>, bool> find_vertex(VertexWrapper&) {
+			throw ara::NotImplemented();
+		}
 		virtual std::pair<std::unique_ptr<EdgeWrapper>, bool> find_edge(EdgeWrapper&) { throw ara::NotImplemented(); }
 
 		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) { throw ara::NotImplemented(); }
