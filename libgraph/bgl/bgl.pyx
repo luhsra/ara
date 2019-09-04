@@ -11,6 +11,7 @@ from cython.operator cimport dereference as deref
 from cython.operator cimport preincrement as pp
 from libcpp.memory cimport shared_ptr, unique_ptr
 from libcpp.utility cimport pair
+from libcpp cimport bool
 from common.cy_helper cimport to_shared_ptr, to_string
 
 
@@ -269,6 +270,18 @@ cdef class Graph:
             v = obj
             return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(v._c_vertex))), self.edge.n_type, self.vert.n_type))
         assert False
+
+    def find_vertex(self, Vertex vertex):
+        cdef pair[unique_ptr[bgl_w.VertexWrapper], bool] ret = deref(self._c_graph).find_vertex(deref(vertex._c_vertex))
+        if ret.second:
+            return self.vert.gen(vertex_fac(to_shared_ptr(move(ret.first)), self.edge.n_type, self.vert.n_type))
+        return None
+
+    def find_edge(self, Edge edge):
+        cdef pair[unique_ptr[bgl_w.EdgeWrapper], bool] ret = deref(self._c_graph).find_edge(deref(edge._c_edge))
+        if ret.second:
+            return self.edge.gen(edge_fac(to_shared_ptr(move(ret.first)), self.edge.n_type, self.vert.n_type))
+        return None
 
     def filter_by(self, vertex=None, edge=None):
         pass

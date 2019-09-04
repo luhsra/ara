@@ -326,6 +326,17 @@ namespace ara::bgl_wrapper {
 			return std::make_unique<EdgeImpl<Graph>>(this->graph, this->root_graph.global_to_local(e.e));
 		}
 
+		virtual std::pair<std::unique_ptr<VertexWrapper>, bool> find_vertex(VertexWrapper& vertex) override {
+			auto& v = static_cast<VertexImpl<RootGraph>&>(vertex);
+			auto res = this->graph.find_vertex(v.v);
+			return std::make_pair(std::make_unique<VertexImpl<Graph>>(this->graph, res.first), res.second);
+		}
+		virtual std::pair<std::unique_ptr<EdgeWrapper>, bool> find_edge(EdgeWrapper& edge) override {
+			auto& e = static_cast<EdgeImpl<RootGraph>&>(edge);
+			auto res = this->graph.find_edge(e.e);
+			return std::make_pair(std::make_unique<EdgeImpl<Graph>>(this->graph, res.first), res.second);
+		}
+
 		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) override {
 			/* TODO */
 			return nullptr;

@@ -88,6 +88,9 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         unique_ptr[VertexWrapper] global_to_local(VertexWrapper& vertex)
         unique_ptr[EdgeWrapper] global_to_local(EdgeWrapper& vertex)
 
+        pair[unique_ptr[EdgeWrapper], bool] find_edge(EdgeWrapper&)
+        pair[unique_ptr[VertexWrapper], bool] find_vertex(VertexWrapper&)
+
         unique_ptr[GraphWrapper] filter_by(Predicate vertex, Predicate edge)
 
         unique_ptr[BoostProperty] get_property_obj()
