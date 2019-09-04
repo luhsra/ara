@@ -54,7 +54,7 @@ namespace ara::cfg {
 	 * Represents an control flow edge between two atomic basic blocks.
 	 */
 	struct ABBEdge {
-		CFType type;
+		CFType type = CFType::lcf;
 	};
 	std::ostream& operator<<(std::ostream&, const ABBEdge&);
 	typedef boost::property<boost::edge_index_t, std::size_t, ABBEdge> edge_prop;

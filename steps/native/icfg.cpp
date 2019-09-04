@@ -16,10 +16,15 @@ namespace step {
 	void ICFG::run(graph::Graph& graph) {
 		ABBGraph& abbs = graph.new_graph.abbs();
 
-		ABBTypeFilter<ABBGraph> filter(ABBType::call | ABBType::syscall, &abbs);
+		ABBTypeFilter<ABBGraph> call_filter(ABBType::call | ABBType::syscall, &abbs);
 		boost::filtered_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> calls(abbs, boost::keep_all(),
-		                                                                                filter);
+		                                                                                call_filter);
 
+		ABBTypeFilter<ABBGraph> non_call_filter(~(ABBType::call | ABBType::syscall), &abbs);
+		boost::filtered_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> non_calls(abbs, boost::keep_all(),
+		                                                                                    non_call_filter);
+
+		// add edges between functions
 		for (auto abbi : boost::make_iterator_range(vertices(calls))) {
 			const ara::cfg::ABB& abb = abbs[abbi];
 
@@ -28,8 +33,20 @@ namespace step {
 				auto other_abb = func.local_to_global(*(vertices(func).first));
 				auto edge = boost::add_edge(abbi, other_abb, abbs);
 				abbs[edge.first].type = CFType::icf;
-				logger.debug() << "Add a direct edge from " << abb << " (" << abbi << ") to " << abbs[other_abb] << " ("
+				logger.debug() << "Add an edge from " << abb << " (" << abbi << ") to " << abbs[other_abb] << " ("
 				               << other_abb << ")." << std::endl;
+			} else {
+				// TODO
+			}
+		}
+		// add edges within the same function
+		for (auto abbi : boost::make_iterator_range(vertices(non_calls))) {
+			auto edge_its = out_edges(abbi, abbs);
+			std::vector<ABBGraph::edge_descriptor> edges(edge_its.first, edge_its.second);
+			for (auto edge : edges) {
+				assert(abbs[edge].type == CFType::lcf);
+				auto i_edge = boost::add_edge(abbi, boost::target(edge, abbs), abbs);
+				abbs[i_edge.first].type = CFType::icf;
 			}
 		}
 	}
