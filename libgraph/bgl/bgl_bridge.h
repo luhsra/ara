@@ -153,6 +153,10 @@ namespace ara::bgl_wrapper {
 			return std::make_unique<VertexImpl<Graph>>(g, boost::target(e, g));
 		}
 
+		virtual std::unique_ptr<BoostProperty> get_property_obj() override {
+			return std::make_unique<BoostPropImpl<typename boost::edge_bundle_type<Graph>::type>>(g[e]);
+		}
+
 		friend class GraphImpl<Graph>;
 		template <class G, class T, class R>
 		friend class SubGraphImpl;

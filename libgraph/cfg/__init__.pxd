@@ -6,6 +6,7 @@ from libcpp.string cimport string
 from libcpp cimport bool
 
 cimport cfg.abbtype
+cimport cfg.cftype
 
 cdef extern from "graph.h" namespace "ara::cfg":
     cdef cppclass FunctionDescriptor:
@@ -22,6 +23,8 @@ cdef extern from "graph.h" namespace "ara::cfg":
         string get_call()
         bool is_indirect()
 
+    cdef cppclass ABBEdge:
+        cfg.cftype.CFType type
 
     cdef cppclass ABBGraph:
         pass

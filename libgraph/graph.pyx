@@ -6,6 +6,7 @@ cimport cgraph
 cimport newgraph
 cimport cfg
 cimport cfg.abbtype
+cimport cfg.cftype
 cimport graph
 cimport common.cy_helper
 cimport boost
@@ -42,6 +43,11 @@ class ABBType(IntEnum):
     call = <int> cfg.abbtype.call
     not_implemented = <int> cfg.abbtype.not_implemented
 
+class CFType(IntEnum):
+    lcf = <int> cfg.cftype.lcf
+    icf = <int> cfg.cftype.icf
+    gcf = <int> cfg.cftype.gcf
+
 ctypedef bgl_bridge.BoostPropImpl[cfg.ABB]* ABBPropPtr
 
 cdef class ABB(bgl.Vertex):
@@ -72,6 +78,26 @@ cdef class ABB(bgl.Vertex):
         return deref(self.get_abb()).name.decode('utf-8')
 
 
+ctypedef bgl_bridge.BoostPropImpl[cfg.ABBEdge]* ABBEdgePropPtr
+
+cdef class ABBEdge(bgl.Edge):
+    cdef cfg.ABBEdge* get_abbedge(self):
+        cdef unique_ptr[bgl_wrapper.BoostProperty] gprop = deref(self._c_edge).get_property_obj()
+        cdef ABBEdgePropPtr prop = dynamic_cast[ABBEdgePropPtr](gprop.get())
+        return &deref(prop).get()
+
+    def __str__(self):
+        return to_string(deref(self.get_abbedge())).decode('utf-8')
+
+    @property
+    def type(self):
+        return CFType(<int> deref(self.get_abbedge()).type)
+
+    @type.setter
+    def type(self, value):
+        assign_enum[cfg.cftype.CFType](deref(self.get_abbedge()).type, int(value))
+
+
 ctypedef bgl_bridge.BoostPropImpl[cfg.Function]* FunctionPropPtr
 
 cdef class Function(bgl.Graph):
@@ -99,6 +125,7 @@ cdef class ABBGraph(bgl.Graph):
     def __cinit__(self):
         self.graph.n_type = Function
         self.vert.n_type = ABB
+        self.edge.n_type = ABBEdge
 
     def __str__(self):
         cdef shared_ptr[ABBGraphWrapper] ptr = spc[ABBGraphWrapper, bgl_wrapper.GraphWrapper](self._c_graph)

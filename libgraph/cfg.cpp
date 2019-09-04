@@ -24,6 +24,20 @@ namespace ara::cfg {
 		return str;
 	}
 
+	// CFType functions
+	ostream& operator<<(ostream& str, const CFType& ty) {
+		switch (ty) {
+		case lcf:
+			return (str << "local control flow");
+		case icf:
+			return (str << "interprocedural control flow");
+		case gcf:
+			return (str << "global control flow");
+		};
+		assert(false);
+		return str;
+	}
+
 	// ABB functions
 	std::unique_ptr<FakeCallBase> get_call_base(const ABBType type, const BasicBlock& bb) {
 		if (!(type == ABBType::call || type == ABBType::syscall)) {
@@ -64,6 +78,9 @@ namespace ara::cfg {
 	}
 
 	ostream& operator<<(ostream& str, const ABB& abb) { return (str << "ABB(" << abb.name << ")"); }
+
+	// ABBEdge functions
+	ostream& operator<<(ostream& str, const ABBEdge& abb_edge) { return (str << "ABBEdge(type=" << abb_edge.type << ")"); }
 
 	// Function functions
 	ostream& operator<<(ostream& str, const Function& func) { return (str << "Function(" << func.name << ")"); }
