@@ -122,7 +122,8 @@ namespace ara::bgl_wrapper {
 
 		virtual uint64_t get_id() override {
 			/* TODO only unique with regard to the Graph g, hash somehow the graph also in */
-			return static_cast<uint64_t>(v);
+			/* TODO handle case, where Graph is not a subgraph */
+			return static_cast<uint64_t>(g.local_to_global(v));
 		}
 
 		friend class GraphImpl<Graph>;
