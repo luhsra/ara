@@ -24,7 +24,13 @@ int do_stuff(int a, int b) {
 	return 0;
 }
 
+int endless_loop() {
+	while (true) {
+	}
+}
+
 int other_function(int a) {
+	endless_loop();
 	return do_stuff(a, 6);
 }
 
