@@ -104,10 +104,31 @@ namespace ara::cfg {
 		return vertex;
 	}
 
+	FunctionDescriptor& ABBGraph::add_function(const std::string name, llvm::Function* llvm_func, bool implemented) {
+		FunctionDescriptor& func = this->create_subgraph();
+
+		ara::cfg::Function& f = boost::get_property(func);
+		f.name = name;
+		f.func = llvm_func;
+		f.implemented = implemented;
+
+		function_map.insert(pair<const llvm::Function*, std::reference_wrapper<FunctionDescriptor>>(llvm_func, func));
+
+		return func;
+	}
+
 	ABBGraph::vertex_descriptor ABBGraph::back_map(const llvm::BasicBlock* bb) {
 		auto it = abb_map.find(bb);
 		if (it == abb_map.end()) {
 			throw VertexNotFound();
+		}
+		return (*it).second;
+	}
+
+	FunctionDescriptor& ABBGraph::back_map(const llvm::Function* func) {
+		auto it = function_map.find(func);
+		if (it == function_map.end()) {
+			throw FunctionNotFound();
 		}
 		return (*it).second;
 	}

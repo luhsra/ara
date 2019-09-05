@@ -124,6 +124,13 @@ namespace ara::cfg {
 		                                       llvm::BasicBlock* exit_bb, FunctionDescriptor& function);
 
 		/**
+		 * Add a function.
+		 *
+		 * Return the function descriptor.
+		 */
+		FunctionDescriptor& add_function(const std::string name, llvm::Function* func, bool implemented);
+
+		/**
 		 * Check, if graph contains bb.
 		 */
 		bool contain(const llvm::BasicBlock* bb) { return abb_map.find(bb) != abb_map.end(); }
@@ -134,6 +141,13 @@ namespace ara::cfg {
 		 * Throws exception, if bb cannot be mapped.
 		 */
 		ABBGraph::vertex_descriptor back_map(const llvm::BasicBlock* bb);
+
+		/**
+		 * Return Function that belongs to func.
+		 *
+		 * Throws exception, if func cannot be mapped.
+		 */
+		FunctionDescriptor& back_map(const llvm::Function* func);
 
 		/**
 		 * Return the function that contains the vertex.
@@ -150,6 +164,7 @@ namespace ara::cfg {
 		ABBGraph() = default;
 
 		std::map<const llvm::BasicBlock*, ABBGraph::vertex_descriptor> abb_map;
+		std::map<const llvm::Function*, std::reference_wrapper<FunctionDescriptor>> function_map;
 	};
 	std::ostream& operator<<(std::ostream&, const ABBGraph&);
 

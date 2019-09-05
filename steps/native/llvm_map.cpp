@@ -29,14 +29,9 @@ namespace step {
 			if (func.isIntrinsic()) {
 				continue;
 			}
-			ara::cfg::FunctionDescriptor& function = abbs.create_subgraph();
+			ara::cfg::FunctionDescriptor& function = abbs.add_function(func.getName(), &func, true);
 
-			ara::cfg::Function& f = boost::get_property(function);
-			f.name = func.getName();
-			f.func = &func;
-			f.implemented = true;
-
-			logger.debug() << "Inserted new function " << f.name << "." << std::endl;
+			logger.debug() << "Inserted new function " << boost::get_property(function).name << "." << std::endl;
 
 			unsigned bb_counter = 0;
 			for (BasicBlock& bb : func) {
@@ -68,7 +63,7 @@ namespace step {
 			}
 			if (bb_counter == 0) {
 				abbs.add_vertex("empty", ara::cfg::ABBType::not_implemented, nullptr, nullptr, function);
-				f.implemented = false;
+				boost::get_property(function).implemented = false;
 			}
 		}
 
