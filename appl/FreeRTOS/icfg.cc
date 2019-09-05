@@ -29,8 +29,17 @@ int endless_loop() {
 	}
 }
 
+int endless_loop2(bool a) {
+	if (a) {
+		return 5;
+	}
+	while (true) {
+	}
+}
+
 int other_function(int a) {
 	endless_loop();
+	endless_loop2(false);
 	return do_stuff(a, 6);
 }
 
