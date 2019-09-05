@@ -5,6 +5,10 @@
 void vTask1(void* pvParameters);
 void vTask2(void* pvParameters);
 
+int ptr_func1(int a, float b, int c) { return a + c; }
+
+int ptr_func2(int a, float b, int c) { return a - c; }
+
 int do_stuff(int a, int b) {
 	if (a == 5) {
 		return 34;
@@ -48,6 +52,9 @@ int main(void) {
 	xTaskCreate(vTask2, "Task 2", 1000, NULL, 1, NULL);
 
 	int e = do_stuff(23, 90);
+
+	auto ptr = ptr_func1;
+	ptr(23, 4.5, 20);
 
 	vTaskStartScheduler();
 

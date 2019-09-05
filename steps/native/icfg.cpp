@@ -2,6 +2,8 @@
 
 #include "icfg.h"
 
+#include "common/llvm_common.h"
+
 #include <boost/graph/filtered_graph.hpp>
 #include <llvm/ADT/SCCIterator.h>
 
@@ -12,6 +14,14 @@ namespace step {
 		return "Search all inter-procedural edges."
 		       "\n"
 		       "Transforming of the ABB CFG to an ABB ICFG.";
+	}
+
+	void ICFG::add_icf_edge(ABBGraph::vertex_descriptor from, ABBGraph::vertex_descriptor to, ABBGraph& graph,
+	                        std::string name) {
+		auto edge = boost::add_edge(from, to, graph);
+		graph[edge.first].type = CFType::icf;
+		logger.debug() << "Add an " << name << " edge from " << graph[from] << " (" << from << ") to " << graph[to]
+		               << " (" << to << ")." << std::endl;
 	}
 
 	void ICFG::run(graph::Graph& graph) {
@@ -33,21 +43,40 @@ namespace step {
 			const ABBGraph::vertex_descriptor after_call = *boost::adjacent_vertices(abbi, abbs).first;
 
 			std::vector<std::reference_wrapper<const FunctionDescriptor>> called_functions;
+			std::vector<ABBGraph::vertex_descriptor> called_abbs;
 
-			if (!abb.is_indirect()) {
+			if (abb.is_indirect()) {
+				// first try: match all function signatures. This is slightly better that using all functions
+				// as possible pointer target but of course not exact
+				logger.info() << "Call to function pointer. ABB:" << abb << std::endl;
+				llvm::Module& mod = graph.new_graph.get_module();
+				std::unique_ptr<FakeCallBase> called_func = FakeCallBase::create(&abb.entry_bb->front());
+				assert(called_func != nullptr);
+				const llvm::FunctionType* called_type = called_func->getFunctionType();
+
+				for (llvm::Function& candidate : mod) {
+					if (candidate.getFunctionType() == called_type) {
+						auto& other_func = abbs.back_map(&candidate);
+						auto other_abb = other_func.local_to_global(*(boost::vertices(other_func).first));
+
+						called_functions.push_back(other_func);
+						called_abbs.push_back(other_abb);
+					}
+				}
+			} else {
 				const FunctionDescriptor& func = abbs.get_function_by_name(abb.get_call());
-				called_functions.push_back(func);
 				auto other_abb = func.local_to_global(*(boost::vertices(func).first));
 
-				auto edge = boost::add_edge(abbi, other_abb, abbs);
-				abbs[edge.first].type = CFType::icf;
-				logger.debug() << "Add an edge from " << abb << " (" << abbi << ") to " << abbs[other_abb] << " ("
-				               << other_abb << ")." << std::endl;
-			} else {
-				// TODO
+				called_functions.push_back(func);
+				called_abbs.push_back(other_abb);
 			}
 
-			// connect outgoing edges
+			// add ingoing edges
+			for (const auto other_abb : called_abbs) {
+				add_icf_edge(abbi, other_abb, abbs, "ingoing");
+			}
+
+			// add outgoing edges
 			for (const FunctionDescriptor& func : called_functions) {
 				ABBGraph::vertex_descriptor back_abb;
 
@@ -64,11 +93,7 @@ namespace step {
 					back_abb = func.local_to_global(*(boost::vertices(func).first));
 				}
 
-				auto edge = boost::add_edge(back_abb, after_call, abbs);
-				abbs[edge.first].type = CFType::icf;
-
-				logger.debug() << "Add a back edge from " << abbs[back_abb] << " (" << back_abb << ") to "
-				               << abbs[after_call] << " (" << after_call << ")." << std::endl;
+				add_icf_edge(back_abb, after_call, abbs, "outgoing");
 			}
 		}
 		// add edges within the same function

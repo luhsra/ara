@@ -8,6 +8,10 @@
 
 namespace step {
 	class ICFG : public Step {
+	  private:
+		void add_icf_edge(ara::cfg::ABBGraph::vertex_descriptor from, ara::cfg::ABBGraph::vertex_descriptor to,
+		                  ara::cfg::ABBGraph& graph, std::string name);
+
 	  public:
 		virtual std::string get_name() const override { return "ICFG"; }
 		virtual std::string get_description() const override;
