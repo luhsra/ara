@@ -21,7 +21,7 @@ namespace step {
 		if (Result)
 			return Result;
 
-		Logger::LogStream debug_logger = logger.debug();
+		Logger::LogStream& debug_logger = logger.debug();
 		err.print("IRReader", debug_logger.llvm_ostream());
 		debug_logger.flush();
 		return NULL;

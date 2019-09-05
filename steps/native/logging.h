@@ -18,7 +18,7 @@ class Logger {
   private:
 	class LogBuf : public std::streambuf {
 	  public:
-		LogBuf(LogLevel level, PyLogger& logger) : level(level), logger(logger) {}
+		LogBuf(LogLevel level, PyLogger& py_logger) : level(level), py_logger(py_logger) {}
 
 	  private:
 		virtual int overflow(int c) override {
@@ -36,14 +36,14 @@ class Logger {
 			if (msg.back() == '\n') {
 				msg.pop_back();
 			}
-			py_log(level, logger, msg);
+			py_log(level, py_logger, msg);
 			o_stream.str(std::string());
 			o_stream.clear();
 			return (o_stream.good()) ? 0 : -1;
 		}
 
 		LogLevel level;
-		PyLogger& logger;
+		PyLogger& py_logger;
 		std::ostringstream o_stream;
 	};
 
@@ -57,6 +57,10 @@ class Logger {
 	 * std::ostream logging and a std::raw_ostream object with operator<< overloads for all LLVM classes.
 	 */
 	class LogStream {
+	  private:
+		friend Logger;
+		struct _constructor_tag {}; // explicit _constructor_tag() = default; };
+
 	  public:
 		/**
 		 * Enable operator<< for LLVM types (compatible with llvm::raw_ostream).
@@ -98,16 +102,30 @@ class Logger {
 			stream.flush();
 		}
 
+		LogStream(LogLevel level, PyLogger& py_logger, _constructor_tag)
+		    : buf(level, py_logger), stream(&buf), llvm_stream(stream) {}
+
 	  private:
-		friend Logger;
-		LogStream(LogLevel level, PyLogger& logger) : buf(level, logger), stream(&buf), llvm_stream(stream) {}
+		static std::unique_ptr<LogStream> factory(LogLevel level, PyLogger& py_logger) {
+			return std::make_unique<LogStream>(level, py_logger, _constructor_tag{});
+		}
 
 		LogBuf buf;
 		std::ostream stream;
 		llvm::raw_os_ostream llvm_stream;
 	};
 
+  private:
 	PyLogger logger;
+	std::map<LogLevel, std::unique_ptr<Logger::LogStream>> instances;
+
+	Logger::LogStream& get_instance(LogLevel level) {
+		assert(logger.logger != nullptr);
+		if (instances.find(level) == instances.end()) {
+			instances[level] = LogStream::factory(level, logger);
+		}
+		return *instances[level];
+	}
 
   public:
 	Logger() {
@@ -123,30 +141,15 @@ class Logger {
 
 	void set_level(LogLevel level) { logger.level = level; }
 
-	Logger::LogStream crit() {
-		assert(logger.logger != nullptr);
-		return Logger::LogStream(LogLevel::CRITICAL, logger);
-	}
+	Logger::LogStream& crit() { return get_instance(LogLevel::CRITICAL); }
 
-	Logger::LogStream err() {
-		assert(logger.logger != nullptr);
-		return Logger::LogStream(LogLevel::ERROR, logger);
-	}
+	Logger::LogStream& err() { return get_instance(LogLevel::ERROR); }
 
-	Logger::LogStream warn() {
-		assert(logger.logger != nullptr);
-		return Logger::LogStream(LogLevel::WARNING, logger);
-	}
+	Logger::LogStream& warn() { return get_instance(LogLevel::WARNING); }
 
-	Logger::LogStream info() {
-		assert(logger.logger != nullptr);
-		return Logger::LogStream(LogLevel::INFO, logger);
-	}
+	Logger::LogStream& info() { return get_instance(LogLevel::INFO); }
 
-	Logger::LogStream debug() {
-		assert(logger.logger != nullptr);
-		return Logger::LogStream(LogLevel::DEBUG, logger);
-	}
+	Logger::LogStream& debug() { return get_instance(LogLevel::DEBUG); }
 };
 
 inline LogLevel translate_level(std::string lvl) {
