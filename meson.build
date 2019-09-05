@@ -3,6 +3,8 @@ project('ara', 'cpp',
 	                   'cpp_std=c++17',
 	                   'buildtype=debugoptimized'])
 
+add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
+
 cython = find_program('cython')
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot'])

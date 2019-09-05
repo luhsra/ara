@@ -1085,6 +1085,8 @@ OS::shared_function OS::ABB::get_called_function() {
 
 	if (called_functions.size() > 2) {
 		std::cerr << "abb " << this->get_name() << " calls more than one function" << std::endl;
+		assert(false);
+		return nullptr;
 	} else if (called_functions.size() == 0)
 		return nullptr;
 	else

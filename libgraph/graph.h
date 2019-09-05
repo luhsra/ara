@@ -434,9 +434,7 @@ namespace graph {
 
 		};
 
-		virtual bool isEqual(const Vertex& vertex){
-
-		};
+		virtual bool isEqual(const Vertex& vertex) { return false; };
 
 		virtual std::ostream& print(std::ostream& stream) const { return stream << "Vertex(" << get_name() << ")"; }
 
