@@ -45,7 +45,7 @@ namespace ara::cfg {
 		}
 		auto call = FakeCallBase::create(&bb.front());
 		assert(call);
-		return std::move(call);
+		return call;
 	}
 
 	std::string ABB::get_call() const {
