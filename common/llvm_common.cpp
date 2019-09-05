@@ -35,6 +35,15 @@ const llvm::Value* FakeCallBase::getCalledValue() const {
 	return nullptr;
 }
 
+const llvm::FunctionType* FakeCallBase::getFunctionType() const {
+	if (c)
+		return c->getFunctionType();
+	if (v)
+		return v->getFunctionType();
+	assert(false);
+	return nullptr;
+}
+
 // copied from LLVM
 bool FakeCallBase::isIndirectCall() const {
 	const llvm::Value* V = getCalledValue();

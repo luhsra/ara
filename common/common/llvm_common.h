@@ -36,6 +36,7 @@ class FakeCallBase {
 
 	const llvm::Function* getCalledFunction() const;
 	const llvm::Value* getCalledValue() const;
+	const llvm::FunctionType* getFunctionType() const;
 	bool isIndirectCall() const;
 	bool isInlineAsm() const;
 };
