@@ -18,7 +18,7 @@ build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
 subdir('common')
-subdir('libgraph')
+subdir('graph')
 subdir('steps')
 subdir('appl')
 

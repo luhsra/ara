@@ -60,7 +60,7 @@ ARA is divided into steps that operate on the same system model. When starting t
 build/ara.sh -l
 ```
 Steps can be written into Python (defined in `steps`) or in C++ (defined in `steps/native`).
-The model is written in C++ with Python bindings (defined in `libgraph`).
+The model is written in C++ with Python bindings (defined in `graph`).
 
 Program configuration
 ---------------------
