@@ -1,10 +1,16 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+/* Python.h must be included before py_logging.h, see
+ * https://github.com/cython/cython/issues/3133
+ * TODO, fixed in Cython 3.0
+ */
+#include "Python.h"
 #include "py_logging.h"
 
 #include <boost/type_traits.hpp>
 #include <llvm/Support/raw_os_ostream.h>
+#include <map>
 #include <sstream>
 
 /**

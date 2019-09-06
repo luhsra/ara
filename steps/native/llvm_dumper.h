@@ -1,10 +1,8 @@
 #ifndef LLVM_DUMPER_H
 #define LLVM_DUMPER_H
 
-#include "graph.h"
-
-#include "llvm/IR/Instructions.h"
-
+#include <graph.h>
+#include <llvm/IR/Instructions.h>
 #include <vector>
 
 class LLVMDumper {

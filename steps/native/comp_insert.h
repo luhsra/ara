@@ -2,11 +2,10 @@
 
 #pragma once
 
-#include "graph.h"
 #include "step.h"
 
-#include "llvm/IR/Intrinsics.h"
-
+#include <graph.h>
+#include <llvm/IR/Intrinsics.h>
 #include <string>
 
 namespace step {

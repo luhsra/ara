@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include "graph.h"
 #include "step.h"
 
+#include <graph.h>
 #include <string>
 
 namespace step {

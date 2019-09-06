@@ -2,8 +2,7 @@
 
 #include "comp_insert.h"
 
-#include "common/llvm_common.h"
-
+#include <common/llvm_common.h>
 #include <iostream>
 #include <list>
 #include <llvm/IR/BasicBlock.h>

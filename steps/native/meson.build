@@ -24,7 +24,7 @@ native_step_pyx_cpp = custom_target('native_step_pyx',
 py_logging_pyx_cpp = custom_target('py_logging_pyx',
   output : ['py_logging.cpp', 'py_logging.h'],
   input : files('py_logging.pyx'),
-  command : [cython, '@INPUT@', '-o', '@OUTPUT0@'] + cython_flags,
+  command : [cython, '--capi-reexport-cincludes', '@INPUT@', '-o', '@OUTPUT0@'] + cython_flags,
 )
 py_logging_header = py_logging_pyx_cpp[1]
 

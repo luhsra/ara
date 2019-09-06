@@ -2,8 +2,7 @@
 
 #include "test.h"
 
-#include "graph.h"
-
+#include <graph.h>
 #include <iostream>
 #include <string>
 

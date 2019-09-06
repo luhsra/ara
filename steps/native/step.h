@@ -3,12 +3,12 @@
 #ifndef STEP_H
 #define STEP_H
 
-#include "Python.h"
-#include "graph.h"
 #include "logging.h"
 #include "option.h"
 
+#include <Python.h>
 #include <functional>
+#include <graph.h>
 #include <stdexcept>
 #include <string>
 #include <vector>

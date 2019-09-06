@@ -2,9 +2,8 @@
 
 #include "icfg.h"
 
-#include "common/llvm_common.h"
-
 #include <boost/graph/filtered_graph.hpp>
+#include <common/llvm_common.h>
 #include <llvm/ADT/SCCIterator.h>
 
 using namespace ara::cfg;

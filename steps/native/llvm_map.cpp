@@ -2,8 +2,7 @@
 
 #include "llvm_map.h"
 
-#include "common/llvm_common.h"
-
+#include <common/llvm_common.h>
 #include <llvm/IR/BasicBlock.h>
 
 using namespace llvm;

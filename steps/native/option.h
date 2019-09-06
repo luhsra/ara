@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Python.h"
-
+#include <Python.h>
 #include <cassert>
 #include <sstream>
 #include <string>

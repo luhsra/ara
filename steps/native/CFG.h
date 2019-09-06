@@ -16,10 +16,10 @@
 #ifndef CFG_H
 #define CFG_H
 
-#include "llvm/ADT/SmallSet.h"
-#include "llvm/Analysis/CFG.h"
-#include "llvm/Analysis/LoopInfo.h"
-#include "llvm/IR/Dominators.h"
+#include <llvm/ADT/SmallSet.h>
+#include <llvm/Analysis/CFG.h>
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/IR/Dominators.h>
 
 namespace llvm {
 

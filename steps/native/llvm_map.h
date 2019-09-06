@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "graph.h"
 #include "step.h"
+
+#include <graph.h>
 
 namespace step {
 	class LLVMMap : public Step {

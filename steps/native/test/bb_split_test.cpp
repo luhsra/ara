@@ -1,13 +1,12 @@
 // vim: set noet ts=4 sw=4:
 
-#include "common/llvm_common.h"
-#include "graph.h"
 #include "test.h"
 
-#include "llvm/IR/Instructions.h"
-#include "llvm/Support/Casting.h"
-
+#include <common/llvm_common.h>
+#include <graph.h>
 #include <iostream>
+#include <llvm/IR/Instructions.h>
+#include <llvm/Support/Casting.h>
 #include <stdexcept>
 #include <string>
 

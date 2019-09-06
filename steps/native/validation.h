@@ -2,31 +2,29 @@
 
 #pragma once
 
-#include "graph.h"
 #include "step.h"
 #include "warning.h"
 
-#include "llvm/Analysis/OrderedBasicBlock.h"
-#include "llvm/IR/CallSite.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Dominators.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Operator.h"
-#include "llvm/IR/Use.h"
-#include "llvm/IR/User.h"
-#include "llvm/Support/raw_ostream.h"
-
+#include <graph.h>
 #include <iostream>
 #include <llvm/Analysis/Interval.h>
 #include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/OrderedBasicBlock.h>
 #include <llvm/Config/llvm-config.h>
 #include <llvm/IR/CFG.h>
+#include <llvm/IR/CallSite.h>
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/DiagnosticInfo.h>
+#include <llvm/IR/Dominators.h>
+#include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Operator.h>
+#include <llvm/IR/Use.h>
+#include <llvm/IR/User.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
@@ -39,6 +37,7 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/SystemUtils.h>
 #include <llvm/Support/ToolOutputFile.h>
+#include <llvm/Support/raw_ostream.h>
 #include <queue>
 #include <string>
 #include <tuple>

@@ -3,9 +3,9 @@
 #ifndef TEST_STEP_H
 #define TEST_STEP_H
 
-#include "graph.h"
 #include "step.h"
 
+#include <graph.h>
 #include <string>
 
 namespace step {
