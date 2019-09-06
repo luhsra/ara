@@ -108,4 +108,10 @@ test('syscall',
   env: [python_path]
 )
 
+test('icfg',
+  py3_inst,
+  args: [files('icfg.py'), 'FreeRTOS', files('icfg.json'), freertos_icfg],
+  env: [python_path]
+)
+
 subdir('native_step_test')
