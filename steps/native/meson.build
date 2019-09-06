@@ -62,6 +62,7 @@ plib = py3_inst.extension_module('native_step',
         'test/fn_single_exit_test.cpp',
         'test/llvm_map_test.cpp',
         'test/test.cpp'),
+  cpp_pch: 'pch/steps_pch.h',
   dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep, common_dep]
 )
 

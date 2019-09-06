@@ -12,6 +12,7 @@ graph_pyx_cpp = custom_target('graph_pyx',
 
 libgraph = py3_inst.extension_module('graph',
     graph_pyx_cpp, 'graph.cc', 'cfg.cpp',
+    cpp_pch: 'pch/graph_pch.h',
     dependencies : [py3_inst.dependency(), llvm_dep, boost_dep, common_dep, bgl_dep]
 )
 
