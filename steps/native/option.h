@@ -303,7 +303,7 @@ namespace ara::option {
 		T ty;
 		bool global;
 
-		virtual std::string get_type_args() { return ty.serialize_args(); }
+		virtual std::string get_type_args() override { return ty.serialize_args(); }
 
 	  public:
 		TOption(std::string name, std::string help, T ty = T(), bool global = false)
@@ -315,7 +315,7 @@ namespace ara::option {
 
 		virtual bool is_global() override { return global; }
 
-		virtual unsigned get_type() { return T::get_type(); }
+		virtual unsigned get_type() override { return T::get_type(); }
 		/**
 		 * get value of option.
 		 */

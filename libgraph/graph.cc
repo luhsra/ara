@@ -1301,7 +1301,6 @@ OS::shared_abb OS::ABB::get_postdominator() {
 }
 
 bool OS::ABB::dominates(shared_abb abb) {
-llvm:
 	BasicBlock* bb = this->entry;
 	if (this->parent_function.lock() == nullptr)
 		abort();
@@ -1314,7 +1313,6 @@ llvm:
 }
 
 bool OS::ABB::postdominates(shared_abb abb) {
-llvm:
 	BasicBlock* bb = this->entry;
 	if (this->parent_function.lock() == nullptr)
 		abort();
@@ -1327,8 +1325,6 @@ llvm:
 }
 
 OS::shared_abb OS::ABB::get_dominator() {
-
-llvm:
 	BasicBlock* bb = this->entry;
 	if (this->parent_function.lock() == nullptr)
 		abort();
@@ -1409,9 +1405,9 @@ void OS::Counter::set_max_allowed_value(unsigned long max_allowed_value) {
 	this->max_allowed_value = max_allowed_value;
 }
 
-void OS::Counter::set_ticks_per_base(unsigned long ticks_per_base) { this->min_cycle = min_cycle; }
+void OS::Counter::set_ticks_per_base(unsigned long ticks_per_base) { this->ticks_per_base = ticks_per_base; }
 
-void OS::Counter::set_min_cycle(unsigned long min_cycle) { this->ticks_per_base = ticks_per_base; }
+void OS::Counter::set_min_cycle(unsigned long min_cycle) { this->min_cycle = min_cycle; }
 
 bool OS::Mutex::set_linked_resource(OS::shared_resource resource) {
 
@@ -1466,7 +1462,7 @@ void OS::Task::set_priority(unsigned long priority) {
 
 void OS::Task::append_priority(unsigned long priority) { this->priority.emplace_back(priority); }
 
-unsigned long OS::Task::get_priority() {
+unsigned long OS::Task::get_priority() const {
 
 	if (priority.size() == 1)
 		return this->priority.back();
@@ -1474,7 +1470,7 @@ unsigned long OS::Task::get_priority() {
 		return -1;
 }
 
-unsigned long OS::Task::get_stacksize() { return this->stacksize; }
+unsigned long OS::Task::get_stacksize() const { return this->stacksize; }
 
 void OS::Task::set_constant_priority(bool is_constant) { this->constant_priority = is_constant; }
 

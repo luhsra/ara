@@ -237,7 +237,7 @@ void get_call_relative_argument(std::any& any_value, llvm::Value*& llvm_value, a
 				int counter = -1;
 				int index = 0;
 				// check if the values are equal
-				for (auto data : valid_candidates) {
+				for (auto& data : valid_candidates) {
 					++counter;
 					if (dyn_cast<ConstantPointerNull>(std::get<llvm::Value*>(data))) {
 						if (first == false)
@@ -280,7 +280,7 @@ void get_call_relative_argument(std::any& any_value, llvm::Value*& llvm_value, a
 						unsigned int min_missmatch = -1;
 
 						// iterate about the candidates
-						for (auto candidate : valid_candidates) {
+						for (auto& candidate : valid_candidates) {
 
 							// get the first element
 							auto missmatch_list = std::get<std::vector<int>>(candidate);
@@ -314,16 +314,16 @@ void get_call_relative_argument(std::any& any_value, llvm::Value*& llvm_value, a
 						// store all best candidates in tmp list
 						std::vector<std::tuple<std::any, llvm::Value*, std::vector<int>>> tmp_valid_candidates;
 						int tmp_counter = 0;
-						for (auto candidate : valid_candidates) {
+						for (auto& candidate : valid_candidates) {
 							// check if candidate is in candidate list
 							if (find(candidate_indexes.begin(), candidate_indexes.end(), tmp_counter) !=
 							    candidate_indexes.end()) {
 								// store candidate in tmp list
-								tmp_valid_candidates.emplace_back(valid_candidates.at(tmp_counter));
+								tmp_valid_candidates.emplace_back(std::move(valid_candidates.at(tmp_counter)));
 							};
 							++tmp_counter;
 						}
-						valid_candidates = tmp_valid_candidates;
+						valid_candidates = std::move(tmp_valid_candidates);
 
 						// if candidate list has just size of 1 valid candidate was found
 						if (valid_candidates.size() == 1) {

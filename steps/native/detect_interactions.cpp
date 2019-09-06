@@ -54,8 +54,8 @@ void debug_argument_test(std::any value) {
  */
 std::vector<std::string> split(std::string stringToBeSplitted, std::string delimeter) {
 	std::vector<std::string> splittedString;
-	int startIndex = 0;
-	int endIndex = 0;
+	unsigned startIndex = 0;
+	unsigned endIndex = 0;
 	// std::cerr << "start handler name " << stringToBeSplitted << std::endl;
 	while ((endIndex = stringToBeSplitted.find(delimeter, startIndex)) < stringToBeSplitted.size()) {
 		std::string val = stringToBeSplitted.substr(startIndex, endIndex - startIndex);

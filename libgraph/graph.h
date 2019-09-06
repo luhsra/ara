@@ -359,7 +359,7 @@ namespace graph {
 
 		std::shared_ptr<llvm::Module> get_llvm_module();
 
-		[[deprecated]] void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für
+		void set_vertex(shared_vertex vertex); // vertex.clone(); innerhalb der set Methode um Objekt für
 		                                                      // die Klasse Graph zu speichern
 		void set_edge(
 		    shared_edge edge); // edge.clone(); innerhalb der set Methode um Objekt für die Klasse Graph zu speichern
@@ -449,7 +449,7 @@ namespace graph {
 
 		};
 
-		virtual bool isEqual(const Vertex& vertex) { return false; };
+		virtual bool isEqual(const Vertex&) { return false; };
 
 		virtual std::ostream& print(std::ostream& stream) const { return stream << "Vertex(" << get_name() << ")"; }
 
@@ -706,7 +706,7 @@ namespace OS {
 		llvm::LoopInfoBase<llvm::BasicBlock, llvm::Loop> loop_info_base;
 
 	  public:
-		void print_information();
+		void print_information() override;
 
 		static bool classof(const Vertex* v); // LLVM RTTI class of Methode
 
@@ -988,7 +988,7 @@ namespace OS {
 		std::list<weak_message> messages;
 		std::list<std::string> app_modes;
 
-		int stacksize;
+		unsigned long stacksize;
 		std::vector<unsigned long> priority;
 
 		// FreeRTOS attributes
@@ -1033,7 +1033,7 @@ namespace OS {
 			return equal;
 		};
 
-		void print_information(){
+		void print_information() override {
 
 		};
 
@@ -1046,13 +1046,13 @@ namespace OS {
 		void set_priority(unsigned long priority);
 		void append_priority(unsigned long priority);
 
-		unsigned long get_priority();
+		unsigned long get_priority() const;
 		void set_stacksize(unsigned long priority);
-		unsigned long get_stacksize();
+		unsigned long get_stacksize() const;
 		void set_schedule(bool scheduled);
 		bool is_scheduled() { return scheduled; }
 		void set_activation(unsigned long activation);
-		unsigned long get_activation() { return activation; }
+		unsigned long get_activation() const { return activation; }
 		void set_autostart(bool autostart);
 		bool is_autostarted() { return autostart; }
 		void set_appmode(std::string app_mode);
@@ -1171,8 +1171,8 @@ namespace OS {
 
 		message_property property = message_property::none;
 
-		int length; // Länger der Queue
-		int item_size;
+		unsigned long length; // Länger der Queue
+		unsigned long item_size;
 
 	  public:
 		Queue(graph::Graph* graph, std::string name) : graph::Vertex(graph, name) {
@@ -1494,7 +1494,7 @@ namespace OS {
 
 		unsigned int alarm_time;
 		unsigned int cycle_time;
-		int periode;     // Periode in Ticks
+		unsigned long periode;     // Periode in Ticks
 		timer_type type; // enum timer_type {One_shot_timer, Auto_reload_timer}
 		int timer_id; // ID is a void pointer and can be used by the application writer for any purpose. useful when the
 		              // same callback function is used by more software timers because it can be used to provide
