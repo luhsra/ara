@@ -16,6 +16,28 @@ from common.cy_helper cimport to_shared_ptr, to_string
 
 
 cdef class SubTypeMaker:
+    """Helper class to cast a base class object to a derived class.
+
+    Let's assume the two classes:
+    ```
+    class A:
+        pass
+
+    class B(A):
+        pass
+    ```
+    and a generator class G that needs to deliver instances of either B, while
+    only A can be created.
+
+    Then SubTypeMaker can be used as attribute for G:
+    ```
+    self.stm = SubTypeMaker(B)
+    a_obj = get_instance_of_A()
+    b_obj = self.stm.gen(a_obj)
+    ```
+
+    To use SubTypeMaker, B needs a constructor that accepts a copy argument.
+    """
     def __cinit__(self, n_type=None):
         self.n_type = n_type
 
@@ -115,8 +137,8 @@ cdef class Vertex:
     def __cinit__(self, edge_type=None, vertex_type=None, Vertex copy=None):
         if copy:
             self._c_vertex = copy._c_vertex
-            self.edge = copy.vert
-            self.vert = copy.edge
+            self.edge = copy.edge
+            self.vert = copy.vert
         else:
             self.edge = SubTypeMaker(edge_type)
             self.vert = SubTypeMaker(vertex_type)
