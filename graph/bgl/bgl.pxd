@@ -25,3 +25,6 @@ cdef class Graph:
     cdef SubTypeMaker graph
     cdef SubTypeMaker vert
     cdef SubTypeMaker edge
+
+cdef graph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g,
+               root_graph_type, graph_type, edge_type, vertex_type)

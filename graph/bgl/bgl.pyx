@@ -396,7 +396,8 @@ cdef class Graph:
     def filter_by(self, vertex=None, edge=None):
         pass
 
-cdef graph_fac(shared_ptr[bgl_w.GraphWrapper] g, root_graph_type=None, graph_type=None, edge_type=None, vertex_type=None):
+cdef graph_fac(shared_ptr[bgl_w.GraphWrapper] g,
+               root_graph_type, graph_type, edge_type, vertex_type):
     graph = Graph(root_graph_type, graph_type, edge_type, vertex_type)
     graph._c_graph = g
     return graph
