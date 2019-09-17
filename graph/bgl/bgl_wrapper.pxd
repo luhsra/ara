@@ -43,6 +43,8 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         uint64_t out_degree()
         uint64_t degree()
 
+        bool is_global()
+
         pair[unique_ptr[GraphIterator[VertexWrapper]], unique_ptr[GraphIterator[VertexWrapper]]] adjacent_vertices()
         pair[unique_ptr[GraphIterator[VertexWrapper]], unique_ptr[GraphIterator[VertexWrapper]]] inv_adjacent_vertices()
 

@@ -213,6 +213,9 @@ cdef class Vertex:
     def degree(self):
         return deref(self._c_vertex).degree()
 
+    def is_global(self):
+        return deref(self._c_vertex).is_global()
+
     def adjacent_vertices(self):
         return make_vertex_it(deref(self._c_vertex).adjacent_vertices(),
                               self.edge.n_type,

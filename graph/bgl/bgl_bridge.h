@@ -100,6 +100,11 @@ namespace ara::bgl_wrapper {
 
 		virtual uint64_t degree() override { return convert_size(boost::degree(v, g)); }
 
+		virtual bool is_global() override {
+			/* TODO handle case, where Graph is not a subgraph */
+			return g.is_root();
+		}
+
 		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> adjacent_vertices() override {
 			return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, typename Graph::adjacency_iterator,
 			                  typename Graph::vertex_descriptor>(g, boost::adjacent_vertices(v, g));

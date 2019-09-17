@@ -44,6 +44,8 @@ namespace ara::bgl_wrapper {
 		virtual uint64_t out_degree() = 0;
 		virtual uint64_t degree() = 0;
 
+		virtual bool is_global() = 0;
+
 		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> adjacent_vertices() = 0;
 		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> inv_adjacent_vertices() {
 			throw ara::NotImplemented();
