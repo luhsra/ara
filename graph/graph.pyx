@@ -10,6 +10,7 @@ cimport cfg.cftype
 cimport graph
 cimport common.cy_helper
 cimport boost
+cimport cy_helper
 
 from libcpp.memory cimport shared_ptr, make_shared, unique_ptr, make_unique
 from libcpp.string cimport string

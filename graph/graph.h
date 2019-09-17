@@ -152,7 +152,7 @@ namespace ara::cfg {
 		/**
 		 * Return the function that contains the vertex.
 		 */
-		const FunctionDescriptor& get_subgraph(const ABBGraph::vertex_descriptor) const;
+		FunctionDescriptor& get_subgraph(const ABBGraph::vertex_descriptor);
 
 		/**
 		 * Return the function with a specific name.

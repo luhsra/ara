@@ -1,6 +1,7 @@
 subdir('bgl')
 
 pygraph_includes = files('cgraph.pxd', 'newgraph.pxd', 'boost.pxd', 'graph.pxd',
+                         'cy_helper.pxd',
                          'cfg/__init__.pxd',
                          'cfg/abbtype.pxd')
 

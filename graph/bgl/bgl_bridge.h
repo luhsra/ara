@@ -8,6 +8,10 @@
 #include <functional>
 #include <memory>
 
+namespace ara::graph::cy_helper {
+	struct BGLExtensions;
+}
+
 namespace ara::bgl_wrapper {
 
 	template <typename Bundle>
@@ -129,6 +133,7 @@ namespace ara::bgl_wrapper {
 		friend class GraphImpl<Graph>;
 		template <class G, class T, class R>
 		friend class SubGraphImpl;
+		friend struct ara::graph::cy_helper::BGLExtensions;
 
 	  private:
 		uint64_t convert_size(typename boost::graph_traits<Graph>::degree_size_type size) {
