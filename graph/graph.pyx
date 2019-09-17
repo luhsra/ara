@@ -111,12 +111,20 @@ cdef class Function(bgl.Graph):
         return deref(self.get_func()).name.decode('utf-8')
 
     @name.setter
-    def name(self, value):
+    def name(self, value: str):
         deref(self.get_func()).name = value
 
     @property
     def implemented(self):
         return deref(self.get_func()).implemented
+
+    @property
+    def syscall(self):
+        return deref(self.get_func()).syscall
+
+    @syscall.setter
+    def syscall(self, value: bool):
+        deref(self.get_func()).syscall = value
 
 
 ctypedef bgl_bridge.SubGraphImpl[cfg.ABBGraph, cfg.FunctionDescriptor, cfg.ABBGraph] ABBGraphWrapper

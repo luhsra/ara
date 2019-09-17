@@ -67,6 +67,7 @@ namespace ara::cfg {
 	struct Function {
 		std::string name;
 		bool implemented; /* has this functions ABBs or is it a stub */
+		bool syscall = false; /* is this function a syscall or not */
 
 		llvm::Function* func;
 	};
