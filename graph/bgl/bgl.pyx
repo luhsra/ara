@@ -91,10 +91,13 @@ cdef class EdgeIterator:
             raise StopIteration
         cdef shared_ptr[bgl_w.EdgeWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
-        return self.edge.gen(edge_fac(e, self.edge.n_type, self.vert.n_type))
+        return self.edge.gen(edge_fac(e,
+                                      self.edge.n_type,
+                                      self.vert.n_type))
 
 
-cdef make_edge_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]]] its, edge_type, vertex_type):
+cdef make_edge_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.EdgeWrapper]]] its,
+                  edge_type, vertex_type):
     it = EdgeIterator(edge_type, vertex_type)
     it._iter = to_shared_ptr(move(its.first))
     it._end = to_shared_ptr(move(its.second))
@@ -122,7 +125,8 @@ cdef class VertexIterator:
         return self.vert.gen(vertex_fac(v, self.edge.n_type, self.vert.n_type))
 
 
-cdef make_vertex_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]]] its, edge_type, vertex_type):
+cdef make_vertex_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]]] its,
+                    edge_type, vertex_type):
     it = VertexIterator(edge_type, vertex_type)
     it._iter = to_shared_ptr(move(its.first))
     it._end = to_shared_ptr(move(its.second))
@@ -151,7 +155,11 @@ cdef class GraphIterator:
             raise StopIteration
         cdef shared_ptr[bgl_w.GraphWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
-        return self.graph.gen(graph_fac(e, self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        return self.graph.gen(graph_fac(e,
+                                        self.root_graph.n_type,
+                                        self.graph.n_type,
+                                        self.edge.n_type,
+                                        self.vert.n_type))
 
 
 cdef make_graph_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]]] its,
@@ -187,10 +195,14 @@ cdef class Vertex:
         return f"Vertex({vid})"
 
     def in_edges(self):
-        return make_edge_it(deref(self._c_vertex).in_edges(), self.edge.n_type, self.vert.n_type)
+        return make_edge_it(deref(self._c_vertex).in_edges(),
+                            self.edge.n_type,
+                            self.vert.n_type)
 
     def out_edges(self):
-        return make_edge_it(deref(self._c_vertex).out_edges(), self.edge.n_type, self.vert.n_type)
+        return make_edge_it(deref(self._c_vertex).out_edges(),
+                            self.edge.n_type,
+                            self.vert.n_type)
 
     def in_degree(self):
         return deref(self._c_vertex).in_degree()
@@ -202,10 +214,14 @@ cdef class Vertex:
         return deref(self._c_vertex).degree()
 
     def adjacent_vertices(self):
-        return make_vertex_it(deref(self._c_vertex).adjacent_vertices(), self.edge.n_type, self.vert.n_type)
+        return make_vertex_it(deref(self._c_vertex).adjacent_vertices(),
+                              self.edge.n_type,
+                              self.vert.n_type)
 
     def inv_adjacent_vertices(self):
-        return make_vertex_it(deref(self._c_vertex).inv_adjacent_vertices(), self.edge.n_type, self.vert.n_type)
+        return make_vertex_it(deref(self._c_vertex).inv_adjacent_vertices(),
+                              self.edge.n_type,
+                              self.vert.n_type)
 
     def clear_in_edges(self):
         deref(self._c_vertex).clear_in_edges()
@@ -232,10 +248,14 @@ cdef class Edge:
             self.vert = SubTypeMaker(vertex_type)
 
     def source(self):
-        return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_edge).source()), self.edge.n_type, self.vert.n_type))
+        return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_edge).source()),
+                                        self.edge.n_type,
+                                        self.vert.n_type))
 
     def target(self):
-        return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_edge).target()), self.edge.n_type, self.vert.n_type))
+        return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_edge).target()),
+                                        self.edge.n_type,
+                                        self.vert.n_type))
 
 cdef edge_fac(shared_ptr[bgl_w.EdgeWrapper] e, edge_type, vertex_type):
     edge = Edge(edge_type, vertex_type)
@@ -258,19 +278,25 @@ cdef class Graph:
             self.vert = SubTypeMaker(vertex_type)
 
     def vertices(self):
-        return make_vertex_it(deref(self._c_graph).vertices(), self.edge.n_type, self.vert.n_type)
+        return make_vertex_it(deref(self._c_graph).vertices(),
+                              self.edge.n_type,
+                              self.vert.n_type)
 
     def num_vertices(self):
         return deref(self._c_graph).num_vertices()
 
     def edges(self):
-        return make_edge_it(deref(self._c_graph).edges(), self.edge.n_type, self.vert.n_type)
+        return make_edge_it(deref(self._c_graph).edges(),
+                            self.edge.n_type,
+                            self.vert.n_type)
 
     def num_edges(self):
         return deref(self._c_graph).num_edges()
 
     def add_vertex(self):
-        return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).add_vertex()), self.edge.n_type, self.vert.n_type))
+        return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).add_vertex()),
+                                        self.edge.n_type,
+                                        self.vert.n_type))
 
     # TODO not supported by boost subgraph
     # def remove_vertex(self, vertex):
@@ -288,32 +314,52 @@ cdef class Graph:
 
     # subgraph functions
     def create_subgraph(self):
-        return self.graph.gen(graph_fac(to_shared_ptr(deref(self._c_graph).create_subgraph()), self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        return self.graph.gen(graph_fac(to_shared_ptr(deref(self._c_graph).create_subgraph()),
+                                        self.root_graph.n_type,
+                                        self.graph.n_type,
+                                        self.edge.n_type,
+                                        self.vert.n_type))
 
     def is_root(self):
         return deref(self._c_graph).is_root()
 
     def root(self):
-        return self.root_graph.gen(graph_fac(to_shared_ptr(deref(self._c_graph).root()), self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        return self.root_graph.gen(graph_fac(to_shared_ptr(deref(self._c_graph).root()),
+                                             self.root_graph.n_type,
+                                             self.graph.n_type,
+                                             self.edge.n_type,
+                                             self.vert.n_type))
 
     def parent(self):
         cdef shared_ptr[bgl_wrapper.GraphWrapper] parent = to_shared_ptr(deref(self._c_graph).parent())
         if deref(parent).is_root():
             return self.root()
-        return self.graph.gen(graph_fac(parent, self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        return self.graph.gen(graph_fac(parent,
+                                        self.root_graph.n_type,
+                                        self.graph.n_type,
+                                        self.edge.n_type,
+                                        self.vert.n_type))
 
     def children(self):
-        return make_graph_it(deref(self._c_graph).children(), self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type)
+        return make_graph_it(deref(self._c_graph).children(),
+                             self.root_graph.n_type,
+                             self.graph.n_type,
+                             self.edge.n_type,
+                             self.vert.n_type)
 
     def local_to_global(self, obj):
         cdef Edge e
         cdef Vertex v
         if isinstance(obj, Edge):
             e = obj
-            return self.edge.gen(edge_fac(to_shared_ptr(deref(self._c_graph).local_to_global(deref(e._c_edge))), self.edge.n_type, self.vert.n_type))
+            return self.edge.gen(edge_fac(to_shared_ptr(deref(self._c_graph).local_to_global(deref(e._c_edge))),
+                                          self.edge.n_type,
+                                          self.vert.n_type))
         if isinstance(obj, Vertex):
             v = obj
-            return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).local_to_global(deref(v._c_vertex))), self.edge.n_type, self.vert.n_type))
+            return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).local_to_global(deref(v._c_vertex))),
+                                            self.edge.n_type,
+                                            self.vert.n_type))
         assert False
 
     def global_to_local(self, obj):
@@ -321,22 +367,30 @@ cdef class Graph:
         cdef Vertex v
         if isinstance(obj, Edge):
             e = obj
-            return self.edge.gen(edge_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(e._c_edge))), self.edge.n_type, self.vert.n_type))
+            return self.edge.gen(edge_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(e._c_edge))),
+                                          self.edge.n_type,
+                                          self.vert.n_type))
         if isinstance(obj, Vertex):
             v = obj
-            return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(v._c_vertex))), self.edge.n_type, self.vert.n_type))
+            return self.vert.gen(vertex_fac(to_shared_ptr(deref(self._c_graph).global_to_local(deref(v._c_vertex))),
+                                            self.edge.n_type,
+                                            self.vert.n_type))
         assert False
 
     def find_vertex(self, Vertex vertex):
         cdef pair[unique_ptr[bgl_w.VertexWrapper], bool] ret = deref(self._c_graph).find_vertex(deref(vertex._c_vertex))
         if ret.second:
-            return self.vert.gen(vertex_fac(to_shared_ptr(move(ret.first)), self.edge.n_type, self.vert.n_type))
+            return self.vert.gen(vertex_fac(to_shared_ptr(move(ret.first)),
+                                            self.edge.n_type,
+                                            self.vert.n_type))
         return None
 
     def find_edge(self, Edge edge):
         cdef pair[unique_ptr[bgl_w.EdgeWrapper], bool] ret = deref(self._c_graph).find_edge(deref(edge._c_edge))
         if ret.second:
-            return self.edge.gen(edge_fac(to_shared_ptr(move(ret.first)), self.edge.n_type, self.vert.n_type))
+            return self.edge.gen(edge_fac(to_shared_ptr(move(ret.first)),
+                                          self.edge.n_type,
+                                          self.vert.n_type))
         return None
 
     def filter_by(self, vertex=None, edge=None):
