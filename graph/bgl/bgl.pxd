@@ -21,6 +21,7 @@ cdef class Edge:
 
 cdef class Graph:
     cdef shared_ptr[bgl_wrapper.GraphWrapper] _c_graph
+    cdef SubTypeMaker root_graph
     cdef SubTypeMaker graph
     cdef SubTypeMaker vert
     cdef SubTypeMaker edge

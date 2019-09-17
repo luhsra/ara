@@ -123,6 +123,7 @@ ctypedef bgl_bridge.SubGraphImpl[cfg.ABBGraph, cfg.FunctionDescriptor, cfg.ABBGr
 
 cdef class ABBGraph(bgl.Graph):
     def __cinit__(self):
+        self.root_graph.n_type = ABBGraph
         self.graph.n_type = Function
         self.vert.n_type = ABB
         self.edge.n_type = ABBEdge

@@ -2,7 +2,33 @@
 # cython: language_level=3
 # vim: set et ts=4 sw=4:
 
-"""Generic python wrapper classes for the boost graph library."""
+"""Generic python wrapper classes for the boost graph library.
+
+All classes here have the problem that they should not be used directly but with
+derived classes. However, all classes deliver instances of each other:
+```
+class A:
+    def other():
+        return B()
+
+class B:
+    def other():
+        return A()
+```
+This is only partly that, that we want. The wanted usage is:
+```
+class My_A(A):
+    pass
+
+class My_B(B):
+    pass
+
+a = My_A()
+print(type(a.other())) # this should print 'My_B'
+```
+Therefore all objects contain special attributes of type SubTypeMaker to store
+the derived classes that should be casted into.
+"""
 
 cimport bgl_wrapper as bgl_w
 from common.move cimport move
@@ -106,11 +132,13 @@ cdef make_vertex_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.VertexWrapper]], u
 cdef class GraphIterator:
     cdef shared_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]] _iter
     cdef shared_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]] _end
+    cdef SubTypeMaker root_graph
     cdef SubTypeMaker graph
     cdef SubTypeMaker vert
     cdef SubTypeMaker edge
 
-    def __cinit__(self, graph_type=None, edge_type=None, vertex_type=None):
+    def __cinit__(self, root_graph_type=None, graph_type=None, edge_type=None, vertex_type=None):
+        self.root_graph = SubTypeMaker(root_graph_type)
         self.graph = SubTypeMaker(graph_type)
         self.edge = SubTypeMaker(edge_type)
         self.vert = SubTypeMaker(vertex_type)
@@ -123,11 +151,12 @@ cdef class GraphIterator:
             raise StopIteration
         cdef shared_ptr[bgl_w.GraphWrapper] e = to_shared_ptr(deref(deref(self._iter)))
         pp(deref(self._iter))
-        return self.graph.gen(graph_fac(e, self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        return self.graph.gen(graph_fac(e, self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
 
 
-cdef make_graph_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]]] its, graph_type, edge_type, vertex_type):
-    it = GraphIterator(graph_type, edge_type, vertex_type)
+cdef make_graph_it(pair[unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]], unique_ptr[bgl_w.GraphIterator[bgl_w.GraphWrapper]]] its,
+                   root_graph_type, graph_type, edge_type, vertex_type):
+    it = GraphIterator(root_graph_type, graph_type, edge_type, vertex_type)
     it._iter = to_shared_ptr(move(its.first))
     it._end = to_shared_ptr(move(its.second))
     return it
@@ -214,14 +243,16 @@ cdef edge_fac(shared_ptr[bgl_w.EdgeWrapper] e, edge_type, vertex_type):
     return edge
 
 cdef class Graph:
-    def __cinit__(self, graph_type=None, edge_type=None, vertex_type=None,
+    def __cinit__(self, root_graph_type=None, graph_type=None, edge_type=None, vertex_type=None,
                   Graph copy=None):
         if copy:
             self._c_graph = copy._c_graph
+            self.root_graph = copy.root_graph
             self.graph = copy.graph
             self.edge = copy.edge
             self.vert = copy.vert
         else:
+            self.root_graph = SubTypeMaker(root_graph_type)
             self.graph = SubTypeMaker(graph_type)
             self.edge = SubTypeMaker(edge_type)
             self.vert = SubTypeMaker(vertex_type)
@@ -257,19 +288,22 @@ cdef class Graph:
 
     # subgraph functions
     def create_subgraph(self):
-        return self.gen_graph(graph_fac(to_shared_ptr(deref(self._c_graph).create_subgraph()), self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        return self.graph.gen(graph_fac(to_shared_ptr(deref(self._c_graph).create_subgraph()), self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
 
     def is_root(self):
         return deref(self._c_graph).is_root()
 
     def root(self):
-        return self.gen_graph(graph_fac(to_shared_ptr(deref(self._c_graph).root())), self.graph.n_type, self.edge.n_type, self.vert.n_type)
+        return self.root_graph.gen(graph_fac(to_shared_ptr(deref(self._c_graph).root()), self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
 
     def parent(self):
-        return self.gen_graph(graph_fac(to_shared_ptr(deref(self._c_graph).parent()), self.graph.n_type, self.edge.n_type, self.vert.n_type))
+        cdef shared_ptr[bgl_wrapper.GraphWrapper] parent = to_shared_ptr(deref(self._c_graph).parent())
+        if deref(parent).is_root():
+            return self.root()
+        return self.graph.gen(graph_fac(parent, self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type))
 
     def children(self):
-        return make_graph_it(deref(self._c_graph).children(), self.graph.n_type, self.edge.n_type, self.vert.n_type)
+        return make_graph_it(deref(self._c_graph).children(), self.root_graph.n_type, self.graph.n_type, self.edge.n_type, self.vert.n_type)
 
     def local_to_global(self, obj):
         cdef Edge e
@@ -308,7 +342,7 @@ cdef class Graph:
     def filter_by(self, vertex=None, edge=None):
         pass
 
-cdef graph_fac(shared_ptr[bgl_w.GraphWrapper] g, graph_type=None, edge_type=None, vertex_type=None):
-    graph = Graph(graph_type, edge_type, vertex_type)
+cdef graph_fac(shared_ptr[bgl_w.GraphWrapper] g, root_graph_type=None, graph_type=None, edge_type=None, vertex_type=None):
+    graph = Graph(root_graph_type, graph_type, edge_type, vertex_type)
     graph._c_graph = g
     return graph
