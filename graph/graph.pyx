@@ -126,15 +126,26 @@ cdef class ABBGraph(bgl.Graph):
     def __cinit__(self):
         self.root_graph.n_type = ABBGraph
         self.graph.n_type = Function
-        self.vert.n_type = ABB
         self.edge.n_type = ABBEdge
+        self.vert.n_type = ABB
+
+    cdef cfg.ABBGraph* get_graph(self):
+        cdef shared_ptr[ABBGraphWrapper] ptr = spc[ABBGraphWrapper, bgl_wrapper.GraphWrapper](self._c_graph)
+        return &deref(ptr).get_graph()
 
     def __str__(self):
-        cdef shared_ptr[ABBGraphWrapper] ptr = spc[ABBGraphWrapper, bgl_wrapper.GraphWrapper](self._c_graph)
-        return to_string(deref(ptr).get_graph()).decode('utf-8')
+        return to_string(self.get_graph()).decode('utf-8')
 
     def functions(self):
         return self.children()
+
+    def get_subgraph(self, ABB abb):
+        assert abb.is_global()
+        return self.graph.gen(bgl.graph_fac(cy_helper.BGLExtensions.get_subgraph(deref(self.get_graph()), abb._c_vertex),
+                                            self.root_graph.n_type,
+                                            self.graph.n_type,
+                                            self.edge.n_type,
+                                            self.vert.n_type))
 
 
 cdef abbgraph_fac(shared_ptr[bgl_wrapper.GraphWrapper] g):

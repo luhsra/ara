@@ -245,7 +245,7 @@ namespace ara::bgl_wrapper {
 			return std::move(get_property_obj_wrap(graph));
 		}
 
-		virtual const Graph& get_graph() { return graph; }
+		virtual Graph& get_graph() { return graph; }
 
 	  protected:
 		Graph& graph;

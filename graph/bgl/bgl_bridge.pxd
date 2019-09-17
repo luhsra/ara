@@ -10,4 +10,4 @@ cdef extern from "bgl_bridge.h" namespace "ara::bgl_wrapper":
         T& get()
 
     cdef cppclass SubGraphImpl[G, S, R]:
-        const G& get_graph()
+        G& get_graph()

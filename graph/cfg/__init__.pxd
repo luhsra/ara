@@ -27,4 +27,7 @@ cdef extern from "graph.h" namespace "ara::cfg":
         cfg.cftype.CFType type
 
     cdef cppclass ABBGraph:
-        pass
+        cppclass vertex_descriptor:
+            pass
+
+        const FunctionDescriptor& get_subgraph(const ABBGraph.vertex_descriptor)
