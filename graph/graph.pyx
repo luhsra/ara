@@ -86,7 +86,7 @@ cdef class ABBEdge(bgl.Edge):
         cdef ABBEdgePropPtr prop = dynamic_cast[ABBEdgePropPtr](gprop.get())
         return &deref(prop).get()
 
-    def __str__(self):
+    def __repr__(self):
         return to_string(deref(self.get_abbedge())).decode('utf-8')
 
     @property
@@ -105,6 +105,12 @@ cdef class Function(bgl.Graph):
         cdef unique_ptr[bgl_wrapper.BoostProperty] gprop = deref(self._c_graph).get_property_obj()
         cdef FunctionPropPtr prop = dynamic_cast[FunctionPropPtr](gprop.get())
         return &deref(prop).get()
+
+    def __hash__(self):
+        return hash("FUNCTION_HASH" + self.name)
+
+    def __repr__(self):
+        return to_string(deref(self.get_func())).decode('utf-8')
 
     @property
     def name(self):
