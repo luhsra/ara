@@ -23,6 +23,7 @@ subdir(freertos_path)
 
 freertos_targets = []
 foreach app : ['a',
+               'abb_merge',
                'argument_load',
                'c',
                'critical_region_detection',
