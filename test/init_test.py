@@ -28,10 +28,21 @@ def fail_if(condition, *arg, dry=False):
 
 
 def init_test(steps=None, extra_config=None):
-    """CLI usage: your_program <os_name> <json_file> <ll_files>"""
+    """Common interface for test. Reads a JSON file and some ll-file from the
+    command line and make them available.
+
+    CLI usage when using init_test:
+    your_program <os_name> <json_file> <ll_files>
+
+    Return a graph reference, the JSON struct and the stepmanager instance.
+
+    Arguments:
+    steps:        List of steps, see the `esteps` argument of
+                  Stepmanager.execute.
+    extra_config: Dict with extra configuration, see the `extra_config`
+                  argument of Stepmanager.execute.
+    """
     init_logging(level=logging.DEBUG)
-    if steps is None:
-        steps = ['ValidationStep']
     if not extra_config:
         extra_config = {}
     g = graph.PyGraph()
@@ -40,7 +51,12 @@ def init_test(steps=None, extra_config=None):
     i_files = sys.argv[3:]
     print(f"Testing with JSON: '{json_file}', OS: '{os_name}'" +
           f", and files: {i_files}")
-    print(f"Executing steps: {steps}")
+    if steps:
+        print(f"Executing steps: {steps}")
+    elif extra_config:
+        print(f"Executing with config: {extra_config}")
+    else:
+        assert False
     with open(json_file) as f:
         data = json.load(f)
 
