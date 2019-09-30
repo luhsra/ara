@@ -18,7 +18,7 @@ Getting packages in SRA lab:
 ```
 echo addpackage llvm-9.0 >> ~/.bashrc
 echo export LD_LIBRARY_PATH=/proj/opt/llvm-9.0/lib:\$LD_LIBRARY_PATH >> ~/.bashrc
-echo export PATH=`pwd`/.local/bin:\$PATH >> ~/.bashrc
+echo export PATH=$HOME/.local/bin:\$PATH >> ~/.bashrc
 . ~/.bashrc
 pip3 install --user meson
 ```
