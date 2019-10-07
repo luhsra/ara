@@ -195,17 +195,18 @@ namespace ara::bgl_wrapper {
 		typename Graph::edge_descriptor e;
 	};
 
-	template <typename Graph>
-	std::unique_ptr<BoostProperty> get_property_obj_wrap(Graph& graph) {
-		typename boost::graph_bundle_type<Graph>::type& prop = boost::get_property(graph);
-		return std::make_unique<BoostPropImpl<typename boost::graph_bundle_type<Graph>::type>>(prop);
-	}
-
-	// boost get_property for ara::cfg::ABBGraph does not work, so provide a special implementation for this case
-	template <>
-	std::unique_ptr<BoostProperty> get_property_obj_wrap<ara::cfg::ABBGraph>(ara::cfg::ABBGraph&) {
-		return nullptr;
-	}
+	namespace {
+		template <typename Graph>
+		std::unique_ptr<BoostProperty> get_property_obj_wrap(Graph& graph) {
+			typename boost::graph_bundle_type<Graph>::type& prop = boost::get_property(graph);
+			return std::make_unique<BoostPropImpl<typename boost::graph_bundle_type<Graph>::type>>(prop);
+		}
+		// boost get_property for ara::cfg::ABBGraph does not work, so provide a special implementation for this case
+		template <>
+		std::unique_ptr<BoostProperty> get_property_obj_wrap<ara::cfg::ABBGraph>(ara::cfg::ABBGraph&) {
+			return nullptr;
+		}
+	} // namespace
 
 	template <typename Graph>
 	class GraphImpl : public GraphWrapper {
@@ -270,19 +271,22 @@ namespace ara::bgl_wrapper {
 		Graph& graph;
 	};
 
-	template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
-	          typename = std::enable_if_t<std::is_same<Graph, PGraph>::value>>
-	std::unique_ptr<GraphWrapper> parent_wrap(Graph& p, RootGraph& r) {
-		return std::make_unique<SubGraphImpl<Graph, SubGraph, RootGraph>>(p, r);
-	}
 
-	template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
-	          typename = std::enable_if_t<std::negation<std::is_same<Graph, PGraph>>::value>>
-	std::unique_ptr<GraphWrapper> parent_wrap(PGraph&, RootGraph&) {
-		/* this cannot be called because runtime logic must take the other return path */
-		assert(false);
-		return nullptr;
-	}
+
+	namespace {
+		template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
+		          typename = std::enable_if_t<std::is_same<Graph, PGraph>::value>>
+		std::unique_ptr<GraphWrapper> parent_wrap(Graph& p, RootGraph& r) {
+			return std::make_unique<SubGraphImpl<Graph, SubGraph, RootGraph>>(p, r);
+		}
+		template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
+		          typename = std::enable_if_t<std::negation<std::is_same<Graph, PGraph>>::value>>
+		std::unique_ptr<GraphWrapper> parent_wrap(PGraph&, RootGraph&) {
+			/* this cannot be called because runtime logic must take the other return path */
+			assert(false);
+			return nullptr;
+		}
+	} // namespace
 
 	/**
 	 * Template Argument:
