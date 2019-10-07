@@ -182,6 +182,13 @@ cdef class Graph:
         return abbgraph_fac(ptr)
 
 
+def create_graph(directed=True, with_subgraph=False,
+                 root_graph_type=None, graph_type=None,
+                 edge_type=None, vertex_type=None):
+    return bgl.graph_fac(cy_helper.create_graph(directed, with_subgraph),
+                         root_graph_type, graph_type, edge_type, vertex_type)
+
+
 # -------------------------------------------
 # HERE BEGINS THE OLD GRAPH API
 # -------------------------------------------

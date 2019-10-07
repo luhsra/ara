@@ -14,4 +14,30 @@ namespace ara::graph::cy_helper {
 			return std::make_shared<ara::bgl_wrapper::SubGraphImpl<ara::cfg::FunctionDescriptor, ara::cfg::FunctionDescriptor, ara::cfg::ABBGraph>>(self.get_subgraph(v->v), self);
 		}
 	};
+
+	std::shared_ptr<bgl_wrapper::GraphWrapper> create_graph(bool directed, bool with_subgraph) {
+		typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS,
+		                                              boost::no_property, boost::property<boost::edge_index_t, int>>>
+		    DirectedSubGraph;
+		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS> DirectedGraph;
+		typedef boost::subgraph<boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property,
+		                                              boost::property<boost::edge_index_t, int>>>
+		    UnDirectedSubGraph;
+		typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> UnDirectedGraph;
+
+		if (directed) {
+			if (with_subgraph) {
+				return std::make_shared<ara::bgl_wrapper::SubGraphOwnerImpl<DirectedSubGraph>>();
+			} else {
+				return std::make_shared<ara::bgl_wrapper::GraphOwnerImpl<DirectedGraph>>();
+			}
+		} else {
+			if (with_subgraph) {
+				return std::make_shared<ara::bgl_wrapper::SubGraphOwnerImpl<UnDirectedSubGraph>>();
+			} else {
+				return std::make_shared<ara::bgl_wrapper::GraphOwnerImpl<UnDirectedGraph>>();
+			}
+		}
+		return nullptr;
+	}
 }

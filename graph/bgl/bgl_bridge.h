@@ -271,7 +271,15 @@ namespace ara::bgl_wrapper {
 		Graph& graph;
 	};
 
+	template <typename Graph>
+	class GraphOwnerImpl : public GraphImpl<Graph> {
+	  public:
+		GraphOwnerImpl() : GraphImpl<Graph>(graph_obj), graph_obj() {}
+		virtual ~GraphOwnerImpl() {}
 
+	  protected:
+		Graph graph_obj;
+	};
 
 	namespace {
 		template <typename Graph, typename SubGraph, typename RootGraph, typename PGraph,
@@ -382,5 +390,15 @@ namespace ara::bgl_wrapper {
 
 	  protected:
 		RootGraph& root_graph;
+	};
+
+	template <typename Graph, typename SubGraph = Graph, typename RootGraph = Graph>
+	class SubGraphOwnerImpl : public SubGraphImpl<Graph, SubGraph, RootGraph> {
+	  public:
+		SubGraphOwnerImpl() : SubGraphImpl<Graph, SubGraph, RootGraph>(graph_obj, graph_obj), graph_obj() {}
+		virtual ~SubGraphOwnerImpl() {}
+
+	  protected:
+		Graph graph_obj;
 	};
 } // namespace ara::bgl_wrapper

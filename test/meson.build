@@ -1,3 +1,9 @@
+test('graph-lib',
+        py3_inst,
+        args : files('test_graph.py'),
+        env : [python_path]
+)
+
 test('dependency-resolving',
         py3_inst,
         args : files('dependency_resolving.py'),
