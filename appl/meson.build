@@ -3,6 +3,7 @@ nop = find_program('true')
 
 # compiler flags to generate annotated IR
 clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names', '-fno-exceptions']
+clang_flags += '-Wno-everything'
 c_std = '-std=c11'
 cxx_std = '-std=c++11'
 
