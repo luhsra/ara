@@ -78,6 +78,29 @@ namespace ara::bgl_wrapper {
 	template <typename Graph>
 	class EdgeImpl;
 
+	namespace {
+		template <typename Graph>
+		bool is_global_wrap(const boost::subgraph<Graph>& graph) {
+			return graph.is_root();
+		}
+		template <typename Graph>
+		bool is_global_wrap(const Graph&) {
+			return true;
+		}
+
+		template <typename Graph>
+		typename boost::subgraph<Graph>::vertex_descriptor
+		global_vertex_wrap(const boost::subgraph<Graph>& graph,
+		                   typename boost::subgraph<Graph>::vertex_descriptor vertex) {
+			return graph.local_to_global(vertex);
+		}
+		template <typename Graph>
+		typename Graph::vertex_descriptor global_vertex_wrap(const Graph&, typename Graph::vertex_descriptor vertex) {
+			return vertex;
+		}
+
+	} // namespace
+
 	template <typename Graph>
 	class VertexImpl : public VertexWrapper {
 	  public:
@@ -100,10 +123,7 @@ namespace ara::bgl_wrapper {
 
 		virtual uint64_t degree() override { return convert_size(boost::degree(v, g)); }
 
-		virtual bool is_global() override {
-			/* TODO handle case, where Graph is not a subgraph */
-			return g.is_root();
-		}
+		virtual bool is_global() override { return is_global_wrap(g); }
 
 		virtual SamePair<std::unique_ptr<GraphIterator<VertexWrapper>>> adjacent_vertices() override {
 			return convert_it<VertexWrapper, VertexImpl<Graph>, Graph, typename Graph::adjacency_iterator,
@@ -131,8 +151,7 @@ namespace ara::bgl_wrapper {
 
 		virtual uint64_t get_id() override {
 			/* TODO only unique with regard to the Graph g, hash somehow the graph also in */
-			/* TODO handle case, where Graph is not a subgraph */
-			return static_cast<uint64_t>(g.local_to_global(v));
+			return static_cast<uint64_t>(global_vertex_wrap(g, v));
 		}
 
 		friend class GraphImpl<Graph>;
