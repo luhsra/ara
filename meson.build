@@ -9,7 +9,9 @@ cython = find_program('cython')
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot'])
 
-llvm_dep = dependency('llvm', version: ['>=9', '<10'], include_type: 'system')
+llvm_version = ['>=9', '<10']
+
+llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 boost_dep = dependency('boost', modules: ['graph'], include_type: 'system')
 
 cython_flags = ['-Wextra', '--cplus', '-3']

@@ -1,4 +1,4 @@
-clang = find_program('clang-9')
+clang = find_program('clang', version: llvm_version)
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
