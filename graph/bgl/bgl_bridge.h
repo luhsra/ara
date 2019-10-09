@@ -1,10 +1,12 @@
 #pragma once
 
+#include "../algorithms.h"
 #include "bgl_wrapper.h"
-#include "boost/graph/graph_concepts.hpp"
-#include "boost/graph/subgraph.hpp"
-#include "boost/iterator/transform_iterator.hpp"
+#include "common/exceptions.h"
 
+#include <boost/graph/graph_concepts.hpp>
+#include <boost/graph/subgraph.hpp>
+#include <boost/iterator/transform_iterator.hpp>
 #include <functional>
 #include <memory>
 
@@ -206,6 +208,18 @@ namespace ara::bgl_wrapper {
 		std::unique_ptr<BoostProperty> get_property_obj_wrap<ara::cfg::ABBGraph>(ara::cfg::ABBGraph&) {
 			return nullptr;
 		}
+
+		template <typename Graph>
+		bool is_connected_wrap(const Graph& graph, const typename Graph::vertex_descriptor s,
+		                       const typename Graph::vertex_descriptor t) {
+			return ara::graph::is_connected(graph, s, t);
+		}
+		// TODO: boost get for ara::cfg::ABBGraph does not work, so just ignore this case for now
+		template <>
+		bool is_connected_wrap(const ara::cfg::ABBGraph&, const typename ara::cfg::ABBGraph::vertex_descriptor,
+		                       const typename ara::cfg::ABBGraph::vertex_descriptor) {
+			throw ara::NotImplemented();
+		}
 	} // namespace
 
 	template <typename Graph>
@@ -263,6 +277,12 @@ namespace ara::bgl_wrapper {
 
 		virtual std::unique_ptr<BoostProperty> get_property_obj() override {
 			return std::move(get_property_obj_wrap(graph));
+		}
+
+		virtual bool is_connected(const VertexWrapper& source, const VertexWrapper& target) const override {
+			const auto& s = static_cast<const VertexImpl<Graph>&>(source);
+			const auto& t = static_cast<const VertexImpl<Graph>&>(target);
+			return is_connected_wrap(graph, s.v, t.v);
 		}
 
 		virtual Graph& get_graph() { return graph; }

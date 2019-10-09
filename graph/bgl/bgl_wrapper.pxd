@@ -96,3 +96,5 @@ cdef extern from "bgl_wrapper.h" namespace "ara::bgl_wrapper":
         unique_ptr[GraphWrapper] filter_by(Predicate vertex, Predicate edge)
 
         unique_ptr[BoostProperty] get_property_obj()
+
+        bool is_connected(VertexWrapper&, VertexWrapper&)

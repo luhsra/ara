@@ -13,6 +13,13 @@
 			"dot": "syscall.dot",
 			"graph_name": "Syscalls",
 			"subgraph": "abbs"
+		},
+		"ABBMerge",
+		{
+			"name": "Printer",
+			"dot": "abb_merge.dot",
+			"graph_name": "ABBMerge",
+			"subgraph": "abbs"
 		}
 	],
 

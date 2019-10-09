@@ -1,8 +1,8 @@
 #pragma once
 
-#include "boost/range/iterator.hpp"
 #include "common/exceptions.h"
 
+#include <boost/range/iterator.hpp>
 #include <memory>
 
 namespace ara::bgl_wrapper {
@@ -109,5 +109,9 @@ namespace ara::bgl_wrapper {
 		virtual std::unique_ptr<GraphWrapper> filter_by(Predicate, Predicate) { throw ara::NotImplemented(); }
 
 		virtual std::unique_ptr<BoostProperty> get_property_obj() { return nullptr; }
+
+		/* Algorithms from algorithms.h */
+
+		virtual bool is_connected(const VertexWrapper&, const VertexWrapper&) const = 0;
 	};
 } // namespace ara::bgl_wrapper

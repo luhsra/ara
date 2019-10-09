@@ -399,6 +399,13 @@ cdef class Graph:
     def filter_by(self, vertex=None, edge=None):
         pass
 
+    # algorithms section
+
+    def is_connected(self, Vertex source, Vertex target):
+        return deref(self._c_graph).is_connected(deref(source._c_vertex),
+                                                 deref(target._c_vertex))
+
+
 cdef graph_fac(shared_ptr[bgl_w.GraphWrapper] g,
                root_graph_type, graph_type, edge_type, vertex_type):
     graph = Graph(root_graph_type, graph_type, edge_type, vertex_type)
