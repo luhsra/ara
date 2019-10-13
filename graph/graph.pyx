@@ -107,10 +107,14 @@ cdef class Function(bgl.Graph):
         return &deref(prop).get()
 
     def __hash__(self):
+        # print("FUNCTION_HASH" + self.name)
         return hash("FUNCTION_HASH" + self.name)
 
     def __repr__(self):
         return to_string(deref(self.get_func())).decode('utf-8')
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
     @property
     def name(self):

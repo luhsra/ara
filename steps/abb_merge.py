@@ -23,6 +23,7 @@ class ABBMerge(Step):
 
     def add_function(self, function):
         if function not in self.function_list:
+            self._log.debug(f"Add function {function} to callgraph.")
             self.function_list[function] = self.callgraph.add_vertex()
         return self.function_list[function]
 
@@ -30,7 +31,7 @@ class ABBMerge(Step):
         vert = self.add_function(function)
         for abb in map(function.local_to_global, function.vertices()):
             for called_function in self.get_called_functions(abb):
-                other_vert = self.add_function(function)
+                other_vert = self.add_function(called_function)
                 self.callgraph.add_edge(vert, other_vert)
 
     def run(self, g: graph.PyGraph):
@@ -46,15 +47,27 @@ class ABBMerge(Step):
         syscalls = [x for x in self.abbs.children() if x.syscall]
         system_relevant = set()
 
+        for edge in self.callgraph.edges():
+            for x,y in self.function_list.items():
+                if (y == edge.source()):
+                    s = x
+                if (y == edge.target()):
+                    t = x
+            print(edge.source(), s, edge.target(), t)
+
+
         for function in self.abbs.children():
             for syscall in syscalls:
                 if self.callgraph.is_connected(self.function_list[function],
                                                self.function_list[syscall]):
-                    system_relevant(function)
+                    self._log.debug(f"{function} is system relevant.")
+                    system_relevant.add(function)
+                    break
 
         # mark calls to system irrelevant functions as computation
         for function in self.abbs.children():
             for abb in map(function.local_to_global, function.vertices()):
                 for called_function in self.get_called_functions(abb):
                     if called_function not in system_relevant:
+                        self._log.debug(f"Set {abb} (calling {called_function}) to computation")
                         abb.type = ABBType.computation

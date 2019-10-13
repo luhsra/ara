@@ -17,25 +17,35 @@ namespace ara::graph {
 	bool is_connected(const Graph& g, const typename Graph::vertex_descriptor source,
 	                  const typename Graph::vertex_descriptor target) {
 		class VertexFound : public std::exception {};
+		class VertexUnconnected : public std::exception {};
 		class FoundVisitor : public boost::default_dfs_visitor {
+			const typename Graph::vertex_descriptor source;
 			const typename Graph::vertex_descriptor target;
 
 		  public:
-			FoundVisitor(const typename Graph::vertex_descriptor target) : target(target) {}
+			FoundVisitor(const typename Graph::vertex_descriptor source, const typename Graph::vertex_descriptor target)
+			    : source(source), target(target) {}
 
-			void discover_vertex(typename Graph::vertex_descriptor u, const Graph&) const {
+			void start_vertex(typename Graph::vertex_descriptor u, const Graph& g) const {
+				if (u != source) {
+					throw VertexUnconnected();
+				}
+			}
+
+			void discover_vertex(typename Graph::vertex_descriptor u, const Graph& g) const {
 				if (u == target) {
 					throw VertexFound();
 				}
 			}
 		};
 
-		FoundVisitor vis(target);
+		FoundVisitor vis(source, target);
 
 		try {
 			boost::depth_first_search(g, boost::visitor(vis).root_vertex(source));
 		} catch (const VertexFound&) {
 			return true;
+		} catch (const VertexUnconnected&) {
 		}
 		return false;
 	}
