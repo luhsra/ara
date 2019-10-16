@@ -11,7 +11,7 @@ The following dependencies are needed:
 
 - [meson](https://mesonbuild.com/) (>=0.52.0)
 - [llvm](http://llvm.org/) (==9)
-- [cython](https://cython.org/) (>=0.26.1)
+- [cython](https://cython.org/) (>=0.29.0)
 - [python](https://www.python.org/) (>=3.6)
 
 Getting packages in SRA lab:
