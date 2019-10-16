@@ -7,41 +7,6 @@
 #include <memory>
 
 /**
- * wrapper for CallBase that will be introduced with newer LLVM, delete this class once CallBase will exist
- */
-class FakeCallBase {
-  private:
-	const llvm::CallInst* c;
-	const llvm::InvokeInst* v;
-
-	FakeCallBase(const llvm::CallInst* c, const llvm::InvokeInst* v) : c(c), v(v) {}
-
-	// workaround to be able to construct FakeCallBase with private constructor
-	struct make_shared_enabler;
-
-  public:
-	friend class std::unique_ptr<FakeCallBase>;
-	/**
-	 * equivalent to llvm::CallBase* = llvm::dyn_cast<llvm::CallBase>(inst)
-	 */
-	static std::unique_ptr<FakeCallBase> create(const llvm::Instruction* inst);
-
-	static bool isa(const llvm::Instruction* I) {
-		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
-	}
-
-	static bool isa(const llvm::Instruction& I) {
-		return (llvm::isa<llvm::InvokeInst>(I) || llvm::isa<llvm::CallInst>(I));
-	}
-
-	const llvm::Function* getCalledFunction() const;
-	const llvm::Value* getCalledValue() const;
-	const llvm::FunctionType* getFunctionType() const;
-	bool isIndirectCall() const;
-	bool isInlineAsm() const;
-};
-
-/**
  * @brief get string representation of llvm value
  * @param argument llvm value variable to print
  */

@@ -2,7 +2,6 @@
 
 #include "test.h"
 
-#include <common/llvm_common.h>
 #include <graph.h>
 #include <iostream>
 #include <llvm/IR/Instructions.h>
@@ -20,7 +19,7 @@ namespace step {
 		for (auto& F : module) {
 			for (auto& B : F) {
 				for (auto& I : B) {
-					if (!(FakeCallBase::isa(I))) {
+					if (!(llvm::isa<llvm::CallBase>(I))) {
 						continue;
 					}
 					if (isCallToLLVMIntrinsic(&I) || isInlineAsm(&I)) {

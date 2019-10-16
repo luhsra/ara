@@ -2,7 +2,6 @@
 
 #include "bb_split.h"
 
-#include <common/llvm_common.h>
 #include <iostream>
 #include <list>
 #include <llvm/IR/BasicBlock.h>
@@ -33,7 +32,7 @@ namespace step {
 			for (BasicBlock* bb : bbs) {
 				BasicBlock::iterator it = bb->begin();
 				while (it != bb->end()) {
-					while (FakeCallBase::isa(*it)) {
+					while (isa<CallBase>(*it)) {
 						if (isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)) {
 							++it;
 							continue;
@@ -50,7 +49,7 @@ namespace step {
 							goto while_end;
 						}
 
-						if (FakeCallBase::isa(*it) && (!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
+						if (isa<CallBase>(*it) && (!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
 							continue;
 						}
 

@@ -1,5 +1,4 @@
 #include "common/exceptions.h"
-#include "common/llvm_common.h"
 #include "graph.h"
 
 #include <cassert>
@@ -39,11 +38,11 @@ namespace ara::cfg {
 	}
 
 	// ABB functions
-	std::unique_ptr<FakeCallBase> get_call_base(const ABBType type, const BasicBlock& bb) {
+	const CallBase* get_call_base(const ABBType type, const BasicBlock& bb) {
 		if (!(type == ABBType::call || type == ABBType::syscall)) {
 			return nullptr;
 		}
-		auto call = FakeCallBase::create(&bb.front());
+		const CallBase* call = dyn_cast<CallBase>(&bb.front());
 		assert(call);
 		return call;
 	}

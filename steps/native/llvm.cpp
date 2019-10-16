@@ -2,8 +2,6 @@
 
 #include "llvm.h"
 
-//#include "FreeRTOSinstances.h"
-#include "common/llvm_common.h"
 #include "llvm_dumper.h"
 
 #include "llvm/ADT/PostOrderIterator.h"
@@ -257,7 +255,7 @@ namespace step {
 			auto* instr = abb->get_call_instruction_reference();
 
 			// TODO: with newer llvm: if (std::unique_ptr<CallBase> call = dyn_cast<CallBase>(instr)) {
-			if (std::unique_ptr<FakeCallBase> call = FakeCallBase::create(instr)) {
+			if (CallBase* call = dyn_cast<CallBase>(instr)) {
 				const llvm::Function* llvm_function = call->getCalledFunction();
 				if (llvm_function == nullptr) {
 					// get function which is addressed with function pointer

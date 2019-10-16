@@ -2,7 +2,6 @@
 
 #include "test.h"
 
-#include <common/llvm_common.h>
 #include <graph.h>
 #include <iostream>
 #include <llvm/IR/Instructions.h>
@@ -21,7 +20,7 @@ namespace step {
 			for (auto& b : f) {
 				for (auto& i : b) {
 					bool found_double_call = false;
-					if (FakeCallBase::isa(i) && !isCallToLLVMIntrinsic(&i)) {
+					if (llvm::isa<llvm::CallBase>(i) && !isCallToLLVMIntrinsic(&i)) {
 						if (found_double_call) {
 							std::string call;
 							llvm::raw_string_ostream rso(call);

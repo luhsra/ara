@@ -3,7 +3,6 @@
 #include "icfg.h"
 
 #include <boost/graph/filtered_graph.hpp>
-#include <common/llvm_common.h>
 #include <llvm/ADT/SCCIterator.h>
 
 using namespace ara::cfg;
@@ -49,7 +48,7 @@ namespace step {
 				// as possible pointer target but of course not exact
 				logger.info() << "Call to function pointer. ABB:" << abb << std::endl;
 				llvm::Module& mod = graph.new_graph.get_module();
-				std::unique_ptr<FakeCallBase> called_func = FakeCallBase::create(&abb.entry_bb->front());
+				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&abb.entry_bb->front());
 				assert(called_func != nullptr);
 				const llvm::FunctionType* called_type = called_func->getFunctionType();
 
