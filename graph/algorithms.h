@@ -26,13 +26,13 @@ namespace ara::graph {
 			FoundVisitor(const typename Graph::vertex_descriptor source, const typename Graph::vertex_descriptor target)
 			    : source(source), target(target) {}
 
-			void start_vertex(typename Graph::vertex_descriptor u, const Graph& g) const {
+			void start_vertex(typename Graph::vertex_descriptor u, const Graph&) const {
 				if (u != source) {
 					throw VertexUnconnected();
 				}
 			}
 
-			void discover_vertex(typename Graph::vertex_descriptor u, const Graph& g) const {
+			void discover_vertex(typename Graph::vertex_descriptor u, const Graph&) const {
 				if (u == target) {
 					throw VertexFound();
 				}
