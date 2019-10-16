@@ -22,8 +22,8 @@ from libcpp.cast cimport dynamic_cast
 from libcpp cimport bool
 from libc.stdint cimport int64_t
 
-from common.backported_memory cimport static_pointer_cast as spc
-from common.backported_memory cimport dynamic_pointer_cast as dpc
+from libcpp.memory cimport static_pointer_cast as spc
+from libcpp.memory cimport dynamic_pointer_cast as dpc
 from common.cy_helper cimport to_string, assign_enum
 from cython.operator cimport typeid
 from cython.operator cimport dereference as deref
