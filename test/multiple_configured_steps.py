@@ -19,7 +19,7 @@ class TestStep(Step):
                           ty=String())
         self.opts.append(self.opt)
 
-    def run(self, graph: graph.PyGraph):
+    def run(self, graph: graph.Graph):
         """Write unique string for testing."""
         opt = self.opt.get()
         global shared_state
@@ -85,7 +85,7 @@ Opt: run2
 
 def main():
     init_logging(level=logging.DEBUG)
-    g = graph.PyGraph()
+    g = graph.Graph()
     config = {}
     p_manager = stepmanager.StepManager(g, provides=provide)
 

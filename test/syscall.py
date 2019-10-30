@@ -2,27 +2,38 @@
 import graph
 import json
 
-from graph import ABBType
+from graph import ABBType, CFType
 
 from init_test import init_test, fail_if
 
-def f_exp(ty):
+
+def f_exp(cfg, ty):
     def actual_filter(abb):
-        return abb.type == ty
+        return cfg.vp.tpye[abb] == ty
     return actual_filter
+
+
+def abbs(cfg, function):
+    for edge in function.out_edges():
+        if cfg.ep.type[edge] == CFType.f2a:
+            yield edge.target()
+
 
 def main():
     """Test for correct syscall mapping."""
 
     m_graph, data, _ = init_test(['Syscall'])
-    abbs = m_graph.new_graph.abbs()
+    cfg = m_graph.cfg
     stats = {}
-    for function in abbs.functions():
+    for function in cfg.vertices():
+        if cfg.vp.is_function[function]:
+            return
         syscalls = sum(1 for _ in
-                       (filter(f_exp(ABBType.syscall), function.vertices())))
+                       (filter(f_exp(cfg, ABBType.syscall),
+                               abbs(cfg, function))))
         calls = sum(1 for _ in
-                    (filter(f_exp(ABBType.call), function.vertices())))
-        stats[function.name] = {"syscalls": syscalls, "calls": calls}
+                    (filter(f_exp(cfg, ABBType.call), abbs(cfg, function))))
+        stats[cfg.vp.name[function]] = {"syscalls": syscalls, "calls": calls}
     fail_if(data != stats, "Data not equal")
 
 

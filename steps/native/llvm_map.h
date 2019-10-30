@@ -13,6 +13,6 @@ namespace step {
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {"FnSingleExit"}; }
 
-		virtual void run(graph::Graph& graph) override;
+		virtual void run(ara::graph::Graph& graph) override;
 	};
 } // namespace step

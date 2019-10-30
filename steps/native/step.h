@@ -103,7 +103,7 @@ namespace step {
 		/**
 		 * This method is called, when the pass is invoked.
 		 */
-		virtual void run(graph::Graph& graph) = 0;
+		virtual void run(ara::graph::Graph& graph) = 0;
 
 		/**
 		 * Return a vector with all options.

@@ -12,7 +12,7 @@ namespace step {
 
 	std::string Test0Step::get_description() const { return "Step for testing purposes"; }
 
-	void Test0Step::run(graph::Graph& graph) {
+	void Test0Step::run(ara::graph::Graph& graph) {
 		std::cout << "Run " << get_name() << std::endl;
 		std::cout << "Graph address: " << &graph << std::endl;
 	}
@@ -23,7 +23,7 @@ namespace step {
 
 	std::string Test2Step::get_description() const { return "Step for testing purposes"; }
 
-	void Test2Step::run(graph::Graph& graph) {
+	void Test2Step::run(ara::graph::Graph& graph) {
 		std::cout << "Run " << get_name() << std::endl;
 		std::cout << "Graph address: " << &graph << std::endl;
 	}

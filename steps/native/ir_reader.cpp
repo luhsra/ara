@@ -27,7 +27,7 @@ namespace step {
 		return NULL;
 	}
 
-	void IRReader::run(graph::Graph& graph) {
+	void IRReader::run(ara::graph::Graph& graph) {
 		// get file arguments from config
 		assert(input_files.get().second);
 		std::vector<std::string> files = input_files.get().first;
@@ -66,6 +66,6 @@ namespace step {
 		}
 
 		// convert unique_ptr to shared_ptr
-		graph.new_graph.set_module(std::move(composite));
+		graph.initialize_module(std::move(composite));
 	}
 } // namespace step

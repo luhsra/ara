@@ -18,7 +18,7 @@ class Dummy(Step):
     def get_dependencies(self):
         return []
 
-    def run(self, g: graph.PyGraph):
+    def run(self, g: graph.Graph):
         self._log.info("Executing Dummy step.")
         opt = self.dummy_option.get()
         if opt:

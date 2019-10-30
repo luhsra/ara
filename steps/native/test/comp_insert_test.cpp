@@ -14,8 +14,8 @@ namespace step {
 
 	std::string CompInsertTest::get_description() const { return "Step for testing the CompInsert step"; }
 
-	void CompInsertTest::run(graph::Graph& graph) {
-		llvm::Module& module = graph.new_graph.get_module();
+	void CompInsertTest::run(ara::graph::Graph& graph) {
+		llvm::Module& module = graph.get_module();
 		for (auto& f : module) {
 			for (auto& b : f) {
 				for (auto& i : b) {

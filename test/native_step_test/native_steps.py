@@ -20,7 +20,7 @@ class Test3Step(Step):
     def get_dependencies(self):
         return ["Test2Step"]
 
-    def run(self, graph: graph.PyGraph):
+    def run(self, graph: graph.Graph):
         log = logging.getLogger(self.__class__.__name__)
         log.info("Running...")
 
@@ -29,7 +29,7 @@ class Test1Step(Step):
     def get_dependencies(self):
         return ["Test0Step"]
 
-    def run(self, graph: graph.PyGraph):
+    def run(self, graph: graph.Graph):
         log = logging.getLogger(self.__class__.__name__)
         log.info("Running...")
 
@@ -44,7 +44,7 @@ def provide():
 
 def main():
     """Checks the interoperability of Python and C++ passes."""
-    g = graph.PyGraph()
+    g = graph.Graph()
     config = {}
     extra_config = {}
     p_manager = stepmanager.StepManager(g, provides=provide)

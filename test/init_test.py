@@ -45,7 +45,7 @@ def init_test(steps=None, extra_config=None):
     init_logging(level=logging.DEBUG)
     if not extra_config:
         extra_config = {}
-    g = graph.PyGraph()
+    g = graph.Graph()
     os_name = sys.argv[1]
     json_file = sys.argv[2]
     i_files = sys.argv[3:]

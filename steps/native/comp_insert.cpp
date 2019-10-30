@@ -22,8 +22,8 @@ namespace step {
 
 	std::vector<std::string> CompInsert::get_dependencies() { return {"IRReader"}; }
 
-	void CompInsert::run(graph::Graph& graph) {
-		llvm::Module& module = graph.new_graph.get_module();
+	void CompInsert::run(ara::graph::Graph& graph) {
+		llvm::Module& module = graph.get_module();
 		unsigned nop_count = 0;
 		for (auto& function : module) {
 			for (BasicBlock& bb : function) {

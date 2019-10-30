@@ -113,7 +113,7 @@ class OilStep(Step):
     def get_dependencies(self):
         return ['ABB_MergeStep']
 
-    def run(self, g: graph.PyGraph):
+    def run(self, g: graph.Graph):
         # load the json outputstructure with json
         oilfile = self.oilfile.get()
         if not oilfile:

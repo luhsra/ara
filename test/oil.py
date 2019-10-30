@@ -52,7 +52,7 @@ def main():
     init_logging(level=logging.DEBUG, max_stepname=len("StepManager"))
 
     for file, oil, validate in TESTS:
-        g = graph.PyGraph()
+        g = graph.Graph()
         config = {'oilfile': oil,
                   'os': 'OSEK',
                   'input_files': [file]}

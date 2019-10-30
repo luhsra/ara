@@ -19,8 +19,8 @@ namespace step {
 
 	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
 
-	void BBSplit::run(graph::Graph& graph) {
-		llvm::Module& module = graph.new_graph.get_module();
+	void BBSplit::run(ara::graph::Graph& graph) {
+		llvm::Module& module = graph.get_module();
 		unsigned split_counter = 0;
 
 		for (auto& function : module) {

@@ -1,18 +1,19 @@
 project('ara', 'cpp',
-	default_options : ['warning_level=3',
-	                   'cpp_std=c++17',
-	                   'buildtype=debugoptimized'])
+    default_options : ['warning_level=3',
+                       'cpp_std=c++17',
+                       'buildtype=debugoptimized'])
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 
 cython = find_program('cython')
 py3_mod = import('python')
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot'])
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 llvm_version = ['>=9', '<10']
 
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
-boost_dep = dependency('boost', modules: ['graph'], include_type: 'system')
+boost_dep = dependency('boost', modules: ['graph', 'python3'], include_type: 'system')
+graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
 cython_flags = ['-Wextra', '--cplus', '-3']
 
@@ -24,7 +25,7 @@ subdir('graph')
 subdir('steps')
 subdir('appl')
 
-python_path = 'PYTHONPATH=' + ':'.join([source_dir, bgl_dir, graphdir, stepdir])
+python_path = 'PYTHONPATH=' + ':'.join([source_dir, stepdir, llvm_wrapper_dir])
 
 subdir('test')
 
@@ -32,10 +33,10 @@ dump_cmds = files('utils/dump_cmds.py')
 ara = files('ara.py')
 
 sh = custom_target('ara-sh',
-	input: ara,
-	output: 'ara.sh',
-	command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\n' + python_path + ' ' + (source_dir / 'ara.py') + ' $@\n'],
-	build_by_default: true
+    input: ara,
+    output: 'ara.sh',
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\n' + python_path + ' ' + (source_dir / 'ara.py') + ' $@\n'],
+    build_by_default: true
 )
 
 extra_settings = files('test/extra_settings.json')
@@ -43,7 +44,7 @@ extra_settings = files('test/extra_settings.json')
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
-   args: [files('ara.py'), freertos_abb_merge, '--os', 'FreeRTOS',
+   args: [files('ara.py'), freertos_icfg, '--os', 'FreeRTOS',
           '--log-level', 'debug',
           '--step-settings', extra_settings],
    env : [python_path]

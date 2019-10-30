@@ -43,7 +43,7 @@ def main():
 
     util.init_logging(level=args.log_level)
 
-    g = graph.PyGraph()
+    g = graph.Graph()
     s_manager = stepmanager.StepManager(g)
     avail_steps = s_manager.get_steps()
 

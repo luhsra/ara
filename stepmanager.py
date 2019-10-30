@@ -97,7 +97,7 @@ class StepManager:
     with a list of step that should be executed.
     """
 
-    def __init__(self, g: graph.PyGraph, provides=steps.provide_steps):
+    def __init__(self, g: graph.Graph, provides=steps.provide_steps):
         """Construct a StepManager.
 
         Arguments:

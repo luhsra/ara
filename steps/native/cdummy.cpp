@@ -11,7 +11,7 @@ namespace step {
 
 	void CDummy::fill_options() { opts.emplace_back(dummy_option); }
 
-	void CDummy::run(graph::Graph& graph) {
+	void CDummy::run(ara::graph::Graph&) {
 		logger.info() << "Execute CDummy step." << std::endl;
 
 		std::pair<int64_t, bool> dopt = dummy_option.get();

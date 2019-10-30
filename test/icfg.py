@@ -11,10 +11,11 @@ def main():
     """Test for correct syscall mapping."""
 
     m_graph, data, _ = init_test(steps=["ICFG"])
-    abbs = m_graph.new_graph.abbs()
+    cfg = m_graph.cfg
     icf_edges = []
-    for edge in filter(lambda x: x.type == CFType.icf, abbs.edges()):
-        icf_edges.append([hash(edge.source()), hash(edge.target())])
+    for edge in filter(lambda x: cfg.ep.type[x] == CFType.icf, cfg.edges()):
+        icf_edges.append([hash(edge.source()),
+                          hash(edge.target())])
     fail_if(data != sorted(icf_edges), "Data not equal")
 
 

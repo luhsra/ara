@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "graph.h"
 #include "option.h"
 #include "step.h"
 

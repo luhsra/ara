@@ -6,6 +6,8 @@ from native_step import Step
 
 import pydot
 
+import graph_tool.draw
+
 
 class Printer(Step):
     """Print graphs to dot."""
@@ -36,25 +38,31 @@ class Printer(Step):
         self.opts += [self.dot, self.graph_name, self.dump, self.subgraph]
 
     def print_abbs(self, g):
-        abbs = g.new_graph.abbs()
-
-        if self.dump.get():
-            for line in str(abbs).splitlines():
-                self._log.info(line)
         dot = self.dot.get()
         if not dot:
             return
+
+        if self.dump.get():
+            self._log.error("Not supported yet.")
+            return
+
         name = self.graph_name.get()
         if not name:
             name = ''
+
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
-        for function in abbs.functions():
-            dot_func = pydot.Cluster(function.name, label=function.name)
+        for function in g.cfg.vertices():
+            if not g.cfg.vp.is_function[function]:
+                continue
+            dot_func = pydot.Cluster(g.cfg.vp.name[function],
+                                     label=g.cfg.vp.name[function])
             dot_graph.add_subgraph(dot_func)
-            for abb in function.vertices():
-                abb = function.local_to_global(abb)
-                if abb.type == graph.ABBType.not_implemented:
-                    assert not function.implemented
+            for edge in function.out_edges():
+                if g.cfg.ep.type[edge] != graph.CFType.f2a:
+                    continue
+                abb = edge.target()
+                if g.cfg.vp.type[abb] == graph.ABBType.not_implemented:
+                    assert not g.cfg.vp.implemented[function]
                     dot_abb = pydot.Node(str(hash(abb)),
                                          label="",
                                          shape="box")
@@ -62,16 +70,18 @@ class Printer(Step):
                     dot_func.set('color', '#eeeeee')
                 else:
                     dot_abb = pydot.Node(str(hash(abb)),
-                                         label=abb.name,
-                                         shape=self.SHAPES[abb.type][0],
-                                         style=self.SHAPES[abb.type][1],
-                                         color=self.SHAPES[abb.type][2])
+                            label=g.cfg.vp.name[abb],
+                            shape=self.SHAPES[g.cfg.vp.type[abb]][0],
+                            style=self.SHAPES[g.cfg.vp.type[abb]][1],
+                            color=self.SHAPES[g.cfg.vp.type[abb]][2])
                 dot_func.add_node(dot_abb)
-        for edge in abbs.edges():
+        for edge in g.cfg.edges():
+            if g.cfg.ep.type[edge] not in [graph.CFType.lcf, graph.CFType.icf]:
+                continue
             color = "black"
-            if edge.type == graph.CFType.lcf:
+            if g.cfg.ep.type[edge] == graph.CFType.lcf:
                 color = "red"
-            if edge.type == graph.CFType.icf:
+            if g.cfg.ep.type[edge] == graph.CFType.icf:
                 color = "blue"
             dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
                                           str(hash(edge.target())),
@@ -79,7 +89,7 @@ class Printer(Step):
         dot_graph.write(dot)
         self._log.info(f"Write dot file to {dot}.")
 
-    def run(self, g: graph.PyGraph):
+    def run(self, g: graph.Graph):
         subgraph = self.subgraph.get()
         if subgraph == 'abbs':
             self.print_abbs(g)

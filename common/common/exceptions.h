@@ -14,4 +14,10 @@ namespace ara {
 	class NotImplemented : public std::exception {
 		virtual const char* what() const throw() { return "Not implemented."; }
 	};
+
+	class BoostPythonInconvertable : public std::exception {
+		virtual const char* what() const throw() {
+			return "Boost Python. Could not convert Python object into C++ class.";
+		}
+	};
 } // namespace ara

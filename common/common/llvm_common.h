@@ -1,9 +1,8 @@
 #ifndef LLVM_COMMON
 #define LLVM_COMMON
 
-#include "llvm/IR/Instructions.h"
-
 #include <cassert>
+#include <llvm/IR/Instructions.h>
 #include <memory>
 
 /**

@@ -14,8 +14,8 @@ namespace step {
 
 	std::string BBSplitTest::get_description() const { return "Step for testing the BBSplit step"; }
 
-	void BBSplitTest::run(graph::Graph& graph) {
-		llvm::Module& module = graph.new_graph.get_module();
+	void BBSplitTest::run(ara::graph::Graph& graph) {
+		llvm::Module& module = graph.get_module();
 		for (auto& F : module) {
 			for (auto& B : F) {
 				for (auto& I : B) {

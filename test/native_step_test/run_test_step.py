@@ -20,7 +20,7 @@ def provide():
 def main():
     """Test for correct splitting of basic blocks."""
     init_logging(level=logging.DEBUG)
-    g = graph.PyGraph()
+    g = graph.Graph()
     os_name = sys.argv[1]
     test_step = sys.argv[2]
     i_files = sys.argv[3:]

@@ -51,7 +51,7 @@ plib = py3_inst.extension_module('native_step',
         'test/llvm_map_test.cpp',
         'test/test.cpp'),
   cpp_pch: 'pch/steps_pch.h',
-  dependencies: [log_dep, py3_inst.dependency(), graph_dep, llvm_dep, common_dep]
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep]
 )
 
 stepdir = meson.current_build_dir()

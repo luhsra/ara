@@ -8,8 +8,8 @@ stepmanager then fulfils this dependencies.
 """
 
 cimport cstep
-cimport graph
 cimport cgraph
+cimport llvm_wrapper
 
 from bb_split cimport BBSplit
 from comp_insert cimport CompInsert
@@ -31,7 +31,7 @@ from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
 from libcpp.memory cimport static_pointer_cast as spc
 from libc.stdint cimport int64_t
-from cstep cimport step_fac
+from cy_helper cimport step_fac, repack, get_type_args
 cimport option as coption
 
 import logging
@@ -39,6 +39,8 @@ import inspect
 from typing import List
 
 from steps import option
+
+import graph
 
 
 LEVEL = {"critical": logging.CRITICAL,
@@ -75,7 +77,7 @@ cdef class SuperStep:
         """Return a descriptive string, that explains what the pass is doing."""
         pass
 
-    def run(self, graph.PyGraph g):
+    def run(self, g):
         """Do the actual action of the pass.
 
         Arguments:
@@ -140,9 +142,9 @@ class Step(SuperStep):
         return self.opts
 
 
-cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
-    cdef pyobj = graph.create_abb(location)
-    return pyobj
+# cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
+#     cdef pyobj = graph.create_abb(location)
+#     return pyobj
 
 
 cdef class NativeStep(SuperStep):
@@ -180,8 +182,10 @@ cdef class NativeStep(SuperStep):
         deps = self._c_pass.get_dependencies()
         return [x.decode('UTF-8') for x in deps]
 
-    def run(self, graph.PyGraph g):
-        self._c_pass.run(deref(g._c_graph))
+    def run(self, g):
+        cdef llvm_wrapper.LLVMWrapper llvm_w = g._llvm
+        cdef cgraph.Graph gwrap = cgraph.Graph(g, llvm_w._c_module)
+        self._c_pass.run(gwrap)
 
     def get_name(self) -> str:
         return self._c_pass.get_name().decode('UTF-8')
@@ -205,19 +209,19 @@ cdef class NativeStep(SuperStep):
         if ctype == <unsigned> coption.STRING:
             return option.String()
         if ctype == <unsigned> coption.CHOICE:
-            args = cstep.get_type_args(opt).decode('UTF-8')
+            args = get_type_args(opt).decode('UTF-8')
             return option.Choice(*args.split(':'))
         if (ctype & (<unsigned> coption.LIST)) == <unsigned> coption.LIST:
             ty = self.getTy(ctype & ~(<unsigned> coption.LIST), opt)
             return option.List(ty)
         if ctype == <unsigned> coption.RANGE:
-            args = cstep.get_type_args(opt).decode('UTF-8')
+            args = get_type_args(opt).decode('UTF-8')
             low, high = args.split(':')
             return option.Range(low, high)
         return None
 
     def options(self):
-        opts = cstep.repack(deref(self._c_pass))
+        opts = repack(deref(self._c_pass))
         pyopts = []
 
         for entry in opts:

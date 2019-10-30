@@ -32,10 +32,9 @@ namespace step {
 
 	std::vector<std::string> LLVMBasicOptimization::get_dependencies() { return {"IRReader"}; }
 
-	void LLVMBasicOptimization::run(graph::Graph& graph) {
+	void LLVMBasicOptimization::run(ara::graph::Graph& graph) {
 		//		DebugFlag = true; // enable llvm passes output
-		llvm::Module& module = graph.new_graph.get_module();
-		auto& theContext = module.getContext();
+		llvm::Module& module = graph.get_module();
 
 		// Collect own set of transformations
 		FunctionPassManager fpm(true);

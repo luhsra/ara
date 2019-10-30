@@ -1,8 +1,9 @@
 // vim: set noet ts=4 sw=4:
 
+#include "common/exceptions.h"
+#include "common/llvm_common.h"
 #include "test.h"
 
-#include <common/llvm_common.h>
 #include <graph.h>
 #include <iostream>
 #include <llvm/IR/Instructions.h>
@@ -11,97 +12,117 @@
 #include <string>
 
 using namespace llvm;
-using namespace ara::cfg;
 
 namespace step {
 	std::string LLVMMapTest::get_name() const { return "LLVMMapTest"; }
 
 	std::string LLVMMapTest::get_description() const { return "Step for testing the LLVMMap step"; }
 
-	void LLVMMapTest::run(graph::Graph& graph) {
-		Module& module = graph.new_graph.get_module();
+	template <typename Graph>
+	typename boost::graph_traits<Graph>::vertex_descriptor back_map(Graph& g, ara::graph::CFG& cfg,
+	                                                                const BasicBlock* block) {
+		for (auto abb : boost::make_iterator_range(vertices(g))) {
+			if (cfg.entry_bb[abb] == reinterpret_cast<intptr_t>(block) ||
+			    cfg.exit_bb[abb] == reinterpret_cast<intptr_t>(block)) {
+				return abb;
+			}
+		}
+		throw ara::VertexNotFound();
+	}
+
+	template <typename Graph>
+	void test_map(Graph& g, ara::graph::CFG& cfg, Module& mod, Logger& logger) {
 		std::set<BasicBlock*> bbs;
 		std::set<llvm::Function*> lfuncs;
-		for (auto& F : module) {
-			lfuncs.insert(&F);
-			for (auto& B : F) {
-				bbs.insert(&B);
+		for (auto& f : mod) {
+			lfuncs.insert(&f);
+			for (auto& b : f) {
+				bbs.insert(&b);
 			}
 		}
-
-		ABBGraph& abbs = graph.new_graph.abbs();
 
 		size_t abb_count = 0;
-		for (auto abb : boost::make_iterator_range(vertices(abbs))) {
-			if (abbs[abb].name == "empty") {
-				if (abbs[abb].entry_bb != nullptr || abbs[abb].exit_bb != nullptr) {
-					throw std::runtime_error("Found empty ABB with linked LLVM BB.");
+		for (auto abb : boost::make_iterator_range(vertices(g))) {
+			if (cfg.is_function[abb]) {
+				llvm::Function* lfunc = reinterpret_cast<llvm::Function*>(cfg.function[abb]);
+
+				if (lfuncs.find(lfunc) == lfuncs.end()) {
+					logger.err() << "LLVM function (" << lfunc << ") not found in ABBGraph." << std::endl;
+					throw std::runtime_error("LLVM function not found.");
 				}
-				continue;
-			}
-			BasicBlock* entry = abbs[abb].entry_bb;
-			BasicBlock* exit = abbs[abb].exit_bb;
+			} else {
+				if (cfg.name[abb] == "empty") {
+					if (cfg.entry_bb[abb] != 0 || cfg.exit_bb[abb] != 0) {
+						throw std::runtime_error("Found empty ABB with linked LLVM BB.");
+					}
+					continue;
+				}
+				BasicBlock* entry = reinterpret_cast<BasicBlock*>(cfg.entry_bb[abb]);
+				BasicBlock* exit = reinterpret_cast<BasicBlock*>(cfg.exit_bb[abb]);
 
-			// entry and exit node are the same
-			if (entry != exit) {
-				logger.err() << "BasicBlocks does not match, in ABB: " << abbs[abb].name << std::endl;
-				throw std::runtime_error("BasicBlocks does not match");
-			}
+				// entry and exit node are the same
+				if (entry != exit) {
+					logger.err() << "BasicBlocks does not match, in ABB: " << cfg.name[abb] << std::endl;
+					throw std::runtime_error("BasicBlocks does not match");
+				}
 
-			// all basicblocks can be find with LLVM
-			if (bbs.find(entry) == bbs.end()) {
-				logger.err() << "Found linked BasicBlock that is not in the LLVM model, in ABB: " << abbs[abb].name
-				             << std::endl;
-				throw std::runtime_error("Found linked BasicBlock that is not in the LLVM model");
-			}
+				// all basicblocks can be find with LLVM
+				if (bbs.find(entry) == bbs.end()) {
+					logger.err() << "Found linked BasicBlock that is not in the LLVM model, in ABB: " << cfg.name[abb]
+					             << std::endl;
+					throw std::runtime_error("Found linked BasicBlock that is not in the LLVM model");
+				}
 
-			// successors match
-			std::set<ABBGraph::vertex_descriptor> succs1;
-			std::set<ABBGraph::vertex_descriptor> succs2;
-			for (const BasicBlock* succ_b : successors(entry)) {
-				succs1.insert(abbs.back_map(succ_b));
-			}
-			for (auto succ : boost::make_iterator_range(boost::out_edges(abb, abbs))) {
-				succs2.insert(boost::target(succ, abbs));
-			}
-			if (succs1 != succs2) {
-				logger.err() << "Successor sets of ABB " << abbs[abb].name << " are not equivalent." << std::endl;
-				throw std::runtime_error("Successor sets are not equivalent.");
-			}
+				// successors match
+				std::set<typename boost::graph_traits<Graph>::vertex_descriptor> succs1;
+				std::set<typename boost::graph_traits<Graph>::vertex_descriptor> succs2;
+				for (const BasicBlock* succ_b : successors(entry)) {
+					succs1.insert(back_map(g, cfg, succ_b));
+				}
+				for (auto succ : boost::make_iterator_range(boost::out_edges(abb, g))) {
+					if (cfg.etype[succ] == ara::graph::CFType::lcf) {
+						succs2.insert(boost::target(succ, g));
+					}
+				}
+				if (succs1 != succs2) {
+					logger.err() << "Successor sets of ABB " << cfg.name[abb] << " are not equivalent." << std::endl;
+					throw std::runtime_error("Successor sets are not equivalent.");
+				}
 
-			// predecessors match
-			std::set<ABBGraph::vertex_descriptor> preds1;
-			std::set<ABBGraph::vertex_descriptor> preds2;
-			for (const BasicBlock* pred_b : predecessors(entry)) {
-				preds1.insert(abbs.back_map(pred_b));
-			}
-			for (auto pred : boost::make_iterator_range(boost::in_edges(abb, abbs))) {
-				preds2.insert(boost::source(pred, abbs));
-			}
-			if (preds1 != preds2) {
-				logger.err() << "Predecessor sets of ABB " << abbs[abb].name << " are not equivalent." << std::endl;
-				throw std::runtime_error("Predecessor sets are not equivalent.");
-			}
+				// predecessors match
+				std::set<typename boost::graph_traits<Graph>::vertex_descriptor> preds1;
+				std::set<typename boost::graph_traits<Graph>::vertex_descriptor> preds2;
+				for (const BasicBlock* pred_b : predecessors(entry)) {
+					preds1.insert(back_map(g, cfg, pred_b));
+				}
+				for (auto pred : boost::make_iterator_range(boost::in_edges(abb, g))) {
+					if (cfg.etype[pred] == ara::graph::CFType::lcf) {
+						preds2.insert(boost::source(pred, g));
+					}
+				}
+				if (preds1 != preds2) {
+					logger.err() << "Predecessor sets of ABB " << cfg.name[abb] << " are not equivalent." << std::endl;
+					throw std::runtime_error("Predecessor sets are not equivalent.");
+				}
 
-			// functions match
-			const FunctionDescriptor& function = abbs.get_subgraph(abb);
-			llvm::Function* lfunc = boost::get_property(function).func;
-			if (lfunc != entry->getParent()) {
-				logger.err() << "LLVM Function of BB" << entry << " and ABB " << abbs[abb].name << " do not match."
-				             << std::endl;
-				throw std::runtime_error("Functions do not match.");
-			}
+				// functions match
+				typename boost::graph_traits<Graph>::vertex_descriptor func;
+				bool valid = false;
+				for (auto edge : boost::make_iterator_range(boost::out_edges(abb, g))) {
+					if (cfg.etype[edge] == ara::graph::CFType::a2f) {
+						func = boost::target(edge, g);
+						valid = true;
+					}
+				}
+				assert(valid);
+				llvm::Function* lfunc = reinterpret_cast<llvm::Function*>(cfg.function[func]);
+				if (lfunc != entry->getParent()) {
+					logger.err() << "LLVM Function of BB" << entry << " and ABB " << cfg.name[abb] << " do not match."
+					             << std::endl;
+					throw std::runtime_error("Functions do not match.");
+				}
 
-			abb_count++;
-		}
-
-		for (auto& func : boost::make_iterator_range(abbs.children())) {
-			ara::cfg::Function& afunc = boost::get_property(func);
-			llvm::Function* lfunc = afunc.func;
-
-			if (lfuncs.find(lfunc) == lfuncs.end()) {
-				logger.err() << "LLVM function (" << lfunc << ") not found in ABBGraph." << std::endl;
-				throw std::runtime_error("LLVM function not found.");
+				abb_count++;
 			}
 		}
 
@@ -110,6 +131,13 @@ namespace step {
 			             << std::endl;
 			throw std::runtime_error("Size mismatch of ABBs and BBs");
 		}
+	}
+
+	void LLVMMapTest::run(ara::graph::Graph& graph) {
+		Module& mod = graph.get_module();
+		ara::graph::CFG cfg = graph.get_cfg();
+		graph_tool::gt_dispatch<>()([&](auto& g) { test_map(g, cfg, mod, logger); },
+		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
 
 	std::vector<std::string> LLVMMapTest::get_dependencies() { return {"LLVMMap"}; }

@@ -13,7 +13,7 @@ shared_state = ""
 class TestStep(Step):
     """Only for testing purposes"""
 
-    def run(self, graph: graph.PyGraph):
+    def run(self, graph: graph.Graph):
         """Write unique string for testing."""
         global shared_state
         shared_state += f"Run: {self.get_name()}\n"
@@ -142,7 +142,7 @@ Run: Test9Step
 
 def main():
     init_logging(level=logging.DEBUG)
-    g = graph.PyGraph()
+    g = graph.Graph()
     config = {}
     extra_config = {}
     p_manager = stepmanager.StepManager(g, provides=provide)
