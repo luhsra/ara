@@ -13,15 +13,10 @@ cimport cgraph
 
 from bb_split cimport BBSplit
 from comp_insert cimport CompInsert
-from detect_interactions cimport DetectInteractionsStep
 from fn_single_exit cimport FnSingleExit
-from freertos_instances cimport FreeRTOSInstancesStep
 from icfg cimport ICFG
-from intermediate_analysis cimport IntermediateAnalysisStep
 from ir_reader cimport IRReader
 from llvm_basic_optimization cimport LLVMBasicOptimization
-from validation cimport ValidationStep
-from llvm cimport LLVMStep
 from llvm_map cimport LLVMMap
 from cdummy cimport CDummy
 
@@ -195,13 +190,6 @@ cdef class NativeStep(SuperStep):
         return self._c_pass.get_description().decode('UTF-8')
 
     def get_side_data(self):
-        if self.get_name() == "ValidationStep":
-            warnings = []
-            for warning in (<ValidationStep*> self._c_pass).get_warnings():
-                p_warn = {'type': deref(warning).get_type().decode('UTF-8'),
-                          'location': get_warning_abb(deref(warning).warning_position)}
-                warnings.append(p_warn)
-            return warnings
         super().get_side_data()
 
     def apply_config(self, config: dict):
@@ -260,16 +248,11 @@ def provide_steps():
     return [_native_fac(step_fac[BBSplit]()),
             _native_fac(step_fac[CDummy]()),
             _native_fac(step_fac[CompInsert]()),
-            _native_fac(step_fac[DetectInteractionsStep]()),
             _native_fac(step_fac[FnSingleExit]()),
-            _native_fac(step_fac[FreeRTOSInstancesStep]()),
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),
-            _native_fac(step_fac[IntermediateAnalysisStep]()),
-            _native_fac(step_fac[LLVMStep]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
-            _native_fac(step_fac[LLVMMap]()),
-            _native_fac(step_fac[ValidationStep]())]
+            _native_fac(step_fac[LLVMMap]())]
 
 
 def provide_test_steps():
