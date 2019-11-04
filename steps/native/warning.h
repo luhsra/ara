@@ -34,8 +34,7 @@ class DumbArgumentWarning : public Warning {
 
 	virtual std::string print_warning() const override {
 		std::string stream = "";
-		stream + "Argument at index " + std::to_string(argument_index) +
-		    " could not dump" + "\n";
+		stream + "Argument at index " + std::to_string(argument_index) + " could not dump" + "\n";
 		return stream;
 	};
 };

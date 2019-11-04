@@ -129,8 +129,10 @@ namespace ara::graph {
 	};
 
 	template <typename Graph>
-	auto filter_by_abb(const unsigned type_filter, Graph& g, const CFG& cfg) -> boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter> {
-		return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(), ABBTypeFilter(type_filter, &cfg));
+	auto filter_by_abb(const unsigned type_filter, Graph& g, const CFG& cfg)
+	    -> boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter> {
+		return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(),
+		                                                                    ABBTypeFilter(type_filter, &cfg));
 	}
 
 	class Graph {
