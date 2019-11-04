@@ -1,12 +1,33 @@
-#ifndef LLVM_DUMPER_H
-#define LLVM_DUMPER_H
+#pragma once
 
-#include <graph.h>
-#include <llvm/IR/Instructions.h>
+#include "logging.h"
+#include "warning.h"
+#include <any>
 #include <vector>
 
-class LLVMDumper {
-  public:
+namespace ara {
+
+struct argument_data {
+	std::vector<std::any> any_list;
+	std::vector<const llvm::Value*> value_list;
+	std::vector<std::vector<const llvm::Instruction*>> argument_calles_list;
+	bool multiple = false;
+};
+
+struct call_data {
+	std::string call_name; // Name des Sycalls
+	std::vector<argument_data> arguments;
+	const llvm::CallBase* call_instruction;
+	bool sys_call = false;
+};
+
+class ValueAnalyzer {
+	private:
+		Logger& logger;
+
+	void dump_instruction(llvm::Function* func, const llvm::CallBase* instruction,
+	                                std::vector<shared_warning>* warning_list);
+
 	/**
 	 * @brief set all possbile argument values and corresponding call history in a data structure. This
 	 * data structure is then stored in the abb.
@@ -17,7 +38,7 @@ class LLVMDumper {
 	 * @param already_visited list of all instructions, which were already visited
 	 */
 	bool dump_argument(std::stringstream& debug_out, argument_data* argument_container, const llvm::Value* arg,
-	                   std::vector<llvm::Instruction*>* already_visited);
+	                   std::vector<const llvm::Instruction*>* already_visited);
 
 	/**
 	 * @brief load the std::any and llvm value of the global llvm arg
@@ -29,7 +50,7 @@ class LLVMDumper {
 	 * @param already_visited list of all instructions, which were already visited
 	 */
 	bool load_value(std::stringstream& debug_out, argument_data* argument_container, llvm::Value* arg,
-	                llvm::Value* prior_arg, std::vector<llvm::Instruction*>* already_visited);
+	                llvm::Value* prior_arg, std::vector<const llvm::Instruction*>* already_visited);
 
 	/**
 	 * @brief dump all call instructions, which calls the function or have the function as argument
@@ -41,7 +62,7 @@ class LLVMDumper {
 	 * @param arg_counter index of the value in call instruction of calling function
 	 */
 	bool load_function_argument(std::stringstream& debug_out, argument_data* argument_container,
-	                            llvm::Function* function, std::vector<llvm::Instruction*>* already_visited,
+	                            const llvm::Function* function, std::vector<const llvm::Instruction*>* already_visited,
 	                            int arg_counter);
 
 	/**
@@ -53,7 +74,7 @@ class LLVMDumper {
 	 * @param already_visited list of all instructions, which were already visited
 	 */
 	bool get_store_instruction(std::stringstream& debug_out, llvm::Instruction* inst, argument_data* argument_container,
-	                           std::vector<llvm::Instruction*>* already_visited);
+	                           std::vector<const llvm::Instruction*>* already_visited);
 
 	/**
 	 * @brief dumpt the value of the GetElementPtrInst with corresponding indizes (important for class values)
@@ -64,7 +85,7 @@ class LLVMDumper {
 	 * @param already_visited list of all instructions, which were already visited
 	 */
 	bool get_element_ptr(std::stringstream& debug_out, llvm::Instruction* inst, argument_data* argument_container,
-	                     std::vector<llvm::Instruction*>* already_visited);
+	                     std::vector<const llvm::Instruction*>* already_visited);
 
 	/**
 	 * @brief function checks if the function is a class method(first argument this) and the type is the same of the
@@ -98,7 +119,7 @@ class LLVMDumper {
 	 * @param arg value which is analyzed
 	 */
 	bool check_nullptr(argument_data* argument_container, llvm::Value* arg, std::stringstream& debug_out,
-	                   std::vector<llvm::Instruction*>* already_visited);
+	                   std::vector<const llvm::Instruction*>* already_visited);
 
 	/**
 	 * @brief load the value of integer of floating point variable
@@ -116,7 +137,7 @@ class LLVMDumper {
 	 * @param indizes indizes to distinguish between the class attribute variables
 	 */
 	bool get_class_attribute_value(std::stringstream& debug_out, llvm::Instruction* inst,
-	                               argument_data* argument_container, std::vector<llvm::Instruction*>* already_visited,
+	                               argument_data* argument_container, std::vector<const llvm::Instruction*>* already_visited,
 	                               std::vector<size_t>* indizes);
 
 	/**
@@ -133,5 +154,11 @@ class LLVMDumper {
 	 * @param instr get element ptr instruction, which is compared to the referenced indizes
 	 */
 	bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElementPtrInst* instr);
+
+	public:
+	ValueAnalyzer(Logger& logger) : logger(logger) {}
+
+	void get_values(const llvm::CallBase& cb);
 };
-#endif // LLVM_DUMPER
+
+}

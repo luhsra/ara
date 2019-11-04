@@ -12,13 +12,14 @@ cimport cgraph
 cimport llvm_wrapper
 
 from bb_split cimport BBSplit
+from cdummy cimport CDummy
 from comp_insert cimport CompInsert
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
 from ir_reader cimport IRReader
 from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
-from cdummy cimport CDummy
+from value_analysis cimport ValueAnalysis
 
 from test cimport (BBSplitTest,
                    CompInsertTest,
@@ -256,7 +257,8 @@ def provide_steps():
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
-            _native_fac(step_fac[LLVMMap]())]
+            _native_fac(step_fac[LLVMMap]()),
+            _native_fac(step_fac[ValueAnalysis]())]
 
 
 def provide_test_steps():

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <exception>
+#include <sstream>
 
 namespace ara {
 	class VertexNotFound : public std::exception {
@@ -18,6 +19,21 @@ namespace ara {
 	class BoostPythonInconvertable : public std::exception {
 		virtual const char* what() const throw() {
 			return "Boost Python. Could not convert Python object into C++ class.";
+		}
+	};
+
+	class ValuesUnknown : public std::exception {
+		private:
+			std::stringstream message;
+		public:
+			explicit ValuesUnknown(const std::string& message) {
+				this->message << "The correct values could not be retrieved: ";
+				this->message << message;
+				this->message.flush();
+			}
+
+		virtual const char* what() const throw() {
+			return message.str().c_str();
 		}
 	};
 } // namespace ara

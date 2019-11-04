@@ -1,6 +1,7 @@
-#include "llvm_dumper.h"
+#include "value_analyzer.h"
 
-#include <common/llvm_common.h>
+#include "common/llvm_common.h"
+#include "common/exceptions.h"
 #include <llvm/Analysis/AliasAnalysis.h>
 #include <llvm/Analysis/MemorySSA.h>
 #include <llvm/Analysis/OrderedBasicBlock.h>
@@ -8,8 +9,10 @@
 
 using namespace llvm;
 
-bool LLVMDumper::dump_argument(std::stringstream& debug_out, argument_data* argument_container, const Value* carg,
-                               std::vector<Instruction*>* already_visited) {
+namespace ara {
+
+bool ValueAnalyzer::dump_argument(std::stringstream& debug_out, argument_data* argument_container, const Value* carg,
+                               std::vector<const Instruction*>* already_visited) {
 
 	// TODO this is a horrible hack and should be eliminated ASAP
 	// speak with the author of this code, if you see this comment
@@ -26,7 +29,7 @@ bool LLVMDumper::dump_argument(std::stringstream& debug_out, argument_data* argu
 
 	// check generell if arg is one of the arguments
 	if (Instruction* instr = dyn_cast<Instruction>(arg)) {
-		Function* function = already_visited->back()->getParent()->getParent();
+		const Function* function = already_visited->back()->getParent()->getParent();
 
 		int arg_counter = 0;
 		for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i) {
@@ -36,7 +39,7 @@ bool LLVMDumper::dump_argument(std::stringstream& debug_out, argument_data* argu
 			// iterate about the user of the allocation
 			for (; sUse != sEnd; ++sUse) {
 
-				if (StoreInst* store = dyn_cast<StoreInst>(*sUse)) {
+				if (const StoreInst* store = dyn_cast<const StoreInst>(*sUse)) {
 					// std::cerr << "store" << print_argument(store);
 					if (store->getOperand(0) == &(*i) && store->getOperand(1) == instr->getOperand(0))
 						return load_function_argument(debug_out, argument_container, function, already_visited,
@@ -378,8 +381,8 @@ bool LLVMDumper::dump_argument(std::stringstream& debug_out, argument_data* argu
 	return dump_success;
 }
 
-bool LLVMDumper::load_value(std::stringstream& debug_out, argument_data* argument_container, Value* arg,
-                            Value* prior_arg, std::vector<Instruction*>* already_visited) {
+bool ValueAnalyzer::load_value(std::stringstream& debug_out, argument_data* argument_container, Value* arg,
+                            Value* prior_arg, std::vector<const Instruction*>* already_visited) {
 
 	// debug data
 	debug_out << "ENTRYLOAD"
@@ -580,8 +583,8 @@ bool LLVMDumper::load_value(std::stringstream& debug_out, argument_data* argumen
  * @param already_visited list of all instructions, which were already visited
  * @param arg_counter index of the value in call instruction of calling function
  */
-bool LLVMDumper::load_function_argument(std::stringstream& debug_out, argument_data* argument_container,
-                                        Function* function, std::vector<Instruction*>* already_visited,
+bool ValueAnalyzer::load_function_argument(std::stringstream& debug_out, argument_data* argument_container,
+                                        const Function* function, std::vector<const Instruction*>* already_visited,
                                         int arg_counter) {
 
 	auto sUse = function->user_begin();
@@ -592,9 +595,9 @@ bool LLVMDumper::load_function_argument(std::stringstream& debug_out, argument_d
 	for (; sUse != sEnd; ++sUse) {
 
 		// check if instruction is a store instruction
-		if (Instruction* instr = dyn_cast<Instruction>(*sUse)) {
+		if (const Instruction* instr = dyn_cast<const Instruction>(*sUse)) {
 			bool flag = true;
-			for (auto* element : *already_visited) {
+			for (const auto* element : *already_visited) {
 				if (element == instr) {
 					flag = false;
 					break;
@@ -605,7 +608,7 @@ bool LLVMDumper::load_function_argument(std::stringstream& debug_out, argument_d
 			if (!flag)
 				continue;
 
-			std::vector<Instruction*> tmp_already_visited = *already_visited;
+			std::vector<const Instruction*> tmp_already_visited = *already_visited;
 
 			// check if instruction is a call instruction
 			if (isa<CallInst>(instr)) {
@@ -644,8 +647,8 @@ bool LLVMDumper::load_function_argument(std::stringstream& debug_out, argument_d
 	return success;
 }
 
-bool LLVMDumper::get_store_instruction(std::stringstream& debug_out, Instruction* inst,
-                                       argument_data* argument_container, std::vector<Instruction*>* already_visited) {
+bool ValueAnalyzer::get_store_instruction(std::stringstream& debug_out, Instruction* inst,
+                                       argument_data* argument_container, std::vector<const Instruction*>* already_visited) {
 
 	bool success = false;
 
@@ -740,8 +743,8 @@ bool LLVMDumper::get_store_instruction(std::stringstream& debug_out, Instruction
 	return success;
 }
 
-bool LLVMDumper::get_element_ptr(std::stringstream& debug_out, Instruction* inst, argument_data* argument_container,
-                                 std::vector<Instruction*>* already_visited) {
+bool ValueAnalyzer::get_element_ptr(std::stringstream& debug_out, Instruction* inst, argument_data* argument_container,
+                                 std::vector<const Instruction*>* already_visited) {
 
 	bool success = false;
 	// check if this is a element ptr
@@ -775,7 +778,7 @@ bool LLVMDumper::get_element_ptr(std::stringstream& debug_out, Instruction* inst
  * @param function vector reference which contains get element ptr instruction indizes
  * @param type get element ptr instruction, which is compared to the referenced indizes
  */
-bool LLVMDumper::check_function_class_reference_type(Function* function, Type* type) {
+bool ValueAnalyzer::check_function_class_reference_type(Function* function, Type* type) {
 	if (type == nullptr || function == nullptr)
 		return false;
 
@@ -789,7 +792,7 @@ bool LLVMDumper::check_function_class_reference_type(Function* function, Type* t
 	return false;
 }
 
-bool LLVMDumper::cast_any_to_double(std::any any_value, double& double_value) {
+bool ValueAnalyzer::cast_any_to_double(std::any any_value, double& double_value) {
 	if (any_value.type().hash_code() == typeid(int).hash_code()) {
 		double_value = std::any_cast<long>(any_value);
 		return true;
@@ -800,7 +803,7 @@ bool LLVMDumper::cast_any_to_double(std::any any_value, double& double_value) {
 	return false;
 }
 
-bool LLVMDumper::cast_any_to_string(std::any any_value, std::string& string_value) {
+bool ValueAnalyzer::cast_any_to_string(std::any any_value, std::string& string_value) {
 	if (any_value.type().hash_code() == typeid(std::string).hash_code()) {
 		string_value = std::any_cast<std::string>(any_value);
 		return true;
@@ -808,8 +811,8 @@ bool LLVMDumper::cast_any_to_string(std::any any_value, std::string& string_valu
 	return false;
 }
 
-bool LLVMDumper::check_nullptr(argument_data* argument_container, Value* arg, std::stringstream& debug_out,
-                               std::vector<Instruction*>* already_visited) {
+bool ValueAnalyzer::check_nullptr(argument_data* argument_container, Value* arg, std::stringstream& debug_out,
+                               std::vector<const Instruction*>* already_visited) {
 	bool load_success = false;
 	if (ConstantPointerNull* constant_data = dyn_cast<ConstantPointerNull>(arg)) {
 		debug_out << "CONSTANTPOINTERNULL" << std::endl;
@@ -822,7 +825,7 @@ bool LLVMDumper::check_nullptr(argument_data* argument_container, Value* arg, st
 	return load_success;
 }
 
-int LLVMDumper::load_index(Value* arg) {
+int ValueAnalyzer::load_index(Value* arg) {
 	int index = 0;
 	// check if argument is a constant int
 	if (ConstantInt* CI = dyn_cast<ConstantInt>(arg)) {
@@ -836,9 +839,9 @@ int LLVMDumper::load_index(Value* arg) {
 	return index;
 }
 
-bool LLVMDumper::get_class_attribute_value(std::stringstream& debug_out, Instruction* inst,
+bool ValueAnalyzer::get_class_attribute_value(std::stringstream& debug_out, Instruction* inst,
                                            argument_data* argument_container,
-                                           std::vector<Instruction*>* already_visited, std::vector<size_t>* indizes) {
+                                           std::vector<const Instruction*>* already_visited, std::vector<size_t>* indizes) {
 	bool success = true;
 	bool flag = false;
 	// get module
@@ -923,7 +926,7 @@ bool LLVMDumper::get_class_attribute_value(std::stringstream& debug_out, Instruc
 		return success;
 }
 
-bool LLVMDumper::instruction_before(Instruction* InstA, Instruction* InstB, DominatorTree* DT) {
+bool ValueAnalyzer::instruction_before(Instruction* InstA, Instruction* InstB, DominatorTree* DT) {
 	DenseMap<BasicBlock*, std::unique_ptr<OrderedBasicBlock>> OBBMap;
 	if (InstA->getParent() == InstB->getParent()) {
 		BasicBlock* IBB = InstA->getParent();
@@ -941,7 +944,7 @@ bool LLVMDumper::instruction_before(Instruction* InstA, Instruction* InstB, Domi
 	return DA->getDFSNumIn() < DB->getDFSNumIn();
 }
 
-bool LLVMDumper::check_get_element_ptr_indizes(std::vector<size_t>* reference, GetElementPtrInst* instr) {
+bool ValueAnalyzer::check_get_element_ptr_indizes(std::vector<size_t>* reference, GetElementPtrInst* instr) {
 	int counter = 0;
 	for (auto i = instr->idx_begin(), ie = instr->idx_end(); i != ie; ++i) {
 		int index = -1;
@@ -953,4 +956,107 @@ bool LLVMDumper::check_get_element_ptr_indizes(std::vector<size_t>* reference, G
 		++counter;
 	}
 	return true;
+}
+
+	void ValueAnalyzer::dump_instruction(Function* func, const CallBase* instruction,
+	                                std::vector<shared_warning>* warning_list) {
+
+		// empty call data container
+		call_data call;
+
+		// store the name of the called function
+
+		call.call_name = func->getName().str();
+
+		// store the llvm call instruction reference
+		call.call_instruction = instruction;
+		std::vector<argument_data> arguments;
+
+		// iterate about the arguments of the call
+		for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
+
+			// debug string
+			std::stringstream debug_out;
+			debug_out << func->getName().str() << "\n";
+
+			std::vector<std::any> any_list;
+
+			std::vector<Value*> value_list;
+			std::vector<const Instruction*> already_visited;
+			already_visited.emplace_back(instruction);
+			// get argument
+			Value* arg = instruction->getArgOperand(i);
+
+			argument_data argument_container;
+
+			// dump argument and check if it was successfull
+			if (dump_argument(debug_out, &argument_container, arg, &already_visited)) {
+
+				// dump was successfull
+				if (argument_container.any_list.size() > 1)
+					argument_container.multiple = true;
+
+				// argument container lists shall not have different sizes
+				if (argument_container.any_list.size() != argument_container.value_list.size() ||
+				    argument_container.any_list.size() != argument_container.argument_calles_list.size() ||
+				    argument_container.argument_calles_list.size() != argument_container.value_list.size()) {
+
+					// error in argument dump
+					auto warning = std::make_shared<DumbArgumentWarning>(i, *instruction);
+					warning_list->emplace_back(warning);
+				}
+
+				// store the dumped argument in the abb with corresponding llvm type
+				arguments.emplace_back(argument_container);
+
+			} else {
+
+				// dump was not successfull
+				auto warning = std::make_shared<DumbArgumentWarning>(i, *instruction);
+				warning_list->emplace_back(warning);
+			}
+
+			logger.debug() << debug_out.str() << std::endl;
+		}
+
+		// check if call has no arguments
+		if (arguments.size() == 0) {
+			// generate empty argument container, if call has no arguments
+			argument_data tmp_arguments;
+			arguments.emplace_back(tmp_arguments);
+		}
+
+		// store arguments
+		call.arguments = arguments;
+
+		assert(call.call_instruction != nullptr);
+	}
+
+	void ValueAnalyzer::get_values(const CallBase& cb) {
+		if (isCallToLLVMIntrinsic(&cb)) {
+			return;
+		}
+
+		Function* func = cb.getCalledFunction();
+
+		// static function pointer
+		if (!func) {
+			if (llvm::Constant* constant = dyn_cast<llvm::Constant>(cb.getCalledValue())) {
+				if (llvm::Function* tmp_func = dyn_cast<llvm::Function>(constant->getOperand(0))) {
+					func = tmp_func;
+				}
+			}
+		}
+
+		if (!func) {
+			throw ValuesUnknown("Called function cannot be determined.");
+		}
+
+		std::vector<shared_warning> warning_list;
+
+		// get and store the called arguments values
+		dump_instruction(func, &cb, &warning_list);
+
+		logger.debug() << "DUMPED" << cb << std::endl;
+	}
 }

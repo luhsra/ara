@@ -1,18 +1,5 @@
 {
 	"steps": [
-		{
-			"name": "Printer",
-			"dot": "cfg.dot",
-			"graph_name": "CFG",
-			"subgraph": "abbs"
-		},
-		"ICFG",
-		{
-			"name": "Printer",
-			"dot": "icfg.dot",
-			"graph_name": "ICFG",
-			"subgraph": "abbs"
-		},
 		"Syscall",
 		{
 			"name": "Printer",
@@ -20,14 +7,7 @@
 			"graph_name": "Syscall",
 			"subgraph": "abbs"
 		},
-		"ABBMerge",
-		{
-			"name": "Printer",
-			"dot": "abb_merge.dot",
-			"graph_name": "ABBMerge",
-			"subgraph": "abbs"
-		}
-
+		"ValueAnalysis"
 	],
 
 	"LLVMMap": {
