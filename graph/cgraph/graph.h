@@ -128,6 +128,11 @@ namespace ara::graph {
 		const CFG* cfg;
 	};
 
+	template <typename Graph>
+	auto filter_by_abb(const unsigned type_filter, Graph& g, const CFG& cfg) -> boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter> {
+		return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(), ABBTypeFilter(type_filter, &cfg));
+	}
+
 	class Graph {
 	  private:
 		PyObject* graph;
