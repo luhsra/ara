@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "llvm_basic_optimization.h" namespace "step":
+cdef extern from "llvm_basic_optimization.h" namespace "ara::step":
     cdef cppclass LLVMBasicOptimization:
         LLVMBasicOptimization(dict config) except +
         string get_name()

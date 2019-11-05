@@ -7,7 +7,7 @@
 #include <graph.h>
 #include <string>
 
-namespace step {
+namespace ara::step {
 
 	class FnSingleExit : public Step {
 	  public:
@@ -15,6 +15,6 @@ namespace step {
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override;
 
-		virtual void run(ara::graph::Graph& graph) override;
+		virtual void run(graph::Graph& graph) override;
 	};
-} // namespace step
+} // namespace ara::step

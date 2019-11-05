@@ -7,10 +7,10 @@
 
 #include <graph.h>
 
-namespace step {
+namespace ara::step {
 	class CDummy : public Step {
 	  private:
-		ara::option::TOption<ara::option::Integer> dummy_option{"dummy_option", "This is the help for dummy_option."};
+		option::TOption<option::Integer> dummy_option{"dummy_option", "This is the help for dummy_option."};
 		virtual void fill_options() override;
 
 	  public:
@@ -18,6 +18,6 @@ namespace step {
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {}; }
 
-		virtual void run(ara::graph::Graph& graph) override;
+		virtual void run(graph::Graph& graph) override;
 	};
-} // namespace step
+} // namespace ara::step

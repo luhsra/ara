@@ -7,7 +7,7 @@
 
 #include <graph.h>
 
-namespace step {
+namespace ara::step {
 	class ICFG : public Step {
 	  public:
 		virtual std::string get_name() const override { return "ICFG"; }
@@ -16,4 +16,4 @@ namespace step {
 
 		virtual void run(ara::graph::Graph& graph) override;
 	};
-} // namespace step
+} // namespace ara::step

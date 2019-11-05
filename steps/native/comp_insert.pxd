@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "comp_insert.h" namespace "step":
+cdef extern from "comp_insert.h" namespace "ara::step":
     cdef cppclass CompInsert:
         CompInsert(dict config) except +
         string get_name()

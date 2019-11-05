@@ -11,7 +11,7 @@
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 
-namespace step {
+namespace ara::step {
 	using namespace llvm;
 
 	std::string FnSingleExit::get_description() const {
@@ -20,7 +20,7 @@ namespace step {
 
 	std::vector<std::string> FnSingleExit::get_dependencies() { return {"BBSplit"}; }
 
-	void FnSingleExit::run(ara::graph::Graph& graph) {
+	void FnSingleExit::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
 		unsigned insert_counter = 0;
 
@@ -48,4 +48,4 @@ namespace step {
 		}
 		logger.debug() << "Inserted " << insert_counter << " new common exit blocks." << std::endl;
 	}
-} // namespace step
+} // namespace ara::step

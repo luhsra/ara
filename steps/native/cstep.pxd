@@ -6,7 +6,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "step.h" namespace "step":
+cdef extern from "step.h" namespace "ara::step":
     cdef cppclass Step:
         Step() except +
         void set_logger(object logger)

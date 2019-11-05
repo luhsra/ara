@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "llvm_map.h" namespace "step":
+cdef extern from "llvm_map.h" namespace "ara::step":
     cdef cppclass LLVMMap:
         LLVMMap(dict config) except +
         string get_name()

@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "value_analysis.h" namespace "step":
+cdef extern from "value_analysis.h" namespace "ara::step":
     cdef cppclass ValueAnalysis:
         ValueAnalysis(dict config) except +
         string get_name()

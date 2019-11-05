@@ -13,27 +13,26 @@
 #include <string>
 #include <vector>
 
-namespace step {
+namespace ara::step {
 
 	/**
 	 * Superclass for constructing arbitrary steps in C++.
 	 */
 	class Step {
 	  public:
-		using option_ref = std::reference_wrapper<ara::option::Option>;
+		using option_ref = std::reference_wrapper<option::Option>;
 
 	  protected:
 		std::vector<option_ref> opts;
 		Logger logger;
 
-		ara::option::TOption<ara::option::Choice<5>> log_level{
-		    "log_level", "Adjust the log level of this step.",
-		    ara::option::makeChoice("critical", "error", "warn", "info", "debug"),
-		    /* global = */ true};
+		option::TOption<option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
+		                                             option::makeChoice("critical", "error", "warn", "info", "debug"),
+		                                             /* global = */ true};
 
-		ara::option::TOption<ara::option::Choice<2>> os{"os", "Select the operating system.",
-		                                                ara::option::makeChoice("FreeRTOS", "OSEK"),
-		                                                /* global = */ true};
+		option::TOption<option::Choice<2>> os{"os", "Select the operating system.",
+		                                      option::makeChoice("FreeRTOS", "OSEK"),
+		                                      /* global = */ true};
 		/**
 		 * Fill with all used options.
 		 */
@@ -53,7 +52,7 @@ namespace step {
 		 */
 		void init_options() {
 			fill_options();
-			for (ara::option::Option& option : opts) {
+			for (option::Option& option : opts) {
 				option.set_step_name(get_name());
 			}
 		}
@@ -67,7 +66,7 @@ namespace step {
 				throw std::invalid_argument("Step: Need a dict as config.");
 			}
 
-			for (ara::option::Option& option : opts) {
+			for (option::Option& option : opts) {
 				option.check(config);
 			}
 			auto lvl = log_level.get();
@@ -103,7 +102,7 @@ namespace step {
 		/**
 		 * This method is called, when the pass is invoked.
 		 */
-		virtual void run(ara::graph::Graph& graph) = 0;
+		virtual void run(graph::Graph& graph) = 0;
 
 		/**
 		 * Return a vector with all options.
@@ -111,6 +110,6 @@ namespace step {
 		const std::vector<option_ref>& options() const { return opts; }
 	};
 
-} // namespace step
+} // namespace ara::step
 
 #endif // STEP_H

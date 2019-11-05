@@ -22,7 +22,7 @@
 #include <llvm/Transforms/Scalar/Reassociate.h>
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 
-namespace step {
+namespace ara::step {
 	using namespace llvm;
 
 	std::string LLVMBasicOptimization::get_description() const {
@@ -32,7 +32,7 @@ namespace step {
 
 	std::vector<std::string> LLVMBasicOptimization::get_dependencies() { return {"IRReader"}; }
 
-	void LLVMBasicOptimization::run(ara::graph::Graph& graph) {
+	void LLVMBasicOptimization::run(graph::Graph& graph) {
 		//		DebugFlag = true; // enable llvm passes output
 		llvm::Module& module = graph.get_module();
 
@@ -75,4 +75,4 @@ namespace step {
 			function.viewCFG();
 		}
 	}
-} // namespace step
+} // namespace ara::step

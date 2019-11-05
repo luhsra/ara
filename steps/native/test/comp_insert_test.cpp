@@ -9,12 +9,12 @@
 #include <stdexcept>
 #include <string>
 
-namespace step {
+namespace ara::step {
 	std::string CompInsertTest::get_name() const { return "CompInsertTest"; }
 
 	std::string CompInsertTest::get_description() const { return "Step for testing the CompInsert step"; }
 
-	void CompInsertTest::run(ara::graph::Graph& graph) {
+	void CompInsertTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
 		for (auto& f : module) {
 			for (auto& b : f) {
@@ -36,4 +36,4 @@ namespace step {
 	}
 
 	std::vector<std::string> CompInsertTest::get_dependencies() { return {"CompInsert"}; }
-} // namespace step
+} // namespace ara::step

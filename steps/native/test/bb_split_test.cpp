@@ -9,12 +9,12 @@
 #include <stdexcept>
 #include <string>
 
-namespace step {
+namespace ara::step {
 	std::string BBSplitTest::get_name() const { return "BBSplitTest"; }
 
 	std::string BBSplitTest::get_description() const { return "Step for testing the BBSplit step"; }
 
-	void BBSplitTest::run(ara::graph::Graph& graph) {
+	void BBSplitTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
 		for (auto& F : module) {
 			for (auto& B : F) {
@@ -45,4 +45,4 @@ namespace step {
 	}
 
 	std::vector<std::string> BBSplitTest::get_dependencies() { return {"BBSplit"}; }
-} // namespace step
+} // namespace ara::step

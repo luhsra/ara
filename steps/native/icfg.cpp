@@ -9,7 +9,7 @@
 
 using namespace ara::graph;
 
-namespace step {
+namespace ara::step {
 	std::string ICFG::get_description() const {
 		return "Search all inter-procedural edges."
 		       "\n"
@@ -35,11 +35,11 @@ namespace step {
 				return boost::target(cand, g);
 			}
 		}
-		throw ara::VertexNotFound();
+		throw VertexNotFound();
 	}
 
 	template <typename Graph>
-	void check_icf(Graph& g, ara::graph::CFG& cfg, llvm::Module& mod, Logger& logger) {
+	void check_icf(Graph& g, CFG& cfg, llvm::Module& mod, Logger& logger) {
 
 		ABBTypeFilter call_filter(ABBType::call | ABBType::syscall, &cfg);
 		boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter> calls(g, boost::keep_all(), call_filter);
@@ -129,10 +129,10 @@ namespace step {
 		}
 	}
 
-	void ICFG::run(ara::graph::Graph& graph) {
+	void ICFG::run(Graph& graph) {
 		llvm::Module& mod = graph.get_module();
-		ara::graph::CFG cfg = graph.get_cfg();
+		CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { check_icf(g, cfg, mod, logger); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
-} // namespace step
+} // namespace ara::step

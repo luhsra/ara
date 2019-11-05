@@ -7,13 +7,13 @@
 
 #include <graph.h>
 
-namespace step {
+namespace ara::step {
 	class ValueAnalysis : public Step {
 	  public:
 		virtual std::string get_name() const override { return "ValueAnalysis"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {"Syscall"}; }
 
-		virtual void run(ara::graph::Graph& graph) override;
+		virtual void run(graph::Graph& graph) override;
 	};
-} // namespace step
+} // namespace ara::step

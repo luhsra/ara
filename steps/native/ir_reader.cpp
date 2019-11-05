@@ -9,7 +9,7 @@
 
 static llvm::LLVMContext context;
 
-namespace step {
+namespace ara::step {
 	std::string IRReader::get_description() const { return "Parser IR files and link together to an LLVM module"; }
 
 	std::unique_ptr<llvm::Module> IRReader::load_file(const std::string& filepath, llvm::LLVMContext& Context) {
@@ -27,7 +27,7 @@ namespace step {
 		return NULL;
 	}
 
-	void IRReader::run(ara::graph::Graph& graph) {
+	void IRReader::run(graph::Graph& graph) {
 		// get file arguments from config
 		assert(input_files.get().second);
 		std::vector<std::string> files = input_files.get().first;
@@ -68,4 +68,4 @@ namespace step {
 		// convert unique_ptr to shared_ptr
 		graph.initialize_module(std::move(composite));
 	}
-} // namespace step
+} // namespace ara::step

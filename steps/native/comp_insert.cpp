@@ -11,7 +11,7 @@
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-namespace step {
+namespace ara::step {
 	using namespace llvm;
 
 	std::string CompInsert::get_description() const {
@@ -22,7 +22,7 @@ namespace step {
 
 	std::vector<std::string> CompInsert::get_dependencies() { return {"IRReader"}; }
 
-	void CompInsert::run(ara::graph::Graph& graph) {
+	void CompInsert::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
 		unsigned nop_count = 0;
 		for (auto& function : module) {
@@ -50,4 +50,4 @@ namespace step {
 		}
 		logger.debug() << "Inserted " << nop_count << " NOPs." << std::endl;
 	}
-} // namespace step
+} // namespace ara::step

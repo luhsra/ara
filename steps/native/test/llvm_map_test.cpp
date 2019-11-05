@@ -13,13 +13,13 @@
 
 using namespace llvm;
 
-namespace step {
+namespace ara::step {
 	std::string LLVMMapTest::get_name() const { return "LLVMMapTest"; }
 
 	std::string LLVMMapTest::get_description() const { return "Step for testing the LLVMMap step"; }
 
 	template <typename Graph>
-	typename boost::graph_traits<Graph>::vertex_descriptor back_map(Graph& g, ara::graph::CFG& cfg,
+	typename boost::graph_traits<Graph>::vertex_descriptor back_map(Graph& g, graph::CFG& cfg,
 	                                                                const BasicBlock* block) {
 		for (auto abb : boost::make_iterator_range(vertices(g))) {
 			if (cfg.entry_bb[abb] == reinterpret_cast<intptr_t>(block) ||
@@ -27,11 +27,11 @@ namespace step {
 				return abb;
 			}
 		}
-		throw ara::VertexNotFound();
+		throw VertexNotFound();
 	}
 
 	template <typename Graph>
-	void test_map(Graph& g, ara::graph::CFG& cfg, Module& mod, Logger& logger) {
+	void test_map(Graph& g, graph::CFG& cfg, Module& mod, Logger& logger) {
 		std::set<BasicBlock*> bbs;
 		std::set<llvm::Function*> lfuncs;
 		for (auto& f : mod) {
@@ -80,7 +80,7 @@ namespace step {
 					succs1.insert(back_map(g, cfg, succ_b));
 				}
 				for (auto succ : boost::make_iterator_range(boost::out_edges(abb, g))) {
-					if (cfg.etype[succ] == ara::graph::CFType::lcf) {
+					if (cfg.etype[succ] == graph::CFType::lcf) {
 						succs2.insert(boost::target(succ, g));
 					}
 				}
@@ -96,7 +96,7 @@ namespace step {
 					preds1.insert(back_map(g, cfg, pred_b));
 				}
 				for (auto pred : boost::make_iterator_range(boost::in_edges(abb, g))) {
-					if (cfg.etype[pred] == ara::graph::CFType::lcf) {
+					if (cfg.etype[pred] == graph::CFType::lcf) {
 						preds2.insert(boost::source(pred, g));
 					}
 				}
@@ -109,7 +109,7 @@ namespace step {
 				typename boost::graph_traits<Graph>::vertex_descriptor func;
 				bool valid = false;
 				for (auto edge : boost::make_iterator_range(boost::out_edges(abb, g))) {
-					if (cfg.etype[edge] == ara::graph::CFType::a2f) {
+					if (cfg.etype[edge] == graph::CFType::a2f) {
 						func = boost::target(edge, g);
 						valid = true;
 					}
@@ -133,12 +133,12 @@ namespace step {
 		}
 	}
 
-	void LLVMMapTest::run(ara::graph::Graph& graph) {
+	void LLVMMapTest::run(graph::Graph& graph) {
 		Module& mod = graph.get_module();
-		ara::graph::CFG cfg = graph.get_cfg();
+		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { test_map(g, cfg, mod, logger); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
 
 	std::vector<std::string> LLVMMapTest::get_dependencies() { return {"LLVMMap"}; }
-} // namespace step
+} // namespace ara::step

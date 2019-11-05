@@ -10,7 +10,7 @@
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-namespace step {
+namespace ara::step {
 	using namespace llvm;
 
 	std::string BBSplit::get_description() const {
@@ -19,7 +19,7 @@ namespace step {
 
 	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
 
-	void BBSplit::run(ara::graph::Graph& graph) {
+	void BBSplit::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
 		unsigned split_counter = 0;
 
@@ -66,4 +66,4 @@ namespace step {
 		}
 		logger.debug() << "Split " << split_counter << " basic blocks." << std::endl;
 	}
-} // namespace step
+} // namespace ara::step

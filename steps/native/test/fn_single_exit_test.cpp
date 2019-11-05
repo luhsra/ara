@@ -9,12 +9,12 @@
 #include <stdexcept>
 #include <string>
 
-namespace step {
+namespace ara::step {
 	std::string FnSingleExitTest::get_name() const { return "FnSingleExitTest"; }
 
 	std::string FnSingleExitTest::get_description() const { return "Step for testing the FnSingleExit step"; }
 
-	void FnSingleExitTest::run(ara::graph::Graph& graph) {
+	void FnSingleExitTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
 		unsigned split_counter = 0;
 
@@ -43,4 +43,4 @@ namespace step {
 	}
 
 	std::vector<std::string> FnSingleExitTest::get_dependencies() { return {"FnSingleExit"}; }
-} // namespace step
+} // namespace ara::step

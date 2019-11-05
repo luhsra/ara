@@ -10,7 +10,7 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 
-cdef extern from "cy_helper.h":
+cdef extern from "cy_helper.h" namespace "ara::step":
     cstep.Step* step_fac[T]()
     vector[option.Option*] repack(cstep.Step& step)
 

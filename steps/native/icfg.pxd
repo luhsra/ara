@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "icfg.h" namespace "step":
+cdef extern from "icfg.h" namespace "ara::step":
     cdef cppclass ICFG:
         ICFG(dict config) except +
         string get_name()

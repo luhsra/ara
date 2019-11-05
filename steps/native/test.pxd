@@ -3,7 +3,7 @@ cimport cgraph
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "test.h" namespace "step":
+cdef extern from "test.h" namespace "ara::step":
     cdef cppclass Test0Step:
         Test0Step(dict config) except +
         string get_name()
