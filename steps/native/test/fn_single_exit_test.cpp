@@ -16,7 +16,6 @@ namespace ara::step {
 
 	void FnSingleExitTest::run(graph::Graph& graph) {
 		llvm::Module& module = graph.get_module();
-		unsigned split_counter = 0;
 
 		bool fail = false;
 		for (auto& function : module) {
