@@ -66,7 +66,7 @@ namespace ara {
 				debug_out << "LOAD INSTRUCTION"
 				          << "\n";
 				// check if argument is a global variable
-				if (GlobalVariable* global_var = dyn_cast<GlobalVariable>(load->getOperand(0))) {
+				if (isa<GlobalVariable>(load->getOperand(0))) {
 					debug_out << "LOAD GLOBAL"
 					          << "\n";
 					// load the global information
@@ -324,7 +324,7 @@ namespace ara {
 				return true;
 			}
 			// check if pointer points to function
-			if (FunctionType* FT = dyn_cast<FunctionType>(elementType)) { // check pointer to function
+			if (isa<FunctionType>(elementType)) { // check pointer to function
 				// check if argument has a name
 				if (arg->hasName()) {
 					debug_out << "POINTER TO FUNCTION"
@@ -344,14 +344,14 @@ namespace ara {
 				dump_success = load_value(debug_out, argument_container, arg, arg, already_visited);
 
 			} // check if value is a constant value
-			else if (GlobalVariable* global_var = dyn_cast<GlobalVariable>(arg)) {
+			else if (isa<GlobalVariable>(arg)) {
 				debug_out << "POINTER TO GLOBAL"
 				          << "\n";
 				dump_success = load_value(debug_out, argument_container, arg, arg, already_visited);
 
 			} else if (Constant* constant = dyn_cast<ConstantExpr>(arg)) { // check if value is a constant value
 				// check if the constant value is global global variable
-				if (GlobalVariable* global_var = dyn_cast<GlobalVariable>(constant->getOperand(0))) {
+				if (isa<GlobalVariable>(constant->getOperand(0))) {
 					debug_out << "POINTER TO CONSTANT GLOBAL"
 					          << "\n";
 					dump_success =
@@ -458,7 +458,7 @@ namespace ara {
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
 					} // check if global variable is contant null pointer
-					else if (ConstantPointerNull* null_ptr = dyn_cast<ConstantPointerNull>(constant_data)) {
+					else if (isa<ConstantPointerNull>(constant_data)) {
 						debug_out << "CONSTANTPOINTERNULL"
 						          << "\n";
 						// print name of null pointer because there is no other content
@@ -515,10 +515,10 @@ namespace ara {
 						}
 
 					} // check if global variable is from type constant struct
-					else if (ConstantStruct* constant_struct = dyn_cast<ConstantStruct>(constant_aggregate)) {
+					else if (isa<ConstantStruct>(constant_aggregate)) {
 						debug_out << "Constant Struct";
 					} // check if global variable is from type constant vector
-					else if (ConstantVector* constant_vector = dyn_cast<ConstantVector>(constant_aggregate)) {
+					else if (isa<ConstantVector>(constant_aggregate)) {
 						debug_out << "Constant Vector";
 					}
 				} else {
@@ -543,7 +543,7 @@ namespace ara {
 			if (ConstantAggregate* constant_aggregate = dyn_cast<ConstantAggregate>(arg)) {
 				debug_out << "CONSTANTAGGREGATE";
 				// check if global variable is from type constant array
-				if (ConstantArray* constant_array = dyn_cast<ConstantArray>(constant_aggregate)) {
+				if (isa<ConstantArray>(constant_aggregate)) {
 					debug_out << "Constant Array";
 
 				} // check if global variable is from type constant struct
@@ -576,7 +576,7 @@ namespace ara {
 					}
 
 				} // check if global variable is from type constant vector
-				else if (ConstantVector* constant_vector = dyn_cast<ConstantVector>(constant_aggregate)) {
+				else if (isa<ConstantVector>(constant_aggregate)) {
 					debug_out << "Constant Vector";
 				}
 			}
@@ -696,7 +696,6 @@ namespace ara {
 			}
 		}
 
-		bool pointer_flag = true;
 		Instruction* store_inst = nullptr;
 
 		// check if memory walker class does not return a acceptable load instruction
@@ -719,7 +718,6 @@ namespace ara {
 
 						// check if user is before of the original call
 						if (instruction_before(tmp_instruction, inst, &dominator_tree)) {
-							pointer_flag = false;
 							// check if the store instruction is before the original call
 							if (dominator_tree.dominates(tmp_instruction, inst)) {
 								if (store_inst == nullptr) {
@@ -922,7 +920,7 @@ namespace ara {
 											debug_out << "USERWITHSAMEPOINTERINDIZES-NOSTOREINSTRUCTIONFOUND"
 											          << std::endl;
 											// debug_out << print_argument(user)<< std::endl;
-											if (auto load = dyn_cast<LoadInst>(user)) {
+											if (isa<LoadInst>(user)) {
 												// flag = true;
 												// std::cerr << "user" << std::endl;
 												// if(!dump_argument(debug_out,argument_container,
@@ -966,11 +964,12 @@ namespace ara {
 	bool ValueAnalyzer::check_get_element_ptr_indizes(std::vector<size_t>* reference, GetElementPtrInst* instr) {
 		int counter = 0;
 		for (auto i = instr->idx_begin(), ie = instr->idx_end(); i != ie; ++i) {
-			int index = -1;
+			long int index = -1;
 			if (ConstantInt* CI = dyn_cast<ConstantInt>(((*i).get()))) {
 				index = CI->getLimitedValue();
 			};
-			if (index != reference->at(counter))
+			assert(reference->at(counter) <= LONG_MAX);
+			if (index != static_cast<long>(reference->at(counter)))
 				return false;
 			++counter;
 		}
