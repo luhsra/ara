@@ -977,11 +977,11 @@ namespace ara {
 		return true;
 	}
 
-	void ValueAnalyzer::dump_instruction(Function* func, const CallBase* instruction,
-	                                     std::vector<shared_warning>* warning_list) {
+	ValueAnalyzer::call_data ValueAnalyzer::dump_instruction(Function* func, const CallBase* instruction,
+	                                                         std::vector<shared_warning>* warning_list) {
 
 		// empty call data container
-		call_data call;
+		ValueAnalyzer::call_data call;
 
 		// store the name of the called function
 
@@ -1035,7 +1035,7 @@ namespace ara {
 				warning_list->emplace_back(warning);
 			}
 
-			logger.debug() << debug_out.str() << std::endl;
+			logger.debug() << "Values dumped, debug log is: " << debug_out.str() << std::endl;
 		}
 
 		// check if call has no arguments
@@ -1049,11 +1049,13 @@ namespace ara {
 		call.arguments = arguments;
 
 		assert(call.call_instruction != nullptr);
+
+		return call;
 	}
 
-	void ValueAnalyzer::get_values(const CallBase& cb) {
+	Arguments ValueAnalyzer::get_values(const CallBase& cb) {
 		if (isCallToLLVMIntrinsic(&cb)) {
-			return;
+			throw ValuesUnknown("Called function is an intrinsic.");
 		}
 
 		Function* func = cb.getCalledFunction();
@@ -1074,8 +1076,23 @@ namespace ara {
 		std::vector<shared_warning> warning_list;
 
 		// get and store the called arguments values
-		dump_instruction(func, &cb, &warning_list);
+		ValueAnalyzer::call_data data = dump_instruction(func, &cb, &warning_list);
 
-		logger.debug() << "DUMPED" << cb << std::endl;
+		// repack Values into Arguments class
+		Arguments args;
+
+		for (auto& a : data.arguments) {
+			if (a.value_list.size() == 0) {
+				assert(data.arguments.size() == 1);
+				break;
+			}
+			assert(a.value_list.size() == 1);
+
+			const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
+			assert(c != nullptr);
+			args.emplace_back(*c);
+		}
+
+		return args;
 	}
 } // namespace ara

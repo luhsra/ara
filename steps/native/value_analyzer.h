@@ -1,5 +1,6 @@
 #pragma once
 
+#include "arguments.h"
 #include "logging.h"
 #include "warning.h"
 
@@ -8,26 +9,26 @@
 
 namespace ara {
 
-	struct argument_data {
-		std::vector<std::any> any_list;
-		std::vector<const llvm::Value*> value_list;
-		std::vector<std::vector<const llvm::Instruction*>> argument_calles_list;
-		bool multiple = false;
-	};
-
-	struct call_data {
-		std::string call_name; // Name des Sycalls
-		std::vector<argument_data> arguments;
-		const llvm::CallBase* call_instruction;
-		bool sys_call = false;
-	};
-
 	class ValueAnalyzer {
 	  private:
+		struct argument_data {
+			std::vector<std::any> any_list;
+			std::vector<const llvm::Value*> value_list;
+			std::vector<std::vector<const llvm::Instruction*>> argument_calles_list;
+			bool multiple = false;
+		};
+
+		struct call_data {
+			std::string call_name; // Name des Sycalls
+			std::vector<argument_data> arguments;
+			const llvm::CallBase* call_instruction;
+			bool sys_call = false;
+		};
+
 		Logger& logger;
 
-		void dump_instruction(llvm::Function* func, const llvm::CallBase* instruction,
-		                      std::vector<shared_warning>* warning_list);
+		call_data dump_instruction(llvm::Function* func, const llvm::CallBase* instruction,
+		                           std::vector<shared_warning>* warning_list);
 
 		/**
 		 * @brief set all possbile argument values and corresponding call history in a data structure. This
@@ -162,7 +163,7 @@ namespace ara {
 	  public:
 		ValueAnalyzer(Logger& logger) : logger(logger) {}
 
-		void get_values(const llvm::CallBase& cb);
+		Arguments get_values(const llvm::CallBase& cb);
 	};
 
 } // namespace ara

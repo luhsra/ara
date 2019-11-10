@@ -13,7 +13,14 @@ namespace ara::step {
 			llvm::CallBase* called_func =
 			    llvm::dyn_cast<llvm::CallBase>(&reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[abb])->front());
 			if (called_func) {
-				va.get_values(*called_func);
+				Arguments args = va.get_values(*called_func);
+				logger.debug() << "Retrieved " << args.size() << " arguments for call " << *called_func << std::endl;
+				for (const llvm::Constant& v : args) {
+					logger.debug() << "Retrieved value: " << v << std::endl;
+				}
+				if (args.size() >= 2) {
+					logger.debug() << "First argument is " << args[1] << std::endl;
+				}
 			} else {
 				logger.warn() << "Something went wrong." << std::endl;
 			}
