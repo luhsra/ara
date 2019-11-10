@@ -1,6 +1,5 @@
 #pragma once
 
-#include <boost/iterator/iterator_facade.hpp>
 #include <sstream>
 #include <string>
 
