@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # vim: set et ts=4 sw=4:
-"""Automated Real-time System Analysis"""
+"""Automatic Real-time System Analyzer"""
 
 import argparse
 import json
@@ -14,7 +14,7 @@ from steplisting import print_avail_steps
 
 
 def main():
-    """Entry point for ARSA."""
+    """Entry point for ARA."""
     parser = argparse.ArgumentParser(
         prog=sys.argv[0],
         description=sys.modules[__name__].__doc__,
