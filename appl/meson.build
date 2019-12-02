@@ -100,6 +100,13 @@ osek_examples = run_target('osek-examples',
                            command: nop,
                            depends: osek_targets)
 
+# test target for constant propagation
+const_prop = custom_target('const-prop',
+                           input : files('const_prop.cc'),
+                           output : ['const_prop.ll'],
+                           command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
+                                      clang_flags)
+
 examples = run_target('examples',
                       command: nop,
-                      depends: [osek_targets, freertos_targets])
+                      depends: [osek_targets, freertos_targets, const_prop])

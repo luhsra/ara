@@ -42,11 +42,11 @@ sh = custom_target('ara-sh',
 extra_settings = files('test/extra_settings.json')
 
 # TODO convert this into a proper test
-test('ara_tester',
+test('const_prop',
    py3_inst,
-   args: [files('ara.py'), freertos_icfg, '--os', 'FreeRTOS',
+   args: [files('ara.py'), const_prop, '--os', 'FreeRTOS',
           '--log-level', 'debug',
-          '--step-settings', extra_settings],
+          '--step', 'ConstProp'],
    env : [python_path]
 )
 
