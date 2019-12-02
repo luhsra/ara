@@ -12,7 +12,7 @@ namespace ara::step {
 		       "Uses the LLVM Simple Constant Propagation pass to substitute the values of known constants inside of expressions.";
 	}
 
-    std::vector<std::string> get_dependencies() { return {"IRReader"}; }
+    std::vector<std::string> ConstProp::get_dependencies() { return {"IRReader"}; }
 
 	//void ConstantPropagation::fill_options() { opts.emplace_back(dummy_option); }
 
@@ -20,7 +20,7 @@ namespace ara::step {
         Module& module = graph.get_module();
         legacy::FunctionPassManager fpm(&module);
         fpm.add(createConstantPropagationPass()); 
-        //fpm.doInitialization();
+        fpm.doInitialization();
 
     /* Loop over module's functions and count how many functions are altered by the ConstProp Pass.
        fpm.run(function) returns true when a function was modified. */
@@ -33,6 +33,6 @@ namespace ara::step {
                 ++n;
             }
         }
-		logger.debug() << "Constant Propagation step finished succesfully. " << n << "/" << module.getFunctionList().size() << " functions modified." << std::endl;
+		logger.debug() << "Constant Propagation step finished successfully. " << n << "/" << module.getFunctionList().size() << " functions modified." << std::endl;
 	}
 } // namespace ara::step

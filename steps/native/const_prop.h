@@ -16,7 +16,7 @@ namespace ara::step {
 	  public:
 		virtual std::string get_name() const override { return "ConstProp"; }
 		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {}; }
+		virtual std::vector<std::string> get_dependencies() override;
 
 		virtual void run(graph::Graph& graph) override;
 	};
