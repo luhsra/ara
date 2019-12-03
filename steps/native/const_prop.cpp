@@ -25,13 +25,25 @@ namespace ara::step {
     /* Loop over module's functions and count how many functions are altered by the ConstProp Pass.
        fpm.run(function) returns true when a function was modified. */
         int n = 0;
+        int i = 0;
         for (auto& function : module) {
             if (function.empty())
                 continue;
+
+            // Remove function's Attribute that prevents it's optimization
+            if (function.hasOptNone()) {
+                function.removeFnAttr(Attribute::OptimizeNone);
+            }
+
+            logger.debug() << "Function " << i << " before pass execution:\n" << std::endl;
+            function.dump();
             if(fpm.run(function)) {
-                logger.debug() << "A function was modified." << std::endl;
+                logger.debug() << "The function was modified.\n" << std::endl;
                 ++n;
             }
+            logger.debug() << "Function " << i << " after pass execution:\n" << std::endl;
+            function.dump();
+            ++i;
         }
 		logger.debug() << "Constant Propagation step finished successfully. " << n << "/" << module.getFunctionList().size() << " functions modified." << std::endl;
 	}
