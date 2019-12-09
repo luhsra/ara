@@ -44,7 +44,7 @@ extra_settings = files('test/extra_settings.json')
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
-   args: [files('ara.py'), freertos_icfg, '--os', 'FreeRTOS',
+   args: [files('ara.py'), freertos_icfg,
           '--log-level', 'debug',
           '--step-settings', extra_settings],
    env : [python_path]

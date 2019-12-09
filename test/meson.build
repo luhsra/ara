@@ -102,7 +102,7 @@ test('ir-reader-multiple-symbols',
 
 test('dummy-test',
    py3_inst,
-   args: [files('../ara.py'), 'empty', '--os', 'FreeRTOS',
+   args: [files('../ara.py'), 'empty',
           '-v',
           '--step-settings', files('dummy_settings.json')],
    env : [python_path]

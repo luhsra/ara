@@ -23,11 +23,12 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
                         choices=['warn', 'info', 'debug'], default='warn')
-    parser.add_argument('--os', '-O', help="specify the operation system",
-                        choices=['FreeRTOS', 'OSEK'], default='OSEK')
-    parser.add_argument('--step', '-s',
-                        help="choose steps that will be executed",
-                        action='append')
+    parser.add_argument('--entrypoint', '-e', help="system entry point",
+                        default='main')
+    parser.add_argument('--isr', '-i', action='append',
+                        help="entrup point for interrupt service routine")
+    parser.add_argument('--step', '-s', action='append',
+                        help="choose steps that will be executed")
     parser.add_argument('--list-steps', '-l', action="store_true",
                         default=False, help="list all available steps")
     parser.add_argument('input_files', help="all LLVM-IR input files",
@@ -52,8 +53,6 @@ def main():
         sys.exit(0)
     elif not args.input_files:
         parser.error('input_files are required (except -l or -h is set)')
-    elif args.os == 'OSEK' and not args.oilfile:
-        parser.error('when analyzing OSEK and oilfile is required')
 
     logging.debug("Processing files: %s", ', '.join(args.input_files))
 
