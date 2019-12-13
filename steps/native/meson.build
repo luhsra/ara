@@ -13,7 +13,7 @@ native_step_pyx_cpp = custom_target('native_step_pyx',
                  'llvm_map.pxd',
                  'value_analysis.pxd',
                  'test.pxd') + common_cython_files],
-  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
+  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
 )
 
 py_logging_pyx_cpp = custom_target('py_logging_pyx',
@@ -54,7 +54,7 @@ plib = py3_inst.extension_module('native_step',
         'test/llvm_map_test.cpp',
         'test/test.cpp'),
   cpp_pch: 'pch/steps_pch.h',
-  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep]
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep, pyllco_dep]
 )
 
-stepdir = meson.current_build_dir()
+step_dir = meson.current_build_dir()

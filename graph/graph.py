@@ -1,4 +1,4 @@
-import llvm_wrapper
+import pyllco
 
 import graph_tool
 
@@ -41,5 +41,5 @@ class Graph:
 
     def __init__(self):
         # should be used only from C++, see graph.h
-        self._llvm = llvm_wrapper.LLVMWrapper()
+        self._llvm = pyllco.Module()
         self._init_cfg()

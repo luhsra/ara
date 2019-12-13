@@ -15,6 +15,19 @@ llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 boost_dep = dependency('boost', modules: ['graph', 'python3'], include_type: 'system')
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
+pyllco_dep = dependency('pyllco-py' + py3_inst.language_version(), required : false)
+
+if pyllco_dep.found()
+    pyllco_cython_inc = pyllco_dep.get_variable(pkgconfig: 'Cython.include')
+    pyllco_dir = ''
+else
+    pyllco_proj = subproject('pyllco')
+    pyllco_dep = pyllco_proj.get_variable('pyllco_dep')
+    pyllco_cython_inc = pyllco_proj.get_variable('pyllco_cython_inc')
+    pyllco_dir = pyllco_proj.get_variable('pyllco_dir')
+endif
+
+
 cython_flags = ['-Wextra', '--cplus', '-3']
 
 build_dir = meson.current_build_dir()
@@ -25,7 +38,7 @@ subdir('graph')
 subdir('steps')
 subdir('appl')
 
-python_path = 'PYTHONPATH=' + ':'.join([source_dir, stepdir, llvm_wrapper_dir])
+python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir])
 
 subdir('test')
 
