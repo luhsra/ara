@@ -2,7 +2,7 @@ clang = find_program('clang', version: llvm_version)
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
-clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names', '-fno-exceptions']
+clang_flags = ['-S', '-ggdb', '-emit-llvm', '-Xclang', '-disable-O0-optnone', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names', '-fno-exceptions']
 clang_flags += '-Wno-everything'
 c_std = '-std=c11'
 cxx_std = '-std=c++11'
@@ -104,6 +104,12 @@ osek_examples = run_target('osek-examples',
 const_prop = custom_target('const-prop',
                            input : files('const_prop.cc'),
                            output : ['const_prop.ll'],
+                           command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
+                                      clang_flags)
+
+dead_code = custom_target('dead-code',
+                           input : files('dead_code.cc'),
+                           output : ['dead_code.ll'],
                            command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
                                       clang_flags)
 

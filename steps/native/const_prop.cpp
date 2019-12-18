@@ -30,7 +30,7 @@ namespace ara::step {
             if (function.empty())
                 continue;
 
-            // Remove function's Attribute that prevents it's optimization
+            // Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn' given
             if (function.hasOptNone()) {
                 function.removeFnAttr(Attribute::OptimizeNone);
             }
