@@ -15,6 +15,7 @@ from bb_split cimport BBSplit
 from cdummy cimport CDummy
 from comp_insert cimport CompInsert
 from const_prop cimport ConstProp
+from dead_code_elimination cimport DeadCodeElimination
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
 from ir_reader cimport IRReader
@@ -255,6 +256,7 @@ def provide_steps():
             _native_fac(step_fac[CDummy]()),
             _native_fac(step_fac[CompInsert]()),
             _native_fac(step_fac[ConstProp]()),
+            _native_fac(step_fac[DeadCodeElimination]()),
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),

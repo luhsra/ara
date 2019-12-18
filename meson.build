@@ -50,6 +50,14 @@ test('const_prop',
    env : [python_path]
 )
 
+test('dead_code',
+   py3_inst,
+   args: [files('ara.py'), dead_code, '--os', 'FreeRTOS',
+          '--log-level', 'debug',
+          '--step', 'DeadCodeElimination'],
+   env : [python_path]
+)
+
 test('gpslogger',
    py3_inst,
    args: [files('ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--log-level', 'debug'],
