@@ -50,11 +50,27 @@ test('const_prop',
    env : [python_path]
 )
 
+test('sparse_cond_const_prop',
+   py3_inst,
+   args: [files('ara.py'), const_prop, '--os', 'FreeRTOS',
+          '--log-level', 'debug',
+          '--step', 'SparseCondConstProp'],
+   env : [python_path]
+)
+
 test('dead_code',
    py3_inst,
    args: [files('ara.py'), dead_code, '--os', 'FreeRTOS',
           '--log-level', 'debug',
           '--step', 'DeadCodeElimination'],
+   env : [python_path]
+)
+
+test('agr_dead_code',
+   py3_inst,
+   args: [files('ara.py'), dead_code, '--os', 'FreeRTOS',
+          '--log-level', 'debug',
+          '--step', 'AgressiveDCE'],
    env : [python_path]
 )
 

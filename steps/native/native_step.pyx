@@ -11,6 +11,7 @@ cimport cstep
 cimport cgraph
 cimport llvm_wrapper
 
+from agressive_dce cimport AgressiveDCE
 from bb_split cimport BBSplit
 from cdummy cimport CDummy
 from comp_insert cimport CompInsert
@@ -21,6 +22,7 @@ from icfg cimport ICFG
 from ir_reader cimport IRReader
 from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
+from sparse_cond_const_prop cimport SparseCondConstProp
 from value_analysis cimport ValueAnalysis
 
 from test cimport (BBSplitTest,
@@ -252,7 +254,8 @@ def provide_steps():
     """Provide a list of all native steps. This also constructs as many
     objects as steps exist.
     """
-    return [_native_fac(step_fac[BBSplit]()),
+    return [_native_fac(step_fac[AgressiveDCE]()),
+            _native_fac(step_fac[BBSplit]()),
             _native_fac(step_fac[CDummy]()),
             _native_fac(step_fac[CompInsert]()),
             _native_fac(step_fac[ConstProp]()),
@@ -262,6 +265,7 @@ def provide_steps():
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
             _native_fac(step_fac[LLVMMap]()),
+            _native_fac(step_fac[SparseCondConstProp]()),
             _native_fac(step_fac[ValueAnalysis]())]
 
 
