@@ -1,21 +1,4 @@
-native_step_pyx_cpp = custom_target('native_step_pyx',
-  output : ['native_step_pyx.cpp'],
-  input : [files('native_step.pyx',
-                 'option.pxd',
-                 'bb_split.pxd',
-                 'cdummy.pxd',
-                 'comp_insert.pxd',
-                 'cstep.pxd',
-                 'fn_single_exit.pxd',
-                 'icfg.pxd',
-                 'ir_reader.pxd',
-                 'llvm_basic_optimization.pxd',
-                 'llvm_map.pxd',
-                 'value_analysis.pxd',
-                 'test.pxd') + common_cython_files],
-  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
-)
-
+# logging submodule
 py_logging_pyx_cpp = custom_target('py_logging_pyx',
   output : ['py_logging.cpp', 'py_logging.h'],
   input : files('py_logging.pyx'),
@@ -34,6 +17,25 @@ log_dep = declare_dependency(
   include_directories: log_bridge_incl,
   link_with: log_bridge,
   sources: py_logging_header)
+
+# steps
+native_step_pyx_cpp = custom_target('native_step_pyx',
+  output : ['native_step_pyx.cpp'],
+  input : [files('native_step.pyx',
+                 'option.pxd',
+                 'bb_split.pxd',
+                 'cdummy.pxd',
+                 'comp_insert.pxd',
+                 'cstep.pxd',
+                 'fn_single_exit.pxd',
+                 'icfg.pxd',
+                 'ir_reader.pxd',
+                 'llvm_basic_optimization.pxd',
+                 'llvm_map.pxd',
+                 'value_analysis.pxd',
+                 'test.pxd') + common_cython_files],
+  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
+)
 
 plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
