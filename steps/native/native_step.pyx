@@ -159,7 +159,7 @@ cdef class NativeStep(SuperStep):
 
     def __init__(self, *args):
         """Fake constructor. Prevent usage of super constructor. Must not
-        calle directly
+        called directly
 
         Use native_fac() to construct a NativeStep.
         """
