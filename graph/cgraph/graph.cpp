@@ -120,21 +120,27 @@ namespace ara::graph {
 		CFG cfg(get_graph_interface());
 
 		// Properties
+#define MAP(Value, Type) cfg.Value = get_property<decltype(cfg.Value)>(Type, #Value);
+#define VMAP(Value) MAP(Value, vprops)
+#define EMAP(Value) MAP(Value, eprops)
+
 		PyObject* vprops = PyObject_GetAttrString(pycfg, "vertex_properties");
 		assert(vprops != nullptr);
-		cfg.name = get_property<decltype(cfg.name)>(vprops, "name");
-		cfg.type = get_property<decltype(cfg.type)>(vprops, "type");
-		cfg.is_function = get_property<decltype(cfg.is_function)>(vprops, "is_function");
-		cfg.entry_bb = get_property<decltype(cfg.entry_bb)>(vprops, "entry_bb");
-		cfg.exit_bb = get_property<decltype(cfg.exit_bb)>(vprops, "exit_bb");
-		cfg.implemented = get_property<decltype(cfg.implemented)>(vprops, "implemented");
-		cfg.syscall = get_property<decltype(cfg.syscall)>(vprops, "syscall");
-		cfg.function = get_property<decltype(cfg.function)>(vprops, "function");
+
+		VMAP(name)
+		VMAP(type)
+		VMAP(is_function)
+		VMAP(entry_bb)
+		VMAP(exit_bb)
+		VMAP(implemented)
+		VMAP(syscall)
+		VMAP(function)
 
 		PyObject* eprops = PyObject_GetAttrString(pycfg, "edge_properties");
 		assert(eprops != nullptr);
+
 		cfg.etype = get_property<decltype(cfg.etype)>(eprops, "type");
-		cfg.is_entry = get_property<decltype(cfg.is_entry)>(eprops, "is_entry");
+		EMAP(is_entry)
 
 		return cfg;
 	}
