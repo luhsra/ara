@@ -30,6 +30,7 @@ class Graph:
         self.cfg.vertex_properties["implemented"] = self.cfg.new_vp("bool")
         self.cfg.vertex_properties["syscall"] = self.cfg.new_vp("bool")
         self.cfg.vertex_properties["function"] = self.cfg.new_vp("int64_t")
+        self.cfg.vertex_properties["arguments"] = self.cfg.new_vp("object")
 
         # edge properties
         self.cfg.edge_properties["type"] = self.cfg.new_ep("int")

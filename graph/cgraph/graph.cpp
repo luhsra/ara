@@ -135,6 +135,7 @@ namespace ara::graph {
 		VMAP(implemented)
 		VMAP(syscall)
 		VMAP(function)
+		VMAP(arguments)
 
 		PyObject* eprops = PyObject_GetAttrString(pycfg, "edge_properties");
 		assert(eprops != nullptr);
