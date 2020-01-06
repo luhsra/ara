@@ -43,7 +43,7 @@ class OptionType:
         return None
 
     def _validate(self, val, name):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def get_help(self):
         return self.__class__.__name__
