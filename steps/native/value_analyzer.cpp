@@ -23,7 +23,7 @@ namespace ara {
 			return false;
 
 		// check if the value is an argument of the function
-		if (Argument* argument = dyn_cast<Argument>(arg)) {
+		if (llvm::Argument* argument = dyn_cast<llvm::Argument>(arg)) {
 			return load_function_argument(debug_out, argument_container, argument->getParent(), already_visited,
 			                              argument->getArgNo());
 		}
@@ -1080,6 +1080,7 @@ namespace ara {
 		// repack Values into Arguments class
 		Arguments args;
 
+		unsigned i = 0;
 		for (auto& a : data.arguments) {
 			if (a.value_list.size() == 0) {
 				assert(data.arguments.size() == 1);
@@ -1089,7 +1090,9 @@ namespace ara {
 
 			const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
 			assert(c != nullptr);
-			args.emplace_back(*c);
+			AttributeSet s = cb.getAttributes().getAttributes(i+1);
+			args.emplace_back(*c, s);
+			i++;
 		}
 
 		return args;
