@@ -42,6 +42,14 @@ sh = custom_target('ara-sh',
 extra_settings = files('test/extra_settings.json')
 
 # TODO convert this into a proper test
+test('mem2reg',
+   py3_inst,
+   args: [files('ara.py'), const_prop, '--os', 'FreeRTOS',
+          '--log-level', 'debug',
+          '--step', 'Mem2Reg'],
+   env : [python_path]
+)
+
 test('const_prop',
    py3_inst,
    args: [files('ara.py'), const_prop, '--os', 'FreeRTOS',

@@ -22,6 +22,7 @@ from icfg cimport ICFG
 from ir_reader cimport IRReader
 from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
+from mem2reg cimport Mem2Reg
 from sparse_cond_const_prop cimport SparseCondConstProp
 from value_analysis cimport ValueAnalysis
 
@@ -265,6 +266,7 @@ def provide_steps():
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
             _native_fac(step_fac[LLVMMap]()),
+            _native_fac(step_fac[Mem2Reg]()),
             _native_fac(step_fac[SparseCondConstProp]()),
             _native_fac(step_fac[ValueAnalysis]())]
 
