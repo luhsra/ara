@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--entrypoint', '-e', help="system entry point",
                         default='main')
     parser.add_argument('--isr', '-i', action='append',
-                        help="entrup point for interrupt service routine")
+                        help="entry point for interrupt service routine")
     parser.add_argument('--step', '-s', action='append',
                         help="choose steps that will be executed")
     parser.add_argument('--list-steps', '-l', action="store_true",
