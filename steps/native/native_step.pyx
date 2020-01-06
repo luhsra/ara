@@ -19,7 +19,7 @@ from icfg cimport ICFG
 from ir_reader cimport IRReader
 from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
-from value_analysis cimport ValueAnalysis
+from value_analysis_core cimport ValueAnalysisCore
 
 from test cimport (BBSplitTest,
                    CompInsertTest,
@@ -258,7 +258,7 @@ def provide_steps():
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
             _native_fac(step_fac[LLVMMap]()),
-            _native_fac(step_fac[ValueAnalysis]())]
+            _native_fac(step_fac[ValueAnalysisCore]())]
 
 
 def provide_test_steps():

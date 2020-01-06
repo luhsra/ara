@@ -3,6 +3,7 @@ from .dummy import Dummy
 from .oil import OilStep
 from .printer import Printer
 from .syscall import Syscall
+from .value_analysis import ValueAnalysis
 
 import py_logging
 
@@ -19,3 +20,4 @@ def provide_steps():
     yield OilStep()
     yield Printer()
     yield Syscall()
+    yield ValueAnalysis()

@@ -8,9 +8,9 @@
 #include <graph.h>
 
 namespace ara::step {
-	class ValueAnalysis : public Step {
+	class ValueAnalysisCore : public Step {
 	  public:
-		virtual std::string get_name() const override { return "ValueAnalysis"; }
+		virtual std::string get_name() const override { return "ValueAnalysisCore"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {"Syscall"}; }
 

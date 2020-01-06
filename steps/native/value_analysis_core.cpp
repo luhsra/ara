@@ -29,7 +29,7 @@ namespace ara::step {
 		}
 	}
 
-	std::string ValueAnalysisCore::get_description() const { return "Perform a value analysis for all system calls (core step)"; }
+	std::string ValueAnalysisCore::get_description() const { return "Perform a value analysis for all system calls (core step)."; }
 
 	void ValueAnalysisCore::run(graph::Graph& graph) {
 		graph::CFG cfg = graph.get_cfg();
