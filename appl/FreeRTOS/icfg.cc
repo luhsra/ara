@@ -48,7 +48,7 @@ int other_function(int a) {
 }
 
 int main(void) {
-	xTaskCreate(vTask1, "Task 1", 1000, NULL, 1, NULL);
+	xTaskCreate(vTask1, "Task 1", 51000, NULL, 1, NULL);
 	xTaskCreate(vTask2, "Task 2", 1000, NULL, 1, NULL);
 
 	int e = do_stuff(23, 90);
