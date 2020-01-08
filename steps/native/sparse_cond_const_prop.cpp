@@ -12,7 +12,7 @@ namespace ara::step {
 		       "Uses the LLVM Simple Constant Propagation pass to substitute the values of known constants inside of expressions.";
 	}
 
-    std::vector<std::string> SparseCondConstProp::get_dependencies() { return {"IRReader"}; }
+    std::vector<std::string> SparseCondConstProp::get_dependencies() { return {"IRReader", "Mem2Reg"}; }
 
 	//void ConstantPropagation::fill_options() { opts.emplace_back(dummy_option); }
 

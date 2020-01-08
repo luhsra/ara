@@ -12,7 +12,7 @@ namespace ara::step {
 		       "Uses the LLVM Dead Code Elimination pass to delete redundant instructions.";
 	}
 
-    std::vector<std::string> DeadCodeElimination::get_dependencies() { return {"IRReader"}; }
+    std::vector<std::string> DeadCodeElimination::get_dependencies() { return {"IRReader", "Mem2Reg"}; }
 
 	//void DeadCodeElimination::fill_options() { opts.emplace_back(dummy_option); }
 
@@ -29,6 +29,7 @@ namespace ara::step {
             if (function.empty())
                 continue;
 
+            function.dump(); 
             // Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn' given
             if (function.hasOptNone()) {
                 function.removeFnAttr(Attribute::OptimizeNone);
@@ -38,6 +39,7 @@ namespace ara::step {
                 logger.debug() << "The function was modified." << std::endl;
                 ++n;
             }
+            function.dump();
         }
 		logger.debug() << "DCE step finished successfully. " << n << "/" << module.getFunctionList().size() << " functions modified." << std::endl;
 	}

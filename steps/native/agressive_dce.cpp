@@ -12,7 +12,7 @@ namespace ara::step {
 		       "Uses the LLVM Agressive Dead Code Elimination pass to delete redundant instructions.";
 	}
 
-    std::vector<std::string> AgressiveDCE::get_dependencies() { return {"IRReader"}; }
+    std::vector<std::string> AgressiveDCE::get_dependencies() { return {"IRReader", "Mem2Reg"}; }
 
 	//void DeadCodeElimination::fill_options() { opts.emplace_back(dummy_option); }
 
@@ -33,11 +33,13 @@ namespace ara::step {
             if (function.hasOptNone()) {
                 function.removeFnAttr(Attribute::OptimizeNone);
             }
+            function.dump();
 
             if(fpm.run(function)) {
                 logger.debug() << "The function was modified." << std::endl;
                 ++n;
             }
+            function.dump();
         }
 		logger.debug() << "ADCE step finished successfully. " << n << "/" << module.getFunctionList().size() << " functions modified." << std::endl;
 	}
