@@ -29,12 +29,12 @@ namespace ara::step {
 			for (BasicBlock& bb : function) {
 				bool found_call = false;
 				for (Instruction& i : bb) {
-					if ((isa<InvokeInst>(&i) || isa<CallInst>(&i)) && !isCallToLLVMIntrinsic(&i)) {
+					if (isa<CallBase>(&i) && !isCallToLLVMIntrinsic(&i)) {
 						if (found_call) {
 							// second call found
+							// insert nop before it and leave found_call untouched (a third call can come)
 							insertNop(&i);
 							nop_count++;
-							found_call = false;
 						} else {
 							found_call = true;
 						}
