@@ -2,6 +2,7 @@
 
 #include "llvm_map.h"
 
+#include <llvm/Analysis/CFGPrinter.h>
 #include <llvm/IR/BasicBlock.h>
 
 using namespace llvm;
@@ -31,12 +32,27 @@ namespace ara::step {
 	}
 
 	template <typename Graph>
-	void map_cfg(Graph& g, graph::CFG& cfg, Module& mod, Logger& logger) {
+	void map_cfg(Graph& g, graph::CFG& cfg, Module& mod, Logger& logger, bool dump_llvm_functions,
+	             const std::string& prefix) {
 		std::map<const BasicBlock*, typename boost::graph_traits<Graph>::vertex_descriptor> abbs;
 
 		unsigned name_counter = 0;
 
 		for (Function& func : mod) {
+
+			if (dump_llvm_functions) {
+				// dump LLVM functions as CFG into dot files
+				std::string filename = prefix + func.getName().str() + ".dot";
+				std::error_code ec;
+				llvm::raw_fd_ostream file(filename, ec, sys::fs::OF_Text);
+
+				if (!ec) {
+					llvm::WriteGraph(file, (const Function*)&func, false);
+				} else {
+					logger.err() << "  error opening file for writing!" << std::endl;
+				}
+			}
+
 			if (func.isIntrinsic()) {
 				continue;
 			}
@@ -84,6 +100,11 @@ namespace ara::step {
 		logger.info() << "Mapped " << name_counter << " ABBs." << std::endl;
 	}
 
+	void LLVMMap::fill_options() {
+		opts.emplace_back(llvm_dump);
+		opts.emplace_back(llvm_dump_prefix);
+	}
+
 	std::string LLVMMap::get_description() const {
 		return "Map llvm::Basicblock and ara::graph::ABB"
 		       "\n"
@@ -91,9 +112,17 @@ namespace ara::step {
 	}
 
 	void LLVMMap::run(graph::Graph& graph) {
+		std::pair<bool, bool> dopt = llvm_dump.get();
+		std::string prefix;
+		std::pair<std::string, bool> prefix_opt = llvm_dump_prefix.get();
+		if (prefix_opt.second) {
+			prefix = prefix_opt.first;
+		} else {
+			prefix = "llvm-func.";
+		}
 		Module& mod = graph.get_module();
 		graph::CFG cfg = graph.get_cfg();
-		graph_tool::gt_dispatch<>()([&](auto& g) { map_cfg(g, cfg, mod, logger); },
+		graph_tool::gt_dispatch<>()([&](auto& g) { map_cfg(g, cfg, mod, logger, dopt.second && dopt.first, prefix); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
 } // namespace ara::step
