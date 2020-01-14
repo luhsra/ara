@@ -1080,18 +1080,39 @@ namespace ara {
 		// repack Values into Arguments class
 		Arguments args;
 
+		const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(cb.getContext());
+		const llvm::Constant* none_c = dyn_cast<llvm::Constant>(token);
+
 		unsigned i = 0;
 		for (auto& a : data.arguments) {
 			if (a.value_list.size() == 0) {
 				assert(data.arguments.size() == 1);
 				break;
 			}
-			assert(a.value_list.size() == 1);
+
+			AttributeSet s = cb.getAttributes().getAttributes(i + 1);
+
+			if (a.value_list.size() != 1) {
+				logger.warn() << "Analysis has found an ambiguous value:" << std::endl;
+				logger.warn() << "  CallBase: " << cb << std::endl;
+				unsigned v_count = 0;
+				for (const auto& v : a.value_list) {
+					logger.warn() << "  Value " << v_count++ << ": " << *v << std::endl;
+				}
+				// embed an empty value
+				// TODO handle these cases in a better way
+				args.emplace_back(*none_c, s);
+			}
 
 			const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
-			assert(c != nullptr);
-			AttributeSet s = cb.getAttributes().getAttributes(i+1);
-			args.emplace_back(*c, s);
+			if (c == nullptr) {
+				logger.warn() << "Analysis has stopped at a non constant:" << std::endl;
+				logger.warn() << "  CallBase: " << cb << std::endl;
+				logger.warn() << "  Analysis result: " << *a.value_list[0] << std::endl;
+				args.emplace_back(*none_c, s);
+			} else {
+				args.emplace_back(*c, s);
+			}
 			i++;
 		}
 

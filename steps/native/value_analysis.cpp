@@ -1,7 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
 #include "value_analysis_core.h"
-
 #include "value_analyzer.h"
 
 #include <boost/python.hpp>
@@ -29,7 +28,9 @@ namespace ara::step {
 		}
 	}
 
-	std::string ValueAnalysisCore::get_description() const { return "Perform a value analysis for all system calls (core step)"; }
+	std::string ValueAnalysisCore::get_description() const {
+		return "Perform a value analysis for all system calls (core step)";
+	}
 
 	void ValueAnalysisCore::run(graph::Graph& graph) {
 		graph::CFG cfg = graph.get_cfg();
