@@ -65,31 +65,31 @@ test('ara_tester',
 
 test('gpslogger',
    py3_inst,
-   args: [files('ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--log-level', 'debug'],
+   args: [files('ara.py'), gpslogger_targets, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 test('smartplug',
    py3_inst,
-   args: [files('ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--log-level', 'debug'],
+   args: [files('ara.py'), smartplug_targets, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 test('copter-without-alarms',
    py3_inst,
-   args: [files('ara.py'), osek_copter_without_alarms[0], '--os', 'OSEK', '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug'],
+   args: [files('ara.py'), osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 test('copter',
    py3_inst,
-   args: [files('ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--log-level', 'debug'],
+   args: [files('ara.py'), osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 
 test('ospert',
    py3_inst,
-   args: [files('ara.py'), freertos_ospert, '--os', 'FreeRTOS', '--log-level', 'debug'],
+   args: [files('ara.py'), freertos_ospert, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
