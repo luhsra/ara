@@ -7,7 +7,9 @@
 			"graph_name": "Syscall",
 			"subgraph": "abbs"
 		},
-		"ValueAnalysis"
+		"ValueAnalysisCore",
+		"ValueAnalysis",
+		"SSE"
 	],
 
 	"LLVMMap": {

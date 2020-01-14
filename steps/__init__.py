@@ -2,6 +2,7 @@ from .abb_merge import ABBMerge
 from .dummy import Dummy
 from .oil import OilStep
 from .printer import Printer
+from .sse import SSE
 from .syscall import Syscall
 from .value_analysis import ValueAnalysis
 
@@ -19,5 +20,6 @@ def provide_steps():
     yield Dummy()
     yield OilStep()
     yield Printer()
+    yield SSE()
     yield Syscall()
     yield ValueAnalysis()

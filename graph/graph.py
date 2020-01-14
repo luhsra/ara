@@ -1,6 +1,7 @@
 import pyllco
 
 import graph_tool
+import graph_tool.util
 
 import enum
 
@@ -48,6 +49,36 @@ class CFG(graph_tool.Graph):
         # Function to ABB edges
         self.edge_properties["is_entry"] = self.new_ep("bool")
 
+    def get_function(self, name: str):
+        """Find a specific function."""
+        func = graph_tool.util.find_vertex(self, self.vp["name"], name)
+        assert len(func) == 1 and self.vp.is_function[func[0]]
+        return func[0]
+
+    def get_entry_abb(self, function):
+        """Return the entry_abb of the given function."""
+
+        def is_entry(abb):
+            return self.ep.is_entry[abb] and self.ep.type[abb] == CFType.f2a
+
+        entry = list(filter(is_entry, function.out_edges()))
+        assert len(entry) == 1
+        return entry[0].target()
+
+    def get_syscall_name(self, abb):
+        """Return the called syscall name for a given abb."""
+        abb = self.vertex(abb)
+        if not self.vp.type[abb] == ABBType.syscall:
+            print("no syscall", abb)
+            return ''
+        syscall = [x.target() for x in abb.out_edges()
+                   if self.ep.type[x] == CFType.icf]
+        assert len(syscall) == 1
+        syscall_func = [x.target() for x in syscall[0].out_edges()
+                        if self.ep.type[x] == CFType.a2f]
+        assert len(syscall_func) == 1
+        return self.vp.name[syscall_func[0]]
+
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
@@ -69,3 +100,4 @@ class Graph:
         # should be used only from C++, see graph.h
         self._llvm = pyllco.Module()
         self._init_cfg()
+        self.os = None
