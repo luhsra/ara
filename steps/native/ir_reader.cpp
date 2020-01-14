@@ -3,6 +3,7 @@
 #include "ir_reader.h"
 
 #include <cassert>
+#include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
@@ -17,7 +18,7 @@ namespace ara::step {
 		logger.debug() << "Loading '" << filepath << "'\n";
 
 		std::unique_ptr<llvm::Module> Result = 0;
-		Result = parseIRFile(filepath, err, Context);
+		Result = llvm::parseIRFile(filepath, err, Context);
 		if (Result)
 			return Result;
 

@@ -6,6 +6,7 @@
 
 #include <graph.h>
 #include <iostream>
+#include <llvm/IR/CFG.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/Support/Casting.h>
 #include <stdexcept>

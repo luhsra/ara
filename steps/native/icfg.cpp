@@ -5,7 +5,10 @@
 #include "common/exceptions.h"
 
 #include <boost/graph/filtered_graph.hpp>
+#include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/SCCIterator.h>
+#include <llvm/IR/CFG.h>
+#include <llvm/IR/Function.h>
 
 using namespace ara::graph;
 

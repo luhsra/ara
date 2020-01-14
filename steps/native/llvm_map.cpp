@@ -2,6 +2,8 @@
 
 #include "llvm_map.h"
 
+#include "common/llvm_common.h"
+
 #include <llvm/Analysis/CFGPrinter.h>
 #include <llvm/IR/BasicBlock.h>
 

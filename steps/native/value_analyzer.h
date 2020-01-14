@@ -5,6 +5,7 @@
 #include "warning.h"
 
 #include <any>
+#include <llvm/IR/Dominators.h>
 #include <vector>
 
 namespace ara {
