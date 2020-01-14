@@ -152,3 +152,9 @@ Then configure your build directory with:
 ```
 meson build --native-file native.txt
 ```
+
+### meson directory is really/too big
+This is because of precompiled headers. They fasten the build a little bit but need a lot of disk space. You can deactivate precompiled headers with:
+```
+meson configure -Db_pch=false
+```
