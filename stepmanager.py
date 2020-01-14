@@ -8,6 +8,7 @@ import steps
 import graph
 import uuid
 import copy
+import time
 
 from steps.util import raise_and_error as rae
 
@@ -173,4 +174,8 @@ class StepManager:
                 config_manager.apply_new_config(step)
             else:
                 self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
+                time_before = time.time()
                 self._steps[step.name].run(self._graph)
+                time_after = time.time()
+                self._log.debug(f"{step.name} had a runtime of "
+                                f"{time_after-time_before:0.2f}s.")
