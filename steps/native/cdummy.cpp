@@ -4,12 +4,15 @@
 
 namespace ara::step {
 
-	template <typename Graph>
-	void do_graph_stuff(Graph& g, graph::CFG& cfg, Logger& logger) {
-		for (auto v : boost::make_iterator_range(boost::vertices(g))) {
-			logger.debug() << "Vertex: " << cfg.name[v] << std::endl;
+	// ATTENTION: put in anonymous namespace to get an unique symbol
+	namespace {
+		template <typename Graph>
+		void do_graph_stuff(Graph& g, graph::CFG& cfg, Logger& logger) {
+			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
+				logger.debug() << "Vertex: " << cfg.name[v] << std::endl;
+			}
 		}
-	}
+	} // namespace
 
 	std::string CDummy::get_description() const {
 		return "Template for a C++ step."
