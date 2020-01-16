@@ -111,14 +111,11 @@ namespace ara::step {
 
 					// functions match
 					typename boost::graph_traits<Graph>::vertex_descriptor func;
-					bool valid = false;
-					for (auto edge : boost::make_iterator_range(boost::out_edges(abb, g))) {
-						if (cfg.etype[edge] == graph::CFType::a2f) {
-							func = boost::target(edge, g);
-							valid = true;
-						}
-					}
-					assert(valid);
+					auto its = boost::out_edges(abb, g);
+					auto it = std::find_if(its.first, its.second, [&](auto e) -> bool {return cfg.etype[e] == graph::CFType::a2f;});
+					assert(it != its.second);
+					func = boost::target(*it, g);
+
 					llvm::Function* lfunc = reinterpret_cast<llvm::Function*>(cfg.function[func]);
 					if (lfunc != entry->getParent()) {
 						logger.err() << "LLVM Function of BB" << entry << " and ABB " << cfg.name[abb]
