@@ -25,6 +25,7 @@ from llvm_map cimport LLVMMap
 from mem2reg cimport Mem2Reg
 from reassociate cimport Reassociate
 from sparse_cond_const_prop cimport SparseCondConstProp
+from simplify_cfg cimport SimplifyCFG
 from value_analysis cimport ValueAnalysis
 
 from test cimport (BBSplitTest,
@@ -270,6 +271,7 @@ def provide_steps():
             _native_fac(step_fac[Mem2Reg]()),
             _native_fac(step_fac[Reassociate]()),
             _native_fac(step_fac[SparseCondConstProp]()),
+            _native_fac(step_fac[SimplifyCFG]()),
             _native_fac(step_fac[ValueAnalysis]())]
 
 
