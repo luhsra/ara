@@ -82,6 +82,14 @@ test('agr_dead_code',
    env : [python_path]
 )
 
+test('reassociate',
+   py3_inst,
+   args: [files('ara.py'), reassociate, '--os', 'FreeRTOS',
+          '--log-level', 'debug',
+          '--step', 'Reassociate'],
+   env : [python_path]
+)
+
 test('gpslogger',
    py3_inst,
    args: [files('ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--log-level', 'debug'],

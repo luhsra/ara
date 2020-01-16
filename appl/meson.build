@@ -113,6 +113,12 @@ dead_code = custom_target('dead-code',
                            command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
                                       clang_flags)
 
+reassociate = custom_target('reassociate',
+                           input : files('reassociate.cc'),
+                           output : ['reassociate.ll'],
+                           command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
+                                      clang_flags)
+
 examples = run_target('examples',
                       command: nop,
                       depends: [osek_targets, freertos_targets, const_prop])
