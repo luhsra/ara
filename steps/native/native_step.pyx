@@ -130,6 +130,11 @@ class Step(SuperStep):
         if level:
             self._log.setLevel(LEVEL[level])
 
+    def _fail(self, msg, error=RuntimeError):
+        """Print msg to as error and raise error."""
+        self._log.error(msg)
+        raise error(msg)
+
     def get_name(self):
         return self.__class__.__name__
 

@@ -104,7 +104,8 @@ class SSE(Step):
 
     def run(self, g: graph.Graph):
         entry_label = self.entry_point.get()
-        assert entry_label is not None
+        if not entry_label:
+            self._fail("Entry point must be given.")
 
         # find main
         entry_func = g.cfg.get_function_by_name(entry_label)
