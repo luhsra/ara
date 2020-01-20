@@ -4,6 +4,7 @@
 // extracted with:
 // rg "#include <" -N -I -g '!pch' | sort | uniq
 
+#include <Python.h>
 #include <any>
 #include <assert.h>
 #include <boost/graph/filtered_graph.hpp>
@@ -36,18 +37,17 @@
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/Debug.h>
-#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Support/SourceMgr.h>
-#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/IPO.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/DCE.h>
 #include <llvm/Transforms/Scalar/GVN.h>
-#include <llvm/Transforms/Scalar.h>
 #include <llvm/Transforms/Scalar/Reassociate.h>
 #include <llvm/Transforms/Scalar/SimplifyCFG.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <map>
-#include <Python.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>

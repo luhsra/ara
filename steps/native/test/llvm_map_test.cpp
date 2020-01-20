@@ -112,7 +112,8 @@ namespace ara::step {
 					// functions match
 					typename boost::graph_traits<Graph>::vertex_descriptor func;
 					auto its = boost::out_edges(abb, g);
-					auto it = std::find_if(its.first, its.second, [&](auto e) -> bool {return cfg.etype[e] == graph::CFType::a2f;});
+					auto it = std::find_if(its.first, its.second,
+					                       [&](auto e) -> bool { return cfg.etype[e] == graph::CFType::a2f; });
 					assert(it != its.second);
 					func = boost::target(*it, g);
 

@@ -27,17 +27,16 @@ namespace ara {
 	};
 
 	class ValuesUnknown : public std::exception {
-		private:
-			std::stringstream message;
-		public:
-			explicit ValuesUnknown(const std::string& message) {
-				this->message << "The correct values could not be retrieved: ";
-				this->message << message;
-				this->message.flush();
-			}
+	  private:
+		std::stringstream message;
 
-		virtual const char* what() const throw() {
-			return message.str().c_str();
+	  public:
+		explicit ValuesUnknown(const std::string& message) {
+			this->message << "The correct values could not be retrieved: ";
+			this->message << message;
+			this->message.flush();
 		}
+
+		virtual const char* what() const throw() { return message.str().c_str(); }
 	};
 } // namespace ara
