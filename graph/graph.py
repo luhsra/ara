@@ -7,6 +7,7 @@ import enum
 
 from .mix import ABBType, CFType
 
+
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
 
@@ -57,6 +58,7 @@ class CFG(graph_tool.Graph):
 
     def get_entry_abb(self, function):
         """Return the entry_abb of the given function."""
+        function = self.vertex(function)
 
         def is_entry(abb):
             return self.ep.is_entry[abb] and self.ep.type[abb] == CFType.f2a
@@ -78,6 +80,24 @@ class CFG(graph_tool.Graph):
                         if self.ep.type[x] == CFType.a2f]
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
+
+
+class CFGView(graph_tool.GraphView):
+    """Class to get CFG functions for a filtered CFG."""
+    def __init__(self, graph, **kwargs):
+        graph_tool.GraphView.__init__(self, graph, **kwargs)
+
+    def get_function_by_name(self, *args, **kwargs):
+        return self.base.get_function_by_name(*args, **kwargs)
+
+    def get_function(self, *args, **kwargs):
+        return self.base.get_function(*args, **kwargs)
+
+    def get_entry_abb(self, *args, **kwargs):
+        return self.base.get_entry_abb(*args, **kwargs)
+
+    def get_syscall_name(self, *args, **kwargs):
+        return self.base.get_syscall_name(*args, **kwargs)
 
 
 class Graph:
