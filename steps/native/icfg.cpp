@@ -23,9 +23,13 @@ namespace ara::step {
 		template <typename Graph>
 		void add_icf_edge(typename boost::graph_traits<Graph>::vertex_descriptor from,
 		                  typename boost::graph_traits<Graph>::vertex_descriptor to, Graph& graph, CFG& cfg,
-		                  std::string name, Logger& logger) {
+		                  bool ingoing, Logger& logger) {
 			auto edge = boost::add_edge(from, to, graph);
 			cfg.etype[edge.first] = CFType::icf;
+			if (!ingoing) {
+				cfg.is_exit[from] = true;
+			}
+			std::string name = (ingoing) ? "ingoing" : "outgoing";
 			logger.debug() << "Add an " << name << " edge from " << cfg.name[from] << " (" << from << ") to "
 			               << cfg.name[to] << " (" << to << ")." << std::endl;
 		}

@@ -132,6 +132,7 @@ namespace ara::graph {
 		VMAP(is_function)
 		VMAP(entry_bb)
 		VMAP(exit_bb)
+		VMAP(is_exit)
 		VMAP(implemented)
 		VMAP(syscall)
 		VMAP(function)

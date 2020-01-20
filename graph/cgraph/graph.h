@@ -26,6 +26,7 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<unsigned char>::type is_function;
 		typename graph_tool::vprop_map_t<int64_t>::type entry_bb;
 		typename graph_tool::vprop_map_t<int64_t>::type exit_bb;
+		typename graph_tool::vprop_map_t<unsigned char>::type is_exit;
 		typename graph_tool::vprop_map_t<unsigned char>::type implemented;
 		typename graph_tool::vprop_map_t<unsigned char>::type syscall;
 		typename graph_tool::vprop_map_t<int64_t>::type function;

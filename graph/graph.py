@@ -39,6 +39,7 @@ class CFG(graph_tool.Graph):
         # TODO: this stores a pointer, make this target architecture aware
         self.vertex_properties["entry_bb"] = self.new_vp("int64_t")
         self.vertex_properties["exit_bb"] = self.new_vp("int64_t")
+        self.vertex_properties["is_exit"] = self.new_vp("bool")
         # vertex properties for Function nodes
         self.vertex_properties["implemented"] = self.new_vp("bool")
         self.vertex_properties["syscall"] = self.new_vp("bool")
