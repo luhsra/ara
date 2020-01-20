@@ -18,6 +18,7 @@ class State:
         if args:
             self.next_abbs = list(args)
         self.instances = graph_tool.Graph()
+        self.callstack = []
 
     def __repr__(self):
         ret = 'State('
@@ -95,7 +96,7 @@ class SSE(Step):
         self.opts.append(self.entry_point)
 
     def get_dependencies(self):
-        return ["Syscall", "ValueAnalysis"]
+        return ["Syscall", "ValueAnalysis", "CallGraph"]
 
     def new_vertex(self, sstg, state):
         vertex = sstg.add_vertex()

@@ -7,6 +7,10 @@
 			"graph_name": "Syscall",
 			"subgraph": "abbs"
 		},
+		{
+			"name": "CallGraph",
+			"dump": "call_graph"
+		},
 		"ValueAnalysisCore",
 		"ValueAnalysis",
 		"SSE"

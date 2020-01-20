@@ -133,3 +133,4 @@ class Graph:
         self._llvm = pyllco.Module()
         self._init_cfg()
         self.os = None
+        self.call_graphs = {}
