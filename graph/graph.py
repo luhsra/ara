@@ -51,11 +51,22 @@ class CFG(graph_tool.Graph):
         # Function to ABB edges
         self.edge_properties["is_entry"] = self.new_ep("bool")
 
-    def get_function(self, name: str):
+    def get_function_by_name(self, name: str):
         """Find a specific function."""
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         assert len(func) == 1 and self.vp.is_function[func[0]]
         return func[0]
+
+    def get_function(self, abb):
+        """Get the function node for an ABB."""
+        abb = self.vertex(abb)
+
+        def is_func(abb):
+            return self.ep.type[abb] == CFType.a2f
+
+        entry = list(filter(is_func, abb.out_edges()))
+        assert len(entry) == 1
+        return entry[0].target()
 
     def get_entry_abb(self, function):
         """Return the entry_abb of the given function."""

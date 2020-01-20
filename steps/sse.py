@@ -107,7 +107,7 @@ class SSE(Step):
         assert entry_label is not None
 
         # find main
-        entry_func = g.cfg.get_function(entry_label)
+        entry_func = g.cfg.get_function_by_name(entry_label)
         entry_abb = g.cfg.get_entry_abb(entry_func)
         print(entry_abb)
 
