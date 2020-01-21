@@ -40,7 +40,7 @@ class FreeRTOS:
         state.instances.vp.type[v] = "Task"
 
         # next abbs
-        state.next_abbs = [cfg.get_entry_abb(cfg.get_function(task_function))]
+        state.next_abbs = [cfg.get_entry_abb(cfg.get_function_by_name(task_function))]
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
