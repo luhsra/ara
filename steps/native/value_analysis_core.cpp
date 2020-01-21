@@ -19,10 +19,6 @@ namespace ara::step {
 				if (called_func) {
 					Arguments args = va.get_values(*called_func);
 
-					// currently, the args object cannot be stored within the system graph, so check that it does not
-					// delete data when going out of scope
-					assert(!args.owns_objects());
-
 					cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
 					logger.debug() << "Retrieved " << args.size() << " arguments for call " << *called_func
 					               << std::endl;

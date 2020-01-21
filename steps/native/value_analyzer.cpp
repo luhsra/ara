@@ -1093,15 +1093,16 @@ namespace ara {
 			AttributeSet s = cb.getAttributes().getAttributes(i + 1);
 
 			if (a.value_list.size() != 1) {
-				logger.warn() << "Analysis has found an ambiguous value:" << std::endl;
-				logger.warn() << "  CallBase: " << cb << std::endl;
+				Argument arg(s, *none_c);
+				logger.info() << "Analysis has found an ambiguous value:" << std::endl;
+				logger.info() << "  CallBase: " << cb << std::endl;
 				unsigned v_count = 0;
 				for (const auto& v : a.value_list) {
-					logger.warn() << "  Value " << v_count++ << ": " << *v << std::endl;
+					const llvm::Constant* c = dyn_cast<llvm::Constant>(v);
+					arg.add_variant(a.argument_calles_list[v_count], *c);
+					logger.info() << "  Value " << v_count++ << ": " << *v << std::endl;
 				}
-				// embed an empty value
-				// TODO handle these cases in a better way
-				args.emplace_back(*none_c, s);
+				args.emplace_back(std::move(arg));
 			}
 
 			const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
@@ -1109,9 +1110,9 @@ namespace ara {
 				logger.warn() << "Analysis has stopped at a non constant:" << std::endl;
 				logger.warn() << "  CallBase: " << cb << std::endl;
 				logger.warn() << "  Analysis result: " << *a.value_list[0] << std::endl;
-				args.emplace_back(*none_c, s);
+				args.emplace_back(Argument(s, *none_c));
 			} else {
-				args.emplace_back(*c, s);
+				args.emplace_back(Argument(s, *c));
 			}
 			i++;
 		}
