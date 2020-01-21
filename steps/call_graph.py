@@ -99,6 +99,8 @@ class CallGraph(Step):
 
         self.visit(lcfg, icfg, cg, start, entry_abb)
 
+        g.call_graphs[entry_point] = cg
+
         dump = self.dump.get()
         if dump:
             cg.save(dump + "-" + entry_point + ".dot", fmt='dot')
