@@ -1,13 +1,20 @@
 from .os_util import syscall
 
+import graph
+
+from graph.argument import CallPath
+
 
 class Task:
-    pass
+    def __init__(self, cfg, entry_abb):
+        self.cfg = cfg
+        self.entry_abb = entry_abb
 
 
 class FreeRTOS:
     vertex_properties = [('label', 'string', 'instance name'),
-                         ('type', 'string', 'instance type (e.g. task)')]
+                         ('type', 'string', 'instance type (e.g. task)'),
+                         ('obj', 'object', 'instance object (e.g. Task)')]
     @staticmethod
     def init(state):
         for prop in FreeRTOS.vertex_properties:
@@ -21,8 +28,9 @@ class FreeRTOS:
 
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
-        for neighbor in cfg.vertex(abb).out_neighbors():
-            state.next_abbs.append(neighbor)
+        for oedge in cfg.vertex(abb).out_edges():
+            if cfg.ep.type[oedge] == graph.CFType.lcf:
+                state.next_abbs.append(oedge.target())
 
     @syscall
     def vTaskNotifyGiveFromISR(cfg, abb, state):
@@ -33,14 +41,19 @@ class FreeRTOS:
         state = state.copy()
 
         # instance properties
-        task_function = state.cfg.vp.arguments[abb][0].constant.get_name()
-        task_name = state.cfg.vp.arguments[abb][1].get()
+        cp = CallPath(graph=state.callgraph, node=state.call)
+        task_function = state.cfg.vp.arguments[abb][0].get(call_path=cp)
+        task_name = state.cfg.vp.arguments[abb][1].get(call_path=cp)
+
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
         state.instances.vp.type[v] = "Task"
 
+        new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
+        state.instances.vp.obj[v] = Task(cfg, new_cfg)
+        state.next_abbs = []
+
         # next abbs
-        state.next_abbs = [cfg.get_entry_abb(cfg.get_function_by_name(task_function))]
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 

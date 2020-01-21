@@ -9,16 +9,19 @@ from native_step import Step
 from .option import Option, String
 
 from itertools import chain
+from collections import defaultdict
 
 
 class State:
-    def __init__(self, cfg, *args):
+    def __init__(self, cfg=None, callgraph=None, next_abbs=None):
         self.cfg = cfg
-        self.next_abbs = []
-        if args:
-            self.next_abbs = list(args)
+        self.callgraph = callgraph
+        if not next_abbs:
+            next_abbs = []
+        self.next_abbs = next_abbs
+
         self.instances = graph_tool.Graph()
-        self.callstack = []
+        self.call = None
 
     def __repr__(self):
         ret = 'State('
@@ -27,8 +30,12 @@ class State:
         return ret + ')'
 
     def copy(self):
-        scopy = State(self.cfg, *self.next_abbs)
+        scopy = State()
+        scopy.cfg = self.cfg
+        scopy.next_abbs = self.next_abbs
         scopy.instances = self.instances.copy()
+        scopy.callgraph = self.callgraph
+        scopy.call = self.call
         return scopy
 
 
@@ -36,9 +43,10 @@ class AbstractOS:
     def __init__(self, g):
         self.g = g
 
-        def is_icf(e):
-            return g.cfg.ep.type[e] == graph.CFType.icf
-        self.cfg = graph_tool.GraphView(g.cfg, efilt=is_icf)
+        self.icfg = graph.CFGView(g.cfg,
+                                 efilt=g.cfg.ep.type.fa == graph.CFType.icf)
+        self.lcfg = graph.CFGView(g.cfg,
+                                  efilt=g.cfg.ep.type.fa == graph.CFType.lcf)
 
     def system_semantic(self, state):
         new_states = self.execute(state)
@@ -47,38 +55,62 @@ class AbstractOS:
 
 
 class InstanceGraph(AbstractOS):
-    def __init__(self, g, state):
+    def __init__(self, g, state, entry_func):
         super().__init__(g)
         self.g.os.init(state)
-        self.visited = self.cfg.new_vp("bool", val=False)
+        self.call_map = self._create_call_map(entry_func)
+
+        def new_visited_map():
+            return self.icfg.new_vp("bool", val=False)
+
+        self.visited = defaultdict(new_visited_map)
+        self.instances = state.instances
+
+    def states_are_equal(state1, state2):
+        equal = bool(state1.next_abbs & state2.next_abbs)
+        return equal
+
+    def _create_call_map(self, entry_func):
+        cg = self.g.call_graphs[entry_func]
+        call_map = {}
+        for v in cg.vertices():
+            call_map[cg.vp.cfglink[v]] = v
+        return call_map
 
     def execute(self, state):
-        next_states = {'normal': [], 'syscall': []}
-        fake_state = state.copy()
-        processed = False
-
-        next_abbs = set()
+        new_states = []
+        state.instances = self.instances
         for abb in state.next_abbs:
-            if self.visited[abb]:
+            if self.visited[state.call][abb]:
                 continue
-            self.visited[abb] = True
-            processed = True
-
-            if self.cfg.vp.type[abb] == graph.ABBType.syscall:
+            self.visited[state.call][abb] = True
+            if self.icfg.vp.type[abb] == graph.ABBType.syscall:
                 assert self.g.os is not None
-                state = self.g.os.interpret(self.g.cfg, abb, fake_state)
-                if (state.instances.num_vertices() >= fake_state.instances.num_vertices() and
-                    state.instances.num_edges() >= fake_state.instances.num_edges()):
-                    fake_state.instances = state.instances
-                next_abbs |= set(state.next_abbs)
-            else:
-                # don't touch the state, just follow the control flow
-                next_abbs |= set(self.cfg.vertex(abb).out_neighbors())
+                new_state = self.g.os.interpret(self.g.cfg, abb, state)
+                self.instances = new_state.instances
+                new_states.append(new_state)
+            elif self.icfg.vp.type[abb] == graph.ABBType.call:
+                for n in self.icfg.vertex(abb).out_neighbors():
+                    new_state = state.copy()
+                    new_state.next_abbs = [n]
+                    new_state.call = self.call_map[abb]
 
-        if processed:
-            fake_state.next_abbs = list(next_abbs)
-            return [fake_state]
-        return []
+                    new_states.append(new_state)
+            elif self.icfg.vp.is_exit[abb]:
+                new_state = state.copy()
+                call = new_state.callgraph.vp.cfglink[new_state.call]
+                neighbors = self.lcfg.vertex(call).out_neighbors()
+                new_state.next_abbs = [next(neighbors)]
+                new_state.call = next(state.call.in_neighbors())
+                new_states.append(new_state)
+            else:
+                for n in self.icfg.vertex(abb).out_neighbors():
+                    new_state = state.copy()
+                    new_state.next_abbs = [n]
+
+                    new_states.append(new_state)
+
+        return new_states
 
     def schedule(self, state):
         # we do simply not care
@@ -111,10 +143,11 @@ class SSE(Step):
         # find main
         entry_func = g.cfg.get_function_by_name(entry_label)
         entry_abb = g.cfg.get_entry_abb(entry_func)
-        print(entry_abb)
 
-        entry = State(g.cfg, entry_abb)
-        flavor = InstanceGraph(g, entry)
+        entry = State(cfg=g.cfg,
+                      callgraph=g.call_graphs[entry_label],
+                      next_abbs=[entry_abb])
+        flavor = InstanceGraph(g, entry, entry_label)
 
         sstg = graph_tool.Graph()
         sstg.vertex_properties["state"] = sstg.new_vp("object")
@@ -125,11 +158,13 @@ class SSE(Step):
 
         counter = 0
         while stack:
-            state_vertex = stack.pop(0)
+            self._log.debug(f"Stack: {[sstg.vp.state[v] for v in stack]}")
+            state_vertex = stack.pop()
             state = sstg.vp.state[state_vertex]
-            self._log.debug(f"executing state {state}")
             for n in flavor.system_semantic(state):
-                n.instances.save(f"State.{counter}.dot", fmt='dot')
+                inst = n.instances.copy()
+                del inst.vp["obj"]
+                inst.save(f"State.{counter}.dot", fmt='dot')
                 counter += 1
                 new_state = self.new_vertex(sstg, n)
                 sstg.add_edge(state_vertex, new_state)
