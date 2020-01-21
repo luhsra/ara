@@ -21,7 +21,6 @@ namespace ara::step {
         legacy::FunctionPassManager fpm(&module);
         // Arguments: Threshold, ForwardSwitchCond, ConvertSwitch, KeepLoops, SinkCommon, Ftor
         fpm.add(createCFGSimplificationPass()); 
-        fpm.doInitialization();
 
     /* Loop over module's functions and count how many functions are altered by the Pass.
        fpm.run(function) returns true when a function was modified. */

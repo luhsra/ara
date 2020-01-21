@@ -20,7 +20,6 @@ namespace ara::step {
         Module& module = graph.get_module();
         legacy::FunctionPassManager fpm(&module);
         fpm.add(createAggressiveDCEPass()); 
-        fpm.doInitialization();
 
     /* Loop over module's functions and count how many functions are altered by the Pass.
        fpm.run(function) returns true when a function was modified. */
