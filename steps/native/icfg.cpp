@@ -100,7 +100,7 @@ namespace ara::step {
 
 				// add ingoing edges
 				for (const auto other_abb : called_abbs) {
-					add_icf_edge(abb, other_abb, g, cfg, "ingoing", logger);
+					add_icf_edge(abb, other_abb, g, cfg, true, logger);
 				}
 
 				// add outgoing edges
@@ -123,7 +123,7 @@ namespace ara::step {
 						    });
 					}
 
-					add_icf_edge(back_abb, after_call, g, cfg, "outgoing", logger);
+					add_icf_edge(back_abb, after_call, g, cfg, false, logger);
 				}
 			}
 			// add edges within the same function
