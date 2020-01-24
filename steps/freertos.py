@@ -13,7 +13,6 @@ class Task:
 
 class FreeRTOS:
     vertex_properties = [('label', 'string', 'instance name'),
-                         ('type', 'string', 'instance type (e.g. task)'),
                          ('obj', 'object', 'instance object (e.g. Task)')]
     @staticmethod
     def init(state):
@@ -47,7 +46,6 @@ class FreeRTOS:
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
-        state.instances.vp.type[v] = "Task"
 
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         state.instances.vp.obj[v] = Task(cfg, new_cfg)
