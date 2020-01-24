@@ -134,3 +134,4 @@ class Graph:
         self._init_cfg()
         self.os = None
         self.call_graphs = {}
+        self.instances = None

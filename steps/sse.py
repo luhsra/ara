@@ -47,7 +47,7 @@ class AbstractOS:
         self.g = g
 
         self.icfg = graph.CFGView(g.cfg,
-                                 efilt=g.cfg.ep.type.fa == graph.CFType.icf)
+                                  efilt=g.cfg.ep.type.fa == graph.CFType.icf)
         self.lcfg = graph.CFGView(g.cfg,
                                   efilt=g.cfg.ep.type.fa == graph.CFType.lcf)
 
@@ -68,7 +68,10 @@ class InstanceGraph(AbstractOS):
             return self.icfg.new_vp("bool", val=False)
 
         self.visited = defaultdict(new_visited_map)
-        self.instances = state.instances
+        if self.g.instances is None:
+            self.instances = state.instances
+        else:
+            self.instances = self.g.instances
         self.new_entry_points = set()
 
     def states_are_equal(state1, state2):
@@ -84,6 +87,8 @@ class InstanceGraph(AbstractOS):
                     func_name = self.g.cfg.vp.name[
                         self.g.cfg.get_function(entry)
                     ]
+                    # order is different here, the first chained step will be
+                    # the last executed one
                     self._step_manager.chain_step({"name": "SSE",
                                                    "entry_point": func_name,
                                                    "flavor": SSE.Flavor.Instances})
@@ -138,6 +143,9 @@ class InstanceGraph(AbstractOS):
         # we do simply not care
         return
 
+    def finish(self, sstg):
+        self.g.instances = self.instances
+
 
 class SSE(Step):
     """Template for a new Python step."""
@@ -191,14 +199,15 @@ class SSE(Step):
 
         counter = 0
         while stack:
-            self._log.debug(f"Stack: {[sstg.vp.state[v] for v in stack]}")
+            self._log.debug(f"Stack {counter:3d}: "
+                            f"{[sstg.vp.state[v] for v in stack]}")
             state_vertex = stack.pop()
             state = sstg.vp.state[state_vertex]
             for n in flavor.system_semantic(state):
-                inst = n.instances.copy()
-                del inst.vp["obj"]
-                inst.save(f"State.{counter}.dot", fmt='dot')
-                counter += 1
                 new_state = self.new_vertex(sstg, n)
                 sstg.add_edge(state_vertex, new_state)
                 stack.append(new_state)
+            counter += 1
+        self._log.info(f"Analysis needed {counter} iterations.")
+
+        flavor.finish(sstg)
