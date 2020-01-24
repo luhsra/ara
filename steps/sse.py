@@ -58,11 +58,15 @@ class AbstractOS:
 
 
 class InstanceGraph(AbstractOS):
-    def __init__(self, g, state, entry_func, step_manager):
+    def __init__(self, g, state, entry_func, step_manager, dump, dump_prefix):
         super().__init__(g)
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
         self._step_manager = step_manager
+        if dump:
+            self.dump_prefix = dump_prefix
+        else:
+            self.dump_prefix = None
 
         def new_visited_map():
             return self.icfg.new_vp("bool", val=False)
@@ -145,6 +149,12 @@ class InstanceGraph(AbstractOS):
 
     def finish(self, sstg):
         self.g.instances = self.instances
+        if self.dump_prefix:
+            # TODO quick and dirty, implement in printer with UUID
+            inst = self.instances.copy()
+            del inst.vp["obj"]
+            import time
+            inst.save(f"State.{time.time()}.dot")
 
 
 class SSE(Step):
@@ -186,7 +196,8 @@ class SSE(Step):
                       next_abbs=[entry_abb])
         flav = self.flavor.get()
         if flav == SSE.Flavor.Instances:
-            flavor = InstanceGraph(g, entry, entry_label, self._step_manager)
+            flavor = InstanceGraph(g, entry, entry_label, self._step_manager,
+                                   self.dump.get(), self.dump_prefix.get())
         else:
             self._fail("A flavor must be specified")
 
