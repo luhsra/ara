@@ -1,5 +1,9 @@
-#include "native_step_pyx.h"
 #include "step.h"
+// clang-format off
+// cython headers does not include anything except Python itself
+#include <string>
+#include "native_step_pyx.h"
+// clang-format on
 
 #include <boost/property_tree/json_parser.hpp>
 #include <sstream>
