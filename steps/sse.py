@@ -6,11 +6,13 @@ import graph
 import pyllco
 
 from native_step import Step
-from .option import Option, String
+from .option import Option, String, Choice
 from .freertos import Task
 
 from itertools import chain
 from collections import defaultdict
+
+from enum import Enum
 
 
 class State:
@@ -82,9 +84,11 @@ class InstanceGraph(AbstractOS):
                     func_name = self.g.cfg.vp.name[
                         self.g.cfg.get_function(entry)
                     ]
+                    self._step_manager.chain_step({"name": "SSE",
+                                                   "entry_point": func_name,
+                                                   "flavor": SSE.Flavor.Instances})
                     self._step_manager.chain_step({"name": "CallGraph",
                                                    "entry_point": func_name})
-                    # self._step_manager.chain_step({"name": "SSE"})
                 self.new_entry_points.add(os_obj)
 
     def _create_call_map(self, entry_func):
@@ -138,12 +142,19 @@ class InstanceGraph(AbstractOS):
 class SSE(Step):
     """Template for a new Python step."""
 
+    class Flavor():
+        Instances = "InstanceGraph"
+
     def _fill_options(self):
         self.entry_point = Option(name="entry_point",
                                   help="system entry point",
                                   step_name=self.get_name(),
                                   ty=String())
-        self.opts.append(self.entry_point)
+        self.flavor = Option(name="flavor",
+                             help="type of analysis",
+                             step_name=self.get_name(),
+                             ty=Choice(SSE.Flavor.Instances))
+        self.opts += [self.entry_point, self.flavor]
 
     def get_dependencies(self):
         return ["Syscall", "ValueAnalysis", "CallGraph"]
@@ -165,7 +176,11 @@ class SSE(Step):
         entry = State(cfg=g.cfg,
                       callgraph=g.call_graphs[entry_label],
                       next_abbs=[entry_abb])
-        flavor = InstanceGraph(g, entry, entry_label, self._step_manager)
+        flav = self.flavor.get()
+        if flav == SSE.Flavor.Instances:
+            flavor = InstanceGraph(g, entry, entry_label, self._step_manager)
+        else:
+            self._fail("A flavor must be specified")
 
         sstg = graph_tool.Graph()
         sstg.vertex_properties["state"] = sstg.new_vp("object")

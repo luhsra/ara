@@ -8,12 +8,14 @@
 			"subgraph": "abbs"
 		},
 		{
-			"name": "CallGraph",
-			"dump": true
+			"name": "CallGraph"
 		},
 		"ValueAnalysisCore",
 		"ValueAnalysis",
-		"SSE"
+		{
+			"name": "SSE",
+			"flavor": "InstanceGraph"
+		}
 	],
 
 	"LLVMMap": {
