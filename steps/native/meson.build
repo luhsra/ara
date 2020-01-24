@@ -19,8 +19,8 @@ log_dep = declare_dependency(
   sources: py_logging_header)
 
 # steps
-native_step_pyx_cpp = custom_target('native_step_pyx',
-  output : ['native_step_pyx.cpp'],
+native_step_pyx_gen = custom_target('native_step_pyx',
+  output : ['native_step_pyx.cpp', 'native_step_pyx.h'],
   input : [files('native_step.pyx',
                  'option.pxd',
                  'bb_split.pxd',
@@ -34,8 +34,11 @@ native_step_pyx_cpp = custom_target('native_step_pyx',
                  'llvm_map.pxd',
                  'value_analysis_core.pxd',
                  'test.pxd') + common_cython_files],
-  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
+  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
 )
+
+native_step_pyx_cpp = native_step_pyx_gen[0]
+native_step_pyx_h   = native_step_pyx_gen[1]
 
 plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
@@ -48,6 +51,7 @@ plib = py3_inst.extension_module('native_step',
         'ir_reader.cpp',
         'llvm_basic_optimization.cpp',
         'llvm_map.cpp',
+        'step_manager.cpp',
         'value_analysis_core.cpp',
         'value_analyzer.cpp',
         'test/bb_split_test.cpp',

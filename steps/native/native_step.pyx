@@ -31,10 +31,12 @@ from test cimport (BBSplitTest,
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
 from libcpp.memory cimport static_pointer_cast as spc
+from libcpp.string cimport string
 from libc.stdint cimport int64_t
 from cy_helper cimport step_fac, repack, get_type_args
 cimport option as coption
 
+import json
 import logging
 import inspect
 from typing import List
@@ -55,10 +57,16 @@ cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
     """
     cdef public object _log
+    cdef public object _step_manager
 
     def __init__(self):
         """Initialize a Step."""
         self._log = logging.getLogger(self.get_name())
+        self._step_manager = None
+
+    def set_step_manager(self, step_manager):
+        """Set the step manager."""
+        self._step_manager = step_manager
 
     def get_dependencies(self):
         """Define all dependencies of the step.
@@ -186,7 +194,12 @@ cdef class NativeStep(SuperStep):
         Use _native_fac() to construct a NativeStep.
         """
         super().__init__()
-        self._c_pass.set_logger(self._log)
+        self._c_pass.python_init(self._log, self._step_manager)
+
+    def set_step_manager(self, step_manager):
+        """Set the step manager."""
+        self._step_manager = step_manager
+        self._c_pass.python_init(self._log, step_manager)
 
     def __dealloc__(self):
         """Destroy the C++ object (if any)."""
@@ -284,3 +297,8 @@ def provide_test_steps():
             _native_fac(step_fac[LLVMMapTest]()),
             _native_fac(step_fac[Test0Step]()),
             _native_fac(step_fac[Test2Step]())]
+
+# make this name extra long, since we have no namespaces here
+cdef public void chain_step_in_step_manager(object step_manager, string config):
+    py_config = json.loads(config)
+    step_manager.chain_step(py_config)

@@ -7,13 +7,37 @@
 #include "option.h"
 
 #include <Python.h>
+#include <boost/property_tree/ptree.hpp>
 #include <functional>
 #include <graph.h>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace ara::step {
+	class Step;
+
+	/**
+	 * Lightweight wrapper class for the Python StepManager.
+	 * Only supports the chain_step interface.
+	 */
+	class StepManager {
+		friend class Step;
+
+	  private:
+		PyObject* step_manager = nullptr;
+
+		StepManager() {}
+		StepManager(PyObject* step_manager) : step_manager(step_manager) {}
+
+	  public:
+		/**
+		 * See stepmanager.py for a description.
+		 */
+		void chain_step(boost::property_tree::ptree step_config);
+		void chain_step(std::string step_name);
+	};
 
 	/**
 	 * Superclass for constructing arbitrary steps in C++.
@@ -25,6 +49,7 @@ namespace ara::step {
 	  protected:
 		std::vector<option_ref> opts;
 		Logger logger;
+		StepManager step_manager;
 
 		// ATTENTION: if you change this, also change the option list in native_step.py for class Step
 		option::TOption<option::Choice<5>> log_level{
@@ -82,9 +107,12 @@ namespace ara::step {
 		}
 
 		/**
-		 * Set the python logger object, this must be called directly after the constructor.
+		 * Link the python objects, this must be called directly after the constructor and on every object update.
 		 */
-		void set_logger(PyObject* py_logger) { logger = Logger(py_logger); }
+		void python_init(PyObject* py_logger, PyObject* py_step_manager) {
+			logger = Logger(py_logger);
+			step_manager = StepManager(py_step_manager);
+		}
 
 		virtual ~Step() {}
 
