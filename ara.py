@@ -23,6 +23,10 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
                         choices=['warn', 'info', 'debug'], default='warn')
+    parser.add_argument('--dump', action='store_true', default=False,
+                        help="emit a meaningful dot graph where possible")
+    parser.add_argument('--dump-prefix', default='graph/{step_name}',
+                        help="path that prefixes all dot files")
     parser.add_argument('--entrypoint', '-e', help="system entry point",
                         default='main')
     parser.add_argument('--isr', '-i', action='append',

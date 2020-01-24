@@ -26,13 +26,18 @@ namespace ara::step {
 		std::vector<option_ref> opts;
 		Logger logger;
 
-		option::TOption<option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
-		                                             option::makeChoice("critical", "error", "warn", "info", "debug"),
-		                                             /* global = */ true};
-
-		option::TOption<option::Choice<2>> os{"os", "Select the operating system.",
-		                                      option::makeChoice("FreeRTOS", "OSEK"),
-		                                      /* global = */ true};
+		// ATTENTION: if you change this, also change the option list in native_step.py for class Step
+		option::TOption<option::Choice<5>> log_level{
+		    "log_level", "Adjust the log level of this step.",
+		    /* ty = */ option::makeChoice("critical", "error", "warn", "info", "debug"),
+		    /* global = */ true};
+		option::TOption<option::Bool> dump{"dump", "If possible, dump the changed graph into a dot file.",
+		                                   /* ty = */ option::Bool(),
+		                                   /* global = */ true};
+		option::TOption<option::String> dump_prefix{
+		    "dump_prefix", "If a file is dumped, set this as prefix for the files (default: dumps/<step_name>).",
+		    /* ty = */ option::String(),
+		    /* global = */ true};
 		/**
 		 * Fill with all used options.
 		 */
@@ -44,7 +49,8 @@ namespace ara::step {
 		 */
 		Step() {
 			opts.emplace_back(log_level);
-			opts.emplace_back(os);
+			opts.emplace_back(dump);
+			opts.emplace_back(dump_prefix);
 		}
 
 		/**

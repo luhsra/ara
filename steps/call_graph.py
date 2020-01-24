@@ -18,11 +18,7 @@ class CallGraph(Step):
                                  help="entry point for creation of the call graph",
                                  step_name=self.get_name(),
                                  ty=String())
-        self.dump = Option(name="dump",
-                           help="dump the call graph to a dot file",
-                           step_name=self.get_name(),
-                           ty=String())
-        self.opts += [self.entrypoint, self.dump]
+        self.opts += [self.entrypoint]
 
     def get_dependencies(self):
         return ["ICFG"]
@@ -101,6 +97,5 @@ class CallGraph(Step):
 
         g.call_graphs[entry_point] = cg
 
-        dump = self.dump.get()
-        if dump:
-            cg.save(dump + "-" + entry_point + ".dot", fmt='dot')
+        if self.dump.get():
+            cg.save("CallGraph." + entry_point + ".dot", fmt='dot')

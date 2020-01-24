@@ -27,10 +27,10 @@ class Printer(Step):
                                  help="Name of the graph.",
                                  step_name=self.get_name(),
                                  ty=String())
-        self.dump = Option(name="dump",
-                           help="Dump graph to logger.",
-                           step_name=self.get_name(),
-                           ty=Bool())
+        self.print_to_log = Option(name="print_to_log",
+                                   help="Dump graph to logger.",
+                                   step_name=self.get_name(),
+                                   ty=Bool())
         self.subgraph = Option(name="subgraph",
                                help="Choose, what subgraph should be printed.",
                                step_name=self.get_name(),
@@ -42,7 +42,7 @@ class Printer(Step):
         if not dot:
             return
 
-        if self.dump.get():
+        if self.print_to_log.get():
             self._log.error("Not supported yet.")
             return
 

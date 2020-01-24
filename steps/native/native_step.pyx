@@ -110,17 +110,27 @@ class Step(SuperStep):
     steps."""
     def __init__(self):
         super().__init__()
+        # ATTENTION: if you change this list, also change the option list in
+        # step.h in class Step
         self.log_level = option.Option("log_level",
                                        "Adjust the log level of this step.",
                                        self.get_name(),
                                        option.Choice(*LEVEL.keys()),
                                        glob=True)
-        self.os = option.Option("os",
-                                "Select the operating system.",
-                                self.get_name(),
-                                option.Choice("FreeRTOS", "OSEK"),
-                                glob=True)
-        self.opts = [self.log_level, self.os]
+        self.dump = option.Option("dump",
+                                  "If possible, dump the changed graph into a "
+                                  "dot file.",
+                                  self.get_name(),
+                                  option.Bool(),
+                                  glob=True)
+        self.dump_prefix = option.Option("dump_prefix",
+                                         "If a file is dumped, set this as "
+                                         "prefix for the files"
+                                         "(default: dumps/<step_name>).",
+                                         self.get_name(),
+                                         option.String(),
+                                         glob=True)
+        self.opts = [self.log_level, self.dump, self.dump_prefix]
         self._fill_options()
 
     def apply_config(self, config):
