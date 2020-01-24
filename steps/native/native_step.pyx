@@ -176,14 +176,14 @@ cdef class NativeStep(SuperStep):
         """Fake constructor. Prevent usage of super constructor. Must not
         called directly
 
-        Use native_fac() to construct a NativeStep.
+        Use _native_fac() to construct a NativeStep.
         """
         pass
 
     def init(self):
         """The actual constructor function. Must not called directly.
 
-        Use native_fac() to construct a NativeStep.
+        Use _native_fac() to construct a NativeStep.
         """
         super().__init__()
         self._c_pass.set_logger(self._log)
