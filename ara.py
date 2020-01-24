@@ -27,7 +27,7 @@ def main():
                         help="emit a meaningful dot graph where possible")
     parser.add_argument('--dump-prefix', default='graph/{step_name}',
                         help="path that prefixes all dot files")
-    parser.add_argument('--entrypoint', '-e', help="system entry point",
+    parser.add_argument('--entry-point', '-e', help="system entry point",
                         default='main')
     parser.add_argument('--isr', '-i', action='append',
                         help="entry point for interrupt service routine")

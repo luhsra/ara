@@ -83,7 +83,7 @@ class InstanceGraph(AbstractOS):
                         self.g.cfg.get_function(entry)
                     ]
                     self._step_manager.chain_step({"name": "CallGraph",
-                                                   "entrypoint": func_name})
+                                                   "entry_point": func_name})
                     # self._step_manager.chain_step({"name": "SSE"})
                 self.new_entry_points.add(os_obj)
 
@@ -139,7 +139,7 @@ class SSE(Step):
     """Template for a new Python step."""
 
     def _fill_options(self):
-        self.entry_point = Option(name="entrypoint",
+        self.entry_point = Option(name="entry_point",
                                   help="system entry point",
                                   step_name=self.get_name(),
                                   ty=String())

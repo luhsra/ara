@@ -14,11 +14,11 @@ class CallGraph(Step):
     """Calculate the CallGraph for one entry point"""
 
     def _fill_options(self):
-        self.entrypoint = Option(name="entrypoint",
-                                 help="entry point for creation of the call graph",
-                                 step_name=self.get_name(),
-                                 ty=String())
-        self.opts += [self.entrypoint]
+        self.entry_point = Option(name="entry_point",
+                                  help="entry point for creation of the call graph",
+                                  step_name=self.get_name(),
+                                  ty=String())
+        self.opts += [self.entry_point]
 
     def get_dependencies(self):
         return ["ICFG"]
@@ -77,7 +77,7 @@ class CallGraph(Step):
                         self.visit(lcfg, icfg, cg, new_vert, target)
 
     def run(self, g: graph.Graph):
-        entry_point = self.entrypoint.get()
+        entry_point = self.entry_point.get()
         if not entry_point:
             self._fail("Entry point must be given.")
 
