@@ -7,6 +7,7 @@ import pyllco
 
 from native_step import Step
 from .option import Option, String
+from .freertos import Task
 
 from itertools import chain
 from collections import defaultdict
@@ -55,20 +56,36 @@ class AbstractOS:
 
 
 class InstanceGraph(AbstractOS):
-    def __init__(self, g, state, entry_func):
+    def __init__(self, g, state, entry_func, step_manager):
         super().__init__(g)
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
+        self._step_manager = step_manager
 
         def new_visited_map():
             return self.icfg.new_vp("bool", val=False)
 
         self.visited = defaultdict(new_visited_map)
         self.instances = state.instances
+        self.new_entry_points = set()
 
     def states_are_equal(state1, state2):
         equal = bool(state1.next_abbs & state2.next_abbs)
         return equal
+
+    def _extract_entry_points(self):
+        for v in self.instances.vertices():
+            os_obj = self.instances.vp.obj[v]
+            if isinstance(os_obj, Task):
+                if os_obj not in self.new_entry_points:
+                    entry = self.g.cfg.vertex(os_obj.entry_abb)
+                    func_name = self.g.cfg.vp.name[
+                        self.g.cfg.get_function(entry)
+                    ]
+                    self._step_manager.chain_step({"name": "CallGraph",
+                                                   "entrypoint": func_name})
+                    # self._step_manager.chain_step({"name": "SSE"})
+                self.new_entry_points.add(os_obj)
 
     def _create_call_map(self, entry_func):
         cg = self.g.call_graphs[entry_func]
@@ -88,6 +105,7 @@ class InstanceGraph(AbstractOS):
                 assert self.g.os is not None
                 new_state = self.g.os.interpret(self.g.cfg, abb, state)
                 self.instances = new_state.instances
+                self._extract_entry_points()
                 new_states.append(new_state)
             elif self.icfg.vp.type[abb] == graph.ABBType.call:
                 for n in self.icfg.vertex(abb).out_neighbors():
@@ -147,7 +165,7 @@ class SSE(Step):
         entry = State(cfg=g.cfg,
                       callgraph=g.call_graphs[entry_label],
                       next_abbs=[entry_abb])
-        flavor = InstanceGraph(g, entry, entry_label)
+        flavor = InstanceGraph(g, entry, entry_label, self._step_manager)
 
         sstg = graph_tool.Graph()
         sstg.vertex_properties["state"] = sstg.new_vp("object")
