@@ -1,0 +1,9 @@
+{
+	"steps": [
+		"CFGPreparation",
+		{
+			"name": "CFGPreparation",
+			"pass_list": ["constprop", "dce"]
+		}
+	]
+}

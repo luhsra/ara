@@ -1,25 +1,37 @@
 // vim: set noet ts=4 sw=4:
 
 #include "cfg_prep.h"
+#include <cassert>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/Utils.h>
+#include <llvm/Support/CommandLine.h>
 
 namespace ara::step {
     using namespace llvm;
-	std::string CFG_Preperation::get_description() const {
+	std::string CFGPreparation::get_description() const {
 		return "Modifies the CFG to prepare it for further usage."
 		       "\n"
 		       "Performs various LLVM Passes on the IR to simplify the CFG.";
 	}
 
-    std::vector<std::string> CFG_Preperation::get_dependencies() { return {"IRReader"}; }
+    std::vector<std::string> CFGPreparation::get_dependencies() { return {"IRReader"}; }
 
-	void CFG_Preperation::fill_options() { opts.emplace_back(pass_list); }
+	void CFGPreparation::fill_options() { opts.emplace_back(pass_list); }
 
-	void CFG_Preperation::run(graph::Graph& graph) {
-        // Get pass list from options
+
+	void CFGPreparation::run(graph::Graph& graph) {
+        // Get pass list from options and feed it to the LLVM Argument Parser
         assert(pass_list.get().second);
         std::vector<std::string> passes = pass_list.get().first;
+        // TODO cast passes to char**
+        //cl::ParseCommandLineOptions(passes.size(), passes);
+
+        // Create gloabal variable for the parser
+        cl::list<Pass_opts> PassOptList(cl::desc("Available Passes:"),
+               cl::values(
+                  clEnumVal(dce         , "Dead Code Elimination"),
+                  clEnumVal(constprop   , "Constant Propagation"),
+                  clEnumVal(sccp        , "Sparse Conditional Constant Propagation")));
 
         Module& module = graph.get_module();
         legacy::FunctionPassManager fpm(&module);
@@ -29,8 +41,6 @@ namespace ara::step {
             // TODO parse pass names and create and add them to the FPM
         }
 
-        /* Loop over module's functions and count how many functions are altered by the Pass.
-        fpm.run(function) returns true when a function was modified. */
         for (auto& function : module) {
             if (function.empty())
                 continue;

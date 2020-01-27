@@ -14,7 +14,7 @@ cimport llvm_wrapper
 from agressive_dce cimport AgressiveDCE
 from bb_split cimport BBSplit
 from cdummy cimport CDummy
-from cfg_prep cimport CFG_Preperation
+from cfg_prep cimport CFGPreparation
 from comp_insert cimport CompInsert
 from const_prop cimport ConstProp
 from dead_code_elimination cimport DeadCodeElimination
@@ -261,7 +261,7 @@ def provide_steps():
     return [_native_fac(step_fac[AgressiveDCE]()),
             _native_fac(step_fac[BBSplit]()),
             _native_fac(step_fac[CDummy]()),
-            _native_fac(step_fac[CFG_Preperation]()),
+            _native_fac(step_fac[CFGPreparation]()),
             _native_fac(step_fac[CompInsert]()),
             _native_fac(step_fac[ConstProp]()),
             _native_fac(step_fac[DeadCodeElimination]()),

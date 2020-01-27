@@ -100,6 +100,14 @@ test('ir-reader-multiple-symbols',
   env: [python_path]
 )
 
+test('cfg_prep',
+   py3_inst,
+   args: [files('../ara.py'), files('../build/appl/const_prop.ll'), '--os', 'FreeRTOS',
+          '-v',
+          '--step-settings', files('cfg_prep.json')],
+   env : [python_path]
+)
+
 test('dummy-test',
    py3_inst,
    args: [files('../ara.py'), 'empty', '--os', 'FreeRTOS',
