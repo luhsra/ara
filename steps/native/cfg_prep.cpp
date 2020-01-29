@@ -4,7 +4,6 @@
 #include <cassert>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/Utils.h>
-#include <llvm/Support/CommandLine.h>
 
 namespace ara::step {
     using namespace llvm;
@@ -18,28 +17,39 @@ namespace ara::step {
 
 	void CFGPreparation::fill_options() { opts.emplace_back(pass_list); }
 
-
 	void CFGPreparation::run(graph::Graph& graph) {
-        // Get pass list from options and feed it to the LLVM Argument Parser
-        assert(pass_list.get().second);
-        std::vector<std::string> passes = pass_list.get().first;
-        // TODO cast passes to char**
-        //cl::ParseCommandLineOptions(passes.size(), passes);
-
-        // Create gloabal variable for the parser
-        cl::list<Pass_opts> PassOptList(cl::desc("Available Passes:"),
-               cl::values(
-                  clEnumVal(dce         , "Dead Code Elimination"),
-                  clEnumVal(constprop   , "Constant Propagation"),
-                  clEnumVal(sccp        , "Sparse Conditional Constant Propagation")));
-
         Module& module = graph.get_module();
         legacy::FunctionPassManager fpm(&module);
 
+        // Get pass list from command line options
+        // TODO fix assert
+        //assert(pass_list.get().second);
+        std::vector<std::string> passes = pass_list.get().first;
+
+        // Add the specified passes to the Function Pass Manager
         for (std::string pass_name : passes) {
-            std::cout << pass_name << std::endl; 
-            // TODO parse pass names and create and add them to the FPM
+            switch(resolveOption(pass_name)) {
+                case Invalid: { 
+                    std::cerr << "Specified pass name '" << pass_name << "' could not be resolved." << std::endl;
+                    abort();
+                }
+                case ConstantPropagation: {
+                    fpm.add(createConstantPropagationPass());
+                    break;
+                }
+                case DeadCodeElimination: {
+                    fpm.add(createDeadCodeEliminationPass());
+                    break;
+                }
+                case MemoryToRegister: {
+                    fpm.add(createPromoteMemoryToRegisterPass());
+                    break;
+                }
+                default: break;
+            }
         }
+
+        // TODO Print Debug Information about Pass Chain to be run
 
         for (auto& function : module) {
             if (function.empty())
@@ -51,7 +61,24 @@ namespace ara::step {
             }
 
             fpm.run(function);
+            // TODO Enable LLVM's "per-Pass-dump" and redirect LLVM ostream to ara's if necessary
+            function.dump();
         }
 		logger.debug() << this->get_name() << " step finished successfully. " << std::endl;
 	}
+
+    CFGPreparation::Option CFGPreparation::resolveOption(std::string arg) {
+        static const std::map<std::string, Option> passOptions {
+            { "dce",       DeadCodeElimination },
+            { "constprop", ConstantPropagation },
+            { "sccp",      SparseConditionalConstantPropagation },
+            { "mem2reg",   MemoryToRegister }
+        };
+
+        auto iterator = passOptions.find(arg);
+        if ( iterator != passOptions.end() ) {
+            return iterator->second;
+        }
+        return Invalid;
+    }
 } // namespace ara::step
