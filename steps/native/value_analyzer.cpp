@@ -1103,16 +1103,16 @@ namespace ara {
 					logger.info() << "  Value " << v_count++ << ": " << *v << std::endl;
 				}
 				args.emplace_back(std::move(arg));
-			}
-
-			const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
-			if (c == nullptr) {
-				logger.warn() << "Analysis has stopped at a non constant:" << std::endl;
-				logger.warn() << "  CallBase: " << cb << std::endl;
-				logger.warn() << "  Analysis result: " << *a.value_list[0] << std::endl;
-				args.emplace_back(Argument(s, *none_c));
 			} else {
-				args.emplace_back(Argument(s, *c));
+				const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
+				if (c == nullptr) {
+					logger.warn() << "Analysis has stopped at a non constant:" << std::endl;
+					logger.warn() << "  CallBase: " << cb << std::endl;
+					logger.warn() << "  Analysis result: " << *a.value_list[0] << std::endl;
+					args.emplace_back(Argument(s, *none_c));
+				} else {
+					args.emplace_back(Argument(s, *c));
+				}
 			}
 			i++;
 		}
