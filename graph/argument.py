@@ -23,6 +23,12 @@ class Argument:
         return (f"Argument({repr(self.consts[tuple()])}, ambiguous={ambi}, "
                 f"{repr(self.attributes)})")
 
+    def __str__(self):
+        ambi = len(self.consts) >= 2
+        args = [f'{x}: {str(y)}' for x, y in self.consts.items()]
+        return (f"Argument({args}, ambiguous={ambi}, "
+                f"{repr(self.attributes)})")
+
     def _get_call_path(self, call_path):
         g = graph_tool.GraphView(call_path.graph, reversed=True)
         path = []
