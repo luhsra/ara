@@ -10,37 +10,35 @@
 namespace ara {
 
 	class Argument {
-		public:
+	  public:
 		using CallPath = std::vector<const llvm::Instruction*>;
-		private:
-			llvm::AttributeSet attrs;
-			// key = call_path (list of call instructions)
-			// value = the constant that is retrieved when following this path
-			std::map<CallPath, const llvm::Constant&> consts;
-		public:
-			Argument(llvm::AttributeSet attrs, const llvm::Constant& l_const) : attrs(attrs), consts() {
+
+	  private:
+		llvm::AttributeSet attrs;
+		// key = call_path (list of call instructions)
+		// value = the constant that is retrieved when following this path
+		std::map<CallPath, const llvm::Constant&> consts;
+
+	  public:
+		Argument(llvm::AttributeSet attrs, const llvm::Constant& l_const) : attrs(attrs), consts() {
 			consts.insert(std::pair<CallPath, const llvm::Constant&>({}, l_const));
-			}
+		}
 
-			void add_variant(CallPath& key, const llvm::Constant& value) {
-				consts.insert(std::pair<CallPath, const llvm::Constant&>(key, value));
-			}
+		void add_variant(CallPath& key, const llvm::Constant& value) {
+			consts.insert(std::pair<CallPath, const llvm::Constant&>(key, value));
+		}
 
-			llvm::AttributeSet get_attrs() {
-				return attrs;
-			}
+		llvm::AttributeSet get_attrs() { return attrs; }
 
-			const llvm::Constant& get_constant(CallPath key={}) {
-				return consts.at(key);
-			}
+		const llvm::Constant& get_constant(CallPath key = {}) { return consts.at(key); }
 
-			auto begin() noexcept { return consts.begin(); }
-			auto begin() const noexcept { return consts.begin(); }
-			auto cbegin() const noexcept { return consts.cbegin(); }
+		auto begin() noexcept { return consts.begin(); }
+		auto begin() const noexcept { return consts.begin(); }
+		auto cbegin() const noexcept { return consts.cbegin(); }
 
-			auto end() noexcept { return consts.end(); }
-			auto end() const noexcept { return consts.end(); }
-			auto cend() const noexcept { return consts.cend(); }
+		auto end() noexcept { return consts.end(); }
+		auto end() const noexcept { return consts.end(); }
+		auto cend() const noexcept { return consts.cend(); }
 	};
 
 	using MetaArguments = std::vector<Argument>;
@@ -58,6 +56,21 @@ namespace ara {
 		/**
 		 * Return the current Arguments vector as Python list. The list is a new object and contains only references to
 		 * currently existing constants. It is _not_ updated, if the Arguments object is extended.
+		 *
+		 * The function does _not_ create a list of the ARA Argument Python class but instead use builtin data types. It
+		 * returns a list of tuples where the first tuple element defines the attribute set and the second element a
+		 * list of constant. This list consists again of tuples that have as key a list of basic block pointers (to the
+		 * call basic blocks) and as value the constant object.
+		 *
+		 * That means one argument with the Constant: llvm.ConstantPointerNull under the CallPath '123 -> 345' is stored
+		 * as:
+		 * [
+		 *     (AttributeSet(),
+		 *      [
+		 *          ([123, 345], llvm.ConstantPointerNull)
+		 *      ]
+		 *     )
+		 * ]
 		 */
 		PyObject* get_python_list() {
 			PyObject* list = PyList_New(0);
@@ -97,9 +110,9 @@ namespace ara {
 					const llvm::Constant& constant = it->second;
 					const llvm::Value* v = llvm::dyn_cast<const llvm::Value>(&constant);
 
-				// now the pain begins. We have to give the const Value to Python and Python/Cython with consts is
-				// nearly impossible. We either have to castrate our Python interface to support only const methods or
-				// have to leave the land of const correctness. We are doing the latter...
+					// now the pain begins. We have to give the const Value to Python and Python/Cython with consts is
+					// nearly impossible. We either have to castrate our Python interface to support only const methods
+					// or have to leave the land of const correctness. We are doing the latter...
 					PyObject* val_obj = get_obj_from_value(const_cast<llvm::Value*>(v));
 					py_throw(val_obj == nullptr);
 
