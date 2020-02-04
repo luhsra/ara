@@ -6,9 +6,21 @@ from graph.argument import CallPath
 
 
 class Task:
-    def __init__(self, cfg, entry_abb):
+    def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
+                 priority, handle_p, abb, is_regular=True):
         self.cfg = cfg
         self.entry_abb = entry_abb
+        self.name = name
+        self.function = function
+        self.stack_size = stack_size
+        self.parameters = parameters
+        self.priority = priority
+        self.handle_p = handle_p
+        self.abb = abb
+        self.is_regular = is_regular
+
+    def __repr__(self):
+        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
 
 
 class FreeRTOS:
@@ -43,18 +55,55 @@ class FreeRTOS:
         cp = CallPath(graph=state.callgraph, node=state.call)
         task_function = state.cfg.vp.arguments[abb][0].get(call_path=cp)
         task_name = state.cfg.vp.arguments[abb][1].get(call_path=cp)
+        task_stack_size = state.cfg.vp.arguments[abb][2].get(call_path=cp)
+        task_parameters = state.cfg.vp.arguments[abb][3].get(call_path=cp)
+        task_priority = state.cfg.vp.arguments[abb][4].get(call_path=cp)
+        task_handle_p = state.cfg.vp.arguments[abb][5].get(call_path=cp)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
 
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
-        state.instances.vp.obj[v] = Task(cfg, new_cfg)
+        state.instances.vp.obj[v] = Task(cfg, new_cfg,
+                                         function=task_function,
+                                         name=task_name,
+                                         stack_size=task_stack_size,
+                                         parameters=task_parameters,
+                                         priority=task_priority,
+                                         handle_p=task_handle_p,
+                                         abb=abb,
+        )
         state.next_abbs = []
+        for i in range(0, args_len):
+            state.cfg.vp.arguments[abb][i].set_used(True, call_path=cp)
 
         # next abbs
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
+    @syscall
+    def vTaskStartScheduler(cfg, abb, state):
+        state = state.copy()
+        cp = CallPath(graph=state.callgraph, node=state.call)
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = '__idle_task'
+
+        state.instances.vp.obj[v] = Task(cfg, None,
+                                         function='prvIdleTask',
+                                         name='idle_task',
+                                         stack_size='ulIdleTaskStackSize',
+                                         parameters=0,
+                                         priority='( tskIDLE_PRIORITY | portPRIVILEGE_BIT )',
+                                         handle_p=0,
+                                         abb=abb,
+                                         is_regular=False,
+        )
+        state.next_abbs = []
+
+        # next abbs
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
 #     {
 #         "name": "vTaskNotifyGiveFromISR",
 #         "os": OS.FreeRTOS,
