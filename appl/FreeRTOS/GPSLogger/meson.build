@@ -41,3 +41,14 @@ endforeach
 gpslogger_runtarget = run_target('gpslogger-full',
                                  command: nop,
                                  depends: gpslogger_targets)
+
+gpslogger_full_static_os = custom_target('gpslogger-instances_full_static-os',
+										 input: gpslogger_targets,
+										 output: 'instances_full_static-os.cc',
+										 command: [sh.full_path(),
+												   '@INPUT@',
+												   '--step-settings',
+												   files('../../../settings/freertos_instances_full_static.json'),
+												   '--output_file', '@OUTPUT@',
+												  ],
+										)
