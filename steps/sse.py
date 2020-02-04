@@ -158,7 +158,10 @@ class InstanceGraph(AbstractOS):
 
 
 class SSE(Step):
-    """Template for a new Python step."""
+    """Apply an OS wide analysis in different depths.
+
+    The extend of the analysis can be switched by the flavor option.
+    """
 
     class Flavor():
         Instances = "InstanceGraph"
