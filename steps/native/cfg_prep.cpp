@@ -4,6 +4,7 @@
 #include <cassert>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/Utils.h>
+#include <llvm/PassRegistry.h>
 
 namespace ara::step {
     using namespace llvm;
@@ -28,28 +29,14 @@ namespace ara::step {
 
         // Add the specified passes to the Function Pass Manager
         for (std::string pass_name : passes) {
-            switch(resolveOption(pass_name)) {
-                case Invalid: { 
-                    std::cerr << "Specified pass name '" << pass_name << "' could not be resolved." << std::endl;
-                    abort();
-                }
-                case ConstantPropagation: {
-                    fpm.add(createConstantPropagationPass());
-                    break;
-                }
-                case DeadCodeElimination: {
-                    fpm.add(createDeadCodeEliminationPass());
-                    break;
-                }
-                case MemoryToRegister: {
-                    fpm.add(createPromoteMemoryToRegisterPass());
-                    break;
-                }
-                default: break;
-            }
+            PassRegistry *pr = PassRegistry::getPassRegistry();
+            if (pr != NULL) logger.debug() << "Pass Registry retrieved succesfully!!!" << std::endl;
+            const PassInfo *pi = pr->getPassInfo(StringRef(pass_name));
+            if (pr != NULL) logger.debug() << "Pass Registry retrieved succesfully!!!" << std::endl;
+            logger.debug() << pi->getPassName().str() << std::endl;
         }
 
-        // TODO Print Debug Information about Pass Chain to be run
+        //fpm.dumpPasses();
 
         for (auto& function : module) {
             if (function.empty())
@@ -66,19 +53,4 @@ namespace ara::step {
         }
 		logger.debug() << this->get_name() << " step finished successfully. " << std::endl;
 	}
-
-    CFGPreparation::Option CFGPreparation::resolveOption(std::string arg) {
-        static const std::map<std::string, Option> passOptions {
-            { "dce",       DeadCodeElimination },
-            { "constprop", ConstantPropagation },
-            { "sccp",      SparseConditionalConstantPropagation },
-            { "mem2reg",   MemoryToRegister }
-        };
-
-        auto iterator = passOptions.find(arg);
-        if ( iterator != passOptions.end() ) {
-            return iterator->second;
-        }
-        return Invalid;
-    }
 } // namespace ara::step
