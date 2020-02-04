@@ -20,9 +20,9 @@ foreach file : src_files
                                     output: 'smartplug-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
                                     command : [clang,
-                                               '-I', freertos_include_dir,
                                                '@INPUT@',
                                                '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@', c_std] +
+											  freertos_includes +
                                               clang_flags)
 endforeach
 

@@ -10,16 +10,7 @@ cxx_std = '-std=c++11'
 
 # FreeRTOS examples
 
-freertos_path = 'FreeRTOS/source/include'
-
-freertos_includes = files(join_paths(freertos_path, 'croutine.h'),
-                          join_paths(freertos_path, 'event_groups.h'),
-                          join_paths(freertos_path, 'FreeRTOS.h'),
-                          join_paths(freertos_path, 'FreeRTOSConfig.h'),
-                          join_paths(freertos_path, 'list.h'),
-                          join_paths(freertos_path, 'queue.h'),
-                          join_paths(freertos_path, 'task.h'))
-subdir(freertos_path)
+freertos_includes = ['-I', join_paths(meson.current_source_dir(), 'FreeRTOS', 'source', 'include')]
 
 freertos_targets = []
 foreach app : ['a',
@@ -46,14 +37,16 @@ foreach app : ['a',
                'syscall',
                'thesis_print',
                'topological_sort']
-   ll_target = custom_target('freertos-' + app,
-                             input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
-                             output : ['freertos-' + app + '.ll'],
-                             command : [clang, '@INPUT0@',
-                                        '-o', '@OUTPUT0@', cxx_std] +
-                                        clang_flags)
-   set_variable('freertos_' + app.underscorify(), ll_target)
-   freertos_targets += ll_target
+  ll_target = custom_target('freertos-' + app,
+                            input : ['FreeRTOS/' + app + '.cc'],
+                            output : ['freertos-' + app + '.ll'],
+                            command : [clang, '@INPUT0@',
+                                       '-o', '@OUTPUT0@', cxx_std] +
+									  libs_includes +
+									  freertos_includes +
+                                      clang_flags)
+  set_variable('freertos_' + app.underscorify(), ll_target)
+  freertos_targets += ll_target
 endforeach
 
 # gpslogger is special
@@ -69,15 +62,7 @@ freertos_examples = run_target('freertos-examples',
 
 # OSEK examples
 
-osek_path = 'OSEK/source/os'
-
-osek_includes = files(join_paths(osek_path, 'alarm.h'),
-                      join_paths(osek_path, 'os.h'),
-                      join_paths(osek_path, 'timing.h'),
-                      join_paths(osek_path, 'counter.h'),
-                      join_paths(osek_path, 'timing.h'),
-                      join_paths(osek_path, 'osek_types.h'))
-
+osek_includes = ['-I', join_paths(meson.current_source_dir(), 'OSEK', 'source', 'os')]
 osek_folder = 'OSEK'
 
 osek_targets = []
@@ -87,12 +72,13 @@ foreach app : [['a',                     'a.oil'],
                ['coptermok',             'coptermok.oil'],
                ['copter-without-alarms', 'copter-without-alarms.oil'],
                ['oiltest',               'oiltest.oil']]
-    ll_target = custom_target('osek-' + app[0],
-                              input : [join_paths([osek_folder, app[0] + '.cc'])] + osek_includes,
-                              output : ['osek-' + app[0] + '.ll'],
-                              command : [clang, '@INPUT0@',
-                                         '-o', '@OUTPUT0@', cxx_std] +
-                                         clang_flags)
+  ll_target = custom_target('osek-' + app[0],
+                            input : [join_paths([osek_folder, app[0] + '.cc'])],
+                            output : ['osek-' + app[0] + '.ll'],
+                            command : [clang, '@INPUT0@',
+                                       '-o', '@OUTPUT0@', cxx_std] +
+									  osek_includes +
+									  clang_flags)
     set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
     osek_targets += ll_target
 endforeach
