@@ -74,8 +74,6 @@ class FreeRTOS:
                                          abb=abb,
         )
         state.next_abbs = []
-        for i in range(0, args_len):
-            state.cfg.vp.arguments[abb][i].set_used(True, call_path=cp)
 
         # next abbs
         FreeRTOS.add_normal_cfg(cfg, abb, state)
