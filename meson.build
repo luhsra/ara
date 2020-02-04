@@ -36,7 +36,6 @@ source_dir = meson.source_root()
 subdir('common')
 subdir('graph')
 subdir('steps')
-subdir('appl')
 
 python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir])
 
@@ -51,6 +50,8 @@ sh = custom_target('ara-sh',
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\n' + python_path + ' ' + (source_dir / 'ara.py') + ' $@\n'],
     build_by_default: true
 )
+
+subdir('appl')
 
 extra_settings = files('test/extra_settings.json')
 
