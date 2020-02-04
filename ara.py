@@ -38,6 +38,7 @@ def main():
     parser.add_argument('input_files', help="all LLVM-IR input files",
                         nargs='*')
     parser.add_argument('--oilfile', help="name of oilfile")
+    parser.add_argument('--output_file', help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE",
                         help="settings for individual steps. '-' is STDIN")
 

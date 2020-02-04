@@ -64,6 +64,16 @@ test('ara_tester',
    env : [python_path]
 )
 
+generator_settings = files('test/generator_settings.json')
+
+test('generator_tester',
+   py3_inst,
+   args: [files('ara.py'), gpslogger_targets,
+          '--log-level', 'debug', '--dump',
+          '--step-settings', generator_settings],
+   env : [python_path]
+)
+
 test('gpslogger',
    py3_inst,
    args: [files('ara.py'), gpslogger_targets, '--log-level', 'debug', '--step', 'SSE'],

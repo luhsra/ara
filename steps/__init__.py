@@ -1,6 +1,7 @@
 from .abb_merge import ABBMerge
 from .call_graph import CallGraph
 from .dummy import Dummy
+from .generator import Generator
 from .oil import OilStep
 from .printer import Printer
 from .sse import SSE
@@ -20,6 +21,7 @@ def provide_steps():
     yield ABBMerge()
     yield CallGraph()
     yield Dummy()
+    yield Generator()
     yield OilStep()
     yield Printer()
     yield SSE()
