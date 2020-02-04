@@ -25,7 +25,6 @@ src_files = [
 foreach file : src_files
   gpslogger_targets += custom_target('gpslogger-' + file.underscorify(),
                                     input: file + '.cpp',
-                                    depend_files: freertos_includes,
                                     output: 'gpslogger-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
                                     command : [clang,
@@ -35,6 +34,7 @@ foreach file : src_files
                                                '-I', gpslogger_includes[3],
                                                '@INPUT0@',
                                                '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@', cxx_std] +
+											  freertos_includes +
                                               clang_flags)
 endforeach
 
