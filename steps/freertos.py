@@ -5,6 +5,7 @@ import graph
 from graph.argument import CallPath
 
 
+# TODO make this a dataclass once we use Python 3.7
 class Task:
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
                  priority, handle_p, abb, is_regular=True):
@@ -64,6 +65,7 @@ class FreeRTOS:
         state.instances.vp.label[v] = task_name
 
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
+        assert new_cfg is not None
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          function=task_function,
                                          name=task_name,

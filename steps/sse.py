@@ -86,7 +86,8 @@ class InstanceGraph(AbstractOS):
         for v in self.instances.vertices():
             os_obj = self.instances.vp.obj[v]
             if isinstance(os_obj, Task):
-                if os_obj not in self.new_entry_points:
+                if (os_obj not in self.new_entry_points
+                    and os_obj.entry_abb is not None):
                     entry = self.g.cfg.vertex(os_obj.entry_abb)
                     func_name = self.g.cfg.vp.name[
                         self.g.cfg.get_function(entry)
