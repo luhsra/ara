@@ -39,7 +39,6 @@ subdir('steps')
 
 python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir])
 
-subdir('test')
 
 dump_cmds = files('utils/dump_cmds.py')
 ara = files('ara.py')
@@ -52,6 +51,7 @@ sh = custom_target('ara-sh',
 )
 
 subdir('appl')
+subdir('test')
 
 extra_settings = files('test/extra_settings.json')
 

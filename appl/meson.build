@@ -44,7 +44,6 @@ foreach app : ['a',
                             command : [clang, '@INPUT0@',
 									   '-MD', '-MF', '@DEPFILE@',
                                        '-o', '@OUTPUT0@', cxx_std] +
-									  libs_includes +
 									  freertos_includes +
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), ll_target)
