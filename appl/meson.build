@@ -40,7 +40,9 @@ foreach app : ['a',
   ll_target = custom_target('freertos-' + app,
                             input : ['FreeRTOS/' + app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
+							depfile : 'freertos-' + app + '.ll.dep',
                             command : [clang, '@INPUT0@',
+									   '-MD', '-MF', '@DEPFILE@',
                                        '-o', '@OUTPUT0@', cxx_std] +
 									  libs_includes +
 									  freertos_includes +
@@ -75,7 +77,9 @@ foreach app : [['a',                     'a.oil'],
   ll_target = custom_target('osek-' + app[0],
                             input : [join_paths([osek_folder, app[0] + '.cc'])],
                             output : ['osek-' + app[0] + '.ll'],
+							depfile : 'osek-' + app[0] + '.ll.dep',
                             command : [clang, '@INPUT0@',
+									   '-MD', '-MF', '@DEPFILE@',
                                        '-o', '@OUTPUT0@', cxx_std] +
 									  osek_includes +
 									  clang_flags)
