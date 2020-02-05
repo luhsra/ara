@@ -1,0 +1,1 @@
+option('arch', type: 'combo', choices: ['arm', 'i386', 'posix'], value: 'arm')

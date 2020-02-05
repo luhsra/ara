@@ -47,9 +47,9 @@
     licensing and training services.
 */
 
-#include "source/include/FreeRTOS.h"
-#include "source/include/FreeRTOSConfig.h"
-#include "source/include/task.h"
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
 
 #define mainDELAY_LOOP_COUNT (0xffffff)
 

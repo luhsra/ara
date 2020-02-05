@@ -1,6 +1,6 @@
-#include "source/include/FreeRTOS.h"
-#include "source/include/FreeRTOSConfig.h"
-#include "source/include/task.h"
+#include "FreeRTOS.h"
+#include "FreeRTOSConfig.h"
+#include "task.h"
 
 void vTask1(void* pvParameters);
 void vTask2(void* pvParameters);

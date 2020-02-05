@@ -1,12 +1,12 @@
 
-#include "source/include/FreeRTOS.h"
-#include "source/include/task.h"
-#include "source/include/queue.h"
-#include "source/include/timers.h"
-#include "source/include/semphr.h"
-#include "source/include/event_groups.h"
-#include "source/include/stream_buffer.h"
-#include "source/include/message_buffer.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "timers.h"
+#include "semphr.h"
+#include "event_groups.h"
+#include "stream_buffer.h"
+#include "message_buffer.h"
 
 #include <stdint.h>
 

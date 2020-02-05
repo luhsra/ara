@@ -48,9 +48,9 @@
 */
 
 /* FreeRTOS.org includes. */
-#include "source/include/FreeRTOS.h"
-#include "source/include/task.h"
-#include "source/include/queue.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 #include <stdint.h>
 void vPrintString( const char * string );
 

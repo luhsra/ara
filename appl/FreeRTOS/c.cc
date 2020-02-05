@@ -1,5 +1,5 @@
-#include "source/include/FreeRTOS.h"
-#include "source/include/task.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #include <stdint.h>
 

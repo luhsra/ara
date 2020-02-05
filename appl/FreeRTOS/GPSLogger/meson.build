@@ -1,9 +1,14 @@
 gpslogger_dir = meson.current_source_dir()
 
-gpslogger_includes = [join_paths([gpslogger_dir, 'Libs', 'AdafruitGFX']),
-                      join_paths([gpslogger_dir, 'Libs', 'Adafruit_SSD1306']),
-                      join_paths([gpslogger_dir, 'Libs', 'arduino']),
-                      join_paths([gpslogger_dir, 'Libs', 'FreeRTOS'])]
+gpslogger_includes = ['-I', join_paths([gpslogger_dir, 'Libs', 'AdafruitGFX']),
+					  '-I', join_paths([gpslogger_dir, 'Libs', 'Adafruit_SSD1306']),
+					  '-I', join_paths([gpslogger_dir, 'Libs', 'arduino']),
+					  '-I', join_paths([gpslogger_dir, 'Libs', 'FreeRTOS']),
+					 ]
+if get_option('arch') == 'arm'
+  gpslogger_includes += ['-I', '/usr/lib/arm-none-eabi/include/',
+						 '-I', '/usr/include/newlib/',]
+endif
 
 gpslogger_targets = []
 
@@ -27,14 +32,10 @@ foreach file : src_files
                                     input: file + '.cpp',
                                     output: 'gpslogger-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
-                                    command : [clang,
-                                               '-I', gpslogger_includes[0],
-                                               '-I', gpslogger_includes[1],
-                                               '-I', gpslogger_includes[2],
-                                               '-I', gpslogger_includes[3],
-                                               '@INPUT0@',
-                                               '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@', cxx_std] +
+                                    command : clang_cpp +
 											  freertos_includes +
+											  gpslogger_includes +
+											  ir_flags +
                                               clang_flags)
 endforeach
 
@@ -45,10 +46,5 @@ gpslogger_runtarget = run_target('gpslogger-full',
 gpslogger_full_static_os = custom_target('gpslogger-instances_full_static-os',
 										 input: gpslogger_targets,
 										 output: 'instances_full_static-os.cc',
-										 command: [sh.full_path(),
-												   '@INPUT@',
-												   '--step-settings',
-												   files('../../../settings/freertos_instances_full_static.json'),
-												   '--output_file', '@OUTPUT@',
-												  ],
+										 command: ara_gen_instances_full_static,
 										)

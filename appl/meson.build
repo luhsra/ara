@@ -1,11 +1,3 @@
-clang = find_program('clang', version: llvm_version)
-nop = find_program('true')
-
-# compiler flags to generate annotated IR
-clang_flags = ['-S', '-g', '-emit-llvm', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names', '-fno-exceptions']
-clang_flags += '-Wno-everything'
-c_std = '-std=c11'
-cxx_std = '-std=c++11'
 
 
 # FreeRTOS examples
@@ -41,10 +33,10 @@ foreach app : ['a',
                             input : ['FreeRTOS/' + app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
 							depfile : 'freertos-' + app + '.ll.dep',
-                            command : [clang, '@INPUT0@',
-									   '-MD', '-MF', '@DEPFILE@',
-                                       '-o', '@OUTPUT0@', cxx_std] +
+                            command : clang_cpp +
+									  libs_includes +
 									  freertos_includes +
+									  ir_flags +
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), ll_target)
   freertos_targets += ll_target
@@ -77,10 +69,9 @@ foreach app : [['a',                     'a.oil'],
                             input : [join_paths([osek_folder, app[0] + '.cc'])],
                             output : ['osek-' + app[0] + '.ll'],
 							depfile : 'osek-' + app[0] + '.ll.dep',
-                            command : [clang, '@INPUT0@',
-									   '-MD', '-MF', '@DEPFILE@',
-                                       '-o', '@OUTPUT0@', cxx_std] +
+                            command : clang_cpp +
 									  osek_includes +
+									  ir_flags +
 									  clang_flags)
     set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
     osek_targets += ll_target

@@ -13,16 +13,22 @@ src_files = [
 	'spiffs_local',
 	'system',
 ]
+smartplug_includes = []
+
+if get_option('arch') == 'arm'
+  smartplug_includes += ['-I', '/usr/include/newlib/',
+						]
+endif
 
 foreach file : src_files
   smartplug_targets += custom_target('smartplug-' + file.underscorify(),
                                     input: file + '.c',
                                     output: 'smartplug-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
-                                    command : [clang,
-                                               '@INPUT@',
-                                               '-o', '@OUTPUT@', '-MD', '-MF', '@DEPFILE@', c_std] +
+                                    command : clang_c +
 											  freertos_includes +
+											  smartplug_includes +
+											  ir_flags +
                                               clang_flags)
 endforeach
 
