@@ -4,7 +4,6 @@
 cimport cgraph
 cimport cstep
 cimport option
-cimport llvm
 
 from libcpp.vector cimport vector
 from libcpp.string cimport string
