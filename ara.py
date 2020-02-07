@@ -47,6 +47,10 @@ def main():
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
 
+    if args.log_level == 'debug':
+        import os
+        print(f'PYTHONPATH={os.environ["PYTHONPATH"]} python3 ' + ' '.join(sys.argv))
+
     util.init_logging(level=args.log_level)
 
     g = graph.Graph()
