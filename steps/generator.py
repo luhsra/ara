@@ -16,7 +16,7 @@ class Generator(Step):
 
     os_choices = {'freertos': FreeRTOSGenericOS}
 
-    syscall_choices= {'unchanged': UnchangedSystemCalls,
+    syscall_choices= {'vanilla': VanillaSystemCalls,
                       'generic_static': StaticFullSystemCalls,
                       'instance_specialized': lambda: exec('raise NotImplementedError()'),
     }

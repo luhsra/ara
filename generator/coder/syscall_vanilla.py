@@ -1,4 +1,4 @@
 from .syscall_generic import GenericSystemCalls
 
-class UnchangedSystemCalls(GenericSystemCalls):
+class VanillaSystemCalls(GenericSystemCalls):
     pass
