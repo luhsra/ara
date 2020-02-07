@@ -68,6 +68,7 @@ foreach app : ['a',
 							   output: name_prefix + '.bin',
 							   command: objcopy_cmd)
 	run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+	run_target('size_' + name_prefix, command: ['arm-none-eabi-size', elf_target])
 
   endforeach
 
