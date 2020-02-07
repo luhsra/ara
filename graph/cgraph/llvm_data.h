@@ -22,12 +22,12 @@ namespace ara::graph {
 		llvm::LLVMContext context;
 		std::unique_ptr<llvm::Module> module;
 
+	  public:
 		/**
 		 * Workaround for function specific additional attributes, since we cannot inherit the function class.
 		 */
-		std::map<llvm::Function*, llvmext::Function*> function_extensions;
+		std::map<llvm::Function*, llvmext::Function> functions;
 
-	  public:
 		LLVMData() : module(nullptr) {}
 
 		llvm::Module& get_module() { return *module; }
