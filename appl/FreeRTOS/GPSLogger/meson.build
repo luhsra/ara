@@ -1,29 +1,29 @@
 gpslogger_dir = meson.current_source_dir()
 
 gpslogger_includes = ['-I', join_paths([gpslogger_dir, 'Libs', 'AdafruitGFX']),
-					  '-I', join_paths([gpslogger_dir, 'Libs', 'Adafruit_SSD1306']),
-					  '-I', join_paths([gpslogger_dir, 'Libs', 'arduino']),
-					  '-I', join_paths([gpslogger_dir, 'Libs', 'FreeRTOS']),
-					 ]
+                      '-I', join_paths([gpslogger_dir, 'Libs', 'Adafruit_SSD1306']),
+                      '-I', join_paths([gpslogger_dir, 'Libs', 'arduino']),
+                      '-I', join_paths([gpslogger_dir, 'Libs', 'FreeRTOS']),
+                     ]
 if get_option('arch') == 'arm'
   gpslogger_includes += ['-I', '/usr/lib/arm-none-eabi/include/',
-						 '-I', '/usr/include/newlib/',]
+                         '-I', '/usr/include/newlib/',]
 endif
 
 gpslogger_targets = []
 
 src_files = [
-	'Src/GPSLogger',
-	'Src/SDThread',
-	'Src/LEDThread',
-	'Src/ButtonsThread',
-	'Src/SdFatSPIDriver',
-	'Src/Screens/ScreenManager',
-	'Src/Screens/SpeedScreen',
-	'Src/Screens/DisplayDriver',
-	'Src/GPS/GPSThread',
-	'Src/GPS/GPSDataModel',
-	'Libs/Adafruit_SSD1306/Adafruit_SSD1306'
+    'Src/GPSLogger',
+    'Src/SDThread',
+    'Src/LEDThread',
+    'Src/ButtonsThread',
+    'Src/SdFatSPIDriver',
+    'Src/Screens/ScreenManager',
+    'Src/Screens/SpeedScreen',
+    'Src/Screens/DisplayDriver',
+    'Src/GPS/GPSThread',
+    'Src/GPS/GPSDataModel',
+    'Libs/Adafruit_SSD1306/Adafruit_SSD1306'
 ]
 
 
@@ -33,9 +33,9 @@ foreach file : src_files
                                     output: 'gpslogger-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
                                     command : clang_cpp +
-											  libs_includes +
-											  gpslogger_includes +
-											  ir_flags +
+                                              libs_includes +
+                                              gpslogger_includes +
+                                              ir_flags +
                                               clang_flags)
 endforeach
 
@@ -44,7 +44,7 @@ gpslogger_runtarget = run_target('gpslogger-full',
                                  depends: gpslogger_targets)
 
 gpslogger_full_static_os = custom_target('gpslogger-instances_full_static-os',
-										 input: gpslogger_targets,
-										 output: 'instances_full_static-os.cc',
-										 command: ara_gen_instances_full_static,
-										)
+                                         input: gpslogger_targets,
+                                         output: 'instances_full_static-os.cc',
+                                         command: ara_gen_instances_full_static,
+                                        )

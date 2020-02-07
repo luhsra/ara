@@ -25,16 +25,16 @@ foreach app : ['a',
                'sse',
                'start_scheduler_relation',
                'syscall',
-			   'simple_print',
+               'simple_print',
                'thesis_print',
                'topological_sort']
   ll_target = custom_target('freertos-' + app,
                             input : ['FreeRTOS/' + app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
-							depfile : 'freertos-' + app + '.ll.dep',
+                            depfile : 'freertos-' + app + '.ll.dep',
                             command : clang_cpp +
-									  libs_includes +
-									  ir_flags +
+                                      libs_includes +
+                                      ir_flags +
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), ll_target)
 
@@ -44,31 +44,31 @@ foreach app : ['a',
                             command : llc_cmd)
 
   foreach t : ara_gen_freertos_targets
-	name_prefix = 'freertos-' + app + '-' + t
-	os_target = custom_target(name_prefix + '-os',
-							  input: ll_target,
-							  output: [name_prefix + '-os.cc',
-									   name_prefix + '-os.cc.startup.s'],
-							  command: get_variable('ara_gen_' + t)
-							 )
+    name_prefix = 'freertos-' + app + '-' + t
+    os_target = custom_target(name_prefix + '-os',
+                              input: ll_target,
+                              output: [name_prefix + '-os.cc',
+                                       name_prefix + '-os.cc.startup.s'],
+                              command: get_variable('ara_gen_' + t)
+                             )
 
-	elf_target = custom_target(name_prefix + '.elf',
-							   input: [o_target,
-									   os_target,
-									   libs_targets,
-									   get_variable('libfreertos_'+t)],
-							   output: name_prefix + '.elf',
-							   depfile: name_prefix + '.elf.dep',
-							   command: clang_cpp +
-										libs_includes +
-										ld_flags +
-										clang_flags)
-	bin_target = custom_target(name_prefix + '.bin',
-							   input: [elf_target],
-							   output: name_prefix + '.bin',
-							   command: objcopy_cmd)
-	run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
-	run_target('size_' + name_prefix, command: ['arm-none-eabi-size', elf_target])
+    elf_target = custom_target(name_prefix + '.elf',
+                               input: [o_target,
+                                       os_target,
+                                       libs_targets,
+                                       get_variable('libfreertos_'+t)],
+                               output: name_prefix + '.elf',
+                               depfile: name_prefix + '.elf.dep',
+                               command: clang_cpp +
+                                        libs_includes +
+                                        ld_flags +
+                                        clang_flags)
+    bin_target = custom_target(name_prefix + '.bin',
+                               input: [elf_target],
+                               output: name_prefix + '.bin',
+                               command: objcopy_cmd)
+    run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('size_' + name_prefix, command: ['arm-none-eabi-size', elf_target])
 
   endforeach
 
@@ -101,11 +101,11 @@ foreach app : [['a',                     'a.oil'],
   ll_target = custom_target('osek-' + app[0],
                             input : [join_paths([osek_folder, app[0] + '.cc'])],
                             output : ['osek-' + app[0] + '.ll'],
-							depfile : 'osek-' + app[0] + '.ll.dep',
+                            depfile : 'osek-' + app[0] + '.ll.dep',
                             command : clang_cpp +
-									  osek_includes +
-									  ir_flags +
-									  clang_flags)
+                                      osek_includes +
+                                      ir_flags +
+                                      clang_flags)
     set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
     osek_targets += ll_target
 endforeach

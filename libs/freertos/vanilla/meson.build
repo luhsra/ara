@@ -11,13 +11,13 @@ src_files = [
 obj_targets = []
 foreach src : src_files
   obj_target = custom_target(src,
-							 input: src+'.c',
-							 output: src+'.c.o',
-							 depfile: src+'.dep',
-							 command: clang_c+
-									  libs_includes +
-									  obj_flags +
-									  clang_flags)
+                             input: src+'.c',
+                             output: src+'.c.o',
+                             depfile: src+'.dep',
+                             command: clang_c+
+                                      libs_includes +
+                                      obj_flags +
+                                      clang_flags)
   obj_targets += obj_target
 
   set_variable('libfreertos_vanilla_'+src, obj_target)
@@ -30,8 +30,8 @@ else
 endif
 
 libfreertos_vanilla = custom_target('libfreertos_vanilla.a',
-									input: obj_targets,
-									output: 'libfreertos_vanilla.a',
-									command: ar_cmd)
+                                    input: obj_targets,
+                                    output: 'libfreertos_vanilla.a',
+                                    command: ar_cmd)
 
 ld_flags += ['-Wl,-L' + meson.current_build_dir()]
