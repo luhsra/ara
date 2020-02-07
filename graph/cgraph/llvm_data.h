@@ -12,7 +12,7 @@ namespace ara::graph {
 			llvm::BasicBlock* exit_block;
 			std::vector<llvm::BasicBlock*> endless_loops;
 		};
-	}
+	} // namespace llvmext
 
 	/**
 	 * Class to encapsulate all LLVM data structures needed for accessing LLVM objects.
