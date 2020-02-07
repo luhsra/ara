@@ -14,6 +14,7 @@ class Generator:
         self.file_prefix = None
         self.source_file = None
         self.source_files = dict()
+        self.template_base = os.path.dirname(os.path.abspath(__file__))
 
         os_rules.set_generator(self)
         arch_rules.set_generator(self)
@@ -47,6 +48,8 @@ class Generator:
 
         self.arch_rules.generate_default_interrupt_handlers()
 
+        self.arch_rules.generate_startup_code()
+
         self.arch_rules.generate_linkerscript()
 
         #write results outgoing
@@ -60,3 +63,6 @@ class Generator:
         # if not os.path.isdir(self.file_prefix):
         #     os.mkdir(self.file_prefix)
         return open(self.file_prefix + name, mode)
+
+    def open_template(self, name):
+        return open(os.path.join(self.generator.template_base,name))
