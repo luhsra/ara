@@ -25,6 +25,7 @@ foreach app : ['a',
                'sse',
                'start_scheduler_relation',
                'syscall',
+			   'simple_print',
                'thesis_print',
                'topological_sort']
   ll_target = custom_target('freertos-' + app,
