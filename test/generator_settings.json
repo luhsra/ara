@@ -21,7 +21,6 @@
 			"arch": "arm",
 			"syscall_style": "generic_static",
 			"os": "freertos",
-			"output_folder": "gen_full_static"
 		}
 	],
 
