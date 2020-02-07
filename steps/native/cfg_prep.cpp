@@ -2,9 +2,9 @@
 
 #include "cfg_prep.h"
 #include <cassert>
-#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/PassManager.h>
+#include <llvm/Passes/PassBuilder.h>
 #include <llvm/Transforms/Utils.h>
-#include <llvm/PassRegistry.h>
 
 namespace ara::step {
     using namespace llvm;
@@ -20,21 +20,13 @@ namespace ara::step {
 
 	void CFGPreparation::run(graph::Graph& graph) {
         Module& module = graph.get_module();
-        legacy::FunctionPassManager fpm(&module);
+        FunctionPassManager fpm(true);
+        FunctionAnalysisManager fam;
+        PassBuilder pb;
 
-        // Get pass list from command line options
-        // TODO fix assert
-        //assert(pass_list.get().second);
-        std::vector<std::string> passes = pass_list.get().first;
-
-        // Add the specified passes to the Function Pass Manager
-        for (std::string pass_name : passes) {
-            PassRegistry *pr = PassRegistry::getPassRegistry();
-            if (pr != NULL) logger.debug() << "Pass Registry retrieved succesfully!!!" << std::endl;
-            const PassInfo *pi = pr->getPassInfo(StringRef(pass_name));
-            if (pr != NULL) logger.debug() << "Pass Registry retrieved succesfully!!!" << std::endl;
-            logger.debug() << pi->getPassName().str() << std::endl;
-        }
+        // Parse pass list from command line options
+        // TODO Handle Error returned from parsePassPipeline
+        pb.parsePassPipeline(fpm, StringRef(pass_list.get().first), true, true);
 
         //fpm.dumpPasses();
 
@@ -47,7 +39,7 @@ namespace ara::step {
                 function.removeFnAttr(Attribute::OptimizeNone);
             }
 
-            fpm.run(function);
+            fpm.run(function, fam);
             // TODO Enable LLVM's "per-Pass-dump" and redirect LLVM ostream to ara's if necessary
             function.dump();
         }
