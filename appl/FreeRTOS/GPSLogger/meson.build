@@ -33,7 +33,7 @@ foreach file : src_files
                                     output: 'gpslogger-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
                                     command : clang_cpp +
-											  freertos_includes +
+											  libs_includes +
 											  gpslogger_includes +
 											  ir_flags +
                                               clang_flags)

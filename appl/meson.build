@@ -2,8 +2,6 @@
 
 # FreeRTOS examples
 
-freertos_includes = ['-I', join_paths(meson.current_source_dir(), 'FreeRTOS', 'source', 'include')]
-
 freertos_targets = []
 foreach app : ['a',
                'abb_merge',
@@ -35,7 +33,6 @@ foreach app : ['a',
 							depfile : 'freertos-' + app + '.ll.dep',
                             command : clang_cpp +
 									  libs_includes +
-									  freertos_includes +
 									  ir_flags +
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), ll_target)

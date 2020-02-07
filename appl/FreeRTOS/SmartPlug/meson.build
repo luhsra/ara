@@ -26,7 +26,7 @@ foreach file : src_files
                                     output: 'smartplug-' + file.underscorify() + '.ll',
                                     depfile: file.underscorify() + '_deps',
                                     command : clang_c +
-											  freertos_includes +
+											  libs_includes +
 											  smartplug_includes +
 											  ir_flags +
                                               clang_flags)

@@ -51,6 +51,7 @@ sh = custom_target('ara-sh',
 )
 
 subdir('settings')
+subdir('libs')
 subdir('appl')
 subdir('test')
 
