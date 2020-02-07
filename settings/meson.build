@@ -39,10 +39,12 @@ elif get_option('arch') == 'arm'
                   '-fshort-enums',
                   '--rtlib=libgcc',
 				  '-I','/usr/lib/arm-none-eabi/include/',
+				  '-I','/usr/arm-none-eabi/include/',
                  ]
   ld_flags += ['-Wl,-Map,GPSLogger.map',
 			   '-fuse-ld=/usr/bin/arm-none-eabi-ld',
 			   '-Wl,-L,/usr/lib/arm-none-eabi/newlib/thumb',
+			   '-Wl,-L,/usr/arm-none-eabi/lib/thumb',
 			   '-Wl,-L,/usr/lib/gcc/arm-none-eabi/7.3.1/thumb/',
 			   '-nostdlib',
 			   '-nodefaultlibs',
