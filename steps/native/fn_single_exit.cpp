@@ -38,6 +38,7 @@ namespace ara::step {
 				}
 			}
 			llvm_data.functions[&function].exit_block = exit_block;
+			llvm_data.basic_blocks[exit_block].is_exit_block = true;
 
 			// endless loop detection
 			DominatorTree dom_tree = DominatorTree(function);
@@ -55,6 +56,7 @@ namespace ara::step {
 				}
 				// we have an endless loop
 				llvm_data.functions[&function].endless_loops.emplace_back(loop->getHeader());
+				llvm_data.basic_blocks[loop->getHeader()].is_loop_head = true;
 				loop_found = true;
 			}
 

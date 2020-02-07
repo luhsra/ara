@@ -9,8 +9,13 @@ namespace ara::graph {
 
 	namespace llvmext {
 		struct Function {
-			llvm::BasicBlock* exit_block;
+			llvm::BasicBlock* exit_block = nullptr;
 			std::vector<llvm::BasicBlock*> endless_loops;
+		};
+
+		struct BasicBlock {
+			bool is_exit_block = false;
+			bool is_loop_head = false;
 		};
 	} // namespace llvmext
 
@@ -26,7 +31,8 @@ namespace ara::graph {
 		/**
 		 * Workaround for function specific additional attributes, since we cannot inherit the function class.
 		 */
-		std::map<llvm::Function*, llvmext::Function> functions;
+		std::map<const llvm::Function*, llvmext::Function> functions;
+		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
 
 		LLVMData() : module(nullptr) {}
 
