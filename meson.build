@@ -37,7 +37,7 @@ subdir('common')
 subdir('graph')
 subdir('steps')
 
-python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir])
+python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir, llvm_data_dir])
 
 
 dump_cmds = files('utils/dump_cmds.py')

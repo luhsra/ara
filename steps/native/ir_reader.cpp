@@ -8,8 +8,6 @@
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
 
-static llvm::LLVMContext context;
-
 namespace ara::step {
 	std::string IRReader::get_description() const { return "Parser IR files and link together to an LLVM module"; }
 
@@ -36,6 +34,7 @@ namespace ara::step {
 		// link the modules
 		// use first module a main module
 		logger.debug() << "Startfile: '" << files.at(0) << "'" << std::endl;
+		llvm::LLVMContext& context = graph.get_llvm_data().get_context();
 		auto composite = load_file(files.at(0), context);
 		if (composite.get() == 0) {
 			logger.err() << "Error loading file '" << files.at(0) << "'" << std::endl;
@@ -67,6 +66,6 @@ namespace ara::step {
 		}
 
 		// convert unique_ptr to shared_ptr
-		graph.initialize_module(std::move(composite));
+		graph.get_llvm_data().initialize_module(std::move(composite));
 	}
 } // namespace ara::step

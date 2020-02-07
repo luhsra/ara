@@ -42,13 +42,6 @@ namespace ara::graph {
 		return str;
 	}
 
-	llvm::Module& Graph::get_module() { return **module; }
-
-	void Graph::initialize_module(std::unique_ptr<llvm::Module> module) {
-		assert(*(this->module) == nullptr);
-		*(this->module) = std::move(module);
-	}
-
 	// ABB functions
 	const llvm::CallBase* CFG::get_call_base(const ABBType type, const llvm::BasicBlock& bb) const {
 		if (!(type == ABBType::call || type == ABBType::syscall)) {

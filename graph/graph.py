@@ -1,4 +1,4 @@
-import pyllco
+import llvm_data
 
 import graph_tool
 import graph_tool.util
@@ -130,7 +130,7 @@ class Graph:
 
     def __init__(self):
         # should be used only from C++, see graph.h
-        self._llvm = pyllco.Module()
+        self._llvm_data = llvm_data.PyLLVMData()
         self._init_cfg()
         self.os = None
         self.call_graphs = {}

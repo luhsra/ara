@@ -9,7 +9,7 @@ stepmanager then fulfils this dependencies.
 
 cimport cstep
 cimport cgraph
-cimport pyllco
+cimport llvm_data
 
 from bb_split cimport BBSplit
 from cdummy cimport CDummy
@@ -212,8 +212,8 @@ cdef class NativeStep(SuperStep):
         return [x.decode('UTF-8') for x in deps]
 
     def run(self, g):
-        cdef pyllco.Module llvm_w = g._llvm
-        cdef cgraph.Graph gwrap = cgraph.Graph(g, llvm_w._mod)
+        cdef llvm_data.PyLLVMData llvm_w = g._llvm_data
+        cdef cgraph.Graph gwrap = cgraph.Graph(g, llvm_w._c_data)
         self._c_pass.run(gwrap)
 
     def get_name(self) -> str:
