@@ -3,7 +3,7 @@
 		"CFGPreparation",
 		{
 			"name": "CFGPreparation",
-			"pass_list": "mem2reg,constprop,dce"
+			"pass_list": "mem2reg,dce"
 		}
 	]
 }

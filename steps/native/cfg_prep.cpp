@@ -20,13 +20,28 @@ namespace ara::step {
 
 	void CFGPreparation::run(graph::Graph& graph) {
         Module& module = graph.get_module();
-        FunctionPassManager fpm(true);
+        // Initialize LLVM Managers
+        ModulePassManager mpm(true);
+        ModuleAnalysisManager mam;
         FunctionAnalysisManager fam;
+        CGSCCAnalysisManager cgsccam;
+        LoopAnalysisManager lam;
+        // Initialize PassBuilder and register Analyses
         PassBuilder pb;
+        pb.registerModuleAnalyses(mam);
+        pb.registerCGSCCAnalyses(cgsccam);
+        pb.registerFunctionAnalyses(fam);
+        pb.registerLoopAnalyses(lam);
+        pb.crossRegisterProxies(lam, fam, cgsccam, mam);
+
+        assert(pass_list.get().second);
+        logger.debug() << "Specified pass list is: " << pass_list.get().first << std::endl;
 
         // Parse pass list from command line options
-        // TODO Handle Error returned from parsePassPipeline
-        pb.parsePassPipeline(fpm, StringRef(pass_list.get().first), true, true);
+        // TODO Fix pass_list
+        if (auto error = pb.parsePassPipeline(mpm, StringRef(pass_list.get().first), true, true)) {
+            abort();
+        }
 
         //fpm.dumpPasses();
 
@@ -39,7 +54,14 @@ namespace ara::step {
                 function.removeFnAttr(Attribute::OptimizeNone);
             }
 
-            fpm.run(function, fam);
+            // TODO Enable LLVM's "per-Pass-dump" and redirect LLVM ostream to ara's if necessary
+            function.dump();
+        }
+        mpm.run(module, mam);
+        for (auto& function : module) {
+            if (function.empty())
+                continue;
+
             // TODO Enable LLVM's "per-Pass-dump" and redirect LLVM ostream to ara's if necessary
             function.dump();
         }
