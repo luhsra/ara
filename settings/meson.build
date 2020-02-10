@@ -73,6 +73,7 @@ objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
 ara_gen_cmd = [sh.full_path(),
                '@INPUT@',
                '--output_file', '@OUTPUT0@',
+			   '--dependency_file', '@DEPFILE@',
               ]
 
 

@@ -41,6 +41,7 @@ def main():
     parser.add_argument('--output_file', help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE",
                         help="settings for individual steps. '-' is STDIN")
+    parser.add_argument('--dependency_file', help="file to write make-style dependencies into for build system integration")
 
     args = parser.parse_args()
 

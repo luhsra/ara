@@ -1,4 +1,6 @@
 """Container for Generator."""
+import os
+import sys
 import graph
 
 from native_step import Step
@@ -39,10 +41,16 @@ class Generator(Step):
                                  step_name=self.get_name(),
                                  glob=True,
                                  ty=String())
+        self.dep_file = Option('dependency_file',
+                               help='file to write make-style dependencies into for build system integration',
+                               step_name=self.get_name(),
+                               glob=True,
+                               ty=String())
         self.opts.append(self.arch)
         self.opts.append(self.os)
         self.opts.append(self.syscall_style)
         self.opts.append(self.out_file)
+        self.opts.append(self.dep_file)
 
     def get_dependencies(self):
         return ['SSE']
@@ -64,3 +72,13 @@ class Generator(Step):
                       logger=self._log)
 
         gen.generate(self.out_file.get())
+
+        dep_file = self.dep_file.get()
+        if dep_file:
+            ara_file = sys.modules['__main__'].__file__
+            base_path = os.path.dirname(ara_file)
+            src_files = [getattr(m, '__file__') for m in sys.modules.values()
+                         if base_path in getattr(m, '__file__', '')]
+            with open(dep_file, 'w') as fd:
+                fd.write(gen.file_prefix + ": ")
+                fd.write("\\\n".join(src_files))

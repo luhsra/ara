@@ -47,6 +47,7 @@ foreach app : ['a',
     name_prefix = 'freertos-' + app + '-' + t
     os_target = custom_target(name_prefix + '-os',
                               input: ll_target,
+                              depfile: name_prefix+ '-os.cc.dep',
                               output: [name_prefix + '-os.cc',
                                        name_prefix + '-os.cc.startup.s'],
                               command: get_variable('ara_gen_' + t)

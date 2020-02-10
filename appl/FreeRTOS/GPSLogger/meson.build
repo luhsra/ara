@@ -45,6 +45,7 @@ gpslogger_runtarget = run_target('gpslogger-full',
 
 gpslogger_full_static_os = custom_target('gpslogger-instances_full_static-os',
                                          input: gpslogger_targets,
+										 depfile: 'instances_full_static-os.cc.dep',
                                          output: 'instances_full_static-os.cc',
                                          command: ara_gen_instances_full_static,
                                         )
