@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/types.h>
 #include "client.h"
 #include "cloud.h"
 
-typedef int time_t;
+//typedef int time_t;
 
 uint8_t getUint8FromHexChar(char c)
 {
