@@ -1,7 +1,7 @@
 #ifndef __OS_KRN_HELPER
 #define __OS_KRN_HELPER
 
-#include "../arch/posix/machine.h"
+#include "machine.h"
 
 /**
  * @file

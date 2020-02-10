@@ -103,7 +103,7 @@ foreach app : [['a',                     'a.oil'],
                             output : ['osek-' + app[0] + '.ll'],
                             depfile : 'osek-' + app[0] + '.ll.dep',
                             command : clang_cpp +
-                                      osek_includes +
+                                      libs_includes +
                                       ir_flags +
                                       clang_flags)
     set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])

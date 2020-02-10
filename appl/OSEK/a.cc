@@ -1,6 +1,6 @@
-#include "source/os.h"
-#include "source/test/test.h"
-#include "source/machine.h"
+#include "os.h"
+#include "test/test.h"
+#include "machine.h"
 
 
 // Test memory protection (spanning over more than one 4k page in x86)
