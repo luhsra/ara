@@ -1,6 +1,7 @@
 settings_dir = meson.current_source_dir()
 clang = find_program('clang', version: llvm_version)
 # llc = find_program('llc', version: llvm_version)
+bash = find_program('bash')
 nop = find_program('true')
 
 # compiler flags to generate annotated IR
@@ -70,7 +71,7 @@ ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']
 llc_cmd = ['llc', '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ]
 objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
 
-ara_gen_cmd = [sh.full_path(),
+ara_gen_cmd = [bash, sh,
                '@INPUT@',
                '--output_file', '@OUTPUT0@',
 			   '--dependency_file', '@DEPFILE@',
