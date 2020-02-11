@@ -8,7 +8,7 @@ from graph.argument import CallPath
 # TODO make this a dataclass once we use Python 3.7
 class Task:
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
-                 priority, handle_p, abb, is_regular=True):
+                 priority, handle_p, abb, branch, is_regular=True):
         self.cfg = cfg
         self.entry_abb = entry_abb
         self.name = name
@@ -18,6 +18,7 @@ class Task:
         self.priority = priority
         self.handle_p = handle_p
         self.abb = abb
+        self.branch = branch
         self.is_regular = is_regular
 
     def __repr__(self):
@@ -35,7 +36,7 @@ class FreeRTOS:
     @staticmethod
     def interpret(cfg, abb, state):
         syscall = cfg.get_syscall_name(abb)
-        print(syscall)
+        print("FreeRTOS Syscall:", syscall)
         return getattr(FreeRTOS, syscall)(cfg, abb, state)
 
     @staticmethod
@@ -74,7 +75,7 @@ class FreeRTOS:
                                          priority=task_priority,
                                          handle_p=task_handle_p,
                                          abb=abb,
-        )
+                                         branch=state.branch)
         state.next_abbs = []
 
         # next abbs
@@ -97,6 +98,7 @@ class FreeRTOS:
                                          priority='( tskIDLE_PRIORITY | portPRIVILEGE_BIT )',
                                          handle_p=0,
                                          abb=abb,
+                                         branch=state.branch,
                                          is_regular=False,
         )
         state.next_abbs = []
