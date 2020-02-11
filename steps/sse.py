@@ -189,11 +189,13 @@ class InstanceGraph(AbstractOS):
 
                     new_states.append(new_state)
 
-            elif self.icfg.vp.is_exit[abb]:
+            elif (self.icfg.vp.is_exit[abb] and
+                  self.icfg.vertex(abb).out_degree() > 0):
                 new_state = state.copy()
                 call = new_state.callgraph.vp.cfglink[new_state.call]
                 neighbors = self.lcfg.vertex(call).out_neighbors()
                 new_state.next_abbs = [next(neighbors)]
+                print(self.icfg.vp.name[abb])
                 new_state.call = next(state.call.in_neighbors())
                 new_states.append(new_state)
 
