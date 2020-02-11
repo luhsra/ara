@@ -19,11 +19,11 @@ ld_flags = ['-Wl,--gc-sections',
 ir_flags = ['-S', '-emit-llvm',]
 obj_flags = ['-c']
 
+arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
+
 if get_option('arch') == 'i386'
   target_triple='x86_64-linux-gnu'
   clang_flags += '--target=i386-pc-linux-gnu'
-  ar = find_program('ar')
-  objcopy = find_program('objcopy')
 elif get_option('arch') == 'arm'
   target_triple = 'arm-none-eabi'
   clang_flags += ['--target='+target_triple,
@@ -56,10 +56,16 @@ elif get_option('arch') == 'arm'
 else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
-ar = find_program(target_triple + '-ar')
-objcopy = find_program(target_triple + '-objcopy')
-size = find_program(target_triple + '-size')
-nm = find_program(target_triple + '-nm')
+
+foreach prog_name : ['ar', 'objcopy', 'size', 'nm']
+    full_prog_name = target_triple + '-' + prog_name
+    prog = find_program(full_prog_name, required: false)
+    if not prog.found()
+        error(arch_error.format(get_option('arch').to_upper()))
+    endif
+    set_variable(prog_name, prog)
+endforeach
+
 compare_nm += nm.path()
 
 clang_flags += '-Wno-everything'
@@ -79,7 +85,7 @@ objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
 ara_gen_cmd = [bash, sh,
                '@INPUT@',
                '--output_file', '@OUTPUT0@',
-			   '--dependency_file', '@DEPFILE@',
+               '--dependency_file', '@DEPFILE@',
               ]
 
 
