@@ -60,6 +60,7 @@ ar = find_program(target_triple + '-ar')
 objcopy = find_program(target_triple + '-objcopy')
 size = find_program(target_triple + '-size')
 nm = find_program(target_triple + '-nm')
+compare_nm += nm.path()
 
 clang_flags += '-Wno-everything'
 c_std = '-std=c11'

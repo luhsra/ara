@@ -43,6 +43,7 @@ foreach app : ['a',
                             output : ['freertos-' + app + '.ll.o'],
                             command : llc_cmd)
 
+  named_elf_targets = []
   elf_targets = []
   foreach t : ara_gen_freertos_targets
     name_prefix = 'freertos-' + app + '-' + t
@@ -72,9 +73,11 @@ foreach app : ['a',
     run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
     run_target('size_' + name_prefix, command: [size, elf_target])
 	elf_targets += elf_target
+	named_elf_targets += [t, elf_target]
 
   endforeach
 
+  run_target('compare_nm-' + app, command: [compare_nm,  named_elf_targets])
   run_target('compare_size-' + app, command: [size, elf_targets])
 
   freertos_targets += ll_target
