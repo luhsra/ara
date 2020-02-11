@@ -46,8 +46,8 @@ namespace ara::step {
 			cfg.is_entry[o_edge.first] = is_entry;
 
 			assert(entry == exit);
-			cfg.is_exit = get(llvm_data.basic_blocks, entry, false, false);
-			cfg.is_loop_head = get(llvm_data.basic_blocks, entry, false, true);
+			cfg.is_exit[abb] = get(llvm_data.basic_blocks, entry, false, false);
+			cfg.is_loop_head[abb] = get(llvm_data.basic_blocks, entry, false, true);
 
 			return abb;
 		}
