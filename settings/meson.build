@@ -20,11 +20,13 @@ ir_flags = ['-S', '-emit-llvm',]
 obj_flags = ['-c']
 
 if get_option('arch') == 'i386'
+  target_triple='x86_64-linux-gnu'
   clang_flags += '--target=i386-pc-linux-gnu'
   ar = find_program('ar')
   objcopy = find_program('objcopy')
 elif get_option('arch') == 'arm'
-  clang_flags += ['--target=arm-none-eabi',
+  target_triple = 'arm-none-eabi'
+  clang_flags += ['--target='+target_triple,
                   '-mthumb',
                   '-mcpu=cortex-m3',
                   '-march=armv7-m',
@@ -51,11 +53,13 @@ elif get_option('arch') == 'arm'
                '-nodefaultlibs',
                '-lc',
               ]
-  ar = find_program('arm-none-eabi-ar')
-  objcopy = find_program('arm-none-eabi-objcopy')
 else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
+ar = find_program(target_triple + '-ar')
+objcopy = find_program(target_triple + '-objcopy')
+size = find_program(target_triple + '-size')
+nm = find_program(target_triple + '-nm')
 
 clang_flags += '-Wno-everything'
 c_std = '-std=c11'
