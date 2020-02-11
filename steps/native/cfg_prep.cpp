@@ -1,7 +1,9 @@
 // vim: set noet ts=4 sw=4:
 
 #include "cfg_prep.h"
+#include "logging.h"
 #include <cassert>
+#include <llvm/Support/Error.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Transforms/Utils.h>
@@ -19,13 +21,17 @@ namespace ara::step {
 	void CFGPreparation::fill_options() { opts.emplace_back(pass_list); }
 
 	void CFGPreparation::run(graph::Graph& graph) {
+        bool dbg_flag = log_level.get().first == "debug";
+        Logger::LogStream& crit_logger = logger.crit();
         Module& module = graph.get_module();
+
         // Initialize LLVM Managers
-        ModulePassManager mpm(true);
-        ModuleAnalysisManager mam;
-        FunctionAnalysisManager fam;
-        CGSCCAnalysisManager cgsccam;
-        LoopAnalysisManager lam;
+        ModulePassManager mpm(dbg_flag);
+        ModuleAnalysisManager mam(dbg_flag);
+        FunctionAnalysisManager fam(dbg_flag);
+        CGSCCAnalysisManager cgsccam(dbg_flag);
+        LoopAnalysisManager lam(dbg_flag);
+
         // Initialize PassBuilder and register Analyses
         PassBuilder pb;
         pb.registerModuleAnalyses(mam);
@@ -34,16 +40,12 @@ namespace ara::step {
         pb.registerLoopAnalyses(lam);
         pb.crossRegisterProxies(lam, fam, cgsccam, mam);
 
-        assert(pass_list.get().second);
-        logger.debug() << "Specified pass list is: " << pass_list.get().first << std::endl;
-
         // Parse pass list from command line options
-        // TODO Fix pass_list
         if (auto error = pb.parsePassPipeline(mpm, StringRef(pass_list.get().first), true, true)) {
+            logAllUnhandledErrors(std::move(error), crit_logger.llvm_ostream(), "[Parse Error] ");
+            crit_logger.flush();
             abort();
         }
-
-        //fpm.dumpPasses();
 
         for (auto& function : module) {
             if (function.empty())
@@ -54,17 +56,19 @@ namespace ara::step {
                 function.removeFnAttr(Attribute::OptimizeNone);
             }
 
-            // TODO Enable LLVM's "per-Pass-dump" and redirect LLVM ostream to ara's if necessary
-            function.dump();
+            // TODO Add an option for enabling IR dump on console
+            //function.dump();
         }
         mpm.run(module, mam);
-        for (auto& function : module) {
+        /*for (auto& function : module) {
             if (function.empty())
                 continue;
 
-            // TODO Enable LLVM's "per-Pass-dump" and redirect LLVM ostream to ara's if necessary
-            function.dump();
-        }
+            // TODO Add an option for enabling IR dump on console
+            //function.dump();
+        }*/
+
+        mam.clear();
 		logger.debug() << this->get_name() << " step finished successfully. " << std::endl;
 	}
 } // namespace ara::step

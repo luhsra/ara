@@ -1,9 +1,8 @@
 {
 	"steps": [
-		"CFGPreparation",
 		{
 			"name": "CFGPreparation",
-			"pass_list": "mem2reg,dce"
+			"pass_list": "module(function(mem2reg,dce,sccp))"
 		}
 	]
 }

@@ -2,15 +2,16 @@
 
 #pragma once
 
-#include "option.h"
 #include "step.h"
+#include "option.h"
+#include <string>
 
 #include <graph.h>
 
 namespace ara::step {
 	class CFGPreparation : public Step {
 	  private:
-          ara::option::TOption<ara::option::String> pass_list{"pass_list", "List of LLVM Passes to be executed."};
+          ara::option::TOption<ara::option::String> pass_list{"pass_list", "List of LLVM Passes to be executed. For Syntax see: https://llvm.org/doxygen/PassBuilder_8h_source.html#l00410"};
 		virtual void fill_options() override;
 	  public:
 		virtual std::string get_name() const override { return "CFGPreparation"; }
