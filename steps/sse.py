@@ -38,12 +38,11 @@ class State:
 
     def copy(self):
         scopy = State()
-        scopy.cfg = self.cfg
-        scopy.next_abbs = self.next_abbs
         scopy.instances = self.instances.copy()
-        scopy.callgraph = self.callgraph
-        scopy.call = self.call
-        scopy.branch = self.branch
+        for key, value in self.__dict__.items():
+            if key == 'instances':
+                continue
+            setattr(scopy, key, value)
         return scopy
 
 
