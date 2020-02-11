@@ -19,8 +19,6 @@ ld_flags = ['-Wl,--gc-sections',
 ir_flags = ['-S', '-emit-llvm',]
 obj_flags = ['-c']
 
-arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
-
 if get_option('arch') == 'i386'
   target_triple='x86_64-linux-gnu'
   clang_flags += '--target=i386-pc-linux-gnu'
@@ -56,6 +54,8 @@ elif get_option('arch') == 'arm'
 else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
+
+arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
 
 foreach prog_name : ['ar', 'objcopy', 'size', 'nm']
     full_prog_name = target_triple + '-' + prog_name
