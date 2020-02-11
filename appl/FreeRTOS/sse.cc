@@ -74,6 +74,11 @@ int main(void) {
 		createTasks("Task 1", "Task 2");
 	}
 	createTasks("Task 3", "Task 4");
+
+	for (int i = 0; i < 5; ++i) {
+		xTaskCreate(vTask2, "Task5", 1000, NULL, 1, NULL);
+	}
+
 	vTaskStartScheduler();
 
 	for (;;)
