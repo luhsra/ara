@@ -1,5 +1,7 @@
 """Container for SSE step."""
 import graph_tool
+import logging
+import functools
 
 import graph
 
@@ -9,10 +11,11 @@ from native_step import Step
 from .option import Option, String, Choice
 from .freertos import Task
 
-from itertools import chain
 from collections import defaultdict
-
 from enum import Enum
+from itertools import chain
+from graph_tool.topology import dominator_tree, label_out_component
+
 
 
 class State:
@@ -24,10 +27,11 @@ class State:
         self.next_abbs = next_abbs
 
         self.instances = graph_tool.Graph()
-        self.call = None
+        self.call = None # call node within the call graph
+        self.branch = False # is this state coming from a branch or loop
 
     def __repr__(self):
-        ret = 'State('
+        ret = f'State(Branch: {self.branch}, '
         abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
         ret += ', '.join(abbs)
         return ret + ')'
@@ -39,6 +43,7 @@ class State:
         scopy.instances = self.instances.copy()
         scopy.callgraph = self.callgraph
         scopy.call = self.call
+        scopy.branch = self.branch
         return scopy
 
 
@@ -60,8 +65,11 @@ class AbstractOS:
 class InstanceGraph(AbstractOS):
     def __init__(self, g, state, entry_func, step_manager, dump, dump_prefix):
         super().__init__(g)
+        self._log = logging.getLogger("SSE.InstanceGraph")
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
+        self.func_branch = self.g.call_graphs[entry_func].new_vp("bool")
+
         self._step_manager = step_manager
         if dump:
             self.dump_prefix = dump_prefix
@@ -78,9 +86,59 @@ class InstanceGraph(AbstractOS):
             self.instances = self.g.instances
         self.new_entry_points = set()
 
-    def states_are_equal(state1, state2):
-        equal = bool(state1.next_abbs & state2.next_abbs)
-        return equal
+        state.call = self._find_tree_root(self.g.call_graphs[entry_func])
+
+    def _find_tree_root(self, graph):
+        if graph.num_vertices() == 0:
+            return None
+        node = next(graph.vertices())
+        while node.in_degree() != 0:
+            node = next(node.in_neighbors())
+        return node
+
+    def _create_call_map(self, entry_func):
+        """Create a mapping  'call node -> node index in call_graph'."""
+        cg = self.g.call_graphs[entry_func]
+        call_map = {}
+        for v in cg.vertices():
+            call_map[cg.vp.cfglink[v]] = v
+        return call_map
+
+    @functools.lru_cache(maxsize=32)
+    def _create_dom_tree(self, func):
+        """Create a dominator tree of the local control flow for func."""
+        abb = self.g.cfg.get_entry_abb(func)
+        comp = label_out_component(self.lcfg, self.lcfg.vertex(abb))
+        func_cfg = graph.CFGView(self.lcfg,
+                                 vfilt=comp)
+        dom_tree = dominator_tree(func_cfg, func_cfg.vertex(abb))
+
+        return dom_tree
+
+    def _dominates(self, abb_x, abb_y):
+        """Does abb_x dominate abb_y?"""
+        func = self.g.cfg.get_function(abb_x)
+        func_other = self.g.cfg.get_function(abb_y)
+        if func != func_other:
+            return False
+        dom_tree = self._create_dom_tree(func)
+        while abb_y:
+            if abb_x == abb_y:
+                return True
+            abb_y = dom_tree[abb_y]
+        print("No")
+        return False
+
+    @functools.lru_cache(maxsize=32)
+    def _find_exit_abbs(self, func):
+        return [x for x in func.out_neighbors()
+                if self.g.cfg.vp.is_exit[x] or self.g.cfg.vp.is_loop_head[x]]
+
+    def _is_in_condition_or_loop(self, abb):
+        """Is abb part of a condition or loop?"""
+        func = self.g.cfg.get_function(abb)
+        return not all([self._dominates(abb, x)
+                        for x in self._find_exit_abbs(func)])
 
     def _extract_entry_points(self):
         for v in self.instances.vertices():
@@ -101,13 +159,6 @@ class InstanceGraph(AbstractOS):
                                                    "entry_point": func_name})
                 self.new_entry_points.add(os_obj)
 
-    def _create_call_map(self, entry_func):
-        cg = self.g.call_graphs[entry_func]
-        call_map = {}
-        for v in cg.vertices():
-            call_map[cg.vp.cfglink[v]] = v
-        return call_map
-
     def execute(self, state):
         new_states = []
         state.instances = self.instances
@@ -115,19 +166,29 @@ class InstanceGraph(AbstractOS):
             if self.visited[state.call][abb]:
                 continue
             self.visited[state.call][abb] = True
+
             if self.icfg.vp.type[abb] == graph.ABBType.syscall:
+                fake_state = state.copy()
+                fake_state.branch = (self.func_branch[state.call] or
+                                     self._is_in_condition_or_loop(abb))
                 assert self.g.os is not None
-                new_state = self.g.os.interpret(self.g.cfg, abb, state)
+                new_state = self.g.os.interpret(self.g.cfg, abb, fake_state)
                 self.instances = new_state.instances
                 self._extract_entry_points()
                 new_states.append(new_state)
+
             elif self.icfg.vp.type[abb] == graph.ABBType.call:
                 for n in self.icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
+                    print(state.call)
+                    new_state.branch = (self.func_branch[state.call] or
+                                        self._is_in_condition_or_loop(abb))
                     new_state.call = self.call_map[abb]
+                    self.func_branch[new_state.call] = new_state.branch
 
                     new_states.append(new_state)
+
             elif self.icfg.vp.is_exit[abb]:
                 new_state = state.copy()
                 call = new_state.callgraph.vp.cfglink[new_state.call]
@@ -135,6 +196,7 @@ class InstanceGraph(AbstractOS):
                 new_state.next_abbs = [next(neighbors)]
                 new_state.call = next(state.call.in_neighbors())
                 new_states.append(new_state)
+
             else:
                 for n in self.icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
@@ -149,6 +211,8 @@ class InstanceGraph(AbstractOS):
         return
 
     def finish(self, sstg):
+        self._log.debug(f"_create_dom_tree {self._create_dom_tree.cache_info()}")
+        self._log.debug(f"_find_exit_abbs  {self._find_exit_abbs.cache_info()}")
         self.g.instances = self.instances
         if self.dump_prefix:
             # TODO quick and dirty, implement in printer with UUID
