@@ -136,3 +136,4 @@ class Graph:
         self.os = None
         self.call_graphs = {}
         self.instances = None
+        self.step_data = {}

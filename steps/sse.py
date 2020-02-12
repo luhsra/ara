@@ -1,5 +1,6 @@
 """Container for SSE step."""
 import graph_tool
+import copy
 import logging
 import functools
 
@@ -10,6 +11,7 @@ import pyllco
 from native_step import Step
 from .option import Option, String, Choice
 from .freertos import Task
+from util import VarianceDict
 
 from collections import defaultdict
 from enum import Enum
@@ -65,12 +67,14 @@ class AbstractOS:
 
 
 class InstanceGraph(AbstractOS):
-    def __init__(self, step, g, state, entry_func, step_manager,
+    def __init__(self, step, g, side_data, state, entry_func, step_manager,
                  dump, dump_prefix):
         super().__init__(step, g)
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
         self.func_branch = self.g.call_graphs[entry_func].new_vp("bool")
+        self.side_data = side_data
+        self.side_data.add(entry_func)
 
         self._step_manager = step_manager
         if dump:
@@ -87,8 +91,22 @@ class InstanceGraph(AbstractOS):
         else:
             self.instances = self.g.instances
         self.new_entry_points = set()
+        self.ig_runs = copy.copy(self.side_data)
 
         state.call = self._find_tree_root(self.g.call_graphs[entry_func])
+        state.scheduler_on = self._is_chained_analysis(entry_func)
+
+    def _is_chained_analysis(self, entry_func):
+        for v in self.instances.vertices():
+            os_obj = self.instances.vp.obj[v]
+            if isinstance(os_obj, Task):
+                entry = self.g.cfg.vertex(os_obj.entry_abb)
+                func_name = self.g.cfg.vp.name[
+                    self.g.cfg.get_function(entry)
+                ]
+                if func_name == entry_func:
+                    return True
+        return False
 
     def _find_tree_root(self, graph):
         if graph.num_vertices() == 0:
@@ -151,13 +169,15 @@ class InstanceGraph(AbstractOS):
                     func_name = self.g.cfg.vp.name[
                         self.g.cfg.get_function(entry)
                     ]
-                    # order is different here, the first chained step will be
-                    # the last executed one
-                    self._step_manager.chain_step({"name": "SSE",
-                                                   "entry_point": func_name,
-                                                   "flavor": SSE.Flavor.Instances})
-                    self._step_manager.chain_step({"name": "CallGraph",
-                                                   "entry_point": func_name})
+                    if func_name not in self.ig_runs:
+                        # order is different here, the first chained step will be
+                        # the last executed one
+                        self._step_manager.chain_step({"name": "SSE",
+                                                       "entry_point": func_name,
+                                                       "flavor": SSE.Flavor.Instances})
+                        self._step_manager.chain_step({"name": "CallGraph",
+                                                       "entry_point": func_name})
+                        self.ig_runs.add(func_name)
                 self.new_entry_points.add(os_obj)
 
     def execute(self, state):
@@ -223,6 +243,12 @@ class InstanceGraph(AbstractOS):
             inst.save(f"State.{time.time()}.dot")
 
 
+# TODO make this a dataclass, when ready
+class SSEStepData:
+    def __init__(self):
+        self.flavor_data = VarianceDict()
+
+
 class SSE(Step):
     """Apply an OS wide analysis in different depths.
 
@@ -256,6 +282,8 @@ class SSE(Step):
         if not entry_label:
             self._fail("Entry point must be given.")
 
+        step_data = self._get_step_data(g, SSEStepData)
+
         # find main
         entry_func = g.cfg.get_function_by_name(entry_label)
         entry_abb = g.cfg.get_entry_abb(entry_func)
@@ -267,6 +295,7 @@ class SSE(Step):
         if flav == SSE.Flavor.Instances:
             flavor = InstanceGraph(
                 self, g,
+                step_data.flavor_data.get(SSE.Flavor.Instances, set()),
                 entry, entry_label,
                 self._step_manager, self.dump.get(),
                 self.dump_prefix.get()

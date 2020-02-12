@@ -141,6 +141,11 @@ class Step(SuperStep):
         self.opts = [self.log_level, self.dump, self.dump_prefix]
         self._fill_options()
 
+    def _get_step_data(self, g, data_class):
+        if self.get_name() not in g.step_data:
+            g.step_data[self.get_name()] = data_class()
+        return g.step_data[self.get_name()]
+
     def apply_config(self, config):
         for option in self.opts:
             option.check(config)
