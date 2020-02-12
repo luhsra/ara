@@ -2,6 +2,7 @@ from .oil import OilStep
 from .syscall import Syscall
 from .abb_merge import ABBMerge
 from .printer import Printer
+from .cfg_stats import CFGStats
 from .dummy import Dummy
 
 import py_logging
@@ -15,6 +16,7 @@ def provide_steps():
         yield step
 
     yield ABBMerge()
+    yield CFGStats()
     yield Dummy()
     yield OilStep()
     yield Printer()

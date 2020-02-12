@@ -113,6 +113,12 @@ test('cfg_prep_no_args',
    env : [python_path]
 )
 
+test('cfg_stats',
+   py3_inst,
+   args: [files('../ara.py'), files('../build/appl/FreeRTOS/GPSLogger/gpslogger-Src_GPSLogger.ll'), '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'debug'],
+   env : [python_path]
+)
+
 test('dummy-test',
    py3_inst,
    args: [files('../ara.py'), 'empty', '--os', 'FreeRTOS',
