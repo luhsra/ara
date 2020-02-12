@@ -195,6 +195,7 @@ class StepManager:
             step.set_step_manager(self)
             self._steps[step.get_name()] = step
         self.execute_chain = None
+        self.current_step_index = None
         self.current_step = None
         self._solver = None
 
@@ -219,8 +220,12 @@ class StepManager:
                 "chain_step cannot be called when no step is running."
             )
         self._log.debug(f"A new step was requested {step_config}")
-        self._solver.chain_step(self.execute_chain, self.current_step,
+        self._solver.chain_step(self.execute_chain, self.current_step_index,
                                 step_config)
+
+    def get_execution_id(self):
+        """Get UUID of currently executing step."""
+        return self.current_step
 
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
@@ -270,15 +275,18 @@ class StepManager:
                 self._log.debug(f"{step.name} (UUID: {step.uuid})")
 
         for index, step in enumerate(self.execute_chain):
-            self.current_step = index
+            self.current_step_index = index
             if isinstance(step, ConfigEvent):
                 config_manager.apply_new_config(step)
             else:
                 self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
+                self.current_step = step.uuid
 
                 time_before = time.time()
                 self._steps[step.name].run(self._graph)
                 time_after = time.time()
+
+                self.current_step = None
 
                 self._log.debug(f"{step.name} had a runtime of "
                                 f"{time_after-time_before:0.2f}s.")
