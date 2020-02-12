@@ -48,7 +48,7 @@ class State:
         return scopy
 
 
-class AbstractOS:
+class Flavor:
     def __init__(self, step, g):
         self.step = step
         self.g = g
@@ -66,7 +66,7 @@ class AbstractOS:
         return new_states
 
 
-class InstanceGraph(AbstractOS):
+class InstanceGraph(Flavor):
     def __init__(self, step, g, side_data, state, entry_func, step_manager,
                  dump, dump_prefix):
         super().__init__(step, g)
