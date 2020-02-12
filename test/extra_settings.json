@@ -20,5 +20,11 @@
 
 	"LLVMMap": {
 		"log_level": "info"
+	},
+	"ValueAnalysis": {
+		"log_level": "info"
+	},
+	"ValueAnalysisCore": {
+		"log_level": "info"
 	}
 }
