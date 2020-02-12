@@ -218,6 +218,7 @@ class StepManager:
             raise StepManagerException(
                 "chain_step cannot be called when no step is running."
             )
+        self._log.debug(f"A new step was requested {step_config}")
         self._solver.chain_step(self.execute_chain, self.current_step,
                                 step_config)
 
