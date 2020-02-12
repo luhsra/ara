@@ -8,7 +8,8 @@ from graph.argument import CallPath
 # TODO make this a dataclass once we use Python 3.7
 class Task:
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
-                 priority, handle_p, abb, branch, is_regular=True):
+                 priority, handle_p, abb, branch, after_scheduler,
+                 is_regular=True):
         self.cfg = cfg
         self.entry_abb = entry_abb
         self.name = name
@@ -19,6 +20,7 @@ class Task:
         self.handle_p = handle_p
         self.abb = abb
         self.branch = branch
+        self.after_scheduler = after_scheduler
         self.is_regular = is_regular
 
     def __repr__(self):
@@ -65,6 +67,8 @@ class FreeRTOS:
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
 
+        after_scheduler = hasattr(state, 'scheduler_on') and state.scheduler_on
+
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
@@ -75,7 +79,8 @@ class FreeRTOS:
                                          priority=task_priority,
                                          handle_p=task_handle_p,
                                          abb=abb,
-                                         branch=state.branch)
+                                         branch=state.branch,
+                                         after_scheduler=after_scheduler)
         state.next_abbs = []
 
         # next abbs
@@ -99,12 +104,10 @@ class FreeRTOS:
                                          handle_p=0,
                                          abb=abb,
                                          branch=state.branch,
-                                         is_regular=False,
-        )
+                                         after_scheduler=False,
+                                         is_regular=False)
         state.next_abbs = []
-
-        # next abbs
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        state.scheduler_on = True
         return state
 #     {
 #         "name": "vTaskNotifyGiveFromISR",
