@@ -47,8 +47,11 @@ class State:
 
 
 class AbstractOS:
-    def __init__(self, g):
+    def __init__(self, step, g):
+        self.step = step
         self.g = g
+        self._log = logging.getLogger(f"{step.get_name()}."
+                                      f"{self.__class__.__name__}")
 
         self.icfg = graph.CFGView(g.cfg,
                                   efilt=g.cfg.ep.type.fa == graph.CFType.icf)
@@ -62,9 +65,9 @@ class AbstractOS:
 
 
 class InstanceGraph(AbstractOS):
-    def __init__(self, g, state, entry_func, step_manager, dump, dump_prefix):
-        super().__init__(g)
-        self._log = logging.getLogger("SSE.InstanceGraph")
+    def __init__(self, step, g, state, entry_func, step_manager,
+                 dump, dump_prefix):
+        super().__init__(step, g)
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
         self.func_branch = self.g.call_graphs[entry_func].new_vp("bool")
@@ -265,8 +268,12 @@ class SSE(Step):
                       next_abbs=[entry_abb])
         flav = self.flavor.get()
         if flav == SSE.Flavor.Instances:
-            flavor = InstanceGraph(g, entry, entry_label, self._step_manager,
-                                   self.dump.get(), self.dump_prefix.get())
+            flavor = InstanceGraph(
+                self, g,
+                entry, entry_label,
+                self._step_manager, self.dump.get(),
+                self.dump_prefix.get()
+            )
         else:
             self._fail("A flavor must be specified")
 
