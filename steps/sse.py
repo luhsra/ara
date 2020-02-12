@@ -128,7 +128,6 @@ class InstanceGraph(AbstractOS):
             if abb_x == abb_y:
                 return True
             abb_y = dom_tree[abb_y]
-        print("No")
         return False
 
     @functools.lru_cache(maxsize=32)
@@ -183,7 +182,6 @@ class InstanceGraph(AbstractOS):
                 for n in self.icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
-                    print(state.call)
                     new_state.branch = (self.func_branch[state.call] or
                                         self._is_in_condition_or_loop(abb))
                     new_state.call = self.call_map[abb]
@@ -197,7 +195,6 @@ class InstanceGraph(AbstractOS):
                 call = new_state.callgraph.vp.cfglink[new_state.call]
                 neighbors = self.lcfg.vertex(call).out_neighbors()
                 new_state.next_abbs = [next(neighbors)]
-                print(self.icfg.vp.name[abb])
                 new_state.call = next(state.call.in_neighbors())
                 new_states.append(new_state)
 
