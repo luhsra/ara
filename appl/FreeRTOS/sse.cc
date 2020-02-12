@@ -88,6 +88,7 @@ int main(void) {
 
 void vTask1(void* pvParameters) {
 	volatile unsigned long ul;
+	xTaskCreate(vTask2, "Task6", 1000, NULL, 1, NULL);
 	for (;;) {
 
 		/* Delay for a period. */
