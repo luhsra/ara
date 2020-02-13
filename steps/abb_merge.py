@@ -83,3 +83,13 @@ class ABBMerge(Step):
                     self._log.debug(f"Set {g.cfg.vp.name[abb]} (calling " +
                                     f"{called_function}) to computation")
                     g.cfg.vp.type[abb] = ABBType.computation
+
+        if self.dump.get():
+            dump_prefix = self.dump_prefix.get()
+            assert dump_prefix
+            uuid = self._step_manager.get_execution_id()
+            dot_file = dump_prefix + f'{uuid}.dot'
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'CFG after ABB merge',
+                                           "subgraph": 'abbs'})
