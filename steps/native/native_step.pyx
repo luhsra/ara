@@ -308,6 +308,9 @@ def provide_test_steps():
             _native_fac(step_fac[Test2Step]())]
 
 # make this name extra long, since we have no namespaces here
-cdef public void chain_step_in_step_manager(object step_manager, string config):
+cdef public void step_manager_chain_step(object step_manager, string config):
     py_config = json.loads(config)
     step_manager.chain_step(py_config)
+
+cdef public string step_manager_get_execution_id(object step_manager):
+    return str(step_manager.get_execution_id()).encode('UTF-8')

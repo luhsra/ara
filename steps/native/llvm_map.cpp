@@ -4,11 +4,13 @@
 
 #include "common/llvm_common.h"
 
+#include <boost/property_tree/json_parser.hpp>
 #include <llvm/Analysis/CFGPrinter.h>
 #include <llvm/IR/BasicBlock.h>
 
 using namespace llvm;
 using namespace std;
+using namespace boost::property_tree;
 
 namespace ara::step {
 
@@ -141,12 +143,28 @@ namespace ara::step {
 		if (prefix_opt.second) {
 			prefix = prefix_opt.first;
 		} else {
-			prefix = "llvm-func.";
+			prefix = "dumps/llvm-func.";
 		}
 		graph::LLVMData& llvm_data = graph.get_llvm_data();
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) { map_cfg(g, cfg, llvm_data, logger, dopt.second && dopt.first, prefix); },
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+
+		std::pair<bool, bool> dump_opt = dump.get();
+		if (dump_opt.second && dump_opt.first) {
+			std::pair<std::string, bool> dump_prefix_opt = dump_prefix.get();
+			assert(dump_prefix_opt.second);
+			std::string uuid = step_manager.get_execution_id();
+			std::string dot_file = dump_prefix_opt.first + uuid + ".dot";
+
+			ptree printer_conf;
+			printer_conf.put("name", "Printer");
+			printer_conf.put("dot", dot_file);
+			printer_conf.put("graph_name", "LLVM CFG");
+			printer_conf.put("subgraph", "abbs");
+
+			step_manager.chain_step(printer_conf);
+		}
 	}
 } // namespace ara::step

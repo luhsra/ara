@@ -35,8 +35,10 @@ namespace ara::step {
 		/**
 		 * See stepmanager.py for a description.
 		 */
-		void chain_step(boost::property_tree::ptree step_config);
-		void chain_step(std::string step_name);
+		void chain_step(const boost::property_tree::ptree& step_config);
+		void chain_step(const std::string step_name);
+
+		std::string get_execution_id();
 	};
 
 	/**
