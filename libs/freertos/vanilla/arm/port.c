@@ -124,7 +124,7 @@ static void prvPortStartFirstTask( void ) __attribute__ (( naked ));
 /*
  * Used to catch tasks that attempt to return from their implementing function.
  */
-static void prvTaskExitError( void );
+void prvTaskExitError( void );
 
 /*-----------------------------------------------------------*/
 
@@ -189,7 +189,7 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
 }
 /*-----------------------------------------------------------*/
 
-static void prvTaskExitError( void )
+void prvTaskExitError( void )
 {
 volatile uint32_t ulDummy = 0UL;
 

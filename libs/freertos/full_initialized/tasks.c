@@ -249,13 +249,13 @@ to its original value when it is released. */
 
 /*lint -save -e956 A manual analysis and inspection has been used to determine
 which static variables must be declared volatile. */
-PRIVILEGED_DATA TCB_t* volatile pxCurrentTCB = NULL;
+extern PRIVILEGED_DATA TCB_t* volatile pxCurrentTCB;
 
 /* Lists for ready and blocked tasks. --------------------
 xDelayedTaskList1 and xDelayedTaskList2 could be move to function scople but
 doing so breaks some kernel aware debuggers and debuggers that rely on removing
 the static qualifier. */
-PRIVILEGED_DATA static List_t pxReadyTasksLists[configMAX_PRIORITIES]; /*< Prioritised ready tasks. */
+extern PRIVILEGED_DATA List_t pxReadyTasksLists[configMAX_PRIORITIES]; /*< Prioritised ready tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList1;                       /*< Delayed tasks. */
 PRIVILEGED_DATA static List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have
                                                     overflowed the current tick count. */
@@ -288,17 +288,17 @@ int FreeRTOS_errno = 0;
 #endif
 
 /* Other file private variables. --------------------------------*/
-PRIVILEGED_DATA static volatile UBaseType_t uxCurrentNumberOfTasks = (UBaseType_t)0U;
+extern PRIVILEGED_DATA volatile UBaseType_t uxCurrentNumberOfTasks;
 PRIVILEGED_DATA static volatile TickType_t xTickCount = (TickType_t)configINITIAL_TICK_COUNT;
-PRIVILEGED_DATA static volatile UBaseType_t uxTopReadyPriority = tskIDLE_PRIORITY;
+extern PRIVILEGED_DATA volatile UBaseType_t uxTopReadyPriority;
 PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunning = pdFALSE;
 PRIVILEGED_DATA static volatile UBaseType_t uxPendedTicks = (UBaseType_t)0U;
 PRIVILEGED_DATA static volatile BaseType_t xYieldPending = pdFALSE;
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = (BaseType_t)0;
-PRIVILEGED_DATA static UBaseType_t uxTaskNumber = (UBaseType_t)0U;
+extern PRIVILEGED_DATA UBaseType_t uxTaskNumber;
 PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime =
     (TickType_t)0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
-PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle = NULL; /*< Holds the handle of the idle task.  The idle task is
+extern PRIVILEGED_DATA TaskHandle_t xIdleTaskHandle; /*< Holds the handle of the idle task.  The idle task is
                                                                created automatically when the scheduler is started. */
 
 /* Context switches are held pending while the scheduler is suspended.  Also,
@@ -339,13 +339,6 @@ extern void vApplicationTickHook(void); /*lint !e526 Symbol not defined as it is
 
 #endif
 
-#if (configSUPPORT_STATIC_ALLOCATION == 1)
-
-extern void vApplicationGetIdleTaskMemory(
-    StaticTask_t** ppxIdleTaskTCBBuffer, StackType_t** ppxIdleTaskStackBuffer,
-    uint32_t* pulIdleTaskStackSize); /*lint !e526 Symbol not defined as it is an application callback. */
-
-#endif
 
 /* File private functions. --------------------------------*/
 
@@ -377,7 +370,7 @@ static void prvInitialiseTaskLists(void) PRIVILEGED_FUNCTION;
  * void prvIdleTask( void *pvParameters );
  *
  */
-static portTASK_FUNCTION_PROTO(prvIdleTask, pvParameters);
+portTASK_FUNCTION_PROTO(prvIdleTask, pvParameters);
 
 /*
  * Utility to free all memory allocated by the scheduler to hold a TCB,
@@ -1702,38 +1695,7 @@ void vTaskStartScheduler(void) {
 	BaseType_t xReturn;
 
 /* Add the idle task at the lowest priority. */
-#if (configSUPPORT_STATIC_ALLOCATION == 1)
-	{
-		StaticTask_t* pxIdleTaskTCBBuffer = NULL;
-		StackType_t* pxIdleTaskStackBuffer = NULL;
-		uint32_t ulIdleTaskStackSize;
-
-		/* The Idle task is created using user provided RAM - obtain the
-		address of the RAM then create the idle task. */
-		vApplicationGetIdleTaskMemory(&pxIdleTaskTCBBuffer, &pxIdleTaskStackBuffer, &ulIdleTaskStackSize);
-		xIdleTaskHandle = xTaskCreateStatic(
-		    prvIdleTask, configIDLE_TASK_NAME, ulIdleTaskStackSize,
-		    (void*)NULL,       /*lint !e961.  The cast is not redundant for all compilers. */
-		    portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
-		    pxIdleTaskStackBuffer, pxIdleTaskTCBBuffer); /*lint !e961 MISRA exception, justified as it is not a
-		                                                    redundant explicit cast to all supported compilers. */
-
-		if (xIdleTaskHandle != NULL) {
-			xReturn = pdPASS;
-		} else {
-			xReturn = pdFAIL;
-		}
-	}
-#else
-	{
-		/* The Idle task is being created using dynamically allocated RAM. */
-		xReturn = xTaskCreate(
-		    prvIdleTask, configIDLE_TASK_NAME, configMINIMAL_STACK_SIZE, (void*)NULL,
-		    portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
-		    &xIdleTaskHandle); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all
-		                          supported compilers. */
-	}
-#endif /* configSUPPORT_STATIC_ALLOCATION */
+// IDLE Task is statically generated
 
 #if (configUSE_TIMERS == 1)
 	{
@@ -2911,7 +2873,7 @@ void vTaskSetTaskNumber(TaskHandle_t xTask, const UBaseType_t uxHandle) {
  * void prvIdleTask( void *pvParameters );
  *
  */
-static portTASK_FUNCTION(prvIdleTask, pvParameters) {
+portTASK_FUNCTION(prvIdleTask, pvParameters) {
 	/* Stop warnings. */
 	(void)pvParameters;
 
