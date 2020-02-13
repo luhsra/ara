@@ -69,6 +69,11 @@ class CFG(graph_tool.Graph):
         assert len(entry) == 1
         return entry[0].target()
 
+    def get_abbs(self, function):
+        for edge in self.vertex(function).out_edges():
+            if self.ep.type[edge] == CFType.f2a:
+                yield edge.target()
+
     def get_entry_abb(self, function):
         """Return the entry_abb of the given function."""
         function = self.vertex(function)
@@ -105,6 +110,9 @@ class CFGView(graph_tool.GraphView):
 
     def get_function(self, *args, **kwargs):
         return self.base.get_function(*args, **kwargs)
+
+    def get_abbs(self, *args, **kwargs):
+        return self.base.get_abbs(*args, **kwargs)
 
     def get_entry_abb(self, *args, **kwargs):
         return self.base.get_entry_abb(*args, **kwargs)
