@@ -69,11 +69,13 @@ class Printer(Step):
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
-                    dot_abb = pydot.Node(str(hash(abb)),
-                            label=g.cfg.vp.name[abb],
-                            shape=self.SHAPES[g.cfg.vp.type[abb]][0],
-                            style=self.SHAPES[g.cfg.vp.type[abb]][1],
-                            color=self.SHAPES[g.cfg.vp.type[abb]][2])
+                    dot_abb = pydot.Node(
+                        str(hash(abb)),
+                        label=g.cfg.vp.name[abb],
+                        shape=self.SHAPES[g.cfg.vp.type[abb]][0],
+                        style=self.SHAPES[g.cfg.vp.type[abb]][1],
+                        color=self.SHAPES[g.cfg.vp.type[abb]][2]
+                    )
                 dot_func.add_node(dot_abb)
         for edge in g.cfg.edges():
             if g.cfg.ep.type[edge] not in [graph.CFType.lcf, graph.CFType.icf]:

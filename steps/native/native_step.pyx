@@ -175,11 +175,6 @@ class Step(SuperStep):
         return self.opts
 
 
-# cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
-#     cdef pyobj = graph.create_abb(location)
-#     return pyobj
-
-
 cdef class NativeStep(SuperStep):
     """Constructs a dummy Python class for a C++ step.
 

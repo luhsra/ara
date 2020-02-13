@@ -46,7 +46,7 @@ ara = files('ara.py')
 sh = custom_target('ara-sh',
     input: ara,
     output: 'ara.sh',
-	depends: [plib, libgraph, llvm_data_mod],
+    depends: [plib, libgraph, llvm_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\n' + python_path + ' ' + (source_dir / 'ara.py') + ' $@\n'],
     build_by_default: true
 )
