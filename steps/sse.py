@@ -70,6 +70,7 @@ class InstanceGraph(Flavor):
     def __init__(self, step, g, side_data, state, entry_func, step_manager,
                  dump, dump_prefix):
         super().__init__(step, g)
+        self._log.info(f"Working on {entry_func}.")
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
         self.func_branch = self.g.call_graphs[entry_func].new_vp("bool")
