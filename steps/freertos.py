@@ -95,12 +95,13 @@ class FreeRTOS:
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
 
+        #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
         state.instances.vp.obj[v] = Task(cfg, None,
                                          function='prvIdleTask',
                                          name='idle_task',
                                          stack_size='configMINIMAL_STACK_SIZE',
                                          parameters=0,
-                                         priority='( tskIDLE_PRIORITY | portPRIVILEGE_BIT )',
+                                         priority=0,
                                          handle_p=0,
                                          abb=abb,
                                          branch=state.branch,

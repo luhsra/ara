@@ -1692,7 +1692,7 @@ BaseType_t xTaskResumeFromISR(TaskHandle_t xTaskToResume) {
 /*-----------------------------------------------------------*/
 
 void vTaskStartScheduler(void) {
-	BaseType_t xReturn;
+	BaseType_t xReturn = pdPASS;
 
 /* Add the idle task at the lowest priority. */
 // IDLE Task is statically generated

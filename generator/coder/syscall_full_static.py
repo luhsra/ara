@@ -26,7 +26,7 @@ class StaticFullSystemCalls(GenericSystemCalls):
         '''generate the memory for the tcbs'''
         for v in self.ara_graph.instances.vertices():
             task = self.ara_graph.instances.vp.obj[v]
-            self.arch_rules.static_unchanged_tcb(task)
+            self.arch_rules.static_unchanged_tcb(task, initialized=False)
 
 
     def generate_system_code(self):

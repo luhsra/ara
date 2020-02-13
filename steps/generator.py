@@ -20,6 +20,7 @@ class Generator(Step):
 
     syscall_choices= {'vanilla': VanillaSystemCalls,
                       'generic_static': StaticFullSystemCalls,
+                      'generic_initialized': InitializedFullSystemCalls,
                       'instance_specialized': lambda: exec('raise NotImplementedError()'),
     }
 

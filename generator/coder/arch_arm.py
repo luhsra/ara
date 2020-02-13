@@ -3,6 +3,7 @@ from .elements import (
     CodeTemplate,
     DataObject,
     DataObjectArray,
+    InstanceDataObject,
 )
 
 default_traps = [
@@ -73,14 +74,29 @@ class ArmArch(GenericArch):
         task.impl.stack = stack
         return stack
 
-    def static_unchanged_tcb(self, task):
+    def static_unchanged_tcb(self, task, initialized):
         self.logger.debug("Generating TCB mem for %s", task)
-        tcb = DataObject("StaticTask_t",
-                         f'{task.name}_tcb',
-                         extern_c = True)
+        if initialized:
+            tcb = self.TCB(task, initialized, extern_c=True)
+        else:
+            tcb = DataObject("StaticTask_t",
+                             f'{task.name}_tcb',
+                             extern_c = True)
         self.generator.source_file.data_manager.add(tcb)
         task.impl.tcb = tcb
         return tcb
+
+    def initialized_stack(self, task):
+        self.logger.debug("Generating initialized stack for %s", task)
+        stack = InstanceDataObject("InitializedStack_t",
+                                   f'{task.name}_static_stack',
+                                   [f'{task.stack_size}'],
+                                   [f'(void *){task.function}'],
+                                   extern_c = False)
+        self.generator.source_file.data_manager.add(stack)
+        task.impl.stack = stack
+        stack.tos = f"((StackType_t*)&{stack.name}) + {task.stack_size} - 17"
+        return stack
 
     def generate_startup_code(self):
         if True:
