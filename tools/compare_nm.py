@@ -19,15 +19,12 @@ def main():
         parser.print_help()
     pairs = [(inp[i], inp[i+1]) for i in range(0,len(inp), 2)]
 
-    common = {}
     data = {}
     keys = {}
     for pair in pairs:
         name, filename = pair
         data[name] = parse_elf(args.NM_TOOL, filename)
         keys[name] = set(data[name].keys())
-        for symbol, obj in data[name].items():
-            common[symbol] = obj
 
 
     common_keys = keys[name].intersection(*keys.values())
@@ -35,8 +32,7 @@ def main():
 
     lens = {name: len(name) for name in data.keys()}
 
-    fields = ['segment']
-    fields += [f'{n:^{lens[n]}}' for n in data.keys()]
+    fields = [f'{n:^{lens[n]+2}}' for n in data.keys()]
     fields += ['name']
     print(" | ".join(fields))
 
@@ -46,9 +42,9 @@ def main():
             sizes = [data[n][key]['size'] for n in data.keys()]
             if len(set(sizes)) == 1:
                 continue
-            fields = [f"{common[key]['segment']:7}"]
-            fields += [f"{data[n][key]['size']:{lens[n]}}" for n in data.keys()]
-            fields += [f"{common[key]['name']}"]
+            fields = [f"{data[n][key]['size']:{lens[n]}} {data[n][key]['segment']}"
+                      for n in data.keys()]
+            fields += [f"{key}"]
             print(" | ".join(fields))
         print('\n')
 
@@ -57,7 +53,7 @@ def parse_elf(nm, elf):
     result = subprocess.run([nm, '-SP', elf],
                             check=True,
                             stdout=subprocess.PIPE)
-    ret = defaultdict(lambda: defaultdict(lambda:''))
+    ret = defaultdict(lambda: defaultdict(lambda:' '))
     for line in result.stdout.decode().strip().split('\n'):
         match = re.match("(?P<name>\S+) (?P<seg>\S) (?P<addr>\S+) (?P<size>\S*)",
                          line)
