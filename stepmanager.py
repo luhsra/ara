@@ -32,6 +32,15 @@ StepEvent = namedtuple('StepEvent', ['name', 'uuid'])
 ConfigEvent = namedtuple('ConfigEvent', ['uuid', 'config'])
 
 
+def get_uuid(step_name):
+    try:
+        get_uuid.counter += 1
+    except AttributeError:
+        get_uuid.counter = -1
+    suuid = uuid.uuid3(uuid.NAMESPACE_DNS, f'{step_name}.{get_uuid.counter}')
+    return suuid
+
+
 class SolverException(Exception):
     """An exception occured in stepmanager.Solver."""
 
@@ -78,7 +87,7 @@ class Solver:
                         rae(self._log, f"{step.name} depends on {dep} "
                                        "but is scheduled after it",
                             exception=SolverException)
-                    rev_chain.append(StepEvent(name=dep, uuid=uuid.uuid4()))
+                    rev_chain.append(StepEvent(name=dep, uuid=get_uuid(dep)))
                     created_steps += 1
 
         # delete duplicates
@@ -125,7 +134,8 @@ class Solver:
         new_step   -- step to insert
         """
         # convert new_step to StepEvent and optional ConfigEvent
-        new_sevent = StepEvent(name=new_step["name"], uuid=uuid.uuid4())
+        name = new_step["name"]
+        new_sevent = StepEvent(name=name, uuid=get_uuid(name))
         new_cevent = None
         if new_step.keys() - set(['name', 'uuid']):
             new_cevent = ConfigEvent(uuid=new_sevent.uuid, config=new_step)
@@ -245,12 +255,12 @@ class StepManager:
                     nstep = step
                 else:
                     nstep = {"name": step}
-                nstep['uuid'] = uuid.uuid4()
+                nstep['uuid'] = get_uuid(nstep['name'])
                 steps.append(nstep)
         elif esteps:
             for step in esteps:
                 steps.append({"name": step,
-                              "uuid": uuid.uuid4()})
+                              "uuid": get_uuid(step)})
 
         if not steps:
             self._log.info("No steps to execute.")
