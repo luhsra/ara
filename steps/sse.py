@@ -236,11 +236,12 @@ class InstanceGraph(Flavor):
         self._log.debug(f"_find_exit_abbs  {self._find_exit_abbs.cache_info()}")
         self.g.instances = self.instances
         if self.dump_prefix:
-            # TODO quick and dirty, implement in printer with UUID
-            inst = self.instances.copy()
-            del inst.vp["obj"]
-            import time
-            inst.save(f"State.{time.time()}.dot")
+            uuid = self._step_manager.get_execution_id()
+            dot_file = self.dump_prefix + f'Instances.{uuid}.dot'
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'Instances',
+                                           "subgraph": 'instances'})
 
 
 # TODO make this a dataclass, when ready
