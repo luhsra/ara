@@ -1,9 +1,5 @@
 {
 	"steps": [
-		"Syscall",
-		"CallGraph",
-		"ValueAnalysisCore",
-		"ValueAnalysis",
 		{
 			"name": "SSE",
 			"flavor": "InstanceGraph"
