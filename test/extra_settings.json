@@ -1,15 +1,7 @@
 {
 	"steps": [
 		"Syscall",
-		{
-			"name": "Printer",
-			"dot": "syscall.dot",
-			"graph_name": "Syscall",
-			"subgraph": "abbs"
-		},
-		{
-			"name": "CallGraph"
-		},
+		"CallGraph",
 		"ValueAnalysisCore",
 		"ValueAnalysis",
 		{

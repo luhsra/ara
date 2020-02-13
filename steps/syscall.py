@@ -48,4 +48,14 @@ class Syscall(Step):
                             g.cfg.vp.type[nod] = ABBType.syscall
                             syscall_counter += 1
 
+        if self.dump.get():
+            dump_prefix = self.dump_prefix.get()
+            assert dump_prefix
+            uuid = self._step_manager.get_execution_id()
+            dot_file = dump_prefix + f'{uuid}.dot'
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'CFG with syscalls',
+                                           "subgraph": 'abbs'})
+
         self._log.info(f"Found {syscall_counter} syscalls.")
