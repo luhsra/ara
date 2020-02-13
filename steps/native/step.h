@@ -60,7 +60,7 @@ namespace ara::step {
 		                                   /* ty = */ option::Bool(),
 		                                   /* global = */ true};
 		option::TOption<option::String> dump_prefix{
-		    "dump_prefix", "If a file is dumped, set this as prefix for the files (default: dumps/<step_name>).",
+		    "dump_prefix", "If a file is dumped, set this as prefix for the files (default: dumps/{step_name}).",
 		    /* ty = */ option::String(),
 		    /* global = */ true};
 		/**
@@ -104,6 +104,8 @@ namespace ara::step {
 			if (lvl.second) {
 				logger.set_level(translate_level(lvl.first));
 			}
+			// HINT: For Python steps also the dump_prefix happens in apply_config. However, this is easier in Python so
+			// already done in the NativeStep wrapper in native_step.pyx.
 		}
 
 		/**

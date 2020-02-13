@@ -134,7 +134,7 @@ class Step(SuperStep):
         self.dump_prefix = option.Option("dump_prefix",
                                          "If a file is dumped, set this as "
                                          "prefix for the files"
-                                         "(default: dumps/<step_name>).",
+                                         "(default: dumps/{step_name}).",
                                          self.get_name(),
                                          option.String(),
                                          glob=True)
@@ -152,6 +152,10 @@ class Step(SuperStep):
         level = self.log_level.get()
         if level:
             self._log.setLevel(LEVEL[level])
+        dump_prefix = self.dump_prefix.get()
+        if dump_prefix:
+            new_dp = dump_prefix.replace('{step_name}', self.get_name())
+            self.dump_prefix.check({'dump_prefix': new_dp})
 
     def _fail(self, msg, error=RuntimeError):
         """Print msg to as error and raise error."""
@@ -231,6 +235,11 @@ cdef class NativeStep(SuperStep):
         super().get_side_data()
 
     def apply_config(self, config: dict):
+        # this is a lot easier on the Python side, so do it here
+        if 'dump_prefix' in config:
+            config['dump_prefix'] = \
+                config['dump_prefix'].replace('{step_name}', self.get_name())
+
         self._c_pass.apply_config(config)
 
     cdef getTy(self, unsigned ctype, coption.Option* opt):
