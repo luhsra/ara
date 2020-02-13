@@ -5,6 +5,7 @@
 import argparse
 import json
 import logging
+import os
 import sys
 import util
 
@@ -41,18 +42,19 @@ def main():
     parser.add_argument('--output_file', help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE",
                         help="settings for individual steps. '-' is STDIN")
-    parser.add_argument('--dependency_file', help="file to write make-style dependencies into for build system integration")
+    parser.add_argument('--dependency_file',
+                        help="file to write make-style dependencies into for "
+                             "build system integration")
 
     args = parser.parse_args()
 
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
 
-    if args.log_level == 'debug':
-        import os
-        print(f'PYTHONPATH={os.environ["PYTHONPATH"]} python3 ' + ' '.join(sys.argv))
-
     util.init_logging(level=args.log_level)
+
+    logging.debug('ARA executed with: PYTHONPATH=%s python3 %s',
+                  os.environ["PYTHONPATH"], ' '.join(sys.argv))
 
     g = graph.Graph()
     s_manager = stepmanager.StepManager(g)
