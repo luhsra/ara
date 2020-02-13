@@ -5,12 +5,14 @@
 #include "common/exceptions.h"
 
 #include <boost/graph/filtered_graph.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/IR/CFG.h>
 #include <llvm/IR/Function.h>
 
 using namespace ara::graph;
+using namespace boost::property_tree;
 
 namespace ara::step {
 	std::string ICFG::get_description() const {
@@ -146,5 +148,21 @@ namespace ara::step {
 		CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { check_icf(g, cfg, mod, logger); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+
+		std::pair<bool, bool> dump_opt = dump.get();
+		if (dump_opt.second && dump_opt.first) {
+			std::pair<std::string, bool> dump_prefix_opt = dump_prefix.get();
+			assert(dump_prefix_opt.second);
+			std::string uuid = step_manager.get_execution_id();
+			std::string dot_file = dump_prefix_opt.first + uuid + ".dot";
+
+			ptree printer_conf;
+			printer_conf.put("name", "Printer");
+			printer_conf.put("dot", dot_file);
+			printer_conf.put("graph_name", "ICFG");
+			printer_conf.put("subgraph", "abbs");
+
+			step_manager.chain_step(printer_conf);
+		}
 	}
 } // namespace ara::step
