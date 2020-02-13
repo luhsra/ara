@@ -33,6 +33,7 @@ class OptionType:
     def check(self, config, step_name, name):
         val = config.get(name, None)
         if not val:
+            self.valid = False
             return
         self.value = self._validate(val, name)
         self.valid = True
