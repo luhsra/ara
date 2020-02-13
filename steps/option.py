@@ -1,5 +1,28 @@
+"""
+Python side of options.
+
+To use the option framework a step can request an Option object.
+The Option object can then filled with an actual configuration with the
+check function.
+"""
+
+
 class Option:
+    """
+    Option object to store information about the option as well as a
+    specific configuration for the option.
+    """
     def __init__(self, name, help, step_name, ty, glob=False):
+        """Create an Option.
+
+        Arguments:
+        name -- option name
+        help -- option help message
+        step_name -- step name that contains the option (for error printing)
+        ty        -- option type (see the OptionType classes for types)
+        glob      -- is this option a global option? (needed for printing of
+                     the help message)
+        """
         self._name = name
         self._help = help
         self._step_name = step_name
@@ -7,21 +30,36 @@ class Option:
         self._global = glob
 
     def get_name(self):
+        """Get name of option."""
         return self._name
 
     def get_help(self):
+        """Get help message of option."""
         return self._help
 
     def is_global(self):
+        """Is the option global?"""
         return self._global
 
-    def check(self, config):
+    def check(self, config: dict):
+        """
+        Apply an actual configuration to the option.
+
+        Arguments:
+        config -- a configuration dict. The option uses the value of
+                  config[self.get_name] for its configuration.
+
+        """
         self._ty.check(config, self._step_name, self._name)
 
     def get_type_help(self):
+        """Get the type help message. What configuration values are allowed?"""
         return self._ty.get_help()
 
     def get(self):
+        """
+        Get the option value. This returns None, if the option is not set.
+        """
         return self._ty.get()
 
 
