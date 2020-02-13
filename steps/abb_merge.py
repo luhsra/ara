@@ -84,6 +84,19 @@ class ABBMerge(Step):
                                     f"{called_function}) to computation")
                     g.cfg.vp.type[abb] = ABBType.computation
 
+        # TODO: discuss
+        # # delete functions
+        # deletions = []
+        # print(system_relevant)
+        # for func in g.functs.vertices():
+        #     if g.functs.vp.name[func] not in system_relevant:
+        #         print(g.functs.vp.name[func])
+        #         print([g.cfg.vp.name[x] for x in g.cfg.get_abbs(func)])
+        #         deletions += [x for x in g.cfg.get_abbs(func)]
+        #         deletions.append(g.cfg.vertex(func))
+        # self._log.info(f"Remove {len(deletions)} not system relevant nodes.")
+        # g.cfg.remove_vertex(deletions)
+
         if self.dump.get():
             dump_prefix = self.dump_prefix.get()
             assert dump_prefix
