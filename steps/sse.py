@@ -100,7 +100,7 @@ class InstanceGraph(Flavor):
     def _is_chained_analysis(self, entry_func):
         for v in self.instances.vertices():
             os_obj = self.instances.vp.obj[v]
-            if isinstance(os_obj, Task):
+            if isinstance(os_obj, Task) and os_obj.is_regular:
                 entry = self.g.cfg.vertex(os_obj.entry_abb)
                 func_name = self.g.cfg.vp.name[
                     self.g.cfg.get_function(entry)
