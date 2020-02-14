@@ -1,9 +1,5 @@
 #include "step.h"
-// clang-format off
-// cython headers does not include anything except Python itself
-#include <string>
 #include "native_step_pyx.h"
-// clang-format on
 
 #include <boost/property_tree/json_parser.hpp>
 #include <sstream>
@@ -14,7 +10,7 @@ namespace ara::step {
 	void StepManager::chain_step(const ptree& step_config) {
 		std::stringstream sstream;
 		json_parser::write_json(sstream, step_config, /* pretty = */ false);
-		step_manager_chain_step(step_manager, sstream.str());
+		step_manager_chain_step(step_manager, sstream.str().c_str());
 	}
 
 	void StepManager::chain_step(const std::string step_name) {
