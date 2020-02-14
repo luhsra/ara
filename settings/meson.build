@@ -1,6 +1,12 @@
 settings_dir = meson.current_source_dir()
 clang = find_program('clang', version: llvm_version)
-# llc = find_program('llc', version: llvm_version)
+#FIXME: enable find_program if it correctly detects llc version
+llc = 'llc'
+#llc = find_program('llc', version: llvm_version)
+llvm_link = 'llvm-link'
+#llvm_link = find_program('llvm-link', llvm_version)
+llvm_opt = 'opt'
+#llmvm_opt = find_program('opt', llvm_version)
 bash = find_program('bash')
 nop = find_program('true')
 
@@ -10,6 +16,13 @@ clang_flags = ['-g',
                '-fdata-sections',
                '-fno-rtti',
                '-fno-discard-value-names', '-fno-exceptions']
+llvm_opt_flags = [
+  # '-time-passes',
+]
+
+llc_flags = ['--function-sections',
+             '--data-sections',
+            ]
 ld_flags = ['-Wl,--gc-sections',
             '-Wl,--warn-common',
             '-Wl,--warn-section-align',
@@ -51,6 +64,9 @@ elif get_option('arch') == 'arm'
                '-nodefaultlibs',
                '-lc',
               ]
+  llc_flags += ['--frame-pointer=none',
+                ]
+
 else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
@@ -79,8 +95,10 @@ clang_x = [clang,
 clang_c = clang_x + [c_std]
 clang_cpp = clang_x + [cxx_std]
 ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']
-llc_cmd = ['llc', '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ]
+llc_cmd = [llc, '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ] + llc_flags
 objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
+llvm_link_cmd = [llvm_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
+llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 
 ara_gen_cmd = [bash, sh,
                '@INPUT@',

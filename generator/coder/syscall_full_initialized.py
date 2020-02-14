@@ -72,7 +72,7 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                                       'UBaseType_t',
                                       'TaskHandle_t *'
                                       ])
-        dummy_xTaskCreate.add(Statement("return (BaseType_t) pxReadyTasksLists"))
+        dummy_xTaskCreate.add(Statement("return pdPASS"))
         self.generator.source_file.function_manager.add(dummy_xTaskCreate)
 
     def generate_data_objects_ready_list(self):

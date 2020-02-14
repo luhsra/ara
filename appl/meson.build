@@ -55,6 +55,42 @@ foreach app : ['a',
                               command: get_variable('ara_gen_' + t)
                              )
 
+    os_ll_target = custom_target(name_prefix + '-os.cc.ll',
+                                 input : os_target,
+                                 output : name_prefix + '-os.cc.ll',
+                                 depfile : name_prefix + '-os.cc.ll.dep',
+                                 command : clang_cpp +
+                                           libs_includes +
+                                           ir_flags +
+                                           clang_flags)
+
+    app_os = custom_target(name_prefix + '-app_os.ll',
+                           input: [ll_target, os_ll_target],
+                           output: name_prefix + '-os_app.ll',
+                           command: llvm_link_cmd)
+
+    lto_app_os = custom_target(name_prefix + '-lto_app_os.ll',
+                               input: app_os,
+                               output: name_prefix + '-lto_os_app.ll',
+                               command: llvm_opt_cmd)
+
+    lto_o = custom_target(name_prefix + '-lto_app_os.o',
+                          input: lto_app_os,
+                          output: name_prefix + '-lto_os_app.ll.o',
+                          command: llc_cmd)
+
+    lto_elf = custom_target(name_prefix + '.lto.elf',
+                            input: [lto_o,
+                                    os_target[1], # startup.s
+                                    libs_targets,
+                                    get_variable('libfreertos_'+t)],
+                            output: name_prefix + '.lto.elf',
+                            depfile: name_prefix + '.lto.elf.dep',
+                            command: clang_cpp +
+                                     libs_includes +
+                                     ld_flags +
+                                     clang_flags)
+
     elf_target = custom_target(name_prefix + '.elf',
                                input: [o_target,
                                        os_target,
@@ -66,14 +102,23 @@ foreach app : ['a',
                                         libs_includes +
                                         ld_flags +
                                         clang_flags)
+
     bin_target = custom_target(name_prefix + '.bin',
                                input: [elf_target],
                                output: name_prefix + '.bin',
                                command: objcopy_cmd)
+
+    lto_bin_target = custom_target(name_prefix + '.lto.bin',
+                                   input: [lto_elf],
+                                   output: name_prefix + '.lto.bin',
+                                   command: objcopy_cmd)
+
     run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
     run_target('size_' + name_prefix, command: [size, elf_target])
     elf_targets += elf_target
+    elf_targets += lto_elf
     named_elf_targets += [t, elf_target]
+    named_elf_targets += [t+'.lto', lto_elf]
 
   endforeach
 
