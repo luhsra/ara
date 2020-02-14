@@ -3,17 +3,19 @@
 #include <task.h>
 #include <output.h>
 
+volatile int i = 0;
 void vTask2(void * param) {
   for (;;) {
 	kout << 't';
-	for (int i = 0; i < 300000; ++i);
+	for (i = 0; i < 300000; ++i);
   }
 }
 
+volatile int j = 0;
 void vTask1(void * param) {
   for (;;) {
 	kout << 'T';
-	for (int i = 0; i < 300000; ++i);
+	for (j = 0; j < 300000; ++j);
   }
 }
 
