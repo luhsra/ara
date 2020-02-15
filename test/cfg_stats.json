@@ -2,7 +2,7 @@
 	"steps": [
 		{
 			"name": "CFGPreparation",
-            "pass_list": "module(function(mem2reg,sccp,dce))"
+            "pass_list": "module(function(mem2reg,sccp,dce,simplify-cfg,loop(unroll-full)))"
 		},
         "CFGStats"
 	]
