@@ -19,7 +19,7 @@ namespace ara {
 		std::map<CallPath, const llvm::Value&> values;
 
 	  public:
-		Argument(llvm::AttributeSet attrs, const llvm::Value& l_const) : attrs(attrs), values() {
+		Argument(const llvm::AttributeSet& attrs, const llvm::Value& l_const) : attrs(attrs), values() {
 			values.insert(std::pair<CallPath, const llvm::Value&>({}, l_const));
 		}
 

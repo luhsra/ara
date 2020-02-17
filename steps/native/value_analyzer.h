@@ -161,6 +161,14 @@ namespace ara {
 		 */
 		bool check_get_element_ptr_indizes(std::vector<size_t>* reference, llvm::GetElementPtrInst* instr);
 
+		/**
+		 * @brief returns the handler, which is one argument of the call
+		 * @param instruction instruction where the handler is an argument
+		 * @param argument_index argument index
+		 * @return llvm_handler
+		 */
+		llvm::Value* get_handler(const llvm::Instruction& instruction, unsigned int argument_index);
+
 	  public:
 		ValueAnalyzer(Logger& logger) : logger(logger) {}
 

@@ -1052,6 +1052,22 @@ namespace ara {
 		return call;
 	}
 
+	llvm::Value* ValueAnalyzer::get_handler(const llvm::Instruction& instruction, unsigned int argument_index) {
+		// check if call instruction has one user
+		if (instruction.hasOneUse()) {
+			// get the user of the call instruction
+			const llvm::User* user = instruction.user_back();
+			// check if user is store instruction
+			if (isa<StoreInst>(user)) {
+				return user->getOperand(argument_index);
+			} else if (llvm::isa<BitCastInst>(user)) {
+				return get_handler(*llvm::cast<Instruction>(user), argument_index);
+			}
+		}
+
+		return nullptr;
+	}
+
 	Arguments ValueAnalyzer::get_values(const CallBase& cb) {
 		if (isCallToLLVMIntrinsic(&cb)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
@@ -1076,6 +1092,9 @@ namespace ara {
 
 		// get and store the called arguments values
 		ValueAnalyzer::call_data data = dump_instruction(func, &cb, &warning_list);
+
+		// return value
+		llvm::Value* return_value = get_handler(cb, 1);
 
 		// repack Values into Arguments class
 		Arguments args;
@@ -1115,6 +1134,12 @@ namespace ara {
 				}
 			}
 			i++;
+		}
+
+		if (return_value != nullptr) {
+			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *return_value));
+		} else {
+			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *none_c));
 		}
 
 		return args;
