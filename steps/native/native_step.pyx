@@ -120,6 +120,8 @@ class Step(SuperStep):
         super().__init__()
         # ATTENTION: if you change this list, also change the option list in
         # step.h in class Step
+        # All of these options are also present in ara.py and have their
+        # defaults from argparse.
         self.log_level = option.Option("log_level",
                                        "Adjust the log level of this step.",
                                        self.get_name(),

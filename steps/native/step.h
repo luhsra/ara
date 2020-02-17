@@ -53,7 +53,8 @@ namespace ara::step {
 		Logger logger;
 		StepManager step_manager;
 
-		// ATTENTION: if you change this, also change the option list in native_step.py for class Step
+		// ATTENTION: If you change this, also change the option list in native_step.py for class Step.
+		// All of these options are also defined in ara.py and have their defaults from there.
 		option::TOption<option::Choice<5>> log_level{
 		    "log_level", "Adjust the log level of this step.",
 		    /* ty = */ option::makeChoice("critical", "error", "warn", "info", "debug"),
