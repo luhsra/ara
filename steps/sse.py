@@ -70,6 +70,7 @@ class InstanceGraph(Flavor):
     def __init__(self, step, g, side_data, state, entry_func, step_manager,
                  dump, dump_prefix):
         super().__init__(step, g)
+        self.entry_func = entry_func
         self._log.info(f"Working on {entry_func}.")
         self.g.os.init(state)
         self.call_map = self._create_call_map(entry_func)
@@ -238,7 +239,8 @@ class InstanceGraph(Flavor):
         self.g.instances = self.instances
         if self.dump_prefix:
             uuid = self._step_manager.get_execution_id()
-            dot_file = self.dump_prefix + f'Instances.{uuid}.dot'
+            dot_file = f'Instances.{uuid}.{self.entry_func}.dot'
+            dot_file = self.dump_prefix + dot_file
             self._step_manager.chain_step({"name": "Printer",
                                            "dot": dot_file,
                                            "graph_name": 'Instances',
