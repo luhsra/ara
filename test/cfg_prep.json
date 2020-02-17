@@ -2,7 +2,7 @@
 	"steps": [
 		{
 			"name": "CFGPreparation",
-			"pass_list": "module(function(print,mem2reg,dce,sccp,print))"
+			"pass_list": "module(function(print,mem2reg,sccp,dce,simplify-cfg,loop(indvars),unroll,print))"
 		}
 	]
 }
