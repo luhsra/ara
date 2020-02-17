@@ -2,6 +2,7 @@
 
 #include <Python.h>
 #include <cassert>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -23,11 +24,12 @@ namespace ara::option {
 	template <typename T>
 	class RawType {
 	  public:
-		typedef T type;
+		using type = T;
 
 	  protected:
 		bool valid = false;
 		type value;
+		std::optional<type> default_value;
 
 		RawType() : step_name("") {}
 		virtual ~RawType() {}
@@ -56,7 +58,14 @@ namespace ara::option {
 
 		void set_step_name(std::string step_name) { this->step_name = step_name; }
 
-		std::pair<type, bool> get() { return std::make_pair(value, valid); }
+		void set_default_value(std::optional<type> default_value) { this->default_value = default_value; }
+
+		std::pair<type, bool> get() {
+			if (!valid && default_value) {
+				return std::make_pair(*default_value, true);
+			}
+			return std::make_pair(value, valid);
+		}
 	};
 
 	struct Integer : public RawType<int64_t> {
@@ -277,6 +286,7 @@ namespace ara::option {
 
 		Option(std::string name, std::string help) : name(name), help(help) {}
 		Option() = default;
+		Option(const Option&) = delete;
 
 		virtual ~Option() = default;
 
@@ -307,8 +317,12 @@ namespace ara::option {
 		virtual std::string get_type_args() override { return ty.serialize_args(); }
 
 	  public:
-		TOption(std::string name, std::string help, T ty = T(), bool global = false)
-		    : Option(name, help), ty(ty), global(global) {}
+		TOption(const std::string& name, const std::string& help, T ty = T(),
+		        std::optional<typename T::type> default_value = std::nullopt, bool global = false)
+		    : Option(name, help), ty(ty), global(global) {
+			this->ty.set_default_value(default_value);
+		}
+		TOption(const TOption&) = delete;
 
 		virtual void set_step_name(std::string step_name) override { ty.set_step_name(step_name); }
 

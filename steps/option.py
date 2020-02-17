@@ -12,7 +12,8 @@ class Option:
     Option object to store information about the option as well as a
     specific configuration for the option.
     """
-    def __init__(self, name, help, step_name, ty, glob=False):
+    def __init__(self, name, help, step_name, ty,
+                 default_value=None, glob=False):
         """Create an Option.
 
         Arguments:
@@ -20,14 +21,20 @@ class Option:
         help -- option help message
         step_name -- step name that contains the option (for error printing)
         ty        -- option type (see the OptionType classes for types)
-        glob      -- is this option a global option? (needed for printing of
-                     the help message)
+
+        Keyword arguments:
+        default_value -- default value of the option (ATTENTION: this value is
+                         unchecked. That means, that e.g. for a choice type it
+                         is not checked if the default is a valid choice.)
+        glob          -- is this option a global option? (needed for printing
+                         of the help message)
         """
         self._name = name
         self._help = help
         self._step_name = step_name
         self._ty = ty
         self._global = glob
+        self._default_value = default_value
 
     def get_name(self):
         """Get name of option."""
@@ -60,7 +67,10 @@ class Option:
         """
         Get the option value. This returns None, if the option is not set.
         """
-        return self._ty.get()
+        ret = self._ty.get()
+        if ret is None:
+            return self._default_value
+        return ret
 
 
 class OptionType:

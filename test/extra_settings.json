@@ -7,7 +7,8 @@
 	],
 
 	"LLVMMap": {
-		"log_level": "info"
+		"log_level": "info",
+		"llvm_dump": true
 	},
 	"ValueAnalysis": {
 		"log_level": "info"

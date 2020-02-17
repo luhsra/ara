@@ -58,14 +58,18 @@ namespace ara::step {
 		option::TOption<option::Choice<5>> log_level{
 		    "log_level", "Adjust the log level of this step.",
 		    /* ty = */ option::makeChoice("critical", "error", "warn", "info", "debug"),
+		    /* default_value = */ std::nullopt,
 		    /* global = */ true};
 		option::TOption<option::Bool> dump{"dump", "If possible, dump the changed graph into a dot file.",
 		                                   /* ty = */ option::Bool(),
+		                                   /* default_value = */ std::nullopt,
 		                                   /* global = */ true};
 		option::TOption<option::String> dump_prefix{
 		    "dump_prefix", "If a file is dumped, set this as prefix for the files (default: dumps/{step_name}).",
 		    /* ty = */ option::String(),
+		    /* default_value = */ std::nullopt,
 		    /* global = */ true};
+
 		/**
 		 * Fill with all used options.
 		 */

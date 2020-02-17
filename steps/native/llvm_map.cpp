@@ -140,11 +140,9 @@ namespace ara::step {
 		std::pair<bool, bool> dopt = llvm_dump.get();
 		std::string prefix;
 		std::pair<std::string, bool> prefix_opt = llvm_dump_prefix.get();
-		if (prefix_opt.second) {
-			prefix = prefix_opt.first;
-		} else {
-			prefix = "dumps/llvm-func.";
-		}
+		assert(prefix_opt.second);
+		prefix = prefix_opt.first;
+
 		graph::LLVMData& llvm_data = graph.get_llvm_data();
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()(
