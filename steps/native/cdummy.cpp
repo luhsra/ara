@@ -25,10 +25,13 @@ namespace ara::step {
 	void CDummy::run(graph::Graph& graph) {
 		logger.info() << "Execute CDummy step." << std::endl;
 
-		std::pair<int64_t, bool> dopt = dummy_option.get();
-		if (dopt.second) {
-			logger.info() << "Option is " << dopt.first << '.' << std::endl;
+		const std::optional<int64_t>& dopt = dummy_option.get();
+		if (dopt) {
+			logger.info() << "Dummy option is " << *dopt << '.' << std::endl;
 		}
+		const auto& dopt2 = dummy_option2.get();
+		assert(dopt2);
+		logger.info() << "Dummy option 2 is " << *dopt2 << '.' << std::endl;
 
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { do_graph_stuff(g, cfg, logger); },

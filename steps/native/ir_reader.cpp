@@ -28,8 +28,8 @@ namespace ara::step {
 
 	void IRReader::run(graph::Graph& graph) {
 		// get file arguments from config
-		assert(input_files.get().second);
-		std::vector<std::string> files = input_files.get().first;
+		assert(input_files.get());
+		std::vector<std::string> files = *input_files.get();
 
 		// link the modules
 		// use first module a main module

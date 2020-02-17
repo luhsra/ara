@@ -11,6 +11,9 @@ namespace ara::step {
 	class CDummy : public Step {
 	  private:
 		option::TOption<option::Integer> dummy_option{"dummy_option", "This is the help for dummy_option."};
+		option::TOption<option::Choice<3>> dummy_option2{"dummy_option2", "This is an option with default.",
+		                                                 /* ty = */ option::makeChoice("A", "B", "C"),
+		                                                 /* default_value = */ "B"};
 		virtual void fill_options() override;
 
 	  public:

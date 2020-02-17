@@ -137,24 +137,19 @@ namespace ara::step {
 	}
 
 	void LLVMMap::run(graph::Graph& graph) {
-		std::pair<bool, bool> dopt = llvm_dump.get();
+		const auto& dopt = llvm_dump.get();
 		std::string prefix;
-		std::pair<std::string, bool> prefix_opt = llvm_dump_prefix.get();
-		assert(prefix_opt.second);
-		prefix = prefix_opt.first;
+		const auto& prefix_opt = llvm_dump_prefix.get();
+		assert(prefix_opt);
 
 		graph::LLVMData& llvm_data = graph.get_llvm_data();
 		graph::CFG cfg = graph.get_cfg();
-		graph_tool::gt_dispatch<>()(
-		    [&](auto& g) { map_cfg(g, cfg, llvm_data, logger, dopt.second && dopt.first, prefix); },
-		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		graph_tool::gt_dispatch<>()([&](auto& g) { map_cfg(g, cfg, llvm_data, logger, dopt && *dopt, *prefix_opt); },
+		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
-		std::pair<bool, bool> dump_opt = dump.get();
-		if (dump_opt.second && dump_opt.first) {
-			std::pair<std::string, bool> dump_prefix_opt = dump_prefix.get();
-			assert(dump_prefix_opt.second);
+		if (*dump.get()) {
 			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = dump_prefix_opt.first + uuid + ".dot";
+			std::string dot_file = *dump_prefix.get() + uuid + ".dot";
 
 			ptree printer_conf;
 			printer_conf.put("name", "Printer");

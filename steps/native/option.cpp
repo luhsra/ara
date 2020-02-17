@@ -8,9 +8,9 @@ void Integer::from_pointer(PyObject* obj, std::string name) {
 		ss << name << " is not an integer." << std::flush;
 		throw std::invalid_argument(ss.str());
 	}
-	this->value = PyLong_AsLongLong(obj);
-	assert(this->value != -1 || PyErr_Occurred() == NULL);
-	this->valid = true;
+	int64_t value = PyLong_AsLongLong(obj);
+	assert(value != -1 || PyErr_Occurred() == NULL);
+	this->value = std::optional(value);
 }
 
 void Float::from_pointer(PyObject* obj, std::string name) {
@@ -19,9 +19,9 @@ void Float::from_pointer(PyObject* obj, std::string name) {
 		ss << name << " is not a floating point number." << std::flush;
 		throw std::invalid_argument(ss.str());
 	}
-	this->value = PyLong_AsDouble(obj);
-	assert(this->value != -1.0 || PyErr_Occurred() == NULL);
-	this->valid = true;
+	double value = PyLong_AsDouble(obj);
+	assert(value != -1.0 || PyErr_Occurred() == NULL);
+	this->value = std::optional(value);
 }
 
 void Bool::from_pointer(PyObject* obj, std::string name) {
@@ -30,8 +30,7 @@ void Bool::from_pointer(PyObject* obj, std::string name) {
 		ss << name << " is not a boolean." << std::flush;
 		throw std::invalid_argument(ss.str());
 	}
-	this->value = PyObject_IsTrue(obj);
-	this->valid = true;
+	this->value = std::optional<bool>(PyObject_IsTrue(obj));
 }
 
 void String::from_pointer(PyObject* obj, std::string name) {
@@ -40,6 +39,5 @@ void String::from_pointer(PyObject* obj, std::string name) {
 		ss << name << " is not a string." << std::flush;
 		throw std::invalid_argument(ss.str());
 	}
-	this->value = std::string(PyUnicode_AsUTF8(obj));
-	this->valid = true;
+	this->value = std::optional(std::string(PyUnicode_AsUTF8(obj)));
 }

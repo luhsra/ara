@@ -108,11 +108,14 @@ namespace ara::step {
 				option.check(config);
 			}
 			auto lvl = log_level.get();
-			if (lvl.second) {
-				logger.set_level(translate_level(lvl.first));
+			if (lvl) {
+				logger.set_level(translate_level(*lvl));
 			}
-			// HINT: For Python steps also the dump_prefix happens in apply_config. However, this is easier in Python so
-			// already done in the NativeStep wrapper in native_step.pyx.
+			// This option are set by default in ara.py. Check that additionally.
+			assert(dump_prefix.get());
+			assert(dump.get());
+			// HINT: For Python steps also the dump_prefix string replacement happens in apply_config. However, this is
+			// easier in Python so already done in the NativeStep wrapper in native_step.pyx.
 		}
 
 		/**
