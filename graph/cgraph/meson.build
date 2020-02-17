@@ -15,11 +15,12 @@ llvm_data_mod = py3_inst.extension_module('llvm_data',
 llvm_data_dir = meson.current_build_dir()
 
 
-libgraph_dependencies = [py3_inst.dependency(), llvm_dep, boost_dep, graph_tool_dep, common_dep]
+libgraph_dependencies = [py3_inst.dependency(), llvm_dep, boost_dep, graph_tool_dep, common_dep, pyllco_dep]
 
 
 libgraph = static_library('graph',
                           'graph.cpp',
+                          'arguments.cpp',
                           dependencies: libgraph_dependencies)
 
 graph_inc = include_directories('.')

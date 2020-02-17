@@ -16,24 +16,24 @@ class Argument:
     An argument consists of two parts:
     1. self.attributes: an LLVM attribute set that defines argument attributes
        like a "zero extension"
-    2. self.consts: a dict for the actually call graph aware constant value
-       the key for that is the call path (a tuple of all call abbs). The value
-       is the llvm constant. If the value is not ambiguous it is stored under
+    2. self.values: a dict for the actually call graph aware value.
+       The key for that is the call path (a tuple of all call abbs). The value
+       is the llvm value. If the value is not ambiguous it is stored under
        the default key 'tuple()'. If the value is ambiguous, this key is not
        present or contains an llvm.ConstantTokenNone.
     """
-    def __init__(self, attributes, constant):
-        self.consts = {tuple(): constant}
+    def __init__(self, attributes, value):
+        self.values = {tuple(): value}
         self.attributes = attributes
 
     def __repr__(self):
-        ambi = len(self.consts) >= 2
-        return (f"Argument({repr(self.consts[tuple()])}, ambiguous={ambi}, "
+        ambi = len(self.values) >= 2
+        return (f"Argument({repr(self.values[tuple()])}, ambiguous={ambi}, "
                 f"{repr(self.attributes)})")
 
     def __str__(self):
-        ambi = len(self.consts) >= 2
-        args = [f'{x}: {str(y)}' for x, y in self.consts.items()]
+        ambi = len(self.values) >= 2
+        args = [f'{x}: {str(y)}' for x, y in self.values.items()]
         return (f"Argument({args}, ambiguous={ambi}, "
                 f"{repr(self.attributes)})")
 
@@ -44,31 +44,48 @@ class Argument:
             path.append(g.vp.cfglink[e.source()])
         return tuple(path)
 
-    def add_variant(self, call_path, constant):
-        """Add another callpath, constant pair."""
-        self.consts[call_path] = constant
+    def add_variant(self, call_path, value):
+        """Add another callpath, value pair."""
+        self.values[call_path] = value
 
     def get(self, call_path=None, raw=False):
-        """Get the constant value as Python object (str, int, ...) under the
-        specified call_path.
+        """Get the value as Python object (str, int, ...) under the specified
+        call_path.
 
         Keyword arguments:
             call_path -- The path of the value that should be retrieved
                          (default: the empty default path for an ambiguous
                          value).
-            raw       -- Return the raw llvm.Constant object without
+            raw       -- Return the raw llvm.Value object without
                          interpreting it.
+
+        Return value:
+        1. The interpreted constant value if possible, None otherwise.
+        2. If raw is set, the uninterpreted llvm.Value.
         """
         if call_path is not None:
             cp = self._get_call_path(call_path)
-            if cp in self.consts:
-                constant = self.consts[cp]
+            if cp in self.values:
+                value = self.values[cp]
             else:
-                constant = self.consts[tuple()]
+                value = self.values[tuple()]
 
         if raw:
-            return constant
+            return value
 
-        if isinstance(constant, pyllco.Function):
-            return constant.get_name()
-        return constant.get(attrs=self.attributes)
+        if isinstance(value, pyllco.Constant):
+            if isinstance(value, pyllco.Function):
+                return value.get_name()
+            return value.get(attrs=self.attributes)
+
+        return None
+
+
+class Arguments(list):
+    """Store a list of argument together with a special return value."""
+
+    def set_return_value(self, ret_value):
+        self.return_value = ret_value
+
+    def get_return_value(self):
+        return self.return_value
