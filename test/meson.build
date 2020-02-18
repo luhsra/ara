@@ -119,6 +119,12 @@ test('cfg_stats',
    env : [python_path]
 )
 
+test('cfg_stats_no_passes',
+   py3_inst,
+   args: [files('../ara.py'), files('../build/appl/FreeRTOS/GPSLogger/gpslogger-Libs_Adafruit_SSD1306_Adafruit_SSD1306.ll'), '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'debug'],
+   env : [python_path]
+)
+
 test('dummy-test',
    py3_inst,
    args: [files('../ara.py'), 'empty', '--os', 'FreeRTOS',

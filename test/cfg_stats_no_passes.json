@@ -1,0 +1,12 @@
+{
+	"steps": [
+        "ABBMerge",
+        "CFGStats",
+        {
+            "name": "Printer",
+            "dot": "cfg_no_passes.dot",
+            "graph_name": "CFG without llvm transformations.",
+            "subgraph": "abbs"
+        }
+	]
+}
