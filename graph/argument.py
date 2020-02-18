@@ -63,12 +63,11 @@ class Argument:
         1. The interpreted constant value if possible, None otherwise.
         2. If raw is set, the uninterpreted llvm.Value.
         """
+        value = self.values[tuple()]
         if call_path is not None:
             cp = self._get_call_path(call_path)
             if cp in self.values:
                 value = self.values[cp]
-            else:
-                value = self.values[tuple()]
 
         if raw:
             return value
