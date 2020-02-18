@@ -5,13 +5,24 @@ namespace ara {
 	PyObject* Arguments::get_python_list() const {
 		PyObject* list = PyList_New(0);
 		py_throw(list == nullptr);
-		for (auto& arg : *this) {
+		for (size_t i = 0; i < this->size() + 1; ++i) {
+			const Argument* arg = nullptr;
 			int ret;
+			if (i == 0) {
+				if (!this->has_return_value()) {
+					ret = PyList_Append(list, Py_None);
+					py_throw(ret != 0);
+					continue;
+				}
+				arg = return_value.get();
+			} else {
+				arg = &this->at(i - 1);
+			}
 
 			PyObject* tup = PyTuple_New(2);
 			py_throw(tup == nullptr);
 
-			llvm::AttributeSet attrs = arg.get_attrs();
+			llvm::AttributeSet attrs = arg->get_attrs();
 
 			PyObject* attrs_obj = get_obj_from_attr_set(attrs);
 			py_throw(attrs_obj == nullptr);
@@ -22,7 +33,7 @@ namespace ara {
 			PyObject* values = PyList_New(0);
 			py_throw(values == nullptr);
 
-			for (auto it = arg.begin(); it != arg.end(); ++it) {
+			for (auto it = arg->begin(); it != arg->end(); ++it) {
 				// handle the path
 				PyObject* call_path = PyList_New(0);
 				py_throw(call_path == nullptr);

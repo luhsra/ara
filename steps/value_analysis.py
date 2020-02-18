@@ -36,16 +36,24 @@ class ValueAnalysis(Step):
 
             self._log.debug(f"Processing node {g.cfg.vp.name[v]}.")
 
-            new_args = []
-            for arg in args:
-                consts = dict([(tuple(x), y) for x, y in arg[1]])
-                new_arg = graph.Argument(arg[0], consts[tuple()])
-                if len(consts) > 1:
-                    for key, value in consts.items():
-                        if key == tuple():
-                            continue
-                        call_path = self._convert_to_abbs(g, key)
-                        new_arg.add_variant(call_path, value)
-                self._log.debug(f"Retrieved argument {new_arg}")
-                new_args.append(new_arg)
+            new_args = graph.Arguments()
+            for i, arg in enumerate(args):
+                # Argument construction
+                new_arg = None
+                if arg is not None:
+                    consts = dict([(tuple(x), y) for x, y in arg[1]])
+                    new_arg = graph.Argument(arg[0], consts[tuple()])
+                    if len(consts) > 1:
+                        for key, value in consts.items():
+                            if key == tuple():
+                                continue
+                            call_path = self._convert_to_abbs(g, key)
+                            new_arg.add_variant(call_path, value)
+                # assignment
+                if i == 0:
+                    self._log.debug(f"Retrieved return value {new_arg}")
+                    new_args.set_return_value(new_arg)
+                else:
+                    self._log.debug(f"Retrieved argument {new_arg}")
+                    new_args.append(new_arg)
             g.cfg.vp.arguments[v] = new_args

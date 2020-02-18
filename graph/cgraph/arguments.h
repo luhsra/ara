@@ -79,6 +79,8 @@ namespace ara {
 		 *      ]
 		 *     )
 		 * ]
+		 *
+		 * The first element (index 0) in the list is the return value or None, if not present.
 		 */
 		PyObject* get_python_list() const;
 	};
