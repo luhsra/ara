@@ -6,12 +6,14 @@
 		}
 	],
 
+	"ICFG": {
+		"log_level": "info"
+	},
 	"LLVMMap": {
-		"log_level": "info",
-		"llvm_dump": true
+		"log_level": "info"
 	},
 	"ValueAnalysis": {
-		"log_level": "info"
+		"log_level": "debug"
 	},
 	"ValueAnalysisCore": {
 		"log_level": "info"
