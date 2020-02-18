@@ -26,6 +26,21 @@ class Task:
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
 
+# TODO make this a dataclass once we use Python 3.7
+class Queue:
+    def __init__(self, cfg, name, handler, length, size, branch,
+                 after_scheduler):
+        self.cfg = cfg
+        self.name = name
+        self.handler = handler,
+        self.length = length
+        self.size = size
+        self.branch = branch
+        self.after_scheduler = after_scheduler
+
+    def __repr__(self):
+        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+
 
 class FreeRTOS:
     vertex_properties = [('label', 'string', 'instance name'),
@@ -110,6 +125,35 @@ class FreeRTOS:
         state.next_abbs = []
         state.scheduler_on = True
         return state
+
+    @syscall
+    def xQueueGenericCreate(cfg, abb, state):
+        state = state.copy()
+
+        # instance properties
+        cp = CallPath(graph=state.callgraph, node=state.call)
+        queue_handler = state.cfg.vp.arguments[abb].get_return_value()
+        handler_name = queue_handler.get(raw=True).get_name()
+        queue_len = state.cfg.vp.arguments[abb][0].get(call_path=cp)
+        queue_item_size = state.cfg.vp.arguments[abb][1].get(call_path=cp)
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = f"{handler_name}"
+
+        after_scheduler = hasattr(state, 'scheduler_on') and state.scheduler_on
+
+        state.instances.vp.obj[v] = Queue(cfg,
+                                          name=handler_name,
+                                          handler=queue_handler,
+                                          length=queue_len,
+                                          size=queue_item_size,
+                                          branch=state.branch,
+                                          after_scheduler=after_scheduler)
+        state.next_abbs = []
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
+
+
 #     {
 #         "name": "vTaskNotifyGiveFromISR",
 #         "os": OS.FreeRTOS,
@@ -122,11 +166,6 @@ class FreeRTOS:
 #     },
 #     {
 #         "name": "xTaskCreateRestricted",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xQueueGenericCreate",
 #         "os": OS.FreeRTOS,
 #         "type": SyscallType.CREATE,
 #     },
