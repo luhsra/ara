@@ -42,6 +42,20 @@ class Queue:
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
 
 
+# TODO make this a dataclass once we use Python 3.7
+class Mutex:
+    def __init__(self, cfg, name, handler, m_type, branch, after_scheduler):
+        self.cfg = cfg
+        self.name = name
+        self.handler = handler,
+        self.m_type = m_type
+        self.branch = branch
+        self.after_scheduler = after_scheduler
+
+    def __repr__(self):
+        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+
+
 class FreeRTOS:
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)')]
@@ -153,6 +167,31 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
+    @syscall
+    def xQueueCreateMutex(cfg, abb, state):
+        state = state.copy()
+        # instance properties
+        cp = CallPath(graph=state.callgraph, node=state.call)
+        mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
+        handler_name = mutex_handler.get(raw=True).get_name()
+        mutex_type = state.cfg.vp.arguments[abb][0].get(call_path=cp)
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = f"{handler_name}"
+
+        after_scheduler = hasattr(state, 'scheduler_on') and state.scheduler_on
+
+        state.instances.vp.obj[v] = Mutex(cfg,
+                                          name=handler_name,
+                                          handler=mutex_handler,
+                                          m_type=mutex_type,
+                                          branch=state.branch,
+                                          after_scheduler=after_scheduler)
+
+        state.next_abbs = []
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
+
 
 #     {
 #         "name": "vTaskNotifyGiveFromISR",
@@ -191,11 +230,6 @@ class FreeRTOS:
 #     },
 #     {
 #         "name": "xSemaphoreCreateBinaryStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xQueueCreateMutex",
 #         "os": OS.FreeRTOS,
 #         "type": SyscallType.CREATE,
 #     },
