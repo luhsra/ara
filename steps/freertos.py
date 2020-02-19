@@ -59,10 +59,14 @@ class Mutex:
 class FreeRTOS:
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)')]
+    edge_properties = [('label', 'string', 'syscall name')]
+
     @staticmethod
     def init(state):
         for prop in FreeRTOS.vertex_properties:
             state.instances.vp[prop[0]] = state.instances.new_vp(prop[1])
+        for prop in FreeRTOS.edge_properties:
+            state.instances.ep[prop[0]] = state.instances.new_ep(prop[1])
 
     @staticmethod
     def interpret(cfg, abb, state):
@@ -191,6 +195,24 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
+    @syscall
+    def vTaskDelay(cfg, abb, state):
+        state = state.copy()
+
+        cp = CallPath(graph=state.callgraph, node=state.call)
+        ticks = state.cfg.vp.arguments[abb][0].get(call_path=cp)
+
+        if state.running is None:
+            # TODO proper error handling
+            print("ERROR: vTaskDelay called without running Task")
+
+        e = state.instances.add_edge(state.running, state.running)
+        state.instances.ep.label[e] = f"vTaskDelay({ticks})"
+
+        state.next_abbs = []
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
+
 
 #     {
 #         "name": "vTaskNotifyGiveFromISR",
@@ -309,11 +331,6 @@ class FreeRTOS:
 #     },
 #     {
 #         "name": "xTaskCheckForTimeOut",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskDelay",
 #         "os": OS.FreeRTOS,
 #         "type": SyscallType.DEFAULT,
 #     },

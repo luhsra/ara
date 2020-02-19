@@ -31,6 +31,7 @@ class State:
         self.instances = graph_tool.Graph()
         self.call = None # call node within the call graph
         self.branch = False # is this state coming from a branch or loop
+        self.running = None # what instance (Task or ISR) is currently running
 
     def __repr__(self):
         ret = f'State(Branch: {self.branch}, '
@@ -96,8 +97,9 @@ class InstanceGraph(Flavor):
 
         state.call = self._find_tree_root(self.g.call_graphs[entry_func])
         state.scheduler_on = self._is_chained_analysis(entry_func)
+        state.running = self._find_running_instance(entry_func)
 
-    def _is_chained_analysis(self, entry_func):
+    def _find_running_instance(self, entry_func):
         for v in self.instances.vertices():
             os_obj = self.instances.vp.obj[v]
             if isinstance(os_obj, Task) and os_obj.is_regular:
@@ -106,8 +108,11 @@ class InstanceGraph(Flavor):
                     self.g.cfg.get_function(entry)
                 ]
                 if func_name == entry_func:
-                    return True
-        return False
+                    return v
+        return None
+
+    def _is_chained_analysis(self, entry_func):
+        return self._find_running_instance(entry_func) is not None
 
     def _find_tree_root(self, graph):
         if graph.num_vertices() == 0:

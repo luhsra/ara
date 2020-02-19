@@ -105,6 +105,10 @@ class Printer(Step):
                 label=g.instances.vp.label[instance],
             )
             dot_graph.add_node(dot_node)
+        for edge in g.instances.edges():
+            dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
+                                          str(hash(edge.target())),
+                                          label=g.instances.ep.label[edge]))
         self._write_dot(dot_graph)
 
     def run(self, g: graph.Graph):
