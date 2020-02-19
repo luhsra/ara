@@ -2,7 +2,7 @@
 	"steps": [
 		{
 			"name": "CFGPreparation",
-            "pass_list": "module(function(mem2reg,sccp,dce,simplify-cfg,unroll))",
+            "pass_list": "module(function(mem2reg,reassociate,sccp,dce,unroll,simplify-cfg))",
             "log_level": "info"
 		},
         "CompInsert",
