@@ -93,7 +93,6 @@ class InstanceGraph(Flavor):
         else:
             self.instances = self.g.instances
         self.new_entry_points = set()
-        self.ig_runs = copy.copy(self.side_data)
 
         state.call = self._find_tree_root(self.g.call_graphs[entry_func])
         state.scheduler_on = self._is_chained_analysis(entry_func)
@@ -171,7 +170,7 @@ class InstanceGraph(Flavor):
                     func_name = self.g.cfg.vp.name[
                         self.g.cfg.get_function(entry)
                     ]
-                    if func_name not in self.ig_runs:
+                    if func_name not in self.side_data:
                         # order is different here, the first chained step will be
                         # the last executed one
                         self._step_manager.chain_step({"name": "SSE",
@@ -179,7 +178,7 @@ class InstanceGraph(Flavor):
                                                        "flavor": SSE.Flavor.Instances})
                         self._step_manager.chain_step({"name": "CallGraph",
                                                        "entry_point": func_name})
-                        self.ig_runs.add(func_name)
+                        self.side_data.add(func_name)
                 self.new_entry_points.add(os_obj)
 
     def execute(self, state):
