@@ -113,15 +113,27 @@ test('cfg_prep_no_args',
    env : [python_path]
 )
 
-test('cfg_stats',
+test('gps_stats',
    py3_inst,
-   args: [files('../ara.py'), files('../build/appl/FreeRTOS/GPSLogger/gpslogger-Libs_Adafruit_SSD1306_Adafruit_SSD1306.ll'), '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'debug'],
    env : [python_path]
 )
 
-test('cfg_stats_no_passes',
+test('gps_stats_no_passes',
    py3_inst,
-   args: [files('../ara.py'), files('../build/appl/FreeRTOS/GPSLogger/gpslogger-Libs_Adafruit_SSD1306_Adafruit_SSD1306.ll'), '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'debug'],
+   env : [python_path]
+)
+
+test('smart_stats',
+   py3_inst,
+   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'debug'],
+   env : [python_path]
+)
+
+test('smart_stats_no_passes',
+   py3_inst,
+   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'debug'],
    env : [python_path]
 )
 
