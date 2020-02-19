@@ -1,6 +1,6 @@
 {
 	"steps": [
-        "ABBMerge",
+        "LLVMMap",
         "CFGStats",
         {
             "name": "Printer",

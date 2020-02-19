@@ -9,9 +9,6 @@
         "BBSplit",
         "FnSingleExit",
         "LLVMMap",
-        "ICFG",
-        "Syscall",
-        "ABBMerge",
         "CFGStats",
         {
             "name": "Printer",
