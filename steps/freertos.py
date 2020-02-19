@@ -119,7 +119,6 @@ class FreeRTOS:
     @syscall
     def vTaskStartScheduler(cfg, abb, state):
         state = state.copy()
-        cp = CallPath(graph=state.callgraph, node=state.call)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
