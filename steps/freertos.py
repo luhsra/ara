@@ -67,6 +67,7 @@ class FreeRTOS:
             state.instances.vp[prop[0]] = state.instances.new_vp(prop[1])
         for prop in FreeRTOS.edge_properties:
             state.instances.ep[prop[0]] = state.instances.new_ep(prop[1])
+        state.scheduler_on = False
 
     @staticmethod
     def interpret(cfg, abb, state):
@@ -100,8 +101,6 @@ class FreeRTOS:
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
 
-        after_scheduler = hasattr(state, 'scheduler_on') and state.scheduler_on
-
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
@@ -113,7 +112,7 @@ class FreeRTOS:
                                          handle_p=task_handle_p,
                                          abb=abb,
                                          branch=state.branch,
-                                         after_scheduler=after_scheduler)
+                                         after_scheduler=state.scheduler_on)
         state.next_abbs = []
 
         # next abbs
@@ -157,15 +156,13 @@ class FreeRTOS:
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
 
-        after_scheduler = hasattr(state, 'scheduler_on') and state.scheduler_on
-
         state.instances.vp.obj[v] = Queue(cfg,
                                           name=handler_name,
                                           handler=queue_handler,
                                           length=queue_len,
                                           size=queue_item_size,
                                           branch=state.branch,
-                                          after_scheduler=after_scheduler)
+                                          after_scheduler=state.scheduler_on)
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
@@ -182,14 +179,12 @@ class FreeRTOS:
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
 
-        after_scheduler = hasattr(state, 'scheduler_on') and state.scheduler_on
-
         state.instances.vp.obj[v] = Mutex(cfg,
                                           name=handler_name,
                                           handler=mutex_handler,
                                           m_type=mutex_type,
                                           branch=state.branch,
-                                          after_scheduler=after_scheduler)
+                                          after_scheduler=state.scheduler_on)
 
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
