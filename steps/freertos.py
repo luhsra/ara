@@ -32,7 +32,7 @@ class Queue:
                  after_scheduler):
         self.cfg = cfg
         self.name = name
-        self.handler = handler,
+        self.handler = handler
         self.length = length
         self.size = size
         self.branch = branch
