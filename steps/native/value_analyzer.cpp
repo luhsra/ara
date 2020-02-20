@@ -1118,6 +1118,7 @@ namespace ara {
 				unsigned v_count = 0;
 				for (const auto& v : a.value_list) {
 					const llvm::Constant* c = dyn_cast<llvm::Constant>(v);
+					assert(c != nullptr && "Ambiguous value must not be null");
 					arg.add_variant(a.argument_calles_list[v_count], *c);
 					logger.info() << "  Value " << v_count++ << ": " << *v << std::endl;
 				}
@@ -1130,6 +1131,7 @@ namespace ara {
 					logger.warn() << "  Analysis result: " << *a.value_list[0] << std::endl;
 					args.emplace_back(Argument(s, *none_c));
 				} else {
+					assert(c != nullptr && "Value value must not be null");
 					args.emplace_back(Argument(s, *c));
 				}
 			}

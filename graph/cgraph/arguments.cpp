@@ -53,7 +53,7 @@ namespace ara {
 				// now the pain begins. We have to give the const Value to Python and Python/Cython with values is
 				// nearly impossible. We either have to castrate our Python interface to support only const methods
 				// or have to leave the land of const correctness. We are doing the latter...
-				PyObject* val_obj = get_obj_from_value(const_cast<llvm::Value*>(&v));
+				PyObject* val_obj = get_obj_from_value(const_cast<llvm::Value&>(v));
 				py_throw(val_obj == nullptr);
 
 				PyObject* cconst = PyTuple_New(2);
