@@ -50,16 +50,18 @@ class State:
 
 
 class Flavor:
-    def __init__(self, step, g):
-        self.step = step
-        self.g = g
+    def __init__(self, step, g, entry_func):
+        self._step = step
+        self._entry_func = entry_func
+        self._g = g
         self._log = logging.getLogger(f"{step.get_name()}."
                                       f"{self.__class__.__name__}")
+        self._log.info(f"Working on {self._entry_func}.")
 
-        self.icfg = graph.CFGView(g.cfg,
-                                  efilt=g.cfg.ep.type.fa == graph.CFType.icf)
-        self.lcfg = graph.CFGView(g.cfg,
-                                  efilt=g.cfg.ep.type.fa == graph.CFType.lcf)
+        self._icfg = graph.CFGView(g.cfg,
+                                   efilt=g.cfg.ep.type.fa == graph.CFType.icf)
+        self._lcfg = graph.CFGView(g.cfg,
+                                   efilt=g.cfg.ep.type.fa == graph.CFType.lcf)
 
     def system_semantic(self, state):
         new_states = self.execute(state)
@@ -68,44 +70,45 @@ class Flavor:
 
 
 class InstanceGraph(Flavor):
-    def __init__(self, step, g, side_data, state, entry_func, step_manager,
-                 dump, dump_prefix):
-        super().__init__(step, g)
-        self.entry_func = entry_func
-        self._log.info(f"Working on {entry_func}.")
-        self.g.os.init(state)
+    def __init__(self, step, g, entry_func, side_data):
+        super().__init__(step, g, entry_func)
         self.call_map = self._create_call_map(entry_func)
-        self.func_branch = self.g.call_graphs[entry_func].new_vp("bool")
+        self.func_branch = self._g.call_graphs[entry_func].new_vp("bool")
         self.side_data = side_data
         self.side_data.add(entry_func)
 
-        self._step_manager = step_manager
-        if dump:
-            self.dump_prefix = dump_prefix
-        else:
-            self.dump_prefix = None
-
         def new_visited_map():
-            return self.icfg.new_vp("bool", val=False)
+            return self._icfg.new_vp("bool", val=False)
 
         self.visited = defaultdict(new_visited_map)
-        if self.g.instances is None:
-            self.instances = state.instances
-        else:
-            self.instances = self.g.instances
         self.new_entry_points = set()
 
-        state.call = self._find_tree_root(self.g.call_graphs[entry_func])
-        state.scheduler_on = self._is_chained_analysis(entry_func)
-        state.running = self._find_running_instance(entry_func)
+    def get_initial_state(self):
+        # find main
+        entry_func = self._g.cfg.get_function_by_name(self._entry_func)
+        entry_abb = self._g.cfg.get_entry_abb(entry_func)
+
+        entry = State(cfg=self._g.cfg,
+                      callgraph=self._g.call_graphs[self._entry_func],
+                      next_abbs=[entry_abb])
+
+        self._g.os.init(entry)
+
+        entry.call = self._find_tree_root(self._g.call_graphs[self._entry_func])
+        entry.scheduler_on = self._is_chained_analysis(self._entry_func)
+        entry.running = self._find_running_instance(self._entry_func)
+
+        return entry
 
     def _find_running_instance(self, entry_func):
-        for v in self.instances.vertices():
-            os_obj = self.instances.vp.obj[v]
+        if self._g.instances is None:
+            return None
+        for v in self._g.instances.vertices():
+            os_obj = self._g.instances.vp.obj[v]
             if isinstance(os_obj, Task) and os_obj.is_regular:
-                entry = self.g.cfg.vertex(os_obj.entry_abb)
-                func_name = self.g.cfg.vp.name[
-                    self.g.cfg.get_function(entry)
+                entry = self._g.cfg.vertex(os_obj.entry_abb)
+                func_name = self._g.cfg.vp.name[
+                    self._g.cfg.get_function(entry)
                 ]
                 if func_name == entry_func:
                     return v
@@ -124,7 +127,7 @@ class InstanceGraph(Flavor):
 
     def _create_call_map(self, entry_func):
         """Create a mapping  'call node -> node index in call_graph'."""
-        cg = self.g.call_graphs[entry_func]
+        cg = self._g.call_graphs[entry_func]
         call_map = {}
         for v in cg.vertices():
             call_map[cg.vp.cfglink[v]] = v
@@ -133,9 +136,9 @@ class InstanceGraph(Flavor):
     @functools.lru_cache(maxsize=32)
     def _create_dom_tree(self, func):
         """Create a dominator tree of the local control flow for func."""
-        abb = self.g.cfg.get_entry_abb(func)
-        comp = label_out_component(self.lcfg, self.lcfg.vertex(abb))
-        func_cfg = graph.CFGView(self.lcfg,
+        abb = self._g.cfg.get_entry_abb(func)
+        comp = label_out_component(self._lcfg, self._lcfg.vertex(abb))
+        func_cfg = graph.CFGView(self._lcfg,
                                  vfilt=comp)
         dom_tree = dominator_tree(func_cfg, func_cfg.vertex(abb))
 
@@ -143,8 +146,8 @@ class InstanceGraph(Flavor):
 
     def _dominates(self, abb_x, abb_y):
         """Does abb_x dominate abb_y?"""
-        func = self.g.cfg.get_function(abb_x)
-        func_other = self.g.cfg.get_function(abb_y)
+        func = self._g.cfg.get_function(abb_x)
+        func_other = self._g.cfg.get_function(abb_y)
         if func != func_other:
             return False
         dom_tree = self._create_dom_tree(func)
@@ -157,55 +160,60 @@ class InstanceGraph(Flavor):
     @functools.lru_cache(maxsize=32)
     def _find_exit_abbs(self, func):
         return [x for x in func.out_neighbors()
-                if self.g.cfg.vp.is_exit[x] or self.g.cfg.vp.is_loop_head[x]]
+                if self._g.cfg.vp.is_exit[x] or self._g.cfg.vp.is_loop_head[x]]
 
     def _is_in_condition_or_loop(self, abb):
         """Is abb part of a condition or loop?"""
-        func = self.g.cfg.get_function(abb)
+        func = self._g.cfg.get_function(abb)
         return not all([self._dominates(abb, x)
                         for x in self._find_exit_abbs(func)])
 
     def _extract_entry_points(self):
-        for v in self.instances.vertices():
-            os_obj = self.instances.vp.obj[v]
+        for v in self._g.instances.vertices():
+            os_obj = self._g.instances.vp.obj[v]
             if isinstance(os_obj, Task):
                 if (os_obj not in self.new_entry_points
                     and os_obj.entry_abb is not None):
-                    entry = self.g.cfg.vertex(os_obj.entry_abb)
-                    func_name = self.g.cfg.vp.name[
-                        self.g.cfg.get_function(entry)
+                    entry = self._g.cfg.vertex(os_obj.entry_abb)
+                    func_name = self._g.cfg.vp.name[
+                        self._g.cfg.get_function(entry)
                     ]
                     if func_name not in self.side_data:
                         # order is different here, the first chained step will be
                         # the last executed one
-                        self._step_manager.chain_step({"name": "SSE",
-                                                       "entry_point": func_name,
-                                                       "flavor": SSE.Flavor.Instances})
-                        self._step_manager.chain_step({"name": "CallGraph",
-                                                       "entry_point": func_name})
+                        self._step._step_manager.chain_step(
+                            {"name": "SSE",
+                             "entry_point": func_name,
+                             "flavor": SSE.Flavor.Instances}
+                        )
+                        self._step._step_manager.chain_step(
+                            {"name": "CallGraph",
+                             "entry_point": func_name}
+                        )
                         self.side_data.add(func_name)
                 self.new_entry_points.add(os_obj)
 
     def execute(self, state):
         new_states = []
-        state.instances = self.instances
+        if self._g.instances is not None:
+            state.instances = self._g.instances
         for abb in state.next_abbs:
             if self.visited[state.call][abb]:
                 continue
             self.visited[state.call][abb] = True
 
-            if self.icfg.vp.type[abb] == graph.ABBType.syscall:
+            if self._icfg.vp.type[abb] == graph.ABBType.syscall:
                 fake_state = state.copy()
                 fake_state.branch = (self.func_branch[state.call] or
                                      self._is_in_condition_or_loop(abb))
-                assert self.g.os is not None
-                new_state = self.g.os.interpret(self.g.cfg, abb, fake_state)
-                self.instances = new_state.instances
+                assert self._g.os is not None
+                new_state = self._g.os.interpret(self._g.cfg, abb, fake_state)
+                self._g.instances = new_state.instances
                 self._extract_entry_points()
                 new_states.append(new_state)
 
-            elif self.icfg.vp.type[abb] == graph.ABBType.call:
-                for n in self.icfg.vertex(abb).out_neighbors():
+            elif self._icfg.vp.type[abb] == graph.ABBType.call:
+                for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
                     new_state.branch = (self.func_branch[state.call] or
@@ -215,17 +223,17 @@ class InstanceGraph(Flavor):
 
                     new_states.append(new_state)
 
-            elif (self.icfg.vp.is_exit[abb] and
-                  self.icfg.vertex(abb).out_degree() > 0):
+            elif (self._icfg.vp.is_exit[abb] and
+                  self._icfg.vertex(abb).out_degree() > 0):
                 new_state = state.copy()
                 call = new_state.callgraph.vp.cfglink[new_state.call]
-                neighbors = self.lcfg.vertex(call).out_neighbors()
+                neighbors = self._lcfg.vertex(call).out_neighbors()
                 new_state.next_abbs = [next(neighbors)]
                 new_state.call = next(state.call.in_neighbors())
                 new_states.append(new_state)
 
             else:
-                for n in self.icfg.vertex(abb).out_neighbors():
+                for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
 
@@ -240,11 +248,10 @@ class InstanceGraph(Flavor):
     def finish(self, sstg):
         self._log.debug(f"_create_dom_tree {self._create_dom_tree.cache_info()}")
         self._log.debug(f"_find_exit_abbs  {self._find_exit_abbs.cache_info()}")
-        self.g.instances = self.instances
-        if self.dump_prefix:
+        if self._step.dump.get():
             uuid = self._step_manager.get_execution_id()
             dot_file = f'Instances.{uuid}.{self.entry_func}.dot'
-            dot_file = self.dump_prefix + dot_file
+            dot_file = self._step.dump_prefix.get() + dot_file
             self._step_manager.chain_step({"name": "Printer",
                                            "dot": dot_file,
                                            "graph_name": 'Instances',
@@ -292,21 +299,13 @@ class SSE(Step):
 
         step_data = self._get_step_data(g, SSEStepData)
 
-        # find main
-        entry_func = g.cfg.get_function_by_name(entry_label)
-        entry_abb = g.cfg.get_entry_abb(entry_func)
-
-        entry = State(cfg=g.cfg,
-                      callgraph=g.call_graphs[entry_label],
-                      next_abbs=[entry_abb])
         flav = self.flavor.get()
         if flav == SSE.Flavor.Instances:
             flavor = InstanceGraph(
-                self, g,
+                self,
+                g,
+                entry_label,
                 step_data.flavor_data.get(SSE.Flavor.Instances, set()),
-                entry, entry_label,
-                self._step_manager, self.dump.get(),
-                self.dump_prefix.get()
             )
         else:
             self._fail("A flavor must be specified")
@@ -314,7 +313,7 @@ class SSE(Step):
         sstg = graph_tool.Graph()
         sstg.vertex_properties["state"] = sstg.new_vp("object")
 
-        state_vertex = self.new_vertex(sstg, entry)
+        state_vertex = self.new_vertex(sstg, flavor.get_initial_state())
 
         stack = [state_vertex]
 
