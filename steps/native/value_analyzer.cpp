@@ -829,6 +829,7 @@ namespace ara {
 	                                  std::vector<const Instruction*>* already_visited) {
 		bool load_success = false;
 		if (ConstantPointerNull* constant_data = dyn_cast<ConstantPointerNull>(arg)) {
+			assert(constant_data != nullptr);
 			debug_out << "CONSTANTPOINTERNULL" << std::endl;
 			std::string tmp = "&$%NULL&$%";
 			argument_container->any_list.emplace_back(tmp);
@@ -1116,24 +1117,16 @@ namespace ara {
 				logger.info() << "Analysis has found an ambiguous value:" << std::endl;
 				logger.info() << "  CallBase: " << cb << std::endl;
 				unsigned v_count = 0;
-				for (const auto& v : a.value_list) {
-					const llvm::Constant* c = dyn_cast<llvm::Constant>(v);
-					assert(c != nullptr && "Ambiguous value must not be null");
-					arg.add_variant(a.argument_calles_list[v_count], *c);
+				for (const llvm::Value* v : a.value_list) {
+					assert(v != nullptr && "Value must not be null");
+					arg.add_variant(a.argument_calles_list[v_count], *v);
 					logger.info() << "  Value " << v_count++ << ": " << *v << std::endl;
 				}
 				args.emplace_back(std::move(arg));
 			} else {
-				const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
-				if (c == nullptr) {
-					logger.warn() << "Analysis has stopped at a non constant:" << std::endl;
-					logger.warn() << "  CallBase: " << cb << std::endl;
-					logger.warn() << "  Analysis result: " << *a.value_list[0] << std::endl;
-					args.emplace_back(Argument(s, *none_c));
-				} else {
-					assert(c != nullptr && "Value value must not be null");
-					args.emplace_back(Argument(s, *c));
-				}
+				const llvm::Value* v = a.value_list[0];
+				assert(v != nullptr && "Value must not be null");
+				args.emplace_back(Argument(s, *v));
 			}
 			i++;
 		}
