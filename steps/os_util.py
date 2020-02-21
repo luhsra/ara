@@ -1,4 +1,4 @@
 def syscall(func):
-    func = staticmethod(func)
     func.syscall = True
+    func = staticmethod(func)
     return func
