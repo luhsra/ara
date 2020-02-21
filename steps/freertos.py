@@ -222,6 +222,33 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
+    @syscall
+    def xQueueGenericSend(cfg, abb, state):
+        state = state.copy()
+
+        cp = CallPath(graph=state.callgraph, node=state.call)
+        handler = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+        # TODO this has to be a pointer object. However, the value analysis
+        # follows the pointer currently.
+        item = state.cfg.vp.arguments[abb][1].get(call_path=cp, raw=True)
+        ticks = state.cfg.vp.arguments[abb][2].get(call_path=cp)
+        action = state.cfg.vp.arguments[abb][3].get(call_path=cp)
+
+        queue = None
+        for v in state.instances.vertices():
+            if isinstance(state.instances.vp.obj[v], Queue):
+                print(state.instances.vp.obj[v].handler.get(raw=True))
+                if handler == state.instances.vp.obj[v].handler.get(raw=True):
+                    queue = v
+        print(handler)
+        assert queue is not None, "Queue handler cannot be found"
+
+        e = state.instances.add_edge(state.running, queue)
+        state.instances.ep.label[e] = f"xQueueGenericSend"
+
+        state.next_abbs = []
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
 
 #     {
 #         "name": "vTaskNotifyGiveFromISR",
@@ -520,11 +547,6 @@ class FreeRTOS:
 #     },
 #     {
 #         "name": "portYIELD",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueGenericSend",
 #         "os": OS.FreeRTOS,
 #         "type": SyscallType.DEFAULT,
 #     },
