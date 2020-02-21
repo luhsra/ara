@@ -11,6 +11,7 @@ import pyllco
 from native_step import Step
 from .option import Option, String, Choice
 from .freertos import Task
+from .os_util import SyscallCategory
 from util import VarianceDict
 
 from collections import defaultdict
@@ -144,6 +145,9 @@ class InstanceGraph(Flavor):
 
         return dom_tree
 
+    def _get_categories(self):
+        return SyscallCategory.CREATE
+
     def _dominates(self, abb_x, abb_y):
         """Does abb_x dominate abb_y?"""
         func = self._g.cfg.get_function(abb_x)
@@ -179,8 +183,8 @@ class InstanceGraph(Flavor):
                         self._g.cfg.get_function(entry)
                     ]
                     if func_name not in self.side_data:
-                        # order is different here, the first chained step will be
-                        # the last executed one
+                        # order is different here, the first chained step will
+                        # be the last executed one
                         self._step._step_manager.chain_step(
                             {"name": "SSE",
                              "entry_point": func_name,
@@ -207,7 +211,8 @@ class InstanceGraph(Flavor):
                 fake_state.branch = (self.func_branch[state.call] or
                                      self._is_in_condition_or_loop(abb))
                 assert self._g.os is not None
-                new_state = self._g.os.interpret(self._g.cfg, abb, fake_state)
+                new_state = self._g.os.interpret(self._g.cfg, abb, fake_state,
+                                                 categories=self._get_categories())
                 self._g.instances = new_state.instances
                 self._extract_entry_points()
                 new_states.append(new_state)

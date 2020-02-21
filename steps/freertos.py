@@ -1,4 +1,4 @@
-from .os_util import syscall
+from .os_util import syscall, SyscallCategory
 
 import graph
 
@@ -70,9 +70,23 @@ class FreeRTOS:
         state.scheduler_on = False
 
     @staticmethod
-    def interpret(cfg, abb, state):
+    def interpret(cfg, abb, state, categories=SyscallCategory.ALL):
         syscall = cfg.get_syscall_name(abb)
         print("FreeRTOS Syscall:", syscall)
+
+        syscall_function = getattr(FreeRTOS, syscall)
+
+        if isinstance(categories, SyscallCategory):
+            categories = set((categories,))
+
+        if SyscallCategory.ALL not in categories:
+            sys_cat = syscall_function.categories
+            if sys_cat | categories != sys_cat:
+                # do not interpret this syscall
+                state = state.copy()
+                state.next_abbs = []
+                FreeRTOS.add_normal_cfg(cfg, abb, state)
+                return state
         return getattr(FreeRTOS, syscall)(cfg, abb, state)
 
     @staticmethod
@@ -85,7 +99,7 @@ class FreeRTOS:
     def vTaskNotifyGiveFromISR(cfg, abb, state):
         pass
 
-    @syscall
+    @syscall(SyscallCategory.CREATE)
     def xTaskCreate(cfg, abb, state):
         state = state.copy()
 
@@ -119,7 +133,7 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall
+    @syscall(SyscallCategory.CREATE)
     def vTaskStartScheduler(cfg, abb, state):
         state = state.copy()
 
@@ -142,7 +156,7 @@ class FreeRTOS:
         state.scheduler_on = True
         return state
 
-    @syscall
+    @syscall(SyscallCategory.CREATE)
     def xQueueGenericCreate(cfg, abb, state):
         state = state.copy()
 
@@ -167,7 +181,7 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall
+    @syscall(SyscallCategory.CREATE)
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
