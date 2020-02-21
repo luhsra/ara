@@ -254,13 +254,13 @@ class InstanceGraph(Flavor):
         self._log.debug(f"_create_dom_tree {self._create_dom_tree.cache_info()}")
         self._log.debug(f"_find_exit_abbs  {self._find_exit_abbs.cache_info()}")
         if self._step.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            dot_file = f'Instances.{uuid}.{self.entry_func}.dot'
+            uuid = self._step._step_manager.get_execution_id()
+            dot_file = f'Instances.{uuid}.{self._entry_func}.dot'
             dot_file = self._step.dump_prefix.get() + dot_file
-            self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
-                                           "graph_name": 'Instances',
-                                           "subgraph": 'instances'})
+            self._step._step_manager.chain_step({"name": "Printer",
+                                                 "dot": dot_file,
+                                                 "graph_name": 'Instances',
+                                                 "subgraph": 'instances'})
 
 
 # TODO make this a dataclass, when ready
