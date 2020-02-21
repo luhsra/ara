@@ -17,5 +17,8 @@
 	},
 	"ValueAnalysisCore": {
 		"log_level": "info"
+	},
+	"SSE": {
+		"dump": true
 	}
 }

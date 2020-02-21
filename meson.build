@@ -63,7 +63,7 @@ extra_settings = files('test/extra_settings.json')
 test('ara_tester',
    py3_inst,
    args: [files('ara.py'), gpslogger_targets,
-          '--log-level', 'debug', '--dump',
+          '--log-level', 'debug',
           '--step-settings', extra_settings],
    env : [python_path]
 )
