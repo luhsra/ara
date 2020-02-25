@@ -1696,6 +1696,8 @@ void vTaskStartScheduler(void) {
 
 /* Add the idle task at the lowest priority. */
 // IDLE Task is statically generated
+	prvInitialiseTaskLists();
+
 
 #if (configUSE_TIMERS == 1)
 	{
@@ -3061,10 +3063,8 @@ void vTaskAllocateMPURegions(TaskHandle_t xTaskToModify, const MemoryRegion_t* c
 static void prvInitialiseTaskLists(void) {
 	UBaseType_t uxPriority;
 
-	for (uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++) {
-		vListInitialise(&(pxReadyTasksLists[uxPriority]));
-	}
-
+	//readyTasksList done
+	//TODO: delayed and pending lists
 	vListInitialise(&xDelayedTaskList1);
 	vListInitialise(&xDelayedTaskList2);
 	vListInitialise(&xPendingReadyList);

@@ -7,12 +7,12 @@ extern "C" void prvIdleTask( void * );
 
 template <unsigned int stacksize>
 struct InitializedStack_t {
-       StackType_t zero[stacksize-5] = {0};
-       uint32_t arguments = 0;
-       void * returnAddr = (void*) prvTaskExitError;
+  StackType_t zero[stacksize-5];
+  uint32_t arguments;
+  void * returnAddr;
        void * startFunc;
-       uint32_t magic = 0x01000000UL;
-       StackType_t zero2[1] = {0};
+  uint32_t magic;
+  StackType_t zero2[1];
 
-       explicit InitializedStack_t(void* start) : startFunc(start) {}
+  InitializedStack_t(void* start) : startFunc(start), magic(0x01000000UL), returnAddr((void*) prvTaskExitError) {}
 } __attribute__((packed));

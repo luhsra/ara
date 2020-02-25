@@ -19,6 +19,7 @@ class VanillaTaskList(StructDataObject):
         end = prev
         for index, task in enumerate(self.tasks):
             task.impl.tcb['xStateListItem']['pxPrevious'] = prev.address
+            task.impl.tcb['xStateListItem']['pxContainer'] = self.address
             print(prev)
             prev['pxNext'] = task.impl.tcb['xStateListItem'].address
             prev = task.impl.tcb['xStateListItem']
@@ -49,7 +50,7 @@ class VanillaTasksLists(DataObjectArray):
         #assume we encode port optimized
         is_bit_encoded = True
         if(is_bit_encoded):
-            return "0" + " | 1 << ".join([str(p) for p in self.used_prios])
+            return " | ".join([f"1 << {p}" for p in self.used_prios])
         return str(max(self.used_prios))
 
 
@@ -83,7 +84,7 @@ class VanillaListItem(StructDataObject):
             return
         self['xItemValue'] = 0
         self['pvOwner'] = lambda:self.container.address
-        self['pxContainer'] = 'NULL'
+        self['pvContainer'] = 'NULL'
 
     def static_initializer(self, indent=2):
         self['pxNext'].do_cast = True

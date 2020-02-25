@@ -105,6 +105,10 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                        'uxTaskNumber',
                        str(len(tasks))))
 
+        self.generator.source_file.data_manager.add(
+            DataObject('PRIVILEGED_DATA UBaseType_t',
+                       'uxCurrentNumberOfTasks',
+                       str(len(tasks))))
 
 
     def generate_limitation_warnings(self):
