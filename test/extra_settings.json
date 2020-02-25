@@ -1,6 +1,6 @@
 {
 	"steps": [
-		"InstanceGraph"
+		"InteractionAnalysis"
 	],
 
 	"ICFG": {
@@ -15,7 +15,13 @@
 	"ValueAnalysisCore": {
 		"log_level": "info"
 	},
+	"Syscall": {
+		"dump": true
+	},
 	"InstanceGraph": {
+		"dump": true
+	},
+	"InteractionAnalysis": {
 		"dump": true
 	}
 }

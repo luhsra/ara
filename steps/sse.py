@@ -134,8 +134,6 @@ class FlatAnalysis(FlowAnalysis):
             return self._icfg.new_vp("bool", val=False)
         self._visited = defaultdict(new_visited_map)
 
-        self.new_entry_points = set()
-
     def _get_initial_state(self):
         # find main
         entry_func = self._g.cfg.get_function_by_name(self._entry_func)
@@ -153,18 +151,26 @@ class FlatAnalysis(FlowAnalysis):
 
         return entry
 
-    def _find_running_instance(self, entry_func):
+    def _iterate_tasks(self):
+        """Return a generator over all tasks in self._g.instances."""
         if self._g.instances is None:
-            return None
+            return
         for v in self._g.instances.vertices():
             os_obj = self._g.instances.vp.obj[v]
             if isinstance(os_obj, Task) and os_obj.is_regular:
-                entry = self._g.cfg.vertex(os_obj.entry_abb)
-                func_name = self._g.cfg.vp.name[
-                    self._g.cfg.get_function(entry)
-                ]
-                if func_name == entry_func:
-                    return v
+                yield os_obj, v
+
+    def _get_task_function(self, task):
+        """Return the function which defines a task."""
+        assert task.entry_abb is not None, "Not a regular Task."
+        entry = self._g.cfg.vertex(task.entry_abb)
+        return self._g.cfg.get_function(entry)
+
+    def _find_running_instance(self, entry_func):
+        for task, v in self._iterate_tasks():
+            func = self._get_task_function(task)
+            if self._g.cfg.vp.name[func] == entry_func:
+                return v
         return None
 
     def _is_chained_analysis(self, entry_func):
@@ -265,10 +271,14 @@ class FlatAnalysis(FlowAnalysis):
 
 
 class InstanceGraph(FlatAnalysis):
-    """Find all System instances."""
+    """Find all application instances."""
 
     def get_dependencies(self):
         return ["Syscall", "ValueAnalysis", "CallGraph"]
+
+    def _init_analysis(self):
+        super()._init_analysis()
+        self._new_entry_points = set()
 
     def _dominates(self, abb_x, abb_y):
         """Does abb_x dominate abb_y?"""
@@ -310,28 +320,18 @@ class InstanceGraph(FlatAnalysis):
                         self._is_in_condition_or_loop(abb))
 
     def _extract_entry_points(self):
-        for v in self._g.instances.vertices():
-            os_obj = self._g.instances.vp.obj[v]
-            if isinstance(os_obj, Task):
-                if (os_obj not in self.new_entry_points
-                    and os_obj.entry_abb is not None):
-                    entry = self._g.cfg.vertex(os_obj.entry_abb)
-                    func_name = self._g.cfg.vp.name[
-                        self._g.cfg.get_function(entry)
-                    ]
-                    if func_name not in self._step_data:
-                        # order is different here, the first chained step will
-                        # be the last executed one
-                        self._step_manager.chain_step(
-                            {"name": self.get_name(),
-                             "entry_point": func_name}
-                        )
-                        self._step_manager.chain_step(
-                            {"name": "CallGraph",
-                             "entry_point": func_name}
-                        )
-                        self._step_data.add(func_name)
-                self.new_entry_points.add(os_obj)
+        for task, _ in self._iterate_tasks():
+            if (task not in self._new_entry_points):
+                func_name = self._g.cfg.vp.name[self._get_task_function(task)]
+                if func_name not in self._step_data:
+                    # order is different here, the first chained step will
+                    # be the last executed one
+                    self._step_manager.chain_step({"name": self.get_name(),
+                                                   "entry_point": func_name})
+                    self._step_manager.chain_step({"name": "CallGraph",
+                                                   "entry_point": func_name})
+                    self._step_data.add(func_name)
+                self._new_entry_points.add(task)
 
     def _evaluate_fake_state(self, new_state, abb):
         self._g.instances = new_state.instances
@@ -356,8 +356,25 @@ class InstanceGraph(FlatAnalysis):
 
 
 class InteractionAnalysis(FlatAnalysis):
+    """Find the flow insensitive interactions between instances."""
+
     def get_dependencies(self):
         return ["InstanceGraph"]
+
+    def _init_analysis(self):
+        super()._init_analysis()
+        self._chain_entry_points()
+
+    def _chain_entry_points(self):
+        for task, _ in self._iterate_tasks():
+            func_name = self._g.cfg.vp.name[self._get_task_function(task)]
+            if func_name not in self._step_data:
+                self._step_manager.chain_step({"name": self.get_name(),
+                                               "entry_point": func_name})
+                self._step_data.add(func_name)
+
+    def _get_categories(self):
+        return SyscallCategory.COMM
 
     def _evaluate_fake_state(self, new_state, abb):
         self._g.instances = new_state.instances
