@@ -3,8 +3,8 @@ import enum
 class SyscallCategory(enum.Enum):
     UNDEFINED = 0
     ALL = 1
-    CREATE = 2
-    COMMUNICATION = 3
+    CREATE = 2 # creates an instance
+    COMM = 3   # set up a communication between multiple instances
 
 
 def syscall(*args):

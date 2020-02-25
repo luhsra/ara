@@ -204,7 +204,7 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall
+    @syscall(SyscallCategory.COMM)
     def vTaskDelay(cfg, abb, state):
         state = state.copy()
 
@@ -222,7 +222,7 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall
+    @syscall(SyscallCategory.COMM)
     def xQueueGenericSend(cfg, abb, state):
         state = state.copy()
 
