@@ -115,6 +115,7 @@ foreach app : ['a',
 
     run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
     run_target('size_' + name_prefix, command: [size, elf_target])
+    run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
     elf_targets += elf_target
     elf_targets += lto_elf
     named_elf_targets += [t, elf_target]
@@ -124,6 +125,7 @@ foreach app : ['a',
 
   run_target('compare_nm-' + app, command: [compare_nm,  named_elf_targets])
   run_target('compare_size-' + app, command: [size, elf_targets])
+  run_target('compare_time-' + app, command: [compare_time, app], depends: elf_targets)
 
   freertos_targets += ll_target
 endforeach

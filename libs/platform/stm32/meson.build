@@ -24,3 +24,4 @@ endforeach
 
 ld_flags += ['-T' + meson.current_source_dir() + '/linkerscript.ld']
 
+run_target('cat_serial', command:[join_paths(meson.current_source_dir(), 'cat_serial.sh')])
