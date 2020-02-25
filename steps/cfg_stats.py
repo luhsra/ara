@@ -16,18 +16,19 @@ class CFGStats(Step):
 
     def run(self, g: graph.Graph):
         self._log.info("Executing CFGStats step.")
+        cfg = g.cfg
 
         num_abbs = 0;
 
-        for v in g.cfg.vertices() :
-            if g.cfg.vp.type[v] in [ABBType.computation, ABBType.call, ABBType.syscall] :
+        for v in cfg.vertices() :
+            if cfg.vp.type[v] in [ABBType.computation, ABBType.call, ABBType.syscall] :
                 num_abbs += 1
 
         self._log.info("Number of ABBs: " + str(num_abbs))
 
         num_cycles = 0;
         
-        for c in graph_tool.topology.all_circuits(g.cfg,True) :
+        for c in graph_tool.topology.all_circuits(cfg,True) :
             num_cycles += 1
 
         self._log.info("Number of Cycles: " + str(num_cycles))
