@@ -256,20 +256,21 @@ xDelayedTaskList1 and xDelayedTaskList2 could be move to function scople but
 doing so breaks some kernel aware debuggers and debuggers that rely on removing
 the static qualifier. */
 extern PRIVILEGED_DATA List_t pxReadyTasksLists[configMAX_PRIORITIES]; /*< Prioritised ready tasks. */
-PRIVILEGED_DATA static List_t xDelayedTaskList1;                       /*< Delayed tasks. */
-PRIVILEGED_DATA static List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have
+extern PRIVILEGED_DATA  List_t xDelayedTaskList1;                       /*< Delayed tasks. */
+extern PRIVILEGED_DATA  List_t xDelayedTaskList2; /*< Delayed tasks (two lists are used - one for delays that have
                                                     overflowed the current tick count. */
-PRIVILEGED_DATA static List_t* volatile pxDelayedTaskList; /*< Points to the delayed task list currently being used. */
-PRIVILEGED_DATA static List_t* volatile pxOverflowDelayedTaskList; /*< Points to the delayed task list currently being
+extern PRIVILEGED_DATA List_t* volatile pxDelayedTaskList; /*< Points to the delayed task list currently being used. */
+extern PRIVILEGED_DATA List_t* volatile pxOverflowDelayedTaskList; /*< Points to the delayed task list currently being
                                                                       used to hold tasks that have overflowed the
                                                                       current tick count. */
-PRIVILEGED_DATA static List_t
+extern PRIVILEGED_DATA List_t
     xPendingReadyList; /*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the
                           ready list when the scheduler is resumed. */
 
 #if (INCLUDE_vTaskDelete == 1)
 
 PRIVILEGED_DATA static List_t
+#error Currently not supported
     xTasksWaitingTermination; /*< Tasks that have been deleted - but their memory not yet freed. */
 PRIVILEGED_DATA static volatile UBaseType_t uxDeletedTasksWaitingCleanUp = (UBaseType_t)0U;
 
@@ -277,7 +278,8 @@ PRIVILEGED_DATA static volatile UBaseType_t uxDeletedTasksWaitingCleanUp = (UBas
 
 #if (INCLUDE_vTaskSuspend == 1)
 
-PRIVILEGED_DATA static List_t xSuspendedTaskList; /*< Tasks that are currently suspended. */
+#warning TODO: needs to be conditional in generator
+extern PRIVILEGED_DATA List_t xSuspendedTaskList; /*< Tasks that are currently suspended. */
 
 #endif
 
@@ -961,14 +963,6 @@ static void prvAddNewTaskToReadyList(TCB_t* pxNewTCB) {
 			the suspended state - make this the current task. */
 			pxCurrentTCB = pxNewTCB;
 
-			if (uxCurrentNumberOfTasks == (UBaseType_t)1) {
-				/* This is the first task to be created so do the preliminary
-				initialisation required.  We will not recover if this call
-				fails, but we will report the failure. */
-				prvInitialiseTaskLists();
-			} else {
-				mtCOVERAGE_TEST_MARKER();
-			}
 		} else {
 			/* If the scheduler is not already running, make this task the
 			current task if it is the highest priority task to be created
@@ -1696,7 +1690,6 @@ void vTaskStartScheduler(void) {
 
 /* Add the idle task at the lowest priority. */
 // IDLE Task is statically generated
-	prvInitialiseTaskLists();
 
 
 #if (configUSE_TIMERS == 1)
@@ -3063,29 +3056,6 @@ void vTaskAllocateMPURegions(TaskHandle_t xTaskToModify, const MemoryRegion_t* c
 #endif /* portUSING_MPU_WRAPPERS */
 /*-----------------------------------------------------------*/
 
-static void prvInitialiseTaskLists(void) {
-	UBaseType_t uxPriority;
-
-	//readyTasksList done
-	//TODO: delayed and pending lists
-	vListInitialise(&xDelayedTaskList1);
-	vListInitialise(&xDelayedTaskList2);
-	vListInitialise(&xPendingReadyList);
-
-#if (INCLUDE_vTaskDelete == 1)
-	{ vListInitialise(&xTasksWaitingTermination); }
-#endif /* INCLUDE_vTaskDelete */
-
-#if (INCLUDE_vTaskSuspend == 1)
-	{ vListInitialise(&xSuspendedTaskList); }
-#endif /* INCLUDE_vTaskSuspend */
-
-	/* Start with pxDelayedTaskList using list1 and the pxOverflowDelayedTaskList
-	using list2. */
-	pxDelayedTaskList = &xDelayedTaskList1;
-	pxOverflowDelayedTaskList = &xDelayedTaskList2;
-}
-/*-----------------------------------------------------------*/
 
 static void prvCheckTasksWaitingTermination(void) {
 

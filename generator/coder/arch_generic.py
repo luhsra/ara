@@ -91,15 +91,31 @@ class VanillaListItem(StructDataObject):
         self['pxPrevious'].do_cast = True
         return StructDataObject.static_initializer(self, indent)
 
+class VanillaListHead(StructDataObject):
+    def __init__(self, name):
+        StructDataObject.__init__(self, 'List_t', name)
+        self['pxIndex'] = DataObject('ListItem_t *', 'pxIndex')
+        self['xListEnd'] = self.arch.ListItem('xListEnd', mini=True)
+        self['xListEnd']['xItemValue'] = 'portMAX_DELAY'
+        self['xListEnd']['pxNext'] = self['xListEnd'].address
+        self['xListEnd']['pxPrevious'] = self['xListEnd'].address
+        self['uxNumberOfItems'] = 0
+        self['pxIndex'] = self['xListEnd'].address
+        self['pxIndex'].do_cast = True
+        self['xListEnd']['pxNext'].do_cast = True
+        self['xListEnd']['pxPrevious'].do_cast = True
+
 
 class GenericArch(BaseCoder):
     ListItem = VanillaListItem
+    ListHead = VanillaListHead
     TaskList = VanillaTaskList
     TasksLists = VanillaTasksLists
     TCB = VanillaTCB
 
     def __init__(self):
         BaseCoder.__init__(self)
+        self.ListHead.arch = self
         self.ListItem.arch = self
         self.TaskList.arch = self
         self.TasksLists.arch = self

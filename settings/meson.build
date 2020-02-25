@@ -12,12 +12,16 @@ nop = find_program('true')
 
 # compiler flags to generate annotated IR
 clang_flags = ['-g',
+               # '-Og',
+               '-O2',
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
                '-fno-discard-value-names', '-fno-exceptions']
 llvm_opt_flags = [
   # '-time-passes',
+  # '-Og',
+  '-O2',
 ]
 
 llc_flags = ['--function-sections',

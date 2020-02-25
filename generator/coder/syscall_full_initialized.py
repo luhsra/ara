@@ -110,6 +110,26 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                        'uxCurrentNumberOfTasks',
                        str(len(tasks))))
 
+        list_names = ['xDelayedTaskList1',
+                      'xDelayedTaskList2',
+                      'xPendingReadyList',
+                      'xSuspendedTaskList',
+        ]
+        lists = {}
+        for name in list_names:
+            list_head = self.arch_rules.ListHead(name)
+            lists[name] = list_head
+            self.generator.source_file.data_manager.add(list_head)
+
+        self.generator.source_file.data_manager.add(
+            DataObject('PRIVILEGED_DATA List_t *',
+                       'pxDelayedTaskList',
+                       static_initializer=lists['xDelayedTaskList1'].address))
+        self.generator.source_file.data_manager.add(
+            DataObject('PRIVILEGED_DATA List_t *',
+                       'pxOverflowDelayedTaskList',
+                       static_initializer=lists['xDelayedTaskList2'].address))
+
 
     def generate_limitation_warnings(self):
         self.generator.source_file.declarations += [
