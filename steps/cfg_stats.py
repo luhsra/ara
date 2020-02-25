@@ -18,6 +18,7 @@ class CFGStats(Step):
         self._log.info("Executing CFGStats step.")
         cfg = g.cfg
 
+        # Calculate number of ABBs
         num_abbs = 0;
 
         for v in cfg.vertices() :
@@ -26,9 +27,20 @@ class CFGStats(Step):
 
         self._log.info("Number of ABBs: " + str(num_abbs))
 
+        # Calculate number of Cycles
         num_cycles = 0;
         
         for c in graph_tool.topology.all_circuits(cfg,True) :
             num_cycles += 1
 
         self._log.info("Number of Cycles: " + str(num_cycles))
+
+        # Calculate cyclomatic complexity
+        num_components = 0
+        property_map, hist = graph_tool.topology.label_components(cfg, None, cfg.is_directed(), False)
+        for comp in hist :
+            num_components += 1
+        v = cfg.num_edges() - cfg.num_vertices() + 2 * num_components
+
+        self._log.info("Cyclomatic complexity: " + str(v))
+
