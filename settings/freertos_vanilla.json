@@ -1,21 +1,5 @@
 {
 	"steps": [
-		"Syscall",
-		{
-			"name": "Printer",
-			"dot": "syscall.dot",
-			"graph_name": "Syscall",
-			"subgraph": "abbs"
-		},
-		{
-			"name": "CallGraph"
-		},
-		"ValueAnalysisCore",
-		"ValueAnalysis",
-		{
-			"name": "SSE",
-			"flavor": "InstanceGraph"
-		},
 		{
 			"name": "Generator",
 			"arch": "arm",

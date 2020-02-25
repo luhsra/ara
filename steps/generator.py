@@ -54,7 +54,7 @@ class Generator(Step):
         self.opts.append(self.dep_file)
 
     def get_dependencies(self):
-        return ['SSE']
+        return ['InstanceGraph']
 
     def run(self, g: graph.Graph):
         # self._log.info("Executing Generator step.")
