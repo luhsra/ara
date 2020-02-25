@@ -1,9 +1,6 @@
 {
 	"steps": [
-		{
-			"name": "SSE",
-			"flavor": "InstanceGraph"
-		}
+		"InstanceGraph"
 	],
 
 	"ICFG": {
@@ -13,12 +10,12 @@
 		"log_level": "info"
 	},
 	"ValueAnalysis": {
-		"log_level": "debug"
+		"log_level": "info"
 	},
 	"ValueAnalysisCore": {
 		"log_level": "info"
 	},
-	"SSE": {
+	"InstanceGraph": {
 		"dump": true
 	}
 }

@@ -50,41 +50,93 @@ class State:
         return scopy
 
 
-class Flavor:
-    def __init__(self, step, g, entry_func):
-        self._step = step
-        self._entry_func = entry_func
-        self._g = g
-        self._log = logging.getLogger(f"{step.get_name()}."
-                                      f"{self.__class__.__name__}")
-        self._log.info(f"Working on {self._entry_func}.")
+class FlowAnalysis(Step):
+    """Base class for all flow analyses.
 
+    Apply the base SSE state search to the CFG. Can be specialized with some
+    interface functions.
+    """
+
+    def _fill_options(self):
+        self.entry_point = Option(name="entry_point",
+                                  help="system entry point",
+                                  step_name=self.get_name(),
+                                  ty=String())
+        self.opts.append(self.entry_point)
+
+    def new_vertex(self, sstg, state):
+        vertex = sstg.add_vertex()
+        sstg.vp.state[vertex] = state
+        return vertex
+
+    def _system_semantic(self, state):
+        new_states = self._execute(state)
+        self._schedule(new_states)
+        return new_states
+
+    def run(self, g: graph.Graph):
+        entry_label = self.entry_point.get()
+        if not entry_label:
+            self._fail("Entry point must be given.")
+        self._log.info(f"Analyzing entry point: '{entry_label}'")
+
+        self._step_data = self._get_step_data(g, set)
+
+        self._g = g
         self._icfg = graph.CFGView(g.cfg,
                                    efilt=g.cfg.ep.type.fa == graph.CFType.icf)
         self._lcfg = graph.CFGView(g.cfg,
                                    efilt=g.cfg.ep.type.fa == graph.CFType.lcf)
 
-    def system_semantic(self, state):
-        new_states = self.execute(state)
-        self.schedule(new_states)
-        return new_states
+        self._entry_func = entry_label
+
+        self._init_analysis()
+
+        sstg = graph_tool.Graph()
+        sstg.vertex_properties["state"] = sstg.new_vp("object")
+
+        state_vertex = self.new_vertex(sstg, self._get_initial_state())
+
+        stack = [state_vertex]
+
+        counter = 0
+        while stack:
+            self._log.debug(f"Stack {counter:3d}: "
+                            f"{[sstg.vp.state[v] for v in stack]}")
+            state_vertex = stack.pop()
+            state = sstg.vp.state[state_vertex]
+            for n in self._system_semantic(state):
+                new_state = self.new_vertex(sstg, n)
+                sstg.add_edge(state_vertex, new_state)
+                stack.append(new_state)
+            counter += 1
+        self._log.info(f"Analysis needed {counter} iterations.")
+
+        self._finish(sstg)
 
 
-class FlowInsensitiveAnalysis(Flavor):
-    def __init__(self, step, g, entry_func, side_data):
-        super().__init__(step, g, entry_func)
-        self.call_map = self._create_call_map(entry_func)
-        self.func_branch = self._g.call_graphs[entry_func].new_vp("bool")
-        self.side_data = side_data
-        self.side_data.add(entry_func)
+class FlatAnalysis(FlowAnalysis):
+    """Analysis that run one time over the control flow reachable from the
+    entry point.
+
+    This analysis does not respect loops.
+    """
+
+    def get_dependencies(self):
+        return ["Syscall", "ValueAnalysis", "CallGraph"]
+
+    def _init_analysis(self):
+        self._call_map = self._create_call_map(self._entry_func)
+        self._cond_func = self._g.call_graphs[self._entry_func].new_vp("bool")
+        self._step_data.add(self._entry_func)
 
         def new_visited_map():
             return self._icfg.new_vp("bool", val=False)
+        self._visited = defaultdict(new_visited_map)
 
-        self.visited = defaultdict(new_visited_map)
         self.new_entry_points = set()
 
-    def get_initial_state(self):
+    def _get_initial_state(self):
         # find main
         entry_func = self._g.cfg.get_function_by_name(self._entry_func)
         entry_abb = self._g.cfg.get_entry_abb(entry_func)
@@ -149,14 +201,14 @@ class FlowInsensitiveAnalysis(Flavor):
     def _get_categories(self):
         return SyscallCategory.ALL
 
-    def execute(self, state):
+    def _execute(self, state):
         new_states = []
         self._init_execution(state)
         for abb in state.next_abbs:
             # don't handle already visted vertices
-            if self.visited[state.call][abb]:
+            if self._visited[state.call][abb]:
                 continue
-            self.visited[state.call][abb] = True
+            self._visited[state.call][abb] = True
 
             # syscall handling
             if self._icfg.vp.type[abb] == graph.ABBType.syscall:
@@ -174,7 +226,7 @@ class FlowInsensitiveAnalysis(Flavor):
                 for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
-                    new_state.call = self.call_map[abb]
+                    new_state.call = self._call_map[abb]
                     self._handle_call(state, new_state, abb)
                     new_states.append(new_state)
 
@@ -197,22 +249,27 @@ class FlowInsensitiveAnalysis(Flavor):
 
         return new_states
 
-    def schedule(self, state):
+    def _schedule(self, state):
         # we do simply not care
         return
 
-    def finish(self, sstg):
-        if self._step.dump.get():
-            uuid = self._step._step_manager.get_execution_id()
-            dot_file = f'Instances.{uuid}.{self._entry_func}.dot'
-            dot_file = self._step.dump_prefix.get() + dot_file
-            self._step._step_manager.chain_step({"name": "Printer",
-                                                 "dot": dot_file,
-                                                 "graph_name": 'Instances',
-                                                 "subgraph": 'instances'})
+    def _finish(self, sstg):
+        if self.dump.get():
+            uuid = self._step_manager.get_execution_id()
+            dot_file = f'{uuid}.{self._entry_func}.dot'
+            dot_file = self.dump_prefix.get() + dot_file
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'Instances',
+                                           "subgraph": 'instances'})
 
 
-class InstanceGraph(FlowInsensitiveAnalysis):
+class InstanceGraph(FlatAnalysis):
+    """Find all System instances."""
+
+    def get_dependencies(self):
+        return ["Syscall", "ValueAnalysis", "CallGraph"]
+
     def _dominates(self, abb_x, abb_y):
         """Does abb_x dominate abb_y?"""
         func = self._g.cfg.get_function(abb_x)
@@ -249,7 +306,7 @@ class InstanceGraph(FlowInsensitiveAnalysis):
                         for x in self._find_exit_abbs(func)])
 
     def _init_fake_state(self, state, abb):
-        state.branch = (self.func_branch[state.call] or
+        state.branch = (self._cond_func[state.call] or
                         self._is_in_condition_or_loop(abb))
 
     def _extract_entry_points(self):
@@ -262,19 +319,18 @@ class InstanceGraph(FlowInsensitiveAnalysis):
                     func_name = self._g.cfg.vp.name[
                         self._g.cfg.get_function(entry)
                     ]
-                    if func_name not in self.side_data:
+                    if func_name not in self._step_data:
                         # order is different here, the first chained step will
                         # be the last executed one
-                        self._step._step_manager.chain_step(
-                            {"name": "SSE",
-                             "entry_point": func_name,
-                             "flavor": SSE.Flavor.Instances}
+                        self._step_manager.chain_step(
+                            {"name": self.get_name(),
+                             "entry_point": func_name}
                         )
-                        self._step._step_manager.chain_step(
+                        self._step_manager.chain_step(
                             {"name": "CallGraph",
                              "entry_point": func_name}
                         )
-                        self.side_data.add(func_name)
+                        self._step_data.add(func_name)
                 self.new_entry_points.add(os_obj)
 
     def _evaluate_fake_state(self, new_state, abb):
@@ -286,20 +342,23 @@ class InstanceGraph(FlowInsensitiveAnalysis):
             state.instances = self._g.instances
 
     def _handle_call(self, old_state, new_state, abb):
-        new_state.branch = (self.func_branch[old_state.call] or
+        new_state.branch = (self._cond_func[old_state.call] or
                             self._is_in_condition_or_loop(abb))
-        self.func_branch[new_state.call] = new_state.branch
+        self._cond_func[new_state.call] = new_state.branch
 
     def _get_categories(self):
         return SyscallCategory.CREATE
 
-    def finish(self, sstg):
-        super().finish(sstg)
+    def _finish(self, sstg):
+        super()._finish(sstg)
         self._log.debug(f"_create_dom_tree {self._create_dom_tree.cache_info()}")
         self._log.debug(f"_find_exit_abbs  {self._find_exit_abbs.cache_info()}")
 
 
-class InteractionAnalysis(FlowInsensitiveAnalysis):
+class InteractionAnalysis(FlatAnalysis):
+    def get_dependencies(self):
+        return ["InstanceGraph"]
+
     def _evaluate_fake_state(self, new_state, abb):
         self._g.instances = new_state.instances
 
@@ -308,76 +367,3 @@ class InteractionAnalysis(FlowInsensitiveAnalysis):
             state.instances = self._g.instances
 
 
-# TODO make this a dataclass, when ready
-class SSEStepData:
-    def __init__(self):
-        self.flavor_data = VarianceDict()
-
-
-class SSE(Step):
-    """Apply an OS wide analysis in different depths.
-
-    The extend of the analysis can be switched by the flavor option.
-    """
-
-    class Flavor():
-        Instances = "InstanceGraph"
-
-    def _fill_options(self):
-        self.entry_point = Option(name="entry_point",
-                                  help="system entry point",
-                                  step_name=self.get_name(),
-                                  ty=String())
-        self.flavor = Option(name="flavor",
-                             help="type of analysis",
-                             step_name=self.get_name(),
-                             ty=Choice(SSE.Flavor.Instances))
-        self.opts += [self.entry_point, self.flavor]
-
-    def get_dependencies(self):
-        return ["Syscall", "ValueAnalysis", "CallGraph"]
-
-    def new_vertex(self, sstg, state):
-        vertex = sstg.add_vertex()
-        sstg.vp.state[vertex] = state
-        return vertex
-
-    def run(self, g: graph.Graph):
-        entry_label = self.entry_point.get()
-        if not entry_label:
-            self._fail("Entry point must be given.")
-
-        step_data = self._get_step_data(g, SSEStepData)
-
-        flav = self.flavor.get()
-        if flav == SSE.Flavor.Instances:
-            flavor = InstanceGraph(
-                self,
-                g,
-                entry_label,
-                step_data.flavor_data.get(SSE.Flavor.Instances, set()),
-            )
-        else:
-            self._fail("A flavor must be specified")
-
-        sstg = graph_tool.Graph()
-        sstg.vertex_properties["state"] = sstg.new_vp("object")
-
-        state_vertex = self.new_vertex(sstg, flavor.get_initial_state())
-
-        stack = [state_vertex]
-
-        counter = 0
-        while stack:
-            self._log.debug(f"Stack {counter:3d}: "
-                            f"{[sstg.vp.state[v] for v in stack]}")
-            state_vertex = stack.pop()
-            state = sstg.vp.state[state_vertex]
-            for n in flavor.system_semantic(state):
-                new_state = self.new_vertex(sstg, n)
-                sstg.add_edge(state_vertex, new_state)
-                stack.append(new_state)
-            counter += 1
-        self._log.info(f"Analysis needed {counter} iterations.")
-
-        flavor.finish(sstg)

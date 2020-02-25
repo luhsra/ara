@@ -4,7 +4,7 @@ from .dummy import Dummy
 from .generator import Generator
 from .oil import OilStep
 from .printer import Printer
-from .sse import SSE
+from .sse import InstanceGraph, InteractionAnalysis
 from .syscall import Syscall
 from .value_analysis import ValueAnalysis
 
@@ -24,6 +24,7 @@ def provide_steps():
     yield Generator()
     yield OilStep()
     yield Printer()
-    yield SSE()
+    yield InstanceGraph()
+    yield InteractionAnalysis()
     yield Syscall()
     yield ValueAnalysis()
