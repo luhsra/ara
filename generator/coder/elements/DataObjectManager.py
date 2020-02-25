@@ -13,6 +13,7 @@ class DataObject:
                  static_initializer = None,
                  dynamic_initializer = False,
                  do_cast = False,
+                 attributes = None,
                  extern_c = False, alignment=None):
         self.typename = typename
         self.name = name.translate(UnderscorifyMap())
@@ -26,6 +27,7 @@ class DataObject:
         self.alignment = alignment
         self.container = ""
         self.do_cast = do_cast
+        self.attributes = attributes
 
     def generate_prefix(self):
         prefix = "extern "
@@ -33,6 +35,9 @@ class DataObject:
             prefix += '"C" '
         if self.alignment:
             prefix += "__attribute__((aligned(%s))) " % self.alignment
+        if self.attributes:
+            for attribute in self.attributes:
+                prefix += f'__attribute__(({attribute})) '
         return self.declaration_prefix + prefix
 
     def source_element_declaration(self):
@@ -106,8 +111,8 @@ class DataObject:
 class ExternalDataObject(DataObject):
     """Manages an external declaration"""
 
-    def __init__(self, typename, name):
-        DataObject.__init__(self, typename, name)
+    def __init__(self, typename, name, **kwargs):
+        DataObject.__init__(self, typename, name, **kwargs)
 
     def source_element_allocation(self):
         return ""
