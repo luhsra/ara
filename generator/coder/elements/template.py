@@ -111,8 +111,6 @@ class CodeTemplate:
         ret = []
         for elem in stream:
             if isinstance(elem, str):
-                print("elem: ",type(elem))
-                print("args: ", type(args))
                 text = elem #% args
                 ret.append(text)
             else:
