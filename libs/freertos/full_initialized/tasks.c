@@ -2875,9 +2875,12 @@ void vTaskSetTaskNumber(TaskHandle_t xTask, const UBaseType_t uxHandle) {
  * void prvIdleTask( void *pvParameters );
  *
  */
+extern void print_startup_statistics(void);
+
 portTASK_FUNCTION(prvIdleTask, pvParameters) {
 	/* Stop warnings. */
 	(void)pvParameters;
+	print_startup_statistics();
 
 	/** THIS IS THE RTOS IDLE TASK - WHICH IS CREATED AUTOMATICALLY WHEN THE
 	SCHEDULER IS STARTED. **/

@@ -26,6 +26,7 @@ obj_targets += libfreertos_vanilla_event_groups
 obj_targets += libfreertos_vanilla_list
 obj_targets += libfreertos_vanilla_timers
 obj_targets += libfreertos_vanilla_port
+obj_targets += libfreertos_vanilla_statistics
 
 
 ar_target = custom_target(target_prefix + '.a',

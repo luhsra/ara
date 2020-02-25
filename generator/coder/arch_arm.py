@@ -3,7 +3,9 @@ from .elements import (
     CodeTemplate,
     DataObject,
     DataObjectArray,
+    Include,
     InstanceDataObject,
+    StructDataObject,
 )
 
 default_traps = [
@@ -99,14 +101,18 @@ class ArmArch(GenericArch):
         return stack
 
     def generate_startup_code(self):
-        if True:
-            startup_asm = StartupCodeTemplate(self).expand()
-        else:
-            with self.generator.open_template('arch/arm/stm32F103xb/startup_stm32f103xb.s') as infile:
-                startup_asm = infile.read()
-
+        GenericArch.generate_startup_code(self)
+        startup_asm = StartupCodeTemplate(self)
         with self.generator.open_file(".startup.s") as fd:
-            fd.write(startup_asm)
+            fd.write(startup_asm.expand())
+
+        self.generator.source_file.includes.add(Include('time_markers.h'))
+        for marker in startup_asm.time_markers:
+            m = StructDataObject('__time_marker_t', f'{marker}',
+                                 attributes=['section("data.__time_markers")'],
+                                 extern_c=True)
+            m['name'] = f'"{marker}"'
+            self.generator.source_file.data_manager.add(m)
 
 class StartupCodeTemplate(CodeTemplate):
 
@@ -115,6 +121,7 @@ class StartupCodeTemplate(CodeTemplate):
         self.arm = arm
         self.ara_graph = arm.ara_graph
         self.debug = debug
+        self.time_markers = []
 
     def default_trap_handlers(self, snippet, args):
         ret = []
@@ -133,3 +140,43 @@ class StartupCodeTemplate(CodeTemplate):
             else:
                 ret.append(f'.thumb_set {t},Default_Handler\n')
         return "\n".join(ret)
+
+    def timing_print_init(self, snippet, args):
+        #TODO: get option from config
+        enable_debug_timing = True
+        if not enable_debug_timing:
+            return ""
+        ret = [
+            '/* Enable DWT_CYCCOUNT */',
+            'ldr r2, =0xe000edfc             //;address of DEMCR',
+            'ldr  r3, [r2, #0]                       //;load DEMCR',
+            'orr.w r3, r3, #16777216         //;DEMCR_TRCENA == 0x1000000',
+            'str r3, [r2, #0]                        //;write back',
+            '',
+            'ldr r3, =0xe0001004                     //;address of DWT_CYCCNT',
+            'mov r2, #0',
+            'str r2, [r3, #0]                        //;clear DWT_CYCCNT',
+            '',
+            'ldr r2, =0xe0001000                     //;address of DWT_CTRL',
+            'ldr r3, [r2, #0]                        //;load DWT_CTRL',
+            'orr.w r3, r3, #1                        //;set CYCCNTENA',
+            'str r3, [r2, #0]                        //;write back',
+        ]
+        return '\n'.join(ret)
+
+    def store_DWT_CYCCNT(self, target):
+        #TODO: get option from config
+        enable_debug_timing = True
+        if not enable_debug_timing:
+            return ""
+        self.time_markers.append(target)
+        return "\n".join([
+            f'.global {target}',
+            f'ldr r0, =0xe0001004  // address of DWT_CYCCNT',
+            f'ldr r0, [r0, #0]     // load value of DWT_CYCCNT',
+            f'ldr r1, ={target}    //address of target symbol',
+            f'str r0, [r1, #0]     //store {target} = r0',
+        ])
+
+    def done_marker(self, snippet, args):
+        return self.store_DWT_CYCCNT(f'__time_done_{args[0]}')

@@ -61,6 +61,7 @@ defined in linker script */
   .type Reset_Handler, %function
 Reset_Handler:
 
+  {{{generate:timing_print_init}}}
 /* Copy the data segment initializers from flash to SRAM */
   movs r1, #0
   b LoopCopyDataInit
@@ -77,6 +78,11 @@ LoopCopyDataInit:
   adds r2, r0, r1
   cmp r2, r3
   bcc CopyDataInit
+
+/* data init done */
+{{{generate:done_marker:data}}}
+
+/* start bss zeroing */
   ldr r2, =_sbss
   b LoopFillZerobss
 /* Zero fill the bss segment. */
@@ -89,10 +95,15 @@ LoopFillZerobss:
   cmp r2, r3
   bcc FillZerobss
 
+/* bss done */
+{{{generate:done_marker:bss}}}
+
 /* Call the clock system intitialization function.*/
     bl  SystemInit
+{{{generate:done_marker:SystemInit}}}
 /* Call static constructors */
     bl __libc_init_array
+{{{generate:done_marker:libc_init}}}
 /* Call the application's entry point.*/
   bl main
   bx lr

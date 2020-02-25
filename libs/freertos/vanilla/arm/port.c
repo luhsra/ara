@@ -32,6 +32,7 @@
 /* Scheduler includes. */
 #include "FreeRTOS.h"
 #include "task.h"
+#include "time_markers.h"
 
 /* For backward compatibility, ensure configKERNEL_INTERRUPT_PRIORITY is
 defined.  The value should also ensure backward compatibility.
@@ -251,6 +252,7 @@ static void prvPortStartFirstTask( void )
 }
 /*-----------------------------------------------------------*/
 
+TIME_MARKER(done_sched_start);
 /*
  * See header file for description.
  */
@@ -333,6 +335,7 @@ BaseType_t xPortStartScheduler( void )
 	/* Initialise the critical nesting count ready for the first task. */
 	uxCriticalNesting = 0;
 
+	STORE_TIME_MARKER(done_sched_start);
 	/* Start the first task. */
 	prvPortStartFirstTask();
 

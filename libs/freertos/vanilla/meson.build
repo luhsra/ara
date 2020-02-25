@@ -23,6 +23,24 @@ foreach src : src_files
   set_variable('libfreertos_vanilla_'+src, obj_target)
 endforeach
 
+cpp_src_files = [
+    'statistics',
+]
+foreach src : cpp_src_files
+  obj_target = custom_target(src,
+                             input: src+'.cc',
+                             output: src+'.cc.o',
+                             depfile: src+'.cc.dep',
+                             command: clang_cpp+
+                                      libs_includes +
+                                      obj_flags +
+                                      clang_flags)
+  obj_targets += obj_target
+
+  set_variable('libfreertos_vanilla_'+src, obj_target)
+endforeach
+
+
 if get_option('arch') == 'arm'
   subdir('arm')
 else
