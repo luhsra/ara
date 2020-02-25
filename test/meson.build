@@ -115,25 +115,25 @@ test('cfg_prep_no_args',
 
 test('gps_stats',
    py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('gps_stats_no_passes',
    py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('smart_stats',
    py3_inst,
-   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('smart_stats_no_passes',
    py3_inst,
-   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
