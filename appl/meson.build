@@ -115,6 +115,7 @@ foreach app : ['a',
                                    command: objcopy_cmd)
 
     run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
     run_target('size_' + name_prefix, command: [size, elf_target])
     run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
     elf_targets += elf_target
