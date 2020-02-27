@@ -118,6 +118,8 @@ foreach app : ['a',
     run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
     run_target('size_' + name_prefix, command: [size, elf_target])
     run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
+    run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
+    run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
     elf_targets += elf_target
     elf_targets += lto_elf
     named_elf_targets += [t, elf_target]
