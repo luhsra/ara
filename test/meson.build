@@ -137,6 +137,18 @@ test('smart_stats_no_passes',
    env : [python_path]
 )
 
+test('copter_stats',
+   py3_inst,
+   args: [files('../ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
+   env : [python_path]
+)
+
+test('copter_stats_no_passes',
+   py3_inst,
+   args: [files('../ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
+   env : [python_path]
+)
+
 test('dummy-test',
    py3_inst,
    args: [files('../ara.py'), 'empty', '--os', 'FreeRTOS',
