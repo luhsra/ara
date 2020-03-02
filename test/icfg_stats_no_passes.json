@@ -1,0 +1,12 @@
+{
+	"steps": [
+        "ICFG",
+        "CFGStats",
+        {
+            "name": "Printer",
+            "dot": "icfg_no_passes.dot",
+            "graph_name": "ICFG without llvm transformations.",
+            "subgraph": "abbs"
+        }
+	]
+}
