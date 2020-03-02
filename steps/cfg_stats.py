@@ -29,12 +29,12 @@ class CFGStats(Step):
         self._log.info("Number of ABBs: " + str(num_abbs))
 
         # Count number of Cycles
-        num_cycles = 0;
+        #num_cycles = 0;
         
-        for c in graph_tool.topology.all_circuits(cfg,True) :
-            num_cycles += 1
+        #for c in graph_tool.topology.all_circuits(cfg,True) :
+        #    num_cycles += 1
 
-        self._log.info("Number of Cycles: " + str(num_cycles))
+        #self._log.info("Number of Cycles: " + str(num_cycles))
 
 
         # Count number of control flow sensitive edges
