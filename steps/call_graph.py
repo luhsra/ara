@@ -98,4 +98,4 @@ class CallGraph(Step):
         g.call_graphs[entry_point] = cg
 
         if self.dump.get():
-            cg.save("CallGraph." + entry_point + ".dot", fmt='dot')
+            cg.save(self.dump_prefix.get() + entry_point + ".dot", fmt='dot')
