@@ -49,3 +49,13 @@ gpslogger_full_static_os = custom_target('gpslogger-instances_full_static-os',
                                          output: 'instances_full_static-os.cc',
                                          command: ara_gen_instances_full_static,
                                         )
+
+gpslogger_application = custom_target('gpslogger-application.ll',
+                                      input: gpslogger_targets,
+                                      output: 'gpslogger-application.ll',
+                                      command: [llvm_link,
+                                                '-S',
+                                                '-o', '@OUTPUT@',
+                                                '@INPUT@',
+                                                ]
+                                      )
