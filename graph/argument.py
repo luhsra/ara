@@ -37,10 +37,14 @@ class Argument:
         return (f"Argument({args}, ambiguous={ambi}, "
                 f"{repr(self.attributes)})")
 
-    def _get_call_path(self, call_path):
-        g = graph_tool.GraphView(call_path.graph, reversed=True)
+    def __iter__(self):
+        return iter(self.values.items())
+
+    def _get_call_path(self, call_node):
+        """Extract the actual call path from a single call node."""
+        g = graph_tool.GraphView(call_node.graph, reversed=True)
         path = []
-        for e in graph_tool.search.dfs_iterator(g, call_path.node):
+        for e in graph_tool.search.dfs_iterator(g, call_node.node):
             path.append(g.vp.cfglink[e.source()])
         return tuple(path)
 
