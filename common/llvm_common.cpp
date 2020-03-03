@@ -2,13 +2,6 @@
 
 using namespace llvm;
 
-std::string print_argument(Value* argument) {
-	std::string type_str;
-	raw_string_ostream rso(type_str);
-	argument->print(rso);
-	return rso.str() + "\"\n";
-}
-
 std::string print_type(Type* argument) {
 	std::string type_str;
 	raw_string_ostream rso(type_str);

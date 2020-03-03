@@ -28,68 +28,63 @@ namespace ara {
 
 		Logger& logger;
 
+		Logger::LogStream& debug(unsigned level);
+
 		call_data dump_instruction(llvm::Function* func, const llvm::CallBase* instruction,
 		                           std::vector<shared_warning>* warning_list);
 
 		/**
 		 * @brief set all possbile argument values and corresponding call history in a data structure. This
 		 * data structure is then stored in the abb.
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param arg argument which has to be dumped
 		 * @param already_visited list of all instructions, which were already visited
 		 */
-		bool dump_argument(std::stringstream& debug_out, argument_data* argument_container, const llvm::Value* arg,
+		bool dump_argument(unsigned level, argument_data* argument_container, const llvm::Value* arg,
 		                   std::vector<const llvm::Instruction*>* already_visited);
 
 		/**
 		 * @brief load the std::any and llvm value of the global llvm arg
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param arg argument which has to be dumped
 		 * @param prior_arg predecessor of the current arg
 		 * @param already_visited list of all instructions, which were already visited
 		 */
-		bool load_value(std::stringstream& debug_out, argument_data* argument_container, llvm::Value* arg,
-		                llvm::Value* prior_arg, std::vector<const llvm::Instruction*>* already_visited);
+		bool load_value(unsigned level, argument_data* argument_container, llvm::Value* arg, llvm::Value* prior_arg,
+		                std::vector<const llvm::Instruction*>* already_visited);
 
 		/**
 		 * @brief dump all call instructions, which calls the function or have the function as argument
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param function llvm function of the arg
 		 * @param already_visited list of all instructions, which were already visited
 		 * @param arg_counter index of the value in call instruction of calling function
 		 */
-		bool load_function_argument(std::stringstream& debug_out, argument_data* argument_container,
-		                            const llvm::Function* function,
+		bool load_function_argument(unsigned level, argument_data* argument_container, const llvm::Function* function,
 		                            std::vector<const llvm::Instruction*>* already_visited, int arg_counter);
 
 		/**
 		 * @brief dump the nearest dominating store instruction of the load instruction to get the loaded value of the
 		 * load
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param inst load instruction, which corresponding loaded value should be determined
 		 * @param already_visited list of all instructions, which were already visited
 		 */
-		bool get_store_instruction(std::stringstream& debug_out, llvm::Instruction* inst,
-		                           argument_data* argument_container,
+		bool get_store_instruction(unsigned level, llvm::Instruction* inst, argument_data* argument_container,
 		                           std::vector<const llvm::Instruction*>* already_visited);
 
 		/**
 		 * @brief dumpt the value of the GetElementPtrInst with corresponding indizes (important for class values)
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param inst get elementptr instruction, which corresponding loaded value should be determined
 		 * @param already_visited list of all instructions, which were already visited
 		 */
-		bool get_element_ptr(std::stringstream& debug_out, llvm::Instruction* inst, argument_data* argument_container,
+		bool get_element_ptr(unsigned level, llvm::Instruction* inst, argument_data* argument_container,
 		                     std::vector<const llvm::Instruction*>* already_visited);
 
 		/**
@@ -116,14 +111,13 @@ namespace ara {
 
 		/**
 		 * @brief check if instuction is an pointer to a constant null
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param inst get elementptr instruction, which corresponding loaded value should be determined
 		 * @param already_visited list of all instructions, which were already visited
 		 * @param arg value which is analyzed
 		 */
-		bool check_nullptr(argument_data* argument_container, llvm::Value* arg, std::stringstream& debug_out,
+		bool check_nullptr(argument_data* argument_container, llvm::Value* arg, unsigned level,
 		                   std::vector<const llvm::Instruction*>* already_visited);
 
 		/**
@@ -133,16 +127,27 @@ namespace ara {
 		int load_index(llvm::Value* arg);
 
 		/**
+		 * Find all users of the GlobalAlias. This should normally work with alias->users(), but does not always.
+		 * Unclear why.
+		 */
+		std::vector<llvm::CallBase*> hacky_find_users(unsigned level, llvm::GlobalAlias* alias);
+
+		/**
+		 * Get for an IR load instruction of the form:
+		 * this1 = load ...;
+		 * the list of values that the this pointer has in the calling function.
+		 */
+		std::vector<llvm::Value*> get_this_instances(unsigned level, llvm::LoadInst* this_usage);
+
+		/**
 		 * @brief get all store instructions which store values in the specific class attribute variable
-		 * @param debug_out stringstream which contains the logical history of the argument dump
 		 * @param argument_container data structure where the dump result is stored(std::any value, llvm value,
 		 * instruction call history)
 		 * @param inst get elementptr instruction, which corresponding loaded value should be determined
 		 * @param already_visited list of all instructions, which were already visited
 		 * @param indizes indizes to distinguish between the class attribute variables
 		 */
-		bool get_class_attribute_value(std::stringstream& debug_out, llvm::Instruction* inst,
-		                               argument_data* argument_container,
+		bool get_class_attribute_value(unsigned level, llvm::Instruction* inst, argument_data* argument_container,
 		                               std::vector<const llvm::Instruction*>* already_visited,
 		                               std::vector<size_t>* indizes);
 
