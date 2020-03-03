@@ -13,15 +13,20 @@
 		"log_level": "info"
 	},
 	"ValueAnalysisCore": {
-		"log_level": "info"
+		"log_level": "debug"
+	},
+	"CallGraph": {
+		"dump": true
 	},
 	"Syscall": {
 		"dump": true
 	},
 	"InstanceGraph": {
-		"dump": true
+		"dump": true,
+		"log_level": "info"
 	},
 	"InteractionAnalysis": {
-		"dump": true
+		"dump": true,
+		"log_level": "info"
 	}
 }
