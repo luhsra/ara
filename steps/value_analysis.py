@@ -56,6 +56,10 @@ class ValueAnalysis(Step):
                     self._log.debug(f"Retrieved return value {new_arg}")
                     new_args.set_return_value(new_arg)
                 else:
-                    self._log.debug(f"Retrieved argument {new_arg}")
+                    self._log.debug(f"Retrieved argument: Argument(")
+                    for cp, value in new_arg:
+                        self._log.debug(f"  {cp}, {value}")
+                    self._log.debug(f")")
+
                     new_args.append(new_arg)
             g.cfg.vp.arguments[v] = new_args
