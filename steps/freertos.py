@@ -1,8 +1,12 @@
 from .os_util import syscall, SyscallCategory
 
 import graph
+import logging
 
 from graph.argument import CallPath
+
+
+logger = logging.getLogger("FreeRTOS")
 
 
 # TODO make this a dataclass once we use Python 3.7
@@ -72,7 +76,7 @@ class FreeRTOS:
     @staticmethod
     def interpret(cfg, abb, state, categories=SyscallCategory.ALL):
         syscall = cfg.get_syscall_name(abb)
-        print("FreeRTOS Syscall:", syscall)
+        logger.debug(f"Get syscall: {syscall}")
 
         syscall_function = getattr(FreeRTOS, syscall)
 
@@ -213,7 +217,7 @@ class FreeRTOS:
 
         if state.running is None:
             # TODO proper error handling
-            print("ERROR: vTaskDelay called without running Task")
+            logger.error("ERROR: vTaskDelay called without running Task")
 
         e = state.instances.add_edge(state.running, state.running)
         state.instances.ep.label[e] = f"vTaskDelay({ticks})"
@@ -228,6 +232,7 @@ class FreeRTOS:
 
         cp = CallPath(graph=state.callgraph, node=state.call)
         handler = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+
         # TODO this has to be a pointer object. However, the value analysis
         # follows the pointer currently.
         item = state.cfg.vp.arguments[abb][1].get(call_path=cp, raw=True)
