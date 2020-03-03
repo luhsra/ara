@@ -11,7 +11,7 @@
 // Note: this class initializes corresponding pins in the constructor.
 //       May not be working properly if objects of this class are created as global variables
 
-uint32_t GPIOA = 1;
+#define GPIOA 1
 volatile uint32_t ledStatus = 0xff;
 class LEDDriver
 {

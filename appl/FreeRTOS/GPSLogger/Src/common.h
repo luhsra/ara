@@ -30,34 +30,34 @@ uint32_t HAL_RCC_GetPCLK2Freq();
 void HAL_Delay( uint32_t Delay);
 uint32_t HAL_GetTick();
 
-uint32_t LL_GPIO_SPEED_FREQ_HIGH = 1;
-uint32_t LL_GPIO_SPEED_FREQ_MEDIUM = 1;
-uint32_t LL_GPIO_SPEED_FREQ_LOW = 1;
-uint32_t LL_GPIO_OUTPUT_PUSHPULL = 1;
-uint32_t LL_GPIO_MODE_OUTPUT = 1;
-uint32_t LL_GPIO_MODE_ALTERNATE = 1;
-uint32_t LL_GPIO_PIN_0 = 13;
-uint32_t LL_GPIO_PIN_1 = 13;
-uint32_t LL_GPIO_PIN_2 = 12;
-uint32_t LL_GPIO_PIN_3 = 13;
-uint32_t LL_GPIO_PIN_4 = 12;
-uint32_t LL_GPIO_PIN_5 = 13;
-uint32_t LL_GPIO_PIN_6 = 12;
-uint32_t LL_GPIO_PIN_7 = 13;
-uint32_t LL_GPIO_PIN_8 = 12;
-uint32_t LL_GPIO_PIN_9 = 13;
-uint32_t LL_GPIO_PIN_10 = 12;
-uint32_t LL_GPIO_PIN_11 = 12;
-uint32_t LL_GPIO_PIN_12 = 13;
-uint32_t LL_GPIO_PIN_13 = 12;
-uint32_t LL_GPIO_PIN_14 = 12;
-uint32_t LL_GPIO_PIN_15 = 13;
-uint32_t LL_GPIO_PIN_16 = 12;
-uint32_t LL_GPIO_PULL_UP = 13;
-uint32_t LL_GPIO_MODE_INPUT = 13;
-uint32_t GPIOC = 0;
-uint32_t GPIOB = 0;
-void * SPI2 ;
+#define LL_GPIO_SPEED_FREQ_HIGH 1
+#define LL_GPIO_SPEED_FREQ_MEDIUM 1
+#define LL_GPIO_SPEED_FREQ_LOW 1
+#define LL_GPIO_OUTPUT_PUSHPULL 1
+#define LL_GPIO_MODE_OUTPUT 1
+#define LL_GPIO_MODE_ALTERNATE 1
+#define LL_GPIO_PIN_0 13
+#define LL_GPIO_PIN_1 13
+#define LL_GPIO_PIN_2 12
+#define LL_GPIO_PIN_3 13
+#define LL_GPIO_PIN_4 12
+#define LL_GPIO_PIN_5 13
+#define LL_GPIO_PIN_6 12
+#define LL_GPIO_PIN_7 13
+#define LL_GPIO_PIN_8 12
+#define LL_GPIO_PIN_9 13
+#define LL_GPIO_PIN_10 12
+#define LL_GPIO_PIN_11 12
+#define LL_GPIO_PIN_12 13
+#define LL_GPIO_PIN_13 12
+#define LL_GPIO_PIN_14 12
+#define LL_GPIO_PIN_15 13
+#define LL_GPIO_PIN_16 12
+#define LL_GPIO_PULL_UP 13
+#define LL_GPIO_MODE_INPUT 13
+#define GPIOC 0
+#define GPIOB 0
+extern void * SPI2 ;
 typedef struct 
  {
    void         *Instance;                                                        /*!< Register base address                  */

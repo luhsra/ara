@@ -20,7 +20,7 @@ NMEAGPS gpsParser;
 const uint8_t gpsBufferSize = 128;
 
 uint8_t USART1 = 100;
-uint8_t GPIOA = 1;
+#define GPIOA 1
 uint8_t LL_USART_STOPBITS_1 = 1;
 uint8_t HAL_RCC_GPIOA_CLK_ENABLE = 1;
 
