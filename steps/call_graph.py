@@ -25,7 +25,8 @@ class CallGraph(Step):
 
     def _copy_props(self, g, old_v, new_v):
         """Copy the subtree properties."""
-        g.vp.label[new_v] = g.vp.label[old_v]
+        g.vp.label[new_v] = g.vp.label[old_v].split('-')[0] + f"-{int(new_v)}"
+        g.vp.func[new_v] = g.vp.func[old_v]
         g.vp.cfglink[new_v] = g.vp.cfglink[old_v]
 
     def _dup_subtree(self, cg, root):
@@ -47,7 +48,7 @@ class CallGraph(Step):
         """Add a new vertex with name. Optionally link it with src.
         If the vertex is already present, its whole subtree is copied.
         """
-        v = graph_tool.util.find_vertex(cg, cg.vp.label, name)
+        v = graph_tool.util.find_vertex(cg, cg.vp.func, name)
         if v and src is not None:
             # we find a duplicate
             other_v = self._dup_subtree(cg, v[0])
@@ -56,7 +57,8 @@ class CallGraph(Step):
             return None, True
 
         v = cg.add_vertex()
-        cg.vp.label[v] = name
+        cg.vp.label[v] = name + f"-{int(v)}"
+        cg.vp.func[v] = name
         cg.vp.cfglink[v] = caller
         if src:
             cg.add_edge(src, v)
@@ -89,6 +91,7 @@ class CallGraph(Step):
 
         cg = graph_tool.Graph()
         cg.vp["label"] = cg.new_vertex_property("string")
+        cg.vp["func"] = cg.new_vertex_property("string")
         cg.vp["cfglink"] = cg.new_vertex_property("long")
         # add root vertex
         start, _ = self._add_vertex(cg, entry_point, entry_abb)
