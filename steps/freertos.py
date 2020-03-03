@@ -51,7 +51,7 @@ class Mutex:
     def __init__(self, cfg, name, handler, m_type, branch, after_scheduler):
         self.cfg = cfg
         self.name = name
-        self.handler = handler,
+        self.handler = handler
         self.m_type = m_type
         self.branch = branch
         self.after_scheduler = after_scheduler
@@ -241,15 +241,15 @@ class FreeRTOS:
 
         queue = None
         for v in state.instances.vertices():
-            if isinstance(state.instances.vp.obj[v], Queue):
-                print(state.instances.vp.obj[v].handler.get(raw=True))
+            if any([isinstance(state.instances.vp.obj[v], x)
+                    for x in [Queue, Mutex]]):
                 if handler == state.instances.vp.obj[v].handler.get(raw=True):
                     queue = v
-        print(handler)
-        assert queue is not None, "Queue handler cannot be found"
-
-        e = state.instances.add_edge(state.running, queue)
-        state.instances.ep.label[e] = f"xQueueGenericSend"
+        if queue is None:
+            logger.error("Queue handler cannot be found. Ignoring syscall.")
+        else:
+            e = state.instances.add_edge(state.running, queue)
+            state.instances.ep.label[e] = f"xQueueGenericSend"
 
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
