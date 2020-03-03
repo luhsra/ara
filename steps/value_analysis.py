@@ -21,12 +21,14 @@ class ValueAnalysis(Step):
         return ["ValueAnalysisCore"]
 
     def _convert_to_abbs(self, g, call_path):
+        """Convert a call_path consisting of pointer to LLVM basic blocks to a
+        tuple of vertices in the ARA cfg."""
         cp = []
         for bb_ptr in call_path:
             v = graph_tool.util.find_vertex(g.cfg, g.cfg.vp.entry_bb, bb_ptr)
-            assert v is not None
-            cp.append(v)
-        return tuple(v)
+            assert v is not None and len(v) == 1
+            cp += v
+        return tuple(cp)
 
     def run(self, g: graph.Graph):
         for v in filter(lambda x: g.cfg.vp.type[x] == graph.ABBType.syscall,
