@@ -13,7 +13,7 @@ nop = find_program('true')
 # compiler flags to generate annotated IR
 clang_flags = ['-g',
                # '-Og',
-               '-O2',
+               # '-O2',
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
