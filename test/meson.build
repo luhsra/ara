@@ -1,6 +1,5 @@
 test('dependency-resolving',
-        py3_inst,
-        args : files('dependency_resolving.py'),
+        py3_inst, args : files('dependency_resolving.py'),
         env : [python_path]
 )
 
@@ -42,13 +41,13 @@ test('ir-reader-multiple-symbols',
 
 test('cfg_prep',
    py3_inst,
-   args: [files('../ara.py'), files('../build/appl/FreeRTOS/GPSLogger/gpslogger-Libs_Adafruit_SSD1306_Adafruit_SSD1306.ll'), '--os', 'FreeRTOS', '--step-settings', files('cfg_prep.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_prep.json'), '--log-level', 'debug'],
    env : [python_path]
 )
 
 test('cfg_prep_no_args',
    py3_inst,
-   args: [files('../ara.py'), files('../build/appl/FreeRTOS/GPSLogger/gpslogger-Libs_Adafruit_SSD1306_Adafruit_SSD1306.ll'), '--os', 'FreeRTOS', '--step-settings', files('cfg_prep_no_args.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_prep_no_args.json'), '--log-level', 'debug'],
    should_fail: true,
    env : [python_path]
 )
