@@ -7,7 +7,7 @@ from graph import ABBType
 from graph import CFType
 
 import graph_tool
-
+import sys
 
 class CFGStats(Step):
     """Gather statistics about the Control Flow Graph."""
@@ -54,4 +54,5 @@ class CFGStats(Step):
         v = num_edges - num_abbs + 2 * num_components
 
         self._log.info("Cyclomatic complexity: " + str(v))
+        sys.stdout.write(str(num_abbs) + " " + str(v) + "\n")
 
