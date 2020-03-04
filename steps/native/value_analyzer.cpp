@@ -20,6 +20,20 @@ namespace ara {
 		return log;
 	}
 
+	void ValueAnalyzer::count_backtrack(argument_data* argument_container, bool new_value) {
+		auto& bd = argument_container->backtrack_depth;
+		bool empty_bd = bd.size() == 0;
+
+		if (empty_bd) {
+			bd.emplace_back(0);
+		}
+		if (new_value && !empty_bd) {
+			bd.emplace_back(bd.at(bd.size() - 1) + 1);
+		} else {
+			bd.at(bd.size() - 1)++;
+		}
+	}
+
 	bool ValueAnalyzer::dump_argument(unsigned level, argument_data* argument_container, const Value* carg,
 	                                  std::vector<const Instruction*>* already_visited) {
 
@@ -76,6 +90,7 @@ namespace ara {
 				if (isa<GlobalVariable>(load->getOperand(0))) {
 					debug(level) << "LOAD GLOBAL" << std::endl;
 					// load the global information
+					count_backtrack(argument_container, false);
 					dump_success = load_value(level + 1, argument_container, load->getOperand(0), arg, already_visited);
 				} else if (instr->getNumOperands() == 1) {
 					debug(level) << "ONEOPERAND" << std::endl;
@@ -86,6 +101,7 @@ namespace ara {
 					} else
 						debug(level) << "  from: " << *load << std::endl;
 					debug(level) << "  to: " << *load->getOperand(0) << std::endl;
+					count_backtrack(argument_container, false);
 					dump_success = dump_argument(level + 1, argument_container, load->getOperand(0), already_visited);
 				}
 				// check if instruction is an alloca instruction
@@ -95,6 +111,7 @@ namespace ara {
 					// dump_success = get_store_instruction(level + 1,alloca,any_list,value_list,already_visited );
 					argument_container->any_list.emplace_back(alloca->getName().str());
 					argument_container->value_list.emplace_back(alloca);
+					count_backtrack(argument_container, true);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					dump_success = true;
 				} else {
@@ -104,16 +121,19 @@ namespace ara {
 					alloca->getType()->print(rso);
 					argument_container->any_list.emplace_back(rso.str());
 					argument_container->value_list.emplace_back(alloca);
+					count_backtrack(argument_container, true);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					dump_success = true;
 				}
 			} else if (CastInst* cast = dyn_cast<CastInst>(instr)) {
 				debug(level) << "CAST INSTRUCTION" << std::endl;
+				count_backtrack(argument_container, false);
 				dump_success = dump_argument(level + 1, argument_container, cast->getOperand(0), already_visited);
 				debug(level) << *cast;
 
 			} else if (StoreInst* store = dyn_cast<StoreInst>(instr)) {
 				debug(level) << "STORE INSTRUCTION" << std::endl;
+				count_backtrack(argument_container, false);
 				dump_success = load_value(level + 1, argument_container, store->getOperand(0), arg, already_visited);
 				debug(level) << *store;
 
@@ -126,9 +146,11 @@ namespace ara {
 				debug(level) << "  call: " << *call << std::endl;
 
 				for (auto user : call->users()) { // U is of type User*
+					count_backtrack(argument_container, false);
 					// get all users of get pointer element instruction
 					if (auto store = dyn_cast<StoreInst>(user)) {
 						if (store->getOperand(0) == call) {
+							count_backtrack(argument_container, false);
 							if (auto* geptr = dyn_cast<GetElementPtrInst>(store->getOperand(1))) {
 								debug(level) << "  user: " << *store << std::endl;
 								debug(level) << "  operand: " << *geptr << std::endl;
@@ -144,6 +166,7 @@ namespace ara {
 								                                        geptr->getOperand(0)->getType())) {
 									debug(level) << "CLASSTYPE" << std::endl;
 									argument_container->any_list.emplace_back(geptr->getName().str());
+									count_backtrack(argument_container, true);
 									argument_container->value_list.emplace_back(geptr);
 									argument_container->argument_calles_list.emplace_back(*already_visited);
 									dump_success = true;
@@ -301,6 +324,7 @@ namespace ara {
 
 					// TODO set more binary operators
 				}
+				count_backtrack(argument_container, false);
 				argument_container->value_list.emplace_back(binop);
 				argument_container->argument_calles_list.emplace_back(*already_visited);
 			}
@@ -308,6 +332,7 @@ namespace ara {
 		else if (ConstantInt* CI = dyn_cast<ConstantInt>(arg)) {
 			debug(level) << "CONSTANT INT" << std::endl;
 			argument_container->any_list.emplace_back(CI->getSExtValue());
+			count_backtrack(argument_container, true);
 			argument_container->value_list.emplace_back(CI);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
 			dump_success = true;
@@ -315,6 +340,7 @@ namespace ara {
 		else if (ConstantFP* constant_fp = dyn_cast<ConstantFP>(arg)) {
 			debug(level) << "CONSTANT FP" << std::endl;
 			argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+			count_backtrack(argument_container, true);
 			argument_container->value_list.emplace_back(constant_fp);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
 			dump_success = true;
@@ -334,6 +360,7 @@ namespace ara {
 				if (arg->hasName()) {
 					debug(level) << "POINTER TO FUNCTION" << std::endl;
 					argument_container->any_list.emplace_back(arg->getName().str());
+					count_backtrack(argument_container, true);
 					argument_container->value_list.emplace_back(arg);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					dump_success = true;
@@ -355,6 +382,7 @@ namespace ara {
 				// check if the constant value is global global variable
 				if (isa<GlobalVariable>(constant->getOperand(0))) {
 					debug(level) << "POINTER TO CONSTANT GLOBAL" << std::endl;
+					count_backtrack(argument_container, false);
 					dump_success =
 					    load_value(level + 1, argument_container, constant->getOperand(0), arg, already_visited);
 				}
@@ -382,6 +410,7 @@ namespace ara {
 				debug(level) << "DEFAULTNAME" << std::endl;
 				debug(level) << *arg << std::endl;
 				argument_container->any_list.emplace_back(arg_name);
+				count_backtrack(argument_container, true);
 				argument_container->value_list.emplace_back(arg);
 				argument_container->argument_calles_list.emplace_back(*already_visited);
 				dump_success = true;
@@ -416,6 +445,7 @@ namespace ara {
 				debug(level) << "HASINITIALIZER" << std::endl;
 
 				if (ConstantData* constant_data = dyn_cast<ConstantData>(global_var->getInitializer())) {
+					count_backtrack(argument_container, false);
 					debug(level) << "CONSTANTDATA" << std::endl;
 					if (ConstantDataSequential* constant_sequential = dyn_cast<ConstantDataSequential>(constant_data)) {
 						debug(level) << "CONSTANTDATASEQUIENTIAL" << std::endl;
@@ -424,6 +454,7 @@ namespace ara {
 							// global variable is a constant array
 							if (constant_array->isCString()) {
 								argument_container->any_list.emplace_back(constant_array->getAsCString().str());
+								count_backtrack(argument_container, true);
 								argument_container->value_list.emplace_back(constant_array);
 								argument_container->argument_calles_list.emplace_back(*already_visited);
 								load_success = true;
@@ -435,6 +466,7 @@ namespace ara {
 						debug(level) << "CONSTANTDATAINT" << std::endl;
 
 						argument_container->any_list.emplace_back(constant_int->getSExtValue());
+						count_backtrack(argument_container, true);
 						argument_container->value_list.emplace_back(constant_int);
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
@@ -444,6 +476,7 @@ namespace ara {
 						debug(level) << "CONSTANTDATAFLOATING" << std::endl;
 
 						argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+						count_backtrack(argument_container, true);
 						argument_container->value_list.emplace_back(constant_fp);
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
@@ -453,6 +486,7 @@ namespace ara {
 						// print name of null pointer because there is no other content
 						if (global_var->hasName()) {
 							argument_container->any_list.emplace_back(global_var->getName().str());
+							count_backtrack(argument_container, true);
 							argument_container->value_list.emplace_back(global_var);
 							argument_container->argument_calles_list.emplace_back(*already_visited);
 							load_success = true;
@@ -462,6 +496,7 @@ namespace ara {
 						}
 					} else {
 						argument_container->any_list.emplace_back(global_var->getName().str());
+						count_backtrack(argument_container, true);
 						argument_container->value_list.emplace_back(global_var);
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
@@ -473,6 +508,7 @@ namespace ara {
 					// check if value is from type value
 					if (Value* tmp_arg = dyn_cast<Value>(constant_expr)) {
 						// get the value
+						count_backtrack(argument_container, false);
 						load_success = dump_argument(level + 1, argument_container, tmp_arg, already_visited);
 					}
 
@@ -492,6 +528,7 @@ namespace ara {
 							// int index_m =load_index(N);
 							debug(level) << index_n << std::endl;
 
+							count_backtrack(argument_container, false);
 							// constant_array->getOperand(index_n)->print(rso);
 							Value* aggregate_operand = constant_array->getOperand(index_n);
 
@@ -515,6 +552,7 @@ namespace ara {
 				if (global_var->hasName()) {
 					// save the name
 					argument_container->any_list.emplace_back(global_var->getName().str());
+					count_backtrack(argument_container, true);
 					argument_container->value_list.emplace_back(global_var);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					load_success = true;
@@ -542,6 +580,7 @@ namespace ara {
 							debug(level) << "CONSTANT INT" << std::endl;
 
 							argument_container->any_list.emplace_back(CI->getSExtValue());
+							count_backtrack(argument_container, true);
 							argument_container->value_list.emplace_back(CI);
 							argument_container->argument_calles_list.emplace_back(*already_visited);
 							load_success = true;
@@ -550,6 +589,7 @@ namespace ara {
 							debug(level) << "CONSTANT FP" << std::endl;
 
 							argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+							count_backtrack(argument_container, true);
 							argument_container->value_list.emplace_back(constant_fp);
 							argument_container->argument_calles_list.emplace_back(*already_visited);
 							load_success = true;
@@ -615,6 +655,7 @@ namespace ara {
 						// dump the call instruction
 						debug(level) << "LOADFUNCTIONARGUMENT: " << arg_counter << " " << *instr << std::endl;
 						debug(level) << "function:: " << instr->getFunction()->getName().str() << std::endl;
+						count_backtrack(argument_container, false);
 						if (!dump_argument(level + 1, argument_container, instr->getOperand(arg_counter),
 						                   &tmp_already_visited))
 							success = false;
@@ -628,6 +669,7 @@ namespace ara {
 							if (arg_counter == counter) {
 								debug(level) << "ARGUMENT" << i->getName().str() << std::endl;
 								argument_container->any_list.emplace_back(i->getName().str());
+								count_backtrack(argument_container, true);
 								argument_container->value_list.emplace_back(i);
 								argument_container->argument_calles_list.emplace_back(*already_visited);
 								success = true;
@@ -669,12 +711,15 @@ namespace ara {
 		// check if an access of the data structure was successfully
 		if (access != nullptr) {
 			if (auto def_access = dyn_cast<MemoryDef>(access)) {
+				count_backtrack(argument_container, false);
 
 				// check if the load and the store instructions addresses the same memory
 				// TODO memory walke class seems sometimes to return no valid results
 				if (StoreInst* store_inst = dyn_cast<StoreInst>(def_access->getMemoryInst())) {
+					count_backtrack(argument_container, false);
 					if (store_inst->getOperand(1) == inst->getOperand(0)) {
 						debug(level) << " store candidate: " << *store_inst << std::endl;
+						count_backtrack(argument_container, false);
 						success =
 						    dump_argument(level + 1, argument_container, store_inst->getOperand(0), already_visited);
 					}
@@ -688,9 +733,11 @@ namespace ara {
 		if (success == false) {
 
 			debug(level) << "  nothing found" << std::endl;
+			count_backtrack(argument_container, false);
 
 			// get the nearest dominating store instruction of the load instruction
 			if (AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(inst->getOperand(0))) {
+				count_backtrack(argument_container, false);
 				Value::user_iterator sUse = alloca_instruction->user_begin();
 				Value::user_iterator sEnd = alloca_instruction->user_end();
 
@@ -737,6 +784,7 @@ namespace ara {
 				// check if a valid store instruction could be found
 				if (store_inst != nullptr) {
 					debug(level) << "  found store: " << *store_inst << std::endl;
+					count_backtrack(argument_container, false);
 					success = dump_argument(level + 1, argument_container, store_inst->getOperand(0), already_visited);
 				}
 			}
@@ -766,6 +814,7 @@ namespace ara {
 			debug(level) << std::endl;
 			// get operand of the GetElementPtrInst
 			if (auto load = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())) {
+				count_backtrack(argument_container, false);
 
 				debug(level) << "  operand: " << *load << std::endl;
 
@@ -829,6 +878,7 @@ namespace ara {
 			debug(level) << "CONSTANTPOINTERNULL" << std::endl;
 			std::string tmp = "&$%NULL&$%";
 			argument_container->any_list.emplace_back(tmp);
+			count_backtrack(argument_container, true);
 			argument_container->value_list.emplace_back(constant_data);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
 			load_success = true;
@@ -1004,10 +1054,12 @@ namespace ara {
 													                "violates soundness of this analysis."
 													             << std::endl;
 												}
+												count_backtrack(argument_container, false);
 
 												flag = true;
 												// std::cerr << "user" << std::endl;
 												debug(level) << "first operand: " << *store->getOperand(0) << std::endl;
+												count_backtrack(argument_container, false);
 												if (!dump_argument(level + 1, argument_container, store->getOperand(0),
 												                   already_visited)) {
 													success = false;
@@ -1180,7 +1232,7 @@ namespace ara {
 		return nullptr;
 	}
 
-	Arguments ValueAnalyzer::get_values(const CallBase& cb) {
+	std::pair<Arguments, std::vector<std::vector<unsigned>>> ValueAnalyzer::get_values(const CallBase& cb) {
 		if (isCallToLLVMIntrinsic(&cb)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -1215,6 +1267,7 @@ namespace ara {
 
 		// repack Values into Arguments class
 		Arguments args;
+		std::vector<std::vector<unsigned>> stats;
 
 		const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(cb.getContext());
 		const llvm::Constant* none_c = dyn_cast<llvm::Constant>(token);
@@ -1253,6 +1306,7 @@ namespace ara {
 				assert(v != nullptr && "Value must not be null");
 				args.emplace_back(Argument(s, *v));
 			}
+			stats.emplace_back(a.backtrack_depth);
 			i++;
 		}
 
@@ -1262,6 +1316,6 @@ namespace ara {
 			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *none_c));
 		}
 
-		return args;
+		return make_pair(std::move(args), std::move(stats));
 	}
 } // namespace ara

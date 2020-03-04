@@ -17,6 +17,7 @@ namespace ara {
 			std::vector<const llvm::Value*> value_list;
 			std::vector<std::vector<const llvm::Instruction*>> argument_calles_list;
 			bool multiple = false;
+			std::vector<unsigned> backtrack_depth;
 		};
 
 		struct call_data {
@@ -29,6 +30,8 @@ namespace ara {
 		Logger& logger;
 
 		Logger::LogStream& debug(unsigned level);
+
+		void count_backtrack(argument_data* argument_container, bool new_value);
 
 		call_data dump_instruction(llvm::Function* func, const llvm::CallBase* instruction,
 		                           std::vector<shared_warning>* warning_list);
@@ -177,7 +180,7 @@ namespace ara {
 	  public:
 		ValueAnalyzer(Logger& logger) : logger(logger) {}
 
-		Arguments get_values(const llvm::CallBase& cb);
+		std::pair<Arguments, std::vector<std::vector<unsigned>>> get_values(const llvm::CallBase& cb);
 	};
 
 } // namespace ara

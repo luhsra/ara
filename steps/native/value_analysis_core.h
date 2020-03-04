@@ -9,6 +9,11 @@
 
 namespace ara::step {
 	class ValueAnalysisCore : public Step {
+	  private:
+		option::TOption<option::Bool> dump_stats{"dump_stats",
+		                                         "Export JSON statistics about the value-analysis depth."};
+		virtual void fill_options() override { opts.emplace_back(dump_stats); }
+
 	  public:
 		virtual std::string get_name() const override { return "ValueAnalysisCore"; }
 		virtual std::string get_description() const override;

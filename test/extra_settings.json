@@ -13,7 +13,8 @@
 		"log_level": "info"
 	},
 	"ValueAnalysisCore": {
-		"log_level": "debug"
+		"log_level": "debug",
+		"dump_stats": true
 	},
 	"CallGraph": {
 		"dump": true
