@@ -33,7 +33,13 @@ namespace ara::step {
 			BasicBlock* exit_block = nullptr;
 			for (BasicBlock& _bb : function) {
 				if (succ_begin(&_bb) == succ_end(&_bb)) {
-					assert(exit_block == nullptr && "ARA expects that the UnifyFunctionExitNodes pass was executed.");
+					if (exit_block != nullptr) {
+						logger.err() << "Function: " << function.getName().str() << " has multiple exit blocks."
+						             << std::endl;
+						logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
+						logger.debug() << "Basicblock 2 with exit: " << _bb << std::endl;
+						assert(false && "ARA expects that the UnifyFunctionExitNodes pass was executed.");
+					}
 					exit_block = &_bb;
 				}
 			}
