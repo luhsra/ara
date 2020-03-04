@@ -9,7 +9,7 @@ stepmanager then fulfils this dependencies.
 
 cimport cstep
 cimport cgraph
-cimport llvm_wrapper
+cimport llvm_data
 
 from agressive_dce cimport AgressiveDCE
 from bb_split cimport BBSplit
@@ -27,7 +27,7 @@ from mem2reg cimport Mem2Reg
 from reassociate cimport Reassociate
 from sparse_cond_const_prop cimport SparseCondConstProp
 from simplify_cfg cimport SimplifyCFG
-from value_analysis cimport ValueAnalysis
+from value_analysis_core cimport ValueAnalysisCore
 
 from test cimport (BBSplitTest,
                    CompInsertTest,
@@ -39,10 +39,12 @@ from test cimport (BBSplitTest,
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
 from libcpp.memory cimport static_pointer_cast as spc
+from libcpp.string cimport string
 from libc.stdint cimport int64_t
 from cy_helper cimport step_fac, repack, get_type_args
 cimport option as coption
 
+import json
 import logging
 import inspect
 from typing import List
@@ -63,10 +65,16 @@ cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
     """
     cdef public object _log
+    cdef public object _step_manager
 
     def __init__(self):
         """Initialize a Step."""
         self._log = logging.getLogger(self.get_name())
+        self._step_manager = None
+
+    def set_step_manager(self, step_manager):
+        """Set the step manager."""
+        self._step_manager = step_manager
 
     def get_dependencies(self):
         """Define all dependencies of the step.
@@ -118,18 +126,35 @@ class Step(SuperStep):
     steps."""
     def __init__(self):
         super().__init__()
+        # ATTENTION: if you change this list, also change the option list in
+        # step.h in class Step
+        # All of these options are also present in ara.py and have their
+        # defaults from argparse.
         self.log_level = option.Option("log_level",
                                        "Adjust the log level of this step.",
                                        self.get_name(),
                                        option.Choice(*LEVEL.keys()),
                                        glob=True)
-        self.os = option.Option("os",
-                                "Select the operating system.",
-                                self.get_name(),
-                                option.Choice("FreeRTOS", "OSEK"),
-                                glob=True)
-        self.opts = [self.log_level, self.os]
+        self.dump = option.Option("dump",
+                                  "If possible, dump the changed graph into a "
+                                  "dot file.",
+                                  self.get_name(),
+                                  option.Bool(),
+                                  glob=True)
+        self.dump_prefix = option.Option("dump_prefix",
+                                         "If a file is dumped, set this as "
+                                         "prefix for the files"
+                                         "(default: dumps/{step_name}).",
+                                         self.get_name(),
+                                         option.String(),
+                                         glob=True)
+        self.opts = [self.log_level, self.dump, self.dump_prefix]
         self._fill_options()
+
+    def _get_step_data(self, g, data_class):
+        if self.get_name() not in g.step_data:
+            g.step_data[self.get_name()] = data_class()
+        return g.step_data[self.get_name()]
 
     def apply_config(self, config):
         for option in self.opts:
@@ -137,6 +162,15 @@ class Step(SuperStep):
         level = self.log_level.get()
         if level:
             self._log.setLevel(LEVEL[level])
+        dump_prefix = self.dump_prefix.get()
+        if dump_prefix:
+            new_dp = dump_prefix.replace('{step_name}', self.get_name())
+            self.dump_prefix.check({'dump_prefix': new_dp})
+
+    def _fail(self, msg, error=RuntimeError):
+        """Print msg to as error and raise error."""
+        self._log.error(msg)
+        raise error(msg)
 
     def get_name(self):
         return self.__class__.__name__
@@ -151,11 +185,6 @@ class Step(SuperStep):
         return self.opts
 
 
-# cdef get_warning_abb(shared_ptr[cgraph.ABB] location):
-#     cdef pyobj = graph.create_abb(location)
-#     return pyobj
-
-
 cdef class NativeStep(SuperStep):
     """Constructs a dummy Python class for a C++ step.
 
@@ -167,19 +196,24 @@ cdef class NativeStep(SuperStep):
 
     def __init__(self, *args):
         """Fake constructor. Prevent usage of super constructor. Must not
-        calle directly
+        called directly
 
-        Use native_fac() to construct a NativeStep.
+        Use _native_fac() to construct a NativeStep.
         """
         pass
 
     def init(self):
         """The actual constructor function. Must not called directly.
 
-        Use native_fac() to construct a NativeStep.
+        Use _native_fac() to construct a NativeStep.
         """
         super().__init__()
-        self._c_pass.set_logger(self._log)
+        self._c_pass.python_init(self._log, self._step_manager)
+
+    def set_step_manager(self, step_manager):
+        """Set the step manager."""
+        self._step_manager = step_manager
+        self._c_pass.python_init(self._log, step_manager)
 
     def __dealloc__(self):
         """Destroy the C++ object (if any)."""
@@ -192,8 +226,8 @@ cdef class NativeStep(SuperStep):
         return [x.decode('UTF-8') for x in deps]
 
     def run(self, g):
-        cdef llvm_wrapper.LLVMWrapper llvm_w = g._llvm
-        cdef cgraph.Graph gwrap = cgraph.Graph(g, llvm_w._c_module)
+        cdef llvm_data.PyLLVMData llvm_w = g._llvm_data
+        cdef cgraph.Graph gwrap = cgraph.Graph(g, llvm_w._c_data)
         self._c_pass.run(gwrap)
 
     def get_name(self) -> str:
@@ -206,6 +240,11 @@ cdef class NativeStep(SuperStep):
         super().get_side_data()
 
     def apply_config(self, config: dict):
+        # this is a lot easier on the Python side, so do it here
+        if 'dump_prefix' in config:
+            config['dump_prefix'] = \
+                config['dump_prefix'].replace('{step_name}', self.get_name())
+
         self._c_pass.apply_config(config)
 
     cdef getTy(self, unsigned ctype, coption.Option* opt):
@@ -274,7 +313,7 @@ def provide_steps():
             _native_fac(step_fac[Reassociate]()),
             _native_fac(step_fac[SparseCondConstProp]()),
             _native_fac(step_fac[SimplifyCFG]()),
-            _native_fac(step_fac[ValueAnalysis]())]
+            _native_fac(step_fac[ValueAnalysisCore]())]
 
 
 def provide_test_steps():
@@ -285,3 +324,11 @@ def provide_test_steps():
             _native_fac(step_fac[LLVMMapTest]()),
             _native_fac(step_fac[Test0Step]()),
             _native_fac(step_fac[Test2Step]())]
+
+# make this name extra long, since we have no namespaces here
+cdef public void step_manager_chain_step(object step_manager, const char* config):
+    py_config = json.loads(config)
+    step_manager.chain_step(py_config)
+
+cdef public const char* step_manager_get_execution_id(object step_manager):
+    return str(step_manager.get_execution_id()).encode('UTF-8')

@@ -17,10 +17,8 @@ The following dependencies are needed:
 Getting packages in SRA lab:
 ```
 echo addpackage llvm-9.0 >> ~/.bashrc
-echo export LD_LIBRARY_PATH=/proj/opt/llvm-9.0/lib:\$LD_LIBRARY_PATH >> ~/.bashrc
-echo export PATH=$HOME/.local/bin:\$PATH >> ~/.bashrc
-. ~/.bashrc
 pip3 install --user meson
+. ~/.profile
 ```
 
 
@@ -151,4 +149,10 @@ llvm-config = '/path/to/llvm-config'
 Then configure your build directory with:
 ```
 meson build --native-file native.txt
+```
+
+### meson directory is really/too big
+This is because of precompiled headers. They fasten the build a little bit but need a lot of disk space. You can deactivate precompiled headers with:
+```
+meson configure -Db_pch=false
 ```

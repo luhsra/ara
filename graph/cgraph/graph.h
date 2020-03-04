@@ -2,8 +2,10 @@
 
 #include "../mix.py"
 #include "common/exceptions.h"
+#include "llvm_data.h"
 
 #include <Python.h>
+#include <boost/python.hpp>
 #include <graph_tool.hh>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
@@ -25,9 +27,12 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<unsigned char>::type is_function;
 		typename graph_tool::vprop_map_t<int64_t>::type entry_bb;
 		typename graph_tool::vprop_map_t<int64_t>::type exit_bb;
+		typename graph_tool::vprop_map_t<unsigned char>::type is_exit;
+		typename graph_tool::vprop_map_t<unsigned char>::type is_loop_head;
 		typename graph_tool::vprop_map_t<unsigned char>::type implemented;
 		typename graph_tool::vprop_map_t<unsigned char>::type syscall;
 		typename graph_tool::vprop_map_t<int64_t>::type function;
+		typename graph_tool::vprop_map_t<boost::python::object>::type arguments;
 
 		typename graph_tool::eprop_map_t<int>::type etype;
 		typename graph_tool::eprop_map_t<unsigned char>::type is_entry;
@@ -135,17 +140,27 @@ namespace ara::graph {
 		                                                                    ABBTypeFilter(type_filter, &cfg));
 	}
 
+	/**
+	 * C++ representation of the graph.
+	 *
+	 * It stores the Python graph and LLVMData separately, although the Python graph contains the LLVMData.
+	 * This is for convenience since the actual extraction is done with Cython.
+	 */
 	class Graph {
 	  private:
 		PyObject* graph;
-		std::unique_ptr<llvm::Module>* module;
+		LLVMData* llvm_data;
 
 	  public:
-		Graph() : graph(nullptr), module(nullptr) {}
-		Graph(PyObject* g, std::unique_ptr<llvm::Module>& m) : graph(g), module(&m) {}
+		Graph() : graph(nullptr), llvm_data(nullptr) {}
+		Graph(PyObject* g, LLVMData& llvm_data) : graph(g), llvm_data(&llvm_data) {}
 
-		llvm::Module& get_module();
-		void initialize_module(std::unique_ptr<llvm::Module> module);
+		/**
+		 * convenience function to get the llvm module directly
+		 */
+		llvm::Module& get_module() { return llvm_data->get_module(); }
+
+		LLVMData& get_llvm_data() { return *llvm_data; }
 
 		CFG get_cfg();
 	};

@@ -1,0 +1,14 @@
+{
+	"steps": [
+		{
+			"name": "Generator",
+			"arch": "arm",
+			"syscall_style": "vanilla",
+			"os": "freertos"
+		}
+	],
+
+	"LLVMMap": {
+		"log_level": "info"
+	}
+}

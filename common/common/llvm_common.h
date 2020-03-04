@@ -6,12 +6,6 @@
 #include <memory>
 
 /**
- * @brief get string representation of llvm value
- * @param argument llvm value variable to print
- */
-std::string print_argument(llvm::Value* argument);
-
-/**
  * @brief get string representation of llvm type
  * @param argument llvm::type to print
  */

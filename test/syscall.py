@@ -30,9 +30,10 @@ def main():
             return
         syscalls = sum(1 for _ in
                        (filter(f_exp(cfg, ABBType.syscall),
-                               abbs(cfg, function))))
+                               cfg.get_abbs(function))))
         calls = sum(1 for _ in
-                    (filter(f_exp(cfg, ABBType.call), abbs(cfg, function))))
+                    (filter(f_exp(cfg, ABBType.call),
+                            cfg.get_abbs(function))))
         stats[cfg.vp.name[function]] = {"syscalls": syscalls, "calls": calls}
     fail_if(data != stats, "Data not equal")
 

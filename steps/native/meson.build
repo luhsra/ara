@@ -1,28 +1,4 @@
-native_step_pyx_cpp = custom_target('native_step_pyx',
-  output : ['native_step_pyx.cpp'],
-  input : [files('native_step.pyx',
-                 'option.pxd',
-                 'agressive_dce.pxd',
-                 'bb_split.pxd',
-                 'cdummy.pxd',
-                 'cfg_prep.pxd',
-                 'comp_insert.pxd',
-                 'const_prop.pxd',
-                 'dead_code_elimination.pxd',
-                 'cstep.pxd',
-                 'fn_single_exit.pxd',
-                 'icfg.pxd',
-                 'ir_reader.pxd',
-                 'llvm_basic_optimization.pxd',
-                 'llvm_map.pxd',
-                 'mem2reg.pxd',
-                 'sparse_cond_const_prop.pxd',
-                 'simplify_cfg.pxd',
-                 'value_analysis.pxd',
-                 'test.pxd') + common_cython_files],
-  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '@INPUT0@', '-o', '@OUTPUT@'] + cython_flags,
-)
-
+# logging submodule
 py_logging_pyx_cpp = custom_target('py_logging_pyx',
   output : ['py_logging.cpp', 'py_logging.h'],
   input : files('py_logging.pyx'),
@@ -41,6 +17,35 @@ log_dep = declare_dependency(
   include_directories: log_bridge_incl,
   link_with: log_bridge,
   sources: py_logging_header)
+
+# steps
+native_step_pyx_gen = custom_target('native_step_pyx',
+  output : ['native_step_pyx.cpp', 'native_step_pyx.h'],
+  input : [files('native_step.pyx',
+                 'option.pxd',
+                 'agressive_dce.pxd',
+                 'bb_split.pxd',
+                 'cdummy.pxd',
+                 'cfg_prep.pxd',
+                 'const_prop.pxd',
+                 'comp_insert.pxd',
+                 'cstep.pxd',
+                 'dead_code_elimination.pxd',
+                 'fn_single_exit.pxd',
+                 'icfg.pxd',
+                 'ir_reader.pxd',
+                 'llvm_basic_optimization.pxd',
+                 'llvm_map.pxd',
+                 'mem2reg.pxd',
+                 'sparse_cond_const_prop.pxd',
+                 'simplify_cfg.pxd',
+                 'value_analysis_core.pxd',
+                 'test.pxd') + common_cython_files],
+  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
+)
+
+native_step_pyx_cpp = native_step_pyx_gen[0]
+native_step_pyx_h   = native_step_pyx_gen[1]
 
 plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
@@ -61,7 +66,8 @@ plib = py3_inst.extension_module('native_step',
         'reassociate.cpp',
         'sparse_cond_const_prop.cpp',
         'simplify_cfg.cpp',
-        'value_analysis.cpp',
+        'step_manager.cpp',
+        'value_analysis_core.cpp',
         'value_analyzer.cpp',
         'test/bb_split_test.cpp',
         'test/comp_insert_test.cpp',
@@ -69,7 +75,7 @@ plib = py3_inst.extension_module('native_step',
         'test/llvm_map_test.cpp',
         'test/test.cpp'),
   cpp_pch: 'pch/steps_pch.h',
-  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep]
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep, pyllco_dep]
 )
 
-stepdir = meson.current_build_dir()
+step_dir = meson.current_build_dir()

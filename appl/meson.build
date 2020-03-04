@@ -1,25 +1,4 @@
-clang = find_program('clang', version: llvm_version)
-nop = find_program('true')
-
-# compiler flags to generate annotated IR
-clang_flags = ['-S', '-ggdb', '-emit-llvm', '-Xclang', '-disable-O0-optnone', '-target', 'i386-pc-linux-gnu', '-fno-discard-value-names', '-fno-exceptions']
-clang_flags += '-Wno-everything'
-c_std = '-std=c11'
-cxx_std = '-std=c++11'
-
-
 # FreeRTOS examples
-
-freertos_path = 'FreeRTOS/source/include'
-
-freertos_includes = files(join_paths(freertos_path, 'croutine.h'),
-                          join_paths(freertos_path, 'event_groups.h'),
-                          join_paths(freertos_path, 'FreeRTOS.h'),
-                          join_paths(freertos_path, 'FreeRTOSConfig.h'),
-                          join_paths(freertos_path, 'list.h'),
-                          join_paths(freertos_path, 'queue.h'),
-                          join_paths(freertos_path, 'task.h'))
-subdir(freertos_path)
 
 freertos_targets = []
 foreach app : ['a',
@@ -41,18 +20,116 @@ foreach app : ['a',
                'multi_exit',
                'ospert',
                'priority_inversion',
+               'sse',
                'start_scheduler_relation',
                'syscall',
+               'simple_print',
+               'simple_delay',
                'thesis_print',
                'topological_sort']
-   ll_target = custom_target('freertos-' + app,
-                             input : ['FreeRTOS/' + app + '.cc'] + freertos_includes,
-                             output : ['freertos-' + app + '.ll'],
-                             command : [clang, '@INPUT0@',
-                                        '-o', '@OUTPUT0@', cxx_std] +
+  ll_target = custom_target('freertos-' + app,
+                            input : ['FreeRTOS/' + app + '.cc'],
+                            output : ['freertos-' + app + '.ll'],
+                            depfile : 'freertos-' + app + '.ll.dep',
+                            command : clang_cpp +
+                                      libs_includes +
+                                      ir_flags +
+                                      clang_flags)
+  set_variable('freertos_' + app.underscorify(), ll_target)
+
+  o_target = custom_target('freertos-' + app + '.o',
+                            input : ll_target,
+                            output : ['freertos-' + app + '.ll.o'],
+                            command : llc_cmd)
+
+  named_elf_targets = []
+  elf_targets = []
+  foreach t : ara_gen_freertos_targets
+    name_prefix = 'freertos-' + app + '-' + t
+    os_target = custom_target(name_prefix + '-os',
+                              input: ll_target,
+                              depfile: name_prefix+ '-os.cc.dep',
+                              output: [name_prefix + '-os.cc',
+                                       name_prefix + '-os.cc.startup.s'],
+                              command: get_variable('ara_gen_' + t)
+                             )
+
+    os_ll_target = custom_target(name_prefix + '-os.cc.ll',
+                                 input : os_target,
+                                 output : name_prefix + '-os.cc.ll',
+                                 depfile : name_prefix + '-os.cc.ll.dep',
+                                 command : clang_cpp +
+                                           libs_includes +
+                                           ir_flags +
+                                           clang_flags)
+
+    app_os = custom_target(name_prefix + '-app_os.ll',
+                           input: [ll_target, os_ll_target],
+                           output: name_prefix + '-os_app.ll',
+                           command: llvm_link_cmd)
+
+    lto_app_os = custom_target(name_prefix + '-lto_app_os.ll',
+                               input: app_os,
+                               output: name_prefix + '-lto_os_app.ll',
+                               command: llvm_opt_cmd)
+
+    lto_o = custom_target(name_prefix + '-lto_app_os.o',
+                          input: lto_app_os,
+                          output: name_prefix + '-lto_os_app.ll.o',
+                          command: llc_cmd)
+
+    lto_elf = custom_target(name_prefix + '.lto.elf',
+                            input: [lto_o,
+                                    os_target[1], # startup.s
+                                    libs_targets,
+                                    get_variable('libfreertos_'+t)],
+                            output: name_prefix + '.lto.elf',
+                            depfile: name_prefix + '.lto.elf.dep',
+                            command: clang_cpp +
+                                     libs_includes +
+                                     ld_flags +
+                                     clang_flags)
+
+    elf_target = custom_target(name_prefix + '.elf',
+                               input: [o_target,
+                                       os_target,
+                                       libs_targets,
+                                       get_variable('libfreertos_'+t)],
+                               output: name_prefix + '.elf',
+                               depfile: name_prefix + '.elf.dep',
+                               command: clang_cpp +
+                                        libs_includes +
+                                        ld_flags +
                                         clang_flags)
-   set_variable('freertos_' + app.underscorify(), ll_target)
-   freertos_targets += ll_target
+
+    bin_target = custom_target(name_prefix + '.bin',
+                               input: [elf_target],
+                               output: name_prefix + '.bin',
+                               command: objcopy_cmd)
+
+    lto_bin_target = custom_target(name_prefix + '.lto.bin',
+                                   input: [lto_elf],
+                                   output: name_prefix + '.lto.bin',
+                                   command: objcopy_cmd)
+
+    run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
+    run_target('size_' + name_prefix, command: [size, elf_target])
+    run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
+    run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
+    run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
+    elf_targets += elf_target
+    elf_targets += lto_elf
+    named_elf_targets += [t, elf_target]
+    named_elf_targets += [t+'.lto', lto_elf]
+
+  endforeach
+
+  run_target('compare_nm-' + app, command: [compare_nm,  named_elf_targets])
+  run_target('compare_size-' + app, command: [size, elf_targets])
+  run_target('compare_time-' + app, command: [compare_time, app], depends: elf_targets)
+
+  freertos_targets += ll_target
 endforeach
 
 # gpslogger is special
@@ -68,15 +145,7 @@ freertos_examples = run_target('freertos-examples',
 
 # OSEK examples
 
-osek_path = 'OSEK/source/os'
-
-osek_includes = files(join_paths(osek_path, 'alarm.h'),
-                      join_paths(osek_path, 'os.h'),
-                      join_paths(osek_path, 'timing.h'),
-                      join_paths(osek_path, 'counter.h'),
-                      join_paths(osek_path, 'timing.h'),
-                      join_paths(osek_path, 'osek_types.h'))
-
+osek_includes = ['-I', join_paths(meson.current_source_dir(), 'OSEK', 'source', 'os')]
 osek_folder = 'OSEK'
 
 osek_targets = []
@@ -86,12 +155,14 @@ foreach app : [['a',                     'a.oil'],
                ['coptermok',             'coptermok.oil'],
                ['copter-without-alarms', 'copter-without-alarms.oil'],
                ['oiltest',               'oiltest.oil']]
-    ll_target = custom_target('osek-' + app[0],
-                              input : [join_paths([osek_folder, app[0] + '.cc'])] + osek_includes,
-                              output : ['osek-' + app[0] + '.ll'],
-                              command : [clang, '@INPUT0@',
-                                         '-o', '@OUTPUT0@', cxx_std] +
-                                         clang_flags)
+  ll_target = custom_target('osek-' + app[0],
+                            input : [join_paths([osek_folder, app[0] + '.cc'])],
+                            output : ['osek-' + app[0] + '.ll'],
+                            depfile : 'osek-' + app[0] + '.ll.dep',
+                            command : clang_cpp +
+                                      libs_includes +
+                                      ir_flags +
+                                      clang_flags)
     set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
     osek_targets += ll_target
 endforeach
@@ -104,19 +175,25 @@ osek_examples = run_target('osek-examples',
 const_prop = custom_target('const-prop',
                            input : files('const_prop.cc'),
                            output : ['const_prop.ll'],
-                           command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
-                                      clang_flags)
+                           depfile : 'const_prop.ll.dep',
+                           command : clang_cpp +
+                                     ir_flags +
+                                     clang_flags)
 
 dead_code = custom_target('dead-code',
                            input : files('dead_code.cc'),
                            output : ['dead_code.ll'],
-                           command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
-                                      clang_flags)
+                           depfile : 'dead_code.ll.dep',
+                           command : clang_cpp +
+                                     ir_flags +
+                                     clang_flags)
 
 reassociate = custom_target('reassociate',
-                           input : files('reassociate.cc'),
-                           output : ['reassociate.ll'],
-                           command : [clang, '@INPUT0@', '-o', '@OUTPUT0@', cxx_std] +
+                            input : files('reassociate.cc'),
+                            output : ['reassociate.ll'],
+                           depfile : 'reassociate.ll.dep',
+                            command : clang_cpp +
+                                      ir_flags +
                                       clang_flags)
 
 examples = run_target('examples',

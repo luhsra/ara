@@ -176,6 +176,7 @@ enum PlcErr
 #define MAX_REMOTE_CMD_RETRIES 5
 #define MAX_NACK_RCV 2
 
+#include <sys/types.h>
 #include <stdint.h>
 #include "FreeRTOS.h"
 #include "task.h"
@@ -184,7 +185,7 @@ enum PlcErr
 #define PLC_TX_BUF_SIZE 8
 #define PLC_TX_BUF_MASK (PLC_TX_BUF_SIZE - 1)
 
-typedef long time_t;
+//typedef long time_t;
 
 enum PlcCommandIds {
 	SET_REMOTE_TX_ENABLE = 1,

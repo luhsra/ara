@@ -21,3 +21,12 @@ def init_logging(level=logging.DEBUG, max_stepname=20):
         level = log_levels[level]
 
     logging.basicConfig(format=_format, level=level)
+
+
+class VarianceDict(dict):
+    """Dict that store the values that are requested per `get`."""
+    def get(self, key, default_value):
+        if key in self:
+            return self[key]
+        self[key] = default_value
+        return self[key]

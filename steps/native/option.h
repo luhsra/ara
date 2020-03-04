@@ -2,10 +2,12 @@
 
 #include <Python.h>
 #include <cassert>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace ara::option {
@@ -22,16 +24,16 @@ namespace ara::option {
 	template <typename T>
 	class RawType {
 	  public:
-		typedef T type;
+		using type = T;
 
 	  protected:
-		bool valid = false;
-		type value;
+		std::optional<type> value;
+		std::optional<type> default_value;
 
 		RawType() : step_name("") {}
 		virtual ~RawType() {}
 
-		PyObject* get_value(PyObject* config, std::string key) {
+		PyObject* get_value(PyObject* config, const std::string& key) {
 			assert(PyDict_Check(config));
 			assert(step_name != "");
 			return PyDict_GetItemString(config, key.c_str());
@@ -42,10 +44,10 @@ namespace ara::option {
 	  public:
 		virtual void from_pointer(PyObject*, std::string){};
 
-		void check(PyObject* obj, std::string key) {
+		void check(PyObject* obj, const std::string& key) {
 			PyObject* scoped_obj = get_value(obj, key);
 			if (!scoped_obj) {
-				this->valid = false;
+				this->value = std::nullopt;
 				return;
 			}
 			this->from_pointer(scoped_obj, key);
@@ -53,9 +55,16 @@ namespace ara::option {
 
 		std::string serialize_args() { return ""; }
 
-		void set_step_name(std::string step_name) { this->step_name = step_name; }
+		void set_step_name(const std::string& step_name) { this->step_name = step_name; }
 
-		std::pair<type, bool> get() { return std::make_pair(value, valid); }
+		void set_default_value(std::optional<type> default_value) { this->default_value = default_value; }
+
+		std::optional<type> get() {
+			if (value) {
+				return value;
+			}
+			return default_value;
+		}
 	};
 
 	struct Integer : public RawType<int64_t> {
@@ -118,22 +127,19 @@ namespace ara::option {
 			cont.set_step_name(this->step_name);
 			cont.check(obj, name);
 
-			auto ret = cont.get();
-			this->value = ret.first;
+			this->value = cont.get();
 
-			if (!ret.second) {
-				this->valid = false;
+			if (this->value()) {
 				return;
 			}
 
-			if (this->value < low || this->value > high) {
+			if (*this->value < low || *this->value > high) {
 				std::stringstream ss;
-				ss << name << ": Range argument " << this->value << "has to be between " << low << " and " << high
+				ss << name << ": Range argument " << *this->value << "has to be between " << low << " and " << high
 				   << "!" << std::flush;
+				this->value = std::nullopt;
 				throw std::invalid_argument(ss.str());
 			}
-
-			this->valid = true;
 		}
 	};
 
@@ -167,28 +173,29 @@ namespace ara::option {
 			PyObject* scoped_obj = this->get_value(obj, key);
 
 			if (!scoped_obj) {
-				this->valid = false;
+				this->value = std::nullopt;
 				return;
 			}
 
 			if (!PyList_Check(scoped_obj)) {
 				std::stringstream ss;
 				ss << key << ": Must be a list" << std::flush;
+				this->value = std::nullopt;
 				throw std::invalid_argument(ss.str());
 			}
 
+			this->value = std::optional(std::vector<typename T::type>());
 			for (Py_ssize_t i = 0; i < PyList_Size(scoped_obj); ++i) {
 				T cont;
 				cont.from_pointer(PyList_GetItem(scoped_obj, i), key);
 				auto ret = cont.get();
 
-				if (!ret.second) {
-					this->valid = false;
+				if (!ret.has_value()) {
+					this->value = std::nullopt;
 					return;
 				}
-				this->value.emplace_back(ret.first);
+				this->value->emplace_back(*ret);
 			}
-			this->valid = true;
 		}
 	};
 
@@ -198,7 +205,8 @@ namespace ara::option {
 		std::array<String::type, N> choices;
 
 	  public:
-		Choice(std::array<String::type, N> choices) : RawType<typename String::type>(), choices(choices) {}
+		explicit Choice(std::array<String::type, N> choices)
+		    : RawType<typename String::type>(), index(0), choices(choices) {}
 
 		static unsigned get_type() { return OptionType::CHOICE; }
 
@@ -223,33 +231,27 @@ namespace ara::option {
 			cont.set_step_name(this->step_name);
 			cont.check(obj, name);
 
-			auto ret = cont.get();
-			this->value = ret.first;
-
-			if (!ret.second) {
-				this->valid = false;
-				return;
-			}
+			this->value = cont.get();
 
 			unsigned found_index = 0;
 			for (typename String::type& choice : choices) {
-				if (this->value == choice) {
+				if (*this->value == choice) {
 					break;
 				}
 				found_index++;
 			}
 			if (found_index == choices.size()) {
 				std::stringstream ss;
-				ss << name << ": Value " << this->value << " is not in the list of possible choices." << std::flush;
+				ss << name << ": Value " << *this->value << " is not in the list of possible choices." << std::flush;
+				this->value = std::nullopt;
 				throw std::invalid_argument(ss.str());
 			}
-
-			this->valid = true;
+			this->index = found_index;
 		}
 
 		/**
 		 * Return the Index of the matching choice.
-		 * Can be used to performance critical code..
+		 * Can be used in performance critical code.
 		 */
 		int64_t getIndex() { return index; }
 	};
@@ -274,8 +276,9 @@ namespace ara::option {
 		// only for Python bridging, sed cy_helper.h
 		friend std::string get_type_args(ara::option::Option* opt);
 
-		Option(std::string name, std::string help) : name(name), help(help) {}
+		Option(const std::string& name, const std::string& help) : name(name), help(help) {}
 		Option() = default;
+		Option(const Option&) = delete;
 
 		virtual ~Option() = default;
 
@@ -306,8 +309,12 @@ namespace ara::option {
 		virtual std::string get_type_args() override { return ty.serialize_args(); }
 
 	  public:
-		TOption(std::string name, std::string help, T ty = T(), bool global = false)
-		    : Option(name, help), ty(ty), global(global) {}
+		TOption(const std::string& name, const std::string& help, T ty = T(),
+		        std::optional<typename T::type> default_value = std::nullopt, bool global = false)
+		    : Option(name, help), ty(ty), global(global) {
+			this->ty.set_default_value(default_value);
+		}
+		TOption(const TOption&) = delete;
 
 		virtual void set_step_name(std::string step_name) override { ty.set_step_name(step_name); }
 
@@ -319,6 +326,6 @@ namespace ara::option {
 		/**
 		 * get value of option.
 		 */
-		std::pair<typename T::type, bool> get() { return ty.get(); }
+		std::optional<typename T::type> get() { return ty.get(); }
 	};
 } // namespace ara::option

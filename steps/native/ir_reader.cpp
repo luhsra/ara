@@ -3,11 +3,10 @@
 #include "ir_reader.h"
 
 #include <cassert>
+#include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
-
-static llvm::LLVMContext context;
 
 namespace ara::step {
 	std::string IRReader::get_description() const { return "Parser IR files and link together to an LLVM module"; }
@@ -17,7 +16,7 @@ namespace ara::step {
 		logger.debug() << "Loading '" << filepath << "'\n";
 
 		std::unique_ptr<llvm::Module> Result = 0;
-		Result = parseIRFile(filepath, err, Context);
+		Result = llvm::parseIRFile(filepath, err, Context);
 		if (Result)
 			return Result;
 
@@ -29,12 +28,13 @@ namespace ara::step {
 
 	void IRReader::run(graph::Graph& graph) {
 		// get file arguments from config
-		assert(input_files.get().second);
-		std::vector<std::string> files = input_files.get().first;
+		assert(input_files.get());
+		std::vector<std::string> files = *input_files.get();
 
 		// link the modules
 		// use first module a main module
 		logger.debug() << "Startfile: '" << files.at(0) << "'" << std::endl;
+		llvm::LLVMContext& context = graph.get_llvm_data().get_context();
 		auto composite = load_file(files.at(0), context);
 		if (composite.get() == 0) {
 			logger.err() << "Error loading file '" << files.at(0) << "'" << std::endl;
@@ -66,6 +66,6 @@ namespace ara::step {
 		}
 
 		// convert unique_ptr to shared_ptr
-		graph.initialize_module(std::move(composite));
+		graph.get_llvm_data().initialize_module(std::move(composite));
 	}
 } // namespace ara::step

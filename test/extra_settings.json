@@ -1,16 +1,33 @@
 {
 	"steps": [
-		"Syscall",
-		{
-			"name": "Printer",
-			"dot": "syscall.dot",
-			"graph_name": "Syscall",
-			"subgraph": "abbs"
-		},
-		"ValueAnalysis"
+		"InteractionAnalysis"
 	],
 
+	"ICFG": {
+		"log_level": "info"
+	},
 	"LLVMMap": {
+		"log_level": "info"
+	},
+	"ValueAnalysis": {
+		"log_level": "info"
+	},
+	"ValueAnalysisCore": {
+		"log_level": "debug",
+		"dump_stats": true
+	},
+	"CallGraph": {
+		"dump": true
+	},
+	"Syscall": {
+		"dump": true
+	},
+	"InstanceGraph": {
+		"dump": true,
+		"log_level": "info"
+	},
+	"InteractionAnalysis": {
+		"dump": true,
 		"log_level": "info"
 	}
 }

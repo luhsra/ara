@@ -48,9 +48,9 @@
 */
 
 /* FreeRTOS.org includes. */
-#include "source/include/FreeRTOS.h"
-#include "source/include/task.h"
-#include "source/include/semphr.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
 #include <stdint.h>
 
 /* Used as a loop counter to create a very crude delay. */

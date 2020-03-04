@@ -12,19 +12,43 @@ using namespace llvm;
 
 namespace ara {
 
-	bool ValueAnalyzer::dump_argument(std::stringstream& debug_out, argument_data* argument_container,
-	                                  const Value* carg, std::vector<const Instruction*>* already_visited) {
+	Logger::LogStream& ValueAnalyzer::debug(unsigned level) {
+		auto& log = logger.debug();
+		for (unsigned i = 0; i < level; ++i) {
+			log << ' ';
+		}
+		return log;
+	}
+
+	void ValueAnalyzer::count_backtrack(argument_data* argument_container, bool new_value) {
+		auto& bd = argument_container->backtrack_depth;
+		bool empty_bd = bd.size() == 0;
+
+		if (empty_bd) {
+			bd.emplace_back(0);
+		}
+		if (new_value && !empty_bd) {
+			bd.emplace_back(bd.at(bd.size() - 1) + 1);
+		} else {
+			bd.at(bd.size() - 1)++;
+		}
+	}
+
+	bool ValueAnalyzer::dump_argument(unsigned level, argument_data* argument_container, const Value* carg,
+	                                  std::vector<const Instruction*>* already_visited) {
 
 		// TODO this is a horrible hack and should be eliminated ASAP
 		// speak with the author of this code, if you see this comment
 		Value* arg = const_cast<Value*>(carg);
 
+		debug(level) << "DUMP_ARGUMENT: " << *arg << std::endl;
+
 		if (arg == nullptr)
 			return false;
 
 		// check if the value is an argument of the function
-		if (Argument* argument = dyn_cast<Argument>(arg)) {
-			return load_function_argument(debug_out, argument_container, argument->getParent(), already_visited,
+		if (llvm::Argument* argument = dyn_cast<llvm::Argument>(arg)) {
+			return load_function_argument(level + 1, argument_container, argument->getParent(), already_visited,
 			                              argument->getArgNo());
 		}
 
@@ -43,7 +67,7 @@ namespace ara {
 					if (const StoreInst* store = dyn_cast<const StoreInst>(*sUse)) {
 						// std::cerr << "store" << print_argument(store);
 						if (store->getOperand(0) == &(*i) && store->getOperand(1) == instr->getOperand(0))
-							return load_function_argument(debug_out, argument_container, function, already_visited,
+							return load_function_argument(level + 1, argument_container, function, already_visited,
 							                              arg_counter);
 					}
 				}
@@ -51,46 +75,43 @@ namespace ara {
 			}
 		}
 
-		debug_out << "ENTRYDUMP"
-		          << "\n";
+		debug(level) << "ENTRYDUMP" << std::endl;
 		bool dump_success = false;
 
 		Type* Ty = arg->getType();
 
 		// check if argument is an instruction
 		if (Instruction* instr = dyn_cast<Instruction>(arg)) {
-			debug_out << "INSTRUCTION"
-			          << "\n";
+			debug(level) << "INSTRUCTION" << std::endl;
 			// check if argument is a load instruction
 			if (LoadInst* load = dyn_cast<LoadInst>(instr)) {
-				debug_out << "LOAD INSTRUCTION"
-				          << "\n";
+				debug(level) << "LOAD INSTRUCTION" << std::endl;
 				// check if argument is a global variable
 				if (isa<GlobalVariable>(load->getOperand(0))) {
-					debug_out << "LOAD GLOBAL"
-					          << "\n";
+					debug(level) << "LOAD GLOBAL" << std::endl;
 					// load the global information
-					dump_success = load_value(debug_out, argument_container, load->getOperand(0), arg, already_visited);
+					count_backtrack(argument_container, false);
+					dump_success = load_value(level + 1, argument_container, load->getOperand(0), arg, already_visited);
 				} else if (instr->getNumOperands() == 1) {
-					debug_out << "ONEOPERAND"
-					          << "\n";
+					debug(level) << "ONEOPERAND" << std::endl;
 
 					if (isa<AllocaInst>(load->getOperand(0))) {
-						debug_out << "ALLOCAINSTRUCTIONLOAD"
-						          << "\n";
-						dump_success = get_store_instruction(debug_out, load, argument_container, already_visited);
+						debug(level) << "ALLOCAINSTRUCTIONLOAD" << std::endl;
+						dump_success = get_store_instruction(level + 1, load, argument_container, already_visited);
 					} else
-						dump_success =
-						    dump_argument(debug_out, argument_container, load->getOperand(0), already_visited);
+						debug(level) << "  from: " << *load << std::endl;
+					debug(level) << "  to: " << *load->getOperand(0) << std::endl;
+					count_backtrack(argument_container, false);
+					dump_success = dump_argument(level + 1, argument_container, load->getOperand(0), already_visited);
 				}
 				// check if instruction is an alloca instruction
 			} else if (AllocaInst* alloca = dyn_cast<AllocaInst>(instr)) {
-				debug_out << "ALLOCA INSTRUCTION"
-				          << "\n";
+				debug(level) << "ALLOCA INSTRUCTION" << std::endl;
 				if (alloca->hasName()) {
-					// dump_success = get_store_instruction(debug_out,alloca,any_list,value_list,already_visited );
+					// dump_success = get_store_instruction(level + 1,alloca,any_list,value_list,already_visited );
 					argument_container->any_list.emplace_back(alloca->getName().str());
 					argument_container->value_list.emplace_back(alloca);
+					count_backtrack(argument_container, true);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					dump_success = true;
 				} else {
@@ -100,42 +121,52 @@ namespace ara {
 					alloca->getType()->print(rso);
 					argument_container->any_list.emplace_back(rso.str());
 					argument_container->value_list.emplace_back(alloca);
+					count_backtrack(argument_container, true);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					dump_success = true;
 				}
 			} else if (CastInst* cast = dyn_cast<CastInst>(instr)) {
-				debug_out << "CAST INSTRUCTION"
-				          << "\n";
-				dump_success = dump_argument(debug_out, argument_container, cast->getOperand(0), already_visited);
-				debug_out << print_argument(cast);
+				debug(level) << "CAST INSTRUCTION" << std::endl;
+				count_backtrack(argument_container, false);
+				dump_success = dump_argument(level + 1, argument_container, cast->getOperand(0), already_visited);
+				debug(level) << *cast;
 
 			} else if (StoreInst* store = dyn_cast<StoreInst>(instr)) {
-				debug_out << "STORE INSTRUCTION"
-				          << "\n";
-				dump_success = load_value(debug_out, argument_container, store->getOperand(0), arg, already_visited);
-				debug_out << print_argument(store);
+				debug(level) << "STORE INSTRUCTION" << std::endl;
+				count_backtrack(argument_container, false);
+				dump_success = load_value(level + 1, argument_container, store->getOperand(0), arg, already_visited);
+				debug(level) << *store;
 
 			} else if (auto* geptr = dyn_cast<GetElementPtrInst>(instr)) {
-				debug_out << "ELEMENTPTRINST INSTRUCTION"
-				          << "\n";
-				debug_out << print_argument(geptr);
-				dump_success = get_element_ptr(debug_out, geptr, argument_container, already_visited);
+				debug(level) << "ELEMENTPTRINST INSTRUCTION" << std::endl;
+				debug(level) << *geptr << std::endl;
+				dump_success = get_element_ptr(level + 1, geptr, argument_container, already_visited);
 			} else if (auto* call = dyn_cast<CallInst>(instr)) {
-				debug_out << "CALLINSTRUCTION"
-				          << "\n";
-				debug_out << print_argument(call);
+				debug(level) << "CALLINSTRUCTION" << std::endl;
+				debug(level) << "  call: " << *call << std::endl;
 
 				for (auto user : call->users()) { // U is of type User*
+					count_backtrack(argument_container, false);
 					// get all users of get pointer element instruction
 					if (auto store = dyn_cast<StoreInst>(user)) {
 						if (store->getOperand(0) == call) {
+							count_backtrack(argument_container, false);
 							if (auto* geptr = dyn_cast<GetElementPtrInst>(store->getOperand(1))) {
-								debug_out << print_type(geptr->getSourceElementType()) << "\n";
+								debug(level) << "  user: " << *store << std::endl;
+								debug(level) << "  operand: " << *geptr << std::endl;
+								debug(level) << "  type: " << print_type(geptr->getSourceElementType()) << std::endl;
+								auto& stream = debug(level);
+								stream << "  call chain:";
+								for (auto& elem : *already_visited) {
+									stream << " | " << *elem << " (func: " << elem->getFunction()->getName().str()
+									       << ")";
+								}
+								stream << std::endl;
 								if (check_function_class_reference_type(geptr->getFunction(),
 								                                        geptr->getOperand(0)->getType())) {
-									debug_out << "CLASSTYPE"
-									          << "\n";
+									debug(level) << "CLASSTYPE" << std::endl;
 									argument_container->any_list.emplace_back(geptr->getName().str());
+									count_backtrack(argument_container, true);
 									argument_container->value_list.emplace_back(geptr);
 									argument_container->argument_calles_list.emplace_back(*already_visited);
 									dump_success = true;
@@ -151,8 +182,8 @@ namespace ara {
 				// std::cerr << print_argument(binop) << std::endl;
 
 				std::any value;
-				if (dump_argument(debug_out, &operand_0, binop->getOperand(0), already_visited) &&
-				    dump_argument(debug_out, &operand_1, binop->getOperand(1), already_visited)) {
+				if (dump_argument(level + 1, &operand_0, binop->getOperand(0), already_visited) &&
+				    dump_argument(level + 1, &operand_1, binop->getOperand(1), already_visited)) {
 
 					if (binop->getOpcode() == Instruction::BinaryOps::Or) {
 						double value_0;
@@ -293,33 +324,33 @@ namespace ara {
 
 					// TODO set more binary operators
 				}
+				count_backtrack(argument_container, false);
 				argument_container->value_list.emplace_back(binop);
 				argument_container->argument_calles_list.emplace_back(*already_visited);
 			}
 		} // check if argument is a constant integer
 		else if (ConstantInt* CI = dyn_cast<ConstantInt>(arg)) {
-			debug_out << "CONSTANT INT"
-			          << "\n";
+			debug(level) << "CONSTANT INT" << std::endl;
 			argument_container->any_list.emplace_back(CI->getSExtValue());
+			count_backtrack(argument_container, true);
 			argument_container->value_list.emplace_back(CI);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
 			dump_success = true;
 		} // check if argument is a constant floating point
 		else if (ConstantFP* constant_fp = dyn_cast<ConstantFP>(arg)) {
-			debug_out << "CONSTANT FP"
-			          << "\n";
+			debug(level) << "CONSTANT FP" << std::endl;
 			argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+			count_backtrack(argument_container, true);
 			argument_container->value_list.emplace_back(constant_fp);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
 			dump_success = true;
 
 		} // check if argument is a pointer
 		else if (PointerType* PT = dyn_cast<PointerType>(Ty)) {
-			debug_out << "POINTER"
-			          << "\n";
+			debug(level) << "POINTER" << std::endl;
 			Type* elementType = PT->getElementType();
 			// check if arg is a null ptr
-			if (check_nullptr(argument_container, arg, debug_out, already_visited)) {
+			if (check_nullptr(argument_container, arg, level + 1, already_visited)) {
 
 				return true;
 			}
@@ -327,9 +358,9 @@ namespace ara {
 			if (isa<FunctionType>(elementType)) { // check pointer to function
 				// check if argument has a name
 				if (arg->hasName()) {
-					debug_out << "POINTER TO FUNCTION"
-					          << "\n";
+					debug(level) << "POINTER TO FUNCTION" << std::endl;
 					argument_container->any_list.emplace_back(arg->getName().str());
+					count_backtrack(argument_container, true);
 					argument_container->value_list.emplace_back(arg);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					dump_success = true;
@@ -337,67 +368,63 @@ namespace ara {
 			} // check if pointer points to pointer
 			else if (PT->getContainedType(0)->isPointerTy()) {
 
-				debug_out << "POINTER TO POINTER"
-				          << "\n";
+				debug(level) << "POINTER TO POINTER" << std::endl;
 
 				// load the global information
-				dump_success = load_value(debug_out, argument_container, arg, arg, already_visited);
+				dump_success = load_value(level + 1, argument_container, arg, arg, already_visited);
 
 			} // check if value is a constant value
 			else if (isa<GlobalVariable>(arg)) {
-				debug_out << "POINTER TO GLOBAL"
-				          << "\n";
-				dump_success = load_value(debug_out, argument_container, arg, arg, already_visited);
+				debug(level) << "POINTER TO GLOBAL" << std::endl;
+				dump_success = load_value(level + 1, argument_container, arg, arg, already_visited);
 
 			} else if (Constant* constant = dyn_cast<ConstantExpr>(arg)) { // check if value is a constant value
 				// check if the constant value is global global variable
 				if (isa<GlobalVariable>(constant->getOperand(0))) {
-					debug_out << "POINTER TO CONSTANT GLOBAL"
-					          << "\n";
+					debug(level) << "POINTER TO CONSTANT GLOBAL" << std::endl;
+					count_backtrack(argument_container, false);
 					dump_success =
-					    load_value(debug_out, argument_container, constant->getOperand(0), arg, already_visited);
+					    load_value(level + 1, argument_container, constant->getOperand(0), arg, already_visited);
 				}
 
 			} else {
 
 				// TODO
-				debug_out << print_argument(arg);
+				debug(level) << *arg;
 			}
 		} else {
 			std::string type_str;
 			raw_string_ostream rso(type_str);
 			arg->getType()->print(rso);
-			debug_out << rso.str() << "\n";
+			debug(level) << rso.str() << std::endl;
 
-			dump_success = load_value(debug_out, argument_container, arg, arg, already_visited);
+			dump_success = load_value(level + 1, argument_container, arg, arg, already_visited);
 			if (!dump_success)
-				debug_out << "Kein Load/Instruction/Pointer"
-				          << "\n";
+				debug(level) << "Kein Load/Instruction/Pointer" << std::endl;
 		}
 
 		if (!dump_success) {
 			std::string arg_name = arg->getName().str();
 
 			if (arg_name.length() > 0) {
-				debug_out << "DEFAULTNAME"
-				          << "\n";
-				debug_out << print_argument(arg) << std::endl;
+				debug(level) << "DEFAULTNAME" << std::endl;
+				debug(level) << *arg << std::endl;
 				argument_container->any_list.emplace_back(arg_name);
+				count_backtrack(argument_container, true);
 				argument_container->value_list.emplace_back(arg);
 				argument_container->argument_calles_list.emplace_back(*already_visited);
 				dump_success = true;
 			}
 		}
-		debug_out << "EXITDUMP: " << dump_success << "\n";
+		debug(level) << "EXITDUMP: " << dump_success << std::endl;
 		return dump_success;
 	}
 
-	bool ValueAnalyzer::load_value(std::stringstream& debug_out, argument_data* argument_container, Value* arg,
-	                               Value* prior_arg, std::vector<const Instruction*>* already_visited) {
+	bool ValueAnalyzer::load_value(unsigned level, argument_data* argument_container, Value* arg, Value* prior_arg,
+	                               std::vector<const Instruction*>* already_visited) {
 
 		// debug data
-		debug_out << "ENTRYLOAD"
-		          << "\n";
+		debug(level) << "ENTRYLOAD" << std::endl;
 
 		std::string type_str;
 		raw_string_ostream rso(type_str);
@@ -405,97 +432,91 @@ namespace ara {
 		bool load_success = false;
 
 		// check if arg is a null ptr
-		if (check_nullptr(argument_container, arg, debug_out, already_visited)) {
+		if (check_nullptr(argument_container, arg, level + 1, already_visited)) {
 			return true;
 		}
 		if (GlobalVariable* global_var = dyn_cast<GlobalVariable>(arg)) {
 
-			debug_out << "GLOBALVALUE"
-			          << "\n";
-			debug_out << print_argument(global_var);
+			debug(level) << "GLOBALVALUE" << std::endl;
+			debug(level) << *global_var;
 
 			// check if the global variable has a loadable value
 			if (global_var->hasInitializer()) {
-				debug_out << "HASINITIALIZER"
-				          << "\n";
+				debug(level) << "HASINITIALIZER" << std::endl;
 
 				if (ConstantData* constant_data = dyn_cast<ConstantData>(global_var->getInitializer())) {
-					debug_out << "CONSTANTDATA"
-					          << "\n";
+					count_backtrack(argument_container, false);
+					debug(level) << "CONSTANTDATA" << std::endl;
 					if (ConstantDataSequential* constant_sequential = dyn_cast<ConstantDataSequential>(constant_data)) {
-						debug_out << "CONSTANTDATASEQUIENTIAL"
-						          << "\n";
+						debug(level) << "CONSTANTDATASEQUIENTIAL" << std::endl;
 						if (ConstantDataArray* constant_array = dyn_cast<ConstantDataArray>(constant_sequential)) {
-							debug_out << "CONSTANTDATAARRAY"
-							          << "\n";
+							debug(level) << "CONSTANTDATAARRAY" << std::endl;
 							// global variable is a constant array
 							if (constant_array->isCString()) {
 								argument_container->any_list.emplace_back(constant_array->getAsCString().str());
+								count_backtrack(argument_container, true);
 								argument_container->value_list.emplace_back(constant_array);
 								argument_container->argument_calles_list.emplace_back(*already_visited);
 								load_success = true;
 							} else
-								debug_out << "Keine konstante sequentielle Date geladen"
-								          << "\n";
+								debug(level) << "Keine konstante sequentielle Date geladen" << std::endl;
 						}
 					} // check if global variable is contant integer
 					else if (ConstantInt* constant_int = dyn_cast<ConstantInt>(constant_data)) {
-						debug_out << "CONSTANTDATAINT"
-						          << "\n";
+						debug(level) << "CONSTANTDATAINT" << std::endl;
 
 						argument_container->any_list.emplace_back(constant_int->getSExtValue());
+						count_backtrack(argument_container, true);
 						argument_container->value_list.emplace_back(constant_int);
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
 
 					} // check if global variable is contant floating point
 					else if (ConstantFP* constant_fp = dyn_cast<ConstantFP>(constant_data)) {
-						debug_out << "CONSTANTDATAFLOATING"
-						          << "\n";
+						debug(level) << "CONSTANTDATAFLOATING" << std::endl;
 
 						argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+						count_backtrack(argument_container, true);
 						argument_container->value_list.emplace_back(constant_fp);
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
 					} // check if global variable is contant null pointer
 					else if (isa<ConstantPointerNull>(constant_data)) {
-						debug_out << "CONSTANTPOINTERNULL"
-						          << "\n";
+						debug(level) << "CONSTANTPOINTERNULL" << std::endl;
 						// print name of null pointer because there is no other content
 						if (global_var->hasName()) {
 							argument_container->any_list.emplace_back(global_var->getName().str());
+							count_backtrack(argument_container, true);
 							argument_container->value_list.emplace_back(global_var);
 							argument_container->argument_calles_list.emplace_back(*already_visited);
 							load_success = true;
 
 						} else {
-							debug_out << "Globaler Null Ptr hat keinen Namen"
-							          << "\n";
+							debug(level) << "Globaler Null Ptr hat keinen Namen" << std::endl;
 						}
 					} else {
 						argument_container->any_list.emplace_back(global_var->getName().str());
+						count_backtrack(argument_container, true);
 						argument_container->value_list.emplace_back(global_var);
 						argument_container->argument_calles_list.emplace_back(*already_visited);
 						load_success = true;
-						debug_out << "CONSTANTUNDEF/TOKENNONE"
-						          << "\n";
+						debug(level) << "CONSTANTUNDEF/TOKENNONE" << std::endl;
 					}
 					// check if global varialbe is a constant expression
 				} else if (ConstantExpr* constant_expr = dyn_cast<ConstantExpr>(global_var->getInitializer())) {
-					debug_out << "CONSTANTEXPRESSION"
-					          << "\n";
+					debug(level) << "CONSTANTEXPRESSION" << std::endl;
 					// check if value is from type value
 					if (Value* tmp_arg = dyn_cast<Value>(constant_expr)) {
 						// get the value
-						load_success = dump_argument(debug_out, argument_container, tmp_arg, already_visited);
+						count_backtrack(argument_container, false);
+						load_success = dump_argument(level + 1, argument_container, tmp_arg, already_visited);
 					}
 
 					// check if global variable is from type constant aggregate
 				} else if (ConstantAggregate* constant_aggregate =
 				               dyn_cast<ConstantAggregate>(global_var->getInitializer())) {
 					// check if global variable is from type constant array
-					debug_out << "CONSTANTAGGREGATE"
-					          << "\n";
+					debug(level) << "CONSTANTAGGREGATE" << std::endl;
 					if (ConstantArray* constant_array = dyn_cast<ConstantArray>(constant_aggregate)) {
 
 						if (User* user = dyn_cast<User>(prior_arg)) {
@@ -505,25 +526,25 @@ namespace ara {
 							// TODO make laoding of array indizes more generel
 							int index_n = load_index(N);
 							// int index_m =load_index(N);
-							debug_out << "\n" << index_n << "\n";
+							debug(level) << index_n << std::endl;
 
+							count_backtrack(argument_container, false);
 							// constant_array->getOperand(index_n)->print(rso);
 							Value* aggregate_operand = constant_array->getOperand(index_n);
 
 							load_success =
-							    dump_argument(debug_out, argument_container, aggregate_operand, already_visited);
+							    dump_argument(level + 1, argument_container, aggregate_operand, already_visited);
 						}
 
 					} // check if global variable is from type constant struct
 					else if (isa<ConstantStruct>(constant_aggregate)) {
-						debug_out << "Constant Struct";
+						debug(level) << "Constant Struct";
 					} // check if global variable is from type constant vector
 					else if (isa<ConstantVector>(constant_aggregate)) {
-						debug_out << "Constant Vector";
+						debug(level) << "Constant Vector";
 					}
 				} else {
-					debug_out << "GLOBALVALUE"
-					          << "\n";
+					debug(level) << "GLOBALVALUE" << std::endl;
 				}
 
 			} else {
@@ -531,43 +552,44 @@ namespace ara {
 				if (global_var->hasName()) {
 					// save the name
 					argument_container->any_list.emplace_back(global_var->getName().str());
+					count_backtrack(argument_container, true);
 					argument_container->value_list.emplace_back(global_var);
 					argument_container->argument_calles_list.emplace_back(*already_visited);
 					load_success = true;
 				} else
-					debug_out << "Nicht ladbare globale Variable hat keinen Namen";
+					debug(level) << "Nicht ladbare globale Variable hat keinen Namen";
 			}
 
 		} else {
 
 			if (ConstantAggregate* constant_aggregate = dyn_cast<ConstantAggregate>(arg)) {
-				debug_out << "CONSTANTAGGREGATE";
+				debug(level) << "CONSTANTAGGREGATE";
 				// check if global variable is from type constant array
 				if (isa<ConstantArray>(constant_aggregate)) {
-					debug_out << "Constant Array";
+					debug(level) << "Constant Array";
 
 				} // check if global variable is from type constant struct
 				else if (ConstantStruct* constant_struct = dyn_cast<ConstantStruct>(constant_aggregate)) {
-					debug_out << "Constant Struct";
+					debug(level) << "Constant Struct";
 
 					Constant* content = constant_struct->getAggregateElement(0u);
 
 					for (unsigned int i = 1; content != nullptr; i++) {
 
 						if (ConstantInt* CI = dyn_cast<ConstantInt>(content)) {
-							debug_out << "CONSTANT INT"
-							          << "\n";
+							debug(level) << "CONSTANT INT" << std::endl;
 
 							argument_container->any_list.emplace_back(CI->getSExtValue());
+							count_backtrack(argument_container, true);
 							argument_container->value_list.emplace_back(CI);
 							argument_container->argument_calles_list.emplace_back(*already_visited);
 							load_success = true;
 						} // check if argument is a constant floating point
 						else if (ConstantFP* constant_fp = dyn_cast<ConstantFP>(content)) {
-							debug_out << "CONSTANT FP"
-							          << "\n";
+							debug(level) << "CONSTANT FP" << std::endl;
 
 							argument_container->any_list.emplace_back(constant_fp->getValueAPF().convertToDouble());
+							count_backtrack(argument_container, true);
 							argument_container->value_list.emplace_back(constant_fp);
 							argument_container->argument_calles_list.emplace_back(*already_visited);
 							load_success = true;
@@ -577,12 +599,12 @@ namespace ara {
 
 				} // check if global variable is from type constant vector
 				else if (isa<ConstantVector>(constant_aggregate)) {
-					debug_out << "Constant Vector";
+					debug(level) << "Constant Vector";
 				}
 			}
 		}
 
-		debug_out << "EXITLOAD: " << load_success << "\n";
+		debug(level) << "EXITLOAD: " << load_success << std::endl;
 		return load_success;
 	}
 
@@ -595,9 +617,11 @@ namespace ara {
 	 * @param already_visited list of all instructions, which were already visited
 	 * @param arg_counter index of the value in call instruction of calling function
 	 */
-	bool ValueAnalyzer::load_function_argument(std::stringstream& debug_out, argument_data* argument_container,
+	bool ValueAnalyzer::load_function_argument(unsigned level, argument_data* argument_container,
 	                                           const Function* function,
 	                                           std::vector<const Instruction*>* already_visited, int arg_counter) {
+
+		debug(level) << "LOAD FUNCTION ARGUMENT of function " << function->getName().str() << std::endl;
 
 		auto sUse = function->user_begin();
 		auto sEnd = function->user_end();
@@ -629,8 +653,10 @@ namespace ara {
 						tmp_already_visited.emplace_back(instr);
 
 						// dump the call instruction
-						debug_out << "LOADFUNKTIONARGUMENT " << arg_counter << "\n";
-						if (!dump_argument(debug_out, argument_container, instr->getOperand(arg_counter),
+						debug(level) << "LOADFUNCTIONARGUMENT: " << arg_counter << " " << *instr << std::endl;
+						debug(level) << "function:: " << instr->getFunction()->getName().str() << std::endl;
+						count_backtrack(argument_container, false);
+						if (!dump_argument(level + 1, argument_container, instr->getOperand(arg_counter),
 						                   &tmp_already_visited))
 							success = false;
 					} else {
@@ -641,8 +667,9 @@ namespace ara {
 						// load argument
 						for (auto i = function->arg_begin(), ie = function->arg_end(); i != ie; ++i) {
 							if (arg_counter == counter) {
-								debug_out << "ARGUMENT" << i->getName().str() << "\n";
+								debug(level) << "ARGUMENT" << i->getName().str() << std::endl;
 								argument_container->any_list.emplace_back(i->getName().str());
+								count_backtrack(argument_container, true);
 								argument_container->value_list.emplace_back(i);
 								argument_container->argument_calles_list.emplace_back(*already_visited);
 								success = true;
@@ -654,14 +681,13 @@ namespace ara {
 				}
 			}
 		}
-		debug_out << "ENDLOADFUNKTIONARGUMENT"
-		          << "\n";
+		debug(level) << "ENDLOADFUNKTIONARGUMENT" << std::endl;
 		return success;
 	}
 
-	bool ValueAnalyzer::get_store_instruction(std::stringstream& debug_out, Instruction* inst,
-	                                          argument_data* argument_container,
+	bool ValueAnalyzer::get_store_instruction(unsigned level, Instruction* inst, argument_data* argument_container,
 	                                          std::vector<const Instruction*>* already_visited) {
+		debug(level) << "GETSTOREINSTRUCTION: " << *inst << std::endl;
 
 		bool success = false;
 
@@ -685,13 +711,18 @@ namespace ara {
 		// check if an access of the data structure was successfully
 		if (access != nullptr) {
 			if (auto def_access = dyn_cast<MemoryDef>(access)) {
+				count_backtrack(argument_container, false);
 
 				// check if the load and the store instructions addresses the same memory
 				// TODO memory walke class seems sometimes to return no valid results
 				if (StoreInst* store_inst = dyn_cast<StoreInst>(def_access->getMemoryInst())) {
-					if (store_inst->getOperand(1) == inst->getOperand(0))
+					count_backtrack(argument_container, false);
+					if (store_inst->getOperand(1) == inst->getOperand(0)) {
+						debug(level) << " store candidate: " << *store_inst << std::endl;
+						count_backtrack(argument_container, false);
 						success =
-						    dump_argument(debug_out, argument_container, store_inst->getOperand(0), already_visited);
+						    dump_argument(level + 1, argument_container, store_inst->getOperand(0), already_visited);
+					}
 				}
 			}
 		}
@@ -701,8 +732,12 @@ namespace ara {
 		// check if memory walker class does not return a acceptable load instruction
 		if (success == false) {
 
+			debug(level) << "  nothing found" << std::endl;
+			count_backtrack(argument_container, false);
+
 			// get the nearest dominating store instruction of the load instruction
 			if (AllocaInst* alloca_instruction = dyn_cast<AllocaInst>(inst->getOperand(0))) {
+				count_backtrack(argument_container, false);
 				Value::user_iterator sUse = alloca_instruction->user_begin();
 				Value::user_iterator sEnd = alloca_instruction->user_end();
 
@@ -748,17 +783,19 @@ namespace ara {
 				}
 				// check if a valid store instruction could be found
 				if (store_inst != nullptr) {
-					success = dump_argument(debug_out, argument_container, store_inst->getOperand(0), already_visited);
+					debug(level) << "  found store: " << *store_inst << std::endl;
+					count_backtrack(argument_container, false);
+					success = dump_argument(level + 1, argument_container, store_inst->getOperand(0), already_visited);
 				}
 			}
 		}
 		return success;
 	}
 
-	bool ValueAnalyzer::get_element_ptr(std::stringstream& debug_out, Instruction* inst,
-	                                    argument_data* argument_container,
+	bool ValueAnalyzer::get_element_ptr(unsigned level, Instruction* inst, argument_data* argument_container,
 	                                    std::vector<const Instruction*>* already_visited) {
 
+		debug(level) << "GET ELEMENT PTR" << std::endl;
 		bool success = false;
 		// check if this is a element ptr
 		if (auto* get_pointer_element = dyn_cast<GetElementPtrInst>(inst)) { // U is of type User*
@@ -770,16 +807,24 @@ namespace ara {
 					indizes.emplace_back(CI->getLimitedValue());
 				};
 			};
+			debug(level) << "  indizes:";
+			for (auto i : indizes) {
+				debug(level) << " " << i;
+			}
+			debug(level) << std::endl;
 			// get operand of the GetElementPtrInst
 			if (auto load = dyn_cast<LoadInst>(get_pointer_element->getPointerOperand())) {
+				count_backtrack(argument_container, false);
+
+				debug(level) << "  operand: " << *load << std::endl;
 
 				// check if the address is a class specific address
 				if (check_function_class_reference_type(inst->getFunction(),
 				                                        get_pointer_element->getPointerOperandType())) {
 
-					debug_out << "GETCLASSATTRIBUTE" << std::endl;
+					debug(level) << "GETCLASSATTRIBUTE" << std::endl;
 					// get store instructions
-					success = get_class_attribute_value(debug_out, load, argument_container, already_visited, &indizes);
+					success = get_class_attribute_value(level + 1, load, argument_container, already_visited, &indizes);
 				}
 			};
 		}
@@ -825,13 +870,15 @@ namespace ara {
 		return false;
 	}
 
-	bool ValueAnalyzer::check_nullptr(argument_data* argument_container, Value* arg, std::stringstream& debug_out,
+	bool ValueAnalyzer::check_nullptr(argument_data* argument_container, Value* arg, unsigned level,
 	                                  std::vector<const Instruction*>* already_visited) {
 		bool load_success = false;
 		if (ConstantPointerNull* constant_data = dyn_cast<ConstantPointerNull>(arg)) {
-			debug_out << "CONSTANTPOINTERNULL" << std::endl;
+			assert(constant_data != nullptr);
+			debug(level) << "CONSTANTPOINTERNULL" << std::endl;
 			std::string tmp = "&$%NULL&$%";
 			argument_container->any_list.emplace_back(tmp);
+			count_backtrack(argument_container, true);
 			argument_container->value_list.emplace_back(constant_data);
 			argument_container->argument_calles_list.emplace_back(*already_visited);
 			load_success = true;
@@ -853,25 +900,90 @@ namespace ara {
 		return index;
 	}
 
-	bool ValueAnalyzer::get_class_attribute_value(std::stringstream& debug_out, Instruction* inst,
-	                                              argument_data* argument_container,
+	std::vector<llvm::CallBase*> ValueAnalyzer::hacky_find_users(unsigned level, GlobalAlias* alias) {
+		std::vector<llvm::CallBase*> v;
+
+		Module* module = alias->getParent();
+		for (auto& function : *module) {
+			if (function.getName().str().find("cxx_global_var_init") != std::string::npos) {
+				debug(level) << function.getName().str() << std::endl;
+			}
+			for (auto& bb : function) {
+				for (auto& inst : bb) {
+					if (auto* call = dyn_cast<CallBase>(&inst)) {
+						if (call->getCalledFunction() != nullptr) {
+							std::string name = call->getCalledFunction()->getName().str();
+							if (name.find("DisplayDriver") != std::string::npos) {
+								debug(level) << "Call: " << *call << std::endl;
+								debug(level) << "alias: " << *alias << std::endl;
+							}
+							// if (call->getCalledFunction() == alias) {
+							// 	v.emplace_back(*call);
+							// }
+						}
+					}
+				}
+			}
+		}
+		return v;
+	}
+
+	std::vector<llvm::Value*> ValueAnalyzer::get_this_instances(unsigned level, llvm::LoadInst* this_usage) {
+		auto& this_arg = *this_usage->getFunction()->arg_begin();
+		llvm::Value* tmp_value = this_usage->getPointerOperand();
+
+		while (&this_arg != tmp_value) {
+			for (auto u : tmp_value->users()) {
+				if (auto si = dyn_cast<StoreInst>(u)) {
+					tmp_value = si->getValueOperand();
+					goto after_assert;
+				}
+			}
+			assert(false && "Value cannot be converted to argument.");
+		after_assert:;
+		}
+		assert(isa<llvm::Argument>(tmp_value) && "Expected an argument.");
+		debug(level) << "GET THIS INSTANCES, argument: " << *tmp_value << std::endl;
+
+		std::vector<llvm::Value*> v;
+		for (auto u : dyn_cast<llvm::Argument>(tmp_value)->getParent()->users()) {
+			if (GlobalAlias* gu = dyn_cast<GlobalAlias>(u)) {
+				bool has_users = false;
+				for (auto u2 : gu->users()) {
+					v.emplace_back(u2->getOperand(0));
+					has_users = true;
+				}
+				if (!has_users) {
+					// sometimes some users aka direct call sites are not found, unclear why
+					for (auto u2 : hacky_find_users(level, gu)) {
+						v.emplace_back(u2->getOperand(0));
+					}
+				}
+			} else if (isa<CallBase>(u)) {
+				v.emplace_back(u->getOperand(0));
+			}
+		}
+		return v;
+	}
+
+	bool ValueAnalyzer::get_class_attribute_value(unsigned level, Instruction* inst, argument_data* argument_container,
 	                                              std::vector<const Instruction*>* already_visited,
 	                                              std::vector<size_t>* indizes) {
 		bool success = true;
 		bool flag = false;
+
+		debug(level) << "GET CLASS ATTRIBUTE VALUE: " << *inst << std::endl;
 		// get module
 		Module* mod = inst->getFunction()->getParent();
-		// iterate about the module
+		// iterate about all instruction of functions belonging to the same class than inst
 		for (auto& function : *mod) {
-			// iterate about the arguments of the function
 			for (auto i = function.arg_begin(), ie = function.arg_end(); i != ie; ++i) {
 				// check if the function is a method of the class
+				// at least, the this arguments must be equal
 				if ((*i).getType() == inst->getType()) {
-					// iterate about the basic blocks of the function
 					for (BasicBlock& bb : function) {
-						// iterate about the instructions of the function
 						for (Instruction& instr : bb) {
-							// get pointerelement instruction
+
 							if (auto* get_pointer_element = dyn_cast<GetElementPtrInst>(&instr)) { // U is of type User*
 								// check if the get pointer operand instruction is a load instruction
 								if (check_function_class_reference_type(instr.getFunction(),
@@ -888,25 +1000,82 @@ namespace ara {
 										// get all users of get pointer element instruction
 
 										if (auto store = dyn_cast<StoreInst>(user)) {
-											debug_out << "USERWITHSAMEPOINTERINDIZESSTORE" << std::endl;
-											debug_out << print_argument(user) << std::endl;
-											flag = true;
-											// std::cerr << "user" << std::endl;
-											if (!dump_argument(debug_out, argument_container, store->getOperand(0),
-											                   already_visited)) {
-												success = false;
-												break;
+											debug(level) << "USERWITHSAMEPOINTERINDIZESSTORE" << std::endl;
+											debug(level) << *user << std::endl;
+
+											// TODO, this is a very basic check, that the load and store are connected,
+											// follow them in a correct way
+											assert(isa<LoadInst>(inst) && "inst has to be a load instruction");
+
+											// possible assignment (store)
+											assert(isa<GetElementPtrInst>(store->getOperand(1)) &&
+											       "Store instruction does not follow the expected use chain.");
+											llvm::Value* tmp_load =
+											    dyn_cast<GetElementPtrInst>(store->getOperand(1))->getPointerOperand();
+											assert(isa<LoadInst>(tmp_load) && "Store instruction did not follow the "
+											                                  "expected use chain. Has to be a load");
+
+											bool match_found = true;
+											auto instances1 = get_this_instances(level, dyn_cast<LoadInst>(inst));
+											auto instances2 = get_this_instances(level, dyn_cast<LoadInst>(tmp_load));
+
+											if (instances1.size() == 0 || instances2.size() == 0) {
+												logger.err()
+												    << "Instance of store candicate cannot be retrieved." << std::endl;
+												logger.err() << "This basically renders this check useless and "
+												                "violates soundness of this analysis."
+												             << std::endl;
 											} else {
-												if (store_flag == true && nullptr_flag == true) {
+												assert(instances1.size() == instances2.size() &&
+												       instances1.size() > 0 && "Cannot found any instances");
+
+												for (auto instance : instances1) {
+													debug(level)
+													    << "instance: " << instance << " " << *instance << std::endl;
+													bool local_match_found = false;
+													for (auto instance2 : instances2) {
+														debug(level) << "instance2: " << instance2 << " " << *instance2
+														             << std::endl;
+														if (instance2 == instance) {
+															local_match_found = true;
+															break;
+														}
+													}
+													if (!local_match_found) {
+														match_found = false;
+														break;
+													}
+												}
+												if (!match_found) {
+													logger.err() << "Instance of store candicate and instance of load "
+													                "do not match."
+													             << std::endl;
+													logger.err() << "This basically renders this check useless and "
+													                "violates soundness of this analysis."
+													             << std::endl;
+												}
+												count_backtrack(argument_container, false);
+
+												flag = true;
+												// std::cerr << "user" << std::endl;
+												debug(level) << "first operand: " << *store->getOperand(0) << std::endl;
+												count_backtrack(argument_container, false);
+												if (!dump_argument(level + 1, argument_container, store->getOperand(0),
+												                   already_visited)) {
 													success = false;
 													break;
-												}
-												if (dyn_cast<ConstantPointerNull>(
-												        argument_container->value_list.back())) {
-													nullptr_flag = true;
-													// TODO
 												} else {
-													store_flag = true;
+													if (store_flag == true && nullptr_flag == true) {
+														success = false;
+														break;
+													}
+													if (dyn_cast<ConstantPointerNull>(
+													        argument_container->value_list.back())) {
+														nullptr_flag = true;
+														// TODO
+													} else {
+														store_flag = true;
+													}
 												}
 											}
 										}
@@ -917,13 +1086,13 @@ namespace ara {
 									if (false == success) {
 										for (auto user : get_pointer_element->users()) { // U is of type User*
 											// get all users of get pointer element instruction
-											debug_out << "USERWITHSAMEPOINTERINDIZES-NOSTOREINSTRUCTIONFOUND"
-											          << std::endl;
-											// debug_out << print_argument(user)<< std::endl;
+											debug(level)
+											    << "USERWITHSAMEPOINTERINDIZES-NOSTOREINSTRUCTIONFOUND" << std::endl;
+											// debug(level) << print_argument(user)<< std::endl;
 											if (isa<LoadInst>(user)) {
 												// flag = true;
 												// std::cerr << "user" << std::endl;
-												// if(!dump_argument(debug_out,argument_container,
+												// if(!dump_argument(level + 1,argument_container,
 												// store->getOperand(0),already_visited))success = false;
 											}
 										}
@@ -979,6 +1148,7 @@ namespace ara {
 	ValueAnalyzer::call_data ValueAnalyzer::dump_instruction(Function* func, const CallBase* instruction,
 	                                                         std::vector<shared_warning>* warning_list) {
 
+		logger.debug() << "---- dumping: " << func->getName().str() << " in " << *instruction << std::endl;
 		// empty call data container
 		ValueAnalyzer::call_data call;
 
@@ -994,12 +1164,8 @@ namespace ara {
 		for (unsigned i = 0; i < instruction->getNumArgOperands(); ++i) {
 
 			// debug string
-			std::stringstream debug_out;
-			debug_out << func->getName().str() << "\n";
+			logger.debug() << "--------------- instruction " << i << "--------------" << std::endl;
 
-			std::vector<std::any> any_list;
-
-			std::vector<Value*> value_list;
 			std::vector<const Instruction*> already_visited;
 			already_visited.emplace_back(instruction);
 			// get argument
@@ -1008,7 +1174,7 @@ namespace ara {
 			argument_data argument_container;
 
 			// dump argument and check if it was successfull
-			if (dump_argument(debug_out, &argument_container, arg, &already_visited)) {
+			if (dump_argument(0, &argument_container, arg, &already_visited)) {
 
 				// dump was successfull
 				if (argument_container.any_list.size() > 1)
@@ -1033,8 +1199,6 @@ namespace ara {
 				auto warning = std::make_shared<DumbArgumentWarning>(i, *instruction);
 				warning_list->emplace_back(warning);
 			}
-
-			logger.debug() << "Values dumped, debug log is: " << debug_out.str() << std::endl;
 		}
 
 		// check if call has no arguments
@@ -1052,7 +1216,23 @@ namespace ara {
 		return call;
 	}
 
-	Arguments ValueAnalyzer::get_values(const CallBase& cb) {
+	llvm::Value* ValueAnalyzer::get_handler(const llvm::Instruction& instruction, unsigned int argument_index) {
+		// check if call instruction has one user
+		if (instruction.hasOneUse()) {
+			// get the user of the call instruction
+			const llvm::User* user = instruction.user_back();
+			// check if user is store instruction
+			if (isa<StoreInst>(user)) {
+				return user->getOperand(argument_index);
+			} else if (llvm::isa<BitCastInst>(user)) {
+				return get_handler(*llvm::cast<Instruction>(user), argument_index);
+			}
+		}
+
+		return nullptr;
+	}
+
+	std::pair<Arguments, std::vector<std::vector<unsigned>>> ValueAnalyzer::get_values(const CallBase& cb) {
 		if (isCallToLLVMIntrinsic(&cb)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -1072,26 +1252,70 @@ namespace ara {
 			throw ValuesUnknown("Called function cannot be determined.");
 		}
 
+		if (func->getName() == "xQueueGenericSend") {
+			std::cout << "IN CORRECT FUNCTION" << std::endl;
+			llvm::errs() << "CB " << &cb << " " << cb << '\n';
+		}
+
 		std::vector<shared_warning> warning_list;
 
 		// get and store the called arguments values
 		ValueAnalyzer::call_data data = dump_instruction(func, &cb, &warning_list);
 
+		// return value
+		llvm::Value* return_value = get_handler(cb, 1);
+
 		// repack Values into Arguments class
 		Arguments args;
+		std::vector<std::vector<unsigned>> stats;
 
+		const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(cb.getContext());
+		const llvm::Constant* none_c = dyn_cast<llvm::Constant>(token);
+
+		unsigned i = 0;
 		for (auto& a : data.arguments) {
 			if (a.value_list.size() == 0) {
 				assert(data.arguments.size() == 1);
 				break;
 			}
-			assert(a.value_list.size() == 1);
 
-			const llvm::Constant* c = dyn_cast<llvm::Constant>(a.value_list[0]);
-			assert(c != nullptr);
-			args.emplace_back(*c);
+			AttributeSet s = cb.getAttributes().getAttributes(i + 1);
+
+			if (a.value_list.size() != 1) {
+				Argument arg(s, *none_c);
+				logger.info() << "Analysis has found an ambiguous value:" << std::endl;
+				logger.info() << "  CallBase: " << cb << std::endl;
+				unsigned v_count = 0;
+				for (const llvm::Value* v : a.value_list) {
+					assert(v != nullptr && "Value must not be null");
+					// omit first element in a.argument_calles_list[v_count]. This is always the call itself.
+					auto& tmp = a.argument_calles_list[v_count];
+					logger.debug() << "  Call chain:";
+					for (auto& elem : tmp) {
+						logger.debug() << " " << *elem << " (func: " << elem->getFunction()->getName().str() << ")";
+					}
+					logger.debug() << std::endl;
+					assert(tmp.at(0) == &cb && "First argument in call list in not the call itself");
+					std::vector<const llvm::Instruction*> reduced_list(tmp.begin() + 1, tmp.end());
+					arg.add_variant(reduced_list, *v);
+					logger.info() << "  Value " << v_count++ << ": " << *v << std::endl;
+				}
+				args.emplace_back(std::move(arg));
+			} else {
+				const llvm::Value* v = a.value_list[0];
+				assert(v != nullptr && "Value must not be null");
+				args.emplace_back(Argument(s, *v));
+			}
+			stats.emplace_back(a.backtrack_depth);
+			i++;
 		}
 
-		return args;
+		if (return_value != nullptr) {
+			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *return_value));
+		} else {
+			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *none_c));
+		}
+
+		return make_pair(std::move(args), std::move(stats));
 	}
 } // namespace ara

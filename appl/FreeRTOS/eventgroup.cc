@@ -3,11 +3,11 @@
 #define mainSECOND_TASK_BIT ( 1UL << 1UL)
 #define mainISR_BIT ( 1UL << 2UL)                                                                                                                                                                                
 
-#include "source/include/FreeRTOS.h"
-#include "source/include/task.h"
-#include "source/include/queue.h"
-#include "source/include/semphr.h"
-#include "source/include/event_groups.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+#include "event_groups.h"
 #include <stdint.h>
 
 void vPrintString(char const *string);

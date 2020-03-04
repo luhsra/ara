@@ -4,7 +4,7 @@ from graph import ABBType, CFType
 
 from native_step import Step
 
-from .os import OS_API
+from .os import get_syscalls
 
 
 class Syscall(Step):
@@ -20,12 +20,20 @@ class Syscall(Step):
         return ["ICFG"]
 
     def run(self, g: graph.Graph):
-        syscalls = [x['name'] for x in OS_API]
+        syscalls = dict(get_syscalls())
 
         syscall_counter = 0
 
         for nod in g.functs.vertices():
-            g.functs.vp.syscall[nod] = (g.functs.vp.name[nod] in syscalls)
+            call = g.functs.vp.name[nod]
+            found = call in syscalls
+            g.functs.vp.syscall[nod] = found
+            if found:
+                os = syscalls[call]
+                if g.os in [None, os]:
+                    g.os = os
+                else:
+                    self._log.error("Call {call} does not fit to OS {g.os}.")
         for nod in g.cfg.vertices():
             if g.cfg.vp.is_function[nod]:
                 continue
@@ -39,5 +47,15 @@ class Syscall(Step):
                                 f"in {g.cfg.vp.name[nod]}")
                             g.cfg.vp.type[nod] = ABBType.syscall
                             syscall_counter += 1
+
+        if self.dump.get():
+            dump_prefix = self.dump_prefix.get()
+            assert dump_prefix
+            uuid = self._step_manager.get_execution_id()
+            dot_file = dump_prefix + f'{uuid}.dot'
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'CFG with syscalls',
+                                           "subgraph": 'abbs'})
 
         self._log.info(f"Found {syscall_counter} syscalls.")

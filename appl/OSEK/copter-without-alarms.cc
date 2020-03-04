@@ -8,8 +8,8 @@
  * @ingroup apps
  * @brief Just a simple test application
  */
-#include "source/os/os.h"
-#include "source/test/test.h"
+#include "os/os.h"
+#include "test/test.h"
 
 
 

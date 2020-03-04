@@ -5,6 +5,7 @@
 import argparse
 import json
 import logging
+import os
 import sys
 import util
 
@@ -23,18 +24,28 @@ def main():
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
                         choices=['warn', 'info', 'debug'], default='warn')
-    parser.add_argument('--os', '-O', help="specify the operation system",
-                        choices=['FreeRTOS', 'OSEK'], default='OSEK')
-    parser.add_argument('--step', '-s',
-                        help="choose steps that will be executed",
-                        action='append')
+    parser.add_argument('--dump', action='store_true', default=False,
+                        help="emit a meaningful dot graph where possible")
+    parser.add_argument('--dump-prefix', default='dumps/{step_name}.',
+                        help="path that prefixes all dot files. The string "
+                             "'{step_name}' is replaced with the step name.")
+    parser.add_argument('--entry-point', '-e', help="system entry point",
+                        default='main')
+    parser.add_argument('--isr', '-i', action='append',
+                        help="entry point for interrupt service routine")
+    parser.add_argument('--step', '-s', action='append',
+                        help="choose steps that will be executed")
     parser.add_argument('--list-steps', '-l', action="store_true",
                         default=False, help="list all available steps")
     parser.add_argument('input_files', help="all LLVM-IR input files",
                         nargs='*')
     parser.add_argument('--oilfile', help="name of oilfile")
+    parser.add_argument('--output_file', help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE",
                         help="settings for individual steps. '-' is STDIN")
+    parser.add_argument('--dependency_file',
+                        help="file to write make-style dependencies into for "
+                             "build system integration")
 
     args = parser.parse_args()
 
@@ -42,6 +53,9 @@ def main():
         args.log_level = 'info'
 
     util.init_logging(level=args.log_level)
+
+    logging.debug('ARA executed with: PYTHONPATH=%s python3 %s',
+                  os.environ["PYTHONPATH"], ' '.join(sys.argv))
 
     g = graph.Graph()
     s_manager = stepmanager.StepManager(g)
@@ -52,8 +66,6 @@ def main():
         sys.exit(0)
     elif not args.input_files:
         parser.error('input_files are required (except -l or -h is set)')
-    elif args.os == 'OSEK' and not args.oilfile:
-        parser.error('when analyzing OSEK and oilfile is required')
 
     logging.debug("Processing files: %s", ', '.join(args.input_files))
 

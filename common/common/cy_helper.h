@@ -26,4 +26,4 @@ namespace ara::cy_helper {
 	inline std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T> ptr) {
 		return ptr;
 	}
-} // namespace cy_helper
+} // namespace ara::cy_helper

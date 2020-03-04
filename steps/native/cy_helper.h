@@ -20,6 +20,7 @@ namespace ara::step {
 
 	template <class S>
 	step::Step* step_fac() {
+		// TODO: is this possible with a unique_ptr?
 		step::Step* s = new S();
 		s->init_options();
 		return s;

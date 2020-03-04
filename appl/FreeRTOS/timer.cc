@@ -1,9 +1,9 @@
  /* FreeRTOS.org includes. */
-#include "source/include/FreeRTOS.h"
-#include "source/include/task.h"
-#include "source/include/queue.h"
-#include "source/include/semphr.h"
-#include "source/include/timers.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "semphr.h"
+#include "timers.h"
 #include <stdint.h>
  
  /* An array to hold handles to the created timers. */

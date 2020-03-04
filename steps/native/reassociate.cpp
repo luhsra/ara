@@ -3,6 +3,7 @@
 #include "reassociate.h"
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/Utils.h>
+#include <llvm/Transforms/Scalar.h>
 
 namespace ara::step {
     using namespace llvm;

@@ -21,7 +21,7 @@ namespace ara::step {
 	void CFGPreparation::fill_options() { opts.emplace_back(pass_list); }
 
 	void CFGPreparation::run(graph::Graph& graph) {
-        const bool dbg_flag = log_level.get().first == "debug";
+        const bool dbg_flag = log_level.get() && (*log_level.get() == "debug");
         const bool verify_passes = false;
         Logger::LogStream& crit_logger = logger.crit();
         Module& module = graph.get_module();
@@ -42,7 +42,7 @@ namespace ara::step {
         pb.crossRegisterProxies(lam, fam, cgsccam, mam);
 
         // Parse pass list from command line options
-        if (auto error = pb.parsePassPipeline(mpm, StringRef(pass_list.get().first), verify_passes, dbg_flag)) {
+        if (auto error = pb.parsePassPipeline(mpm, StringRef(*pass_list.get()), verify_passes, dbg_flag)) {
             logAllUnhandledErrors(std::move(error), crit_logger.llvm_ostream(), "[Parse Error] ");
             crit_logger.flush();
             abort();

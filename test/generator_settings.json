@@ -1,0 +1,30 @@
+{
+	"steps": [
+		"Syscall",
+		{
+			"name": "Printer",
+			"dot": "syscall.dot",
+			"graph_name": "Syscall",
+			"subgraph": "abbs"
+		},
+		{
+			"name": "CallGraph"
+		},
+		"ValueAnalysisCore",
+		"ValueAnalysis",
+		{
+			"name": "SSE",
+			"flavor": "InstanceGraph"
+		},
+		{
+			"name": "Generator",
+			"arch": "arm",
+			"syscall_style": "generic_static",
+			"os": "freertos",
+		}
+	],
+
+	"LLVMMap": {
+		"log_level": "info"
+	}
+}

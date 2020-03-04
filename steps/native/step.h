@@ -7,13 +7,39 @@
 #include "option.h"
 
 #include <Python.h>
+#include <boost/property_tree/ptree.hpp>
 #include <functional>
 #include <graph.h>
+#include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace ara::step {
+	class Step;
+
+	/**
+	 * Lightweight wrapper class for the Python StepManager.
+	 * Only supports the chain_step interface.
+	 */
+	class StepManager {
+		friend class Step;
+
+	  private:
+		PyObject* step_manager = nullptr;
+
+		StepManager() {}
+		StepManager(PyObject* step_manager) : step_manager(step_manager) {}
+
+	  public:
+		/**
+		 * See stepmanager.py for a description.
+		 */
+		void chain_step(const boost::property_tree::ptree& step_config);
+		void chain_step(const std::string step_name);
+
+		std::string get_execution_id();
+	};
 
 	/**
 	 * Superclass for constructing arbitrary steps in C++.
@@ -25,14 +51,25 @@ namespace ara::step {
 	  protected:
 		std::vector<option_ref> opts;
 		Logger logger;
+		StepManager step_manager;
 
-		option::TOption<option::Choice<5>> log_level{"log_level", "Adjust the log level of this step.",
-		                                             option::makeChoice("critical", "error", "warn", "info", "debug"),
-		                                             /* global = */ true};
+		// ATTENTION: If you change this, also change the option list in native_step.py for class Step.
+		// All of these options are also defined in ara.py and have their defaults from there.
+		option::TOption<option::Choice<5>> log_level{
+		    "log_level", "Adjust the log level of this step.",
+		    /* ty = */ option::makeChoice("critical", "error", "warn", "info", "debug"),
+		    /* default_value = */ std::nullopt,
+		    /* global = */ true};
+		option::TOption<option::Bool> dump{"dump", "If possible, dump the changed graph into a dot file.",
+		                                   /* ty = */ option::Bool(),
+		                                   /* default_value = */ std::nullopt,
+		                                   /* global = */ true};
+		option::TOption<option::String> dump_prefix{
+		    "dump_prefix", "If a file is dumped, set this as prefix for the files (default: dumps/{step_name}).",
+		    /* ty = */ option::String(),
+		    /* default_value = */ std::nullopt,
+		    /* global = */ true};
 
-		option::TOption<option::Choice<2>> os{"os", "Select the operating system.",
-		                                      option::makeChoice("FreeRTOS", "OSEK"),
-		                                      /* global = */ true};
 		/**
 		 * Fill with all used options.
 		 */
@@ -44,7 +81,8 @@ namespace ara::step {
 		 */
 		Step() {
 			opts.emplace_back(log_level);
-			opts.emplace_back(os);
+			opts.emplace_back(dump);
+			opts.emplace_back(dump_prefix);
 		}
 
 		/**
@@ -70,15 +108,23 @@ namespace ara::step {
 				option.check(config);
 			}
 			auto lvl = log_level.get();
-			if (lvl.second) {
-				logger.set_level(translate_level(lvl.first));
+			if (lvl) {
+				logger.set_level(translate_level(*lvl));
 			}
+			// This option are set by default in ara.py. Check that additionally.
+			assert(dump_prefix.get());
+			assert(dump.get());
+			// HINT: For Python steps also the dump_prefix string replacement happens in apply_config. However, this is
+			// easier in Python so already done in the NativeStep wrapper in native_step.pyx.
 		}
 
 		/**
-		 * Set the python logger object, this must be called directly after the constructor.
+		 * Link the python objects, this must be called directly after the constructor and on every object update.
 		 */
-		void set_logger(PyObject* py_logger) { logger = Logger(py_logger); }
+		void python_init(PyObject* py_logger, PyObject* py_step_manager) {
+			logger = Logger(py_logger);
+			step_manager = StepManager(py_step_manager);
+		}
 
 		virtual ~Step() {}
 

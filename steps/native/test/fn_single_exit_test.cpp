@@ -4,6 +4,7 @@
 
 #include <graph.h>
 #include <iostream>
+#include <llvm/IR/CFG.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/Support/Casting.h>
 #include <stdexcept>
@@ -21,7 +22,7 @@ namespace ara::step {
 		for (auto& function : module) {
 			std::list<llvm::BasicBlock*> exit_blocks;
 			for (llvm::BasicBlock& _bb : function) {
-				if (succ_begin(&_bb) == succ_end(&_bb)) {
+				if (llvm::succ_begin(&_bb) == llvm::succ_end(&_bb)) {
 					exit_blocks.push_back(&_bb);
 				}
 			}

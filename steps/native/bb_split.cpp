@@ -2,6 +2,8 @@
 
 #include "bb_split.h"
 
+#include "common/llvm_common.h"
+
 #include <iostream>
 #include <list>
 #include <llvm/IR/BasicBlock.h>

@@ -5,6 +5,7 @@ from .option import Option, String, Choice, Bool
 from native_step import Step
 
 import pydot
+import os.path
 
 import graph_tool.draw
 
@@ -27,28 +28,32 @@ class Printer(Step):
                                  help="Name of the graph.",
                                  step_name=self.get_name(),
                                  ty=String())
-        self.dump = Option(name="dump",
-                           help="Dump graph to logger.",
-                           step_name=self.get_name(),
-                           ty=Bool())
         self.subgraph = Option(name="subgraph",
                                help="Choose, what subgraph should be printed.",
                                step_name=self.get_name(),
-                               ty=Choice("abbs"))
-        self.opts += [self.dot, self.graph_name, self.dump, self.subgraph]
+                               ty=Choice("abbs", "instances"))
+        self.opts += [self.dot, self.graph_name, self.subgraph]
 
-    def print_abbs(self, g):
+    def _print_init(self):
         dot = self.dot.get()
         if not dot:
-            return
-
-        if self.dump.get():
-            self._log.error("Not supported yet.")
-            return
+            self._fail("dot file path must be given.")
 
         name = self.graph_name.get()
         if not name:
             name = ''
+        return name
+
+    def _write_dot(self, dot):
+        dot_path = self.dot.get()
+        assert dot_path
+        dot_path = os.path.abspath(dot_path)
+        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
+        dot.write(dot_path)
+        self._log.info(f"Write {self.subgraph.get()} to {dot_path}.")
+
+    def print_abbs(self, g):
+        name = self._print_init()
 
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
         for function in g.cfg.vertices():
@@ -69,11 +74,13 @@ class Printer(Step):
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
-                    dot_abb = pydot.Node(str(hash(abb)),
-                            label=g.cfg.vp.name[abb],
-                            shape=self.SHAPES[g.cfg.vp.type[abb]][0],
-                            style=self.SHAPES[g.cfg.vp.type[abb]][1],
-                            color=self.SHAPES[g.cfg.vp.type[abb]][2])
+                    dot_abb = pydot.Node(
+                        str(hash(abb)),
+                        label=g.cfg.vp.name[abb],
+                        shape=self.SHAPES[g.cfg.vp.type[abb]][0],
+                        style=self.SHAPES[g.cfg.vp.type[abb]][1],
+                        color=self.SHAPES[g.cfg.vp.type[abb]][2]
+                    )
                 dot_func.add_node(dot_abb)
         for edge in g.cfg.edges():
             if g.cfg.ep.type[edge] not in [graph.CFType.lcf, graph.CFType.icf]:
@@ -86,10 +93,27 @@ class Printer(Step):
             dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
                                           str(hash(edge.target())),
                                           color=color))
-        dot_graph.write(dot)
-        self._log.info(f"Write dot file to {dot}.")
+        self._write_dot(dot_graph)
+
+    def print_instances(self, g):
+        name = self._print_init()
+
+        dot_graph = pydot.Dot(graph_type='digraph', label=name)
+        for instance in g.instances.vertices():
+            dot_node = pydot.Node(
+                str(hash(instance)),
+                label=g.instances.vp.label[instance],
+            )
+            dot_graph.add_node(dot_node)
+        for edge in g.instances.edges():
+            dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
+                                          str(hash(edge.target())),
+                                          label=g.instances.ep.label[edge]))
+        self._write_dot(dot_graph)
 
     def run(self, g: graph.Graph):
         subgraph = self.subgraph.get()
         if subgraph == 'abbs':
             self.print_abbs(g)
+        if subgraph == 'instances':
+            self.print_instances(g)
