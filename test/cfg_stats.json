@@ -2,18 +2,19 @@
 	"steps": [
 		{
 			"name": "CFGPreparation",
-            "pass_list": "module(function(mem2reg,reassociate,sccp,dce,unroll,simplify-cfg))",
+            "pass_list": "module(function(mem2reg,jump-threading,simplify-cfg))",
             "log_level": "info"
 		},
         "CompInsert",
         "BBSplit",
         "FnSingleExit",
         "LLVMMap",
+        "ICFG",
         "CFGStats",
         {
             "name": "Printer",
-            "dot": "cfg_passes.dot",
-            "graph_name": "CFG after llvm transformations.",
+            "dot": "icfg_passes.dot",
+            "graph_name": "ICFG after llvm transformations.",
             "subgraph": "abbs"
         }
 	]

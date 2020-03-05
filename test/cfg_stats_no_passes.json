@@ -1,11 +1,11 @@
 {
 	"steps": [
-        "LLVMMap",
+        "ICFG",
         "CFGStats",
         {
             "name": "Printer",
-            "dot": "cfg_no_passes.dot",
-            "graph_name": "CFG without llvm transformations.",
+            "dot": "icfg_no_passes.dot",
+            "graph_name": "ICFG without llvm transformations.",
             "subgraph": "abbs"
         }
 	]

@@ -41,86 +41,50 @@ test('ir-reader-multiple-symbols',
 
 test('cfg_prep',
    py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_prep.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--step-settings', files('cfg_prep.json'), '--log-level', 'debug'],
    env : [python_path]
 )
 
 test('cfg_prep_no_args',
    py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_prep_no_args.json'), '--log-level', 'debug'],
+   args: [files('../ara.py'), gpslogger_targets, '--step-settings', files('cfg_prep_no_args.json'), '--log-level', 'debug'],
    should_fail: true,
    env : [python_path]
 )
 
 test('gps_stats',
    py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
+   args: [files('../ara.py'), gpslogger_targets, '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('gps_stats_no_passes',
    py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
+   args: [files('../ara.py'), gpslogger_targets, '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('smart_stats',
    py3_inst,
-   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
+   args: [files('../ara.py'), smartplug_targets, '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('smart_stats_no_passes',
    py3_inst,
-   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
+   args: [files('../ara.py'), smartplug_targets, '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('copter_stats',
    py3_inst,
-   args: [files('../ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
+   args: [files('../ara.py'), osek_coptermok[0], '--oilfile', osek_coptermok[1], '--step-settings', files('cfg_stats.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
 test('copter_stats_no_passes',
    py3_inst,
-   args: [files('../ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
-   env : [python_path]
-)
-
-test('gps_ipstats',
-   py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('icfg_stats.json'), '--log-level', 'info'],
-   env : [python_path]
-)
-
-test('gps_ipstats_no_passes',
-   py3_inst,
-   args: [files('../ara.py'), gpslogger_targets, '--os', 'FreeRTOS', '--step-settings', files('icfg_stats_no_passes.json'), '--log-level', 'info'],
-   env : [python_path]
-)
-
-test('smart_ipstats',
-   py3_inst,
-   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('icfg_stats.json'), '--log-level', 'info'],
-   env : [python_path]
-)
-
-test('smart_ipstats_no_passes',
-   py3_inst,
-   args: [files('../ara.py'), smartplug_targets, '--os', 'FreeRTOS', '--step-settings', files('icfg_stats_no_passes.json'), '--log-level', 'info'],
-   env : [python_path]
-)
-
-test('copter_ipstats',
-   py3_inst,
-   args: [files('../ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--step-settings', files('icfg_stats.json'), '--log-level', 'info'],
-   env : [python_path]
-)
-
-test('copter_ipstats_no_passes',
-   py3_inst,
-   args: [files('../ara.py'), osek_coptermok[0], '--os', 'OSEK', '--oilfile', osek_coptermok[1], '--step-settings', files('icfg_stats_no_passes.json'), '--log-level', 'info'],
+   args: [files('../ara.py'), osek_coptermok[0], '--oilfile', osek_coptermok[1], '--step-settings', files('cfg_stats_no_passes.json'), '--log-level', 'info'],
    env : [python_path]
 )
 
