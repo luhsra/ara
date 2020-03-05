@@ -6,7 +6,6 @@ foreach app : ['a',
                'argument_load',
                'c',
                'critical_region_detection',
-               'dead_code',
                'deadlock',
                'dominator',
                'eventgroup',
@@ -171,31 +170,6 @@ osek_examples = run_target('osek-examples',
                            command: nop,
                            depends: osek_targets)
 
-# test target for constant propagation
-const_prop = custom_target('const-prop',
-                           input : files('const_prop.cc'),
-                           output : ['const_prop.ll'],
-                           depfile : 'const_prop.ll.dep',
-                           command : clang_cpp +
-                                     ir_flags +
-                                     clang_flags)
-
-dead_code = custom_target('dead-code',
-                           input : files('dead_code.cc'),
-                           output : ['dead_code.ll'],
-                           depfile : 'dead_code.ll.dep',
-                           command : clang_cpp +
-                                     ir_flags +
-                                     clang_flags)
-
-reassociate = custom_target('reassociate',
-                            input : files('reassociate.cc'),
-                            output : ['reassociate.ll'],
-                           depfile : 'reassociate.ll.dep',
-                            command : clang_cpp +
-                                      ir_flags +
-                                      clang_flags)
-
 examples = run_target('examples',
                       command: nop,
-                      depends: [osek_targets, freertos_targets, const_prop])
+                      depends: [osek_targets, freertos_targets])

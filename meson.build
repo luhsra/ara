@@ -66,6 +66,7 @@ test('ara_tester',
           '--log-level', 'debug',
           '--step-settings', extra_settings],
    env : [python_path]
+)
 
 test('mem2reg',
 py3_inst,
@@ -73,46 +74,6 @@ args: [files('ara.py'), gpslogger_application,
       '--log-level', 'debug',
       '--step', 'Mem2Reg'],
 env : [python_path]
-)
-
-test('const_prop',
-   py3_inst,
-   args: [files('ara.py'), const_prop, '--os', 'FreeRTOS',
-          '--log-level', 'debug',
-          '--step', 'ConstProp'],
-   env : [python_path]
-)
-
-test('sparse_cond_const_prop',
-   py3_inst,
-   args: [files('ara.py'), const_prop, '--os', 'FreeRTOS',
-          '--log-level', 'debug',
-          '--step', 'SparseCondConstProp'],
-   env : [python_path]
-)
-
-test('dead_code',
-   py3_inst,
-   args: [files('ara.py'), dead_code, '--os', 'FreeRTOS',
-          '--log-level', 'debug',
-          '--step', 'DeadCodeElimination'],
-   env : [python_path]
-)
-
-test('agr_dead_code',
-   py3_inst,
-   args: [files('ara.py'), dead_code, '--os', 'FreeRTOS',
-          '--log-level', 'debug',
-          '--step', 'AgressiveDCE'],
-   env : [python_path]
-)
-
-test('reassociate',
-   py3_inst,
-   args: [files('ara.py'), reassociate, '--os', 'FreeRTOS',
-          '--log-level', 'debug',
-          '--step', 'Reassociate'],
-   env : [python_path]
 )
 
 generator_settings = files('test/generator_settings.json')
