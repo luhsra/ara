@@ -3,3 +3,9 @@
 	url = https://scm.sra.uni-hannover.de/source/pyllco.git
 	branch = master
 	vcs = git
+
+[external "svf"]
+	path = subprojects/svf
+	url = https://github.com/luhsra/SVF
+	branch = master
+	vcs = git
