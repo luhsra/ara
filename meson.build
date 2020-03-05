@@ -60,12 +60,19 @@ subdir('test')
 extra_settings = files('test/extra_settings.json')
 
 # TODO convert this into a proper test
-test('mem2reg',
+test('ara_tester',
    py3_inst,
    args: [files('ara.py'), gpslogger_application,
           '--log-level', 'debug',
-          '--step', 'Mem2Reg'],
+          '--step-settings', extra_settings],
    env : [python_path]
+
+test('mem2reg',
+py3_inst,
+args: [files('ara.py'), gpslogger_application,
+      '--log-level', 'debug',
+      '--step', 'Mem2Reg'],
+env : [python_path]
 )
 
 test('const_prop',
