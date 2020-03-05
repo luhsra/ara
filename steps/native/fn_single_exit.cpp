@@ -9,10 +9,12 @@
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
 namespace ara::step {
 	using namespace llvm;
@@ -27,6 +29,17 @@ namespace ara::step {
 			if (function.empty() || function.isIntrinsic()) {
 				continue;
 			}
+
+			// Execute LLVM's UnifyFunctionExitNodes pass
+			Module& module = graph.get_module();
+			legacy::FunctionPassManager fpm(&module);
+			fpm.add(createUnifyFunctionExitNodesPass());
+
+			if (fpm.run(function)) {
+				logger.debug() << function.getName().str() << ": UnifyFunctionExitNodes has modified something."
+				               << std::endl;
+			}
+			// ----
 
 			// exit block detection
 			// an exit block is a block with no successors
