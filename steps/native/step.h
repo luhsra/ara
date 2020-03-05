@@ -7,9 +7,9 @@
 #include "option.h"
 
 #include <Python.h>
-#include <boost/property_tree/ptree.hpp>
 #include <functional>
 #include <graph.h>
+#include <llvm/Support/JSON.h>
 #include <map>
 #include <stdexcept>
 #include <string>
@@ -35,8 +35,9 @@ namespace ara::step {
 		/**
 		 * See stepmanager.py for a description.
 		 */
-		void chain_step(const boost::property_tree::ptree& step_config);
-		void chain_step(const std::string step_name);
+		void chain_step(const llvm::json::Value& step_config);
+		void chain_step(const std::string& step_name);
+		void chain_step(const char* step_name);
 
 		std::string get_execution_id();
 	};

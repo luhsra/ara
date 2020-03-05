@@ -151,11 +151,8 @@ namespace ara::step {
 			std::string uuid = step_manager.get_execution_id();
 			std::string dot_file = *dump_prefix.get() + uuid + ".dot";
 
-			ptree printer_conf;
-			printer_conf.put("name", "Printer");
-			printer_conf.put("dot", dot_file);
-			printer_conf.put("graph_name", "LLVM CFG");
-			printer_conf.put("subgraph", "abbs");
+			llvm::json::Value printer_conf(llvm::json::Object{
+			    {"name", "Printer"}, {"dot", dot_file}, {"graph_name", "LLVM CFG"}, {"subgraph", "abbs"}});
 
 			step_manager.chain_step(printer_conf);
 		}

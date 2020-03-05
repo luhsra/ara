@@ -1,22 +1,23 @@
-#include "step.h"
 #include "native_step_pyx.h"
+#include "step.h"
 
-#include <boost/property_tree/json_parser.hpp>
+#include <llvm/Support/JSON.h>
+#include <llvm/Support/raw_ostream.h>
 #include <sstream>
 
-using namespace boost::property_tree;
-
 namespace ara::step {
-	void StepManager::chain_step(const ptree& step_config) {
-		std::stringstream sstream;
-		json_parser::write_json(sstream, step_config, /* pretty = */ false);
+	void StepManager::chain_step(const llvm::json::Value& step_config) {
+		std::string foo;
+		llvm::raw_string_ostream sstream(foo);
+		sstream << step_config;
 		step_manager_chain_step(step_manager, sstream.str().c_str());
 	}
 
-	void StepManager::chain_step(const std::string step_name) {
-		ptree tree;
-		tree.put("name", step_name);
-		chain_step(tree);
+	void StepManager::chain_step(const std::string& step_name) { chain_step(step_name.c_str()); }
+
+	void StepManager::chain_step(const char* step_name) {
+		llvm::json::Value v(llvm::json::Object{{"name", step_name}});
+		chain_step(v);
 	}
 
 	std::string StepManager::get_execution_id() { return step_manager_get_execution_id(step_manager); }
