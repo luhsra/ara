@@ -1,6 +1,6 @@
 #pragma once
 
-#include "generic/ostream.h"
+#include "ostream.h"
 
 #ifndef FAIL
 #if DEBUG

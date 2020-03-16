@@ -9,7 +9,7 @@
  */
 
 // #include <stdint.h>
-#include "generic/ostream.h"
+#include "ostream.h"
 
 /** \brief  Colors (just copied from cga), actually not used */
 typedef enum class Color {

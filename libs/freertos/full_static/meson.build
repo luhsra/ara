@@ -23,7 +23,6 @@ obj_targets += libfreertos_vanilla_event_groups
 obj_targets += libfreertos_vanilla_list
 obj_targets += libfreertos_vanilla_timers
 obj_targets += libfreertos_vanilla_port
-obj_targets += libfreertos_vanilla_statistics
 
 
 libfreertos_full_static = custom_target('libfreertos_full_static.a',

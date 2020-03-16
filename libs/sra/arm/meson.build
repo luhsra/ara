@@ -1,5 +1,3 @@
-libsra_objs = []
-
 libsra_objs += custom_target('libsra-output.o',
                              input: 'output.cc',
                              output: 'output.cc.o',
@@ -9,8 +7,3 @@ libsra_objs += custom_target('libsra-output.o',
                                       obj_flags +
                                       clang_flags)
 subdir('platforms/stm32f103rb')
-
-libsra_ar = custom_target('libsra.a',
-                          input: libsra_objs,
-                          output: 'libsra.a',
-                          command: ar_cmd)

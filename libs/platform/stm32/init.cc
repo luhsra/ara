@@ -1,5 +1,4 @@
 #include <stm32f1xx_hal.h>
-// #include <serial.h>
 
 void SystemClock_Config(void) {
 	// Set up external oscillator to 72 MHz

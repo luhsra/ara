@@ -14,3 +14,5 @@ typedef struct __time_marker {
 #define TIME_MARKER(NAME) __attribute((section(".data.__time_markers"))) __time_marker_t __time_##NAME = {.name=#NAME};
 
 #endif //STORE_TIME_MARKER
+
+void print_startup_statistcs();
