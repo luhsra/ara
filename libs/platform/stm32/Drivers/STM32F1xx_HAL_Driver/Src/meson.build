@@ -2,7 +2,8 @@ src_files = [
   'stm32f1xx_hal_rcc.c',
   'stm32f1xx_hal.c',
   'stm32f1xx_hal_cortex.c',
-  'stm32f1xx_hal_rcc_ex.c'
+  'stm32f1xx_hal_rcc_ex.c',
+  'stm32f1xx_hal_pwr.c',
 ]
 
 obj_targets = []

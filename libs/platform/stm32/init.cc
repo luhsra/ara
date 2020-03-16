@@ -1,4 +1,6 @@
 #include <stm32f1xx_hal.h>
+#include <stm32f1xx_hal_pwr.h>
+
 
 void SystemClock_Config(void) {
 	// Set up external oscillator to 72 MHz
@@ -53,4 +55,5 @@ extern "C" void SysTick_Handler(void) {
 }
 
 void StopBoard(void) {
+	HAL_PWR_EnterSTANDBYMode();
 }
