@@ -1,4 +1,8 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define DWT_CYCCNT      ((volatile uint32_t *)0xE0001004)
 
@@ -15,4 +19,8 @@ typedef struct __time_marker {
 
 #endif //STORE_TIME_MARKER
 
-void print_startup_statistcs();
+void print_startup_statistics();
+
+#ifdef __cplusplus
+}
+#endif

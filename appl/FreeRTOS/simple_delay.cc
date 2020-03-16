@@ -3,6 +3,8 @@
 #include <task.h>
 #include <output.h>
 #include "time_markers.h"
+#include <platform.h>
+
 
 TIME_MARKER(task2_go);
 TIME_MARKER(task1_go);
@@ -30,10 +32,10 @@ void vTask1(void * param) {
     taskEXIT_CRITICAL();
     vTaskDelay(2000);
   }
-  for (;;) vTaskDelay(100);
+  for (int i=0; i < 3; ++i)
+    vTaskDelay(100);
+  StopBoard();
 }
-
-void InitBoard();
 
 int main() {
   STORE_TIME_MARKER(main_start);

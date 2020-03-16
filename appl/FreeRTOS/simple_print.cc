@@ -3,8 +3,7 @@
 #include <task.h>
 #include <output.h>
 #include "time_markers.h"
-
-extern "C" void print_startup_statistics(void);
+#include <platform.h>
 
 TIME_MARKER(task2_go);
 TIME_MARKER(task1_go);
@@ -36,10 +35,10 @@ void vTask1(void * param) {
 	kout << 'T';
     taskEXIT_CRITICAL();
 	for (j = 0; j < 300000; ++j);
+  StopBoard();
   }
 }
 
-void InitBoard();
 
 int main() {
   STORE_TIME_MARKER(main_start);
