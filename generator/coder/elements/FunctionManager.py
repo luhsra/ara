@@ -1,5 +1,6 @@
 from .SourceElement import Block, Statement
 from collections import namedtuple
+import logging
 
 class Function:
     def __init__(self, name, rettype, argstype, extern_c = False, attributes = None):
@@ -127,7 +128,11 @@ class  FunctionManager:
                 self.namespaces.append(self.Namespace(namespace, []))
                 current_scope = self.namespaces[-1].functions
         for x in current_scope:
-            assert x.name != function.name, "Duplicate function name %s" % function.name
+            if x.name == function.name:
+                if isinstance(function, FunctionDeclaration):
+                    logging.warning("Duplicate function name %s", function.name)
+                else:
+                    assert x.name != function.name, "Duplicate function name %s" % function.name
         current_scope.append(function)
 
     def source_element_declarations(self):
