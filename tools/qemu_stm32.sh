@@ -1,3 +1,11 @@
 #!/bin/bash
+STTY_SETTINGS="$( stty -g )"
 
-qemu-system-stm32 -machine stm32-p103 -nographic -serial mon:stdio -kernel ${1}
+function finish {
+	stty "$STTY_SETTINGS"
+}
+trap finish EXIT QUIT HUP INT ABRT TERM
+
+echo $@
+# qemu-system-stm32 -machine stm32-p103 -nographic -serial mon:stdio -kernel ${1}
+qemu-system-stm32 -machine stm32-p103 -nographic -serial stdio -monitor none -kernel $@
