@@ -125,6 +125,18 @@ foreach app : ['a',
     named_elf_targets += [t, elf_target]
     named_elf_targets += [t+'.lto', lto_elf]
 
+    # test(name_prefix,
+    #      py3_inst,
+    #      args: [qemu_test_runner,
+    #             qemu_cmd,
+    #             app,
+    #             elf_target,
+    #            ],
+    #      env: [python_path],
+    #      workdir: freertos_src_dir,
+    #     )
+
+
   endforeach
 
   run_target('compare_nm-' + app, command: [compare_nm,  named_elf_targets])

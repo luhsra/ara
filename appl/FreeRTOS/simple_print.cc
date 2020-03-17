@@ -12,7 +12,6 @@ TIME_MARKER(done_InitBoard);
 TIME_MARKER(done_hello_print);
 TIME_MARKER(done_tastCreate);
 
-
 volatile int i = 0;
 void vTask2(void * param) {
   STORE_TIME_MARKER(task2_go);
@@ -30,13 +29,13 @@ void vTask2(void * param) {
 volatile int j = 0;
 void vTask1(void * param) {
   STORE_TIME_MARKER(task1_go);
-  for (;;) {
+  for (int i =0; i < 3; ++i) {
     taskENTER_CRITICAL();
 	kout << 'T';
     taskEXIT_CRITICAL();
 	for (j = 0; j < 300000; ++j);
-  StopBoard();
   }
+  StopBoard();
 }
 
 
