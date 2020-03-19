@@ -18,12 +18,12 @@ llvm_version = ['>=9', '<10']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 clang = find_program('clang', version: llvm_version)
 ### FIXME: enable find_program if it correctly detects llc version, needs meson > 0.54
-llc = 'llc'
+llc = find_program('llc')
 ### llc = find_program('llc', version: llvm_version)
-llvm_link = 'llvm-link'
+llvm_link = find_program('llvm-link')
 ### llvm_link = find_program('llvm-link', llvm_version)
-llvm_opt = 'opt'
-### llmvm_opt = find_program('opt', llvm_version)
+llvm_opt = find_program('opt')
+### llvm_opt = find_program('opt', llvm_version)
 
 boost_dep = dependency('boost', modules: ['graph', 'python3'], include_type: 'system')
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
