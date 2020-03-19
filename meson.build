@@ -5,18 +5,31 @@ project('ara', 'cpp',
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 
+# check all dependencies first
+
 cython = find_program('cython')
+cython_flags = ['-Wextra', '--cplus', '-3']
+
 py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
+## llvm dependencies
 llvm_version = ['>=9', '<10']
-
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
+clang = find_program('clang', version: llvm_version)
+### FIXME: enable find_program if it correctly detects llc version, needs meson > 0.54
+llc = 'llc'
+### llc = find_program('llc', version: llvm_version)
+llvm_link = 'llvm-link'
+### llvm_link = find_program('llvm-link', llvm_version)
+llvm_opt = 'opt'
+### llmvm_opt = find_program('opt', llvm_version)
+
 boost_dep = dependency('boost', modules: ['graph', 'python3'], include_type: 'system')
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
+## pyllco
 pyllco_dep = dependency('pyllco-py' + py3_inst.language_version(), required : false)
-
 if pyllco_dep.found()
     pyllco_cython_inc = pyllco_dep.get_variable(pkgconfig: 'Cython.include')
     pyllco_dir = ''
@@ -27,16 +40,39 @@ else
     pyllco_dir = pyllco_proj.get_variable('pyllco_dir')
 endif
 
+## svf
 cmake = import('cmake')
-
-# Configure the CMake project
 svf_proj = cmake.subproject('svf', cmake_options: '-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'))
 Svf = svf_proj.dependency('Svf', include_type: 'system')
 Cudd = svf_proj.dependency('Cudd')
 LLVMSvf = svf_proj.dependency('LLVMSvf')
 LLVMCudd = svf_proj.dependency('LLVMCudd')
 
-cython_flags = ['-Wextra', '--cplus', '-3']
+## tools
+bash = find_program('bash')
+nop = find_program('true')
+
+## arch specific build tools
+if get_option('arch') == 'i386'
+    target_triple='x86_64-linux-gnu'
+elif get_option('arch') == 'arm'
+    target_triple = 'arm-none-eabi'
+else
+    assert(false, 'unknown arch ' + get_option('arch'))
+endif
+
+arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
+
+foreach prog_name : ['ar', 'objcopy', 'size', 'nm']
+    full_prog_name = target_triple + '-' + prog_name
+    prog = find_program(full_prog_name, required: false)
+    if not prog.found()
+        error(arch_error.format(get_option('arch').to_upper()))
+    endif
+    set_variable(prog_name, prog)
+endforeach
+
+# all dependencies found, build the actual program
 
 build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
