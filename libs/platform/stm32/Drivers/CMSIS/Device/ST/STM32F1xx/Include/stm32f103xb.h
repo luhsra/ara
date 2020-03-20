@@ -396,6 +396,7 @@ typedef struct {
 typedef struct {
 	__IO uint32_t CR;
 	__IO uint32_t CSR;
+	__IO uint32_t QEMU_STATUS;
 } PWR_TypeDef;
 
 /**

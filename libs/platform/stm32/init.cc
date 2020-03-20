@@ -55,5 +55,5 @@ extern "C" void SysTick_Handler(void) {
 }
 
 void StopBoard(void) {
-	HAL_PWR_EnterSTANDBYMode();
+	HAL_PWR_StopQEMU(0);
 }
