@@ -126,7 +126,7 @@ class FlatAnalysis(FlowAnalysis):
         return ["Syscall", "ValueAnalysis", "CallGraph"]
 
     def _init_analysis(self):
-        self._call_map = self._create_call_map(self._entry_func)
+        self._call_graph = self._g.call_graphs[self._entry_func]
         self._cond_func = self._g.call_graphs[self._entry_func].new_vp("bool")
         self._step_data.add(self._entry_func)
 
@@ -184,14 +184,6 @@ class FlatAnalysis(FlowAnalysis):
             node = next(node.in_neighbors())
         return node
 
-    def _create_call_map(self, entry_func):
-        """Create a mapping  'call node -> node index in call_graph'."""
-        cg = self._g.call_graphs[entry_func]
-        call_map = {}
-        for v in cg.vertices():
-            call_map[cg.vp.cfglink[v]] = v
-        return call_map
-
     def _init_execution(self, state):
         pass
 
@@ -207,6 +199,15 @@ class FlatAnalysis(FlowAnalysis):
     def _get_categories(self):
         return SyscallCategory.ALL
 
+    def _get_call_node(self, call_path, abb):
+        """Return the call node for the given abb, respecting the call_path."""
+        for neighbor in self._call_graph.vertex(call_path).out_neighbors():
+            if self._call_graph.vp.cfglink[neighbor] == abb:
+                return neighbor
+        else:
+            abb_name = self._icfg.vp.name[self._icfg.vertex(abb)]
+            self._fail(f"Cannot find call path for ABB {abb_name}.")
+
     def _execute(self, state):
         new_states = []
         self._init_execution(state)
@@ -215,6 +216,7 @@ class FlatAnalysis(FlowAnalysis):
             if self._visited[state.call][abb]:
                 continue
             self._visited[state.call][abb] = True
+            self._log.debug(f"Handle state {state}")
 
             # syscall handling
             if self._icfg.vp.type[abb] == graph.ABBType.syscall:
@@ -232,7 +234,7 @@ class FlatAnalysis(FlowAnalysis):
                 for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
-                    new_state.call = self._call_map[abb]
+                    new_state.call = self._get_call_node(state.call, abb)
                     self._handle_call(state, new_state, abb)
                     new_states.append(new_state)
 
