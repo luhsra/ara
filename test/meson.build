@@ -12,7 +12,7 @@ test('multiple-configured-steps',
 
 test('loop-detection',
         py3_inst,
-        args : [files('loop_detection.py'), 'FreeRTOS', files('loop_detection.json'), freertos_loop_detection],
+        args : [files('loop_detection.py'), files('loop_detection.json'), freertos_loop_detection],
         env : [python_path]
 )
 
@@ -24,18 +24,18 @@ test('oil-parsing',
 
 test('ir-reader',
   py3_inst,
-  args: [files('ir_reader.py'), 'FreeRTOS', files('empty.json'), gpslogger_targets],
+  args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],
   env: [python_path]
 )
 test('ir-reader-false-syntax',
   py3_inst,
-  args: [files('ir_reader.py'), 'FreeRTOS', files('empty.json'), gpslogger_targets, files('ir_reader.false_syntax.ll')],
+  args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.false_syntax.ll')],
   should_fail: true,
   env: [python_path]
 )
 test('ir-reader-multiple-symbols',
   py3_inst,
-  args: [files('ir_reader.py'), 'FreeRTOS', files('empty.json'), gpslogger_targets, files('ir_reader.multiple_symbols.ll')],
+  args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.multiple_symbols.ll')],
   should_fail: true,
   env: [python_path]
 )
@@ -50,13 +50,13 @@ test('dummy-test',
 
 test('syscall',
   py3_inst,
-  args: [files('syscall.py'), 'FreeRTOS', files('syscall.json'), freertos_syscall],
+  args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
   env: [python_path]
 )
 
 test('icfg',
   py3_inst,
-  args: [files('icfg.py'), 'FreeRTOS', files('icfg.json'), freertos_icfg],
+  args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
   env: [python_path]
 )
 

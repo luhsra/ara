@@ -46,11 +46,11 @@ def init_test(steps=None, extra_config=None):
     if not extra_config:
         extra_config = {}
     g = graph.Graph()
-    os_name = sys.argv[1]
-    json_file = sys.argv[2]
-    i_files = sys.argv[3:]
-    print(f"Testing with JSON: '{json_file}', OS: '{os_name}'" +
-          f", and files: {i_files}")
+    assert len(sys.argv) == 3
+    json_file = sys.argv[1]
+    i_file = sys.argv[2]
+    print(f"Testing with JSON: '{json_file}'"
+          f", and file: {i_file}")
     if steps:
         print(f"Executing steps: {steps}")
     elif extra_config:
@@ -62,9 +62,10 @@ def init_test(steps=None, extra_config=None):
 
     s_manager = stepmanager.StepManager(g)
 
-    config = {'os': os_name,
-              'log_level': 'debug',
-              'input_files': i_files}
+    config = {'log_level': 'debug',
+              'dump_prefix': '/dev/null',
+              'dump': False,
+              'input_file': i_file}
     s_manager.execute(config, extra_config, steps)
 
     return g, data, s_manager

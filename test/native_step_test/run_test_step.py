@@ -21,11 +21,13 @@ def main():
     """Test for correct splitting of basic blocks."""
     init_logging(level=logging.DEBUG)
     g = graph.Graph()
-    os_name = sys.argv[1]
-    test_step = sys.argv[2]
-    i_files = sys.argv[3:]
-    config = {'os': os_name,
-              'input_files': i_files}
+    assert len(sys.argv) == 3
+    test_step = sys.argv[1]
+    i_file = sys.argv[2]
+    config = {'log_level': 'debug',
+              'dump_prefix': '/dev/null',
+              'dump': False,
+              'input_file': i_file}
     p_manager = stepmanager.StepManager(g, provides=provide)
 
     p_manager.execute(config, {}, [test_step])
