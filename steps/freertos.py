@@ -255,583 +255,468 @@ class FreeRTOS:
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-#     {
-#         "name": "vTaskNotifyGiveFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskCreateStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xTaskCreateRestricted",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xQueueCreateStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xQueueCreateSet",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "vSemaphoreCreateBinary",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xSemaphoreCreateBinary",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xSemaphoreCreateBinaryStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xSemaphoreCreateMutexStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xSemaphoreCreateRecursiveMutex",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xSemaphoreCreateRecursiveMutexStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xQueueCreateCountingSemaphore",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xSemaphoreCreateCountingStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xTimerCreate",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xTimerCreateStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xEventGroupCreate",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xEventGroupCreateStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xStreamBufferGenericCreate",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xStreamBufferCreateStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "xMessageBufferCreateStatic",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "vTaskAllocateMPURegions",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskAbortDelay",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskCallApplicationTaskHook",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskCheckForTimeOut",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskDelayUntil",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskDelete",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "portDISABLE_INTERRUPTS",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "portENABLE_INTERRUPTS",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskEnterCritical",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "portSET_INTERRUPT_MASK_FROM_ISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskExitCritical",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskGetApplicationTaskTag",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskGetCurrentTaskHandle",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskGetIdleTaskHandle",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskGetHandle",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxTaskGetNumberOfTasks",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskGetRunTimeStats",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxTaskGetStackHighWaterMark",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "eTaskGetState",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxTaskGetSystemState",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "pvTaskGetThreadLocalStoragePointer",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "pcTaskGetName",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskGetTickCount",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskGetTickCountFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskList",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskNotifyStateClear",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "ulTaskNotifyTake",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxTaskPriorityGet",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskPrioritySet",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskResume",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskResumeAll",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTaskResumeFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskSetApplicationTaskTag",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskSetThreadLocalStoragePointer",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskSetTimeOutState",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskStartScheduler",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.START,
-#     },
-#     {
-#         "name": "vTaskStepTick",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskSuspend",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTaskSuspendAll",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "portYIELD",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueGenericSendFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueReceive",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueReceiveFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueuePeek",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueuePeekFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueIsQueueEmptyFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueIsQueueFullFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxQueueMessagesWaiting",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxQueueSpacesAvailable",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vQueueDelete",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "pcQueueGetName",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueReset",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueGiveFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueSemaphoreTake",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueGetMutexHolder",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueGetMutexHolderFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueGiveMutexRecursive",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueTakeMutexRecursive",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerGenericCommand",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerGetExpiryTime",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "pcTimerGetName",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerGetPeriod",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerGetTimerDaemonTaskHandle",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "pvTimerGetTimerID",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerIsTimerActive",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerPendFunctionCall",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xTimerPendFunctionCallFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vTimerSetTimerID",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vQueueAddToRegistry",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "uxQueueMessagesWaitingFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueAddToSet",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueRemoveFromSet",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueSelectFromSet",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xQueueSelectFromSetFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupClearBits",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupClearBitsFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vEventGroupDelete",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupGetBitsFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupSetBits",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupSetBitsFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupSync",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xEventGroupWaitBits",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferBytesAvailable",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "vStreamBufferDelete",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferIsEmpty",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferIsFull",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferReceive",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferReceiveFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferReset",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferResetFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferSend",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferSendFromISR",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferSetTriggerLevel",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xStreamBufferSpacesAvailable",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "xCoRoutineCreate",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.CREATE,
-#     },
-#     {
-#         "name": "vCoRoutineSchedule",
-#         "os": OS.FreeRTOS,
-#         "type": SyscallType.DEFAULT,
-#     }
+    ## HERE BEGINS THE TODO sections, all following syscalls are stubs
+
+    @syscall
+    def eTaskGetState(cfg, abb, state):
+        pass
+
+    @syscall
+    def pcQueueGetName(cfg, abb, state):
+        pass
+
+    @syscall
+    def pcTaskGetName(cfg, abb, state):
+        pass
+
+    @syscall
+    def pcTimerGetName(cfg, abb, state):
+        pass
+
+    @syscall
+    def portDISABLE_INTERRUPTS(cfg, abb, state):
+        pass
+
+    @syscall
+    def portENABLE_INTERRUPTS(cfg, abb, state):
+        pass
+
+    @syscall
+    def portSET_INTERRUPT_MASK_FROM_ISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def portYIELD(cfg, abb, state):
+        pass
+
+    @syscall
+    def pvTaskGetThreadLocalStoragePointer(cfg, abb, state):
+        pass
+
+    @syscall
+    def pvTimerGetTimerID(cfg, abb, state):
+        pass
+
+    @syscall
+    def ulTaskNotifyTake(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxQueueMessagesWaiting(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxQueueMessagesWaitingFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxQueueSpacesAvailable(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxTaskGetNumberOfTasks(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxTaskGetStackHighWaterMark(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxTaskGetSystemState(cfg, abb, state):
+        pass
+
+    @syscall
+    def uxTaskPriorityGet(cfg, abb, state):
+        pass
+
+    @syscall
+    def vCoRoutineSchedule(cfg, abb, state):
+        pass
+
+    @syscall
+    def vEventGroupDelete(cfg, abb, state):
+        pass
+
+    @syscall
+    def vQueueAddToRegistry(cfg, abb, state):
+        pass
+
+    @syscall
+    def vQueueDelete(cfg, abb, state):
+        pass
+
+    @syscall
+    def vSemaphoreCreateBinary(cfg, abb, state):
+        pass
+
+    @syscall
+    def vStreamBufferDelete(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskAllocateMPURegions(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskDelayUntil(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskDelete(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskEnterCritical(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskExitCritical(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskGetRunTimeStats(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskList(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskNotifyGiveFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskPrioritySet(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskResume(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskSetApplicationTaskTag(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskSetThreadLocalStoragePointer(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskSetTimeOutState(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskStartScheduler(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskStepTick(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskSuspend(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTaskSuspendAll(cfg, abb, state):
+        pass
+
+    @syscall
+    def vTimerSetTimerID(cfg, abb, state):
+        pass
+
+    @syscall
+    def xCoRoutineCreate(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupClearBits(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupClearBitsFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupCreate(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupCreateStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupGetBitsFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupSetBits(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupSetBitsFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupSync(cfg, abb, state):
+        pass
+
+    @syscall
+    def xEventGroupWaitBits(cfg, abb, state):
+        pass
+
+    @syscall
+    def xMessageBufferCreateStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueAddToSet(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueCreateCountingSemaphore(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueCreateSet(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueCreateStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueGenericSendFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueGetMutexHolder(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueGetMutexHolderFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueGiveFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueGiveMutexRecursive(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueIsQueueEmptyFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueIsQueueFullFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueuePeek(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueuePeekFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueReceive(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueReceiveFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueRemoveFromSet(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueReset(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueSelectFromSet(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueSelectFromSetFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueSemaphoreTake(cfg, abb, state):
+        pass
+
+    @syscall
+    def xQueueTakeMutexRecursive(cfg, abb, state):
+        pass
+
+    @syscall
+    def xSemaphoreCreateBinary(cfg, abb, state):
+        pass
+
+    @syscall
+    def xSemaphoreCreateBinaryStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xSemaphoreCreateCountingStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xSemaphoreCreateMutexStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xSemaphoreCreateRecursiveMutex(cfg, abb, state):
+        pass
+
+    @syscall
+    def xSemaphoreCreateRecursiveMutexStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferBytesAvailable(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferCreateStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferGenericCreate(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferIsEmpty(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferIsFull(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferReceive(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferReceiveFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferReset(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferResetFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferSend(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferSendFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferSetTriggerLevel(cfg, abb, state):
+        pass
+
+    @syscall
+    def xStreamBufferSpacesAvailable(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskAbortDelay(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskCallApplicationTaskHook(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskCheckForTimeOut(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskCreateRestricted(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskCreateStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskGetApplicationTaskTag(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskGetCurrentTaskHandle(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskGetHandle(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskGetIdleTaskHandle(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskGetTickCount(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskGetTickCountFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskNotifyStateClear(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskResumeAll(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTaskResumeFromISR(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerCreate(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerCreateStatic(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerGenericCommand(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerGetExpiryTime(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerGetPeriod(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerGetTimerDaemonTaskHandle(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerIsTimerActive(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerPendFunctionCall(cfg, abb, state):
+        pass
+
+    @syscall
+    def xTimerPendFunctionCallFromISR(cfg, abb, state):
+        pass
