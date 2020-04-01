@@ -37,8 +37,7 @@ def main():
                         help="choose steps that will be executed")
     parser.add_argument('--list-steps', '-l', action="store_true",
                         default=False, help="list all available steps")
-    parser.add_argument('input_files', help="all LLVM-IR input files",
-                        nargs='*')
+    parser.add_argument('input_file', help="the LLVM-IR input file")
     parser.add_argument('--oilfile', help="name of oilfile")
     parser.add_argument('--output_file', help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE",
@@ -64,10 +63,10 @@ def main():
     if args.list_steps:
         print(print_avail_steps(avail_steps))
         sys.exit(0)
-    elif not args.input_files:
-        parser.error('input_files are required (except -l or -h is set)')
+    elif not args.input_file:
+        parser.error('an input_file is required (except -l or -h is set)')
 
-    logging.debug("Processing files: %s", ', '.join(args.input_files))
+    logging.debug(f"Processing file: {args.input_file}")
 
     extra_settings = {}
 
