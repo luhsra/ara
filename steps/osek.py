@@ -6,115 +6,90 @@ class OSEK:
     def OSEKOS_ActivateTask(cfg, state):
         pass
 
-# OS_API = [
-#     # OSEK
-#     {
-#         "name": "OSEKOS_ActivateTask",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_StartOS",
-#         "os": OS.OSEK,
-#         "type": SyscallType.START,
-#     },
-#     {
-#         "name": "OSEKOS_ShutdownOS",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_TerminateTask",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_ChainTask",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_CancelAlarm",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_GetResource",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_ReleaseResource",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_DisableAllInterrupts",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_EnableAllInterrupts",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_SuspendAllInterrupts",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_ResumeAllInterrupts",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_SuspendOSInterrupts",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_ResumeOSInterrupts",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_GetAlarm",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_AdvanceCounter",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_SetEvent",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_ClearEvent",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_WaitEvent",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_GetEvent",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_SetRelAlarm",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
-#     {
-#         "name": "OSEKOS_CheckAlarm",
-#         "os": OS.OSEK,
-#         "type": SyscallType.DEFAULT,
-#     },
+    @syscall
+    def OSEKOS_ActivateTask(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_AdvanceCounter(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_CancelAlarm(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_ChainTask(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_CheckAlarm(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_ClearEvent(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_DisableAllInterrupts(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_EnableAllInterrupts(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_GetAlarm(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_GetEvent(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_GetResource(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_ReleaseResource(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_ResumeAllInterrupts(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_ResumeOSInterrupts(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_SetEvent(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_SetRelAlarm(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_ShutdownOS(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_StartOS(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_SuspendAllInterrupts(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_SuspendOSInterrupts(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_TerminateTask(cfg, abb, state):
+        pass
+
+    @syscall
+    def OSEKOS_WaitEvent(cfg, abb, state):
+        pass
