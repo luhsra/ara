@@ -3,13 +3,18 @@
 #include "ir_reader.h"
 
 #include <cassert>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Transforms/Utils.h>
 
 namespace ara::step {
-	std::string IRReader::get_description() const { return "Parse IR file into an LLVM module"; }
+	std::string IRReader::get_description() const {
+		return "Parse IR file into an LLVM module and prepare it for ARA.\n"
+		       "Currently this means: Execute the mem2reg pass.";
+	}
 
 	void IRReader::run(graph::Graph& graph) {
 		// get file arguments from config
@@ -31,6 +36,21 @@ namespace ara::step {
 			err.print("IRReader", debug_logger.llvm_ostream());
 			debug_logger.flush();
 			abort();
+		}
+
+		llvm::legacy::FunctionPassManager fpm(module.get());
+		fpm.add(llvm::createPromoteMemoryToRegisterPass());
+		fpm.doInitialization();
+
+		for (llvm::Function& func : *module) {
+			// Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn't given
+			if (func.hasOptNone()) {
+				func.removeFnAttr(llvm::Attribute::OptimizeNone);
+			}
+
+			if (fpm.run(func)) {
+				logger.debug() << func.getName().str() << ": Mem2Reg has modified the function." << std::endl;
+			}
 		}
 
 		// convert unique_ptr to shared_ptr
