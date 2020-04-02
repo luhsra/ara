@@ -20,6 +20,8 @@ def main():
         prog=sys.argv[0],
         description=sys.modules[__name__].__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--list-steps', '-l', action="store_true",
+                        default=False, help="list all available steps")
     parser.add_argument('--verbose', '-v', help="alias for --log-level=info",
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
@@ -35,9 +37,7 @@ def main():
                         help="entry point for interrupt service routine")
     parser.add_argument('--step', '-s', action='append',
                         help="choose steps that will be executed")
-    parser.add_argument('--list-steps', '-l', action="store_true",
-                        default=False, help="list all available steps")
-    parser.add_argument('input_file', help="the LLVM-IR input file")
+    parser.add_argument('input_file', help="the LLVM-IR input file", nargs='?')
     parser.add_argument('--oilfile', help="name of oilfile")
     parser.add_argument('--output_file', help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE",
