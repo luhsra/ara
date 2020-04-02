@@ -1,13 +1,13 @@
 settings_dir = meson.current_source_dir()
 
 # compiler flags to generate annotated IR
-clang_flags = ['-g',
-               # '-Og',
-               # '-O2',
+clang_flags = ['-g',  # generate debug information
+               '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
-               '-fno-discard-value-names', '-fno-exceptions']
+               '-fno-discard-value-names',  # use the C/C++ variable names for the pendent in the LLVM IR when possible
+               '-fno-exceptions']
 llvm_opt_flags = [
   # '-time-passes',
   # '-Og',
