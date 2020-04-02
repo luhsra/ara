@@ -39,7 +39,6 @@ namespace ara::step {
 				logger.debug() << function.getName().str() << ": UnifyFunctionExitNodes has modified something."
 				               << std::endl;
 			}
-			// ----
 
 			// exit block detection
 			// an exit block is a block with no successors
@@ -51,7 +50,7 @@ namespace ara::step {
 						             << std::endl;
 						logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
 						logger.debug() << "Basicblock 2 with exit: " << _bb << std::endl;
-						assert(false && "ARA expects that the UnifyFunctionExitNodes pass was executed.");
+						assert(false && "Something with the UnifyFunctionExitNodes went wrong.");
 					}
 					exit_block = &_bb;
 				}
