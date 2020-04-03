@@ -79,7 +79,7 @@ class Generator(Step):
             ara_file = sys.modules['__main__'].__file__
             base_path = os.path.dirname(ara_file)
             src_files = [getattr(m, '__file__') for m in sys.modules.values()
-                         if base_path in getattr(m, '__file__', '')]
+                         if base_path in (getattr(m, '__file__', '') or "")]
             with open(dep_file, 'w') as fd:
                 fd.write(gen.file_prefix + ": ")
                 fd.write("\\\n".join(src_files))
