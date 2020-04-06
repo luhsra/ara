@@ -99,10 +99,6 @@ class FreeRTOS:
             if cfg.ep.type[oedge] == graph.CFType.lcf:
                 state.next_abbs.append(oedge.target())
 
-    @syscall
-    def vTaskNotifyGiveFromISR(cfg, abb, state):
-        pass
-
     @syscall(SyscallCategory.CREATE)
     def xTaskCreate(cfg, abb, state):
         state = state.copy()
@@ -405,9 +401,6 @@ class FreeRTOS:
     def vTaskSetTimeOutState(cfg, abb, state):
         pass
 
-    @syscall
-    def vTaskStartScheduler(cfg, abb, state):
-        pass
 
     @syscall
     def vTaskStepTick(cfg, abb, state):
