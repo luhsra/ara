@@ -47,6 +47,8 @@ def main():
     parser.add_argument('--dependency_file',
                         help="file to write make-style dependencies into for "
                              "build system integration")
+    parser.add_argument('--ir_output', '-o', help="File to store modified IR into",
+                        metavar="FILE")
 
     args = parser.parse_args()
 
@@ -89,6 +91,9 @@ def main():
         args.step = ['DisplayResultsStep']
 
     s_manager.execute(vars(args), extra_settings, args.step)
+
+    if args.ir_output:
+        s_manager.execute(vars(args), {'steps': [{'name':'IRWriter', 'ir_file': args.ir_output}]}, None)
 
 
 if __name__ == '__main__':
