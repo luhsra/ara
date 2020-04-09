@@ -17,6 +17,7 @@ from comp_insert cimport CompInsert
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
 from ir_reader cimport IRReader
+from ir_writer cimport IRWriter
 from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
 from value_analysis_core cimport ValueAnalysisCore
@@ -295,6 +296,7 @@ def provide_steps():
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),
+            _native_fac(step_fac[IRWriter]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
             _native_fac(step_fac[LLVMMap]()),
             _native_fac(step_fac[ValueAnalysisCore]())]
