@@ -1,3 +1,10 @@
+# store py3inst for recovery
+real_py3_inst = py3_inst
+# using a disabler stops the execution but not syntax and existence checks
+if get_option('disable_step_tests')
+  py3_inst = disabler()
+endif
+
 test('dependency-resolving',
         py3_inst,
         args : files('dependency_resolving.py'),
@@ -61,3 +68,6 @@ test('icfg',
 )
 
 subdir('native_step_test')
+
+# restore using previously stored value
+py3_inst = real_py3_inst

@@ -151,7 +151,7 @@ foreach app : ['a',
     named_elf_targets += [t, elf_target]
     named_elf_targets += [t+'.lto', lto_elf]
 
-    if app in disabled_tests
+    if get_option('disable_qemu_tests') or  app in disabled_tests
       py = disabler()
     else
       py = py3_inst

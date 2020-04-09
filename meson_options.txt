@@ -1,1 +1,4 @@
 option('arch', type: 'combo', choices: ['arm', 'i386', 'posix'], value: 'arm')
+option('disable_qemu_tests', type: 'boolean', value: false)
+option('disable_step_tests', type: 'boolean', value: false)
+option('disable_toplevel_tests', type: 'boolean', value: false)

@@ -103,10 +103,16 @@ subdir('test')
 
 extra_settings = files('test/extra_settings.json')
 
+
+if get_option('disable_toplevel_tests')
+  ara_test =  disabler()
+else
+  ara_test = ara
+endif
 # TODO convert this into a proper test
 test('ara_tester',
    py3_inst,
-   args: [files('ara.py'), gpslogger_application,
+   args: [ara_test, gpslogger_application,
           '--log-level', 'debug',
           '--step-settings', extra_settings],
    env : [python_path]
@@ -116,39 +122,40 @@ generator_settings = files('test/generator_settings.json')
 
 test('generator_tester',
    py3_inst,
-   args: [files('ara.py'), gpslogger_targets,
+   args: [ara_test, freertos_simple_print,
           '--log-level', 'debug', '--dump',
+          '--generator_output', 'generator_tester-os.cc',
           '--step-settings', generator_settings],
    env : [python_path]
 )
 
 test('gpslogger',
    py3_inst,
-   args: [files('ara.py'), gpslogger_targets, '--log-level', 'debug', '--step', 'SSE'],
+   args: [ara_test, gpslogger_targets, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 test('smartplug',
    py3_inst,
-   args: [files('ara.py'), smartplug_targets, '--log-level', 'debug', '--step', 'SSE'],
+   args: [ara_test, smartplug_targets, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 test('copter-without-alarms',
    py3_inst,
-   args: [files('ara.py'), osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'SSE'],
+   args: [ara_test, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 test('copter',
    py3_inst,
-   args: [files('ara.py'), osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'SSE'],
+   args: [ara_test, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
 
 test('ospert',
    py3_inst,
-   args: [files('ara.py'), freertos_ospert, '--log-level', 'debug', '--step', 'SSE'],
+   args: [ara_test, freertos_ospert, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
