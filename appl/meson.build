@@ -1,8 +1,30 @@
 
 
 # FreeRTOS examples
+freertos_src_dir = join_paths(meson.current_source_dir(), 'FreeRTOS')
 
 freertos_targets = []
+
+disabled_tests = [
+  'argument_load',
+  'c',
+  'dead_code',
+  'deadlock',
+  'dominator',
+  'eventgroup',
+  'f',
+  'g',
+  'invalid_isr_syscall',
+  'invalid_mutex',
+  'invalid_semaphore',
+  'loop_detection',
+  'multi_exit',
+  'ospert',
+  'priority_inversion',
+  'simple_queue_send',
+  'thesis_print',
+  'topological_sort',
+]
 foreach app : ['a',
                'abb_merge',
                'argument_load',
@@ -129,16 +151,21 @@ foreach app : ['a',
     named_elf_targets += [t, elf_target]
     named_elf_targets += [t+'.lto', lto_elf]
 
-    # test(name_prefix,
-    #      py3_inst,
-    #      args: [qemu_test_runner,
-    #             qemu_cmd,
-    #             app,
-    #             elf_target,
-    #            ],
-    #      env: [python_path],
-    #      workdir: freertos_src_dir,
-    #     )
+    if app in disabled_tests
+      py = disabler()
+    else
+      py = py3_inst
+    endif
+    test('run_qemu_' + name_prefix,
+         py,
+         args: [qemu_test_runner,
+                qemu_cmd,
+                app,
+                elf_target,
+               ],
+         env: [python_path],
+         workdir: freertos_src_dir,
+        )
 
 
   endforeach
