@@ -3,7 +3,7 @@
 import re
 def check(emulator, elf, result):
     if result.returncode:
-        exit(result.returncode)
+        raise RuntimeError(f"emulator failed: {result.returncode}")
     if not b'T' in result.stdout:
         raise RuntimeError("T missing")
     if not b't' in result.stdout:

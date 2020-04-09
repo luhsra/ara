@@ -3,7 +3,7 @@
 import re
 def check(emulator, elf, result):
     if result.returncode:
-        exit(result.returncode)
+        raise RuntimeError(f"emulator failed: {result.returncode}")
     if not b't' in result.stdout:
         raise RuntimeError("sender not working")
     if not b'TtTtTtUuUuUuVvVvVvWwWwWw' in result.stdout:
