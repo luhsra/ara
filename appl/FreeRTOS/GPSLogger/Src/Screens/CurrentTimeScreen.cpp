@@ -9,7 +9,7 @@
 
 extern Adafruit_SSD1306 display;
 
-TimeZoneScreen timeZoneScreen; //TODO Move it to CurrentTimeScreen class
+TimeZoneScreen timeZoneScreen; //TO_not_DO Move it to CurrentTimeScreen class
 
 void CurrentTimeScreen::drawScreen() const
 {
@@ -17,7 +17,7 @@ void CurrentTimeScreen::drawScreen() const
 	gps_fix gpsFix = GPSDataModel::instance().getGPSFix();
 	NeoGPS::time_t dateTime = gpsFix.dateTime + timeZoneScreen.getCurrentTimeZone() * 60; //timeZone is in minutes
 
-	// TODO: display approximate time even if GPS is not available
+	// TO_not_DO: display approximate time even if GPS is not available
 
 	display.setFont(&TimeFont);
 	display.setCursor(0,31);

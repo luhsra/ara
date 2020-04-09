@@ -4,7 +4,7 @@
 #include "FreeRTOS.h"
 #include "parsers.h"
 
-// TODO: Parse PLC Phy address to two integers composing a key
+// TO_not_DO: Parse PLC Phy address to two integers composing a key
 volatile struct Client *clientListBegin = NULL;
 volatile struct Client *clientListEnd = NULL;
 

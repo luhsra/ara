@@ -58,7 +58,7 @@ Screen * getCurrentScreen()
 
 void enterChildScreen(Screen * screen)
 {
-	screenIdx++; //TODO limit this
+	screenIdx++; //TO_not_DO limit this
 	screenStack[screenIdx] = screen;
 }
 
@@ -120,7 +120,7 @@ void processButton(const ButtonMessage &msg)
 	if(msg.button == OK_BUTTON && msg.event == BUTTON_CLICK)
 		getCurrentScreen()->onOkButton();
 
-	// TODO: handle long and very long button presses here
+	// TO_not_DO: handle long and very long button presses here
 }
 
 void vDisplayTask(void *pvParameters) 
@@ -142,7 +142,7 @@ void vDisplayTask(void *pvParameters)
 		}
 		
 		// Enter display off mode if needed
-		if(xTaskGetTickCount() - lastActionTicks > 10000) // TODO Store display off duration in settings
+		if(xTaskGetTickCount() - lastActionTicks > 10000) // TO_not_DO Store display off duration in settings
 		{
 			// Turn off the display
 			display.ssd1306_command(SSD1306_DISPLAYOFF);

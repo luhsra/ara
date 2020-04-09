@@ -3,7 +3,7 @@
 #include "common.h"
 #include "USBDebugLogger.h"
 #include "SerialDebugLogger.h"
-// TODO: perhaps it would be reasonable to detect button press via pin change interrupt
+// TO_not_DO: perhaps it would be reasonable to detect button press via pin change interrupt
 
 // Pins assignment
 const uint32_t SEL_BUTTON_PIN = LL_GPIO_PIN_13;
@@ -101,7 +101,7 @@ void vButtonsThread(void *pvParameters)
 			xQueueSend(buttonsQueue, &msg, 0);
 		}
 		
-		// TODO: Use different polling periods depending on global system state (off/idle/active)
+		// TO_not_DO: Use different polling periods depending on global system state (off/idle/active)
 		vTaskDelay(ACTIVE_POLL_PERIOD);
 	}
 }

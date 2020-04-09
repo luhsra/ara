@@ -20,7 +20,7 @@
 const char clientStr[] = "CLIENT";
 const char gatewayStr[] = "GATEWAY";
 
-/* TODO:    1. Use O_RDWR in place of O_WRONLY (problems occured when using o_RDWR)
+/* TO_not_DO:    1. Use O_RDWR in place of O_WRONLY (problems occured when using o_RDWR)
             2. Delete rubbish at the end of file, 
                 which are leftovers from past config data, which was longer than now. */
 

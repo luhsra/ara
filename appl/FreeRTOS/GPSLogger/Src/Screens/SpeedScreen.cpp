@@ -22,16 +22,16 @@ void SpeedScreen::drawScreen() const
 	gps_fix gpsFix = GPSDataModel::instance().getGPSFix();
 	    /*
 	// Draw speed
-	// TODO draw '----' if no GPS signal found. Requires new character in font
+	// TO_not_DO draw '----' if no GPS signal found. Requires new character in font
 	char buf[7]; // 6 symbols + trailing zero
 	//strcpy(buf, "----");
-	//printNumber(buf, gpsFix.speed_kph(), 4, true); // TODO: Add leading spaces
+	//printNumber(buf, gpsFix.speed_kph(), 4, true); // TO_not_DO: Add leading spaces
 	//display.setFont(&TimeFont);
 	display.setCursor(24,31);
 	display.print(buf);
 	
 	// Draw speed units
-	//display.setFont(&Monospace8x12Font); // TODO: Use slightly larger bold font
+	//display.setFont(&Monospace8x12Font); // TO_not_DO: Use slightly larger bold font
 	display.setCursor(90, 20);
 	display.print("km/h");
 
@@ -49,7 +49,7 @@ void SpeedScreen::drawScreen() const
 	display.print(buf);
 
 	// Draw heading letter
-	display.setFont(&Monospace8x12Font); // TODO: Use slightly larger bold font
+	display.setFont(&Monospace8x12Font); // TO_not_DO: Use slightly larger bold font
 	display.setCursor(2, 20);
 	if(gpsFix.valid.heading)
 		display.print(headingAsLetter(gpsFix.hdg.whole));

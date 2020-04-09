@@ -22,7 +22,7 @@ const uint8_t TimeFontBitmaps[] = {
 
 const GFXglyph TimeFontGlyphs[] =
 {
-	// TODO: Add space symbol
+	// TO_not_DO: Add space symbol
 	0, 14, 22, 16, 1, -22,		//0x30 '0'
 	39, 13, 22, 16, 2, -22,		//0x31 '1'
 	75, 14, 22, 16, 1, -22,		//0x32 '2'

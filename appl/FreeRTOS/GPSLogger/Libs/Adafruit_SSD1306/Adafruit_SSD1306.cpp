@@ -158,7 +158,7 @@ void Adafruit_SSD1306::begin(uint8_t vccstate, bool reset)
   // Initialize communication driver
   _driver->begin();
 
-  // TODO: Move this code to the driver's begin() method
+  // TO_not_DO: Move this code to the driver's begin() method
 /*
   if ((reset) && (_rst >= 0))
   {

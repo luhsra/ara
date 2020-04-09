@@ -21,10 +21,10 @@
 */
 
 /**
- * TODO: Check if txBuffer is NULL in every method
- * TODO: generate different BUFFER_SIZE values for different boards based on available memory
- * TODO: add alternate pin selection functions
- * TODO: add constructor with custom buffer parameter
+ * TO_not_DO: Check if txBuffer is NULL in every method
+ * TO_not_DO: generate different BUFFER_SIZE values for different boards based on available memory
+ * TO_not_DO: add alternate pin selection functions
+ * TO_not_DO: add constructor with custom buffer parameter
  */
 #include "SerialUART.h"
 #include "stm32_gpio_af.h"

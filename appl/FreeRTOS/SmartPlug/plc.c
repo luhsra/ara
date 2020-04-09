@@ -211,12 +211,12 @@ uint8_t readPLCintRegister(void)
 	return intStatusReg;
 }
 
-//TODO: Change comments to english
+//TO_not_DO: Change comments to english
 void initPLCdevice(uint8_t nodeLA)
 {
 	//  Konfiguracja pinu HOST_INT
 	//gpio_enable(HOST_INT_PIN, 234);
-	//TODO gpio_set_interrupt(HOST_INT_PIN, GPIO_INTTYPE_EDGE_NEG, hostIntPinHandler);
+	//TO_not_DO gpio_set_interrupt(HOST_INT_PIN, GPIO_INTTYPE_EDGE_NEG, hostIntPinHandler);
 
 	//	Uruchomienie i podstawowa konfiguracja modemu PLC
 	writePLCregister(PLC_MODE_REG, TX_ENABLE | RX_ENABLE | RX_OVERRIDE | ENABLE_BIU | CHECK_DA | VERIFY_PACKET_CRC8);
@@ -245,7 +245,7 @@ void fillPLCTxData(uint8_t *buf, uint8_t len)
 {
 	if (len > 32)
 	{
-		// TODO: Jeżeli ten warunek jest spełniony należy podzielić wiadomość.
+		// TO_not_DO: Jeżeli ten warunek jest spełniony należy podzielić wiadomość.
 		printf("Internal CY8CPLC10 buffer is shorter than len\n\r");
 		return;
 	}
@@ -412,7 +412,7 @@ void plcTaskSend(void *pvParameters)
 	}
 }
 
-// TODO: split into different files client side and gateway side functions.
+// TO_not_DO: split into different files client side and gateway side functions.
 enum PlcErr registerClient(struct ConfigData *configData)
 {
 	uint8_t rawPlcPhyAddr[8];
@@ -475,7 +475,7 @@ void registerNewClientTask(void *pvParameters)
 	newClient->deviceName[packetLen] = '\0';
 	getPLCrxSA(newClient->plcPhyAddr);
 
-	// TODO: Send reason of registration failure.
+	// TO_not_DO: Send reason of registration failure.
 	enum PlcErr result = PLC_ERR_OK;
 
 	struct sdk_station_config config;

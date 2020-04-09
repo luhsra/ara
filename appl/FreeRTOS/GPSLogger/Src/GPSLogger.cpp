@@ -99,7 +99,7 @@ int main(void)
 		//	serialDebugWrite("creating Threads\r\n");
 	m_startInits = CPU_CYCLES;
 	// Set up threads
-	// TODO: Consider encapsulating init and task functions into a class(es)
+	// TO_not_DO: Consider encapsulating init and task functions into a class(es)
 	xTaskCreate(vSDThread, "SD Thread", 512, NULL, tskIDLE_PRIORITY +4 , NULL);
 	xTaskCreate(vLEDThread, "LED Thread",	configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 

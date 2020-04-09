@@ -52,7 +52,7 @@ const int16_t timeZones[] =
 
 TimeZoneScreen::TimeZoneScreen()
 {
-	timeZoneIdx = 2; // TODO: get the value in settings EEPROM
+	timeZoneIdx = 2; // TO_not_DO: get the value in settings EEPROM
 }
 
 void TimeZoneScreen::drawScreen() const
@@ -76,7 +76,7 @@ void TimeZoneScreen::drawScreen() const
 	display.print("  UTC");
 
 	display.setCursor(78,24);
-	display.print(timeZone < 0 ? '-' : '+'); // TODO implement char printing for printf
+	display.print(timeZone < 0 ? '-' : '+'); // TO_not_DO implement char printing for printf
 	printToDisplay("%02d:%02d", abs(timeZone) / 60, abs(timeZone) % 60);
 }
 
@@ -88,9 +88,9 @@ void TimeZoneScreen::onSelButton()
 
 void TimeZoneScreen::onOkButton()
 {
-	//TODO: Apply time zone here and store it to Settings/EEPROM
+	//TO_not_DO: Apply time zone here and store it to Settings/EEPROM
 	
-	//TODO: consider handling a long press as a cancel operation
+	//TO_not_DO: consider handling a long press as a cancel operation
 	
 	backToParentScreen();
 }

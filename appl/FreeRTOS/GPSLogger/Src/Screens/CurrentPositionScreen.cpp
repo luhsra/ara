@@ -42,7 +42,7 @@ void CurrentPositionScreen::drawScreen() const
 	}
 
 	display.setCursor(0,20);
-	display.print(latitudeString); // TODO GFX library wraps the last symbol to new line
+	display.print(latitudeString); // TO_not_DO GFX library wraps the last symbol to new line
 	display.setCursor(0,32);
 	display.print(longtitudeString);
 }

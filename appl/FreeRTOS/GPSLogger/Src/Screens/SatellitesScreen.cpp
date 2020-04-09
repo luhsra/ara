@@ -35,7 +35,7 @@ void SatellitesScreen::drawScreen() const
 		uint8_t snr = satellites.getSatteliteSNR(sat);
 		if (snr > 50) // Cap value with 50 dBm
 			snr = 50;
-		uint8_t h = (float)snr * 22 / 50; // TODO: Remove hardcoded numbers. 22 is max height for a bar, 50 is max dBm
+		uint8_t h = (float)snr * 22 / 50; // TO_not_DO: Remove hardcoded numbers. 22 is max height for a bar, 50 is max dBm
 		display.fillRect(x, display.height() - h, width - 1, h, 1);
 
 		// Draw a short stroke above the tracked satellite bar

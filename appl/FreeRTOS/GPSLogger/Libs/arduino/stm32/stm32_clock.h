@@ -25,7 +25,7 @@
 * millis() https://www.arduino.cc/en/Reference/Millis
 * micros() https://www.arduino.cc/en/Reference/Micros
 * delay() https://www.arduino.cc/en/Reference/Delay
-* TODO delayMicroseconds() https://www.arduino.cc/en/Reference/DelayMicroseconds
+* TO_not_DO delayMicroseconds() https://www.arduino.cc/en/Reference/DelayMicroseconds
 */
 #ifndef STM32_CLOCK_H
 #define STM32_CLOCK_H
