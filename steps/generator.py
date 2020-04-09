@@ -37,7 +37,7 @@ class Generator(Step):
                                     help='style of resulting syscalls',
                                     step_name=self.get_name(),
                                     ty=Choice(*self.syscall_choices.keys()))
-        self.out_file = Option('output_file',
+        self.out_file = Option('generator_output',
                                  help='file to write the generated OS into',
                                  step_name=self.get_name(),
                                  glob=True,
