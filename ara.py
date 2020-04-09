@@ -25,7 +25,8 @@ def main():
     parser.add_argument('--verbose', '-v', help="alias for --log-level=info",
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
-                        choices=['warn', 'info', 'debug'], default='warn')
+                        choices=['warn', 'info', 'debug'],
+                        default=os.environ.get('ARA_LOGLEVEL', 'warn'))
     parser.add_argument('--dump', action='store_true', default=False,
                         help="emit a meaningful dot graph where possible")
     parser.add_argument('--dump-prefix', default='dumps/{step_name}.',
