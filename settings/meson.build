@@ -93,7 +93,7 @@ ara_gen_freertos_targets = ['vanilla',
                            ]
 
 foreach t : ara_gen_freertos_targets
-  set_variable('ara_gen_'+t, ara_gen_cmd +
+  set_variable('ara_gen_cmd_'+t, ara_gen_cmd +
                              [ '--step-settings',
                                files(join_paths(settings_dir, 'freertos_'+t+'.json')),
                              ]

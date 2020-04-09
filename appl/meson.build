@@ -54,7 +54,7 @@ foreach app : ['a',
                               depfile: name_prefix+ '-os.cc.dep',
                               output: [name_prefix + '-os.cc',
                                        name_prefix + '-os.cc.startup.s'],
-                              command: get_variable('ara_gen_' + t)
+                              command: get_variable('ara_gen_cmd_' + t)
                              )
 
     os_ll_target = custom_target(name_prefix + '-os.cc.ll',
