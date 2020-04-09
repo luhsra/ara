@@ -30,7 +30,7 @@ foreach app : ['a',
                'simple_queue_send',
                'thesis_print',
                'topological_sort']
-  ll_target = custom_target('freertos-' + app,
+  app_vanilla_ll = custom_target('freertos-' + app,
                             input : ['FreeRTOS/' + app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
                             depfile : 'freertos-' + app + '.ll.dep',
@@ -38,10 +38,10 @@ foreach app : ['a',
                                       libs_includes +
                                       ir_flags +
                                       clang_flags)
-  set_variable('freertos_' + app.underscorify(), ll_target)
+  set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
 
   o_target = custom_target('freertos-' + app + '.o',
-                            input : ll_target,
+                            input : app_vanilla_ll,
                             output : ['freertos-' + app + '.ll.o'],
                             command : llc_cmd)
 
@@ -49,13 +49,16 @@ foreach app : ['a',
   elf_targets = []
   foreach t : ara_gen_freertos_targets
     name_prefix = 'freertos-' + app + '-' + t
-    os_target = custom_target(name_prefix + '-os',
-                              input: ll_target,
-                              depfile: name_prefix+ '-os.cc.dep',
-                              output: [name_prefix + '-os.cc',
-                                       name_prefix + '-os.cc.startup.s'],
-                              command: get_variable('ara_gen_cmd_' + t)
-                             )
+    ara_target = custom_target(name_prefix + '-os',
+                               input: app_vanilla_ll,
+                               depfile: name_prefix+ '-os.cc.dep',
+                               output: [name_prefix + '-os.cc',
+                                        name_prefix + '-os.cc.startup.s',
+                                        name_prefix + '-modifiedapp.ll'],
+                               command: get_variable('ara_gen_cmd_' + t)
+                              )
+    os_target = [ara_target[0], ara_target[1]]
+    app_aramodified_ll = ara_target[2]
 
     os_ll_target = custom_target(name_prefix + '-os.cc.ll',
                                  input : os_target,
@@ -67,7 +70,7 @@ foreach app : ['a',
                                            clang_flags)
 
     app_os = custom_target(name_prefix + '-app_os.ll',
-                           input: [ll_target, os_ll_target],
+                           input: [app_aramodified_ll, os_ll_target],
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
 
@@ -144,7 +147,7 @@ foreach app : ['a',
   run_target('compare_size-' + app, command: [size, elf_targets])
   run_target('compare_time-' + app, command: [compare_time, app], depends: elf_targets)
 
-  freertos_targets += ll_target
+  freertos_targets += app_vanilla_ll
 endforeach
 
 # gpslogger is special
@@ -170,7 +173,7 @@ foreach app : [['a',                     'a.oil'],
                ['coptermok',             'coptermok.oil'],
                ['copter-without-alarms', 'copter-without-alarms.oil'],
                ['oiltest',               'oiltest.oil']]
-  ll_target = custom_target('osek-' + app[0],
+  app_vanilla_ll = custom_target('osek-' + app[0],
                             input : [join_paths([osek_folder, app[0] + '.cc'])],
                             output : ['osek-' + app[0] + '.ll'],
                             depfile : 'osek-' + app[0] + '.ll.dep',
@@ -178,8 +181,8 @@ foreach app : [['a',                     'a.oil'],
                                       libs_includes +
                                       ir_flags +
                                       clang_flags)
-    set_variable('osek_' + app[0].underscorify(), [ll_target, files(join_paths([osek_folder, app[1]]))])
-    osek_targets += ll_target
+    set_variable('osek_' + app[0].underscorify(), [app_vanilla_ll, files(join_paths([osek_folder, app[1]]))])
+    osek_targets += app_vanilla_ll
 endforeach
 
 osek_examples = run_target('osek-examples',

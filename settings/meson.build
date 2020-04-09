@@ -82,7 +82,8 @@ llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 
 ara_gen_cmd = [bash, sh,
                '@INPUT@',
-               '--output_file', '@OUTPUT0@',
+               '--generator_output', '@OUTPUT0@',
+               '--ir_output', '@OUTPUT2@',
                '--dependency_file', '@DEPFILE@',
               ]
 
