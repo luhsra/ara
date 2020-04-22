@@ -57,9 +57,9 @@ class InitializedFullSystemCalls(GenericSystemCalls):
             if not task.is_regular:
                 if task.name == 'idle_task':
                     idle_task = task
-                    self.logger.debug("IdleTask: %s", task)
+                    self._log.debug("IdleTask: %s", task)
                 continue
-            self.logger.debug("Generating init function call for %s", task)
+            self._log.debug("Generating init function call for %s", task)
             start_func = FunctionDeclaration(task.function,
                                              'void',
                                              ['void *'],

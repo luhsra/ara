@@ -67,7 +67,7 @@ default_traps = [
 class ArmArch(GenericArch):
 
     def static_stack(self, task):
-        self.logger.debug("Generating stack for %s", task)
+        self._log.debug("Generating stack for %s", task)
         stack = DataObjectArray("StackType_t",
                                 f'{task.name}_static_stack',
                                 f'{task.stack_size}',
@@ -77,7 +77,7 @@ class ArmArch(GenericArch):
         return stack
 
     def static_unchanged_tcb(self, task, initialized):
-        self.logger.debug("Generating TCB mem for %s", task)
+        self._log.debug("Generating TCB mem for %s", task)
         if initialized:
             tcb = self.TCB(task, initialized, extern_c=True)
         else:
@@ -89,7 +89,7 @@ class ArmArch(GenericArch):
         return tcb
 
     def initialized_stack(self, task):
-        self.logger.debug("Generating initialized stack for %s", task)
+        self._log.debug("Generating initialized stack for %s", task)
         stack = InstanceDataObject("InitializedStack_t",
                                    f'{task.name}_static_stack',
                                    [f'{task.stack_size}'],

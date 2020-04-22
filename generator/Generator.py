@@ -3,13 +3,14 @@ from .coder.elements import SourceFile, Include
 from .coder.implementations import TaskImpl
 
 class Generator:
-    def __init__(self, ara_graph, arch_rules, os_rules, syscall_rules, logger):
+    def __init__(self, ara_graph, ara_step, arch_rules, os_rules, syscall_rules, _log):
         self.ara_graph = ara_graph
+        self.ara_step = ara_step
         self.ara_graph.generator = self
         self.arch_rules = arch_rules
         self.os_rules = os_rules
         self.syscall_rules = syscall_rules
-        self.logger = logger
+        self._log = _log
 
         self.file_prefix = None
         self.source_file = None
@@ -24,7 +25,7 @@ class Generator:
     def generate(self, out_file):
         self.file_prefix = out_file
 
-        self.source_file = SourceFile()
+        self.source_file = SourceFile(self._log)
         self.source_files[''] = self.source_file
 
         #include "freertos.h"

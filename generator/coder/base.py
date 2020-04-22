@@ -9,7 +9,7 @@ class BaseCoder:
         self.arch_rules = None
         self.os_rules = None
         self.syscall_rules = None
-        self.logger = None
+        self._log = None
 
 
     def set_generator(self, generator):
@@ -18,13 +18,13 @@ class BaseCoder:
         self.syscall_rules = generator.syscall_rules
         self.arch_rules = generator.arch_rules
         self.os_rules = generator.os_rules
-        self.logger = generator.logger
+        self._log = generator._log.getChild(self.__class__.__name__)
 
 
     def generate_data_objects(self):
-        self.logger.warning("generate_data_objects not implemented: %s",
+        self._log.warning("generate_data_objects not implemented: %s",
                             self)
 
     def generate_system_code(self):
-        self.logger.warning("generate_system_code not implemented: %s",
+        self._log.warning("generate_system_code not implemented: %s",
                             self)

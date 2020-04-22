@@ -18,8 +18,9 @@ class Include:
         return ret
 
 class IncludeManager:
-    def __init__(self):
+    def __init__(self, _log):
         self.included_files = []
+        self._log = _log.getChild(self.__class__.__name__)
 
     def add(self, include):
         # Filter out duplicate includes

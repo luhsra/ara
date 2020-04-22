@@ -252,9 +252,10 @@ class InstanceDataObject(DataObject):
                          + self.name + args)
 
 class DataObjectManager:
-    def __init__(self):
+    def __init__(self, _log):
         # Namespace -> [DataObjects]
         self.__objects = {}
+        self._log = _log.getChild(self.__class__.__name__)
 
     def objects(self):
         """Iterate over all namespaces and collect all data objects"""
