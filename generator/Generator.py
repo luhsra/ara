@@ -1,6 +1,6 @@
 import os
 from .coder.elements import SourceFile, Include
-from .coder.implementations import TaskImpl
+from .coder.implementations import add_impl
 
 class Generator:
     def __init__(self, ara_graph, ara_step, arch_rules, os_rules, syscall_rules, _log):
@@ -33,8 +33,8 @@ class Generator:
 
         # storage for generated source elements
         for v in self.ara_graph.instances.vertices():
-            task = self.ara_graph.instances.vp.obj[v]
-            task.impl = TaskImpl()
+            instance = self.ara_graph.instances.vp.obj[v]
+            add_impl(instance)
 
         # generate all system objects
         self.arch_rules.generate_data_objects()
@@ -66,4 +66,4 @@ class Generator:
         return open(self.file_prefix + name, mode)
 
     def open_template(self, name):
-        return open(os.path.join(self.generator.template_base,name))
+        return open(os.path.join(self.template_base, name))

@@ -1,5 +1,6 @@
 src_files = [
   'tasks',
+  'queue',
 ]
 
 obj_targets = []

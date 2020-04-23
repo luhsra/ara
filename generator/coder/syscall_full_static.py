@@ -2,7 +2,7 @@ from .syscall_generic import GenericSystemCalls
 from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        Statement, Include,
                        FunctionDeclaration)
-from steps.freertos import Task
+from steps.freertos import Task, Queue
 
 class StaticFullSystemCalls(GenericSystemCalls):
 
@@ -16,8 +16,12 @@ class StaticFullSystemCalls(GenericSystemCalls):
         task_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        queue_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
         self.generate_dataobjects_task_stacks(task_list)
         self.generate_data_objects_tcb_mem(task_list)
+        self.generate_data_objects_queue_mem(queue_list)
 
     def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''
@@ -29,13 +33,29 @@ class StaticFullSystemCalls(GenericSystemCalls):
         for task in task_list:
             self.arch_rules.static_unchanged_tcb(task, initialized=False)
 
+    def generate_data_objects_queue_mem(self, queue_list):
+        '''generate the memory for the queue heads and data'''
+        for queue in queue_list:
+            self._log.debug('Queue: %s', queue.name)
+            if not queue.branch:
+                queue.impl.init = 'static'
+                self.arch_rules.static_unchanged_queue(queue, initialized=False)
 
     def generate_system_code(self):
         super().generate_system_code()
         task_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        queue_list = [self.ara_graph.instances.vp.obj[v]
+                      for v in self.ara_graph.instances.vertices()
+                      if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
+        self._log.debug("Instances: %s", len(list(self.ara_graph.instances.vertices())))
+        self._log.debug("Tasks: %s", len(task_list))
+        self._log.debug("Queues: %s", len(queue_list))
+        self.replace_task_create(task_list)
         self.generate_system_code_init_tasks(task_list)
+        if len(queue_list) != 0:
+            self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
 
 
     def generate_system_code_init_tasks(self, task_list):
