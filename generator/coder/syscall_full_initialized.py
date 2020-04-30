@@ -70,7 +70,7 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                                      'BaseType_t',
                                      ['TaskFunction_t',
                                       'const char *',
-                                      'const uint16_t',
+                                      'const uint32_t',
                                       'void * const',
                                       'UBaseType_t',
                                       'TaskHandle_t *'
