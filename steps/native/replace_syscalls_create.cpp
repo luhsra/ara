@@ -70,7 +70,7 @@ namespace ara::step {
 
 
 	void ReplaceSyscallsCreate::run(graph::Graph& graph) {
-		logger.err() << "this should never happen" << std::endl;
+		logger.error() << "this should never happen" << std::endl;
 		exit(1);
 		return;
 	}
@@ -84,7 +84,7 @@ namespace ara::step {
 		assert(old_func != nullptr && "Missing call target");
 
 		if ("xQueueGenericCreate" != old_func->getName().str()) {
-			logger.err() <<  "wrong function found: " << old_func->getName().str() << std::endl;
+			logger.error() <<  "wrong function found: " << old_func->getName().str() << std::endl;
 			exit(1);
 		}
 		assert(old_func->arg_size() == 3 && "Wrong number of parameters");
