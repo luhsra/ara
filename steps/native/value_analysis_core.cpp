@@ -8,75 +8,69 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/python.hpp>
 
+#define VERSION_BKP VERSION
+#undef VERSION
+#include <Util/BasicTypes.h>
+#include <Util/VFGNode.h>
+#include <WPA/Andersen.h>
+#undef VERSION
+#define VERSION VERSION_BKP
+#undef VERSION_BKP
+
 using namespace boost::property_tree;
 
 namespace ara::step {
-	namespace {
-		template <typename Graph>
-		void get_values(Graph& g, graph::CFG& cfg, Logger& logger, bool dump_stats, const std::string& prefix,
-		                const std::string& entry_point) {
-			using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
-			Vertex entry_func;
+	void ValueAnalysisCore::retrieve_value(const SVFG& vfg, const llvm::Value& value) {
+		logger.debug() << "Trying to get value of " << value << std::endl;
+		PAG* pag = PAG::getPAG();
 
-			try {
-				entry_func = cfg.get_function_by_name(g, entry_point);
-			} catch (FunctionNotFound&) {
-				std::stringstream ss;
-				ss << "Bad entry point given: " << entry_point << ". Could not be found.";
-				logger.error() << ss.str();
-				throw StepError("ICFG", ss.str());
-			}
+		PAGNode* pNode = pag->getPAGNode(pag->getValueNode(&value));
+		assert(pNode != nullptr);
+		const VFGNode* vNode = vfg.getDefSVFGNode(pNode);
+		assert(vNode != nullptr);
+		FIFOWorkList<const VFGNode*> worklist;
+		std::set<const VFGNode*> visited;
+		worklist.push(vNode);
 
-			ValueAnalyzer va(logger);
-			ptree stats;
-
-			std::function<void(const Graph&, graph::CFG&, Vertex)> do_with_abb = [&](const Graph&, graph::CFG& lcfg,
-			                                                                         Vertex abb) {
-				if (lcfg.type[abb] == graph::ABBType::syscall) {
-					// get call of abb
-					llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(lcfg.entry_bb[abb]);
-					llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
-					if (called_func) {
-						std::pair<Arguments, std::vector<std::vector<unsigned>>> args_pair =
-						    va.get_values(*called_func);
-						Arguments& args = args_pair.first;
-
-						// statistic printing
-						if (dump_stats) {
-							ptree arg_stats;
-							arg_stats.put("basic_block", bb->getName().str());
-							llvm::Function* func = called_func->getCalledFunction();
-							if (func) {
-								arg_stats.put("called_function", func->getName().str());
-							}
-							int i = 0;
-							for (auto& numbers : args_pair.second) {
-								std::stringstream ss;
-								ss << "argument " << i++;
-								ptree stat_list;
-								for (unsigned num : numbers) {
-									stat_list.push_back(std::make_pair("", ptree(std::to_string(num))));
-								}
-								arg_stats.add_child(ss.str(), stat_list);
-							}
-							std::string abb_name = lcfg.name[abb];
-							stats.add_child(abb_name, arg_stats);
-						}
-
-						lcfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
-						logger.debug() << "Retrieved " << args.size() << " arguments for call " << *called_func
-						               << std::endl;
-					} else {
-						logger.warn() << "Something went wrong. Cannot retrieve called function." << std::endl;
-					}
-					if (dump_stats) {
-						json_parser::write_json(prefix + "value_analysis_statistics.json", stats);
-					}
+		/// Traverse along VFG
+		while (!worklist.empty()) {
+			const VFGNode* vNode = worklist.pop();
+			logger.debug() << "Handle VFGNode " << *vNode << std::endl;
+			visited.insert(vNode);
+			for (VFGNode::const_iterator it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it != eit; ++it) {
+				if (visited.find((*it)->getDstNode()) == visited.end()) {
+					logger.debug() << "Insert vNode " << *(*it)->getDstNode() << std::endl;
+					worklist.push((*it)->getDstNode());
 				}
-			};
-			cfg.execute_on_reachable_abbs(g, entry_func, do_with_abb);
+			}
 		}
-	} // namespace
+
+		/// Collect all LLVM Values
+		for (std::set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it != eit; ++it) {
+			const VFGNode* node = *it;
+			/// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
+			const PAGNode* pNode = vfg.getLHSTopLevPtr(node);
+			const Value* val = pNode->getValue();
+			logger.debug() << "Found Value: " << *val << std::endl;
+		}
+	}
+
+	void ValueAnalysisCore::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call) {
+		if (isCallToLLVMIntrinsic(&call)) {
+			throw ValuesUnknown("Called function is an intrinsic.");
+		}
+
+		for (const llvm::Use& use : call.args()) {
+			const Value* val = use.get();
+			if (const llvm::Constant* c = llvm::dyn_cast<llvm::Constant>(val)) {
+				// we have found a direct constant, no need for further analysis
+				this->logger.debug() << "Found direct constant: " << *c << std::endl;
+			} else {
+				assert(val != nullptr);
+				retrieve_value(vfg, *val);
+			}
+		}
+	}
 
 	llvm::json::Array ValueAnalysisCore::get_configured_dependencies() {
 		const auto& entry_point_name = entry_point.get();
@@ -101,8 +95,10 @@ namespace ara::step {
 		const auto& entry_point_name = entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
 
-		graph_tool::gt_dispatch<>()(
-		    [&](auto& g) { get_values(g, cfg, logger, dopt && *dopt, *prefix, *entry_point_name); },
-		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		SVFG* svfg = SVFGBuilder::globalSvfg;
+		assert(svfg != nullptr && "svfg is null")
+
+		    graph_tool::gt_dispatch<>()([&](auto& g) { this->get_values(g, *svfg); },
+		                                graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
 } // namespace ara::step
