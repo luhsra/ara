@@ -265,6 +265,7 @@ class DataObjectManager:
         return ret
 
     def add(self, obj, phase = 0, namespace=None):
+        self._log.debug("add: %s", obj)
         obj.data_object_manager = self
         # Check whether data object was already defined with that
         # name/type:
@@ -272,7 +273,7 @@ class DataObjectManager:
             if obj.name == old_obj.name:
                 assert obj.typename == old_obj.typename, "Variable %s already defined with different type" % obj.name
                 # Do not add another instance for this object
-                return
+                raise ValueError(f"duplicated element {obj.name} ({obj.typename})")
         obj.phase = phase
 
         if not namespace in self.__objects:

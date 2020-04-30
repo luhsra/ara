@@ -67,11 +67,11 @@ class StaticFullSystemCalls(GenericSystemCalls):
         )
         idle_task = None
         for task in task_list:
-            self._log.debug("Task: %s", task)
+            self._log.debug("Task: %s", task.name)
             if not task.is_regular:
                 if task.name == 'idle_task':
                     idle_task = task
-                    self._log.debug("IdleTask: %s", task)
+                    self._log.debug("IdleTask: %s", task.name)
                 continue
             self._log.debug("Generating init function call for %s", task)
             init_func.add(FunctionCall("xTaskCreateStatic",
@@ -93,7 +93,7 @@ class StaticFullSystemCalls(GenericSystemCalls):
 
 
         if not idle_task:
-            self._log.warn("IdleTask not found")
+            self._log.warning("IdleTask not found")
         else:
             mem_f = Function('vApplicationGetIdleTaskMemory',
                                          'void',
