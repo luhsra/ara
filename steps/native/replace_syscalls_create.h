@@ -20,6 +20,8 @@ namespace ara::step {
 
 		virtual void run(graph::Graph& graph) override;
 		bool replace_queue_create_static(graph::Graph& graph, int where, char* symbol_metadata, char* symbol_storage);
+		bool replace_queue_create_initialized(graph::Graph& graph, int where, char* symbol_metadata);
 		bool replace_task_create_static(graph::Graph& graph, int where, char* handle_name,  char* stack_name);
+		bool replace_task_create_initialized(graph::Graph& graph, int where, char* handle_name);
 	};
 } // namespace ara::step

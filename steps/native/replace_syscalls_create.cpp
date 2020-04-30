@@ -124,6 +124,44 @@ namespace ara::step {
 		return true;
 	}
 
+	bool ReplaceSyscallsCreate::replace_queue_create_initialized(graph::Graph& graph, int where, char* symbol_metadata) {
+				Module &module = graph.get_module();
+		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
+		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
+		Function *old_func = old_create_call->getCalledFunction();
+
+		assert(old_func != nullptr && "Missing call target");
+
+		if ("xQueueGenericCreate" != old_func->getName().str()) {
+			logger.error() <<  "wrong function found: " << old_func->getName().str() << std::endl;
+			exit(1);
+		}
+		Function* create_static_fn = get_fn(module, logger, "xQueueGenericCreateStatic");
+		if (create_static_fn == nullptr) {
+			return false;
+		}
+
+		llvm::IRBuilder<> Builder(module.getContext());
+		Builder.SetInsertPoint(old_create_call);
+
+		GlobalVariable *queue_meta_data_val = new GlobalVariable(module, // module
+																 dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(3))->getElementType(),
+																 // get_type(module, logger, freertos_types::queue_metadata), // type
+																 false, // isConstant
+																 GlobalValue::ExternalLinkage,
+																 nullptr, // initializer
+																 symbol_metadata, // name
+																 nullptr, // insertBefore
+																 GlobalVariable::NotThreadLocal,
+																 0, // AddressSpace
+																 false); // isExternallyInitialized
+		queue_meta_data_val->setDSOLocal(true);
+		Value* handle = Builder.CreatePointerCast(queue_meta_data_val, old_func->getFunctionType()->getReturnType());
+		old_create_call->replaceAllUsesWith(handle);
+		old_create_call->removeFromParent();
+		return true;
+	}
+
 	bool ReplaceSyscallsCreate::replace_task_create_static(graph::Graph& graph, int where, char* tcb_name, char* stack_name) {
 		Module &module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
@@ -170,4 +208,34 @@ namespace ara::step {
 		}
 		return true;
 	}
+
+	bool ReplaceSyscallsCreate::replace_task_create_initialized(graph::Graph& graph, int where, char *tcb_name) {
+		Module &module = graph.get_module();
+		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
+		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
+		Function *old_func = old_create_call->getCalledFunction();
+
+		if ("xTaskCreate" != old_func->getName().str()) {
+			if ("vTaskStartScheduler" == old_func->getName().str()) {
+				//skip idle task
+				return true;
+			}
+			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
+			return false;
+		}
+
+		IRBuilder<> Builder(module.getContext());
+		Builder.SetInsertPoint(old_create_call);
+
+		GlobalVariable *task_tcb = new GlobalVariable(module, dyn_cast<PointerType>(old_func->getFunctionType()->getParamType(5))->getElementType(), false, GlobalValue::ExternalLinkage, nullptr, tcb_name, nullptr, GlobalVariable::NotThreadLocal, 0, false);
+
+		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb, logger)) {
+			return false;
+		}
+		if (!replace_call_with_true(old_create_call)) {
+			return false;
+		}
+		return true;
+	}
+
 } // namespace ara::step

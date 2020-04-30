@@ -163,7 +163,8 @@ class DataObjectArray(DataObject):
 
     def lvalue(self, child=None):
         lv = self.container.lvalue(self) if self.container else self.name
-        lv += f'[{child.name}]'
+        if child is not None:
+            lv += f'[{child.name}]'
         return lv
 
 

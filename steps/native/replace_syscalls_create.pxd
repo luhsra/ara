@@ -14,4 +14,6 @@ cdef extern from "replace_syscalls_create.h" namespace "ara::step":
         vector[string] get_dependencies()
         void run(cgraph.Graph a)
         bool replace_queue_create_static(cgraph.Graph, int, char*, char*)
+        bool replace_queue_create_initialized(cgraph.Graph, int, char*)
         bool replace_task_create_static(cgraph.Graph, int, char*, char*)
+        bool replace_task_create_initialized(cgraph.Graph, int, char*)

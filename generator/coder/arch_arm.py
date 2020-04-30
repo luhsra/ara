@@ -102,18 +102,15 @@ class ArmArch(GenericArch):
 
     def static_unchanged_queue(self, queue, initialized):
         self._log.debug("Generating Queue: %s", queue.name)
-        head = DataObject('StaticQueue_t',
-                          # f'{queue.name}_queue_head',
-                          f'queue_meta_data_{queue.name}',
-                          extern_c = True)
-        self.generator.source_file.data_manager.add(head)
-        queue.impl.head = head
         data = DataObjectArray('uint8_t',
                                # f'{queue.name}_queue_data',
                                f'queue_data_{queue.name}',
                                queue.size * queue.length)
         self.generator.source_file.data_manager.add(data)
         queue.impl.data = data
+        head = self.QUEUE(queue, initialized, extern_c=True)
+        self.generator.source_file.data_manager.add(head)
+        queue.impl.head = head
 
     def generate_startup_code(self):
         GenericArch.generate_startup_code(self)

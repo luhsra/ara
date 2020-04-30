@@ -21,7 +21,9 @@ class StaticFullSystemCalls(GenericSystemCalls):
                      if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
         self.generate_dataobjects_task_stacks(task_list)
         self.generate_data_objects_tcb_mem(task_list)
-        self.generate_data_objects_queue_mem(queue_list)
+        self.generate_data_objects_queue_mem(queue_list, 'static')
+        self.generator.source_file.includes.add(Include('queue.h'))
+
 
     def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''
@@ -32,14 +34,6 @@ class StaticFullSystemCalls(GenericSystemCalls):
         '''generate the memory for the tcbs'''
         for task in task_list:
             self.arch_rules.static_unchanged_tcb(task, initialized=False)
-
-    def generate_data_objects_queue_mem(self, queue_list):
-        '''generate the memory for the queue heads and data'''
-        for queue in queue_list:
-            self._log.debug('Queue: %s', queue.name)
-            if not queue.branch:
-                queue.impl.init = 'static'
-                self.arch_rules.static_unchanged_queue(queue, initialized=False)
 
     def generate_system_code(self):
         super().generate_system_code()

@@ -31,20 +31,34 @@ cdef class ReplaceSyscallsCreate(NativeStep):
     def handle_queue(self, queue):
         if queue.impl.init == 'static':
             self._queue_create_static(queue)
+        elif queue.impl.init == 'initialized':
+            self._queue_create_initialized(queue)
 
     def _queue_create_static(self, queue):
         success = self._c_.replace_queue_create_static(self.gwrap, self.g.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode(), queue.impl.data.name.encode())
         if not success:
             raise RuntimeError(f"Failed to create static create syscall for {queue}")
 
+    def _queue_create_initialized(self, queue):
+        success = self._c_.replace_queue_create_initialized(self.gwrap, self.g.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode())
+        if not success:
+            raise RuntimeError(f"Failed to create static create syscall for {queue}")
+
     def handle_task(self, task):
         if task.impl.init == 'static':
             self._task_create_static(task)
+        elif task.impl.init == 'initialized':
+            self._task_create_initialized(task)
 
     def _task_create_static(self, task):
         success = self._c_.replace_task_create_static(self.gwrap, self.g.cfg.vp.entry_bb[task.abb], task.impl.tcb.name.encode(), task.impl.stack.name.encode())
         if not success:
             raise RuntimeError(f"Failed to create static create syscall for {task}")
+
+    def _task_create_initialized(self, task):
+        success = self._c_.replace_task_create_initialized(self.gwrap, self.g.cfg.vp.entry_bb[task.abb], task.impl.tcb.name.encode())
+        if not success:
+            raise RuntimeError(f"Failed to create initialized create syscall for {task}")
 
 cdef _native_fac_ReplaceSyscallsCreate():
     """Construct a NativeStep. Expects an already constructed C++-Step pointer.
