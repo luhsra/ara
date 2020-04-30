@@ -6,6 +6,6 @@
 
 [external "svf"]
 	path = subprojects/svf
-	url = https://github.com/SVF-tools/SVF
-	branch = master
+	url = https://github.com/luhsra/SVF
+	branch = sra
 	vcs = git
