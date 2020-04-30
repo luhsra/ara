@@ -1,6 +1,6 @@
 from .syscall_generic import GenericSystemCalls
 from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
-                       Statement, Include,
+                       Statement, Include, CPPStatement,
                        FunctionDeclaration)
 from steps.freertos import Task, Queue
 
@@ -54,8 +54,20 @@ class StaticFullSystemCalls(GenericSystemCalls):
         self._log.debug("Queues: %s", len(queue_list))
         self.replace_task_create(task_list)
         self.generate_system_code_init_tasks(task_list)
-        if len(queue_list) != 0:
+        config = Include('FreeRTOSConfig.h')
+        config.add_overwrite(CPPStatement('define', 'configSUPPORT_STATIC_ALLOCATION 1'))
+        self.generator.source_file.includes.add(config, 0)
+
+        self.generator.source_file.includes.add(Include('FreeRTOS.h'))
+        if len(task_list) or len(queue_list):
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
+
+    def replace_task_create(self, task_list):
+        self._log.warning("TODO: richtige Bedingung wählen")
+        for task in task_list:
+            if not task.branch:
+                task.impl.init = 'static'
+
 
 
     def generate_system_code_init_tasks(self, task_list):
@@ -73,21 +85,6 @@ class StaticFullSystemCalls(GenericSystemCalls):
                     idle_task = task
                     self._log.debug("IdleTask: %s", task.name)
                 continue
-            self._log.debug("Generating init function call for %s", task)
-            init_func.add(FunctionCall("xTaskCreateStatic",
-                                       [f'{task.function}',
-                                        f'"{task.name}"',
-                                        f'{task.stack_size}',
-                                        f'{task.parameters}',
-                                        f'{task.priority}',
-                                        f'{task.impl.stack.name}',
-                                        f'&{task.impl.tcb.name}',
-                                       ]))
-            start_func = FunctionDeclaration(task.function,
-                                             'void',
-                                             ['void *'],
-                                             extern_c=True)
-            self.generator.source_file.function_manager.add(start_func)
 
         self.generator.source_file.function_manager.add(init_func)
 
@@ -106,30 +103,5 @@ class StaticFullSystemCalls(GenericSystemCalls):
             mem_f.add(Statement(f"*arg1 = &({idle_task.impl.stack.name}[0])"))
             mem_f.add(Statement(f"*arg2 = {idle_task.stack_size}"))
             self.generator.source_file.function_manager.add(mem_f)
-
-        dummy_xTaskCreate = Function('xTaskCreate',
-                                     'BaseType_t',
-                                     ['TaskFunction_t',
-                                      'const char *',
-                                      'const uint16_t',
-                                      'void * const',
-                                      'UBaseType_t',
-                                      'TaskHandle_t *'
-                                      ])
-        dummy_xTaskCreate.add(Statement("return pdPASS"))
-        self.generator.source_file.function_manager.add(dummy_xTaskCreate)
-
-        dummy_xTaskCreateStatic = FunctionDeclaration('xTaskCreateStatic',
-                                                      'TaskHandle_t',
-                                                      ['TaskFunction_t',
-                                                       'const char *',
-                                                       'const uint16_t',
-                                                       'void * const',
-                                                       'UBaseType_t',
-                                                       'StackType_t *',
-                                                       'StaticTask_t *'
-                                                      ],
-                                                      extern_c=True)
-        self.generator.source_file.function_manager.add(dummy_xTaskCreateStatic)
 
         self._init.add(FunctionCall('init_static_system_objects',[]))

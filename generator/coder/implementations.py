@@ -6,6 +6,7 @@ class TaskImpl:
         self.stackptr = None
         self.tcb = None
         self.tcbptr = None
+        self.init = None
 
 class QueueImpl:
     def __init__(self):

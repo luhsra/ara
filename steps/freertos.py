@@ -112,7 +112,7 @@ class FreeRTOS:
         task_stack_size = state.cfg.vp.arguments[abb][2].get(call_path=cp)
         task_parameters = state.cfg.vp.arguments[abb][3].get(call_path=cp)
         task_priority = state.cfg.vp.arguments[abb][4].get(call_path=cp)
-        task_handle_p = state.cfg.vp.arguments[abb][5].get(call_path=cp)
+        task_handle_p = state.cfg.vp.arguments[abb][5].get(call_path=cp, raw=True)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name

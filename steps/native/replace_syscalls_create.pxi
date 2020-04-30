@@ -19,22 +19,32 @@ cdef class ReplaceSyscallsCreate(NativeStep):
         self.g = g
         cdef llvm_data.PyLLVMData llvm_w = g._llvm_data
         self.gwrap = cgraph.Graph(g, llvm_w._c_data)
-        self.handle_queues(g)
+
+        for v in g.instances.vertices():
+            inst = g.instances.vp.obj[v]
+            if isinstance(inst, Queue):
+                self.handle_queue(inst)
+            elif isinstance(inst, Task):
+                self.handle_task(inst)
 
 
-    def handle_queues(self, g):
-        self.g = g
-        queue_list = [g.instances.vp.obj[v]
-                      for v in g.instances.vertices()
-                      if isinstance(g.instances.vp.obj[v], Queue)]
+    def handle_queue(self, queue):
+        if queue.impl.init == 'static':
+            self._queue_create_static(queue)
 
-        for queue in queue_list:
-            if queue.impl.init == 'static':
-                self._create_queue_static(queue)
+    def _queue_create_static(self, queue):
+        success = self._c_.replace_queue_create_static(self.gwrap, self.g.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode(), queue.impl.data.name.encode())
+        if not success:
+            raise RuntimeError(f"Failed to create static create syscall for {queue}")
 
-    def _create_queue_static(self, queue):
-        self._c_.replace_queue_create_static(self.gwrap, self.g.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode(), queue.impl.data.name.encode())
-        pass
+    def handle_task(self, task):
+        if task.impl.init == 'static':
+            self._task_create_static(task)
+
+    def _task_create_static(self, task):
+        success = self._c_.replace_task_create_static(self.gwrap, self.g.cfg.vp.entry_bb[task.abb], task.impl.tcb.name.encode(), task.impl.stack.name.encode())
+        if not success:
+            raise RuntimeError(f"Failed to create static create syscall for {task}")
 
 cdef _native_fac_ReplaceSyscallsCreate():
     """Construct a NativeStep. Expects an already constructed C++-Step pointer.
