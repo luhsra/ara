@@ -18,11 +18,11 @@ void vTask2(void * param) {
     taskENTER_CRITICAL();
     print_startup_statistics();
     taskEXIT_CRITICAL();
-  for (;;) {
+  for (int i = 0; i < 3; ++i) {
     taskENTER_CRITICAL();
 	kout << 't';
     taskEXIT_CRITICAL();
-	for (i = 0; i < 300000; ++i);
+	taskYIELD();
   }
 }
 
@@ -33,8 +33,9 @@ void vTask1(void * param) {
     taskENTER_CRITICAL();
 	kout << 'T';
     taskEXIT_CRITICAL();
-	for (j = 0; j < 300000; ++j);
+	taskYIELD();
   }
+  for (j = 0; j < 300000; ++j);
   StopBoard();
 }
 
