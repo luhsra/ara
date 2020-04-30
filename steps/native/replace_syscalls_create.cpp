@@ -42,7 +42,7 @@ namespace ara::step {
 			return true;
 		}
 
-		Function* get_fn(Module &module, Logger &logger, char* name) {
+		Function* get_fn(Module &module, Logger &logger, const char* name) {
 			Function* fn = module.getFunction(name);
 			if (fn != nullptr) {
 				logger.debug() << "found '" << name << "' candidate: " << *fn<<std::endl;
@@ -62,6 +62,7 @@ namespace ara::step {
 
 
 	void ReplaceSyscallsCreate::run(graph::Graph& graph) {
+		(void) graph;
 		logger.error() << "this should never happen" << std::endl;
 		exit(1);
 		return;
@@ -197,6 +198,9 @@ namespace ara::step {
 		IRBuilder<> Builder(module.getContext());
 		Builder.SetInsertPoint(old_create_call);
 		Value* new_ret = Builder.CreateCall(create_static_fn, new_args, "static_handle");
+		if (new_ret == nullptr) {
+			return false;
+		}
 		logger.debug() << "handle: " << *old_create_call->getArgOperand(5) << std::endl;
 
 		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb, logger)) {
