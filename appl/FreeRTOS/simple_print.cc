@@ -12,6 +12,8 @@ TIME_MARKER(done_InitBoard);
 TIME_MARKER(done_hello_print);
 TIME_MARKER(done_tastCreate);
 
+TaskHandle_t handle_zzz;
+
 volatile int i = 0;
 void vTask2(void * param) {
   STORE_TIME_MARKER(task2_go);
@@ -36,6 +38,11 @@ void vTask1(void * param) {
 	taskYIELD();
   }
   for (j = 0; j < 300000; ++j);
+  taskENTER_CRITICAL();
+  kout << endl;
+  kout << "my_handle: " << xTaskGetCurrentTaskHandle() << endl;
+  kout << "T1 handle: " << handle_zzz << endl;
+  taskEXIT_CRITICAL();
   StopBoard();
 }
 
@@ -50,7 +57,7 @@ int main() {
   kout << "hello from main" << endl;
   STORE_TIME_MARKER(done_hello_print);
 
-  xTaskCreate(vTask1, "zzz", 1000, NULL, 1, NULL);
+  xTaskCreate(vTask1, "zzz", 1000, NULL, 1, &handle_zzz);
   xTaskCreate(vTask2, "xxx", 1000, NULL, 1, NULL);
   STORE_TIME_MARKER(done_tastCreate);
 
