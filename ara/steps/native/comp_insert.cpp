@@ -20,7 +20,7 @@ namespace ara::step {
 		       "Insert the nop only, if the call is followed by another call or at the end. ";
 	}
 
-	std::vector<std::string> CompInsert::get_single_dependencies() { return {"CFGOptimize"}; }
+	std::vector<std::string> CompInsert::get_single_dependencies() { return {"CFGOptimize", "SVFTransformation"}; }
 
 	void CompInsert::run() {
 		llvm::Module& module = graph.get_module();

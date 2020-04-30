@@ -64,6 +64,10 @@ cdef extern from "load_freertos_config.h" namespace "ara::step":
     cdef cppclass LoadFreeRTOSConfig:
         pass
 
+cdef extern from "svf_transformation.h" namespace "ara::step":
+    cdef cppclass SVFTransformation:
+        pass
+
 cdef extern from "value_analysis_core.h" namespace "ara::step":
     cdef cppclass ValueAnalysisCore:
         pass
