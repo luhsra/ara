@@ -1,3 +1,5 @@
+app_flags = ['-DconfigINCLUDE_ALL_DECLS=1',
+             ]
 
 
 # FreeRTOS examples
@@ -65,6 +67,7 @@ foreach app : ['a',
                             output : ['freertos-' + app + '.ll'],
                             depfile : 'freertos-' + app + '.ll.dep',
                             command : clang_cpp +
+                                      app_flags +
                                       libs_includes +
                                       ir_flags +
                                       clang_flags)

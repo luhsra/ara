@@ -530,7 +530,7 @@ BaseType_t xTaskCreate(
  * \defgroup xTaskCreateStatic xTaskCreateStatic
  * \ingroup Tasks
  */
-#if (configSUPPORT_STATIC_ALLOCATION == 1)
+#if (configSUPPORT_STATIC_ALLOCATION == 0 || configINCLUDE_ALL_DECLS)
 TaskHandle_t xTaskCreateStatic(
     TaskFunction_t pxTaskCode,
     const char* const pcName, /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
@@ -610,7 +610,7 @@ TaskHandle_t xHandle;
  * \defgroup xTaskCreateRestricted xTaskCreateRestricted
  * \ingroup Tasks
  */
-#if (portUSING_MPU_WRAPPERS == 1)
+#if (portUSING_MPU_WRAPPERS == 1 || configINCLUDE_ALL_DECLS)
 BaseType_t xTaskCreateRestricted(const TaskParameters_t* const pxTaskDefinition,
                                  TaskHandle_t* pxCreatedTask) PRIVILEGED_FUNCTION;
 #endif
@@ -699,7 +699,7 @@ TaskHandle_t xHandle;
  * \defgroup xTaskCreateRestrictedStatic xTaskCreateRestrictedStatic
  * \ingroup Tasks
  */
-#if ((portUSING_MPU_WRAPPERS == 1) && (configSUPPORT_STATIC_ALLOCATION == 1))
+#if ((portUSING_MPU_WRAPPERS == 1) && (configSUPPORT_STATIC_ALLOCATION == 1) || configINCLUDE_ALL_DECLS)
 BaseType_t xTaskCreateRestrictedStatic(const TaskParameters_t* const pxTaskDefinition,
                                        TaskHandle_t* pxCreatedTask) PRIVILEGED_FUNCTION;
 #endif
@@ -1561,8 +1561,8 @@ so the following two prototypes will cause a compilation error.  This can be
 fixed by simply guarding against the inclusion of these two prototypes unless
 they are explicitly required by the configUSE_APPLICATION_TASK_TAG configuration
 constant. */
-#ifdef configUSE_APPLICATION_TASK_TAG
-#if configUSE_APPLICATION_TASK_TAG == 1
+#ifdef configUSE_APPLICATION_TASK_TAG || configINCLUDE_ALL_DECLS
+#if configUSE_APPLICATION_TASK_TAG == 1 || configINCLUDE_ALL_DECLS
 /**
  * task.h
  * <pre>void vTaskSetApplicationTaskTag( TaskHandle_t xTask, TaskHookFunction_t pxHookFunction );</pre>
@@ -1594,7 +1594,7 @@ TaskHookFunction_t xTaskGetApplicationTaskTagFromISR(TaskHandle_t xTask) PRIVILE
 #endif /* configUSE_APPLICATION_TASK_TAG ==1 */
 #endif /* ifdef configUSE_APPLICATION_TASK_TAG */
 
-#if (configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0)
+#if (configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0) || configINCLUDE_ALL_DECLS
 
 /* Each task contains an array of pointers that is dimensioned by the
 configNUM_THREAD_LOCAL_STORAGE_POINTERS setting in FreeRTOSConfig.h.  The
@@ -2523,6 +2523,80 @@ TaskHandle_t pvTaskIncrementMutexHeldCount(void) PRIVILEGED_FUNCTION;
 void vTaskInternalSetTimeOutState(TimeOut_t* const pxTimeOut) PRIVILEGED_FUNCTION;
 
 #ifdef __cplusplus
+}
+#endif
+
+#if configINCLUDE_ALL_DECLS
+__attribute((weak)) void __decl_all_task() {
+  (void *) eTaskConfirmSleepModeStatus;
+  (void *) eTaskGetState;
+  (void *) pcTaskGetName;
+  (void *) pvTaskGetThreadLocalStoragePointer;
+  (void *) pvTaskIncrementMutexHeldCount;
+  (void *) ulTaskNotifyTake;
+  (void *) uxTaskGetNumberOfTasks;
+  (void *) uxTaskGetStackHighWaterMark;
+  (void *) uxTaskGetStackHighWaterMark2;
+  (void *) uxTaskGetSystemState;
+  (void *) uxTaskGetTaskNumber;
+  (void *) uxTaskPriorityGet;
+  (void *) uxTaskPriorityGetFromISR;
+  (void *) uxTaskResetEventItemValue;
+  (void *) vTaskAllocateMPURegions;
+  (void *) vTaskDelay;
+  (void *) vTaskDelayUntil;
+  (void *) vTaskDelete;
+  (void *) vTaskEndScheduler;
+  (void *) vTaskGetInfo;
+  (void *) vTaskGetRunTimeStats;
+  (void *) vTaskInternalSetTimeOutState;
+  (void *) vTaskList;
+  (void *) vTaskMissedYield;
+  (void *) vTaskNotifyGiveFromISR;
+  (void *) vTaskPlaceOnEventList;
+  (void *) vTaskPlaceOnEventListRestricted;
+  (void *) vTaskPlaceOnUnorderedEventList;
+  (void *) vTaskPriorityDisinheritAfterTimeout;
+  (void *) vTaskPrioritySet;
+  (void *) vTaskRemoveFromUnorderedEventList;
+  (void *) vTaskResume;
+  (void *) vTaskSetApplicationTaskTag;
+  (void *) vTaskSetTaskNumber;
+  (void *) vTaskSetThreadLocalStoragePointer;
+  (void *) vTaskSetTimeOutState;
+  (void *) vTaskStartScheduler;
+  (void *) vTaskStepTick;
+  (void *) vTaskSuspend;
+  (void *) vTaskSuspendAll;
+  (void *) vTaskSwitchContext;
+  (void *) xTaskAbortDelay;
+  (void *) xTaskCallApplicationTaskHook;
+  (void *) xTaskCheckForTimeOut;
+  (void *) xTaskCreateRestricted;
+  (void *) xTaskCreateRestrictedStatic;
+  (void *) xTaskCreateStatic;
+  (void *) xTaskGenericNotify;
+  (void *) xTaskGenericNotifyFromISR;
+  (void *) xTaskGetApplicationTaskTag;
+  (void *) xTaskGetApplicationTaskTagFromISR;
+  (void *) xTaskGetCurrentTaskHandle;
+  (void *) xTaskGetHandle;
+  (void *) xTaskGetIdleRunTimeCounter;
+  (void *) xTaskGetIdleTaskHandle;
+  (void *) xTaskGetSchedulerState;
+  (void *) xTaskGetTickCount;
+  (void *) xTaskGetTickCountFromISR;
+  (void *) xTaskIncrementTick;
+  (void *) xTaskNotifyStateClear;
+  (void *) xTaskNotifyWait;
+  (void *) xTaskPriorityDisinherit;
+  (void *) xTaskPriorityInherit;
+  (void *) xTaskRemoveFromEventList;
+  (void *) xTaskResumeAll;
+  (void *) xTaskResumeFromISR;
+#if (configSUPPORT_DYNAMIC_ALLOCATION == 1)
+  (void *) xTaskCreate;
+#endif
 }
 #endif
 #endif /* INC_TASK_H */

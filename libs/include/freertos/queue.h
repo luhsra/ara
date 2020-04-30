@@ -1576,7 +1576,7 @@ const char* pcQueueGetName(QueueHandle_t xQueue)
  * allocation.  This is called by other functions and macros that create other
  * RTOS objects that use the queue structure as their base.
  */
-#if (configSUPPORT_DYNAMIC_ALLOCATION == 1)
+#if (configSUPPORT_DYNAMIC_ALLOCATION == 1 || configINCLUDE_ALL_DECLS)
 QueueHandle_t xQueueGenericCreate(const UBaseType_t uxQueueLength, const UBaseType_t uxItemSize,
                                   const uint8_t ucQueueType) PRIVILEGED_FUNCTION;
 #endif
@@ -1586,7 +1586,7 @@ QueueHandle_t xQueueGenericCreate(const UBaseType_t uxQueueLength, const UBaseTy
  * allocation.  This is called by other functions and macros that create other
  * RTOS objects that use the queue structure as their base.
  */
-#if (configSUPPORT_STATIC_ALLOCATION == 1)
+#if (configSUPPORT_STATIC_ALLOCATION == 1 || configINCLUDE_ALL_DECLS)
 QueueHandle_t xQueueGenericCreateStatic(const UBaseType_t uxQueueLength, const UBaseType_t uxItemSize,
                                         uint8_t* pucQueueStorage, StaticQueue_t* pxStaticQueue,
                                         const uint8_t ucQueueType) PRIVILEGED_FUNCTION;
@@ -1740,4 +1740,46 @@ uint8_t ucQueueGetQueueType(QueueHandle_t xQueue) PRIVILEGED_FUNCTION;
 }
 #endif
 
+#if configINCLUDE_ALL_DECLS
+__attribute((weak)) void __decl_all_queue() {
+  (void *) ucQueueGetQueueType;
+  (void *) uxQueueGetQueueNumber;
+  (void *) uxQueueMessagesWaiting;
+  (void *) uxQueueMessagesWaitingFromISR;
+  (void *) uxQueueSpacesAvailable;
+  (void *) vQueueDelete;
+  (void *) vQueueSetQueueNumber;
+  (void *) vQueueWaitForMessageRestricted;
+  (void *) xQueueAddToSet;
+  (void *) xQueueCreateCountingSemaphore;
+  (void *) xQueueCreateCountingSemaphoreStatic;
+  (void *) xQueueCreateMutex;
+  (void *) xQueueCreateMutexStatic;
+  (void *) xQueueCreateSet;
+  (void *) xQueueCRReceive;
+  (void *) xQueueCRReceiveFromISR;
+  (void *) xQueueCRSend;
+  (void *) xQueueCRSendFromISR;
+  (void *) xQueueGenericCreate;
+  (void *) xQueueGenericCreateStatic;
+  (void *) xQueueGenericReset;
+  (void *) xQueueGenericSend;
+  (void *) xQueueGenericSendFromISR;
+  (void *) xQueueGetMutexHolder;
+  (void *) xQueueGetMutexHolderFromISR;
+  (void *) xQueueGiveFromISR;
+  (void *) xQueueGiveMutexRecursive;
+  (void *) xQueueIsQueueEmptyFromISR;
+  (void *) xQueueIsQueueFullFromISR;
+  (void *) xQueuePeek;
+  (void *) xQueuePeekFromISR;
+  (void *) xQueueReceive;
+  (void *) xQueueReceiveFromISR;
+  (void *) xQueueRemoveFromSet;
+  (void *) xQueueSelectFromSet;
+  (void *) xQueueSelectFromSetFromISR;
+  (void *) xQueueSemaphoreTake;
+  (void *) xQueueTakeMutexRecursive;
+}
+#endif //configINCLUDE_ALL_DECLS
 #endif /* QUEUE_H */
