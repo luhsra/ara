@@ -68,6 +68,7 @@ class VanillaTCB(StructDataObject):
         self['uxPriority'] = task.priority
         self['pxTopOfStack'] = task.impl.stack.tos
         self['pxStack'] = f"(StackType_t*) &{task.impl.stack.name}"
+        #TODO: truncate to max name length from config
         self['pcTaskName'] = f'"{task.name}"'
         self['uxBasePriority'] = f"{task.priority}"
         self['xStateListItem'] = self.arch.ListItem('xStateListItem')
