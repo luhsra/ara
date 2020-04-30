@@ -62,11 +62,6 @@ foreach app : ['a',
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
 
-  o_target = custom_target('freertos-' + app + '.o',
-                            input : app_vanilla_ll,
-                            output : ['freertos-' + app + '.ll.o'],
-                            command : llc_cmd)
-
   named_elf_targets = []
   elf_targets = []
   foreach t : ara_gen_freertos_targets
@@ -81,6 +76,11 @@ foreach app : ['a',
                               )
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
+
+    o_target = custom_target(name_prefix + '.o',
+                             input : app_aramodified_ll,
+                             output : name_prefix + '.ll.o',
+                             command : llc_cmd)
 
     os_ll_target = custom_target(name_prefix + '-os.cc.ll',
                                  input : os_target,
