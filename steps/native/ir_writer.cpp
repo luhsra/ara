@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "ir_writer.h"
+#include <llvm/Support/FileSystem.h>
 
 
 namespace ara::step {
