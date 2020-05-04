@@ -38,7 +38,8 @@ namespace ara::step {
 			// return true;
 			Value *pdTrue = ConstantInt::get(call->getFunctionType()->getReturnType(), true, false);
 			call->replaceAllUsesWith(pdTrue);
-			call->removeFromParent();
+			// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter wit failing assert: "Use still stuck around after Def is destroyed"
+			call->eraseFromParent();
 			return true;
 		}
 
@@ -121,7 +122,8 @@ namespace ara::step {
 		Value *new_ret = Builder.CreateCall(create_static_fn, new_args, "static_queue");
 		logger.debug() << "new ret: " << *new_ret << std::endl;
 		old_create_call->replaceAllUsesWith(new_ret);
-		old_create_call->removeFromParent();
+		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter wit failing assert: "Use still stuck around after Def is destroyed"
+		old_create_call->eraseFromParent();
 		return true;
 	}
 
@@ -159,7 +161,8 @@ namespace ara::step {
 		queue_meta_data_val->setDSOLocal(true);
 		Value* handle = Builder.CreatePointerCast(queue_meta_data_val, old_func->getFunctionType()->getReturnType());
 		old_create_call->replaceAllUsesWith(handle);
-		old_create_call->removeFromParent();
+		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter wit failing assert: "Use still stuck around after Def is destroyed"
+		old_create_call->eraseFromParent();
 		return true;
 	}
 
