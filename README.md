@@ -21,6 +21,11 @@ pip3 install --user meson
 . ~/.profile
 ```
 
+To initialize the external modules, run the init script:
+```
+./init
+```
+
 
 To build the program type:
 ```
@@ -172,3 +177,6 @@ This is because of precompiled headers. They fasten the build a little bit but n
 ```
 meson configure -Db_pch=false
 ```
+
+### Error: "'PyObject' does not name a type"
+If your `cython --version` is <0.29.14 and you have this error, you have to add `#import "Python.h"` to `subprojects/pyllco/pyllco.h`.
