@@ -1741,45 +1741,47 @@ uint8_t ucQueueGetQueueType(QueueHandle_t xQueue) PRIVILEGED_FUNCTION;
 #endif
 
 #if configINCLUDE_ALL_DECLS
-__attribute((weak)) void __decl_all_queue() {
-  (void *) ucQueueGetQueueType;
-  (void *) uxQueueGetQueueNumber;
-  (void *) uxQueueMessagesWaiting;
-  (void *) uxQueueMessagesWaitingFromISR;
-  (void *) uxQueueSpacesAvailable;
-  (void *) vQueueDelete;
-  (void *) vQueueSetQueueNumber;
-  (void *) vQueueWaitForMessageRestricted;
-  (void *) xQueueAddToSet;
-  (void *) xQueueCreateCountingSemaphore;
-  (void *) xQueueCreateCountingSemaphoreStatic;
-  (void *) xQueueCreateMutex;
-  (void *) xQueueCreateMutexStatic;
-  (void *) xQueueCreateSet;
-  (void *) xQueueCRReceive;
-  (void *) xQueueCRReceiveFromISR;
-  (void *) xQueueCRSend;
-  (void *) xQueueCRSendFromISR;
-  (void *) xQueueGenericCreate;
-  (void *) xQueueGenericCreateStatic;
-  (void *) xQueueGenericReset;
-  (void *) xQueueGenericSend;
-  (void *) xQueueGenericSendFromISR;
-  (void *) xQueueGetMutexHolder;
-  (void *) xQueueGetMutexHolderFromISR;
-  (void *) xQueueGiveFromISR;
-  (void *) xQueueGiveMutexRecursive;
-  (void *) xQueueIsQueueEmptyFromISR;
-  (void *) xQueueIsQueueFullFromISR;
-  (void *) xQueuePeek;
-  (void *) xQueuePeekFromISR;
-  (void *) xQueueReceive;
-  (void *) xQueueReceiveFromISR;
-  (void *) xQueueRemoveFromSet;
-  (void *) xQueueSelectFromSet;
-  (void *) xQueueSelectFromSetFromISR;
-  (void *) xQueueSemaphoreTake;
-  (void *) xQueueTakeMutexRecursive;
+__attribute((weak)) int __decl_all_queue() {
+  int ret = 0;
+  ret |= ((int) ucQueueGetQueueType & 0x04) == NULL;
+  ret |= ((int) uxQueueGetQueueNumber & 0x04) == NULL;
+  ret |= ((int) uxQueueMessagesWaiting & 0x04) == NULL;
+  ret |= ((int) uxQueueMessagesWaitingFromISR & 0x04) == NULL;
+  ret |= ((int) uxQueueSpacesAvailable & 0x04) == NULL;
+  ret |= ((int) vQueueDelete & 0x04) == NULL;
+  ret |= ((int) vQueueSetQueueNumber & 0x04) == NULL;
+  ret |= ((int) vQueueWaitForMessageRestricted & 0x04) == NULL;
+  ret |= ((int) xQueueAddToSet & 0x04) == NULL;
+  ret |= ((int) xQueueCreateCountingSemaphore & 0x04) == NULL;
+  ret |= ((int) xQueueCreateCountingSemaphoreStatic & 0x04) == NULL;
+  ret |= ((int) xQueueCreateMutex & 0x04) == NULL;
+  ret |= ((int) xQueueCreateMutexStatic & 0x04) == NULL;
+  ret |= ((int) xQueueCreateSet & 0x04) == NULL;
+  ret |= ((int) xQueueCRReceive & 0x04) == NULL;
+  ret |= ((int) xQueueCRReceiveFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueCRSend & 0x04) == NULL;
+  ret |= ((int) xQueueCRSendFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueGenericCreate & 0x04) == NULL;
+  ret |= ((int) xQueueGenericCreateStatic & 0x04) == NULL;
+  ret |= ((int) xQueueGenericReset & 0x04) == NULL;
+  ret |= ((int) xQueueGenericSend & 0x04) == NULL;
+  ret |= ((int) xQueueGenericSendFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueGetMutexHolder & 0x04) == NULL;
+  ret |= ((int) xQueueGetMutexHolderFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueGiveFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueGiveMutexRecursive & 0x04) == NULL;
+  ret |= ((int) xQueueIsQueueEmptyFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueIsQueueFullFromISR & 0x04) == NULL;
+  ret |= ((int) xQueuePeek & 0x04) == NULL;
+  ret |= ((int) xQueuePeekFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueReceive & 0x04) == NULL;
+  ret |= ((int) xQueueReceiveFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueRemoveFromSet & 0x04) == NULL;
+  ret |= ((int) xQueueSelectFromSet & 0x04) == NULL;
+  ret |= ((int) xQueueSelectFromSetFromISR & 0x04) == NULL;
+  ret |= ((int) xQueueSemaphoreTake & 0x04) == NULL;
+  ret |= ((int) xQueueTakeMutexRecursive & 0x04) == NULL;
+  return ret;
 }
 #endif //configINCLUDE_ALL_DECLS
 #endif /* QUEUE_H */
