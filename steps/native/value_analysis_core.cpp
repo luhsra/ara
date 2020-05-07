@@ -36,23 +36,27 @@ namespace ara::step {
 		while (!worklist.empty()) {
 			const VFGNode* vNode = worklist.pop();
 			logger.debug() << "Handle VFGNode " << *vNode << std::endl;
-			visited.insert(vNode);
-			for (VFGNode::const_iterator it = vNode->OutEdgeBegin(), eit = vNode->OutEdgeEnd(); it != eit; ++it) {
-				if (visited.find((*it)->getDstNode()) == visited.end()) {
-					logger.debug() << "Insert vNode " << *(*it)->getDstNode() << std::endl;
-					worklist.push((*it)->getDstNode());
+	        visited.insert(vNode);
+			for(VFGNode::const_iterator it = vNode->InEdgeBegin(); it != vNode->InEdgeEnd(); ++it) {
+				if(visited.find((*it)->getSrcNode())==visited.end()){
+					logger.debug() << "Insert vNode " << *(*it)->getSrcNode() << std::endl;
+					worklist.push((*it)->getSrcNode());
 				}
 			}
 		}
 
-		/// Collect all LLVM Values
-		for (std::set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it != eit; ++it) {
-			const VFGNode* node = *it;
-			/// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
-			const PAGNode* pNode = vfg.getLHSTopLevPtr(node);
-			const Value* val = pNode->getValue();
-			logger.debug() << "Found Value: " << *val << std::endl;
-		}
+	    /// Collect all LLVM Values
+	    for(std::set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it){
+	    	const VFGNode* node = *it;
+	    	/// can only query VFGNode involving top-level pointers (starting with % or @ in LLVM IR)
+	    	const PAGNode* pNode = vfg.getLHSTopLevPtr(node);
+	    	const Value* val = pNode->getValue();
+			if (const Instruction* inst = llvm::dyn_cast<Instruction>(val)) {
+				if (const Constant* c = llvm::dyn_cast<Constant>(inst->getOperand(0))) {
+					logger.debug() << "Found Value: " << *c << std::endl;
+				}
+			}
+	    }
 	}
 
 	void ValueAnalysisCore::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call) {

@@ -40,7 +40,12 @@ namespace ara::step {
 				llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[abb]);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
 				if (called_func) {
-					collectUsesOnVFG(vfg, *called_func);
+					llvm::Function* func = called_func->getCalledFunction();
+					if (func) {
+						this->logger.debug() << "Function name: " << func->getName().str() << std::endl;
+						this->logger.debug() << "Number of args: " << func->arg_size() << std::endl;
+						collectUsesOnVFG(vfg, *called_func);
+					}
 
 					// std::pair<Arguments, std::vector<std::vector<unsigned>>> args_pair = va.get_values(*called_func);
 					// Arguments& args = args_pair.first;
