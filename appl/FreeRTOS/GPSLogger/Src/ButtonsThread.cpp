@@ -1,6 +1,7 @@
-#include "../Libs/FreeRTOS/Arduino_FreeRTOS.h"
+#include <Arduino.h>
+#include <Arduino_FreeRTOS.h>
 #include "ButtonsThread.h"
-#include "common.h"
+
 #include "USBDebugLogger.h"
 #include "SerialDebugLogger.h"
 // TO_not_DO: perhaps it would be reasonable to detect button press via pin change interrupt
@@ -24,7 +25,7 @@ QueueHandle_t buttonsQueue;
 void initButtons()
 {
 	//enable clock to the GPIOC peripheral
-	//__HAL_RCC_GPIOC_CLK_ENABLE();
+	__HAL_RCC_GPIOC_CLK_ENABLE();
 
 	// Set up button pins
 	LL_GPIO_SetPinMode(GPIOC, SEL_BUTTON_PIN, LL_GPIO_MODE_INPUT);

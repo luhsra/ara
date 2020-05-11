@@ -1,13 +1,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-//#include <stm32f1xx_hal_dma.h>
-//#include <stm32f1xx_hal_gpio.h>
-//#include <stm32f1xx_hal_spi.h>
+#include <stm32f1xx_hal_dma.h>
+#include <stm32f1xx_hal_gpio.h>
+#include <stm32f1xx_hal_spi.h>
 
-#include "../Libs/FreeRTOS/Arduino_FreeRTOS.h"
-
-//#include <SPI.h> // Should not be included, but SPISettings is defined there
+#include <Arduino_FreeRTOS.h>
+#include <SPI.h> // Should not be included, but SPISettings is defined there
 
 #include "SdFatSPIDriver.h"
 #include "USBDebugLogger.h"
@@ -21,6 +20,9 @@ const size_t DMA_TRESHOLD = 16;
 #include "SerialDebugLogger.h"
 #define usbDebugWrite serialDebugWrite
 
+SdFatSPIDriver::SdFatSPIDriver()
+{
+}
 
 void SdFatSPIDriver::begin(uint8_t chipSelectPin)
 {
@@ -33,11 +35,11 @@ void SdFatSPIDriver::begin(uint8_t chipSelectPin)
 	portENABLE_INTERRUPTS();
 
 	// Enable clocking of corresponding periperhal
-	/*__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOA_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOD_CLK_ENABLE();
 	__HAL_RCC_SPI2_CLK_ENABLE();
-    */
+
 
 	LL_GPIO_SetPinMode(GPIOB, LL_GPIO_PIN_1, LL_GPIO_MODE_OUTPUT);
 	LL_GPIO_SetPinOutputType(GPIOB, LL_GPIO_PIN_1, LL_GPIO_OUTPUT_PUSHPULL);
@@ -70,7 +72,6 @@ void SdFatSPIDriver::begin(uint8_t chipSelectPin)
 	LL_GPIO_SetOutputPin(GPIOB, CS);
 
 	// Init SPI
-    /*
 	spiHandle.Instance = SPI2;
 	spiHandle.Init.Mode = SPI_MODE_MASTER;
 	spiHandle.Init.Direction = SPI_DIRECTION_2LINES;
@@ -118,7 +119,6 @@ void SdFatSPIDriver::begin(uint8_t chipSelectPin)
 	HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
 	HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 8, 0);
 	HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
-	*/
 }
 
 void SdFatSPIDriver::activate()
@@ -149,7 +149,7 @@ uint8_t SdFatSPIDriver::receive()
 
 	uint8_t buf;
 	uint8_t dummy = 0xff;
-	//HAL_SPI_TransmitReceive(&spiHandle, &dummy, &buf, 1, 10);
+	HAL_SPI_TransmitReceive(&spiHandle, &dummy, &buf, 1, 10);
 
 #ifdef USB_DEBUG
 	if(debugEnabled)
@@ -161,7 +161,7 @@ uint8_t SdFatSPIDriver::receive()
 
 uint8_t SdFatSPIDriver::receive(uint8_t* buf, size_t n)
 {
-	//memset(buf, 0xff, n);
+	memset(buf, 0xff, n);
 
 	// Not using DMA for short transfers
 	if(n <= DMA_TRESHOLD)
@@ -170,8 +170,7 @@ uint8_t SdFatSPIDriver::receive(uint8_t* buf, size_t n)
 		if(debugEnabled)
 		usbDebugWrite("== reading %d bytes\n\r", n);
 #endif
-		//uint8_t s = HAL_SPI_TransmitReceive(&spiHandle, buf, buf, n, 10);
-        uint8_t s = 1;
+		uint8_t s = HAL_SPI_TransmitReceive(&spiHandle, buf, buf, n, 10);
 
 		if(s)
 		  //usbDebugWrite("Failed ad #10: %d\n\r", s);
@@ -186,7 +185,7 @@ uint8_t SdFatSPIDriver::receive(uint8_t* buf, size_t n)
 
 		LL_GPIO_SetOutputPin(GPIOB, LL_GPIO_PIN_0);
 	// Start data transfer
-	//HAL_SPI_TransmitReceive_DMA(&spiHandle, buf, buf, n);
+	HAL_SPI_TransmitReceive_DMA(&spiHandle, buf, buf, n);
 
 #ifdef USB_DEBUG
 	if(debugEnabled)
@@ -212,7 +211,7 @@ void SdFatSPIDriver::send(uint8_t data)
 	usbDebugWrite("== send: %02x\n\r", data);
 #endif
 
-	//HAL_SPI_Transmit(&spiHandle, &data, 1, 10);
+	HAL_SPI_Transmit(&spiHandle, &data, 1, 10);
 }
 
 void SdFatSPIDriver::send(const uint8_t* buf, size_t n)
@@ -226,12 +225,12 @@ void SdFatSPIDriver::send(const uint8_t* buf, size_t n)
 	// Not using DMA for short transfers
 	if(n <= DMA_TRESHOLD)
 	{
-		//HAL_SPI_Transmit(&spiHandle, (uint8_t*)buf, n, 10);
+		HAL_SPI_Transmit(&spiHandle, (uint8_t*)buf, n, 10);
 		return;
 	}
 
 	// Start data transfer
-	//HAL_SPI_Transmit_DMA(&spiHandle, (uint8_t*)buf, n);
+	HAL_SPI_Transmit_DMA(&spiHandle, (uint8_t*)buf, n);
 
 #ifdef USB_DEBUG
 	if(debugEnabled)
@@ -289,21 +288,20 @@ extern SdFatSPIDriver spiDriver;
 
 extern "C" void DMA1_Channel2_IRQHandler(void)
 {
-	//HAL_DMA_IRQHandler(spiDriver.getHandle().hdmarx);
+	HAL_DMA_IRQHandler(spiDriver.getHandle().hdmarx);
 }
 
 extern "C" void DMA1_Channel3_IRQHandler(void)
 {
-	//HAL_DMA_IRQHandler(spiDriver.getHandle().hdmatx);
+	HAL_DMA_IRQHandler(spiDriver.getHandle().hdmatx);
 }
-/*
+
 extern "C" void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-	//spiDriver.dmaTransferCompletedCB();
+	spiDriver.dmaTransferCompletedCB();
 }
 
 extern "C" void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
 	spiDriver.dmaTransferCompletedCB();
 }
-*/

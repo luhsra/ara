@@ -1,7 +1,7 @@
-//#include <Arduino_FreeRTOS.h>
-//#include <NMEAGPS.h>
+#include <Arduino_FreeRTOS.h>
+#include <NMEAGPS.h>
 
-#include "../FreeRTOSHelpers.h"
+#include "FreeRTOSHelpers.h"
 #include "GPSDataModel.h"
 #include "GPSOdometer.h"
 
@@ -40,10 +40,10 @@ void GPSDataModel::processNewGPSFix(const gps_fix & fix)
 	odometers[2]->processNewFix(fix);
 }
 
-void GPSDataModel::processNewSatellitesData(void * sattelites, uint8_t count)
+void GPSDataModel::processNewSatellitesData(NMEAGPS::satellite_view_t * sattelites, uint8_t count)
 {
 	MutexLocker lock(xGPSDataMutex);
-	//sattelitesData.parseSatellitesData( *sattelites, count);
+	sattelitesData.parseSatellitesData(sattelites, count);
 }
 
 gps_fix GPSDataModel::getGPSFix() const
@@ -63,11 +63,10 @@ float GPSDataModel::getVerticalSpeed() const
 	MutexLocker lock(xGPSDataMutex);
 	
 	// Return NAN to indicate vertical speed not available
-	//if(!cur_fix.valid.altitude || !prev_fix.valid.altitude)
-	//	return NAN;
+	if(!cur_fix.valid.altitude || !prev_fix.valid.altitude)
+		return NAN;
 	
-	//return cur_fix.altitude() - prev_fix.altitude(); // Assuming that time difference between cur and prev fix is 1 second
-    return 1;
+	return cur_fix.altitude() - prev_fix.altitude(); // Assuming that time difference between cur and prev fix is 1 second
 }
 
 int GPSDataModel::timeDifference() const
@@ -75,12 +74,10 @@ int GPSDataModel::timeDifference() const
 	MutexLocker lock(xGPSDataMutex);
 	
 	// Return NAN to indicate vertical speed not available
-	//if(!cur_fix.valid.altitude || !prev_fix.valid.altitude)
-		//return 0;
+	if(!cur_fix.valid.altitude || !prev_fix.valid.altitude)
+		return 0;
 	
-	//return cur_fix.dateTime - prev_fix.dateTime;
-    return 1;
-    
+	return cur_fix.dateTime - prev_fix.dateTime;
 }
 
 GPSOdometerData GPSDataModel::getOdometerData(uint8_t idx) const

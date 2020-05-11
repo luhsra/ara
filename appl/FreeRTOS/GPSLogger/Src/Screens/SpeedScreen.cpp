@@ -1,13 +1,16 @@
-//#include <Adafruit_SSD1306.h>
-//#include <NMEAGPS.h>
-#include "../../Libs/FreeRTOS/Arduino_FreeRTOS.h"
+#include <Adafruit_SSD1306.h>
+#include <NMEAGPS.h>
+
 #include "SpeedScreen.h"
 #include "AltitudeScreen.h"
-//#include "../TimeFont.h"
-//#include "8x12Font.h"
-//#include "../PrintUtils.h"
+#include "TimeFont.h"
+#include "8x12Font.h"
+#include "PrintUtils.h"
 
-#include "../GPS/GPSDataModel.h"
+#include "GPS/GPSDataModel.h"
+
+
+extern Adafruit_SSD1306 display;
 
 AltitudeScreen altitudeScreen;
 
@@ -20,18 +23,18 @@ void SpeedScreen::drawScreen() const
 {
 	// Get the gps fix data
 	gps_fix gpsFix = GPSDataModel::instance().getGPSFix();
-	    /*
+
 	// Draw speed
 	// TO_not_DO draw '----' if no GPS signal found. Requires new character in font
 	char buf[7]; // 6 symbols + trailing zero
-	//strcpy(buf, "----");
-	//printNumber(buf, gpsFix.speed_kph(), 4, true); // TO_not_DO: Add leading spaces
-	//display.setFont(&TimeFont);
+	strcpy(buf, "----");
+	printNumber(buf, gpsFix.speed_kph(), 4, true); // TO_not_DO: Add leading spaces
+	display.setFont(&TimeFont);
 	display.setCursor(24,31);
 	display.print(buf);
-	
+
 	// Draw speed units
-	//display.setFont(&Monospace8x12Font); // TO_not_DO: Use slightly larger bold font
+	display.setFont(&Monospace8x12Font); // TO_not_DO: Use slightly larger bold font
 	display.setCursor(90, 20);
 	display.print("km/h");
 
@@ -63,7 +66,6 @@ void SpeedScreen::drawScreen() const
 	display.setFont(NULL);
 	display.setCursor(0, 24);
 	display.print(buf);
-	*/
 }
 
 const char * SpeedScreen::headingAsLetter(uint16_t heading)

@@ -1,39 +1,23 @@
-//#include <stm32f1xx_ll_usart.h>
-//#include <stm32f1xx_hal_rcc.h>
+#include <stm32f1xx_ll_usart.h>
+#include <stm32f1xx_hal_rcc.h>
 
-#include "../../Libs/FreeRTOS/Arduino_FreeRTOS.h"
-#include "NMEAGPS.h"
-//#include "Streamers.h"
+#include <Arduino_FreeRTOS.h>
+#include <NMEAGPS.h>
+#include "Streamers.h"
 
 #include "GPSThread.h"
 #include "GPSDataModel.h"
-//#include "USBDebugLogger.h"
+#include "USBDebugLogger.h"
 
-#include "../SDThread.h"
-#include "../USBDebugLogger.h"
-#include "../SerialDebugLogger.h"
-#include "../common.h"
+#include "SDThread.h"
+#include "USBDebugLogger.h"
+#include "SerialDebugLogger.h"
+
 // A GPS parser
 NMEAGPS gpsParser;
 
 // Size of UART input buffer
 const uint8_t gpsBufferSize = 128;
-
-uint8_t USART1 = 100;
-#define GPIOA 1
-uint8_t LL_USART_STOPBITS_1 = 1;
-uint8_t HAL_RCC_GPIOA_CLK_ENABLE = 1;
-
-
-
-
-
-uint8_t USART1_IRQn = 1;
-
-uint8_t LL_USART_DATAWIDTH_8B = 1;
-uint8_t LL_USART_PARITY_NONE = 1;
-uint8_t LL_USART_HWCONTROL_NONE = 1;
-uint8_t LL_USART_DIRECTION_TX_RX = 0;
 
 // This class handles UART interface that receive chars from GPS and stores them to a buffer
 class GPS_UART
@@ -57,8 +41,8 @@ public:
 		xGPSThread = xTaskGetCurrentTaskHandle();
 
 		// Enable clocking of corresponding periperhal
-		//__HAL_RCC_GPIOA_CLK_ENABLE();
-		//__HAL_RCC_USART1_CLK_ENABLE();
+		__HAL_RCC_GPIOA_CLK_ENABLE();
+		__HAL_RCC_USART1_CLK_ENABLE();
 
 		// Init pins in alternate function mode
 		LL_GPIO_SetPinMode(GPIOA, LL_GPIO_PIN_9, LL_GPIO_MODE_ALTERNATE); //TX pin
@@ -187,13 +171,8 @@ void vGPSTask(void *pvParameters)
 		// Update GPS model data
 		if(gpsParser.available())
 		{
-            const gps_fix tmp = gps_fix();
-            int a= 231;
-            void * pointer_tmp = &a;
-            //GPSDataModel tmp_test = GPSDataModel();
-            //tmp_test.processNewGPSFix(tmp);
-			GPSDataModel::instance().processNewGPSFix(tmp);
-			GPSDataModel::instance().processNewSatellitesData(pointer_tmp,321);
+			GPSDataModel::instance().processNewGPSFix(gpsParser.read());
+			GPSDataModel::instance().processNewSatellitesData(gpsParser.satellites, gpsParser.sat_count);
 		}
 
 		vTaskDelay(10);

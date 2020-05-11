@@ -1,21 +1,19 @@
 //#include <Print.h>
-#include "USBDebugLogger.h"
-//#include <FatLib/FatVolume.h>
+//#include "USBDebugLogger.h"
+#include <FatLib/FatVolume.h>
 
 
 // SdFat needs Serial for its interface. Provide our one
 // (must be declared before including SdFat.h)
 #include "SerialDebugLogger.h"
-#include <string.h>
-#include "common.h"
 
-class  CharWriter
+class UsbDebugSerial : public CharWriter
 {
-  virtual size_t write (const char *s) {
+  virtual size_t write (const char *s)override {
     serialDebugWrite("%s",s);
     return strlen(s);
   }
-	virtual size_t write(char c) 
+	virtual size_t write(char c) override
 	{
 	  char x[2];
 	  x[0] = c;
@@ -25,8 +23,8 @@ class  CharWriter
 	}
 } Serial;
 
-//#include <SdFat.h>
-#include "../Libs/FreeRTOS/Arduino_FreeRTOS.h"
+#include <SdFat.h>
+#include <Arduino_FreeRTOS.h>
 
 #include "SdFatSPIDriver.h"
 #include "SDThread.h"
@@ -35,30 +33,10 @@ class  CharWriter
 #define usbDebugWrite serialDebugWrite
 
 //#include "Print.h"
-class SdFat{
-    
-    public:
-        
-        SdFat(SdFatSPIDriver* sd){};
-        
-        uint32_t begin(uint32_t tmp){
-            return tmp;
-        };
-    
-    
-};
 
 // SD card instance
 SdFatSPIDriver spiDriver;
-
-
-
-
 SdFat SD(&spiDriver);
-
-
-
-
 
 // Files we are working fith
 FatFile rawDataFile;
@@ -121,7 +99,7 @@ bool initSDCard()
 	//usbDebugWrite("Initializing SD card...\n");
 
 	// see if the card is present and can be initialized:
-	uint32_t errno = SD.begin(100);
+	uint32_t errno = SD.begin(PB12);
 	if (errno)
 	{
 	  //usbDebugWrite("Card failed, or not present: %d\n", errno);
@@ -211,9 +189,9 @@ void initSDThread()
 
 void vSDThread(void *pvParameters)
 {
-  //  serialDebugWrite("vSDThread\r\n");
+	serialDebugWrite("vSDThread\r\n");
 	initSDThread();
-	//serialDebugWrite("vSDThread2\r\n");
+	serialDebugWrite("vSDThread2\r\n");
 
 	while(true)
 	{

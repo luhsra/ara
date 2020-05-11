@@ -1,16 +1,14 @@
 #include <stddef.h> //for NULL
 
-#include "../../Libs/FreeRTOS/Arduino_FreeRTOS.h"
-
-#define ARDUINO 100
+#include "Arduino_FreeRTOS.h"
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#include "../8x12Font.h"
+#include "8x12Font.h"
 #include "Screen.h"
 #include "ScreenManager.h"
-#include "../ButtonsThread.h"
+#include "ButtonsThread.h"
 
 #include "DisplayDriver.h"
 #include "CurrentPositionScreen.h"
@@ -19,16 +17,15 @@
 #include "SatellitesScreen.h"
 #include "OdometerScreen.h"
 #include "SettingsGroupScreen.h"
-#include "../SerialDebugLogger.h"
+#include "SerialDebugLogger.h"
 
 extern DisplayDriver displayDriver;
 Adafruit_SSD1306 display(&displayDriver, -1);
 
-//#if (SSD1306_LCDHEIGHT != 64)
-//#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-//#endif
+#if (SSD1306_LCDHEIGHT != 64)
+#error("Height incorrect, please fix Adafruit_SSD1306.h!");
+#endif
 
-int strlen_P(const char * text);
 // Timeouts
 const uint16_t DISPLAY_CYCLE = 100 / portTICK_PERIOD_MS;
 const uint16_t MESSAGE_BOX_DURATION = 1000 / portTICK_PERIOD_MS;
@@ -81,7 +78,6 @@ void initScreens()
 	timeScreen.addScreen(&positionScreen);
 	positionScreen.addScreen(&speedScreen);
 	speedScreen.addScreen(&odometerScreen);
-    speedScreen.drawScreen();
 	odometerScreen.addScreen(&satellitesScreen);
 	satellitesScreen.addScreen(&rootSettingsScreen);
 }

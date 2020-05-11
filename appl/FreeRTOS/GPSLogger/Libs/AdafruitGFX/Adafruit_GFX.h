@@ -5,6 +5,7 @@
  #include "Arduino.h"
  #include "Print.h"
 #else
+ #error Arduino should be 10801
  #include "WProgram.h"
 #endif
 #include "gfxfont.h"

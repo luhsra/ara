@@ -13,6 +13,9 @@
 // I would love if this symbol is defined as weak in newlib-nano (libc), but it is not.
 extern "C" void _init(void)  {}
 
+// newlib requires errno
+unsigned long __errno;
+
 // Set up board clocks
 void SystemClock_Config(void)
 {

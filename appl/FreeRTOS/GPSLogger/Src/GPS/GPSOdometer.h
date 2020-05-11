@@ -1,8 +1,7 @@
 #ifndef __GPSODOMETER_H__
 #define __GPSODOMETER_H__
 
-//#include <NMEAGPS.h>
-typedef uint32_t clock_t;
+#include <NMEAGPS.h>
 
 // This class represents a single odometer data with no logic around
 class GPSOdometerData
@@ -15,8 +14,8 @@ class GPSOdometerData
 	
 	bool active;
 	
-	//NeoGPS::Location_t startLocation;
-	//NeoGPS::Location_t lastLocation;
+	NeoGPS::Location_t startLocation;
+	NeoGPS::Location_t lastLocation;
 	
 	float odometer;
 	int16_t startAltitude;

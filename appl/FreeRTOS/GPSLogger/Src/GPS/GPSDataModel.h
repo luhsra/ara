@@ -25,12 +25,11 @@ const uint8_t ODOMERTERS_COUNT = 3;
 class GPSDataModel
 {
 public:
-    GPSDataModel();
 	/// A single instance of the model
 	static GPSDataModel & instance();
 
 	void processNewGPSFix(const gps_fix & fix);
-	void processNewSatellitesData(void * sattelites, uint8_t count);
+	void processNewSatellitesData(NMEAGPS::satellite_view_t * sattelites, uint8_t count);
 	gps_fix getGPSFix() const;
 	GPSSatellitesData getSattelitesData() const;
 	
@@ -45,8 +44,6 @@ public:
 	void resumeAllOdometers();
 	void pauseAllOdometers();
 	void resetAllOdometers();
-    GPSDataModel( const GPSDataModel &c );
-	GPSDataModel& operator=( const GPSDataModel &c );	
 	
 private:
 	gps_fix cur_fix; /// most recent fix data
@@ -57,8 +54,9 @@ private:
 	
 	SemaphoreHandle_t xGPSDataMutex;
 	
-	
-	
+	GPSDataModel();
+	GPSDataModel( const GPSDataModel &c );
+	GPSDataModel& operator=( const GPSDataModel &c );
 }; //GPSDataModel
 
 #endif //__GPSDATA_H__

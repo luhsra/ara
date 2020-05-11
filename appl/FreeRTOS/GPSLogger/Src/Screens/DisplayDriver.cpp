@@ -1,8 +1,7 @@
-//#include <stm32f1xx_hal_dma.h>
-//#include <stm32f1xx_hal_i2c.h>
-//#include <stm32f1xx_ll_gpio.h>
-#include "fake_stm.h"
-#include "../SerialDebugLogger.h"
+#include <stm32f1xx_hal_dma.h>
+#include <stm32f1xx_hal_i2c.h>
+#include <stm32f1xx_ll_gpio.h>
+#include "SerialDebugLogger.h"
 #include "DisplayDriver.h"
 
 // A display driver instance
@@ -20,7 +19,6 @@ void DisplayDriver::begin()
 	// Init sync object
 	xDisplayThread = xTaskGetCurrentTaskHandle();
 
-	/*
 	// Initialize I2C pins
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	LL_GPIO_SetPinMode(GPIOB, LL_GPIO_PIN_6 , LL_GPIO_MODE_ALTERNATE);
@@ -59,14 +57,11 @@ void DisplayDriver::begin()
 
 	// Associate the initialized DMA handle to the the I2C handle
 	__HAL_LINKDMA(&handle, hdmatx, hdma_tx);
-	*/
 
 	/* DMA interrupt init */
 	/* DMA1_Channel6_IRQn interrupt configuration */
-	/*
 	HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 7, 0);
 	HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
-	*/
 
 
 }
@@ -98,7 +93,7 @@ void DisplayDriver::transferCompletedCB()
 
 extern "C" void DMA1_Channel6_IRQHandler(void)
 {
-  //HAL_DMA_IRQHandler(displayDriver.getDMAHandle());
+  HAL_DMA_IRQHandler(displayDriver.getDMAHandle());
 }
 
 extern "C" void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c)
