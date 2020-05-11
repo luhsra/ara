@@ -1,4 +1,3 @@
-#include <avr/pgmspace.h>
 
 #include <Adafruit_SSD1306.h>
 

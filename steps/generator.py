@@ -21,10 +21,12 @@ class Generator(Step):
     syscall_choices= {'vanilla': VanillaSystemCalls,
                       'generic_static': StaticFullSystemCalls,
                       'generic_initialized': InitializedFullSystemCalls,
+                      'passthrough': VanillaSystemCalls,
                       'instance_specialized': lambda: exec('raise NotImplementedError()'),
     }
 
     def _fill_options(self):
+        self._log.warning("fill_opts")
         self.arch = Option(name="arch",
                            help='the hardware architecture',
                            step_name=self.get_name(),
@@ -54,6 +56,9 @@ class Generator(Step):
         self.opts.append(self.dep_file)
 
     def get_dependencies(self):
+        self._log.warn("get_dependencies: style: %s", self.syscall_style.get())
+        if self.syscall_style.get() == 'passthrough':
+            return ['IRReader']
         return ['InstanceGraph']
 
     def run(self, g: graph.Graph):
@@ -73,7 +78,7 @@ class Generator(Step):
                       syscall_rules=syscall_rules,
                       _log=self._log)
 
-        gen.generate(self.out_file.get())
+        gen.generate(self.out_file.get(), passthrough=self.syscall_style.get()=='passthrough')
 
         dep_file = self.dep_file.get()
         if dep_file:

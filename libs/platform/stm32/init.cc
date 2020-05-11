@@ -1,5 +1,6 @@
 #include <stm32f1xx_hal.h>
 #include <stm32f1xx_hal_pwr.h>
+#include <stm32f1xx_ll_usart.h>
 
 
 void SystemClock_Config(void) {
@@ -57,3 +58,25 @@ extern "C" void SysTick_Handler(void) {
 void StopBoard(void) {
 	HAL_PWR_StopQEMU(0);
 }
+
+__attribute__((weak)) extern "C" void vApplicationMallocFailedHook( void )
+{
+	/* vApplicationMallocFailedHook() will only be called if
+	configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
+	function that will get called if a call to pvPortMalloc() fails.*/
+	//taskDISABLE_INTERRUPTS();
+	LL_USART_TransmitData8(USART2, '?');
+	for( ;; );
+}
+
+__attribute__((weak)) extern "C" void vApplicationStackOverflowHook( void )
+{
+	/* vApplicationMallocFailedHook() will only be called if
+	configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
+	function that will get called if a call to pvPortMalloc() fails.*/
+	//taskDISABLE_INTERRUPTS();
+	LL_USART_TransmitData8(USART2, '?');
+	for( ;; );
+}
+
+__attribute__((weak)) extern "C" void _init() {}

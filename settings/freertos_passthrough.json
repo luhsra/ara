@@ -1,0 +1,13 @@
+{
+	"steps": [
+		{
+			"name": "Generator"
+		}
+	],
+	"Generator": {
+		"syscall_style": "passthrough",
+		"arch": "arm",
+		"os": "freertos"
+	}
+
+}

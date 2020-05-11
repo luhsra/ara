@@ -6,7 +6,6 @@
 #include <Printable.h>
 
 // Forward declarations
-typedef uint32_t clock_t;
 namespace NeoGPS
 {
 	struct time_t;	

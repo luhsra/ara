@@ -22,7 +22,7 @@ class Generator:
         syscall_rules.set_generator(self)
 
 
-    def generate(self, out_file):
+    def generate(self, out_file, passthrough=False):
         self.file_prefix = out_file
 
         self.source_file = SourceFile(self._log)
@@ -31,6 +31,13 @@ class Generator:
         #include "freertos.h"
         self.source_file.includes.add(Include('FreeRTOS.h'))
 
+        if not passthrough:
+            self.generate_code()
+        self.generate_startup_code()
+        self.generate_linkerscript()
+        self.write_out()
+
+    def generate_code(self):
         # storage for generated source elements
         for v in self.ara_graph.instances.vertices():
             instance = self.ara_graph.instances.vp.obj[v]
@@ -49,10 +56,13 @@ class Generator:
 
         self.arch_rules.generate_default_interrupt_handlers()
 
+    def generate_startup_code(self):
         self.arch_rules.generate_startup_code()
 
+    def generate_linkerscript(self):
         self.arch_rules.generate_linkerscript()
 
+    def write_out(self):
         #write results outgoing
         for name, content in self.source_files.items():
             with self.open_file(name) as f:

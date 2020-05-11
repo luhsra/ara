@@ -93,6 +93,7 @@ ara_gen_cmd = [bash, sh,
 ara_gen_freertos_targets = ['vanilla',
                             'instances_full_static',
                             'instances_full_initialized',
+                            'passthrough'
                            ]
 
 foreach t : ara_gen_freertos_targets
