@@ -9,6 +9,7 @@ foreach src: src_files
                                depfile: src+'.cc.dep',
                                command: clang_cpp+
                                         libs_includes +
+                                        freertos_default_config +
                                         obj_flags +
                                         clang_flags)
 endforeach

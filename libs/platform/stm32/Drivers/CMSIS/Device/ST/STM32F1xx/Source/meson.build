@@ -3,6 +3,7 @@ src_files = ['system_stm32f1xx.c']
 
 obj_targets = []
 foreach src : src_files
+  lib_platform_src_files += files(src)
   obj_target = custom_target(src,
                              input: src,
                              output: src+'.o',

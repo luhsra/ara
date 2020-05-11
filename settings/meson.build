@@ -47,7 +47,8 @@ elif get_option('arch') == 'arm'
                   '-I','/usr/arm-none-eabi/include/',
                   '-I','/usr/lib/arm-none-eabi/include/',
                  ]
-  ld_flags += ['-Wl,-Map,GPSLogger.map',
+  ld_flags += ['-Wl,-Map,@OUTPUT0@.map',
+               '-Wl,--cref',
                '-fuse-ld=/usr/bin/arm-none-eabi-ld',
                '-Wl,-L,/usr/arm-none-eabi/lib/thumb',
                '-Wl,-L,/usr/lib/arm-none-eabi/newlib/thumb',
@@ -67,11 +68,12 @@ compare_nm += nm.path()
 clang_flags += '-Wno-everything'
 c_std = '-std=c11'
 cxx_std = '-std=c++11'
-clang_x = [clang,
+clang_base = [
            '-o', '@OUTPUT0@',
            '@INPUT@',
            '-MD', '-MF', '@DEPFILE@',
-          ]
+]
+clang_x = [clang] + clang_base
 clang_c = clang_x + [c_std]
 clang_cpp = clang_x + [cxx_std]
 ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']

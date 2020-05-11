@@ -69,6 +69,8 @@ foreach app : ['a',
                             command : clang_cpp +
                                       app_flags +
                                       libs_includes +
+                                      freertos_default_config +
+                                      libplatform_default_config +
                                       ir_flags +
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
@@ -99,6 +101,8 @@ foreach app : ['a',
                                  depfile : name_prefix + '-os.cc.ll.dep',
                                  command : clang_cpp +
                                            libs_includes +
+                                           freertos_default_config +
+                                           libplatform_default_config +
                                            ir_flags +
                                            clang_flags)
 
@@ -138,6 +142,8 @@ foreach app : ['a',
                                depfile: name_prefix + '.elf.dep',
                                command: clang_cpp +
                                         libs_includes +
+                                        freertos_default_config +
+                                        libplatform_default_config +
                                         ld_flags +
                                         clang_flags)
 
@@ -190,7 +196,7 @@ endforeach
 
 # gpslogger is special
 subdir('FreeRTOS/GPSLogger')
-freertos_targets += gpslogger_targets
+freertos_targets += gpslogger_application
 
 subdir('FreeRTOS/SmartPlug')
 freertos_targets += smartplug_targets
