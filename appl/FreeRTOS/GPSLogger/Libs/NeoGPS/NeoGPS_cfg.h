@@ -65,8 +65,8 @@
  *  The bad news is that it introduces a new language keyword, and the old
  *  code raises an error.
  *
- *  TODO: Evaluate the requirement for the "static" keyword.
- *  TODO: Evaluate using a C++ version preprocessor symbol for the #if.
+ *  TO_not_DO: Evaluate the requirement for the "static" keyword.
+ *  TO_not_DO: Evaluate using a C++ version preprocessor symbol for the #if.
  *
  *  The CONST_CLASS_DATA define will expand to the appropriate keywords.
  *
