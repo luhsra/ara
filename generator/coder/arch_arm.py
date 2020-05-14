@@ -145,9 +145,9 @@ class StartupCodeTemplate(CodeTemplate):
             if self.debug:
                 letter = letters[i]
                 ret.append(f'DEFAULT_{t}:')
-                ret.append(f'  movs r0, #{ord(letter)} // {letter}')
+                ret.append(f'  movs r1, #{ord(letter)} // {letter}')
                 ret.append(f'  bl _ZN6Serial7putcharEc //call Serial::putchar({letter})')
-                ret.append(f'  b DEFAULT_{t}')
+                ret.append(f'  b Default_Handler')
                 ret.append(f'.thumb_set {t},DEFAULT_{t}\n')
             else:
                 ret.append(f'.thumb_set {t},Default_Handler\n')
