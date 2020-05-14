@@ -66,6 +66,7 @@ void InitBoard()
 	SystemClock_Config();
 }
 
+extern "C" void serialDebugWriteC(char);
 extern "C"
 void vApplicationStackOverflowHook(xTaskHandle *pxTask,
 								   signed char *pcTaskName)
@@ -77,6 +78,8 @@ void vApplicationStackOverflowHook(xTaskHandle *pxTask,
 	(void) pxTask;
 	(void) pcTaskName;
 
+	taskDISABLE_INTERRUPTS();
+	serialDebugWriteC('"');
 	while (1)
 		;
 }
@@ -86,6 +89,7 @@ extern "C" void vApplicationMallocFailedHook( void )
 	/* vApplicationMallocFailedHook() will only be called if
 	configUSE_MALLOC_FAILED_HOOK is set to 1 in FreeRTOSConfig.h.  It is a hook
 	function that will get called if a call to pvPortMalloc() fails.*/
-	//taskDISABLE_INTERRUPTS();
+	taskDISABLE_INTERRUPTS();
+	serialDebugWriteC('?');
 	for( ;; );
 }
