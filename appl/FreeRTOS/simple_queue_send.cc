@@ -67,7 +67,7 @@ int main() {
 
   xTaskCreate(vTask1, "zzz", 100, NULL, 2, NULL);
   xTaskCreate(vTask2, "xxx", 100, NULL, 3, NULL);
-  xTaskCreate(vTask3, "xxx", 100, NULL, 1, NULL);
+  xTaskCreate(vTask3, "yyy", 100, NULL, 1, NULL);
   STORE_TIME_MARKER(done_tastCreate);
 
   queue_handle_2 = xQueueCreate(3, sizeof(char));

@@ -153,7 +153,11 @@ namespace ara {
 
 		Logger::LogStream& err() { return get_instance(LogLevel::ERROR); }
 
+		Logger::LogStream& error() { return get_instance(LogLevel::ERROR); }
+
 		Logger::LogStream& warn() { return get_instance(LogLevel::WARNING); }
+
+		Logger::LogStream& warning() { return get_instance(LogLevel::WARNING); }
 
 		Logger::LogStream& info() { return get_instance(LogLevel::INFO); }
 

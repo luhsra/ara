@@ -32,13 +32,14 @@ class Task:
 
 # TODO make this a dataclass once we use Python 3.7
 class Queue:
-    def __init__(self, cfg, name, handler, length, size, branch,
+    def __init__(self, cfg, name, handler, length, size, abb, branch,
                  after_scheduler):
         self.cfg = cfg
         self.name = name
         self.handler = handler
         self.length = length
         self.size = size
+        self.abb = abb
         self.branch = branch
         self.after_scheduler = after_scheduler
 
@@ -48,11 +49,12 @@ class Queue:
 
 # TODO make this a dataclass once we use Python 3.7
 class Mutex:
-    def __init__(self, cfg, name, handler, m_type, branch, after_scheduler):
+    def __init__(self, cfg, name, handler, m_type, abb, branch, after_scheduler):
         self.cfg = cfg
         self.name = name
         self.handler = handler
         self.m_type = m_type
+        self.abb = abb
         self.branch = branch
         self.after_scheduler = after_scheduler
 
@@ -110,13 +112,14 @@ class FreeRTOS:
         task_stack_size = state.cfg.vp.arguments[abb][2].get(call_path=cp)
         task_parameters = state.cfg.vp.arguments[abb][3].get(call_path=cp)
         task_priority = state.cfg.vp.arguments[abb][4].get(call_path=cp)
-        task_handle_p = state.cfg.vp.arguments[abb][5].get(call_path=cp)
+        task_handle_p = state.cfg.vp.arguments[abb][5].get(call_path=cp, raw=True)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
 
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          function=task_function,
                                          name=task_name,
@@ -170,11 +173,13 @@ class FreeRTOS:
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
 
+        # TODO: when do we know that this is an unique instance?
         state.instances.vp.obj[v] = Queue(cfg,
                                           name=handler_name,
                                           handler=queue_handler,
                                           length=queue_len,
                                           size=queue_item_size,
+                                          abb=abb,
                                           branch=state.branch,
                                           after_scheduler=state.scheduler_on)
         state.next_abbs = []
@@ -197,6 +202,7 @@ class FreeRTOS:
                                           name=handler_name,
                                           handler=mutex_handler,
                                           m_type=mutex_type,
+                                          abb=abb,
                                           branch=state.branch,
                                           after_scheduler=state.scheduler_on)
 

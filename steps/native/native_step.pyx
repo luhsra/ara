@@ -281,6 +281,7 @@ cdef class NativeStep(SuperStep):
                                         glob=entry.is_global()))
         return pyopts
 
+include "replace_syscalls_create.pxi"
 
 cdef _native_fac(cstep.Step* step):
     """Construct a NativeStep. Expects an already constructed C++-Step pointer.
@@ -315,6 +316,7 @@ def provide_steps():
             _native_fac(step_fac[Reassociate]()),
             _native_fac(step_fac[SparseCondConstProp]()),
             _native_fac(step_fac[SimplifyCFG]()),
+            _native_fac_ReplaceSyscallsCreate(),
             _native_fac(step_fac[ValueAnalysisCore]())]
 
 

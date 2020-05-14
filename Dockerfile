@@ -3,7 +3,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
 RUN apt update\
-	&& apt-get install -y pkg-config clang-9 llvm-9-dev python3 python3-pip tmux build-essential ninja-build git binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib bash-completion
+	&& apt-get install -y pkg-config clang-9 llvm-9-dev python3 python3-pip tmux build-essential ninja-build git binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib bash-completion gdb-multiarch
 RUN echo "deb http://downloads.skewed.de/apt eoan main" > /etc/apt/sources.list.d/graph_tool.list\
 	&& apt-key adv --keyserver keys.openpgp.org --recv-key 612DEFB798507F25\
 	&& apt-get update \

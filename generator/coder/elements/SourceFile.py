@@ -11,12 +11,13 @@ from .FunctionManager import FunctionManager
 from generator import tools
 
 class SourceFile:
-    def __init__(self):
-        self.includes = IncludeManager()
+    def __init__(self, _log=None):
+        self.includes = IncludeManager(_log)
         self.declarations = []
-        self.data_manager = DataObjectManager()
-        self.function_manager = FunctionManager()
+        self.data_manager = DataObjectManager(_log)
+        self.function_manager = FunctionManager(_log)
         self.definitions = []
+        self._log = _log.getChild(self.__class__.__name__)
 
     def include(self, filename):
         self.includes.add(Include(filename))

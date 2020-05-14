@@ -68,6 +68,7 @@ class VanillaTCB(StructDataObject):
         self['uxPriority'] = task.priority
         self['pxTopOfStack'] = task.impl.stack.tos
         self['pxStack'] = f"(StackType_t*) &{task.impl.stack.name}"
+        #TODO: truncate to max name length from config
         self['pcTaskName'] = f'"{task.name}"'
         self['uxBasePriority'] = f"{task.priority}"
         self['xStateListItem'] = self.arch.ListItem('xStateListItem')
@@ -97,13 +98,48 @@ class VanillaListHead(StructDataObject):
         self['pxIndex'] = DataObject('ListItem_t *', 'pxIndex')
         self['xListEnd'] = self.arch.ListItem('xListEnd', mini=True)
         self['xListEnd']['xItemValue'] = 'portMAX_DELAY'
-        self['xListEnd']['pxNext'] = self['xListEnd'].address
-        self['xListEnd']['pxPrevious'] = self['xListEnd'].address
+        self['xListEnd']['pxNext'] = lambda: self['xListEnd'].address
+        self['xListEnd']['pxPrevious'] = lambda: self['xListEnd'].address
         self['uxNumberOfItems'] = 0
-        self['pxIndex'] = self['xListEnd'].address
+        self['pxIndex'] = lambda: self['xListEnd'].address
         self['pxIndex'].do_cast = True
         self['xListEnd']['pxNext'].do_cast = True
         self['xListEnd']['pxPrevious'].do_cast = True
+
+class VanillaQueue(StructDataObject):
+    def __init__(self, queue, initialized, **kwargs):
+        StructDataObject.__init__(self,
+                                  "Queue_t", f"__queue_head_{queue.name}",
+                                  **kwargs)
+        self.queue = queue
+        queue.impl.head = self
+
+        if not initialized:
+            return
+        self['pcHead'] = DataObject('int8_t*', 'pcHead')
+        self['pcHead'] = queue.impl.data.address
+        self['pcHead'].do_cast = True
+        self['pcWriteTo'] = DataObject('int8_t*', 'pcWriteTo')
+        self['pcWriteTo'] = queue.impl.data.address
+        self['pcWriteTo'].do_cast = True
+        self['u'] = StructDataObject("NONE", 'u')
+        self['u']['xQueue'] = StructDataObject('QueuePointers_t', 'xQueue')
+        self['u']['xQueue']['pcTail'] = DataObject('int8_t*', 'pcTail')
+        self['u']['xQueue']['pcTail'] = (f"{queue.impl.data.address} +"
+                                         f"({queue.length} * {queue.size})")
+        self['u']['xQueue']['pcTail'].do_cast = True
+        self['u']['xQueue']['pcReadFrom'] = DataObject('int8_t*', 'pcReadFrom')
+        self['u']['xQueue']['pcReadFrom'] = (f"{queue.impl.data.address} +"
+                                             f"(({queue.length} - 1U) *"
+                                             f"{queue.size})")
+        self['u']['xQueue']['pcReadFrom'].do_cast = True
+        self['xTasksWaitingToSend'] = VanillaListHead("xTasksWaitingToSend")
+        self['xTasksWaitingToReceive'] = VanillaListHead("xTasksWaitingToReceive")
+        self['uxMessagesWaiting'] = 0
+        self['uxLength'] = queue.length
+        self['uxItemSize'] = queue.size
+        self['cRxLock'] = "queueUNLOCKED"
+        self['cTxLock'] = "queueUNLOCKED"
 
 
 class GenericArch(BaseCoder):
@@ -112,6 +148,7 @@ class GenericArch(BaseCoder):
     TaskList = VanillaTaskList
     TasksLists = VanillaTasksLists
     TCB = VanillaTCB
+    QUEUE = VanillaQueue
 
     def __init__(self):
         BaseCoder.__init__(self)
@@ -123,15 +160,15 @@ class GenericArch(BaseCoder):
 
 
     def generate_linkerscript(self):
-        self.logger.warning("generate_linkerscript not implemented: %s",
+        self._log.warning("generate_linkerscript not implemented: %s",
                             self)
 
     def generate_default_interrupt_handlers(self):
-        self.logger.warning("generate_default_interrupt_handlers not implemented: %s",
+        self._log.warning("generate_default_interrupt_handlers not implemented: %s",
                             self)
 
     def generate_startup_code(self):
-        self.logger.warning("generate_startup_code not implemented: %s", self)
+        self._log.warning("generate_startup_code not implemented: %s", self)
 
 
 

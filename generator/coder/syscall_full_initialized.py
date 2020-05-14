@@ -3,7 +3,7 @@ from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        CPPStatement,
                        Statement, Include, InstanceDataObject, StructDataObject,
                        FunctionDeclaration)
-from steps.freertos import Task
+from steps.freertos import Task, Queue
 
 
 
@@ -21,9 +21,14 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         task_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        queue_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
         self.generate_dataobjects_task_stacks(task_list)
         self.generate_data_objects_tcb_mem(task_list)
         self.generate_data_objects_ready_list(task_list)
+        self.generate_data_objects_queue_mem(queue_list, 'initialized')
+        self.generator.source_file.includes.add(Include('queue.h'))
         self.generate_limitation_warnings()
 
     def generate_dataobjects_task_stacks(self, task_list):
@@ -47,7 +52,22 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         task_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        queue_list = [self.ara_graph.instances.vp.obj[v]
+                      for v in self.ara_graph.instances.vertices()
+                      if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
         self.generate_system_code_init_tasks(task_list)
+        self.replace_create(task_list)
+        self.replace_create(queue_list)
+        if len(task_list) > 0 or len(queue_list) > 0:
+            self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
+        else:
+            self._log.warning("Neither Tasks nor Queues")
+
+    def replace_create(self, instance_list):
+        for instance in instance_list:
+            if not instance.branch:
+                instance.impl.init = 'initialized'
+
 
 
     def generate_system_code_init_tasks(self, task_list):
@@ -57,9 +77,9 @@ class InitializedFullSystemCalls(GenericSystemCalls):
             if not task.is_regular:
                 if task.name == 'idle_task':
                     idle_task = task
-                    self.logger.debug("IdleTask: %s", task)
+                    self._log.debug("IdleTask: %s", task)
                 continue
-            self.logger.debug("Generating init function call for %s", task)
+            self._log.debug("Generating init function call for %s", task)
             start_func = FunctionDeclaration(task.function,
                                              'void',
                                              ['void *'],
@@ -70,7 +90,7 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                                      'BaseType_t',
                                      ['TaskFunction_t',
                                       'const char *',
-                                      'const uint16_t',
+                                      'const uint32_t',
                                       'void * const',
                                       'UBaseType_t',
                                       'TaskHandle_t *'

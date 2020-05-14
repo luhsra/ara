@@ -67,7 +67,7 @@ default_traps = [
 class ArmArch(GenericArch):
 
     def static_stack(self, task):
-        self.logger.debug("Generating stack for %s", task)
+        self._log.debug("Generating stack for %s", task.name)
         stack = DataObjectArray("StackType_t",
                                 f'{task.name}_static_stack',
                                 f'{task.stack_size}',
@@ -77,7 +77,7 @@ class ArmArch(GenericArch):
         return stack
 
     def static_unchanged_tcb(self, task, initialized):
-        self.logger.debug("Generating TCB mem for %s", task)
+        self._log.debug("Generating TCB mem for %s", task.name)
         if initialized:
             tcb = self.TCB(task, initialized, extern_c=True)
         else:
@@ -89,7 +89,7 @@ class ArmArch(GenericArch):
         return tcb
 
     def initialized_stack(self, task):
-        self.logger.debug("Generating initialized stack for %s", task)
+        self._log.debug("Generating initialized stack for %s", task.name)
         stack = InstanceDataObject("InitializedStack_t",
                                    f'{task.name}_static_stack',
                                    [f'{task.stack_size}'],
@@ -99,6 +99,18 @@ class ArmArch(GenericArch):
         task.impl.stack = stack
         stack.tos = f"((StackType_t*)&{stack.name}) + {task.stack_size} - 17"
         return stack
+
+    def static_unchanged_queue(self, queue, initialized):
+        self._log.debug("Generating Queue: %s", queue.name)
+        data = DataObjectArray('uint8_t',
+                               # f'{queue.name}_queue_data',
+                               f'queue_data_{queue.name}',
+                               queue.size * queue.length)
+        self.generator.source_file.data_manager.add(data)
+        queue.impl.data = data
+        head = self.QUEUE(queue, initialized, extern_c=True)
+        self.generator.source_file.data_manager.add(head)
+        queue.impl.head = head
 
     def generate_startup_code(self):
         GenericArch.generate_startup_code(self)

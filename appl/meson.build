@@ -1,25 +1,37 @@
+app_flags = ['-DconfigINCLUDE_ALL_DECLS=1',
+             ]
+
+
 # FreeRTOS examples
 freertos_src_dir = join_paths(meson.current_source_dir(), 'FreeRTOS')
 
 freertos_targets = []
 
 disabled_tests = [
+  'a',
+  'abb_merge',
   'argument_load',
   'c',
+  'critical_region_detection',
   'dead_code',
   'deadlock',
   'dominator',
   'eventgroup',
   'f',
   'g',
+  'icfg',
   'invalid_isr_syscall',
   'invalid_mutex',
   'invalid_semaphore',
   'loop_detection',
   'multi_exit',
+  'mwe',
   'ospert',
   'priority_inversion',
-  'simple_queue_send',
+  # 'simple_queue_send',
+  'sse',
+  'start_scheduler_relation',
+  'syscall',
   'thesis_print',
   'topological_sort',
 ]
@@ -54,15 +66,11 @@ foreach app : ['a',
                             output : ['freertos-' + app + '.ll'],
                             depfile : 'freertos-' + app + '.ll.dep',
                             command : clang_cpp +
+                                      app_flags +
                                       libs_includes +
                                       ir_flags +
                                       clang_flags)
   set_variable('freertos_' + app.underscorify(), app_vanilla_ll)
-
-  o_target = custom_target('freertos-' + app + '.o',
-                            input : app_vanilla_ll,
-                            output : ['freertos-' + app + '.ll.o'],
-                            command : llc_cmd)
 
   named_elf_targets = []
   elf_targets = []
@@ -78,6 +86,11 @@ foreach app : ['a',
                               )
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
+
+    o_target = custom_target(name_prefix + '.o',
+                             input : app_aramodified_ll,
+                             output : name_prefix + '.ll.o',
+                             command : llc_cmd)
 
     os_ll_target = custom_target(name_prefix + '-os.cc.ll',
                                  input : os_target,

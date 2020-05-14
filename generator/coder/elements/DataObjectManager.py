@@ -163,7 +163,8 @@ class DataObjectArray(DataObject):
 
     def lvalue(self, child=None):
         lv = self.container.lvalue(self) if self.container else self.name
-        lv += f'[{child.name}]'
+        if child is not None:
+            lv += f'[{child.name}]'
         return lv
 
 
@@ -252,9 +253,10 @@ class InstanceDataObject(DataObject):
                          + self.name + args)
 
 class DataObjectManager:
-    def __init__(self):
+    def __init__(self, _log):
         # Namespace -> [DataObjects]
         self.__objects = {}
+        self._log = _log.getChild(self.__class__.__name__)
 
     def objects(self):
         """Iterate over all namespaces and collect all data objects"""
@@ -264,6 +266,7 @@ class DataObjectManager:
         return ret
 
     def add(self, obj, phase = 0, namespace=None):
+        self._log.debug("add: %s", obj)
         obj.data_object_manager = self
         # Check whether data object was already defined with that
         # name/type:
@@ -271,7 +274,7 @@ class DataObjectManager:
             if obj.name == old_obj.name:
                 assert obj.typename == old_obj.typename, "Variable %s already defined with different type" % obj.name
                 # Do not add another instance for this object
-                return
+                raise ValueError(f"duplicated element {obj.name} ({obj.typename})")
         obj.phase = phase
 
         if not namespace in self.__objects:

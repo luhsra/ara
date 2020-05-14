@@ -13,6 +13,8 @@ TIME_MARKER(done_InitBoard);
 TIME_MARKER(done_hello_print);
 TIME_MARKER(done_tastCreate);
 
+TaskHandle_t handle_zzz;
+
 void vTask2(void * param) {
   STORE_TIME_MARKER(task2_go);
   for (int n=0; n < 4; ++n) {
@@ -34,6 +36,9 @@ void vTask1(void * param) {
   }
   for (int i=0; i < 3; ++i)
     vTaskDelay(10);
+  kout << endl;
+  kout << "my_handle: " << xTaskGetCurrentTaskHandle() << endl;
+  kout << "T1 handle: " << handle_zzz << endl;
   StopBoard();
 }
 
@@ -47,7 +52,7 @@ int main() {
   kout << "hello from main" << endl;
   STORE_TIME_MARKER(done_hello_print);
 
-  xTaskCreate(vTask1, "zzz", 100, NULL, 1, NULL);
+  xTaskCreate(vTask1, "zzz", 100, NULL, 3, &handle_zzz);
   xTaskCreate(vTask2, "xxx", 100, NULL, 1, NULL);
   STORE_TIME_MARKER(done_tastCreate);
 

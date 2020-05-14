@@ -67,15 +67,17 @@ class Generator(Step):
         os_rules = self.os_choices[self.os.get()]()
         syscall_rules = self.syscall_choices[self.syscall_style.get()]()
         gen = GenImpl(ara_graph=g,
+                      ara_step=self,
                       arch_rules=arch_rules,
                       os_rules=os_rules,
                       syscall_rules=syscall_rules,
-                      logger=self._log)
+                      _log=self._log)
 
         gen.generate(self.out_file.get())
 
         dep_file = self.dep_file.get()
         if dep_file:
+            self._log.info("generate depfile: %s", dep_file)
             ara_file = sys.modules['__main__'].__file__
             base_path = os.path.dirname(ara_file)
             src_files = [getattr(m, '__file__') for m in sys.modules.values()

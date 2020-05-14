@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "ir_writer.h"
+#include <llvm/Support/FileSystem.h>
 
 
 namespace ara::step {
@@ -28,7 +29,7 @@ namespace ara::step {
 		logger.info() << "Writing IR to " << *filename << '.' << std::endl;
 
 		std::error_code error;
-		llvm::raw_fd_ostream out_file(*filename, error, llvm::sys::fs::OF_Text);
+		llvm::raw_fd_ostream out_file(*filename, error, llvm::sys::fs::OpenFlags::OF_Text);
 		if (out_file.has_error()) {
 			logger.err() << out_file.error() << std::endl;
 			out_file.close();
