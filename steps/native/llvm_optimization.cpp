@@ -1,6 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#include "cfg_prep.h"
+#include "llvm_optimization.h"
 #include "logging.h"
 #include <cassert>
 #include <llvm/Support/Error.h>
@@ -10,17 +10,17 @@
 
 namespace ara::step {
     using namespace llvm;
-	std::string CFGPreparation::get_description() const {
+	std::string LLVMOptimization::get_description() const {
 		return "Modifies the CFG to prepare it for further usage."
 		       "\n"
 		       "Performs various LLVM Passes on the IR to simplify the CFG.";
 	}
 
-    std::vector<std::string> CFGPreparation::get_dependencies() { return {"IRReader"}; }
+    std::vector<std::string> LLVMOptimization::get_dependencies() { return {"IRReader"}; }
 
-	void CFGPreparation::fill_options() { opts.emplace_back(pass_list); }
+	void LLVMOptimization::fill_options() { opts.emplace_back(pass_list); }
 
-	void CFGPreparation::run(graph::Graph& graph) {
+	void LLVMOptimization::run(graph::Graph& graph) {
         const bool dbg_flag = log_level.get() && (*log_level.get() == "debug");
         const bool verify_passes = false;
         Logger::LogStream& crit_logger = logger.crit();

@@ -13,7 +13,7 @@ cimport llvm_data
 
 from bb_split cimport BBSplit
 from cdummy cimport CDummy
-from cfg_prep cimport CFGPreparation
+from llvm_optimization cimport LLVMOptimization
 from comp_insert cimport CompInsert
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
@@ -293,7 +293,7 @@ def provide_steps():
     """
     return [_native_fac(step_fac[BBSplit]()),
             _native_fac(step_fac[CDummy]()),
-            _native_fac(step_fac[CFGPreparation]()),
+            _native_fac(step_fac[LLVMOptimization]()),
             _native_fac(step_fac[CompInsert]()),
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[ICFG]()),
