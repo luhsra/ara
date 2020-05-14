@@ -45,7 +45,7 @@ def provide():
 def main():
     """Checks the interoperability of Python and C++ passes."""
     g = graph.Graph()
-    config = {}
+    config = {'log_level': 'debug', 'dump': False, 'dump_prefix': '/dev/null'}
     extra_config = {}
     p_manager = stepmanager.StepManager(g, provides=provide)
 

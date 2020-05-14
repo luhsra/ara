@@ -3,7 +3,7 @@
 
 #include "ParentScreen.h"
 
-class SatellitesScreen : public ParentScreen  // TODO: This should inherit Screen, not ParentScreen. I just needed to attach DebugScreen somewhere
+class SatellitesScreen : public ParentScreen  // TO_not_DO: This should inherit Screen, not ParentScreen. I just needed to attach DebugScreen somewhere
 {
 public:
 	SatellitesScreen();

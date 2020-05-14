@@ -52,13 +52,10 @@
 #include "task.h"
 #include "queue.h"
 #include <stdint.h>
+#include <output.h>
 
 /* Used as a loop counter to create a very crude delay. */
 #define mainDELAY_LOOP_COUNT		( 0xffffff )
-
-void vPrintString( const char * string );
-
-void vPrintStringAndNumber( const char *string , int32_t number );
 
 QueueHandle_t xQueue;
 

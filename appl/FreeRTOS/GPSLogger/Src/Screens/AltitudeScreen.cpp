@@ -20,13 +20,13 @@ void AltitudeScreen::drawScreen() const
 	gps_fix gpsFix = GPSDataModel::instance().getGPSFix();
 
 	// Draw Altitude
-	// TODO draw '----' if no GPS signal found. Requires new character in font
+	// TO_not_DO draw '----' if no GPS signal found. Requires new character in font
 	char buf[7]; // 6 symbols + trailing zero
 	strcpy(buf, "-----");
 	if(gpsFix.valid.altitude)
 	{
 		if(gpsFix.alt.whole >= 0)
-			printNumber(buf, gpsFix.alt.whole, 5); //TODO add leading spaces
+			printNumber(buf, gpsFix.alt.whole, 5); //TO_not_DO add leading spaces
 		else
 			printNumber(buf+1, abs(gpsFix.alt.whole), 4); // there could be negative altitude
 	}
@@ -35,7 +35,7 @@ void AltitudeScreen::drawScreen() const
 	display.print(buf);
 
 	// Draw Altitude units
-	display.setFont(&Monospace8x12Font); // TODO: Use slightly larger bold font
+	display.setFont(&Monospace8x12Font); // TO_not_DO: Use slightly larger bold font
 	display.setCursor(82, 20);
 	display.print("m");
 
@@ -46,7 +46,7 @@ void AltitudeScreen::drawScreen() const
 		display.setFont(NULL);
 		display.setCursor(80, 24);
 		display.print(FloatPrinter(vspeed, 5));
-		display.print("m/s"); //TODO: Add a space before 'm/s'. Requires text wrapping fix in GFX library
+		display.print("m/s"); //TO_not_DO: Add a space before 'm/s'. Requires text wrapping fix in GFX library
 	}
 }
 

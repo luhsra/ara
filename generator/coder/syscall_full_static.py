@@ -13,28 +13,32 @@ class StaticFullSystemCalls(GenericSystemCalls):
         #TODO: TCB Speicher global
         #TODO: QueueStorage
         #TODO: Queue Verwaltungsstruktur
-        self.generate_dataobjects_task_stacks()
-        self.generate_data_objects_tcb_mem()
+        task_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        self.generate_dataobjects_task_stacks(task_list)
+        self.generate_data_objects_tcb_mem(task_list)
 
-    def generate_dataobjects_task_stacks(self):
+    def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''
-        for v in self.ara_graph.instances.vertices():
-            task = self.ara_graph.instances.vp.obj[v]
+        for task in task_list:
             self.arch_rules.static_stack(task)
 
-    def generate_data_objects_tcb_mem(self):
+    def generate_data_objects_tcb_mem(self, task_list):
         '''generate the memory for the tcbs'''
-        for v in self.ara_graph.instances.vertices():
-            task = self.ara_graph.instances.vp.obj[v]
+        for task in task_list:
             self.arch_rules.static_unchanged_tcb(task, initialized=False)
 
 
     def generate_system_code(self):
         super().generate_system_code()
-        self.generate_system_code_init_tasks()
+        task_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        self.generate_system_code_init_tasks(task_list)
 
 
-    def generate_system_code_init_tasks(self):
+    def generate_system_code_init_tasks(self, task_list):
         self.generator.source_file.includes.add(Include('task.h'))
         init_func = Function("init_static_system_objects",
                              'void',
@@ -42,8 +46,7 @@ class StaticFullSystemCalls(GenericSystemCalls):
                              extern_c=True,
         )
         idle_task = None
-        for v in self.ara_graph.instances.vertices():
-            task = self.ara_graph.instances.vp.obj[v]
+        for task in task_list:
             if not task.is_regular:
                 if task.name == 'idle_task':
                     idle_task = task

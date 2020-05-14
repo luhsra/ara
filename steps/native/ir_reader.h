@@ -12,15 +12,9 @@ namespace ara::step {
 
 	class IRReader : public Step {
 	  private:
-		/**
-		 * Load the file with path FN handled by Context.
-		 * @return LLVM Module on success or null on error.
-		 */
-		std::unique_ptr<llvm::Module> load_file(const std::string& FN, llvm::LLVMContext& Context);
+		option::TOption<option::String> input_file{"input_file", "Get input file."};
 
-		ara::option::TOption<ara::option::List<ara::option::String>> input_files{"input_files", "Get input files."};
-
-		virtual void fill_options() override { opts.emplace_back(input_files); }
+		virtual void fill_options() override { opts.emplace_back(input_file); }
 
 	  public:
 		virtual std::string get_name() const override { return "IRReader"; }

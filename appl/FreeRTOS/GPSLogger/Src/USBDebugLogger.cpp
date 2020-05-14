@@ -22,7 +22,7 @@ volatile uint16_t usbTxHead = 0;
 volatile uint16_t usbTxTail = 0;
 volatile uint16_t usbTransmitting = 0;
 
-// TODO Make it static
+// TO_not_DO Make it static
 SemaphoreHandle_t usbMutex = NULL;
 
 USBD_HandleTypeDef hUsbDeviceFS;

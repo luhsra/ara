@@ -12,7 +12,7 @@ GPSOdometer odometer2;
 GPSDataModel::GPSDataModel()
 {
 	// Initialize the mutex
-	// TODO: consider migrating to FreeRTOS 9.x which allows allocating mutex statically
+	// TO_not_DO: consider migrating to FreeRTOS 9.x which allows allocating mutex statically
 	xGPSDataMutex = xSemaphoreCreateMutex();
 
 	// Odometers are statically allocated

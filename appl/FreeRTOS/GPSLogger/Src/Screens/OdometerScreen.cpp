@@ -38,10 +38,10 @@ void OdometerScreen::drawBriefScreen() const
 	if(odometer.isActive())
 		display.print(FloatPrinter(odometer.getOdometerValue(), 4));
 	else
-		display.print("0000"); // TODO: print '----' when there is such symbol in the font
+		display.print("0000"); // TO_not_DO: print '----' when there is such symbol in the font
 		
 	// Draw distance units
-	display.setFont(&Monospace8x12Font); // TODO: Use slightly larger bold font
+	display.setFont(&Monospace8x12Font); // TO_not_DO: Use slightly larger bold font
 	display.setCursor(64, 20);
 	display.print("km");
 		
@@ -76,11 +76,11 @@ void OdometerScreen::drawDetailsScreen() const
 
 	display.setCursor(0,24);
 	NeoGPS::time_t totalTime(odometer.getTotalTime());
-	printToDisplay("T:%02d:%02d:%02d", totalTime.hours, totalTime.minutes, totalTime.seconds); // TODO: This may not fit if total time is more that 1 day
+	printToDisplay("T:%02d:%02d:%02d", totalTime.hours, totalTime.minutes, totalTime.seconds); // TO_not_DO: This may not fit if total time is more that 1 day
 
 	display.setCursor(64,24);
 	NeoGPS::time_t activeTime(odometer.getActiveTime());
-	printToDisplay("A:%02d:%02d:%02d", activeTime.hours, activeTime.minutes, activeTime.seconds); // TODO: This may not fit if total time is more that 1 day
+	printToDisplay("A:%02d:%02d:%02d", activeTime.hours, activeTime.minutes, activeTime.seconds); // TO_not_DO: This may not fit if total time is more that 1 day
 }
 
 const char * OdometerScreen::getOkButtonText() const

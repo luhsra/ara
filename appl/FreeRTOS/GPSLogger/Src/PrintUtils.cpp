@@ -46,7 +46,7 @@ struct CharBufTarget : public PrintTarget
 // Returns number of printed symbols
 static size_t PrintNum(unsigned int value, uint8_t radix, char * buf, uint8_t width, char padSymbol)
 {
-	//TODO check negative here
+	//TO_not_DO check negative here
 
 	size_t len = 0;
 
@@ -191,10 +191,10 @@ void printToDisplay(const char * fmt, ...)
 	va_end(args);
 }
 
-// TODO: port this to print to Stream one day
+// TO_not_DO: port this to print to Stream one day
 void printNumber(char * buf, uint16_t value, uint8_t digits, bool leadingZeros)
 {
-	// TODO Fix a case when value is larger than digits specified
+	// TO_not_DO Fix a case when value is larger than digits specified
 
 	bool drawSpaces = false;	
 	while(digits)

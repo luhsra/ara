@@ -24,7 +24,6 @@ foreach src : src_files
 endforeach
 
 cpp_src_files = [
-    'statistics',
 ]
 foreach src : cpp_src_files
   obj_target = custom_target(src,

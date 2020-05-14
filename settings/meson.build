@@ -1,23 +1,13 @@
 settings_dir = meson.current_source_dir()
-clang = find_program('clang', version: llvm_version)
-#FIXME: enable find_program if it correctly detects llc version
-llc = 'llc'
-#llc = find_program('llc', version: llvm_version)
-llvm_link = 'llvm-link'
-#llvm_link = find_program('llvm-link', llvm_version)
-llvm_opt = 'opt'
-#llmvm_opt = find_program('opt', llvm_version)
-bash = find_program('bash')
-nop = find_program('true')
 
 # compiler flags to generate annotated IR
-clang_flags = ['-g',
-               # '-Og',
-               # '-O2',
+clang_flags = ['-g',  # generate debug information
+               '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
-               '-fno-discard-value-names', '-fno-exceptions']
+               '-fno-discard-value-names',  # use the C/C++ variable names for the pendent in the LLVM IR when possible
+               '-fno-exceptions']
 llvm_opt_flags = [
   # '-time-passes',
   # '-Og',
@@ -37,11 +27,9 @@ ir_flags = ['-S', '-emit-llvm',]
 obj_flags = ['-c']
 
 if get_option('arch') == 'i386'
-  target_triple='x86_64-linux-gnu'
   clang_flags += '--target=i386-pc-linux-gnu'
 elif get_option('arch') == 'arm'
-  target_triple = 'arm-none-eabi'
-  clang_flags += ['--target='+target_triple,
+  clang_flags += ['--target=' + target_triple,
                   '-mthumb',
                   '-mcpu=cortex-m3',
                   '-march=armv7-m',
@@ -70,21 +58,9 @@ elif get_option('arch') == 'arm'
               ]
   llc_flags += ['--frame-pointer=none',
                 ]
-
 else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
-
-arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
-
-foreach prog_name : ['ar', 'objcopy', 'size', 'nm']
-    full_prog_name = target_triple + '-' + prog_name
-    prog = find_program(full_prog_name, required: false)
-    if not prog.found()
-        error(arch_error.format(get_option('arch').to_upper()))
-    endif
-    set_variable(prog_name, prog)
-endforeach
 
 compare_nm += nm.path()
 
@@ -106,7 +82,8 @@ llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 
 ara_gen_cmd = [bash, sh,
                '@INPUT@',
-               '--output_file', '@OUTPUT0@',
+               '--generator_output', '@OUTPUT0@',
+               '--ir_output', '@OUTPUT2@',
                '--dependency_file', '@DEPFILE@',
               ]
 
@@ -117,7 +94,7 @@ ara_gen_freertos_targets = ['vanilla',
                            ]
 
 foreach t : ara_gen_freertos_targets
-  set_variable('ara_gen_'+t, ara_gen_cmd +
+  set_variable('ara_gen_cmd_'+t, ara_gen_cmd +
                              [ '--step-settings',
                                files(join_paths(settings_dir, 'freertos_'+t+'.json')),
                              ]

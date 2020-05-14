@@ -9,12 +9,14 @@
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/raw_os_ostream.h>
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
+#include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 
 namespace ara::step {
 	using namespace llvm;
@@ -30,15 +32,15 @@ namespace ara::step {
 				continue;
 			}
 
-            // Execute LLVM's UnifyFunctionExitNodes pass
-            Module& module = graph.get_module();
-            legacy::FunctionPassManager fpm(&module);
-            fpm.add(createUnifyFunctionExitNodesPass());
+			// Execute LLVM's UnifyFunctionExitNodes pass
+			Module& module = graph.get_module();
+			legacy::FunctionPassManager fpm(&module);
+			fpm.add(createUnifyFunctionExitNodesPass());
 
-            if(fpm.run(function)) {
-                logger.debug() << "Exit Nodes unified successfully.\n" << std::endl;
-            }
-            // ----
+			if (fpm.run(function)) {
+				logger.debug() << function.getName().str() << ": UnifyFunctionExitNodes has modified something."
+				               << std::endl;
+			}
 
 			// exit block detection
 			// an exit block is a block with no successors
@@ -50,7 +52,7 @@ namespace ara::step {
 						             << std::endl;
 						logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
 						logger.debug() << "Basicblock 2 with exit: " << _bb << std::endl;
-						assert(false && "ARA expects that the UnifyFunctionExitNodes pass was executed.");
+						assert(false && "Something with the UnifyFunctionExitNodes went wrong.");
 					}
 					exit_block = &_bb;
 				}

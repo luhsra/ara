@@ -1,5 +1,6 @@
 #include <stm32f1xx_hal.h>
-// #include <serial.h>
+#include <stm32f1xx_hal_pwr.h>
+
 
 void SystemClock_Config(void) {
 	// Set up external oscillator to 72 MHz
@@ -51,4 +52,8 @@ void InitBoard() {
 extern "C" void SysTick_Handler(void) {
 	HAL_IncTick();
 	HAL_SYSTICK_IRQHandler();
+}
+
+void StopBoard(void) {
+	HAL_PWR_StopQEMU(0);
 }

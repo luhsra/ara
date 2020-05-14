@@ -24,13 +24,13 @@
  * Implementation of Arduino methods:
  * analogRead(): https://www.arduino.cc/en/Reference/AnalogRead
  *
- * TODO actually create stm32_analog_in_XX.c files for the different variants. This is getting too compicated
+ * TO_not_DO actually create stm32_analog_in_XX.c files for the different variants. This is getting too compicated
  *
- * TODO improve performance by saving if the pin was configured for analog, and do not configure again.
+ * TO_not_DO improve performance by saving if the pin was configured for analog, and do not configure again.
  *   also deconfigure from pinMode in this case
- * TODO implement analogReadResolution
- * TODO F1 has no resolution, map to arduino default 10 bits
- * TODO check if ClockPrescaler can always be set to ADC_CLOCK_SYNC_PCLK_DIV2
+ * TO_not_DO implement analogReadResolution
+ * TO_not_DO F1 has no resolution, map to arduino default 10 bits
+ * TO_not_DO check if ClockPrescaler can always be set to ADC_CLOCK_SYNC_PCLK_DIV2
  */
 
 #include "stm32_gpio_af.h"

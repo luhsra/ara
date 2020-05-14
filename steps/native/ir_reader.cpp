@@ -3,69 +3,57 @@
 #include "ir_reader.h"
 
 #include <cassert>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IRReader/IRReader.h>
 #include <llvm/Linker/Linker.h>
 #include <llvm/Support/SourceMgr.h>
 #include <llvm/Support/raw_os_ostream.h>
+#include <llvm/Transforms/Utils.h>
 
 namespace ara::step {
-	std::string IRReader::get_description() const { return "Parser IR files and link together to an LLVM module"; }
-
-	std::unique_ptr<llvm::Module> IRReader::load_file(const std::string& filepath, llvm::LLVMContext& Context) {
-		llvm::SMDiagnostic err;
-		logger.debug() << "Loading '" << filepath << "'\n";
-
-		std::unique_ptr<llvm::Module> Result = 0;
-		Result = llvm::parseIRFile(filepath, err, Context);
-		if (Result)
-			return Result;
-
-		Logger::LogStream& debug_logger = logger.debug();
-		err.print("IRReader", debug_logger.llvm_ostream());
-		debug_logger.flush();
-		return NULL;
+	std::string IRReader::get_description() const {
+		return "Parse IR file into an LLVM module and prepare it for ARA.\n"
+		       "Currently this means: Execute the mem2reg pass.";
 	}
 
 	void IRReader::run(graph::Graph& graph) {
 		// get file arguments from config
-		assert(input_files.get());
-		std::vector<std::string> files = *input_files.get();
+		assert(input_file.get());
+		std::string file = *input_file.get();
 
 		// link the modules
 		// use first module a main module
-		logger.debug() << "Startfile: '" << files.at(0) << "'" << std::endl;
 		llvm::LLVMContext& context = graph.get_llvm_data().get_context();
-		auto composite = load_file(files.at(0), context);
-		if (composite.get() == 0) {
-			logger.err() << "Error loading file '" << files.at(0) << "'" << std::endl;
+
+		logger.debug() << "Loading '" << file << "'" << std::endl;
+
+		llvm::SMDiagnostic err;
+		std::unique_ptr<llvm::Module> module = llvm::parseIRFile(file, err, context);
+
+		if (module == nullptr) {
+			logger.err() << "Error loading file '" << file << "'" << std::endl;
+			Logger::LogStream& debug_logger = logger.debug();
+			err.print("IRReader", debug_logger.llvm_ostream());
+			debug_logger.flush();
 			abort();
 		}
 
-		llvm::Linker linker(*composite);
+		llvm::legacy::FunctionPassManager fpm(module.get());
+		fpm.add(llvm::createPromoteMemoryToRegisterPass());
+		fpm.doInitialization();
 
-		// resolve link errors
-		for (unsigned i = 1; i < files.size(); ++i) {
-			auto M = load_file(files.at(i), context);
-			if (M.get() == 0) {
-				logger.err() << "Error loading file '" << files.at(i) << "'" << std::endl;
-				abort();
+		for (llvm::Function& func : *module) {
+			// Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn't given
+			if (func.hasOptNone()) {
+				func.removeFnAttr(llvm::Attribute::OptimizeNone);
 			}
 
-			logger.debug() << "Linking in '" << files.at(i) << "'" << std::endl;
-
-			for (auto it = M->global_begin(); it != M->global_end(); ++it) {
-				llvm::GlobalVariable& gv = *it;
-				if (!gv.isDeclaration() && !gv.hasPrivateLinkage())
-					gv.setLinkage(llvm::GlobalValue::AvailableExternallyLinkage);
-			}
-
-			if (linker.linkInModule(std::move(M))) {
-				logger.err() << "Link error in '" << files.at(i) << "'" << std::endl;
-				abort();
+			if (fpm.run(func)) {
+				logger.debug() << func.getName().str() << ": Mem2Reg has modified the function." << std::endl;
 			}
 		}
 
 		// convert unique_ptr to shared_ptr
-		graph.get_llvm_data().initialize_module(std::move(composite));
+		graph.get_llvm_data().initialize_module(std::move(module));
 	}
 } // namespace ara::step

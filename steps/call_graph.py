@@ -41,10 +41,14 @@ class CallGraph(Step):
             new_v = cg.add_vertex()
             v_map[e.target()] = new_v
             self._copy_props(cg, e.target(), new_v)
-            cg.add_edge(v_map[e.source()], new_v)
+            new_e = cg.add_edge(v_map[e.source()], new_v)
+            cg.ep.label[new_e] = cg.ep.label[e]
         return new_root
 
-    def _add_vertex(self, cg, name, caller, src=None):
+    def _get_edge_label(self, cfg, caller):
+        return "Call: " + cfg.vp.name[cfg.vertex(caller)]
+
+    def _add_vertex(self, cg, cfg, name, caller, src=None):
         """Add a new vertex with name. Optionally link it with src.
         If the vertex is already present, its whole subtree is copied.
         """
@@ -53,7 +57,8 @@ class CallGraph(Step):
             # we find a duplicate
             other_v = self._dup_subtree(cg, v[0])
             cg.vp.cfglink[other_v] = caller
-            cg.add_edge(src, other_v)
+            e = cg.add_edge(src, other_v)
+            cg.ep.label[e] = self._get_edge_label(cfg, caller)
             return None, True
 
         v = cg.add_vertex()
@@ -61,7 +66,8 @@ class CallGraph(Step):
         cg.vp.func[v] = name
         cg.vp.cfglink[v] = caller
         if src:
-            cg.add_edge(src, v)
+            e = cg.add_edge(src, v)
+            cg.ep.label[e] = self._get_edge_label(cfg, caller)
         return v, False
 
     def visit(self, lcfg, icfg, cg, cg_vertex, abb):
@@ -73,7 +79,8 @@ class CallGraph(Step):
                                             graph.ABBType.syscall]:
                 for target in icfg.vertex(e.source()).out_neighbors():
                     func = icfg.vp.name[icfg.get_function(target)]
-                    new_vert, visited = self._add_vertex(cg, func, e.source(),
+                    new_vert, visited = self._add_vertex(cg, icfg,
+                                                         func, e.source(),
                                                          src=cg_vertex)
                     if not visited:
                         self.visit(lcfg, icfg, cg, new_vert, target)
@@ -93,8 +100,9 @@ class CallGraph(Step):
         cg.vp["label"] = cg.new_vertex_property("string")
         cg.vp["func"] = cg.new_vertex_property("string")
         cg.vp["cfglink"] = cg.new_vertex_property("long")
+        cg.ep["label"] = cg.new_edge_property("string")
         # add root vertex
-        start, _ = self._add_vertex(cg, entry_point, entry_abb)
+        start, _ = self._add_vertex(cg, g.cfg, entry_point, entry_abb)
 
         self.visit(lcfg, icfg, cg, start, entry_abb)
 

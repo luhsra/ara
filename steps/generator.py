@@ -37,7 +37,7 @@ class Generator(Step):
                                     help='style of resulting syscalls',
                                     step_name=self.get_name(),
                                     ty=Choice(*self.syscall_choices.keys()))
-        self.out_file = Option('output_file',
+        self.out_file = Option('generator_output',
                                  help='file to write the generated OS into',
                                  step_name=self.get_name(),
                                  glob=True,
@@ -79,7 +79,7 @@ class Generator(Step):
             ara_file = sys.modules['__main__'].__file__
             base_path = os.path.dirname(ara_file)
             src_files = [getattr(m, '__file__') for m in sys.modules.values()
-                         if base_path in getattr(m, '__file__', '')]
+                         if base_path in (getattr(m, '__file__', '') or "")]
             with open(dep_file, 'w') as fd:
                 fd.write(gen.file_prefix + ": ")
                 fd.write("\\\n".join(src_files))

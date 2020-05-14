@@ -46,7 +46,7 @@ void SystemClock_Config(void)
 	HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
 
 	// Set up SysTTick to 1 ms
-	// TODO: Do we really need this? SysTick is initialized multiple times in HAL
+	// TO_not_DO: Do we really need this? SysTick is initialized multiple times in HAL
 	HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 	HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 

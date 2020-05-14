@@ -146,12 +146,12 @@ int main( void ){
     
 
 
-    xTaskCreate( Task1, "Task1", 1000, NULL, 1, NULL );
-    xTaskCreate( Task2, "Task2", 1000, NULL, 2, NULL );
-    xTaskCreate( Task3, "Task3", 1000, NULL, 1, NULL );
-    xTaskCreate( Task4, "Task4", 1000, NULL, 2, NULL );
-    xTaskCreate( Task5, "Task5", 1000, NULL, 2, NULL );
-    xTaskCreate( Task6, "Task6", 1000, NULL, 2, NULL );
+    xTaskCreate( Task1, "Task1", 100, NULL, 1, NULL );
+    xTaskCreate( Task2, "Task2", 100, NULL, 2, NULL );
+    xTaskCreate( Task3, "Task3", 100, NULL, 1, NULL );
+    xTaskCreate( Task4, "Task4", 100, NULL, 2, NULL );
+    xTaskCreate( Task5, "Task5", 100, NULL, 2, NULL );
+    xTaskCreate( Task6, "Task6", 100, NULL, 2, NULL );
     vTaskStartScheduler();
     
 

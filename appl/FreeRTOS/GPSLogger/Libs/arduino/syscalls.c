@@ -126,7 +126,7 @@ extern int _write( UNUSED_PARAM(int file), char *ptr, int len )
   int iIndex = 0;
 
   for ( iIndex=0 ; iIndex < len ; iIndex++) {
-    //TODO write to Serial
+    //TO_not_DO write to Serial
   }
   return iIndex ;
 }

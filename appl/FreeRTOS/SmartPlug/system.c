@@ -31,8 +31,8 @@ int STATION_MODE = 234;
 int STATION_CONNECTING = 6546;
 int AUTH_WPA_WPA2_PSK = 6463;
 int STATIONAP_MODE = 23;
-// TODO: Check if Thingsboard token is correct
-// TODO: Clean up function placement.
+// TO_not_DO: Check if Thingsboard token is correct
+// TO_not_DO: Clean up function placement.
 
 extern void sdk_wifi_set_opmode(int);
 extern int sdk_wifi_station_get_connect_status();
@@ -49,7 +49,7 @@ static void setGatewayPlcPhyAddressTask(void *pvParameters);
 static void connectToStation(char *ssid, char *password, int ssidLen, int passwordLen);
 static inline void fillJsonConnectionSuccessStringWithPlcPhyAddr(char *plcPhyAddrStr);
 
-// TODO: Add makefile define NULL = THIS (when task self deletion use vTaskDelete(THIS) instead of vTaskDelete(NULL))
+// TO_not_DO: Add makefile define NULL = THIS (when task self deletion use vTaskDelete(THIS) instead of vTaskDelete(NULL))
 void initDeviceByMode()
 {
 	char buffer[16];

@@ -116,7 +116,7 @@ void ackRawGPSData(uint8_t len)
 #if 1
 bool initSDCard()
 {
-	//TODO Perhaps we should uninitialize SD card first
+	//TO_not_DO Perhaps we should uninitialize SD card first
 
 	//usbDebugWrite("Initializing SD card...\n");
 
@@ -164,7 +164,7 @@ void runSDMessageLoop()
 	{
 
 		SDMessage msg;
-		if(xQueueReceive(sdQueue, &msg, 50)) // TODO: fix hardcode
+		if(xQueueReceive(sdQueue, &msg, 50)) // TO_not_DO: fix hardcode
 		{
 			switch(msg.messageType)
 			{
