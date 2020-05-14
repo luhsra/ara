@@ -11,23 +11,16 @@ cimport cstep
 cimport cgraph
 cimport llvm_data
 
-from agressive_dce cimport AgressiveDCE
 from bb_split cimport BBSplit
 from cdummy cimport CDummy
 from cfg_prep cimport CFGPreparation
 from comp_insert cimport CompInsert
-from const_prop cimport ConstProp
-from dead_code_elimination cimport DeadCodeElimination
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
 from ir_reader cimport IRReader
 from ir_writer cimport IRWriter
 from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
-from mem2reg cimport Mem2Reg
-from reassociate cimport Reassociate
-from sparse_cond_const_prop cimport SparseCondConstProp
-from simplify_cfg cimport SimplifyCFG
 from value_analysis_core cimport ValueAnalysisCore
 
 from test cimport (BBSplitTest,
@@ -299,23 +292,16 @@ def provide_steps():
     """Provide a list of all native steps. This also constructs as many
     objects as steps exist.
     """
-    return [_native_fac(step_fac[AgressiveDCE]()),
-            _native_fac(step_fac[BBSplit]()),
+    return [_native_fac(step_fac[BBSplit]()),
             _native_fac(step_fac[CDummy]()),
             _native_fac(step_fac[CFGPreparation]()),
             _native_fac(step_fac[CompInsert]()),
-            _native_fac(step_fac[ConstProp]()),
-            _native_fac(step_fac[DeadCodeElimination]()),
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[IRWriter]()),
             _native_fac(step_fac[LLVMBasicOptimization]()),
             _native_fac(step_fac[LLVMMap]()),
-            _native_fac(step_fac[Mem2Reg]()),
-            _native_fac(step_fac[Reassociate]()),
-            _native_fac(step_fac[SparseCondConstProp]()),
-            _native_fac(step_fac[SimplifyCFG]()),
             _native_fac_ReplaceSyscallsCreate(),
             _native_fac(step_fac[ValueAnalysisCore]())]
 

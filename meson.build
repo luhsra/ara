@@ -114,14 +114,6 @@ test('ara_tester',
    env : [python_path]
 )
 
-test('mem2reg',
-py3_inst,
-args: [files('ara.py'), gpslogger_application,
-      '--log-level', 'debug',
-      '--step', 'Mem2Reg'],
-env : [python_path]
-)
-
 generator_settings = files('test/generator_settings.json')
 
 test('generator_tester',
