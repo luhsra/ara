@@ -1,75 +1,77 @@
 // vim: set noet ts=4 sw=4:
 
 #include "llvm_optimization.h"
+
 #include "logging.h"
+
 #include <cassert>
-#include <llvm/Support/Error.h>
 #include <llvm/IR/PassManager.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Support/Error.h>
 #include <llvm/Transforms/Utils.h>
 
 namespace ara::step {
-    using namespace llvm;
+	using namespace llvm;
 	std::string LLVMOptimization::get_description() const {
 		return "Modifies the CFG to prepare it for further usage."
 		       "\n"
 		       "Performs various LLVM Passes on the IR to simplify the CFG.";
 	}
 
-    std::vector<std::string> LLVMOptimization::get_dependencies() { return {"IRReader"}; }
+	std::vector<std::string> LLVMOptimization::get_dependencies() { return {"IRReader"}; }
 
 	void LLVMOptimization::fill_options() { opts.emplace_back(pass_list); }
 
 	void LLVMOptimization::run(graph::Graph& graph) {
-        const bool dbg_flag = log_level.get() && (*log_level.get() == "debug");
-        const bool verify_passes = false;
-        Logger::LogStream& crit_logger = logger.crit();
-        Module& module = graph.get_module();
+		const bool dbg_flag = log_level.get() && (*log_level.get() == "debug");
+		const bool verify_passes = false;
+		Logger::LogStream& crit_logger = logger.crit();
+		Module& module = graph.get_module();
 
-        // Initialize LLVM Managers
-        ModulePassManager mpm(dbg_flag);
-        ModuleAnalysisManager mam(dbg_flag);
-        FunctionAnalysisManager fam(dbg_flag);
-        CGSCCAnalysisManager cgsccam(dbg_flag);
-        LoopAnalysisManager lam(dbg_flag);
+		// Initialize LLVM Managers
+		ModulePassManager mpm(dbg_flag);
+		ModuleAnalysisManager mam(dbg_flag);
+		FunctionAnalysisManager fam(dbg_flag);
+		CGSCCAnalysisManager cgsccam(dbg_flag);
+		LoopAnalysisManager lam(dbg_flag);
 
-        // Initialize PassBuilder and register Analyses
-        PassBuilder pb;
-        pb.registerModuleAnalyses(mam);
-        pb.registerCGSCCAnalyses(cgsccam);
-        pb.registerFunctionAnalyses(fam);
-        pb.registerLoopAnalyses(lam);
-        pb.crossRegisterProxies(lam, fam, cgsccam, mam);
+		// Initialize PassBuilder and register Analyses
+		PassBuilder pb;
+		pb.registerModuleAnalyses(mam);
+		pb.registerCGSCCAnalyses(cgsccam);
+		pb.registerFunctionAnalyses(fam);
+		pb.registerLoopAnalyses(lam);
+		pb.crossRegisterProxies(lam, fam, cgsccam, mam);
 
-        // Parse pass list from command line options
-        if (auto error = pb.parsePassPipeline(mpm, StringRef(*pass_list.get()), verify_passes, dbg_flag)) {
-            logAllUnhandledErrors(std::move(error), crit_logger.llvm_ostream(), "[Parse Error] ");
-            crit_logger.flush();
-            abort();
-        }
+		// Parse pass list from command line options
+		if (auto error = pb.parsePassPipeline(mpm, StringRef(*pass_list.get()), verify_passes, dbg_flag)) {
+			logAllUnhandledErrors(std::move(error), crit_logger.llvm_ostream(), "[Parse Error] ");
+			crit_logger.flush();
+			abort();
+		}
 
-        for (auto& function : module) {
-            if (function.empty())
-                continue;
+		for (auto& function : module) {
+			if (function.empty())
+				continue;
 
-            // Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn't given
-            if (function.hasOptNone()) {
-                function.removeFnAttr(Attribute::OptimizeNone);
-            }
+			// Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn't given
+			if (function.hasOptNone()) {
+				function.removeFnAttr(Attribute::OptimizeNone);
+			}
 
-            // TODO Add an option for enabling IR dump on console
-            //function.dump();
-        }
-        mpm.run(module, mam);
-        /*for (auto& function : module) {
-            if (function.empty())
-                continue;
+			// TODO Add an option for enabling IR dump on console
+			// function.dump();
+		}
+		mpm.run(module, mam);
+		/*for (auto& function : module) {
+		    if (function.empty())
+		        continue;
 
-            // TODO Add an option for enabling IR dump on console
-            //function.dump();
-        }*/
+		    // TODO Add an option for enabling IR dump on console
+		    //function.dump();
+		}*/
 
-        mam.clear();
+		mam.clear();
 		logger.debug() << this->get_name() << " step finished successfully. " << std::endl;
 	}
 } // namespace ara::step
