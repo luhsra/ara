@@ -23,9 +23,17 @@ namespace ara::step {
 	void LLVMOptimization::fill_options() { opts.emplace_back(pass_list); }
 
 	void LLVMOptimization::run(graph::Graph& graph) {
-		const bool dbg_flag = log_level.get() && (*log_level.get() == "debug");
+		// The PassManagers have no way to do debug logging to an own ostream. They use dbgs() which always prints to
+		// stdout. Nevertheless, debug logging can be switched on and off, therefore we approximate this with our
+		// log_level.
+		const bool dbg_flag = logger.get_level() == LogLevel::DEBUG;
 		const bool verify_passes = false;
-		Logger::LogStream& crit_logger = logger.crit();
+		if (!pass_list.get()) {
+			logger.debug() << "pass_list argument is not given. Defaulting to do nothing then." << std::endl;
+			return;
+		}
+
+		Logger::LogStream& error_logger = logger.err();
 		Module& module = graph.get_module();
 
 		// Initialize LLVM Managers
@@ -45,33 +53,13 @@ namespace ara::step {
 
 		// Parse pass list from command line options
 		if (auto error = pb.parsePassPipeline(mpm, StringRef(*pass_list.get()), verify_passes, dbg_flag)) {
-			logAllUnhandledErrors(std::move(error), crit_logger.llvm_ostream(), "[Parse Error] ");
-			crit_logger.flush();
-			abort();
+			logAllUnhandledErrors(std::move(error), error_logger.llvm_ostream(), "[Parse Error] ");
+			error_logger.flush();
+			std::string step_name = get_name();
+			throw StepError(step_name, "Parse error in pass_list.");
 		}
 
-		for (auto& function : module) {
-			if (function.empty())
-				continue;
-
-			// Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn't given
-			if (function.hasOptNone()) {
-				function.removeFnAttr(Attribute::OptimizeNone);
-			}
-
-			// TODO Add an option for enabling IR dump on console
-			// function.dump();
-		}
 		mpm.run(module, mam);
-		/*for (auto& function : module) {
-		    if (function.empty())
-		        continue;
-
-		    // TODO Add an option for enabling IR dump on console
-		    //function.dump();
-		}*/
-
 		mam.clear();
-		logger.debug() << this->get_name() << " step finished successfully. " << std::endl;
 	}
 } // namespace ara::step
