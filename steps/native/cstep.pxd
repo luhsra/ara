@@ -14,4 +14,4 @@ cdef extern from "step.h" namespace "ara::step":
         string get_description()
         vector[string] get_dependencies()
         void apply_config(dict config)
-        void run(cgraph.Graph g)
+        void run(cgraph.Graph g) except +
