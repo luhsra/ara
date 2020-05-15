@@ -104,7 +104,7 @@ class ArmArch(GenericArch):
         self._log.debug("Generating Queue: %s", queue.name)
         data = DataObjectArray('uint8_t',
                                # f'{queue.name}_queue_data',
-                               f'queue_data_{queue.name}',
+                               f'queue_data_{queue.name}{queue.uid}',
                                queue.size * queue.length)
         self.generator.source_file.data_manager.add(data)
         queue.impl.data = data

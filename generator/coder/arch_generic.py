@@ -109,7 +109,7 @@ class VanillaListHead(StructDataObject):
 class VanillaQueue(StructDataObject):
     def __init__(self, queue, initialized, **kwargs):
         StructDataObject.__init__(self,
-                                  "Queue_t", f"__queue_head_{queue.name}",
+                                  "Queue_t", f"__queue_head_{queue.name}{queue.uid}",
                                   **kwargs)
         self.queue = queue
         queue.impl.head = self

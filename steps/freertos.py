@@ -11,6 +11,7 @@ logger = logging.getLogger("FreeRTOS")
 
 # TODO make this a dataclass once we use Python 3.7
 class Task:
+    uid_counter = 0
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
                  priority, handle_p, abb, branch, after_scheduler,
                  is_regular=True):
@@ -26,12 +27,15 @@ class Task:
         self.branch = branch
         self.after_scheduler = after_scheduler
         self.is_regular = is_regular
+        self.uid = Task.uid_counter
+        Task.uid_counter += 1
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
 
 # TODO make this a dataclass once we use Python 3.7
 class Queue:
+    uid_counter = 0
     def __init__(self, cfg, name, handler, length, size, abb, branch,
                  after_scheduler):
         self.cfg = cfg
@@ -42,6 +46,8 @@ class Queue:
         self.abb = abb
         self.branch = branch
         self.after_scheduler = after_scheduler
+        self.uid = Queue.uid_counter
+        Queue.uid_counter += 1
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
