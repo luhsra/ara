@@ -78,6 +78,9 @@ namespace ara::step {
 					const llvm::FunctionType* called_type = called_func->getFunctionType();
 
 					for (llvm::Function& candidate : mod) {
+						if (candidate.empty() || candidate.isIntrinsic()) {
+							continue;
+						}
 						if (candidate.getFunctionType() == called_type) {
 							auto other_func = cfg.back_map<Graph>(g, candidate);
 							auto other_abb = get_vertex<Graph>(
