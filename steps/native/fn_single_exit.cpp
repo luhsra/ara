@@ -23,6 +23,20 @@ namespace ara::step {
 
 	std::vector<std::string> FnSingleExit::get_dependencies() { return {"BBSplit"}; }
 
+	inline void FnSingleExit::fill_unreachable_and_exit(BasicBlock*& unreachable, BasicBlock*& exit,
+	                                                    BasicBlock& probe) const {
+		for (Instruction& i : probe) {
+			if (isa<ReturnInst>(i)) {
+				exit = &probe;
+				break;
+			}
+			if (isa<UnreachableInst>(i)) {
+				unreachable = &probe;
+				break;
+			}
+		}
+	}
+
 	void FnSingleExit::run(graph::Graph& graph) {
 		graph::LLVMData& llvm_data = graph.get_llvm_data();
 		for (auto& function : llvm_data.get_module()) {
@@ -46,12 +60,26 @@ namespace ara::step {
 			for (BasicBlock& _bb : function) {
 				if (succ_begin(&_bb) == succ_end(&_bb)) {
 					if (exit_block != nullptr) {
-						logger.err() << "Function: " << function.getName().str() << " has multiple exit blocks."
-						             << std::endl;
-						logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
-						logger.debug() << "Basicblock 2 with exit: " << _bb << std::endl;
-						logger.debug() << "Whole function: " << function << std::endl;
-						assert(false && "Something with the UnifyFunctionExitNodes went wrong.");
+						// one block is probably unreachable
+						BasicBlock* unreachable = nullptr;
+						BasicBlock* exit = nullptr;
+						fill_unreachable_and_exit(unreachable, exit, *exit_block);
+						fill_unreachable_and_exit(unreachable, exit, _bb);
+						if (unreachable != nullptr && exit != nullptr && unreachable != exit) {
+							// link unreachable block to exit block
+							// Technically, we create a branch instruction after an unreachable instruction
+							// This my break LLVM in some cases. The spec is unclear theryby.
+							// The other fix is to make ARA aware of ignoring unreachable instructions.
+							BranchInst::Create(exit, unreachable);
+						} else {
+
+							logger.err() << "Function: " << function.getName().str() << " has multiple exit blocks."
+							             << std::endl;
+							logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
+							logger.debug() << "Basicblock 2 with exit: " << _bb << std::endl;
+							logger.debug() << "Whole function: " << function << std::endl;
+							assert(false && "Something with the UnifyFunctionExitNodes went wrong.");
+						}
 					}
 					exit_block = &_bb;
 				}
@@ -83,7 +111,7 @@ namespace ara::step {
 			if (exit_block) {
 				if (loop_found) {
 					logger.debug() << "Function " << function.getName().str()
-					               << " has an regular exit and endless loops." << std::endl;
+					               << " has a regular exit and endless loops." << std::endl;
 				} else {
 					logger.debug() << "Function " << function.getName().str() << " has exactly one regular exit."
 					               << std::endl;
