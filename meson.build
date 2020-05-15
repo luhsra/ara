@@ -127,7 +127,7 @@ test('generator_tester',
 
 test('gpslogger',
    py3_inst,
-   args: [ara_test, gpslogger_targets, '--log-level', 'debug', '--step', 'SSE'],
+   args: [ara_test, gpslogger_application, '--log-level', 'debug', '--step', 'SSE'],
    env : [python_path]
 )
 
