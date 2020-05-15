@@ -19,7 +19,7 @@ cdef public struct PyLogger:
     PyObject* logger
 
 
-cdef public LogLevel get_level(object py_logger):
+cdef public LogLevel py_log_get_level(object py_logger):
     cdef int lvl = py_logger.getEffectiveLevel()
     return <LogLevel> lvl;
 

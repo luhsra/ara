@@ -144,10 +144,11 @@ namespace ara {
 		Logger(PyObject* py_logger) {
 			assert(py_logger != nullptr);
 			logger.logger = py_logger;
-			logger.level = get_level(py_logger);
+			logger.level = py_log_get_level(py_logger);
 		}
 
 		void set_level(LogLevel level) { logger.level = level; }
+		LogLevel get_level() { return logger.level; }
 
 		Logger::LogStream& crit() { return get_instance(LogLevel::CRITICAL); }
 
