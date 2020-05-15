@@ -7,7 +7,7 @@ add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 
 # check all dependencies first
 
-cython = find_program('cython')
+cython = find_program('cython', version: '>=0.29.14')
 cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')

@@ -11,7 +11,7 @@ The following dependencies are needed:
 
 - [meson](https://mesonbuild.com/) (>=0.52.0)
 - [llvm](http://llvm.org/) (==9)
-- [cython](https://cython.org/) (>=0.29.0)
+- [cython](https://cython.org/) (>=0.29.14)
 - [python](https://www.python.org/) (>=3.6)
 
 Getting packages in SRA lab:
@@ -177,6 +177,3 @@ This is because of precompiled headers. They fasten the build a little bit but n
 ```
 meson configure -Db_pch=false
 ```
-
-### Error: "'PyObject' does not name a type"
-If your `cython --version` is <0.29.14 and you have this error, you have to add `#import "Python.h"` to `subprojects/pyllco/pyllco.h`.
