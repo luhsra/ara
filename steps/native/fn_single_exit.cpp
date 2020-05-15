@@ -50,6 +50,7 @@ namespace ara::step {
 						             << std::endl;
 						logger.debug() << "Basicblock 1 with exit: " << *exit_block << std::endl;
 						logger.debug() << "Basicblock 2 with exit: " << _bb << std::endl;
+						logger.debug() << "Whole function: " << function << std::endl;
 						assert(false && "Something with the UnifyFunctionExitNodes went wrong.");
 					}
 					exit_block = &_bb;
