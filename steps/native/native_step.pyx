@@ -23,6 +23,7 @@ from llvm_map cimport LLVMMap
 from value_analysis_core cimport ValueAnalysisCore
 
 from test cimport (BBSplitTest,
+                   CFGOptimizeTest,
                    CompInsertTest,
                    FnSingleExitTest,
                    LLVMMapTest,
@@ -307,6 +308,7 @@ def provide_steps():
 def provide_test_steps():
     """Do not use this, only for testing purposes."""
     return [_native_fac(step_fac[BBSplitTest]()),
+            _native_fac(step_fac[CFGOptimizeTest]()),
             _native_fac(step_fac[CompInsertTest]()),
             _native_fac(step_fac[FnSingleExitTest]()),
             _native_fac(step_fac[LLVMMapTest]()),

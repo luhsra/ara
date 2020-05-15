@@ -47,12 +47,6 @@ test('ir-reader-multiple-symbols',
   env: [python_path]
 )
 
-test('cfg_prep',
-   py3_inst,
-   args: [files('../ara.py'), gpslogger_application, '--step-settings', files('cfg_prep.json'), '--log-level', 'debug'],
-   env : [python_path]
-)
-
 test('dummy-test',
    py3_inst,
    args: [files('../ara.py'), 'empty',

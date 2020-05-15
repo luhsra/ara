@@ -26,6 +26,7 @@ disabled_tests = [
   'loop_detection',
   'multi_exit',
   'mwe',
+  'optimization',
   'ospert',
   'priority_inversion',
   # 'simple_queue_send',
@@ -52,6 +53,7 @@ foreach app : ['a',
                'invalid_semaphore',
                'loop_detection',
                'multi_exit',
+               'optimization',
                'ospert',
                'priority_inversion',
                'sse',
@@ -162,7 +164,7 @@ foreach app : ['a',
     named_elf_targets += [t, elf_target]
     named_elf_targets += [t+'.lto', lto_elf]
 
-    if get_option('disable_qemu_tests') or  app in disabled_tests
+    if get_option('disable_qemu_tests') or app in disabled_tests
       py = disabler()
     else
       py = py3_inst
