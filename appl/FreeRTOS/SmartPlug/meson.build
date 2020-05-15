@@ -28,6 +28,7 @@ foreach file : src_files
                                     command : clang_c +
                                               libs_includes +
                                               smartplug_includes +
+                                              freertos_default_config +
                                               ir_flags +
                                               clang_flags)
 endforeach
