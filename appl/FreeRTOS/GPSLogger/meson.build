@@ -212,25 +212,29 @@ foreach t : ara_gen_freertos_targets
   named_elf_targets += [t, elf_target]
   named_elf_targets += [t+'.lto', lto_elf]
 
-  if get_option('disable_qemu_tests') or  app in disabled_tests
-    py = disabler()
+  if get_option('disable_gpslogger_tests') == false
+    if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
+      test_elf = 'nop'
+    else
+      test_elf = elf_target
+    endif
+    test('run_qemu_' + name_prefix,
+         py3_inst,
+         args: [qemu_test_runner,
+                qemu_cmd,
+                'gpslogger',
+                test_elf,
+               ],
+         env: [python_path],
+         workdir: meson.current_source_dir(),
+        )
   else
-    py = py3_inst
+    error('disabled')
   endif
-  test('run_qemu_' + name_prefix,
-       py,
-       args: [qemu_test_runner,
-              qemu_cmd,
-              app,
-              elf_target,
-             ],
-       env: [python_path],
-       workdir: freertos_src_dir,
-      )
 
 
 endforeach
 
 run_target('compare_nm-gpslogger', command: [compare_nm,  named_elf_targets])
 run_target('compare_size-gpslogger', command: [size, elf_targets])
-run_target('compare_time-gpslogger', command: [compare_time, app], depends: elf_targets)
+run_target('compare_time-gpslogger', command: [compare_time, 'gpslogger'], depends: elf_targets)

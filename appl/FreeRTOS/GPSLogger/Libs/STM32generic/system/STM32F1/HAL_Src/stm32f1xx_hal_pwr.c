@@ -534,6 +534,20 @@ void HAL_PWR_EnterSTANDBYMode(void)
   __WFI();
 }
 
+/**
+  * @brief Stops QEMU.
+  * @note  This allows to stop the QEMU emulator.
+  * The passed status may be printed by QEMUU
+  * @param status: Exit status to be send to QEMU.
+  * @retval None
+  */
+void HAL_PWR_StopQEMU(uint32_t status)
+{
+  /* Write anywhere into the region as currently QEMU treats all writes as powerdown commands */
+  PWR->QEMU_STATUS = status;
+  //for(;;); // spin forever
+}
+
 
 /**
   * @brief Indicates Sleep-On-Exit when returning from Handler mode to Thread mode. 

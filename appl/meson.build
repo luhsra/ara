@@ -182,6 +182,7 @@ foreach app : ['a',
                ],
          env: [python_path],
          workdir: freertos_src_dir,
+         is_parallel: false,
         )
 
 

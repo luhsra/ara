@@ -1,6 +1,7 @@
 #include <stm32f1xx_hal.h>
 #include <stm32f1xx_hal_rcc.h>
 #include <stm32f1xx_ll_gpio.h>
+#include <stm32f1xx_hal_pwr.h>
 
 #include "LEDThread.h"
 #include <Arduino_FreeRTOS.h>
@@ -93,11 +94,14 @@ void halt(uint8_t status)
 
 void vLEDThread(void *pvParameters)
 {
+	int count = 0;
 	led.init();
 
 	// Just blink once in 2 seconds
 	for (;;)
 	{
+		if (count++ == 1)
+			HAL_PWR_StopQEMU(0);
 		vTaskDelay(2000);
 
 		if(ledStatus == 0xff)

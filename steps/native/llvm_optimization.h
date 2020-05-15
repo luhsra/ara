@@ -14,7 +14,8 @@ namespace ara::step {
 		option::TOption<option::String> pass_list{
 		    "pass_list", "List of LLVM Passes to be executed.\nFor Syntax see: "
 		                 "https://llvm.org/doxygen/PassBuilder_8h_source.html#l00410\nFor the list of available passes "
-		                 "see: https://github.com/llvm/llvm-project/blob/release/9.x/llvm/lib/Passes/PassRegistry.def"};
+		                 "see: https://github.com/llvm/llvm-project/blob/release/9.x/llvm/lib/Passes/PassRegistry.def"
+		                 " and http://llvm.org/docs/Passes.html"};
 		virtual void fill_options() override;
 
 	  public:

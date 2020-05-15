@@ -9,6 +9,9 @@ def main():
     name = sys.argv[2]
     elf = sys.argv[3]
 
+    if elf == 'nop':
+        sys.exit(77)
+
     try:
         checker = runpy.run_path(f"{name}-checker.py")
         if checker.get("ALWAYS_GOOD", False):
