@@ -3,8 +3,6 @@
 #include "ir_writer.h"
 #include <llvm/Support/FileSystem.h>
 
-#include "llvm/Support/FileSystem.h"
-
 namespace ara::step {
 
 	// ATTENTION: put in anonymous namespace to get an unique symbol
