@@ -76,6 +76,15 @@ namespace ara::step {
 		 */
 		virtual void fill_options() {}
 
+		/**
+		 * Fail with an error message.
+		 */
+		void fail(const std::string& message) {
+			logger.err() << message << std::endl;
+			std::string step_name = get_name();
+			throw StepError(step_name, message);
+		}
+
 	  public:
 		/**
 		 * Contruct a native step.

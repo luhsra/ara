@@ -136,6 +136,22 @@ If you want to develop with ARA, some common actions are usual.
 - Create a test case for this step in the `test/native_step_test` directory. Usually, it is enough to add your test to `test/native_step_test/meson.build`.
   - C++ steps often need other C++ code to test it. For that add an extra test step in `steps/native/test.h` and `steps/native/test/` and call it from your test case.
 
+### Autoformat
+
+ARA uses `clang-format` as automatic formatting for its C++ sources.
+
+One possibility to integrate this with git is a pre-commit hook like the following. Create a file `.git/hooks/pre-commit`:
+```sh
+#!/bin/sh
+
+if git clang-format --diff $(git diff --name-only --cached 2>&1) 2>&1 | grep diff 2>&1 >/dev/null; then
+	echo "ERROR: clang-format has changes."
+	exit 1
+fi
+exit 0
+```
+And then manually invoke `git clang-format`.
+
 Troubleshooting
 ---------------
 

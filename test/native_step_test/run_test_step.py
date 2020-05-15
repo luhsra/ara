@@ -6,7 +6,8 @@ import sys
 
 from util import init_logging
 
-from native_step import Step, provide_test_steps, provide_steps
+from native_step import Step, provide_test_steps
+from steps import provide_steps
 
 
 def provide():

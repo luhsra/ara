@@ -38,18 +38,10 @@ namespace ara::step {
 			abort();
 		}
 
-		llvm::legacy::FunctionPassManager fpm(module.get());
-		fpm.add(llvm::createPromoteMemoryToRegisterPass());
-		fpm.doInitialization();
-
 		for (llvm::Function& func : *module) {
 			// Removes OptNone Attribute that prevents optimization if -Xclang -disable-O0-optnone isn't given
 			if (func.hasOptNone()) {
 				func.removeFnAttr(llvm::Attribute::OptimizeNone);
-			}
-
-			if (fpm.run(func)) {
-				logger.debug() << func.getName().str() << ": Mem2Reg has modified the function." << std::endl;
 			}
 		}
 

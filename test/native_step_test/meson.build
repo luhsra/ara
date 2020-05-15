@@ -10,6 +10,12 @@ test('bb-split',
   env: [python_path]
 )
 
+test('cfg-optimize',
+  py3_inst,
+  args: [files('run_test_step.py'), 'CFGOptimizeTest', freertos_optimization],
+  env: [python_path]
+)
+
 test('comp-insert',
   py3_inst,
   args: [files('run_test_step.py'), 'CompInsertTest', gpslogger_application],

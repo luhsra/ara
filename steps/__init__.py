@@ -1,5 +1,7 @@
 from .abb_merge import ABBMerge
 from .call_graph import CallGraph
+from .cfg_optimize import CFGOptimize
+from .cfg_stats import CFGStats
 from .dummy import Dummy
 from .generator import Generator
 from .oil import OilStep
@@ -20,6 +22,8 @@ def provide_steps():
 
     yield ABBMerge()
     yield CallGraph()
+    yield CFGOptimize()
+    yield CFGStats()
     yield Dummy()
     yield Generator()
     yield OilStep()

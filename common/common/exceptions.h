@@ -39,4 +39,17 @@ namespace ara {
 
 		virtual const char* what() const throw() { return message.str().c_str(); }
 	};
+
+	class StepError : public std::runtime_error {
+	  private:
+		static std::string format(const std::string& step_name, const std::string& message) {
+			std::stringstream ss;
+			ss << "Error in step " << step_name << ": " << message;
+			return ss.str();
+		}
+
+	  public:
+		explicit StepError(const std::string& step_name, const std::string& message)
+		    : std::runtime_error(format(step_name, message)) {}
+	};
 } // namespace ara

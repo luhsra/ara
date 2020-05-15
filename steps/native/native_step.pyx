@@ -13,16 +13,17 @@ cimport llvm_data
 
 from bb_split cimport BBSplit
 from cdummy cimport CDummy
+from llvm_optimization cimport LLVMOptimization
 from comp_insert cimport CompInsert
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
 from ir_reader cimport IRReader
 from ir_writer cimport IRWriter
-from llvm_basic_optimization cimport LLVMBasicOptimization
 from llvm_map cimport LLVMMap
 from value_analysis_core cimport ValueAnalysisCore
 
 from test cimport (BBSplitTest,
+                   CFGOptimizeTest,
                    CompInsertTest,
                    FnSingleExitTest,
                    LLVMMapTest,
@@ -293,12 +294,12 @@ def provide_steps():
     """
     return [_native_fac(step_fac[BBSplit]()),
             _native_fac(step_fac[CDummy]()),
+            _native_fac(step_fac[LLVMOptimization]()),
             _native_fac(step_fac[CompInsert]()),
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[IRWriter]()),
-            _native_fac(step_fac[LLVMBasicOptimization]()),
             _native_fac(step_fac[LLVMMap]()),
             _native_fac_ReplaceSyscallsCreate(),
             _native_fac(step_fac[ValueAnalysisCore]())]
@@ -307,6 +308,7 @@ def provide_steps():
 def provide_test_steps():
     """Do not use this, only for testing purposes."""
     return [_native_fac(step_fac[BBSplitTest]()),
+            _native_fac(step_fac[CFGOptimizeTest]()),
             _native_fac(step_fac[CompInsertTest]()),
             _native_fac(step_fac[FnSingleExitTest]()),
             _native_fac(step_fac[LLVMMapTest]()),

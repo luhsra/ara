@@ -1,0 +1,8 @@
+{
+	"steps": [
+		{
+			"name": "LLVMOptimization",
+			"pass_list": "module(function(print,mem2reg,sccp,dce,simplify-cfg,loop(indvars),unroll,print))"
+		}
+	]
+}
