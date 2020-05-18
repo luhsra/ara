@@ -235,6 +235,6 @@ foreach t : ara_gen_freertos_targets
 
 endforeach
 
-run_target('compare_nm-gpslogger', command: [compare_nm,  named_elf_targets])
+run_target('compare_nm-gpslogger', command: [compare_nm, nm.path(), named_elf_targets])
 run_target('compare_size-gpslogger', command: [size, elf_targets])
-run_target('compare_time-gpslogger', command: [compare_time, 'gpslogger'], depends: elf_targets)
+run_target('compare_time-gpslogger', command: [compare_time, meson.build_root(), 'gpslogger'], depends: elf_targets)

@@ -188,9 +188,9 @@ foreach app : ['a',
 
   endforeach
 
-  run_target('compare_nm-' + app, command: [compare_nm,  named_elf_targets])
+  run_target('compare_nm-' + app, command: [compare_nm, nm.path(), named_elf_targets])
   run_target('compare_size-' + app, command: [size, elf_targets])
-  run_target('compare_time-' + app, command: [compare_time, app], depends: elf_targets)
+  run_target('compare_time-' + app, command: [compare_time, meson.build_root(), app], depends: elf_targets)
 
   freertos_targets += app_vanilla_ll
 endforeach

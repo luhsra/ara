@@ -63,8 +63,6 @@ else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
 
-compare_nm += nm.path()
-
 clang_flags += '-Wno-everything'
 c_std = '-std=c11'
 cxx_std = '-std=c++11'

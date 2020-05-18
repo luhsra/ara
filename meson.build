@@ -77,10 +77,11 @@ subdir('common')
 subdir('graph')
 subdir('steps')
 
+# tools for deploying
+subdir('tools')
+
+
 python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir, llvm_data_dir])
-
-
-dump_cmds = files('utils/dump_cmds.py')
 ara = files('ara.py')
 
 sh = custom_target('ara-sh',
@@ -91,7 +92,6 @@ sh = custom_target('ara-sh',
     build_by_default: true
 )
 
-subdir('tools')
 subdir('settings')
 subdir('libs')
 subdir('appl')
