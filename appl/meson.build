@@ -7,7 +7,9 @@ freertos_src_dir = join_paths(meson.current_source_dir(), 'FreeRTOS')
 
 freertos_targets = []
 
-disabled_tests = [
+# these apps are not meant to ever run on real hardware, but are used for unit tests etc.
+# they are only compiled to IR
+ir_apps = [
   'a',
   'abb_merge',
   'argument_load',
@@ -24,7 +26,6 @@ disabled_tests = [
   'invalid_semaphore',
   'loop_detection',
   'multi_exit',
-  'mwe',
   'optimization',
   'ospert',
   'priority_inversion',
@@ -35,33 +36,16 @@ disabled_tests = [
   'thesis_print',
   'topological_sort',
 ]
-foreach app : ['a',
-               'abb_merge',
-               'argument_load',
-               'c',
-               'critical_region_detection',
-               'deadlock',
-               'dominator',
-               'eventgroup',
-               'f',
-               'g',
-               'icfg',
-               'invalid_isr_syscall',
-               'invalid_mutex',
-               'invalid_semaphore',
-               'loop_detection',
-               'multi_exit',
-               'optimization',
-               'ospert',
-               'priority_inversion',
-               'sse',
-               'start_scheduler_relation',
-               'syscall',
-               'simple_print',
-               'simple_delay',
-               'simple_queue_send',
-               'thesis_print',
-               'topological_sort']
+
+# these apps are meant to run on real hardware and are compiled into an elf
+hw_apps = [
+  'simple_print',
+  'simple_delay',
+  'simple_queue_send',
+]
+
+
+foreach app : ir_apps + hw_apps
   app_vanilla_ll = custom_target('freertos-' + app,
                             input : ['FreeRTOS/' + app + '.cc'],
                             output : ['freertos-' + app + '.ll'],
@@ -193,7 +177,7 @@ foreach app : ['a',
     named_elf_targets += [target, elf_target]
     named_elf_targets += [target+'.lto', lto_elf]
 
-    if get_option('disable_qemu_tests') or app in disabled_tests
+    if get_option('disable_qemu_tests') or app in ir_apps
       py = disabler()
     else
       py = py3_inst
