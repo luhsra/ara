@@ -52,7 +52,9 @@ elif get_option('arch') == 'arm'
                  ]
   path_error = '@0@ "@1@" does not exist or is not absolute'
   foreach include_dir : get_option('arm_include_dirs')
-    assert(fs.exists(include_dir) and fs.is_absolute(include_dir), path_error.format('arm_include_dir', include_dir))
+    # requires meson 0.54
+    # assert(fs.exists(include_dir) and fs.is_absolute(include_dir), path_error.format('arm_include_dir', include_dir))
+    assert(fs.exists(include_dir), path_error.format('arm_include_dir', include_dir))
     clang_flags += ['-I', include_dir]
   endforeach
 
@@ -65,7 +67,9 @@ elif get_option('arch') == 'arm'
               ]
   # external arm dirs
   foreach link_dir : get_option('arm_link_dirs')
-    assert(fs.exists(link_dir) and fs.is_absolute(link_dir), path_error.format('arm_link_dir', link_dir))
+    # requires meson 0.54
+    # assert(fs.exists(link_dir) and fs.is_absolute(link_dir), path_error.format('arm_link_dir', link_dir))
+    assert(fs.exists(link_dir), path_error.format('arm_link_dir', link_dir))
     ld_flags += ['-Wl,-L,' + link_dir]
   endforeach
   # external gcc dir
@@ -80,7 +84,9 @@ elif get_option('arch') == 'arm'
     gcc_arm_version = get_option('arm_gcc_version')
   endif
   libgcc_dir = get_option('arm_gcc_dir').format(gcc_arm_version)
-  assert(fs.exists(libgcc_dir) and fs.is_absolute(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
+  # requires meson 0.54
+  # assert(fs.exists(libgcc_dir) and fs.is_absolute(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
+  assert(fs.exists(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
   assert(fs.exists(libgcc_dir / 'thumb'), 'Thumb library inside GCC ARM is missing.')
   message('libgcc directory: @0@'.format(libgcc_dir))
   ld_flags += ['-Wl,-L,' + (libgcc_dir / 'thumb')]
