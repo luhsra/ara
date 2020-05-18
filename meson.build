@@ -84,7 +84,8 @@ subdir('tools')
 python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir, llvm_data_dir])
 ara = files('ara.py')
 
-sh = custom_target('ara-sh',
+# convenience script to call ara with correct environment
+ara_sh = custom_target('ara-sh',
     input: ara,
     output: 'ara.sh',
     depends: [plib, libgraph, llvm_data_mod],
