@@ -5,6 +5,7 @@ compare_time = files('compare_time.py')
 gdb_hw_script = files('gdb_stm32.sh')
 qemu_test_runner = files('qemu_test_runner.py')
 dump_cmds = files('dump_cmds.py')
+gcc_version = files('gcc_version.py') # drop, when https://github.com/mesonbuild/meson/issues/7166 is resolved
 
 if get_option('arch') == 'arm'
   qemu_cmd = files('qemu_stm32.sh')

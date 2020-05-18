@@ -5,6 +5,8 @@ project('ara', 'cpp',
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
 
+fs = import('fs')
+
 # check all dependencies first
 
 cython = find_program('cython', version: '>=0.29.14')

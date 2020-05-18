@@ -49,21 +49,44 @@ elif get_option('arch') == 'arm'
                   '-fno-threadsafe-statics',
                   '-fshort-enums',
                   '--rtlib=libgcc',
-                  '-I','/usr/arm-none-eabi/include/',
-                  '-I','/usr/lib/arm-none-eabi/include/',
                  ]
+  path_error = '@0@ "@1@" does not exist or is not absolute'
+  foreach include_dir : get_option('arm_include_dirs')
+    assert(fs.exists(include_dir) and fs.is_absolute(include_dir), path_error.format('arm_include_dir', include_dir))
+    clang_flags += ['-I', include_dir]
+  endforeach
+
   ld_flags += ['-Wl,-Map,@OUTPUT0@.map',
                '-Wl,--cref',
                '-fuse-ld=' + ld.path(),
-               '-Wl,-L,/usr/arm-none-eabi/lib/thumb',
-               '-Wl,-L,/usr/lib/arm-none-eabi/newlib/thumb',
-               '-Wl,-L,/usr/lib/gcc/arm-none-eabi/7.3.1/thumb/',
                '-nostdlib',
                '-nodefaultlibs',
                '-lc',
               ]
-  llc_flags += ['--frame-pointer=none',
-                ]
+  # external arm dirs
+  foreach link_dir : get_option('arm_link_dirs')
+    assert(fs.exists(link_dir) and fs.is_absolute(link_dir), path_error.format('arm_link_dir', link_dir))
+    ld_flags += ['-Wl,-L,' + link_dir]
+  endforeach
+  # external gcc dir
+  if get_option('arm_gcc_version') == 'default'
+    system_gcc = find_program('gcc')
+    r = run_command(py3_inst, gcc_version, system_gcc.path())
+    if r.returncode() != 0
+      error('Cannot extract default GCC option. Consider setting "arm_gcc_version".')
+    endif
+    gcc_arm_version = r.stdout().strip()
+  else
+    gcc_arm_version = get_option('arm_gcc_version')
+  endif
+  libgcc_dir = get_option('arm_gcc_dir').format(gcc_arm_version)
+  assert(fs.exists(libgcc_dir) and fs.is_absolute(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
+  assert(fs.exists(libgcc_dir / 'thumb'), 'Thumb library inside GCC ARM is missing.')
+  message('libgcc directory: @0@'.format(libgcc_dir))
+  ld_flags += ['-Wl,-L,' + (libgcc_dir / 'thumb')]
+
+
+  llc_flags += ['--frame-pointer=none']
 else
   error('unknown arch ' + get_option('arch'))
 endif
