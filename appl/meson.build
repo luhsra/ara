@@ -78,6 +78,31 @@ foreach app : ['a',
   named_elf_targets = []
   elf_targets = []
   foreach target : ara_gen_freertos_targets
+    # build standard and specialized variants for freertos
+    #
+    # the whole process works roughly so:
+    #
+    # +--------+ ARA +-------------+                     llc +----------+
+    # | app.ll |---->| modified-ll |-------------------+---->|  o-file  |
+    # +--------+  |  +-------------+                   |     +----------+
+    #             |                                    |
+    #             |  +-------------+ clang +---------+ | llvm-link +-----------+
+    #             +->|    os.cc    |------>|  os.ll  |-+---------->| app_os.ll |
+    #             |  +-------------+       +---------+             +-.---------+
+    #             |                                                  v opt
+    #             |  +-------------+                           +---------------+
+    #             +->|  startup.s  |---+                       | lto_app_os.ll |
+    #                +-------------+   |                       +-----.---------+
+    #                                  |                             v llc
+    #                                  |                       +---------------+
+    #                                  |                       | lto_app_os.ll |
+    #                                  |                       +-----.---------+
+    #                                  +-----------------------------|
+    #                                                                v clang
+    #                            +----------------+  objcopy  +----------------+
+    #                            | lto_app_os.bin |<----------| lto_app_os.elf |
+    #                            +----------------+           +----------------+
+
     name_prefix = 'freertos-' + app + '-' + target
     ara_target = custom_target(name_prefix + '-os',
                                input: app_vanilla_ll,
