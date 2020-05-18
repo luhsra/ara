@@ -1,13 +1,14 @@
 settings_dir = meson.current_source_dir()
 
-# compiler flags to generate annotated IR
+# common flags for clang
 clang_flags = ['-g',  # generate debug information
-               '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA
+               '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA)
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
                '-fno-discard-value-names',  # use the C/C++ variable names for the pendent in the LLVM IR when possible
                '-fno-exceptions']
+
 llvm_opt_flags = [
   # '-time-passes',
   # '-Og',
@@ -23,7 +24,10 @@ ld_flags = ['-Wl,--gc-sections',
             '-Wl,--cref',
             '-Wl,-Map,@OUTPUT0@.map'
            ]
+
+# compiler flags to generate IR
 ir_flags = ['-S', '-emit-llvm',]
+
 obj_flags = ['-c']
 
 if get_option('arch') == 'i386'
@@ -64,6 +68,7 @@ else
 endif
 
 clang_flags += '-Wno-everything'
+# standard invocations for clang with c and cpp
 c_std = '-std=c11'
 cxx_std = '-std=c++11'
 clang_base = [
@@ -71,9 +76,10 @@ clang_base = [
            '@INPUT@',
            '-MD', '-MF', '@DEPFILE@',
 ]
-clang_x = [clang] + clang_base
-clang_c = clang_x + [c_std]
-clang_cpp = clang_x + [cxx_std]
+clang_c = [clang, clang_base, c_std]
+clang_cpp = [clang, clang_base, cxx_std]
+
+# standard invocations for rest of the toolchain
 ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']
 llc_cmd = [llc, '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ] + llc_flags
 objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']

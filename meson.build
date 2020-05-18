@@ -73,6 +73,7 @@ endforeach
 build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
+# build ARA itself
 subdir('common')
 subdir('graph')
 subdir('steps')
@@ -93,20 +94,23 @@ ara_sh = custom_target('ara-sh',
     build_by_default: true
 )
 
-subdir('settings')
-subdir('libs')
+# build test applications with help of ARA
+# Attention: The include order is important here.
+subdir('settings') # generic settings
+subdir('libs') # build libs such as osek/freertos/stm32-init
 subdir('appl')
 subdir('test')
 
-extra_settings = files('test/extra_settings.json')
-
+# application tests
+# tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 
 if get_option('disable_toplevel_tests')
-  ara_test =  disabler()
+  ara_test = disabler()
 else
   ara_test = ara
 endif
-# TODO convert this into a proper test
+
+extra_settings = files('test/extra_settings.json')
 test('ara_tester',
    py3_inst,
    args: [ara_test, gpslogger_application,
