@@ -77,15 +77,15 @@ foreach app : ['a',
 
   named_elf_targets = []
   elf_targets = []
-  foreach t : ara_gen_freertos_targets
-    name_prefix = 'freertos-' + app + '-' + t
+  foreach target : ara_gen_freertos_targets
+    name_prefix = 'freertos-' + app + '-' + target
     ara_target = custom_target(name_prefix + '-os',
                                input: app_vanilla_ll,
                                depfile: name_prefix+ '-os.cc.dep',
                                output: [name_prefix + '-os.cc',
                                         name_prefix + '-os.cc.startup.s',
                                         name_prefix + '-modifiedapp.ll'],
-                               command: get_variable('ara_gen_cmd_' + t)
+                               command: get_variable('ara_gen_cmd_' + target)
                               )
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
@@ -125,7 +125,7 @@ foreach app : ['a',
                             input: [lto_o,
                                     os_target[1], # startup.s
                                     libs_targets,
-                                    get_variable('libfreertos_'+t)],
+                                    get_variable('libfreertos_' + target)],
                             output: name_prefix + '.lto.elf',
                             depfile: name_prefix + '.lto.elf.dep',
                             command: clang_cpp +
@@ -137,7 +137,7 @@ foreach app : ['a',
                                input: [o_target,
                                        os_target,
                                        libs_targets,
-                                       get_variable('libfreertos_'+t)],
+                                       get_variable('libfreertos_' + target)],
                                output: name_prefix + '.elf',
                                depfile: name_prefix + '.elf.dep',
                                command: clang_cpp +
@@ -165,8 +165,8 @@ foreach app : ['a',
     run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
     elf_targets += elf_target
     elf_targets += lto_elf
-    named_elf_targets += [t, elf_target]
-    named_elf_targets += [t+'.lto', lto_elf]
+    named_elf_targets += [target, elf_target]
+    named_elf_targets += [target+'.lto', lto_elf]
 
     if get_option('disable_qemu_tests') or app in disabled_tests
       py = disabler()
