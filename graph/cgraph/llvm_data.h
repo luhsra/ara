@@ -29,7 +29,9 @@ namespace ara::graph {
 
 	  public:
 		/**
-		 * Workaround for function specific additional attributes, since we cannot inherit the function class.
+		 * Workaround for LLVM classes where we need additional attributes.
+		 * We cannot inherit this classes, since LLVM type deduction needs global knowledge. Therefore we have a map
+		 * here that extends LLVM.
 		 */
 		std::map<const llvm::Function*, llvmext::Function> functions;
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;

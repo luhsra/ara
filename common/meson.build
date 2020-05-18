@@ -1,3 +1,6 @@
+# ara code that is used project wide in graph and steps
+# technically it is packaged as a set of headers and a static library
+
 common_dependencies = [llvm_dep, boost_dep]
 libcommon = static_library('libcommon',
     'llvm_common.cpp',

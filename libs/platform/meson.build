@@ -7,6 +7,4 @@ if get_option('arch') == 'arm'
                                      output: 'libplatform.a',
                                      command: ar_cmd)
   libs_targets += libplatform_target
-
-
 endif
