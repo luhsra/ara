@@ -41,8 +41,8 @@ endif
 ## svf
 cmake = import('cmake')
 svf_proj = cmake.subproject('svf', cmake_options: '-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'))
-svf_dep = svf_proj.dependency('Svf', include_type: 'system')
-cudd_dep = svf_proj.dependency('Cudd', include_type: 'system')
+svf_dep = svf_proj.dependency('Svf')
+cudd_dep = svf_proj.dependency('Cudd')
 
 ## tools
 bash = find_program('bash')
