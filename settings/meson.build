@@ -54,7 +54,7 @@ elif get_option('arch') == 'arm'
                  ]
   ld_flags += ['-Wl,-Map,@OUTPUT0@.map',
                '-Wl,--cref',
-               '-fuse-ld=/usr/bin/arm-none-eabi-ld',
+               '-fuse-ld=' + ld.path(),
                '-Wl,-L,/usr/arm-none-eabi/lib/thumb',
                '-Wl,-L,/usr/lib/arm-none-eabi/newlib/thumb',
                '-Wl,-L,/usr/lib/gcc/arm-none-eabi/7.3.1/thumb/',

@@ -59,7 +59,7 @@ endif
 
 arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
 
-foreach prog_name : ['ar', 'objcopy', 'size', 'nm']
+foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld']
     full_prog_name = target_triple + '-' + prog_name
     prog = find_program(full_prog_name, required: false)
     if not prog.found()
