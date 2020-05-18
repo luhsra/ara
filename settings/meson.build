@@ -6,6 +6,7 @@ clang_flags = ['-g',  # generate debug information
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
+               '-Wno-everything',
                '-fno-discard-value-names',  # use the C/C++ variable names for the pendent in the LLVM IR when possible
                '-fno-exceptions']
 
@@ -67,7 +68,6 @@ else
   assert(false, 'unknown arch ' + get_option('arch'))
 endif
 
-clang_flags += '-Wno-everything'
 # standard invocations for clang with c and cpp
 c_std = '-std=c11'
 cxx_std = '-std=c++11'
