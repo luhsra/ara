@@ -54,7 +54,7 @@ if get_option('arch') == 'i386'
 elif get_option('arch') == 'arm'
     target_triple = 'arm-none-eabi'
 else
-    assert(false, 'unknown arch ' + get_option('arch'))
+    error('unknown arch ' + get_option('arch'))
 endif
 
 arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'

@@ -65,7 +65,7 @@ elif get_option('arch') == 'arm'
   llc_flags += ['--frame-pointer=none',
                 ]
 else
-  assert(false, 'unknown arch ' + get_option('arch'))
+  error('unknown arch ' + get_option('arch'))
 endif
 
 # standard invocations for clang with c and cpp
