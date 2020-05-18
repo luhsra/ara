@@ -18,10 +18,10 @@ llvm_version = ['>=9', '<10']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
-clang = find_program(llvm_bindir / 'clang')
-llc = find_program(llvm_bindir / 'llc')
-llvm_link = find_program(llvm_bindir / 'llvm-link')
-llvm_opt = find_program(llvm_bindir / 'opt')
+clang = find_program(llvm_bindir / 'clang', version: llvm_version)
+llc = find_program(llvm_bindir / 'llc', version: llvm_version)
+llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
+llvm_opt = find_program(llvm_bindir / 'opt', version: llvm_version)
 
 boost_dep = dependency('boost', modules: ['graph', 'python3'], include_type: 'system')
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
