@@ -94,12 +94,8 @@ void createTasks(const char* name1, const char* name2) {
 	return;
 }
 
-void vSemTask(void* pvParameters) {
-    xTestMutex = xSemaphoreCreateMutex();
-}
-
 int main(void) {
-	xTaskCreate(vSemTask, "Task Sema", 100, NULL, 1, NULL);
+    xTestMutex = xSemaphoreCreateMutex();
 
 	bool b = true;
 	if (b) {
