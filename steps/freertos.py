@@ -55,6 +55,7 @@ class Queue:
 
 # TODO make this a dataclass once we use Python 3.7
 class Mutex:
+    uid_counter = 0
     def __init__(self, cfg, name, handler, m_type, abb, branch, after_scheduler):
         self.cfg = cfg
         self.name = name
@@ -63,6 +64,10 @@ class Mutex:
         self.abb = abb
         self.branch = branch
         self.after_scheduler = after_scheduler
+        self.uid = Queue.uid_counter
+        self.size = 0
+        self.length = 1
+        Mutex.uid_counter += 1
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'

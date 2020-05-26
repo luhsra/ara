@@ -3,7 +3,7 @@ from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        CPPStatement,
                        Statement, Include, InstanceDataObject, StructDataObject,
                        FunctionDeclaration)
-from steps.freertos import Task, Queue
+from steps.freertos import Task, Queue, Mutex
 
 
 
@@ -24,10 +24,14 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         queue_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
+        mutex_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
         self.generate_dataobjects_task_stacks(task_list)
         self.generate_data_objects_tcb_mem(task_list)
         self.generate_data_objects_ready_list(task_list)
         self.generate_data_objects_queue_mem(queue_list, 'initialized')
+        self.generate_data_objects_queue_mem(mutex_list, 'initialized')
         self.generator.source_file.includes.add(Include('queue.h'))
         self.generate_limitation_warnings()
 
@@ -55,9 +59,13 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         queue_list = [self.ara_graph.instances.vp.obj[v]
                       for v in self.ara_graph.instances.vertices()
                       if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
+        mutex_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
         self.generate_system_code_init_tasks(task_list)
         self.replace_create(task_list)
         self.replace_create(queue_list)
+        self.replace_create(mutex_list)
         if len(task_list) > 0 or len(queue_list) > 0:
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
         else:
@@ -67,6 +75,8 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         for instance in instance_list:
             if not instance.branch:
                 instance.impl.init = 'initialized'
+            else:
+                self._log.error("Can't replace initialization (branch=True): %s", instance)
 
 
 

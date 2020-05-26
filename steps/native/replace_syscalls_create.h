@@ -19,6 +19,8 @@ namespace ara::step {
 		virtual std::vector<std::string> get_dependencies() override { return {}; }
 
 		virtual void run(graph::Graph& graph) override;
+		bool replace_mutex_create_static(graph::Graph& graph, int where, char* symbol_metadata);
+		bool replace_mutex_create_initialized(graph::Graph& graph, int where, char* symbol_metadata);
 		bool replace_queue_create_static(graph::Graph& graph, int where, char* symbol_metadata, char* symbol_storage);
 		bool replace_queue_create_initialized(graph::Graph& graph, int where, char* symbol_metadata);
 		bool replace_task_create_static(graph::Graph& graph, int where, char* handle_name,  char* stack_name);

@@ -127,6 +127,90 @@ namespace ara::step {
 		return true;
 	}
 
+	bool ReplaceSyscallsCreate::replace_mutex_create_static(graph::Graph& graph, int where, char *symbol_metadata) {
+		Module &module = graph.get_module();
+		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
+		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
+		Function *old_func = old_create_call->getCalledFunction();
+
+		assert(old_func != nullptr && "Missing call target");
+
+		if ("xQueueCreateMutex" != old_func->getName().str()) {
+			logger.error() <<  "wrong function found: " << old_func->getName().str() << std::endl;
+			exit(1);
+		}
+		Function* create_static_fn = get_fn(module, logger, "xQueueCreateMutexStatic");
+		if (create_static_fn == nullptr) {
+			return false;
+		}
+
+		GlobalVariable *mutex_meta_data_val = new GlobalVariable(module, // module
+																 dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(1))->getElementType(),
+																 // get_type(module, logger, freertos_types::mutex_metadata), // type
+																 false, // isConstant
+																 GlobalValue::ExternalLinkage,
+																 nullptr, // initializer
+																 symbol_metadata, // name
+																 nullptr, // insertBefore
+																 GlobalVariable::NotThreadLocal,
+																 0, // AddressSpace
+																 false); // isExternallyInitialized
+		mutex_meta_data_val->setDSOLocal(true);
+
+		SmallVector<Value*, 2> new_args;
+		new_args.push_back(old_create_call->getArgOperand(0));
+		new_args.push_back(mutex_meta_data_val);
+		logger.debug() << "args created" << std::endl;
+
+		llvm::IRBuilder<> Builder(module.getContext());
+		Builder.SetInsertPoint(old_create_call);
+		Value *new_ret = Builder.CreateCall(create_static_fn, new_args, "static_mutex");
+		logger.debug() << "new ret: " << *new_ret << std::endl;
+		old_create_call->replaceAllUsesWith(new_ret);
+		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter wit failing assert: "Use still stuck around after Def is destroyed"
+		old_create_call->eraseFromParent();
+		return true;
+	}
+
+	bool ReplaceSyscallsCreate::replace_mutex_create_initialized(graph::Graph& graph, int where, char* symbol_metadata) {
+				Module &module = graph.get_module();
+		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
+		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
+		Function *old_func = old_create_call->getCalledFunction();
+
+		assert(old_func != nullptr && "Missing call target");
+
+		if ("xQueueCreateMutex" != old_func->getName().str()) {
+			logger.error() <<  "wrong function found: " << old_func->getName().str() << " expected: xQueueCreateMutex" << std::endl;
+			exit(1);
+		}
+		Function* create_static_fn = get_fn(module, logger, "xQueueCreateMutexStatic");
+		if (create_static_fn == nullptr) {
+			return false;
+		}
+
+		llvm::IRBuilder<> Builder(module.getContext());
+		Builder.SetInsertPoint(old_create_call);
+
+		GlobalVariable *mutex_meta_data_val = new GlobalVariable(module, // module
+																 dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(1))->getElementType(),
+																 // get_type(module, logger, freertos_types::mutex_metadata), // type
+																 false, // isConstant
+																 GlobalValue::ExternalLinkage,
+																 nullptr, // initializer
+																 symbol_metadata, // name
+																 nullptr, // insertBefore
+																 GlobalVariable::NotThreadLocal,
+																 0, // AddressSpace
+																 false); // isExternallyInitialized
+		mutex_meta_data_val->setDSOLocal(true);
+		Value* handle = Builder.CreatePointerCast(mutex_meta_data_val, old_func->getFunctionType()->getReturnType());
+		old_create_call->replaceAllUsesWith(handle);
+		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter wit failing assert: "Use still stuck around after Def is destroyed"
+		old_create_call->eraseFromParent();
+		return true;
+	}
+
 	bool ReplaceSyscallsCreate::replace_queue_create_initialized(graph::Graph& graph, int where, char* symbol_metadata) {
 				Module &module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
@@ -136,7 +220,7 @@ namespace ara::step {
 		assert(old_func != nullptr && "Missing call target");
 
 		if ("xQueueGenericCreate" != old_func->getName().str()) {
-			logger.error() <<  "wrong function found: " << old_func->getName().str() << std::endl;
+			logger.error() <<  "wrong function found: " << old_func->getName().str() << " expected: xQueueGenericCreate" << std::endl;
 			exit(1);
 		}
 		Function* create_static_fn = get_fn(module, logger, "xQueueGenericCreateStatic");

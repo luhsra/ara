@@ -1,5 +1,6 @@
 from .base import BaseCoder
 from .elements import StructDataObject, DataObjectArray, DataObject
+from steps.freertos import Queue, Mutex
 
 class VanillaTaskList(StructDataObject):
     def __init__(self, tasks, container, index):
@@ -20,7 +21,7 @@ class VanillaTaskList(StructDataObject):
         for index, task in enumerate(self.tasks):
             task.impl.tcb['xStateListItem']['pxPrevious'] = prev.address
             task.impl.tcb['xStateListItem']['pxContainer'] = self.address
-            print(prev)
+            #print(prev)
             prev['pxNext'] = task.impl.tcb['xStateListItem'].address
             prev = task.impl.tcb['xStateListItem']
         self.tasks[-1].impl.tcb['xStateListItem']['pxNext'] = self['xListEnd'].address
@@ -117,29 +118,39 @@ class VanillaQueue(StructDataObject):
         if not initialized:
             return
         self['pcHead'] = DataObject('int8_t*', 'pcHead')
-        self['pcHead'] = queue.impl.data.address
-        self['pcHead'].do_cast = True
         self['pcWriteTo'] = DataObject('int8_t*', 'pcWriteTo')
-        self['pcWriteTo'] = queue.impl.data.address
-        self['pcWriteTo'].do_cast = True
-        self['u'] = StructDataObject("NONE", 'u')
-        self['u']['xQueue'] = StructDataObject('QueuePointers_t', 'xQueue')
-        self['u']['xQueue']['pcTail'] = DataObject('int8_t*', 'pcTail')
-        self['u']['xQueue']['pcTail'] = (f"{queue.impl.data.address} +"
-                                         f"({queue.length} * {queue.size})")
-        self['u']['xQueue']['pcTail'].do_cast = True
-        self['u']['xQueue']['pcReadFrom'] = DataObject('int8_t*', 'pcReadFrom')
-        self['u']['xQueue']['pcReadFrom'] = (f"{queue.impl.data.address} +"
-                                             f"(({queue.length} - 1U) *"
-                                             f"{queue.size})")
-        self['u']['xQueue']['pcReadFrom'].do_cast = True
+        if isinstance(queue, Queue):
+            self['pcWriteTo'] = queue.impl.data.address
+            self['pcHead'] = queue.impl.data.address
+            self['u'] = StructDataObject("NONE", 'u')
+            self['u']['xQueue'] = StructDataObject('QueuePointers_t', 'xQueue')
+            self['u']['xQueue']['pcTail'] = DataObject('int8_t*', 'pcTail')
+            self['u']['xQueue']['pcTail'] = (f"{queue.impl.data.address} +"
+                                             f"({queue.length} * {queue.size})")
+            self['u']['xQueue']['pcTail'].do_cast = True
+            self['u']['xQueue']['pcReadFrom'] = DataObject('int8_t*', 'pcReadFrom')
+            self['u']['xQueue']['pcReadFrom'] = (f"{queue.impl.data.address} +"
+                                                 f"(({queue.length} - 1U) *"
+                                                 f"{queue.size})")
+            self['u']['xQueue']['pcReadFrom'].do_cast = True
+        elif isinstance(queue, Mutex):
+            self['u'] = StructDataObject("NONE", 'u')
+            self['u']['xSemaphore'] = StructDataObject("NONE", "xSemaphore")
+            self['u']['xSemaphore']['xMutexHolder'] = 'NULL'
+            self['u']['xSemaphore']['uxRecursiveCallCount'] = 0
+            self['pcHead'] = 'NULL' # aka. uxQueueType = 'queueQUEUE_IS_MUTEX'
+            self['pcWriteTo'] = lambda: self.address
+            self['uxMessagesWaiting'] = 1 # aka. xQueueGenericSend()
+        else:
+            raise RuntimeError(f"unknown queue type: {type(queue)}")
         self['xTasksWaitingToSend'] = VanillaListHead("xTasksWaitingToSend")
         self['xTasksWaitingToReceive'] = VanillaListHead("xTasksWaitingToReceive")
-        self['uxMessagesWaiting'] = 0
         self['uxLength'] = queue.length
         self['uxItemSize'] = queue.size
         self['cRxLock'] = "queueUNLOCKED"
         self['cTxLock'] = "queueUNLOCKED"
+        self['pcHead'].do_cast = True
+        self['pcWriteTo'].do_cast = True
 
 
 class GenericArch(BaseCoder):

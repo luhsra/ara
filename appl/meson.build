@@ -42,6 +42,7 @@ hw_apps = [
   'simple_print',
   'simple_delay',
   'simple_queue_send',
+  'simple_mutex',
 ]
 
 

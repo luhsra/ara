@@ -1,5 +1,5 @@
 from replace_syscalls_create cimport ReplaceSyscallsCreate as CReplaceSyscallsCreate
-from steps.freertos import Task, Queue
+from steps.freertos import Task, Queue, Mutex
 
 from libc.stdint cimport intptr_t
 cimport ir
@@ -26,6 +26,28 @@ cdef class ReplaceSyscallsCreate(NativeStep):
                 self.handle_queue(inst)
             elif isinstance(inst, Task):
                 self.handle_task(inst)
+            elif isinstance(inst, Mutex):
+                self.handle_mutex(inst)
+            else:
+                self._log.error("unknown instance: %s %s", type(inst), inst)
+
+    def handle_mutex(self, mutex):
+        if mutex.impl.init == 'static':
+            self._mutex_create_static(mutex)
+        elif mutex.impl.init == 'initialized':
+            self._mutex_create_initialized(mutex)
+        else:
+            raise RuntimeError("unknown init: %s || %s", mutex.impl.init, mutex)
+
+    def _mutex_create_static(self, mutex):
+        success = self._c_.replace_mutex_create_static(self.gwrap, self.g.cfg.vp.entry_bb[mutex.abb], mutex.impl.head.name.encode())
+        if not success:
+            raise RuntimeError(f"Failed to create static create syscall for {mutex}")
+
+    def _mutex_create_initialized(self, mutex):
+        success = self._c_.replace_mutex_create_initialized(self.gwrap, self.g.cfg.vp.entry_bb[mutex.abb], mutex.impl.head.name.encode())
+        if not success:
+            raise RuntimeError(f"Failed to create static create syscall for {mutex}")
 
 
     def handle_queue(self, queue):
@@ -33,6 +55,8 @@ cdef class ReplaceSyscallsCreate(NativeStep):
             self._queue_create_static(queue)
         elif queue.impl.init == 'initialized':
             self._queue_create_initialized(queue)
+        else:
+            raise RuntimeError("inknown init: %s", queue.impl.init)
 
     def _queue_create_static(self, queue):
         success = self._c_.replace_queue_create_static(self.gwrap, self.g.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode(), queue.impl.data.name.encode())
@@ -49,6 +73,8 @@ cdef class ReplaceSyscallsCreate(NativeStep):
             self._task_create_static(task)
         elif task.impl.init == 'initialized':
             self._task_create_initialized(task)
+        else:
+            raise RuntimeError("inknown init: %s", task.impl.init)
 
     def _task_create_static(self, task):
         success = self._c_.replace_task_create_static(self.gwrap, self.g.cfg.vp.entry_bb[task.abb], task.impl.tcb.name.encode(), task.impl.stack.name.encode())

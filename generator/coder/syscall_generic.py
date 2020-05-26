@@ -21,8 +21,13 @@ class GenericSystemCalls(BaseCoder):
 
     def generate_data_objects_queue_mem(self, queue_list, init):
         '''generate the memory for the queue heads and data'''
+        self._log.debug("generate_data_objects_queue_mem: %s instances", len(queue_list))
         for queue in queue_list:
             self._log.debug('Queue: %s', queue.name)
             if not queue.branch:
                 queue.impl.init = init
                 self.arch_rules.static_unchanged_queue(queue, initialized=(init == 'initialized'))
+            else:
+                msg = f"Can't create queue static cause it is inside a branch: {queue}"
+                self._log.error(msg)
+                raise RuntimeError(msg)

@@ -2,7 +2,7 @@ from .syscall_generic import GenericSystemCalls
 from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        Statement, Include, CPPStatement,
                        FunctionDeclaration)
-from steps.freertos import Task, Queue
+from steps.freertos import Task, Queue, Mutex
 
 class StaticFullSystemCalls(GenericSystemCalls):
 
@@ -19,9 +19,13 @@ class StaticFullSystemCalls(GenericSystemCalls):
         queue_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
+        mutex_list = [self.ara_graph.instances.vp.obj[v]
+                     for v in self.ara_graph.instances.vertices()
+                     if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
         self.generate_dataobjects_task_stacks(task_list)
         self.generate_data_objects_tcb_mem(task_list)
         self.generate_data_objects_queue_mem(queue_list, 'static')
+        self.generate_data_objects_queue_mem(mutex_list, 'static')
         self.generator.source_file.includes.add(Include('queue.h'))
 
 
@@ -43,9 +47,14 @@ class StaticFullSystemCalls(GenericSystemCalls):
         queue_list = [self.ara_graph.instances.vp.obj[v]
                       for v in self.ara_graph.instances.vertices()
                       if isinstance(self.ara_graph.instances.vp.obj[v], Queue)]
+        mutex_list = [self.ara_graph.instances.vp.obj[v]
+                      for v in self.ara_graph.instances.vertices()
+                      if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
+
         self._log.debug("Instances: %s", len(list(self.ara_graph.instances.vertices())))
         self._log.debug("Tasks: %s", len(task_list))
         self._log.debug("Queues: %s", len(queue_list))
+        self._log.debug("Mutexes: %s", len(mutex_list))
         self.replace_task_create(task_list)
         self.generate_system_code_init_tasks(task_list)
         config = Include('FreeRTOSConfig.h')
@@ -53,7 +62,7 @@ class StaticFullSystemCalls(GenericSystemCalls):
         self.generator.source_file.includes.add(config, 0)
 
         self.generator.source_file.includes.add(Include('FreeRTOS.h'))
-        if len(task_list) or len(queue_list):
+        if len(task_list) or len(queue_list) or len(mutex_list):
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
 
     def replace_task_create(self, task_list):
@@ -61,6 +70,10 @@ class StaticFullSystemCalls(GenericSystemCalls):
         for task in task_list:
             if not task.branch:
                 task.impl.init = 'static'
+            else:
+                self._log.error("Can't replace initialization (branch=True): %s", instance)
+                raise RuntimeError(instance)
+
 
 
 
