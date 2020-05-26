@@ -1,10 +1,10 @@
-from ubuntu:eoan
+from ubuntu:focal
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin
 
 RUN apt update\
 	&& apt-get install -y pkg-config clang-9 llvm-9-dev python3 python3-pip tmux build-essential ninja-build git binutils-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib bash-completion gdb-multiarch
-RUN echo "deb http://downloads.skewed.de/apt eoan main" > /etc/apt/sources.list.d/graph_tool.list\
+RUN echo "deb http://downloads.skewed.de/apt focal main" > /etc/apt/sources.list.d/graph_tool.list\
 	&& apt-key adv --keyserver keys.openpgp.org --recv-key 612DEFB798507F25\
 	&& apt-get update \
 	&& apt-get install -y python3-graph-tool
@@ -22,7 +22,5 @@ RUN apt-get install -y stlink-tools
 # get newer versions since the currently available ones dont fulfill or requirements
 # we need 0.53.0 or >= 0.55.0
 RUN pip3 install meson>=0.54.2 cython
-# we need >=1.10.0
-RUN apt-get install wget unzip && wget 'https://github.com/ninja-build/ninja/releases/download/v1.10.0/ninja-linux.zip' -O ninja.zip && unzip -p ninja.zip > /usr/local/bin/ninja && chmod +x /usr/local/bin/ninja
 
 CMD ["bash"]
