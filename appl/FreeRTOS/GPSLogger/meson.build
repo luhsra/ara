@@ -1,5 +1,6 @@
 gpslogger_dir = meson.current_source_dir()
 gpslogger_cflags = [
+    '-DconfigINCLUDE_ALL_DECLS=1',
     '-DARDUINO=10801',
     '-DF_CPU=72000000L',
     '-DUSE_USB_COMPOSITE',
@@ -213,7 +214,7 @@ foreach t : ara_gen_freertos_targets
   named_elf_targets += [t+'.lto', lto_elf]
 
   if get_option('disable_gpslogger_tests') == false
-    if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
+    if t in ['instances_full_static', 'instances_full_initialized']
       test_elf = 'nop'
     else
       test_elf = elf_target
@@ -227,6 +228,7 @@ foreach t : ara_gen_freertos_targets
                ],
          env: [python_path],
          workdir: meson.current_source_dir(),
+         is_parallel: false,
         )
   else
     error('disabled')
