@@ -43,6 +43,7 @@ hw_apps = [
   'simple_delay',
   'simple_queue_send',
   'simple_mutex',
+  'simple_mutex_constructor',
 ]
 
 
