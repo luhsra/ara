@@ -15,6 +15,7 @@ from bb_split cimport BBSplit
 from cdummy cimport CDummy
 from llvm_optimization cimport LLVMOptimization
 from comp_insert cimport CompInsert
+from fake_entry_point cimport FakeEntryPoint
 from fn_single_exit cimport FnSingleExit
 from icfg cimport ICFG
 from ir_reader cimport IRReader
@@ -296,6 +297,7 @@ def provide_steps():
             _native_fac(step_fac[CDummy]()),
             _native_fac(step_fac[LLVMOptimization]()),
             _native_fac(step_fac[CompInsert]()),
+            _native_fac(step_fac[FakeEntryPoint]()),
             _native_fac(step_fac[FnSingleExit]()),
             _native_fac(step_fac[ICFG]()),
             _native_fac(step_fac[IRReader]()),

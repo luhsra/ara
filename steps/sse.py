@@ -276,7 +276,7 @@ class InstanceGraph(FlatAnalysis):
     """Find all application instances."""
 
     def get_dependencies(self):
-        return ["Syscall", "ValueAnalysis", "CallGraph"]
+        return ["Syscall", "ValueAnalysis", "CallGraph", "FakeEntryPoint"]
 
     def _init_analysis(self):
         super()._init_analysis()
