@@ -17,6 +17,7 @@ def init_logging(level=logging.DEBUG, max_stepname=20):
     if type(level) == str:
         log_levels = {'debug': logging.DEBUG,
                       'info': logging.INFO,
+                      'warning': logging.WARNING,
                       'warn': logging.WARNING}
         level = log_levels[level]
 

@@ -172,7 +172,7 @@ namespace ara {
 		if (lvl == "error") {
 			return LogLevel::ERROR;
 		}
-		if (lvl == "warn") {
+		if (lvl == "warn" || lvl == "warning") {
 			return LogLevel::WARNING;
 		}
 		if (lvl == "info") {

@@ -56,9 +56,9 @@ namespace ara::step {
 
 		// ATTENTION: If you change this, also change the option list in native_step.py for class Step.
 		// All of these options are also defined in ara.py and have their defaults from there.
-		option::TOption<option::Choice<5>> log_level{
+		option::TOption<option::Choice<6>> log_level{
 		    "log_level", "Adjust the log level of this step.",
-		    /* ty = */ option::makeChoice("critical", "error", "warn", "info", "debug"),
+		    /* ty = */ option::makeChoice("critical", "error", "warn", "warning", "info", "debug"),
 		    /* default_value = */ std::nullopt,
 		    /* global = */ true};
 		option::TOption<option::Bool> dump{"dump", "If possible, dump the changed graph into a dot file.",
