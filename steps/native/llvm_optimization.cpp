@@ -18,7 +18,7 @@ namespace ara::step {
 		       "Performs various LLVM Passes on the IR to simplify the CFG.";
 	}
 
-	std::vector<std::string> LLVMOptimization::get_dependencies() { return {"IRReader"}; }
+	std::vector<std::string> LLVMOptimization::get_dependencies() { return {"IRReader", "FakeEntryPoint"}; }
 
 	void LLVMOptimization::fill_options() { opts.emplace_back(pass_list); }
 

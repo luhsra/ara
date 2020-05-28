@@ -15,6 +15,12 @@ namespace ara::step {
 	void FakeEntryPoint::fill_options() { opts.emplace_back(entry_point); }
 
 	void FakeEntryPoint::run(graph::Graph& graph) {
+		static int run = 0;
+		if (run++) {
+			logger.error() << get_name() << " is only allowed to run once! This is run " << run << std::endl;
+			return;
+			exit(1);
+		}
 		logger.info() << "Execute FakeEntryPoint step." << std::endl;
 
 		const std::optional<std::string>& old_entry_point = entry_point.get();
@@ -27,7 +33,7 @@ namespace ara::step {
 		Module& module = graph.get_module();
 		LLVMContext& context = module.getContext();
 		IRBuilder<> builder(context);
-		FunctionType* fty = FunctionType::get(Type::getVoidTy(context), std::vector<Type*>(), false);
+		FunctionType* fty = FunctionType::get(Type::getVoidTy(context), false);
 		Function* fake = Function::Create(fty, Function::ExternalLinkage, "__ara_fake_entry", module);
 		BasicBlock* bb = BasicBlock::Create(context, "entry", fake);
 		builder.SetInsertPoint(bb);

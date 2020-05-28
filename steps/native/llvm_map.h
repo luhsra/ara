@@ -18,7 +18,7 @@ namespace ara::step {
 	  public:
 		virtual std::string get_name() const override { return "LLVMMap"; }
 		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"FnSingleExit"}; }
+		virtual std::vector<std::string> get_dependencies() override { return {"FnSingleExit", "FakeEntryPoint"}; }
 
 		virtual void run(graph::Graph& graph) override;
 	};
