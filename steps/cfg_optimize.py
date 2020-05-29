@@ -9,7 +9,7 @@ class CFGOptimize(Step):
     """Apply basic LLVM optimizations that are needed for ARA."""
 
     def get_dependencies(self):
-        return ['IRReader']
+        return ['IRReader', 'FakeEntryPoint']
 
     def run(self, g: graph.Graph):
         self._step_manager.chain_step(

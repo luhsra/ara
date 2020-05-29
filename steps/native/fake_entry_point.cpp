@@ -17,9 +17,9 @@ namespace ara::step {
 	void FakeEntryPoint::run(graph::Graph& graph) {
 		static int run = 0;
 		if (run++) {
-			logger.error() << get_name() << " is only allowed to run once! This is run " << run << std::endl;
-			return;
-			exit(1);
+			std::stringstream ss;
+			ss << get_name() << " is only allowed to run once! This is run " << run;
+			fail(ss.str());
 		}
 		logger.info() << "Execute FakeEntryPoint step." << std::endl;
 
