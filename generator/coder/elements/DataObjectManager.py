@@ -1,4 +1,5 @@
 from .SourceElement import Block, Statement, ForRange
+from collections import namedtuple
 
 class UnderscorifyMap:
     def __getitem__(self, key):
@@ -328,3 +329,6 @@ class DataObjectManager:
     def source_element_initializer(self):
         # assert False, "Not implemented yet"
         return []
+
+    def get_nullptr(self):
+        return namedtuple('nullptr', 'name')('nullptr')

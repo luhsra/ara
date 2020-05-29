@@ -98,17 +98,24 @@ namespace ara::step {
 																 0, // AddressSpace
 																 false); // isExternallyInitialized
 		queue_meta_data_val->setDSOLocal(true);
-		GlobalVariable *queue_data_val = new GlobalVariable(module, // module
-															Type::getInt8Ty(module.getContext()), // type
-															false, // isConstant
-															GlobalValue::ExternalLinkage,
-															nullptr, // initializer
-															symbol_storage, // name
-															nullptr, // insertBefore
-															GlobalVariable::NotThreadLocal,
-															0, // AddressSpace
-															false); // isExternallyInitialized
-		queue_data_val->setDSOLocal(true);
+		Value* queue_data_val;
+		auto queue_data_ty = dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(2));
+		if (symbol_storage == std::string("nullptr")) {
+			queue_data_val = ConstantPointerNull::get(queue_data_ty);
+		} else {
+			auto data = new GlobalVariable(module,                          // modulea
+			                               queue_data_ty->getElementType(), // type
+			                               false,                           // isConstant
+			                               GlobalValue::ExternalLinkage,
+			                               nullptr,        // initializer
+			                               symbol_storage, // name
+			                               nullptr,        // insertBefore
+			                               GlobalVariable::NotThreadLocal,
+			                               0,      // AddressSpace
+			                               false); // isExternallyInitialized
+			data->setDSOLocal(true);
+			queue_data_val = data;
+		}
 
 		SmallVector<Value*, 5> new_args;
 		new_args.push_back(old_create_call->getArgOperand(0));

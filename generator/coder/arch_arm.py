@@ -102,12 +102,16 @@ class ArmArch(GenericArch):
 
     def static_unchanged_queue(self, queue, initialized):
         self._log.debug("Generating Queue: %s", queue.name)
-        data = DataObjectArray('uint8_t',
-                               # f'{queue.name}_queue_data',
-                               f'queue_data_{queue.name}{queue.uid}',
-                               queue.size * queue.length)
-        self.generator.source_file.data_manager.add(data)
-        queue.impl.data = data
+        if int(queue.size) == 0 or int(queue.length) == 0:
+            self._log.error("queue size/length = 0: %s", queue)
+            queue.impl.data = self.generator.source_file.data_manager.get_nullptr()
+        else:
+            data = DataObjectArray('uint8_t',
+                                   # f'{queue.name}_queue_data',
+                                   f'queue_data_{queue.name}{queue.uid}',
+                                   queue.size * queue.length)
+            self.generator.source_file.data_manager.add(data)
+            queue.impl.data = data
         head = self.QUEUE(queue, initialized, extern_c=True)
         self.generator.source_file.data_manager.add(head)
         queue.impl.head = head
