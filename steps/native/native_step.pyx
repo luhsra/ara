@@ -51,6 +51,7 @@ import graph
 
 LEVEL = {"critical": logging.CRITICAL,
          "error": logging.ERROR,
+         "warning": logging.WARNING,
          "warn": logging.WARNING,
          "info": logging.INFO,
          "debug": logging.DEBUG}
