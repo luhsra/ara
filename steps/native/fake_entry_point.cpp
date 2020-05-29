@@ -21,8 +21,6 @@ namespace ara::step {
 			ss << get_name() << " is only allowed to run once! This is run " << run;
 			fail(ss.str());
 		}
-		logger.info() << "Execute FakeEntryPoint step." << std::endl;
-
 		const std::optional<std::string>& old_entry_point = entry_point.get();
 		if (!old_entry_point) {
 			logger.error() << "No entry point given" << std::endl;
@@ -49,5 +47,8 @@ namespace ara::step {
 		builder.CreateCall(module.getFunction(StringRef(*old_entry_point)), std::vector<Value*>(), "old_entry");
 		builder.CreateRetVoid();
 		logger.debug() << "new entry: " << *fake << std::endl;
+
+		llvm::json::Value v(llvm::json::Object{{"entry_point", "__ara_fake_entry"}});
+		step_manager.change_global_config(v);
 	}
 } // namespace ara::step

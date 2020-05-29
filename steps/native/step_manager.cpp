@@ -6,6 +6,13 @@
 #include <sstream>
 
 namespace ara::step {
+	void StepManager::change_global_config(const llvm::json::Value& config) {
+		std::string foo;
+		llvm::raw_string_ostream sstream(foo);
+		sstream << config;
+		step_manager_change_global_config(step_manager, sstream.str().c_str());
+	}
+
 	void StepManager::chain_step(const llvm::json::Value& step_config) {
 		std::string foo;
 		llvm::raw_string_ostream sstream(foo);

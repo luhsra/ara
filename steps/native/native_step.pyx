@@ -322,5 +322,9 @@ cdef public void step_manager_chain_step(object step_manager, const char* config
     py_config = json.loads(config)
     step_manager.chain_step(py_config)
 
+cdef public void step_manager_change_global_config(object step_manager, const char* config):
+    py_config = json.loads(config)
+    step_manager.change_global_config(py_config)
+
 cdef public const char* step_manager_get_execution_id(object step_manager):
     return str(step_manager.get_execution_id()).encode('UTF-8')

@@ -30,6 +30,7 @@ import sys
 
 StepEvent = namedtuple('StepEvent', ['name', 'uuid'])
 ConfigEvent = namedtuple('ConfigEvent', ['uuid', 'config'])
+GlobalConfigEvent = namedtuple('GlobalConfigEvent', ['config'])
 
 
 def get_uuid(step_name):
@@ -194,6 +195,10 @@ class ConfigManager:
             config = self._get_config(step, {})
             self.steps[step].apply_config(config)
 
+    def apply_global_config(self, config_event):
+        """Apply the config given by config_event to all steps."""
+        self.p_config = {**self.p_config, **config_event.config}
+        self.apply_initial_config()
 
     def apply_new_config(self, config_event):
         """Apply a new config for step specified in config_event.uuid.
@@ -236,6 +241,7 @@ class StepManager:
         self._current_step_index = None
         self._current_step = None
         self._solver = None
+        self._config_manager = None
 
     def get_step(self, name):
         """Get the step with specified name or None."""
@@ -260,6 +266,20 @@ class StepManager:
         self._log.debug(f"A new step was requested {step_config}")
         self._solver.chain_step(self._execute_chain, self._current_step_index,
                                 step_config)
+
+    def change_global_config(self, new_config):
+        """Apply a new global config.
+
+        This must be called within an execution chain.
+
+        Arguments:
+        new_config -- new global config
+        """
+        assert self._config_manager
+        assert self._execute_chain
+        assert self._current_step_index > 0
+        self._execute_chain.insert(self._current_step_index + 1,
+                                   GlobalConfigEvent(new_config))
 
     def get_execution_id(self):
         """Get UUID of currently executing step."""
@@ -300,9 +320,9 @@ class StepManager:
             del extra_config["steps"]
 
         # give this list the config manager and solver
-        config_manager = ConfigManager(program_config, extra_config,
-                                       steps, self._steps)
-        config_manager.apply_initial_config()
+        self._config_manager = ConfigManager(program_config, extra_config,
+                                             steps, self._steps)
+        self._config_manager.apply_initial_config()
 
         self._solver = Solver(steps, self._steps)
 
@@ -317,7 +337,9 @@ class StepManager:
         for index, step in enumerate(self._execute_chain):
             self._current_step_index = index
             if isinstance(step, ConfigEvent):
-                config_manager.apply_new_config(step)
+                self._config_manager.apply_new_config(step)
+            elif isinstance(step, GlobalConfigEvent):
+                self._config_manager.apply_global_config(step)
             else:
                 self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
                 self._current_step = step.uuid

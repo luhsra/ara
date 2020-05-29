@@ -20,7 +20,6 @@ namespace ara::step {
 
 	/**
 	 * Lightweight wrapper class for the Python StepManager.
-	 * Only supports the chain_step interface.
 	 */
 	class StepManager {
 		friend class Step;
@@ -35,6 +34,7 @@ namespace ara::step {
 		/**
 		 * See stepmanager.py for a description.
 		 */
+		void change_global_config(const llvm::json::Value& config);
 		void chain_step(const llvm::json::Value& step_config);
 		void chain_step(const std::string& step_name);
 		void chain_step(const char* step_name);
