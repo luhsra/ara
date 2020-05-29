@@ -153,30 +153,58 @@ class Solver:
 
 
 class ConfigManager:
-    def __init__(self, program_config, extra_config, time_config, steps):
+    """Manages all config events.
+
+    These are mainly two groups: the initial configuration and the
+    configuration during step execution.
+    """
+
+    def __init__(self, program_config, step_config, time_config, steps):
+        """Prepare the different config layer.
+
+        Arguments:
+        program_config -- program wide config
+        step_config    -- step specific configs
+        time_config    -- time and step specific configs
+        steps          -- list of steps
+        """
         self.p_config = program_config
-        self.e_config = extra_config
+        self.s_config = step_config
         self.t_config = time_config
         self.t_uuids = dict([(x['uuid'], x) for x in self.t_config])
         self.steps = steps
 
+    def _get_config(self, step_name, extra_config):
+        """Overlay the specific configs.
+
+        p_config: initial global config
+        s_config: step specific config
+        extra_config: additional config
+
+        extra_config overlays s_config overlays p_config.
+        """
+        # see PEP 448
+        return {**self.p_config,
+                **(self.s_config.get(step_name, {})),
+                **extra_config}
+
     def apply_initial_config(self):
+        """Apply the initial config to all steps."""
         for step in self.steps:
-            # see PEP 448
-            config = {**self.p_config, **(self.e_config.get(step, {}))}
+            config = self._get_config(step, {})
             self.steps[step].apply_config(config)
 
-    def set_execution_chain(self, execute):
-        self.execute = execute
 
     def apply_new_config(self, config_event):
+        """Apply a new config for step specified in config_event.uuid.
+
+        If no extra config is given, use the predefined time_config.
+        """
         if config_event.config:
             step_config = config_event.config
         else:
             step_config = self.t_uuids[config_event.uuid]
-        config = {**self.p_config,
-                  **(self.e_config.get(step_config['name'], {})),
-                  **step_config}
+        config = self._get_config(step_config['name'], step_config)
         self.steps[step_config['name']].apply_config(config)
 
 
@@ -204,9 +232,9 @@ class StepManager:
         for step in provides():
             step.set_step_manager(self)
             self._steps[step.get_name()] = step
-        self.execute_chain = None
-        self.current_step_index = None
-        self.current_step = None
+        self._execute_chain = None
+        self._current_step_index = None
+        self._current_step = None
         self._solver = None
 
     def get_step(self, name):
@@ -225,17 +253,17 @@ class StepManager:
 
         step_config is a step dict exactly as the extra_config configuration.
         """
-        if self.execute_chain is None:
+        if self._execute_chain is None:
             raise StepManagerException(
                 "chain_step cannot be called when no step is running."
             )
         self._log.debug(f"A new step was requested {step_config}")
-        self._solver.chain_step(self.execute_chain, self.current_step_index,
+        self._solver.chain_step(self._execute_chain, self._current_step_index,
                                 step_config)
 
     def get_execution_id(self):
         """Get UUID of currently executing step."""
-        return self.current_step
+        return self._current_step
 
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
@@ -246,6 +274,8 @@ class StepManager:
         esteps         -- list of steps to execute. The elements are strings
                           that matches the ones returned by step.get_name().
         """
+        # get a list of steps, either from extra_config or esteps
+        # output is a list of dicts with at least UUID and name key.
         ecsteps = extra_config.get("steps", None)
         steps = []
         if ecsteps:
@@ -269,34 +299,34 @@ class StepManager:
         if "steps" in extra_config:
             del extra_config["steps"]
 
+        # give this list the config manager and solver
         config_manager = ConfigManager(program_config, extra_config,
                                        steps, self._steps)
         config_manager.apply_initial_config()
 
         self._solver = Solver(steps, self._steps)
 
-        self.execute_chain = self._solver.solve()
+        self._execute_chain = self._solver.solve()
 
-        config_manager.set_execution_chain(self.execute_chain)
-
+        # actual execution
         self._log.debug("The following steps will be executed:")
-        for step in self.execute_chain:
+        for step in self._execute_chain:
             if isinstance(step, StepEvent):
                 self._log.debug(f"{step.name} (UUID: {step.uuid})")
 
-        for index, step in enumerate(self.execute_chain):
-            self.current_step_index = index
+        for index, step in enumerate(self._execute_chain):
+            self._current_step_index = index
             if isinstance(step, ConfigEvent):
                 config_manager.apply_new_config(step)
             else:
                 self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
-                self.current_step = step.uuid
+                self._current_step = step.uuid
 
                 time_before = time.time()
                 self._steps[step.name].run(self._graph)
                 time_after = time.time()
 
-                self.current_step = None
+                self._current_step = None
 
                 self._log.debug(f"{step.name} had a runtime of "
                                 f"{time_after-time_before:0.2f}s.")
