@@ -139,7 +139,7 @@ class VanillaQueue(StructDataObject):
             self['u']['xSemaphore']['xMutexHolder'] = 'NULL'
             self['u']['xSemaphore']['uxRecursiveCallCount'] = 0
             self['pcHead'] = 'NULL' # aka. uxQueueType = 'queueQUEUE_IS_MUTEX'
-            self['pcWriteTo'] = lambda: self.address
+            self['pcWriteTo'] = 'nullptr'
             self['uxMessagesWaiting'] = 1 # aka. xQueueGenericSend()
         else:
             raise RuntimeError(f"unknown queue type: {type(queue)}")

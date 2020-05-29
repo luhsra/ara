@@ -1,4 +1,3 @@
-libs_includes += ['-I', meson.current_source_dir()+'/']
 target_prefix = 'libfreertos_instances_full_initialized'
 src_files = [
   'tasks',

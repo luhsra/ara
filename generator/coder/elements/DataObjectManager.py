@@ -331,4 +331,4 @@ class DataObjectManager:
         return []
 
     def get_nullptr(self):
-        return namedtuple('nullptr', 'name')('nullptr')
+        return namedtuple('nullptr', ['name', 'address'])('nullptr', 'nullptr')
