@@ -24,7 +24,7 @@ namespace ara::step {
 		std::string prefix = "__ara_osconfig_";
 		for (auto& global : module.globals()) {
 			if (global.getName().str().rfind(prefix) == 0) {
-				logger.error() << global << std::endl;
+				logger.debug() << global << std::endl;
 				PyObject* val_obj = get_obj_from_value(*global.getInitializer());
 				PyObject* key = PyUnicode_FromString(global.getName().str().substr(prefix.length()).c_str());
 				PyObject_SetItem(config, key, val_obj);
