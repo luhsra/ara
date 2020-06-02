@@ -87,9 +87,9 @@ elif get_option('arch') == 'arm'
   # requires meson 0.54
   # assert(fs.exists(libgcc_dir) and fs.is_absolute(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
   assert(fs.exists(libgcc_dir), path_error.format('arm_gcc_dir', libgcc_dir))
-  assert(fs.exists(libgcc_dir / 'thumb'), 'Thumb library inside GCC ARM is missing.')
+  assert(fs.exists(libgcc_dir), 'arm_gcc_dir is non-existent.')
   message('libgcc directory: @0@'.format(libgcc_dir))
-  ld_flags += ['-Wl,-L,' + (libgcc_dir / 'thumb')]
+  ld_flags += ['-Wl,-L,' + (libgcc_dir )]
 
 
   llc_flags += ['--frame-pointer=none']
