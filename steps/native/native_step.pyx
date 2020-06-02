@@ -21,6 +21,7 @@ from icfg cimport ICFG
 from ir_reader cimport IRReader
 from ir_writer cimport IRWriter
 from llvm_map cimport LLVMMap
+from load_os_config cimport LoadOSConfig
 from value_analysis_core cimport ValueAnalysisCore
 
 from test cimport (BBSplitTest,
@@ -304,6 +305,7 @@ def provide_steps():
             _native_fac(step_fac[IRReader]()),
             _native_fac(step_fac[IRWriter]()),
             _native_fac(step_fac[LLVMMap]()),
+            _native_fac(step_fac[LoadOSConfig]()),
             _native_fac_ReplaceSyscallsCreate(),
             _native_fac(step_fac[ValueAnalysisCore]())]
 

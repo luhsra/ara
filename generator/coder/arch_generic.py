@@ -29,13 +29,14 @@ class VanillaTaskList(StructDataObject):
 
 
 class VanillaTasksLists(DataObjectArray):
-    def __init__(self, name, max_prio, tasks):
+    def __init__(self, name, max_prio, tasks, prio_is_bit_encoded):
         DataObjectArray.__init__(self,
                                  "PRIVILEGED_DATA List_t",
                                  name,
                                  max_prio)
         self.tasks = tasks
         self.current_tcb = None
+        self.prio_is_bit_encoded = prio_is_bit_encoded
         self.used_prios = []
         for prio in range(max_prio):
             p_tasks = [t for t in tasks if t.priority == prio]
@@ -49,15 +50,14 @@ class VanillaTasksLists(DataObjectArray):
     def top_ready_prio(self):
         #TODO: get prio encoding from config: configUSE_PORT_OPTIMISED_TASK_SELECTION
         #assume we encode port optimized
-        is_bit_encoded = True
-        if(is_bit_encoded):
+        if(self.prio_is_bit_encoded):
             return " | ".join([f"1 << {p}" for p in self.used_prios])
         return str(max(self.used_prios))
 
 
 
 class VanillaTCB(StructDataObject):
-    def __init__(self, task, initialized, **kwargs):
+    def __init__(self, task, initialized, name_length, **kwargs):
         StructDataObject.__init__(self,
                                     "TCB_t", f"{task.name}_tcb",
                                   **kwargs)
@@ -69,8 +69,9 @@ class VanillaTCB(StructDataObject):
         self['uxPriority'] = task.priority
         self['pxTopOfStack'] = task.impl.stack.tos
         self['pxStack'] = f"(StackType_t*) &{task.impl.stack.name}"
-        #TODO: truncate to max name length from config
-        self['pcTaskName'] = f'"{task.name}"'
+        name = [f"'{task.name[i]}'" for i in range(min(len(task.name), name_length-1))]
+        name.append('0')
+        self['pcTaskName'] = "{" + ", ".join(name) + "}"
         self['uxBasePriority'] = f"{task.priority}"
         self['xStateListItem'] = self.arch.ListItem('xStateListItem')
         self['xEventListItem'] = self.arch.ListItem('xEventListItem')

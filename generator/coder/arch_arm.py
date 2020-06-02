@@ -79,7 +79,8 @@ class ArmArch(GenericArch):
     def static_unchanged_tcb(self, task, initialized):
         self._log.debug("Generating TCB mem for %s", task.name)
         if initialized:
-            tcb = self.TCB(task, initialized, extern_c=True)
+            name_length = self.ara_graph.os.config['configMAX_TASK_NAME_LEN'].get()
+            tcb = self.TCB(task, initialized, extern_c=True, name_length=name_length)
         else:
             tcb = DataObject("StaticTask_t",
                              f'{task.name}_tcb',

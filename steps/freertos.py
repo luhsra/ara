@@ -77,6 +77,7 @@ class FreeRTOS:
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)')]
     edge_properties = [('label', 'string', 'syscall name')]
+    config = {}
 
     @staticmethod
     def init(state):

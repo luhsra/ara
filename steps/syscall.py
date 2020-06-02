@@ -31,9 +31,11 @@ class Syscall(Step):
             if found:
                 os = syscalls[call]
                 if g.os in [None, os]:
+                    if g.os is None:
+                        self._step_manager.chain_step({"name": "LoadOSConfig"})
                     g.os = os
                 else:
-                    self._log.error("Call {call} does not fit to OS {g.os}.")
+                    self._log.error(f"Call {call} does not fit to OS {g.os}.")
         for nod in g.cfg.vertices():
             if g.cfg.vp.is_function[nod]:
                 continue

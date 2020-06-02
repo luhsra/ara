@@ -1268,4 +1268,53 @@ typedef StaticStreamBuffer_t StaticMessageBuffer_t;
 }
 #endif
 
+#ifndef __ARA_FREERTOSCONFIGS_VARS
+#define __ARA_FREERTOSCONFIGS_VARS 1
+int __attribute__((weak)) __ara_osconfig_configUSE_NEWLIB_REENTRANT = configUSE_NEWLIB_REENTRANT;
+int __attribute__((weak)) __ara_osconfig_configUSE_CO_ROUTINES = configUSE_CO_ROUTINES;
+int __attribute__((weak)) __ara_osconfig_configUSE_DAEMON_TASK_STARTUP_HOOK = configUSE_DAEMON_TASK_STARTUP_HOOK;
+int __attribute__((weak)) __ara_osconfig_configUSE_APPLICATION_TASK_TAG = configUSE_APPLICATION_TASK_TAG;
+int __attribute__((weak)) __ara_osconfig_configNUM_THREAD_LOCAL_STORAGE_POINTERS =
+    configNUM_THREAD_LOCAL_STORAGE_POINTERS;
+int __attribute__((weak)) __ara_osconfig_configUSE_RECURSIVE_MUTEXES = configUSE_RECURSIVE_MUTEXES;
+int __attribute__((weak)) __ara_osconfig_configUSE_MUTEXES = configUSE_MUTEXES;
+int __attribute__((weak)) __ara_osconfig_configUSE_TIMERS = configUSE_TIMERS;
+int __attribute__((weak)) __ara_osconfig_configUSE_COUNTING_SEMAPHORES = configUSE_COUNTING_SEMAPHORES;
+int __attribute__((weak)) __ara_osconfig_configUSE_ALTERNATIVE_API = configUSE_ALTERNATIVE_API;
+int __attribute__((weak)) __ara_osconfig_configMAX_TASK_NAME_LEN = configMAX_TASK_NAME_LEN;
+int __attribute__((weak)) __ara_osconfig_configIDLE_SHOULD_YIELD = configIDLE_SHOULD_YIELD;
+int __attribute__((weak)) __ara_osconfig_configASSERT_DEFINED = configASSERT_DEFINED;
+int __attribute__((weak)) __ara_osconfig_configQUEUE_REGISTRY_SIZE = configQUEUE_REGISTRY_SIZE;
+int __attribute__((weak)) __ara_osconfig_configCHECK_FOR_STACK_OVERFLOW = configCHECK_FOR_STACK_OVERFLOW;
+int __attribute__((weak)) __ara_osconfig_configRECORD_STACK_HIGH_ADDRESS = configRECORD_STACK_HIGH_ADDRESS;
+int __attribute__((weak)) __ara_osconfig_configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H =
+    configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H;
+int __attribute__((weak)) __ara_osconfig_configGENERATE_RUN_TIME_STATS = configGENERATE_RUN_TIME_STATS;
+int __attribute__((weak)) __ara_osconfig_configUSE_MALLOC_FAILED_HOOK = configUSE_MALLOC_FAILED_HOOK;
+int __attribute__((weak)) __ara_osconfig_configEXPECTED_IDLE_TIME_BEFORE_SLEEP = configEXPECTED_IDLE_TIME_BEFORE_SLEEP;
+int __attribute__((weak)) __ara_osconfig_configUSE_TICKLESS_IDLE = configUSE_TICKLESS_IDLE;
+int __attribute__((weak)) __ara_osconfig_configUSE_QUEUE_SETS = configUSE_QUEUE_SETS;
+int __attribute__((weak)) __ara_osconfig_configUSE_TIME_SLICING = configUSE_TIME_SLICING;
+int __attribute__((weak)) __ara_osconfig_configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS =
+    configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS;
+int __attribute__((weak)) __ara_osconfig_configUSE_STATS_FORMATTING_FUNCTIONS = configUSE_STATS_FORMATTING_FUNCTIONS;
+int __attribute__((weak)) __ara_osconfig_configUSE_TRACE_FACILITY = configUSE_TRACE_FACILITY;
+int __attribute__((weak)) __ara_osconfig_configUSE_PORT_OPTIMISED_TASK_SELECTION =
+    configUSE_PORT_OPTIMISED_TASK_SELECTION;
+int __attribute__((weak)) __ara_osconfig_configAPPLICATION_ALLOCATED_HEAP = configAPPLICATION_ALLOCATED_HEAP;
+int __attribute__((weak)) __ara_osconfig_configUSE_TASK_NOTIFICATIONS = configUSE_TASK_NOTIFICATIONS;
+int __attribute__((weak)) __ara_osconfig_configUSE_POSIX_ERRNO = configUSE_POSIX_ERRNO;
+int __attribute__((weak)) __ara_osconfig_configSUPPORT_STATIC_ALLOCATION = configSUPPORT_STATIC_ALLOCATION;
+int __attribute__((weak)) __ara_osconfig_configSUPPORT_DYNAMIC_ALLOCATION = configSUPPORT_DYNAMIC_ALLOCATION;
+int __attribute__((weak)) __ara_osconfig_configSTACK_DEPTH_TYPE = sizeof(configSTACK_DEPTH_TYPE);
+int __attribute__((weak)) __ara_osconfig_configMESSAGE_BUFFER_LENGTH_TYPE = sizeof(configMESSAGE_BUFFER_LENGTH_TYPE);
+int __attribute__((weak)) __ara_osconfig_configINITIAL_TICK_COUNT = configINITIAL_TICK_COUNT;
+int __attribute__((weak)) __ara_osconfig_configENABLE_BACKWARD_COMPATIBILITY = configENABLE_BACKWARD_COMPATIBILITY;
+int __attribute__((weak)) __ara_osconfig_configUSE_TASK_FPU_SUPPORT = configUSE_TASK_FPU_SUPPORT;
+int __attribute__((weak)) __ara_osconfig_configENABLE_MPU = configENABLE_MPU;
+int __attribute__((weak)) __ara_osconfig_configENABLE_FPU = configENABLE_FPU;
+int __attribute__((weak)) __ara_osconfig_configENABLE_TRUSTZONE = configENABLE_TRUSTZONE;
+int __attribute__((weak)) __ara_osconfig_configRUN_FREERTOS_SECURE_ONLY = configRUN_FREERTOS_SECURE_ONLY;
+#endif /* __ARA_OSCONFIGS_VARS */
+
 #endif /* INC_FREERTOS_H */

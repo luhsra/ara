@@ -114,9 +114,12 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         max_prio = 5
 
         # ready_lists = DataObjectArray("PRIVILEGED_DATA List_t", "pxReadyTasksLists", 'configMAX_PRIORITIES')
+        prio_is_bit_encoded = bool(self.ara_graph.os.config['configUSE_PORT_OPTIMISED_TASK_SELECTION'].get())
         ready_lists = self.arch_rules.TasksLists("pxReadyTasksLists",
                                                  max_prio,
-                                                 tasks)
+                                                 tasks,
+                                                 prio_is_bit_encoded=prio_is_bit_encoded,
+                                                 )
         self.generator.source_file.data_manager.add(ready_lists)
 
 

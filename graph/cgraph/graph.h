@@ -162,6 +162,8 @@ namespace ara::graph {
 
 		LLVMData& get_llvm_data() { return *llvm_data; }
 
+		PyObject* get_pygraph() { return graph; }
+
 		CFG get_cfg();
 	};
 } // namespace ara::graph
