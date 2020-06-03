@@ -11,12 +11,6 @@ if get_option('disable_step_tests')
             env : [python_path]
     )
 
-    test('loop-detection',
-            py3_inst,
-            args : [files('loop_detection.py'), files('loop_detection.json'), freertos_loop_detection],
-            env : [python_path]
-    )
-
     test('oil-parsing',
       py3_inst,
       args : [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
