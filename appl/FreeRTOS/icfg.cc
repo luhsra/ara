@@ -9,6 +9,9 @@ int ptr_func1(int a, float b, int c) { return a + c; }
 
 int ptr_func2(int a, float b, int c) { return a - c; }
 
+typedef int (*PtrFunc)(int, float, int);
+PtrFunc get_ptr_func();
+
 int do_stuff(int a, int b) {
 	if (a == 5) {
 		return 34;
@@ -53,8 +56,13 @@ int main(void) {
 
 	int e = do_stuff(23, 90);
 
+	// this is optimized out and therefore unambiguous
 	auto ptr = ptr_func1;
 	ptr(23, 4.5, 20);
+
+	// this is impossible to optimize out
+	auto ptr2 = get_ptr_func();
+	ptr2(23, 4.5, 20);
 
 	vTaskStartScheduler();
 
