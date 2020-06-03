@@ -24,13 +24,16 @@ from llvm_map cimport LLVMMap
 from load_os_config cimport LoadOSConfig
 from value_analysis_core cimport ValueAnalysisCore
 
-from test cimport (BBSplitTest,
-                   CFGOptimizeTest,
-                   CompInsertTest,
-                   FnSingleExitTest,
-                   LLVMMapTest,
-                   Test0Step,
-                   Test2Step)
+include "project_config.pxi"
+
+IF STEP_TESTS:
+    from test cimport (BBSplitTest,
+                       CFGOptimizeTest,
+                       CompInsertTest,
+                       FnSingleExitTest,
+                       LLVMMapTest,
+                       Test0Step,
+                       Test2Step)
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr
@@ -309,16 +312,18 @@ def provide_steps():
             _native_fac_ReplaceSyscallsCreate(),
             _native_fac(step_fac[ValueAnalysisCore]())]
 
-
 def provide_test_steps():
-    """Do not use this, only for testing purposes."""
-    return [_native_fac(step_fac[BBSplitTest]()),
-            _native_fac(step_fac[CFGOptimizeTest]()),
-            _native_fac(step_fac[CompInsertTest]()),
-            _native_fac(step_fac[FnSingleExitTest]()),
-            _native_fac(step_fac[LLVMMapTest]()),
-            _native_fac(step_fac[Test0Step]()),
-            _native_fac(step_fac[Test2Step]())]
+    IF STEP_TESTS:
+        """Do not use this, only for testing purposes."""
+        return [_native_fac(step_fac[BBSplitTest]()),
+                _native_fac(step_fac[CFGOptimizeTest]()),
+                _native_fac(step_fac[CompInsertTest]()),
+                _native_fac(step_fac[FnSingleExitTest]()),
+                _native_fac(step_fac[LLVMMapTest]()),
+                _native_fac(step_fac[Test0Step]()),
+                _native_fac(step_fac[Test2Step]())]
+    ELSE:
+        return []
 
 # make this name extra long, since we have no namespaces here
 cdef public void step_manager_chain_step(object step_manager, const char* config):

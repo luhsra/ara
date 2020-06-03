@@ -19,6 +19,20 @@ log_dep = declare_dependency(
   sources: py_logging_header)
 
 # steps
+step_dir = meson.current_build_dir()
+
+conf_data = configuration_data()
+if get_option('disable_step_tests')
+  test_pxd = []
+  conf_data.set('step_tests', 'False')
+else
+  test_pxd = ['test.pxd']
+  conf_data.set('step_tests', 'True')
+endif
+configure_file(input: 'project_config.pxi.in',
+  output: 'project_config.pxi',
+  configuration: conf_data)
+
 native_step_pyx_gen = custom_target('native_step_pyx',
   output : ['native_step_pyx.cpp', 'native_step_pyx.h'],
   input : [files('native_step.pyx',
@@ -37,13 +51,23 @@ native_step_pyx_gen = custom_target('native_step_pyx',
                  'load_os_config.pxd',
                  'replace_syscalls_create.pxd',
                  'replace_syscalls_create.pxi',
-                 'value_analysis_core.pxd',
-                 'test.pxd') + common_cython_files],
-  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
+                 'value_analysis_core.pxd') + test_pxd + common_cython_files],
+  command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '-I', step_dir, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
 )
 
 native_step_pyx_cpp = native_step_pyx_gen[0]
 native_step_pyx_h   = native_step_pyx_gen[1]
+
+if get_option('disable_step_tests')
+  test_sources = []
+else
+  test_sources = files('test/bb_split_test.cpp',
+                       'test/comp_insert_test.cpp',
+                       'test/cfg_optimize_test.cpp',
+                       'test/fn_single_exit_test.cpp',
+                       'test/llvm_map_test.cpp',
+                       'test/test.cpp')
+endif
 
 plib = py3_inst.extension_module('native_step',
   native_step_pyx_cpp,
@@ -62,15 +86,9 @@ plib = py3_inst.extension_module('native_step',
         'replace_syscalls_create.cpp',
         'step_manager.cpp',
         'value_analysis_core.cpp',
-        'value_analyzer.cpp',
-        'test/bb_split_test.cpp',
-        'test/comp_insert_test.cpp',
-        'test/cfg_optimize_test.cpp',
-        'test/fn_single_exit_test.cpp',
-        'test/llvm_map_test.cpp',
-        'test/test.cpp'),
+        'value_analyzer.cpp') + test_sources,
+
   cpp_pch: 'pch/steps_pch.h',
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep, pyllco_dep]
 )
 
-step_dir = meson.current_build_dir()
