@@ -1,4 +1,4 @@
-if get_option('disable_step_tests')
+if not get_option('disable_step_tests')
     test('dependency-resolving',
             py3_inst,
             args : files('dependency_resolving.py'),
