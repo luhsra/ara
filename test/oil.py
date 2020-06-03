@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.6
 
+
 import logging
 import os.path
 import sys
@@ -65,4 +66,6 @@ def main():
 
 
 if __name__ == '__main__':
+    # skip for now, until we have an AUTOSAR/OSEK detection again
+    sys.exit(77)
     main()
