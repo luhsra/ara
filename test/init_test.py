@@ -27,6 +27,15 @@ def fail_if(condition, *arg, dry=False):
             sys.exit(1)
 
 
+def get_config(i_file):
+    """Return the default common config."""
+    return {'log_level': 'debug',
+            'dump_prefix': 'dumps/',
+            'dump': False,
+            'entry_point': 'main',
+            'input_file': i_file}
+
+
 def init_test(steps=None, extra_config=None):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
@@ -62,10 +71,6 @@ def init_test(steps=None, extra_config=None):
 
     s_manager = stepmanager.StepManager(g)
 
-    config = {'log_level': 'debug',
-              'dump_prefix': '/dev/null',
-              'dump': False,
-              'input_file': i_file}
-    s_manager.execute(config, extra_config, steps)
+    s_manager.execute(get_config(i_file), extra_config, steps)
 
     return g, data, s_manager
