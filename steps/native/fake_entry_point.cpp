@@ -21,18 +21,24 @@ namespace ara::step {
 			ss << get_name() << " is only allowed to run once! This is run " << run;
 			fail(ss.str());
 		}
-		const std::optional<std::string>& old_entry_point = entry_point.get();
-		if (!old_entry_point) {
-			logger.error() << "No entry point given" << std::endl;
-			exit(1);
-		}
-		logger.info() << "old entry point: " << *old_entry_point << std::endl;
-
 		Module& module = graph.get_module();
+
+		auto entry_point_name = this->entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+		Function* old_entry_point = module.getFunction(StringRef(*entry_point_name));
+		if (old_entry_point == nullptr) {
+			logger.warn() << "entry point " << *entry_point_name << " does not exist.";
+		}
+		if (!(old_entry_point->getReturnType()->isVoidTy() || old_entry_point->getReturnType()->isIntegerTy())) {
+			fail("Entry point must return void or int.");
+		}
+		logger.debug() << "Old entry point: " << *entry_point_name << std::endl;
+
 		LLVMContext& context = module.getContext();
 		IRBuilder<> builder(context);
-		FunctionType* fty = FunctionType::get(Type::getVoidTy(context), false);
-		Function* fake = Function::Create(fty, Function::ExternalLinkage, "__ara_fake_entry", module);
+		// FunctionType* fty = FunctionType::get(Type::getVoidTy(context), false);
+		Function* fake =
+		    Function::Create(old_entry_point->getFunctionType(), Function::ExternalLinkage, "__ara_fake_entry", module);
 		BasicBlock* bb = BasicBlock::Create(context, "entry", fake);
 		builder.SetInsertPoint(bb);
 
@@ -44,8 +50,16 @@ namespace ara::step {
 				builder.CreateCall(&cur, std::vector<Value*>());
 			}
 		}
-		builder.CreateCall(module.getFunction(StringRef(*old_entry_point)), std::vector<Value*>(), "old_entry");
-		builder.CreateRetVoid();
+		std::vector<Value*> args;
+		for (Argument& arg : fake->args()) {
+			args.emplace_back(&arg);
+		}
+		CallInst* o_call = builder.CreateCall(old_entry_point, args, "old_entry");
+		if (old_entry_point->getReturnType()->isVoidTy()) {
+			builder.CreateRetVoid();
+		} else {
+			builder.CreateRet(o_call);
+		}
 		logger.debug() << "new entry: " << *fake << std::endl;
 
 		llvm::json::Value v(llvm::json::Object{{"entry_point", "__ara_fake_entry"}});
