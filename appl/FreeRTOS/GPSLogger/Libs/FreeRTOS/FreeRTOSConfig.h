@@ -171,5 +171,12 @@ standard names. */
 #define xPortPendSVHandler PendSV_Handler
 #define xPortSysTickHandler HAL_SYSTICK_Callback
 
+
+/* ONLY for i386 stub */
+#if X86_STUB == 1
+#define configISR_STACK_SIZE					350
+#endif
+
+
 #endif /* FREERTOS_CONFIG_H */
 

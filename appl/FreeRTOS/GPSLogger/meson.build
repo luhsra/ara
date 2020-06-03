@@ -1,6 +1,10 @@
 gpslogger_dir = meson.current_source_dir()
 gpslogger_cflags = [
     '-DconfigINCLUDE_ALL_DECLS=1',
+    '-DMCU_STM32F103RB',
+    '-DSTM32F1',
+    '-DSTM32F103RB',
+    '-DSTM32F103xB',
     '-DARDUINO=10801',
     '-DF_CPU=72000000L',
     '-DUSE_USB_COMPOSITE',
@@ -230,8 +234,6 @@ foreach t : ara_gen_freertos_targets
          workdir: meson.current_source_dir(),
          is_parallel: false,
         )
-  else
-    error('disabled')
   endif
 
 

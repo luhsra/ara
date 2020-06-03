@@ -51,6 +51,9 @@ endforeach
 
 if get_option('arch') == 'arm'
   subdir('arm')
+elif get_option('arch') == 'i386'
+  warning('i396 is not very well supported. problems are likely')
+  subdir('IA32_flat')
 else
   error('unknown arch')
 endif

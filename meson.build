@@ -105,60 +105,55 @@ subdir('test')
 
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
+if not get_option('disable_toplevel_tests')
+    extra_settings = files('test/extra_settings.json')
+    test('ara_tester',
+       py3_inst,
+       args: [ara_sh, gpslogger_application,
+              '--log-level', 'debug',
+              '--step-settings', extra_settings],
+       env : [python_path]
+    )
 
-if get_option('disable_toplevel_tests')
-  ara_test = disabler()
-else
-  ara_test = ara
+    generator_settings = files('test/generator_settings.json')
+
+    test('generator_tester',
+       py3_inst,
+       args: [ara_sh, freertos_simple_print,
+              '--log-level', 'debug', '--dump',
+              '--generator_output', 'generator_tester-os.cc',
+              '--step-settings', generator_settings],
+       env : [python_path]
+    )
+
+    test('gpslogger',
+       py3_inst,
+       args: [ara_sh, gpslogger_application, '--log-level', 'debug', '--step', 'SSE'],
+       env : [python_path]
+    )
+
+    test('smartplug',
+       py3_inst,
+       args: [ara_sh, smartplug_targets, '--log-level', 'debug', '--step', 'SSE'],
+       env : [python_path]
+    )
+
+    test('copter-without-alarms',
+       py3_inst,
+       args: [ara_sh, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'SSE'],
+       env : [python_path]
+    )
+
+    test('copter',
+       py3_inst,
+       args: [ara_sh, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'SSE'],
+       env : [python_path]
+    )
+
+
+    test('ospert',
+       py3_inst,
+       args: [ara_sh, freertos_ospert, '--log-level', 'debug', '--step', 'SSE'],
+       env : [python_path]
+    )
 endif
-
-extra_settings = files('test/extra_settings.json')
-test('ara_tester',
-   py3_inst,
-   args: [ara_test, gpslogger_application,
-          '--log-level', 'debug',
-          '--step-settings', extra_settings],
-   env : [python_path]
-)
-
-generator_settings = files('test/generator_settings.json')
-
-test('generator_tester',
-   py3_inst,
-   args: [ara_test, freertos_simple_print,
-          '--log-level', 'debug', '--dump',
-          '--generator_output', 'generator_tester-os.cc',
-          '--step-settings', generator_settings],
-   env : [python_path]
-)
-
-test('gpslogger',
-   py3_inst,
-   args: [ara_test, gpslogger_application, '--log-level', 'debug', '--step', 'SSE'],
-   env : [python_path]
-)
-
-test('smartplug',
-   py3_inst,
-   args: [ara_test, smartplug_targets, '--log-level', 'debug', '--step', 'SSE'],
-   env : [python_path]
-)
-
-test('copter-without-alarms',
-   py3_inst,
-   args: [ara_test, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'SSE'],
-   env : [python_path]
-)
-
-test('copter',
-   py3_inst,
-   args: [ara_test, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'SSE'],
-   env : [python_path]
-)
-
-
-test('ospert',
-   py3_inst,
-   args: [ara_test, freertos_ospert, '--log-level', 'debug', '--step', 'SSE'],
-   env : [python_path]
-)
