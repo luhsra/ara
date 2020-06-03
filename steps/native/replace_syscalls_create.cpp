@@ -69,7 +69,8 @@ namespace ara::step {
 		return;
 	}
 
-	bool ReplaceSyscallsCreate::replace_queue_create_static(graph::Graph& graph, int where, char *symbol_metadata, char *symbol_storage) {
+	bool ReplaceSyscallsCreate::replace_queue_create_static(graph::Graph& graph, uintptr_t where, char* symbol_metadata,
+	                                                        char* symbol_storage) {
 		Module &module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -134,7 +135,8 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_mutex_create_static(graph::Graph& graph, int where, char *symbol_metadata) {
+	bool ReplaceSyscallsCreate::replace_mutex_create_static(graph::Graph& graph, uintptr_t where,
+	                                                        char* symbol_metadata) {
 		Module &module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -179,8 +181,9 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_mutex_create_initialized(graph::Graph& graph, int where, char* symbol_metadata) {
-				Module &module = graph.get_module();
+	bool ReplaceSyscallsCreate::replace_mutex_create_initialized(graph::Graph& graph, uintptr_t where,
+	                                                             char* symbol_metadata) {
+		Module& module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function *old_func = old_create_call->getCalledFunction();
@@ -218,8 +221,9 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_queue_create_initialized(graph::Graph& graph, int where, char* symbol_metadata) {
-				Module &module = graph.get_module();
+	bool ReplaceSyscallsCreate::replace_queue_create_initialized(graph::Graph& graph, uintptr_t where,
+	                                                             char* symbol_metadata) {
+		Module& module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function *old_func = old_create_call->getCalledFunction();
@@ -257,7 +261,8 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_task_create_static(graph::Graph& graph, int where, char* tcb_name, char* stack_name) {
+	bool ReplaceSyscallsCreate::replace_task_create_static(graph::Graph& graph, uintptr_t where, char* tcb_name,
+	                                                       char* stack_name) {
 		Module &module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -307,7 +312,7 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_task_create_initialized(graph::Graph& graph, int where, char *tcb_name) {
+	bool ReplaceSyscallsCreate::replace_task_create_initialized(graph::Graph& graph, uintptr_t where, char* tcb_name) {
 		Module &module = graph.get_module();
 		BasicBlock *bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase *old_create_call = dyn_cast<CallBase>(&bb->front());

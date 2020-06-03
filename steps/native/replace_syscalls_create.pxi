@@ -1,7 +1,7 @@
 from replace_syscalls_create cimport ReplaceSyscallsCreate as CReplaceSyscallsCreate
 from steps.freertos import Task, Queue, Mutex
 
-from libc.stdint cimport intptr_t
+from libc.stdint cimport uintptr_t
 cimport ir
 
 cdef class ReplaceSyscallsCreate(NativeStep):
