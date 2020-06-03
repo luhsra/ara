@@ -33,6 +33,8 @@ foreach file : src_files
                                               clang_flags)
 endforeach
 
-smartplug_runtarget = run_target('smartplug-full',
-                                 command: nop,
-                                 depends: smartplug_targets)
+smartplug_application = custom_target('smartplug_app.ll',
+                              input: smartplug_targets,
+                              output: 'smartplug_app.ll',
+                              command: llvm_link_cmd,
+                              )

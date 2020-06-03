@@ -109,51 +109,56 @@ if not get_option('disable_toplevel_tests')
     extra_settings = files('test/extra_settings.json')
     test('ara_tester',
        py3_inst,
-       args: [ara_sh, gpslogger_application,
+       args: [ara, gpslogger_application,
               '--log-level', 'debug',
               '--step-settings', extra_settings],
-       env : [python_path]
+       env: [python_path],
+       suite: 'toplevel'
     )
 
     generator_settings = files('test/generator_settings.json')
-
     test('generator_tester',
        py3_inst,
-       args: [ara_sh, freertos_simple_print,
+       args: [ara, freertos_simple_print,
               '--log-level', 'debug', '--dump',
               '--generator_output', 'generator_tester-os.cc',
               '--step-settings', generator_settings],
-       env : [python_path]
+       env : [python_path],
+       suite: 'toplevel'
     )
 
     test('gpslogger',
        py3_inst,
-       args: [ara_sh, gpslogger_application, '--log-level', 'debug', '--step', 'SSE'],
-       env : [python_path]
+       args: [ara, gpslogger_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
+       env : [python_path],
+       suite: 'toplevel'
     )
 
     test('smartplug',
        py3_inst,
-       args: [ara_sh, smartplug_targets, '--log-level', 'debug', '--step', 'SSE'],
-       env : [python_path]
+       args: [ara, smartplug_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
+       env : [python_path],
+       suite: 'toplevel'
     )
 
     test('copter-without-alarms',
        py3_inst,
-       args: [ara_sh, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'SSE'],
-       env : [python_path]
+       args: [ara, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
+       env : [python_path],
+       suite: 'toplevel'
     )
 
     test('copter',
        py3_inst,
-       args: [ara_sh, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'SSE'],
-       env : [python_path]
+       args: [ara, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
+       env : [python_path],
+       suite: 'toplevel'
     )
-
 
     test('ospert',
        py3_inst,
-       args: [ara_sh, freertos_ospert, '--log-level', 'debug', '--step', 'SSE'],
-       env : [python_path]
+       args: [ara, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
+       env : [python_path],
+       suite: 'toplevel'
     )
 endif
