@@ -35,6 +35,13 @@ ninja
 ```
 (Note: `build` is actually a placeholder for an arbitrary path.)
 
+To build only ARA itself use:
+```
+ninja ara.sh
+```
+
+There are some build options to deactivate parts of the project. Take a look at `meson configure` for that.
+
 Usage
 -----
 
