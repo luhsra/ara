@@ -116,7 +116,7 @@ objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
 llvm_link_cmd = [llvm_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
 llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 
-ara_gen_cmd = [bash, ara_sh,
+ara_gen_cmd = [py3_inst, ara_py,
                '@INPUT@',
                '--generator_output', '@OUTPUT0@',
                '--ir_output', '@OUTPUT2@',

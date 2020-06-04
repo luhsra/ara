@@ -1,22 +1,19 @@
-from .abb_merge import ABBMerge
-from .call_graph import CallGraph
-from .cfg_optimize import CFGOptimize
-from .cfg_stats import CFGStats
-from .dummy import Dummy
-from .generator import Generator
-from .oil import OilStep
-from .printer import Printer
-from .sse import InstanceGraph, InteractionAnalysis
-from .syscall import Syscall
-from .value_analysis import ValueAnalysis
-
 import py_logging
 
-from native_step import Step
-from native_step import provide_steps as _native_provide
-
-
 def provide_steps():
+    from .step import provide_steps as _native_provide
+    from .abb_merge import ABBMerge
+    from .call_graph import CallGraph
+    from .cfg_optimize import CFGOptimize
+    from .cfg_stats import CFGStats
+    from .dummy import Dummy
+    from .generator import Generator
+    from .oil import OilStep
+    from .printer import Printer
+    from .sse import InstanceGraph, InteractionAnalysis
+    from .syscall import Syscall
+    from .value_analysis import ValueAnalysis
+
     for step in _native_provide():
         yield step
 

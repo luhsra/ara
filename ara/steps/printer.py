@@ -1,8 +1,8 @@
 """Container for Printer."""
-from .option import Option, String, Choice, Bool
 from ara.graph import ABBType, CFType, Graph
 
-from native_step import Step
+from .option import Option, String, Choice, Bool
+from .step import Step
 
 import pydot
 import os.path

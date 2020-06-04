@@ -57,9 +57,6 @@ def main():
 
     logger = init_logging(level=args.log_level, root_name='ara')
 
-    logger.debug('ARA executed with: PYTHONPATH=%s python3 %s',
-                  os.environ["PYTHONPATH"], ' '.join(sys.argv))
-
     g = Graph()
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()

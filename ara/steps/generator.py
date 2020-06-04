@@ -3,7 +3,7 @@ import os
 import sys
 
 from ara.graph import Graph
-from native_step import Step
+from .step import Step
 from .option import Option, Choice, String
 
 from ara.generator import *
@@ -83,7 +83,7 @@ class Generator(Step):
         dep_file = self.dep_file.get()
         if dep_file:
             self._log.info("generate depfile: %s", dep_file)
-            ara_file = sys.modules['__main__'].__file__
+            ara_file = sys.modules['ara'].__file__
             base_path = os.path.dirname(ara_file)
             src_files = [getattr(m, '__file__') for m in sys.modules.values()
                          if base_path in (getattr(m, '__file__', '') or "")]

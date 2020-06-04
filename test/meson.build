@@ -43,10 +43,9 @@ if not get_option('disable_step_tests')
 
     test('dummy-test',
         py3_inst,
-        args: [files('../ara.py'), 'empty',
+        args: [ara_py, 'empty',
                '-v',
                '--step-settings', files('dummy_settings.json')],
-        env : [python_path],
         suite: 'steps'
     )
 

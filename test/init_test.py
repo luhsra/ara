@@ -1,8 +1,21 @@
 """Common init function for tests."""
-import sys
+import importlib
 import json
 import logging
+import sys
 
+
+def fake_step_module():
+    """Fake the step module into the correct package."""
+    import graph_tool
+    step_module = importlib.import_module("step")
+    sys.modules["ara.steps.step"] = step_module
+
+
+fake_step_module()
+
+
+# this imports has to be _below_ the call to fake_step_module
 from ara.util import init_logging
 from ara.graph import Graph
 from ara.stepmanager import StepManager

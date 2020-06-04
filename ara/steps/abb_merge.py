@@ -1,7 +1,7 @@
 """Container for ABBMerge."""
 
 from ara.graph import ABBType, CFType, Graph
-from native_step import Step
+from .step import Step
 from .option import Option, Integer
 
 import functools

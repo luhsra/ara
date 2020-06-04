@@ -6,7 +6,7 @@ import graph_tool.util
 
 import ara.graph as _graph
 
-from native_step import Step
+from .step import Step
 from .option import Option, String
 
 

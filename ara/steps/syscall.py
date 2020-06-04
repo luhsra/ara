@@ -1,6 +1,6 @@
 """Container for Syscall."""
 from ara.graph import ABBType, CFType, Graph
-from native_step import Step
+from .step import Step
 from .os import get_syscalls
 
 

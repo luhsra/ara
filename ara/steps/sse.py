@@ -6,7 +6,7 @@ import functools
 import pyllco
 
 from ara.graph import ABBType, Graph, CFGView, CFType
-from native_step import Step
+from .step import Step
 from .option import Option, String, Choice
 from .freertos import Task
 from .os_util import SyscallCategory

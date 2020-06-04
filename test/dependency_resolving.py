@@ -2,10 +2,13 @@
 
 import logging
 
+# only importing is relevant. This module is not used otherwise.
+import init_test
+
 from ara import stepmanager
 from ara import graph
 
-from native_step import Step
+from step import Step
 from ara.util import init_logging
 from ara.steps.option import Option, Bool
 

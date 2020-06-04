@@ -191,7 +191,6 @@ foreach app : ir_apps + hw_apps
                 app,
                 elf_target,
                ],
-         env: [python_path],
          workdir: freertos_src_dir,
          is_parallel: false,
         )

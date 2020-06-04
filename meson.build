@@ -47,7 +47,6 @@ svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
 ## tools
-bash = find_program('bash')
 nop = find_program('true')
 
 ## arch specific build tools
@@ -81,17 +80,30 @@ subdir('ara')
 # tools for deploying
 subdir('tools')
 
-python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir, llvm_data_dir])
-ara = files('ara.py')
+# convenience script to call ara without installing
+ara_py_content = '''#!@0@
+"""Automatic Real-time System Analyzer"""
 
-# convenience script to call ara with correct environment
-ara_sh = custom_target('ara-sh',
-    input: ara,
-    output: 'ara.sh',
-    depends: [plib, libgraph, llvm_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', '#!/bin/sh\n' + python_path + ' ' + py3_inst.path() + ' ' + (source_dir / 'ara.py') + ' $@\n'],
+import importlib
+import sys
+import graph_tool
+sys.path = [@1@] + sys.path
+step_module = importlib.import_module("step")
+sys.modules["ara.steps.step"] = step_module
+import ara.ara as _ara
+sys.exit(_ara.main())'''
+
+python_dirs = [source_dir, step_dir, pyllco_dir, llvm_data_dir]
+python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
+
+ara_py = custom_target('ara-py',
+    input: [],
+    output: 'ara.py',
+    depends: [step_mod, libgraph, llvm_data_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )
+
 
 # build test applications with help of ARA
 # Attention: The include order is important here.
@@ -106,56 +118,50 @@ if not get_option('disable_toplevel_tests')
     extra_settings = files('test/extra_settings.json')
     test('ara_tester',
        py3_inst,
-       args: [ara, gpslogger_application,
+       args: [ara_py, gpslogger_application,
               '--log-level', 'warn',
               '--step-settings', extra_settings],
-       env: [python_path],
        suite: 'toplevel'
     )
 
     generator_settings = files('test/generator_settings.json')
     test('generator_tester',
        py3_inst,
-       args: [ara, freertos_simple_print,
+       args: [ara_py, freertos_simple_print,
               '--log-level', 'debug', '--dump',
               '--generator_output', 'generator_tester-os.cc',
               '--step-settings', generator_settings],
-       env : [python_path],
        suite: 'toplevel'
     )
 
     test('gpslogger',
        py3_inst,
-       args: [ara, gpslogger_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
+       args: [ara_py, gpslogger_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
        suite: 'toplevel'
     )
 
     test('smartplug',
        py3_inst,
-       args: [ara, smartplug_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
+       args: [ara_py, smartplug_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
        suite: 'toplevel'
     )
 
     test('copter-without-alarms',
        py3_inst,
-       args: [ara, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
+       args: [ara_py, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
        env : [python_path],
        suite: 'toplevel'
     )
 
     test('copter',
        py3_inst,
-       args: [ara, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
+       args: [ara_py, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
        suite: 'toplevel'
     )
 
     test('ospert',
        py3_inst,
-       args: [ara, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
+       args: [ara_py, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
        suite: 'toplevel'
     )
 endif

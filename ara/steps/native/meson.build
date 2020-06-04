@@ -33,9 +33,9 @@ configure_file(input: 'project_config.pxi.in',
   output: 'project_config.pxi',
   configuration: conf_data)
 
-native_step_pyx_gen = custom_target('native_step_pyx',
-  output : ['native_step_pyx.cpp', 'native_step_pyx.h'],
-  input : [files('native_step.pyx',
+step_pyx_gen = custom_target('step_pyx',
+  output : ['step_pyx.cpp', 'step_pyx.h'],
+  input : [files('step.pyx',
                  'option.pxd',
                  'bb_split.pxd',
                  'cdummy.pxd',
@@ -55,8 +55,8 @@ native_step_pyx_gen = custom_target('native_step_pyx',
   command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '-I', step_dir, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
 )
 
-native_step_pyx_cpp = native_step_pyx_gen[0]
-native_step_pyx_h   = native_step_pyx_gen[1]
+step_pyx_cpp = step_pyx_gen[0]
+step_pyx_h   = step_pyx_gen[1]
 
 if get_option('disable_step_tests')
   test_sources = []
@@ -69,8 +69,8 @@ else
                        'test/test.cpp')
 endif
 
-plib = py3_inst.extension_module('native_step',
-  native_step_pyx_cpp,
+step_mod = py3_inst.extension_module('step',
+  step_pyx_cpp,
   files('option.cpp',
         'bb_split.cpp',
         'cdummy.cpp',
@@ -89,6 +89,7 @@ plib = py3_inst.extension_module('native_step',
         'value_analyzer.cpp') + test_sources,
 
   cpp_pch: 'pch/steps_pch.h',
+  depend_files: step_pyx_h,
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep, pyllco_dep]
 )
 

@@ -7,9 +7,9 @@ from typing import Dict, Any
 # TODO change to _graph
 import ara.graph as graph
 from .option import Option, String
+from .step import Step
 from .util import raise_and_error
 
-from native_step import Step
 
 
 class OilStep(Step):
