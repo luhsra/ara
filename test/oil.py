@@ -5,10 +5,9 @@ import logging
 import os.path
 import sys
 
-import stepmanager
-import graph
-
-from util import init_logging
+from ara.stepmanager import StepManager
+from ara.graph import Graph
+from ara.util import init_logging
 
 from native_step import Step
 
@@ -53,12 +52,12 @@ def main():
     init_logging(level=logging.DEBUG, max_stepname=len("StepManager"))
 
     for file, oil, validate in TESTS:
-        g = graph.Graph()
+        g = Graph()
         config = {'oilfile': oil,
                   'os': 'OSEK',
                   'input_files': [file]}
         extra_config = {}
-        p_manager = stepmanager.StepManager(g)
+        p_manager = StepManager(g)
 
         p_manager.execute(config, extra_config, ['OilStep'])
 

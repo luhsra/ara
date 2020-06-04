@@ -1,12 +1,13 @@
 #!/usr/bin/env python3.6
 
-import stepmanager
-import graph
 import logging
 
+from ara import stepmanager
+from ara import graph
+
 from native_step import Step
-from util import init_logging
-from steps.option import Option, Bool
+from ara.util import init_logging
+from ara.steps.option import Option, Bool
 
 shared_state = ""
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3.6
-import graph
 import json
 
-from graph import CFType
+from ara.graph import CFType
 
 from init_test import init_test, fail_if
 

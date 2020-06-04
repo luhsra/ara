@@ -1,6 +1,4 @@
 #!/usr/bin/env python3.6
-import graph
-
 from init_test import init_test
 
 

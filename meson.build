@@ -76,13 +76,10 @@ build_dir = meson.current_build_dir()
 source_dir = meson.source_root()
 
 # build ARA itself
-subdir('common')
-subdir('graph')
-subdir('steps')
+subdir('ara')
 
 # tools for deploying
 subdir('tools')
-
 
 python_path = 'PYTHONPATH=' + ':'.join([source_dir, step_dir, pyllco_dir, llvm_data_dir])
 ara = files('ara.py')

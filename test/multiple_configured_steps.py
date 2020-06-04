@@ -1,12 +1,12 @@
 #!/usr/bin/env python3.6
 
-import stepmanager
-import graph
 import logging
 
+from ara.stepmanager import StepManager, SolverException
+from ara.graph import Graph
 from native_step import Step
-from util import init_logging
-from steps.option import Option, String
+from ara.util import init_logging
+from ara.steps.option import Option, String
 
 shared_state = ""
 
@@ -19,7 +19,7 @@ class TestStep(Step):
                           ty=String())
         self.opts.append(self.opt)
 
-    def run(self, graph: graph.Graph):
+    def run(self, graph: Graph):
         """Write unique string for testing."""
         opt = self.opt.get()
         global shared_state
@@ -85,9 +85,9 @@ Opt: run2
 
 def main():
     init_logging(level=logging.DEBUG)
-    g = graph.Graph()
+    g = Graph()
     config = {}
-    p_manager = stepmanager.StepManager(g, provides=provide)
+    p_manager = StepManager(g, provides=provide)
 
     extra_config = {"steps": ["Test2Step",
                               {"name": "Special", "opt": "run1"},
@@ -110,7 +110,7 @@ def main():
 
     try:
         p_manager.execute(config, extra_config, None)
-    except stepmanager.SolverException as e:
+    except SolverException as e:
         assert (str(e) ==
                 "Test3Step depends on Test2Step but is scheduled after it")
 

@@ -3,10 +3,9 @@ import sys
 import json
 import logging
 
-from util import init_logging
-
-import graph
-import stepmanager
+from ara.util import init_logging
+from ara.graph import Graph
+from ara.stepmanager import StepManager
 
 
 def fail_with(*arg):
@@ -54,7 +53,7 @@ def init_test(steps=None, extra_config=None):
     init_logging(level=logging.DEBUG)
     if not extra_config:
         extra_config = {}
-    g = graph.Graph()
+    g = Graph()
     assert len(sys.argv) == 3
     json_file = sys.argv[1]
     i_file = sys.argv[2]
@@ -69,7 +68,7 @@ def init_test(steps=None, extra_config=None):
     with open(json_file) as f:
         data = json.load(f)
 
-    s_manager = stepmanager.StepManager(g)
+    s_manager = StepManager(g)
 
     s_manager.execute(get_config(i_file), extra_config, steps)
 

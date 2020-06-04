@@ -1,10 +1,10 @@
 #!/usr/bin/env python3.6
 """Checks the interoperability of Python and C++ passes."""
 
-import stepmanager
-import graph
 import logging
 
+from ara.stepmanager import StepManager
+from ara.graph import Graph
 from native_step import Step, provide_test_steps
 
 # Test0Step (C++)
@@ -20,7 +20,7 @@ class Test3Step(Step):
     def get_dependencies(self):
         return ["Test2Step"]
 
-    def run(self, graph: graph.Graph):
+    def run(self, graph: Graph):
         log = logging.getLogger(self.__class__.__name__)
         log.info("Running...")
 
@@ -29,7 +29,7 @@ class Test1Step(Step):
     def get_dependencies(self):
         return ["Test0Step"]
 
-    def run(self, graph: graph.Graph):
+    def run(self, graph: Graph):
         log = logging.getLogger(self.__class__.__name__)
         log.info("Running...")
 
@@ -44,10 +44,10 @@ def provide():
 
 def main():
     """Checks the interoperability of Python and C++ passes."""
-    g = graph.Graph()
+    g = Graph()
     config = {'log_level': 'debug', 'dump': False, 'dump_prefix': '/dev/null'}
     extra_config = {}
-    p_manager = stepmanager.StepManager(g, provides=provide)
+    p_manager = StepManager(g, provides=provide)
 
     p_manager.execute(config, extra_config, ['Test3Step'])
 
