@@ -107,7 +107,7 @@ if not get_option('disable_toplevel_tests')
     test('ara_tester',
        py3_inst,
        args: [ara, gpslogger_application,
-              '--log-level', 'debug',
+              '--log-level', 'warn',
               '--step-settings', extra_settings],
        env: [python_path],
        suite: 'toplevel'

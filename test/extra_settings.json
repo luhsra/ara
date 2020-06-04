@@ -3,19 +3,6 @@
 		"InteractionAnalysis"
 	],
 
-	"ICFG": {
-		"log_level": "info"
-	},
-	"LLVMMap": {
-		"log_level": "info"
-	},
-	"ValueAnalysis": {
-		"log_level": "info"
-	},
-	"ValueAnalysisCore": {
-		"log_level": "debug",
-		"dump_stats": true
-	},
 	"CallGraph": {
 		"dump": true
 	},
@@ -24,7 +11,7 @@
 	},
 	"InstanceGraph": {
 		"dump": true,
-		"log_level": "info"
+		"log_level": "debug"
 	},
 	"InteractionAnalysis": {
 		"dump": true,
