@@ -1,4 +1,5 @@
 from .os_util import syscall, SyscallCategory
+from .os_base import OSBase
 
 import graph
 import logging
@@ -73,11 +74,10 @@ class Mutex:
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
 
 
-class FreeRTOS:
+class FreeRTOS(OSBase):
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)')]
     edge_properties = [('label', 'string', 'syscall name')]
-    config = {}
 
     @staticmethod
     def init(state):

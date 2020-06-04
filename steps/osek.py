@@ -1,6 +1,7 @@
 from .os_util import syscall
+from .os_base import OSBase
 
-class OSEK:
+class OSEK(OSBase):
 
     @syscall
     def OSEKOS_ActivateTask(cfg, state):
