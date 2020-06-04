@@ -7,10 +7,12 @@
 namespace ara::step {
 	using namespace llvm;
 
+	std::string prefix = "__ara_osconfig_";
+
 	std::string LoadOSConfig::get_description() const {
-		return "Template for a C++ step."
-		       "\n"
-		       "Add a meaningful description of your step here.";
+		return "Retrieve config values from IR. \n"
+		       "Stores all global values named \"" +
+		       prefix + "*\" into graph.os.config dict";
 	}
 
 	void LoadOSConfig::fill_options() {}
@@ -21,7 +23,6 @@ namespace ara::step {
 		PyObject* config = PyObject_GetAttrString(os, "config");
 
 		Module& module = graph.get_module();
-		std::string prefix = "__ara_osconfig_";
 		for (auto& global : module.globals()) {
 			if (global.getName().str().rfind(prefix) == 0) {
 				logger.debug() << global << std::endl;
