@@ -1,5 +1,4 @@
 from ara.steps.freertos import Task, Queue, Mutex
-import logging
 
 class BaseImpl:
     def __init__(self, instance):

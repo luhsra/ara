@@ -4,7 +4,6 @@
 
 import argparse
 import json
-import logging
 import os
 import sys
 
@@ -56,9 +55,9 @@ def main():
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
 
-    init_logging(level=args.log_level)
+    logger = init_logging(level=args.log_level, root_name='ara')
 
-    logging.debug('ARA executed with: PYTHONPATH=%s python3 %s',
+    logger.debug('ARA executed with: PYTHONPATH=%s python3 %s',
                   os.environ["PYTHONPATH"], ' '.join(sys.argv))
 
     g = Graph()
@@ -71,7 +70,7 @@ def main():
     elif not args.input_file:
         parser.error('an input_file is required (except -l or -h is set)')
 
-    logging.debug(f"Processing file: {args.input_file}")
+    logger.debug(f"Processing file: {args.input_file}")
 
     extra_settings = {}
 

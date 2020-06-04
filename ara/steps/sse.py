@@ -1,7 +1,6 @@
 """Container for SSE step."""
 import graph_tool
 import copy
-import logging
 import functools
 
 import pyllco

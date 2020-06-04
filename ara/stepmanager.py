@@ -14,7 +14,6 @@ In principal, there are two different concepts:
   its UUID.
 """
 import copy
-import logging
 import time
 import uuid
 import sys
@@ -22,6 +21,7 @@ import sys
 from typing import List
 from collections import namedtuple
 
+from .util import get_logger
 from .steps import provide_steps
 from .graph import Graph
 
@@ -59,7 +59,7 @@ class Solver:
         steps  -- a dict of all existing steps (key: stepname,
                   value: step object)
         """
-        self._log = logging.getLogger(self.__class__.__name__)
+        self._log = get_logger(self.__class__.__name__)
         self.esteps = esteps
         self.steps = steps
 
@@ -233,7 +233,7 @@ class StepManager:
         """
         self._graph = g
         self._steps = {}
-        self._log = logging.getLogger(self.__class__.__name__)
+        self._log = get_logger(self.__class__.__name__)
         for step in provides():
             step.set_step_manager(self)
             self._steps[step.get_name()] = step

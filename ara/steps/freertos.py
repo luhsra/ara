@@ -1,13 +1,12 @@
-import logging
-
 from .os_util import syscall, SyscallCategory
 from .os_base import OSBase
 
 import ara.graph as _graph
 from ara.graph.argument import CallPath
+from ara.util import get_logger
 
 
-logger = logging.getLogger("FreeRTOS")
+logger = get_logger("FreeRTOS")
 
 
 # TODO make this a dataclass once we use Python 3.7

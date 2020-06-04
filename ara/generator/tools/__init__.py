@@ -1,10 +1,12 @@
 import sys
-import logging
 from inspect import getmembers, isfunction, isclass, ismethod
 from collections import defaultdict
 
 from ara.generator.tools.enum import *
 from ara.generator.tools.typecheck import typecheck, iterable
+from ara.util import get_logger
+
+_logger = get_logger('Generator.Tools')
 
 def abstract():
     import inspect
@@ -38,7 +40,7 @@ def stringify(string):
 
 
 def panic(fmt : str, *args):
-    logging.error(fmt, *args)
+    _logger.error(fmt, *args)
     sys.exit(-1)
 
 def unwrap_seq(seq):
