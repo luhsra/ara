@@ -83,15 +83,20 @@ subdir('tools')
 # convenience script to call ara without installing
 ara_py_content = '''#!@0@
 """Automatic Real-time System Analyzer"""
-
 import importlib
 import sys
 import graph_tool
+
+def load(what, where):
+    module = importlib.import_module(what)
+    sys.modules[where] = module
+
 sys.path = [@1@] + sys.path
-llvm_data_module = importlib.import_module("llvm_data")
-sys.modules["ara.graph.llvm_data"] = llvm_data_module
-step_module = importlib.import_module("step")
-sys.modules["ara.steps.step"] = step_module
+
+load("llvm_data", "ara.graph.llvm_data")
+load("py_logging", "ara.steps.py_logging")
+load("step", "ara.steps.step")
+
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
