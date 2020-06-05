@@ -22,12 +22,12 @@ log_dep = declare_dependency(
 step_dir = meson.current_build_dir()
 
 conf_data = configuration_data()
-if get_option('disable_step_tests')
-  test_pxd = []
-  conf_data.set('step_tests', 'False')
-else
+if get_option('enable_step_tests')
   test_pxd = ['test.pxd']
   conf_data.set('step_tests', 'True')
+else
+  test_pxd = []
+  conf_data.set('step_tests', 'False')
 endif
 configure_file(input: 'project_config.pxi.in',
   output: 'project_config.pxi',
@@ -58,15 +58,15 @@ step_pyx_gen = custom_target('step_pyx',
 step_pyx_cpp = step_pyx_gen[0]
 step_pyx_h   = step_pyx_gen[1]
 
-if get_option('disable_step_tests')
-  test_sources = []
-else
+if get_option('enable_step_tests')
   test_sources = files('test/bb_split_test.cpp',
                        'test/comp_insert_test.cpp',
                        'test/cfg_optimize_test.cpp',
                        'test/fn_single_exit_test.cpp',
                        'test/llvm_map_test.cpp',
                        'test/test.cpp')
+else
+  test_sources = []
 endif
 
 step_mod = py3_inst.extension_module('step',

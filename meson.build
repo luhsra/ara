@@ -121,7 +121,7 @@ subdir('test')
 
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
-if not get_option('disable_toplevel_tests')
+if get_option('enable_toplevel_tests')
     extra_settings = files('test/extra_settings.json')
     test('ara_tester',
        py3_inst,

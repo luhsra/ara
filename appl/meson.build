@@ -179,7 +179,7 @@ foreach app : ir_apps + hw_apps
     named_elf_targets += [target, elf_target]
     named_elf_targets += [target+'.lto', lto_elf]
 
-    if get_option('disable_qemu_tests') or app in ir_apps
+    if not get_option('enable_qemu_tests') or app in ir_apps
       py = disabler()
     else
       py = py3_inst
