@@ -1,9 +1,10 @@
 #!/usr/bin/env python3.6
 import json
 
+# Note: init_test must be imported first
+from init_test import init_test, fail_if
 from ara.graph import CFType
 
-from init_test import init_test, fail_if
 
 
 def main():

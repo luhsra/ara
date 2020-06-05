@@ -1,10 +1,10 @@
-import llvm_data
 
 import graph_tool
 import graph_tool.util
 
 import enum
 
+from .llvm_data import PyLLVMData
 from .mix import ABBType, CFType
 
 
@@ -139,7 +139,7 @@ class Graph:
 
     def __init__(self):
         # should be used only from C++, see graph.h
-        self._llvm_data = llvm_data.PyLLVMData()
+        self._llvm_data = PyLLVMData()
         self._init_cfg()
         self.os = None
         self.call_graphs = {}

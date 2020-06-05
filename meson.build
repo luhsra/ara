@@ -88,12 +88,14 @@ import importlib
 import sys
 import graph_tool
 sys.path = [@1@] + sys.path
+llvm_data_module = importlib.import_module("llvm_data")
+sys.modules["ara.graph.llvm_data"] = llvm_data_module
 step_module = importlib.import_module("step")
 sys.modules["ara.steps.step"] = step_module
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
-python_dirs = [source_dir, step_dir, pyllco_dir, llvm_data_dir]
+python_dirs = [source_dir, pyllco_dir, step_dir, llvm_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 
 ara_py = custom_target('ara-py',

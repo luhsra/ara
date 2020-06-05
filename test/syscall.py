@@ -1,9 +1,9 @@
 #!/usr/bin/env python3.6
 import json
 
-from ara.graph import ABBType, CFType
-
+# Note: init_test must be imported first
 from init_test import init_test, fail_if
+from ara.graph import ABBType, CFType
 
 
 def f_exp(cfg, ty):

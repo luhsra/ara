@@ -8,6 +8,8 @@ import sys
 def fake_step_module():
     """Fake the step module into the correct package."""
     import graph_tool
+    llvm_data_module = importlib.import_module("llvm_data")
+    sys.modules["ara.graph.llvm_data"] = llvm_data_module
     step_module = importlib.import_module("step")
     sys.modules["ara.steps.step"] = step_module
 
