@@ -5,9 +5,7 @@ import ara.graph as _graph
 from ara.graph.argument import CallPath
 from ara.util import get_logger
 
-
 logger = get_logger("FreeRTOS")
-
 
 # TODO make this a dataclass once we use Python 3.7
 class Task:

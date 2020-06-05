@@ -13,15 +13,17 @@ In principal, there are two different concepts:
   is handled with a ConfigEvent namedtuple, that is linked to the execution via
   its UUID.
 """
+import collections
 import copy
+import itertools
+import sys
 import time
 import uuid
-import sys
 
 from typing import List
 from collections import namedtuple
 
-from .util import get_logger
+from .util import get_logger, get_logger_manager, LEVEL
 from .steps import provide_steps
 from .graph import Graph
 
@@ -174,6 +176,7 @@ class ConfigManager:
         self.t_config = time_config
         self.t_uuids = dict([(x['uuid'], x) for x in self.t_config])
         self.steps = steps
+        self._log = get_logger(self.__class__.__name__)
 
     def _get_config(self, step_name, extra_config):
         """Overlay the specific configs.
@@ -190,6 +193,23 @@ class ConfigManager:
                 **extra_config}
 
     def apply_initial_config(self):
+        """Apply initial config to ARA."""
+        if 'logger' in self.s_config:
+            log_levels = self.s_config['logger']
+            # remove step entries
+            for step in self.steps.keys():
+                if step in log_levels:
+                    self._log.warn("Processing config 'logger': "
+                                   f"'{step}' is forbidden. It is a step and "
+                                   "will be ignored.")
+                    log_levels.pop(step)
+            log_levels = dict([(key, LEVEL[lvl])
+                               for key, lvl in log_levels.items()])
+            print(log_levels)
+            get_logger_manager().set_logger_levels(log_levels)
+        self._apply_initial_step_config()
+
+    def _apply_initial_step_config(self):
         """Apply the initial config to all steps."""
         for step in self.steps:
             config = self._get_config(step, {})
@@ -198,7 +218,7 @@ class ConfigManager:
     def apply_global_config(self, config_event):
         """Apply the config given by config_event to all steps."""
         self.p_config = {**self.p_config, **config_event.config}
-        self.apply_initial_config()
+        self._apply_initial_step_config()
 
     def apply_new_config(self, config_event):
         """Apply a new config for step specified in config_event.uuid.
@@ -313,7 +333,7 @@ class StepManager:
                               "uuid": get_uuid(step)})
 
         if not steps:
-            self._log.info("No steps to execute.")
+            self._log.warn("No steps to execute.")
             return
 
         if "steps" in extra_config:

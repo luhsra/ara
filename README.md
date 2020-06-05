@@ -75,10 +75,10 @@ The model is written in C++ with Python bindings (defined in `graph`).
 Program configuration
 ---------------------
 
-ARA con be configured in multiple ways:
+ARA can be configured in multiple ways:
 
-1. Globally applied options: Normally specified options at the command line. See `build/ara.sh -h` for all available options.
-2. Per step applied options: See the following text.
+1. Global options: Options specified per command line. See `build/ara.sh -h` for all available options.
+2. Per-step options: See the following text.
 
 Steps can define their own options. See `build/ara.sh -l` for a list of steps and their options.
 Step wise configuration can be configured with the `--step-settings` command line switch.
@@ -96,7 +96,7 @@ Input must be a JSON file with this syntax:
 	...
 }
 ```
-Additionally to that with the step-settings file steps can be configured to run multiple times with different options. In this case the settings file get an additional entry `steps` that can be a list of steps that should be executed:
+Additionally to that, steps can be configured to run multiple times with different options. In this case, the settings file gets an additional entry `steps` that can be a list of steps that should be executed:
 ```
 {
 	"steps": ["MyStep1", "MyStep2", ...],
@@ -127,6 +127,22 @@ or a list of step configurations or a mix of both:
 In this case *MyStep2* is executed two times with different options.
 
 Applying of options goes from local to global. So a step get the configuration in `steps` first, then the per step configuration and then the global configuration.
+
+### Logging configuration
+Logging in ARA is done with the Python logging framework and makes extensive use of (Sub)Loggers.
+In most cases, these loggers are equivalent with a step and can be configured via setting of the step's `log_level`.
+However, some loggers are not for steps, e.g. the `StepManager` logger.
+
+These loggers can be configured with an additional entry in the configuration file:
+```
+{
+	"logger": {
+		"StepManager": "debug",
+		"Solver": "info",
+	}
+}
+```
+Note that only non-step loggers can be configured in this way.
 
 Developing
 ----------

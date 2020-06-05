@@ -3,32 +3,72 @@
 
 import logging
 
+
+LEVEL = {"critical": logging.CRITICAL,
+         "error": logging.ERROR,
+         "warning": logging.WARNING,
+         "warn": logging.WARNING,
+         "info": logging.INFO,
+         "debug": logging.DEBUG}
+
+
+class LoggerManager:
+    """Manages loggers for ARA."""
+    def __init__(self):
+        self._log_level = logging.WARNING
+        self._logger_levels = {}
+        self._loggers = {}
+
+    def set_log_level(self, level):
+        """Set global log level. All loggers will be adjusted."""
+        self._log_level = level
+        for logger in self._loggers.values():
+            logger.setLevel(level)
+
+    def set_logger_levels(self, levels):
+        """Set levels for loggers. Updates all existing loggers."""
+        self._logger_levels = levels
+        for name in levels:
+            if name in self._loggers:
+                self._loggers[name].setLevel(levels[name])
+
+    def get_log_level(self, logger=None):
+        """Get the global or logger specific loglevel."""
+        if logger and logger in self._logger_levels:
+            return self._logger_levels[logger]
+        return self._log_level
+
+    def get_logger(self, name: str, level=None):
+        """Get a sublogger with an preinitialized level.
+
+        Arguments:
+        name  -- name of the sublogger
+        level -- Level of the sublogger (default: the global log level)
+        """
+        if not level:
+            level = self.get_log_level(name)
+        logger = logging.getLogger(name)
+        logger.setLevel(level)
+        self._loggers[name] = logger
+        return logger
+
+
 # place this in a global variable to make a singleton out of it
 # this is to circumvent one restriction of the Python logging framework that
 # allows only log levels below the root log levels for subloggers. We don't want
 # this for ARA.
-# Access this variable with get_log_level()
-_global_log_level = logging.DEBUG
+# Access this variable with get_logger_manager()
+_logger_manager = LoggerManager()
 
 
-def get_log_level():
-    """Get the global loglevel."""
-    global _global_log_level
-    return _global_log_level
+def get_logger_manager():
+    global _logger_manager
+    return _logger_manager
 
 
 def get_logger(name: str, level=None):
-    """Get a sublogger with an preinitialized level.
-
-    Arguments:
-    name  -- name of the sublogger
-    level -- Level of the sublogger (default: the global log level)
-    """
-    if not level:
-        level = get_log_level()
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    return logger
+    """Convenience method. See LoggerManager.get_logger."""
+    return get_logger_manager().get_logger(name, level)
 
 
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root'):
@@ -56,10 +96,10 @@ def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root'):
                       'warn': logging.WARNING}
         level = log_levels[level]
 
-    global _global_log_level
-    _global_log_level = level
+    logger_manager = get_logger_manager()
+    logger_manager.set_log_level(level)
     logging.basicConfig(format=_format, level=logging.DEBUG)
-    return get_logger(root_name, level)
+    return logger_manager.get_logger(root_name, level)
 
 
 class VarianceDict(dict):

@@ -49,13 +49,7 @@ import inspect
 from typing import List
 
 from ara.steps import option
-
-LEVEL = {"critical": logging.CRITICAL,
-         "error": logging.ERROR,
-         "warning": logging.WARNING,
-         "warn": logging.WARNING,
-         "info": logging.INFO,
-         "debug": logging.DEBUG}
+from ara.util import LEVEL
 
 
 cdef class SuperStep:
