@@ -52,6 +52,22 @@ class LoggerManager:
         self._loggers[name] = logger
         return logger
 
+    @staticmethod
+    def _matplotlib_logging_hack():
+        """We are using a global logger on level default. However, this leads to a
+        bunch of (unwanted) log output from matplotlib. We are not using matplotlib
+        in any way, but it is loaded as a dependency of graph tool. This function
+        sets matplotlib internal logging to the ARA global level.
+        """
+        try:
+            import matplotlib
+            matplotlib.set_loglevel("critical")
+        except:
+            # absolutely not relevant
+            pass
+
+
+
 
 # place this in a global variable to make a singleton out of it
 # this is to circumvent one restriction of the Python logging framework that
@@ -90,14 +106,11 @@ def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root'):
     max_l = max([len(logging.getLevelName(l)) for l in range(logging.CRITICAL)])
     _format = f'%(asctime)s %(levelname)-{max_l}s %(name)-{max_stepname+1}s %(message)s'
     if type(level) == str:
-        log_levels = {'debug': logging.DEBUG,
-                      'info': logging.INFO,
-                      'warning': logging.WARNING,
-                      'warn': logging.WARNING}
-        level = log_levels[level]
+        level = LEVEL[level]
 
     logger_manager = get_logger_manager()
     logger_manager.set_log_level(level)
+    logger_manager._matplotlib_logging_hack()
     logging.basicConfig(format=_format, level=logging.DEBUG)
     return logger_manager.get_logger(root_name, level)
 

@@ -26,7 +26,6 @@ class Generator(Step):
     }
 
     def _fill_options(self):
-        self._log.warning("fill_opts")
         self.arch = Option(name="arch",
                            help='the hardware architecture',
                            step_name=self.get_name(),
