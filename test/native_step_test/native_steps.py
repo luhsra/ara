@@ -1,11 +1,15 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 """Checks the interoperability of Python and C++ passes."""
+if __name__ == '__main__':
+    __package__ = 'test.native_step_test'
+
+from ..init_test import fail_if
 
 import logging
 
 from ara.stepmanager import StepManager
 from ara.graph import Graph
-from native_step import Step, provide_test_steps
+from ara.steps.step import Step, provide_test_steps
 
 # Test0Step (C++)
 #      |

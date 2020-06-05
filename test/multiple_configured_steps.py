@@ -1,12 +1,14 @@
 #!/usr/bin/env python3.6
 
+import init_test
+
 import logging
 
 from ara.stepmanager import StepManager, SolverException
 from ara.graph import Graph
-from native_step import Step
-from ara.util import init_logging
+from ara.steps.step import Step
 from ara.steps.option import Option, String
+from ara.util import init_logging
 
 shared_state = ""
 

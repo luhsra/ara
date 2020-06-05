@@ -1,5 +1,7 @@
 #!/usr/bin/env python3.6
 
+import init_test
+
 
 import logging
 import os.path
@@ -9,7 +11,7 @@ from ara.stepmanager import StepManager
 from ara.graph import Graph
 from ara.util import init_logging
 
-from native_step import Step
+from ara.steps.step import Step
 
 TASKS_1 = {
     'Handler11': {

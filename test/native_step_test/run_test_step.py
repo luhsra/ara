@@ -1,17 +1,18 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 if __name__ == '__main__':
     __package__ = 'test.native_step_test'
 
 import logging
 import sys
 
+from ..init_test import get_config
+
 from ara.util import init_logging
 from ara.graph import Graph
 from ara.stepmanager import StepManager
-from native_step import Step, provide_test_steps
+from ara.steps.step import Step, provide_test_steps
 from ara.steps import provide_steps
 
-from ..init_test import get_config
 
 
 def provide():
