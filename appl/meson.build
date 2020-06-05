@@ -179,21 +179,19 @@ foreach app : ir_apps + hw_apps
     named_elf_targets += [target, elf_target]
     named_elf_targets += [target+'.lto', lto_elf]
 
-    if not get_option('enable_qemu_tests') or app in ir_apps
-      py = disabler()
-    else
-      py = py3_inst
+    if get_option('enable_qemu_tests') and app not in ir_apps
+        test('run_qemu_' + name_prefix,
+             py3_inst,
+             args: [qemu_test_runner,
+                    qemu_cmd,
+                    app,
+                    elf_target,
+                   ],
+             workdir: freertos_src_dir,
+             suite: 'qemu',
+             is_parallel: false,
+            )
     endif
-    test('run_qemu_' + name_prefix,
-         py,
-         args: [qemu_test_runner,
-                qemu_cmd,
-                app,
-                elf_target,
-               ],
-         workdir: freertos_src_dir,
-         is_parallel: false,
-        )
 
 
   endforeach

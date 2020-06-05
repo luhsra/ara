@@ -232,6 +232,7 @@ foreach t : ara_gen_freertos_targets
                ],
          env: [python_path],
          workdir: meson.current_source_dir(),
+         suite: 'gpslogger',
          is_parallel: false,
         )
   endif
