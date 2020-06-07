@@ -106,6 +106,35 @@ namespace ara::graph {
 			throw FunctionNotFound();
 		}
 
+		/**
+		 * Get a vertex with a specific condition.
+		 * TODO: make a generator out of that, once we use C++20
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::vertex_descriptor
+		get_vertex(const Graph& g, const typename boost::graph_traits<Graph>::vertex_descriptor source,
+		           std::function<bool(const typename boost::graph_traits<Graph>::edge_descriptor e)> filt) const {
+			for (auto cand : boost::make_iterator_range(boost::out_edges(source, g))) {
+				if (filt(cand)) {
+					return boost::target(cand, g);
+				}
+			}
+			throw VertexNotFound();
+		}
+
+		/**
+		 * Return the entry abb of a function.
+		 *
+		 * Throws exception, if entry cannot be found.
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::vertex_descriptor
+		get_entry_abb(const Graph& g, typename boost::graph_traits<Graph>::vertex_descriptor function) const {
+			return get_vertex(g, function, [&](typename boost::graph_traits<Graph>::edge_descriptor e) {
+				return etype[e] == CFType::f2a && is_entry[e];
+			});
+		}
+
 	  private:
 		const std::string bb_get_call(const ABBType type, const llvm::BasicBlock& bb) const;
 		bool bb_is_indirect(const ABBType type, const llvm::BasicBlock& bb) const;
