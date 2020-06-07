@@ -6,11 +6,11 @@ from init_test import init_test, fail_if
 from ara.graph import CFType
 
 
-
 def main():
-    """Test for correct syscall mapping."""
-
-    m_graph, data, _ = init_test(steps=["ICFG"])
+    """Test for correct icfg mapping."""
+    config = {"steps": ["ICFG", {"name": "ICFG",
+                                 "entry_point": "_Z14other_functioni"}]}
+    m_graph, data, _ = init_test(extra_config=config)
     cfg = m_graph.cfg
     icf_edges = []
     for edge in filter(lambda x: cfg.ep.type[x] == CFType.icf, cfg.edges()):

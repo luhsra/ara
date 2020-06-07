@@ -3,22 +3,11 @@
 		"InteractionAnalysis"
 	],
 
-	"CallGraph": {
-		"dump": true
-	},
-	"Syscall": {
-		"dump": true
-	},
-	"InstanceGraph": {
-		"dump": true,
+	"ICFG": {
 		"log_level": "debug"
-	},
-	"InteractionAnalysis": {
-		"dump": true,
-		"log_level": "info"
 	},
 
 	"logger": {
-		"StepManager": "info"
+		"StepManager": "debug"
 	}
 }
