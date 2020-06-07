@@ -327,6 +327,8 @@ class InstanceGraph(FlatAnalysis):
                                                    "entry_point": func_name})
                     self._step_manager.chain_step({"name": "CallGraph",
                                                    "entry_point": func_name})
+                    self._step_manager.chain_step({"name": "ICFG",
+                                                   "entry_point": func_name})
                     self._step_data.add(func_name)
                 self._new_entry_points.add(task)
 
