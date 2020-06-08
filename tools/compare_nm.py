@@ -17,6 +17,18 @@ def main():
                         nargs='+')
     parser.add_argument('-C', '--force-color', action='store_true',
                         help='force colorized changes')
+    parser.add_argument('--change', help='limit output to certain class of changes',
+                        choices=['segment', 'size', 'all'],
+                        default=os.environ.get('CHANGE', 'all'))
+    parser.add_argument('--symbols', help='limit output to certain class of symbols',
+                        choices=['common', 'unique', 'all', 'merged'],
+                        default=os.environ.get('KEYSET', 'all'))
+    parser.add_argument('--sort', help='define sort criterium',
+                        choices=['name', 'size'],
+                        default=os.environ.get('SORT', 'name'))
+    parser.add_argument('--segment', help='limit output to symbols appearing in listed segments',
+                        default=os.environ.get('SEGMENT', None))
+
     args = parser.parse_args()
 
     if not (args.force_color or os.isatty(1)):
@@ -47,13 +59,36 @@ def main():
     print(" | ".join(fields))
 
 
-    for keyset in [unique_keys, common_keys]:
-        for key in sorted(keyset):
+    keysets = []
+    if args.symbols in ['unique', 'all']:
+        keysets.append(unique_keys)
+    if args.symbols in ['common', 'all']:
+        keysets.append(common_keys)
+    if args.symbols in ['merged']:
+        keysets = [list(unique_keys) + list(common_keys)]
+
+    for keyset in keysets:
+        sorted_keyset = None
+        if args.sort == 'name':
+            sorted_keyset = sorted(keyset)
+        elif args.sort == 'size':
+            sorted_keyset = sorted(keyset,
+                                   key=lambda idx:
+                                   int(list(data[idx].values())[0]['size'])
+            )
+        for key in sorted_keyset:
             d = data[key]
             sizes = [d[k]['size'] for k in keys.keys()]
             segments = set([i['segment'] for i in d.values()])
             if len(set(sizes)) == 1 and len(segments) == 1:
                 continue
+            elif args.change == 'segment' and len(segments) == 1:
+                continue
+            elif args.change == 'size' and len(set(sizes)) == 1:
+                continue
+            if args.segment is not None:
+                if not any([seg in args.segment for seg in segments]):
+                    continue
             segments -= set(" ")
             size_color = ("","") if len(set(sizes)-set(" ")) == 1 else BLUE
             seg_color = ("","") if len(segments) == 1 else RED
