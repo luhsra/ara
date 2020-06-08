@@ -48,8 +48,6 @@ class VanillaTasksLists(DataObjectArray):
 
     @property
     def top_ready_prio(self):
-        #TODO: get prio encoding from config: configUSE_PORT_OPTIMISED_TASK_SELECTION
-        #assume we encode port optimized
         if(self.prio_is_bit_encoded):
             return " | ".join([f"1 << {p}" for p in self.used_prios])
         return str(max(self.used_prios))

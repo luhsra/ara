@@ -1315,6 +1315,8 @@ int __attribute__((weak)) __ara_osconfig_configENABLE_MPU = configENABLE_MPU;
 int __attribute__((weak)) __ara_osconfig_configENABLE_FPU = configENABLE_FPU;
 int __attribute__((weak)) __ara_osconfig_configENABLE_TRUSTZONE = configENABLE_TRUSTZONE;
 int __attribute__((weak)) __ara_osconfig_configRUN_FREERTOS_SECURE_ONLY = configRUN_FREERTOS_SECURE_ONLY;
+int __attribute__((weak)) __ara_osconfig_configMAX_PRIORITIES = configMAX_PRIORITIES;
+
 #endif /* __ARA_OSCONFIGS_VARS */
 
 #endif /* INC_FREERTOS_H */

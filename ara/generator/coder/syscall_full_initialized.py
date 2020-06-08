@@ -109,9 +109,7 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         self.generator.source_file.function_manager.add(dummy_xTaskCreate)
 
     def generate_data_objects_ready_list(self, tasks):
-        #TODO: max prio from analyzer
-        #max_prio = self.ara_graph.get_config('configMAX_PRIORITIES')
-        max_prio = 5
+        max_prio = self.ara_graph.os.config.get('configMAX_PRIORITIES').get()
 
         # ready_lists = DataObjectArray("PRIVILEGED_DATA List_t", "pxReadyTasksLists", 'configMAX_PRIORITIES')
         prio_is_bit_encoded = bool(self.ara_graph.os.config['configUSE_PORT_OPTIMISED_TASK_SELECTION'].get())

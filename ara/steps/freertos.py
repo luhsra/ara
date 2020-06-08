@@ -19,7 +19,7 @@ class Task:
         self.function = function
         self.stack_size = stack_size
         self.parameters = parameters
-        self.priority = priority
+        self.__priority = priority
         self.handle_p = handle_p
         self.abb = abb
         self.branch = branch
@@ -27,6 +27,19 @@ class Task:
         self.is_regular = is_regular
         self.uid = Task.uid_counter
         Task.uid_counter += 1
+
+    @property
+    def priority(self):
+        clamp = FreeRTOS.config.get('configMAX_PRIORITIES', None)
+        if clamp is not None:
+            clamp = clamp.get()
+            if self.__priority >= clamp:
+                logger.warning("Task %s priority clamped to %s (was %s)",
+                                self.name, clamp -1, self.__priority)
+                return clamp-1
+        else:
+            logger.warning("No value for configMAX_PRIORITIES found")
+        return self.__priority
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
