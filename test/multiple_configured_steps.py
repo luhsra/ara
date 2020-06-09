@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.6
 
-import init_test
+from init_test import get_config
 
 import logging
 
@@ -88,7 +88,7 @@ Opt: run2
 def main():
     init_logging(level=logging.DEBUG)
     g = Graph()
-    config = {}
+    config = get_config('/dev/null')
     p_manager = StepManager(g, provides=provide)
 
     extra_config = {"steps": ["Test2Step",
@@ -103,7 +103,7 @@ def main():
     assert(shared_state == trace)
 
     shared_state = ""
-    config = {}
+    config = get_config('/dev/null')
     extra_config = {"steps": ["Test3Step",
                               {"name": "Special", "opt": "run1"},
                               "Test2Step",

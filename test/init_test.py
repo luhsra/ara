@@ -49,6 +49,9 @@ def get_config(i_file):
     return {'log_level': 'debug',
             'dump_prefix': 'dumps/',
             'dump': False,
+            'runtime_stats': True,
+            'runtime_stats_file': 'logger',
+            'runtime_stats_format': 'human',
             'entry_point': 'main',
             'input_file': i_file}
 

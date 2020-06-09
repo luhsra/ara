@@ -2,8 +2,7 @@
 
 import logging
 
-# only importing is relevant. This module is not used otherwise.
-import init_test
+from init_test import get_config
 
 from ara import stepmanager
 from ara import graph
@@ -147,7 +146,7 @@ Run: Test9Step
 def main():
     init_logging(level=logging.DEBUG)
     g = graph.Graph()
-    config = {}
+    config = get_config('/dev/null')
     extra_config = {}
     p_manager = stepmanager.StepManager(g, provides=provide)
 

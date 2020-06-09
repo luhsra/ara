@@ -3,7 +3,7 @@
 if __name__ == '__main__':
     __package__ = 'test.native_step_test'
 
-from ..init_test import fail_if
+from ..init_test import fail_if, get_config
 
 import logging
 
@@ -49,7 +49,7 @@ def provide():
 def main():
     """Checks the interoperability of Python and C++ passes."""
     g = Graph()
-    config = {'log_level': 'debug', 'dump': False, 'dump_prefix': '/dev/null'}
+    config = get_config('/dev/null')
     extra_config = {}
     p_manager = StepManager(g, provides=provide)
 
