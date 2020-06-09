@@ -13,10 +13,7 @@ In principal, there are two different concepts:
   is handled with a ConfigEvent namedtuple, that is linked to the execution via
   its UUID.
 """
-import collections
-import copy
-import itertools
-import sys
+import json
 import time
 import uuid
 
@@ -36,6 +33,7 @@ GlobalConfigEvent = namedtuple('GlobalConfigEvent', ['config'])
 
 
 def get_uuid(step_name):
+    """Assign a unique id a step with given name."""
     try:
         get_uuid.counter += 1
     except AttributeError:
@@ -305,6 +303,29 @@ class StepManager:
         """Get UUID of currently executing step."""
         return self._current_step
 
+    def _emit_runtime_stats(self, data, stats_format, stats_file, dump_prefix):
+        # formatting
+        if stats_format == 'json':
+            stats_string = json.dumps(data)
+        elif stats_format == 'human':
+            sn = 'Step name'
+            sn_len = max([len(x[0]) for x in data + [sn]])
+            stats_string = f'{sn:<{sn_len}} UUID' + 33 * ' ' + 'Runtime\n'
+            for s_name, s_uuid, rtime in data:
+                stats_string += f'{s_name:<{sn_len}} {s_uuid} {rtime:0.2f}s\n'
+        else:
+            assert False, "This should be unreachable."
+
+        # output
+        if stats_file == 'dump':
+            file_name = dump_prefix.replace('{step_name}', 'ARA')
+            ending = {'human': '.txt', 'json': '.json'}[stats_format]
+            with open(file_name + 'runtime_stats' + ending, 'w') as f:
+                f.write(stats_string)
+        elif stats_file == 'logger':
+            for line in stats_string.split('\n'):
+                self._log.info(line)
+
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
 
@@ -339,6 +360,15 @@ class StepManager:
         if "steps" in extra_config:
             del extra_config["steps"]
 
+        # extract the step manager specific config
+        runtime_stats = program_config['runtime_stats']
+        runtime_stats_file = program_config['runtime_stats_file']
+        runtime_stats_format = program_config['runtime_stats_format']
+        dump_prefix = program_config['dump_prefix']
+
+        if runtime_stats:
+            stats_data = []
+
         # give this list the config manager and solver
         self._config_manager = ConfigManager(program_config, extra_config,
                                              steps, self._steps)
@@ -364,11 +394,22 @@ class StepManager:
                 self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
                 self._current_step = step.uuid
 
-                time_before = time.time()
+                if runtime_stats:
+                    time_before = time.time()
+
+                # actual execution
                 self._steps[step.name].run(self._graph)
-                time_after = time.time()
+
+                # runtime stats handling
+                if runtime_stats:
+                    time_after = time.time()
+                    stats_data.append((step.name, str(step.uuid),
+                                       time_after - time_before))
+                    self._log.debug(f"{step.name} had a runtime of "
+                                    f"{time_after-time_before:0.2f}s.")
 
                 self._current_step = None
 
-                self._log.debug(f"{step.name} had a runtime of "
-                                f"{time_after-time_before:0.2f}s.")
+        if runtime_stats:
+            self._emit_runtime_stats(stats_data, runtime_stats_format,
+                                     runtime_stats_file, dump_prefix)

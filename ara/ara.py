@@ -32,6 +32,16 @@ def main():
     parser.add_argument('--dump-prefix', default='dumps/{step_name}.',
                         help="path that prefixes all dot files. The string "
                              "'{step_name}' is replaced with the step name.")
+    parser.add_argument('--runtime-stats', action='store_true', default=False,
+                        help="emit statistics about step runtimes.")
+    parser.add_argument('--runtime-stats-file', choices=['logger', 'dump'],
+                        help="Choose whether emit the data with the logging"
+                        " framework or in a separate dump file.",
+                        default='logger')
+    parser.add_argument('--runtime-stats-format', choices=['human', 'json'],
+                        help="Choose whether emit the data in a human readable"
+                        " format or in machine readable JSON.",
+                        default='human')
     parser.add_argument('--entry-point', '-e', help="system entry point",
                         default='main')
     parser.add_argument('--isr', '-i', action='append',
