@@ -142,6 +142,7 @@ foreach app : ir_apps + hw_apps
                             command: clang_cpp +
                                      libs_includes +
                                      ld_flags +
+                                     ['-lsra'] +
                                      clang_flags)
 
     elf_target = custom_target(name_prefix + '.elf',
@@ -156,6 +157,7 @@ foreach app : ir_apps + hw_apps
                                         freertos_default_config +
                                         libplatform_default_config +
                                         ld_flags +
+                                        ['-lsra'] +
                                         clang_flags)
 
     bin_target = custom_target(name_prefix + '.bin',
