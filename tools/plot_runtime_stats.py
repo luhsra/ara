@@ -110,21 +110,29 @@ def main():
                         help='statistic files, that are plotted')
     args = parser.parse_args()
 
+    ex_counter = 0
+    ex_names = set()
+
     stats = []
     for stat_file in args.STAT_FILE:
         steps = []
+        ex_name = splitext(basename(stat_file))[0]
+        if ex_name in ex_names:
+            ex_name += str(ex_counter)
+            ex_counter += 1
+        ex_names.add(ex_name)
+
         with open(stat_file) as f:
             ex_stat = json.load(f)
             for step_name, s_uuid, runtime in ex_stat:
                 steps.append(Step(name=step_name, uuid=s_uuid, runtime=runtime))
-        stats.append(Execution(name=splitext(basename(stat_file))[0], steps=steps))
+        stats.append(Execution(name=ex_name, steps=steps))
 
     plot_data = prepare_data_for_plotting(stats)
 
     plt.rcdefaults()
     fig, ax = plt.subplots()
 
-    # Example data
     al_pr_times = np.empty(len(plot_data.y_pos))
 
     for step in plot_data.steps:
