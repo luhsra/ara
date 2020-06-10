@@ -125,8 +125,8 @@ class ArmArch(GenericArch):
 
         self.generator.source_file.includes.add(Include('time_markers.h'))
         for marker in startup_asm.time_markers:
-            m = StructDataObject('__time_marker_t', f'{marker}',
-                                 attributes=['section("data.__time_markers")'],
+            m = StructDataObject('__time_marker_t', f'__time_{marker}',
+                                 attributes=['section(".data.__time_markers")'],
                                  extern_c=True)
             m['name'] = f'"{marker}"'
             self.generator.source_file.data_manager.add(m)
@@ -188,12 +188,12 @@ class StartupCodeTemplate(CodeTemplate):
             return ""
         self.time_markers.append(target)
         return "\n".join([
-            f'.global {target}',
+            f'.global __time_{target}',
             f'ldr r0, =0xe0001004  // address of DWT_CYCCNT',
             f'ldr r0, [r0, #0]     // load value of DWT_CYCCNT',
-            f'ldr r1, ={target}    //address of target symbol',
+            f'ldr r1, =__time_{target}    //address of target symbol',
             f'str r0, [r1, #0]     //store {target} = r0',
         ])
 
     def done_marker(self, snippet, args):
-        return self.store_DWT_CYCCNT(f'__time_done_{args[0]}')
+        return self.store_DWT_CYCCNT(f'startup_{args[0]}')

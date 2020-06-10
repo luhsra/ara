@@ -80,7 +80,7 @@ LoopCopyDataInit:
   bcc CopyDataInit
 
 /* data init done */
-{{{generate:done_marker:data}}}
+{{{generate:done_marker:data_copy}}}
 
 /* start bss zeroing */
   ldr r2, =_sbss
@@ -96,14 +96,14 @@ LoopFillZerobss:
   bcc FillZerobss
 
 /* bss done */
-{{{generate:done_marker:bss}}}
+{{{generate:done_marker:bss_zero}}}
 
 /* Call the clock system intitialization function.*/
     bl  SystemInit
-{{{generate:done_marker:SystemInit}}}
+{{{generate:done_marker:SystemInit_call}}}
 /* Call static constructors */
     bl __libc_init_array
-{{{generate:done_marker:libc_init}}}
+{{{generate:done_marker:libc_init_array_calls}}}
 /* Call the application's entry point.*/
   bl main
   bx lr

@@ -9,6 +9,7 @@
 #include "SDThread.h"
 #include "USBDebugLogger.h"
 #include "SerialDebugLogger.h"
+#include "time_markers.h"
 //#include "SdMscDriver.h"
 /* Core Debug registers */
 /*
@@ -30,9 +31,9 @@
  800353c:       e0001000        and     r1, r0, r0
 
 */
-uint32_t m_start;
-uint32_t m_startInits;
-uint32_t m_startSched;
+TIME_MARKER(main_reached);
+TIME_MARKER(main_hw_init);
+TIME_MARKER(main_tasks_created);
 
 
 // #define DEMCR           (*((volatile uint32_t *)0xE000EDFC))
@@ -54,7 +55,7 @@ uint32_t m_startSched;
 int main(void)
 {
   //  stopwatch_reset();
-  m_start = CPU_CYCLES;
+  STORE_TIME_MARKER(main_reached);
   InitBoard();
   initDebugSerial();
 
@@ -97,7 +98,7 @@ int main(void)
         initButtons();
 
 		//	serialDebugWrite("creating Threads\r\n");
-	m_startInits = CPU_CYCLES;
+	STORE_TIME_MARKER(main_hw_init);
 	// Set up threads
 	// TO_not_DO: Consider encapsulating init and task functions into a class(es)
 	xTaskCreate(vSDThread, "SD Thread", 512, NULL, tskIDLE_PRIORITY +4 , NULL);
@@ -108,7 +109,7 @@ int main(void)
 	//	xTaskCreate(xSDIOThread, "SD IO executor", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
 	//xTaskCreate(xSDTestThread, "SD test thread", 200, NULL, tskIDLE_PRIORITY + 3, NULL);
 	xTaskCreate(vGPSTask, "GPS Task", 256, NULL, tskIDLE_PRIORITY + 3, NULL);
-	m_startSched = CPU_CYCLES;
+	STORE_TIME_MARKER(main_tasks_created);
 	//usbDebugWrite("Test\n");
 	//	serialDebugWrite("SerialTest\n\r");
 	//	serialDebugWrite("m_start, m_startInits, m_startSched: %d %d %d\r\n",m_start, m_startInits, m_startSched);

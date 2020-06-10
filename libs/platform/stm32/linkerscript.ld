@@ -119,7 +119,7 @@ SECTIONS
     . = ALIGN(4);
     _sdata = .;        /* create a global symbol at data start */
     __start_time_markers = .;
-    *(.data.__time_markers);
+    *(.data.__time_markers*);
     __end_time_markers = .;
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
