@@ -172,6 +172,7 @@ foreach t : ara_gen_freertos_targets
   lto_elf = custom_target(name_prefix + '.lto.elf',
                           input: [lto_o,
                                   os_target[1], # startup.s
+                                  libsra_ar,
                                  ],
                           output: name_prefix + '.lto.elf',
                           depfile: name_prefix + '.lto.elf.dep',
@@ -184,7 +185,9 @@ foreach t : ara_gen_freertos_targets
   elf_target = custom_target(name_prefix + '.elf',
                              input: [o_target,
                                      os_target,
-                                     lib_freertos_ll_targets],
+                                     lib_freertos_ll_targets,
+                                     libsra_ar,
+                                    ],
                              output: name_prefix + '.elf',
                              depfile: name_prefix + '.elf.dep',
                              command: clang_cpp +

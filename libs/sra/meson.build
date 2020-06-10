@@ -14,4 +14,4 @@ libsra_ar = custom_target('libsra.a',
                           output: 'libsra.a',
                           command: ar_cmd)
 
-ld_flags += ['-Wl,-L' + meson.current_build_dir(), '-Wl,-lsra']
+ld_flags += ['-Wl,-L' + meson.current_build_dir()]
