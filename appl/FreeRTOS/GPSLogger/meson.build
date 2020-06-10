@@ -246,3 +246,11 @@ endforeach
 run_target('compare_nm-gpslogger', command: [compare_nm, nm.path(), named_elf_targets])
 run_target('compare_size-gpslogger', command: [size, elf_targets])
 run_target('compare_time-gpslogger', command: [compare_time, meson.build_root(), 'gpslogger'], depends: elf_targets)
+custom_target('analyze-gpslogger',
+              command: [files('GPSLoggerExperiment.py'), '-d', meson.current_build_dir(),
+                        '-s',
+                        '--run-dir', meson.build_root()],
+              output: ['gpslogger_result.dref',
+                       'gpslogger_raw.dref'],
+              console: true,
+              depends: elf_targets)

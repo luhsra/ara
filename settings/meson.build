@@ -124,10 +124,10 @@ ara_gen_cmd = [py3_inst, ara_py,
               ]
 
 
-ara_gen_freertos_targets = ['vanilla',
+ara_gen_freertos_targets = ['passthrough',
+                            'vanilla',
                             'instances_full_static',
                             'instances_full_initialized',
-                            'passthrough'
                            ]
 
 foreach target : ara_gen_freertos_targets
