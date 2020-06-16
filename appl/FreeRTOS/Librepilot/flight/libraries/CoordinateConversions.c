@@ -34,10 +34,10 @@
 #define MIN_ALLOWABLE_MAGNITUDE 1e-30f
 
 // Equatorial Radius
-#define equatorial_radius       6378137.0d
+#define equatorial_radius       6378137.0
 
 // Eccentricity
-#define eccentricity            8.1819190842622e-2d
+#define eccentricity            8.1819190842622e-2
 #define equatorial_radius_sq    (equatorial_radius * equatorial_radius)
 #define eccentricity_sq         (eccentricity * eccentricity)
 
@@ -47,9 +47,9 @@ void LLA2ECEF(const int32_t LLAi[3], float ECEF[3])
     double sinLat, sinLon, cosLat, cosLon;
     double N;
     double LLA[3] = {
-        ((double)LLAi[0]) * 1e-7d,
-        ((double)LLAi[1]) * 1e-7d,
-        ((double)LLAi[2]) * 1e-4d
+        ((double)LLAi[0]) * 1e-7,
+        ((double)LLAi[1]) * 1e-7,
+        ((double)LLAi[2]) * 1e-4
     };
 
     sinLat = sin(DEG2RAD_D(LLA[0]));
@@ -57,11 +57,11 @@ void LLA2ECEF(const int32_t LLAi[3], float ECEF[3])
     cosLat = cos(DEG2RAD_D(LLA[0]));
     cosLon = cos(DEG2RAD_D(LLA[1]));
 
-    N = equatorial_radius / sqrt(1.0d - eccentricity_sq * sinLat * sinLat); // prime vertical radius of curvature
+    N = equatorial_radius / sqrt(1.0 - eccentricity_sq * sinLat * sinLat); // prime vertical radius of curvature
 
     ECEF[0] = (float)((N + LLA[2]) * cosLat * cosLon);
     ECEF[1] = (float)((N + LLA[2]) * cosLat * sinLon);
-    ECEF[2] = (float)(((1.0d - eccentricity_sq) * N + LLA[2]) * sinLat);
+    ECEF[2] = (float)(((1.0 - eccentricity_sq) * N + LLA[2]) * sinLat);
 }
 
 // ****** convert ECEF to Lat,Lon,Alt (ITERATIVE!) *********
@@ -97,9 +97,9 @@ void ECEF2LLA(const float ECEF[3], int32_t LLA[3])
     const double N   = equatorial_radius / (sqrt(1 - eccentricity_sq * pow(sin(lat), 2)));
     const double alt = p / cos(lat) - N;
 
-    LLA[0] = (int32_t)(RAD2DEG_D(lat) * 1e7d);
-    LLA[1] = (int32_t)(RAD2DEG_D(lon) * 1e7d) % ((int32_t)(180 * 1e7d));
-    LLA[2] = (int32_t)(alt * 1e4d);
+    LLA[0] = (int32_t)(RAD2DEG_D(lat) * 1e7);
+    LLA[1] = (int32_t)(RAD2DEG_D(lon) * 1e7) % ((int32_t)(180 * 1e7));
+    LLA[2] = (int32_t)(alt * 1e4);
 }
 
 // ****** find ECEF to NED rotation matrix ********

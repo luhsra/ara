@@ -58,7 +58,7 @@
  * @brief Compiler barrier: Disables compiler load/store reordering across the barrier
  *
  */
-#define COMPILER_BARRIER()      asm volatile ("" ::: "memory")
+#define COMPILER_BARRIER()      __asm volatile ("" ::: "memory")
 
 // Memory barriers:
 // Note that on single core Cortex M3 & M4, the is generally no need to use a processor memory barrier instruction such as DMB.

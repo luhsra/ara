@@ -385,7 +385,11 @@ uint32_t UAVObjGetID(UAVObjHandle obj_handle)
 
     if (IsMetaobject(obj_handle)) {
         /* We have a meta object, find our containing UAVO */
-        struct UAVOData *uavo_data = container_of((struct UAVOMeta *)uavo_base, struct UAVOData, metaObj);
+        /* struct UAVOData *uavo_data = container_of((struct UAVOMeta *)uavo_base, struct UAVOData, metaObj); */
+
+        /* write out macro as it didn't work with clang */
+        const struct UAVMeta * __mptr = uavo_base;
+        struct UAVOData *uavo_data = (struct UAVOData*)((char*)__mptr - offsetof(struct UAVOData, metaObj));
 
         return MetaObjectId(uavo_data->type->id);
     } else {
@@ -438,7 +442,11 @@ UAVObjHandle UAVObjGetLinkedObj(UAVObjHandle obj_handle)
 
     if (IsMetaobject(obj_handle)) {
         /* We have a meta object, find our containing UAVO. */
-        struct UAVOData *uavo_data = container_of((struct UAVOMeta *)uavo_base, struct UAVOData, metaObj);
+        /* struct UAVOData *uavo_data = container_of((struct UAVOMeta *)uavo_base, struct UAVOData, metaObj); */
+
+        /* write out macro as it didn't work with clang */
+        const struct UAVMeta * __mptr = uavo_base;
+        struct UAVOData *uavo_data = (struct UAVOData*)((char*)__mptr - offsetof(struct UAVOData, metaObj));
 
         return (UAVObjHandle)uavo_data;
     } else {

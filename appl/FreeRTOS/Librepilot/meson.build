@@ -204,7 +204,7 @@ foreach t : ara_gen_freertos_targets
                           input: [lto_o,
                                   # os_target[1], # startup.s
                                   files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
-                                  # libsra_ar,
+                                  libsra_ar,
                                  ],
                           output: name_prefix + '.lto.elf',
                           depfile: name_prefix + '.lto.elf.dep',
@@ -224,7 +224,7 @@ foreach t : ara_gen_freertos_targets
                                      os_target[0],
                                      files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
                                      lib_freertos_ll_targets,
-                                     # libsra_ar,
+                                     libsra_ar,
                                     ],
                              output: name_prefix + '.elf',
                              depfile: name_prefix + '.elf.dep',

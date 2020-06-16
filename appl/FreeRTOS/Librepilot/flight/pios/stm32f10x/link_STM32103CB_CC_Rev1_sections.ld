@@ -76,6 +76,9 @@ SECTIONS
     .data : AT (_etext)
     {
         _sdata = .;
+        __start_time_markers = .;
+         *(.data.__time_markers*);
+        __end_time_markers = .;
         *(.data .data.*)
         . = ALIGN(4);
         _edata = . ;

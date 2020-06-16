@@ -28,7 +28,7 @@
 #define configUSE_MALLOC_FAILED_HOOK                 1
 #define configCPU_CLOCK_HZ                           ((unsigned long)72000000)
 #define configTICK_RATE_HZ                           ((portTickType)1000)
-#define configMAX_PRIORITIES                         ((unsigned portBASE_TYPE)5)
+#define configMAX_PRIORITIES                         5
 #define configMINIMAL_STACK_SIZE                     ((unsigned short)48)
 #define configTOTAL_HEAP_SIZE                        ((size_t)(53 * 256))
 #define configMAX_TASK_NAME_LEN                      (6)
