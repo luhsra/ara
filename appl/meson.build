@@ -215,6 +215,9 @@ freertos_targets += gpslogger_application
 subdir('FreeRTOS/SmartPlug')
 freertos_targets += smartplug_targets
 
+subdir('FreeRTOS/Librepilot')
+freertos_targets += librepilot_application
+
 freertos_examples = run_target('freertos-examples',
                                command: nop,
                                depends: freertos_targets)

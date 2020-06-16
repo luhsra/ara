@@ -1,0 +1,54 @@
+c_src = [
+'firmware/uavobjects/accelgyrosettings.c',
+'firmware/uavobjects/accelstate.c',
+'firmware/uavobjects/accessorydesired.c',
+'firmware/uavobjects/actuatorcommand.c',
+'firmware/uavobjects/actuatordesired.c',
+'firmware/uavobjects/actuatorsettings.c',
+'firmware/uavobjects/attitudesettings.c',
+'firmware/uavobjects/attitudestate.c',
+'firmware/uavobjects/cameradesired.c',
+'firmware/uavobjects/camerastabsettings.c',
+'firmware/uavobjects/firmwareiapobj.c',
+'firmware/uavobjects/flightmodesettings.c',
+'firmware/uavobjects/flightstatus.c',
+'firmware/uavobjects/flighttelemetrystats.c',
+'firmware/uavobjects/gcstelemetrystats.c',
+'firmware/uavobjects/gpspositionsensor.c',
+'firmware/uavobjects/gpssettings.c',
+'firmware/uavobjects/gpsvelocitysensor.c',
+'firmware/uavobjects/gyrostate.c',
+'firmware/uavobjects/hwsettings.c',
+'firmware/uavobjects/manualcontrolcommand.c',
+'firmware/uavobjects/manualcontrolsettings.c',
+'firmware/uavobjects/mixersettings.c',
+'firmware/uavobjects/mixerstatus.c',
+'firmware/uavobjects/mpugyroaccelsettings.c',
+'firmware/uavobjects/objectpersistence.c',
+'firmware/uavobjects/ratedesired.c',
+'firmware/uavobjects/receiveractivity.c',
+'firmware/uavobjects/receiverstatus.c',
+'firmware/uavobjects/stabilizationbank.c',
+'firmware/uavobjects/stabilizationdesired.c',
+'firmware/uavobjects/stabilizationsettings.c',
+'firmware/uavobjects/stabilizationsettingsbank1.c',
+'firmware/uavobjects/stabilizationsettingsbank2.c',
+'firmware/uavobjects/stabilizationsettingsbank3.c',
+'firmware/uavobjects/stabilizationstatus.c',
+'firmware/uavobjects/systemalarms.c',
+'firmware/uavobjects/systemsettings.c',
+'firmware/uavobjects/systemstats.c',
+'firmware/uavobjects/txpidsettings.c',
+'firmware/uavobjects/txpidstatus.c',
+'firmware/uavobjects/watchdogstatus.c',
+]
+
+cpp_src = [
+]
+foreach file : cpp_src
+  libarduino_targets += librepilot_compilepp.process(file)
+endforeach
+
+foreach file : c_src
+  librepilot_targets += librepilot_compile.process(file)
+endforeach
