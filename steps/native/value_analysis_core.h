@@ -5,13 +5,20 @@
 #include "option.h"
 #include "step.h"
 
+#include "arguments.h"
+
 #include <graph.h>
+
+#include <cxxabi.h>
 
 #define VERSION_BKP VERSION
 #undef VERSION
 #include <MSSA/SVFG.h>
 #include <Util/BasicTypes.h>
-#include <Util/VFGNode.h>
+//#include <Util/VFGNode.h>
+#include <Graphs/VFGNode.h>
+//#include <MSSA/SVFG.h>
+#include <Graphs/SVFG.h>
 #include <WPA/Andersen.h>
 #undef VERSION
 #define VERSION VERSION_BKP
@@ -28,8 +35,61 @@ namespace ara::step {
 
 		virtual void init_options() override;
 
-		void retrieve_value(const SVFG& vfg, const llvm::Value& value);
-		void collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call);
+		/*
+		 * demangle a string, for example:
+		 * _ZN11MutexLockerC2EP15QueueDefinition to MutexLocker::MutexLocker(QueueDefinition*)
+		 */
+		std::string demangle(std::string name) {
+			int status = -1;
+			std::unique_ptr<char, void(*)(void*)> res {abi::__cxa_demangle(name.c_str(), NULL, NULL, &status), std::free};
+			return (status == 0) ? res.get() : name;
+		}
+
+		/* a list of values and their (hopefully) corresponding paths along which they are retrieved */
+		typedef std::tuple<std::vector<const Constant*>, std::vector<std::vector<const Function*>>> ValPath;
+
+		ValPath retrieve_value(const SVFG& vfg, const llvm::Value& value);
+		std::vector<ValPath> collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call);
+
+		/*
+		 * given a function, find its corresponding callgraph node and iterate over
+		 * its parents up to the respective root, saving each list of functions
+		 * in <curPath> first, and adding it to <paths> when a root node is reached
+		 *
+		 * this should just be bottom-up DFS
+		 */
+		void getCallPaths(const Function* f, std::vector<std::vector<const Function*>>& paths, std::vector<const Function*>& curPath) {
+			if (const SVFFunction* sf = svfModule->getSVFFunction(f)) {
+				PTACallGraphNode* cgn = callgraph->getCallGraphNode(sf);
+				curPath.push_back(f);
+				/* check if further path exists */
+				if (cgn->hasIncomingEdge()) {
+					/* incoming edges of this node */
+					for (auto edgit = cgn->InEdgeBegin(); edgit != cgn->InEdgeEnd(); ++edgit) {
+						PTACallGraphEdge* edg = *edgit;
+						PTACallGraphEdge::CallInstSet cis = edg->getDirectCalls();
+						for (const CallBlockNode* cbn : cis) {
+							//llvm::CallSite cs = cbn->getCallSite();
+							const Function* cf = cbn->getCallSite()->getFunction();
+							const Instruction* ci = cbn->getCallSite().getInstruction();
+							//curPath.push_back(ci);
+							getCallPaths(cf, paths, curPath);
+							/* when the recursion above finishes, we have reached a root node
+							 * therefore we go back (down) one node and check its other parents
+							 */
+							curPath.pop_back();
+						}
+					}
+				}
+				/* end of this callpath reached */
+				else {
+					paths.push_back(curPath);
+				}
+			}
+		}
+
+		PTACallGraph* callgraph;
+		SVFModule* svfModule;
 
 		template <typename Graph>
 		void get_values(Graph& g, const SVFG& vfg) {
@@ -39,12 +99,63 @@ namespace ara::step {
 			     boost::make_iterator_range(boost::vertices(filter_by_abb(graph::ABBType::syscall, g, cfg)))) {
 				llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[abb]);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
+				//logger.debug() << "call base aka instruction: " << *called_func << std::endl;
 				if (called_func) {
+					//Arguments args;
 					llvm::Function* func = called_func->getCalledFunction();
 					if (func) {
-						this->logger.debug() << "Function name: " << func->getName().str() << std::endl;
+						//this->logger.debug() << *bb << std::endl;
+						//this->logger.debug() << "Called function: " << *called_func << std::endl;
+						this->logger.debug() << "Function name: \033[34m" << func->getName().str() << "\033[0m" << std::endl;
 						this->logger.debug() << "Number of args: " << func->arg_size() << std::endl;
-						collectUsesOnVFG(vfg, *called_func);
+						this->logger.debug() << "------------" << std::endl;
+						// attributes
+						llvm::AttributeSet attrs = func->getAttributes().getFnAttributes();
+						// return value (probably wrong)
+						if (llvm::Value* v = llvm::dyn_cast<llvm::Value>(func)) {
+							//this->logger.debug() << "Return: " << *v << std::endl;
+						}
+
+						// TODO get Instructions instead of Functions
+						std::vector<ValPath> vps = collectUsesOnVFG(vfg, *called_func);
+						for (auto vp : vps) {
+							/* i does not correspond to the index of the argument in the function 
+							 * it is just here for debugging purposes
+							 */
+							int i=0, j=0;
+							for (auto v : std::get<0>(vp)) {
+								// temporary: uncomment to skip direct constants (values with empty paths) 
+								// works with Function* version:
+								//if (std::get<1>(vp).at(0).empty()) continue;
+								// works with Instruction* version:
+								//if (std::get<1>(vp).at(0).size() == 1) continue;
+								if (const Function* func = llvm::dyn_cast<llvm::Function>(v)) {
+									logger.debug() << "Value (function) " << i << ": " << demangle(func->getName().str()) << std::endl;
+								}
+								else {
+									logger.debug() << "Value " << i << ": " << *v << std::endl;
+								}
+								i++;
+							}
+							for (auto p : std::get<1>(vp)) {
+								if (p.empty()) {
+									//logger.debug() << "PATH EMPTY" << std::endl;
+									continue;
+								}
+								/*
+								if (p.size() <= 1) {
+									//continue;
+								}
+								*/
+								logger.debug() << "PATH " << j << ": ";
+								for (auto f : p) {
+									logger.debug() << demangle(f->getName().str()) << "---";
+									//logger.debug() << demangle(f->getFunction()->getName().str()) << "---";
+								}
+								logger.debug() <<  "|" << std::endl;
+								j++;
+							}
+						}
 					}
 
 					// std::pair<Arguments, std::vector<std::vector<unsigned>>> args_pair = va.get_values(*called_func);
@@ -74,7 +185,9 @@ namespace ara::step {
 
 					// cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
 					this->logger.debug() << "Retrieved " // << args.size() << " arguments for call " << *called_func
-					                     << std::endl;
+					               << std::endl;
+					this->logger.debug() << "================================================" << std::endl;
+					std::cout << std::endl;
 				} else {
 					this->logger.warn() << "Something went wrong." << std::endl;
 					this->logger.debug() << "In function: " << bb->getParent()->getName().str() << std::endl;
