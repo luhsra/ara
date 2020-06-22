@@ -18,7 +18,6 @@ namespace ara::step {
 	void LoadOSConfig::fill_options() {}
 
 	void LoadOSConfig::run(graph::Graph& graph) {
-		logger.info() << "Execute LoadOSConfig step." << std::endl;
 		PyObject* os = PyObject_GetAttrString(graph.get_pygraph(), "os");
 		PyObject* config = PyObject_GetAttrString(os, "config");
 

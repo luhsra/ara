@@ -272,7 +272,8 @@ class InstanceGraph(FlatAnalysis):
     """Find all application instances."""
 
     def get_dependencies(self):
-        return ["Syscall", "ValueAnalysis", "CallGraph", "FakeEntryPoint"]
+        return ["Syscall", "ValueAnalysis", "CallGraph", "FakeEntryPoint",
+                "LoadOSConfig"]
 
     def _init_analysis(self):
         super()._init_analysis()
@@ -326,6 +327,8 @@ class InstanceGraph(FlatAnalysis):
                     self._step_manager.chain_step({"name": self.get_name(),
                                                    "entry_point": func_name})
                     self._step_manager.chain_step({"name": "CallGraph",
+                                                   "entry_point": func_name})
+                    self._step_manager.chain_step({"name": "Syscall",
                                                    "entry_point": func_name})
                     self._step_manager.chain_step({"name": "ICFG",
                                                    "entry_point": func_name})

@@ -12,6 +12,7 @@ def provide_steps():
     from .printer import Printer
     from .sse import InstanceGraph, InteractionAnalysis
     from .syscall import Syscall
+    from .sysfuncts import SysFuncts
     from .value_analysis import ValueAnalysis
 
     for step in _native_provide():
@@ -28,4 +29,5 @@ def provide_steps():
     yield InstanceGraph()
     yield InteractionAnalysis()
     yield Syscall()
+    yield SysFuncts()
     yield ValueAnalysis()

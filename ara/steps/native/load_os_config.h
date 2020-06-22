@@ -15,7 +15,7 @@ namespace ara::step {
 	  public:
 		virtual std::string get_name() const override { return "LoadOSConfig"; }
 		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"Syscall"}; }
+		virtual std::vector<std::string> get_dependencies() override { return {"SysFuncts"}; }
 
 		virtual void run(graph::Graph& graph) override;
 	};
