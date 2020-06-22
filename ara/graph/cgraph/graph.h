@@ -5,6 +5,7 @@
 #include "llvm_data.h"
 
 #include <Python.h>
+#include <boost/graph/depth_first_search.hpp>
 #include <boost/python.hpp>
 #include <graph_tool.hh>
 #include <llvm/IR/Instructions.h>
@@ -135,7 +136,82 @@ namespace ara::graph {
 			});
 		}
 
+		/**
+		 * Doing an action for all reachable ABBs
+		 *
+		 * @param g Graph
+		 * @param entry_function Entry function where the search begins
+		 * @param do_with_abb Function that is executed on each ABB. The function will be invoked with a Graph and CFG
+		 * and the current ABB node.
+		 */
+		template <class Graph>
+		void execute_on_reachable_abbs(
+		    Graph& g, typename boost::graph_traits<Graph>::vertex_descriptor entry_function,
+		    std::function<void(const Graph&, CFG&, typename boost::graph_traits<Graph>::vertex_descriptor)>
+		        do_with_abb) {
+			auto entry_abb = get_entry_abb(g, entry_function);
+			NoExitNodes<Graph> filter(&g, this);
+			boost::filtered_graph<Graph, NoExitNodes<Graph>> fg(g, filter);
+			NoBacktrackVisitor<Graph> nbv(*this, do_with_abb);
+			auto indexmap = boost::get(boost::vertex_index, g);
+			auto colormap = boost::make_vector_property_map<boost::default_color_type>(indexmap);
+			try {
+				depth_first_search(g, nbv, colormap, entry_abb);
+			} catch (StopDFSException&) { /*we are expecting that*/
+			}
+		}
+
 	  private:
+		/**
+		 * Filter all edges that are back edges for the ICFG.
+		 *
+		 * Helper class for execute_on_reachable_abbs
+		 */
+		template <class InnerGraph>
+		class NoExitNodes {
+		  public:
+			NoExitNodes() : g(nullptr), cfg(nullptr) {}
+			NoExitNodes(const InnerGraph* g, const CFG* cfg) : g(g), cfg(cfg) {}
+			template <typename Edge>
+			bool operator()(const Edge& e) const {
+				assert(g != nullptr && "Graph must not be null");
+				assert(cfg != nullptr && "CFG must not be null");
+				return cfg->etype[e] == CFType::icf && !cfg->is_exit[boost::source(boost::edge(e), *g)];
+			}
+
+		  private:
+			const InnerGraph* g;
+			const CFG* cfg;
+		};
+
+		/**
+		 * Implementation of a counting DFS visitor. Stops as soon as the first unreachable vertex is reached.
+		 */
+		template <class InnerGraph>
+		class NoBacktrackVisitor : public boost::default_dfs_visitor {
+			using Vertex = typename boost::graph_traits<InnerGraph>::vertex_descriptor;
+
+		  public:
+			NoBacktrackVisitor(CFG& cfg, std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func)
+			    : counter(0), discover_func(discover_func), cfg(cfg) {}
+
+			void discover_vertex(Vertex u, const InnerGraph& g) {
+				++counter;
+				discover_func(g, cfg, u);
+			}
+			void finish_vertex(Vertex, const InnerGraph&) {
+				--counter;
+				if (counter == 0) {
+					throw StopDFSException();
+				}
+			}
+
+		  private:
+			unsigned int counter;
+			std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func;
+			CFG& cfg;
+		};
+
 		const std::string bb_get_call(const ABBType type, const llvm::BasicBlock& bb) const;
 		bool bb_is_indirect(const ABBType type, const llvm::BasicBlock& bb) const;
 		const llvm::CallBase* get_call_base(const ABBType type, const llvm::BasicBlock& bb) const;
