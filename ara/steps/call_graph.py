@@ -48,9 +48,18 @@ class CallGraph(Step):
     def _get_edge_label(self, cfg, caller):
         return "Call: " + cfg.vp.name[cfg.vertex(caller)]
 
-    def _add_vertex(self, cg, cfg, name, caller, src=None):
+    def _add_vertex(self, cg, cfg, name: str, caller=None, src=None):
         """Add a new vertex with name. Optionally link it with src.
         If the vertex is already present, its whole subtree is copied.
+
+        Return the new vertex if it is created, None otherwise.
+
+        Arguments:
+        cg     -- call graph
+        cfg    -- control flow graph
+        name   -- name of the new call graph node (function name)
+        caller -- caller ABB (if src is given)
+        src    -- caller function
         """
         v = graph_tool.util.find_vertex(cg, cg.vp.func, name)
         if v and src is not None:
@@ -59,46 +68,47 @@ class CallGraph(Step):
             cg.vp.cfglink[other_v] = caller
             e = cg.add_edge(src, other_v)
             cg.ep.label[e] = self._get_edge_label(cfg, caller)
-            return None, True
+            return None
 
         v = cg.add_vertex()
         cg.vp.label[v] = name + f"-{int(v)}"
         cg.vp.func[v] = name
-        cg.vp.cfglink[v] = caller
         if src:
+            cg.vp.cfglink[v] = caller
             e = cg.add_edge(src, v)
             cg.ep.label[e] = self._get_edge_label(cfg, caller)
-        return v, False
+        else:
+            cg.vp.cfglink[v] = 0
+        return v
 
-    def visit(self, lcfg, icfg, cg, cg_vertex, abb):
+    def visit(self, cfg, func, cg, cg_func):
         """Do a depth first search about the local control flow.
         Every time a call is found visit is called again.
+
+        Arguments:
+        icfg    -- CFG
+        func    -- function node within the CFG (entry of the search)
+        cg      -- call graph
+        cg_func -- corresponding function to func within the call graph
         """
-        for e in graph_tool.search.dfs_iterator(lcfg, abb):
-            if lcfg.vp.type[e.source()] in [_graph.ABBType.call,
-                                            _graph.ABBType.syscall]:
-                for target in icfg.vertex(e.source()).out_neighbors():
-                    func = icfg.vp.name[icfg.get_function(target)]
-                    new_vert, visited = self._add_vertex(cg, icfg,
-                                                         func, e.source(),
-                                                         src=cg_vertex)
-                    if not visited:
-                        self.visit(lcfg, icfg, cg, new_vert, target)
+        for abb in cfg.get_abbs(func):
+            if cfg.vp.type[abb] in [_graph.ABBType.call,
+                                     _graph.ABBType.syscall]:
+                for edge in cfg.vertex(abb).out_edges():
+                    if cfg.ep.type[edge] == _graph.CFType.icf:
+                        new_func = cfg.get_function(edge.target())
+                        new_vert = self._add_vertex(cg, cfg,
+                                                    cfg.vp.name[new_func],
+                                                    abb, src=cg_func)
+                        if new_vert:
+                            self.visit(cfg, new_func, cg, new_vert)
 
     def run(self, g: _graph.Graph):
         entry_point = self.entry_point.get()
         if not entry_point:
             self._fail("Entry point must be given.")
 
-        icfg = _graph.CFGView(
-            g.cfg, efilt=g.cfg.ep.type.fa == _graph.CFType.icf
-        )
-        lcfg = _graph.CFGView(
-            g.cfg, efilt=g.cfg.ep.type.fa == _graph.CFType.lcf
-        )
-
         entry_func = g.cfg.get_function_by_name(entry_point)
-        entry_abb = g.cfg.get_entry_abb(entry_func)
 
         cg = graph_tool.Graph()
         cg.vp["label"] = cg.new_vertex_property("string")
@@ -106,9 +116,9 @@ class CallGraph(Step):
         cg.vp["cfglink"] = cg.new_vertex_property("long")
         cg.ep["label"] = cg.new_edge_property("string")
         # add root vertex
-        start, _ = self._add_vertex(cg, g.cfg, entry_point, entry_abb)
+        start = self._add_vertex(cg, g.cfg, entry_point)
 
-        self.visit(lcfg, icfg, cg, start, entry_abb)
+        self.visit(g.cfg, entry_func, cg, start)
 
         g.call_graphs[entry_point] = cg
 
