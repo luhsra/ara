@@ -4,6 +4,8 @@ import graph_tool.util
 
 import enum
 
+from collections import deque
+
 from .llvm_data import PyLLVMData
 from .mix import ABBType, CFType
 
@@ -98,6 +100,26 @@ class CFG(graph_tool.Graph):
                         if self.ep.type[x] == CFType.a2f]
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
+
+    def reachable_abbs(self, func):
+        """Generator about all reachable ABBs starting at func."""
+
+        funcs_queue = deque([func])
+        funcs_done = set()
+
+        while funcs_queue:
+            cur_func = funcs_queue.popleft()
+            if cur_func in funcs_done:
+                continue
+            funcs_done.add(cur_func)
+            for abb in self.get_abbs(cur_func):
+                # find other functions
+                if self.vp.type[abb] != ABBType.computation:
+                    for edge in abb.out_edges():
+                        if self.ep.type[edge] == CFType.icf:
+                            new_func = self.get_function(edge.target())
+                            funcs_queue.append(new_func)
+                yield abb
 
 
 class CFGView(graph_tool.GraphView):
