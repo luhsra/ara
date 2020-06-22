@@ -121,6 +121,22 @@ class CFG(graph_tool.Graph):
                             funcs_queue.append(new_func)
                 yield abb
 
+    def get_call_targets(self, abb, func=True):
+        """Generator about all call targets for a given call abb.
+
+        Keyword arguments:
+        func -- If set, return the called functions, otherwise the called
+                function entry ABBs.
+        """
+        assert self.vp.type[abb] in [ABBType.call, ABBType.syscall]
+
+        for edge in abb.out_edges():
+            if self.ep.type[edge] == CFType.icf:
+                if func:
+                    yield self.get_function(edge.target())
+                else:
+                    yield edge.target
+
 
 class CFGView(graph_tool.GraphView):
     """Class to get CFG functions for a filtered CFG."""
@@ -157,7 +173,6 @@ class Graph:
 
         self.functs = graph_tool.GraphView(self.cfg,
                                            vfilt=self.cfg.vp.is_function)
-
 
     def __init__(self):
         # should be used only from C++, see graph.h
