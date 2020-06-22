@@ -326,6 +326,10 @@ class InstanceGraph(FlatAnalysis):
                     # be the last executed one
                     self._step_manager.chain_step({"name": self.get_name(),
                                                    "entry_point": func_name})
+                    self._step_manager.chain_step({"name": "ValueAnalysis",
+                                                   "entry_point": func_name})
+                    self._step_manager.chain_step({"name": "ValueAnalysisCore",
+                                                   "entry_point": func_name})
                     self._step_manager.chain_step({"name": "CallGraph",
                                                    "entry_point": func_name})
                     self._step_manager.chain_step({"name": "Syscall",

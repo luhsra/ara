@@ -7,7 +7,7 @@ import graph_tool.util
 import ara.graph
 
 from .step import Step
-from .option import Option, Integer
+from .option import Option, String
 
 
 class ValueAnalysis(Step):
@@ -16,6 +16,12 @@ class ValueAnalysis(Step):
     This is actually a post processing step that proper repacks the arguments.
     The real work is done within the ValueAnalysisCore step.
     """
+    def _fill_options(self):
+        self.entry_point = Option(name="entry_point",
+                                  help="Entry point for Value analysis",
+                                  step_name=self.get_name(),
+                                  ty=String())
+        self.opts.append(self.entry_point)
 
     def get_dependencies(self):
         return ["ValueAnalysisCore"]
@@ -31,12 +37,17 @@ class ValueAnalysis(Step):
         return tuple(cp)
 
     def run(self, g: ara.graph.Graph):
-        for v in filter(lambda x: g.cfg.vp.type[x] == ara.graph.ABBType.syscall,
-                        g.cfg.vertices()):
-            args = g.cfg.vp.arguments[v]
+        entry_label = self.entry_point.get()
+        entry_func = g.cfg.get_function_by_name(entry_label)
+
+        for abb in g.cfg.reachable_abbs(entry_func):
+            if g.cfg.vp.type[abb] != ara.graph.ABBType.syscall:
+                continue
+
+            args = g.cfg.vp.arguments[abb]
             assert type(args) is list
 
-            self._log.debug(f"Processing node {g.cfg.vp.name[v]}.")
+            self._log.debug(f"Processing node {g.cfg.vp.name[abb]}.")
 
             new_args = ara.graph.Arguments()
             for i, arg in enumerate(args):
@@ -62,4 +73,4 @@ class ValueAnalysis(Step):
                     self._log.debug(f")")
 
                     new_args.append(new_arg)
-            g.cfg.vp.arguments[v] = new_args
+            g.cfg.vp.arguments[abb] = new_args

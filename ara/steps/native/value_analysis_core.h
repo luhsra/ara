@@ -12,7 +12,8 @@ namespace ara::step {
 	  private:
 		option::TOption<option::Bool> dump_stats{"dump_stats",
 		                                         "Export JSON statistics about the value-analysis depth."};
-		virtual void fill_options() override { opts.emplace_back(dump_stats); }
+		option::TOption<option::String> entry_point{"entry_point", "system entry point"};
+		virtual void fill_options() override;
 
 	  public:
 		virtual std::string get_name() const override { return "ValueAnalysisCore"; }
