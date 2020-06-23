@@ -1,0 +1,9 @@
+{
+	"steps": [
+		"InteractionAnalysis"
+	],
+
+	"logger": {
+		"StepManager": "debug"
+	}
+}
