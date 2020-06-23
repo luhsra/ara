@@ -12,7 +12,7 @@ from .util import raise_and_error
 
 
 
-class OilStep(Step):
+class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
 
     Expect the path to the oil file to be in the config 'oilfile' key.
@@ -112,10 +112,10 @@ class OilStep(Step):
         self.opts.append(self.oilfile)
 
     def get_dependencies(self):
-        return ['ABB_MergeStep']
+        return []
 
     def run(self, g: graph.Graph):
-        # load the json outputstructure with json
+        # load the json file
         oilfile = self.oilfile.get()
         if not oilfile:
             raise_and_error(self._log, "No oilfile provided")
@@ -125,7 +125,12 @@ class OilStep(Step):
         assert("cpu" in oil)
         oil = oil["cpu"]
 
-        # TODO validate json
+        self._g.instances = graph_tool.Graph()
+        # TODO: call AUTOSAR init
+
+
+
+
 
         # prepare graph functions:
         funcs = g.get_type_vertices("Function")

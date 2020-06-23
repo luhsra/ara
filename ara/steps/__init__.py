@@ -8,7 +8,7 @@ def provide_steps():
     from .cfg_stats import CFGStats
     from .dummy import Dummy
     from .generator import Generator
-    from .oil import OilStep
+    from .load_oil import LoadOIL
     from .printer import Printer
     from .sse import InstanceGraph, InteractionAnalysis
     from .syscall import Syscall
@@ -24,7 +24,7 @@ def provide_steps():
     yield CFGStats()
     yield Dummy()
     yield Generator()
-    yield OilStep()
+    yield LoadOIL()
     yield Printer()
     yield InstanceGraph()
     yield InteractionAnalysis()
