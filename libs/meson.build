@@ -7,5 +7,6 @@ subdir('include')
 subdir('sra')
 subdir('freertos')
 subdir('osek')
+subdir('autosar')
 
 libs_targets += libsra_ar

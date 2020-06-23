@@ -13,9 +13,7 @@
 			{
                 "cpu_id": 0,
 				"activation": 1,
-				"autostart": true :{
-					"APPMODE" : ["tmp"]
-				},
+				"autostart": true,
 				"name": "TaskA",
 				"priority": 1,
 				"schedule": true
@@ -31,9 +29,7 @@
 			{
                 "cpu_id": 1,
 				"activation": 1,
-				"autostart": true :{
-					"APPMODE" : ["tmp"]
-				},
+				"autostart": true,
 				"name": "TaskC",
 				"priority": 1,
 				"schedule": true
@@ -53,7 +49,7 @@
 				"name": "TaskE",
 				"priority": 2,
 				"schedule": true
-			}			
+			}
 		]
 	}
 }

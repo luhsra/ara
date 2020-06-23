@@ -1,5 +1,11 @@
-#include "os/os.h"
-#include "test/test.h"
+#include "autosar/os.h"
+
+void doSomethingBefore() { }
+void doSomethingAfter() { }
+void doSomethingImportant() { }
+void doSomethingC() { }
+void doSomethingD() { }
+void doSomethingE() { }
 
 DeclareTask(TaskA);
 DeclareTask(TaskB);
@@ -39,7 +45,7 @@ TASK(TaskE) {
     TerminateTask();
 }
 
-int  main(void){
+int main(void){
     char * appmode = {"tmp"};
     StartOS(appmode);
     return 0;
