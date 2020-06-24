@@ -111,6 +111,27 @@ class FlowAnalysis(Step):
         self._finish(sstg)
 
 
+class MultiSSE(FlowAnalysis):
+    """Run the MultiCore SSE."""
+    def get_dependencies(self):
+        return ["SysFuncts"]
+
+    def _init_analysis(self):
+        pass
+
+    def _get_initial_state(self):
+        return None
+
+    def _execute(self, state):
+        return []
+
+    def _schedule(self, state):
+        return []
+
+    def _finish(self, sstg):
+        pass
+
+
 class FlatAnalysis(FlowAnalysis):
     """Analysis that run one time over the control flow reachable from the
     entry point.
@@ -387,5 +408,3 @@ class InteractionAnalysis(FlatAnalysis):
     def _init_execution(self, state):
         if self._g.instances is not None:
             state.instances = self._g.instances
-
-

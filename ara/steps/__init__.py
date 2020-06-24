@@ -10,8 +10,7 @@ def provide_steps():
     from .generator import Generator
     from .load_oil import LoadOIL
     from .printer import Printer
-    from .sse import InstanceGraph, InteractionAnalysis
-    from .multisse import MultiSSE
+    from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .value_analysis import ValueAnalysis
@@ -25,10 +24,10 @@ def provide_steps():
     yield CFGStats()
     yield Dummy()
     yield Generator()
-    yield LoadOIL()
-    yield Printer()
     yield InstanceGraph()
     yield InteractionAnalysis()
+    yield LoadOIL()
+    yield Printer()
     yield MultiSSE()
     yield Syscall()
     yield SysFuncts()
