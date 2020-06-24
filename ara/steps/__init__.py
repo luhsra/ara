@@ -11,6 +11,7 @@ def provide_steps():
     from .load_oil import LoadOIL
     from .printer import Printer
     from .sse import InstanceGraph, InteractionAnalysis
+    from .multisse import MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .value_analysis import ValueAnalysis
@@ -28,6 +29,7 @@ def provide_steps():
     yield Printer()
     yield InstanceGraph()
     yield InteractionAnalysis()
+    yield MultiSSE()
     yield Syscall()
     yield SysFuncts()
     yield ValueAnalysis()
