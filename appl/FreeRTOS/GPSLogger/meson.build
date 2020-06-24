@@ -178,10 +178,12 @@ foreach t : ara_gen_freertos_targets
                                  ],
                           output: name_prefix + '.lto.elf',
                           depfile: name_prefix + '.lto.elf.dep',
+                          depend_files: default_linkerscript,
                           command: clang_cpp +
                                    gpslogger_includes +
                                    ld_flags +
                                    gpslogger_ldflags +
+                                   ['-T' + default_linkerscript ] +
                                    clang_flags)
 
   elf_target = custom_target(name_prefix + '.elf',
@@ -192,10 +194,12 @@ foreach t : ara_gen_freertos_targets
                                     ],
                              output: name_prefix + '.elf',
                              depfile: name_prefix + '.elf.dep',
+                             depend_files: default_linkerscript,
                              command: clang_cpp +
                                       gpslogger_includes +
                                       ld_flags +
                                       gpslogger_ldflags +
+                                      ['-T' + default_linkerscript ] +
                                       clang_flags)
 
   bin_target = custom_target(name_prefix + '.bin',

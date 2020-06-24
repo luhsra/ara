@@ -139,10 +139,12 @@ foreach app : ir_apps + hw_apps
                                     get_variable('libfreertos_' + target)],
                             output: name_prefix + '.lto.elf',
                             depfile: name_prefix + '.lto.elf.dep',
+                            depend_files: default_linkerscript,
                             command: clang_cpp +
                                      libs_includes +
                                      ld_flags +
                                      ['-lsra'] +
+                                     ['-T' + default_linkerscript ] +
                                      clang_flags)
 
     elf_target = custom_target(name_prefix + '.elf',
@@ -158,6 +160,7 @@ foreach app : ir_apps + hw_apps
                                         libplatform_default_config +
                                         ld_flags +
                                         ['-lsra'] +
+                                        ['-T' + default_linkerscript ] +
                                         clang_flags)
 
     bin_target = custom_target(name_prefix + '.bin',
