@@ -60,10 +60,8 @@ namespace ara::step {
 #endif
 		}
 
-		//std::vector<std::vector<const Instruction*>> paths, altPaths;
-		std::vector<std::vector<const Function*>> paths, altPaths;
-		//std::vector<const Instruction*> curPath;
-		std::vector<const Function*> curPath;
+		std::vector<std::vector<const Instruction*>> paths, altPaths;
+		std::vector<const Instruction*> curPath;
 		std::vector<const Constant*> ret;
 
 	    /// Collect all LLVM Values
@@ -180,13 +178,11 @@ namespace ara::step {
 				assert(val != nullptr);
 				logger.debug() << "retrieving value: \033[35m" << *val << "\033[0m" << std::endl;
 				ValueAnalysisCore::ValPath vp = retrieve_value(vfg, *val);
-				/*
 				for (auto& p : std::get<1>(vp)) {
-					p.insert(p.begin(), &call);
+					p.insert(p.begin(), (Instruction*)&call);
 				}
-				*/
-				//assert(std::get<0>(vp).size() == std::get<1>(vp).size() && "Number of Values and Paths must be the same");
 				vps.push_back(vp);
+				//assert(std::get<0>(vp).size() == std::get<1>(vp).size() && "Number of Values and Paths must be the same");
 			}
 		}
 		return vps;

@@ -46,7 +46,7 @@ namespace ara::step {
 		}
 
 		/* a list of values and their (hopefully) corresponding paths along which they are retrieved */
-		typedef std::tuple<std::vector<const Constant*>, std::vector<std::vector<const Function*>>> ValPath;
+		typedef std::tuple<std::vector<const Constant*>, std::vector<std::vector<const Instruction*>>> ValPath;
 
 		ValPath retrieve_value(const SVFG& vfg, const llvm::Value& value);
 		std::vector<ValPath> collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call);
@@ -58,10 +58,9 @@ namespace ara::step {
 		 *
 		 * this should just be bottom-up DFS
 		 */
-		void getCallPaths(const Function* f, std::vector<std::vector<const Function*>>& paths, std::vector<const Function*>& curPath) {
+		void getCallPaths(const Function* f, std::vector<std::vector<const Instruction*>>& paths, std::vector<const Instruction*>& curPath) {
 			if (const SVFFunction* sf = svfModule->getSVFFunction(f)) {
 				PTACallGraphNode* cgn = callgraph->getCallGraphNode(sf);
-				curPath.push_back(f);
 				/* check if further path exists */
 				if (cgn->hasIncomingEdge()) {
 					/* incoming edges of this node */
@@ -69,10 +68,9 @@ namespace ara::step {
 						PTACallGraphEdge* edg = *edgit;
 						PTACallGraphEdge::CallInstSet cis = edg->getDirectCalls();
 						for (const CallBlockNode* cbn : cis) {
-							//llvm::CallSite cs = cbn->getCallSite();
 							const Function* cf = cbn->getCallSite()->getFunction();
 							const Instruction* ci = cbn->getCallSite().getInstruction();
-							//curPath.push_back(ci);
+							curPath.push_back(ci);
 							getCallPaths(cf, paths, curPath);
 							/* when the recursion above finishes, we have reached a root node
 							 * therefore we go back (down) one node and check its other parents
@@ -138,21 +136,21 @@ namespace ara::step {
 								i++;
 							}
 							for (auto p : std::get<1>(vp)) {
-								if (p.empty()) {
-									//logger.debug() << "PATH EMPTY" << std::endl;
-									continue;
-								}
-								/*
 								if (p.size() <= 1) {
 									//continue;
 								}
-								*/
-								logger.debug() << "PATH " << j << ": ";
-								for (auto f : p) {
-									logger.debug() << demangle(f->getName().str()) << "---";
-									//logger.debug() << demangle(f->getFunction()->getName().str()) << "---";
+								logger.debug() << "PATH " << j << ": \n        |--";
+								std::string topLevFun;
+								for (auto inst : p) {
+									//topLevFun = demangle(inst->getFunction()->getName().str());
+									//logger.debug() << *inst << "\033[33m(called by " << topLevFun << ")\033[0m" << "---";
+									logger.debug() << *inst << "\n        ---";
 								}
 								logger.debug() <<  "|" << std::endl;
+								/* end iterator points behind the last element so we subtract 1 before dereferencing it */
+								logger.debug() << "Entry function is: \033[33m"
+											   << (*(p.end() - 1))->getFunction()->getName().str()
+											   << "\033[0m" << std::endl;
 								j++;
 							}
 						}
