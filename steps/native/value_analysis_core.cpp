@@ -102,7 +102,7 @@ namespace ara::step {
 				continue;
 	    	const Value* val = pNode->getValue();
 			if (const Function* f = pNode->getFunction()) {
-				logger.debug() << "[[[PAGNode function: " << f->getName().str() << std::endl;
+				//logger.debug() << "[[[PAGNode function: " << f->getName().str() << std::endl;
 				/*
 				 * filter node with isFunEntryNode, additionally save all unfiltered results.
 				 * at the end (after all nodes have been iterated over), check if the
@@ -117,31 +117,39 @@ namespace ara::step {
 				}
 			}
 			if (const Instruction* inst = llvm::dyn_cast<Instruction>(val)) {
-				logger.debug() << "[[[Found Instruction: " << *inst << std::endl;
+				//logger.debug() << "Inst: " << *inst << "\n        " << *(inst->getOperand(0)) << std::endl;
+				/* for getelementpointer instructions that retrieve constants */
 				if (const Constant* c = llvm::dyn_cast<Constant>(inst->getOperand(0))) {
-					logger.debug() << "[[[Found Value: " << *c << std::endl;
+					//logger.debug() << "[[[Found Value: " << *c << std::endl;
 					ret.push_back(c);
-#if 0
-					//logger.debug() << "instruction: " << inst->getFunction()->getName().str() << std::endl;
-					if (const llvm::BasicBlock* nbb = reinterpret_cast<const llvm::BasicBlock*>(node->getBB())) {
-						logger.debug() << "in bb: " << nbb->getName().str() << std::endl;
-						logger.debug() << "first user: " << **inst->user_begin() << std::endl;
-						// if the parent call is top level, it will contain the syscall, otherwise the parent call
-						if (nbb->getUniqueSuccessor()) {
-							if (nbb->getUniqueSuccessor()/* != *inst->user_begin()*/) {
-								//logger.debug() << *nbb << std::endl;
-								logger.debug() << "Call resides in: " << nbb->getUniqueSuccessor()->getName().str() << std::endl;
-								logger.debug() << "call is: " << nbb->getUniqueSuccessor()->front() << std::endl;
-							}
-						}
+				}
+				else if (const GetElementPtrInst* gepinst = llvm::dyn_cast<GetElementPtrInst>(inst)) {
+					if (inst->getOperand(0)->getValueName()->getKey().str() == "this") {
+						logger.debug() << "skipping \"this\" value" << std::endl;
 					}
-
-					// if unique successor call == call.getCalledFunction
-					// 		origin function (vNode fun()) is top-level
-					// else
-					// 		origin function was called from some other function
-					// 		get that other function
-#endif
+					else {
+						logger.debug() << "gep operand 0: " << *(inst->getOperand(0))
+									   << " -||- Instruction: " << *inst << std::endl;
+					}
+				}
+				else if (const LoadInst* loadinst = llvm::dyn_cast<LoadInst>(inst)) {
+					logger.debug() << "load operand 0: " << *(inst->getOperand(0))
+								   << " -||- Instruction: " << *inst << std::endl;
+				}
+				else if (const AllocaInst* allocainst = llvm::dyn_cast<AllocaInst>(inst)) {
+					logger.debug() << "alloca operand 0: " << *(inst->getOperand(0))
+								   << " -||- Instruction: " << *inst << std::endl;
+				}
+				/* interesting stuff not always in operand 0 for a CallInst */
+				else if (const CallInst* callinst = llvm::dyn_cast<CallInst>(inst)) {
+					for (int o = 0; o < inst->getNumOperands(); o++) {
+						logger.debug() << "call operand " << o
+									   << ": " << *(inst->getOperand(o))
+									   << " -||- Instruction: " << *inst << std::endl;
+					}
+				}
+				else {
+					logger.debug() << "UNHANDLED INST !(gep, load, alloca, call) "  << *inst << std::endl;
 				}
 			}
 	    }
