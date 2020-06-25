@@ -1,5 +1,8 @@
 from .os_util import syscall
 from .os_base import OSBase
+from ara.util import get_logger
+
+logger = get_logger("AUTOSAR")
 
 class Task:
     def __init__(self, cfg, name, function, priority, activation,
@@ -24,6 +27,12 @@ class AUTOSAR(OSBase):
             instances.vp[prop[0]] = instances.new_vp(prop[1])
         for prop in AUTOSAR.edge_properties:
             instances.ep[prop[0]] = instances.new_ep(prop[1])
+
+    @staticmethod
+    def interpret(cfg, abb, state):
+        syscall = cfg.get_syscall_name(abb)
+        logger.debug(f"Get syscall: {syscall}")
+        return getattr(AUTOSAR, syscall)(cfg, abb, state)
 
     @syscall
     def AUTOSAR_ActivateTask(cfg, abb, state):
