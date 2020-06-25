@@ -44,6 +44,7 @@ hw_apps = [
   'simple_queue_send',
   'simple_mutex',
   'simple_mutex_constructor',
+  # 'simple_pios_modules', # mini version of the librepilot/pios module system for task creation
 ]
 
 
