@@ -245,6 +245,10 @@ osek_examples = run_target('osek-examples',
                            command: nop,
                            depends: osek_targets)
 
+# AUTOSAR examples
+subdir('AUTOSAR')
+
+
 examples = run_target('examples',
                       command: nop,
                       depends: [osek_targets, freertos_targets])

@@ -110,6 +110,91 @@ class FlowAnalysis(Step):
 
         self._finish(sstg)
 
+class MultiState:
+    def __init__(self, cfg=None, instances=None):
+        self.cfg = cfg
+        self.instances = instances
+        self.abbs = {}
+        self.min_time = 0
+        self.max_time = 0
+
+    def __repr__(self):
+        ret = ""
+        for abb in self.abbs.values():
+            if abb is not None:
+                ret += self.cfg.vp.name[abb] + ", "
+        return ret
+
+    def copy(self):
+        scopy = MultiState()
+
+        for key, value in self.__dict__.items():
+            if key == 'instances' or key == 'abbs':
+                continue
+            setattr(scopy, key, value)
+        scopy.instances = self.instances.copy()
+        scopy.abbs = self.abbs.copy()
+        return scopy
+
+class MultiSSE(FlowAnalysis):
+    """Run the MultiCore SSE."""
+    def get_dependencies(self):
+        return ["SysFuncts"]
+
+    def _init_analysis(self):
+        pass
+
+    def _get_initial_state(self):
+        self.print_tasks()
+        state = MultiState(cfg=self._g.cfg,
+                           instances=self._g.instances) 
+
+        #building initial state
+        func_name_start = "AUTOSAR_TASK_FUNC_"
+        for v in state.instances.vertices():
+            task = state.instances.vp.obj[v]
+            if task.autostart:
+                func_name = func_name_start + task.name
+                entry_func = self._g.cfg.get_function_by_name(func_name)
+                entry_abb = self._g.cfg.get_entry_abb(entry_func)
+                if task.cpu_id not in state.abbs:
+                    state.abbs[task.cpu_id] = entry_abb
+        return state
+
+    def _execute(self, state):
+        self._log.info(f"Executing State: {state}")
+        new_states = []
+
+        for cpu, abb in state.abbs.items():
+            if abb is not None:
+                # syscall handling
+                if self._icfg.vp.type[abb] == ABBType.syscall:
+                    assert self._g.os is not None
+                    new_state = self._g.os.interpret(self._g.cfg, abb, state)
+                    new_states.append(new_state)
+
+                # handling calls and computations blocks the same way atm
+                else:
+                    for n in self._icfg.vertex(abb).out_neighbors():
+                        new_state = state.copy()
+                        new_state.abbs[cpu] = n
+                        new_states.append(new_state)
+        return new_states
+
+    def _schedule(self, states):
+        return []
+
+    def _finish(self, sstg):
+        pass
+    
+    def print_tasks(self):
+        log = "Tasks ("
+        instances = self._g.instances
+        for vertex in instances.vertices():
+            task = instances.vp.obj[vertex]
+            log += task.name + ", "
+        self._log.info(f"{log})")
+
 
 class FlatAnalysis(FlowAnalysis):
     """Analysis that run one time over the control flow reachable from the
@@ -272,8 +357,7 @@ class InstanceGraph(FlatAnalysis):
     """Find all application instances."""
 
     def get_dependencies(self):
-        return ["Syscall", "ValueAnalysis", "CallGraph", "FakeEntryPoint",
-                "LoadOSConfig"]
+        return ["Syscall", "ValueAnalysis", "CallGraph", "FakeEntryPoint"]
 
     def _init_analysis(self):
         super()._init_analysis()
@@ -388,5 +472,3 @@ class InteractionAnalysis(FlatAnalysis):
     def _init_execution(self, state):
         if self._g.instances is not None:
             state.instances = self._g.instances
-
-

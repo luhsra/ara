@@ -1,5 +1,5 @@
 // vim: set noet ts=4 sw=4:
-#include "load_os_config.h"
+#include "load_freertos_config.h"
 
 #include <Python.h>
 #include <pyllco.h>
@@ -9,15 +9,15 @@ namespace ara::step {
 
 	std::string prefix = "__ara_osconfig_";
 
-	std::string LoadOSConfig::get_description() const {
+	std::string LoadFreeRTOSConfig::get_description() const {
 		return "Retrieve config values from IR. \n"
 		       "Stores all global values named \"" +
 		       prefix + "*\" into graph.os.config dict";
 	}
 
-	void LoadOSConfig::fill_options() {}
+	void LoadFreeRTOSConfig::fill_options() {}
 
-	void LoadOSConfig::run(graph::Graph& graph) {
+	void LoadFreeRTOSConfig::run(graph::Graph& graph) {
 		PyObject* os = PyObject_GetAttrString(graph.get_pygraph(), "os");
 		PyObject* config = PyObject_GetAttrString(os, "config");
 

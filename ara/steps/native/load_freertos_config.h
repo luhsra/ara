@@ -8,12 +8,12 @@
 #include <graph.h>
 
 namespace ara::step {
-	class LoadOSConfig : public Step {
+	class LoadFreeRTOSConfig : public Step {
 	  private:
 		virtual void fill_options() override;
 
 	  public:
-		virtual std::string get_name() const override { return "LoadOSConfig"; }
+		virtual std::string get_name() const override { return "LoadFreeRTOSConfig"; }
 		virtual std::string get_description() const override;
 		virtual std::vector<std::string> get_dependencies() override { return {"SysFuncts"}; }
 

@@ -1,0 +1,198 @@
+// ****************************************************************
+// TaskList Implementation
+// ****************************************************************
+namespace os { namespace scheduler {
+
+// only needed for Tasklist constructor comma placement
+class UnencodedTaskListStatic {};
+
+/* Simpler array based task queue */
+struct TaskList : public UnencodedTaskListStatic {
+	typedef uint32_t event_mask_t;
+
+	typedef Task::prio_t current_prio_t;
+	typedef Task::id_t current_task_t;
+
+	static constexpr auto scheduler_prio = {{{!scheduler_prio}}};
+
+
+{{{!foreach_subtask|
+    Task::prio_t {{{!subtask}}};
+    {{{!if_events|\
+    event_mask_t {{{!subtask}}}_events_waiting;
+	event_mask_t {{{!subtask}}}_events_set;
+    }}}
+}}}
+
+    // idle task id/priority
+    static constexpr Task::id_t idle_id     = 0;
+	static constexpr Task::prio_t idle_prio = 0;
+
+    TaskList() : UnencodedTaskListStatic()
+    {{{!foreach_subtask|
+        , {{{!subtask}}}(0)\
+        {{{!if_events|\
+           , {{{!subtask}}}_events_waiting(0), {{{!subtask}}}_events_set(0)\
+        }}}
+	}}}
+    { /* empty constructor */ }
+
+    forceinline uint32_t isReady(const Task::id_t id) {
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+            return {{{!subtask}}};
+        } else \
+}}}     {
+			assert(false);
+			return false;
+		}
+    }
+
+    /** Set priority of task id to prio **/
+    forceinline void set(const Task::id_t id, const Task::prio_t prio) {
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}} = prio;
+        } else \
+}}}      {
+             assert(false);
+         }
+    }
+
+
+
+    /** Set priority of task id to prio **/
+    forceinline void activate(const Task::id_t id, const Task::prio_t prio) {
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+			if ({{{!subtask}}} < prio) {
+				{{{!subtask}}} = prio;
+				{{{!if_events|
+				{{{!subtask}}}_events_waiting = 0;
+                {{{!subtask}}}_events_set = 0;\
+                }}}
+			}
+        } else \
+}}}     {
+			assert(false);
+		}
+    }
+
+	template<const bool* possible_tasks = nullptr>
+	forceinline void head(Task::id_t& id, Task::prio_t& prio) const {
+        // start with idle id/priority
+        id = idle_id;
+        prio = idle_prio;
+
+{{{!foreach_subtask|
+		if (possible_tasks == nullptr || possible_tasks[{{{!subtask_id}}}]) {
+        if({{{!subtask}}} > prio {{{!if_events|\
+         && (({{{!subtask}}}_events_waiting == 0) || ({{{!subtask}}}_events_waiting & {{{!subtask}}}_events_set) != 0)\
+        }}}) {
+            prio = {{{!subtask}}};
+            id = {{{!subtask_id}}};
+        }
+		}
+}}}
+    }
+
+    /** Wait for a specific event mask **/
+    forceinline void wait_events(const Task::id_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+   {{{!if_events|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_events_waiting = mask;
+   {{{!if_not_preemptable|
+           // We're non-preemptable, therefore we must drop our priority, before calling blocking
+           if (({{{!subtask}}}_events_waiting & {{{!subtask}}}_events_set) == 0) {
+              {{{!subtask}}} = {{{!subtask_desc}}}.prio;
+           }
+   }}}
+        } else \
+   }}}\
+}}}     {
+			assert(false);
+		}
+    }
+
+    /** Set Events **/
+    forceinline void set_events(const Task::id_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+   {{{!if_events|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_events_set |= mask;
+        } else \
+   }}}\
+}}}     {
+			assert(false);
+		}
+    }
+
+    /** Clear Events **/
+    forceinline void clear_events(const Task::id_t id, const event_mask_t mask) {
+        (void) id;
+        (void) mask;
+{{{!foreach_subtask|\
+   {{{!if_events|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_events_waiting &= ~mask;
+           {{{!subtask}}}_events_set &= ~mask;
+        } else \
+   }}}\
+}}}     {
+		}
+    }
+
+    forceinline void remove(const Task::id_t& id) {
+        set(id, 0);
+    }
+
+    /** Get Events **/
+    forceinline event_mask_t get_events(const Task::id_t id) {
+        (void) id;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+{{{!if_events|
+            return {{{!subtask}}}_events_set;
+}}}
+        } else \
+}}}       {
+          }
+          return 0;
+    }
+
+	static Task::id_t decode_task_id(Task::id_t id){
+		return id;
+	}
+
+	static Task::id_t encode_task_id(Task::id_t id){
+		return id;
+	}
+
+	static Task::prio_t encode_task_prio(Task::prio_t prio){
+		return prio;
+	}
+
+
+};
+
+/** Equality operator (used for TMR) [enc=0] **/
+bool operator==(const TaskList& lhs, const TaskList& rhs) {
+{{{!foreach_subtask|
+     if(lhs.{{{!subtask}}} != rhs.{{{!subtask}}}) return false;
+{{{!if_events|
+     if(lhs.{{{!subtask}}}_events_waiting != rhs.{{{!subtask}}}_events_waiting) return false;
+     if(lhs.{{{!subtask}}}_events_set != rhs.{{{!subtask}}}_events_set) return false;
+}}}\
+}}}
+        return true;
+}
+
+bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs); }
+
+}; // scheduler
+}; // os
