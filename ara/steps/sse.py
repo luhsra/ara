@@ -114,7 +114,10 @@ class MultiState:
     def __init__(self, cfg=None, instances=None):
         self.cfg = cfg
         self.instances = instances
-        self.abbs = {}
+        self.call_nodes = {}
+        self.callgraphs = {}
+        self.abbs = {} #active ABBs per cpu; key: cpu_id, value: ABB node
+        self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
         self.min_time = 0
         self.max_time = 0
 
@@ -123,7 +126,7 @@ class MultiState:
         for abb in self.abbs.values():
             if abb is not None:
                 ret += self.cfg.vp.name[abb] + ", "
-        return ret
+        return ret[:-2]
 
     def copy(self):
         scopy = MultiState()
@@ -134,6 +137,9 @@ class MultiState:
             setattr(scopy, key, value)
         scopy.instances = self.instances.copy()
         scopy.abbs = self.abbs.copy()
+        scopy.activated_tasks = self.activated_tasks.copy()
+        scopy.callgraphs = self.callgraphs.copy()
+        scopy.call_nodes = self.call_nodes.copy()
         return scopy
 
 class MultiSSE(FlowAnalysis):
@@ -150,6 +156,7 @@ class MultiSSE(FlowAnalysis):
                            instances=self._g.instances) 
 
         #building initial state
+        # TODO: get rid of the hardcoded function name
         func_name_start = "AUTOSAR_TASK_FUNC_"
         for v in state.instances.vertices():
             task = state.instances.vp.obj[v]
@@ -159,6 +166,15 @@ class MultiSSE(FlowAnalysis):
                 entry_abb = self._g.cfg.get_entry_abb(entry_func)
                 if task.cpu_id not in state.abbs:
                     state.abbs[task.cpu_id] = entry_abb
+                if task.cpu_id not in state.activated_tasks:
+                    state.activated_tasks[task.cpu_id] = []
+                state.activated_tasks[task.cpu_id].append(task)
+
+                #TODO: handling multiple tasks in autostart per cpu
+                if task.cpu_id not in state.callgraphs:
+                    state.callgraphs[task.cpu_id] = self._g.call_graphs[func_name]
+                    state.call_nodes[task.cpu_id] = self._find_tree_root(self._g.call_graphs[func_name])
+
         return state
 
     def _execute(self, state):
@@ -170,7 +186,7 @@ class MultiSSE(FlowAnalysis):
                 # syscall handling
                 if self._icfg.vp.type[abb] == ABBType.syscall:
                     assert self._g.os is not None
-                    new_state = self._g.os.interpret(self._g.cfg, abb, state)
+                    new_state = self._g.os.interpret(self._g.cfg, abb, state, cpu)
                     new_states.append(new_state)
 
                 # handling calls and computations blocks the same way atm
@@ -193,7 +209,15 @@ class MultiSSE(FlowAnalysis):
         for vertex in instances.vertices():
             task = instances.vp.obj[vertex]
             log += task.name + ", "
-        self._log.info(f"{log})")
+        self._log.info(f"{log[:-2]})")
+    
+    def _find_tree_root(self, graph):
+        if graph.num_vertices() == 0:
+            return None
+        node = next(graph.vertices())
+        while node.in_degree() != 0:
+            node = next(node.in_neighbors())
+        return node
 
 
 class FlatAnalysis(FlowAnalysis):

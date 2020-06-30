@@ -1,6 +1,7 @@
 from .os_util import syscall
 from .os_base import OSBase
 from ara.util import get_logger
+from ara.graph.argument import CallPath
 
 logger = get_logger("AUTOSAR")
 
@@ -29,13 +30,19 @@ class AUTOSAR(OSBase):
             instances.ep[prop[0]] = instances.new_ep(prop[1])
 
     @staticmethod
-    def interpret(cfg, abb, state):
+    def interpret(cfg, abb, state, cpu):
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}")
-        return getattr(AUTOSAR, syscall)(cfg, abb, state)
+        return getattr(AUTOSAR, syscall)(cfg, abb, state, cpu)
 
     @syscall
-    def AUTOSAR_ActivateTask(cfg, abb, state):
+    def AUTOSAR_ActivateTask(cfg, abb, state, cpu):
+
+        # get Task argument
+        cp = CallPath(graph=state.callgraphs[cpu], node=state.call_nodes[cpu])
+        task = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+        # assert(isinstance(task, Task))
+        print(type(task))
         pass
 
     @syscall
