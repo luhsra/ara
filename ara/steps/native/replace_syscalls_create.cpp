@@ -63,6 +63,27 @@ namespace ara::step {
 			graph::CFG cfg = graph.get_cfg();
 			return reinterpret_cast<BasicBlock*>(cfg.entry_bb[extract<int64_t>(task.attr("abb"))]);
 		}
+
+		PyObject* replace_call_with_activate(Module& module, Logger& logger, CallBase* call, Value* tcb) {
+
+			Function* activate_fn = get_fn(module, logger, "__ara_vTaskActivate");
+			// Function* activate_fn = get_fn(module, logger, "vTaskResume" /*"__ara_vTaskActivate" */);
+			if (activate_fn == nullptr) {
+				return PyErr_Format(PyExc_RuntimeError, "__ara_vTaskActivate not found");
+			}
+			SmallVector<Value*, 1> new_args(1);
+			new_args[0] = {tcb};
+
+			IRBuilder<> Builder(module.getContext());
+			Builder.SetInsertPoint(call);
+			Value* success = Builder.CreateCall(activate_fn, new_args);
+			if (success == nullptr) {
+				return PyErr_Format(PyExc_RuntimeError, "failed to create __ara_vTaskActivate call");
+			}
+
+			replace_call_with_true(call);
+			Py_RETURN_NONE;
+		}
 	} // namespace
 
 	std::string ReplaceSyscallsCreate::get_description() const {
@@ -365,8 +386,9 @@ namespace ara::step {
 		}
 		if (extract<bool>(task.attr("after_scheduler"))) {
 			logger.debug() << "create call is after_scheduler:" << *old_create_call << std::endl;
-			return PyErr_Format(PyExc_NotImplementedError,
-			                    "task creation after scheduler start is currently not implemented");
+			if (!replace_call_with_activate(module, logger, old_create_call, task_tcb)) {
+				return nullptr;
+			}
 		} else {
 			logger.debug() << "create is before_scheduler: " << old_create_call << std::endl;
 			if (!replace_call_with_true(old_create_call)) {

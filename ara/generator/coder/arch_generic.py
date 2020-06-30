@@ -17,7 +17,6 @@ class VanillaTaskList(StructDataObject):
         if not self.tasks:
             return
         prev = self['xListEnd']
-        end = prev
         for index, task in enumerate(self.tasks):
             task.impl.tcb['xStateListItem']['pxPrevious'] = prev.address
             task.impl.tcb['xStateListItem']['pxContainer'] = self.address
@@ -39,7 +38,9 @@ class VanillaTasksLists(DataObjectArray):
         self.prio_is_bit_encoded = prio_is_bit_encoded
         self.used_prios = []
         for prio in range(max_prio):
-            p_tasks = [t for t in tasks if t.priority == prio]
+            # skip tasks where xTaskCreate is called after the scheduler starts
+            p_tasks = [t for t in tasks if (t.priority == prio
+                                            and not t.after_scheduler)]
             self[prio] = self.arch.TaskList(p_tasks, self, prio)
             #print('after insert', self[prio]['xListEnd'].address)
             if p_tasks:
@@ -79,8 +80,9 @@ class VanillaListItem(StructDataObject):
         tn = 'MiniListItem_t' if mini else 'ListItem_t'
         StructDataObject.__init__(self, tn, name)
         self.mini = mini
-        self['pxNext'] = DataObject('ListItem_t *', 'pxNext', 'NULL')
-        self['pxPrevious'] = DataObject('ListItem_t *', 'pxPrevious', 'NULL')
+        # empty lists are mini loops
+        self['pxNext'] = DataObject('ListItem_t *', 'pxNext', lambda: self.address)
+        self['pxPrevious'] = DataObject('ListItem_t *', 'pxPrevious', lambda: self.address)
         if mini:
             return
         self['xItemValue'] = 0
