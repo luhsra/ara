@@ -5,6 +5,7 @@
 #include "option.h"
 #include "step.h"
 
+#include <boost/python.hpp>
 #include <graph.h>
 #include <llvm/IR/Value.h>
 
@@ -24,7 +25,8 @@ namespace ara::step {
 		bool replace_queue_create_static(graph::Graph& graph, uintptr_t where, char* symbol_metadata,
 		                                 char* symbol_storage);
 		bool replace_queue_create_initialized(graph::Graph& graph, uintptr_t where, char* symbol_metadata);
-		bool replace_task_create_static(graph::Graph& graph, uintptr_t where, char* handle_name, char* stack_name);
-		bool replace_task_create_initialized(graph::Graph& graph, uintptr_t where, char* handle_name);
+		PyObject* replace_task_create_static(graph::Graph& graph, boost::python::object task);
+		PyObject* replace_task_create_initialized(graph::Graph& graph, boost::python::object task);
+		PyObject* replace_task_create(graph::Graph& graph, PyObject* pyo_task);
 	};
 } // namespace ara::step

@@ -8,14 +8,18 @@
 #include "llvm/IR/TypeFinder.h"
 
 #include <boost/graph/filtered_graph.hpp>
+#include <boost/python.hpp>
+
 using namespace ara::graph;
+using namespace boost::python;
 
 namespace ara::step {
 	using namespace llvm;
 
 	// ATTENTION: put in anonymous namespace to get an unique symbol
 	namespace {
-		bool handle_tcb_ref_param(IRBuilder<>& Builder, Value* tcb_ref, Value* the_tcb, Logger& logger) {
+		/* xTaskCreate() may take a reference parameter which needs to be filled here */
+		PyObject* handle_tcb_ref_param(IRBuilder<>& Builder, Value* tcb_ref, Value* the_tcb, Logger& logger) {
 			if (Constant* CI = dyn_cast<Constant>(tcb_ref)) {
 				if (!CI->isZeroValue()) {
 					logger.debug() << "handle != 0: " << std::endl;
@@ -29,19 +33,20 @@ namespace ara::step {
 				logger.error()
 				    << "NOT IMLEMENTED: Need to generate runtime checking code for task_handle in xTaskCreate call"
 				    << std::endl;
-				return false;
+				return PyErr_Format(PyExc_NotImplementedError,
+				                    "Need to generate runtime checking code for task_handle in xTaskCreate call");
 			}
-			return true;
+			Py_RETURN_NONE;
 		}
 
-		bool replace_call_with_true(CallBase* call) {
+		PyObject* replace_call_with_true(CallBase* call) {
 			// return true;
 			Value* pdTrue = ConstantInt::get(call->getFunctionType()->getReturnType(), true, false);
 			call->replaceAllUsesWith(pdTrue);
 			// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling
 			// piniter wit failing assert: "Use still stuck around after Def is destroyed"
 			call->eraseFromParent();
-			return true;
+			Py_RETURN_NONE;
 		}
 
 		Function* get_fn(Module& module, Logger& logger, const char* name) {
@@ -54,6 +59,10 @@ namespace ara::step {
 			return nullptr;
 		}
 
+		BasicBlock* create_bb(graph::Graph& graph, object task) {
+			graph::CFG cfg = graph.get_cfg();
+			return reinterpret_cast<BasicBlock*>(cfg.entry_bb[extract<int64_t>(task.attr("abb"))]);
+		}
 	} // namespace
 
 	std::string ReplaceSyscallsCreate::get_description() const {
@@ -271,25 +280,26 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_task_create_static(graph::Graph& graph, uintptr_t where, char* tcb_name,
-	                                                       char* stack_name) {
+	PyObject* ReplaceSyscallsCreate::replace_task_create_static(graph::Graph& graph, object task) {
 		Module& module = graph.get_module();
-		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
+		BasicBlock* bb = create_bb(graph, task);
+		std::string tcb_name = extract<std::string>(task.attr("impl").attr("tcb").attr("name"));
+		std::string stack_name = extract<std::string>(task.attr("impl").attr("stack").attr("name"));
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
 
 		if ("xTaskCreate" != old_func->getName().str()) {
 			if ("vTaskStartScheduler" == old_func->getName().str()) {
 				logger.info() << "skipping idle task" << std::endl;
-				return true;
+				Py_RETURN_NONE;
 			}
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "wrong function");
 		}
 
 		Function* create_static_fn = get_fn(module, logger, "xTaskCreateStatic");
 		if (create_static_fn == nullptr) {
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "xTaskCreateStatic not found");
 		}
 
 		GlobalVariable* task_tcb = new GlobalVariable(
@@ -313,49 +323,76 @@ namespace ara::step {
 		Builder.SetInsertPoint(old_create_call);
 		Value* new_ret = Builder.CreateCall(create_static_fn, new_args, "static_handle");
 		if (new_ret == nullptr) {
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "failed to create xTaskCreateStattic call");
 		}
 		logger.debug() << "handle: " << *old_create_call->getArgOperand(5) << std::endl;
 
 		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb, logger)) {
-			return false;
+			return nullptr;
 		}
 
 		if (!replace_call_with_true(old_create_call)) {
-			return false;
+			return nullptr;
 		}
-		return true;
+		Py_RETURN_NONE;
 	}
 
-	bool ReplaceSyscallsCreate::replace_task_create_initialized(graph::Graph& graph, uintptr_t where, char* tcb_name) {
+	PyObject* ReplaceSyscallsCreate::replace_task_create_initialized(graph::Graph& graph, object task) {
 		Module& module = graph.get_module();
-		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
+		BasicBlock* bb = create_bb(graph, task);
+		std::string tcb_name = extract<std::string>(task.attr("impl").attr("tcb").attr("name"));
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
 
 		if ("xTaskCreate" != old_func->getName().str()) {
 			if ("vTaskStartScheduler" == old_func->getName().str()) {
 				// skip idle task
-				return true;
+				Py_RETURN_NONE;
 			}
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "wrong function found %s", old_func->getName().str());
 		}
 
 		IRBuilder<> Builder(module.getContext());
 		Builder.SetInsertPoint(old_create_call);
 
 		GlobalVariable* task_tcb = new GlobalVariable(
-		    module, dyn_cast<PointerType>(old_func->getFunctionType()->getParamType(5))->getElementType(), false,
-		    GlobalValue::ExternalLinkage, nullptr, tcb_name, nullptr, GlobalVariable::NotThreadLocal, 0, false);
+		    module, old_func->getFunctionType()->getParamType(5)->getPointerElementType()->getPointerElementType(),
+		    false, GlobalValue::ExternalLinkage, nullptr, tcb_name, nullptr, GlobalVariable::NotThreadLocal, 0, false);
 
 		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb, logger)) {
-			return false;
+			return nullptr;
 		}
-		if (!replace_call_with_true(old_create_call)) {
-			return false;
+		if (extract<bool>(task.attr("after_scheduler"))) {
+			logger.debug() << "create call is after_scheduler:" << *old_create_call << std::endl;
+			return PyErr_Format(PyExc_NotImplementedError,
+			                    "task creation after scheduler start is currently not implemented");
+		} else {
+			logger.debug() << "create is before_scheduler: " << old_create_call << std::endl;
+			if (!replace_call_with_true(old_create_call)) {
+				return nullptr;
+			}
 		}
-		return true;
+		Py_RETURN_NONE;
+		return PyErr_Format(PyExc_RuntimeError, "moin");
+		PyErr_SetString(PyExc_RuntimeError, "hello exception");
+		return NULL;
+	}
+
+	PyObject* ReplaceSyscallsCreate::replace_task_create(graph::Graph& graph, PyObject* pyo_task) {
+		boost::python::object task(boost::python::borrowed<>(pyo_task));
+		logger.debug() << "the task: " << task << std::endl;
+		object impl = task.attr("impl");
+		str init_type = extract<str>(impl.attr("init"));
+		str tcb_name = extract<str>(impl.attr("tcb").attr("name"));
+		if (init_type == "static") {
+			return replace_task_create_static(graph, task);
+		} else if (init_type == "initialized") {
+			return replace_task_create_initialized(graph, task);
+		} else {
+			logger.error() << "unknown init type" << init_type << std::endl;
+		}
+		Py_RETURN_NONE;
 	}
 
 } // namespace ara::step

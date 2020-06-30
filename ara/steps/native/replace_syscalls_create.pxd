@@ -17,5 +17,4 @@ cdef extern from "replace_syscalls_create.h" namespace "ara::step":
         bool replace_mutex_create_initialized(cgraph.Graph, uintptr_t, char*)
         bool replace_queue_create_static(cgraph.Graph, uintptr_t, char*, char*)
         bool replace_queue_create_initialized(cgraph.Graph, uintptr_t, char*)
-        bool replace_task_create_static(cgraph.Graph, uintptr_t, char*, char*)
-        bool replace_task_create_initialized(cgraph.Graph, uintptr_t, char*)
+        object replace_task_create(cgraph.Graph, object pyo_task)
