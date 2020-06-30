@@ -11,6 +11,7 @@ from .option import Option, String, Choice
 from .freertos import Task
 from .os_util import SyscallCategory
 from ara.util import VarianceDict
+from .autosar import Task as AUTOSAR_Task
 
 from collections import defaultdict
 from enum import Enum
@@ -116,24 +117,26 @@ class MultiState:
         self.instances = instances
         self.call_nodes = {}
         self.callgraphs = {}
-        self.abbs = {} #active ABBs per cpu; key: cpu_id, value: ABB node
+        self.abbs = {} # active ABBs per task; key: task name, value: ABB node
         self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
         self.min_time = 0
         self.max_time = 0
+    
+    def get_scheduled_task(self, cpu):
+        return self.activated_tasks[cpu][0]
 
     def __repr__(self):
         ret = ""
-        for abb in self.abbs.values():
-            if abb is not None:
-                ret += self.cfg.vp.name[abb] + ", "
+        for cpu in self.activated_tasks:
+            task = self.get_scheduled_task(cpu)
+            abb = self.abbs[task.name]
+            ret += self.cfg.vp.name[abb] + ", "
         return ret[:-2]
 
     def copy(self):
         scopy = MultiState()
 
         for key, value in self.__dict__.items():
-            if key == 'instances' or key == 'abbs':
-                continue
             setattr(scopy, key, value)
         scopy.instances = self.instances.copy()
         scopy.abbs = self.abbs.copy()
@@ -160,20 +163,23 @@ class MultiSSE(FlowAnalysis):
         func_name_start = "AUTOSAR_TASK_FUNC_"
         for v in state.instances.vertices():
             task = state.instances.vp.obj[v]
-            if task.autostart:
+
+            if isinstance(task, AUTOSAR_Task):
+                # set entry abb for each task
                 func_name = func_name_start + task.name
                 entry_func = self._g.cfg.get_function_by_name(func_name)
                 entry_abb = self._g.cfg.get_entry_abb(entry_func)
-                if task.cpu_id not in state.abbs:
-                    state.abbs[task.cpu_id] = entry_abb
-                if task.cpu_id not in state.activated_tasks:
-                    state.activated_tasks[task.cpu_id] = []
-                state.activated_tasks[task.cpu_id].append(task)
+                state.abbs[task.name] = entry_abb
 
-                #TODO: handling multiple tasks in autostart per cpu
-                if task.cpu_id not in state.callgraphs:
-                    state.callgraphs[task.cpu_id] = self._g.call_graphs[func_name]
-                    state.call_nodes[task.cpu_id] = self._find_tree_root(self._g.call_graphs[func_name])
+                # set callgraph and entry call node for each task
+                state.callgraphs[task.name] = self._g.call_graphs[func_name]
+                state.call_nodes[task.name] = self._find_tree_root(self._g.call_graphs[func_name])
+                
+                # set list of activated tasks for each cpu
+                if task.autostart: 
+                    if task.cpu_id not in state.activated_tasks:
+                        state.activated_tasks[task.cpu_id] = []
+                    state.activated_tasks[task.cpu_id].append(task)
 
         return state
 
@@ -181,19 +187,21 @@ class MultiSSE(FlowAnalysis):
         self._log.info(f"Executing State: {state}")
         new_states = []
 
-        for cpu, abb in state.abbs.items():
+        for cpu in state.activated_tasks:
+            task = state.get_scheduled_task(cpu)
+            abb = state.abbs[task.name]
             if abb is not None:
                 # syscall handling
                 if self._icfg.vp.type[abb] == ABBType.syscall:
                     assert self._g.os is not None
-                    new_state = self._g.os.interpret(self._g.cfg, abb, state, cpu)
+                    new_state = self._g.os.interpret(self._lcfg, abb, state, cpu)
                     new_states.append(new_state)
-
+                #TODO: adding call handling
                 # handling calls and computations blocks the same way atm
                 else:
                     for n in self._icfg.vertex(abb).out_neighbors():
                         new_state = state.copy()
-                        new_state.abbs[cpu] = n
+                        new_state.abbs[task.name] = n
                         new_states.append(new_state)
         return new_states
 

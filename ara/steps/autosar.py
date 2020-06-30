@@ -16,6 +16,9 @@ class Task:
         self.autostart = autostart
         self.schedule = schedule
         self.cpu_id = cpu_id
+    
+    def __repr__(self):
+        return self.name
 
 class AUTOSAR(OSBase):
     vertex_properties = [('label', 'string', 'instance name'),
@@ -35,15 +38,46 @@ class AUTOSAR(OSBase):
         logger.debug(f"Get syscall: {syscall}")
         return getattr(AUTOSAR, syscall)(cfg, abb, state, cpu)
 
+    @staticmethod
+    def schedule(state, cpu):
+        # sort actived tasks by priority
+        state.activated_tasks[cpu].sort(key=lambda task: task.priority, reverse=True)
+
+
     @syscall
     def AUTOSAR_ActivateTask(cfg, abb, state, cpu):
+        state = state.copy()
+        scheduled_task = state.get_scheduled_task(cpu)
 
         # get Task argument
-        cp = CallPath(graph=state.callgraphs[cpu], node=state.call_nodes[cpu])
-        task = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
-        # assert(isinstance(task, Task))
-        print(type(task))
-        pass
+        cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
+        arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+
+        # find task with same name as 'arg' in instance graph
+        task = None
+        for v in state.instances.vertices():
+            task = state.instances.vp.obj[v]
+            if isinstance(task, Task):
+                if task.name in arg.get_name():
+                    break
+
+        # add found Task to list of activated tasks
+        if task not in state.activated_tasks[task.cpu_id]:
+            state.activated_tasks[task.cpu_id].append(task)
+
+        # advance current task to next abb
+        counter = 0
+        for n in cfg.vertex(abb).out_neighbors():
+            state.abbs[scheduled_task.name] = n
+            counter += 1
+        assert(counter == 1)
+
+        # trigger scheduling 
+        AUTOSAR.schedule(state, task.cpu_id)
+
+        print("Activate Task: " + task.name)
+
+        return state
 
     @syscall
     def AUTOSAR_AdvanceCounter(cfg, abb, state):
@@ -122,7 +156,7 @@ class AUTOSAR(OSBase):
         pass
 
     @syscall
-    def AUTOSAR_TerminateTask(cfg, abb, state):
+    def AUTOSAR_TerminateTask(cfg, abb, state, cpu):
         pass
 
     @syscall
