@@ -157,7 +157,15 @@ class AUTOSAR(OSBase):
 
     @syscall
     def AUTOSAR_TerminateTask(cfg, abb, state, cpu):
-        pass
+        state = state.copy()
+
+        # remove task from activated tasks list
+        scheduled_task = state.get_scheduled_task(cpu)
+        state.activated_tasks[cpu].remove(scheduled_task)
+
+        print("Terminated Task: " + scheduled_task.name)
+
+        return state
 
     @syscall
     def AUTOSAR_WaitEvent(cfg, abb, state):

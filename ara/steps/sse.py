@@ -89,49 +89,63 @@ class FlowAnalysis(Step):
 
         self._init_analysis()
 
-        sstg = graph_tool.Graph()
-        sstg.vertex_properties["state"] = sstg.new_vp("object")
+        self.sstg = graph_tool.Graph()
+        self.sstg.vertex_properties["state"] = self.sstg.new_vp("object")
 
-        state_vertex = self.new_vertex(sstg, self._get_initial_state())
+        state_vertex = self.new_vertex(self.sstg, self._get_initial_state())
 
         stack = [state_vertex]
 
         counter = 0
         while stack:
             self._log.debug(f"Stack {counter:3d}: "
-                            f"{[sstg.vp.state[v] for v in stack]}")
+                            f"{[self.sstg.vp.state[v] for v in stack]}")
             state_vertex = stack.pop()
-            state = sstg.vp.state[state_vertex]
+            state = self.sstg.vp.state[state_vertex]
             for n in self._system_semantic(state):
-                new_state = self.new_vertex(sstg, n)
-                sstg.add_edge(state_vertex, new_state)
+                new_state = self.new_vertex(self.sstg, n)
+                self.sstg.add_edge(state_vertex, new_state)
                 stack.append(new_state)
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
 
-        self._finish(sstg)
+        self._finish(self.sstg)
 
 class MultiState:
     def __init__(self, cfg=None, instances=None):
         self.cfg = cfg
         self.instances = instances
-        self.call_nodes = {}
-        self.callgraphs = {}
+        self.call_nodes = {} # call node of each task (used for handling calls)
+                             # key: task name, value: ABB node (call node)
+        self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABBs per task; key: task name, value: ABB node
         self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
         self.min_time = 0
         self.max_time = 0
     
     def get_scheduled_task(self, cpu):
-        return self.activated_tasks[cpu][0]
+        task_list = self.activated_tasks[cpu]
+        if len(task_list) >= 1:
+            return task_list[0]
+        else: 
+            return None
 
     def __repr__(self):
         ret = ""
         for cpu in self.activated_tasks:
             task = self.get_scheduled_task(cpu)
-            abb = self.abbs[task.name]
-            ret += self.cfg.vp.name[abb] + ", "
+            if task is not None:
+                abb = self.abbs[task.name]
+                ret += self.cfg.vp.name[abb] + ", "
+            else: 
+                ret += "None, "
         return ret[:-2]
+
+    def __eq__(self, other):
+        class_eq = self.__class__ == other.__class__
+        abbs_eq = self.abbs == other.abbs
+        activated_task_eq = self.activated_tasks == other.activated_tasks
+        return class_eq and abbs_eq and activated_task_eq
 
     def copy(self):
         scopy = MultiState()
@@ -158,7 +172,7 @@ class MultiSSE(FlowAnalysis):
         state = MultiState(cfg=self._g.cfg,
                            instances=self._g.instances) 
 
-        #building initial state
+        # building initial state
         # TODO: get rid of the hardcoded function name
         func_name_start = "AUTOSAR_TASK_FUNC_"
         for v in state.instances.vertices():
@@ -189,20 +203,29 @@ class MultiSSE(FlowAnalysis):
 
         for cpu in state.activated_tasks:
             task = state.get_scheduled_task(cpu)
-            abb = state.abbs[task.name]
-            if abb is not None:
-                # syscall handling
-                if self._icfg.vp.type[abb] == ABBType.syscall:
-                    assert self._g.os is not None
-                    new_state = self._g.os.interpret(self._lcfg, abb, state, cpu)
-                    new_states.append(new_state)
-                #TODO: adding call handling
-                # handling calls and computations blocks the same way atm
-                else:
-                    for n in self._icfg.vertex(abb).out_neighbors():
-                        new_state = state.copy()
-                        new_state.abbs[task.name] = n
+            if task is not None:
+                abb = state.abbs[task.name]
+                if abb is not None:
+                    # syscall handling
+                    if self._icfg.vp.type[abb] == ABBType.syscall:
+                        assert self._g.os is not None
+                        new_state = self._g.os.interpret(self._lcfg, abb, state, cpu)
                         new_states.append(new_state)
+                    #TODO: adding call handling
+                    # handling calls and computations blocks the same way atm
+                    else:
+                        for n in self._icfg.vertex(abb).out_neighbors():
+                            new_state = state.copy()
+                            new_state.abbs[task.name] = n
+                            new_states.append(new_state)
+        
+        # filter out duplicate states by comparing with states in sstg
+        for v in self.sstg.vertices():
+            sstg_state = self.sstg.vp.state[v]
+            for new_state in new_states:
+                if new_state == sstg_state:
+                    new_states.remove(new_state)
+
         return new_states
 
     def _schedule(self, states):
@@ -210,6 +233,9 @@ class MultiSSE(FlowAnalysis):
 
     def _finish(self, sstg):
         pass
+        # if self.dump.get():
+        #     sstg.save(self.dump_prefix.get() + ".dot", fmt='dot')
+
     
     def print_tasks(self):
         log = "Tasks ("
@@ -383,7 +409,6 @@ class FlatAnalysis(FlowAnalysis):
                                            "dot": dot_file,
                                            "graph_name": 'Instances',
                                            "subgraph": 'instances'})
-
 
 class InstanceGraph(FlatAnalysis):
     """Find all application instances."""
