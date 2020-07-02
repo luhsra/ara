@@ -53,7 +53,7 @@ namespace ara::option {
 			this->from_pointer(scoped_obj, key);
 		}
 
-		std::string serialize_args() { return ""; }
+		std::string serialize_args() const { return ""; }
 
 		void set_step_name(const std::string& step_name) { this->step_name = step_name; }
 
@@ -112,7 +112,7 @@ namespace ara::option {
 		typename T::type high;
 
 	  public:
-		std::string serialize_args() {
+		std::string serialize_args() const {
 			std::stringstream ss;
 			ss << low << ":" << high;
 			return ss.str();
@@ -210,11 +210,11 @@ namespace ara::option {
 
 		static unsigned get_type() { return OptionType::CHOICE; }
 
-		std::string serialize_args() {
+		std::string serialize_args() const {
 			std::stringstream ss;
 			const char delim = ':';
 			bool first = true;
-			for (typename String::type& choice : choices) {
+			for (const typename String::type& choice : choices) {
 				assert(choice.find(delim) == std::string::npos);
 				if (first) {
 					first = false;
@@ -270,11 +270,11 @@ namespace ara::option {
 		const std::string name;
 		const std::string help;
 
-		virtual std::string get_type_args() = 0;
+		virtual std::string get_type_args() const = 0;
 
 	  public:
 		// only for Python bridging, sed cy_helper.h
-		friend std::string get_type_args(ara::option::Option* opt);
+		friend std::string get_type_args(const ara::option::Option* opt);
 
 		Option(const std::string& name, const std::string& help) : name(name), help(help) {}
 		Option() = default;
@@ -289,12 +289,12 @@ namespace ara::option {
 
 		virtual void set_step_name(std::string step_name) = 0;
 
-		virtual bool is_global() = 0;
+		virtual bool is_global() const = 0;
 
-		virtual unsigned get_type() = 0;
+		virtual unsigned get_type() const = 0;
 
-		std::string get_name() { return name; }
-		std::string get_help() { return help; }
+		const std::string get_name() const { return name; }
+		const std::string get_help() const { return help; }
 	};
 
 	/**
@@ -306,7 +306,7 @@ namespace ara::option {
 		T ty;
 		bool global;
 
-		virtual std::string get_type_args() override { return ty.serialize_args(); }
+		virtual std::string get_type_args() const override { return ty.serialize_args(); }
 
 	  public:
 		TOption(const std::string& name, const std::string& help, T ty = T(),
@@ -320,9 +320,9 @@ namespace ara::option {
 
 		virtual void check(PyObject* obj) override { ty.check(obj, name); }
 
-		virtual bool is_global() override { return global; }
+		virtual bool is_global() const override { return global; }
 
-		virtual unsigned get_type() override { return T::get_type(); }
+		virtual unsigned get_type() const override { return T::get_type(); }
 		/**
 		 * get value of option.
 		 */
