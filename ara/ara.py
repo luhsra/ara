@@ -57,8 +57,8 @@ def main():
     parser.add_argument('--dependency_file',
                         help="file to write make-style dependencies into for "
                              "build system integration")
-    parser.add_argument('--ir_output', '-o', help="File to store modified IR into",
-                        metavar="FILE")
+    parser.add_argument('--ir_output', '-o',
+                        help="File to store modified IR into", metavar="FILE")
 
     args = parser.parse_args()
 
