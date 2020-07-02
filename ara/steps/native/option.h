@@ -206,7 +206,7 @@ namespace ara::option {
 
 	  public:
 		explicit Choice(std::array<String::type, N> choices)
-		    : RawType<typename String::type>(), index(0), choices(choices) {}
+		    : RawType<typename String::type>(), index(-1), choices(choices) {}
 
 		static unsigned get_type() { return OptionType::CHOICE; }
 
@@ -233,20 +233,23 @@ namespace ara::option {
 
 			this->value = cont.get();
 
-			unsigned found_index = 0;
-			for (typename String::type& choice : choices) {
-				if (*this->value == choice) {
-					break;
+			if (this->value) {
+				unsigned found_index = 0;
+				for (typename String::type& choice : choices) {
+					if (*this->value == choice) {
+						break;
+					}
+					found_index++;
 				}
-				found_index++;
+				if (found_index == choices.size()) {
+					std::stringstream ss;
+					ss << name << ": Value " << *this->value << " is not in the list of possible choices."
+					   << std::flush;
+					this->value = std::nullopt;
+					throw std::invalid_argument(ss.str());
+				}
+				this->index = found_index;
 			}
-			if (found_index == choices.size()) {
-				std::stringstream ss;
-				ss << name << ": Value " << *this->value << " is not in the list of possible choices." << std::flush;
-				this->value = std::nullopt;
-				throw std::invalid_argument(ss.str());
-			}
-			this->index = found_index;
 		}
 
 		/**
