@@ -11,18 +11,18 @@ cimport cstep
 cimport cgraph
 cimport llvm_data
 
-from bb_split cimport BBSplit
+# from bb_split cimport BBSplit
 from cdummy cimport CDummy
-from llvm_optimization cimport LLVMOptimization
-from comp_insert cimport CompInsert
-from fake_entry_point cimport FakeEntryPoint
-from fn_single_exit cimport FnSingleExit
-from icfg cimport ICFG
-from ir_reader cimport IRReader
-from ir_writer cimport IRWriter
-from llvm_map cimport LLVMMap
-from load_freertos_config cimport LoadFreeRTOSConfig
-from value_analysis_core cimport ValueAnalysisCore
+# from llvm_optimization cimport LLVMOptimization
+# from comp_insert cimport CompInsert
+# from fake_entry_point cimport FakeEntryPoint
+# from fn_single_exit cimport FnSingleExit
+# from icfg cimport ICFG
+# from ir_reader cimport IRReader
+# from ir_writer cimport IRWriter
+# from llvm_map cimport LLVMMap
+# from load_freertos_config cimport LoadFreeRTOSConfig
+# from value_analysis_core cimport ValueAnalysisCore
 
 include "project_config.pxi"
 
@@ -289,32 +289,20 @@ def provide_steps():
     """Provide a list of all native steps. This also constructs as many
     objects as steps exist.
     """
-    return [_native_fac(step_fac[BBSplit]()),
-            _native_fac(step_fac[CDummy]()),
-            _native_fac(step_fac[LLVMOptimization]()),
-            _native_fac(step_fac[CompInsert]()),
-            _native_fac(step_fac[FakeEntryPoint]()),
-            _native_fac(step_fac[FnSingleExit]()),
-            _native_fac(step_fac[ICFG]()),
-            _native_fac(step_fac[IRReader]()),
-            _native_fac(step_fac[IRWriter]()),
-            _native_fac(step_fac[LLVMMap]()),
-            _native_fac(step_fac[LoadFreeRTOSConfig]()),
-            _native_fac_ReplaceSyscallsCreate(),
-            _native_fac(step_fac[ValueAnalysisCore]())]
+    return [_native_step_fac(make_step_fac[CDummy]())]
 
-def provide_test_steps():
-    IF STEP_TESTS:
-        """Do not use this, only for testing purposes."""
-        return [_native_fac(step_fac[BBSplitTest]()),
-                _native_fac(step_fac[CFGOptimizeTest]()),
-                _native_fac(step_fac[CompInsertTest]()),
-                _native_fac(step_fac[FnSingleExitTest]()),
-                _native_fac(step_fac[LLVMMapTest]()),
-                _native_fac(step_fac[Test0Step]()),
-                _native_fac(step_fac[Test2Step]())]
-    ELSE:
-        return []
+# def provide_test_steps():
+#     IF STEP_TESTS:
+#         """Do not use this, only for testing purposes."""
+#         return [_native_fac(step_fac[BBSplitTest]()),
+#                 _native_fac(step_fac[CFGOptimizeTest]()),
+#                 _native_fac(step_fac[CompInsertTest]()),
+#                 _native_fac(step_fac[FnSingleExitTest]()),
+#                 _native_fac(step_fac[LLVMMapTest]()),
+#                 _native_fac(step_fac[Test0Step]()),
+#                 _native_fac(step_fac[Test2Step]())]
+#     ELSE:
+#         return []
 
 # make this name extra long, since we have no namespaces here
 cdef public void step_manager_chain_step(object step_manager, const char* config):
