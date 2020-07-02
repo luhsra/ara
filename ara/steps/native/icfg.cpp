@@ -5,7 +5,6 @@
 #include "common/exceptions.h"
 
 #include <boost/graph/filtered_graph.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/IR/CFG.h>
@@ -13,7 +12,6 @@
 #include <queue>
 
 using namespace ara::graph;
-using namespace boost::property_tree;
 
 namespace ara::step {
 	std::string ICFG::get_description() const {
