@@ -11,29 +11,10 @@ cimport cstep
 cimport cgraph
 cimport llvm_data
 
-# from bb_split cimport BBSplit
-from cdummy cimport CDummy
-# from llvm_optimization cimport LLVMOptimization
-# from comp_insert cimport CompInsert
-# from fake_entry_point cimport FakeEntryPoint
-# from fn_single_exit cimport FnSingleExit
-# from icfg cimport ICFG
-# from ir_reader cimport IRReader
-# from ir_writer cimport IRWriter
-# from llvm_map cimport LLVMMap
-# from load_freertos_config cimport LoadFreeRTOSConfig
-# from value_analysis_core cimport ValueAnalysisCore
-
 include "project_config.pxi"
 
 IF STEP_TESTS:
-    from test cimport (BBSplitTest,
-                       CFGOptimizeTest,
-                       CompInsertTest,
-                       FnSingleExitTest,
-                       LLVMMapTest,
-                       Test0Step,
-                       Test2Step)
+    cimport test
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr, unique_ptr
@@ -50,6 +31,7 @@ import json
 import logging
 import inspect
 from typing import List
+from collections import defaultdict
 
 from ara.steps import option
 from ara.util import LEVEL
@@ -71,9 +53,24 @@ cdef class SuperStep:
     def get_dependencies(self, step_history):
         """Define all dependencies of the step.
 
-        Returns a list of dependencies (str). This means, that the step
-        depends on _all_ of the defined steps. The elements of the list are
-        strings, that match with the names returned by get_name().
+        Returns a list of dependencies. This means, that the step
+        depends on _all_ of the defined steps.
+
+        The function is called before every attempted execution of the step and
+        must evaluate to the empty list to get the step executed.
+
+        It gets the step history as input, where the decision can be based on:
+        "The step history contains a specific step already so I don't need to
+        request it anymore."
+
+        Both, the step_history and the return value need to be a list of dicts.
+        Every dict contain a step description in the following format:
+        {
+            "name": step name,
+            "uuid": step uuid (only present in the step history)
+            "config": { "key": value } a requested or executed step config
+        }
+
         """
         return []
 
@@ -143,10 +140,10 @@ class Step(SuperStep):
             setattr(self, name, opt)
             self._opts.append(opt)
 
-    def _get_step_data(self, g, data_class):
-        if self.get_name() not in g.step_data:
-            g.step_data[self.get_name()] = data_class()
-        return g.step_data[self.get_name()]
+    def _get_step_data(self, data_class):
+        if self.get_name() not in self._graph.step_data:
+            self._graph.step_data[self.get_name()] = data_class()
+        return self._graph.step_data[self.get_name()]
 
     def apply_config(self, config):
         for option in self._opts:
@@ -214,6 +211,10 @@ class Step(SuperStep):
 
 cdef class NativeStepFactory:
     cdef unique_ptr[cstep.StepFactory] _c_step_fac
+    cdef object _recipe_step
+
+    def __init__(self, recipe_step=NativeStep):
+        self._recipe_step = recipe_step
 
     def __call__(self, graph, step_manager):
         cdef unique_ptr[cstep.Step] _c_step
@@ -221,8 +222,9 @@ cdef class NativeStepFactory:
         cdef llvm_data.PyLLVMData llvm_w = graph._llvm_data
         cdef cgraph.Graph gwrap = cgraph.Graph(graph, llvm_w._c_data)
 
-        n_step = NativeStep(graph, step_manager,
-                            self.get_name(), self.get_description())
+        cdef NativeStep n_step = self._recipe_step(graph, step_manager,
+                                                   self.get_name(),
+                                                   self.get_description())
 
         _c_step = deref(self._c_step_fac).instantiate(n_step._log, move(gwrap),
                                                       step_manager)
@@ -313,7 +315,7 @@ cdef class NativeStep(SuperStep):
         deref(self._c_step).apply_config(config)
 
 
-# include "replace_syscalls_create.pxi"
+include "replace_syscalls_create.pxi"
 
 cdef _native_step_fac(unique_ptr[cstep.StepFactory] step_fac):
     """Construct a NativeStep. Expects an already constructed C++-Step pointer.
@@ -330,20 +332,32 @@ def provide_steps():
     """Provide a list of all native steps. This also constructs as many
     objects as steps exist.
     """
-    return [_native_step_fac(make_step_fac[CDummy]())]
+    return [_native_step_fac(make_step_fac[cstep.BBSplit]()),
+            _native_step_fac(make_step_fac[cstep.CDummy]()),
+            _native_step_fac(make_step_fac[cstep.CompInsert]()),
+            _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
+            _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
+            _native_step_fac(make_step_fac[cstep.ICFG]()),
+            _native_step_fac(make_step_fac[cstep.IRWriter]()),
+            _native_step_fac(make_step_fac[cstep.IRReader]()),
+            _native_step_fac(make_step_fac[cstep.LLVMMap]()),
+            _native_step_fac(make_step_fac[cstep.LLVMOptimization]()),
+            _native_step_fac(make_step_fac[cstep.LoadFreeRTOSConfig]()),
+            _native_step_fac_ReplaceSyscallsCreate(),
+            _native_step_fac(make_step_fac[cstep.ValueAnalysisCore]())]
 
-# def provide_test_steps():
-#     IF STEP_TESTS:
-#         """Do not use this, only for testing purposes."""
-#         return [_native_fac(step_fac[BBSplitTest]()),
-#                 _native_fac(step_fac[CFGOptimizeTest]()),
-#                 _native_fac(step_fac[CompInsertTest]()),
-#                 _native_fac(step_fac[FnSingleExitTest]()),
-#                 _native_fac(step_fac[LLVMMapTest]()),
-#                 _native_fac(step_fac[Test0Step]()),
-#                 _native_fac(step_fac[Test2Step]())]
-#     ELSE:
-#         return []
+def provide_test_steps():
+    IF STEP_TESTS:
+        """Do not use this, only for testing purposes."""
+        return [_native_step_fac(make_step_fac[test.BBSplitTest]()),
+                _native_step_fac(make_step_fac[test.CFGOptimizeTest]()),
+                _native_step_fac(make_step_fac[test.CompInsertTest]()),
+                _native_step_fac(make_step_fac[test.FnSingleExitTest]()),
+                _native_step_fac(make_step_fac[test.LLVMMapTest]()),
+                _native_step_fac(make_step_fac[test.Test0Step]()),
+                _native_step_fac(make_step_fac[test.Test2Step]())]
+    ELSE:
+        return []
 
 # make this name extra long, since we have no namespaces here
 cdef public void step_manager_chain_step(object step_manager, const char* config):

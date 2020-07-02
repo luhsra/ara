@@ -58,7 +58,8 @@ class Option:
                          unchecked. That means, that e.g. for a choice type it
                          is not checked if the default is a valid choice.)
         is_global     -- is this option a global option? (needed for printing
-                         of the help message)
+                         of the help message). A global option is an option
+                         that is accepted by all steps.
         """
         self._name = name
         self._help = help

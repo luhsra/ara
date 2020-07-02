@@ -13,6 +13,7 @@ cdef extern from "cy_helper.h" namespace "ara::step":
     unique_ptr[cstep.StepFactory] make_step_fac[T]()
     vector[const option.Option*] repack(cstep.StepFactory& step)
     string get_dependencies(cstep.Step&, string)
+    T* get_derived_raw_pointer[T](unique_ptr[cstep.Step]&)
 
 cdef extern from "cy_helper.h" namespace "ara::option":
     string get_type_args(const option.Option*)

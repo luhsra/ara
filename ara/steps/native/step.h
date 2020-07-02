@@ -98,7 +98,7 @@ namespace ara::step {
 		 *
 		 * Is called from the default implementation of get_dependencies()
 		 */
-		virtual std::vector<std::string> get_static_dependencies() { return {}; }
+		virtual std::vector<std::string> get_single_dependencies() { return {}; }
 
 		bool is_in_history(const std::string& dependency, const llvm::json::Array& step_history) {
 			for (const llvm::json::Value& step : step_history) {
@@ -148,7 +148,7 @@ namespace ara::step {
 		 */
 		virtual llvm::json::Array get_dependencies(const llvm::json::Array& step_history) {
 			llvm::json::Array remaining_deps;
-			for (const std::string& dependency : get_static_dependencies()) {
+			for (const std::string& dependency : get_single_dependencies()) {
 				if (is_in_history(dependency, step_history)) {
 					continue;
 				}
@@ -189,6 +189,26 @@ namespace ara::step {
 		}
 	};
 
+	/**
+	 * An EntryPointStep is a step that has the entry_point option.
+	 */
+	template <class SubStep>
+	class EntryPointStep : public ConfStep<SubStep> {
+	  protected:
+		const static inline option::TOption<option::String> entry_point_template{"entry_point", "system entry point"};
+		option::TOptEntity<option::String> entry_point;
+
+		using ConfStep<SubStep>::ConfStep;
+
+		virtual void init_options() override {
+			entry_point = entry_point_template.instantiate(SubStep::get_name());
+			this->opts.emplace_back(entry_point);
+		}
+
+	  public:
+		static Step::OptionVec get_entrypoint_options() { return {entry_point_template}; }
+	};
+
 	// we just need a common type
 	class StepFactory {
 	  public:
@@ -196,12 +216,12 @@ namespace ara::step {
 		/**
 		 * Return a unique name of this step. This acts as ID for the step.
 		 */
-		virtual inline std::string get_name() const = 0;
+		virtual std::string get_name() const = 0;
 
 		/**
 		 * Get a descriptive string of the step that says what the step is doing.
 		 */
-		virtual inline std::string get_description() const = 0;
+		virtual std::string get_description() const = 0;
 
 		/**
 		 * Return a vector with all options.
@@ -215,17 +235,44 @@ namespace ara::step {
 		                                          PyObject* py_step_manager) const = 0;
 	};
 
+	class OptionChecker {
+#define CHECK_FOR(FunctionName)                                                                                        \
+  private:                                                                                                             \
+	template <typename T, typename = void>                                                                             \
+	struct Has##FunctionName : std::false_type {};                                                                     \
+                                                                                                                       \
+	template <typename T>                                                                                              \
+	struct Has##FunctionName<T, std::void_t<decltype(std::declval<T>().FunctionName())>> : std::true_type {};          \
+                                                                                                                       \
+  public:                                                                                                              \
+	template <typename T>                                                                                              \
+	static const Step::OptionVec FunctionName() {                                                                      \
+		if constexpr (Has##FunctionName<T>::value) {                                                                   \
+			return T::FunctionName();                                                                                  \
+		} else {                                                                                                       \
+			return {};                                                                                                 \
+		}                                                                                                              \
+	}
+		CHECK_FOR(get_local_options)
+		CHECK_FOR(get_entrypoint_options)
+	};
+
 	template <class TStep>
 	class StepTrait : public StepFactory {
+	  private:
 	  public:
 		virtual inline std::string get_name() const override { return TStep::get_name(); }
 		virtual inline std::string get_description() const override { return TStep::get_description(); }
 
 		virtual const Step::OptionVec get_options() const override {
 			const auto& global_opts = TStep::get_global_options();
-			const auto& local_opts = TStep::get_local_options();
 			Step::OptionVec opts(global_opts.begin(), global_opts.end());
+
+			const auto& local_opts = OptionChecker::get_local_options<TStep>();
 			opts.insert(opts.end(), local_opts.begin(), local_opts.end());
+
+			const auto& entrypoint_opts = OptionChecker::get_entrypoint_options<TStep>();
+			opts.insert(opts.end(), entrypoint_opts.begin(), entrypoint_opts.end());
 			return opts;
 		}
 

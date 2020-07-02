@@ -8,15 +8,16 @@
 #include <graph.h>
 
 namespace ara::step {
-	class LoadFreeRTOSConfig : public Step {
+	class LoadFreeRTOSConfig : public ConfStep<LoadFreeRTOSConfig> {
 	  private:
-		virtual void fill_options() override;
+		using ConfStep<LoadFreeRTOSConfig>::ConfStep;
 
 	  public:
-		virtual std::string get_name() const override { return "LoadFreeRTOSConfig"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"SysFuncts"}; }
+		static std::string get_name() { return "LoadFreeRTOSConfig"; }
+		static std::string get_description();
 
-		virtual void run(graph::Graph& graph) override;
+		virtual std::vector<std::string> get_single_dependencies() override { return {"SysFuncts"}; }
+
+		virtual void run() override;
 	};
 } // namespace ara::step

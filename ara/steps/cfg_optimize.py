@@ -1,16 +1,15 @@
 """Container for CFGOptimize."""
 from ara.graph import Graph
 from .step import Step
-from .option import Option, Integer
 
 
 class CFGOptimize(Step):
     """Apply basic LLVM optimizations that are needed for ARA."""
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ['IRReader', 'FakeEntryPoint']
 
-    def run(self, g: Graph):
+    def run(self):
         self._step_manager.chain_step(
             {
                 "name": "LLVMOptimization",

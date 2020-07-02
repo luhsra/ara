@@ -16,17 +16,11 @@ class LoadOIL(Step):
     Expect the path to the oil file to be in the config 'oilfile' key.
     The syntax is changed to JSON. Take a look at tests/oil/1.oil.
     """
-    def _fill_options(self):
-        self.oilfile = Option(name="oilfile",
-                              help="Path to JSON oil file.",
-                              step_name=self.get_name(),
-                              ty=String())
-        self.opts.append(self.oilfile)
+    oilfile = Option(name="oilfile",
+                     help="Path to JSON oil file.",
+                     ty=String())
 
-    def get_dependencies(self):
-        return []
-
-    def run(self, g: _graph.Graph):
+    def run(self):
         # load the json file
         oilfile = self.oilfile.get()
         if not oilfile:
@@ -36,15 +30,15 @@ class LoadOIL(Step):
             oil = json.load(f)
 
         instances = graph_tool.Graph()
-        g.os.init(instances)
+        self._graph.os.init(instances)
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
             for task in cpu["tasks"]:
                 t = instances.add_vertex()
                 t_name = task["name"]
                 t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
-                t_func = g.cfg.get_function_by_name(t_func_name)
-                instances.vp.obj[t] = Task(g.cfg, t_name, t_func,
+                t_func = self._graph.cfg.get_function_by_name(t_func_name)
+                instances.vp.obj[t] = Task(self._graph.cfg, t_name, t_func,
                                            task["priority"],
                                            task["activation"],
                                            task["autostart"],
@@ -64,7 +58,7 @@ class LoadOIL(Step):
                 self._step_manager.chain_step({"name": "ICFG",
                                                "entry_point": t_func_name})
 
-        g.instances = instances
+        self._graph.instances = instances
 
         if self.dump.get():
             uuid = self._step_manager.get_execution_id()

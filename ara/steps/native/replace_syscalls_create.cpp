@@ -4,7 +4,6 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/IR/GlobalVariable.h"
-#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/TypeFinder.h"
 
 #include <boost/graph/filtered_graph.hpp>
@@ -13,63 +12,52 @@ using namespace ara::graph;
 namespace ara::step {
 	using namespace llvm;
 
-	// ATTENTION: put in anonymous namespace to get an unique symbol
-	namespace {
-		bool handle_tcb_ref_param(IRBuilder<>& Builder, Value* tcb_ref, Value* the_tcb, Logger& logger) {
-			if (Constant* CI = dyn_cast<Constant>(tcb_ref)) {
-				if (!CI->isZeroValue()) {
-					logger.debug() << "handle != 0: " << std::endl;
-					Value* handle = Builder.CreatePointerCast(tcb_ref, PointerType::get(the_tcb->getType(), 0));
-					Builder.CreateStore(the_tcb, handle);
-				} else {
-					logger.debug() << "handle == 0 --> nothing to do" << std::endl;
-				}
+	bool ReplaceSyscallsCreate::handle_tcb_ref_param(IRBuilder<>& Builder, Value* tcb_ref, Value* the_tcb) {
+		if (Constant* CI = dyn_cast<Constant>(tcb_ref)) {
+			if (!CI->isZeroValue()) {
+				logger.debug() << "handle != 0: " << std::endl;
+				Value* handle = Builder.CreatePointerCast(tcb_ref, PointerType::get(the_tcb->getType(), 0));
+				Builder.CreateStore(the_tcb, handle);
 			} else {
-				// TODO: use ret value. check if handle != null, set handle
-				logger.error()
-				    << "NOT IMLEMENTED: Need to generate runtime checking code for task_handle in xTaskCreate call"
-				    << std::endl;
-				return false;
+				logger.debug() << "handle == 0 --> nothing to do" << std::endl;
 			}
-			return true;
+		} else {
+			// TODO: use ret value. check if handle != null, set handle
+			logger.error()
+			    << "NOT IMLEMENTED: Need to generate runtime checking code for task_handle in xTaskCreate call"
+			    << std::endl;
+			return false;
 		}
-
-		bool replace_call_with_true(CallBase* call) {
-			// return true;
-			Value* pdTrue = ConstantInt::get(call->getFunctionType()->getReturnType(), true, false);
-			call->replaceAllUsesWith(pdTrue);
-			// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling
-			// piniter wit failing assert: "Use still stuck around after Def is destroyed"
-			call->eraseFromParent();
-			return true;
-		}
-
-		Function* get_fn(Module& module, Logger& logger, const char* name) {
-			Function* fn = module.getFunction(name);
-			if (fn != nullptr) {
-				logger.debug() << "found '" << name << "' candidate: " << *fn << std::endl;
-				return fn;
-			}
-			logger.error() << "function declaration '" << name << "' not found!" << std::endl;
-			return nullptr;
-		}
-
-	} // namespace
-
-	std::string ReplaceSyscallsCreate::get_description() const {
-		return "Replace Create-syscalls with their static pendants";
+		return true;
 	}
 
-	void ReplaceSyscallsCreate::fill_options() {}
-
-	void ReplaceSyscallsCreate::run(graph::Graph& graph) {
-		(void)graph;
-		logger.error() << "this should never happen" << std::endl;
-		exit(1);
-		return;
+	bool ReplaceSyscallsCreate::replace_call_with_true(CallBase* call) {
+		// return true;
+		Value* pdTrue = ConstantInt::get(call->getFunctionType()->getReturnType(), true, false);
+		call->replaceAllUsesWith(pdTrue);
+		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling
+		// piniter wit failing assert: "Use still stuck around after Def is destroyed"
+		call->eraseFromParent();
+		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_queue_create_static(graph::Graph& graph, uintptr_t where, char* symbol_metadata,
+	Function* ReplaceSyscallsCreate::get_fn(const char* name) {
+		Function* fn = graph.get_module().getFunction(name);
+		if (fn != nullptr) {
+			logger.debug() << "found '" << name << "' candidate: " << *fn << std::endl;
+			return fn;
+		}
+		logger.error() << "function declaration '" << name << "' not found!" << std::endl;
+		return nullptr;
+	}
+
+	std::string ReplaceSyscallsCreate::get_description() {
+		return "Replace Create-syscalls with their static pendants.";
+	}
+
+	void ReplaceSyscallsCreate::run() { fail("This should never happen"); }
+
+	bool ReplaceSyscallsCreate::replace_queue_create_static(uintptr_t where, char* symbol_metadata,
 	                                                        char* symbol_storage) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
@@ -82,7 +70,7 @@ namespace ara::step {
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
 			exit(1);
 		}
-		Function* create_static_fn = get_fn(module, logger, "xQueueGenericCreateStatic");
+		Function* create_static_fn = get_fn("xQueueGenericCreateStatic");
 		if (create_static_fn == nullptr) {
 			return false;
 		}
@@ -137,8 +125,7 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_mutex_create_static(graph::Graph& graph, uintptr_t where,
-	                                                        char* symbol_metadata) {
+	bool ReplaceSyscallsCreate::replace_mutex_create_static(uintptr_t where, char* symbol_metadata) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -150,7 +137,7 @@ namespace ara::step {
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
 			exit(1);
 		}
-		Function* create_static_fn = get_fn(module, logger, "xQueueCreateMutexStatic");
+		Function* create_static_fn = get_fn("xQueueCreateMutexStatic");
 		if (create_static_fn == nullptr) {
 			return false;
 		}
@@ -185,8 +172,7 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_mutex_create_initialized(graph::Graph& graph, uintptr_t where,
-	                                                             char* symbol_metadata) {
+	bool ReplaceSyscallsCreate::replace_mutex_create_initialized(uintptr_t where, char* symbol_metadata) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -199,7 +185,7 @@ namespace ara::step {
 			               << std::endl;
 			exit(1);
 		}
-		Function* create_static_fn = get_fn(module, logger, "xQueueCreateMutexStatic");
+		Function* create_static_fn = get_fn("xQueueCreateMutexStatic");
 		if (create_static_fn == nullptr) {
 			return false;
 		}
@@ -228,8 +214,7 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_queue_create_initialized(graph::Graph& graph, uintptr_t where,
-	                                                             char* symbol_metadata) {
+	bool ReplaceSyscallsCreate::replace_queue_create_initialized(uintptr_t where, char* symbol_metadata) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -242,7 +227,7 @@ namespace ara::step {
 			               << std::endl;
 			exit(1);
 		}
-		Function* create_static_fn = get_fn(module, logger, "xQueueGenericCreateStatic");
+		Function* create_static_fn = get_fn("xQueueGenericCreateStatic");
 		if (create_static_fn == nullptr) {
 			return false;
 		}
@@ -271,8 +256,7 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_task_create_static(graph::Graph& graph, uintptr_t where, char* tcb_name,
-	                                                       char* stack_name) {
+	bool ReplaceSyscallsCreate::replace_task_create_static(uintptr_t where, char* tcb_name, char* stack_name) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -287,7 +271,7 @@ namespace ara::step {
 			return false;
 		}
 
-		Function* create_static_fn = get_fn(module, logger, "xTaskCreateStatic");
+		Function* create_static_fn = get_fn("xTaskCreateStatic");
 		if (create_static_fn == nullptr) {
 			return false;
 		}
@@ -317,7 +301,7 @@ namespace ara::step {
 		}
 		logger.debug() << "handle: " << *old_create_call->getArgOperand(5) << std::endl;
 
-		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb, logger)) {
+		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb)) {
 			return false;
 		}
 
@@ -327,7 +311,7 @@ namespace ara::step {
 		return true;
 	}
 
-	bool ReplaceSyscallsCreate::replace_task_create_initialized(graph::Graph& graph, uintptr_t where, char* tcb_name) {
+	bool ReplaceSyscallsCreate::replace_task_create_initialized(uintptr_t where, char* tcb_name) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
@@ -349,7 +333,7 @@ namespace ara::step {
 		    module, dyn_cast<PointerType>(old_func->getFunctionType()->getParamType(5))->getElementType(), false,
 		    GlobalValue::ExternalLinkage, nullptr, tcb_name, nullptr, GlobalVariable::NotThreadLocal, 0, false);
 
-		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb, logger)) {
+		if (!handle_tcb_ref_param(Builder, old_create_call->getArgOperand(5), task_tcb)) {
 			return false;
 		}
 		if (!replace_call_with_true(old_create_call)) {

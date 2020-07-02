@@ -79,16 +79,17 @@ namespace ara::step {
 		}
 	} // namespace
 
-	std::string ValueAnalysisCore::get_description() const {
+	std::string ValueAnalysisCore::get_description() {
 		return "Perform a value analysis for all system calls (core step).";
 	}
 
-	void ValueAnalysisCore::fill_options() {
+	void ValueAnalysisCore::init_options() {
+		EntryPointStep<ValueAnalysisCore>::init_options();
+		dump_stats = dump_stats_template.instantiate(get_name());
 		opts.emplace_back(dump_stats);
-		opts.emplace_back(entry_point);
 	}
 
-	void ValueAnalysisCore::run(graph::Graph& graph) {
+	void ValueAnalysisCore::run() {
 		graph::CFG cfg = graph.get_cfg();
 		const auto& dopt = dump_stats.get();
 		const auto& prefix = dump_prefix.get();

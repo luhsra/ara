@@ -14,15 +14,15 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string CompInsert::get_description() const {
+	std::string CompInsert::get_description() {
 		return "Insert a nop (computation block) after calls so that every call is followed by a non call."
 		       "\n"
 		       "Insert the nop only, if the call is followed by another call or at the end. ";
 	}
 
-	std::vector<std::string> CompInsert::get_dependencies() { return {"CFGOptimize"}; }
+	std::vector<std::string> CompInsert::get_single_dependencies() { return {"CFGOptimize"}; }
 
-	void CompInsert::run(graph::Graph& graph) {
+	void CompInsert::run() {
 		llvm::Module& module = graph.get_module();
 		unsigned nop_count = 0;
 		for (auto& function : module) {

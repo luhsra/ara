@@ -7,17 +7,15 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string prefix = "__ara_osconfig_";
+	const std::string prefix = "__ara_osconfig_";
 
-	std::string LoadFreeRTOSConfig::get_description() const {
+	std::string LoadFreeRTOSConfig::get_description() {
 		return "Retrieve config values from IR. \n"
 		       "Stores all global values named \"" +
 		       prefix + "*\" into graph.os.config dict";
 	}
 
-	void LoadFreeRTOSConfig::fill_options() {}
-
-	void LoadFreeRTOSConfig::run(graph::Graph& graph) {
+	void LoadFreeRTOSConfig::run() {
 		PyObject* os = PyObject_GetAttrString(graph.get_pygraph(), "os");
 		PyObject* config = PyObject_GetAttrString(os, "config");
 

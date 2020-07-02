@@ -9,66 +9,89 @@
 #include <string>
 
 namespace ara::step {
-	class Test0Step : public Step {
-	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
-		virtual void run(graph::Graph& graph) override;
-	};
-
-	class Test2Step : public Step {
-	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
-		virtual void run(graph::Graph& graph) override;
-	};
-
-	class BBSplitTest : public Step {
-	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
-		virtual void run(graph::Graph& graph) override;
-	};
-
-	class CFGOptimizeTest : public Step {
+	class Test0Step : public ConfStep<Test0Step> {
 	  private:
-		option::TOption<option::String> input_file{"input_file", "Input file."};
-		virtual void fill_options() override { opts.emplace_back(input_file); }
+		using ConfStep<Test0Step>::ConfStep;
 
 	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
-		virtual void run(graph::Graph& graph) override;
+		static std::string get_name();
+		static std::string get_description();
+		virtual void run() override;
 	};
 
-	class CompInsertTest : public Step {
+	class Test2Step : public ConfStep<Test2Step> {
+	  private:
+		using ConfStep<Test2Step>::ConfStep;
+
 	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
-		virtual void run(graph::Graph& graph) override;
+		static std::string get_name();
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
+		virtual void run() override;
 	};
 
-	class FnSingleExitTest : public Step {
-	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
+	class BBSplitTest : public ConfStep<BBSplitTest> {
+	  private:
+		using ConfStep<BBSplitTest>::ConfStep;
 
-		virtual void run(graph::Graph& graph) override;
+	  public:
+		static std::string get_name();
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
+		virtual void run() override;
 	};
 
-	class LLVMMapTest : public Step {
-	  public:
-		virtual std::string get_name() const override;
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
+	class CFGOptimizeTest : public ConfStep<CFGOptimizeTest> {
+	  private:
+		using ConfStep<CFGOptimizeTest>::ConfStep;
 
-		virtual void run(graph::Graph& graph) override;
+	  private:
+		const static inline option::TOption<option::String> input_file_template{"input_file", "Input file."};
+		option::TOptEntity<option::String> input_file;
+		virtual void init_options() override;
+
+	  public:
+		static std::string get_name();
+		static std::string get_description();
+		static Step::OptionVec get_local_options() { return {input_file_template}; };
+
+		virtual std::vector<std::string> get_single_dependencies() override;
+		virtual void run() override;
+	};
+
+	class CompInsertTest : public ConfStep<CompInsertTest> {
+	  private:
+		using ConfStep<CompInsertTest>::ConfStep;
+
+	  public:
+		static std::string get_name();
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
+		virtual void run() override;
+	};
+
+	class FnSingleExitTest : public ConfStep<FnSingleExitTest> {
+	  private:
+		using ConfStep<FnSingleExitTest>::ConfStep;
+
+	  public:
+		static std::string get_name();
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
+
+		virtual void run() override;
+	};
+
+	class LLVMMapTest : public ConfStep<LLVMMapTest> {
+	  private:
+		using ConfStep<LLVMMapTest>::ConfStep;
+
+	  public:
+		static std::string get_name();
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
+
+		virtual void run() override;
 	};
 } // namespace ara::step
 

@@ -39,6 +39,15 @@ namespace ara::step {
 		sstream << llvm::json::Value(step.get_dependencies(*arr));
 		return sstream.str();
 	}
+
+	/**
+	 * Use this with caution. This is an ugly hack and would be completely unsafe in Rust.
+	 * It must be guaranteed, that the unique_ptr exists longer than the returned raw pointer.
+	 */
+	template <class T>
+	T* get_derived_raw_pointer(std::unique_ptr<Step>& step) {
+		return static_cast<T*>(step.get());
+	}
 } // namespace ara::step
 
 namespace ara::option {

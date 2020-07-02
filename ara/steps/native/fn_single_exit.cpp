@@ -19,9 +19,7 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string FnSingleExit::get_description() const { return "Find unique exit BB and endless loops for functions"; }
-
-	std::vector<std::string> FnSingleExit::get_dependencies() { return {"BBSplit"}; }
+	std::string FnSingleExit::get_description() { return "Find unique exit BB and endless loops for functions."; }
 
 	inline void FnSingleExit::fill_unreachable_and_exit(BasicBlock*& unreachable, BasicBlock*& exit,
 	                                                    BasicBlock& probe) const {
@@ -37,7 +35,7 @@ namespace ara::step {
 		}
 	}
 
-	void FnSingleExit::run(graph::Graph& graph) {
+	void FnSingleExit::run() {
 		graph::LLVMData& llvm_data = graph.get_llvm_data();
 		for (auto& function : llvm_data.get_module()) {
 			if (function.empty() || function.isIntrinsic()) {

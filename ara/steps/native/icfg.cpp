@@ -14,14 +14,12 @@
 using namespace ara::graph;
 
 namespace ara::step {
-	std::string ICFG::get_description() const {
+	std::string ICFG::get_description() {
 		return "Search all interprocedural edges."
 		       "\n"
 		       "Transforming of the ABB CFG to an ABB ICFG. The search is done from the entry point of the program. "
 		       "Unused functions are not analyzed.";
 	}
-
-	void ICFG::fill_options() { opts.emplace_back(entry_point); }
 
 	namespace {
 		template <typename Graph>
@@ -179,7 +177,7 @@ namespace ara::step {
 
 	} // namespace
 
-	void ICFG::run(Graph& graph) {
+	void ICFG::run() {
 		llvm::Module& mod = graph.get_module();
 		CFG cfg = graph.get_cfg();
 

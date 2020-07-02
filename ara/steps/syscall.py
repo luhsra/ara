@@ -10,30 +10,26 @@ class Syscall(Step):
 
     The analysis is only for ABBs reachable by the entry point.
     """
+    entry_point = Option(name="entry_point",
+                         help="system entry point",
+                         ty=String())
 
-    def _fill_options(self):
-        self.entry_point = Option(name="entry_point",
-                                  help="system entry point",
-                                  step_name=self.get_name(),
-                                  ty=String())
-        self.opts.append(self.entry_point)
-
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["ICFG", "SysFuncts"]
 
-    def run(self, g: Graph):
+    def run(self):
         entry_label = self.entry_point.get()
-        entry_func = g.cfg.get_function_by_name(entry_label)
+        entry_func = self._graph.cfg.get_function_by_name(entry_label)
 
         syscall_counter = 0
 
-        for abb in g.cfg.reachable_abbs(entry_func):
-            if g.cfg.vp.type[abb] == ABBType.call:
-                for func in g.cfg.get_call_targets(abb):
-                    if g.cfg.vp.syscall[func]:
-                        self._log.debug(f"Found syscall {g.cfg.vp.name[func]} "
-                                        f"in {g.cfg.vp.name[abb]}")
-                        g.cfg.vp.type[abb] = ABBType.syscall
+        for abb in self._graph.cfg.reachable_abbs(entry_func):
+            if self._graph.cfg.vp.type[abb] == ABBType.call:
+                for func in self._graph.cfg.get_call_targets(abb):
+                    if self._graph.cfg.vp.syscall[func]:
+                        self._log.debug(f"Found syscall {self._graph.cfg.vp.name[func]} "
+                                        f"in {self._graph.cfg.vp.name[abb]}")
+                        self._graph.cfg.vp.type[abb] = ABBType.syscall
                         syscall_counter += 1
 
         if self.dump.get():

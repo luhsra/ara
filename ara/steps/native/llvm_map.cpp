@@ -125,18 +125,22 @@ namespace ara::step {
 		}
 	} // namespace
 
-	void LLVMMap::fill_options() {
+	void LLVMMap::init_options() {
+		llvm_dump = llvm_dump_template.instantiate(get_name());
+		llvm_dump_prefix = llvm_dump_prefix_template.instantiate(get_name());
 		opts.emplace_back(llvm_dump);
 		opts.emplace_back(llvm_dump_prefix);
 	}
 
-	std::string LLVMMap::get_description() const {
+	Step::OptionVec LLVMMap::get_local_options() { return {llvm_dump_template, llvm_dump_prefix_template}; }
+
+	std::string LLVMMap::get_description() {
 		return "Map llvm::Basicblock and ara::graph::ABB"
 		       "\n"
 		       "Maps in a one to one mapping.";
 	}
 
-	void LLVMMap::run(graph::Graph& graph) {
+	void LLVMMap::run() {
 		const auto& dopt = llvm_dump.get();
 		std::string prefix;
 		const auto& prefix_opt = llvm_dump_prefix.get();

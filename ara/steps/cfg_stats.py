@@ -1,7 +1,6 @@
 """Container for CFGStats."""
 from ara.graph import ABBType, CFGView, CFType, Graph
 from .step import Step
-from .option import Option, Integer
 
 import graph_tool
 import sys
@@ -9,18 +8,18 @@ import sys
 class CFGStats(Step):
     """Gather statistics about the Control Flow Graph."""
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["IRReader"]
 
-    def run(self, g: Graph):
+    def run(self):
         self._log.info("Executing CFGStats step.")
-        cfg = g.cfg
+        cfg = self._graph.cfg
 
         # Count number of Nodes (ABBs + non implemented functions)
         num_abbs = 0;
 
         for v in cfg.vertices() :
-            if g.cfg.vp.is_function[v]:
+            if self._graph.cfg.vp.is_function[v]:
                 continue
             num_abbs += 1
 
@@ -60,13 +59,13 @@ class CFGStats(Step):
                                                                     False)
         for comp in ihist :
             num_icomp += 1
-        self._log.info("Number of interprocedural components: " + str(num_icomp))
+        self._log.info(f"Number of interprocedural components: {num_icomp}")
 
         # Calculate cyclomatic complexities
         lv = num_ledges - num_abbs + 2 * num_lcomp
         iv = num_iedges - num_abbs + 2 * num_icomp
 
-        self._log.info("Local cyclomatic complexity: " + str(lv))
-        self._log.info("Interprocedural cyclomatic complexity: " + str(iv))
+        self._log.info(f"Local cyclomatic complexity: {lv}")
+        self._log.info(f"Interprocedural cyclomatic complexity: {iv}")
         # Only used for bulk testing
         sys.stdout.write(str(num_abbs) + " " + str(lv) + " " + str(iv) + "\n")

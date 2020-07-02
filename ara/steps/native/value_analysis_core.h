@@ -8,18 +8,23 @@
 #include <graph.h>
 
 namespace ara::step {
-	class ValueAnalysisCore : public Step {
+	class ValueAnalysisCore : public EntryPointStep<ValueAnalysisCore> {
 	  private:
-		option::TOption<option::Bool> dump_stats{"dump_stats",
-		                                         "Export JSON statistics about the value-analysis depth."};
-		option::TOption<option::String> entry_point{"entry_point", "system entry point"};
-		virtual void fill_options() override;
+		using EntryPointStep<ValueAnalysisCore>::EntryPointStep;
+
+		const static inline option::TOption<option::Bool> dump_stats_template{
+		    "dump_stats", "Export JSON statistics about the value-analysis depth."};
+		option::TOptEntity<option::Bool> dump_stats;
+
+		virtual void init_options() override;
 
 	  public:
-		virtual std::string get_name() const override { return "ValueAnalysisCore"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"Syscall"}; }
+		static std::string get_name() { return "ValueAnalysisCore"; }
+		static std::string get_description();
+		static Step::OptionVec get_local_options() { return {dump_stats_template}; }
 
-		virtual void run(graph::Graph& graph) override;
+		virtual std::vector<std::string> get_single_dependencies() override { return {"Syscall"}; }
+
+		virtual void run() override;
 	};
 } // namespace ara::step
