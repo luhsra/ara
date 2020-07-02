@@ -5,13 +5,15 @@ cimport cgraph
 
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libcpp.memory cimport unique_ptr
 
 cdef extern from "step.h" namespace "ara::step":
     cdef cppclass Step:
         Step() except +
-        void python_init(object logger, object step_manager)
+        void apply_config(dict config)
+        void run() except +
+
+    cdef cppclass StepFactory:
         string get_name()
         string get_description()
-        vector[string] get_dependencies()
-        void apply_config(dict config)
-        void run(cgraph.Graph g) except +
+        unique_ptr[Step] instantiate(object, cgraph.Graph, object)

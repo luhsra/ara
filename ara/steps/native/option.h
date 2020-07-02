@@ -266,6 +266,39 @@ namespace ara::option {
 	}
 
 	/**
+	 * Description object for an option entity.
+	 * The instance that actually holds the values.
+	 */
+	class OptEntity {
+	  public:
+		virtual ~OptEntity() = default;
+		/**
+		 * check in global config dict for this option.
+		 */
+		virtual void check(PyObject*) = 0;
+	};
+
+	template <class T>
+	class TOptEntity : public OptEntity {
+	  private:
+		std::optional<T> ty;
+		std::string opt_name;
+
+	  public:
+		TOptEntity() : ty(std::nullopt), opt_name(""){};
+
+		TOptEntity(T ty, const std::string& step_name, const std::string& opt_name) : ty(ty), opt_name(opt_name) {
+			this->ty->set_step_name(step_name);
+		}
+
+		virtual void check(PyObject* obj) override { ty->check(obj, opt_name); }
+		/**
+		 * get value of option.
+		 */
+		std::optional<typename T::type> get() { return ty->get(); }
+	};
+
+	/**
 	 * Description object for options
 	 */
 	struct Option {
@@ -284,13 +317,6 @@ namespace ara::option {
 		Option(const Option&) = delete;
 
 		virtual ~Option() = default;
-
-		/**
-		 * check in global config dict for this option.
-		 */
-		virtual void check(PyObject*) = 0;
-
-		virtual void set_step_name(std::string step_name) = 0;
 
 		virtual bool is_global() const = 0;
 
@@ -319,16 +345,10 @@ namespace ara::option {
 		}
 		TOption(const TOption&) = delete;
 
-		virtual void set_step_name(std::string step_name) override { ty.set_step_name(step_name); }
-
-		virtual void check(PyObject* obj) override { ty.check(obj, name); }
+		TOptEntity<T> instantiate(const std::string step_name) const { return TOptEntity<T>(ty, step_name, name); }
 
 		virtual bool is_global() const override { return global; }
 
 		virtual unsigned get_type() const override { return T::get_type(); }
-		/**
-		 * get value of option.
-		 */
-		std::optional<typename T::type> get() { return ty.get(); }
 	};
 } // namespace ara::option

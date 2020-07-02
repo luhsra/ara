@@ -19,9 +19,11 @@ import uuid
 
 from typing import List
 from collections import namedtuple
+from dataclasses import dataclass
 
 from .util import get_logger, get_logger_manager, LEVEL
 from .steps import provide_steps
+from .steps.step import Step
 from .graph import Graph
 
 from .steps.util import raise_and_error as rae
@@ -30,6 +32,23 @@ from .steps.util import raise_and_error as rae
 StepEvent = namedtuple('StepEvent', ['name', 'uuid'])
 ConfigEvent = namedtuple('ConfigEvent', ['uuid', 'config'])
 GlobalConfigEvent = namedtuple('GlobalConfigEvent', ['config'])
+
+
+@dataclass
+class Config:
+    """Aggregate type for program configuration"""
+    program: dict
+    extra: dict
+
+
+@dataclass
+class StepEntry:
+    """Store all step relevant data."""
+    name: str
+    uuid: uuid.UUID
+    step: Step
+    runtime: float
+    config: dict
 
 
 def get_uuid(step_name):
@@ -190,23 +209,6 @@ class ConfigManager:
                 **(self.s_config.get(step_name, {})),
                 **extra_config}
 
-    def apply_initial_config(self):
-        """Apply initial config to ARA."""
-        if 'logger' in self.s_config:
-            log_levels = self.s_config['logger']
-            # remove step entries
-            for step in self.steps.keys():
-                if step in log_levels:
-                    self._log.warn("Processing config 'logger': "
-                                   f"'{step}' is forbidden. It is a step and "
-                                   "will be ignored.")
-                    log_levels.pop(step)
-            log_levels = dict([(key, LEVEL[lvl])
-                               for key, lvl in log_levels.items()])
-            print(log_levels)
-            get_logger_manager().set_logger_levels(log_levels)
-        self._apply_initial_step_config()
-
     def _apply_initial_step_config(self):
         """Apply the initial config to all steps."""
         for step in self.steps:
@@ -253,7 +255,6 @@ class StepManager:
         self._steps = {}
         self._log = get_logger(self.__class__.__name__)
         for step in provides():
-            step.set_step_manager(self)
             self._steps[step.get_name()] = step
         self._execute_chain = None
         self._current_step_index = None
@@ -303,8 +304,24 @@ class StepManager:
         """Get UUID of currently executing step."""
         return self._current_step
 
+    def _apply_logger_config(self, config):
+        """Apply initial config to ARA."""
+        if 'logger' in config:
+            log_levels = config['logger']
+            # remove step entries
+            for step in self._steps.keys():
+                if step in log_levels:
+                    self._log.warn("Processing config 'logger': "
+                                   f"'{step}' is forbidden. It is a step and "
+                                   "will be ignored.")
+                    log_levels.pop(step)
+            log_levels = dict([(key, LEVEL[lvl])
+                               for key, lvl in log_levels.items()])
+            get_logger_manager().set_logger_levels(log_levels)
+
     def _emit_runtime_stats(self, data, stats_format, stats_file, dump_prefix):
         # formatting
+        data = [(x.name, str(x.uuid), x.runtime) for x in data]
         if stats_format == 'json':
             stats_string = json.dumps(data)
         elif stats_format == 'human':
@@ -326,6 +343,65 @@ class StepManager:
             for line in stats_string.split('\n'):
                 self._log.info(line)
 
+    def _get_config(self, step, global_config):
+        step_opts = [x.get_name() for x in self._steps[step["name"]].options()]
+        step_config = global_config.extra.get(step["name"], {})
+        config = {**global_config.program, **step_config, **step}
+        config = dict(filter(lambda e: e[0] in step_opts, config.items()))
+        return config
+
+    def _execute_step_with_deps(self, step_data, step_history, config):
+        step_name = step_data["name"]
+        if step_name not in self._steps:
+            rae(self._log, f"Step {step_name} does not exist",
+                exception=StepManagerException)
+        step_inst = self._steps[step_data["name"]](self._graph, self)
+
+        step = StepEntry(name=step_data['name'], uuid=step_data['uuid'],
+                         step=step_inst,
+                         config=None, runtime=None)
+
+        self._log.debug("Beginning execution of "
+                        f"{step.name} (UUID: {step.uuid}).")
+
+        while True:
+            step.config = self._get_config(step_data, config)
+            self._log.debug(f"Apply config: {step.config}")
+            step.step.apply_config(step.config)
+
+            d_hist = [{"name": x.name,
+                       "uuid": str(x.uuid),
+                       "config": x.config} for x in step_history]
+            dependencies = step.step.get_dependencies(d_hist)
+            if not dependencies:
+                break
+            self._log.debug(f"Step has dependencies: {dependencies}")
+            dependency = dependencies[0]
+            dependency['uuid'] = get_uuid(dependency['name'])
+            self._execute_step_with_deps(dependency, step_history, config)
+
+        self._log.info(f"Execute {step.name} (UUID: {step.uuid}).")
+        self._current_step = step.uuid
+
+        if self._runtime_stats:
+            time_before = time.time()
+
+        # actual execution
+        step.step.run()
+
+        # runtime stats handling
+        if self._runtime_stats:
+            time_after = time.time()
+
+        # runtime stats handling
+        if self._runtime_stats:
+            step.runtime = time_after - time_before
+            self._log.debug(f"{step.name} had a runtime of "
+                            f"{step.runtime:0.2f}s.")
+        self._current_step = None
+
+        step_history.append(step)
+
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
 
@@ -335,6 +411,8 @@ class StepManager:
         esteps         -- list of steps to execute. The elements are strings
                           that matches the ones returned by step.get_name().
         """
+        self._apply_logger_config(extra_config)
+
         # get a list of steps, either from extra_config or esteps
         # output is a list of dicts with at least UUID and name key.
         ecsteps = extra_config.get("steps", None)
@@ -354,62 +432,25 @@ class StepManager:
                               "uuid": get_uuid(step)})
 
         if not steps:
-            self._log.warn("No steps to execute.")
+            self._log.warning("No steps to execute.")
             return
 
         if "steps" in extra_config:
             del extra_config["steps"]
 
+        config = Config(program=program_config, extra=extra_config)
+
         # extract the step manager specific config
-        runtime_stats = program_config['runtime_stats']
+        self._runtime_stats = program_config['runtime_stats']
         runtime_stats_file = program_config['runtime_stats_file']
         runtime_stats_format = program_config['runtime_stats_format']
         dump_prefix = program_config['dump_prefix']
 
-        if runtime_stats:
-            stats_data = []
+        step_history = []
 
-        # give this list the config manager and solver
-        self._config_manager = ConfigManager(program_config, extra_config,
-                                             steps, self._steps)
-        self._config_manager.apply_initial_config()
+        for step in steps:
+            self._execute_step_with_deps(step, step_history, config)
 
-        self._solver = Solver(steps, self._steps)
-
-        self._execute_chain = self._solver.solve()
-
-        # actual execution
-        self._log.debug("The following steps will be executed:")
-        for step in self._execute_chain:
-            if isinstance(step, StepEvent):
-                self._log.debug(f"{step.name} (UUID: {step.uuid})")
-
-        for index, step in enumerate(self._execute_chain):
-            self._current_step_index = index
-            if isinstance(step, ConfigEvent):
-                self._config_manager.apply_new_config(step)
-            elif isinstance(step, GlobalConfigEvent):
-                self._config_manager.apply_global_config(step)
-            else:
-                self._log.info(f"Executing {step.name} (UUID: {step.uuid})")
-                self._current_step = step.uuid
-
-                if runtime_stats:
-                    time_before = time.time()
-
-                # actual execution
-                self._steps[step.name].run(self._graph)
-
-                # runtime stats handling
-                if runtime_stats:
-                    time_after = time.time()
-                    stats_data.append((step.name, str(step.uuid),
-                                       time_after - time_before))
-                    self._log.debug(f"{step.name} had a runtime of "
-                                    f"{time_after-time_before:0.2f}s.")
-
-                self._current_step = None
-
-        if runtime_stats:
-            self._emit_runtime_stats(stats_data, runtime_stats_format,
+        if self._runtime_stats:
+            self._emit_runtime_stats(step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)

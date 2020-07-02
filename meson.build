@@ -9,10 +9,11 @@ fs = import('fs')
 
 # check all dependencies first
 
-cython = find_program('cython', version: '>=0.29.14')
+cython = find_program('cython', version: '>=0.29.17')
 cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
+# TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies

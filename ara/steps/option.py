@@ -2,9 +2,41 @@
 Python side of options.
 
 To use the option framework a step can request an Option object.
-The Option object can then filled with an actual configuration with the
-check function.
+The Option object needs to be instantiated. The option instance can be filled
+with an actual configuration (check() function) and asked for this value
+(get()).
 """
+
+
+class OptionInst:
+    """
+    An instance of an option that can hold values and give them back.
+    """
+    def __init__(self, opt_type_store, default_value, name, step_name):
+        self._ty = opt_type_store
+        self._default_value = default_value
+        self._name = name
+        self._step_name = step_name
+
+    def check(self, config: dict):
+        """
+        Apply an actual configuration to the option.
+
+        Arguments:
+        config -- a configuration dict. The option uses the value of
+                  config[self.get_name] for its configuration.
+
+        """
+        self._ty.check(config, self._step_name, self._name)
+
+    def get(self):
+        """
+        Get the option value. This returns None, if the option is not set.
+        """
+        ret = self._ty.get()
+        if ret is None:
+            return self._default_value
+        return ret
 
 
 class Option:
@@ -12,28 +44,26 @@ class Option:
     Option object to store information about the option as well as a
     specific configuration for the option.
     """
-    def __init__(self, name, help, step_name, ty,
-                 default_value=None, glob=False):
+    def __init__(self, name, help, ty,
+                 default_value=None, is_global=False):
         """Create an Option.
 
         Arguments:
         name -- option name
         help -- option help message
-        step_name -- step name that contains the option (for error printing)
         ty        -- option type (see the OptionType classes for types)
 
         Keyword arguments:
         default_value -- default value of the option (ATTENTION: this value is
                          unchecked. That means, that e.g. for a choice type it
                          is not checked if the default is a valid choice.)
-        glob          -- is this option a global option? (needed for printing
+        is_global     -- is this option a global option? (needed for printing
                          of the help message)
         """
         self._name = name
         self._help = help
-        self._step_name = step_name
         self._ty = ty
-        self._global = glob
+        self._global = is_global
         self._default_value = default_value
 
     def get_name(self):
@@ -48,48 +78,37 @@ class Option:
         """Is the option global?"""
         return self._global
 
-    def check(self, config: dict):
-        """
-        Apply an actual configuration to the option.
-
-        Arguments:
-        config -- a configuration dict. The option uses the value of
-                  config[self.get_name] for its configuration.
-
-        """
-        self._ty.check(config, self._step_name, self._name)
-
     def get_type_help(self):
         """Get the type help message. What configuration values are allowed?"""
         return self._ty.get_help()
 
-    def get(self):
-        """
-        Get the option value. This returns None, if the option is not set.
-        """
-        ret = self._ty.get()
-        if ret is None:
-            return self._default_value
-        return ret
+    def instantiate(self, step_name):
+        return OptionInst(self._ty.instantiate(), self._default_value,
+                          self._name, step_name)
 
 
 class OptionType:
-    def __init__(self):
-        self.valid = False
-        self.value = None
-
-    def check(self, config, step_name, name):
-        val = config.get(name, None)
-        if not val:
+    class OptionTypeStore:
+        def __init__(self, opt_type):
             self.valid = False
-            return
-        self.value = self._validate(val, name)
-        self.valid = True
+            self.value = None
+            self._ty = opt_type
 
-    def get(self):
-        if self.valid:
-            return self.value
-        return None
+        def check(self, config, step_name, name):
+            val = config.get(name, None)
+            if val is None:
+                self.valid = False
+                return
+            self.value = self._ty._validate(val, name)
+            self.valid = True
+
+        def get(self):
+            if self.valid:
+                return self.value
+            return None
+
+    def instantiate(self):
+        return self.OptionTypeStore(self)
 
     def _validate(self, val, name):
         raise NotImplementedError()

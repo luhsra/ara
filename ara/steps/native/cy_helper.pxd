@@ -10,8 +10,9 @@ from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 
 cdef extern from "cy_helper.h" namespace "ara::step":
-    cstep.Step* step_fac[T]()
-    vector[option.Option*] repack(cstep.Step& step)
+    unique_ptr[cstep.StepFactory] make_step_fac[T]()
+    vector[const option.Option*] repack(cstep.StepFactory& step)
+    string get_dependencies(cstep.Step&, string)
 
 cdef extern from "cy_helper.h" namespace "ara::option":
-    string get_type_args(option.Option*)
+    string get_type_args(const option.Option*)
