@@ -144,8 +144,9 @@ void GPSDataModel::resetAllOdometers()
 	odometerWasActive[2] = false;
 }
 
+GPSDataModel GPSDataModel::_the_instance;
+
 GPSDataModel & GPSDataModel::instance()
 {
-	static GPSDataModel s;
-	return s;
+	return GPSDataModel::_the_instance;
 }
