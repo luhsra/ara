@@ -18,7 +18,7 @@ IF STEP_TESTS:
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr, unique_ptr
-from libcpp.utility cimport move
+from backported_utility cimport move
 from libcpp.memory cimport static_pointer_cast as spc
 from libcpp.string cimport string
 from libc.stdint cimport int64_t

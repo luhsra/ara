@@ -9,7 +9,7 @@ fs = import('fs')
 
 # check all dependencies first
 
-cython = find_program('cython', version: '>=0.29.17')
+cython = find_program('cython', version: '>=0.29.14')
 cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
