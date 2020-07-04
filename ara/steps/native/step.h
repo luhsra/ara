@@ -95,67 +95,39 @@ namespace ara::step {
 
 		/**
 		 * Retrieve all dependencies that needs to be executed at minimum one time before this step.
+		 * Options cannot be requested within this function, only a list of step names is valid.
+		 * Use get_configured_dependencies() for this.
 		 *
-		 * Is called from the default implementation of get_dependencies()
+		 * This function is called from the default implementation of get_dependencies().
 		 */
 		virtual std::vector<std::string> get_single_dependencies() { return {}; }
 
-		bool is_in_history(const std::string& dependency, const llvm::json::Array& step_history) {
-			for (const llvm::json::Value& step : step_history) {
-				const llvm::json::Object* obj = step.getAsObject();
-				assert(obj != nullptr && "step_history is wrong");
-				auto step_name = obj->getString("name");
-				if (step_name && *step_name == dependency) {
-					return true;
-				}
-			}
-			return false;
-		}
+		/**
+		 * Check, if a step is already in the history.
+		 */
+		bool is_in_history(const std::string& dependency, const llvm::json::Array& step_history);
 
 	  public:
+		/**
+		 * Retrieve all global options. Used by StepTraits.
+		 */
 		static OptionVec get_global_options() { return {log_level_template, dump_template, dump_prefix_template}; }
 
 		/**
 		 * Apply a configuration to the step.
 		 * Can be run multiple times.
 		 */
-		void apply_config(PyObject* config) {
-			if (!PyDict_Check(config)) {
-				throw std::invalid_argument("Step: Need a dict as config.");
-			}
-
-			for (option::OptEntity& option : opts) {
-				option.check(config);
-			}
-
-			auto lvl = log_level.get();
-			if (lvl) {
-				logger.set_level(translate_level(*lvl));
-			}
-			// This option are set by default in ara.py. Check that additionally.
-			assert(dump_prefix.get());
-			assert(dump.get());
-			// HINT: For Python steps also the dump_prefix string replacement happens in apply_config. However, this is
-			// easier in Python so already done in the NativeStep wrapper in step.pyx.
-		}
+		void apply_config(PyObject* config);
 
 		virtual ~Step() {}
 
 		/**
 		 * Get all dependencies of this step.
 		 *
-		 * @Return: A list of step names (the ones that are returned with get_name().
+		 * @Return: A list of steps. The steps need to be in an LLVM JSON opbject with the following format:
+		 * [ { "name": "MyStep", "specific_option": true }, { "name": "MyOtherStep" } ]
 		 */
-		virtual llvm::json::Array get_dependencies(const llvm::json::Array& step_history) {
-			llvm::json::Array remaining_deps;
-			for (const std::string& dependency : get_single_dependencies()) {
-				if (is_in_history(dependency, step_history)) {
-					continue;
-				}
-				remaining_deps.emplace_back(llvm::json::Object{{"name", dependency}});
-			}
-			return remaining_deps;
-		}
+		virtual llvm::json::Array get_dependencies(const llvm::json::Array& step_history);
 
 		/**
 		 * This method is called, when the pass is invoked.
@@ -200,6 +172,15 @@ namespace ara::step {
 
 		using ConfStep<SubStep>::ConfStep;
 
+		/**
+		 * Instantiate the entry point option.
+		 *
+		 * Attention: This function must be called from its override version, i.e.:
+		 * virtual void init_options() override {
+		 *     EntryPointStep<MyStep>::init_options();
+		 *     ...
+		 * }
+		 */
 		virtual void init_options() override {
 			entry_point = entry_point_template.instantiate(SubStep::get_name());
 			this->opts.emplace_back(entry_point);
@@ -209,7 +190,10 @@ namespace ara::step {
 		static Step::OptionVec get_entrypoint_options() { return {entry_point_template}; }
 	};
 
-	// we just need a common type
+	/**
+	 * Common type for calling the static parts of all steps.
+	 * Actual implementation is in StepTrait.
+	 */
 	class StepFactory {
 	  public:
 		virtual ~StepFactory() {}
@@ -235,6 +219,13 @@ namespace ara::step {
 		                                          PyObject* py_step_manager) const = 0;
 	};
 
+	/**
+	 * Enables calling of a certain function only if is present in the step.
+	 *
+	 * The class enables this functionality for all functions decleared with CHECK_FOR.
+	 * So i.e. CHECK_FOR(get_foo) enables calling the function get_foo() in all steps where it is defined.
+	 * The usage is then: OptionChecker::get_foo<MyStep>();
+	 */
 	class OptionChecker {
 #define CHECK_FOR(FunctionName)                                                                                        \
   private:                                                                                                             \
@@ -257,6 +248,9 @@ namespace ara::step {
 		CHECK_FOR(get_entrypoint_options)
 	};
 
+	/**
+	 * Wrapper around the static methods of step. This allows to create an object again.
+	 */
 	template <class TStep>
 	class StepTrait : public StepFactory {
 	  private:
@@ -283,7 +277,6 @@ namespace ara::step {
 			return step;
 		}
 	};
-
 } // namespace ara::step
 
 #endif // STEP_H

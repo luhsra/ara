@@ -60,7 +60,8 @@ endif
 
 step_mod = py3_inst.extension_module('step',
   step_pyx_cpp,
-  files('option.cpp',
+  files('step.cpp',
+        'option.cpp',
         'bb_split.cpp',
         'cdummy.cpp',
         'comp_insert.cpp',
