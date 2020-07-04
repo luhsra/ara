@@ -3,22 +3,19 @@
 In principal, there are two different concepts:
 
 - The list of available steps
-  A list ob step objects that exists.
+  A list of step classes that exists.
 
 - The list of steps that should be executed
-  A list of executions. Every execution has a linked step (key: name) and a
-  UUID (unique for each execution). Executions are modeled with the StepEvent
-  namedtuple. Executions can also have different configurations (passed to the
-  step implementation with their option system). Internally every configuration
-  is handled with a ConfigEvent namedtuple, that is linked to the execution via
-  its UUID.
+  A list of executions (StepEntry). Every execution has a linked name
+  (key: name) and a UUID (unique for each execution). When they should be
+  executed a Step instance is assigned to them together with its config.
+  See StepManager._execute_steps_with_deps for the actual code.
 """
 import json
 import time
 import uuid
 
 from typing import List
-from collections import namedtuple
 from dataclasses import dataclass
 
 from .util import get_logger, get_logger_manager, LEVEL
@@ -27,11 +24,6 @@ from .steps.step import Step
 from .graph import Graph
 
 from .steps.util import raise_and_error as rae
-
-
-StepEvent = namedtuple('StepEvent', ['name', 'uuid'])
-ConfigEvent = namedtuple('ConfigEvent', ['uuid', 'config'])
-GlobalConfigEvent = namedtuple('GlobalConfigEvent', ['config'])
 
 
 @dataclass
@@ -46,9 +38,10 @@ class StepEntry:
     """Store all step relevant data."""
     name: str
     uuid: uuid.UUID
-    step: Step
-    runtime: float
-    config: dict
+    step: Step = None
+    runtime: float = None
+    all_config: dict = None
+    local_config: dict = None
 
 
 def get_uuid(step_name):
@@ -61,176 +54,8 @@ def get_uuid(step_name):
     return suuid
 
 
-class SolverException(Exception):
-    """An exception occured in stepmanager.Solver."""
-
 class StepManagerException(Exception):
     """An exception occured in stepmanager.StepManager."""
-
-
-class Solver:
-    def __init__(self, esteps, steps):
-        """Construct a new Solver:
-
-        Arguments:
-        esteps -- the steps to execute (together with its config),
-                  a list of dicts.
-        steps  -- a dict of all existing steps (key: stepname,
-                  value: step object)
-        """
-        self._log = get_logger(self.__class__.__name__)
-        self.esteps = esteps
-        self.steps = steps
-
-    def _insert_dependencies(self, step_chain, fulfilled_deps=None):
-        """Dependencies resolution for step_chain."""
-        # The algorithm works roughly in the following way:
-        # 1. Reverse the given execution order (given per self.esteps) so that
-        #    the last executed step is the first in the list.
-        # 2. Append executions of all dependencies to the list.
-        # 3. Remove duplicates.
-        # 4. Reverse the order again.
-        if not fulfilled_deps:
-            fulfilled_deps = []
-
-        rev_chain = list(reversed(step_chain))
-
-        # order is relevant here
-        orig_esteps = [x.name for x in rev_chain] + fulfilled_deps
-
-        # insert dependencies as additional StepEvents
-        created_steps = 0
-        for idx, step in enumerate(rev_chain):
-            for dep in self.steps[step.name].get_dependencies():
-                if dep not in orig_esteps[idx:]:
-                    if dep in orig_esteps:
-                        rae(self._log, f"{step.name} depends on {dep} "
-                                       "but is scheduled after it",
-                            exception=SolverException)
-                    rev_chain.append(StepEvent(name=dep, uuid=get_uuid(dep)))
-                    created_steps += 1
-
-        # delete duplicates
-        execute_chain = []
-        exec_names = set()
-        for index, step in enumerate(reversed(rev_chain)):
-            if index < created_steps and step.name in exec_names:
-                continue
-            execute_chain.append(step)
-            exec_names.add(step.name)
-
-        return execute_chain
-
-    def solve(self):
-        """Calculate a valid execution chain while respecting step
-        dependencies."""
-        # convert self.esteps to StepEvents
-        steps = [StepEvent(name=x["name"], uuid=x["uuid"])
-                 for x in self.esteps]
-        # generate a dict: UUID -> step_has_extra_configuration
-        esteps_uuids = {}
-        for step in self.esteps:
-            config_keys = step.keys() - set(['name', 'uuid'])
-            esteps_uuids[step["uuid"]] = bool(config_keys)
-
-        execute_chain = self._insert_dependencies(steps)
-
-        # insert config events into the chain
-        exec_with_config = []
-        for step in execute_chain:
-            if esteps_uuids.get(step.uuid, False):
-                exec_with_config.append(ConfigEvent(uuid=step.uuid,
-                                                    config=None))
-            exec_with_config.append(step)
-
-        return exec_with_config
-
-    def chain_step(self, step_chain, current, new_step):
-        """Insert an additional step into the given execution chain.
-
-        Arguments:
-        step_chain -- execution chain
-        current    -- index in the chain
-        new_step   -- step to insert
-        """
-        # convert new_step to StepEvent and optional ConfigEvent
-        name = new_step["name"]
-        new_sevent = StepEvent(name=name, uuid=get_uuid(name))
-        new_cevent = None
-        if new_step.keys() - set(['name', 'uuid']):
-            new_cevent = ConfigEvent(uuid=new_sevent.uuid, config=new_step)
-
-        # calculate additional dependencies
-        executed_steps = [x.name for x in step_chain[:current]
-                          if isinstance(x, StepEvent)]
-        execute_chain = self._insert_dependencies([new_sevent], executed_steps)
-
-        if new_cevent:
-            execute_chain.insert(-1, new_cevent)
-
-        for elem in reversed(execute_chain):
-            step_chain.insert(current + 1, elem)
-
-
-class ConfigManager:
-    """Manages all config events.
-
-    These are mainly two groups: the initial configuration and the
-    configuration during step execution.
-    """
-
-    def __init__(self, program_config, step_config, time_config, steps):
-        """Prepare the different config layer.
-
-        Arguments:
-        program_config -- program wide config
-        step_config    -- step specific configs
-        time_config    -- time and step specific configs
-        steps          -- list of steps
-        """
-        self.p_config = program_config
-        self.s_config = step_config
-        self.t_config = time_config
-        self.t_uuids = dict([(x['uuid'], x) for x in self.t_config])
-        self.steps = steps
-        self._log = get_logger(self.__class__.__name__)
-
-    def _get_config(self, step_name, extra_config):
-        """Overlay the specific configs.
-
-        p_config: initial global config
-        s_config: step specific config
-        extra_config: additional config
-
-        extra_config overlays s_config overlays p_config.
-        """
-        # see PEP 448
-        return {**self.p_config,
-                **(self.s_config.get(step_name, {})),
-                **extra_config}
-
-    def _apply_initial_step_config(self):
-        """Apply the initial config to all steps."""
-        for step in self.steps:
-            config = self._get_config(step, {})
-            self.steps[step].apply_config(config)
-
-    def apply_global_config(self, config_event):
-        """Apply the config given by config_event to all steps."""
-        self.p_config = {**self.p_config, **config_event.config}
-        self._apply_initial_step_config()
-
-    def apply_new_config(self, config_event):
-        """Apply a new config for step specified in config_event.uuid.
-
-        If no extra config is given, use the predefined time_config.
-        """
-        if config_event.config:
-            step_config = config_event.config
-        else:
-            step_config = self.t_uuids[config_event.uuid]
-        config = self._get_config(step_config['name'], step_config)
-        self.steps[step_config['name']].apply_config(config)
 
 
 class StepManager:
@@ -257,55 +82,19 @@ class StepManager:
         for step in provides():
             self._steps[step.get_name()] = step
         self._execute_chain = None
-        self._current_step_index = None
-        self._current_step = None
-        self._solver = None
-        self._config_manager = None
+        self._config = None
 
-    def get_step(self, name):
-        """Get the step with specified name or None."""
-        return self._steps.get(name, None)
-
-    def get_steps(self):
-        """Get all available steps as set."""
-        return set(self._steps.values())
-
-    def chain_step(self, step_config):
-        """Insert step immediately after the current running step.
-
-        Potential dependencies are queued before the new step. However, if the
-        dependencies were already executed, they are skipped.
-
-        step_config is a step dict exactly as the extra_config configuration.
-        """
-        if self._execute_chain is None:
-            raise StepManagerException(
-                "chain_step cannot be called when no step is running."
-            )
-        self._log.debug(f"A new step was requested {step_config}")
-        self._solver.chain_step(self._execute_chain, self._current_step_index,
-                                step_config)
-
-    def change_global_config(self, new_config):
-        """Apply a new global config.
-
-        This must be called within an execution chain.
-
-        Arguments:
-        new_config -- new global config
-        """
-        assert self._config_manager
-        assert self._execute_chain
-        assert self._current_step_index > 0
-        self._execute_chain.insert(self._current_step_index + 1,
-                                   GlobalConfigEvent(new_config))
-
-    def get_execution_id(self):
-        """Get UUID of currently executing step."""
-        return self._current_step
+    def _make_step_entry(self, step):
+        """Make a StepEntry of a step dict."""
+        assert "name" in step, "step without name given."
+        uuid = step.get('uuid', get_uuid(step['name']))
+        se = StepEntry(name=step["name"], uuid=uuid)
+        se.local_config = {k: v for k, v in step.items() if (k != "name" and
+                                                             k != "uuid")}
+        return se
 
     def _apply_logger_config(self, config):
-        """Apply initial config to ARA."""
+        """Apply extra logger config to ARA."""
         if 'logger' in config:
             log_levels = config['logger']
             # remove step entries
@@ -320,6 +109,7 @@ class StepManager:
             get_logger_manager().set_logger_levels(log_levels)
 
     def _emit_runtime_stats(self, data, stats_format, stats_file, dump_prefix):
+        """Output runtime statistics."""
         # formatting
         data = [(x.name, str(x.uuid), x.runtime) for x in data]
         if stats_format == 'json':
@@ -343,67 +133,118 @@ class StepManager:
             for line in stats_string.split('\n'):
                 self._log.info(line)
 
-    def _get_config(self, step, global_config):
-        step_opts = [x.get_name() for x in self._steps[step["name"]].options()]
-        step_config = global_config.extra.get(step["name"], {})
-        config = {**global_config.program, **step_config, **step}
+    def _get_config(self, step):
+        """
+        Takes a StepEntry and applies the global, extra and step config to
+        it.
+        """
+        step_opts = [x.get_name() for x in self._steps[step.name].options()]
+        step_config = self._config.extra.get(step.name, {})
+        config = {**self._config.program, **step_config, **step.local_config}
         config = dict(filter(lambda e: e[0] in step_opts, config.items()))
         return config
 
-    def _execute_step_with_deps(self, step_data, step_history, config):
-        step_name = step_data["name"]
-        if step_name not in self._steps:
-            rae(self._log, f"Step {step_name} does not exist",
-                exception=StepManagerException)
-        step_inst = self._steps[step_data["name"]](self._graph, self)
+    def _execute_steps_with_deps(self, step_history):
+        """
+        Execute all steps from self._execute_chain including its dependencies.
+        Stores the history within step_history.
+        """
+        while self._execute_chain:
+            current = self._execute_chain[-1]
 
-        step = StepEntry(name=step_data['name'], uuid=step_data['uuid'],
-                         step=step_inst,
-                         config=None, runtime=None)
+            self._log.debug("Beginning execution of "
+                            f"{current.name} (UUID: {current.uuid}).")
 
-        self._log.debug("Beginning execution of "
-                        f"{step.name} (UUID: {step.uuid}).")
+            # initialize step
+            if current.step is None:
+                if current.name not in self._steps:
+                    rae(self._log, f"Step {current.name} does not exist",
+                        exception=StepManagerException)
+                step_inst = self._steps[current.name](self._graph, self)
+                current.step = step_inst
 
-        while True:
-            step.config = self._get_config(step_data, config)
-            self._log.debug(f"Apply config: {step.config}")
-            step.step.apply_config(step.config)
+            # apply config
+            current.all_config = self._get_config(current)
+            self._log.debug(f"Apply config: {current.all_config}")
+            current.step.apply_config(current.all_config)
 
+            # dependency handling
             d_hist = [{"name": x.name,
                        "uuid": str(x.uuid),
-                       "config": x.config} for x in step_history]
-            dependencies = step.step.get_dependencies(d_hist)
-            if not dependencies:
-                break
-            self._log.debug(f"Step has dependencies: {dependencies}")
-            dependency = dependencies[0]
-            dependency['uuid'] = get_uuid(dependency['name'])
-            self._execute_step_with_deps(dependency, step_history, config)
+                       "config": x.all_config} for x in step_history]
+            dependencies = current.step.get_dependencies(d_hist)
+            if dependencies:
+                self._log.debug(f"Step has dependencies: {dependencies}")
+                dependency = dependencies[0]
+                self._execute_chain.append(self._make_step_entry(dependency))
+                continue
 
-        self._log.info(f"Execute {step.name} (UUID: {step.uuid}).")
-        self._current_step = step.uuid
+            # execution
+            self._log.info(f"Execute {current.name} (UUID: {current.uuid}).")
 
-        if self._runtime_stats:
-            time_before = time.time()
+            if self._runtime_stats:
+                time_before = time.time()
 
-        # actual execution
-        step.step.run()
+            current.step.run()
 
-        # runtime stats handling
-        if self._runtime_stats:
-            time_after = time.time()
+            if self._runtime_stats:
+                time_after = time.time()
 
-        # runtime stats handling
-        if self._runtime_stats:
-            step.runtime = time_after - time_before
-            self._log.debug(f"{step.name} had a runtime of "
-                            f"{step.runtime:0.2f}s.")
-        self._current_step = None
+            # runtime stats handling
+            if self._runtime_stats:
+                current.runtime = time_after - time_before
+                self._log.debug(f"{current.name} had a runtime of "
+                                f"{current.runtime:0.2f}s.")
 
-        step_history.append(step)
+            self._execute_chain.pop()
+            step_history.append(current)
+
+    def get_step(self, name):
+        """Get the step with specified name or None."""
+        return self._steps.get(name, None)
+
+    def get_steps(self):
+        """Get all available steps as set."""
+        return set(self._steps.values())
+
+    def chain_step(self, step_config):
+        """Insert step immediately after the current running step.
+
+        Potential dependencies are queued before the new step. However, if the
+        dependencies were already executed, they are skipped.
+
+        step_config is a step dict exactly as the extra_config configuration.
+        """
+        if self._execute_chain is None:
+            raise StepManagerException(
+                "chain_step cannot be called when no step is running."
+            )
+        self._log.debug(f"A new step was requested {step_config}")
+
+        self._execute_chain.insert(-1, self._make_step_entry(step_config))
+
+    def change_global_config(self, new_config):
+        """Apply a new global config.
+
+        This must be called within an execution chain.
+
+        Arguments:
+        new_config -- new global config
+        """
+        assert self._execute_chain is not None
+        assert self._config is not None
+        self._config.program = {**self._config.program, **new_config}
+
+    def get_execution_id(self):
+        """Get UUID of currently executing step."""
+        if self._execute_chain:
+            return self._execute_chain[-1].uuid
+        return None
 
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
+
+        Return the history of executed steps.
 
         Arguments:
         program_config -- global program configuration
@@ -446,11 +287,18 @@ class StepManager:
         runtime_stats_format = program_config['runtime_stats_format']
         dump_prefix = program_config['dump_prefix']
 
+        self._execute_chain = [self._make_step_entry(step)
+                               for step in reversed(steps)]
+        self._config = config
+
         step_history = []
 
-        for step in steps:
-            self._execute_step_with_deps(step, step_history, config)
+        self._execute_steps_with_deps(step_history)
+
+        self._config = None
+        self._execute_chain = None
 
         if self._runtime_stats:
             self._emit_runtime_stats(step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)
+        return step_history

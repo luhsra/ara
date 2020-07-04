@@ -11,15 +11,10 @@ from step import Step
 from ara.util import init_logging
 from ara.steps.option import Option, Bool
 
-shared_state = ""
-
 class TestStep(Step):
     """Only for testing purposes"""
-
-    def run(self, graph: graph.Graph):
-        """Write unique string for testing."""
-        global shared_state
-        shared_state += f"Run: {self.get_name()}\n"
+    def run(self):
+        pass
 
 
 #  Test0  Test1  Test2  Test3
@@ -50,17 +45,17 @@ class Test3Step(TestStep):
 
 
 class Test4Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test0Step", "Test1Step"]
 
 
 class Test5Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test0Step"]
 
 
 class Test6Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test4Step"]
 
 
@@ -69,12 +64,12 @@ class Test7Step(TestStep):
 
 
 class Test8Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test5Step", "Test6Step", "Test7Step"]
 
 
 class Test9Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test1Step", "Test3Step"]
 
 
@@ -89,59 +84,154 @@ class TestDep0(TestStep):
 
 
 class TestDep1(TestStep):
-    def _fill_options(self):
-        self.cond = Option(name="cond",
-                           help="Testopt",
-                           step_name=self.get_name(),
-                           ty=Bool())
-        self.opts.append(self.cond)
+    cond = Option(name="cond",
+                  help="Testopt",
+                  ty=Bool())
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         print(self.cond.get())
         if self.cond.get():
             return ["TestDep0"]
         return []
 
 
+# TestDep0(cond=X)
+#    |
+# TestDep1(cond=X)
+
+class TestCond0(TestStep):
+    cond = Option(name="cond",
+                  help="Testopt",
+                  ty=Bool())
+
+
+class TestCond1(TestStep):
+    cond = Option(name="cond",
+                  help="Testopt",
+                  ty=Bool())
+
+    def get_single_dependencies(self):
+        return [{"name": "TestCond0",
+                 "cond": self.cond.get()}]
+
+# TestChain0
+#     |   |
+#     |   |--triggers first--TestChain1
+#     |   |
+#     |   |                 TestChain2
+#     |-depends on                |
+#     |   |                       |-depends on
+#     |   |                       |
+#     |    --triggers then--TestChain3
+#     |
+# TestChain4
+
+
+class TestChain0(TestStep):
+    def run(self):
+        self._step_manager.chain_step({"name": "TestChain3"})
+        self._step_manager.chain_step({"name": "TestChain1"})
+
+
+class TestChain1(TestStep):
+    pass
+
+
+class TestChain2(TestStep):
+    pass
+
+
+class TestChain3(TestStep):
+    def get_single_dependencies(self):
+        return ["TestChain2"]
+
+
+class TestChain4(TestStep):
+    def get_single_dependencies(self):
+        return ["TestChain0"]
+
+
+# TestConfig0 (changes config)
+#     |
+#     | depends on
+#     |
+# TestConfig1
+
+class TestConfig0(TestStep):
+    def run(self):
+        self._step_manager.change_global_config({"dump": True})
+
+class TestConfig1(TestStep):
+    def get_single_dependencies(self):
+        return ["TestConfig0"]
+
+
 def provide():
-    yield Test0Step()
-    yield Test1Step()
-    yield Test2Step()
-    yield Test3Step()
-    yield Test4Step()
-    yield Test5Step()
-    yield Test6Step()
-    yield Test7Step()
-    yield Test8Step()
-    yield Test9Step()
-    yield TestDep0()
-    yield TestDep1()
+    yield Test0Step
+    yield Test1Step
+    yield Test2Step
+    yield Test3Step
+    yield Test4Step
+    yield Test5Step
+    yield Test6Step
+    yield Test7Step
+    yield Test8Step
+    yield Test9Step
+
+    yield TestDep0
+    yield TestDep1
+
+    yield TestCond0
+    yield TestCond1
+
+    yield TestChain0
+    yield TestChain1
+    yield TestChain2
+    yield TestChain3
+    yield TestChain4
+
+    yield TestConfig0
+    yield TestConfig1
 
 
-tests = ["""
-Run: Test1Step
-Run: Test0Step
-Run: Test4Step
-Run: Test7Step
-Run: Test6Step
-Run: Test5Step
-Run: Test8Step
-"""[1:], """
-Run: Test3Step
-Run: Test1Step
-Run: Test9Step
-"""[1:], """
-Run: Test1Step
-Run: Test0Step
-Run: Test4Step
-Run: Test7Step
-Run: Test6Step
-Run: Test5Step
-Run: Test3Step
-Run: Test8Step
-Run: Test9Step
-"""[1:]]
-
+TESTS = [
+    [
+        'Test0Step',
+        'Test5Step',
+        'Test1Step',
+        'Test4Step',
+        'Test6Step',
+        'Test7Step',
+        'Test8Step'
+    ], [
+        'Test1Step',
+        'Test3Step',
+        'Test9Step'
+    ], [
+        'Test0Step',
+        'Test5Step',
+        'Test1Step',
+        'Test4Step',
+        'Test6Step',
+        'Test7Step',
+        'Test8Step',
+        'Test3Step',
+        'Test9Step'
+    ], [
+        ('TestCond0', True),
+        ('TestCond0', False),
+        ('TestCond1', False)
+    ], [
+        'TestChain0',
+        'TestChain1',
+        'TestChain2',
+        'TestChain3',
+        'TestChain4'
+    ], [
+        ('TestConfig0', False),
+        ('TestConfig1', True),
+    ]
+]
 
 def main():
     init_logging(level=logging.DEBUG)
@@ -150,31 +240,40 @@ def main():
     extra_config = {}
     p_manager = stepmanager.StepManager(g, provides=provide)
 
-    global shared_state
-
     # standard tests
-    p_manager.execute(config, extra_config, ['Test8Step'])
-    assert(shared_state == tests[0])
-    shared_state = ""
+    hist = p_manager.execute(config, extra_config, ['Test8Step'])
+    assert TESTS[0] == [x.name for x in hist]
 
-    p_manager.execute(config, extra_config, ['Test9Step'])
-    assert(shared_state == tests[1])
-    shared_state = ""
+    hist = p_manager.execute(config, extra_config, ['Test9Step'])
+    assert TESTS[1] == [x.name for x in hist]
 
-    p_manager.execute(config, extra_config, ['Test8Step', 'Test9Step'])
-    assert(shared_state == tests[2])
-    shared_state = ""
+    hist = p_manager.execute(config, extra_config, ['Test8Step', 'Test9Step'])
+    assert TESTS[2] == [x.name for x in hist]
 
-    # conditional tests
+    # conditional dependencies
     config['cond'] = False
-    p_manager.execute(config, extra_config, ['TestDep1'])
-    assert(shared_state == 'Run: TestDep1\n')
-    shared_state = ""
+    hist = p_manager.execute(config, extra_config, ['TestDep1'])
+    assert [x.name for x in hist] == ['TestDep1']
 
     config['cond'] = True
-    p_manager.execute(config, extra_config, ['TestDep1'])
-    assert(shared_state == 'Run: TestDep0\nRun: TestDep1\n')
-    shared_state = ""
+    hist = p_manager.execute(config, extra_config, ['TestDep1'])
+    assert [x.name for x in hist] == ['TestDep0', 'TestDep1']
+
+    # dependencies to conditionals
+    config['cond'] = False
+    extra_config2 = {"TestCond0": {'cond': True}}
+    hist = p_manager.execute(config, extra_config2, ['TestCond0', 'TestCond1'])
+    assert TESTS[3] == [(x.name, x.all_config['cond']) for x in hist]
+
+    # chain step
+    hist = p_manager.execute(config, extra_config, ['TestChain4'])
+    assert TESTS[4] == [x.name for x in hist]
+
+    # global config test
+    config2 = get_config('/dev/null')
+    config2["dump"] = False
+    hist = p_manager.execute(config2, extra_config, ['TestConfig1'])
+    assert TESTS[5] == [(x.name, x.all_config['dump']) for x in hist]
 
 
 if __name__ == '__main__':
