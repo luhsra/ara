@@ -1620,6 +1620,24 @@ void vTaskResume(TaskHandle_t xTaskToResume) {
 }
 
 #endif /* INCLUDE_vTaskSuspend */
+void __ara_vTaskActivate(TaskHandle_t xTaskToResume)
+{
+	TCB_t * const pxTCB = xTaskToResume;
+	configASSERT( xTaskToResume );
+	taskENTER_CRITICAL();
+	uxCurrentNumberOfTasks++;
+	prvAddTaskToReadyList( pxTCB );
+	/* A higher priority task may have just been resumed. */
+	if (pxTCB->uxPriority >= pxCurrentTCB->uxPriority) {
+		/* This yield may not cause the task just resumed to run,
+		   but will leave the lists in the correct state for the
+		   next yield. */
+		taskYIELD_IF_USING_PREEMPTION();
+	}
+	taskEXIT_CRITICAL();
+}
+
+
 
 /*-----------------------------------------------------------*/
 

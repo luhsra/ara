@@ -64,22 +64,7 @@ cdef class ReplaceSyscallsCreate(NativeStep):
             raise RuntimeError(f"Failed to create static create syscall for {queue}")
 
     def handle_task(self, task):
-        if task.impl.init == 'static':
-            self._task_create_static(task)
-        elif task.impl.init == 'initialized':
-            self._task_create_initialized(task)
-        else:
-            raise RuntimeError("inknown init: %s", task.impl.init)
-
-    def _task_create_static(self, task):
-        success = deref(self._c_()).replace_task_create_static(self._graph.cfg.vp.entry_bb[task.abb], task.impl.tcb.name.encode(), task.impl.stack.name.encode())
-        if not success:
-            raise RuntimeError(f"Failed to create static create syscall for {task}")
-
-    def _task_create_initialized(self, task):
-        success = deref(self._c_()).replace_task_create_initialized(self._graph.cfg.vp.entry_bb[task.abb], task.impl.tcb.name.encode())
-        if not success:
-            raise RuntimeError(f"Failed to create initialized create syscall for {task}")
+        deref(self._c_()).replace_task_create(task)
 
 cdef _native_step_fac_ReplaceSyscallsCreate():
     cdef unique_ptr[cstep.StepFactory] step_fac = make_step_fac[CReplaceSyscallsCreate]()

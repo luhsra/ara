@@ -27,6 +27,8 @@ class Task:
         self.is_regular = is_regular
         self.uid = Task.uid_counter
         Task.uid_counter += 1
+        FreeRTOS.malloc_heap(stack_size, FreeRTOS.config.get('STACK_TYPE_SIZE', None))
+        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('TCB_SIZE', None))
 
     @property
     def priority(self):
@@ -59,6 +61,8 @@ class Queue:
         self.after_scheduler = after_scheduler
         self.uid = Queue.uid_counter
         Queue.uid_counter += 1
+        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
+        FreeRTOS.malloc_heap(length, size)
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
@@ -79,6 +83,7 @@ class Mutex:
         self.size = 0
         self.length = 1
         Mutex.uid_counter += 1
+        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
@@ -122,6 +127,26 @@ class FreeRTOS(OSBase):
         for oedge in cfg.vertex(abb).out_edges():
             if cfg.ep.type[oedge] == _graph.CFType.lcf:
                 state.next_abbs.append(oedge.target())
+
+    @staticmethod
+    def malloc_heap(count, size):
+        try:
+            request = int(count) * int(size)
+            used = FreeRTOS.config.get('used_heap', 0) + request
+            FreeRTOS.config['used_heap'] = used
+            total = FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None)
+            total = total.get() if total else 0
+            percent = used / total
+            logger.debug("FreeRTOS heap usage: %05.2f%% (%5d / %5d)",
+                         percent*100, used, total)
+            if used >= total:
+                logger.error("FreeRTOS heap usage exceeds heap size: %s", percent)
+        except Exception as e:
+            logger.error("malloc failed: %05.2f%% (%5d / %5d)",
+                         percent*100, used, total)
+            raise e
+
+
 
     @syscall(SyscallCategory.CREATE)
     def xTaskCreate(cfg, abb, state):
@@ -169,7 +194,7 @@ class FreeRTOS(OSBase):
         state.instances.vp.obj[v] = Task(cfg, None,
                                          function='prvIdleTask',
                                          name='idle_task',
-                                         stack_size='configMINIMAL_STACK_SIZE',
+                                         stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None)),
                                          parameters=0,
                                          priority=0,
                                          handle_p=0,
