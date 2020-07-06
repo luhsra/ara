@@ -1,0 +1,21 @@
+#include "counter.h"
+#include "alarm.h"
+
+namespace os {
+
+{{{snippet:if_alarm:counter,alarm|
+	if (%(alarm)s.checkTrigger()) {
+}}}
+{{{snippet:endif_alarm:counter,alarm|    }
+}}}
+{{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
+
+
+void inlinehint Counter::tick() {
+    {{{snippet:increase_counter:name|%(name)s.do_tick();
+}}}
+    {{{generate:increase_counters}}}
+    {{{generate:generate_check_alarms}}}
+}
+
+} // os

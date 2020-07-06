@@ -70,6 +70,12 @@ SECTIONS
     KEEP (*(.fini))
 
     . = ALIGN(4);
+    /* module sections */
+    __module_initcall_start = .;
+        KEEP(*(.initcallmodule.init))
+    . = ALIGN(4);
+    __module_initcall_end   = .;
+
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 

@@ -8,16 +8,15 @@
 #include <graph.h>
 
 namespace ara::step {
-	class FakeEntryPoint : public Step {
+	class FakeEntryPoint : public EntryPointStep<FakeEntryPoint> {
 	  private:
-		option::TOption<option::String> entry_point{"entry_point", "system entry point"};
-		virtual void fill_options() override;
+		using EntryPointStep<FakeEntryPoint>::EntryPointStep;
 
 	  public:
-		virtual std::string get_name() const override { return "FakeEntryPoint"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"IRReader"}; }
+		static std::string get_name() { return "FakeEntryPoint"; }
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override { return {"IRReader"}; }
 
-		virtual void run(graph::Graph& graph) override;
+		virtual void run() override;
 	};
 } // namespace ara::step

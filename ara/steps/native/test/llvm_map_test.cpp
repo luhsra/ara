@@ -15,9 +15,9 @@
 using namespace llvm;
 
 namespace ara::step {
-	std::string LLVMMapTest::get_name() const { return "LLVMMapTest"; }
+	std::string LLVMMapTest::get_name() { return "LLVMMapTest"; }
 
-	std::string LLVMMapTest::get_description() const { return "Step for testing the LLVMMap step"; }
+	std::string LLVMMapTest::get_description() { return "Step for testing the LLVMMap step"; }
 
 	namespace {
 		template <typename Graph>
@@ -136,12 +136,12 @@ namespace ara::step {
 		}
 	} // namespace
 
-	void LLVMMapTest::run(graph::Graph& graph) {
+	void LLVMMapTest::run() {
 		Module& mod = graph.get_module();
 		graph::CFG cfg = graph.get_cfg();
 		graph_tool::gt_dispatch<>()([&](auto& g) { test_map(g, cfg, mod, logger); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
 
-	std::vector<std::string> LLVMMapTest::get_dependencies() { return {"LLVMMap"}; }
+	std::vector<std::string> LLVMMapTest::get_single_dependencies() { return {"LLVMMap"}; }
 } // namespace ara::step

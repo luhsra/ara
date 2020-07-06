@@ -12,7 +12,7 @@ from ara.generator.Generator import Generator as GenImpl
 
 
 class Generator(Step):
-    """Template for a new Python step."""
+    """Generate whole OS code based on the previous analyses."""
 
     arch_choices = {'arm':ArmArch}
 
@@ -25,42 +25,29 @@ class Generator(Step):
                       'instance_specialized': lambda: exec('raise NotImplementedError()'),
     }
 
-    def _fill_options(self):
-        self.arch = Option(name="arch",
-                           help='the hardware architecture',
-                           step_name=self.get_name(),
-                           ty=Choice(*self.arch_choices.keys()))
-        self.os = Option(name="os",
-                         help='the os api',
-                         step_name=self.get_name(),
-                         ty=Choice(*self.os_choices.keys()))
-        self.syscall_style = Option(name="syscall_style",
-                                    help='style of resulting syscalls',
-                                    step_name=self.get_name(),
-                                    ty=Choice(*self.syscall_choices.keys()))
-        self.out_file = Option('generator_output',
-                                 help='file to write the generated OS into',
-                                 step_name=self.get_name(),
-                                 glob=True,
-                                 ty=String())
-        self.dep_file = Option('dependency_file',
-                               help='file to write make-style dependencies into for build system integration',
-                               step_name=self.get_name(),
-                               glob=True,
-                               ty=String())
-        self.opts.append(self.arch)
-        self.opts.append(self.os)
-        self.opts.append(self.syscall_style)
-        self.opts.append(self.out_file)
-        self.opts.append(self.dep_file)
+    arch = Option(name="arch",
+                  help='the hardware architecture',
+                  ty=Choice(*arch_choices.keys()))
+    os = Option(name="os",
+                help='the os api',
+                ty=Choice(*os_choices.keys()))
+    syscall_style = Option(name="syscall_style",
+                           help='style of resulting syscalls',
+                           ty=Choice(*syscall_choices.keys()))
+    out_file = Option('generator_output',
+                        help='file to write the generated OS into',
+                        ty=String())
+    dep_file = Option('dependency_file',
+                      help='file to write make-style dependencies into for build system integration',
+                      ty=String())
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         self._log.warn("get_dependencies: style: %s", self.syscall_style.get())
         if self.syscall_style.get() == 'passthrough':
             return ['IRReader']
         return ['InstanceGraph']
 
-    def run(self, g: Graph):
+    def run(self):
         # self._log.info("Executing Generator step.")
         # opt = self.dummy_option.get()
         # if opt:
@@ -70,7 +57,7 @@ class Generator(Step):
         arch_rules = self.arch_choices[self.arch.get()]()
         os_rules = self.os_choices[self.os.get()]()
         syscall_rules = self.syscall_choices[self.syscall_style.get()]()
-        gen = GenImpl(ara_graph=g,
+        gen = GenImpl(ara_graph=self._graph,
                       ara_step=self,
                       arch_rules=arch_rules,
                       os_rules=os_rules,

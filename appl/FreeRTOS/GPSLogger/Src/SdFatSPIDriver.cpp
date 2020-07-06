@@ -22,6 +22,7 @@ const size_t DMA_TRESHOLD = 16;
 
 SdFatSPIDriver::SdFatSPIDriver()
 {
+	xSema = xSemaphoreCreateBinary();
 }
 
 void SdFatSPIDriver::begin(uint8_t chipSelectPin)
@@ -31,7 +32,6 @@ void SdFatSPIDriver::begin(uint8_t chipSelectPin)
 
 	// Initialize GPS Thread handle
 	portDISABLE_INTERRUPTS();
-	xSema = xSemaphoreCreateBinary();
 	portENABLE_INTERRUPTS();
 
 	// Enable clocking of corresponding periperhal

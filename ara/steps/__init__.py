@@ -8,9 +8,9 @@ def provide_steps():
     from .cfg_stats import CFGStats
     from .dummy import Dummy
     from .generator import Generator
-    from .oil import OilStep
+    from .load_oil import LoadOIL
     from .printer import Printer
-    from .sse import InstanceGraph, InteractionAnalysis
+    from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .value_analysis import ValueAnalysis
@@ -18,16 +18,17 @@ def provide_steps():
     for step in _native_provide():
         yield step
 
-    yield ABBMerge()
-    yield CallGraph()
-    yield CFGOptimize()
-    yield CFGStats()
-    yield Dummy()
-    yield Generator()
-    yield OilStep()
-    yield Printer()
-    yield InstanceGraph()
-    yield InteractionAnalysis()
-    yield Syscall()
-    yield SysFuncts()
-    yield ValueAnalysis()
+    yield ABBMerge
+    yield CallGraph
+    yield CFGOptimize
+    yield CFGStats
+    yield Dummy
+    yield Generator
+    yield InstanceGraph
+    yield InteractionAnalysis
+    yield LoadOIL
+    yield Printer
+    yield MultiSSE
+    yield Syscall
+    yield SysFuncts
+    yield ValueAnalysis

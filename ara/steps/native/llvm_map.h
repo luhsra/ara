@@ -7,19 +7,30 @@
 #include <graph.h>
 
 namespace ara::step {
-	class LLVMMap : public Step {
+	class LLVMMap : public ConfStep<LLVMMap> {
 	  private:
-		option::TOption<option::Bool> llvm_dump{"llvm_dump", "Dump all llvm functions into dot files."};
-		option::TOption<option::String> llvm_dump_prefix{"llvm_dump_prefix", "Prefix string for the dot files.",
-		                                                 /* ty = */ option::String(),
-		                                                 /* default = */ "dumps/llvm-func."};
-		virtual void fill_options() override;
+		using ConfStep<LLVMMap>::ConfStep;
+		const static inline option::TOption<option::Bool> llvm_dump_template{"llvm_dump",
+		                                                                     "Dump all llvm functions into dot files."};
+		option::TOptEntity<option::Bool> llvm_dump;
+
+		const static inline option::TOption<option::String> llvm_dump_prefix_template{
+		    "llvm_dump_prefix", "Prefix string for the dot files.",
+		    /* ty = */ option::String(),
+		    /* default = */ "dumps/llvm-func."};
+		option::TOptEntity<option::String> llvm_dump_prefix;
+
+		virtual void init_options() override;
 
 	  public:
-		virtual std::string get_name() const override { return "LLVMMap"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"FnSingleExit", "FakeEntryPoint"}; }
+		static std::string get_name() { return "LLVMMap"; }
+		static std::string get_description();
+		static Step::OptionVec get_local_options();
 
-		virtual void run(graph::Graph& graph) override;
+		virtual std::vector<std::string> get_single_dependencies() override {
+			return {"FnSingleExit", "FakeEntryPoint"};
+		}
+
+		virtual void run() override;
 	};
 } // namespace ara::step

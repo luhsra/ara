@@ -2,7 +2,6 @@
 
 from ara.graph import ABBType, CFType, Graph
 from .step import Step
-from .option import Option, Integer
 
 import functools
 import graph_tool
@@ -18,7 +17,7 @@ class ABBMerge(Step):
             return True
         return False
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Syscall"]
 
     def get_called_functions(self, abb):
@@ -47,25 +46,26 @@ class ABBMerge(Step):
                 other_vert = self.add_function(called_function)
                 self.callgraph.add_edge(vert, other_vert)
 
-    def run(self, g: Graph):
-        self.cfg = g.cfg
+    def run(self):
+        self.cfg = self._graph.cfg
         self.callgraph = graph_tool.Graph()
         self.function_list = {}
 
         # build callgraph
-        for function in g.cfg.vertices():
-            if g.cfg.vp.is_function[function]:
+        for function in self._graph.cfg.vertices():
+            if self._graph.cfg.vp.is_function[function]:
                 self.add_to_callgraph(function)
 
         self.callgraph.save("callgraph.dot")
 
         # find system relevant functions
-        syscalls = [g.functs.vp.name[x] for x in g.functs.vertices()
-                    if g.functs.vp.syscall[x]]
+        syscalls = [self._graph.functs.vp.name[x]
+                    for x in self._graph.functs.vertices()
+                    if self._graph.functs.vp.syscall[x]]
         system_relevant = set()
 
-        for function in g.functs.vertices():
-            function = g.functs.vp.name[function]
+        for function in self._graph.functs.vertices():
+            function = self._graph.functs.vp.name[function]
             for syscall in syscalls:
                 if self._is_call_connected(self.function_list[function],
                                            self.function_list[syscall]):
@@ -74,14 +74,15 @@ class ABBMerge(Step):
                     break
 
         # mark calls to system irrelevant functions as computation
-        for abb in g.cfg.vertices():
-            if g.cfg.vp.is_function[abb]:
+        for abb in self._graph.cfg.vertices():
+            if self._graph.cfg.vp.is_function[abb]:
                 continue
             for called_function in self.get_called_functions(abb):
                 if called_function not in system_relevant:
-                    self._log.debug(f"Set {g.cfg.vp.name[abb]} (calling " +
-                                    f"{called_function}) to computation")
-                    g.cfg.vp.type[abb] = ABBType.computation
+                    self._log.debug(f"Set {self._graph.cfg.vp.name[abb]} "
+                                    f"(calling {called_function}) to "
+                                    "computation")
+                    self._graph.cfg.vp.type[abb] = ABBType.computation
 
         # TODO: discuss
         # # delete functions

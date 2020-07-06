@@ -1,0 +1,50 @@
+{
+    "oil_version" : "2.5",
+	"cpus": [
+		{
+			"id": 0,
+			"tasks": [
+				{
+					"activation": 1,
+					"autostart": true,
+					"name": "TaskA",
+					"priority": 1,
+					"schedule": true
+				},
+				{
+					"activation": 1,
+					"autostart": false,
+					"name": "TaskB",
+					"priority": 2,
+					"schedule": true
+				}
+			]
+		},
+		{
+			"id": 1,
+			"tasks": [
+				{
+					"activation": 1,
+					"autostart": true,
+					"name": "TaskC",
+					"priority": 1,
+					"schedule": true
+				},
+				{
+					"activation": 1,
+					"autostart": false,
+					"name": "TaskD",
+					"priority": 2,
+					"schedule": true
+				},
+				{
+					"activation": 1,
+					"autostart": false,
+					"name": "TaskE",
+					"priority": 2,
+					"schedule": true
+				}
+			]
+		}
+	]
+}

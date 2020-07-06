@@ -44,6 +44,8 @@ hw_apps = [
   'simple_queue_send',
   'simple_mutex',
   'simple_mutex_constructor',
+  # 'simple_pios_modules', # mini version of the librepilot/pios module system for task creation
+  'simple_lazy_create',
 ]
 
 
@@ -249,6 +251,10 @@ endforeach
 osek_examples = run_target('osek-examples',
                            command: nop,
                            depends: osek_targets)
+
+# AUTOSAR examples
+subdir('AUTOSAR')
+
 
 examples = run_target('examples',
                       command: nop,

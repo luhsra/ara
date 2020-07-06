@@ -13,14 +13,11 @@ from .option import Option, String
 class CallGraph(Step):
     """Calculate the CallGraph for one entry point"""
 
-    def _fill_options(self):
-        self.entry_point = Option(name="entry_point",
-                                  help="entry point for creation of the call graph",
-                                  step_name=self.get_name(),
-                                  ty=String())
-        self.opts += [self.entry_point]
+    entry_point = Option(name="entry_point",
+                         help="entry point for creation of the call graph",
+                         ty=String())
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["ICFG", "FakeEntryPoint"]
 
     def _copy_props(self, g, old_v, new_v):
@@ -103,12 +100,12 @@ class CallGraph(Step):
                         if new_vert:
                             self.visit(cfg, new_func, cg, new_vert)
 
-    def run(self, g: _graph.Graph):
+    def run(self):
         entry_point = self.entry_point.get()
         if not entry_point:
             self._fail("Entry point must be given.")
 
-        entry_func = g.cfg.get_function_by_name(entry_point)
+        entry_func = self._graph.cfg.get_function_by_name(entry_point)
 
         cg = graph_tool.Graph()
         cg.vp["label"] = cg.new_vertex_property("string")
@@ -116,11 +113,11 @@ class CallGraph(Step):
         cg.vp["cfglink"] = cg.new_vertex_property("long")
         cg.ep["label"] = cg.new_edge_property("string")
         # add root vertex
-        start = self._add_vertex(cg, g.cfg, entry_point)
+        start = self._add_vertex(cg, self._graph.cfg, entry_point)
 
-        self.visit(g.cfg, entry_func, cg, start)
+        self.visit(self._graph.cfg, entry_func, cg, start)
 
-        g.call_graphs[entry_point] = cg
+        self._graph.call_graphs[entry_point] = cg
 
         if self.dump.get():
             cg.save(self.dump_prefix.get() + entry_point + ".dot", fmt='dot')

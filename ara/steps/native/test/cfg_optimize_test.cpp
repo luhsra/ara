@@ -11,11 +11,11 @@
 #include <string>
 
 namespace ara::step {
-	std::string CFGOptimizeTest::get_name() const { return "CFGOptimizeTest"; }
+	std::string CFGOptimizeTest::get_name() { return "CFGOptimizeTest"; }
 
-	std::string CFGOptimizeTest::get_description() const { return "Step for testing the CFGOptimize step"; }
+	std::string CFGOptimizeTest::get_description() { return "Step for testing the CFGOptimize step"; }
 
-	void CFGOptimizeTest::run(graph::Graph& graph) {
+	void CFGOptimizeTest::run() {
 		assert(input_file.get());
 		std::string file = *input_file.get();
 		assert(file == "appl/freertos-optimization.ll");
@@ -43,5 +43,10 @@ namespace ara::step {
 		assert(main_found && number_found && "main or number not found");
 	}
 
-	std::vector<std::string> CFGOptimizeTest::get_dependencies() { return {"CFGOptimize"}; }
+	void CFGOptimizeTest::init_options() {
+		input_file = input_file_template.instantiate(get_name());
+		opts.emplace_back(input_file);
+	}
+
+	std::vector<std::string> CFGOptimizeTest::get_single_dependencies() { return {"CFGOptimize"}; }
 } // namespace ara::step

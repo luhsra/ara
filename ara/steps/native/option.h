@@ -53,7 +53,7 @@ namespace ara::option {
 			this->from_pointer(scoped_obj, key);
 		}
 
-		std::string serialize_args() { return ""; }
+		std::string serialize_args() const { return ""; }
 
 		void set_step_name(const std::string& step_name) { this->step_name = step_name; }
 
@@ -112,7 +112,7 @@ namespace ara::option {
 		typename T::type high;
 
 	  public:
-		std::string serialize_args() {
+		std::string serialize_args() const {
 			std::stringstream ss;
 			ss << low << ":" << high;
 			return ss.str();
@@ -206,15 +206,15 @@ namespace ara::option {
 
 	  public:
 		explicit Choice(std::array<String::type, N> choices)
-		    : RawType<typename String::type>(), index(0), choices(choices) {}
+		    : RawType<typename String::type>(), index(-1), choices(choices) {}
 
 		static unsigned get_type() { return OptionType::CHOICE; }
 
-		std::string serialize_args() {
+		std::string serialize_args() const {
 			std::stringstream ss;
 			const char delim = ':';
 			bool first = true;
-			for (typename String::type& choice : choices) {
+			for (const typename String::type& choice : choices) {
 				assert(choice.find(delim) == std::string::npos);
 				if (first) {
 					first = false;
@@ -233,20 +233,23 @@ namespace ara::option {
 
 			this->value = cont.get();
 
-			unsigned found_index = 0;
-			for (typename String::type& choice : choices) {
-				if (*this->value == choice) {
-					break;
+			if (this->value) {
+				unsigned found_index = 0;
+				for (typename String::type& choice : choices) {
+					if (*this->value == choice) {
+						break;
+					}
+					found_index++;
 				}
-				found_index++;
+				if (found_index == choices.size()) {
+					std::stringstream ss;
+					ss << name << ": Value " << *this->value << " is not in the list of possible choices."
+					   << std::flush;
+					this->value = std::nullopt;
+					throw std::invalid_argument(ss.str());
+				}
+				this->index = found_index;
 			}
-			if (found_index == choices.size()) {
-				std::stringstream ss;
-				ss << name << ": Value " << *this->value << " is not in the list of possible choices." << std::flush;
-				this->value = std::nullopt;
-				throw std::invalid_argument(ss.str());
-			}
-			this->index = found_index;
 		}
 
 		/**
@@ -263,6 +266,39 @@ namespace ara::option {
 	}
 
 	/**
+	 * Description object for an option entity.
+	 * The instance that actually holds the values.
+	 */
+	class OptEntity {
+	  public:
+		virtual ~OptEntity() = default;
+		/**
+		 * check in global config dict for this option.
+		 */
+		virtual void check(PyObject*) = 0;
+	};
+
+	template <class T>
+	class TOptEntity : public OptEntity {
+	  private:
+		std::optional<T> ty;
+		std::string opt_name;
+
+	  public:
+		TOptEntity() : ty(std::nullopt), opt_name(""){};
+
+		TOptEntity(T ty, const std::string& step_name, const std::string& opt_name) : ty(ty), opt_name(opt_name) {
+			this->ty->set_step_name(step_name);
+		}
+
+		virtual void check(PyObject* obj) override { ty->check(obj, opt_name); }
+		/**
+		 * get value of option.
+		 */
+		std::optional<typename T::type> get() { return ty->get(); }
+	};
+
+	/**
 	 * Description object for options
 	 */
 	struct Option {
@@ -270,11 +306,11 @@ namespace ara::option {
 		const std::string name;
 		const std::string help;
 
-		virtual std::string get_type_args() = 0;
+		virtual std::string get_type_args() const = 0;
 
 	  public:
 		// only for Python bridging, sed cy_helper.h
-		friend std::string get_type_args(ara::option::Option* opt);
+		friend std::string get_type_args(const ara::option::Option* opt);
 
 		Option(const std::string& name, const std::string& help) : name(name), help(help) {}
 		Option() = default;
@@ -282,19 +318,12 @@ namespace ara::option {
 
 		virtual ~Option() = default;
 
-		/**
-		 * check in global config dict for this option.
-		 */
-		virtual void check(PyObject*) = 0;
+		virtual bool is_global() const = 0;
 
-		virtual void set_step_name(std::string step_name) = 0;
+		virtual unsigned get_type() const = 0;
 
-		virtual bool is_global() = 0;
-
-		virtual unsigned get_type() = 0;
-
-		std::string get_name() { return name; }
-		std::string get_help() { return help; }
+		const std::string get_name() const { return name; }
+		const std::string get_help() const { return help; }
 	};
 
 	/**
@@ -306,7 +335,7 @@ namespace ara::option {
 		T ty;
 		bool global;
 
-		virtual std::string get_type_args() override { return ty.serialize_args(); }
+		virtual std::string get_type_args() const override { return ty.serialize_args(); }
 
 	  public:
 		TOption(const std::string& name, const std::string& help, T ty = T(),
@@ -316,16 +345,10 @@ namespace ara::option {
 		}
 		TOption(const TOption&) = delete;
 
-		virtual void set_step_name(std::string step_name) override { ty.set_step_name(step_name); }
+		TOptEntity<T> instantiate(const std::string step_name) const { return TOptEntity<T>(ty, step_name, name); }
 
-		virtual void check(PyObject* obj) override { ty.check(obj, name); }
+		virtual bool is_global() const override { return global; }
 
-		virtual bool is_global() override { return global; }
-
-		virtual unsigned get_type() override { return T::get_type(); }
-		/**
-		 * get value of option.
-		 */
-		std::optional<typename T::type> get() { return ty.get(); }
+		virtual unsigned get_type() const override { return T::get_type(); }
 	};
 } // namespace ara::option

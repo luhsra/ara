@@ -16,38 +16,37 @@ class ValueAnalysis(Step):
     This is actually a post processing step that proper repacks the arguments.
     The real work is done within the ValueAnalysisCore step.
     """
-    def _fill_options(self):
-        self.entry_point = Option(name="entry_point",
-                                  help="Entry point for Value analysis",
-                                  step_name=self.get_name(),
-                                  ty=String())
-        self.opts.append(self.entry_point)
+    entry_point = Option(name="entry_point",
+                         help="Entry point for Value analysis",
+                         ty=String())
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["ValueAnalysisCore"]
 
-    def _convert_to_abbs(self, g, call_path):
+    def _convert_to_abbs(self, call_path):
         """Convert a call_path consisting of pointer to LLVM basic blocks to a
         tuple of vertices in the ARA cfg."""
         cp = []
         for bb_ptr in call_path:
-            v = graph_tool.util.find_vertex(g.cfg, g.cfg.vp.entry_bb, bb_ptr)
+            v = graph_tool.util.find_vertex(self._graph.cfg,
+                                            self._graph.cfg.vp.entry_bb,
+                                            bb_ptr)
             assert v is not None and len(v) == 1
             cp += v
         return tuple(cp)
 
-    def run(self, g: ara.graph.Graph):
+    def run(self):
         entry_label = self.entry_point.get()
-        entry_func = g.cfg.get_function_by_name(entry_label)
+        entry_func = self._graph.cfg.get_function_by_name(entry_label)
 
-        for abb in g.cfg.reachable_abbs(entry_func):
-            if g.cfg.vp.type[abb] != ara.graph.ABBType.syscall:
+        for abb in self._graph.cfg.reachable_abbs(entry_func):
+            if self._graph.cfg.vp.type[abb] != ara.graph.ABBType.syscall:
                 continue
 
-            args = g.cfg.vp.arguments[abb]
+            args = self._graph.cfg.vp.arguments[abb]
             assert type(args) is list
 
-            self._log.debug(f"Processing node {g.cfg.vp.name[abb]}.")
+            self._log.debug(f"Processing node {self._graph.cfg.vp.name[abb]}.")
 
             new_args = ara.graph.Arguments()
             for i, arg in enumerate(args):
@@ -60,7 +59,7 @@ class ValueAnalysis(Step):
                         for key, value in consts.items():
                             if key == tuple():
                                 continue
-                            call_path = self._convert_to_abbs(g, key)
+                            call_path = self._convert_to_abbs(key)
                             new_arg.add_variant(call_path, value)
                 # assignment
                 if i == 0:
@@ -73,4 +72,4 @@ class ValueAnalysis(Step):
                     self._log.debug(f")")
 
                     new_args.append(new_arg)
-            g.cfg.vp.arguments[abb] = new_args
+            self._graph.cfg.vp.arguments[abb] = new_args

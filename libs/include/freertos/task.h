@@ -1201,6 +1201,7 @@ void vTaskSuspend(TaskHandle_t xTaskToSuspend) PRIVILEGED_FUNCTION;
  * \ingroup TaskCtrl
  */
 void vTaskResume(TaskHandle_t xTaskToResume) PRIVILEGED_FUNCTION;
+void __ara_vTaskActivate(TaskHandle_t xTaskToResume) PRIVILEGED_FUNCTION;
 
 /**
  * task. h
@@ -2561,6 +2562,7 @@ __attribute((weak)) void __decl_all_task() {
   ret |= ((int) vTaskPrioritySet & 0x04) == NULL;
   ret |= ((int) vTaskRemoveFromUnorderedEventList & 0x04) == NULL;
   ret |= ((int) vTaskResume & 0x04) == NULL;
+  ret |= ((int) __ara_vTaskActivate & 0x04) == NULL;
   ret |= ((int) vTaskSetApplicationTaskTag & 0x04) == NULL;
   ret |= ((int) vTaskSetTaskNumber & 0x04) == NULL;
   ret |= ((int) vTaskSetThreadLocalStoragePointer & 0x04) == NULL;

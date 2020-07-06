@@ -13,6 +13,7 @@ cython = find_program('cython', version: '>=0.29.14')
 cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
+# TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies
@@ -122,7 +123,7 @@ subdir('test')
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 if get_option('enable_toplevel_tests')
-    extra_settings = files('test/extra_settings.json')
+    extra_settings = files('test' / 'extra_settings.json')
     test('ara_tester',
        py3_inst,
        args: [ara_py, gpslogger_application,
@@ -169,6 +170,17 @@ if get_option('enable_toplevel_tests')
     test('ospert',
        py3_inst,
        args: [ara_py, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
+       suite: 'toplevel'
+    )
+
+    autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
+    test('multisse',
+       py3_inst,
+       args: [ara_py, autosar_minexample[0],
+              '--oilfile', autosar_minexample[1],
+              '--log-level', 'info',
+              '--dump',
+              '--step-settings', autosar_minexample_settings],
        suite: 'toplevel'
     )
 endif

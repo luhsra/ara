@@ -11,11 +11,11 @@
 #include <string>
 
 namespace ara::step {
-	std::string CompInsertTest::get_name() const { return "CompInsertTest"; }
+	std::string CompInsertTest::get_name() { return "CompInsertTest"; }
 
-	std::string CompInsertTest::get_description() const { return "Step for testing the CompInsert step"; }
+	std::string CompInsertTest::get_description() { return "Step for testing the CompInsert step"; }
 
-	void CompInsertTest::run(graph::Graph& graph) {
+	void CompInsertTest::run() {
 		llvm::Module& module = graph.get_module();
 		for (auto& f : module) {
 			for (auto& b : f) {
@@ -36,5 +36,5 @@ namespace ara::step {
 		}
 	}
 
-	std::vector<std::string> CompInsertTest::get_dependencies() { return {"CompInsert"}; }
+	std::vector<std::string> CompInsertTest::get_single_dependencies() { return {"CompInsert"}; }
 } // namespace ara::step

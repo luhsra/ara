@@ -6,15 +6,13 @@
 using namespace llvm;
 namespace ara::step {
 
-	std::string FakeEntryPoint::get_description() const {
+	std::string FakeEntryPoint::get_description() {
 		return "Create a fake entry point which calls all constructors before the real entry pouint is reached. "
 		       "This is task of the startup code and needs to be simulated for correctness and instance detection. "
 		       "";
 	}
 
-	void FakeEntryPoint::fill_options() { opts.emplace_back(entry_point); }
-
-	void FakeEntryPoint::run(graph::Graph& graph) {
+	void FakeEntryPoint::run() {
 		static int run = 0;
 		if (run++) {
 			std::stringstream ss;

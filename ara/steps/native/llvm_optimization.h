@@ -9,20 +9,25 @@
 #include <string>
 
 namespace ara::step {
-	class LLVMOptimization : public Step {
+	class LLVMOptimization : public ConfStep<LLVMOptimization> {
 	  private:
-		option::TOption<option::String> pass_list{
+		using ConfStep<LLVMOptimization>::ConfStep;
+		const static inline option::TOption<option::String> pass_list_template{
 		    "pass_list", "List of LLVM Passes to be executed.\nFor Syntax see: "
 		                 "https://llvm.org/doxygen/PassBuilder_8h_source.html#l00410\nFor the list of available passes "
 		                 "see: https://github.com/llvm/llvm-project/blob/release/9.x/llvm/lib/Passes/PassRegistry.def"
 		                 " and http://llvm.org/docs/Passes.html"};
-		virtual void fill_options() override;
+		option::TOptEntity<option::String> pass_list;
+
+		virtual void init_options() override;
 
 	  public:
-		virtual std::string get_name() const override { return "LLVMOptimization"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
+		static std::string get_name() { return "LLVMOptimization"; }
+		static std::string get_description();
+		static Step::OptionVec get_local_options() { return {pass_list_template}; }
 
-		virtual void run(graph::Graph& graph) override;
+		virtual std::vector<std::string> get_single_dependencies() override { return {"IRReader"}; }
+
+		virtual void run() override;
 	};
 } // namespace ara::step

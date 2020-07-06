@@ -5,7 +5,6 @@
 #include "common/exceptions.h"
 
 #include <boost/graph/filtered_graph.hpp>
-#include <boost/property_tree/json_parser.hpp>
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/IR/CFG.h>
@@ -13,17 +12,14 @@
 #include <queue>
 
 using namespace ara::graph;
-using namespace boost::property_tree;
 
 namespace ara::step {
-	std::string ICFG::get_description() const {
+	std::string ICFG::get_description() {
 		return "Search all interprocedural edges."
 		       "\n"
 		       "Transforming of the ABB CFG to an ABB ICFG. The search is done from the entry point of the program. "
 		       "Unused functions are not analyzed.";
 	}
-
-	void ICFG::fill_options() { opts.emplace_back(entry_point); }
 
 	namespace {
 		template <typename Graph>
@@ -181,7 +177,7 @@ namespace ara::step {
 
 	} // namespace
 
-	void ICFG::run(Graph& graph) {
+	void ICFG::run() {
 		llvm::Module& mod = graph.get_module();
 		CFG cfg = graph.get_cfg();
 

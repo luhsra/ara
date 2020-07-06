@@ -1316,6 +1316,11 @@ int __attribute__((weak)) __ara_osconfig_configENABLE_FPU = configENABLE_FPU;
 int __attribute__((weak)) __ara_osconfig_configENABLE_TRUSTZONE = configENABLE_TRUSTZONE;
 int __attribute__((weak)) __ara_osconfig_configRUN_FREERTOS_SECURE_ONLY = configRUN_FREERTOS_SECURE_ONLY;
 int __attribute__((weak)) __ara_osconfig_configMAX_PRIORITIES = configMAX_PRIORITIES;
+int __attribute__((weak)) __ara_osconfig_configTOTAL_HEAP_SIZE = configTOTAL_HEAP_SIZE;
+int __attribute__((weak)) __ara_osconfig_configMINIMAL_STACK_SIZE = configMINIMAL_STACK_SIZE;
+int __attribute__((weak)) __ara_osconfig_QUEUE_HEAD_SIZE = sizeof(StaticQueue_t);
+int __attribute__((weak)) __ara_osconfig_TCB_SIZE = sizeof(StaticTask_t);
+int __attribute__((weak)) __ara_osconfig_STACK_TYPE_SIZE = sizeof(StackType_t);
 
 #endif /* __ARA_OSCONFIGS_VARS */
 

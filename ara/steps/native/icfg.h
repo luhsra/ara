@@ -8,16 +8,15 @@
 #include <graph.h>
 
 namespace ara::step {
-	class ICFG : public Step {
+	class ICFG : public EntryPointStep<ICFG> {
 	  private:
-		option::TOption<option::String> entry_point{"entry_point", "system entry point"};
-		virtual void fill_options() override;
+		using EntryPointStep<ICFG>::EntryPointStep;
 
 	  public:
-		virtual std::string get_name() const override { return "ICFG"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {"LLVMMap"}; }
+		static std::string get_name() { return "ICFG"; }
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override { return {"LLVMMap"}; }
 
-		virtual void run(ara::graph::Graph& graph) override;
+		virtual void run() override;
 	};
 } // namespace ara::step

@@ -14,15 +14,22 @@ namespace ara::step {
 		}
 	} // namespace
 
-	std::string CDummy::get_description() const {
+	std::string CDummy::get_description() {
 		return "Template for a C++ step."
 		       "\n"
 		       "Add a meaningful description of your step here.";
 	}
 
-	void CDummy::fill_options() { opts.emplace_back(dummy_option); }
+	void CDummy::init_options() {
+		dummy_option = dummy_option_template.instantiate(get_name());
+		dummy_option2 = dummy_option2_template.instantiate(get_name());
+		opts.emplace_back(dummy_option);
+		opts.emplace_back(dummy_option2);
+	}
 
-	void CDummy::run(graph::Graph& graph) {
+	Step::OptionVec CDummy::get_local_options() { return {dummy_option_template, dummy_option2_template}; }
+
+	void CDummy::run() {
 		logger.info() << "Execute CDummy step." << std::endl;
 
 		const std::optional<int64_t>& dopt = dummy_option.get();

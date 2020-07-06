@@ -5,13 +5,65 @@ cimport cgraph
 
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libcpp.memory cimport unique_ptr
 
 cdef extern from "step.h" namespace "ara::step":
     cdef cppclass Step:
         Step() except +
-        void python_init(object logger, object step_manager)
+        void apply_config(dict config)
+        void run() except +
+
+    cdef cppclass StepFactory:
         string get_name()
         string get_description()
-        vector[string] get_dependencies()
-        void apply_config(dict config)
-        void run(cgraph.Graph g) except +
+        unique_ptr[Step] instantiate(object, cgraph.Graph, object)
+
+# all step following
+
+cdef extern from "bb_split.h" namespace "ara::step":
+    cdef cppclass BBSplit:
+        pass
+
+cdef extern from "cdummy.h" namespace "ara::step":
+    cdef cppclass CDummy:
+        pass
+
+cdef extern from "comp_insert.h" namespace "ara::step":
+    cdef cppclass CompInsert:
+        pass
+
+cdef extern from "fake_entry_point.h" namespace "ara::step":
+    cdef cppclass FakeEntryPoint:
+        pass
+
+cdef extern from "fn_single_exit.h" namespace "ara::step":
+    cdef cppclass FnSingleExit:
+        pass
+
+cdef extern from "icfg.h" namespace "ara::step":
+    cdef cppclass ICFG:
+        pass
+
+cdef extern from "ir_reader.h" namespace "ara::step":
+    cdef cppclass IRReader:
+        pass
+
+cdef extern from "ir_writer.h" namespace "ara::step":
+    cdef cppclass IRWriter:
+        pass
+
+cdef extern from "llvm_map.h" namespace "ara::step":
+    cdef cppclass LLVMMap:
+        pass
+
+cdef extern from "llvm_optimization.h" namespace "ara::step":
+    cdef cppclass LLVMOptimization:
+        pass
+
+cdef extern from "load_freertos_config.h" namespace "ara::step":
+    cdef cppclass LoadFreeRTOSConfig:
+        pass
+
+cdef extern from "value_analysis_core.h" namespace "ara::step":
+    cdef cppclass ValueAnalysisCore:
+        pass

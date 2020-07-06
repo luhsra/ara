@@ -6,18 +6,14 @@ from .option import Option, Integer
 
 class Dummy(Step):
     """Template for a new Python step."""
+    dummy_option = Option(name="dummy_option",
+                          help="An option to demonstrate options.",
+                          ty=Integer())
 
-    def _fill_options(self):
-        self.dummy_option = Option(name="dummy_option",
-                                   help="An option to demonstrate options.",
-                                   step_name=self.get_name(),
-                                   ty=Integer())
-        self.opts.append(self.dummy_option)
-
-    def get_dependencies(self):
+    def get_dependencies(self, _):
         return []
 
-    def run(self, g: Graph):
+    def run(self):
         self._log.info("Executing Dummy step.")
         opt = self.dummy_option.get()
         if opt:

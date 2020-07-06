@@ -10,17 +10,19 @@
 
 namespace ara::step {
 
-	class IRReader : public Step {
+	class IRReader : public ConfStep<IRReader> {
 	  private:
-		option::TOption<option::String> input_file{"input_file", "Get input file."};
+		using ConfStep<IRReader>::ConfStep;
+		static const inline option::TOption<option::String> input_file_template{"input_file", "Get input file."};
+		option::TOptEntity<option::String> input_file;
 
-		virtual void fill_options() override { opts.emplace_back(input_file); }
+		virtual void init_options();
 
 	  public:
-		virtual std::string get_name() const override { return "IRReader"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {}; }
+		static std::string get_name() { return "IRReader"; }
+		static std::string get_description();
+		static Step::OptionVec get_local_options() { return {input_file_template}; }
 
-		virtual void run(graph::Graph& graph) override;
+		virtual void run() override;
 	};
 } // namespace ara::step

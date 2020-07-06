@@ -16,11 +16,14 @@ namespace ara::step {
 		}
 	} // namespace
 
-	std::string IRWriter::get_description() const { return "Print current IR code to file."; }
+	std::string IRWriter::get_description() { return "Print current IR code to file."; }
 
-	void IRWriter::fill_options() { opts.emplace_back(ir_file_option); }
+	void IRWriter::init_options() {
+		ir_file_option = ir_file_option_template.instantiate(get_name());
+		opts.emplace_back(ir_file_option);
+	}
 
-	void IRWriter::run(graph::Graph& graph) {
+	void IRWriter::run() {
 		logger.info() << "Execute IRWriter step." << std::endl;
 
 		const auto& filename = ir_file_option.get();

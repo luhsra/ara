@@ -229,17 +229,12 @@ foreach t : ara_gen_freertos_targets
   named_lto_elf_targets += [t+'.lto', lto_elf]
 
   if get_option('enable_gpslogger_tests')
-    if t in ['instances_full_static', 'instances_full_initialized']
-      test_elf = 'nop'
-    else
-      test_elf = elf_target
-    endif
     test('run_qemu_' + name_prefix,
          py3_inst,
          args: [qemu_test_runner,
                 qemu_cmd,
                 'gpslogger',
-                test_elf,
+                elf_target,
                ],
          env: [python_path],
          workdir: meson.current_source_dir(),

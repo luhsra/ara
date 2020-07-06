@@ -1,0 +1,9 @@
+{
+	"steps": [
+		"MultiSSE"
+	],
+
+	"logger": {
+		"StepManager": "debug"
+	}
+}

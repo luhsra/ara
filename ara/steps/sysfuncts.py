@@ -7,22 +7,28 @@ from .os import get_syscalls
 class SysFuncts(Step):
     """Label system functions as such and detect the OS."""
 
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["LLVMMap"]
 
-    def run(self, g: Graph):
+    def run(self):
         syscalls = dict(get_syscalls())
 
-        for nod in g.functs.vertices():
-            call = g.functs.vp.name[nod]
+        for nod in self._graph.functs.vertices():
+            call = self._graph.functs.vp.name[nod]
             found = call in syscalls
-            g.functs.vp.syscall[nod] = found
+            self._graph.functs.vp.syscall[nod] = found
             if found:
                 os = syscalls[call]
-                if g.os in [None, os]:
-                    g.os = os
+                if self._graph.os in [None, os]:
+                    self._graph.os = os
                 else:
-                    self._log.error(f"Call {call} does not fit to OS {g.os}.")
+                    self.fail(f"Call {call} does not fit to OS {self._graph.os}.")
+        if self._graph.os is None:
+            self._log.info("OS cannot be detected. Are there any syscalls?")
+        if self._graph.os.get_name() == 'FreeRTOS':
+            self._step_manager.chain_step({"name": "LoadFreeRTOSConfig"})
+        if self._graph.os.get_name() == 'AUTOSAR':
+            self._step_manager.chain_step({"name": "LoadOIL"})
 
         if self.dump.get():
             dump_prefix = self.dump_prefix.get()

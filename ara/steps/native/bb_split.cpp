@@ -15,13 +15,11 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string BBSplit::get_description() const {
-		return "Split basic blocks in function call and computation blocks.";
-	}
+	std::string BBSplit::get_description() { return "Split basic blocks in function call and computation blocks."; }
 
-	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
+	std::vector<std::string> BBSplit::get_single_dependencies() { return {"CompInsert"}; }
 
-	void BBSplit::run(graph::Graph& graph) {
+	void BBSplit::run() {
 		llvm::Module& module = graph.get_module();
 		unsigned split_counter = 0;
 
