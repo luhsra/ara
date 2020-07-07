@@ -23,8 +23,7 @@ namespace ara::step {
 		static std::string get_description();
 		static Step::OptionVec get_local_options() { return {dump_stats_template}; }
 
-		virtual std::vector<std::string> get_single_dependencies() override { return {"Syscall"}; }
-
+		virtual llvm::json::Array get_configured_dependencies() override;
 		virtual void run() override;
 	};
 } // namespace ara::step

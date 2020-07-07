@@ -95,6 +95,14 @@ class FreeRTOS(OSBase):
     edge_properties = [('label', 'string', 'syscall name')]
 
     @staticmethod
+    def get_special_steps():
+        return ["LoadFreeRTOSConfig"]
+
+    @staticmethod
+    def has_dynamic_instances():
+        return True
+
+    @staticmethod
     def init(state):
         for prop in FreeRTOS.vertex_properties:
             state.instances.vp[prop[0]] = state.instances.new_vp(prop[1])

@@ -45,19 +45,6 @@ class LoadOIL(Step):
                                            task["schedule"],
                                            cpu_id)
                 instances.vp.label[t] = t_name
-
-                # trigger other steps
-                self._step_manager.chain_step({"name": "ValueAnalysis",
-                                               "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "ValueAnalysisCore",
-                                               "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "CallGraph",
-                                               "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "Syscall",
-                                               "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "ICFG",
-                                               "entry_point": t_func_name})
-
         self._graph.instances = instances
 
         if self.dump.get():

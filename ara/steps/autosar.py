@@ -22,6 +22,14 @@ class AUTOSAR(OSBase):
     edge_properties = [('label', 'string', 'syscall name')]
 
     @staticmethod
+    def get_special_steps():
+        return ["LoadOIL"]
+
+    @staticmethod
+    def has_dynamic_instances():
+        return False
+
+    @staticmethod
     def init(instances):
         for prop in AUTOSAR.vertex_properties:
             instances.vp[prop[0]] = instances.new_vp(prop[1])

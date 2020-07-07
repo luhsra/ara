@@ -64,6 +64,19 @@ class FlowAnalysis(Step):
         sstg.vp.state[vertex] = state
         return vertex
 
+    def _get_os_specific_deps(self):
+        if self._graph.os is None:
+            return ['SysFuncts']
+        return self._graph.os.get_special_steps()
+
+    def _require_instances(self):
+        if self._graph.os is None:
+            return ['SysFuncts']
+        deps = self._graph.os.get_special_steps()
+        if self._graph.os.has_dynamic_instances():
+            deps.append('InstanceGraph')
+        return deps
+
     def _system_semantic(self, state):
         new_states = self._execute(state)
         self._schedule(new_states)
@@ -135,7 +148,7 @@ class MultiState:
 class MultiSSE(FlowAnalysis):
     """Run the MultiCore SSE."""
     def get_single_dependencies(self):
-        return ["SysFuncts"]
+        return self._require_instances()
 
     def _init_analysis(self):
         pass
@@ -198,10 +211,6 @@ class FlatAnalysis(FlowAnalysis):
 
     This analysis does not respect loops.
     """
-
-    def get_single_dependencies(self):
-        return ["Syscall", "ValueAnalysis", "CallGraph"]
-
     def _init_analysis(self):
         self._call_graph = self._graph.call_graphs[self._entry_func]
         self._cond_func = self._graph.call_graphs[self._entry_func].new_vp("bool")
@@ -300,9 +309,10 @@ class FlatAnalysis(FlowAnalysis):
                 fake_state = state.copy()
                 self._init_fake_state(fake_state, abb)
                 assert self._graph.os is not None
-                print(getattr(self._graph.os, "xQueueGenericCreate"))
-                new_state = self._graph.os.interpret(self._graph.cfg, abb, fake_state,
-                                                 categories=self._get_categories())
+                new_state = self._graph.os.interpret(
+                    self._graph.cfg, abb, fake_state,
+                    categories=self._get_categories()
+                )
                 self._evaluate_fake_state(new_state, abb)
                 new_states.append(new_state)
 
@@ -352,8 +362,14 @@ class FlatAnalysis(FlowAnalysis):
 class InstanceGraph(FlatAnalysis):
     """Find all application instances."""
 
+    def _get_entry_point_dep(self, name):
+        return {"name": name, "entry_point": self.entry_point.get()}
+
     def get_single_dependencies(self):
-        return ["Syscall", "ValueAnalysis", "CallGraph", "FakeEntryPoint"]
+        deps = self._get_os_specific_deps()
+        deps += list(map(self._get_entry_point_dep,
+                         ["Syscall", "ValueAnalysis", "CallGraph"]))
+        return deps
 
     def _init_analysis(self):
         super()._init_analysis()
@@ -406,16 +422,6 @@ class InstanceGraph(FlatAnalysis):
                     # be the last executed one
                     self._step_manager.chain_step({"name": self.get_name(),
                                                    "entry_point": func_name})
-                    self._step_manager.chain_step({"name": "ValueAnalysis",
-                                                   "entry_point": func_name})
-                    self._step_manager.chain_step({"name": "ValueAnalysisCore",
-                                                   "entry_point": func_name})
-                    self._step_manager.chain_step({"name": "CallGraph",
-                                                   "entry_point": func_name})
-                    self._step_manager.chain_step({"name": "Syscall",
-                                                   "entry_point": func_name})
-                    self._step_manager.chain_step({"name": "ICFG",
-                                                   "entry_point": func_name})
                     self._step_data.add(func_name)
                 self._new_entry_points.add(task)
 
@@ -445,7 +451,7 @@ class InteractionAnalysis(FlatAnalysis):
     """Find the flow insensitive interactions between instances."""
 
     def get_single_dependencies(self):
-        return ["InstanceGraph"]
+        return self._require_instances()
 
     def _init_analysis(self):
         super()._init_analysis()

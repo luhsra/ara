@@ -11,7 +11,6 @@
 using namespace boost::property_tree;
 
 namespace ara::step {
-
 	namespace {
 		template <typename Graph>
 		void get_values(Graph& g, graph::CFG& cfg, Logger& logger, bool dump_stats, const std::string& prefix,
@@ -78,6 +77,12 @@ namespace ara::step {
 			cfg.execute_on_reachable_abbs(g, entry_func, do_with_abb);
 		}
 	} // namespace
+
+	llvm::json::Array ValueAnalysisCore::get_configured_dependencies() {
+		const auto& entry_point_name = entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+		return llvm::json::Array{llvm::json::Object{{{"name", "Syscall"}, {"entry_point", *entry_point_name}}}};
+	}
 
 	std::string ValueAnalysisCore::get_description() {
 		return "Perform a value analysis for all system calls (core step).";

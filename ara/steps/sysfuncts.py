@@ -25,10 +25,6 @@ class SysFuncts(Step):
                     self.fail(f"Call {call} does not fit to OS {self._graph.os}.")
         if self._graph.os is None:
             self._log.info("OS cannot be detected. Are there any syscalls?")
-        if self._graph.os.get_name() == 'FreeRTOS':
-            self._step_manager.chain_step({"name": "LoadFreeRTOSConfig"})
-        if self._graph.os.get_name() == 'AUTOSAR':
-            self._step_manager.chain_step({"name": "LoadOIL"})
 
         if self.dump.get():
             dump_prefix = self.dump_prefix.get()

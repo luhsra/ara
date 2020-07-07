@@ -2,6 +2,13 @@ from .os_util import syscall
 from .os_base import OSBase
 
 class OSEK(OSBase):
+    @staticmethod
+    def get_special_steps():
+        return ["LoadOIL"]
+
+    @staticmethod
+    def has_dynamic_instances():
+        return False
 
     @staticmethod
     def init(state):

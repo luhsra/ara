@@ -21,7 +21,8 @@ class ValueAnalysis(Step):
                          ty=String())
 
     def get_single_dependencies(self):
-        return ["ValueAnalysisCore"]
+        return [{"name": "ValueAnalysisCore",
+                 "entry_point": self.entry_point.get()}]
 
     def _convert_to_abbs(self, call_path):
         """Convert a call_path consisting of pointer to LLVM basic blocks to a

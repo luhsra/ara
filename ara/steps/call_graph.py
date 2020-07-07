@@ -18,7 +18,8 @@ class CallGraph(Step):
                          ty=String())
 
     def get_single_dependencies(self):
-        return ["ICFG", "FakeEntryPoint"]
+        return [{"name": "ICFG", "entry_point": self.entry_point.get()},
+                "FakeEntryPoint"]
 
     def _copy_props(self, g, old_v, new_v):
         """Copy the subtree properties."""
