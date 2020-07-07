@@ -43,12 +43,7 @@ c_src = [
 'firmware/uavobjects/watchdogstatus.c',
 ]
 
-cpp_src = [
-]
-foreach file : cpp_src
-  libarduino_targets += librepilot_compilepp.process(file)
-endforeach
-
 foreach file : c_src
   librepilot_targets += librepilot_compile.process(file)
+  librepilot_mock_targets += librepilot_mock_compile.process(file)
 endforeach

@@ -57,6 +57,7 @@ librepilot_cflags = [
 '-DBL_BANK_BASE=0x08000000',
 '-DBL_BANK_SIZE=0x00003000',
 '-DBL_DESC_SIZE=',
+'-mllvm', '-inline-threshold=2',
 ]
 
 
@@ -108,7 +109,7 @@ librepilot_ldflags = [
   '-Wl,--sort-common',
   '-Wl,--sort-section=alignment',
   '-lm',
-  '-lc',
+  # '-lc_nano',
   '-lgcc',
   '-Wl,-static',
   '-nostartfiles',
@@ -116,6 +117,7 @@ librepilot_ldflags = [
 ]
 
 librepilot_targets = []
+librepilot_mock_targets = []
 
 librepilot_compile = generator(clang,
                               output: '@BASENAME@.ll',
@@ -128,176 +130,188 @@ librepilot_compile = generator(clang,
                                          clang_flags
                              )
 
-librepilot_compilepp = generator(clang,
+librepilot_mock_compile = generator(clang,
                                 output: '@BASENAME@.ll',
                                 depfile: '@BASENAME@_dep',
                                 arguments: clang_base +
-                                           [cxx_std] +
+                                           [c_std] +
                                            librepilot_includes +
                                            ir_flags +
                                            librepilot_cflags +
+                                           ['-DARA_MOCK'] +
                                            clang_flags
                                )
 
 subdir('build')
 subdir('flight')
 
-librepilot_application = custom_target('librepilot_app.ll',
+librepilot_ll = custom_target('librepilot_app.ll',
                               input: librepilot_targets,
                               output: 'librepilot_app.ll',
                               command: llvm_link_cmd,
                               )
+librepilot_mock_ll = custom_target('librepilot_mock_app.ll',
+                                            input: librepilot_mock_targets,
+                                            output: 'librepilot_mock.ll',
+                                            command: llvm_link_cmd,
+                                  )
+librepilot_application = librepilot_mock_ll
+
+
 
 named_elf_targets = []
 elf_targets = []
 named_plain_elf_targets = []
 named_lto_elf_targets = []
-foreach t : ara_gen_freertos_targets
-  name_prefix = 'librepilot-' + t
-  ara_target = custom_target(name_prefix + '-os',
-                             input: librepilot_application,
-                             depfile: name_prefix+ '-os.cc.dep',
-                             output: [name_prefix + '-os.cc',
-                                      name_prefix + '-os.cc.startup.s',
-                                      name_prefix + '-modifiedapp.ll'],
-                             command: get_variable('ara_gen_cmd_' + t)
-                            )
-  os_target = [ara_target[0], ara_target[1]]
-  app_aramodified_ll = ara_target[2]
+foreach application_prefix: ['librepilot', 'librepilot_mock']
+  foreach t : ara_gen_freertos_targets
+    application_ll = get_variable(application_prefix + '_ll')
+    name_prefix = application_prefix + '-' + t
+    ara_target = custom_target(name_prefix + '-os',
+                               input: application_ll,
+                               depfile: name_prefix+ '-os.cc.dep',
+                               output: [name_prefix + '-os.cc',
+                                        name_prefix + '-os.cc.startup.s',
+                                        name_prefix + '-modifiedapp.ll'],
+                               command: get_variable('ara_gen_cmd_' + t)
+                              )
+    os_target = [ara_target[0], ara_target[1]]
+    app_aramodified_ll = ara_target[2]
 
-  lib_freertos_ll_targets = []
-  foreach src_file : get_variable('libfreertos_src_files_' + t)
-    lib_freertos_ll_targets += librepilot_compile.process(src_file)
+    lib_freertos_ll_targets = []
+    foreach src_file : get_variable('libfreertos_src_files_' + t)
+      lib_freertos_ll_targets += librepilot_compile.process(src_file)
+    endforeach
+
+    o_target = custom_target(name_prefix + '.o',
+                             input : app_aramodified_ll,
+                             output : name_prefix + '.ll.o',
+                             command : llc_cmd)
+
+    os_ll_target = custom_target(name_prefix + '-os.cc.ll',
+                                 input : os_target,
+                                 output : name_prefix + '-os.cc.ll',
+                                 depfile : name_prefix + '-os.cc.ll.dep',
+                                 command : clang_cpp +
+                                           librepilot_includes +
+                                           ir_flags +
+                                           clang_flags)
+
+    app_os = custom_target(name_prefix + '-app_os.ll',
+                           input: [app_aramodified_ll, os_ll_target,
+                                   lib_freertos_ll_targets],
+                           output: name_prefix + '-os_app.ll',
+                           command: llvm_link_cmd)
+
+    lto_app_os = custom_target(name_prefix + '-lto_app_os.ll',
+                               input: app_os,
+                               output: name_prefix + '-lto_os_app.ll',
+                               command: llvm_opt_cmd + ['-Os'])
+
+    lto_o = custom_target(name_prefix + '-lto_app_os.o',
+                          input: lto_app_os,
+                          output: name_prefix + '-lto_os_app.ll.o',
+                          command: llc_cmd)
+
+    lto_elf = custom_target(name_prefix + '.lto.elf',
+                            input: [lto_o,
+                                    # os_target[1], # startup.s
+                                    files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
+                                    libsra_ar,
+                                   ],
+                            output: name_prefix + '.lto.elf',
+                            depfile: name_prefix + '.lto.elf.dep',
+                            command: clang_cpp +
+                                     librepilot_includes +
+                                     ld_flags +
+                                     librepilot_ldflags +
+                                     clang_flags,
+                            depend_files: [files(meson.current_source_dir() / 'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_memory.ld',
+                                                 meson.current_source_dir() /'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_sections.ld',
+                                                )
+                                          ],
+                           )
+
+    elf_target = custom_target(name_prefix + '.elf',
+                               input: [o_target,
+                                       os_target[0],
+                                       files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
+                                       lib_freertos_ll_targets,
+                                       libsra_ar,
+                                      ],
+                               output: name_prefix + '.elf',
+                               depfile: name_prefix + '.elf.dep',
+                               command: clang_cpp +
+                                        librepilot_includes +
+                                        ld_flags +
+                                        librepilot_ldflags +
+                                        clang_flags,
+                               depend_files: [files(meson.current_source_dir() / 'flight/pios/stm32f10x/link_STM32103CB_CC_Rev1_memory.ld',
+                                                    meson.current_source_dir() / 'flight/pios/stm32f10x/link_STM32103CB_CC_Rev1_sections.ld',
+                                                   )
+                                             ],
+                              )
+
+    bin_target = custom_target(name_prefix + '.bin',
+                               input: [elf_target],
+                               output: name_prefix + '.bin',
+                               command: objcopy_cmd)
+
+    lto_bin_target = custom_target(name_prefix + '.lto.bin',
+                                   input: [lto_elf],
+                                   output: name_prefix + '.lto.bin',
+                                   command: objcopy_cmd)
+
+    run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
+    run_target('size_' + name_prefix, command: [size, elf_target])
+    run_target('size_' + name_prefix + '.lto', command: [size, lto_elf])
+    run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
+    run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
+    run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
+    run_target('run_qemu_' + name_prefix + '-lto', command: [qemu_cmd, lto_elf])
+    run_target('run_gdb_qemu_' + name_prefix + '-lto', command: [gdb_qemu_cmd, lto_elf])
+    elf_targets += elf_target
+    elf_targets += lto_elf
+    named_elf_targets += [t, elf_target]
+    named_elf_targets += [t+'.lto', lto_elf]
+    named_plain_elf_targets += [t, elf_target]
+    named_lto_elf_targets += [t+'.lto', lto_elf]
+
+    if get_option('enable_librepilot_tests')
+      if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
+        test_elf = 'nop'
+      else
+        test_elf = elf_target
+      endif
+      test('run_qemu_' + name_prefix,
+           py3_inst,
+           args: [qemu_test_runner,
+                  qemu_cmd,
+                  'librepilot',
+                  test_elf,
+                 ],
+           env: [python_path],
+           workdir: meson.current_source_dir(),
+           suite: 'librepilot',
+           is_parallel: false,
+          )
+    endif
+
+
   endforeach
 
-  o_target = custom_target(name_prefix + '.o',
-                           input : app_aramodified_ll,
-                           output : name_prefix + '.ll.o',
-                           command : llc_cmd)
-
-  os_ll_target = custom_target(name_prefix + '-os.cc.ll',
-                               input : os_target,
-                               output : name_prefix + '-os.cc.ll',
-                               depfile : name_prefix + '-os.cc.ll.dep',
-                               command : clang_cpp +
-                                         librepilot_includes +
-                                         ir_flags +
-                                         clang_flags)
-
-  app_os = custom_target(name_prefix + '-app_os.ll',
-                         input: [app_aramodified_ll, os_ll_target,
-                                 lib_freertos_ll_targets],
-                         output: name_prefix + '-os_app.ll',
-                         command: llvm_link_cmd)
-
-  lto_app_os = custom_target(name_prefix + '-lto_app_os.ll',
-                             input: app_os,
-                             output: name_prefix + '-lto_os_app.ll',
-                             command: llvm_opt_cmd + ['-Os'])
-
-  lto_o = custom_target(name_prefix + '-lto_app_os.o',
-                        input: lto_app_os,
-                        output: name_prefix + '-lto_os_app.ll.o',
-                        command: llc_cmd)
-
-  lto_elf = custom_target(name_prefix + '.lto.elf',
-                          input: [lto_o,
-                                  # os_target[1], # startup.s
-                                  files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
-                                  libsra_ar,
-                                 ],
-                          output: name_prefix + '.lto.elf',
-                          depfile: name_prefix + '.lto.elf.dep',
-                          command: clang_cpp +
-                                   librepilot_includes +
-                                   ld_flags +
-                                   librepilot_ldflags +
-                                   clang_flags,
-                          depend_files: [files(meson.current_source_dir() / 'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_memory.ld',
-                                          meson.current_source_dir() /'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_sections.ld',
-                                         )
-                                    ],
-                                   )
-
-  elf_target = custom_target(name_prefix + '.elf',
-                             input: [o_target,
-                                     os_target[0],
-                                     files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
-                                     lib_freertos_ll_targets,
-                                     libsra_ar,
-                                    ],
-                             output: name_prefix + '.elf',
-                             depfile: name_prefix + '.elf.dep',
-                             command: clang_cpp +
-                                      librepilot_includes +
-                                      ld_flags +
-                                      librepilot_ldflags +
-                                      clang_flags,
-                             depend_filess: [files(meson.current_source_dir() / 'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_memory.ld',
-                                             meson.current_source_dir() /'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_sections.ld',
-                                            )
-                                      ],
-                                   )
-
-  bin_target = custom_target(name_prefix + '.bin',
-                             input: [elf_target],
-                             output: name_prefix + '.bin',
-                             command: objcopy_cmd)
-
-  lto_bin_target = custom_target(name_prefix + '.lto.bin',
-                                 input: [lto_elf],
-                                 output: name_prefix + '.lto.bin',
-                                 command: objcopy_cmd)
-
-  run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
-  run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
-  run_target('size_' + name_prefix, command: [size, elf_target])
-  run_target('size_' + name_prefix + '.lto', command: [size, lto_elf])
-  run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
-  run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
-  run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
-  run_target('run_qemu_' + name_prefix + '-lto', command: [qemu_cmd, lto_elf])
-  run_target('run_gdb_qemu_' + name_prefix + '-lto', command: [gdb_qemu_cmd, lto_elf])
-  elf_targets += elf_target
-  elf_targets += lto_elf
-  named_elf_targets += [t, elf_target]
-  named_elf_targets += [t+'.lto', lto_elf]
-  named_plain_elf_targets += [t, elf_target]
-  named_lto_elf_targets += [t+'.lto', lto_elf]
-
-  if get_option('enable_librepilot_tests')
-    if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
-      test_elf = 'nop'
-    else
-      test_elf = elf_target
-    endif
-    test('run_qemu_' + name_prefix,
-         py3_inst,
-         args: [qemu_test_runner,
-                qemu_cmd,
-                'librepilot',
-                test_elf,
-               ],
-         env: [python_path],
-         workdir: meson.current_source_dir(),
-         suite: 'librepilot',
-         is_parallel: false,
-        )
-  endif
-
-
+  run_target('compare_nm-' + application_prefix, command: [compare_nm, nm.path(), named_elf_targets])
+  run_target('compare_nm-' + application_prefix + '-plain', command: [compare_nm, nm.path(), named_plain_elf_targets])
+  run_target('compare_nm-' + application_prefix + '-lto', command: [compare_nm, nm.path(), named_lto_elf_targets])
+  run_target('compare_size-' + application_prefix, command: [size, elf_targets])
+  run_target('compare_time-' + application_prefix, command: [compare_time, meson.build_root(), 'librepilot'], depends: elf_targets)
+  # custom_target('analyze-librepilot',
+  #               command: [files('LibrepilotExperiment.py'), '-d', meson.current_build_dir(),
+  #                         '-s',
+  #                         '--run-dir', meson.build_root()],
+  #               output: ['librepilot_result.dref',
+  #                        'librepilot_raw.dref'],
+  #               console: true,
+  #               depends: elf_targets)
 endforeach
-
-run_target('compare_nm-librepilot', command: [compare_nm, nm.path(), named_elf_targets])
-run_target('compare_nm-librepilot-plain', command: [compare_nm, nm.path(), named_plain_elf_targets])
-run_target('compare_nm-librepilot-lto', command: [compare_nm, nm.path(), named_lto_elf_targets])
-run_target('compare_size-librepilot', command: [size, elf_targets])
-run_target('compare_time-librepilot', command: [compare_time, meson.build_root(), 'librepilot'], depends: elf_targets)
-# custom_target('analyze-librepilot',
-#               command: [files('LibrepilotExperiment.py'), '-d', meson.current_build_dir(),
-#                         '-s',
-#                         '--run-dir', meson.build_root()],
-#               output: ['librepilot_result.dref',
-#                        'librepilot_raw.dref'],
-#               console: true,
-#               depends: elf_targets)

@@ -41,6 +41,10 @@ extern uintptr_t pios_uavo_settings_fs_id;
  */
 int32_t UAVObjSave(UAVObjHandle obj_handle, uint16_t instId)
 {
+#ifdef ARA_MOCK // we miss the external flash :-(
+  // TODO: return dummy
+  return 0;
+#endif /* ARA_MOCK */
     PIOS_Assert(obj_handle);
 
     if (UAVObjIsMetaobject(obj_handle)) {
@@ -87,12 +91,15 @@ int32_t UAVObjLoad(UAVObjHandle obj_handle, uint16_t instId)
             return -1;
         }
 
+#ifndef ARA_MOCK
+		// TODO: return dummy
         // Fire event on success
         if (PIOS_FLASHFS_ObjLoad(pios_uavo_settings_fs_id, UAVObjGetID(obj_handle), instId, (uint8_t *)MetaDataPtr((struct UAVOMeta *)obj_handle), UAVObjGetNumBytes(obj_handle)) == 0) {
             sendEvent((struct UAVOBase *)obj_handle, instId, EV_UNPACKED);
         } else {
             return -1;
         }
+#endif /* ARA_MOCK */
     } else {
         InstanceHandle instEntry = getInstance((struct UAVOData *)obj_handle, instId);
 
@@ -100,12 +107,15 @@ int32_t UAVObjLoad(UAVObjHandle obj_handle, uint16_t instId)
             return -1;
         }
 
+#ifndef ARA_MOCK
+		// TODO: return dummy
         // Fire event on success
         if (PIOS_FLASHFS_ObjLoad(pios_uavo_settings_fs_id, UAVObjGetID(obj_handle), instId, InstanceData(instEntry), UAVObjGetNumBytes(obj_handle)) == 0) {
             sendEvent((struct UAVOBase *)obj_handle, instId, EV_UNPACKED);
         } else {
             return -1;
         }
+#endif /* ARA_MOCK */
     }
 
 
@@ -120,6 +130,9 @@ int32_t UAVObjLoad(UAVObjHandle obj_handle, uint16_t instId)
  */
 int32_t UAVObjDelete(UAVObjHandle obj_handle, uint16_t instId)
 {
+#ifdef ARA_MOCK
+  return 0;
+#endif /* ARA_MOCK */
     PIOS_Assert(obj_handle);
     if (PIOS_FLASHFS_ObjDelete(pios_uavo_settings_fs_id, UAVObjGetID(obj_handle), instId) == 0) {
         UAVObjSetInstanceDefaults(obj_handle, instId);

@@ -90,6 +90,8 @@ int main()
     return 0;
 }
 
+__errno;
+
 /**
  * @}
  * @}

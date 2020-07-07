@@ -144,3 +144,11 @@ size_t xPortGetFreeHeapSize( void )
 
 
 
+
+void xPortIncreaseHeapSize( size_t bytes )
+{
+  //TODO: reactivate for librepilot?
+    /* vTaskSuspendAll(); */
+    /* currentTOTAL_HEAP_SIZE = configTOTAL_HEAP_SIZE + bytes; */
+    /* xTaskResumeAll(); */
+}

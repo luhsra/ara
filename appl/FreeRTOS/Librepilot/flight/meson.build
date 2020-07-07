@@ -161,6 +161,7 @@ c_src = [
 'pios/stm32f10x/pios_usbhook.c',
 'pios/stm32f10x/pios_wdg.c',
 # 'pios/stm32f10x/startup_stm32f10x_MD_CC.S',
+'pios/common/pios_board_info.c',
 'targets/boards/coptercontrol/firmware/coptercontrol.c',
 'targets/boards/coptercontrol/firmware/pios_board.c',
 'targets/boards/coptercontrol/pios_usb_board_data.c',
@@ -170,13 +171,8 @@ c_src = [
 'uavtalk/uavtalk.c',
 ]
 
-cpp_src = [
-]
-
-foreach file : cpp_src
-  librepilot_targets += librepilot_compilepp.process(file)
-endforeach
 
 foreach file : c_src
   librepilot_targets += librepilot_compile.process(file)
+  librepilot_mock_targets += librepilot_mock_compile.process(file)
 endforeach

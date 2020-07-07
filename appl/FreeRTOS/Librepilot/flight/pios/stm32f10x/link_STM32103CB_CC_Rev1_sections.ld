@@ -121,6 +121,16 @@ SECTIONS
 
     PROVIDE ( _end = _ebss ) ;
 
+	/* boardinfo, usually in bootloader but we don't use the bootloader. 
+	 *  Hence, it needs to be included here */
+    .boardinfo :
+    {
+        . = ALIGN(4);
+        KEEP(*(.boardinfo))
+        . = ALIGN(ORIGIN(BD_INFO)+LENGTH(BD_INFO));
+    } > BD_INFO
+
+
     /* Stabs debugging sections.  */
     .stab          0 : { *(.stab) }
     .stabstr       0 : { *(.stabstr) }

@@ -67,6 +67,9 @@ uint16_t PIOS_WDG_Init()
     if (delay > 0x0fff) {
         delay = 0x0fff;
     }
+#ifdef ARA_MOCK
+	return delay;
+#endif /* ARA_MOCK */
 #if defined(PIOS_INCLUDE_WDG)
     DBGMCU_Config(DBGMCU_IWDG_STOP, ENABLE); // make the watchdog stop counting in debug mode
     IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
@@ -130,6 +133,9 @@ bool PIOS_WDG_UpdateFlag(uint16_t flag)
     // efficiency and not blocking critical tasks.  race condition could
     // overwrite their flag update, but unlikely to block _all_ of them
     // for the timeout window
+#ifdef ARA_MOCK
+  PIOS_WDG_Clear();
+#endif /* ARA_MOCK */
     uint16_t cur_flags = BKP_ReadBackupRegister(PIOS_WDG_REGISTER);
 
     if ((cur_flags | flag) == wdg_configuration.used_flags) {

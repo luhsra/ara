@@ -783,9 +783,12 @@ void vApplicationStackOverflowHook(__attribute__((unused)) xTaskHandle *pxTask,
  * Called by the RTOS when a malloc call fails.
  */
 #define DEBUG_MALLOC_FAILURES 0
+void HAL_PWR_StopQEMU(uint32_t status);
 void vApplicationMallocFailedHook(void)
 {
     mallocFailed = true;
+    __asm volatile("bkpt 1");
+    HAL_PWR_StopQEMU(0x4eab);
 #if DEBUG_MALLOC_FAILURES
     static volatile bool wait_here = true;
     while (wait_here) {

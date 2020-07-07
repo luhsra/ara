@@ -70,7 +70,9 @@
 #define PIOS_INCLUDE_SPI
 #define PIOS_INCLUDE_GPIO
 #define PIOS_INCLUDE_EXTI
+#ifndef ARA_MOCK
 #define PIOS_INCLUDE_WDG
+#endif /* ARA_MOCK */
 
 /* PIOS USB functions */
 #define PIOS_INCLUDE_USB
@@ -122,8 +124,10 @@
 /* #define PIOS_OVERO_SPI */
 /* #define PIOS_INCLUDE_SDCARD */
 /* #define LOG_FILENAME "startup.log" */
+#ifndef ARA_MOCK
 #define PIOS_INCLUDE_FLASH
 #define PIOS_INCLUDE_FLASH_LOGFS_SETTINGS
+#endif /* ARA_MOCK */
 /* #define FLASH_FREERTOS */
 /* #define PIOS_INCLUDE_FLASH_EEPROM */
 /* #define PIOS_INCLUDE_FLASH_INTERNAL */

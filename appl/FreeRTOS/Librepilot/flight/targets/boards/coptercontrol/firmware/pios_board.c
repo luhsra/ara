@@ -126,6 +126,7 @@ void PIOS_Board_Init(void)
 
 #endif
 
+#ifndef ARA_MOCK
     uintptr_t flash_id;
     switch (bdinfo->board_rev) {
     case BOARD_REVISION_CC:
@@ -147,6 +148,7 @@ void PIOS_Board_Init(void)
     default:
         PIOS_DEBUG_Assert(0);
     }
+#endif /* ARA_MOCK */
 
     /* Initialize the task monitor */
     if (PIOS_TASK_MONITOR_Initialize(TASKINFO_RUNNING_NUMELEM)) {
@@ -161,11 +163,14 @@ void PIOS_Board_Init(void)
     UAVObjInitialize();
     SETTINGS_INITIALISE_ALL;
 
+#ifndef ARA_MOCK
 #if defined(PIOS_INCLUDE_RTC)
     /* Initialize the real-time clock and its associated tick */
     PIOS_RTC_Init(&pios_rtc_main_cfg);
 #endif
+#endif /* ARA_MOCK */
     PIOS_IAP_Init();
+#ifndef ARA_MOCK
     // check for safe mode commands from gcs
     if (PIOS_IAP_ReadBootCmd(0) == PIOS_IAP_CLEAR_FLASH_CMD_0 &&
         PIOS_IAP_ReadBootCmd(1) == PIOS_IAP_CLEAR_FLASH_CMD_1 &&
@@ -175,11 +180,14 @@ void PIOS_Board_Init(void)
         PIOS_IAP_WriteBootCmd(1, 0);
         PIOS_IAP_WriteBootCmd(2, 0);
     }
+#endif /* ARA_MOCK */
 
 #ifndef ERASE_FLASH
 #ifdef PIOS_INCLUDE_WDG
     /* Initialize watchdog as early as possible to catch faults during init */
+#ifndef ARA_MOCK
     PIOS_WDG_Init();
+#endif /* ARA_MOCK */
 #endif
 #endif
 
@@ -322,7 +330,9 @@ void PIOS_Board_Init(void)
         PIOS_Assert(0);
     }
 
+#ifndef ARA_MOCK
     PIOS_BOARD_Sensors_Configure();
+#endif /* ARA_MOCK */
 
     /* Make sure we have at least one telemetry link configured or else fail initialization */
     PIOS_Assert(pios_com_telem_rf_id || pios_com_telem_usb_id);

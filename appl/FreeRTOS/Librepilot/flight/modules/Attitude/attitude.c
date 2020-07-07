@@ -52,6 +52,9 @@
 #include <openpilot.h>
 
 #include <pios_board_info.h>
+#ifdef ARA_MOCK
+#undef PIOS_INCLUDE_MPU6000
+#endif /* ARA_MOCK */
 
 #include "attitude.h"
 #include "gyrostate.h"
