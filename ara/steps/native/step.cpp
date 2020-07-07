@@ -1,12 +1,29 @@
 #include "step.h"
 
 namespace ara::step {
-	bool Step::is_in_history(const std::string& dependency, const llvm::json::Array& step_history) {
-		for (const llvm::json::Value& step : step_history) {
-			const llvm::json::Object* obj = step.getAsObject();
-			assert(obj != nullptr && "step_history is wrong");
-			auto step_name = obj->getString("name");
-			if (step_name && *step_name == dependency) {
+	bool Step::is_in_history(const llvm::json::Object& dependency, const llvm::json::Array& step_history) {
+		for (const llvm::json::Value& step_v : step_history) {
+			bool match = true;
+			const llvm::json::Object* step = step_v.getAsObject();
+			assert(step != nullptr && "step_history is wrong");
+			for (const auto& kv : dependency) {
+				if (kv.first == "name") {
+					auto step_name = step->getString("name");
+					if (!(step_name && *step_name == kv.second)) {
+						match = false;
+						break;
+					}
+				} else {
+					const llvm::json::Object* step_config = step->getObject("config");
+					assert(step_config && "step history object has no config.");
+					auto it = step_config->find(kv.first);
+					if (it == step_config->end() || it->second != kv.second) {
+						match = false;
+						break;
+					}
+				}
+			}
+			if (match) {
 				return true;
 			}
 		}
@@ -36,11 +53,23 @@ namespace ara::step {
 	llvm::json::Array Step::get_dependencies(const llvm::json::Array& step_history) {
 		llvm::json::Array remaining_deps;
 		for (const std::string& dependency : get_single_dependencies()) {
-			if (is_in_history(dependency, step_history)) {
+			const llvm::json::Object dep_obj{{"name", dependency}};
+			if (is_in_history(dep_obj, step_history)) {
 				continue;
 			}
 			remaining_deps.emplace_back(llvm::json::Object{{"name", dependency}});
 		}
+		for (llvm::json::Value& dependency : get_configured_dependencies()) {
+			llvm::json::Object* obj = dependency.getAsObject();
+			assert(obj && "Dependency is not a JSON object.");
+			if (is_in_history(*obj, step_history)) {
+				continue;
+			}
+			remaining_deps.emplace_back(std::move(*obj));
+		}
 		return remaining_deps;
 	}
+
+	// llvm::json::Array get_configured_dependencies() { return {}; }
+	//
 } // namespace ara::step

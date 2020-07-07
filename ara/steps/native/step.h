@@ -101,11 +101,12 @@ namespace ara::step {
 		 * This function is called from the default implementation of get_dependencies().
 		 */
 		virtual std::vector<std::string> get_single_dependencies() { return {}; }
+		virtual llvm::json::Array get_configured_dependencies() { return {}; }
 
 		/**
 		 * Check, if a step is already in the history.
 		 */
-		bool is_in_history(const std::string& dependency, const llvm::json::Array& step_history);
+		bool is_in_history(const llvm::json::Object& dependency, const llvm::json::Array& step_history);
 
 	  public:
 		/**
