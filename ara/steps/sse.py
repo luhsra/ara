@@ -101,8 +101,8 @@ class FlowAnalysis(Step):
             self._log.debug(f"Stack {counter:3d}: "
                             f"{[self.sstg.vp.state[v] for v in stack]}")
             state_vertex = stack.pop()
-            state = self.sstg.vp.state[state_vertex]
-            for n in self._system_semantic(state):
+            # state = self.sstg.vp.state[state_vertex]
+            for n in self._system_semantic(state_vertex):
                 new_state = self.new_vertex(self.sstg, n)
                 self.sstg.add_edge(state_vertex, new_state)
                 stack.append(new_state)
@@ -200,10 +200,11 @@ class MultiSSE(FlowAnalysis):
 
         return state
 
-    def _execute(self, state):
+    def _execute(self, state_vertex):
+        state = self.sstg.vp.state[state_vertex]
         self._log.info(f"Executing State: {state}")
         new_states = []
-
+        
         for cpu in state.activated_tasks:
             task = state.get_scheduled_task(cpu)
             if task is not None:
@@ -228,6 +229,7 @@ class MultiSSE(FlowAnalysis):
             for new_state in new_states:
                 if new_state == sstg_state:
                     new_states.remove(new_state)
+                    self.sstg.add_edge(state_vertex, v)
 
         return new_states
 
@@ -358,7 +360,8 @@ class FlatAnalysis(FlowAnalysis):
             abb_name = self._icfg.vp.name[self._icfg.vertex(abb)]
             self._fail(f"Cannot find call path for ABB {abb_name}.")
 
-    def _execute(self, state):
+    def _execute(self, state_vertex):
+        state = self.sstg.vp.state[state_vertex]
         new_states = []
         self._init_execution(state)
         for abb in state.next_abbs:
