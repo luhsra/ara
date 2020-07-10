@@ -1,3 +1,5 @@
+import graph_tool
+
 """
 Python side of options.
 
@@ -172,3 +174,9 @@ class Choice(OptionType):
     def get_help(self):
         choices = ', '.join([f'"{x}"' for x in self.choices])
         return f"Any of {choices}"
+    
+class Graph_Type(OptionType):
+    def _validate(self, val, name):
+        if not isinstance(val, graph_tool.Graph):
+            raise ValueError(f"{name}: {val} is not a Graph.")
+        return val

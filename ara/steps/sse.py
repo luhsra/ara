@@ -120,8 +120,6 @@ class MultiState:
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABBs per task; key: task name, value: ABB node
         self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
-        self.min_time = 0
-        self.max_time = 0
     
     def get_scheduled_task(self, cpu):
         task_list = self.activated_tasks[cpu]
@@ -157,6 +155,11 @@ class MultiState:
         scopy.activated_tasks = self.activated_tasks.copy()
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
+
+        # copy lists of activated tasks
+        for k in scopy.activated_tasks:
+            scopy.activated_tasks[k] = self.activated_tasks[k].copy()
+
         return scopy
 
 class MultiSSE(FlowAnalysis):
@@ -235,7 +238,15 @@ class MultiSSE(FlowAnalysis):
         pass
         # if self.dump.get():
         #     sstg.save(self.dump_prefix.get() + ".dot", fmt='dot')
-
+        if self.dump.get():
+            uuid = self._step_manager.get_execution_id()
+            dot_file = f'{uuid}.SSTG.dot'
+            dot_file = self.dump_prefix.get() + dot_file
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'SSTG',
+                                           "subgraph": 'sstg',
+                                           "graph": sstg})
     
     def print_tasks(self):
         log = "Tasks ("

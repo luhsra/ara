@@ -1,7 +1,7 @@
 """Container for Printer."""
 from ara.graph import ABBType, CFType, Graph
 
-from .option import Option, String, Choice, Bool
+from .option import Option, String, Choice, Bool, Graph_Type
 from .step import Step
 
 import pydot
@@ -31,8 +31,12 @@ class Printer(Step):
         self.subgraph = Option(name="subgraph",
                                help="Choose, what subgraph should be printed.",
                                step_name=self.get_name(),
-                               ty=Choice("abbs", "instances"))
-        self.opts += [self.dot, self.graph_name, self.subgraph]
+                               ty=Choice("abbs", "instances", "sstg"))
+        self.graph = Option(name="graph",
+                               help="Graph object of sstg.",
+                               step_name=self.get_name(),
+                               ty=Graph_Type())
+        self.opts += [self.dot, self.graph_name, self.subgraph, self.graph]
 
     def _print_init(self):
         dot = self.dot.get()
@@ -111,9 +115,37 @@ class Printer(Step):
                                           label=g.instances.ep.label[edge]))
         self._write_dot(dot_graph)
 
+    def print_sstg(self):
+        sstg = self.graph.get()
+        if not sstg:
+            self._fail("Graph must be given when choosing sstg.")
+        
+        name = self._print_init()
+        dot_graph = pydot.Dot(graph_type='digraph', label=name)
+
+        # print all vertices
+        for state_node in sstg.vertices():
+            state = sstg.vp.state[state_node]
+            dot_node = pydot.Node(
+                str(hash(state_node)),
+                label=state.__repr__()
+            )
+            dot_graph.add_node(dot_node)
+        
+        # print all edges
+        for edge in sstg.edges():
+            dot_graph.add_edge(pydot.Edge(
+                str(hash(edge.source())),
+                str(hash(edge.target()))
+            ))
+
+        self._write_dot(dot_graph)
+
     def run(self, g: Graph):
         subgraph = self.subgraph.get()
         if subgraph == 'abbs':
             self.print_abbs(g)
         if subgraph == 'instances':
             self.print_instances(g)
+        if subgraph == 'sstg':
+            self.print_sstg()
