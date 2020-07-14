@@ -1,5 +1,5 @@
 """Container for Printer."""
-from ara.graph import ABBType, CFType, Graph
+from ara.graph import ABBType, CFType, Graph, CFGView
 
 from .option import Option, String, Choice, Bool, Graph_Type
 from .step import Step
@@ -115,13 +115,15 @@ class Printer(Step):
                                           label=g.instances.ep.label[edge]))
         self._write_dot(dot_graph)
 
-    def print_sstg(self):
+    def print_sstg(self, g):
         sstg = self.graph.get()
         if not sstg:
             self._fail("Graph must be given when choosing sstg.")
         
         name = self._print_init()
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
+        
+        cfg = CFGView(g.cfg, efilt=lambda x: g.cfg.ep.type[x] == CFType.icf or g.cfg.ep.type[x] == CFType.lcf)
 
         # print all vertices
         for state_node in sstg.vertices():
@@ -134,9 +136,25 @@ class Printer(Step):
         
         # print all edges
         for edge in sstg.edges():
+            color = "black"
+
+            # look for important edges and color them red
+            s_state = sstg.vp.state[edge.source()]
+            t_state = sstg.vp.state[edge.target()]
+
+            for cpu in s_state.activated_tasks:
+                s_task = s_state.get_scheduled_task(cpu)
+                t_task = t_state.get_scheduled_task(cpu)
+                if s_task is not None and t_task is not None and s_task.name != t_task.name:
+                    t_abb = t_state.abbs[t_task.name]
+                    s_abb = s_state.abbs[s_task.name]
+                    if t_abb not in cfg.vertex(s_abb).out_neighbors():
+                        color = "red"
+
             dot_graph.add_edge(pydot.Edge(
                 str(hash(edge.source())),
-                str(hash(edge.target()))
+                str(hash(edge.target())),
+                color=color
             ))
 
         self._write_dot(dot_graph)
@@ -148,4 +166,4 @@ class Printer(Step):
         if subgraph == 'instances':
             self.print_instances(g)
         if subgraph == 'sstg':
-            self.print_sstg()
+            self.print_sstg(g)

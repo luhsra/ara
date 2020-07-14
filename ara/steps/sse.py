@@ -237,9 +237,7 @@ class MultiSSE(FlowAnalysis):
         return []
 
     def _finish(self, sstg):
-        pass
-        # if self.dump.get():
-        #     sstg.save(self.dump_prefix.get() + ".dot", fmt='dot')
+        # print the sstg by chaining a printer step
         if self.dump.get():
             uuid = self._step_manager.get_execution_id()
             dot_file = f'{uuid}.SSTG.dot'
