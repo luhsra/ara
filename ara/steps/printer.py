@@ -139,17 +139,17 @@ class Printer(Step):
             color = "black"
 
             # look for important edges and color them red
-            s_state = sstg.vp.state[edge.source()]
-            t_state = sstg.vp.state[edge.target()]
+            # s_state = sstg.vp.state[edge.source()]
+            # t_state = sstg.vp.state[edge.target()]
 
-            for cpu in s_state.activated_tasks:
-                s_task = s_state.get_scheduled_task(cpu)
-                t_task = t_state.get_scheduled_task(cpu)
-                if s_task is not None and t_task is not None and s_task.name != t_task.name:
-                    t_abb = t_state.abbs[t_task.name]
-                    s_abb = s_state.abbs[s_task.name]
-                    if t_abb not in cfg.vertex(s_abb).out_neighbors():
-                        color = "red"
+            # for cpu in s_state.activated_tasks:
+            #     s_task = s_state.get_scheduled_task(cpu)
+            #     t_task = t_state.get_scheduled_task(cpu)
+            #     if s_task is not None and t_task is not None and s_task.name != t_task.name:
+            #         t_abb = t_state.abbs[t_task.name]
+            #         s_abb = s_state.abbs[s_task.name]
+            #         if t_abb not in cfg.vertex(s_abb).out_neighbors():
+            #           color = "red"
 
             dot_graph.add_edge(pydot.Edge(
                 str(hash(edge.source())),

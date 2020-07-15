@@ -67,8 +67,9 @@ class AUTOSAR(OSBase):
 
         # advance current task to next abb
         counter = 0
+        state.abbs[scheduled_task.name] = []
         for n in cfg.vertex(abb).out_neighbors():
-            state.abbs[scheduled_task.name] = n
+            state.abbs[scheduled_task.name].append(n)
             counter += 1
         assert(counter == 1)
 
@@ -162,6 +163,9 @@ class AUTOSAR(OSBase):
         # remove task from activated tasks list
         scheduled_task = state.get_scheduled_task(cpu)
         state.activated_tasks[cpu].remove(scheduled_task)
+
+        # reset abb list to entry abb
+        state.abbs[scheduled_task.name] = [state.entry_abbs[scheduled_task.name]]
 
         print("Terminated Task: " + scheduled_task.name)
 

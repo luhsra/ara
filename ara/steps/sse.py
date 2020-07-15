@@ -115,10 +115,11 @@ class MultiState:
     def __init__(self, cfg=None, instances=None):
         self.cfg = cfg
         self.instances = instances
+        self.entry_abbs = {} # entry abbs for each task; key: task name, value: entry abb node
         self.call_nodes = {} # call node of each task (used for handling calls)
                              # key: task name, value: ABB node (call node)
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
-        self.abbs = {} # active ABBs per task; key: task name, value: ABB node
+        self.abbs = {} # active ABBs per task; key: task name, value: list of ABB nodes
         self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
     
     def get_scheduled_task(self, cpu):
@@ -127,14 +128,40 @@ class MultiState:
             return task_list[0]
         else: 
             return None
+    
+    def explore(self, cfg):
+        """Explore the state to contain all abbs that can be reached from 
+        the inital abb stopping at syscall abbs."""
+        for cpu in self.activated_tasks:
+            task = self.get_scheduled_task(cpu)
+            if task is not None:
+                abb_list = self.abbs[task.name]
+
+                # only explore new states (when their list only contains one abb)
+                if (len(abb_list) == 1):
+                    stack = [abb_list[0]]
+
+                    # explore neighbors until no new none syscall abb is found
+                    while stack:
+                        abb = stack.pop()
+
+                        # append neighbors to abb list and to stack if not a syscall
+                        for n in cfg.vertex(abb).out_neighbors():
+                            if n not in abb_list:
+                                abb_list.append(n)
+                            if not cfg.vp.type[n] == ABBType.syscall:
+                                stack.append(n)
 
     def __repr__(self):
         ret = ""
         for cpu in self.activated_tasks:
             task = self.get_scheduled_task(cpu)
             if task is not None:
-                abb = self.abbs[task.name]
-                ret += self.cfg.vp.name[abb] + ", "
+                ret += "["
+                for abb in self.abbs[task.name]:
+                    ret += self.cfg.vp.name[abb] + ", "
+                ret = ret[:-2] 
+                ret += "], "
             else: 
                 ret += "None, "
         return ret[:-2]
@@ -155,10 +182,15 @@ class MultiState:
         scopy.activated_tasks = self.activated_tasks.copy()
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
+        scopy.entry_abbs = self.entry_abbs.copy()
 
         # copy lists of activated tasks
         for k in scopy.activated_tasks:
             scopy.activated_tasks[k] = self.activated_tasks[k].copy()
+
+        # copy list of abb nodes in abbs dict
+        for k in scopy.abbs:
+            scopy.abbs[k] = self.abbs[k].copy()
 
         return scopy
 
@@ -186,7 +218,8 @@ class MultiSSE(FlowAnalysis):
                 func_name = func_name_start + task.name
                 entry_func = self._g.cfg.get_function_by_name(func_name)
                 entry_abb = self._g.cfg.get_entry_abb(entry_func)
-                state.abbs[task.name] = entry_abb
+                state.entry_abbs[task.name] = entry_abb
+                state.abbs[task.name] = [entry_abb]
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
@@ -198,6 +231,7 @@ class MultiSSE(FlowAnalysis):
                         state.activated_tasks[task.cpu_id] = []
                     state.activated_tasks[task.cpu_id].append(task)
 
+        state.explore(self._icfg)
         return state
 
     def _execute(self, state_vertex):
@@ -208,21 +242,15 @@ class MultiSSE(FlowAnalysis):
         for cpu in state.activated_tasks:
             task = state.get_scheduled_task(cpu)
             if task is not None:
-                abb = state.abbs[task.name]
-                if abb is not None:
-                    # syscall handling
-                    if self._icfg.vp.type[abb] == ABBType.syscall:
-                        assert self._g.os is not None
-                        new_state = self._g.os.interpret(self._lcfg, abb, state, cpu)
-                        new_states.append(new_state)
-                    #TODO: adding call handling
-                    # handling calls and computations blocks the same way atm
-                    else:
-                        for n in self._icfg.vertex(abb).out_neighbors():
-                            new_state = state.copy()
-                            new_state.abbs[task.name] = n
+                for abb in state.abbs[task.name]:
+                    if abb is not None:
+                        # syscall handling
+                        if self._icfg.vp.type[abb] == ABBType.syscall:
+                            assert self._g.os is not None
+                            new_state = self._g.os.interpret(self._lcfg, abb, state, cpu)
+                            new_state.explore(self._icfg)
                             new_states.append(new_state)
-        
+                        
         # filter out duplicate states by comparing with states in sstg
         for v in self.sstg.vertices():
             sstg_state = self.sstg.vp.state[v]
