@@ -1,6 +1,7 @@
 # vim: set et ts=4 sw=4:
 """Utility functions."""
 
+import sys
 import logging
 
 
@@ -11,6 +12,20 @@ LEVEL = {"critical": logging.CRITICAL,
          "info": logging.INFO,
          "debug": logging.DEBUG}
 
+
+class DieOnErrorLogger(logging.getLoggerClass()):
+    werr = False
+    def error(self, *args, **kwargs):
+        super().error(*args, **kwargs)
+        sys.exit(1)
+    def warning(self, *args, **kwargs):
+        if self.werr:
+            super().error(*args, **kwargs)
+            sys.exit(1)
+        else:
+            super().warning(*args, **kwargs)
+
+logging.setLoggerClass(DieOnErrorLogger)
 
 class LoggerManager:
     """Manages loggers for ARA."""
@@ -87,7 +102,7 @@ def get_logger(name: str, level=None):
     return get_logger_manager().get_logger(name, level)
 
 
-def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root'):
+def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):
     """Init logging with color and timestamps.
 
     Returns a root logger with correct log level.
@@ -112,6 +127,7 @@ def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root'):
     logger_manager.set_log_level(level)
     logger_manager._matplotlib_logging_hack()
     logging.basicConfig(format=_format, level=logging.DEBUG)
+    DieOnErrorLogger.werr = werr
     return logger_manager.get_logger(root_name, level)
 
 

@@ -59,13 +59,15 @@ def main():
                              "build system integration")
     parser.add_argument('--ir_output', '-o',
                         help="File to store modified IR into", metavar="FILE")
+    parser.add_argument('-Werr', help="Treat warnings as errors",
+                        action='store_true')
 
     args = parser.parse_args()
 
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
 
-    logger = init_logging(level=args.log_level, root_name='ara')
+    logger = init_logging(level=args.log_level, root_name='ara', werr=args.Werr)
 
     g = Graph()
     s_manager = StepManager(g)
