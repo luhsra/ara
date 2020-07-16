@@ -41,6 +41,11 @@ namespace ara {
 		auto cend() const noexcept { return values.cend(); }
 	};
 
+    /* TODO
+     * Argument: value and its path
+     * Arguments: list of those
+     * entry function where? as member of Argument?
+     */
 	using MetaArguments = std::vector<Argument>;
 
 	class Arguments : public MetaArguments {
@@ -54,6 +59,8 @@ namespace ara {
 			}
 		}
 
+        std::string entry_fun = "";
+
 	  public:
 		bool has_return_value() const { return return_value != nullptr; }
 		const Argument& get_return_value() const {
@@ -61,6 +68,9 @@ namespace ara {
 			return *return_value;
 		}
 		void set_return_value(std::unique_ptr<Argument> return_value) { this->return_value = std::move(return_value); }
+
+        void set_entry_fun(std::string name) { this->entry_fun = name; }
+        std::string get_entry_fun() { return this->entry_fun; }
 
 		/**
 		 * Return the current Arguments vector as Python list. The list is a new object and contains only references to
@@ -85,5 +95,7 @@ namespace ara {
 		 */
 		PyObject* get_python_list() const;
 	};
+
+    using EntryArguments = std::map<std::string, Arguments>;
 
 } // namespace ara
