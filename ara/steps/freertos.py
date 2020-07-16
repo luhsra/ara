@@ -27,8 +27,8 @@ class Task:
         self.is_regular = is_regular
         self.uid = Task.uid_counter
         Task.uid_counter += 1
-        FreeRTOS.malloc_heap(stack_size, FreeRTOS.config.get('STACK_TYPE_SIZE', None))
-        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('TCB_SIZE', None))
+        FreeRTOS.malloc_heap(stack_size, FreeRTOS.config.get('STACK_TYPE_SIZE', None), maybe=branch)
+        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('TCB_SIZE', None), maybe=branch)
 
     @property
     def priority(self):
@@ -61,8 +61,8 @@ class Queue:
         self.after_scheduler = after_scheduler
         self.uid = Queue.uid_counter
         Queue.uid_counter += 1
-        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
-        FreeRTOS.malloc_heap(length, size)
+        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=branch)
+        FreeRTOS.malloc_heap(length, size, maybe=branch)
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
@@ -83,7 +83,7 @@ class Mutex:
         self.size = 0
         self.length = 1
         Mutex.uid_counter += 1
-        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
+        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=branch)
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
@@ -137,21 +137,31 @@ class FreeRTOS(OSBase):
                 state.next_abbs.append(oedge.target())
 
     @staticmethod
-    def malloc_heap(count, size):
+    def malloc_heap(count, size, maybe=False):
         try:
             request = int(count) * int(size)
-            used = FreeRTOS.config.get('used_heap', 0) + request
-            FreeRTOS.config['used_heap'] = used
+            used_sure = FreeRTOS.config.get('used_heap_sure', 0)
+            used_maybe = FreeRTOS.config.get('used_heap_maybe', 0)
+            used_maybe += request
+            if not maybe:
+                used_sure += request
+            FreeRTOS.config['used_heap_sure'] = used_sure
+            FreeRTOS.config['used_heap_maybe'] = used_maybe
             total = FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None)
             total = total.get() if total else 0
-            percent = used / total
-            logger.debug("FreeRTOS heap usage: %05.2f%% (%5d / %5d)",
-                         percent*100, used, total)
-            if used >= total:
-                logger.error("FreeRTOS heap usage exceeds heap size: %s", percent)
+            percent_sure = used_sure / total
+            percent_maybe = used_maybe / total
+            logger.debug("FreeRTOS heap usage sure: %05.2f%% (%5d / %5d)",
+                         percent_sure*100, used_sure, total)
+            logger.debug("FreeRTOS heap usage maybe: %05.2f%% (%5d / %5d)",
+                         percent_maybe*100, used_maybe, total)
+            if used_sure >= total:
+                logger.error("FreeRTOS heap usage exceeds heap size: %s", percent_sure)
+            if used_maybe >= total:
+                logger.warning("FreeRTOS heap usage exceeds heap size: %s", percent_maybe)
         except Exception as e:
             logger.error("malloc failed: %05.2f%% (%5d / %5d)",
-                         percent*100, used, total)
+                         percent_sure*100, used_sure, total)
             raise e
 
 
