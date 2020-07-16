@@ -118,7 +118,6 @@ class ArmArch(GenericArch):
         queue.impl.head = head
 
     def generate_startup_code(self):
-        GenericArch.generate_startup_code(self)
         startup_asm = StartupCodeTemplate(self)
         with self.generator.open_file(".startup.s") as fd:
             fd.write(startup_asm.expand())
@@ -130,6 +129,13 @@ class ArmArch(GenericArch):
                                  extern_c=True)
             m['name'] = f'"{marker}"'
             self.generator.source_file.data_manager.add(m)
+
+    def generate_default_interrupt_handlers(self):
+        pass
+
+    def generate_linkerscript(self):
+        pass
+
 
 class StartupCodeTemplate(CodeTemplate):
 
