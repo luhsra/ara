@@ -263,8 +263,38 @@ class MultiSSE(FlowAnalysis):
 
     def _schedule(self, states):
         return []
+    
+    def build_gcfg(self):
+        """Adds global control flow edges to the control flow graph."""
+        for edge in self.sstg.edges():
+            s_state = self.sstg.vp.state[edge.source()]
+            t_state = self.sstg.vp.state[edge.target()]
+            for cpu in s_state.activated_tasks:
+                s_task = s_state.get_scheduled_task(cpu)
+                t_task = t_state.get_scheduled_task(cpu)
+                if s_task is not None and t_task is not None and s_task.name != t_task.name:
+                    # add edge from each source abb to first target abb
+                    # we assume that the target abb is the first element in the list
+                    # since the list is not sorted
+                    t_abb = t_state.abbs[t_task.name][0]
+                    for abb in s_state.abbs[s_task.name]:
+                        if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
+                            e = self._g.cfg.add_edge(abb, t_abb)
+                            self._g.cfg.ep.type[e] = CFType.gcf
+
 
     def _finish(self, sstg):
+        # build global control flow graph and print it
+        self.build_gcfg()
+        if self.dump.get():
+            uuid = self._step_manager.get_execution_id()
+            dot_file = f'{uuid}.GCFG.dot'
+            dot_file = self.dump_prefix.get() + dot_file
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'GCFG',
+                                           "subgraph": 'abbs'})
+
         # print the sstg by chaining a printer step
         if self.dump.get():
             uuid = self._step_manager.get_execution_id()

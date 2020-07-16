@@ -87,7 +87,7 @@ class Printer(Step):
                     )
                 dot_func.add_node(dot_abb)
         for edge in g.cfg.edges():
-            if g.cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
+            if g.cfg.ep.type[edge] not in [CFType.lcf, CFType.icf, CFType.gcf]:
                 continue
             color = "black"
             if g.cfg.ep.type[edge] == CFType.lcf:
@@ -137,19 +137,6 @@ class Printer(Step):
         # print all edges
         for edge in sstg.edges():
             color = "black"
-
-            # look for important edges and color them red
-            # s_state = sstg.vp.state[edge.source()]
-            # t_state = sstg.vp.state[edge.target()]
-
-            # for cpu in s_state.activated_tasks:
-            #     s_task = s_state.get_scheduled_task(cpu)
-            #     t_task = t_state.get_scheduled_task(cpu)
-            #     if s_task is not None and t_task is not None and s_task.name != t_task.name:
-            #         t_abb = t_state.abbs[t_task.name]
-            #         s_abb = s_state.abbs[s_task.name]
-            #         if t_abb not in cfg.vertex(s_abb).out_neighbors():
-            #           color = "red"
 
             dot_graph.add_edge(pydot.Edge(
                 str(hash(edge.source())),
