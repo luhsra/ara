@@ -58,7 +58,7 @@ class VanillaTasksLists(DataObjectArray):
 class VanillaTCB(StructDataObject):
     def __init__(self, task, initialized, name_length, **kwargs):
         StructDataObject.__init__(self,
-                                    "TCB_t", f"{task.name}_tcb",
+                                    "TCB_t", f"{task.name}_{task.uid}_tcb",
                                   **kwargs)
         self.task = task
         task.impl.tcb = self

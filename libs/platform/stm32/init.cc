@@ -84,3 +84,5 @@ __attribute__((weak)) extern "C" void vApplicationStackOverflowHook( void )
 }
 
 __attribute__((weak)) extern "C" void _init() {}
+
+__attribute__((weak)) extern "C" void vApplicationIdleHook( void ) {}
