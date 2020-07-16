@@ -15,9 +15,7 @@
 #undef VERSION
 #include <MSSA/SVFG.h>
 #include <Util/BasicTypes.h>
-//#include <Util/VFGNode.h>
 #include <Graphs/VFGNode.h>
-//#include <MSSA/SVFG.h>
 #include <Graphs/SVFG.h>
 #include <WPA/Andersen.h>
 #undef VERSION
@@ -35,7 +33,7 @@ namespace ara::step {
 
 		virtual void init_options() override;
 
-		/*
+		/**
 		 * demangle a string, for example:
 		 * _ZN11MutexLockerC2EP15QueueDefinition to MutexLocker::MutexLocker(QueueDefinition*)
 		 */
@@ -48,10 +46,11 @@ namespace ara::step {
 		/* a list of values and their (hopefully) corresponding paths along which they are retrieved */
 		typedef std::tuple<std::vector<const Constant*>, std::vector<std::vector<const Instruction*>>> ValPath;
 
+		const llvm::Constant* handle_value(const llvm::Value* value);
 		ValPath retrieve_value(const SVFG& vfg, const llvm::Value& value);
 		std::vector<ValPath> collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call);
 
-		/*
+		/**
 		 * given a function, find its corresponding callgraph node and iterate over
 		 * its parents up to the respective root, saving each list of functions
 		 * in <curPath> first, and adding it to <paths> when a root node is reached
@@ -72,7 +71,8 @@ namespace ara::step {
 							const Instruction* ci = cbn->getCallSite().getInstruction();
 							curPath.push_back(ci);
 							getCallPaths(cf, paths, curPath);
-							/* when the recursion above finishes, we have reached a root node
+							/**
+							 * when the recursion above finishes, we have reached a root node
 							 * therefore we go back (down) one node and check its other parents
 							 */
 							curPath.pop_back();
@@ -99,7 +99,8 @@ namespace ara::step {
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
 				//logger.debug() << "call base aka instruction: " << *called_func << std::endl;
 				if (called_func) {
-					//Arguments args;
+					Arguments args;
+					llvm::AttributeSet attrs;
 					llvm::Function* func = called_func->getCalledFunction();
 					if (func) {
 						//this->logger.debug() << *bb << std::endl;
@@ -107,53 +108,88 @@ namespace ara::step {
 						this->logger.debug() << "Function name: \033[34m" << func->getName().str() << "\033[0m" << std::endl;
 						this->logger.debug() << "Number of args: " << func->arg_size() << std::endl;
 						this->logger.debug() << "------------" << std::endl;
-						// attributes
-						llvm::AttributeSet attrs = func->getAttributes().getFnAttributes();
-						// return value (probably wrong)
-						if (llvm::Value* v = llvm::dyn_cast<llvm::Value>(func)) {
-							//this->logger.debug() << "Return: " << *v << std::endl;
+						//llvm::AttributeSet attrs = func->getAttributes().getFnAttributes();
+						llvm::AttributeList attrl = called_func->getAttributes();
+						for (unsigned it = attrl.index_begin(); it != attrl.index_end(); ++it) {
+							// index is sometimes negative (2**32 - 1 or something)??
+							//logger.debug() << it << ": " << attrl.getAsString(it) << std::endl;
 						}
 
-						// TODO get Instructions instead of Functions
+						const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(called_func->getContext());
+						const llvm::Constant* none_c = llvm::dyn_cast<llvm::Constant>(token);
+
 						std::vector<ValPath> vps = collectUsesOnVFG(vfg, *called_func);
+						int t = 0;
 						for (auto vp : vps) {
-							/* i does not correspond to the index of the argument in the function 
+							attrs = attrl.getAttributes(t + 1);
+							if (std::get<0>(vp).size() != std::get<1>(vp).size()) {
+								logger.debug() << "===Number of Values: " << std::get<0>(vp).size() << std::endl;
+								logger.debug() << "===Number of Paths:  " << std::get<1>(vp).size() << std::endl;
+							}
+							if (std::get<0>(vp).size() < 1) {
+								logger.debug() << "no vals" << std::endl;
+								continue;
+							}
+
+							/**
+							 * for unambiguous values:
+							 * 	- push back an Argument with just the one value and no alternatives/paths
+							 */
+							if (std::get<0>(vp).size() == 1) {
+								const llvm::Value* constVal = std::get<0>(vp).at(0);
+								if (const Function* func = llvm::dyn_cast<llvm::Function>(constVal)) {
+									logger.debug() << "value is function: " << demangle(func->getName().str()) << std::endl;
+								}
+								else {
+									logger.debug() << "unambiguous value: " << *constVal << std::endl;
+								}
+								args.push_back(Argument(attrs, *constVal));
+								continue;
+							}
+
+							Argument a(attrs, *none_c);
+
+							/**
+							 * i does not correspond to the index of the argument in the function 
 							 * it is just here for debugging purposes
 							 */
-							int i=0, j=0;
+							int i = 0;
+							/* we need paths >= values for this to work */
+							assert(std::get<1>(vp).size() >= std::get<0>(vp).size());
+							std::string entryFun;
 							for (auto v : std::get<0>(vp)) {
-								// temporary: uncomment to skip direct constants (values with empty paths) 
-								// works with Function* version:
-								//if (std::get<1>(vp).at(0).empty()) continue;
-								// works with Instruction* version:
-								//if (std::get<1>(vp).at(0).size() == 1) continue;
+								/* end iterator points behind the last element so we subtract 1 before dereferencing it */
+								entryFun = (*(std::get<1>(vp).at(i).end() - 1))->getFunction()->getName().str();
+
+								/* erase the syscall itself from the instruction list */
+								std::get<1>(vp).at(i).erase(std::get<1>(vp).at(i).begin());
+
 								if (const Function* func = llvm::dyn_cast<llvm::Function>(v)) {
 									logger.debug() << "Value (function) " << i << ": " << demangle(func->getName().str()) << std::endl;
 								}
 								else {
 									logger.debug() << "Value " << i << ": " << *v << std::endl;
 								}
-								i++;
-							}
-							for (auto p : std::get<1>(vp)) {
-								if (p.size() <= 1) {
-									//continue;
-								}
-								logger.debug() << "PATH " << j << ": \n        |--";
-								std::string topLevFun;
-								for (auto inst : p) {
-									//topLevFun = demangle(inst->getFunction()->getName().str());
-									//logger.debug() << *inst << "\033[33m(called by " << topLevFun << ")\033[0m" << "---";
+								logger.debug() << "PATH " << i << ": \n        |--";
+								for (auto inst : std::get<1>(vp).at(i)) {
 									logger.debug() << *inst << "\n        ---";
 								}
-								logger.debug() <<  "|" << std::endl;
-								/* end iterator points behind the last element so we subtract 1 before dereferencing it */
-								logger.debug() << "Entry function is: \033[33m"
-											   << (*(p.end() - 1))->getFunction()->getName().str()
-											   << "\033[0m" << std::endl;
-								j++;
+								logger.debug() <<"\033[33m" << demangle(entryFun) << "\033[0m|" << std::endl;
+
+								a.add_variant(std::get<1>(vp).at(i), *v);
+								i++;
 							}
+							args.set_entry_fun(entryFun);
+							args.push_back(a);
+							t++;
 						}
+					}
+					/* return value */
+					if (called_func->hasOneUse()) {
+						const llvm::User* ur = called_func->user_back();
+						llvm::Value* retval = ur->getOperand(1);
+						logger.debug() << "return: " << *retval << std::endl;
+						args.set_return_value(std::make_unique<Argument>(llvm::AttributeSet(), *retval));
 					}
 
 					// std::pair<Arguments, std::vector<std::vector<unsigned>>> args_pair = va.get_values(*called_func);
@@ -181,8 +217,8 @@ namespace ara::step {
 					// 	stats.add_child(abb_name, arg_stats);
 					// }
 
-					// cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
-					this->logger.debug() << "Retrieved " // << args.size() << " arguments for call " << *called_func
+					cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
+					this->logger.debug() << "Retrieved " << args.size() << " arguments for call " << *called_func
 					               << std::endl;
 					this->logger.debug() << "================================================" << std::endl;
 					std::cout << std::endl;

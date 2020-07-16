@@ -8,12 +8,9 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/python.hpp>
 
-//#include <tuple>
-
 #define VERSION_BKP VERSION
 #undef VERSION
 #include <Util/BasicTypes.h>
-//#include <Util/VFGNode.h>
 #include <Graphs/VFGNode.h>
 #include <WPA/Andersen.h>
 #undef VERSION
@@ -23,6 +20,89 @@
 using namespace boost::property_tree;
 
 namespace ara::step {
+
+
+	const llvm::Constant* ValueAnalysisCore::handle_value(const llvm::Value* value) {
+		if (const Instruction* inst = llvm::dyn_cast<Instruction>(value)) {
+			/* handle different constant types */
+			llvm::Value* opz = inst->getOperand(0);
+			if (const llvm::ConstantData* cdata = llvm::dyn_cast<ConstantData>(opz)) {
+				logger.debug() << "---constant data " << *cdata << std::endl;
+				return cdata;
+			}
+			else if (const llvm::ConstantInt* cint = llvm::dyn_cast<ConstantInt>(opz)) {
+				logger.debug() << "---constant int " << *cint << std::endl;
+				return cint;
+			}
+			else if (const llvm::ConstantFP* cfp = llvm::dyn_cast<llvm::ConstantFP>(opz)) {
+				logger.debug() << "---constant fp " << *cfp << std::endl;
+				return cfp;
+			}
+			// TODO: refine
+			else if (const llvm::ConstantExpr* cexpr = llvm::dyn_cast<ConstantExpr>(opz)) {
+				logger.debug() << "---constant expr " << *cexpr << std::endl;
+				if (const llvm::GlobalVariable* gvar = llvm::dyn_cast<GlobalVariable>(cexpr->getOperand(0))) {
+					logger.debug() << "---constant globvar " << *gvar << std::endl;
+				}
+			}
+			// TODO: refine
+			else if (const ConstantAggregate* caggr = llvm::dyn_cast<ConstantAggregate>(opz)) {
+				logger.debug() << "---constant aggregate " << *caggr << std::endl;
+			}
+			else if (const GlobalVariable* globvar = llvm::dyn_cast<GlobalVariable>(opz)) {
+				if (globvar->hasInitializer()) {
+					logger.debug() << "---globvar initializer: " << *globvar->getInitializer() << std::endl;
+					return globvar->getInitializer();
+				}
+			}
+
+			/* handle different instruction types */
+			if (const GetElementPtrInst* gepinst = llvm::dyn_cast<GetElementPtrInst>(inst)) {
+				if (gepinst->getOperand(0)->getValueName()->getKey().str() == "this") {
+					logger.debug() << "---skipping \"this\" value (" << *(gepinst->getOperand(0)) << ")" << std::endl;
+				}
+				else {
+					logger.debug() << "---gep operand 0: " << *(gepinst->getOperand(0))
+								   << " -||- Instruction: " << *gepinst << std::endl;
+				}
+			}
+			else if (const LoadInst* loadinst = llvm::dyn_cast<LoadInst>(inst)) {
+				logger.debug() << "---load operand 0: " << *(loadinst->getOperand(0))
+							   << " -||- Instruction: " << *loadinst << std::endl;
+			}
+			else if (const AllocaInst* allocainst = llvm::dyn_cast<AllocaInst>(inst)) {
+				logger.debug() << "---alloca operand 0: " << *(allocainst->getOperand(0))
+							   << " -||- Instruction: " << *allocainst << std::endl;
+			}
+			else if (const CastInst* castinst = llvm::dyn_cast<CastInst>(inst)) {
+				logger.debug() << "---cast operand 0: " << *(castinst->getOperand(0))
+							   << " -||- Instruction: " << *castinst << std::endl;
+			}
+			else if (const StoreInst* storeinst = llvm::dyn_cast<StoreInst>(inst)) {
+				logger.debug() << "---store operand 0: " << *(storeinst->getOperand(0))
+							   << " -||- Instruction: " << *storeinst << std::endl;
+			}
+			else if (const CallInst* callinst = llvm::dyn_cast<CallInst>(inst)) {
+				if (const GetElementPtrInst* gepinst = llvm::dyn_cast<GetElementPtrInst>(callinst->getOperand(0))) {
+					logger.debug() << "---call gep: " << *(gepinst->getOperand(0)) << std::endl;
+					if (const Constant* c = llvm::dyn_cast<Constant>(gepinst->getOperand(0))) {
+						return c;
+					}
+				}
+				/* interesting stuff not always in operand 0 for a CallInst */
+				for (int o = 0; o < inst->getNumOperands(); o++) {
+					logger.debug() << "---call operand " << o
+								   << ": " << *(inst->getOperand(o))
+								   << " -||- Instruction: " << *inst << std::endl;
+				}
+			}
+			// TODO binary ops?
+			else {
+				logger.debug() << "UNHANDLED INST !(gep | load | alloca | call) "  << *inst << std::endl;
+			}
+		}
+		return NULL;
+	}
 
 
 	ValueAnalysisCore::ValPath ValueAnalysisCore::retrieve_value(const SVFG& vfg, const llvm::Value& value) {
@@ -68,14 +148,13 @@ namespace ara::step {
 	    for(std::set<const VFGNode*>::const_iterator it = visited.begin(), eit = visited.end(); it!=eit; ++it){
 	    	const VFGNode* node = *it;
 #if 0
-			// contains calling function
-			//if (const llvm::Function* fun = vfg.isFunEntryVFGNode(node)) {
-			if (const SVFFunction* fun = vfg.isFunEntryVFGNode(node)) {
-				logger.debug() << "\033[31mcalling function:\033[0m " << fun->getName().str() << std::endl;
-				//logger.debug() << *fun << std::endl;
-			}
-			else {
-				//logger.debug() << "\033[33mno calling function for node type \033[0m" << node->getNodeKind() << std::endl;
+			if (const MRSVFGNode* mrnode = SVFUtil::dyn_cast<MRSVFGNode>(node)) {
+				const PointsTo pt = mrnode->getPointsTo();
+				// something something PAGNode ids
+				//logger.debug() << "pointsto: " << pt.count() << std::endl;
+				for (auto info : pt) {
+					//logger.debug() << info << std::endl;
+				}
 			}
 #endif
 			/* -- vfg node kind --
@@ -84,7 +163,7 @@ namespace ara::step {
 			 * MPhi 	MIntraPhi 	MInterPhi 	FRet 	ARet 	AParm 	FParm 	FunRet 	APIN 	  APOUT
 			 * FPIN 	FPOUT 		NPtr
 			 */
-			// vfg node types for which getLHSTopLevPtr is unsupported
+			/* vfg node types for which getLHSTopLevPtr is unsupported */
 			std::vector<int> filterVFG = {SVFGNode::MPhi, SVFGNode::MIntraPhi, SVFGNode::MInterPhi,
 										  SVFGNode::FunRet, SVFGNode::APIN, SVFGNode::APOUT,
 										  SVFGNode::FPIN, SVFGNode::FPOUT};
@@ -97,13 +176,14 @@ namespace ara::step {
 			 * 0 	   1       2 	   3 		  4 		 5  		6 		  7 		   8
 			 * ValNode ObjNode RetNode VarargNode GepValNode GepObjNode FIObjNode DummyValNode DummyObjNode
 			 */
-			// pag node types which have no value
+			/* pag node types which have no value */
 			if (pNode->getNodeKind() > 6)
 				continue;
 	    	const Value* val = pNode->getValue();
+			//logger.debug() << "[[[value: " << *val << std::endl;
 			if (const Function* f = pNode->getFunction()) {
 				//logger.debug() << "[[[PAGNode function: " << f->getName().str() << std::endl;
-				/*
+				/**
 				 * filter node with isFunEntryNode, additionally save all unfiltered results.
 				 * at the end (after all nodes have been iterated over), check if the
 				 * filtered <paths> are empty, if they are, use the unfiltered <altPaths>
@@ -116,41 +196,10 @@ namespace ara::step {
 					getCallPaths(f, altPaths, curPath);
 				}
 			}
-			if (const Instruction* inst = llvm::dyn_cast<Instruction>(val)) {
-				//logger.debug() << "Inst: " << *inst << "\n        " << *(inst->getOperand(0)) << std::endl;
-				/* for getelementpointer instructions that retrieve constants */
-				if (const Constant* c = llvm::dyn_cast<Constant>(inst->getOperand(0))) {
-					//logger.debug() << "[[[Found Value: " << *c << std::endl;
-					ret.push_back(c);
-				}
-				else if (const GetElementPtrInst* gepinst = llvm::dyn_cast<GetElementPtrInst>(inst)) {
-					if (inst->getOperand(0)->getValueName()->getKey().str() == "this") {
-						logger.debug() << "skipping \"this\" value" << std::endl;
-					}
-					else {
-						logger.debug() << "gep operand 0: " << *(inst->getOperand(0))
-									   << " -||- Instruction: " << *inst << std::endl;
-					}
-				}
-				else if (const LoadInst* loadinst = llvm::dyn_cast<LoadInst>(inst)) {
-					logger.debug() << "load operand 0: " << *(inst->getOperand(0))
-								   << " -||- Instruction: " << *inst << std::endl;
-				}
-				else if (const AllocaInst* allocainst = llvm::dyn_cast<AllocaInst>(inst)) {
-					logger.debug() << "alloca operand 0: " << *(inst->getOperand(0))
-								   << " -||- Instruction: " << *inst << std::endl;
-				}
-				/* interesting stuff not always in operand 0 for a CallInst */
-				else if (const CallInst* callinst = llvm::dyn_cast<CallInst>(inst)) {
-					for (int o = 0; o < inst->getNumOperands(); o++) {
-						logger.debug() << "call operand " << o
-									   << ": " << *(inst->getOperand(o))
-									   << " -||- Instruction: " << *inst << std::endl;
-					}
-				}
-				else {
-					logger.debug() << "UNHANDLED INST !(gep, load, alloca, call) "  << *inst << std::endl;
-				}
+			/* evaluate the value we found */
+			const Constant* c = handle_value(val);
+			if (c) {
+				ret.push_back(c);
 			}
 	    }
 		return {ret, (paths.empty() ? altPaths : paths)};
@@ -164,33 +213,31 @@ namespace ara::step {
 		std::vector<ValueAnalysisCore::ValPath> vps;
 
 
-		int i = 0;
 		for (const llvm::Use& use : call.args()) {
-			//logger.debug() << "HANDLING USE " << i++ << std::endl;
 			//logger.debug() << "function is: " << call.getCalledFunction()->getName().str() << std::endl;
 			const Value* val = use.get();
 			if (const llvm::Constant* c = llvm::dyn_cast<llvm::Constant>(val)) {
-				// is our constant a function?
-				if (const Function* func = llvm::dyn_cast<llvm::Function>(val)) {
-					//logger.debug() << "Found Value (constant function): " << /* *c*/ func->getName().str() << std::endl;
-				}
-				else {
-					// we have found a direct constant, no need for further analysis
-					//this->logger.debug() << "Found Value (direct  constant): " << *c << std::endl;
-				}
-				// constants are saved as just one value with a single call
-				//ValueAnalysisCore::ValPath vp = {{c}, {{&call}}};
-				ValueAnalysisCore::ValPath vp = {{c}, {}};
+				/**
+				 * constants are saved as just one value with a single call
+				 * which is needed to determine the entry function later
+				 */
+				ValueAnalysisCore::ValPath vp = {{c}, {{(Instruction*)&call}}};
 				vps.push_back(vp);
 			} else {
 				assert(val != nullptr);
 				logger.debug() << "retrieving value: \033[35m" << *val << "\033[0m" << std::endl;
 				ValueAnalysisCore::ValPath vp = retrieve_value(vfg, *val);
+				/**
+				 * insert the syscall itself at the front of the callpath
+				 * this is needed to distinguish these values from constants
+				 * which are later detected by having a callpath of size=1
+				 *
+				 * this way the values always have a callpath of size >=2
+				 */
 				for (auto& p : std::get<1>(vp)) {
 					p.insert(p.begin(), (Instruction*)&call);
 				}
 				vps.push_back(vp);
-				//assert(std::get<0>(vp).size() == std::get<1>(vp).size() && "Number of Values and Paths must be the same");
 			}
 		}
 		return vps;
