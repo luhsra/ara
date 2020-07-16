@@ -9,6 +9,10 @@ import ara.graph
 from .step import Step
 from .option import Option, String
 
+def p_print(obj):
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
+    pp.pprint(obj)
 
 class ValueAnalysis(Step):
     """Perform a value analysis for all system calls.
@@ -45,6 +49,8 @@ class ValueAnalysis(Step):
                 continue
 
             args = self._graph.cfg.vp.arguments[abb]
+            ## to pretty-print args structure
+            #p_print(args)
             assert type(args) is list
 
             self._log.debug(f"Processing node {self._graph.cfg.vp.name[abb]}.")
