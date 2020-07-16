@@ -96,17 +96,6 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                                              extern_c=True)
             self.generator.source_file.function_manager.add(start_func)
 
-        dummy_xTaskCreate = Function('xTaskCreate',
-                                     'BaseType_t',
-                                     ['TaskFunction_t',
-                                      'const char *',
-                                      'const uint32_t',
-                                      'void * const',
-                                      'UBaseType_t',
-                                      'TaskHandle_t *'
-                                      ])
-        dummy_xTaskCreate.add(Statement("return pdPASS"))
-        self.generator.source_file.function_manager.add(dummy_xTaskCreate)
 
     def generate_data_objects_ready_list(self, tasks):
         max_prio = self.ara_graph.os.config.get('configMAX_PRIORITIES').get()
