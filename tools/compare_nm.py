@@ -9,6 +9,14 @@ import os
 
 RED = ("\033[1;31m", "\033[1;0m")
 BLUE = ("\033[1;34m", "\033[1;0m")
+def to_int(x):
+    if x == ' ':
+        return 0
+    if isinstance(x, int):
+        return x
+    return int(x)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('NM_TOOL', help='nm binary')
@@ -18,7 +26,7 @@ def main():
     parser.add_argument('-C', '--force-color', action='store_true',
                         help='force colorized changes')
     parser.add_argument('--change', help='limit output to certain class of changes',
-                        choices=['segment', 'size', 'all'],
+                        choices=['segment', 'size', 'size-diff', 'all'],
                         default=os.environ.get('CHANGE', 'all'))
     parser.add_argument('--symbols', help='limit output to certain class of symbols',
                         choices=['common', 'unique', 'all', 'merged'],
@@ -28,10 +36,23 @@ def main():
                         default=os.environ.get('SORT', 'name'))
     parser.add_argument('--segment', help='limit output to symbols appearing in listed segments',
                         default=os.environ.get('SEGMENT', None))
+    parser.add_argument('--same-width', help='show columns for lto and non-lto variants with the same width',
+                        default=os.environ.get('SAME_WIDTH', None)=='True')
+    parser.add_argument('--verbose', '-v', action='store_true')
 
     args = parser.parse_args()
 
-    if not (args.force_color or os.isatty(1)):
+    logging.addLevelName(logging.WARNING, "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+    logging.addLevelName(logging.ERROR, "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+    logging.addLevelName(logging.DEBUG, "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
+    logging.addLevelName(logging.INFO, "\033[1;34m%s\033[1;0m" % logging.getLevelName(logging.INFO))
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO)
+    if args.change != 'all':
+        logging.info("applying change filter: %s", args.change)
+
+    if not (args.force_color
+            or os.isatty(1)
+            or os.environ.get('COLOR', None) == 'force'):
         global RED, BLUE
         RED = ("","")
         BLUE = RED
@@ -52,7 +73,10 @@ def main():
     common_keys = keys[name].intersection(*keys.values())
     unique_keys = keys[name].union(*keys.values()) - common_keys
 
-    lens = {name: len(name) for name in keys.keys()}
+    if args.same_width:
+        lens = {name: len(name) if '.lto' in name else len(name) + 4 for name in keys.keys()}
+    else:
+        lens = {name: len(name) for name in keys.keys()}
 
     fields = [f'{n:^{lens[n]+2}}' for n in keys.keys()]
     fields += ['name']
@@ -76,6 +100,12 @@ def main():
                                    key=lambda idx:
                                    int(list(data[idx].values())[0]['size'])
             )
+        elif args.sort == 'size-diff':
+            sorted_keyset = sorted(keyset,
+                                   key=lambda idx:
+                                   (max([to_int(x['size']) for x in data[idx].values()]) -
+                                    min([to_int(x['size']) for x in data[idx].values()]))
+            )
         for key in sorted_keyset:
             d = data[key]
             sizes = [d[k]['size'] for k in keys.keys()]
@@ -96,7 +126,11 @@ def main():
                       f"{seg_color[0]}{d[n]['segment']}{seg_color[1]}"
                       for n in keys.keys()]
             fields += [f"{key}"]
-            print(" | ".join(fields))
+            print(" | ".join(fields), end='')
+            for key in keys:
+                if d[key]['parts'] != ' ':
+                    print(f"'{key}_parts: {{{d[key]['parts']}}}", end='')
+            print('')
         print('\n')
 
 
@@ -111,6 +145,9 @@ def parse_elf(nm, elf_name, elf, data, keys):
             logging.debug("failed line: %s", line)
             if ' N ' in line or line.startswith('N '):
                 continue
+            if ' U' in line:
+                continue
+            logging.error("giving up on this: %s", line)
             return
         name = match.group('name')
         data[name][elf_name] = {
@@ -118,9 +155,22 @@ def parse_elf(nm, elf_name, elf, data, keys):
             'size': int(match.group('size') or '0', 16),
             'addr': match.group('addr'),
             'name': name,
+            'parts': ' ',
         }
+
+        logging.debug("found %s", data[name][elf_name])
         keys[elf_name].add(name)
 
+    for key in keys[elf_name]:
+        if '.part.' not in key:
+            continue
+        logging.debug('partioal sym: %s', key)
+        main_name, part_num = key.split('.part.', 1)
+        main_entry = data[main_name][elf_name]
+        part_entry = data[key][elf_name]
+        main_entry['size'] = to_int(main_entry['size']) + part_entry['size']
+        main_entry['segment'] += part_entry['segment']
+        main_entry['parts'] += ', ' + part_num
 
 if __name__ == '__main__':
     import sys

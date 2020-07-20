@@ -144,10 +144,12 @@ foreach app : ir_apps + hw_apps
                                     get_variable('libfreertos_' + target)],
                             output: name_prefix + '.lto.elf',
                             depfile: name_prefix + '.lto.elf.dep',
+                            depend_files: default_linkerscript,
                             command: clang_cpp +
                                      libs_includes +
                                      ld_flags +
                                      ['-lsra'] +
+                                     ['-T' + default_linkerscript ] +
                                      clang_flags)
 
     elf_target = custom_target(name_prefix + '.elf',
@@ -163,6 +165,7 @@ foreach app : ir_apps + hw_apps
                                         libplatform_default_config +
                                         ld_flags +
                                         ['-lsra'] +
+                                        ['-T' + default_linkerscript ] +
                                         clang_flags)
 
     bin_target = custom_target(name_prefix + '.bin',
@@ -239,6 +242,9 @@ freertos_targets += gpslogger_application
 
 subdir('FreeRTOS/SmartPlug')
 freertos_targets += smartplug_targets
+
+subdir('FreeRTOS/Librepilot')
+freertos_targets += librepilot_application
 
 freertos_examples = run_target('freertos-examples',
                                command: nop,

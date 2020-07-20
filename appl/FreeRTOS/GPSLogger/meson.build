@@ -121,6 +121,8 @@ gpslogger_runtarget = run_target('gpslogger-full',
 
 named_elf_targets = []
 elf_targets = []
+named_plain_elf_targets = []
+named_lto_elf_targets = []
 foreach t : ara_gen_freertos_targets
   name_prefix = 'gpslogger-' + t
   ara_target = custom_target(name_prefix + '-os',
@@ -176,10 +178,12 @@ foreach t : ara_gen_freertos_targets
                                  ],
                           output: name_prefix + '.lto.elf',
                           depfile: name_prefix + '.lto.elf.dep',
+                          depend_files: default_linkerscript,
                           command: clang_cpp +
                                    gpslogger_includes +
                                    ld_flags +
                                    gpslogger_ldflags +
+                                   ['-T' + default_linkerscript ] +
                                    clang_flags)
 
   elf_target = custom_target(name_prefix + '.elf',
@@ -190,10 +194,12 @@ foreach t : ara_gen_freertos_targets
                                     ],
                              output: name_prefix + '.elf',
                              depfile: name_prefix + '.elf.dep',
+                             depend_files: default_linkerscript,
                              command: clang_cpp +
                                       gpslogger_includes +
                                       ld_flags +
                                       gpslogger_ldflags +
+                                      ['-T' + default_linkerscript ] +
                                       clang_flags)
 
   bin_target = custom_target(name_prefix + '.bin',
@@ -219,6 +225,8 @@ foreach t : ara_gen_freertos_targets
   elf_targets += lto_elf
   named_elf_targets += [t, elf_target]
   named_elf_targets += [t+'.lto', lto_elf]
+  named_plain_elf_targets += [t, elf_target]
+  named_lto_elf_targets += [t+'.lto', lto_elf]
 
   if get_option('enable_gpslogger_tests')
     test('run_qemu_' + name_prefix,
@@ -239,6 +247,8 @@ foreach t : ara_gen_freertos_targets
 endforeach
 
 run_target('compare_nm-gpslogger', command: [compare_nm, nm.path(), named_elf_targets])
+run_target('compare_nm-gpslogger-plain', command: [compare_nm, nm.path(), named_plain_elf_targets])
+run_target('compare_nm-gpslogger-lto', command: [compare_nm, nm.path(), named_lto_elf_targets])
 run_target('compare_size-gpslogger', command: [size, elf_targets])
 run_target('compare_time-gpslogger', command: [compare_time, meson.build_root(), 'gpslogger'], depends: elf_targets)
 custom_target('analyze-gpslogger',
