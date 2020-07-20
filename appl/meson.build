@@ -48,6 +48,7 @@ hw_apps = [
   'simple_lazy_create',
   'timing_xTaskCreate-preScheduler',
   'timing_xTaskCreate-postScheduler',
+  'timing_xQueueCreate',
 ]
 
 
@@ -177,6 +178,7 @@ foreach app : ir_apps + hw_apps
     run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
     run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
     run_target('size_' + name_prefix, command: [size, elf_target])
+    run_target('size_' + name_prefix + '.lto', command: [size, lto_elf])
     run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
     run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
     run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
@@ -207,6 +209,28 @@ foreach app : ir_apps + hw_apps
   run_target('compare_time-' + app, command: [compare_time, meson.build_root(), app], depends: elf_targets)
 
   freertos_targets += app_vanilla_ll
+  profiles_list = []
+  foreach profile: ara_gen_freertos_targets
+    profiles_list += ['--profiles', profile]
+    profiles_list += ['--profiles', profile + '.lto']
+  endforeach
+  timing_exp_result = custom_target('analyze_timing-' + app,
+                                    command: [files('GenericTimingExperiment.py'), '-d', meson.current_build_dir(),
+                                              '-s',
+                                              '--title', 'freertos-' + app,
+                                              profiles_list,
+                                              '--run-dir', meson.build_root()],
+                                    output: ['timing_result-freertos-' + app + '.dref',
+                                             'timing_result_raw-freertos-' + app + '.dref'],
+                                    console: true,
+                                    depends: elf_targets)
+  run_target('show-timing_result-freertos-' + app + '.dref',
+             command: [#'strace',
+               files('make_figures.py'),
+               profiles_list,
+               '--title', 'freertos-' + app,],
+             depends: timing_exp_result,
+            )
 endforeach
 
 # gpslogger is special

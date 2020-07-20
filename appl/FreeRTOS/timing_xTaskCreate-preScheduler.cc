@@ -123,7 +123,6 @@ static void start_70(void) {
 
 
 extern "C" void vApplicationIdleHook(void) {
-  kout << "running: " << running_tasks << endl;
   StopBoard(0);
 }
 
@@ -134,8 +133,6 @@ int main() {
   STORE_TIME_MARKER(done_InitBoard);
   kout.init();
 
-  kout << 'z' << endl;
-  kout << "hello from main" << endl;
   STORE_TIME_MARKER(done_hello_print);
   STORE_TIME_MARKER(done_taskCreate);
   start_10();

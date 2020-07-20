@@ -141,7 +141,6 @@ void setup_task(void * param) {
   // start_40();
   // start_50();
   // start_60();
-  kout << started_tasks << endl;
   STORE_TIME_MARKER(done_taskCreate);
   for (;;) vTaskDelay(10000);
 }
@@ -152,8 +151,6 @@ int main() {
   STORE_TIME_MARKER(done_InitBoard);
   kout.init();
 
-  kout << 'z' << endl;
-  kout << "hello from main" << endl;
   STORE_TIME_MARKER(done_hello_print);
   xTaskCreate(setup_task, "setup", 100, NULL, 2, NULL);
 

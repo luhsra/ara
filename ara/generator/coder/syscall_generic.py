@@ -8,9 +8,9 @@ class GenericSystemCalls(BaseCoder):
 
     def generate_system_code(self):
         self.generator.source_file.function_manager.add(self._init)
-        init_board = FunctionDeclaration('InitBoard', 'void', [])
-        self.generator.source_file.function_manager.add(init_board)
-        self._init.add(FunctionCall('InitBoard',[]))
+        # init_board = FunctionDeclaration('InitBoard', 'void', [])
+        # self.generator.source_file.function_manager.add(init_board)
+        # self._init.add(FunctionCall('InitBoard',[]))
 
         stack_hook = Function('vApplicationStackOverflowHook', 'void',
                               [], extern_c=True, attributes=['__attribute__((weak))'])
