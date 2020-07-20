@@ -11,7 +11,7 @@ from .option import Option, String, Choice
 from .freertos import Task
 from .os_util import SyscallCategory
 from ara.util import VarianceDict
-from .autosar import Task as AUTOSAR_Task
+from .autosar import Task as AUTOSAR_Task, SyscallInfo
 
 from collections import defaultdict
 from enum import Enum
@@ -91,6 +91,7 @@ class FlowAnalysis(Step):
 
         self.sstg = graph_tool.Graph()
         self.sstg.vertex_properties["state"] = self.sstg.new_vp("object")
+        self.sstg.edge_properties["syscall"] = self.sstg.new_ep("object")
 
         state_vertex = self.new_vertex(self.sstg, self._get_initial_state())
 
@@ -104,7 +105,11 @@ class FlowAnalysis(Step):
             # state = self.sstg.vp.state[state_vertex]
             for n in self._system_semantic(state_vertex):
                 new_state = self.new_vertex(self.sstg, n)
-                self.sstg.add_edge(state_vertex, new_state)
+                e = self.sstg.add_edge(state_vertex, new_state)
+
+                if isinstance(n, MultiState):
+                    self.sstg.ep.syscall[e] = n.last_syscall
+
                 stack.append(new_state)
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
@@ -121,7 +126,9 @@ class MultiState:
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABBs per task; key: task name, value: list of ABB nodes
         self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
-    
+
+        self.last_syscall = None # syscall that this state originated from (used for building gcfg)
+                                 # Type: SyscallInfo 
     def get_scheduled_task(self, cpu):
         task_list = self.activated_tasks[cpu]
         if len(task_list) >= 1:
@@ -257,7 +264,8 @@ class MultiSSE(FlowAnalysis):
             for new_state in new_states:
                 if new_state == sstg_state:
                     new_states.remove(new_state)
-                    self.sstg.add_edge(state_vertex, v)
+                    e = self.sstg.add_edge(state_vertex, v)
+                    self.sstg.ep.syscall[e] = new_state.last_syscall
 
         return new_states
 
@@ -273,14 +281,26 @@ class MultiSSE(FlowAnalysis):
                 s_task = s_state.get_scheduled_task(cpu)
                 t_task = t_state.get_scheduled_task(cpu)
                 if s_task is not None and t_task is not None and s_task.name != t_task.name:
-                    # add edge from each source abb to first target abb
                     # we assume that the target abb is the first element in the list
                     # since the list is not sorted
                     t_abb = t_state.abbs[t_task.name][0]
-                    for abb in s_state.abbs[s_task.name]:
-                        if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
-                            e = self._g.cfg.add_edge(abb, t_abb)
-                            self._g.cfg.ep.type[e] = CFType.gcf
+
+                    # getting info about last syscall
+                    info = self.sstg.ep.syscall[edge]
+
+                    # if last syscall was TerminateTask only one edge is added
+                    if info.name == "TerminateTask":
+                        if info.cpu == cpu:
+                            s_abb = info.abb
+                            if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
+                                e = self._g.cfg.add_edge(s_abb, t_abb)
+                                self._g.cfg.ep.type[e] = CFType.gcf
+                    else:
+                        # add edge from each source abb to first target abb
+                        for abb in s_state.abbs[s_task.name]:
+                            if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
+                                e = self._g.cfg.add_edge(abb, t_abb)
+                                self._g.cfg.ep.type[e] = CFType.gcf
 
 
     def _finish(self, sstg):

@@ -5,6 +5,13 @@ from ara.graph.argument import CallPath
 
 logger = get_logger("AUTOSAR")
 
+
+class SyscallInfo:
+    def __init__(self, name, abb, cpu):
+        self.name = name
+        self.abb = abb
+        self.cpu = cpu
+
 class Task:
     def __init__(self, cfg, name, function, priority, activation,
                  autostart, schedule, cpu_id):
@@ -75,6 +82,9 @@ class AUTOSAR(OSBase):
 
         # trigger scheduling 
         AUTOSAR.schedule(state, task.cpu_id)
+
+        # set this syscall for gcfg building
+        state.last_syscall = SyscallInfo("ActivateTask", abb, cpu)
 
         print("Activate Task: " + task.name)
 
@@ -166,6 +176,9 @@ class AUTOSAR(OSBase):
 
         # reset abb list to entry abb
         state.abbs[scheduled_task.name] = [state.entry_abbs[scheduled_task.name]]
+
+        # set this syscall for gcfg building
+        state.last_syscall = SyscallInfo("TerminateTask", abb, cpu)
 
         print("Terminated Task: " + scheduled_task.name)
 

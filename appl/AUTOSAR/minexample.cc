@@ -6,6 +6,7 @@ void doSomethingImportant() { }
 void doSomethingC() { }
 void doSomethingD() { }
 void doSomethingE() { }
+extern bool getBool();
 
 DeclareTask(TaskA);
 DeclareTask(TaskB);
@@ -35,7 +36,10 @@ TASK(TaskC) {
 
 TASK(TaskD) {
     doSomethingD();
-    ActivateTask(TaskE);
+    if (getBool()) {
+        ActivateTask(TaskE);
+    }
+    
     TerminateTask();
 }
 
