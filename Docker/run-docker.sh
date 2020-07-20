@@ -13,6 +13,8 @@ else
 	qemu_mount=""
 fi
 
+	 # --device "/dev/bus/usb/001/011"\
+	 # --volume "/dev/bus/usb/:/dev/bus/usb:rw"\
 
 sudo docker run --rm -it \
 	 --user $UID:$GID --workdir "$HOME" \
@@ -20,6 +22,11 @@ sudo docker run --rm -it \
 	 --volume "/etc/group:/etc/group:ro"\
 	 --volume "/etc/passwd:/etc/passwd:ro"\
 	 --volume "/etc/shadow:/etc/shadow:ro"\
+	 --volume "/proj/opt:/proj/opt:ro"\
 	 --volume "$HOME:$HOME:rw"\
+	 --device "/dev/ttyACM0"\
+	 --privileged\
+	 -v "/tmp/.X11-unix:/tmp/.X11-unix"\
+	 --env=DISPLAY=$DISPLAY\
 	 $qemu_mount \
-	 ara-dev-env /bin/bash
+	 ara-dev-env-focal /bin/bash

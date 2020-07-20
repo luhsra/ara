@@ -23,4 +23,10 @@ RUN apt-get install -y stlink-tools
 # we need 0.53.0 or >= 0.55.0
 RUN pip3 install meson>=0.54.2 cython
 
+RUN apt-get install -y python3-serial python3-future python3-matplotlib
+RUN pip3 install -U versuchung matplotlib
+#RUN apt-get install make unrar-free autoconf automake libtool gcc g++ gperf flex bison texinfo gawk ncurses-dev libexpat-dev python-dev python python-serialsed git unzip bash help2man wget bzip2 libtool-bin
+RUN apt-get install -y strace
+
+
 CMD ["bash"]
