@@ -156,8 +156,8 @@ class MultiState:
                         for n in cfg.vertex(abb).out_neighbors():
                             if n not in abb_list:
                                 abb_list.append(n)
-                            if not cfg.vp.type[n] == ABBType.syscall:
-                                stack.append(n)
+                                if cfg.vp.type[n] != ABBType.syscall and n not in stack:
+                                    stack.append(n)
 
     def __repr__(self):
         ret = ""
@@ -295,8 +295,23 @@ class MultiSSE(FlowAnalysis):
                             if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
                                 e = self._g.cfg.add_edge(s_abb, t_abb)
                                 self._g.cfg.ep.type[e] = CFType.gcf
+
+                    # if last syscall was ActivateTask we have to see if the activated task
+                    # is on the same cpu as the syscall, then we only need to add one edge
+                    elif info.name == "ActivateTask":
+                        if info.cpu == cpu:
+                            s_abb = info.abb
+                            if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
+                                e = self._g.cfg.add_edge(s_abb, t_abb)
+                                self._g.cfg.ep.type[e] = CFType.gcf
+                        else:
+                            # add edge from each source abb to first target abb
+                            for abb in s_state.abbs[s_task.name]:
+                                if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
+                                    e = self._g.cfg.add_edge(abb, t_abb)
+                                    self._g.cfg.ep.type[e] = CFType.gcf
                     else:
-                        # add edge from each source abb to first target abb
+                        # default: add edge from each source abb to first target abb
                         for abb in s_state.abbs[s_task.name]:
                             if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
                                 e = self._g.cfg.add_edge(abb, t_abb)
