@@ -17,6 +17,13 @@
 					"name": "TaskB",
 					"priority": 2,
 					"schedule": true
+				},
+				{
+					"activation": 1,
+					"autostart": false,
+					"name": "TaskF",
+					"priority": 3,
+					"schedule": true
 				}
 			]
 		},

@@ -2,7 +2,10 @@
 
 void doSomethingBefore() { }
 void doSomethingAfter() { }
-void doSomethingImportant() { }
+void doSomethingImportant2() { }
+void doSomethingImportant() {
+    doSomethingImportant2();
+}
 void doSomethingC() { }
 void doSomethingD() { }
 void doSomethingE() { }
@@ -13,6 +16,7 @@ DeclareTask(TaskB);
 DeclareTask(TaskC);
 DeclareTask(TaskD);
 DeclareTask(TaskE);
+DeclareTask(TaskF);
 
 TASK(TaskA) {
     doSomethingBefore();
@@ -25,6 +29,12 @@ TASK(TaskA) {
 }
 
 TASK(TaskB) {
+    doSomethingImportant();
+    ActivateTask(TaskF);
+    TerminateTask();
+}
+
+TASK(TaskF) {
     doSomethingImportant();
     TerminateTask();
 }

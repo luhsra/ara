@@ -139,6 +139,7 @@ class MultiState:
     def explore(self, cfg):
         """Explore the state to contain all abbs that can be reached from 
         the inital abb stopping at syscall abbs."""
+        lcfg = CFGView(self.cfg, efilt=self.cfg.ep.type.fa == CFType.lcf)
         for cpu in self.activated_tasks:
             task = self.get_scheduled_task(cpu)
             if task is not None:
@@ -147,17 +148,33 @@ class MultiState:
                 # only explore new states (when their list only contains one abb)
                 if (len(abb_list) == 1):
                     stack = [abb_list[0]]
+                    ret_stack = []
 
                     # explore neighbors until no new none syscall abb is found
                     while stack:
                         abb = stack.pop()
+                        
+                        is_ret = False
+
+                        # if call node is found, the return node is saved in return stack
+                        if cfg.vp.type[abb] == ABBType.call:
+                            for out in lcfg.vertex(abb).out_neighbors():
+                                ret_stack.append(out)
+                                break
+                        elif cfg.vp.type[abb] == ABBType.computation:
+                            if len(ret_stack) > 0 and ret_stack[-1] in cfg.vertex(abb).out_neighbors():
+                                is_ret = True
 
                         # append neighbors to abb list and to stack if not a syscall
                         for n in cfg.vertex(abb).out_neighbors():
+                            if is_ret:
+                                n = ret_stack.pop()
                             if n not in abb_list:
                                 abb_list.append(n)
                                 if cfg.vp.type[n] != ABBType.syscall and n not in stack:
                                     stack.append(n)
+                            if is_ret:
+                                break
 
     def __repr__(self):
         ret = ""
@@ -264,6 +281,8 @@ class MultiSSE(FlowAnalysis):
             for new_state in new_states:
                 if new_state == sstg_state:
                     new_states.remove(new_state)
+
+                    # add edge to existing state in sstg
                     e = self.sstg.add_edge(state_vertex, v)
                     self.sstg.ep.syscall[e] = new_state.last_syscall
 
