@@ -11,6 +11,10 @@ class SyscallInfo:
         self.name = name
         self.abb = abb
         self.cpu = cpu
+        self.multi_ret = False
+
+    def set_multi_ret(self):
+        self.multi_ret = True
 
 class Task:
     def __init__(self, cfg, name, function, priority, activation,
@@ -72,6 +76,8 @@ class AUTOSAR(OSBase):
         if task not in state.activated_tasks[task.cpu_id]:
             state.activated_tasks[task.cpu_id].append(task)
 
+        old_task = state.get_scheduled_task(task.cpu_id)
+
         # advance current task to next abb
         counter = 0
         state.abbs[scheduled_task.name] = []
@@ -82,6 +88,12 @@ class AUTOSAR(OSBase):
 
         # trigger scheduling 
         AUTOSAR.schedule(state, task.cpu_id)
+
+        # set multi ret for gcfg building if the new task was scheduled
+        new_task = state.get_scheduled_task(task.cpu_id)
+        if cpu != task.cpu_id:
+            if new_task.name == task.name:
+                state.gcfg_multi_ret[old_task.name] = True
 
         # set this syscall for gcfg building
         state.last_syscall = SyscallInfo("ActivateTask", abb, cpu)
@@ -179,6 +191,15 @@ class AUTOSAR(OSBase):
 
         # set this syscall for gcfg building
         state.last_syscall = SyscallInfo("TerminateTask", abb, cpu)
+
+        # set multi ret in syscall info
+        new_task = state.get_scheduled_task(cpu)
+        if new_task is not None:
+            if state.gcfg_multi_ret[new_task.name]:
+                state.last_syscall.set_multi_ret()
+
+                # reset multi ret for gcfg building to False
+                state.gcfg_multi_ret[new_task.name] = False
 
         print("Terminated Task: " + scheduled_task.name)
 

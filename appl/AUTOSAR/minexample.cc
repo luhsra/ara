@@ -20,11 +20,9 @@ DeclareTask(TaskF);
 
 TASK(TaskA) {
     doSomethingBefore();
-    ActivateTask(TaskD);
+    // ActivateTask(TaskD);
     doSomethingAfter();
-    if (getBool()) {
-        ActivateTask(TaskB);
-    }
+    ActivateTask(TaskD);
     TerminateTask();
 }
 
@@ -36,6 +34,7 @@ TASK(TaskB) {
 
 TASK(TaskF) {
     doSomethingImportant();
+    doSomethingBefore();
     TerminateTask();
 }
 

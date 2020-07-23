@@ -129,6 +129,10 @@ class MultiState:
 
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
+        self.gcfg_multi_ret = {} # indication for gcfg building wether the global control flow 
+                                 # returns to a single abb or multiple ones
+                                 # key: task name, value: bool
+        
     def get_scheduled_task(self, cpu):
         task_list = self.activated_tasks[cpu]
         if len(task_list) >= 1:
@@ -194,7 +198,8 @@ class MultiState:
         class_eq = self.__class__ == other.__class__
         abbs_eq = self.abbs == other.abbs
         activated_task_eq = self.activated_tasks == other.activated_tasks
-        return class_eq and abbs_eq and activated_task_eq
+        multi_ret_eq = self.gcfg_multi_ret == other.gcfg_multi_ret
+        return class_eq and abbs_eq and activated_task_eq and multi_ret_eq
 
     def copy(self):
         scopy = MultiState()
@@ -207,6 +212,7 @@ class MultiState:
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
+        scopy.gcfg_multi_ret = self.gcfg_multi_ret.copy()
 
         # copy lists of activated tasks
         for k in scopy.activated_tasks:
@@ -220,6 +226,13 @@ class MultiState:
 
 class MultiSSE(FlowAnalysis):
     """Run the MultiCore SSE."""
+    # TODOs:
+    # TODO: add edge information to gcfg edges if a call returns to a task
+    #       to determine for which task/abb this edge is viable
+    #       (necessary when a function is shared)
+    # TODO: add missing edges after TerminateTask when the task has been 
+    #       accessed by multiple ABBs (when it was 'interrupted' by another task)
+
     def get_dependencies(self):
         return ["SysFuncts"]
 
@@ -248,6 +261,9 @@ class MultiSSE(FlowAnalysis):
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
                 state.call_nodes[task.name] = self._find_tree_root(self._g.call_graphs[func_name])
+
+                # set multi ret bool to false for all tasks
+                state.gcfg_multi_ret[task.name] = False
                 
                 # set list of activated tasks for each cpu
                 if task.autostart: 
@@ -300,6 +316,12 @@ class MultiSSE(FlowAnalysis):
                 s_task = s_state.get_scheduled_task(cpu)
                 t_task = t_state.get_scheduled_task(cpu)
                 if s_task is not None and t_task is not None and s_task.name != t_task.name:
+
+                    def add_edge(s_abb, t_abb):
+                        if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
+                            e = self._g.cfg.add_edge(s_abb, t_abb)
+                            self._g.cfg.ep.type[e] = CFType.gcf
+
                     # we assume that the target abb is the first element in the list
                     # since the list is not sorted
                     t_abb = t_state.abbs[t_task.name][0]
@@ -308,33 +330,32 @@ class MultiSSE(FlowAnalysis):
                     info = self.sstg.ep.syscall[edge]
 
                     # if last syscall was TerminateTask only one edge is added
+                    # unless the multi ret flag was set in the task
                     if info.name == "TerminateTask":
                         if info.cpu == cpu:
                             s_abb = info.abb
-                            if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
-                                e = self._g.cfg.add_edge(s_abb, t_abb)
-                                self._g.cfg.ep.type[e] = CFType.gcf
+                            if info.multi_ret:
+                                for t_abb in t_state.abbs[t_task.name]:
+                                    add_edge(s_abb, t_abb)
+                            else:
+                                add_edge(s_abb, t_abb)
 
                     # if last syscall was ActivateTask we have to see if the activated task
                     # is on the same cpu as the syscall, then we only need to add one edge
                     elif info.name == "ActivateTask":
                         if info.cpu == cpu:
                             s_abb = info.abb
-                            if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
-                                e = self._g.cfg.add_edge(s_abb, t_abb)
-                                self._g.cfg.ep.type[e] = CFType.gcf
+                            add_edge(s_abb, t_abb)
                         else:
                             # add edge from each source abb to first target abb
                             for abb in s_state.abbs[s_task.name]:
-                                if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
-                                    e = self._g.cfg.add_edge(abb, t_abb)
-                                    self._g.cfg.ep.type[e] = CFType.gcf
+                                add_edge(abb, t_abb)
                     else:
                         # default: add edge from each source abb to first target abb
                         for abb in s_state.abbs[s_task.name]:
-                            if t_abb not in self._g.cfg.vertex(abb).out_neighbors():
-                                e = self._g.cfg.add_edge(abb, t_abb)
-                                self._g.cfg.ep.type[e] = CFType.gcf
+                            # TODO: find root node of lcfg from this abb and check if entry node of one on the tasks
+                            #       if not add label to edge
+                            add_edge(abb, t_abb)
 
 
     def _finish(self, sstg):
