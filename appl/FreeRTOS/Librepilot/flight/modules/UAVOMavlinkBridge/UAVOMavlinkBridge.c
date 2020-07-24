@@ -36,6 +36,8 @@
 
 // ****************
 #include "openpilot.h"
+
+#include "time_markers.h"
 #include "stabilizationdesired.h"
 #include "flightbatterysettings.h"
 #include "flightbatterystate.h"
@@ -559,6 +561,8 @@ static void mavlink_send_extra2()
 
 static void uavoMavlinkBridgeTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_mavlink);
+
     uint32_t lastSysTime;
 
     // Main task loop

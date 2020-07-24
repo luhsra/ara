@@ -56,6 +56,8 @@
 
 #include "pios.h"
 
+#include "time_markers.h"
+
 #ifdef PIOS_INCLUDE_RFM22B
 
 #include <pios_spi_priv.h>
@@ -1163,6 +1165,8 @@ inline bool PIOS_RFM22B_Validate(struct pios_rfm22b_dev *rfm22b_dev)
  */
 static void pios_rfm22_task(void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_rfm22);
+
     struct pios_rfm22b_dev *rfm22b_dev = (struct pios_rfm22b_dev *)parameters;
 
     if (!PIOS_RFM22B_Validate(rfm22b_dev)) {

@@ -35,6 +35,8 @@
  */
 
 #include "openpilot.h"
+
+#include "time_markers.h"
 #include "receiverstatus.h"
 #include "hwsettings.h"
 #include "flightmodesettings.h"
@@ -1127,6 +1129,8 @@ MODULE_INITCALL(uavoMSPBridgeInitialize, uavoMSPBridgeStart);
  */
 static void uavoMSPBridgeTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_uavomsbridge);
+
     while (1) {
         uint8_t b = 0;
         uint16_t count = PIOS_COM_ReceiveBuffer(msp->com, &b, 1, ~0);

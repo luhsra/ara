@@ -34,6 +34,8 @@
  */
 
 #include <openpilot.h>
+
+#include "time_markers.h"
 #include <accessorydesired.h>
 #include <manualcontrolsettings.h>
 #include <manualcontrolcommand.h>
@@ -192,6 +194,8 @@ static void SettingsUpdatedCb(__attribute__((unused)) UAVObjEvent *ev)
  */
 static void receiverTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_receiver);
+
     ManualControlSettingsData settings;
     ManualControlCommandData cmd;
 

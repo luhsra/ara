@@ -34,6 +34,7 @@
 
 #include <openpilot.h>
 
+#include "time_markers.h"
 #include "accessorydesired.h"
 #include "actuator.h"
 #include "actuatorsettings.h"
@@ -209,6 +210,8 @@ static void actuatorTask(__attribute__((unused)) void *parameters)
     FlightStatusData flightStatus;
     float throttleDesired;
     float collectiveDesired;
+
+    STORE_INLINE_TIME_MARKER(task_started_actuator);
 
 #ifdef PIOS_INCLUDE_INSTRUMENTATION
     counter = PIOS_Instrumentation_CreateCounter(0xAC700001);

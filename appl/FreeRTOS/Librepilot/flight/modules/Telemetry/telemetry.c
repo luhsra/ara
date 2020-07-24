@@ -62,6 +62,7 @@
 
 #include <openpilot.h>
 
+#include "time_markers.h"
 #include "telemetry.h"
 
 #include "flighttelemetrystats.h"
@@ -586,6 +587,8 @@ static void processObjEvent(
  */
 static void telemetryTxTask(void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_telemetryTX);
+
     channelContext *channel = (channelContext *)parameters;
     UAVObjEvent ev;
 
@@ -631,6 +634,8 @@ static void telemetryTxTask(void *parameters)
  */
 static void telemetryRxTask(void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_telemetrRX);
+
     channelContext *channel = (channelContext *)parameters;
 
     /* Check for a bad context */

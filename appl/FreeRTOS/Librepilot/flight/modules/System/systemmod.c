@@ -40,6 +40,9 @@
  */
 
 #include <openpilot.h>
+
+#include "time_markers.h"
+
 // private includes
 #include "inc/systemmod.h"
 
@@ -190,6 +193,8 @@ MODULE_INITCALL(SystemModInitialize, 0);
  */
 static void systemTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_receiver);
+
     /* calibrate the cpu usage monitor */
     PIOS_TASK_MONITOR_CalibrateIdleCounter();
     /* board driver init */

@@ -32,6 +32,8 @@
 
 #include <openpilot.h>
 
+#include "time_markers.h"
+
 #include "taskinfo.h"
 
 #include <stdbool.h>
@@ -140,6 +142,8 @@ MODULE_INITCALL(comUsbBridgeInitialize, comUsbBridgeStart);
 
 static void com2UsbBridgeTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_com2usb);
+
     /* Handle usart -> vcp direction */
     volatile uint32_t tx_errors = 0;
 
@@ -159,6 +163,8 @@ static void com2UsbBridgeTask(__attribute__((unused)) void *parameters)
 
 static void usb2ComBridgeTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_com2usb);
+
     /* Handle vcp -> usart direction */
     volatile uint32_t tx_errors = 0;
 

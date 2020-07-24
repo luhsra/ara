@@ -59,6 +59,9 @@ static struct pios_tim_dev *PIOS_TIM_alloc(void)
 
 int32_t PIOS_TIM_InitClock(const struct pios_tim_clock_cfg *cfg)
 {
+#ifdef ARA_MOCK
+  return 0;
+#endif /* ARA_MOCK */
     PIOS_DEBUG_Assert(cfg);
 
     /* Enable appropriate clock to timer module */
@@ -115,7 +118,11 @@ int32_t PIOS_TIM_InitClock(const struct pios_tim_clock_cfg *cfg)
 
 int32_t PIOS_TIM_InitChannels(uint32_t *tim_id, const struct pios_tim_channel *channels, uint8_t num_channels, const struct pios_tim_callbacks *callbacks, uint32_t context)
 {
-    PIOS_Assert(channels);
+
+#ifdef ARA_MOCK
+  return 0;
+#endif /* ARA_MOCK */
+  PIOS_Assert(channels);
     PIOS_Assert(num_channels);
 
     struct pios_tim_dev *tim_dev;

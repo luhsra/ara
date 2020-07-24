@@ -25,6 +25,8 @@
  */
 
 #include <pios.h>
+
+#include "time_markers.h"
 #ifdef PIOS_INCLUDE_CALLBACKSCHEDULER
 
 #include <utlist.h>
@@ -535,6 +537,8 @@ static int32_t runNextCallback(struct DelayedCallbackTaskStruct *task, DelayedCa
  */
 static void CallbackSchedulerTask(void *task)
 {
+    STORE_INLINE_TIME_MARKER(task_started_callbackscheduler);
+
     uint32_t delay = 0;
 
     while (1) {

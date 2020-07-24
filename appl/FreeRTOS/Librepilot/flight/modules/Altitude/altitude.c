@@ -38,6 +38,7 @@
 
 #include <openpilot.h>
 
+#include "time_markers.h"
 #include "hwsettings.h"
 #include "altitude.h"
 #if defined(PIOS_INCLUDE_BMP085)
@@ -127,6 +128,9 @@ MODULE_INITCALL(AltitudeInitialize, AltitudeStart);
  */
 static void altitudeTask(__attribute__((unused)) void *parameters)
 {
+
+    STORE_INLINE_TIME_MARKER(task_started_altitude);
+
     portTickType lastSysTime;
 
 #if defined(PIOS_INCLUDE_HCSR04)

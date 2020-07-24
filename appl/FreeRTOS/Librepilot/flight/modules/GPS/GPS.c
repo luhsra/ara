@@ -33,6 +33,7 @@
 
 #include <openpilot.h>
 
+#include "time_markers.h"
 #include "gpspositionsensor.h"
 #include "homelocation.h"
 #include "gpstime.h"
@@ -300,6 +301,8 @@ MODULE_INITCALL(GPSInitialize, GPSStart);
 
 static void gpsTask(__attribute__((unused)) void *parameters)
 {
+    STORE_INLINE_TIME_MARKER(task_started_gps);
+
     uint32_t timeNowMs = xTaskGetTickCount() * portTICK_RATE_MS;
 
 #ifdef PIOS_GPS_SETS_HOMELOCATION
