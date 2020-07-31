@@ -40,6 +40,80 @@ namespace ara::graph {
 
 		CFG(graph_tool::GraphInterface& graph) : graph(graph){};
 
+		class FunctionFilter {
+		  public:
+			FunctionFilter() : cfg(nullptr), reverted(false) {}
+			FunctionFilter(const CFG* cfg, bool reverted = false) : cfg(cfg), reverted(reverted) {}
+			template <class Vertex>
+			bool operator()(const Vertex& v) const {
+				return cfg->is_function[v] != reverted;
+			}
+
+		  private:
+			const CFG* cfg;
+			const bool reverted;
+		};
+
+		/**
+		 * return a graph that contains only the function nodes
+		 */
+		template <class Graph>
+		auto get_functions(Graph& g) const -> auto {
+			FunctionFilter func(this);
+			return boost::filtered_graph<Graph, boost::keep_all, FunctionFilter>(g, boost::keep_all(), std::move(func));
+		}
+		/**
+		 * return a graph that contains only the abb nodes
+		 */
+		template <class Graph>
+		auto get_abbs(Graph& g) const -> auto {
+			FunctionFilter func(this, /* reverted= */ true);
+			return boost::filtered_graph<Graph, boost::keep_all, FunctionFilter>(g, boost::keep_all(), std::move(func));
+		}
+
+		/**
+		 * Predicate object for boost::filtered_graph. Can filter ABB by their types.
+		 *
+		 * Example usage:
+		 * ABBTypeFilter<ABBGraph> f(<abb_type_mask>);
+		 * boost::filter_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> foo(g, boost::keep_all(), f);
+		 */
+		class ABBTypeFilter {
+		  public:
+			ABBTypeFilter() : type_filter(0), cfg(nullptr) {}
+			ABBTypeFilter(const unsigned type_filter, const CFG* cfg) : type_filter(type_filter), cfg(cfg) {}
+			template <class Vertex>
+			bool operator()(const Vertex& v) const {
+				return (cfg->type[v] & type_filter) != 0;
+			}
+
+		  private:
+			const unsigned type_filter;
+			const CFG* cfg;
+		};
+
+		template <typename Graph>
+		auto filter_by_abb(Graph& g, const unsigned type_filter) const -> auto {
+			return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(),
+			                                                                    ABBTypeFilter(type_filter, this));
+		}
+
+		/**
+		 * Return the entry bb of the given ABB.
+		 */
+		template <class Graph>
+		llvm::BasicBlock* get_entry_bb(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			return reinterpret_cast<llvm::BasicBlock*>(entry_bb[v]);
+		}
+
+		/**
+		 * Return the exit bb of the given ABB.
+		 */
+		template <class Graph>
+		llvm::BasicBlock* get_exit_bb(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			return reinterpret_cast<llvm::BasicBlock*>(exit_bb[v]);
+		}
+
 		/**
 		 * Return the name to the call that this ABB calls.
 		 *
@@ -216,34 +290,6 @@ namespace ara::graph {
 		bool bb_is_indirect(const ABBType type, const llvm::BasicBlock& bb) const;
 		const llvm::CallBase* get_call_base(const ABBType type, const llvm::BasicBlock& bb) const;
 	};
-
-	/**
-	 * Predicate object for boost::filtered_graph. Can filter ABB by their types.
-	 *
-	 * Example usage:
-	 * ABBTypeFilter<ABBGraph> f(<abb_type_mask>);
-	 * boost::filter_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> foo(g, boost::keep_all(), f);
-	 */
-	class ABBTypeFilter {
-	  public:
-		ABBTypeFilter() : type_filter(0), cfg(nullptr) {}
-		ABBTypeFilter(const unsigned type_filter, const CFG* cfg) : type_filter(type_filter), cfg(cfg) {}
-		template <class Vertex>
-		bool operator()(const Vertex& v) const {
-			return (cfg->type[v] & type_filter) != 0;
-		}
-
-	  private:
-		const unsigned type_filter;
-		const CFG* cfg;
-	};
-
-	template <typename Graph>
-	auto filter_by_abb(const unsigned type_filter, Graph& g, const CFG& cfg)
-	    -> boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter> {
-		return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(),
-		                                                                    ABBTypeFilter(type_filter, &cfg));
-	}
 
 	/**
 	 * C++ representation of the graph.
