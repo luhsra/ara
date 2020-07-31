@@ -1,7 +1,13 @@
 {
 	"steps": [
-		"InteractionAnalysis"
+		"SVFAnalyses",
+		"ICFG"
 	],
+
+	"ICFG": {
+		"dump": true,
+		"log_level": "debug"
+	},
 
 	"logger": {
 		"StepManager": "debug"
