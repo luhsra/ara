@@ -76,11 +76,12 @@ step_mod = py3_inst.extension_module('step',
         'llvm_optimization.cpp',
         'load_freertos_config.cpp',
         'replace_syscalls_create.cpp',
+        'svf_analyses.cpp',
         'svf_transformation.cpp',
         'value_analysis_core.cpp',
         'value_analyzer.cpp') + test_sources,
   cpp_pch: 'pch/steps_pch.h',
   depend_files: step_pyx_h,
-  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep, pyllco_dep, svf_dep]
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_dep, common_dep, pyllco_dep, svf_dep, cudd_dep]
 )
 
