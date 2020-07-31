@@ -107,6 +107,8 @@ class FlowAnalysis(Step):
                 new_state = self.new_vertex(self.sstg, n)
                 e = self.sstg.add_edge(state_vertex, new_state)
 
+                # if MultiSSE is running, info about last syscall is stored as ep
+                # this info is later on used for building the gcfg
                 if isinstance(n, MultiState):
                     self.sstg.ep.syscall[e] = n.last_syscall
 
@@ -116,83 +118,91 @@ class FlowAnalysis(Step):
 
         self._finish(self.sstg)
 
+class MetaState:
+    def __init__(self):
+        self.cfg = None
+        self.instances = None
+        self.state_graph = {} # graph of Multistates for each cpu
+                              # key: cpu id, value: graph of Multistates
+
 class MultiState:
-    def __init__(self, cfg=None, instances=None):
+    def __init__(self, cfg=None, instances=None, cpu=0):
         self.cfg = cfg
         self.instances = instances
         self.entry_abbs = {} # entry abbs for each task; key: task name, value: entry abb node
         self.call_nodes = {} # call node of each task (used for handling calls)
                              # key: task name, value: ABB node (call node)
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
-        self.abbs = {} # active ABBs per task; key: task name, value: list of ABB nodes
-        self.activated_tasks = {} # actived Tasks per cpu; key: cpu_id, value: List of Task nodes
+        self.abbs = {} # active ABB per task; key: task name, value: ABB node
+        self.activated_tasks = [] # list of activated tasks 
 
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
         self.gcfg_multi_ret = {} # indication for gcfg building wether the global control flow 
                                  # returns to a single abb or multiple ones
                                  # key: task name, value: bool
+        self.cpu = cpu
         
     def get_scheduled_task(self, cpu):
-        task_list = self.activated_tasks[cpu]
-        if len(task_list) >= 1:
-            return task_list[0]
+        if len(self.activated_tasks) >= 1:
+            return self.activated_tasks[0]
         else: 
             return None
     
     def explore(self, cfg):
-        """Explore the state to contain all abbs that can be reached from 
-        the inital abb stopping at syscall abbs."""
+        """Explore the state by running a single core sse on each cpu until no progress 
+        is made or only syscalls with inter cpu behavior are found."""
         lcfg = CFGView(self.cfg, efilt=self.cfg.ep.type.fa == CFType.lcf)
         for cpu in self.activated_tasks:
             task = self.get_scheduled_task(cpu)
             if task is not None:
-                abb_list = self.abbs[task.name]
+                abb = self.abbs[task.name]
 
-                # only explore new states (when their list only contains one abb)
-                if (len(abb_list) == 1):
-                    stack = [abb_list[0]]
-                    ret_stack = []
+                stack = []
+                ret_stack = []
 
-                    # explore neighbors until no new none syscall abb is found
-                    while stack:
-                        abb = stack.pop()
-                        
-                        is_ret = False
+                # explore neighbors until no new none syscall abb is found
+                while stack:
+                    abb_vertex = stack.pop()
+                    abb = abb_graph.vp.abb[abb_vertex]
+                    
+                    is_ret = False
 
-                        # if call node is found, the return node is saved in return stack
-                        if cfg.vp.type[abb] == ABBType.call:
-                            for out in lcfg.vertex(abb).out_neighbors():
-                                ret_stack.append(out)
-                                break
-                        elif cfg.vp.type[abb] == ABBType.computation:
-                            if len(ret_stack) > 0 and ret_stack[-1] in cfg.vertex(abb).out_neighbors():
-                                is_ret = True
+                    # if call node is found, the return node is saved in return stack
+                    if cfg.vp.type[abb] == ABBType.call:
+                        for out in lcfg.vertex(abb).out_neighbors():
+                            ret_stack.append(out)
+                            break
+                    elif cfg.vp.type[abb] == ABBType.computation:
+                        if len(ret_stack) > 0 and ret_stack[-1] in cfg.vertex(abb).out_neighbors():
+                            is_ret = True
+                    elif cfg.vp.type[abb] == ABBType.syscall:
+                        if not self._g.os.is_inter_cpu_syscall(self._lcfg, abb, self, cpu):
+                            self._g.os.interpret(self._lcfg, abb, self, cpu)
 
-                        # append neighbors to abb list and to stack if not a syscall
-                        for n in cfg.vertex(abb).out_neighbors():
-                            if is_ret:
-                                n = ret_stack.pop()
-                            if n not in abb_list:
-                                abb_list.append(n)
-                                if cfg.vp.type[n] != ABBType.syscall and n not in stack:
-                                    stack.append(n)
-                            if is_ret:
-                                break
+                    # append neighbors to abb list and to stack if not a syscall
+                    for n in cfg.vertex(abb).out_neighbors():
+                        # if is_ret:
+                        #     n = ret_stack.pop()
+                        if n not in abb_list:
+                            abb_list.append(n)
+                            if cfg.vp.type[n] != ABBType.syscall and n not in stack:
+                                stack.append(n)
+                        if is_ret:
+                            break
 
     def __repr__(self):
-        ret = ""
+        ret = "["
         for cpu in self.activated_tasks:
             task = self.get_scheduled_task(cpu)
             if task is not None:
-                ret += "["
-                for abb in self.abbs[task.name]:
-                    ret += self.cfg.vp.name[abb] + ", "
-                ret = ret[:-2] 
-                ret += "], "
+                abb = self.abbs[task.name]
+                ret += self.cfg.vp.name[abb]
             else: 
-                ret += "None, "
-        return ret[:-2]
+                ret += "None"
+            ret += ", "
+        ret = ret[:-2]
+        return ret + "]"
 
     def __eq__(self, other):
         class_eq = self.__class__ == other.__class__
@@ -214,14 +224,6 @@ class MultiState:
         scopy.entry_abbs = self.entry_abbs.copy()
         scopy.gcfg_multi_ret = self.gcfg_multi_ret.copy()
 
-        # copy lists of activated tasks
-        for k in scopy.activated_tasks:
-            scopy.activated_tasks[k] = self.activated_tasks[k].copy()
-
-        # copy list of abb nodes in abbs dict
-        for k in scopy.abbs:
-            scopy.abbs[k] = self.abbs[k].copy()
-
         return scopy
 
 class MultiSSE(FlowAnalysis):
@@ -230,8 +232,7 @@ class MultiSSE(FlowAnalysis):
     # TODO: add edge information to gcfg edges if a call returns to a task
     #       to determine for which task/abb this edge is viable
     #       (necessary when a function is shared)
-    # TODO: add missing edges after TerminateTask when the task has been 
-    #       accessed by multiple ABBs (when it was 'interrupted' by another task)
+    # TODO: somehow get the timing information
 
     def get_dependencies(self):
         return ["SysFuncts"]
@@ -240,23 +241,40 @@ class MultiSSE(FlowAnalysis):
         pass
 
     def _get_initial_state(self):
-        self.print_tasks()
-        state = MultiState(cfg=self._g.cfg,
-                           instances=self._g.instances) 
+        self.print_tasks()  
 
-        # building initial state
+        # building initial metastate
+        metastate = MetaState(cfg=self._g.cfg, instances=self._g.instances)
+
         # TODO: get rid of the hardcoded function name
         func_name_start = "AUTOSAR_TASK_FUNC_"
-        for v in state.instances.vertices():
-            task = state.instances.vp.obj[v]
-
+        found_cpus = {}
+        for v in self._g.instances.vertices():
+            task = self._g.instances.vp.obj[v]
+            state = None
             if isinstance(task, AUTOSAR_Task):
+                if task.cpu_id not in found_cpus:
+                    # create new MultiState
+                    state = MultiState(cfg=self._g.cfg,instances=self._g.instances, cpu=task.cpu_id) 
+                    found_cpus[task.cpu_id] = state
+
+                    # add new state to Metastate
+                    metastate.state_graph[state.cpu] = graph_tool.Graph()
+                    graph = metastate.state_graph[state.cpu]
+                    graph.vertex_properties["state"] = self.sstg.new_vp("object")
+                    vertex = graph.add_vertex()
+                    graph.vp.state[vertex] = state
+                else:
+                    state = found_cpus[task.cpu_id]
+
                 # set entry abb for each task
                 func_name = func_name_start + task.name
                 entry_func = self._g.cfg.get_function_by_name(func_name)
                 entry_abb = self._g.cfg.get_entry_abb(entry_func)
                 state.entry_abbs[task.name] = entry_abb
-                state.abbs[task.name] = [entry_abb]
+
+                # setup abbs dict with entry abb for each task
+                state.abbs[task.name] = entry_abb
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
@@ -265,27 +283,30 @@ class MultiSSE(FlowAnalysis):
                 # set multi ret bool to false for all tasks
                 state.gcfg_multi_ret[task.name] = False
                 
-                # set list of activated tasks for each cpu
+                # set list of activated tasks
                 if task.autostart: 
-                    if task.cpu_id not in state.activated_tasks:
-                        state.activated_tasks[task.cpu_id] = []
-                    state.activated_tasks[task.cpu_id].append(task)
+                    state.activated_tasks.append(task)
 
-        state.explore(self._icfg)
-        return state
+        # run single core sse for each cpu
+        for cpu, graph in metastate.state_graph.items():
+            self.run_sse(graph)
+
+        return metastate
 
     def _execute(self, state_vertex):
         state = self.sstg.vp.state[state_vertex]
-        self._log.info(f"Executing State: {state}")
+        self._log.info(f"Executing Metastate: {state}")
         new_states = []
         
         for cpu in state.activated_tasks:
             task = state.get_scheduled_task(cpu)
             if task is not None:
-                for abb in state.abbs[task.name]:
+                for vertex in state.abbs[task.name].vertices():
+                    abb = state.abbs[task.name].vp.abb[vertex]
                     if abb is not None:
                         # syscall handling
                         if self._icfg.vp.type[abb] == ABBType.syscall:
+                            # TODO: add check for inter cpu syscall
                             assert self._g.os is not None
                             new_state = self._g.os.interpret(self._lcfg, abb, state, cpu)
                             new_state.explore(self._icfg)
@@ -303,6 +324,31 @@ class MultiSSE(FlowAnalysis):
                     self.sstg.ep.syscall[e] = new_state.last_syscall
 
         return new_states
+
+    def run_sse(self, graph):
+        stack = []
+
+        for v in graph.vertices():
+            stack.append(v)
+
+        while stack:
+            vertex = stack.pop()
+            state = graph.vp.state[vertex]
+            for new_state in self.execute_state(state):
+                # check for duplicate states
+                for v in graph.vertices():
+                    existing_state = graph.vp.state[v]
+
+                    # add edge to existing state
+                    if new_state == existing_state:
+                        graph.add_edge(vertex, v)
+
+                    # add new state to graph and append it to the stack
+                    else:
+                        new_vertex = graph.add_vertex()
+                        graph.vp.state[new_vertex] = new_state
+                        graph.add_edge(vertex, new_vertex)
+                        stack.append(new_vertex)
 
     def _schedule(self, states):
         return []
@@ -353,22 +399,22 @@ class MultiSSE(FlowAnalysis):
                     else:
                         # default: add edge from each source abb to first target abb
                         for abb in s_state.abbs[s_task.name]:
-                            # TODO: find root node of lcfg from this abb and check if entry node of one on the tasks
+                            # TODO: find root node of lcfg from this abb and check if entry node of one of the tasks
                             #       if not add label to edge
                             add_edge(abb, t_abb)
 
 
     def _finish(self, sstg):
         # build global control flow graph and print it
-        self.build_gcfg()
-        if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            dot_file = f'{uuid}.GCFG.dot'
-            dot_file = self.dump_prefix.get() + dot_file
-            self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
-                                           "graph_name": 'GCFG',
-                                           "subgraph": 'abbs'})
+        # self.build_gcfg()
+        # if self.dump.get():
+        #     uuid = self._step_manager.get_execution_id()
+        #     dot_file = f'{uuid}.GCFG.dot'
+        #     dot_file = self.dump_prefix.get() + dot_file
+        #     self._step_manager.chain_step({"name": "Printer",
+        #                                    "dot": dot_file,
+        #                                    "graph_name": 'GCFG',
+        #                                    "subgraph": 'abbs'})
 
         # print the sstg by chaining a printer step
         if self.dump.get():

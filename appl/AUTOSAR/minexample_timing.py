@@ -12,7 +12,7 @@ class Timings:
         res = self.get_timings(abb_nr, context)
         return res[0]
 
-    def get_man_time(self, abb_nr, context):
+    def get_max_time(self, abb_nr, context):
         res = self.get_timings(abb_nr, context)
         return res[1]
 

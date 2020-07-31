@@ -50,6 +50,31 @@ class AUTOSAR(OSBase):
         return getattr(AUTOSAR, syscall)(cfg, abb, state, cpu)
 
     @staticmethod
+    def is_inter_cpu_syscall(cfg, abb, state, cpu):
+        """Checks wether the syscall has interferences with other cpus."""
+        syscall = cfg.get_syscall_name(abb)
+
+        if "ActivateTask" in syscall:
+            # get Task argument
+            scheduled_task = state.get_scheduled_task(cpu)
+            cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
+            arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+
+            # find task with same name as 'arg' in instance graph
+            task = None
+            for v in state.instances.vertices():
+                task = state.instances.vp.obj[v]
+                if isinstance(task, Task):
+                    if task.name in arg.get_name():
+                        break
+
+            # check if found task runs on different cpu
+            if task.cpu_id != cpu:
+                return True
+
+        return False
+
+    @staticmethod
     def schedule(state, cpu):
         # sort actived tasks by priority
         state.activated_tasks[cpu].sort(key=lambda task: task.priority, reverse=True)
