@@ -43,7 +43,8 @@ endif
 
 ## svf
 cmake = import('cmake')
-svf_proj = cmake.subproject('svf', cmake_options: '-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'))
+svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'),
+                                                   '-DBUILD_SHARED_LIBS=on'])
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
