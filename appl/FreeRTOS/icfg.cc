@@ -50,6 +50,15 @@ int other_function(int a) {
 	return do_stuff(a, 6);
 }
 
+PtrFunc complex_get_ptr_func(int a) {
+	if (a < 12) {
+		return ptr_func1;
+	} else {
+		return ptr_func2;
+	}
+}
+
+
 int main(void) {
 	xTaskCreate(vTask1, "Task 1", 510, NULL, 1, NULL);
 	xTaskCreate(vTask2, "Task 2", 100, NULL, 1, NULL);
@@ -63,6 +72,10 @@ int main(void) {
 	// this is impossible to optimize out
 	auto ptr2 = get_ptr_func();
 	ptr2(23, 4.5, 20);
+
+	// this can be solved
+	auto ptr3 = complex_get_ptr_func(23);
+	ptr3(23, 4.5, 20);
 
 	vTaskStartScheduler();
 
