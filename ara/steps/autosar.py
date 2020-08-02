@@ -56,7 +56,7 @@ class AUTOSAR(OSBase):
 
         if "ActivateTask" in syscall:
             # get Task argument
-            scheduled_task = state.get_scheduled_task(cpu)
+            scheduled_task = state.get_scheduled_task()
             cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
             arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
 
@@ -77,13 +77,13 @@ class AUTOSAR(OSBase):
     @staticmethod
     def schedule(state, cpu):
         # sort actived tasks by priority
-        state.activated_tasks[cpu].sort(key=lambda task: task.priority, reverse=True)
+        state.activated_tasks.sort(key=lambda task: task.priority, reverse=True)
 
 
     @syscall
     def AUTOSAR_ActivateTask(cfg, abb, state, cpu):
         state = state.copy()
-        scheduled_task = state.get_scheduled_task(cpu)
+        scheduled_task = state.get_scheduled_task()
 
         # get Task argument
         cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
@@ -98,16 +98,15 @@ class AUTOSAR(OSBase):
                     break
 
         # add found Task to list of activated tasks
-        if task not in state.activated_tasks[task.cpu_id]:
-            state.activated_tasks[task.cpu_id].append(task)
+        if task not in state.activated_tasks:
+            state.activated_tasks.append(task)
 
-        old_task = state.get_scheduled_task(task.cpu_id)
+        # old_task = state.get_scheduled_task(task.cpu_id)
 
         # advance current task to next abb
         counter = 0
-        state.abbs[scheduled_task.name] = []
         for n in cfg.vertex(abb).out_neighbors():
-            state.abbs[scheduled_task.name].append(n)
+            state.abbs[scheduled_task.name] = n
             counter += 1
         assert(counter == 1)
 
@@ -115,10 +114,10 @@ class AUTOSAR(OSBase):
         AUTOSAR.schedule(state, task.cpu_id)
 
         # set multi ret for gcfg building if the new task was scheduled
-        new_task = state.get_scheduled_task(task.cpu_id)
-        if cpu != task.cpu_id:
-            if new_task.name == task.name:
-                state.gcfg_multi_ret[old_task.name] = True
+        # new_task = state.get_scheduled_task(task.cpu_id)
+        # if cpu != task.cpu_id:
+        #     if new_task.name == task.name:
+        #         state.gcfg_multi_ret[old_task.name] = True
 
         # set this syscall for gcfg building
         state.last_syscall = SyscallInfo("ActivateTask", abb, cpu)
@@ -209,22 +208,22 @@ class AUTOSAR(OSBase):
 
         # remove task from activated tasks list
         scheduled_task = state.get_scheduled_task(cpu)
-        state.activated_tasks[cpu].remove(scheduled_task)
+        state.activated_tasks.remove(scheduled_task)
 
         # reset abb list to entry abb
-        state.abbs[scheduled_task.name] = [state.entry_abbs[scheduled_task.name]]
+        state.abbs[scheduled_task.name] = state.entry_abbs[scheduled_task.name]
 
         # set this syscall for gcfg building
         state.last_syscall = SyscallInfo("TerminateTask", abb, cpu)
 
         # set multi ret in syscall info
-        new_task = state.get_scheduled_task(cpu)
-        if new_task is not None:
-            if state.gcfg_multi_ret[new_task.name]:
-                state.last_syscall.set_multi_ret()
+        # new_task = state.get_scheduled_task(cpu)
+        # if new_task is not None:
+        #     if state.gcfg_multi_ret[new_task.name]:
+        #         state.last_syscall.set_multi_ret()
 
-                # reset multi ret for gcfg building to False
-                state.gcfg_multi_ret[new_task.name] = False
+        #         # reset multi ret for gcfg building to False
+        #         state.gcfg_multi_ret[new_task.name] = False
 
         print("Terminated Task: " + scheduled_task.name)
 

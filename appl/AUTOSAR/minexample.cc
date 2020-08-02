@@ -20,21 +20,21 @@ DeclareTask(TaskF);
 
 TASK(TaskA) {
     doSomethingBefore();
-    // ActivateTask(TaskD);
-    doSomethingAfter();
     ActivateTask(TaskD);
+    doSomethingAfter();
+    // ActivateTask(TaskD);
     TerminateTask();
 }
 
 TASK(TaskB) {
     doSomethingImportant();
-    ActivateTask(TaskF);
+    // ActivateTask(TaskF);
     TerminateTask();
 }
 
 TASK(TaskF) {
-    doSomethingImportant();
-    doSomethingBefore();
+    // doSomethingImportant();
+    // doSomethingBefore();
     TerminateTask();
 }
 
