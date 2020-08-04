@@ -125,23 +125,52 @@ class Printer(Step):
         
         cfg = CFGView(g.cfg, efilt=lambda x: g.cfg.ep.type[x] == CFType.icf or g.cfg.ep.type[x] == CFType.lcf)
 
-        # print all vertices
+        # print all metastates as clusters
         for state_node in sstg.vertices():
-            state = sstg.vp.state[state_node]
-            dot_node = pydot.Node(
+            # print cluster
+            metastate = sstg.vp.state[state_node]
+            dot_cluster = pydot.Cluster(
                 str(hash(state_node)),
-                label=state.__repr__()
+                label="Metastate"
             )
-            dot_graph.add_node(dot_node)
+            dot_graph.add_subgraph(dot_cluster)
+
+            for cpu, state_graph in metastate.state_graph.items():
+                subg = pydot.Subgraph(
+                    str(hash(state_node)) + "_" + str(cpu),
+                    label=str(cpu)
+                )
+                dot_cluster.add_subgraph(subg)
+
+                # print state vertices in cluster
+                for vertex in state_graph.vertices():
+                    state = state_graph.vp.state[vertex]
+                    dot_node = pydot.Node(
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(vertex)),
+                        label=state.__repr__()
+                    )
+                    subg.add_node(dot_node)
+
+                # print state edges in cluster
+                for edge in state_graph.edges():
+                    dot_edge = pydot.Edge(
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.source())),
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.target()))
+                    )
+                    subg.add_edge(dot_edge)
         
         # print all edges
         for edge in sstg.edges():
             color = "black"
+            state = sstg.vp.state[edge.source()]
+            cpu = list(state.state_graph.keys())[0]
 
             dot_graph.add_edge(pydot.Edge(
-                str(hash(edge.source())),
-                str(hash(edge.target())),
-                color=color
+                str(hash(edge.source())) + "_" + str(cpu) + "_0",
+                str(hash(edge.target())) + "_" + str(cpu) + "_0",
+                color=color,
+                ltail="cluster_" + str(hash(edge.source())),
+                lhead="cluster_" + str(hash(edge.target()))
             ))
 
         self._write_dot(dot_graph)

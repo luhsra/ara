@@ -2,6 +2,7 @@
 import graph_tool
 import copy
 import functools
+import numpy as np
 
 import pyllco
 
@@ -106,12 +107,6 @@ class FlowAnalysis(Step):
             for n in self._system_semantic(state_vertex):
                 new_state = self.new_vertex(self.sstg, n)
                 e = self.sstg.add_edge(state_vertex, new_state)
-
-                # if MultiSSE is running, info about last syscall is stored as ep
-                # this info is later on used for building the gcfg
-                if isinstance(n, MultiState):
-                    self.sstg.ep.syscall[e] = n.last_syscall
-
                 stack.append(new_state)
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
@@ -124,6 +119,9 @@ class MetaState:
         self.instances = instances
         self.state_graph = {} # graph of Multistates for each cpu
                               # key: cpu id, value: graph of Multistates
+        self.sync_states = {} # list of MultiStates for each cpu, which handle 
+                              # a syscall that affects other cpus
+                              # key: cpu id, value: list of MultiStates
 
     def __repr__(self):
         ret = "["
@@ -131,6 +129,40 @@ class MetaState:
         for cpu, graph in self.state_graph.items():
             ret += f"{graph}, "
         return ret[:-2] + "]"
+    
+    def basic_copy(self):
+        copy = MetaState(self.cfg, self.instances)
+
+        for cpu in self.state_graph:
+            copy.state_graph[cpu] = graph_tool.Graph()
+            copy.sync_states[cpu] = []
+            copy.state_graph[cpu].vertex_properties["state"] = copy.state_graph[cpu].new_vp("object")
+
+        return copy
+
+    def __eq__(self, other):
+        class_eq = self.__class__ == other.__class__
+
+        # compare state graphs
+        graph_eq = True
+        for cpu, graph in self.state_graph.items():
+            for v in graph.vertices():
+                state = graph.vp.state[v]
+
+                if cpu not in other.state_graph:
+                    graph_eq = False
+                    return False
+                else:
+                    found_state = False
+                    for v in other.state_graph[cpu].vertices():
+                        state_other = other.state_graph[cpu].vp.state[v]
+                        if state == state_other:
+                            found_state = True
+                            break
+                    if not found_state:
+                        return False
+
+        return class_eq and graph_eq
 
 class MultiState:
     def __init__(self, cfg=None, instances=None, cpu=0):
@@ -271,6 +303,9 @@ class MultiSSE(FlowAnalysis):
                     graph.vertex_properties["state"] = graph.new_vp("object")
                     vertex = graph.add_vertex()
                     graph.vp.state[vertex] = state
+
+                    # add empty list to sync_states in Metastate
+                    metastate.sync_states[state.cpu] = []
                 else:
                     state = found_cpus[task.cpu_id]
 
@@ -295,17 +330,55 @@ class MultiSSE(FlowAnalysis):
                     state.activated_tasks.append(task)
 
         # run single core sse for each cpu
-        for cpu, graph in metastate.state_graph.items():
-            self.run_sse(graph)
+        self.run_sse(metastate)
 
         return metastate
 
     def _execute(self, state_vertex):
-        state = self.sstg.vp.state[state_vertex]
-        self._log.info(f"Executing Metastate: {state}")
+        metastate = self.sstg.vp.state[state_vertex]
+        self._log.info(f"Executing Metastate: {metastate}")
         new_states = []
         
-        
+        # g = metastate.state_graph[0]
+        # v1 = g.get_vertices()
+        # print("CPU 0 -- Type: " + str(type(v1)) + ", Value: " + str(v1))
+        # g = metastate.state_graph[1]
+        # v2 = g.get_vertices()
+        # print("CPU 1 -- Type: " + str(type(v2)) + ", Value: " + str(v2))
+        # mesh = np.array(np.meshgrid(*[v1, v2, v2]))
+        # mesh = mesh.T.reshape(-1, 3)
+        # print("Mesh: " + str(mesh))
+
+        for cpu, sync_list in metastate.sync_states.items():
+            for state in sync_list:
+                args = []
+                for cpu_other, graph in metastate.state_graph.items():
+                    if cpu != cpu_other:
+                        args.append(graph.get_vertices())
+                
+                # compute possible combinations
+                if len(args) > 1:
+                    mesh = np.array(np.meshgrid(*args)).T.reshape(-1, len(args))
+                    print(str(mesh))
+
+                    # do the same as for 2 cpus
+                else:
+                    for cpu_other, graph in metastate.state_graph.items():
+                        if cpu != cpu_other:
+                            for vertex in args[0]:
+                                next_state = metastate.state_graph[cpu_other].vp.state[vertex]
+
+                                new_state = metastate.basic_copy()
+                                v = new_state.state_graph[cpu].add_vertex()
+                                new_state.state_graph[cpu].vp.state[v] = state
+                                v = new_state.state_graph[cpu_other].add_vertex()
+                                new_state.state_graph[cpu_other].vp.state[v] = next_state
+
+                                if new_state not in new_states:
+                                    new_states.append(new_state)
+                            
+                
+
                         
         # filter out duplicate states by comparing with states in sstg
         # for v in self.sstg.vertices():
@@ -316,39 +389,40 @@ class MultiSSE(FlowAnalysis):
 
         #             # add edge to existing state in sstg
         #             e = self.sstg.add_edge(state_vertex, v)
-        #             self.sstg.ep.syscall[e] = new_state.last_syscall
+        #             # self.sstg.ep.syscall[e] = new_state.last_syscall
 
         return new_states
 
-    def run_sse(self, graph):
-        stack = []
+    def run_sse(self, metastate):
+        for cpu, graph in metastate.state_graph.items():
+            stack = []
 
-        for v in graph.vertices():
-            stack.append(v)
+            for v in graph.vertices():
+                stack.append(v)
 
-        while stack:
-            vertex = stack.pop()
-            state = graph.vp.state[vertex]
-            for new_state in self.execute_state(state):
-                found = False
+            while stack:
+                vertex = stack.pop()
+                state = graph.vp.state[vertex]
+                for new_state in self.execute_state(state, metastate.sync_states[cpu]):
+                    found = False
 
-                # check for duplicate states
-                for v in graph.vertices():
-                    existing_state = graph.vp.state[v]
+                    # check for duplicate states
+                    for v in graph.vertices():
+                        existing_state = graph.vp.state[v]
 
-                    # add edge to existing state if new state is equal
-                    if new_state == existing_state:
-                        graph.add_edge(vertex, v)
-                        found = True
+                        # add edge to existing state if new state is equal
+                        if new_state == existing_state:
+                            graph.add_edge(vertex, v)
+                            found = True
 
-                # add new state to graph and append it to the stack
-                if not found:
-                    new_vertex = graph.add_vertex()
-                    graph.vp.state[new_vertex] = new_state
-                    graph.add_edge(vertex, new_vertex)
-                    stack.append(new_vertex)
-    
-    def execute_state(self, state):
+                    # add new state to graph and append it to the stack
+                    if not found:
+                        new_vertex = graph.add_vertex()
+                        graph.vp.state[new_vertex] = new_state
+                        graph.add_edge(vertex, new_vertex)
+                        stack.append(new_vertex)
+        
+    def execute_state(self, state, sync_list):
         new_states = []
         self._log.info(f"Executing state: {state}")
         
@@ -360,7 +434,7 @@ class MultiSSE(FlowAnalysis):
                     assert self._g.os is not None
                     if self._g.os.is_inter_cpu_syscall(self._lcfg, abb, state, state.cpu):
                         # put state into some kind of list of metastate maybe
-                        pass
+                        sync_list.append(state)
                     else:
                         new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)  
                         new_states.append(new_state)
