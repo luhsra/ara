@@ -44,9 +44,11 @@ class AUTOSAR(OSBase):
             instances.ep[prop[0]] = instances.new_ep(prop[1])
 
     @staticmethod
-    def interpret(cfg, abb, state, cpu):
+    def interpret(cfg, abb, state, cpu, is_global=False):
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}")
+        if is_global:
+            syscall += "_global"
         return getattr(AUTOSAR, syscall)(cfg, abb, state, cpu)
 
     @staticmethod
@@ -78,6 +80,48 @@ class AUTOSAR(OSBase):
     def schedule(state, cpu):
         # sort actived tasks by priority
         state.activated_tasks.sort(key=lambda task: task.priority, reverse=True)
+
+    @syscall
+    def AUTOSAR_ActivateTask_global(cfg, abb, metastate, cpu):
+        graph = metastate.state_graph[cpu]
+        v = graph.get_vertices()[0]
+        state = graph.vp.state[v]
+
+        scheduled_task = state.get_scheduled_task()
+
+        # get Task argument
+        cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
+        arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+
+        # find task with same name as 'arg' in instance graph
+        task = None
+        for v in state.instances.vertices():
+            task = state.instances.vp.obj[v]
+            if isinstance(task, Task):
+                if task.name in arg.get_name():
+                    break
+
+        # find target state
+        target_cpu = task.cpu_id
+        t_graph = metastate.state_graph[target_cpu]
+        t_vertex = t_graph.get_vertices()[0]
+        target_state = t_graph.vp.state[t_vertex]
+
+        # add found Task to list of activated tasks
+        if task not in target_state.activated_tasks:
+            target_state.activated_tasks.append(task)
+
+        # advance current task to next abb
+        counter = 0
+        for n in cfg.vertex(abb).out_neighbors():
+            state.abbs[scheduled_task.name] = n
+            counter += 1
+        assert(counter == 1)
+
+        # trigger scheduling 
+        AUTOSAR.schedule(target_state, task.cpu_id)
+
+        print("Activate Task globally: " + task.name)
 
 
     @syscall
@@ -207,7 +251,7 @@ class AUTOSAR(OSBase):
         state = state.copy()
 
         # remove task from activated tasks list
-        scheduled_task = state.get_scheduled_task(cpu)
+        scheduled_task = state.get_scheduled_task()
         state.activated_tasks.remove(scheduled_task)
 
         # reset abb list to entry abb
@@ -217,7 +261,7 @@ class AUTOSAR(OSBase):
         state.last_syscall = SyscallInfo("TerminateTask", abb, cpu)
 
         # set multi ret in syscall info
-        # new_task = state.get_scheduled_task(cpu)
+        # new_task = state.get_scheduled_task()
         # if new_task is not None:
         #     if state.gcfg_multi_ret[new_task.name]:
         #         state.last_syscall.set_multi_ret()
