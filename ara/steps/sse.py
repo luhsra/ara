@@ -141,7 +141,8 @@ class MetaState:
         return copy
 
     def __eq__(self, other):
-        class_eq = self.__class__ == other.__class__
+        if self.__class__ != other.__class__:
+            return False
 
         # compare state graphs
         graph_eq = True
@@ -150,7 +151,6 @@ class MetaState:
                 state = graph.vp.state[v]
 
                 if cpu not in other.state_graph:
-                    graph_eq = False
                     return False
                 else:
                     found_state = False
@@ -162,7 +162,7 @@ class MetaState:
                     if not found_state:
                         return False
 
-        return class_eq and graph_eq
+        return True
 
 class MultiState:
     def __init__(self, cfg=None, instances=None, cpu=0):
@@ -338,17 +338,6 @@ class MultiSSE(FlowAnalysis):
         metastate = self.sstg.vp.state[state_vertex]
         self._log.info(f"Executing Metastate: {metastate}")
         new_states = []
-        
-        # g = metastate.state_graph[0]
-        # v1 = g.get_vertices()
-        # print("CPU 0 -- Type: " + str(type(v1)) + ", Value: " + str(v1))
-        # g = metastate.state_graph[1]
-        # v2 = g.get_vertices()
-        # print("CPU 1 -- Type: " + str(type(v2)) + ", Value: " + str(v2))
-        # mesh = np.array(np.meshgrid(*[v1, v2, v2]))
-        # mesh = mesh.T.reshape(-1, 3)
-        # print("Mesh: " + str(mesh))
-            
 
         for cpu, sync_list in metastate.sync_states.items():
             for state in sync_list:
@@ -375,11 +364,10 @@ class MultiSSE(FlowAnalysis):
                             v = new_state.state_graph[cpu_other].add_vertex()
                             new_state.state_graph[cpu_other].vp.state[v] = next_state
 
-                        if new_state not in new_states:
-                            new_states.append(new_state)
-
                             # execute the syscall
                             self._g.os.interpret(self._lcfg, state.abbs[state.get_scheduled_task().name], new_state, cpu, is_global=True)
+                            if new_state not in new_states:
+                                new_states.append(new_state)
 
                 else:
                     for cpu_other, graph in metastate.state_graph.items():
@@ -393,18 +381,26 @@ class MultiSSE(FlowAnalysis):
                                 new_state.state_graph[cpu].vp.state[v] = sync_state
                                 v = new_state.state_graph[cpu_other].add_vertex()
                                 new_state.state_graph[cpu_other].vp.state[v] = next_state.copy()
-
-                                if new_state not in new_states:
+                                
+                                # execute the syscall
+                                self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
+                                if new_state not in new_states:    
                                     new_states.append(new_state)
-
-                                    # execute the syscall
-                                    self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
                     
         # run the single core sse on each new state
+        res = []
         for new_state in new_states:
             self.run_sse(new_state)
-                
+            if new_state not in res:
+                res.append(new_state)
 
+        new_states = res
+
+        for i, new_state in enumerate(new_states):
+            for j, new_state_2 in enumerate(new_states):
+                if i < j:
+                    if new_state == new_state_2:
+                        assert(False)
                         
         # filter out duplicate states by comparing with states in sstg
         for v in self.sstg.vertices():
@@ -412,7 +408,7 @@ class MultiSSE(FlowAnalysis):
             for new_state in new_states:
                 if new_state == sstg_state:
                     new_states.remove(new_state)
-
+                    
                     # add edge to existing state in sstg
                     e = self.sstg.add_edge(state_vertex, v)
                     # self.sstg.ep.syscall[e] = new_state.last_syscall

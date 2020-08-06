@@ -131,7 +131,8 @@ class Printer(Step):
             metastate = sstg.vp.state[state_node]
             dot_cluster = pydot.Cluster(
                 str(hash(state_node)),
-                label="Metastate"
+                label="Metastate",
+                style="rounded"
             )
             dot_graph.add_subgraph(dot_cluster)
 
@@ -161,7 +162,7 @@ class Printer(Step):
         
         # print all edges
         for edge in sstg.edges():
-            color = "black"
+            color = "blue"
             state = sstg.vp.state[edge.source()]
             cpu = list(state.state_graph.keys())[0]
 
