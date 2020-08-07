@@ -121,7 +121,7 @@ class Printer(Step):
             self._fail("Graph must be given when choosing sstg.")
         
         name = self._print_init()
-        dot_graph = pydot.Dot(graph_type='digraph', label=name)
+        dot_graph = pydot.Dot(graph_type='digraph', label=name, compound=True)
         
         cfg = CFGView(g.cfg, efilt=lambda x: g.cfg.ep.type[x] == CFType.icf or g.cfg.ep.type[x] == CFType.lcf)
 
@@ -164,14 +164,21 @@ class Printer(Step):
         for edge in sstg.edges():
             color = "blue"
             state = sstg.vp.state[edge.source()]
-            cpu = list(state.state_graph.keys())[0]
+            cpu_list = list(state.state_graph.keys())
+            cpu = cpu_list[0]
+            graph = state.state_graph[cpu]
+            s_vertex = graph.vertex(len(graph.get_vertices()) // 2)
+
+            t_state = sstg.vp.state[edge.target()]
+            graph = t_state.state_graph[cpu]
+            t_vertex = graph.vertex(len(graph.get_vertices()) // 2)
 
             dot_graph.add_edge(pydot.Edge(
-                str(hash(edge.source())) + "_" + str(cpu) + "_0",
-                str(hash(edge.target())) + "_" + str(cpu) + "_0",
+                str(hash(edge.source())) + "_" + str(cpu) + "_" + str(hash(s_vertex)),
+                str(hash(edge.target())) + "_" + str(cpu) + "_" + str(hash(t_vertex)),
                 color=color,
-                ltail="cluster_" + str(hash(edge.source())),
-                lhead="cluster_" + str(hash(edge.target()))
+                lhead="cluster_" + str(hash(edge.target())),
+                ltail="cluster_" + str(hash(edge.source()))
             ))
 
         self._write_dot(dot_graph)

@@ -13,6 +13,7 @@ from .freertos import Task
 from .os_util import SyscallCategory
 from ara.util import VarianceDict
 from .autosar import Task as AUTOSAR_Task, SyscallInfo
+from appl.AUTOSAR.minexample_timing import Timings
 
 from collections import defaultdict
 from enum import Enum
@@ -181,12 +182,24 @@ class MultiState:
                                  # returns to a single abb or multiple ones
                                  # key: task name, value: bool
         self.cpu = cpu
+        self.min_time = 0
+        self.max_time = 0
         
     def get_scheduled_task(self):
         if len(self.activated_tasks) >= 1:
             return self.activated_tasks[0]
         else: 
             return None
+
+    def add_max_time(self, time):
+        if self.max_time is not None:
+            if time is None:
+                self.max_time = time
+            else:
+                self.max_time += time
+
+    def add_min_time(self, time):
+        self.min_time += time
     
     # def explore(self, cfg):
     #     """Explore the state by running a single core sse on each cpu until no progress 
@@ -238,8 +251,8 @@ class MultiState:
             else: 
                 ret += "None"
             ret += ", "
-        ret = ret[:-2]
-        return ret + "]"
+        ret = ret[:-2] + "] " + str(self.min_time) + "-" + str(self.max_time)
+        return ret
 
     def __eq__(self, other):
         class_eq = self.__class__ == other.__class__
@@ -376,6 +389,14 @@ class MultiSSE(FlowAnalysis):
                                 sync_state = state.copy()
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
 
+                                # skip this state if sync state times are higher than max or lower than min
+                                if next_state.max_time is not None and sync_state.min_time > next_state.max_time:
+                                    print("skipped")
+                                    continue
+                                if sync_state.max_time is not None and sync_state.max_time < next_state.min_time:
+                                    print("skipped")
+                                    continue
+
                                 new_state = metastate.basic_copy()
                                 v = new_state.state_graph[cpu].add_vertex()
                                 new_state.state_graph[cpu].vp.state[v] = sync_state
@@ -396,6 +417,7 @@ class MultiSSE(FlowAnalysis):
 
         new_states = res
 
+        # just for debugging
         for i, new_state in enumerate(new_states):
             for j, new_state_2 in enumerate(new_states):
                 if i < j:
@@ -446,7 +468,10 @@ class MultiSSE(FlowAnalysis):
         
     def execute_state(self, state, sync_list):
         new_states = []
-        self._log.info(f"Executing state: {state}")
+        # self._log.info(f"Executing state: {state}")
+
+        # context used for computing ABB timings, this should be something useful later on
+        context = None
         
         task = state.get_scheduled_task()
         if task is not None:
@@ -458,7 +483,12 @@ class MultiSSE(FlowAnalysis):
                         # put state into some kind of list of metastate maybe
                         sync_list.append(state)
                     else:
-                        new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)  
+                        new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
+                        
+                        # set new min and max times
+                        new_state.add_min_time(Timings.get_min_time(state.cfg.vp.name[abb], context))
+                        new_state.add_max_time(Timings.get_max_time(state.cfg.vp.name[abb], context))
+
                         new_states.append(new_state)
                 # elif self._icfg.vp.type[abb] == ABBType.call:
                 #     pass
@@ -470,6 +500,11 @@ class MultiSSE(FlowAnalysis):
                     for n in self._icfg.vertex(abb).out_neighbors():
                         new_state = state.copy()
                         new_state.abbs[task.name] = n
+
+                        # set new min and max times
+                        new_state.add_min_time(Timings.get_min_time(state.cfg.vp.name[abb], context))
+                        new_state.add_max_time(Timings.get_max_time(state.cfg.vp.name[abb], context))
+
                         new_states.append(new_state)
 
         return new_states
