@@ -142,11 +142,10 @@ class MetaState:
         return copy
 
     def __eq__(self, other):
-        if self.__class__ != other.__class__:
+        if not isinstance(other, self.__class__):
             return False
 
         # compare state graphs
-        graph_eq = True
         for cpu, graph in self.state_graph.items():
             for v in graph.vertices():
                 state = graph.vp.state[v]
@@ -157,6 +156,23 @@ class MetaState:
                     found_state = False
                     for v in other.state_graph[cpu].vertices():
                         state_other = other.state_graph[cpu].vp.state[v]
+                        if state == state_other:
+                            found_state = True
+                            break
+                    if not found_state:
+                        return False
+        
+        # compare again in other direction
+        for cpu, graph in other.state_graph.items():
+            for v in graph.vertices():
+                state = graph.vp.state[v]
+
+                if cpu not in self.state_graph:
+                    return False
+                else:
+                    found_state = False
+                    for v in self.state_graph[cpu].vertices():
+                        state_other = self.state_graph[cpu].vp.state[v]
                         if state == state_other:
                             found_state = True
                             break
@@ -245,7 +261,10 @@ class MultiState:
 
     def __repr__(self):
         ret = "["
+        scheduled_task = self.get_scheduled_task()
         for task_name, abb in self.abbs.items():
+            if scheduled_task is not None and task_name == scheduled_task.name:
+                ret += "+"
             if abb is not None:
                 ret += self.cfg.vp.name[abb]
             else: 
@@ -412,15 +431,22 @@ class MultiSSE(FlowAnalysis):
         res = []
         for new_state in new_states:
             self.run_sse(new_state)
-            if new_state not in res:
-                res.append(new_state)
+
+            # check for duplicates
+            found = False
+            for state in res:
+                if state == new_state:
+                    found = True
+                    break
+            if not found:
+                res.append(new_state)   
 
         new_states = res
 
         # just for debugging
         for i, new_state in enumerate(new_states):
             for j, new_state_2 in enumerate(new_states):
-                if i < j:
+                if i > j:
                     if new_state == new_state_2:
                         assert(False)
                         
@@ -433,11 +459,11 @@ class MultiSSE(FlowAnalysis):
                     
                     # add edge to existing state in sstg
                     e = self.sstg.add_edge(state_vertex, v)
-                    # self.sstg.ep.syscall[e] = new_state.last_syscall
 
         return new_states
 
     def run_sse(self, metastate):
+        """Run the single core sse for the given metastate on each cpu."""
         for cpu, graph in metastate.state_graph.items():
             stack = []
 
