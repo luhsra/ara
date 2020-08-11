@@ -200,6 +200,7 @@ class MultiState:
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
+        self.times = [] # list of time intervalls this state is valid in
         
     def get_scheduled_task(self):
         if len(self.activated_tasks) >= 1:
@@ -207,57 +208,39 @@ class MultiState:
         else: 
             return None
 
-    def add_max_time(self, time):
+    def add_time(self, min_time, max_time):
         if self.max_time is not None:
-            if time is None:
-                self.max_time = time
+            if max_time is None:
+                self.max_time = max_time
             else:
-                self.max_time += time
+                self.max_time += max_time
+        
+        self.min_time += min_time
 
-    def add_min_time(self, time):
-        self.min_time += time
-    
-    # def explore(self, cfg):
-    #     """Explore the state by running a single core sse on each cpu until no progress 
-    #     is made or only syscalls with inter cpu behavior are found."""
-    #     lcfg = CFGView(self.cfg, efilt=self.cfg.ep.type.fa == CFType.lcf)
-    #     for cpu in self.activated_tasks:
-    #         task = self.get_scheduled_task(cpu)
-    #         if task is not None:
-    #             abb = self.abbs[task.name]
+        # add new time intervall to list and merge it if necessary
+        self.times.append((self.min_time, self.max_time))
+        if len(self.times) > 1:
+            self.times.sort(key=lambda intervall: intervall[0])
 
-    #             stack = []
-    #             ret_stack = []
+            def merge(time_1, time_2):
+                if time_1[1] < time_2[0]:
+                    return False, None
+                if time_1[1] < time_2[1]:
+                    return True, (time_1[0], time_2[1])
+                else:
+                    return True, (time_1[0], time_1[1])
 
-    #             # explore neighbors until no new none syscall abb is found
-    #             while stack:
-    #                 abb_vertex = stack.pop()
-    #                 abb = abb_graph.vp.abb[abb_vertex]
-                    
-    #                 is_ret = False
-
-    #                 # if call node is found, the return node is saved in return stack
-    #                 if cfg.vp.type[abb] == ABBType.call:
-    #                     for out in lcfg.vertex(abb).out_neighbors():
-    #                         ret_stack.append(out)
-    #                         break
-    #                 elif cfg.vp.type[abb] == ABBType.computation:
-    #                     if len(ret_stack) > 0 and ret_stack[-1] in cfg.vertex(abb).out_neighbors():
-    #                         is_ret = True
-    #                 elif cfg.vp.type[abb] == ABBType.syscall:
-    #                     if not self._g.os.is_inter_cpu_syscall(self._lcfg, abb, self, cpu):
-    #                         self._g.os.interpret(self._lcfg, abb, self, cpu)
-
-    #                 # append neighbors to abb list and to stack if not a syscall
-    #                 for n in cfg.vertex(abb).out_neighbors():
-    #                     # if is_ret:
-    #                     #     n = ret_stack.pop()
-    #                     if n not in abb_list:
-    #                         abb_list.append(n)
-    #                         if cfg.vp.type[n] != ABBType.syscall and n not in stack:
-    #                             stack.append(n)
-    #                     if is_ret:
-    #                         break
+            while True:
+                new_times = self.times.copy()
+                for i, time in enumerate(new_times):
+                    if i != len(new_times) - 1:
+                        merged, intervall = merge(new_times[i], new_times[i + 1])
+                        if merged:
+                            self.times[i] = intervall
+                            self.times.pop(i + 1)
+                            break
+                if new_times == self.times:
+                    break
 
     def __repr__(self):
         ret = "["
@@ -270,7 +253,7 @@ class MultiState:
             else: 
                 ret += "None"
             ret += ", "
-        ret = ret[:-2] + "] " + str(self.min_time) + "-" + str(self.max_time)
+        ret = ret[:-2] + "] " + str(self.times)
         return ret
 
     def __eq__(self, other):
@@ -291,6 +274,7 @@ class MultiState:
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
+        scopy.times = []
         # scopy.gcfg_multi_ret = self.gcfg_multi_ret.copy()
 
         return scopy
@@ -375,6 +359,13 @@ class MultiSSE(FlowAnalysis):
             for state in sync_list:
                 args = []
                 cpu_list = []
+
+                # get min and max times for the sync syscall
+                context = None # this has to be something useful later on
+                abb = state.abbs[state.get_scheduled_task().name]
+                min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+
                 for cpu_other, graph in metastate.state_graph.items():
                     if cpu != cpu_other:
                         args.append(graph.get_vertices())
@@ -416,14 +407,27 @@ class MultiSSE(FlowAnalysis):
                                     print("skipped")
                                     continue
 
+                                next_state = next_state.copy()
+                                
                                 new_state = metastate.basic_copy()
                                 v = new_state.state_graph[cpu].add_vertex()
                                 new_state.state_graph[cpu].vp.state[v] = sync_state
                                 v = new_state.state_graph[cpu_other].add_vertex()
-                                new_state.state_graph[cpu_other].vp.state[v] = next_state.copy()
+                                new_state.state_graph[cpu_other].vp.state[v] = next_state
                                 
                                 # execute the syscall
                                 self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
+
+                                # set new min and max times for both new states
+                                new_min = max(sync_state.min_time, next_state.min_time)
+                                new_max = min(sync_state.max_time, next_state.max_time)
+                                next_state.min_time = new_min
+                                next_state.max_time = new_max
+                                sync_state.min_time = new_min
+                                sync_state.max_time = new_max
+                                sync_state.add_time(min_time, max_time)
+                                next_state.add_time(min_time, max_time)
+
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
                     
@@ -506,14 +510,15 @@ class MultiSSE(FlowAnalysis):
                 if self._icfg.vp.type[abb] == ABBType.syscall:
                     assert self._g.os is not None
                     if self._g.os.is_inter_cpu_syscall(self._lcfg, abb, state, state.cpu):
-                        # put state into some kind of list of metastate maybe
+                        # put state into list of syncronization syscalls (inter cpu syscalls)
                         sync_list.append(state)
                     else:
                         new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
                         
                         # set new min and max times
-                        new_state.add_min_time(Timings.get_min_time(state.cfg.vp.name[abb], context))
-                        new_state.add_max_time(Timings.get_max_time(state.cfg.vp.name[abb], context))
+                        min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                        max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+                        new_state.add_time(min_time, max_time)
 
                         new_states.append(new_state)
                 # elif self._icfg.vp.type[abb] == ABBType.call:
@@ -528,8 +533,9 @@ class MultiSSE(FlowAnalysis):
                         new_state.abbs[task.name] = n
 
                         # set new min and max times
-                        new_state.add_min_time(Timings.get_min_time(state.cfg.vp.name[abb], context))
-                        new_state.add_max_time(Timings.get_max_time(state.cfg.vp.name[abb], context))
+                        min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                        max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+                        new_state.add_time(min_time, max_time)
 
                         new_states.append(new_state)
 
