@@ -27,7 +27,7 @@ TASK(TaskA) {
 }
 
 TASK(TaskB) {
-    doSomethingImportant();
+    doSomethingBefore();
     // ActivateTask(TaskF);
     TerminateTask();
 }

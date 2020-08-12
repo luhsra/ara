@@ -209,12 +209,7 @@ class MultiState:
             return None
 
     def add_time(self, min_time, max_time):
-        if self.max_time is not None:
-            if max_time is None:
-                self.max_time = max_time
-            else:
-                self.max_time += max_time
-        
+        self.max_time += max_time        
         self.min_time += min_time
 
         # add new time intervall to list and merge it if necessary
@@ -507,6 +502,10 @@ class MultiSSE(FlowAnalysis):
         if task is not None:
             abb = state.abbs[task.name]
             if abb is not None:
+                # get min and max times for this abb
+                min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+
                 if self._icfg.vp.type[abb] == ABBType.syscall:
                     assert self._g.os is not None
                     if self._g.os.is_inter_cpu_syscall(self._lcfg, abb, state, state.cpu):
@@ -516,25 +515,44 @@ class MultiSSE(FlowAnalysis):
                         new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
                         
                         # set new min and max times
-                        min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
-                        max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
                         new_state.add_time(min_time, max_time)
 
                         new_states.append(new_state)
-                # elif self._icfg.vp.type[abb] == ABBType.call:
-                #     pass
-                # elif (self._icfg.vp.is_exit[abb] and
-                #     self._icfg.vertex(abb).out_degree() > 0):
-                #     pass
-                # elif self._icfg.vp.type[abb] == ABBType.computation:
-                else:
+                elif self._icfg.vp.type[abb] == ABBType.call:
+                    for n in self._icfg.vertex(abb).out_neighbors():
+                        new_state = state.copy()
+                        new_state.abbs[task.name] = n
+
+                        # find next call node
+                        call_node = None
+                        for neighbor in state.callgraphs[task.name].vertex(state.call_nodes[task.name]).out_neighbors():
+                            if state.callgraphs[task.name].vp.cfglink[neighbor] == abb:
+                                call_node = neighbor
+                                break
+                        new_state.call_nodes[task.name] = call_node
+
+                        # set new min and max times
+                        new_state.add_time(min_time, max_time)
+
+                        new_states.append(new_state)
+                elif (self._icfg.vp.is_exit[abb] and
+                    self._icfg.vertex(abb).out_degree() > 0):
+                    new_state = state.copy()
+                    call = new_state.callgraphs[task.name].vp.cfglink[new_state.call_nodes[task.name]]
+                    neighbors = self._lcfg.vertex(call).out_neighbors()
+                    new_state.abbs[task.name] = next(neighbors)
+                    new_state.call_nodes[task.name] = next(state.call_nodes[task.name].in_neighbors())
+
+                    # set new min and max times
+                    new_state.add_time(min_time, max_time)
+                    
+                    new_states.append(new_state)
+                elif self._icfg.vp.type[abb] == ABBType.computation:
                     for n in self._icfg.vertex(abb).out_neighbors():
                         new_state = state.copy()
                         new_state.abbs[task.name] = n
 
                         # set new min and max times
-                        min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
-                        max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
                         new_state.add_time(min_time, max_time)
 
                         new_states.append(new_state)

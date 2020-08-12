@@ -1,3 +1,5 @@
+import math
+
 class Timings:
     """This class contains all timing information for the minexample application.
     For each ABB there needs to be a function returning their min and max execution times."""
@@ -8,7 +10,7 @@ class Timings:
         # if f is not None:
         #     return f(context)
         # return (0, None)
-        return (1,2)
+        return (1, 2)
     
     @staticmethod
     def get_min_time(abb_name, context):
