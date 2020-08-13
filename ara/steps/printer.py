@@ -31,7 +31,7 @@ class Printer(Step):
         self.subgraph = Option(name="subgraph",
                                help="Choose, what subgraph should be printed.",
                                step_name=self.get_name(),
-                               ty=Choice("abbs", "instances", "sstg"))
+                               ty=Choice("abbs", "instances", "sstg_full", "sstg_simple", "multistates"))
         self.graph = Option(name="graph",
                                help="Graph object of sstg.",
                                step_name=self.get_name(),
@@ -115,7 +115,7 @@ class Printer(Step):
                                           label=g.instances.ep.label[edge]))
         self._write_dot(dot_graph)
 
-    def print_sstg(self, g):
+    def print_sstg_full(self, g):
         sstg = self.graph.get()
         if not sstg:
             self._fail("Graph must be given when choosing sstg.")
@@ -183,11 +183,100 @@ class Printer(Step):
 
         self._write_dot(dot_graph)
 
+    def print_sstg_simple(self, g):
+        sstg = self.graph.get()
+        if not sstg:
+            self._fail("Graph must be given when choosing sstg.")
+        
+        name = self._print_init()
+        dot_graph = pydot.Dot(graph_type='digraph', label=name)
+
+        # print all vertices
+        for vertex in sstg.vertices():
+            metastate = sstg.vp.state[vertex]
+            label = ""
+
+            for cpu, graph in metastate.state_graph.items():
+                # get name of first vertex
+                v = graph.get_vertices()[0]
+                state = graph.vp.state[v]
+                label += f'{state} | '
+
+            label = label[:-2]
+            label += " -- " + str(hash(vertex))
+
+            node = pydot.Node(
+                str(hash(vertex)),
+                label=label
+            )
+            dot_graph.add_node(node)
+
+        # print all edges
+        for edge in sstg.edges():
+            dot_graph.add_edge(
+                pydot.Edge(
+                    str(hash(edge.source())),
+                    str(hash(edge.target()))
+                )
+            )
+
+        self._write_dot(dot_graph)
+
+    def print_multistates(self, g):
+        sstg = self.graph.get()
+        if not sstg:
+            self._fail("Graph must be given when choosing sstg.")
+        
+        name = self._print_init()
+        dot_graph = pydot.Dot(graph_type='digraph', label=name)
+
+        # print all metastates as clusters
+        for state_node in sstg.vertices():
+            # print cluster
+            metastate = sstg.vp.state[state_node]
+            dot_cluster = pydot.Cluster(
+                str(hash(state_node)),
+                label="Metastate " + str(hash(state_node)),
+                style="rounded"
+            )
+            dot_graph.add_subgraph(dot_cluster)
+
+            for cpu, state_graph in metastate.state_graph.items():
+                subg = pydot.Subgraph(
+                    str(hash(state_node)) + "_" + str(cpu),
+                    label=str(cpu)
+                )
+                dot_cluster.add_subgraph(subg)
+
+                # print state vertices in cluster
+                for vertex in state_graph.vertices():
+                    state = state_graph.vp.state[vertex]
+                    dot_node = pydot.Node(
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(vertex)),
+                        label=state.__repr__()
+                    )
+                    subg.add_node(dot_node)
+
+                # print state edges in cluster
+                for edge in state_graph.edges():
+                    dot_edge = pydot.Edge(
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.source())),
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.target()))
+                    )
+                    subg.add_edge(dot_edge)
+        
+
+        self._write_dot(dot_graph)
+
     def run(self, g: Graph):
         subgraph = self.subgraph.get()
         if subgraph == 'abbs':
             self.print_abbs(g)
         if subgraph == 'instances':
             self.print_instances(g)
-        if subgraph == 'sstg':
-            self.print_sstg(g)
+        if subgraph == 'sstg_full':
+            self.print_sstg_full(g)
+        if subgraph == 'sstg_simple':
+            self.print_sstg_simple(g)
+        if subgraph == 'multistates':
+            self.print_multistates(g)

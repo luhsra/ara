@@ -628,12 +628,22 @@ class MultiSSE(FlowAnalysis):
         # print the sstg by chaining a printer step
         if self.dump.get():
             uuid = self._step_manager.get_execution_id()
-            dot_file = f'{uuid}.SSTG.dot'
+            dot_file = f'{uuid}.SIMPLE_SSTG.dot'
             dot_file = self.dump_prefix.get() + dot_file
             self._step_manager.chain_step({"name": "Printer",
                                            "dot": dot_file,
-                                           "graph_name": 'SSTG',
-                                           "subgraph": 'sstg',
+                                           "graph_name": 'SIMPLE SSTG',
+                                           "subgraph": 'sstg_simple',
+                                           "graph": sstg})
+
+        if self.dump.get():
+            uuid = self._step_manager.get_execution_id()
+            dot_file = f'{uuid}.Multistates.dot'
+            dot_file = self.dump_prefix.get() + dot_file
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'Multistates',
+                                           "subgraph": 'multistates',
                                            "graph": sstg})
     
     def print_tasks(self):
