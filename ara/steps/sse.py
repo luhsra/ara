@@ -94,6 +94,7 @@ class FlowAnalysis(Step):
         self.sstg = graph_tool.Graph()
         self.sstg.vertex_properties["state"] = self.sstg.new_vp("object")
         self.sstg.edge_properties["syscall"] = self.sstg.new_ep("object")
+        self.sstg.edge_properties["state_list"] = self.sstg.new_ep("object")
 
         state_vertex = self.new_vertex(self.sstg, self._get_initial_state())
 
@@ -108,11 +109,19 @@ class FlowAnalysis(Step):
             for n in self._system_semantic(state_vertex):
                 new_state = self.new_vertex(self.sstg, n)
                 e = self.sstg.add_edge(state_vertex, new_state)
+
+                if isinstance(n, MetaState):
+                    self.sstg.ep.state_list[e] = GCFGInfo(n.entry_states.copy())
+
                 stack.append(new_state)
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
 
         self._finish(self.sstg)
+
+class GCFGInfo:
+    def __init__(self, entry_states):
+        self.entry_states = entry_states
 
 class MetaState:
     def __init__(self, cfg=None, instances=None):
@@ -123,6 +132,8 @@ class MetaState:
         self.sync_states = {} # list of MultiStates for each cpu, which handle 
                               # a syscall that affects other cpus
                               # key: cpu id, value: list of MultiStates
+        self.entry_states = {}  # entry state for each cpu
+                                # key: cpu id, value: Multistate
 
     def __repr__(self):
         ret = "["
@@ -138,6 +149,7 @@ class MetaState:
             copy.state_graph[cpu] = graph_tool.Graph()
             copy.sync_states[cpu] = []
             copy.state_graph[cpu].vertex_properties["state"] = copy.state_graph[cpu].new_vp("object")
+            # copy.entry_states[cpu] = None
 
         return copy
 
@@ -371,6 +383,8 @@ class MultiSSE(FlowAnalysis):
                     mesh = np.array(np.meshgrid(*args)).T.reshape(-1, len(args))
                     print(str(mesh))
 
+                    # TODO: update this for multiple cpus (> 2)
+
                     for combination in mesh:
                         new_state = metastate.copy()
                         v = new_state.state_graph[cpu].add_vertex()
@@ -409,6 +423,12 @@ class MultiSSE(FlowAnalysis):
                                 new_state.state_graph[cpu].vp.state[v] = sync_state
                                 v = new_state.state_graph[cpu_other].add_vertex()
                                 new_state.state_graph[cpu_other].vp.state[v] = next_state
+
+
+                                # save the original multistates in the new metastate before executing the syscall
+                                # this information is later on used for building the gcfg
+                                new_state.entry_states[cpu] = sync_state.copy()
+                                new_state.entry_states[cpu_other] = next_state.copy()
                                 
                                 # execute the syscall
                                 self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
@@ -458,6 +478,7 @@ class MultiSSE(FlowAnalysis):
                     
                     # add edge to existing state in sstg
                     e = self.sstg.add_edge(state_vertex, v)
+                    self.sstg.ep.state_list[e] = GCFGInfo(new_state.entry_states.copy())
 
         return new_states
 
@@ -564,66 +585,59 @@ class MultiSSE(FlowAnalysis):
     
     def build_gcfg(self):
         """Adds global control flow edges to the control flow graph."""
+        def add_edge(s_abb, t_abb):
+            if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
+                e = self._g.cfg.add_edge(s_abb, t_abb)
+                self._g.cfg.ep.type[e] = CFType.gcf
+
+        # add all gcfg edges that are the result of inter cpu syscalls
         for edge in self.sstg.edges():
-            s_state = self.sstg.vp.state[edge.source()]
-            t_state = self.sstg.vp.state[edge.target()]
-            for cpu in s_state.activated_tasks:
-                s_task = s_state.get_scheduled_task(cpu)
-                t_task = t_state.get_scheduled_task(cpu)
-                if s_task is not None and t_task is not None and s_task.name != t_task.name:
+            entry_states = self.sstg.ep.state_list[edge].entry_states
+            t_metastate = self.sstg.vp.state[edge.target()]
 
-                    def add_edge(s_abb, t_abb):
-                        if t_abb not in self._g.cfg.vertex(s_abb).out_neighbors():
-                            e = self._g.cfg.add_edge(s_abb, t_abb)
-                            self._g.cfg.ep.type[e] = CFType.gcf
+            for cpu, graph in t_metastate.state_graph.items():
+                # get first graph node (first state)
+                t_state = graph.vp.state[graph.get_vertices()[0]]
+                
+                s_state = entry_states[cpu]
 
-                    # we assume that the target abb is the first element in the list
-                    # since the list is not sorted
-                    t_abb = t_state.abbs[t_task.name][0]
+                s_abb = s_state.abbs[s_state.get_scheduled_task().name]
+                t_abb = t_state.abbs[t_state.get_scheduled_task().name]
+                
+                if s_abb != t_abb:
+                    add_edge(s_abb, t_abb)
+        
+        # add all gcfg edges that are the result of syscalls only affecting a single cpu
+        for meta_vertex in self.sstg.vertices():
+            metastate = self.sstg.vp.state[meta_vertex]
 
-                    # getting info about last syscall
-                    info = self.sstg.ep.syscall[edge]
+            for cpu, graph in metastate.state_graph.items():
+                for edge in graph.edges():
+                    s_state = graph.vp.state[edge.source()]
+                    t_state = graph.vp.state[edge.target()]
 
-                    # if last syscall was TerminateTask only one edge is added
-                    # unless the multi ret flag was set in the task
-                    if info.name == "TerminateTask":
-                        if info.cpu == cpu:
-                            s_abb = info.abb
-                            if info.multi_ret:
-                                for t_abb in t_state.abbs[t_task.name]:
-                                    add_edge(s_abb, t_abb)
-                            else:
-                                add_edge(s_abb, t_abb)
+                    s_task = s_state.get_scheduled_task()
+                    t_task = t_state.get_scheduled_task()
 
-                    # if last syscall was ActivateTask we have to see if the activated task
-                    # is on the same cpu as the syscall, then we only need to add one edge
-                    elif info.name == "ActivateTask":
-                        if info.cpu == cpu:
-                            s_abb = info.abb
+                    if s_task is not None and t_task is not None:
+                        s_abb = s_state.abbs[s_task.name]
+                        t_abb = t_state.abbs[t_task.name]
+
+                        if s_abb != t_abb:
                             add_edge(s_abb, t_abb)
-                        else:
-                            # add edge from each source abb to first target abb
-                            for abb in s_state.abbs[s_task.name]:
-                                add_edge(abb, t_abb)
-                    else:
-                        # default: add edge from each source abb to first target abb
-                        for abb in s_state.abbs[s_task.name]:
-                            # TODO: find root node of lcfg from this abb and check if entry node of one of the tasks
-                            #       if not add label to edge
-                            add_edge(abb, t_abb)
 
 
     def _finish(self, sstg):
         # build global control flow graph and print it
-        # self.build_gcfg()
-        # if self.dump.get():
-        #     uuid = self._step_manager.get_execution_id()
-        #     dot_file = f'{uuid}.GCFG.dot'
-        #     dot_file = self.dump_prefix.get() + dot_file
-        #     self._step_manager.chain_step({"name": "Printer",
-        #                                    "dot": dot_file,
-        #                                    "graph_name": 'GCFG',
-        #                                    "subgraph": 'abbs'})
+        self.build_gcfg()
+        if self.dump.get():
+            uuid = self._step_manager.get_execution_id()
+            dot_file = f'{uuid}.GCFG.dot'
+            dot_file = self.dump_prefix.get() + dot_file
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'GCFG',
+                                           "subgraph": 'abbs'})
 
         # print the sstg by chaining a printer step
         if self.dump.get():

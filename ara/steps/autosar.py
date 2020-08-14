@@ -121,7 +121,7 @@ class AUTOSAR(OSBase):
         # trigger scheduling 
         AUTOSAR.schedule(target_state, task.cpu_id)
 
-        print("Activate Task globally: " + task.name)
+        # print("Activate Task globally: " + task.name)
 
 
     @syscall
@@ -166,7 +166,7 @@ class AUTOSAR(OSBase):
         # set this syscall for gcfg building
         state.last_syscall = SyscallInfo("ActivateTask", abb, cpu)
 
-        print("Activate Task: " + task.name)
+        # print("Activate Task: " + task.name)
 
         return state
 
@@ -269,7 +269,7 @@ class AUTOSAR(OSBase):
         #         # reset multi ret for gcfg building to False
         #         state.gcfg_multi_ret[new_task.name] = False
 
-        print("Terminated Task: " + scheduled_task.name)
+        # print("Terminated Task: " + scheduled_task.name)
 
         return state
 
