@@ -291,6 +291,21 @@ namespace ara::graph {
 		const llvm::CallBase* get_call_base(const ABBType type, const llvm::BasicBlock& bb) const;
 	};
 
+    struct Callgraph {
+        graph_tool::GraphInterface& graph;
+        /* vertex properties */
+        typename graph_tool::vprop_map_t<std::string>::type label;
+        typename graph_tool::vprop_map_t<std::string>::type func;
+        typename graph_tool::vprop_map_t<long>::type cfglink;
+        typename graph_tool::vprop_map_t<long>::type callgraphlink;
+        /* edge properties */
+        typename graph_tool::eprop_map_t<std::string>::type elabel;
+        typename graph_tool::eprop_map_t<long>::type ecallgraphlink;
+
+        Callgraph(graph_tool::GraphInterface& graph) : graph(graph){};
+    };
+
+
 	/**
 	 * C++ representation of the graph.
 	 *
@@ -316,5 +331,7 @@ namespace ara::graph {
 		PyObject* get_pygraph() { return graph; }
 
 		CFG get_cfg();
+
+        Callgraph get_callgraph();
 	};
 } // namespace ara::graph

@@ -5,6 +5,7 @@
 #define VERSION_BKP VERSION
 #undef VERSION
 #include <Graphs/VFGNode.h>
+#include <Graphs/PTACallGraph.h>
 #include <SVF-FE/PAGBuilder.h>
 #include <Util/BasicTypes.h>
 #include <WPA/Andersen.h>
@@ -34,6 +35,9 @@ namespace ara::step {
 
 		// resolve indirect pointer
 		pag->getICFG()->updateCallGraph(ander->getPTACallGraph());
+
+		// get callgraph from ander
+		//PTACallGraph* callgraph = ander->getPTACallGraph();
 
 		// we don't need to store anything here, since all SVF datastructures are stored in singletons
 	}

@@ -113,9 +113,9 @@ namespace ara::graph {
 		CFG cfg(get_graph_interface());
 
 		// Properties
-#define MAP(Value, Type) cfg.Value = get_property<decltype(cfg.Value)>(Type, #Value);
-#define VMAP(Value) MAP(Value, vprops)
-#define EMAP(Value) MAP(Value, eprops)
+#define MAP(Graph, Value, Type) Graph.Value = get_property<decltype(Graph.Value)>(Type, #Value);
+#define VMAP(Value) MAP(cfg, Value, vprops)
+#define EMAP(Value) MAP(cfg, Value, eprops)
 
 		PyObject* vprops = PyObject_GetAttrString(pycfg, "vertex_properties");
 		assert(vprops != nullptr);
@@ -140,4 +140,37 @@ namespace ara::graph {
 
 		return cfg;
 	}
+
+    Callgraph Graph::get_callgraph() {
+        // extract self.callgraph from Python
+        PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
+        assert(pycallgraph != nullptr);
+
+        // get GraphInterface
+        PyObject* pycallgraph_graph = PyObject_GetAttrString(pycallgraph, "_Graph__graph");
+        assert(pycallgraph_graph != nullptr);
+        boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pycallgraph_graph);
+        assert(get_graph_interface.check());
+        Callgraph callgraph(get_graph_interface());
+
+        // Property map helper macros
+#define CGVMAP(Value) MAP(callgraph, Value, vprops)
+#define CGEMAP(Value) MAP(callgraph, Value, eprops)
+
+        PyObject* vprops = PyObject_GetAttrString(pycallgraph, "vertex_properties");
+        assert(vprops != nullptr);
+
+        CGVMAP(label)
+        CGVMAP(func)
+        CGVMAP(cfglink)
+        CGVMAP(callgraphlink)
+
+        PyObject* eprops = PyObject_GetAttrString(pycallgraph, "edge_properties");
+        assert(eprops != nullptr);
+
+        CGEMAP(elabel)
+        CGEMAP(ecallgraphlink)
+
+        return callgraph;
+    }
 } // namespace ara::graph

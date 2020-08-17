@@ -9,7 +9,6 @@ from collections import deque
 from .llvm_data import PyLLVMData
 from .mix import ABBType, CFType
 
-
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
 
@@ -158,6 +157,20 @@ class CFGView(graph_tool.GraphView):
     def get_syscall_name(self, *args, **kwargs):
         return self.base.get_syscall_name(*args, **kwargs)
 
+class Callgraph(graph_tool.Graph):
+    """ TODO comment on functionality
+    """
+    def __init__(self):
+        super().__init__()
+
+        #vertex properties
+        self.vertex_properties["label"] = self.new_vp("string")
+        self.vertex_properties["func"] = self.new_vp("string")
+        self.vertex_properties["cfglink"] = self.new_vp("long")
+        self.vertex_properties["callgraphlink"] = self.new_vp("long")
+        #edge properties
+        self.edge_properties["label"] = self.new_ep("string")
+        self.edge_properties["callgraphlink"] = self.new_ep("long")
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
@@ -173,11 +186,14 @@ class Graph:
 
         self.functs = graph_tool.GraphView(self.cfg,
                                            vfilt=self.cfg.vp.is_function)
+    def _init_callgraph(self):
+        self.callgraph = Callgraph()
 
     def __init__(self):
         # should be used only from C++, see graph.h
         self._llvm_data = PyLLVMData()
         self._init_cfg()
+        self._init_callgraph()
         self.os = None
         self.call_graphs = {}
         self.instances = None
