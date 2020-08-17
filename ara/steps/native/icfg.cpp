@@ -100,20 +100,33 @@ namespace ara::step {
 				return linked;
 			}
 
+			/**
+			 * Check if a caller_type of function pointer fits to a given candidate function.
+			 * Currently, this only checks for the same amount of arguments.
+			 */
+			bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) {
+				if (candidate.empty() || candidate.isIntrinsic()) {
+					return false;
+				}
+				// TODO this can be improved. It should also be sound, if the bitsize is the same for all types.
+				if (candidate.getFunctionType()->getNumParams() == caller_type.getNumParams()) {
+					return true;
+				}
+				return false;
+			}
+
 			void link_unresolved_function_pointer(Vertex call_abb, Vertex after_call) {
 				// first try: match all function signatures. This is slightly better that using all
 				// functions as possible pointer target but of course not exact
 				logger.info() << "Unresolved call to function pointer. ABB: " << cfg.name[call_abb] << std::endl;
 				llvm::CallBase* called_func =
 				    llvm::dyn_cast<llvm::CallBase>(&cfg.get_entry_bb<Graph>(call_abb)->front());
-				assert(called_func != nullptr);
+				assert(called_func != nullptr && "called_func is null");
 				const llvm::FunctionType* called_type = called_func->getFunctionType();
 
 				for (llvm::Function& candidate : mod) {
-					if (candidate.empty() || candidate.isIntrinsic()) {
-						continue;
-					}
-					if (candidate.getFunctionType() == called_type) {
+					assert(called_type != nullptr && "called_type is null");
+					if (is_valid_call_target(*called_type, candidate)) {
 						auto callee = cfg.back_map<Graph>(graph, candidate);
 						auto callee_abb = cfg.get_entry_abb(graph, callee);
 						// ingoing edge
