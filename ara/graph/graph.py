@@ -166,11 +166,11 @@ class Callgraph(graph_tool.Graph):
         #vertex properties
         self.vertex_properties["label"] = self.new_vp("string")
         self.vertex_properties["func"] = self.new_vp("string")
-        self.vertex_properties["cfglink"] = self.new_vp("long")
-        self.vertex_properties["callgraphlink"] = self.new_vp("long")
+        #self.vertex_properties["cfglink"] = self.new_vp("long")
+        self.vertex_properties["callgraphvlink"] = self.new_vp("int64_t")
         #edge properties
         self.edge_properties["label"] = self.new_ep("string")
-        self.edge_properties["callgraphlink"] = self.new_ep("long")
+        self.edge_properties["callgraphelink"] = self.new_ep("int64_t")
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
@@ -195,6 +195,6 @@ class Graph:
         self._init_cfg()
         self._init_callgraph()
         self.os = None
-        self.call_graphs = {}
+        #self.call_graphs = {}
         self.instances = None
         self.step_data = {}

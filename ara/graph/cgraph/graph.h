@@ -296,11 +296,11 @@ namespace ara::graph {
         /* vertex properties */
         typename graph_tool::vprop_map_t<std::string>::type label;
         typename graph_tool::vprop_map_t<std::string>::type func;
-        typename graph_tool::vprop_map_t<long>::type cfglink;
-        typename graph_tool::vprop_map_t<long>::type callgraphlink;
+        //typename graph_tool::vprop_map_t<long>::type cfglink;
+        typename graph_tool::vprop_map_t<int64_t>::type callgraphvlink;
         /* edge properties */
         typename graph_tool::eprop_map_t<std::string>::type elabel;
-        typename graph_tool::eprop_map_t<long>::type ecallgraphlink;
+        typename graph_tool::eprop_map_t<int64_t>::type callgraphelink;
 
         Callgraph(graph_tool::GraphInterface& graph) : graph(graph){};
     };

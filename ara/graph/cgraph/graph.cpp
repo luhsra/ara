@@ -162,14 +162,14 @@ namespace ara::graph {
 
         CGVMAP(label)
         CGVMAP(func)
-        CGVMAP(cfglink)
-        CGVMAP(callgraphlink)
+        //CGVMAP(cfglink)
+        CGVMAP(callgraphvlink)
 
         PyObject* eprops = PyObject_GetAttrString(pycallgraph, "edge_properties");
         assert(eprops != nullptr);
 
-        CGEMAP(elabel)
-        CGEMAP(ecallgraphlink)
+        callgraph.elabel = get_property<decltype(callgraph.elabel)>(eprops, "label");
+        CGEMAP(callgraphelink)
 
         return callgraph;
     }
