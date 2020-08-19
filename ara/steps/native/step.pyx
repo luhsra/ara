@@ -338,6 +338,7 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
             _native_step_fac(make_step_fac[cstep.ICFG]()),
+            _native_step_fac(make_step_fac[cstep.Callgraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),

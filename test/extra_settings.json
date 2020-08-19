@@ -1,7 +1,8 @@
 {
 	"steps": [
 		"SVFAnalyses",
-		"ICFG"
+		"ICFG",
+		"Callgraph"
 	],
 
 	"ICFG": {
