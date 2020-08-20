@@ -1,6 +1,7 @@
 #include "callgraph.h"
 
 #include "common/exceptions.h"
+#include "common/util.h"
 
 #include <boost/graph/filtered_graph.hpp>
 #include <llvm/ADT/GraphTraits.h>
@@ -39,49 +40,70 @@ namespace ara::step {
 			SVF::PTACallGraph& svf_callgraph;
 			llvm::Module& mod;
 			Logger& logger;
+			std::map<const SVF::PTACallGraphNode*, CallVertex> svf_to_ara_nodes;
 
-			// void add_call_edge(Vertex from, Vertex to/*, bool ingoing*/) {
-			// 	if (!boost::edge(from, to, graph).second) {
-			// 		logger.debug() << "edge from " << from << " to " << to << " does not exist yet." << std::endl;
-			// 		boost::add_edge(from, to, graph);
-			// 	}
-			// 	logger.debug() << "edge from " << from << " to " << to << " already exists." << std::endl;
-			//     /*
-			// 	auto edge = boost::add_edge(from, to, graph);
-			// 	cfg.etype[edge.first] = CFType::icf;
-			// 	if (!ingoing) {
-			// 		cfg.is_exit[from] = true;
-			// 	}
-			// 	std::string name = (ingoing) ? "ingoing" : "outgoing";
-			// 	logger.debug() << "Add an " << name << " edge from " << cfg.name[from] << " (" << from << ") to "
-			// 	               << cfg.name[to] << " (" << to << ")." << std::endl;
-			//     */
-			// }
+			CFVertex get_function(const SVF::PTACallGraphNode& svf_node) {
+				const llvm::Function* func = svf_node.getFunction()->getLLVMFun();
+				return cfg.back_map(cfg_obj, safe_deref(func));
+			}
+
+			CallVertex map_svf_call_node(const SVF::PTACallGraphNode& svf_node,
+			                             std::optional<CFVertex> func = std::nullopt) {
+				CallVertex call_node;
+				auto cand = svf_to_ara_nodes.find(&svf_node);
+				if (cand != svf_to_ara_nodes.end()) {
+					logger.debug() << "Call node already handled: " << svf_node << std::endl;
+					call_node = cand->second;
+				} else {
+					logger.debug() << "Add new node: " << svf_node << std::endl;
+					call_node = boost::add_vertex(callg_obj);
+					svf_to_ara_nodes.insert(std::make_pair(&svf_node, call_node));
+
+					// properties
+					CFVertex func_v = (func) ? *func : get_function(svf_node);
+					callgraph.function[call_node] = func_v;
+					callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
+				}
+				return call_node;
+			}
+
+			CallEdge map_svf_call_edge(const SVF::PTACallGraphEdge& svf_edge) {
+				const SVF::PTACallGraphNode& source = safe_deref(svf_edge.getSrcNode());
+				const SVF::PTACallGraphNode& dst = safe_deref(svf_edge.getDstNode());
+
+				CallVertex s_vert = map_svf_call_node(source);
+				CallVertex d_vert = map_svf_call_node(dst);
+
+				auto edge = boost::add_edge(s_vert, d_vert, callg_obj);
+				assert(edge.second && "Edge already present");
+
+				// properties
+				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
+				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent();
+				CFVertex abb = cfg.back_map(cfg_obj, safe_deref(out_bb));
+
+				callgraph.callsite[edge.first] = abb;
+				callgraph.svf_elink[edge.first] = reinterpret_cast<uintptr_t>(&svf_edge);
+
+				return edge.first;
+			}
 
 			void link_with_svf_callgraph(CFVertex function) {
-				// // is this necessary?
-				// llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[call_abb]);
-				// llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
-				// llvm::Function* func = called_func->getCalledFunction();
-				// logger.debug() << "working on function " << (func ? called_func->getCalledFunction()->getName().str()
-				// : "no func") << std::endl; SVF::PAG* pag = SVF::PAG::getPAG(); SVF::CallBlockNode* cbn =
-				// pag->getICFG()->getCallBlockNode(called_func); SVF::PTACallGraphNode* cgn =
-				// callgraph.getCallGraphNode(cbn->getCaller()); for (auto outedge = cgn->OutEdgeBegin(); outedge !=
-				// cgn->OutEdgeEnd(); outedge++) {
-				//     //SVF::PTACallGraphNode* dst = (*outedge)->getDstNode();
-				// 	//logger.debug() << "callsite id: " << (*outedge)->getCallSiteID() << std::endl;
-				//     const SVF::CallBlockNode* outcbn = callgraph.getCallSite((*outedge)->getCallSiteID());
-				//     //const llvm::BasicBlock* outbb = outcbn->getParent();
-				// 	//logger.debug() << "bb: " << outbb->getName().str() << std::endl;
-				// 	const SVF::SVFFunction* fun = outcbn->getFun();
-				// 	Vertex dst = cfg.back_map(graph, *(fun->getLLVMFun()));
-				// 	//Vertex dst = cfg.back_map(graph, *outbb);
-				// 	Vertex dst_abb = cfg.get_entry_abb(graph, dst);
-				//     add_call_edge(call_abb, dst_abb);
-				// }
+				const llvm::Function* l_func = cfg.get_function<CFGraph>(function);
+				assert(l_func != nullptr && "l_func is null.");
+				const SVF::SVFFunction* svf_func = SVF::LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(l_func);
+				assert(svf_func != nullptr && "svf_func is null.");
+				SVF::PTACallGraphNode* cg_node = svf_callgraph.getCallGraphNode(svf_func);
+				assert(cg_node != nullptr && "cg_node is null.");
 
-				// // TODO return something that makes sense
-				// return false;
+				map_svf_call_node(*cg_node, function);
+
+				// add edges
+				for (SVF::PTACallGraphNode::iterator out_it = cg_node->OutEdgeBegin(); out_it != cg_node->OutEdgeEnd();
+				     ++out_it) {
+					const SVF::PTACallGraphEdge* cg_edge = *out_it;
+					map_svf_call_edge(safe_deref(cg_edge));
+				}
 			}
 
 		  public:
@@ -91,6 +113,7 @@ namespace ara::step {
 			    : cfg_obj(cfg_obj), cfg(cfg), callg_obj(callg_obj), callgraph(callgraph), svf_callgraph(svf_callgraph),
 			      mod(mod), logger(logger) {
 				for (auto function : boost::make_iterator_range(boost::vertices(cfg.get_functions(cfg_obj)))) {
+					logger.debug() << "Handle function " << cfg.name[function] << std::endl;
 					link_with_svf_callgraph(function);
 				}
 			}

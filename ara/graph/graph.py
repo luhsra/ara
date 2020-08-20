@@ -165,10 +165,10 @@ class Callgraph(graph_tool.Graph):
 
         #vertex properties
         self.vertex_properties["function"] = self.new_vp("long")
-        self.vertex_properties["callgraphvlink"] = self.new_vp("int64_t")
+        self.vertex_properties["svf_vlink"] = self.new_vp("int64_t")
         #edge properties
         self.edge_properties["callsite"] = self.new_ep("long")
-        self.edge_properties["callgraphelink"] = self.new_ep("int64_t")
+        self.edge_properties["svf_elink"] = self.new_ep("int64_t")
 
         self.graph_properties["cfg"] = self.new_gp("object", cfg)
 

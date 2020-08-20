@@ -158,13 +158,13 @@ namespace ara::graph {
 		assert(vprops != nullptr);
 
 		MAP(callgraph, function, vprops)
-		MAP(callgraph, callgraphvlink, vprops)
+		MAP(callgraph, svf_vlink, vprops)
 
 		PyObject* eprops = PyObject_GetAttrString(pycallgraph, "edge_properties");
 		assert(eprops != nullptr);
 
 		MAP(callgraph, callsite, eprops)
-		MAP(callgraph, callgraphelink, eprops)
+		MAP(callgraph, svf_elink, eprops)
 
 		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
 

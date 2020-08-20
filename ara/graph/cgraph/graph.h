@@ -103,6 +103,7 @@ namespace ara::graph {
 		 */
 		template <class Graph>
 		llvm::BasicBlock* get_entry_bb(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			assert(!is_function[v]);
 			return reinterpret_cast<llvm::BasicBlock*>(entry_bb[v]);
 		}
 
@@ -111,7 +112,17 @@ namespace ara::graph {
 		 */
 		template <class Graph>
 		llvm::BasicBlock* get_exit_bb(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			assert(!is_function[v]);
 			return reinterpret_cast<llvm::BasicBlock*>(exit_bb[v]);
+		}
+
+		/**
+		 * Return the llvm function of the given ABB.
+		 */
+		template <class Graph>
+		llvm::Function* get_function(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			assert(is_function[v]);
+			return reinterpret_cast<llvm::Function*>(function[v]);
 		}
 
 		/**
@@ -295,10 +306,10 @@ namespace ara::graph {
 		graph_tool::GraphInterface& graph;
 		/* vertex properties */
 		typename graph_tool::vprop_map_t<long>::type function;
-		typename graph_tool::vprop_map_t<int64_t>::type callgraphvlink;
+		typename graph_tool::vprop_map_t<int64_t>::type svf_vlink;
 		/* edge properties */
 		typename graph_tool::eprop_map_t<long>::type callsite;
-		typename graph_tool::eprop_map_t<int64_t>::type callgraphelink;
+		typename graph_tool::eprop_map_t<int64_t>::type svf_elink;
 
 		typename graph_tool::gprop_map_t<PyObject*>::type cfg;
 
