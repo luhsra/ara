@@ -10,6 +10,11 @@
 		"log_level": "debug"
 	},
 
+	"Callgraph": {
+		"dump": true,
+		"log_level": "debug"
+	},
+
 	"logger": {
 		"StepManager": "debug"
 	}
