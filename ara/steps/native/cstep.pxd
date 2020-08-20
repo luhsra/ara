@@ -45,7 +45,7 @@ cdef extern from "icfg.h" namespace "ara::step":
         pass
 
 cdef extern from "callgraph.h" namespace "ara::step":
-    cdef cppclass Callgraph:
+    cdef cppclass CallGraph:
         pass
 
 cdef extern from "ir_reader.h" namespace "ara::step":

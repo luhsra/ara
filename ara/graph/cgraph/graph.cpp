@@ -141,7 +141,7 @@ namespace ara::graph {
 		return cfg;
 	}
 
-	Callgraph Graph::get_callgraph() {
+	CallGraph Graph::get_callgraph() {
 		// extract self.callgraph from Python
 		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
 		assert(pycallgraph != nullptr);
@@ -151,7 +151,7 @@ namespace ara::graph {
 		assert(pycallgraph_graph != nullptr);
 		boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pycallgraph_graph);
 		assert(get_graph_interface.check());
-		Callgraph callgraph(get_graph_interface());
+		CallGraph callgraph(get_graph_interface());
 
 		// Properties
 		PyObject* vprops = PyObject_GetAttrString(pycallgraph, "vertex_properties");

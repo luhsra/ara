@@ -291,7 +291,7 @@ namespace ara::graph {
 		const llvm::CallBase* get_call_base(const ABBType type, const llvm::BasicBlock& bb) const;
 	};
 
-	struct Callgraph {
+	struct CallGraph {
 		graph_tool::GraphInterface& graph;
 		/* vertex properties */
 		typename graph_tool::vprop_map_t<long>::type function;
@@ -302,7 +302,7 @@ namespace ara::graph {
 
 		typename graph_tool::gprop_map_t<PyObject*>::type cfg;
 
-		Callgraph(graph_tool::GraphInterface& graph) : graph(graph){};
+		CallGraph(graph_tool::GraphInterface& graph) : graph(graph){};
 	};
 
 	/**
@@ -331,6 +331,6 @@ namespace ara::graph {
 
 		CFG get_cfg();
 
-		Callgraph get_callgraph();
+		CallGraph get_callgraph();
 	};
 } // namespace ara::graph

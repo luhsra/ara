@@ -14,13 +14,13 @@
 #include <graph.h>
 
 namespace ara::step {
-	class Callgraph : public ConfStep<Callgraph> {
+	class CallGraph : public ConfStep<CallGraph> {
 	  private:
-		using ConfStep<Callgraph>::ConfStep;
+		using ConfStep<CallGraph>::ConfStep;
 		static SVF::PTACallGraph& get_svf_callgraph();
 
 	  public:
-		static std::string get_name() { return "Callgraph"; }
+		static std::string get_name() { return "CallGraph"; }
 		static std::string get_description();
 		virtual std::vector<std::string> get_single_dependencies() override { return {"LLVMMap", "SVFAnalyses"}; }
 

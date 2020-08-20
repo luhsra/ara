@@ -1,4 +1,3 @@
-
 #include "callgraph.h"
 
 #include "common/exceptions.h"
@@ -20,13 +19,13 @@
 #undef VERSION_BKP
 
 namespace ara::step {
-	std::string Callgraph::get_description() {
+	std::string CallGraph::get_description() {
 		return "Map the callgraph that is retrieved by SVF to the ARA datastructure";
 	}
 
 	namespace {
 		template <typename CFGraph, typename CaGraph>
-		class CallgraphImpl {
+		class CallGraphImpl {
 		  private:
 			using CFVertex = typename boost::graph_traits<CFGraph>::vertex_descriptor;
 			using CFEdge = typename boost::graph_traits<CFGraph>::edge_descriptor;
@@ -36,7 +35,7 @@ namespace ara::step {
 			CFGraph& cfg_obj;
 			graph::CFG& cfg;
 			CaGraph& callg_obj;
-			graph::Callgraph& callgraph;
+			graph::CallGraph& callgraph;
 			SVF::PTACallGraph& svf_callgraph;
 			llvm::Module& mod;
 			Logger& logger;
@@ -87,7 +86,7 @@ namespace ara::step {
 
 		  public:
 			// TODO
-			CallgraphImpl(CFGraph& cfg_obj, graph::CFG& cfg, CaGraph& callg_obj, graph::Callgraph& callgraph,
+			CallGraphImpl(CFGraph& cfg_obj, graph::CFG& cfg, CaGraph& callg_obj, graph::CallGraph& callgraph,
 			              SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger)
 			    : cfg_obj(cfg_obj), cfg(cfg), callg_obj(callg_obj), callgraph(callgraph), svf_callgraph(svf_callgraph),
 			      mod(mod), logger(logger) {
@@ -98,15 +97,15 @@ namespace ara::step {
 		};
 
 		template <typename CFGraph>
-		void map_callgraph(CFGraph& cfg_obj, graph::CFG& cfg, graph::Callgraph& callgraph,
+		void map_callgraph(CFGraph& cfg_obj, graph::CFG& cfg, graph::CallGraph& callgraph,
 		                   SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger) {
 			graph_tool::gt_dispatch<>()(
-			    [&](auto& g) { CallgraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger); },
+			    [&](auto& g) { CallGraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger); },
 			    graph_tool::always_directed())(callgraph.graph.get_graph_view());
 		}
 	} // namespace
 
-	SVF::PTACallGraph& Callgraph::get_svf_callgraph() {
+	SVF::PTACallGraph& CallGraph::get_svf_callgraph() {
 		SVF::PAG* pag = SVF::PAG::getPAG();
 		// this is actually a singleton, so the creation was done in SVFAnalyses
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -114,10 +113,10 @@ namespace ara::step {
 		return *ptacallgraph;
 	}
 
-	void Callgraph::run() {
+	void CallGraph::run() {
 		llvm::Module& mod = graph.get_module();
 		graph::CFG cfg = graph.get_cfg();
-		graph::Callgraph callgraph = graph.get_callgraph();
+		graph::CallGraph callgraph = graph.get_callgraph();
 		SVF::PTACallGraph& svf_callgraph = get_svf_callgraph();
 
 		graph_tool::gt_dispatch<>()([&](auto& g) { map_callgraph(g, cfg, callgraph, svf_callgraph, mod, logger); },
@@ -131,7 +130,7 @@ namespace ara::step {
 
 			llvm::json::Value printer_conf(llvm::json::Object{{"name", "Printer"},
 			                                                  {"dot", dot_file + ".dot"},
-			                                                  {"graph_name", "Callgraph"},
+			                                                  {"graph_name", "CallGraph"},
 			                                                  {"subgraph", "callgraph"}});
 
 			step_manager.chain_step(printer_conf);

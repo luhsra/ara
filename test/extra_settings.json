@@ -2,7 +2,7 @@
 	"steps": [
 		"SVFAnalyses",
 		"ICFG",
-		"Callgraph"
+		"CallGraph"
 	],
 
 	"ICFG": {
@@ -10,7 +10,7 @@
 		"log_level": "debug"
 	},
 
-	"Callgraph": {
+	"CallGraph": {
 		"dump": true,
 		"log_level": "debug"
 	},
