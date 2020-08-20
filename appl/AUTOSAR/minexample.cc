@@ -34,7 +34,7 @@ TASK(TaskB) {
 
 TASK(TaskF) {
     // doSomethingImportant();
-    // doSomethingBefore();
+    doSomethingBefore();
     TerminateTask();
 }
 

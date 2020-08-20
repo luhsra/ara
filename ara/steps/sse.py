@@ -3,6 +3,7 @@ import graph_tool
 import copy
 import functools
 import numpy as np
+from datetime import datetime
 
 import pyllco
 
@@ -21,6 +22,13 @@ from itertools import chain
 from graph_tool.topology import dominator_tree, label_out_component
 
 
+# time counter for performance measures
+c_debugging = 0 # in milliseconds
+
+def debug_time(t_start):
+    t_delta = datetime.now() - t_start
+    global c_debugging
+    c_debugging += t_delta.seconds * 1000 + t_delta.microseconds / 1000
 
 class State:
     def __init__(self, cfg=None, callgraph=None, next_abbs=None):
@@ -190,7 +198,6 @@ class MetaState:
                             break
                     if not found_state:
                         return False
-
         return True
 
 class MultiState:
@@ -289,10 +296,7 @@ class MultiState:
 class MultiSSE(FlowAnalysis):
     """Run the MultiCore SSE."""
     # TODOs:
-    # TODO: add edge information to gcfg edges if a call returns to a task
-    #       to determine for which task/abb this edge is viable
-    #       (necessary when a function is shared)
-    # TODO: somehow get the timing information
+
 
     def get_dependencies(self):
         return ["SysFuncts"]
@@ -445,7 +449,7 @@ class MultiSSE(FlowAnalysis):
 
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
-                    
+
         # run the single core sse on each new state
         res = []
         for new_state in new_states:
@@ -468,18 +472,34 @@ class MultiSSE(FlowAnalysis):
                 if i > j:
                     if new_state == new_state_2:
                         assert(False)
-                        
+
+        def add_timings(new_state, sstg_state):
+            for cpu, graph in sstg_state.state_graph.items():
+                v_sstg = graph.get_vertices()[0]
+                s_sstg = graph.vp.state[v_sstg]
+
+                g_new = new_state.state_graph[cpu]
+                v_new = g_new.get_vertices()[0]
+                s_new = g_new.vp.state[v_new]
+
+                s_sstg.min_time = 0
+                s_sstg.max_time = 0
+                s_sstg.add_time(s_new.min_time, s_new.max_time)    
+                            
         # filter out duplicate states by comparing with states in sstg
         for v in self.sstg.vertices():
             sstg_state = self.sstg.vp.state[v]
             for new_state in new_states:
                 if new_state == sstg_state:
                     new_states.remove(new_state)
+
+                    # add timings to found state
+                    add_timings(new_state, sstg_state)
                     
                     # add edge to existing state in sstg
                     e = self.sstg.add_edge(state_vertex, v)
                     self.sstg.ep.state_list[e] = GCFGInfo(new_state.entry_states.copy())
-
+        
         return new_states
 
     def run_sse(self, metastate):
@@ -628,6 +648,9 @@ class MultiSSE(FlowAnalysis):
 
 
     def _finish(self, sstg):
+        # output eq time
+        print("Total time used for a certain task: " + str(c_debugging))
+
         # build global control flow graph and print it
         self.build_gcfg()
         if self.dump.get():
