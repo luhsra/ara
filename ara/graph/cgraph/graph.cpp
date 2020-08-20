@@ -141,33 +141,33 @@ namespace ara::graph {
 		return cfg;
 	}
 
-    Callgraph Graph::get_callgraph() {
-        // extract self.callgraph from Python
-        PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
-        assert(pycallgraph != nullptr);
+	Callgraph Graph::get_callgraph() {
+		// extract self.callgraph from Python
+		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
+		assert(pycallgraph != nullptr);
 
-        // get GraphInterface
-        PyObject* pycallgraph_graph = PyObject_GetAttrString(pycallgraph, "_Graph__graph");
-        assert(pycallgraph_graph != nullptr);
-        boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pycallgraph_graph);
-        assert(get_graph_interface.check());
-        Callgraph callgraph(get_graph_interface());
+		// get GraphInterface
+		PyObject* pycallgraph_graph = PyObject_GetAttrString(pycallgraph, "_Graph__graph");
+		assert(pycallgraph_graph != nullptr);
+		boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pycallgraph_graph);
+		assert(get_graph_interface.check());
+		Callgraph callgraph(get_graph_interface());
 
 		// Properties
-        PyObject* vprops = PyObject_GetAttrString(pycallgraph, "vertex_properties");
-        assert(vprops != nullptr);
+		PyObject* vprops = PyObject_GetAttrString(pycallgraph, "vertex_properties");
+		assert(vprops != nullptr);
 
-        MAP(callgraph, function, vprops)
-        MAP(callgraph, callgraphvlink, vprops)
+		MAP(callgraph, function, vprops)
+		MAP(callgraph, callgraphvlink, vprops)
 
-        PyObject* eprops = PyObject_GetAttrString(pycallgraph, "edge_properties");
-        assert(eprops != nullptr);
+		PyObject* eprops = PyObject_GetAttrString(pycallgraph, "edge_properties");
+		assert(eprops != nullptr);
 
-        MAP(callgraph, callsite, eprops)
-        MAP(callgraph, callgraphelink, eprops)
+		MAP(callgraph, callsite, eprops)
+		MAP(callgraph, callgraphelink, eprops)
 
 		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
 
-        return callgraph;
-    }
+		return callgraph;
+	}
 } // namespace ara::graph
