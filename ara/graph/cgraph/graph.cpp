@@ -153,23 +153,20 @@ namespace ara::graph {
         assert(get_graph_interface.check());
         Callgraph callgraph(get_graph_interface());
 
-        // Property map helper macros
-#define CGVMAP(Value) MAP(callgraph, Value, vprops)
-#define CGEMAP(Value) MAP(callgraph, Value, eprops)
-
+		// Properties
         PyObject* vprops = PyObject_GetAttrString(pycallgraph, "vertex_properties");
         assert(vprops != nullptr);
 
-        CGVMAP(label)
-        CGVMAP(func)
-        //CGVMAP(cfglink)
-        CGVMAP(callgraphvlink)
+        MAP(callgraph, function, vprops)
+        MAP(callgraph, callgraphvlink, vprops)
 
         PyObject* eprops = PyObject_GetAttrString(pycallgraph, "edge_properties");
         assert(eprops != nullptr);
 
-        callgraph.elabel = get_property<decltype(callgraph.elabel)>(eprops, "label");
-        CGEMAP(callgraphelink)
+        MAP(callgraph, callsite, eprops)
+        MAP(callgraph, callgraphelink, eprops)
+
+		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
 
         return callgraph;
     }

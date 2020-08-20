@@ -294,13 +294,13 @@ namespace ara::graph {
     struct Callgraph {
         graph_tool::GraphInterface& graph;
         /* vertex properties */
-        typename graph_tool::vprop_map_t<std::string>::type label;
-        typename graph_tool::vprop_map_t<std::string>::type func;
-        //typename graph_tool::vprop_map_t<long>::type cfglink;
+        typename graph_tool::vprop_map_t<long>::type function;
         typename graph_tool::vprop_map_t<int64_t>::type callgraphvlink;
         /* edge properties */
-        typename graph_tool::eprop_map_t<std::string>::type elabel;
+        typename graph_tool::eprop_map_t<long>::type callsite;
         typename graph_tool::eprop_map_t<int64_t>::type callgraphelink;
+
+        typename graph_tool::gprop_map_t<PyObject*>::type cfg;
 
         Callgraph(graph_tool::GraphInterface& graph) : graph(graph){};
     };

@@ -17,7 +17,7 @@ namespace ara::step {
 	class Callgraph : public ConfStep<Callgraph> {
 	  private:
 		using ConfStep<Callgraph>::ConfStep;
-		static SVF::PTACallGraph& get_callgraph();
+		static SVF::PTACallGraph& get_svf_callgraph();
 
 	  public:
 		static std::string get_name() { return "Callgraph"; }

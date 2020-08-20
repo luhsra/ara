@@ -160,17 +160,17 @@ class CFGView(graph_tool.GraphView):
 class Callgraph(graph_tool.Graph):
     """ TODO comment on functionality
     """
-    def __init__(self):
+    def __init__(self, cfg):
         super().__init__()
 
         #vertex properties
-        self.vertex_properties["label"] = self.new_vp("string")
-        self.vertex_properties["func"] = self.new_vp("string")
-        #self.vertex_properties["cfglink"] = self.new_vp("long")
+        self.vertex_properties["function"] = self.new_vp("long")
         self.vertex_properties["callgraphvlink"] = self.new_vp("int64_t")
         #edge properties
-        self.edge_properties["label"] = self.new_ep("string")
+        self.edge_properties["callsite"] = self.new_ep("long")
         self.edge_properties["callgraphelink"] = self.new_ep("int64_t")
+
+        self.graph_properties["cfg"] = self.new_gp("object", cfg)
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
@@ -186,14 +186,12 @@ class Graph:
 
         self.functs = graph_tool.GraphView(self.cfg,
                                            vfilt=self.cfg.vp.is_function)
-    def _init_callgraph(self):
-        self.callgraph = Callgraph()
 
     def __init__(self):
         # should be used only from C++, see graph.h
         self._llvm_data = PyLLVMData()
         self._init_cfg()
-        self._init_callgraph()
+        self.callgraph = Callgraph(self.cfg)
         self.os = None
         #self.call_graphs = {}
         self.instances = None

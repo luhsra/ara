@@ -27,7 +27,7 @@ class Printer(Step):
                         ty=String())
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
-                      ty=Choice("abbs", "instances"))
+                      ty=Choice("abbs", "instances", "callgraph"))
 
     def _print_init(self):
         dot = self.dot.get()
@@ -107,9 +107,28 @@ class Printer(Step):
                 label=self._graph.instances.ep.label[edge]))
         self._write_dot(dot_graph)
 
+    def print_callgraph(self):
+        # name = self._print_init()
+
+        # dot_graph = pydot.Dot(graph_type='digraph', label=name)
+        # for instance in self._graph.instances.vertices():
+        #     dot_node = pydot.Node(
+        #         str(hash(instance)),
+        #         label=self._graph.instances.vp.label[instance],
+        #     )
+        #     dot_graph.add_node(dot_node)
+        # for edge in self._graph.instances.edges():
+        #     dot_graph.add_edge(pydot.Edge(
+        #         str(hash(edge.source())),
+        #         str(hash(edge.target())),
+        #         label=self._graph.instances.ep.label[edge]))
+        # self._write_dot(dot_graph)
+
     def run(self):
         subgraph = self.subgraph.get()
         if subgraph == 'abbs':
             self.print_abbs()
         if subgraph == 'instances':
             self.print_instances()
+        if subgraph == 'callgraph':
+            self.print_callgraph()
