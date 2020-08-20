@@ -108,21 +108,24 @@ class Printer(Step):
         self._write_dot(dot_graph)
 
     def print_callgraph(self):
-        # name = self._print_init()
+        name = self._print_init()
 
-        # dot_graph = pydot.Dot(graph_type='digraph', label=name)
-        # for instance in self._graph.instances.vertices():
-        #     dot_node = pydot.Node(
-        #         str(hash(instance)),
-        #         label=self._graph.instances.vp.label[instance],
-        #     )
-        #     dot_graph.add_node(dot_node)
-        # for edge in self._graph.instances.edges():
-        #     dot_graph.add_edge(pydot.Edge(
-        #         str(hash(edge.source())),
-        #         str(hash(edge.target())),
-        #         label=self._graph.instances.ep.label[edge]))
-        # self._write_dot(dot_graph)
+        dot_graph = pydot.Dot(graph_type='digraph', label=name)
+        callgraph = self._graph.callgraph
+
+        cfg = callgraph.gp.cfg
+        for node in callgraph.vertices():
+            dot_node = pydot.Node(
+                str(hash(node)),
+                label=cfg.vp.name[callgraph.vp.function[node]],
+            )
+            dot_graph.add_node(dot_node)
+        for edge in callgraph.edges():
+            dot_graph.add_edge(pydot.Edge(
+                str(hash(edge.source())),
+                str(hash(edge.target())),
+                label=cfg.vp.name[callgraph.ep.callsite[edge]]))
+        self._write_dot(dot_graph)
 
     def run(self):
         subgraph = self.subgraph.get()
