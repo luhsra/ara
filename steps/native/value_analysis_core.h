@@ -46,7 +46,10 @@ namespace ara::step {
 		/* a list of values and their (hopefully) corresponding paths along which they are retrieved */
 		typedef std::tuple<std::vector<const Constant*>, std::vector<std::vector<const Instruction*>>> ValPath;
 
-		const llvm::Constant* handle_value(const llvm::Value* value);
+		const llvm::Value* temp_traverse(const SVFGNode* node, const SVFG& vfg, std::vector<const SVFGNode*>& visited);
+		std::vector<const SVFGNode*> vstd;
+
+		const llvm::Constant* handle_value(const llvm::Value* value, const SVFG& vfg, const VFGNode* node);
 		ValPath retrieve_value(const SVFG& vfg, const llvm::Value& value);
 		std::vector<ValPath> collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call);
 
@@ -58,6 +61,8 @@ namespace ara::step {
 		 * this should just be bottom-up DFS
 		 */
 		void getCallPaths(const Function* f, std::vector<std::vector<const Instruction*>>& paths, std::vector<const Instruction*>& curPath) {
+			// TODO check out icfg->getCallBlockNode(inst) which directly gets the callblocknode
+			// callee is getCallee(inst), caller is svfModule->getSVFFunction(f)
 			if (const SVFFunction* sf = svfModule->getSVFFunction(f)) {
 				PTACallGraphNode* cgn = callgraph->getCallGraphNode(sf);
 				/* check if further path exists */
@@ -99,6 +104,7 @@ namespace ara::step {
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
 				//logger.debug() << "call base aka instruction: " << *called_func << std::endl;
 				if (called_func) {
+					vstd.clear();
 					Arguments args;
 					llvm::AttributeSet attrs;
 					llvm::Function* func = called_func->getCalledFunction();
@@ -153,7 +159,7 @@ namespace ara::step {
 							 * i does not correspond to the index of the argument in the function 
 							 * it is just here for debugging purposes
 							 */
-							int i = 0;
+							long unsigned int i = 0;
 							/* we need paths >= values for this to work */
 							assert(std::get<1>(vp).size() >= std::get<0>(vp).size());
 							std::string entryFun;
@@ -179,6 +185,20 @@ namespace ara::step {
 								a.add_variant(std::get<1>(vp).at(i), *v);
 								i++;
 							}
+							/* print extra / leftover paths */
+							if (i < std::get<1>(vp).size()) {
+								logger.debug() << "\033[32mLEFTOVER PATHS (" << i << " to "
+											   << std::get<1>(vp).size() - 1 << ")\033[0m" << std::endl;
+								for (long unsigned int j = i; j < std::get<1>(vp).size(); j++) {
+									std::get<1>(vp).at(j).erase(std::get<1>(vp).at(j).begin());
+									logger.debug() << "PATH " << j << ": \n        |--";
+									for (auto inst : std::get<1>(vp).at(j)) {
+										logger.debug() << *inst << "\n        ---";
+									}
+									logger.debug() <<"\033[33m" << demangle(entryFun) << "\033[0m|" << std::endl;
+								}
+							}
+
 							args.set_entry_fun(entryFun);
 							args.push_back(a);
 							t++;

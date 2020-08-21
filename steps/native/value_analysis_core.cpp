@@ -21,37 +21,108 @@ using namespace boost::property_tree;
 
 namespace ara::step {
 
+	const llvm::Value* ValueAnalysisCore::temp_traverse(const SVFGNode* node, const SVFG& vfg, std::vector<const SVFGNode*>& visited) {
+		// TODO investigate: svfg node ids/(structure?) changes for each ara run
+#if 0
+		if (const PHISVFGNode* tphi = SVFUtil::dyn_cast<PHISVFGNode>(node)) {
+			//logger.debug() << "tphi: " << *tphi->getRes()->getValue() << std::endl;
+			if (const llvm::Argument* arg = SVFUtil::dyn_cast<llvm::Argument>(tphi->getRes()->getValue())) {
+				/**
+				 * hacky method to find out whether our function is a constructor/destructor
+				 *
+				 * if the function name contains "~" it's a destructor
+				 *
+				 * otherwise, split off the part after the opening parenthesis containing the argument(s)
+				 * if the before our delimiter "::" is the same as the substring after, it's a constructor
+				 */
+				std::string funName = demangle(arg->getParent()->getName().str());
+				if (funName.find("~") != std::string::npos) {
+					logger.debug() << "\033[31mDESTRUCTOR\033[0m ";
+				}
+				std::string fNB = funName.substr(0, funName.find("("));
+				std::string delim = "::";
+				if (fNB.substr(0, fNB.find(delim)) == fNB.substr(fNB.find(delim) + delim.length())) {
+					logger.debug() << "\033[31mCONSTRUCTOR\033[0m ";
+				}
+				logger.debug() << funName  << " [" << arg->getParent()->arg_size() << " args] has ";
+				for (auto it = arg->getParent()->arg_begin(); it != arg->getParent()->arg_end(); ++it) {
+					logger.debug() << "arg" << it->getArgNo() << ": " << *it << " ";
+				}
+				logger.debug() << std::endl;
+			}
+		}
+#endif
+		std::vector<int> filterVFG = {SVFGNode::MPhi, SVFGNode::MIntraPhi, SVFGNode::MInterPhi,
+									  SVFGNode::FunRet, SVFGNode::APIN, SVFGNode::APOUT,
+									  SVFGNode::FPIN, SVFGNode::FPOUT};
+		if (std::find(filterVFG.begin(), filterVFG.end(), node->getNodeKind()) != filterVFG.end()) {
+			logger.debug() << *node << " has no pag nodes" << std::endl;
+		}
+		else {
+			const PAGNode* pNode = vfg.getLHSTopLevPtr(node);
+			if (pNode->getNodeKind() < 7) {
+				const Value* val = pNode->getValue();
+				logger.debug() << "pagnode value: " << *val << "(" << *node << ")" << std::endl;
+				if (const Instruction* inst = llvm::dyn_cast<Instruction>(val)) {
+					if (const AllocaInst* allocainst = llvm::dyn_cast<AllocaInst>(inst)) {
+						//logger.debug() << "alloca: " << *allocainst << "||| opz: " << *allocainst->getOperand(0) << std::endl;
+						//return allocainst;
+					}
+				}
+				if (const GlobalVariable* globvar = llvm::dyn_cast<GlobalVariable>(val)) {
+					// this contains stuff like xTestMutex (which is what we're looking for I think)
+					// TODO return this somewhere
+					logger.debug() << "value: " << *val << std::endl;
+					return val;
+					/*
+					if (1 || globvar->hasInitializer()) {
+						//
+					}
+					*/
+				}
+			}
+		}
+		for (auto it = node->InEdgeBegin(); it != node->InEdgeEnd(); ++it) {
+			const SVFGNode* par = (*it)->getSrcNode();
+			if (std::find(visited.begin(), visited.end(), par) == visited.end()) {
+				vstd.push_back(par);
+				temp_traverse(par, vfg, visited);
+			}
+		}
+		return NULL;
+	}
 
-	const llvm::Constant* ValueAnalysisCore::handle_value(const llvm::Value* value) {
+	const llvm::Constant* ValueAnalysisCore::handle_value(const llvm::Value* value, const SVFG& vfg, const VFGNode* node) {
 		if (const Instruction* inst = llvm::dyn_cast<Instruction>(value)) {
 			/* handle different constant types */
 			llvm::Value* opz = inst->getOperand(0);
-			if (const llvm::ConstantData* cdata = llvm::dyn_cast<ConstantData>(opz)) {
-				logger.debug() << "---constant data " << *cdata << std::endl;
-				return cdata;
-			}
-			else if (const llvm::ConstantInt* cint = llvm::dyn_cast<ConstantInt>(opz)) {
-				logger.debug() << "---constant int " << *cint << std::endl;
+			if (const llvm::ConstantInt* cint = llvm::dyn_cast<ConstantInt>(opz)) {
+				//logger.debug() << "---constant int " << *cint << std::endl;
 				return cint;
 			}
 			else if (const llvm::ConstantFP* cfp = llvm::dyn_cast<llvm::ConstantFP>(opz)) {
-				logger.debug() << "---constant fp " << *cfp << std::endl;
+				//logger.debug() << "---constant fp " << *cfp << std::endl;
 				return cfp;
+			}
+			else if (const llvm::ConstantData* cdata = llvm::dyn_cast<ConstantData>(opz)) {
+				//logger.debug() << "---constant data " << *cdata << std::endl;
+				return cdata;
 			}
 			// TODO: refine
 			else if (const llvm::ConstantExpr* cexpr = llvm::dyn_cast<ConstantExpr>(opz)) {
-				logger.debug() << "---constant expr " << *cexpr << std::endl;
+				//logger.debug() << "---constant expr " << *cexpr << std::endl;
 				if (const llvm::GlobalVariable* gvar = llvm::dyn_cast<GlobalVariable>(cexpr->getOperand(0))) {
-					logger.debug() << "---constant globvar " << *gvar << std::endl;
+					//logger.debug() << "---constant globvar " << *gvar << std::endl;
+					return handle_value(gvar, vfg, node);
 				}
 			}
 			// TODO: refine
 			else if (const ConstantAggregate* caggr = llvm::dyn_cast<ConstantAggregate>(opz)) {
-				logger.debug() << "---constant aggregate " << *caggr << std::endl;
+				//logger.debug() << "---constant aggregate " << *caggr << std::endl;
 			}
 			else if (const GlobalVariable* globvar = llvm::dyn_cast<GlobalVariable>(opz)) {
 				if (globvar->hasInitializer()) {
-					logger.debug() << "---globvar initializer: " << *globvar->getInitializer() << std::endl;
+					//logger.debug() << "---globvar initializer: " << *globvar->getInitializer() << std::endl;
 					return globvar->getInitializer();
 				}
 			}
@@ -59,46 +130,61 @@ namespace ara::step {
 			/* handle different instruction types */
 			if (const GetElementPtrInst* gepinst = llvm::dyn_cast<GetElementPtrInst>(inst)) {
 				if (gepinst->getOperand(0)->getValueName()->getKey().str() == "this") {
-					logger.debug() << "---skipping \"this\" value (" << *(gepinst->getOperand(0)) << ")" << std::endl;
+					//logger.debug() << "---skipping \"this\" value (" << *(gepinst->getOperand(0)) << ")" << std::endl;
+					//std::cout << std::endl;
+					//logger.debug() << "\"this\" found in vfgnode " << *node << std::endl;
+					const llvm::Value* traverseResult = temp_traverse(node, vfg, vstd);
+					if (traverseResult) {
+						return handle_value(traverseResult, vfg, node);
+					}
 				}
 				else {
-					logger.debug() << "---gep operand 0: " << *(gepinst->getOperand(0))
+					logger.debug() << "--gep operand 0: " << *(gepinst->getOperand(0))
 								   << " -||- Instruction: " << *gepinst << std::endl;
+					return handle_value(gepinst->getOperand(0), vfg, node);
 				}
 			}
 			else if (const LoadInst* loadinst = llvm::dyn_cast<LoadInst>(inst)) {
-				logger.debug() << "---load operand 0: " << *(loadinst->getOperand(0))
+				/*
+				logger.debug() << "--load operand 0: " << *(loadinst->getOperand(0))
 							   << " -||- Instruction: " << *loadinst << std::endl;
+			   */
+				if (const Constant* c = llvm::dyn_cast<Constant>(loadinst->getOperand(0))) {
+					return c;
+				}
 			}
 			else if (const AllocaInst* allocainst = llvm::dyn_cast<AllocaInst>(inst)) {
-				logger.debug() << "---alloca operand 0: " << *(allocainst->getOperand(0))
+				logger.debug() << "--alloca operand 0: " << *(allocainst->getOperand(0))
 							   << " -||- Instruction: " << *allocainst << std::endl;
 			}
 			else if (const CastInst* castinst = llvm::dyn_cast<CastInst>(inst)) {
-				logger.debug() << "---cast operand 0: " << *(castinst->getOperand(0))
+				logger.debug() << "--cast operand 0: " << *(castinst->getOperand(0))
 							   << " -||- Instruction: " << *castinst << std::endl;
 			}
 			else if (const StoreInst* storeinst = llvm::dyn_cast<StoreInst>(inst)) {
-				logger.debug() << "---store operand 0: " << *(storeinst->getOperand(0))
+				logger.debug() << "--store operand 0: " << *(storeinst->getOperand(0))
 							   << " -||- Instruction: " << *storeinst << std::endl;
 			}
 			else if (const CallInst* callinst = llvm::dyn_cast<CallInst>(inst)) {
+				return handle_value(callinst->getOperand(0), vfg, node);
+				/*
 				if (const GetElementPtrInst* gepinst = llvm::dyn_cast<GetElementPtrInst>(callinst->getOperand(0))) {
 					logger.debug() << "---call gep: " << *(gepinst->getOperand(0)) << std::endl;
 					if (const Constant* c = llvm::dyn_cast<Constant>(gepinst->getOperand(0))) {
 						return c;
 					}
 				}
+				*/
 				/* interesting stuff not always in operand 0 for a CallInst */
 				for (int o = 0; o < inst->getNumOperands(); o++) {
-					logger.debug() << "---call operand " << o
+					logger.debug() << "--call operand " << o
 								   << ": " << *(inst->getOperand(o))
 								   << " -||- Instruction: " << *inst << std::endl;
 				}
 			}
 			// TODO binary ops?
 			else {
-				logger.debug() << "UNHANDLED INST !(gep | load | alloca | call) "  << *inst << std::endl;
+				logger.debug() << "UNHANDLED INST !(gep | load | alloca | cast | store | call) "  << *inst << std::endl;
 			}
 		}
 		return NULL;
@@ -122,6 +208,7 @@ namespace ara::step {
 	    	const VFGNode* vNode = worklist.pop();
 			//logger.debug() << "Handle VFGNode " << *vNode << std::endl;
 	        visited.insert(vNode);
+#if 1
 			/* handle parent nodes */
 			for(VFGNode::const_iterator it = vNode->InEdgeBegin(); it != vNode->InEdgeEnd(); ++it) {
 				if(visited.find((*it)->getSrcNode())==visited.end()){
@@ -129,7 +216,8 @@ namespace ara::step {
 					worklist.push((*it)->getSrcNode());
 				}
 			}
-#if 0
+#endif
+#if 1
 			/* handle child nodes */
 			for(VFGNode::const_iterator it = vNode->OutEdgeBegin(); it != vNode->OutEdgeEnd(); ++it) {
 				if(visited.find((*it)->getDstNode())==visited.end()){
@@ -197,9 +285,10 @@ namespace ara::step {
 				}
 			}
 			/* evaluate the value we found */
-			const Constant* c = handle_value(val);
+			const Constant* c = handle_value(val, vfg, node);
 			if (c) {
 				ret.push_back(c);
+				//logger.debug() << "icfg node: " << *node->getICFGNode() << std::endl;
 			}
 	    }
 		return {ret, (paths.empty() ? altPaths : paths)};
@@ -268,6 +357,8 @@ namespace ara::step {
 
 		SVFG* svfg = SVFGBuilder::globalSvfg;
 		assert(svfg != nullptr && "svfg is null")
+		svfg->dump("svfgdump");
+		assert(svfg != nullptr);
 
 		    graph_tool::gt_dispatch<>()([&](auto& g) { this->get_values(g, *svfg); },
 		                                graph_tool::always_directed())(cfg.graph.get_graph_view());

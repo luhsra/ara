@@ -77,6 +77,7 @@ private:
 };
 
 SemaphoreHandle_t xTestMutex = NULL;
+SemaphoreHandle_t xTestMutex2 = NULL;
 
 void vTask1(void* pvParameters);
 void vTask2(void* pvParameters);
@@ -96,6 +97,7 @@ void createTasks(const char* name1, const char* name2) {
 
 int main(void) {
     xTestMutex = xSemaphoreCreateMutex();
+    //xTestMutex2 = xSemaphoreCreateMutex();
 
 	bool b = true;
 	if (b) {
@@ -115,6 +117,7 @@ int main(void) {
 }
 
 void vTask1(void* pvParameters) {
+    //MutexLocker lock(xTestMutex2);
 	volatile unsigned long ul;
 	xTaskCreate(vTask2, "Task6", 100, NULL, 1, NULL);
 	for (;;) {
