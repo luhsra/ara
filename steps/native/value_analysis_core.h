@@ -22,6 +22,8 @@
 #define VERSION VERSION_BKP
 #undef VERSION_BKP
 
+using namespace SVF;
+
 namespace ara::step {
 	class ValueAnalysisCore : public EntryPointStep<ValueAnalysisCore> {
 	  private:
@@ -73,7 +75,7 @@ namespace ara::step {
 						PTACallGraphEdge::CallInstSet cis = edg->getDirectCalls();
 						for (const CallBlockNode* cbn : cis) {
 							const Function* cf = cbn->getCallSite()->getFunction();
-							const Instruction* ci = cbn->getCallSite().getInstruction();
+							const Instruction* ci = cbn->getCallSite();
 							curPath.push_back(ci);
 							getCallPaths(cf, paths, curPath);
 							/**

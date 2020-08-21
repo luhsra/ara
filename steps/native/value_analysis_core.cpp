@@ -13,6 +13,7 @@
 #include <Util/BasicTypes.h>
 #include <Graphs/VFGNode.h>
 #include <WPA/Andersen.h>
+#include <SVF-FE/PAGBuilder.h>
 #undef VERSION
 #define VERSION VERSION_BKP
 #undef VERSION_BKP
