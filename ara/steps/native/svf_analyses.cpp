@@ -26,7 +26,7 @@ namespace ara::step {
 
 		PAGBuilder builder;
 		PAG* pag = builder.build(svfModule);
-		assert(pag != nullptr && "SVF Module is null");
+		assert(pag != nullptr && "PAG is null");
 
 		Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
