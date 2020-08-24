@@ -5,6 +5,11 @@
 		"CallGraph"
 	],
 
+	"SVFAnalyses": {
+		"dump": true,
+		"log_level": "debug"
+	},
+
 	"ICFG": {
 		"dump": true,
 		"log_level": "debug"
