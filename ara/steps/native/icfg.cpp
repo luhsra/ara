@@ -100,59 +100,6 @@ namespace ara::step {
 				return linked;
 			}
 
-			/**
-			 * Check if a caller_type of function pointer fits to a given candidate function.
-			 * Currently, this only checks for the same amount of arguments.
-			 */
-			bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) {
-				if (candidate.empty() || candidate.isIntrinsic()) {
-					return false;
-				}
-				// TODO this can be improved. It should also be sound, if the bitsize is the same for all types.
-				if (candidate.getFunctionType()->getNumParams() == caller_type.getNumParams()) {
-					return true;
-				}
-				return false;
-			}
-
-			void link_unresolved_function_pointer(Vertex call_abb, Vertex after_call) {
-				// first try: match all function signatures. This is slightly better that using all
-				// functions as possible pointer target but of course not exact
-				logger.info() << "Unresolved call to function pointer. ABB: " << cfg.name[call_abb] << std::endl;
-				llvm::CallBase* called_func =
-				    llvm::dyn_cast<llvm::CallBase>(&cfg.get_entry_bb<Graph>(call_abb)->front());
-				assert(called_func != nullptr && "called_func is null");
-				const llvm::FunctionType* called_type = called_func->getFunctionType();
-
-				for (llvm::Function& candidate : mod) {
-					assert(called_type != nullptr && "called_type is null");
-					if (is_valid_call_target(*called_type, candidate)) {
-						auto callee = cfg.back_map<Graph>(graph, candidate);
-						auto callee_abb = cfg.get_entry_abb(graph, callee);
-						// ingoing edge
-						add_icf_edge(call_abb, callee_abb, true);
-
-						// outgoing edge
-						Vertex back_abb;
-						if (cfg.implemented[callee]) {
-							auto lfunc = reinterpret_cast<llvm::Function*>(cfg.function[callee]);
-							auto scc_it = llvm::scc_begin(lfunc);
-							if (scc_it.hasLoop()) {
-								logger.debug() << cfg.name[callee] << " ends in an endless loop." << std::endl;
-								continue;
-							}
-							const llvm::BasicBlock* back_bb = *(*scc_it).begin();
-							back_abb = cfg.back_map<Graph>(graph, *back_bb);
-						} else {
-							back_abb =
-							    cfg.get_vertex(graph, callee, [&](Edge e) { return cfg.etype[e] == CFType::f2a; });
-						}
-
-						add_icf_edge(back_abb, after_call, false);
-					}
-				}
-			}
-
 		  public:
 			ICFGImpl(Graph& g, CFG& cfg, llvm::Module& mod, Logger& logger, SVF::ICFG& icfg)
 			    : graph(g), cfg(cfg), mod(mod), logger(logger), icfg(icfg) {
@@ -162,7 +109,7 @@ namespace ara::step {
 					    cfg.get_vertex(graph, call_abb, [&](Edge e) { return cfg.etype[e] == CFType::lcf; });
 
 					if (!link_with_svf_icfg(call_abb, after_call)) {
-						link_unresolved_function_pointer(call_abb, after_call);
+						assert("This should never happen. All indirect pointers are resolved in SVFAnalyses.");
 					}
 				}
 			}
