@@ -25,6 +25,10 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
+MAX_UPDATES = 10
+
+sse_counter = 0
+
 def debug_time(t_start):
     t_delta = datetime.now() - t_start
     global c_debugging
@@ -124,6 +128,7 @@ class FlowAnalysis(Step):
                 stack.append(new_state)
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
+        self._log.info(f"Analysis did {sse_counter} SSEs.")
 
         self._finish(self.sstg)
 
@@ -144,11 +149,13 @@ class MetaState:
                                 # key: cpu id, value: Multistate
 
     def __repr__(self):
-        ret = "["
+        ret = ""
 
         for cpu, graph in self.state_graph.items():
-            ret += f"{graph}, "
-        return ret[:-2] + "]"
+            v = graph.get_vertices()[0]
+            state = graph.vp.state[v]
+            ret += f"{state} | "
+        return ret[:-2]
     
     def basic_copy(self):
         copy = MetaState(self.cfg, self.instances)
@@ -160,6 +167,27 @@ class MetaState:
             # copy.entry_states[cpu] = None
 
         return copy
+    
+    def compare_root_states(self, other):
+        """Compares itself to another metastate, by comparing the root Multistates of each state graph."""
+        if not isinstance(other, self.__class__):
+            return False
+        
+        for cpu, g_self in self.state_graph.items():
+            if cpu not in other.state_graph:
+                return False
+            
+            v_self = g_self.get_vertices()[0]
+            s_self = g_self.vp.state[v_self]
+
+            g_other = other.state_graph[cpu]
+            v_other = g_other.get_vertices()[0]
+            s_other = g_other.vp.state[v_other]
+            
+            if s_self != s_other:
+                return False
+
+        return True
 
     def __eq__(self, other):
         if not isinstance(other, self.__class__):
@@ -450,6 +478,20 @@ class MultiSSE(FlowAnalysis):
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
 
+        # filter out duplicate states by comparing with states in sstg
+        for v in self.sstg.vertices():
+            sstg_state = self.sstg.vp.state[v]
+            for new_state in new_states:
+                if new_state.compare_root_states(sstg_state):
+                    new_states.remove(new_state)
+
+                    # add timings to found state
+                    # add_timings(new_state, sstg_state)
+                    
+                    # add edge to existing state in sstg
+                    e = self.sstg.add_edge(state_vertex, v)
+                    self.sstg.ep.state_list[e] = GCFGInfo(new_state.entry_states.copy())
+
         # run the single core sse on each new state
         res = []
         for new_state in new_states:
@@ -458,7 +500,7 @@ class MultiSSE(FlowAnalysis):
             # check for duplicates
             found = False
             for state in res:
-                if state == new_state:
+                if state.compare_root_states(new_state):
                     found = True
                     break
             if not found:
@@ -473,38 +515,26 @@ class MultiSSE(FlowAnalysis):
                     if new_state == new_state_2:
                         assert(False)
 
-        def add_timings(new_state, sstg_state):
-            for cpu, graph in sstg_state.state_graph.items():
-                v_sstg = graph.get_vertices()[0]
-                s_sstg = graph.vp.state[v_sstg]
+        # def add_timings(new_state, sstg_state):
+        #     for cpu, graph in sstg_state.state_graph.items():
+        #         v_sstg = graph.get_vertices()[0]
+        #         s_sstg = graph.vp.state[v_sstg]
 
-                g_new = new_state.state_graph[cpu]
-                v_new = g_new.get_vertices()[0]
-                s_new = g_new.vp.state[v_new]
+        #         g_new = new_state.state_graph[cpu]
+        #         v_new = g_new.get_vertices()[0]
+        #         s_new = g_new.vp.state[v_new]
 
-                s_sstg.min_time = 0
-                s_sstg.max_time = 0
-                s_sstg.add_time(s_new.min_time, s_new.max_time)    
-                            
-        # filter out duplicate states by comparing with states in sstg
-        for v in self.sstg.vertices():
-            sstg_state = self.sstg.vp.state[v]
-            for new_state in new_states:
-                if new_state == sstg_state:
-                    new_states.remove(new_state)
-
-                    # add timings to found state
-                    add_timings(new_state, sstg_state)
-                    
-                    # add edge to existing state in sstg
-                    e = self.sstg.add_edge(state_vertex, v)
-                    self.sstg.ep.state_list[e] = GCFGInfo(new_state.entry_states.copy())
+        #         s_sstg.min_time = 0
+        #         s_sstg.max_time = 0
+        #         s_sstg.add_time(s_new.min_time, s_new.max_time)    
         
         return new_states
 
     def run_sse(self, metastate):
         """Run the single core sse for the given metastate on each cpu."""
         for cpu, graph in metastate.state_graph.items():
+            global sse_counter
+            sse_counter += 1
             stack = []
 
             for v in graph.vertices():

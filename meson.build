@@ -180,6 +180,7 @@ if get_option('enable_toplevel_tests')
               '--log-level', 'info',
               '--dump',
               '--step-settings', autosar_minexample_settings],
-       suite: 'toplevel'
+       suite: 'toplevel',
+       timeout: 60
     )
 endif
