@@ -11,16 +11,10 @@
 
 #include <cxxabi.h>
 
-#define VERSION_BKP VERSION
-#undef VERSION
-#include <MSSA/SVFG.h>
 #include <Util/BasicTypes.h>
 #include <Graphs/VFGNode.h>
 #include <Graphs/SVFG.h>
 #include <WPA/Andersen.h>
-#undef VERSION
-#define VERSION VERSION_BKP
-#undef VERSION_BKP
 
 using namespace SVF;
 
@@ -98,10 +92,10 @@ namespace ara::step {
 
 		template <typename Graph>
 		void get_values(Graph& g, const SVFG& vfg) {
-			cfg = graph->get_cfg();
+			graph::CFG cfg = graph.get_cfg();
 			// ptree stats;
 			for (auto abb :
-			     boost::make_iterator_range(boost::vertices(filter_by_abb(graph::ABBType::syscall, g, cfg)))) {
+			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
 				llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[abb]);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
 				//logger.debug() << "call base aka instruction: " << *called_func << std::endl;

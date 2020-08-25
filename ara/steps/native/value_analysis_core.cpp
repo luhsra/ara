@@ -351,13 +351,12 @@ namespace ara::step {
 
 	void ValueAnalysisCore::run() {
 		graph::CFG cfg = graph.get_cfg();
-		const auto& dopt = dump_stats.get();
 		const auto& prefix = dump_prefix.get();
 		const auto& entry_point_name = entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
 
 		SVFG* svfg = SVFGBuilder::globalSvfg;
-		assert(svfg != nullptr && "svfg is null")
+		assert(svfg != nullptr && "svfg is null");
 		svfg->dump("svfgdump");
 		assert(svfg != nullptr);
 
