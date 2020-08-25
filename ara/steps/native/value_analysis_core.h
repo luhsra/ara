@@ -2,19 +2,16 @@
 
 #pragma once
 
+#include "arguments.h"
 #include "option.h"
 #include "step.h"
 
-#include "arguments.h"
-
-#include <graph.h>
-
-#include <cxxabi.h>
-
-#include <Util/BasicTypes.h>
-#include <Graphs/VFGNode.h>
 #include <Graphs/SVFG.h>
+#include <Graphs/VFGNode.h>
+#include <Util/BasicTypes.h>
 #include <WPA/Andersen.h>
+#include <cxxabi.h>
+#include <graph.h>
 
 using namespace SVF;
 
@@ -35,7 +32,8 @@ namespace ara::step {
 		 */
 		std::string demangle(std::string name) {
 			int status = -1;
-			std::unique_ptr<char, void(*)(void*)> res {abi::__cxa_demangle(name.c_str(), NULL, NULL, &status), std::free};
+			std::unique_ptr<char, void (*)(void*)> res{abi::__cxa_demangle(name.c_str(), NULL, NULL, &status),
+			                                           std::free};
 			return (status == 0) ? res.get() : name;
 		}
 
@@ -56,7 +54,8 @@ namespace ara::step {
 		 *
 		 * this should just be bottom-up DFS
 		 */
-		void getCallPaths(const Function* f, std::vector<std::vector<const Instruction*>>& paths, std::vector<const Instruction*>& curPath) {
+		void getCallPaths(const Function* f, std::vector<std::vector<const Instruction*>>& paths,
+		                  std::vector<const Instruction*>& curPath) {
 			// TODO check out icfg->getCallBlockNode(inst) which directly gets the callblocknode
 			// callee is getCallee(inst), caller is svfModule->getSVFFunction(f)
 			if (const SVFFunction* sf = svfModule->getSVFFunction(f)) {
@@ -98,23 +97,24 @@ namespace ara::step {
 			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
 				llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[abb]);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
-				//logger.debug() << "call base aka instruction: " << *called_func << std::endl;
+				// logger.debug() << "call base aka instruction: " << *called_func << std::endl;
 				if (called_func) {
 					vstd.clear();
 					Arguments args;
 					llvm::AttributeSet attrs;
 					llvm::Function* func = called_func->getCalledFunction();
 					if (func) {
-						//this->logger.debug() << *bb << std::endl;
-						//this->logger.debug() << "Called function: " << *called_func << std::endl;
-						this->logger.debug() << "Function name: \033[34m" << func->getName().str() << "\033[0m" << std::endl;
+						// this->logger.debug() << *bb << std::endl;
+						// this->logger.debug() << "Called function: " << *called_func << std::endl;
+						this->logger.debug()
+						    << "Function name: \033[34m" << func->getName().str() << "\033[0m" << std::endl;
 						this->logger.debug() << "Number of args: " << func->arg_size() << std::endl;
 						this->logger.debug() << "------------" << std::endl;
-						//llvm::AttributeSet attrs = func->getAttributes().getFnAttributes();
+						// llvm::AttributeSet attrs = func->getAttributes().getFnAttributes();
 						llvm::AttributeList attrl = called_func->getAttributes();
 						for (unsigned it = attrl.index_begin(); it != attrl.index_end(); ++it) {
 							// index is sometimes negative (2**32 - 1 or something)??
-							//logger.debug() << it << ": " << attrl.getAsString(it) << std::endl;
+							// logger.debug() << it << ": " << attrl.getAsString(it) << std::endl;
 						}
 
 						const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(called_func->getContext());
@@ -140,9 +140,9 @@ namespace ara::step {
 							if (std::get<0>(vp).size() == 1) {
 								const llvm::Value* constVal = std::get<0>(vp).at(0);
 								if (const Function* func = llvm::dyn_cast<llvm::Function>(constVal)) {
-									logger.debug() << "value is function: " << demangle(func->getName().str()) << std::endl;
-								}
-								else {
+									logger.debug()
+									    << "value is function: " << demangle(func->getName().str()) << std::endl;
+								} else {
 									logger.debug() << "unambiguous value: " << *constVal << std::endl;
 								}
 								args.push_back(Argument(attrs, *constVal));
@@ -152,7 +152,7 @@ namespace ara::step {
 							Argument a(attrs, *none_c);
 
 							/**
-							 * i does not correspond to the index of the argument in the function 
+							 * i does not correspond to the index of the argument in the function
 							 * it is just here for debugging purposes
 							 */
 							long unsigned int i = 0;
@@ -160,23 +160,24 @@ namespace ara::step {
 							assert(std::get<1>(vp).size() >= std::get<0>(vp).size());
 							std::string entryFun;
 							for (auto v : std::get<0>(vp)) {
-								/* end iterator points behind the last element so we subtract 1 before dereferencing it */
+								/* end iterator points behind the last element so we subtract 1 before dereferencing it
+								 */
 								entryFun = (*(std::get<1>(vp).at(i).end() - 1))->getFunction()->getName().str();
 
 								/* erase the syscall itself from the instruction list */
 								std::get<1>(vp).at(i).erase(std::get<1>(vp).at(i).begin());
 
 								if (const Function* func = llvm::dyn_cast<llvm::Function>(v)) {
-									logger.debug() << "Value (function) " << i << ": " << demangle(func->getName().str()) << std::endl;
-								}
-								else {
+									logger.debug() << "Value (function) " << i << ": "
+									               << demangle(func->getName().str()) << std::endl;
+								} else {
 									logger.debug() << "Value " << i << ": " << *v << std::endl;
 								}
 								logger.debug() << "PATH " << i << ": \n        |--";
 								for (auto inst : std::get<1>(vp).at(i)) {
 									logger.debug() << *inst << "\n        ---";
 								}
-								logger.debug() <<"\033[33m" << demangle(entryFun) << "\033[0m|" << std::endl;
+								logger.debug() << "\033[33m" << demangle(entryFun) << "\033[0m|" << std::endl;
 
 								a.add_variant(std::get<1>(vp).at(i), *v);
 								i++;
@@ -184,14 +185,14 @@ namespace ara::step {
 							/* print extra / leftover paths */
 							if (i < std::get<1>(vp).size()) {
 								logger.debug() << "\033[32mLEFTOVER PATHS (" << i << " to "
-											   << std::get<1>(vp).size() - 1 << ")\033[0m" << std::endl;
+								               << std::get<1>(vp).size() - 1 << ")\033[0m" << std::endl;
 								for (long unsigned int j = i; j < std::get<1>(vp).size(); j++) {
 									std::get<1>(vp).at(j).erase(std::get<1>(vp).at(j).begin());
 									logger.debug() << "PATH " << j << ": \n        |--";
 									for (auto inst : std::get<1>(vp).at(j)) {
 										logger.debug() << *inst << "\n        ---";
 									}
-									logger.debug() <<"\033[33m" << demangle(entryFun) << "\033[0m|" << std::endl;
+									logger.debug() << "\033[33m" << demangle(entryFun) << "\033[0m|" << std::endl;
 								}
 							}
 
@@ -235,7 +236,7 @@ namespace ara::step {
 
 					cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
 					this->logger.debug() << "Retrieved " << args.size() << " arguments for call " << *called_func
-					               << std::endl;
+					                     << std::endl;
 					this->logger.debug() << "================================================" << std::endl;
 					std::cout << std::endl;
 				} else {
