@@ -1118,7 +1118,7 @@ namespace ara {
 			BasicBlock* IBB = InstA->getParent();
 			auto OBB = OBBMap.find(IBB);
 			if (OBB == OBBMap.end())
-				OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
+				OBB = OBBMap.insert({IBB, std::make_unique<OrderedBasicBlock>(IBB)}).first;
 			return OBB->second->dominates(InstA, InstB);
 		}
 
@@ -1311,9 +1311,9 @@ namespace ara {
 		}
 
 		if (return_value != nullptr) {
-			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *return_value));
+			args.set_return_value(std::make_unique<Argument>(llvm::AttributeSet(), *return_value));
 		} else {
-			args.set_return_value(make_unique<Argument>(llvm::AttributeSet(), *none_c));
+			args.set_return_value(std::make_unique<Argument>(llvm::AttributeSet(), *none_c));
 		}
 
 		return make_pair(std::move(args), std::move(stats));
