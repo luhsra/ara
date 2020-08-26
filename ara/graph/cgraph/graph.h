@@ -334,9 +334,13 @@ namespace ara::graph {
 		/**
 		 * convenience function to get the llvm module directly
 		 */
-		llvm::Module& get_module() { return llvm_data->get_module(); }
+		llvm::Module& get_module() { return safe_deref(llvm_data).get_module(); }
+		/**
+		 * convenience function to get the svfg directly
+		 */
+		SVF::SVFG& get_svfg() { return safe_deref(llvm_data).get_svfg(); }
 
-		LLVMData& get_llvm_data() { return *llvm_data; }
+		LLVMData& get_llvm_data() { return safe_deref(llvm_data); }
 
 		PyObject* get_pygraph() { return graph; }
 

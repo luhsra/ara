@@ -54,7 +54,7 @@ namespace ara::graph {
 		SVF::SVFG& get_svfg() { return safe_deref(svfg); }
 
 		void initialize_svfg(std::unique_ptr<SVF::SVFG> svfg) {
-			assert(this->module == nullptr && "module already initialized");
+			assert(this->svfg == nullptr && "module already initialized");
 			this->svfg = std::move(svfg);
 		}
 	};
