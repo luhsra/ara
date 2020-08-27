@@ -25,7 +25,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 10
+MAX_UPDATES = 5
 
 sse_counter = 0
 
@@ -119,11 +119,21 @@ class FlowAnalysis(Step):
             state_vertex = stack.pop()
             # state = self.sstg.vp.state[state_vertex]
             for n in self._system_semantic(state_vertex):
-                new_state = self.new_vertex(self.sstg, n)
-                e = self.sstg.add_edge(state_vertex, new_state)
-
                 if isinstance(n, MetaState):
-                    self.sstg.ep.state_list[e] = GCFGInfo(n.entry_states.copy())
+                    found = False
+                    for v in self.sstg.vertices():
+                        state = self.sstg.vp.state[v]
+                        if state.compare_root_states(n):
+                            found = True 
+                            break
+                    if not found:
+                        new_state = self.new_vertex(self.sstg, n)
+                        e = self.sstg.add_edge(state_vertex, new_state)
+                        self.sstg.ep.state_list[e] = GCFGInfo(n.entry_states.copy())
+                
+                else:
+                    new_state = self.new_vertex(self.sstg, n)
+                    e = self.sstg.add_edge(state_vertex, new_state) 
 
                 stack.append(new_state)
             counter += 1
@@ -147,6 +157,7 @@ class MetaState:
                               # key: cpu id, value: list of MultiStates
         self.entry_states = {}  # entry state for each cpu
                                 # key: cpu id, value: Multistate
+        self.updated = 0 # amount of times this metastate has been updated (timings)
 
     def __repr__(self):
         ret = ""
@@ -167,6 +178,47 @@ class MetaState:
             # copy.entry_states[cpu] = None
 
         return copy
+    
+    def update_timings(self):
+        """Updates the timings in each state in each graph."""
+        self.updated += 1
+
+        for cpu, graph in self.state_graph.items():
+            v = graph.get_vertices()[0]
+
+            stack = [v]
+            found_list = []
+            while stack:
+                v = stack.pop()
+                state = graph.vp.state[v]
+                found_list.append(state)
+
+                for next_v in graph.vertex(v).out_neighbors():
+                    next_state = graph.vp.state[next_v]
+
+                    # check for already found states
+                    found = False
+                    for s in found_list:
+                        if s == next_state:
+                            found = True
+                            break
+                    
+                    if not found:
+                        stack.append(next_v)
+                        
+                        # get min and max timings for current abb
+                        task = next_state.get_scheduled_task()
+                        next_state.times = state.times.copy()
+                        
+                        if task is not None:
+                            abb = next_state.abbs[task.name]
+                            context = None
+                            min_time = Timings.get_min_time(next_state.cfg.vp.name[abb], context)
+                            max_time = Timings.get_max_time(next_state.cfg.vp.name[abb], context)
+
+                            # update all intervalls
+                            for i, intervall in enumerate(state.times):
+                                next_state.times[i] = (intervall[0] + min_time, intervall[1] + max_time)
     
     def compare_root_states(self, other):
         """Compares itself to another metastate, by comparing the root Multistates of each state graph."""
@@ -247,7 +299,8 @@ class MultiState:
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
-        self.times = [] # list of time intervalls this state is valid in
+        self.times = [(0, 0)] # list of time intervalls this state is valid in
+        self.times_merged = [] # same as times list, but without overlapping intervalls
         
     def get_scheduled_task(self):
         if len(self.activated_tasks) >= 1:
@@ -256,33 +309,31 @@ class MultiState:
             return None
 
     def add_time(self, min_time, max_time):
-        self.max_time += max_time        
-        self.min_time += min_time
-
-        # add new time intervall to list and merge it if necessary
-        self.times.append((self.min_time, self.max_time))
-        if len(self.times) > 1:
-            self.times.sort(key=lambda intervall: intervall[0])
-
-            def merge(time_1, time_2):
-                if time_1[1] < time_2[0]:
-                    return False, None
-                if time_1[1] < time_2[1]:
-                    return True, (time_1[0], time_2[1])
-                else:
-                    return True, (time_1[0], time_1[1])
-
-            while True:
-                new_times = self.times.copy()
-                for i, time in enumerate(new_times):
-                    if i != len(new_times) - 1:
-                        merged, intervall = merge(new_times[i], new_times[i + 1])
-                        if merged:
-                            self.times[i] = intervall
-                            self.times.pop(i + 1)
-                            break
-                if new_times == self.times:
-                    break
+        for i, intervall in enumerate(self.times):
+            self.times[i] = (intervall[0] + min_time, intervall[1] + max_time)
+        
+        # self.merge_times()
+    
+    def merge_times(self):
+        """Merges list of time intervalls so that overlapping intervalls are merged into one."""
+        while True:
+            new_times = self.times.copy()
+            for i, time_1 in enumerate(new_times):
+                if i != len(new_times) - 1:
+                    time_2 = new_times[i + 1]
+                    if not time_1[1] < time_2[0]: 
+                        intervall = ()  
+                        if time_1[1] < time_2[1]:
+                            intervall = (time_1[0], time_2[1])
+                        else:
+                            intervall = (time_1[0], time_1[1])
+                        
+                        self.times[i] = intervall
+                        self.times.pop(i + 1)
+                        break
+            if new_times == self.times:
+                break
+        pass
 
     def __repr__(self):
         ret = "["
@@ -316,8 +367,7 @@ class MultiState:
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
-        scopy.times = []
-        # scopy.gcfg_multi_ret = self.gcfg_multi_ret.copy()
+        scopy.times = self.times.copy()
 
         return scopy
 
@@ -383,6 +433,15 @@ class MultiSSE(FlowAnalysis):
                 # set list of activated tasks
                 if task.autostart: 
                     state.activated_tasks.append(task)
+        
+        # build starting times for each multistate
+        # for cpu, graph in metastate.state_graph.items():
+        #     v = graph.get_vertices()[0]
+        #     state = graph.vp.state[v]
+        #     abb = state.abbs[state.get_scheduled_task().name]
+        #     context = None
+        #     max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+        #     state.times.append((0, max_time))
 
         # run single core sse for each cpu
         self.run_sse(metastate)
@@ -409,6 +468,19 @@ class MultiSSE(FlowAnalysis):
                     if cpu != cpu_other:
                         args.append(graph.get_vertices())
                         cpu_list.append(cpu_other)
+
+                def disjunct_times(state_1, state_2):
+                    """Calculates whether the timing intervalls of the states are disjunct.
+                    This information is used for skipping combinations that can not be active
+                    at the same time."""
+                    for i, intervall_1 in enumerate(state_1.times):
+                        intervall_2 = state_2.times[i]
+                        if intervall_1[0] > intervall_2[1]:
+                            return True
+                        if intervall_2[0] > intervall_1[1]:
+                            return True
+
+                    return False
                 
                 # compute possible combinations
                 if len(args) > 1:
@@ -441,10 +513,10 @@ class MultiSSE(FlowAnalysis):
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
 
                                 # skip this state if sync state times are higher than max or lower than min
-                                if next_state.max_time is not None and sync_state.min_time > next_state.max_time:
+                                if disjunct_times(sync_state, next_state):
                                     print("skipped")
                                     continue
-                                if sync_state.max_time is not None and sync_state.max_time < next_state.min_time:
+                                if disjunct_times(sync_state, next_state):
                                     print("skipped")
                                     continue
 
@@ -466,18 +538,25 @@ class MultiSSE(FlowAnalysis):
                                 self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
 
                                 # set new min and max times for both new states
-                                new_min = max(sync_state.min_time, next_state.min_time)
-                                new_max = min(sync_state.max_time, next_state.max_time)
-                                next_state.min_time = new_min
-                                next_state.max_time = new_max
-                                sync_state.min_time = new_min
-                                sync_state.max_time = new_max
+                                new_times = []
+                                for i, intervall_s in enumerate(sync_state.times):
+                                    intervall_n = next_state.times[i]
+
+                                    # check if intervalls are disjunct
+                                    if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
+                                        new_min = max(intervall_s[0], intervall_n[0])
+                                        new_max = min(intervall_s[1], intervall_n[1])
+                                        new_times.append((new_min, new_max))
+
+                                sync_state.times = new_times.copy()
+                                next_state.times = new_times.copy()
                                 sync_state.add_time(min_time, max_time)
                                 next_state.add_time(min_time, max_time)
 
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
 
+        update_list = []
         # filter out duplicate states by comparing with states in sstg
         for v in self.sstg.vertices():
             sstg_state = self.sstg.vp.state[v]
@@ -485,12 +564,22 @@ class MultiSSE(FlowAnalysis):
                 if new_state.compare_root_states(sstg_state):
                     new_states.remove(new_state)
 
-                    # add timings to found state
-                    # add_timings(new_state, sstg_state)
+                    # add timing intervalls to existing state
+                    for cpu, graph in sstg_state.state_graph.items():
+                        s_state = graph.vp.state[graph.get_vertices()[0]]
+                        n_state = new_state.state_graph[cpu].vp.state[new_state.state_graph[cpu].get_vertices()[0]]
+                        for intervall in n_state.times:
+                            if intervall not in s_state.times:
+                                s_state.times.append(intervall)
+                    
+                    if sstg_state.updated < MAX_UPDATES:
+                        sstg_state.update_timings()
+                        update_list.append(sstg_state)
                     
                     # add edge to existing state in sstg
-                    e = self.sstg.add_edge(state_vertex, v)
-                    self.sstg.ep.state_list[e] = GCFGInfo(new_state.entry_states.copy())
+                    if v not in self.sstg.vertex(state_vertex).out_neighbors():
+                        e = self.sstg.add_edge(state_vertex, v)
+                        self.sstg.ep.state_list[e] = GCFGInfo(new_state.entry_states.copy())
 
         # run the single core sse on each new state
         res = []
@@ -513,25 +602,14 @@ class MultiSSE(FlowAnalysis):
             for j, new_state_2 in enumerate(new_states):
                 if i > j:
                     if new_state == new_state_2:
-                        assert(False)
-
-        # def add_timings(new_state, sstg_state):
-        #     for cpu, graph in sstg_state.state_graph.items():
-        #         v_sstg = graph.get_vertices()[0]
-        #         s_sstg = graph.vp.state[v_sstg]
-
-        #         g_new = new_state.state_graph[cpu]
-        #         v_new = g_new.get_vertices()[0]
-        #         s_new = g_new.vp.state[v_new]
-
-        #         s_sstg.min_time = 0
-        #         s_sstg.max_time = 0
-        #         s_sstg.add_time(s_new.min_time, s_new.max_time)    
+                        assert(False) 
         
+        new_states.extend(update_list)
         return new_states
 
     def run_sse(self, metastate):
         """Run the single core sse for the given metastate on each cpu."""
+        metastate.updated += 1
         for cpu, graph in metastate.state_graph.items():
             global sse_counter
             sse_counter += 1
@@ -576,6 +654,7 @@ class MultiSSE(FlowAnalysis):
                 # get min and max times for this abb
                 min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
                 max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+                state.add_time(min_time, max_time)
 
                 if self._icfg.vp.type[abb] == ABBType.syscall:
                     assert self._g.os is not None
@@ -584,9 +663,6 @@ class MultiSSE(FlowAnalysis):
                         sync_list.append(state)
                     else:
                         new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
-                        
-                        # set new min and max times
-                        new_state.add_time(min_time, max_time)
 
                         new_states.append(new_state)
                 elif self._icfg.vp.type[abb] == ABBType.call:
@@ -602,9 +678,6 @@ class MultiSSE(FlowAnalysis):
                                 break
                         new_state.call_nodes[task.name] = call_node
 
-                        # set new min and max times
-                        new_state.add_time(min_time, max_time)
-
                         new_states.append(new_state)
                 elif (self._icfg.vp.is_exit[abb] and
                     self._icfg.vertex(abb).out_degree() > 0):
@@ -614,17 +687,11 @@ class MultiSSE(FlowAnalysis):
                     new_state.abbs[task.name] = next(neighbors)
                     new_state.call_nodes[task.name] = next(state.call_nodes[task.name].in_neighbors())
 
-                    # set new min and max times
-                    new_state.add_time(min_time, max_time)
-                    
                     new_states.append(new_state)
                 elif self._icfg.vp.type[abb] == ABBType.computation:
                     for n in self._icfg.vertex(abb).out_neighbors():
                         new_state = state.copy()
                         new_state.abbs[task.name] = n
-
-                        # set new min and max times
-                        new_state.add_time(min_time, max_time)
 
                         new_states.append(new_state)
 

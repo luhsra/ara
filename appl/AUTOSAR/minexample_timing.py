@@ -10,7 +10,7 @@ class Timings:
         # if f is not None:
         #     return f(context)
         # return (0, None)
-        return (1, 3)
+        return (1, 2)
     
     @staticmethod
     def get_min_time(abb_name, context):
