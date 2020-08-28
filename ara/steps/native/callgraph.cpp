@@ -3,21 +3,17 @@
 #include "common/exceptions.h"
 #include "common/util.h"
 
+#include <Graphs/PAG.h>
+#include <Graphs/PTACallGraph.h>
+#include <WPA/Andersen.h>
 #include <boost/graph/filtered_graph.hpp>
 #include <llvm/ADT/GraphTraits.h>
 #include <llvm/ADT/SCCIterator.h>
 #include <llvm/IR/CFG.h>
 #include <llvm/IR/Function.h>
 #include <queue>
-
-#define VERSION_BKP VERSION
-#undef VERSION
-#include <Graphs/PAG.h>
-#include <Graphs/PTACallGraph.h>
-#include <WPA/Andersen.h>
-#undef VERSION
-#define VERSION VERSION_BKP
-#undef VERSION_BKP
+#include <type_traits>
+#include <typeinfo>
 
 namespace ara::step {
 	std::string CallGraph::get_description() {
@@ -25,6 +21,16 @@ namespace ara::step {
 	}
 
 	namespace {
+		template <class V>
+		struct MakeClean {
+			using type = typename std::make_signed<typename std::remove_reference<V>::type>::type;
+		};
+
+		template <class T, class U>
+		constexpr bool check_graph_tool_compability() {
+			return std::is_same<typename MakeClean<T>::type, typename MakeClean<U>::type>::value;
+		}
+
 		template <typename CFGraph, typename CaGraph>
 		class CallGraphImpl {
 		  private:
@@ -61,6 +67,10 @@ namespace ara::step {
 
 					// properties
 					CFVertex func_v = (func) ? *func : get_function(svf_node);
+					static_assert(
+					    check_graph_tool_compability<decltype(callgraph.function[call_node]), decltype(func_v)>(),
+					    "The function vertex of the graph tool CFG can not be stored in CallGraph vertex property due "
+					    "to incompatible types");
 					callgraph.function[call_node] = func_v;
 					callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
 				}
