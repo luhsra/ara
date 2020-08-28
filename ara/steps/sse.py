@@ -25,7 +25,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 10
+MAX_UPDATES = 20
 
 sse_counter = 0
 
@@ -136,7 +136,8 @@ class FlowAnalysis(Step):
                     new_state = self.new_vertex(self.sstg, n)
                     e = self.sstg.add_edge(state_vertex, new_state) 
 
-                stack.append(new_state)
+                if new_state not in stack:
+                    stack.append(new_state) 
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
         self._log.info(f"Analysis did {sse_counter} SSEs.")
@@ -313,11 +314,10 @@ class MultiState:
         for i, intervall in enumerate(self.times):
             self.times[i] = (intervall[0] + min_time, intervall[1] + max_time)
         
-        # self.merge_times()
     
     def merge_times(self):
         """Merges list of time intervalls so that overlapping intervalls are merged into one."""
-        self.times_merged = self.times.copy()
+        self.times_merged.extend(self.times)
         self.times_merged.sort(key=lambda i: i[0])
         while True:
             new_times = self.times_merged.copy()
@@ -371,6 +371,7 @@ class MultiState:
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
         scopy.times = self.times.copy()
+        scopy.times_merged = []
 
         return scopy
 
@@ -542,6 +543,13 @@ class MultiSSE(FlowAnalysis):
 
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
+
+        # remove all timing intervalls from executed metastate
+        for cpu, graph in metastate.state_graph.items():
+            for v in graph.vertices():
+                state = graph.vp.state[v]
+                state.merge_times()
+                state.times = []
 
         update_list = []
         # filter out duplicate states by comparing with states in sstg
