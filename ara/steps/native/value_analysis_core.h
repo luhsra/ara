@@ -56,9 +56,13 @@ namespace ara::step {
 		 */
 		void getCallPaths(const Function* f, std::vector<std::vector<const Instruction*>>& paths,
 		                  std::vector<const Instruction*>& curPath) {
+			SVF::PAG* pag = SVF::PAG::getPAG();
+			// this is actually a singleton, so the creation was done in SVFAnalyses
+			SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
+			SVF::PTACallGraph* callgraph = ander->getPTACallGraph();
 			// TODO check out icfg->getCallBlockNode(inst) which directly gets the callblocknode
 			// callee is getCallee(inst), caller is svfModule->getSVFFunction(f)
-			if (const SVFFunction* sf = svfModule->getSVFFunction(f)) {
+			if (const SVFFunction* sf = LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(f)) {
 				PTACallGraphNode* cgn = callgraph->getCallGraphNode(sf);
 				/* check if further path exists */
 				if (cgn->hasIncomingEdge()) {
@@ -86,16 +90,13 @@ namespace ara::step {
 			}
 		}
 
-		PTACallGraph* callgraph;
-		SVFModule* svfModule;
-
 		template <typename Graph>
 		void get_values(Graph& g, const SVFG& vfg) {
 			graph::CFG cfg = graph.get_cfg();
 			// ptree stats;
 			for (auto abb :
 			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
-				llvm::BasicBlock* bb = reinterpret_cast<llvm::BasicBlock*>(cfg.entry_bb[abb]);
+				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
 				// logger.debug() << "call base aka instruction: " << *called_func << std::endl;
 				if (called_func) {
