@@ -25,7 +25,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 5
+MAX_UPDATES = 10
 
 sse_counter = 0
 
@@ -116,7 +116,7 @@ class FlowAnalysis(Step):
         while stack:
             self._log.debug(f"Stack {counter:3d}: "
                             f"{[self.sstg.vp.state[v] for v in stack]}")
-            state_vertex = stack.pop()
+            state_vertex = stack.pop(0)
             # state = self.sstg.vp.state[state_vertex]
             for n in self._system_semantic(state_vertex):
                 if isinstance(n, MetaState):
@@ -124,6 +124,7 @@ class FlowAnalysis(Step):
                     for v in self.sstg.vertices():
                         state = self.sstg.vp.state[v]
                         if state.compare_root_states(n):
+                            new_state = v
                             found = True 
                             break
                     if not found:
@@ -189,7 +190,7 @@ class MetaState:
             stack = [v]
             found_list = []
             while stack:
-                v = stack.pop()
+                v = stack.pop(0)
                 state = graph.vp.state[v]
                 found_list.append(state)
 
@@ -316,8 +317,10 @@ class MultiState:
     
     def merge_times(self):
         """Merges list of time intervalls so that overlapping intervalls are merged into one."""
+        self.times_merged = self.times.copy()
+        self.times_merged.sort(key=lambda i: i[0])
         while True:
-            new_times = self.times.copy()
+            new_times = self.times_merged.copy()
             for i, time_1 in enumerate(new_times):
                 if i != len(new_times) - 1:
                     time_2 = new_times[i + 1]
@@ -328,14 +331,14 @@ class MultiState:
                         else:
                             intervall = (time_1[0], time_1[1])
                         
-                        self.times[i] = intervall
-                        self.times.pop(i + 1)
+                        self.times_merged[i] = intervall
+                        self.times_merged.pop(i + 1)
                         break
-            if new_times == self.times:
+            if new_times == self.times_merged:
                 break
-        pass
 
     def __repr__(self):
+        self.merge_times()
         ret = "["
         scheduled_task = self.get_scheduled_task()
         for task_name, abb in self.abbs.items():
@@ -346,7 +349,7 @@ class MultiState:
             else: 
                 ret += "None"
             ret += ", "
-        ret = ret[:-2] + "] " + str(self.times)
+        ret = ret[:-2] + "] " + str(self.times_merged)
         return ret
 
     def __eq__(self, other):
@@ -450,7 +453,7 @@ class MultiSSE(FlowAnalysis):
 
     def _execute(self, state_vertex):
         metastate = self.sstg.vp.state[state_vertex]
-        self._log.info(f"Executing Metastate: {metastate}")
+        self._log.info(f"Executing Metastate {state_vertex}: {metastate}")
         new_states = []
 
         for cpu, sync_list in metastate.sync_states.items():
@@ -468,19 +471,6 @@ class MultiSSE(FlowAnalysis):
                     if cpu != cpu_other:
                         args.append(graph.get_vertices())
                         cpu_list.append(cpu_other)
-
-                def disjunct_times(state_1, state_2):
-                    """Calculates whether the timing intervalls of the states are disjunct.
-                    This information is used for skipping combinations that can not be active
-                    at the same time."""
-                    for i, intervall_1 in enumerate(state_1.times):
-                        intervall_2 = state_2.times[i]
-                        if intervall_1[0] > intervall_2[1]:
-                            return True
-                        if intervall_2[0] > intervall_1[1]:
-                            return True
-
-                    return False
                 
                 # compute possible combinations
                 if len(args) > 1:
@@ -510,18 +500,31 @@ class MultiSSE(FlowAnalysis):
                         if cpu != cpu_other:
                             for vertex in args[0]:
                                 sync_state = state.copy()
-                                next_state = metastate.state_graph[cpu_other].vp.state[vertex]
+                                next_state = metastate.state_graph[cpu_other].vp.state[vertex].copy()
 
-                                # skip this state if sync state times are higher than max or lower than min
-                                if disjunct_times(sync_state, next_state):
-                                    print("skipped")
-                                    continue
-                                if disjunct_times(sync_state, next_state):
-                                    print("skipped")
-                                    continue
+                                # calculate new timing intervalls for the new states
+                                new_times = []
+                                for i, intervall_s in enumerate(sync_state.times):
+                                    intervall_n = next_state.times[i]
 
-                                next_state = next_state.copy()
+                                    # check if intervall is disjunct
+                                    if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
+                                        new_min = max(intervall_s[0], intervall_n[0])
+                                        new_max = min(intervall_s[1], intervall_n[1])
+                                        new_times.append((new_min, new_max))
                                 
+                                # skip this combination, if all intervalls are disjunct
+                                if len(new_times) == 0:
+                                    print("skipped")
+                                    continue
+
+                                # set new min and max times for both new states
+                                sync_state.times = new_times.copy()
+                                next_state.times = new_times.copy()
+                                sync_state.add_time(min_time, max_time)
+                                next_state.add_time(min_time, max_time)
+
+                                # construct new metastate
                                 new_state = metastate.basic_copy()
                                 v = new_state.state_graph[cpu].add_vertex()
                                 new_state.state_graph[cpu].vp.state[v] = sync_state
@@ -536,22 +539,6 @@ class MultiSSE(FlowAnalysis):
                                 
                                 # execute the syscall
                                 self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
-
-                                # set new min and max times for both new states
-                                new_times = []
-                                for i, intervall_s in enumerate(sync_state.times):
-                                    intervall_n = next_state.times[i]
-
-                                    # check if intervalls are disjunct
-                                    if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
-                                        new_min = max(intervall_s[0], intervall_n[0])
-                                        new_max = min(intervall_s[1], intervall_n[1])
-                                        new_times.append((new_min, new_max))
-
-                                sync_state.times = new_times.copy()
-                                next_state.times = new_times.copy()
-                                sync_state.add_time(min_time, max_time)
-                                next_state.add_time(min_time, max_time)
 
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
@@ -572,8 +559,8 @@ class MultiSSE(FlowAnalysis):
                             if intervall not in s_state.times:
                                 s_state.times.append(intervall)
                     
-                    if sstg_state.updated < MAX_UPDATES:
-                        sstg_state.update_timings()
+                    sstg_state.update_timings()
+                    if sstg_state.updated < MAX_UPDATES:    
                         update_list.append(sstg_state)
                     
                     # add edge to existing state in sstg
@@ -619,7 +606,7 @@ class MultiSSE(FlowAnalysis):
                 stack.append(v)
 
             while stack:
-                vertex = stack.pop()
+                vertex = stack.pop(0)
                 state = graph.vp.state[vertex]
                 for new_state in self.execute_state(state, metastate.sync_states[cpu]):
                     found = False
