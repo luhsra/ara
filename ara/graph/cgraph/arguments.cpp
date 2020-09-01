@@ -1,6 +1,6 @@
 #include "arguments.h"
 
-namespace ara {
+namespace ara::graph {
 	bool Argument::is_constant() const {
 		for (const auto& value : values) {
 			if (!llvm::isa<llvm::Constant>(value.second)) {
@@ -95,4 +95,4 @@ namespace ara {
 		// return list;
 		return nullptr;
 	}
-} // namespace ara
+} // namespace ara::graph

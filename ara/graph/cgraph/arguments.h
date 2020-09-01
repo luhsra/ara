@@ -8,7 +8,7 @@
 #include <pyllco.h>
 #include <vector>
 
-namespace ara {
+namespace ara::graph {
 	using CallPath = std::vector<const SVF::PTACallGraphEdge*>;
 	/**
 	 * Stores all data for an argument. Mainly, this is the list of possible values dependend on its callpaths.
@@ -129,4 +129,4 @@ namespace ara {
 
     using EntryArguments = std::map<std::string, Arguments>;
 
-} // namespace ara
+} // namespace ara::graph
