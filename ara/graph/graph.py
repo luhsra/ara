@@ -6,7 +6,7 @@ import enum
 
 from collections import deque
 
-from .llvm_data import PyLLVMData
+from .graph_data import PyGraphData
 from .mix import ABBType, CFType
 
 class CFG(graph_tool.Graph):
@@ -189,7 +189,7 @@ class Graph:
 
     def __init__(self):
         # should be used only from C++, see graph.h
-        self._llvm_data = PyLLVMData()
+        self._graph_data = PyGraphData()
         self._init_cfg()
         self.callgraph = Callgraph(self.cfg)
         self.os = None

@@ -30,7 +30,7 @@ namespace ara::step {
 
 		template <typename Graph>
 		typename boost::graph_traits<Graph>::vertex_descriptor
-		add_abb(Graph& g, graph::CFG& cfg, graph::LLVMData& llvm_data, std::string name, graph::ABBType type,
+		add_abb(Graph& g, graph::CFG& cfg, graph::GraphData& graph_data, std::string name, graph::ABBType type,
 		        const BasicBlock* entry, const BasicBlock* exit,
 		        typename boost::graph_traits<Graph>::vertex_descriptor function, bool is_entry) {
 			auto abb = boost::add_vertex(g);
@@ -48,20 +48,20 @@ namespace ara::step {
 			cfg.is_entry[o_edge.first] = is_entry;
 
 			assert(entry == exit);
-			cfg.is_exit[abb] = get(llvm_data.basic_blocks, entry, false, false);
-			cfg.is_loop_head[abb] = get(llvm_data.basic_blocks, entry, false, true);
+			cfg.is_exit[abb] = get(graph_data.basic_blocks, entry, false, false);
+			cfg.is_loop_head[abb] = get(graph_data.basic_blocks, entry, false, true);
 
 			return abb;
 		}
 
 		template <typename Graph>
-		void map_cfg(Graph& g, graph::CFG& cfg, graph::LLVMData& llvm_data, Logger& logger, bool dump_llvm_functions,
+		void map_cfg(Graph& g, graph::CFG& cfg, graph::GraphData& graph_data, Logger& logger, bool dump_llvm_functions,
 		             const std::string& prefix) {
 			std::map<const BasicBlock*, typename boost::graph_traits<Graph>::vertex_descriptor> abbs;
 
 			unsigned name_counter = 0;
 
-			for (Function& func : llvm_data.get_module()) {
+			for (Function& func : graph_data.get_module()) {
 
 				if (dump_llvm_functions) {
 					// dump LLVM functions as CFG into dot files
@@ -95,7 +95,7 @@ namespace ara::step {
 					if (isa<CallBase>(bb.front()) && !isInlineAsm(&bb.front()) && !isCallToLLVMIntrinsic(&bb.front())) {
 						ty = graph::ABBType::call;
 					}
-					auto abb = add_abb(g, cfg, llvm_data, ss.str(), ty, &bb, &bb, function, bb_counter == 0);
+					auto abb = add_abb(g, cfg, graph_data, ss.str(), ty, &bb, &bb, function, bb_counter == 0);
 					abbs[&bb] = abb;
 
 					bb_counter++;
@@ -115,7 +115,7 @@ namespace ara::step {
 					}
 				}
 				if (bb_counter == 0) {
-					add_abb(g, cfg, llvm_data, "empty", graph::ABBType::not_implemented, nullptr, nullptr, function,
+					add_abb(g, cfg, graph_data, "empty", graph::ABBType::not_implemented, nullptr, nullptr, function,
 					        true);
 					cfg.implemented[function] = false;
 				}
@@ -146,9 +146,9 @@ namespace ara::step {
 		const auto& prefix_opt = llvm_dump_prefix.get();
 		assert(prefix_opt);
 
-		graph::LLVMData& llvm_data = graph.get_llvm_data();
+		graph::GraphData& graph_data = graph.get_graph_data();
 		graph::CFG cfg = graph.get_cfg();
-		graph_tool::gt_dispatch<>()([&](auto& g) { map_cfg(g, cfg, llvm_data, logger, dopt && *dopt, *prefix_opt); },
+		graph_tool::gt_dispatch<>()([&](auto& g) { map_cfg(g, cfg, graph_data, logger, dopt && *dopt, *prefix_opt); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {

@@ -23,9 +23,9 @@ namespace ara::graph {
 	} // namespace llvmext
 
 	/**
-	 * Class to encapsulate all LLVM data structures needed for accessing LLVM objects.
+	 * Class to encapsulate all C++ data structures that are not elsewhere mapped.
 	 */
-	class LLVMData {
+	class GraphData {
 	  private:
 		llvm::LLVMContext context;
 		std::unique_ptr<llvm::Module> module;
@@ -40,7 +40,7 @@ namespace ara::graph {
 		std::map<const llvm::Function*, llvmext::Function> functions;
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
 
-		LLVMData() : module(nullptr), svfg(nullptr) {}
+		GraphData() : module(nullptr), svfg(nullptr) {}
 
 		llvm::LLVMContext& get_context() { return context; }
 

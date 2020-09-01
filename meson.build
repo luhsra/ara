@@ -95,20 +95,20 @@ def load(what, where):
 
 sys.path = [@1@] + sys.path
 
-load("llvm_data", "ara.graph.llvm_data")
+load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
 
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
-python_dirs = [source_dir, pyllco_dir, step_dir, llvm_data_dir]
+python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
-    depends: [step_mod, libgraph, llvm_data_mod],
+    depends: [step_mod, libgraph, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )

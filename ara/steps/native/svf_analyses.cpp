@@ -78,7 +78,7 @@ namespace ara::step {
 		SVFGBuilder svfBuilder(true);
 		std::unique_ptr<SVFG> svfg(svfBuilder.buildFullSVFG(ander));
 
-		graph.get_llvm_data().initialize_svfg(std::move(svfg));
+		graph.get_graph_data().initialize_svfg(std::move(svfg));
 
 		ICFG* icfg = pag->getICFG();
 		PTACallGraph* callgraph = ander->getPTACallGraph();

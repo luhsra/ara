@@ -12,7 +12,7 @@ def fake_step_module():
         module = importlib.import_module(what)
         sys.modules[where] = module
 
-    load("llvm_data", "ara.graph.llvm_data")
+    load("graph_data", "ara.graph.graph_data")
     load("py_logging", "ara.steps.py_logging")
     load("step", "ara.steps.step")
 

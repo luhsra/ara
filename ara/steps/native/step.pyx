@@ -9,7 +9,7 @@ stepmanager then fulfils this dependencies.
 
 cimport cstep
 cimport cgraph
-cimport llvm_data
+cimport graph_data
 
 include "project_config.pxi"
 
@@ -219,8 +219,8 @@ cdef class NativeStepFactory:
     def __call__(self, graph, step_manager):
         cdef unique_ptr[cstep.Step] _c_step
 
-        cdef llvm_data.PyLLVMData llvm_w = graph._llvm_data
-        cdef cgraph.Graph gwrap = cgraph.Graph(graph, llvm_w._c_data)
+        cdef graph_data.PyGraphData g_data = graph._graph_data
+        cdef cgraph.Graph gwrap = cgraph.Graph(graph, g_data._c_data)
 
         cdef NativeStep n_step = self._recipe_step(graph, step_manager,
                                                    self.get_name(),

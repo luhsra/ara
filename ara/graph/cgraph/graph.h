@@ -2,7 +2,7 @@
 
 #include "../mix.py"
 #include "common/exceptions.h"
-#include "llvm_data.h"
+#include "graph_data.h"
 
 #include <Python.h>
 #include <boost/graph/depth_first_search.hpp>
@@ -319,28 +319,28 @@ namespace ara::graph {
 	/**
 	 * C++ representation of the graph.
 	 *
-	 * It stores the Python graph and LLVMData separately, although the Python graph contains the LLVMData.
+	 * It stores the Python graph and GraphData separately, although the Python graph contains the GraphData.
 	 * This is for convenience since the actual extraction is done with Cython.
 	 */
 	class Graph {
 	  private:
 		PyObject* graph;
-		LLVMData* llvm_data;
+		GraphData* graph_data;
 
 	  public:
-		Graph() : graph(nullptr), llvm_data(nullptr) {}
-		Graph(PyObject* g, LLVMData& llvm_data) : graph(g), llvm_data(&llvm_data) {}
+		Graph() : graph(nullptr), graph_data(nullptr) {}
+		Graph(PyObject* g, GraphData& graph_data) : graph(g), graph_data(&graph_data) {}
 
 		/**
 		 * convenience function to get the llvm module directly
 		 */
-		llvm::Module& get_module() { return safe_deref(llvm_data).get_module(); }
+		llvm::Module& get_module() { return safe_deref(graph_data).get_module(); }
 		/**
 		 * convenience function to get the svfg directly
 		 */
-		SVF::SVFG& get_svfg() { return safe_deref(llvm_data).get_svfg(); }
+		SVF::SVFG& get_svfg() { return safe_deref(graph_data).get_svfg(); }
 
-		LLVMData& get_llvm_data() { return safe_deref(llvm_data); }
+		GraphData& get_graph_data() { return safe_deref(graph_data); }
 
 		PyObject* get_pygraph() { return graph; }
 
