@@ -14,7 +14,7 @@ from .option import Option, String, Choice
 from .freertos import Task
 from .os_util import SyscallCategory
 from ara.util import VarianceDict
-from .autosar import Task as AUTOSAR_Task, SyscallInfo
+from .autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter
 from appl.AUTOSAR.minexample_timing import Timings
 
 from collections import defaultdict
@@ -796,12 +796,31 @@ class MultiSSE(FlowAnalysis):
                                            "graph": sstg})
     
     def print_tasks(self):
+        # print all tasks
         log = "Tasks ("
         instances = self._g.instances
         for vertex in instances.vertices():
             task = instances.vp.obj[vertex]
-            log += task.name + ", "
+            if isinstance(task, AUTOSAR_Task):
+                log += task.name + ", "
         self._log.info(f"{log[:-2]})")
+
+        # print all counters
+        log = "Counters ("
+        for v in instances.vertices():
+            counter = instances.vp.obj[v]
+            if isinstance(counter, Counter):
+                log += f"{counter}, "
+        self._log.info(f"{log[:-2]})")
+
+        # print all alarms
+        log = "Alarms ("
+        for v in instances.vertices():
+            alarm = instances.vp.obj[v]
+            if isinstance(alarm, Alarm):
+                log += f"{alarm}, "
+        self._log.info(f"{log[:-2]})")
+
     
     def _find_tree_root(self, graph):
         if graph.num_vertices() == 0:

@@ -4,7 +4,7 @@ import json
 import ara.graph as _graph
 from .option import Option, String
 from .step import Step
-from .autosar import Task
+from .autosar import Task, Counter, Alarm, AlarmAction
 
 import graph_tool
 
@@ -39,6 +39,8 @@ class LoadOIL(Step):
         g.os.init(instances)
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
+
+            # read all tasks
             for task in cpu["tasks"]:
                 t = instances.add_vertex()
                 t_name = task["name"]
@@ -63,6 +65,73 @@ class LoadOIL(Step):
                                                "entry_point": t_func_name})
                 self._step_manager.chain_step({"name": "ICFG",
                                                "entry_point": t_func_name})
+        
+        def find_instance_by_name(name, _class):
+            obj = None
+            for v in instances.vertices():
+                obj = instances.vp.obj[v]
+                if isinstance(obj, _class):
+                    if obj.name == name:
+                        return obj
+
+            self.fail("Couldn't find instance with name " + name)
+
+        for cpu in oil["cpus"]:
+            cpu_id = cpu["id"]
+
+            # read all counters
+            for counter in cpu["counters"]:
+                c = instances.add_vertex()
+                instances.vp.obj[c] = Counter(counter["name"],
+                                              cpu_id,
+                                              counter["mincycle"],
+                                              counter["maxallowedvalue"],
+                                              counter["ticksperbase"],
+                                              counter["secondspertick"])
+                instances.vp.label[c] = counter["name"]
+
+            # read all alarms
+            for alarm in cpu["alarms"]:
+                a = instances.add_vertex()
+                instances.vp.label[a] = alarm["name"]
+
+                # find counter object in instances
+                c_name = alarm["counter"]
+                counter = find_instance_by_name(c_name, Counter)
+
+                # read alarm action
+                action = alarm["action"]
+                if action["action"].lower() == "incrementcounter":
+                    incrementcounter = find_instance_by_name(action["counter"], Counter)
+                    instances.vp.obj[a] = Alarm(alarm["name"],
+                                                cpu_id,
+                                                counter,
+                                                alarm["autostart"],
+                                                AlarmAction.INCREMENTCOUNTER,
+                                                incrementcounter=incrementcounter)
+                elif action["action"].lower() == "activatetask":
+                    task = find_instance_by_name(action["task"], Task)
+                    instances.vp.obj[a] = Alarm(alarm["name"],
+                                                cpu_id,
+                                                counter,
+                                                alarm["autostart"],
+                                                AlarmAction.ACTIVATETASK,
+                                                task=task)
+                elif action["action"].lower() == "setevent":
+                    task = find_instance_by_name(action["task"], Task)
+                    event = find_instance_by_name(action["event"], Event)
+                    instances.vp.obj[a] = Alarm(alarm["name"],
+                                                cpu_id,
+                                                counter,
+                                                alarm["autostart"],
+                                                AlarmAction.SETEVENT,
+                                                task=task,
+                                                event=event)
+
+                # set cycletime and alarmtime if autostart is true
+                if instances.vp.obj[a].autostart:
+                    instances.vp.obj[a].cycletime = alarm["cycletime"]
+                    instances.vp.obj[a].alarmtime = alarm["alarmtime"]
 
         g.instances = instances
 

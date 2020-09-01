@@ -25,6 +25,28 @@
 					"priority": 2,
 					"schedule": true
 				}
+			],
+			"counters": [
+				{
+					"name": "SystemCounter",
+					"mincycle": 1,
+					"maxallowedvalue": 1024,
+					"ticksperbase": 1,
+					"secondspertick": 0.001
+				}
+			],
+			"alarms": [
+				{
+					"name": "Alarm1",
+					"counter": "SystemCounter",
+					"autostart": true,
+					"cycletime": 50,
+					"alarmtime": 49,
+					"action": {
+						"action": "activatetask",
+						"task": "TaskF"
+					}
+				}
 			]
 		},
 		{
@@ -51,7 +73,9 @@
 					"priority": 2,
 					"schedule": true
 				}
-			]
+			],
+			"counters": [],
+			"alarms": []
 		}
 	]
 }

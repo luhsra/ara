@@ -3,6 +3,8 @@ from .os_base import OSBase
 from ara.util import get_logger
 from ara.graph.argument import CallPath
 
+from enum import Enum
+
 logger = get_logger("AUTOSAR")
 
 
@@ -27,6 +29,39 @@ class Task:
         self.autostart = autostart
         self.schedule = schedule
         self.cpu_id = cpu_id
+    
+    def __repr__(self):
+        return self.name
+
+class Counter:
+    def __init__(self, name, cpu_id, mincycle, maxallowedvalue, ticksperbase, secondspertick):
+        self.cpu_id = cpu_id
+        self.mincycle = mincycle
+        self.maxallowedvalue = maxallowedvalue
+        self.ticksperbase = ticksperbase
+        self.secondspertick = secondspertick
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+class AlarmAction(Enum):
+    ACTIVATETASK = 1,
+    SETEVENT = 2,
+    INCREMENTCOUNTER = 3
+
+class Alarm:
+    def __init__(self, name, cpu_id, counter, autostart, action, task=None, event=None, incrementcounter=None, alarmtime=None, cycletime=None):
+        self.cpu_id = cpu_id
+        self.name = name
+        self.counter = counter
+        self.autostart = autostart
+        self.action = action
+        self.task = task
+        self.event = event
+        self.incrementcounter = incrementcounter,
+        self.alarmtime = alarmtime,
+        self.cycletime = cycletime
     
     def __repr__(self):
         return self.name
