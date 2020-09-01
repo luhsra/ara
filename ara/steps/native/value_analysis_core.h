@@ -19,9 +19,9 @@ namespace ara::step {
 	  private:
 		struct VFGContainer {
 			const SVF::VFGNode* node;
-			CallPath call_path;
+			graph::CallPath call_path;
 
-			VFGContainer(const SVF::VFGNode* node, CallPath call_path) : node(node), call_path(call_path) {}
+			VFGContainer(const SVF::VFGNode* node, graph::CallPath call_path) : node(node), call_path(call_path) {}
 			VFGContainer() {}
 		};
 
@@ -44,31 +44,10 @@ namespace ara::step {
 			return (status == 0) ? res.get() : name;
 		}
 
-		/* a list of values and their (hopefully) corresponding paths along which they are retrieved */
-		typedef std::tuple<std::vector<const llvm::Constant*>, std::vector<std::vector<const llvm::Instruction*>>>
-		    ValPath;
+		void retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, graph::Argument& arg);
+		void collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call);
 
-		const llvm::Value* temp_traverse(const SVF::SVFGNode* node, const SVF::SVFG& vfg,
-		                                 std::vector<const SVF::SVFGNode*>& visited);
-		std::vector<const SVF::SVFGNode*> vstd;
-
-		const llvm::Constant* handle_value(const llvm::Value* value, const SVF::SVFG& vfg, const SVF::VFGNode* node);
-		ValPath retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, Argument& arg);
-		std::vector<ValPath> collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call);
-
-		/**
-		 * given a function, find its corresponding callgraph node and iterate over
-		 * its parents up to the respective root, saving each list of functions
-		 * in <curPath> first, and adding it to <paths> when a root node is reached
-		 *
-		 * this should just be bottom-up DFS
-		 */
-		void getCallPaths(const llvm::Function* f, std::vector<std::vector<const llvm::Instruction*>>& paths,
-		                  std::vector<const llvm::Instruction*>& curPath);
-
-		Arguments get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
-
-		bool handle_stmt_node(const SVF::StmtVFGNode& node);
+		graph::Arguments get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
 		template <typename Graph>
 		void get_values(Graph& g, const SVF::SVFG& vfg) {
@@ -78,8 +57,8 @@ namespace ara::step {
 			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
 				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
-				Arguments args = get_value(safe_deref(called_func), vfg);
-				cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
+				graph::Arguments args = get_value(safe_deref(called_func), vfg);
+				// cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
 			}
 			// if (dump_stats) {
 			// 	json_parser::write_json(prefix + "value_analysis_statistics.json", stats);

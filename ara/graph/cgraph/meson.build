@@ -10,7 +10,7 @@ graph_data_pyx_cpp = custom_target('graph_data_pyx',
 
 graph_data_mod = py3_inst.extension_module('graph_data',
   graph_data_pyx_cpp,
-  dependencies: [py3_inst.dependency(), llvm_dep, common_dep, svf_dep]
+  dependencies: [py3_inst.dependency(), llvm_dep, graph_tool_dep, common_dep, svf_dep]
 )
 graph_data_dir = meson.current_build_dir()
 
