@@ -96,11 +96,16 @@ namespace ara::graph {
 		// value = the value that is retrieved when following this path
 		std::unordered_map<CallPath, const llvm::Value&> values;
 
-	  public:
 		Argument(const llvm::AttributeSet& attrs) : attrs(attrs), values() {}
 		Argument(const llvm::AttributeSet& attrs, const llvm::Value& value) : attrs(attrs), values() {
 			values.insert(std::pair<CallPath, const llvm::Value&>(CallPath(), value));
 		}
+
+		struct ArgumentSharedEnabler;
+
+	  public:
+		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs);
+		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs, const llvm::Value& value);
 
 		/**
 		 * Set a single value.
@@ -159,6 +164,8 @@ namespace ara::graph {
 	  private:
 		std::shared_ptr<Argument> return_value = nullptr;
 
+		std::string entry_fun = "";
+
 		inline void py_throw(bool condition) const {
 			if (condition) {
 				PyErr_Print();
@@ -166,9 +173,13 @@ namespace ara::graph {
 			}
 		}
 
-		std::string entry_fun = "";
+		Arguments() {}
 
 	  public:
+		static std::shared_ptr<Arguments> get() {
+			struct MakeSharedEnabler : public Arguments {};
+			return std::make_shared<MakeSharedEnabler>();
+		}
 		bool has_return_value() const { return return_value != nullptr; }
 		const Argument& get_return_value() const {
 			assert(has_return_value());

@@ -90,13 +90,13 @@ namespace ara::step {
 
 			assert(val != nullptr);
 			logger.debug() << "retrieving value: \033[35m" << *val << "\033[0m" << std::endl;
-			graph::Argument arg(attrs);
-			retrieve_value(vfg, *val, arg);
+			std::shared_ptr<graph::Argument> arg = graph::Argument::get(attrs);
+			retrieve_value(vfg, *val, *arg);
 		}
 	}
 
-	graph::Arguments ValueAnalysisCore::get_value(const llvm::CallBase& called_func, const SVFG& vfg) {
-		graph::Arguments args;
+	std::shared_ptr<graph::Arguments> ValueAnalysisCore::get_value(const llvm::CallBase& called_func, const SVFG& vfg) {
+		std::shared_ptr<graph::Arguments> args = graph::Arguments::get();
 		llvm::AttributeSet attrs;
 		llvm::Function* func = called_func.getCalledFunction();
 		if (func) {
@@ -123,10 +123,10 @@ namespace ara::step {
 			const llvm::User* ur = called_func.user_back();
 			llvm::Value* retval = ur->getOperand(1);
 			logger.debug() << "return: " << *retval << std::endl;
-			args.set_return_value(std::make_unique<graph::Argument>(llvm::AttributeSet(), *retval));
+			args->set_return_value(graph::Argument::get(llvm::AttributeSet(), *retval));
 		}
 
-		this->logger.debug() << "Retrieved " << args.size() << " arguments for call " << called_func << std::endl;
+		this->logger.debug() << "Retrieved " << args->size() << " arguments for call " << called_func << std::endl;
 		this->logger.debug() << "================================================" << std::endl;
 		std::cout << std::endl;
 		return args;

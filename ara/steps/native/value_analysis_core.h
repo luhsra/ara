@@ -46,7 +46,7 @@ namespace ara::step {
 		void retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, graph::Argument& arg);
 		void collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call);
 
-		graph::Arguments get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
+		shared_ptr<graph::Arguments> get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
 		template <typename Graph>
 		void get_values(Graph& g, const SVF::SVFG& vfg) {
@@ -56,7 +56,7 @@ namespace ara::step {
 			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
 				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
-				graph::Arguments args = get_value(safe_deref(called_func), vfg);
+				shared_ptr<graph::Arguments> args = get_value(safe_deref(called_func), vfg);
 				// cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
 			}
 			// if (dump_stats) {

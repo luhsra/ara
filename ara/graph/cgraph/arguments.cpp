@@ -70,6 +70,17 @@ namespace ara::graph {
 		return os;
 	}
 
+	struct Argument::ArgumentSharedEnabler : public Argument {
+		template <typename... Args>
+		ArgumentSharedEnabler(Args&&... args) : Argument(std::forward<Args>(args)...) {}
+	};
+	std::shared_ptr<Argument> Argument::get(const llvm::AttributeSet& attrs) {
+		return std::make_shared<ArgumentSharedEnabler>(attrs);
+	}
+	std::shared_ptr<Argument> Argument::get(const llvm::AttributeSet& attrs, const llvm::Value& value) {
+		return std::make_shared<ArgumentSharedEnabler>(attrs, value);
+	}
+
 	bool Argument::is_constant() const {
 		for (const auto& value : values) {
 			if (!llvm::isa<llvm::Constant>(value.second)) {
