@@ -26,7 +26,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 2
+MAX_UPDATES = 3
 
 sse_counter = 0
 
@@ -587,9 +587,9 @@ class MultiSSE(FlowAnalysis):
                             if intervall not in s_state.times:
                                 s_state.times.append(intervall)
                     
-                    sstg_state.update_timings()
-                    if sstg_state.updated < MAX_UPDATES:  
-                        sstg_state.updated += 1  
+                    self.run_sse(sstg_state)
+                    if sstg_state.updated < MAX_UPDATES:   
+                        sstg_state.updated += 1 
                         update_list.append(sstg_state)
                     
                     # add edge to existing state in sstg
@@ -601,6 +601,7 @@ class MultiSSE(FlowAnalysis):
         res = []
         for new_state in new_states:
             self.run_sse(new_state)
+            new_state.updated += 1
 
             # check for duplicates
             found = False
@@ -625,19 +626,32 @@ class MultiSSE(FlowAnalysis):
 
     def run_sse(self, metastate):
         """Run the single core sse for the given metastate on each cpu."""
-        metastate.updated += 1
         for cpu, graph in metastate.state_graph.items():
             global sse_counter
             sse_counter += 1
-            stack = []
 
-            for v in graph.vertices():
-                stack.append(v)
+            v_start = graph.get_vertices()[0]
+            stack = [v_start]
+            found_list = []
 
             while stack:
                 vertex = stack.pop(0)
                 state = graph.vp.state[vertex]
-                for new_state in self.execute_state(state, metastate.sync_states[cpu]):
+                found_list.append(vertex)
+
+                # add existing neighbors to stack
+                for v in graph.vertex(vertex).out_neighbors():                   
+                    # check for already found nodes
+                    found = False
+                    for v_found in found_list:
+                        if v == v_found:
+                            found = True
+                            break
+
+                    if not found:
+                        stack.append(v)
+
+                for new_state in self.execute_state(vertex, metastate.sync_states[cpu], graph):
                     found = False
 
                     # check for duplicate states
@@ -657,58 +671,94 @@ class MultiSSE(FlowAnalysis):
                         stack.append(new_vertex)
 
         # calculate all timings
-        metastate.update_timings()
+        # metastate.update_timings()
         
-    def execute_state(self, state, sync_list):
+    def execute_state(self, state_vertex, sync_list, graph):
         new_states = []
         # self._log.info(f"Executing state: {state}")
 
         # context used for computing ABB timings, this should be something useful later on
         context = None
         
+        state = graph.vp.state[state_vertex]
         task = state.get_scheduled_task()
         if task is not None:
             abb = state.abbs[task.name]
             if abb is not None:
+                min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
 
-                if self._icfg.vp.type[abb] == ABBType.syscall:
-                    assert self._g.os is not None
-                    if self._g.os.is_inter_cpu_syscall(self._lcfg, abb, state, state.cpu):
-                        # put state into list of syncronization syscalls (inter cpu syscalls)
-                        sync_list.append(state)
-                    else:
-                        new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
+                # check for existing neighbors
+                if len(graph.get_out_neighbors(state_vertex)) == 0:
+                    ########## COMPUTE NEW STATES ######################
 
-                        new_states.append(new_state)
-                elif self._icfg.vp.type[abb] == ABBType.call:
-                    for n in self._icfg.vertex(abb).out_neighbors():
+                    # syscall handling
+                    if self._icfg.vp.type[abb] == ABBType.syscall:
+                        assert self._g.os is not None
+                        if self._g.os.is_inter_cpu_syscall(self._lcfg, abb, state, state.cpu):
+                            # put state into list of syncronization syscalls (inter cpu syscalls)
+                            sync_list.append(state)
+                        else:
+                            new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
+
+                            new_states.append(new_state)
+                    
+                    # call block handling
+                    elif self._icfg.vp.type[abb] == ABBType.call:
+                        for n in self._icfg.vertex(abb).out_neighbors():
+                            new_state = state.copy()
+                            new_state.abbs[task.name] = n
+
+                            # find next call node
+                            call_node = None
+                            for neighbor in state.callgraphs[task.name].vertex(state.call_nodes[task.name]).out_neighbors():
+                                if state.callgraphs[task.name].vp.cfglink[neighbor] == abb:
+                                    call_node = neighbor
+                                    break
+                            new_state.call_nodes[task.name] = call_node
+
+                            new_states.append(new_state)
+
+                    # exit block handling
+                    elif (self._icfg.vp.is_exit[abb] and
+                        self._icfg.vertex(abb).out_degree() > 0):
                         new_state = state.copy()
-                        new_state.abbs[task.name] = n
-
-                        # find next call node
-                        call_node = None
-                        for neighbor in state.callgraphs[task.name].vertex(state.call_nodes[task.name]).out_neighbors():
-                            if state.callgraphs[task.name].vp.cfglink[neighbor] == abb:
-                                call_node = neighbor
-                                break
-                        new_state.call_nodes[task.name] = call_node
+                        call = new_state.callgraphs[task.name].vp.cfglink[new_state.call_nodes[task.name]]
+                        neighbors = self._lcfg.vertex(call).out_neighbors()
+                        new_state.abbs[task.name] = next(neighbors)
+                        new_state.call_nodes[task.name] = next(state.call_nodes[task.name].in_neighbors())
 
                         new_states.append(new_state)
-                elif (self._icfg.vp.is_exit[abb] and
-                    self._icfg.vertex(abb).out_degree() > 0):
-                    new_state = state.copy()
-                    call = new_state.callgraphs[task.name].vp.cfglink[new_state.call_nodes[task.name]]
-                    neighbors = self._lcfg.vertex(call).out_neighbors()
-                    new_state.abbs[task.name] = next(neighbors)
-                    new_state.call_nodes[task.name] = next(state.call_nodes[task.name].in_neighbors())
+                    
+                    # computation block handling
+                    elif self._icfg.vp.type[abb] == ABBType.computation:
+                        for n in self._icfg.vertex(abb).out_neighbors():
+                            new_state = state.copy()
+                            new_state.abbs[task.name] = n
 
-                    new_states.append(new_state)
-                elif self._icfg.vp.type[abb] == ABBType.computation:
-                    for n in self._icfg.vertex(abb).out_neighbors():
-                        new_state = state.copy()
-                        new_state.abbs[task.name] = n
+                            new_states.append(new_state)
+                
+                ############## UPDATE TIMINGS ###################
 
-                        new_states.append(new_state)
+                # put existing neighbors and new states in update list
+                update_list = new_states.copy()
+                for v in graph.vertex(state_vertex).out_neighbors():
+                    new_state = graph.vp.state[v]
+                    update_list.append(new_state)
+                
+                # update timing intervalls for each state in update list
+                for new_state in update_list:                    
+                    new_task = new_state.get_scheduled_task()
+                    new_state.times = []
+
+                    if new_task is not None:
+                        abb = new_state.abbs[new_task.name] 
+                        max_time = Timings.get_max_time(new_state.cfg.vp.name[abb], context)
+
+                        # update all intervalls
+                        for intervall in state.times:
+                            new_state.times.append((intervall[0] + min_time, intervall[1] + max_time))
+
+                
 
         return new_states
 
