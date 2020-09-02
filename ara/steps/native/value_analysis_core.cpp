@@ -40,6 +40,7 @@ namespace ara::step {
 			const VFGNode* current_node = current.node;
 			// copy
 			graph::CallPath next_path = current.call_path;
+			logger.info() << "CallPath: " << next_path << std::endl;
 
 			for (VFGNode::const_iterator it = current_node->InEdgeBegin(); it != current_node->InEdgeEnd(); ++it) {
 				VFGEdge* edge = *it;
@@ -53,7 +54,7 @@ namespace ara::step {
 					assert(bi == s_callgraph->getCallEdgeEnd(cbn) && "more than one edge found");
 					assert(call_site->getCallSiteID() == cde->getCallSiteId() && "call side IDs does not match.");
 					logger.info() << "Callsite: " << *call_site << std::endl;
-					next_path.add_call_site(callgraph, call_site);
+					next_path.add_call_site(callgraph, safe_deref(call_site));
 				}
 
 				const VFGNode* next_node = (*it)->getSrcNode();

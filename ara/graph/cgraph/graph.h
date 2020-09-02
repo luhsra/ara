@@ -302,18 +302,57 @@ namespace ara::graph {
 		const llvm::CallBase* get_call_base(const ABBType type, const llvm::BasicBlock& bb) const;
 	};
 
+	class Graph;
+
 	struct CallGraph {
+	  private:
+		friend class Graph;
+		CallGraph(graph_tool::GraphInterface& graph) : graph(graph){};
+
+	  public:
 		graph_tool::GraphInterface& graph;
 		/* vertex properties */
 		typename graph_tool::vprop_map_t<long>::type function;
+		typename graph_tool::vprop_map_t<std::string>::type function_name;
 		typename graph_tool::vprop_map_t<int64_t>::type svf_vlink;
 		/* edge properties */
 		typename graph_tool::eprop_map_t<long>::type callsite;
+		typename graph_tool::eprop_map_t<std::string>::type callsite_name;
 		typename graph_tool::eprop_map_t<int64_t>::type svf_elink;
 
 		typename graph_tool::gprop_map_t<PyObject*>::type cfg;
 
-		CallGraph(graph_tool::GraphInterface& graph) : graph(graph){};
+		/**
+		 * Return the corresponding SVF callgraph node to the given node.
+		 */
+		template <class Graph>
+		const SVF::PTACallGraphNode* get_svf_vlink(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return reinterpret_cast<const SVF::PTACallGraphNode*>(svf_vlink[v]);
+		}
+
+		/**
+		 * Return the corresponding SVF callgraph edge to the given edge.
+		 */
+		template <class Graph>
+		const SVF::PTACallGraphEdge* get_svf_elink(typename boost::graph_traits<Graph>::edge_descriptor v) const {
+			return reinterpret_cast<const SVF::PTACallGraphEdge*>(svf_elink[v]);
+		}
+
+		/**
+		 * Return Edge that belongs to the appropriate Callgraph edge.
+		 *
+		 * Throws exception, if edge cannot be mapped.
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::edge_descriptor back_map(const Graph g,
+		                                                              const SVF::PTACallGraphEdge& edge) const {
+			for (auto e : boost::make_iterator_range(boost::edges(g))) {
+				if (get_svf_elink<Graph>(e) == &edge) {
+					return e;
+				}
+			}
+			throw VertexNotFound();
+		}
 	};
 
 	/**

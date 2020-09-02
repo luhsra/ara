@@ -72,6 +72,7 @@ namespace ara::step {
 					    "The function vertex of the graph tool CFG can not be stored in CallGraph vertex property due "
 					    "to incompatible types");
 					callgraph.function[call_node] = func_v;
+					callgraph.function_name[call_node] = cfg.name[func_v];
 					callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
 				}
 				return call_node;
@@ -93,6 +94,7 @@ namespace ara::step {
 				CFVertex abb = cfg.back_map(cfg_obj, safe_deref(out_bb));
 
 				callgraph.callsite[edge.first] = abb;
+				callgraph.callsite_name[edge.first] = cfg.name[abb];
 				callgraph.svf_elink[edge.first] = reinterpret_cast<uintptr_t>(&svf_edge);
 
 				return edge.first;
