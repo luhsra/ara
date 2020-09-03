@@ -54,6 +54,7 @@ namespace ara::step {
 			// ptree stats;
 			for (auto abb :
 			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
+				logger.debug() << "Analyzing: " << cfg.name[abb] << std::endl;
 				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
 				shared_ptr<graph::Arguments> args = get_value(safe_deref(called_func), vfg);
