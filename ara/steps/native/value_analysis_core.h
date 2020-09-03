@@ -14,8 +14,17 @@
 #include <graph.h>
 
 namespace ara::step {
+
 	class ValueAnalysisCore : public EntryPointStep<ValueAnalysisCore> {
 	  private:
+		struct VFGContainer {
+			const SVF::VFGNode* node;
+			CallPath call_path;
+
+			VFGContainer(const SVF::VFGNode* node, CallPath call_path) : node(node), call_path(call_path) {}
+			VFGContainer() {}
+		};
+
 		using EntryPointStep<ValueAnalysisCore>::EntryPointStep;
 
 		const static inline option::TOption<option::Bool> dump_stats_template{
@@ -44,7 +53,7 @@ namespace ara::step {
 		std::vector<const SVF::SVFGNode*> vstd;
 
 		const llvm::Constant* handle_value(const llvm::Value* value, const SVF::SVFG& vfg, const SVF::VFGNode* node);
-		ValPath retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value);
+		ValPath retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, Argument& arg);
 		std::vector<ValPath> collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call);
 
 		/**
@@ -57,7 +66,9 @@ namespace ara::step {
 		void getCallPaths(const llvm::Function* f, std::vector<std::vector<const llvm::Instruction*>>& paths,
 		                  std::vector<const llvm::Instruction*>& curPath);
 
-		Arguments get_value(const llvm::BasicBlock& bb, const llvm::CallBase& called_func, const SVF::SVFG& vfg);
+		Arguments get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
+
+		bool handle_stmt_node(const SVF::StmtVFGNode& node);
 
 		template <typename Graph>
 		void get_values(Graph& g, const SVF::SVFG& vfg) {
@@ -66,16 +77,9 @@ namespace ara::step {
 			for (auto abb :
 			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
 				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
-				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&bb->front());
-				// logger.debug() << "call base aka instruction: " << *called_func << std::endl;
-				if (called_func) {
-					Arguments args = get_value(safe_deref(bb), safe_deref(called_func), vfg);
-					cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
-				} else {
-					std::stringstream ss;
-					ss << "Syscall ABB (" << cfg.name[abb] << ") has abigoues function";
-					fail(ss.str());
-				}
+				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
+				Arguments args = get_value(safe_deref(called_func), vfg);
+				cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
 			}
 			// if (dump_stats) {
 			// 	json_parser::write_json(prefix + "value_analysis_statistics.json", stats);
