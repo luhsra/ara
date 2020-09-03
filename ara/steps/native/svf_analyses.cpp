@@ -76,7 +76,9 @@ namespace ara::step {
 		Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
 
 		SVFGBuilder svfBuilder;
-		svfBuilder.buildFullSVFG(ander);
+		std::unique_ptr<SVFG> svfg(svfBuilder.buildFullSVFG(ander));
+
+		graph.get_llvm_data().initialize_svfg(std::move(svfg));
 
 		ICFG* icfg = pag->getICFG();
 		PTACallGraph* callgraph = ander->getPTACallGraph();
