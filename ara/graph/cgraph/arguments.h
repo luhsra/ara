@@ -1,18 +1,21 @@
 #pragma once
-#include <Python.h>
-
 #include "common/exceptions.h"
 
+#include <Graphs/PTACallGraph.h>
+#include <Python.h>
 #include <functional>
 #include <llvm/IR/Instructions.h>
 #include <pyllco.h>
 #include <vector>
 
 namespace ara {
+	using CallPath = std::vector<const SVF::PTACallGraphEdge*>;
+	/**
+	 * Stores all data for an argument. Mainly, this is the list of possible values dependend on its callpaths.
+	 *
+	 * An Argument can either have a single (callpath independent) value or multiple (callpath dependent) values.
+	 */
 	class Argument {
-	  public:
-		using CallPath = std::vector<const llvm::Instruction*>;
-
 	  private:
 		llvm::AttributeSet attrs;
 		// key = call_path (list of call instructions)
@@ -20,18 +23,46 @@ namespace ara {
 		std::map<CallPath, const llvm::Value&> values;
 
 	  public:
-		Argument(const llvm::AttributeSet& attrs, const llvm::Value& l_const) : attrs(attrs), values() {
-			values.insert(std::pair<CallPath, const llvm::Value&>({}, l_const));
+		Argument(const llvm::AttributeSet& attrs) : attrs(attrs), values() {}
+		Argument(const llvm::AttributeSet& attrs, const llvm::Value& value) : attrs(attrs), values() {
+			values.insert(std::pair<CallPath, const llvm::Value&>({}, value));
 		}
 
+		/**
+		 * Set a single value.
+		 */
+		void set_value(const llvm::Value& value) { values.insert(std::pair<CallPath, const llvm::Value&>({}, value)); }
+
+		/**
+		 * Set a callpath dependent value.
+		 */
 		void add_variant(CallPath& key, const llvm::Value& value) {
 			values.insert(std::pair<CallPath, const llvm::Value&>(key, value));
 		}
 
+		/**
+		 * Is there a unique determined value?
+		 */
+		bool is_determined() const { return values.size() == 1; }
+		/**
+		 * Are all values constants?
+		 */
+		bool is_constant() const;
+
+		/**
+		 * Get the AttributeSet that belongs to this argument.
+		 */
 		llvm::AttributeSet get_attrs() const { return attrs; }
 
-		const llvm::Value& get_value(CallPath key = {}) const { return values.at(key); }
+		/**
+		 * Get the value at a specific call path. Per default it returns the unique determined value.
+		 * If the Argument is determined, the unique value will be returned, regardless what the key is.
+		 */
+		const llvm::Value& get_value(CallPath key = {}) const;
 
+		/**
+		 * Common iterators that return a std::pair<CallPath, const llvm::Value&>.
+		 */
 		auto begin() noexcept { return values.begin(); }
 		auto begin() const noexcept { return values.begin(); }
 		auto cbegin() const noexcept { return values.cbegin(); }
