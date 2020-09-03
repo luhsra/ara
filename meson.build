@@ -108,7 +108,7 @@ python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
-    depends: [step_mod, libgraph, graph_data_mod],
+    depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )
