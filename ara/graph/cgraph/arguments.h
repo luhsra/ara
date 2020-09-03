@@ -160,7 +160,7 @@ namespace ara::graph {
 	 */
 	using MetaArguments = std::vector<std::shared_ptr<Argument>>;
 
-	class Arguments : public MetaArguments {
+	class Arguments : public MetaArguments, public std::enable_shared_from_this<Arguments> {
 	  private:
 		std::shared_ptr<Argument> return_value = nullptr;
 
@@ -190,32 +190,10 @@ namespace ara::graph {
 		void set_entry_fun(std::string name) { this->entry_fun = name; }
 		std::string get_entry_fun() { return this->entry_fun; }
 
-		// /**
-		//  * Return the current Arguments vector as Python list. The list is a new object and contains only references
-		//  to
-		//  * currently existing constants. It is _not_ updated, if the Arguments object is extended.
-		//  *
-		//  * The function does _not_ create a list of the ARA Argument Python class but instead use builtin data types.
-		//  It
-		//  * returns a list of tuples where the first tuple element defines the attribute set and the second element a
-		//  * list of constant. This list consists again of tuples that have as key a list of basic block pointers (to
-		//  the
-		//  * call basic blocks) and as value the constant object.
-		//  *
-		//  * That means one argument with the Constant: llvm.ConstantPointerNull under the CallPath '123 -> 345' is
-		//  stored
-		//  * as:
-		//  * [
-		//  *     (AttributeSet(),
-		//  *      [
-		//  *          ([123, 345], llvm.ConstantPointerNull)
-		//  *      ]
-		//  *     )
-		//  * ]
-		//  *
-		//  * The first element (index 0) in the list is the return value or None, if not present.
-		//  */
-		// PyObject* get_python_list() const;
+		/**
+		 * Return the current Arguments vector as correspondent Python object.
+		 */
+		PyObject* get_python_obj();
 	};
 
 	using EntryArguments = std::map<std::string, Arguments>;

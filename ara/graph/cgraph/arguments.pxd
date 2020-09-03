@@ -2,6 +2,7 @@
 # vim: set et ts=4 sw=4:
 
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 
 cdef extern from "arguments.h" namespace "ara::graph":
     cdef cppclass CallPath:
@@ -12,4 +13,5 @@ cdef extern from "arguments.h" namespace "ara::graph":
         bool is_constant()
 
     cdef cppclass Arguments:
-        pass
+        @staticmethod
+        shared_ptr[Arguments] get()

@@ -17,5 +17,19 @@ cdef class Argument:
     def is_constant(self):
         return deref(self._c_argument).is_constant()
 
+
 cdef class Arguments:
-    cdef unique_ptr[CArguments] _c_arguments
+    cdef shared_ptr[CArguments] _c_arguments
+
+    def __cinit__(self, create=True):
+        if create:
+            self._c_arguments = CArguments.get()
+
+    def __init__(self, create=True):
+        pass
+
+
+cdef public object py_get_arguments(shared_ptr[CArguments] c_args):
+    args = Arguments(create=False);
+    args._c_arguments = c_args
+    return args
