@@ -14,7 +14,7 @@
 #include <graph.h>
 
 namespace ara::step {
-	class ValueAnalysisCore : public EntryPointStep<ValueAnalysisCore> {
+	class ValueAnalysis : public EntryPointStep<ValueAnalysis> {
 	  private:
 		struct VFGContainer {
 			const SVF::VFGNode* node;
@@ -24,7 +24,7 @@ namespace ara::step {
 			VFGContainer() {}
 		};
 
-		using EntryPointStep<ValueAnalysisCore>::EntryPointStep;
+		using EntryPointStep<ValueAnalysis>::EntryPointStep;
 
 		const static inline option::TOption<option::Bool> dump_stats_template{
 		    "dump_stats", "Export JSON statistics about the value-analysis depth."};
@@ -65,7 +65,7 @@ namespace ara::step {
 		}
 
 	  public:
-		static std::string get_name() { return "ValueAnalysisCore"; }
+		static std::string get_name() { return "ValueAnalysis"; }
 		static std::string get_description();
 		static Step::OptionVec get_local_options() { return {dump_stats_template}; }
 

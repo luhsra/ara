@@ -1,6 +1,6 @@
 // vim: set noet ts=4 sw=4:
 
-#include "value_analysis_core.h"
+#include "value_analysis.h"
 
 #include "common/llvm_common.h"
 
@@ -17,7 +17,7 @@ using namespace boost::property_tree;
 using namespace SVF;
 
 namespace ara::step {
-	void ValueAnalysisCore::retrieve_value(const SVFG& vfg, const llvm::Value& value, graph::Argument& arg) {
+	void ValueAnalysis::retrieve_value(const SVFG& vfg, const llvm::Value& value, graph::Argument& arg) {
 		// logger.debug() << "Trying to get value of " << value << std::endl;
 		PAG* pag = PAG::getPAG();
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -76,7 +76,7 @@ namespace ara::step {
 		}
 	}
 
-	void ValueAnalysisCore::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call) {
+	void ValueAnalysis::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call) {
 		if (isCallToLLVMIntrinsic(&call)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -95,7 +95,7 @@ namespace ara::step {
 		}
 	}
 
-	std::shared_ptr<graph::Arguments> ValueAnalysisCore::get_value(const llvm::CallBase& called_func, const SVFG& vfg) {
+	std::shared_ptr<graph::Arguments> ValueAnalysis::get_value(const llvm::CallBase& called_func, const SVFG& vfg) {
 		std::shared_ptr<graph::Arguments> args = graph::Arguments::get();
 		llvm::AttributeSet attrs;
 		llvm::Function* func = called_func.getCalledFunction();
@@ -132,23 +132,23 @@ namespace ara::step {
 		return args;
 	}
 
-	llvm::json::Array ValueAnalysisCore::get_configured_dependencies() {
+	llvm::json::Array ValueAnalysis::get_configured_dependencies() {
 		const auto& entry_point_name = entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
 		return llvm::json::Array{llvm::json::Object{{{"name", "Syscall"}, {"entry_point", *entry_point_name}}}};
 	}
 
-	std::string ValueAnalysisCore::get_description() {
+	std::string ValueAnalysis::get_description() {
 		return "Perform a value analysis for all system calls (core step).";
 	}
 
-	void ValueAnalysisCore::init_options() {
-		EntryPointStep<ValueAnalysisCore>::init_options();
+	void ValueAnalysis::init_options() {
+		EntryPointStep<ValueAnalysis>::init_options();
 		dump_stats = dump_stats_template.instantiate(get_name());
 		opts.emplace_back(dump_stats);
 	}
 
-	void ValueAnalysisCore::run() {
+	void ValueAnalysis::run() {
 		graph::CFG cfg = graph.get_cfg();
 		const auto& prefix = dump_prefix.get();
 		const auto& entry_point_name = entry_point.get();
