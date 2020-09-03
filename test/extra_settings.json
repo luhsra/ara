@@ -18,6 +18,14 @@
 		"log_level": "debug"
 	},
 
+	"Syscall": {
+		"dump": true
+	},
+
+	"ValueAnalysisCore": {
+		"log_level": "debug"
+	},
+
 	"logger": {
 		"StepManager": "debug"
 	}
