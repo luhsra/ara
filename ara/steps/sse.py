@@ -304,8 +304,9 @@ class MultiState:
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
-        self.times = [(0, 0)] # list of time intervalls this state is valid in
-        self.times_merged = [] # same as times list, but without overlapping intervalls
+        self.global_times = [(0, 0)] # list of global time intervalls this state is valid in
+        self.local_times = [] # list of local time intervalls this state is valid within a metastate
+        # self.times_merged = [] # same as times list, but without overlapping intervalls
         
     def get_scheduled_task(self):
         if len(self.activated_tasks) >= 1:
@@ -314,31 +315,55 @@ class MultiState:
             return None
 
     def add_time(self, min_time, max_time):
-        for i, intervall in enumerate(self.times):
-            self.times[i] = (intervall[0] + min_time, intervall[1] + max_time)
+        self.min_time = min_time
+        self.max_time = max_time
+        for i, intervall in enumerate(self.local_times):
+            self.local_times[i] = (intervall[0] + min_time, intervall[1] + max_time)
         
+        self.merge_times()
+    
+    def reset_local_time(self):
+        self.local_times = [(self.min_time, self.max_time)]
+
+    def calc_global_time(self):
+        """Calculates the global time intervalls for this state."""
+        new_global_times = []
+        local_copy = self.local_times.copy()
+        local_copy.sort(key=lambda i: i[0])
+        min_time = local_copy[0][0]
+
+        local_copy.sort(key=lambda i: i[1], reverse=True)
+        max_time = local_copy[0][1]
+
+        for intervall in self.global_times:
+            new_global_times.append((intervall[0] + min_time, intervall[1] + max_time))
+        
+        self.global_times = new_global_times
+        self.merge_times()
     
     def merge_times(self):
         """Merges list of time intervalls so that overlapping intervalls are merged into one."""
-        self.times_merged.extend(self.times)
-        self.times_merged.sort(key=lambda i: i[0])
-        while True:
-            new_times = self.times_merged.copy()
-            for i, time_1 in enumerate(new_times):
-                if i != len(new_times) - 1:
-                    time_2 = new_times[i + 1]
-                    if not time_1[1] < time_2[0]: 
-                        intervall = ()  
-                        if time_1[1] < time_2[1]:
-                            intervall = (time_1[0], time_2[1])
-                        else:
-                            intervall = (time_1[0], time_1[1])
-                        
-                        self.times_merged[i] = intervall
-                        self.times_merged.pop(i + 1)
-                        break
-            if new_times == self.times_merged:
-                break
+        merge_list = [self.global_times, self.local_times]
+
+        for times in merge_list:
+            times.sort(key=lambda i: i[0])
+            while True:
+                new_times = times.copy()
+                for i, time_1 in enumerate(new_times):
+                    if i != len(new_times) - 1:
+                        time_2 = new_times[i + 1]
+                        if not time_1[1] < time_2[0]: 
+                            intervall = ()  
+                            if time_1[1] < time_2[1]:
+                                intervall = (time_1[0], time_2[1])
+                            else:
+                                intervall = (time_1[0], time_1[1])
+                            
+                            times[i] = intervall
+                            times.pop(i + 1)
+                            break
+                if new_times == times:
+                    break
 
     def __repr__(self):
         self.merge_times()
@@ -352,14 +377,13 @@ class MultiState:
             else: 
                 ret += "None"
             ret += ", "
-        ret = ret[:-2] + "] " + str(self.times_merged)
+        ret = ret[:-2] + "] " + str(self.global_times)
         return ret
 
     def __eq__(self, other):
         class_eq = self.__class__ == other.__class__
         abbs_eq = self.abbs == other.abbs
         activated_task_eq = self.activated_tasks == other.activated_tasks
-        # multi_ret_eq = self.gcfg_multi_ret == other.gcfg_multi_ret
         return class_eq and abbs_eq and activated_task_eq
 
     def copy(self):
@@ -373,8 +397,8 @@ class MultiState:
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
-        scopy.times = self.times.copy()
-        scopy.times_merged = []
+        scopy.global_times = self.global_times.copy()
+        scopy.local_times = self.local_times.copy()
 
         return scopy
 
@@ -448,7 +472,8 @@ class MultiSSE(FlowAnalysis):
             abb = state.abbs[state.get_scheduled_task().name]
             context = None
             max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
-            state.times = [(0, max_time)]
+            state.local_times = [(0, max_time)]
+            state.global_times = [(0, max_time)]
 
         # run single core sse for each cpu
         self.run_sse(metastate)
@@ -507,22 +532,24 @@ class MultiSSE(FlowAnalysis):
 
                                 # calculate new timing intervalls for the new states
                                 new_times = []
-                                for i, intervall_s in enumerate(sync_state.times):
-                                    intervall_n = next_state.times[i]
+                                for i, intervall_s in enumerate(sync_state.local_times):
+                                    for j, intervall_n in enumerate(next_state.local_times):
 
-                                    # check if intervall is disjunct
-                                    if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
-                                        new_min = max(intervall_s[0], intervall_n[0])
-                                        new_max = min(intervall_s[1], intervall_n[1])
-                                        new_times.append((new_min, new_max))
+                                        # check if intervall is disjunct
+                                        if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
+                                            new_min = max(intervall_s[0], intervall_n[0])
+                                            new_max = min(intervall_s[1], intervall_n[1])
+                                            new_times.append((new_min, new_max))
                                 
                                 # skip this combination, if all intervalls are disjunct
                                 if len(new_times) == 0:
                                     print("skipped")
                                     continue
 
-                                sync_state.times = new_times.copy()
-                                next_state.times = new_times.copy()
+                                sync_state.local_times = new_times.copy()
+                                next_state.local_times = new_times.copy()
+                                sync_state.merge_times()
+                                next_state.merge_times()
 
                                 # construct new metastate
                                 new_state = metastate.basic_copy()
@@ -550,6 +577,8 @@ class MultiSSE(FlowAnalysis):
                                     max_time = math.inf
 
                                 sync_state.add_time(min_time, max_time)
+                                sync_state.calc_global_time()
+                                sync_state.reset_local_time()
                                 
                                 next_task = next_state.get_scheduled_task()
                                 if next_task is not None:
@@ -560,16 +589,18 @@ class MultiSSE(FlowAnalysis):
                                     max_time = math.inf
 
                                 next_state.add_time(min_time, max_time)
+                                next_state.calc_global_time()
+                                next_state.reset_local_time()
 
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
 
         # remove all timing intervalls from executed metastate
-        for cpu, graph in metastate.state_graph.items():
-            for v in graph.vertices():
-                state = graph.vp.state[v]
-                state.merge_times()
-                state.times = []
+        # for cpu, graph in metastate.state_graph.items():
+        #     for v in graph.vertices():
+        #         state = graph.vp.state[v]
+        #         state.merge_times()
+        #         state.times = []
 
         update_list = []
         # filter out duplicate states by comparing with states in sstg
@@ -583,9 +614,9 @@ class MultiSSE(FlowAnalysis):
                     for cpu, graph in sstg_state.state_graph.items():
                         s_state = graph.vp.state[graph.get_vertices()[0]]
                         n_state = new_state.state_graph[cpu].vp.state[new_state.state_graph[cpu].get_vertices()[0]]
-                        for intervall in n_state.times:
-                            if intervall not in s_state.times:
-                                s_state.times.append(intervall)
+                        for intervall in n_state.global_times:
+                            s_state.global_times.append(intervall)
+                        s_state.merge_times()
                     
                     self.run_sse(sstg_state)
                     if sstg_state.updated < MAX_UPDATES:   
@@ -748,15 +779,15 @@ class MultiSSE(FlowAnalysis):
                 # update timing intervalls for each state in update list
                 for new_state in update_list:                    
                     new_task = new_state.get_scheduled_task()
-                    new_state.times = []
+                    new_state.local_times = []
 
                     if new_task is not None:
                         abb = new_state.abbs[new_task.name] 
                         max_time = Timings.get_max_time(new_state.cfg.vp.name[abb], context)
 
                         # update all intervalls
-                        for intervall in state.times:
-                            new_state.times.append((intervall[0] + min_time, intervall[1] + max_time))
+                        for intervall in state.local_times:
+                            new_state.local_times.append((intervall[0] + min_time, intervall[1] + max_time))
 
                 
 
