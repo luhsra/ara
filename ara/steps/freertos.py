@@ -462,7 +462,6 @@ class FreeRTOS(OSBase):
     def vTaskSetTimeOutState(cfg, abb, state):
         pass
 
-
     @syscall
     def vTaskStepTick(cfg, abb, state):
         pass
