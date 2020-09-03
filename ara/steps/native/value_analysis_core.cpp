@@ -342,12 +342,10 @@ namespace ara::step {
 		const auto& entry_point_name = entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
 
-		SVFG* svfg = SVFGBuilder::globalSvfg;
-		assert(svfg != nullptr && "svfg is null");
-		svfg->dump("svfgdump");
-		assert(svfg != nullptr);
+		SVFG& svfg = graph.get_svfg();
+		svfg.dump("svfgdump");
 
-		graph_tool::gt_dispatch<>()([&](auto& g) { this->get_values(g, *svfg); },
+		graph_tool::gt_dispatch<>()([&](auto& g) { this->get_values(g, svfg); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 	}
 } // namespace ara::step
