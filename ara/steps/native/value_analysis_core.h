@@ -57,7 +57,7 @@ namespace ara::step {
 				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
 				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
 				shared_ptr<graph::Arguments> args = get_value(safe_deref(called_func), vfg);
-				// cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args.get_python_list()));
+				cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args->get_python_obj()));
 			}
 			// if (dump_stats) {
 			// 	json_parser::write_json(prefix + "value_analysis_statistics.json", stats);
