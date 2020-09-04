@@ -76,7 +76,7 @@ namespace ara::step {
 		}
 	}
 
-	void ValueAnalysis::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call) {
+	void ValueAnalysis::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call, graph::Arguments& args) {
 		if (isCallToLLVMIntrinsic(&call)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -92,6 +92,7 @@ namespace ara::step {
 			logger.debug() << "retrieving value: \033[35m" << *val << "\033[0m" << std::endl;
 			std::shared_ptr<graph::Argument> arg = graph::Argument::get(attrs);
 			retrieve_value(vfg, *val, *arg);
+			args.emplace_back(arg);
 		}
 	}
 
@@ -115,7 +116,7 @@ namespace ara::step {
 			const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(called_func.getContext());
 			const llvm::Constant* none_c = llvm::dyn_cast<llvm::Constant>(token);
 
-			collectUsesOnVFG(vfg, called_func);
+			collectUsesOnVFG(vfg, called_func, *args);
 		}
 
 		/* return value */

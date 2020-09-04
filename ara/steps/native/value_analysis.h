@@ -44,7 +44,7 @@ namespace ara::step {
 		}
 
 		void retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, graph::Argument& arg);
-		void collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call);
+		void collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call, graph::Arguments& args);
 
 		shared_ptr<graph::Arguments> get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
