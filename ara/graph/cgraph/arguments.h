@@ -103,6 +103,8 @@ namespace ara::graph {
 
 		struct ArgumentSharedEnabler;
 
+		friend std::ostream& operator<<(std::ostream& os, const Argument& arg);
+
 	  public:
 		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs);
 		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs, const llvm::Value& value);
@@ -152,6 +154,7 @@ namespace ara::graph {
 		auto end() const noexcept { return values.end(); }
 		auto cend() const noexcept { return values.cend(); }
 	};
+	std::ostream& operator<<(std::ostream& os, const Argument& arg);
 
 	/* TODO
 	 * Argument: value and its path
@@ -181,10 +184,7 @@ namespace ara::graph {
 			return std::make_shared<MakeSharedEnabler>();
 		}
 		bool has_return_value() const { return return_value != nullptr; }
-		const Argument& get_return_value() const {
-			assert(has_return_value());
-			return *return_value;
-		}
+		std::shared_ptr<Argument> get_return_value() const { return return_value; }
 		void set_return_value(std::shared_ptr<Argument> return_value) { this->return_value = return_value; }
 
 		void set_entry_fun(std::string name) { this->entry_fun = name; }
@@ -195,6 +195,7 @@ namespace ara::graph {
 		 */
 		PyObject* get_python_obj();
 	};
+	std::ostream& operator<<(std::ostream& os, const Arguments& args);
 
 	using EntryArguments = std::map<std::string, Arguments>;
 

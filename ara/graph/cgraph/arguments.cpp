@@ -1,5 +1,6 @@
 #include "arguments.h"
 
+#include "common/llvm_common.h"
 #include "graph_data_pyx.h"
 
 #include <llvm/Support/raw_ostream.h>
@@ -31,10 +32,7 @@ namespace ara::graph {
 		const llvm::Instruction* inst = node->getCallSite();
 		assert(inst != nullptr && "inst is null");
 
-		std::string out;
-		llvm::raw_string_ostream lss(out);
-		lss << *inst;
-		return lss.str();
+		return llvm_to_string(*inst);
 	}
 
 	bool CallPath::operator==(const CallPath& other) const {
@@ -97,6 +95,55 @@ namespace ara::graph {
 			return values.begin()->second;
 		}
 		return values.at(key);
+	}
+
+	std::ostream& operator<<(std::ostream& os, const Argument& arg) {
+		os << "Argument(";
+
+		if (arg.is_determined()) {
+			os << llvm_to_string(arg.get_value());
+		} else {
+			bool first = true;
+			for (const auto& entry : arg) {
+				if (!first) {
+					os << ", ";
+				}
+				first = false;
+
+				os << entry.first << ": " << llvm_to_string(entry.second);
+			}
+		}
+
+		os << ", constant=";
+		if (arg.is_constant()) {
+			os << "true";
+		} else {
+			os << "false";
+		}
+
+		os << ")";
+		return os;
+	}
+
+	std::ostream& operator<<(std::ostream& os, const Arguments& args) {
+		os << "Arguments(";
+		bool first = true;
+		for (const auto& arg : args) {
+			if (!first) {
+				os << ", ";
+			}
+			first = false;
+			if (arg == nullptr) {
+				os << "nullptr";
+			} else {
+				os << *arg;
+			}
+		}
+		if (args.has_return_value()) {
+			os << ", return_value=" << *args.get_return_value();
+		}
+		os << ")";
+		return os;
 	}
 
 	PyObject* Arguments::get_python_obj() { return py_get_arguments(shared_from_this()); }

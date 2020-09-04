@@ -7,7 +7,7 @@ graph_data_pyx = custom_target('graph_data_pyx',
   output: ['graph_data_pyx.cpp', 'graph_data_pyx.h'],
   input: files('graph_data.pyx'),
   depend_files: files('graph_data.pxd'),
-  command: [cython, '--capi-reexport-cincludes', '@INPUT@', '-o', '@OUTPUT0@'] + cython_flags,
+  command: [cython, '-I', common_cython_inc, '@INPUT@', '-o', '@OUTPUT0@'] + cython_flags,
 )
 graph_data_pyx_header = graph_data_pyx[1]
 graph_data_pyx_cpp = graph_data_pyx[0]
