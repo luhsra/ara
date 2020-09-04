@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <llvm/IR/Instructions.h>
+#include <llvm/Support/raw_os_ostream.h>
 #include <memory>
 
 namespace ara {
@@ -12,6 +13,17 @@ namespace ara {
 	 * @param argument llvm::type to print
 	 */
 	std::string print_type(llvm::Type* argument);
+
+	/**
+	 * @brief print any LLVM object into a std::string
+	 */
+	template <typename T>
+	std::string llvm_to_string(const T& x) {
+		std::string out;
+		llvm::raw_string_ostream lss(out);
+		lss << x;
+		return lss.str();
+	}
 
 	/**
 	 * @brief check if the instruction is just llvm specific
