@@ -16,7 +16,19 @@ def main():
 
     for syscall in syscalls.vertices():
         print(syscalls.vp.name[syscall])
-        print(syscalls.vp.arguments[syscall])
+        args = syscalls.vp.arguments[syscall]
+        print(args)
+
+
+        print("------------------")
+        print(len(args))
+        print(args[0])
+        print(next(iter(args)))
+
+        for argument in args:
+            print(argument)
+
+
 
     # icf_edges = []
     # for edge in filter(lambda x: cfg.ep.type[x] == CFType.icf, cfg.edges()):
