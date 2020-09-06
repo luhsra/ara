@@ -35,6 +35,17 @@ namespace ara::graph {
 		return llvm_to_string(*inst);
 	}
 
+	std::string CallPath::print(const CallGraph& call_graph, bool call_site, bool instruction, bool functions) const {
+		if (!(call_site || instruction || functions)) {
+			return "CallPath()";
+		}
+		std::stringstream ss;
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) { print_dispatched(g, call_graph, call_site, instruction, functions, ss); },
+		    graph_tool::always_directed())(call_graph.graph.get_graph_view());
+		return ss.str();
+	}
+
 	bool CallPath::operator==(const CallPath& other) const {
 		if (edges.size() != other.edges.size()) {
 			return false;
@@ -64,9 +75,10 @@ namespace ara::graph {
 					os << ", ";
 				}
 				first = false;
-				os << "Edge(" << edge.s << ", " << edge.t << ", " << edge.idx << ")";
+				os << edge.s << "->" << edge.t << " (" << edge.idx << ")";
 			}
 		}
+		os << ')';
 		return os;
 	}
 

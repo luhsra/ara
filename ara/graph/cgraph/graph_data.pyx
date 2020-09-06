@@ -6,8 +6,10 @@ from .graph_data cimport PyGraphData
 from .arguments cimport Argument as CArgument, Arguments as CArguments
 from .arguments cimport CallPath as CCallPath
 from common.cy_helper cimport to_string
+from .cgraph cimport CallGraph
 
 from libcpp.memory cimport unique_ptr, shared_ptr
+from libcpp cimport bool
 from cython.operator cimport dereference as deref, postincrement
 from ir cimport Value
 
@@ -19,6 +21,12 @@ cdef extern from 'pyllco.h':
 
 cdef class CallPath:
     cdef CCallPath _c_callpath
+
+    def __repr__(self):
+        return to_string[CCallPath](self._c_callpath).decode('UTF-8')
+
+    def print(self, call_graph, bool call_site=False, bool instruction=False, bool functions=False):
+        return self._c_callpath.print(CallGraph.get(call_graph), call_site, instruction, functions).decode('UTF-8')
 
 
 cdef enum _ArgumentIteratorKind:

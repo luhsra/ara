@@ -34,16 +34,43 @@ namespace ara::graph {
 			typename boost::graph_traits<Graph>::edge_descriptor mapped_edge = call_graph.back_map(g, edge);
 			edges.emplace_back(mapped_edge);
 			if (verbose) {
-				std::stringstream ss;
-				ss << "Edge(";
-				ss << call_graph.function_name[boost::source(mapped_edge, g)] << " -> "
-				   << call_graph.function_name[boost::target(mapped_edge, g)] << ", ";
-				ss << "Callsite: " << call_graph.callsite_name[mapped_edge] << ", ";
-				ss << "Instruction: " << get_callsite_name(edge);
-				ss << ")";
-				edge_descriptions.emplace_back(ss.str());
+				edge_descriptions.emplace_back(call_graph.callsite_name[mapped_edge]);
 			}
 		}
+
+		template <typename Graph>
+		void print_dispatched(Graph& g, const CallGraph& call_graph, bool call_site, bool instruction, bool functions,
+		                      std::stringstream& ss) const {
+			bool first = true;
+			ss << "Callpath(";
+			for (const auto& edge : edges) {
+				if (!first) {
+					ss << ", ";
+				}
+				first = false;
+
+				ss << "[";
+				if (call_site) {
+					ss << call_graph.callsite_name[edge];
+				}
+				if (instruction) {
+					if (call_site) {
+						ss << ", ";
+					}
+					ss << get_callsite_name(safe_deref(call_graph.get_svf_elink<Graph>(edge)));
+				}
+				if (functions) {
+					if (call_site || instruction) {
+						ss << ", ";
+					}
+					ss << call_graph.function_name[boost::source(edge, g)] << " -> "
+					   << call_graph.function_name[boost::target(edge, g)];
+				}
+				ss << "]";
+			}
+			ss << ")";
+		}
+
 		friend std::ostream& operator<<(std::ostream& os, const CallPath& cp);
 
 	  public:
@@ -59,11 +86,8 @@ namespace ara::graph {
 			                            graph_tool::always_directed())(call_graph.graph.get_graph_view());
 		}
 
-		template <class Graph>
-		auto begin();
-
-		template <class Graph>
-		auto end();
+		std::string print(const CallGraph& call_graph, bool call_site = false, bool instruction = false,
+		                  bool functions = false) const;
 
 		bool is_empty() const { return size() == 0; }
 
