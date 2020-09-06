@@ -17,17 +17,10 @@ def main():
     for syscall in syscalls.vertices():
         print(syscalls.vp.name[syscall])
         args = syscalls.vp.arguments[syscall]
-        print(args)
-
-
-        print("------------------")
-        print(len(args))
-        print(args[0])
-        print(next(iter(args)))
 
         for argument in args:
-            print(argument)
-
+            for call_path, value in argument.items():
+                print(call_path.print(m_graph.callgraph, functions=True), value)
 
 
     # icf_edges = []
