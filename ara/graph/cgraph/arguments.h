@@ -23,7 +23,8 @@ namespace ara::graph {
 		// type with graph_traits without needing a template, replace this code with that.
 		std::vector<boost::detail::adj_edge_descriptor<unsigned long>> edges;
 
-		const bool verbose;
+		// must not be changed without clearing edges and edge_descriptions, too
+		bool verbose;
 		std::vector<std::string> edge_descriptions;
 
 		std::string get_callsite_name(const SVF::PTACallGraphEdge& edge) const;
@@ -64,9 +65,9 @@ namespace ara::graph {
 		template <class Graph>
 		auto end();
 
-		bool is_empty() { return true; }
+		bool is_empty() const { return size() == 0; }
 
-		size_t size() { return 0; }
+		size_t size() const { return edges.size(); }
 
 		bool operator==(const CallPath& other) const;
 
@@ -94,11 +95,11 @@ namespace ara::graph {
 		llvm::AttributeSet attrs;
 		// key = call_path (list of call instructions)
 		// value = the value that is retrieved when following this path
-		std::unordered_map<CallPath, const llvm::Value&> values;
+		std::unordered_map<CallPath, llvm::Value&> values;
 
 		Argument(const llvm::AttributeSet& attrs) : attrs(attrs), values() {}
-		Argument(const llvm::AttributeSet& attrs, const llvm::Value& value) : attrs(attrs), values() {
-			values.insert(std::pair<CallPath, const llvm::Value&>(CallPath(), value));
+		Argument(const llvm::AttributeSet& attrs, llvm::Value& value) : attrs(attrs), values() {
+			values.insert(std::pair<CallPath, llvm::Value&>(CallPath(), value));
 		}
 
 		struct ArgumentSharedEnabler;
@@ -106,21 +107,22 @@ namespace ara::graph {
 		friend std::ostream& operator<<(std::ostream& os, const Argument& arg);
 
 	  public:
+		using iterator = decltype(values)::iterator;
+		using const_iterator = decltype(values)::const_iterator;
+
 		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs);
-		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs, const llvm::Value& value);
+		static std::shared_ptr<Argument> get(const llvm::AttributeSet& attrs, llvm::Value& value);
 
 		/**
 		 * Set a single value.
 		 */
-		void set_value(const llvm::Value& value) {
-			values.insert(std::pair<CallPath, const llvm::Value&>(CallPath(), value));
-		}
+		void set_value(llvm::Value& value) { values.insert(std::pair<CallPath, llvm::Value&>(CallPath(), value)); }
 
 		/**
 		 * Set a callpath dependent value.
 		 */
-		void add_variant(CallPath& key, const llvm::Value& value) {
-			values.insert(std::pair<CallPath, const llvm::Value&>(key, value));
+		void add_variant(CallPath& key, llvm::Value& value) {
+			values.insert(std::pair<CallPath, llvm::Value&>(key, value));
 		}
 
 		/**
@@ -138,21 +140,28 @@ namespace ara::graph {
 		llvm::AttributeSet get_attrs() const { return attrs; }
 
 		/**
+		 * Check if a value at a specific call path exists.
+		 */
+		bool has_value(const CallPath& key) const;
+
+		/**
 		 * Get the value at a specific call path. Per default it returns the unique determined value.
 		 * If the Argument is determined, the unique value will be returned, regardless what the key is.
 		 */
-		const llvm::Value& get_value(CallPath key = CallPath()) const;
+		llvm::Value& get_value(const CallPath& key = CallPath()) const;
+
+		size_t size() { return values.size(); }
 
 		/**
-		 * Common iterators that return a std::pair<CallPath, const llvm::Value&>.
+		 * Common iterators that return a std::pair<CallPath, llvm::Value&>.
 		 */
-		auto begin() noexcept { return values.begin(); }
-		auto begin() const noexcept { return values.begin(); }
-		auto cbegin() const noexcept { return values.cbegin(); }
+		iterator begin() noexcept { return values.begin(); }
+		const_iterator begin() const noexcept { return values.begin(); }
+		const_iterator cbegin() const noexcept { return values.cbegin(); }
 
-		auto end() noexcept { return values.end(); }
-		auto end() const noexcept { return values.end(); }
-		auto cend() const noexcept { return values.cend(); }
+		iterator end() noexcept { return values.end(); }
+		const_iterator end() const noexcept { return values.end(); }
+		const_iterator cend() const noexcept { return values.cend(); }
 	};
 	std::ostream& operator<<(std::ostream& os, const Argument& arg);
 

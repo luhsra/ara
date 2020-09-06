@@ -63,7 +63,12 @@ namespace ara::step {
 					const PAGEdge* edge = stmt->getPAGEdge();
 					if (const Constant* c = llvm::dyn_cast<Constant>(edge->getValue())) {
 						logger.info() << "Constant: " << *c << std::endl;
-						arg.add_variant(next_path, *c);
+						// We have a problem here. SVF gives us a constant Value what is meaningful from their site.
+						// However, we want to fill this into our Argument structure which is exposed in Python. In
+						// Python there exists no thing like const correctness because is semantically useless. That
+						// means that we are forced to limit the Python types to only support methods that don't violate
+						// const correctness or do a const_cast here and hope that everything will work.
+						arg.add_variant(next_path, const_cast<Constant&>(*c));
 						last_node = true;
 					}
 				}

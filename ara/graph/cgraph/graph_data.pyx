@@ -4,10 +4,55 @@
 from .graph_data cimport PyGraphData
 
 from .arguments cimport Argument as CArgument, Arguments as CArguments
+from .arguments cimport CallPath as CCallPath
 from common.cy_helper cimport to_string
 
 from libcpp.memory cimport unique_ptr, shared_ptr
-from cython.operator cimport dereference as deref
+from cython.operator cimport dereference as deref, postincrement
+from ir cimport Value
+
+# workaround for https://github.com/cython/cython/issues/3816
+# from pyllco cimport get_obj_from_value
+cdef extern from 'pyllco.h':
+    object get_obj_from_value(Value&)
+
+
+cdef class CallPath:
+    cdef CCallPath _c_callpath
+
+
+cdef enum _ArgumentIteratorKind:
+    keys = 0,
+    values = 1,
+    both = 2
+
+
+cdef class ArgumentIterator:
+    cdef CArgument.iterator _c_iter
+    cdef CArgument.iterator _c_iter_end
+    cdef _ArgumentIteratorKind _kind
+
+    def __cinit__(self, Argument arg, int kind):
+        self._c_iter = deref(arg._c_argument).begin()
+        self._c_iter_end = deref(arg._c_argument).end()
+        self._kind = <_ArgumentIteratorKind> kind
+
+    def __next__(self):
+        if self._c_iter == self._c_iter_end:
+            raise StopIteration
+        cp = CallPath()
+        cp._c_callpath = deref(self._c_iter).first
+        val = get_obj_from_value(deref(self._c_iter).second)
+        postincrement(self._c_iter);
+
+        if self._kind == _ArgumentIteratorKind.keys:
+            return cp
+        if self._kind == _ArgumentIteratorKind.values:
+            return val
+        if self._kind == _ArgumentIteratorKind.both:
+            return cp, val
+        raise RuntimeError("Wrong type of kind")
+
 
 cdef class Argument:
     cdef shared_ptr[CArgument] _c_argument
@@ -18,8 +63,48 @@ cdef class Argument:
     def is_constant(self):
         return deref(self._c_argument).is_constant()
 
+    def has_value(self, key: CallPath):
+        return deref(self._c_argument).has_value(key._c_callpath)
+
+    def get_value(self, CallPath key=CallPath()):
+        return get_obj_from_value(deref(self._c_argument).get_value(key._c_callpath))
+
     def __repr__(self):
         return to_string[CArgument](deref(self._c_argument)).decode('UTF-8')
+
+    def __len__(self):
+        return deref(self._c_argument).size()
+
+    def __getitem__(self, key):
+        if key not in self:
+            raise KeyError(key)
+        return self.get_value(key)
+
+    def __contains__(self, key):
+        return self.has_value(key)
+
+    def values(self):
+        class ItemIterator:
+            def __init__(self, arg):
+                self._arg = arg
+
+            def __iter__(self):
+                return ArgumentIterator(self._arg,
+                                        <int> _ArgumentIteratorKind.values)
+        return ItemIterator(self)
+
+    def items(self):
+        class ItemIterator:
+            def __init__(self, arg):
+                self._arg = arg
+
+            def __iter__(self):
+                return ArgumentIterator(self._arg,
+                                        <int> _ArgumentIteratorKind.both)
+        return ItemIterator(self)
+
+    def __iter__(self):
+        return ArgumentIterator(self, <int> _ArgumentIteratorKind.keys)
 
 
 cdef class Arguments:

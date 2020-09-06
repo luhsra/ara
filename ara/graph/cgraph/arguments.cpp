@@ -77,7 +77,7 @@ namespace ara::graph {
 	std::shared_ptr<Argument> Argument::get(const llvm::AttributeSet& attrs) {
 		return std::make_shared<ArgumentSharedEnabler>(attrs);
 	}
-	std::shared_ptr<Argument> Argument::get(const llvm::AttributeSet& attrs, const llvm::Value& value) {
+	std::shared_ptr<Argument> Argument::get(const llvm::AttributeSet& attrs, llvm::Value& value) {
 		return std::make_shared<ArgumentSharedEnabler>(attrs, value);
 	}
 
@@ -90,7 +90,9 @@ namespace ara::graph {
 		return true;
 	}
 
-	const llvm::Value& Argument::get_value(CallPath key) const {
+	bool Argument::has_value(const CallPath& key) const { return values.find(key) != values.end(); }
+
+	llvm::Value& Argument::get_value(const CallPath& key) const {
 		if (is_determined() && key.is_empty()) {
 			return values.begin()->second;
 		}
