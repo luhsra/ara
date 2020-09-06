@@ -40,6 +40,11 @@ namespace ara::graph {
 
 		CFG(graph_tool::GraphInterface& graph) : graph(graph){};
 
+		/**
+		 * Return a CFG from the corresponding Python graph.
+		 */
+		static CFG get(PyObject* py_cfg);
+
 		class FunctionFilter {
 		  public:
 			FunctionFilter() : cfg(nullptr), reverted(false) {}
@@ -321,6 +326,11 @@ namespace ara::graph {
 		typename graph_tool::eprop_map_t<int64_t>::type svf_elink;
 
 		typename graph_tool::gprop_map_t<PyObject*>::type cfg;
+
+		/**
+		 * Return a CallGraph from the corresponding Python graph.
+		 */
+		static CallGraph get(PyObject* py_callgraph);
 
 		/**
 		 * Return the corresponding SVF callgraph node to the given node.
