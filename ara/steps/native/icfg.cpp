@@ -112,6 +112,15 @@ namespace ara::step {
 						assert("This should never happen. All indirect pointers are resolved in SVFAnalyses.");
 					}
 				}
+				for (auto abb :
+				     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::computation)))) {
+					for (const auto& edge : boost::make_iterator_range(boost::out_edges(abb, g))) {
+						if (cfg.etype[edge] == CFType::lcf) {
+							auto i_edge = boost::add_edge(abb, boost::target(edge, g), g);
+							cfg.etype[i_edge.first] = CFType::icf;
+						}
+					}
+				}
 			}
 		};
 	} // namespace
