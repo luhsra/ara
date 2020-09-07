@@ -24,7 +24,7 @@ namespace ara::step {
 			return false;
 		}
 		// TODO this can be improved. It should also be sound, if the bitsize is the same for all types.
-		if (candidate.getFunctionType()->getNumParams() == caller_type.getNumParams()) {
+		if (candidate.getFunctionType() == &caller_type) {
 			return true;
 		}
 		return false;
