@@ -11,7 +11,7 @@ cdef extern from "step.h" namespace "ara::step":
     cdef cppclass Step:
         Step() except +
         void apply_config(dict config)
-        void run() except +
+        void run()
 
     cdef cppclass StepFactory:
         string get_name()
