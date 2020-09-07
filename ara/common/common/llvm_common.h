@@ -29,7 +29,9 @@ namespace ara {
 	 * @brief check if the instruction is just llvm specific
 	 * @param instr instrucion to analyze
 	 */
-	bool isCallToLLVMIntrinsic(const llvm::Instruction* inst);
+	[[deprecated("Use is_call_to_intrinsic() instead.")]] bool isCallToLLVMIntrinsic(const llvm::Instruction* inst);
+	bool is_call_to_intrinsic(const llvm::Instruction& inst);
+	bool is_intrinsic(const llvm::Function& func);
 	bool isInlineAsm(const llvm::Instruction* inst);
 } // namespace ara
 

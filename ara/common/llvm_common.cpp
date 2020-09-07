@@ -1,4 +1,6 @@
 #include "common/llvm_common.h"
+
+#include <llvm/IR/Intrinsics.h>
 #include <llvm/Support/raw_ostream.h>
 
 using namespace llvm;
@@ -12,14 +14,30 @@ namespace ara {
 		return rso.str() + "\"\n";
 	}
 
-	bool isCallToLLVMIntrinsic(const Instruction* inst) {
-		if (const CallBase* call = dyn_cast<CallBase>(inst)) {
-			const Function* func = call->getCalledFunction();
-			if (func && func->isIntrinsic()) {
-				return true;
-			}
+	bool is_intrinsic(const Function& func) {
+		if (func.getIntrinsicID() == llvm::Intrinsic::donothing || func.getIntrinsicID() == llvm::Intrinsic::dbg_addr ||
+		    func.getIntrinsicID() == llvm::Intrinsic::dbg_declare ||
+		    func.getIntrinsicID() == llvm::Intrinsic::dbg_label ||
+		    func.getIntrinsicID() == llvm::Intrinsic::dbg_value) {
+			return true;
 		}
 		return false;
+	}
+
+	bool is_call_to_intrinsic(const Instruction& inst) {
+		if (const CallBase* call = dyn_cast<CallBase>(&inst)) {
+			const Function* func = call->getCalledFunction();
+			if (func == nullptr)
+				return false;
+			return is_intrinsic(*func);
+		}
+		return false;
+	}
+
+	bool isCallToLLVMIntrinsic(const Instruction* inst) {
+		if (inst == nullptr)
+			return false;
+		return is_call_to_intrinsic(*inst);
 	}
 
 	bool isInlineAsm(const Instruction* inst) {

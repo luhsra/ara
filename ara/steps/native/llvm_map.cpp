@@ -76,7 +76,7 @@ namespace ara::step {
 					}
 				}
 
-				if (func.isIntrinsic()) {
+				if (is_intrinsic(func)) {
 					continue;
 				}
 				auto function = boost::add_vertex(g);
@@ -92,7 +92,7 @@ namespace ara::step {
 					std::stringstream ss;
 					ss << "ABB" << name_counter++;
 					graph::ABBType ty = graph::ABBType::computation;
-					if (isa<CallBase>(bb.front()) && !isInlineAsm(&bb.front()) && !isCallToLLVMIntrinsic(&bb.front())) {
+					if (isa<CallBase>(bb.front()) && !isInlineAsm(&bb.front()) && !is_call_to_intrinsic(bb.front())) {
 						ty = graph::ABBType::call;
 					}
 					auto abb = add_abb(g, cfg, graph_data, ss.str(), ty, &bb, &bb, function, bb_counter == 0);
