@@ -32,7 +32,7 @@ namespace ara::step {
 
 		std::stack<VFGContainer> nodes;
 
-		nodes.emplace(VFGContainer(vNode, {}));
+		nodes.emplace(VFGContainer(vNode, graph::CallPath()));
 
 		while (!nodes.empty()) {
 			VFGContainer current = std::move(nodes.top());
@@ -77,6 +77,7 @@ namespace ara::step {
 					logger.info() << "Next node: " << *next_node << std::endl;
 					nodes.emplace(VFGContainer(next_node, next_path));
 				}
+				next_path = current.call_path;
 			}
 		}
 	}
