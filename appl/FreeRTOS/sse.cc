@@ -50,40 +50,13 @@
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
 #include "task.h"
-#include "semphr.h"
 
 #define mainDELAY_LOOP_COUNT (0xffffff)
-
-class MutexLocker
-{
-public:
-	MutexLocker(SemaphoreHandle_t mtx)
-	{
-        additional_attribute = 0;
-        tmp = 210;
-		mutex = mtx;
-		xSemaphoreTake(mutex, portMAX_DELAY);
-	}
-
-	~MutexLocker()
-	{
-		xSemaphoreGive(mutex);
-	}
-
-private:
-    double tmp;
-    int additional_attribute;
-	SemaphoreHandle_t mutex;
-};
-
-SemaphoreHandle_t xTestMutex = NULL;
-SemaphoreHandle_t xTestMutex2 = NULL;
 
 void vTask1(void* pvParameters);
 void vTask2(void* pvParameters);
 
 void createTasks(const char* name1, const char* name2) {
-    MutexLocker lock(xTestMutex);
 	xTaskCreate(vTask1,   /* Pointer to the function that implements the task. */
 	            name1,    /* Text name for the task.  This is to facilitate debugging only. */
 	            100,     /* Stack depth - most small microcontrollers will use much less stack than this. */
@@ -96,9 +69,6 @@ void createTasks(const char* name1, const char* name2) {
 }
 
 int main(void) {
-    xTestMutex = xSemaphoreCreateMutex();
-    //xTestMutex2 = xSemaphoreCreateMutex();
-
 	bool b = true;
 	if (b) {
 		createTasks("Task 1", "Task 2");
@@ -117,7 +87,6 @@ int main(void) {
 }
 
 void vTask1(void* pvParameters) {
-    //MutexLocker lock(xTestMutex2);
 	volatile unsigned long ul;
 	xTaskCreate(vTask2, "Task6", 100, NULL, 1, NULL);
 	for (;;) {
