@@ -1,32 +1,13 @@
 {
 	"steps": [
-		"ValueAnalysis"
+		"InstanceGraph"
 	],
 
-	"SVFAnalyses": {
-		"dump": true,
-		"log_level": "debug"
-	},
-
-	"ICFG": {
-		"dump": true,
-		"log_level": "debug"
-	},
-
-	"CallGraph": {
-		"dump": true,
-		"log_level": "debug"
-	},
-
-	"Syscall": {
-		"dump": true
-	},
-
-	"ValueAnalysisCore": {
+	"ValueAnalysis": {
 		"log_level": "debug"
 	},
 
 	"logger": {
-		"StepManager": "debug"
+		"StepManager": "info"
 	}
 }
