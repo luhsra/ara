@@ -119,9 +119,6 @@ namespace ara::step {
 				// logger.debug() << it << ": " << attrl.getAsString(it) << std::endl;
 			}
 
-			const llvm::ConstantTokenNone* token = llvm::ConstantTokenNone::get(called_func.getContext());
-			const llvm::Constant* none_c = llvm::dyn_cast<llvm::Constant>(token);
-
 			collectUsesOnVFG(vfg, called_func, *args);
 		}
 
