@@ -161,7 +161,7 @@ namespace ara::graph {
 					return v;
 				}
 			}
-			throw FunctionNotFound();
+			throw FunctionNotFound(func.getName().str());
 		}
 
 		/**
@@ -194,7 +194,7 @@ namespace ara::graph {
 					return v;
 				}
 			}
-			throw FunctionNotFound();
+			throw FunctionNotFound(func_name);
 		}
 
 		/**
