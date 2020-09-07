@@ -1,10 +1,7 @@
 # cython: language_level=3
-"""Common description ob both Python and C++ steps. A step is a part of
-Arsa, that fulfils one specific task. There it manipulates the systemgraph in
-a specific way.
-
-Steps can have dependencies respectively depend on other steps, the
-stepmanager then fulfils this dependencies.
+"""Common description of both Python and C++ steps. A step is a part of
+ARA, that fulfils one specific task. Therefore, it manipulates the systemgraph
+in a specific way.
 """
 
 cimport cstep
