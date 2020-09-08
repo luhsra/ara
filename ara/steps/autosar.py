@@ -79,7 +79,7 @@ class AUTOSAR(OSBase):
             instances.ep[prop[0]] = instances.new_ep(prop[1])
 
     @staticmethod
-    def get_next_timed_event(time, instances):
+    def get_next_timed_event(time, instances, cpu):
         """Returns the next timed event, e.g. an Alarm, that occurs after a given time."""
         event_list = []
         for v_instance in instances.vertices():
@@ -88,7 +88,7 @@ class AUTOSAR(OSBase):
                 alarm = instance
                 counter = alarm.counter
 
-                if counter is not None:
+                if counter is not None and alarm.cpu_id == cpu:
 
                     # only handle autostart alarms at the moment
                     if alarm.autostart:
@@ -106,9 +106,25 @@ class AUTOSAR(OSBase):
                         event_list.append((event_time, alarm))
 
         # sort event list to get nearest event
-        event_list.sort(key=lambda x: x[0])           
+        event_list.sort(key=lambda x: x[0])  
+        if len(event_list) != 0:         
+            return event_list[0]
+        else:
+            return None, None
+    
+    @staticmethod
+    def execute_event(event, state):
+        """Interprets a timed event, e.g. an alarm, and creates a new state."""
+        new_state = state.copy()
 
-        return event_list[0]
+        if isinstance(event, Alarm):
+            alarm = event
+            if alarm.action == AlarmAction.ACTIVATETASK:
+                if alarm.task not in new_state.activated_tasks:
+                    new_state.activated_tasks.append(alarm.task)
+                    AUTOSAR.schedule(new_state, new_state.cpu)
+        
+        return new_state
 
     @staticmethod
     def interpret(cfg, abb, state, cpu, is_global=False):

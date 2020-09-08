@@ -26,7 +26,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 3
+MAX_UPDATES = 1
 
 sse_counter = 0
 
@@ -723,6 +723,19 @@ class MultiSSE(FlowAnalysis):
                 min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
 
                 state.calc_global_time()
+
+                # get next timed event
+                event_time, event = self._g.os.get_next_timed_event(state.global_times[0][0], state.instances, state.cpu)
+
+                # check if event time is in global time intervalls
+                if event is not None:
+                    for intervall in state.global_times:
+                        if intervall[0] <= event_time and event_time <= intervall[1]:
+
+                            # execute event
+                            new_state = self._g.os.execute_event(event, state)
+
+                            new_states.append(new_state)
 
                 # check for existing neighbors
                 if len(graph.get_out_neighbors(state_vertex)) == 0:
