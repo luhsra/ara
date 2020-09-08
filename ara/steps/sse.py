@@ -329,15 +329,10 @@ class MultiState:
     def calc_global_time(self):
         """Calculates the global time intervalls for this state."""
         new_global_times = []
-        local_copy = self.local_times.copy()
-        local_copy.sort(key=lambda i: i[0])
-        min_time = local_copy[0][0]
 
-        local_copy.sort(key=lambda i: i[1], reverse=True)
-        max_time = local_copy[0][1]
-
-        for intervall in self.root_global_times:
-            new_global_times.append((intervall[0] + min_time, intervall[1] + max_time))
+        for intervall_r in self.root_global_times:
+            for intervall_l in self.local_times:
+                new_global_times.append((intervall_r[0] + intervall_l[0], intervall_r[1] + intervall_l[1]))
         
         self.global_times = new_global_times
         self.merge_times()

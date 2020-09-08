@@ -79,6 +79,38 @@ class AUTOSAR(OSBase):
             instances.ep[prop[0]] = instances.new_ep(prop[1])
 
     @staticmethod
+    def get_next_timed_event(time, instances):
+        """Returns the next timed event, e.g. an Alarm, that occurs after a given time."""
+        event_list = []
+        for v_instance in instances.vertices():
+            instance = instances.vp.obj[v_instance]
+            if isinstance(instance, Alarm):
+                alarm = instance
+                counter = alarm.counter
+
+                if counter is not None:
+
+                    # only handle autostart alarms at the moment
+                    if alarm.autostart:
+                        # period of the alarm in ms
+                        period = alarm.cycletime * counter.secondspertick * 1000
+                        alarmtime = alarm.alarmtime * counter.secondspertick * 1000
+
+                        mod = time % period
+                        if mod < alarmtime:
+                            diff = alarmtime - mod
+                        else: 
+                            diff = alarmtime + period - mod
+                        
+                        event_time = time + diff
+                        event_list.append((event_time, alarm))
+
+        # sort event list to get nearest event
+        event_list.sort(key=lambda x: x[0])           
+
+        return event_list[0]
+
+    @staticmethod
     def interpret(cfg, abb, state, cpu, is_global=False):
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}")
@@ -88,7 +120,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def is_inter_cpu_syscall(cfg, abb, state, cpu):
-        """Checks wether the syscall has interferences with other cpus."""
+        """Checks whether the syscall has interferences with other cpus."""
         syscall = cfg.get_syscall_name(abb)
 
         if "ActivateTask" in syscall:
