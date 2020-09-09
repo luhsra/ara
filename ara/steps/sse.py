@@ -26,7 +26,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 1
+MAX_UPDATES = 2
 
 sse_counter = 0
 
@@ -307,7 +307,7 @@ class MultiState:
         self.root_global_times = []
         self.global_times = [] # list of global time intervalls this state is valid in
         self.local_times = [] # list of local time intervalls this state is valid within a metastate
-        # self.times_merged = [] # same as times list, but without overlapping intervalls
+        self.last_event_time = 0 # time of the last global event, e.g. an Alarm
         
     def get_scheduled_task(self):
         if len(self.activated_tasks) >= 1:
@@ -695,8 +695,10 @@ class MultiSSE(FlowAnalysis):
 
                         # add edge to existing state if new state is equal
                         if new_state == existing_state:
-                            graph.add_edge(vertex, v)
+                            if v not in graph.vertex(vertex).out_neighbors():
+                                graph.add_edge(vertex, v)
                             found = True
+                            break
 
                     # add new state to graph and append it to the stack
                     if not found:
@@ -705,8 +707,6 @@ class MultiSSE(FlowAnalysis):
                         graph.add_edge(vertex, new_vertex)
                         stack.append(new_vertex)
 
-        # calculate all timings
-        # metastate.update_timings()
         
     def execute_state(self, state_vertex, sync_list, graph):
         new_states = []
@@ -725,17 +725,21 @@ class MultiSSE(FlowAnalysis):
                 state.calc_global_time()
 
                 # get next timed event
-                event_time, event = self._g.os.get_next_timed_event(state.global_times[0][0], state.instances, state.cpu)
+                event_time, event = self._g.os.get_next_timed_event(state.last_event_time, state.instances, state.cpu)
+                found_timed_event = False
 
                 # check if event time is in global time intervalls
                 if event is not None:
                     for intervall in state.global_times:
                         if intervall[0] <= event_time and event_time <= intervall[1]:
+                            found_timed_event = True
 
                             # execute event
                             new_state = self._g.os.execute_event(event, state)
+                            new_state.last_event_time = event_time
 
                             new_states.append(new_state)
+                            break
 
                 # check for existing neighbors
                 if len(graph.get_out_neighbors(state_vertex)) == 0:
@@ -787,6 +791,10 @@ class MultiSSE(FlowAnalysis):
                             new_state.abbs[task.name] = n
 
                             new_states.append(new_state)
+
+                if found_timed_event:
+                    # advance last event timer
+                    state.last_event_time = event_time
                 
                 ############## UPDATE TIMINGS ###################
 
