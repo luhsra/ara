@@ -15,9 +15,8 @@ ctypedef Value& value_ref
 
 cdef extern from "arguments.h" namespace "ara::graph":
     cdef cppclass CallPath:
-        pass
-
         string print(const CallGraph&, bool, bool, bool)
+        void add_call_site(object, string)
 
     cdef cppclass Argument:
         ctypedef unordered_map[CallPath, value_ref].iterator iterator

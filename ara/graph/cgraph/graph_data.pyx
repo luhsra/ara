@@ -22,11 +22,32 @@ cdef extern from 'pyllco.h':
 cdef class CallPath:
     cdef CCallPath _c_callpath
 
+    def __cinit__(self):
+        pass
+
     def __repr__(self):
         return to_string[CCallPath](self._c_callpath).decode('UTF-8')
 
-    def print(self, call_graph, bool call_site=False, bool instruction=False, bool functions=False):
-        return self._c_callpath.print(CallGraph.get(call_graph), call_site, instruction, functions).decode('UTF-8')
+    def print(self, call_graph,
+              bool call_site=False,
+              bool instruction=False,
+              bool functions=False):
+        return self._c_callpath.print(CallGraph.get(call_graph),
+                                      call_site,
+                                      instruction,
+                                      functions).decode('UTF-8')
+
+    def add_call_site(self, call_graph, call_site):
+        self._c_callpath.add_call_site(
+            call_site,
+            call_graph.ep.callsite_name[call_site].encode('UTF-8')
+        )
+
+    def __copy__(self):
+        cp = CallPath()
+        # calls copy constructor in C++
+        cp._c_callpath = self._c_callpath
+        return cp
 
 
 cdef enum _ArgumentIteratorKind:

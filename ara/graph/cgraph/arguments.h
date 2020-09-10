@@ -8,20 +8,20 @@
 #include <boost/functional/hash.hpp>
 #include <boost/range/combine.hpp>
 #include <functional>
+#include <graph_python_interface.hh>
 #include <llvm/IR/Instructions.h>
 #include <vector>
 
 namespace boost::detail {
-	// ATTENTION: This makes use of internal boost API. Fix this, if possible.
+	// This only works since graph_tool::GraphInterface::edge_t is a typedef to boost::detail::adj_edge_descriptor. If
+	// graph_tool changes this, this hash function needs to be changed, too.
 	std::size_t hash_value(const boost::detail::adj_edge_descriptor<long unsigned int>& edge);
 } // namespace boost::detail
 
 namespace ara::graph {
 	class CallPath {
 	  private:
-		// TODO: this is the inner type from boost for the standard graph structure, if there is a way to access this
-		// type with graph_traits without needing a template, replace this code with that.
-		std::vector<boost::detail::adj_edge_descriptor<unsigned long>> edges;
+		std::vector<graph_tool::GraphInterface::edge_t> edges;
 
 		// must not be changed without clearing edges and edge_descriptions, too
 		bool verbose;
@@ -85,6 +85,8 @@ namespace ara::graph {
 			graph_tool::gt_dispatch<>()([&](auto& g) { add_call_site_dispatched(g, call_graph, call_site); },
 			                            graph_tool::always_directed())(call_graph.graph.get_graph_view());
 		}
+
+		void add_call_site(PyObject* edge, const std::string& description = "-");
 
 		std::string print(const CallGraph& call_graph, bool call_site = false, bool instruction = false,
 		                  bool functions = false) const;

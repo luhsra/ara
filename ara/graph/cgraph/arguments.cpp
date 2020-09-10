@@ -35,6 +35,14 @@ namespace ara::graph {
 		return llvm_to_string(*inst);
 	}
 
+	void CallPath::add_call_site(PyObject* edge, const std::string& description) {
+		graph_tool::EdgeBase& edge_base = boost::python::extract<graph_tool::EdgeBase&>(edge);
+		edges.emplace_back(edge_base.get_descriptor());
+		if (verbose) {
+			edge_descriptions.emplace_back(description);
+		}
+	}
+
 	std::string CallPath::print(const CallGraph& call_graph, bool call_site, bool instruction, bool functions) const {
 		if (!(call_site || instruction || functions)) {
 			return "CallPath()";
