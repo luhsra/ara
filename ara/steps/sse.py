@@ -26,7 +26,8 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 1
+MAX_UPDATES = 2
+MAX_STATE_UPDATES = 3
 
 sse_counter = 0
 
@@ -178,7 +179,7 @@ class MetaState:
             copy.state_graph[cpu] = graph_tool.Graph()
             copy.sync_states[cpu] = []
             copy.state_graph[cpu].vertex_properties["state"] = copy.state_graph[cpu].new_vp("object")
-            # copy.entry_states[cpu] = None
+            copy.state_graph[cpu].edge_properties["is_timed_event"] = copy.state_graph[cpu].new_ep("bool")
 
         return copy
     
@@ -304,12 +305,16 @@ class MultiState:
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
-        self.root_global_times = []
+        # self.root_global_times = []
         self.global_times = [] # list of global time intervalls this state is valid in
         self.local_times = [] # list of local time intervalls this state is valid within a metastate
+        self.global_times_merged = []
+        self.local_times_merged = []
         self.last_event_time = 0 # time of the last global event, e.g. an Alarm
                                  # this is used to calculate which event happens next
         self.passed_events = [0] # list of times of passed events, e.g. Alarms
+        self.from_event = False # indicates if this state is the result of a timed event, e.g. an Alarm
+        self.updated = 0
         
     def get_scheduled_task(self):
         if len(self.activated_tasks) >= 1:
@@ -341,7 +346,7 @@ class MultiState:
     
     def merge_times(self):
         """Merges list of time intervalls so that overlapping intervalls are merged into one."""
-        merge_list = [self.global_times, self.local_times]
+        merge_list = [self.global_times_merged, self.local_times_merged]
 
         for times in merge_list:
             times.sort(key=lambda i: i[0])
@@ -375,7 +380,7 @@ class MultiState:
             else: 
                 ret += "None"
             ret += ", "
-        ret = ret[:-2] + "] " + str(self.global_times)
+        ret = ret[:-2] + "] " + str(self.global_times_merged)
         return ret
 
     def __eq__(self, other):
@@ -397,8 +402,10 @@ class MultiState:
         scopy.entry_abbs = self.entry_abbs.copy()
         scopy.global_times = self.global_times.copy()
         scopy.local_times = self.local_times.copy()
-        scopy.root_global_times = self.root_global_times.copy()
+        scopy.global_times_merged = []
+        scopy.local_times_merged = []
         scopy.passed_events = self.passed_events.copy()
+        scopy.updated = 0
 
         return scopy
 
@@ -437,6 +444,7 @@ class MultiSSE(FlowAnalysis):
                     metastate.state_graph[state.cpu] = graph_tool.Graph()
                     graph = metastate.state_graph[state.cpu]
                     graph.vertex_properties["state"] = graph.new_vp("object")
+                    graph.edge_properties["is_timed_event"] = graph.new_ep("bool")
                     vertex = graph.add_vertex()
                     graph.vp.state[vertex] = state
 
@@ -528,13 +536,13 @@ class MultiSSE(FlowAnalysis):
                     for cpu_other, graph in metastate.state_graph.items():
                         if cpu != cpu_other:
                             for vertex in args[0]:
-                                sync_state = state.copy()
-                                next_state = metastate.state_graph[cpu_other].vp.state[vertex].copy()
+                                sync_state = state
+                                next_state = metastate.state_graph[cpu_other].vp.state[vertex]
 
                                 # calculate new timing intervalls for the new states
                                 new_times = []
-                                for i, intervall_s in enumerate(sync_state.local_times):
-                                    for j, intervall_n in enumerate(next_state.local_times):
+                                for i, intervall_s in enumerate(sync_state.global_times_merged):
+                                    for j, intervall_n in enumerate(next_state.global_times_merged):
 
                                         # check if intervall is disjunct
                                         if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
@@ -547,10 +555,11 @@ class MultiSSE(FlowAnalysis):
                                     print("skipped")
                                     continue
 
-                                sync_state.local_times = new_times.copy()
-                                next_state.local_times = new_times.copy()
-                                sync_state.merge_times()
-                                next_state.merge_times()
+                                sync_state = sync_state.copy()
+                                next_state = next_state.copy()
+
+                                sync_state.global_times = new_times.copy()
+                                next_state.global_times = new_times.copy()
 
                                 # construct new metastate
                                 new_state = metastate.basic_copy()
@@ -606,7 +615,7 @@ class MultiSSE(FlowAnalysis):
                         n_state = new_state.state_graph[cpu].vp.state[new_state.state_graph[cpu].get_vertices()[0]]
                         for intervall in n_state.global_times:
                             s_state.global_times.append(intervall)
-                        s_state.merge_times()
+                        # s_state.merge_times()
                     
                     self.run_sse(sstg_state)
                     if sstg_state.updated < MAX_UPDATES:   
@@ -682,7 +691,8 @@ class MultiSSE(FlowAnalysis):
                         # add edge to existing state if new state is equal
                         if new_state == existing_state:
                             if v not in graph.vertex(vertex).out_neighbors():
-                                graph.add_edge(vertex, v)
+                                e = graph.add_edge(vertex, v)
+                                graph.ep.is_timed_event[e] = False
                             found = True
 
                             last_event_time = existing_state.passed_events[-1]
@@ -690,14 +700,23 @@ class MultiSSE(FlowAnalysis):
                                 if intervall[0] > last_event_time:
                                     existing_state.global_times.append(intervall)
                             existing_state.passed_events = new_state.passed_events.copy()
+                            existing_state.merge_times()
 
+                            if existing_state.updated < MAX_STATE_UPDATES:
+                                existing_state.updated += 1
+                                stack.append(v)
                             break
 
                     # add new state to graph and append it to the stack
                     if not found:
                         new_vertex = graph.add_vertex()
                         graph.vp.state[new_vertex] = new_state
-                        graph.add_edge(vertex, new_vertex)
+                        e = graph.add_edge(vertex, new_vertex)
+                        if new_state.from_event:
+                            graph.ep.is_timed_event[e] = True
+                            new_state.from_event = False
+                        else:
+                            graph.ep.is_timed_event[e] = False
                         stack.append(new_vertex)
 
         
@@ -707,6 +726,9 @@ class MultiSSE(FlowAnalysis):
 
         # context used for computing ABB timings, this should be something useful later on
         context = None
+
+        # Graph View without edges from timed events
+        g_wo_events = graph_tool.GraphView(graph, efilt=lambda x: not graph.ep.is_timed_event[x])
         
         state = graph.vp.state[state_vertex]
         task = state.get_scheduled_task()
@@ -723,7 +745,7 @@ class MultiSSE(FlowAnalysis):
 
                 # check if event time is in global time intervalls
                 if event is not None:
-                    for i, intervall in enumerate(state.global_times):
+                    for intervall in state.global_times:
                         if intervall[0] <= event_time and event_time <= intervall[1]:
                             found_timed_event = True
 
@@ -733,7 +755,11 @@ class MultiSSE(FlowAnalysis):
                             # set timing information
                             new_state.last_event_time = event_time
                             new_state.passed_events.append(event_time)
-                            state.global_times[i] = (intervall[0], event_time)
+
+                            # cut global times of original state to maximum event time
+                            for i, intervall in enumerate(state.global_times.copy()):
+                                if intervall[1] > event_time:
+                                    state.global_times[i] = (intervall[0], event_time)
 
                             new_states.append(new_state)
                             break
@@ -797,7 +823,7 @@ class MultiSSE(FlowAnalysis):
 
                 # put existing neighbors and new states in update list
                 update_list = new_states.copy()
-                for v in graph.vertex(state_vertex).out_neighbors():
+                for v in g_wo_events.vertex(state_vertex).out_neighbors():
                     new_state = graph.vp.state[v]
                     update_list.append(new_state)
                 
@@ -805,9 +831,8 @@ class MultiSSE(FlowAnalysis):
                 for new_state in update_list:                    
                     new_task = new_state.get_scheduled_task()
 
-                    if new_state in new_states:
-                        new_state.local_times = []
-                        new_state.global_times = []
+                    new_state.local_times = []
+                    new_state.global_times = []
 
                     if new_task is not None:
                         abb = new_state.abbs[new_task.name] 
@@ -830,13 +855,13 @@ class MultiSSE(FlowAnalysis):
                                     new_state.global_times.append((intervall[0] + min_time, intervall[1] + max_time))
 
                     new_state.merge_times()
-                
-                # copy root global times to all neighbors
-                # for v in graph.vertex(state_vertex).out_neighbors():
-                #     new_state = graph.vp.state[v]
-                #     new_state.root_global_times = state.root_global_times.copy()
 
-                
+                # merge global and local times into merged lists 
+                state.global_times_merged.extend(state.global_times)
+                state.local_times_merged.extend(state.local_times)
+                state.merge_times()
+                state.local_times = []
+                state.global_times = []               
 
         return new_states
 

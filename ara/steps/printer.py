@@ -259,9 +259,13 @@ class Printer(Step):
 
                 # print state edges in cluster
                 for edge in state_graph.edges():
+                    color = "black"
+                    if state_graph.ep.is_timed_event[edge]:
+                        color = "green"
                     dot_edge = pydot.Edge(
                         str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.source())),
-                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.target()))
+                        str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.target())),
+                        color=color
                     )
                     subg.add_edge(dot_edge)
         
