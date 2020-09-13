@@ -194,8 +194,10 @@ cdef class Arguments:
         return deref(self._c_arguments).size()
 
     def __getitem__(self, key):
-        if (key >= len(self)):
+        if (key >= len(self) or -key >= len(self)):
             raise IndexError("Argument index out of range")
+        if (key < 0):
+            key = len(self) + key
         cdef shared_ptr[CArgument] c_arg = deref(self._c_arguments).at(key)
         arg = Argument()
         arg._c_argument = c_arg
