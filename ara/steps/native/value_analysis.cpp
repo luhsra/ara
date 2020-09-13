@@ -18,7 +18,7 @@ using namespace SVF;
 
 namespace ara::step {
 	void ValueAnalysis::retrieve_value(const SVFG& vfg, const llvm::Value& value, graph::Argument& arg) {
-		// logger.debug() << "Trying to get value of " << value << std::endl;
+		logger.debug() << "Trying to get value of " << value << std::endl;
 		PAG* pag = PAG::getPAG();
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
 		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
@@ -38,12 +38,43 @@ namespace ara::step {
 			VFGContainer current = std::move(nodes.top());
 			nodes.pop();
 			const VFGNode* current_node = current.node;
-			// copy
-			graph::CallPath next_path = current.call_path;
-			logger.info() << "CallPath: " << next_path << std::endl;
+			graph::CallPath& current_path = current.call_path;
+			logger.info() << "Current Node: " << *current_node << std::endl;
+			logger.info() << "Current CallPath: " << current_path << std::endl;
+
+			if (auto stmt = llvm::dyn_cast<StmtVFGNode>(current_node)) {
+				const PAGEdge* edge = stmt->getPAGEdge();
+				if (const Constant* c = llvm::dyn_cast<Constant>(edge->getValue())) {
+					logger.info() << "Constant: " << *c << std::endl;
+					// We have a problem here. SVF gives us a constant Value what is meaningful from their site.
+					// However, we want to fill this into our Argument structure which is exposed in Python. In
+					// Python there exists no thing like const correctness because is semantically useless. That
+					// means that we are forced to limit the Python types to only support methods that don't violate
+					// const correctness or do a const_cast here and hope that everything will work.
+					//
+					// GlobalVariables needs an extra unpacking
+					if (const GlobalVariable* gv = llvm::dyn_cast<GlobalVariable>(c)) {
+						const llvm::Value* gvv = gv->getOperand(0);
+						if (gvv != nullptr) {
+							if (const Constant* gvvc = llvm::dyn_cast<Constant>(gvv)) {
+								arg.add_variant(current_path, const_cast<Constant&>(*gvvc));
+								continue;
+							}
+						}
+					}
+					arg.add_variant(current_path, const_cast<Constant&>(*c));
+					continue;
+				}
+			}
+			if (auto null_p = llvm::dyn_cast<NullPtrVFGNode>(current_node)) {
+				arg.add_variant(current_path, *llvm::ConstantPointerNull::get(llvm::PointerType::get(
+				                                  llvm::IntegerType::get(graph.get_module().getContext(), 8), 0)));
+				continue;
+			}
 
 			for (VFGNode::const_iterator it = current_node->InEdgeBegin(); it != current_node->InEdgeEnd(); ++it) {
 				VFGEdge* edge = *it;
+				graph::CallPath next_path = current_path;
 				logger.info() << "Next edge: " << *edge << std::endl;
 				if (auto cde = llvm::dyn_cast<CallDirSVFGEdge>(edge)) {
 					const CallBlockNode* cbn = s_callgraph->getCallSite(cde->getCallSiteId());
@@ -58,26 +89,10 @@ namespace ara::step {
 				}
 
 				const VFGNode* next_node = (*it)->getSrcNode();
-				bool last_node = false;
-				if (auto stmt = llvm::dyn_cast<StmtVFGNode>(next_node)) {
-					const PAGEdge* edge = stmt->getPAGEdge();
-					if (const Constant* c = llvm::dyn_cast<Constant>(edge->getValue())) {
-						logger.info() << "Constant: " << *c << std::endl;
-						// We have a problem here. SVF gives us a constant Value what is meaningful from their site.
-						// However, we want to fill this into our Argument structure which is exposed in Python. In
-						// Python there exists no thing like const correctness because is semantically useless. That
-						// means that we are forced to limit the Python types to only support methods that don't violate
-						// const correctness or do a const_cast here and hope that everything will work.
-						arg.add_variant(next_path, const_cast<Constant&>(*c));
-						last_node = true;
-					}
-				}
-
-				if (!last_node && next_node != nullptr) {
+				if (next_node != nullptr) {
 					logger.info() << "Next node: " << *next_node << std::endl;
 					nodes.emplace(VFGContainer(next_node, next_path));
 				}
-				next_path = current.call_path;
 			}
 		}
 	}
