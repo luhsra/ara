@@ -174,6 +174,12 @@ class Callgraph(graph_tool.Graph):
 
         self.graph_properties["cfg"] = self.new_gp("object", cfg)
 
+    def get_edge_for_callsite(self, callsite):
+        for edge in self.edges():
+            if self.ep.callsite[edge] == callsite:
+                return edge
+        return None
+
 class Graph:
     """Container for all data that ARA uses from multiple steps.
 

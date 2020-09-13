@@ -1,8 +1,10 @@
 from .os_util import syscall, SyscallCategory
 from .os_base import OSBase
 
+import pyllco
+
 import ara.graph as _graph
-from ara.graph.argument import CallPath
+from ara.graph import CallPath
 from ara.util import get_logger
 
 logger = get_logger("FreeRTOS")
@@ -161,13 +163,17 @@ class FreeRTOS(OSBase):
         state = state.copy()
 
         # instance properties
-        cp = CallPath(graph=state.callgraph, node=state.call)
-        task_function = state.cfg.vp.arguments[abb][0].get(call_path=cp)
-        task_name = state.cfg.vp.arguments[abb][1].get(call_path=cp)
-        task_stack_size = state.cfg.vp.arguments[abb][2].get(call_path=cp)
-        task_parameters = state.cfg.vp.arguments[abb][3].get(call_path=cp)
-        task_priority = state.cfg.vp.arguments[abb][4].get(call_path=cp)
-        task_handle_p = state.cfg.vp.arguments[abb][5].get(call_path=cp, raw=True)
+        cp = state.call_path
+
+        task_function = state.cfg.vp.arguments[abb][0].get_value(key=cp, raw=True)
+        assert isinstance(task_function, pyllco.Function), "Expecting function"
+        task_function = task_function.get_name()
+
+        task_name = state.cfg.vp.arguments[abb][1].get_value(key=cp)
+        task_stack_size = state.cfg.vp.arguments[abb][2].get_value(key=cp)
+        task_parameters = state.cfg.vp.arguments[abb][3].get_value(key=cp)
+        task_priority = state.cfg.vp.arguments[abb][4].get_value(key=cp)
+        task_handle_p = state.cfg.vp.arguments[abb][5].get_value(key=cp, raw=True)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
@@ -219,11 +225,11 @@ class FreeRTOS(OSBase):
         state = state.copy()
 
         # instance properties
-        cp = CallPath(graph=state.callgraph, node=state.call)
+        cp = state.call_path
         queue_handler = state.cfg.vp.arguments[abb].get_return_value()
-        handler_name = queue_handler.get(raw=True).get_name()
-        queue_len = state.cfg.vp.arguments[abb][0].get(call_path=cp)
-        queue_item_size = state.cfg.vp.arguments[abb][1].get(call_path=cp)
+        handler_name = queue_handler.get_value(raw=True).get_name()
+        queue_len = state.cfg.vp.arguments[abb][0].get_value(key=cp)
+        queue_item_size = state.cfg.vp.arguments[abb][1].get_value(key=cp)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
@@ -245,10 +251,10 @@ class FreeRTOS(OSBase):
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
-        cp = CallPath(graph=state.callgraph, node=state.call)
+        cp = state.call_path
         mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
-        handler_name = mutex_handler.get(raw=True).get_name()
-        mutex_type = state.cfg.vp.arguments[abb][0].get(call_path=cp)
+        handler_name = mutex_handler.get_value(raw=True).get_name()
+        mutex_type = state.cfg.vp.arguments[abb][0].get_value(key=cp)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
@@ -269,8 +275,8 @@ class FreeRTOS(OSBase):
     def vTaskDelay(cfg, abb, state):
         state = state.copy()
 
-        cp = CallPath(graph=state.callgraph, node=state.call)
-        ticks = state.cfg.vp.arguments[abb][0].get(call_path=cp)
+        cp = state.call_path
+        ticks = state.cfg.vp.arguments[abb][0].get_value(key=cp)
 
         if state.running is None:
             # TODO proper error handling
@@ -287,14 +293,14 @@ class FreeRTOS(OSBase):
     def xQueueGenericSend(cfg, abb, state):
         state = state.copy()
 
-        cp = CallPath(graph=state.callgraph, node=state.call)
-        handler = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
+        cp = state.call_path
+        handler = state.cfg.vp.arguments[abb][0].get_value(key=cp, raw=True)
 
         # TODO this has to be a pointer object. However, the value analysis
         # follows the pointer currently.
-        item = state.cfg.vp.arguments[abb][1].get(call_path=cp, raw=True)
-        ticks = state.cfg.vp.arguments[abb][2].get(call_path=cp)
-        action = state.cfg.vp.arguments[abb][3].get(call_path=cp)
+        item = state.cfg.vp.arguments[abb][1].get_value(key=cp, raw=True)
+        ticks = state.cfg.vp.arguments[abb][2].get_value(key=cp)
+        action = state.cfg.vp.arguments[abb][3].get_value(key=cp)
 
         queue = None
         for v in state.instances.vertices():

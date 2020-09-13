@@ -5,7 +5,7 @@ import functools
 
 import pyllco
 
-from ara.graph import ABBType, Graph, CFGView, CFType
+from ara.graph import ABBType, Graph, CFGView, CFType, CallPath
 from .step import Step
 from .option import Option, String, Choice
 from .freertos import Task
@@ -28,7 +28,7 @@ class State:
         self.next_abbs = next_abbs
 
         self.instances = graph_tool.Graph()
-        self.call = None # call node within the call graph
+        self.call_path = None # call node within the call graph
         self.branch = False # is this state coming from a branch or loop
         self.running = None # what instance (Task or ISR) is currently running
 
@@ -41,8 +41,9 @@ class State:
     def copy(self):
         scopy = State()
         scopy.instances = self.instances.copy()
+        scopy.call_path = copy.copy(self.call_path)
         for key, value in self.__dict__.items():
-            if key == 'instances':
+            if key in ['instances', 'call_path']:
                 continue
             setattr(scopy, key, value)
         return scopy
@@ -212,13 +213,11 @@ class FlatAnalysis(FlowAnalysis):
     This analysis does not respect loops.
     """
     def _init_analysis(self):
-        self._call_graph = self._graph.call_graphs[self._entry_func]
-        self._cond_func = self._graph.call_graphs[self._entry_func].new_vp("bool")
+        self._call_graph = self._graph.callgraph
+        self._cond_func = {}
         self._step_data.add(self._entry_func)
 
-        def new_visited_map():
-            return self._icfg.new_vp("bool", val=False)
-        self._visited = defaultdict(new_visited_map)
+        self._visited = defaultdict(lambda: defaultdict(lambda: False))
 
     def _get_initial_state(self):
         # find main
@@ -226,12 +225,12 @@ class FlatAnalysis(FlowAnalysis):
         entry_abb = self._graph.cfg.get_entry_abb(entry_func)
 
         entry = State(cfg=self._graph.cfg,
-                      callgraph=self._graph.call_graphs[self._entry_func],
+                      callgraph=self._graph.callgraph,
                       next_abbs=[entry_abb])
 
         self._graph.os.init(entry)
 
-        entry.call = self._find_tree_root(self._graph.call_graphs[self._entry_func])
+        entry.call_path = CallPath()
         entry.scheduler_on = self._is_chained_analysis(self._entry_func)
         entry.running = self._find_running_instance(self._entry_func)
 
@@ -262,14 +261,6 @@ class FlatAnalysis(FlowAnalysis):
     def _is_chained_analysis(self, entry_func):
         return self._find_running_instance(entry_func) is not None
 
-    def _find_tree_root(self, graph):
-        if graph.num_vertices() == 0:
-            return None
-        node = next(graph.vertices())
-        while node.in_degree() != 0:
-            node = next(node.in_neighbors())
-        return node
-
     def _init_execution(self, state):
         pass
 
@@ -287,21 +278,21 @@ class FlatAnalysis(FlowAnalysis):
 
     def _get_call_node(self, call_path, abb):
         """Return the call node for the given abb, respecting the call_path."""
-        for neighbor in self._call_graph.vertex(call_path).out_neighbors():
-            if self._call_graph.vp.cfglink[neighbor] == abb:
-                return neighbor
-        else:
-            abb_name = self._icfg.vp.name[self._icfg.vertex(abb)]
+        edge = self._call_graph.get_edge_for_callsite(abb)
+        if edge is None:
             self._fail(f"Cannot find call path for ABB {abb_name}.")
+        new_call_path = copy.copy(call_path)
+        new_call_path.add_call_site(self._call_graph, edge)
+        return new_call_path
 
     def _execute(self, state):
         new_states = []
         self._init_execution(state)
         for abb in state.next_abbs:
-            # don't handle already visted vertices
-            if self._visited[state.call][abb]:
+            # don't handle already visited vertices
+            if self._visited[state.call_path][abb]:
                 continue
-            self._visited[state.call][abb] = True
+            self._visited[state.call_path][abb] = True
             self._log.debug(f"Handle state {state}")
 
             # syscall handling
@@ -321,7 +312,8 @@ class FlatAnalysis(FlowAnalysis):
                 for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
-                    new_state.call = self._get_call_node(state.call, abb)
+                    new_state.call_path = self._get_call_node(state.call_path,
+                                                              abb)
                     self._handle_call(state, new_state, abb)
                     new_states.append(new_state)
 
@@ -329,10 +321,11 @@ class FlatAnalysis(FlowAnalysis):
             elif (self._icfg.vp.is_exit[abb] and
                   self._icfg.vertex(abb).out_degree() > 0):
                 new_state = state.copy()
-                call = new_state.callgraph.vp.cfglink[new_state.call]
+                callsite = new_state.call_path.s(new_state.callgraph)[-1]
+                call = new_state.callgraph.ep.callsite[callsite]
                 neighbors = self._lcfg.vertex(call).out_neighbors()
                 new_state.next_abbs = [next(neighbors)]
-                new_state.call = next(state.call.in_neighbors())
+                new_state.call_path.pop_back()
                 new_states.append(new_state)
 
             # computation block handling
@@ -368,7 +361,7 @@ class InstanceGraph(FlatAnalysis):
     def get_single_dependencies(self):
         deps = self._get_os_specific_deps()
         deps += list(map(self._get_entry_point_dep,
-                         ["Syscall", "ValueAnalysis", "CallGraph"]))
+                         ["Syscall", "ValueAnalysis"]))
         return deps
 
     def _init_analysis(self):
@@ -410,7 +403,7 @@ class InstanceGraph(FlatAnalysis):
                         for x in self._find_exit_abbs(func)])
 
     def _init_fake_state(self, state, abb):
-        state.branch = (self._cond_func[state.call] or
+        state.branch = (self._cond_func.get(state.call_path, False) or
                         self._is_in_condition_or_loop(abb))
 
     def _extract_entry_points(self):
@@ -434,9 +427,9 @@ class InstanceGraph(FlatAnalysis):
             state.instances = self._graph.instances
 
     def _handle_call(self, old_state, new_state, abb):
-        new_state.branch = (self._cond_func[old_state.call] or
+        new_state.branch = (self._cond_func.get(old_state.call_path, False) or
                             self._is_in_condition_or_loop(abb))
-        self._cond_func[new_state.call] = new_state.branch
+        self._cond_func[new_state.call_path] = new_state.branch
 
     def _get_categories(self):
         return SyscallCategory.CREATE
