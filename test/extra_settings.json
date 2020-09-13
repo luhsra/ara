@@ -7,6 +7,15 @@
 		"log_level": "debug"
 	},
 
+	"InstanceGraph": {
+		"log_level": "debug",
+		"dump": true
+	},
+
+	"Syscall": {
+		"dump": true
+	},
+
 	"logger": {
 		"StepManager": "info"
 	}
