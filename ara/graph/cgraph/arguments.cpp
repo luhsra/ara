@@ -1,6 +1,7 @@
 #include "arguments.h"
 
 #include "common/llvm_common.h"
+#include "graph.h"
 #include "graph_data_pyx.h"
 
 #include <llvm/Support/raw_ostream.h>
@@ -43,6 +44,15 @@ namespace ara::graph {
 		}
 	}
 
+	PyObject* CallPath::get_call_site(PyObject* graph, size_t index) {
+		auto gi = get_graph(graph);
+		boost::python::object new_e;
+		graph_tool::run_action<>()(gi, [&](auto&& graph) {
+			return get_call_site_dispatched(std::forward<decltype(graph)>(graph), gi, index, new_e);
+		})();
+		return boost::python::incref(new_e.ptr());
+	}
+
 	std::string CallPath::print(const CallGraph& call_graph, bool call_site, bool instruction, bool functions) const {
 		if (!(call_site || instruction || functions)) {
 			return "CallPath()";
@@ -64,6 +74,26 @@ namespace ara::graph {
 			}
 		}
 		return true;
+	}
+
+	void CallPath::pop_front() {
+		if (is_empty()) {
+			return;
+		}
+		edges.erase(edges.begin());
+		if (verbose) {
+			edge_descriptions.erase(edge_descriptions.begin());
+		}
+	}
+
+	void CallPath::pop_back() {
+		if (is_empty()) {
+			return;
+		}
+		edges.pop_back();
+		if (verbose) {
+			edge_descriptions.pop_back();
+		}
 	}
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp) {
@@ -113,15 +143,34 @@ namespace ara::graph {
 	bool Argument::has_value(const CallPath& key) const { return values.find(key) != values.end(); }
 
 	llvm::Value& Argument::get_value(const CallPath& key) const {
-		if (is_determined() && key.is_empty()) {
+		if (is_determined()) {
 			return values.begin()->second;
 		}
-		return values.at(key);
+		auto it = values.find(key);
+		if (it != values.end()) {
+			return it->second;
+		}
+
+		// copy key
+		CallPath r_key = key;
+
+		// check for less specific paths
+		while (!r_key.is_empty()) {
+			r_key.pop_front();
+			auto it = values.find(r_key);
+			if (it != values.end()) {
+				return it->second;
+			}
+		}
+		throw std::out_of_range("Argument has not such value.");
 	}
 
 	std::ostream& operator<<(std::ostream& os, const Argument& arg) {
 		os << "Argument(";
-
+		if (arg.size() == 0) {
+			os << "empty)";
+			return os;
+		}
 		if (arg.is_determined()) {
 			os << llvm_to_string(arg.get_value());
 		} else {

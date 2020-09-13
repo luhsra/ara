@@ -7,7 +7,7 @@ from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp.unordered_map cimport unordered_map
 
-from ir cimport Value
+from ir cimport Value, AttributeSet
 
 from .cgraph cimport CallGraph
 
@@ -17,6 +17,12 @@ cdef extern from "arguments.h" namespace "ara::graph":
     cdef cppclass CallPath:
         string print(const CallGraph&, bool, bool, bool)
         void add_call_site(object, string)
+        object get_call_site(object, size_t)
+        size_t size()
+        void pop_back()
+        void pop_front()
+        size_t hash()
+        bool operator==(const CallPath&)
 
     cdef cppclass Argument:
         ctypedef unordered_map[CallPath, value_ref].iterator iterator
@@ -24,6 +30,7 @@ cdef extern from "arguments.h" namespace "ara::graph":
         bool is_constant()
         bool has_value(CallPath&)
         Value get_value(CallPath&)
+        AttributeSet& get_attrs()
         size_t size()
         iterator begin()
         iterator end()

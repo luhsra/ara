@@ -19,7 +19,7 @@ namespace boost::detail {
 } // namespace boost::detail
 
 namespace ara::graph {
-	class CallPath {
+	class CallPath : boost::equality_comparable<CallPath> {
 	  private:
 		std::vector<graph_tool::GraphInterface::edge_t> edges;
 
@@ -36,6 +36,13 @@ namespace ara::graph {
 			if (verbose) {
 				edge_descriptions.emplace_back(call_graph.callsite_name[mapped_edge]);
 			}
+		}
+
+		template <typename Graph>
+		void get_call_site_dispatched(Graph& g, graph_tool::GraphInterface& gi, size_t index,
+		                              boost::python::object& new_e) {
+			auto gp = graph_tool::retrieve_graph_view<Graph>(gi, g);
+			new_e = boost::python::object(graph_tool::PythonEdge<Graph>(gp, edges.at(index)));
 		}
 
 		template <typename Graph>
@@ -88,6 +95,8 @@ namespace ara::graph {
 
 		void add_call_site(PyObject* edge, const std::string& description = "-");
 
+		PyObject* get_call_site(PyObject* graph, size_t index);
+
 		std::string print(const CallGraph& call_graph, bool call_site = false, bool instruction = false,
 		                  bool functions = false) const;
 
@@ -98,6 +107,16 @@ namespace ara::graph {
 		bool operator==(const CallPath& other) const;
 
 		std::size_t hash() const { return boost::hash_range(edges.begin(), edges.end()); }
+
+		/**
+		 * Deletes the most far away call from the CallPath.
+		 */
+		void pop_front();
+
+		/**
+		 * Deletes the nearest call from the CallPath.
+		 */
+		void pop_back();
 	};
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp);
@@ -176,7 +195,7 @@ namespace ara::graph {
 		 */
 		llvm::Value& get_value(const CallPath& key = CallPath()) const;
 
-		size_t size() { return values.size(); }
+		size_t size() const { return values.size(); }
 
 		/**
 		 * Common iterators that return a std::pair<CallPath, llvm::Value&>.

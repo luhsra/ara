@@ -28,10 +28,17 @@ cdef class CallPath:
     def __repr__(self):
         return to_string[CCallPath](self._c_callpath).decode('UTF-8')
 
+    def __hash__(self):
+        return self._c_callpath.hash()
+
+    def __eq__(self, CallPath other):
+        return self._c_callpath == other._c_callpath
+
     def print(self, call_graph,
               bool call_site=False,
               bool instruction=False,
               bool functions=False):
+        assert hasattr(call_graph, "_Graph__graph"), "call_graph is not a graph tool graph."
         return self._c_callpath.print(CallGraph.get(call_graph),
                                       call_site,
                                       instruction,
@@ -43,11 +50,45 @@ cdef class CallPath:
             call_graph.ep.callsite_name[call_site].encode('UTF-8')
         )
 
+    def pop_front(self):
+        self._c_callpath.pop_front()
+
+    def pop_back(self):
+        self._c_callpath.pop_back()
+
     def __copy__(self):
         cp = CallPath()
         # calls copy constructor in C++
         cp._c_callpath = self._c_callpath
         return cp
+
+    def __len__(self):
+        return self._c_callpath.size()
+
+    def get_call_site(self, call_graph, index):
+        assert hasattr(call_graph, "_Graph__graph"), "call_graph is not a graph tool graph."
+        return self._c_callpath.get_call_site(call_graph, index)
+
+    def specify_with_graph(self, graph):
+        class SpecifiedCallPath:
+            def __init__(self, cp, graph):
+                self._cp = cp
+                self._graph = graph
+
+            def __len__(self):
+                return len(self._cp)
+
+            def __getitem__(self, index):
+                if (index >= len(self) or -index >= len(self)):
+                    raise IndexError("Argument index out of range")
+                if (index < 0):
+                    index = len(self) + index
+                return self._cp.get_call_site(self._graph, index)
+
+        return SpecifiedCallPath(self, graph)
+
+    def s(self, graph):
+        return self.specify_with_graph(graph)
 
 
 cdef enum _ArgumentIteratorKind:
