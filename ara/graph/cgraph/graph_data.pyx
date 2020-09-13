@@ -11,12 +11,13 @@ from .cgraph cimport CallGraph
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp cimport bool
 from cython.operator cimport dereference as deref, postincrement
-from ir cimport Value
+from ir cimport Value, AttributeSet
 
 # workaround for https://github.com/cython/cython/issues/3816
 # from pyllco cimport get_obj_from_value
 cdef extern from 'pyllco.h':
     object get_obj_from_value(Value&)
+    object get_obj_from_attr_set(AttributeSet&)
 
 
 cdef class CallPath:
@@ -136,8 +137,15 @@ cdef class Argument:
     def has_value(self, key: CallPath):
         return deref(self._c_argument).has_value(key._c_callpath)
 
-    def get_value(self, CallPath key=CallPath()):
-        return get_obj_from_value(deref(self._c_argument).get_value(key._c_callpath))
+    def get_value(self, CallPath key=CallPath(), raw=False):
+        cdef AttributeSet a_set
+        value = get_obj_from_value(deref(self._c_argument).get_value(key._c_callpath))
+        if raw:
+            return value
+        else:
+            a_set = deref(self._c_argument).get_attrs()
+            attrs = get_obj_from_attr_set(a_set)
+            return value.get(attrs=attrs)
 
     def __repr__(self):
         return to_string[CArgument](deref(self._c_argument)).decode('UTF-8')
