@@ -8,6 +8,14 @@
 #include <exception>
 
 namespace ara::graph {
+	graph_tool::GraphInterface& get_graph(PyObject* py_obj) {
+		PyObject* pyobj_graph = PyObject_GetAttrString(py_obj, "_Graph__graph");
+		assert(pyobj_graph != nullptr);
+		boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pyobj_graph);
+		assert(get_graph_interface.check());
+		return get_graph_interface();
+	}
+
 	// ABBType functions
 	std::ostream& operator<<(std::ostream& str, const ABBType& ty) {
 		switch (ty) {
@@ -98,14 +106,6 @@ namespace ara::graph {
 			std::cerr << "Bad any cast for attribute '" << key << "'" << std::endl;
 			throw e;
 		}
-	}
-
-	graph_tool::GraphInterface& get_graph(PyObject* py_obj) {
-		PyObject* pyobj_graph = PyObject_GetAttrString(py_obj, "_Graph__graph");
-		assert(pyobj_graph != nullptr);
-		boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pyobj_graph);
-		assert(get_graph_interface.check());
-		return get_graph_interface();
 	}
 
 	PyObject* get_vprops(PyObject* graph) {

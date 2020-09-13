@@ -20,6 +20,8 @@ namespace ara::graph {
 	/* pointers are stored in the int64_t properties, so check they fit */
 	static_assert(sizeof(int64_t) == sizeof(void*));
 
+	graph_tool::GraphInterface& get_graph(PyObject* py_obj);
+
 	struct CFG {
 		graph_tool::GraphInterface& graph;
 		/* see graph.py for python definitions */
