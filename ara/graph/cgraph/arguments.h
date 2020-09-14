@@ -10,6 +10,7 @@
 #include <functional>
 #include <graph_python_interface.hh>
 #include <llvm/IR/Instructions.h>
+#include <memory>
 #include <vector>
 
 namespace boost::detail {
@@ -22,20 +23,18 @@ namespace ara::graph {
 	class CallPath : boost::equality_comparable<CallPath> {
 	  private:
 		std::vector<graph_tool::GraphInterface::edge_t> edges;
-
-		// must not be changed without clearing edges and edge_descriptions, too
-		bool verbose;
-		std::vector<std::string> edge_descriptions;
+		// This CallGraph should be filled, as soon as CallPath is not empty anymore.
+		CallGraph* call_graph;
+		std::shared_ptr<CallGraph> owned_call_graph;
 
 		std::string get_callsite_name(const SVF::PTACallGraphEdge& edge) const;
+
+		void check_and_assign(CallGraph& call_graph);
 
 		template <typename Graph>
 		void add_call_site_dispatched(Graph& g, CallGraph& call_graph, const SVF::PTACallGraphEdge& edge) {
 			typename boost::graph_traits<Graph>::edge_descriptor mapped_edge = call_graph.back_map(g, edge);
 			edges.emplace_back(mapped_edge);
-			if (verbose) {
-				edge_descriptions.emplace_back(call_graph.callsite_name[mapped_edge]);
-			}
 		}
 
 		template <typename Graph>
@@ -81,24 +80,20 @@ namespace ara::graph {
 		friend std::ostream& operator<<(std::ostream& os, const CallPath& cp);
 
 	  public:
-		/**
-		 * Construct a CallPath. If verbose is set, construct an readable output string already when adding edges since
-		 * they need the tamplated graph type. This can be deactivated for lower memory usage at the price of worse
-		 * output.
-		 */
-		CallPath(bool verbose = true) : verbose(verbose) {}
+		CallPath() : edges(), call_graph(nullptr) {}
 
 		void add_call_site(CallGraph& call_graph, const SVF::PTACallGraphEdge& call_site) {
+			check_and_assign(call_graph);
 			graph_tool::gt_dispatch<>()([&](auto& g) { add_call_site_dispatched(g, call_graph, call_site); },
 			                            graph_tool::always_directed())(call_graph.graph.get_graph_view());
 		}
 
-		void add_call_site(PyObject* edge, const std::string& description = "-");
+		void add_call_site(PyObject* call_graph, PyObject* edge);
 
-		PyObject* get_call_site(PyObject* graph, size_t index);
+		graph_tool::GraphInterface::edge_t at(size_t index) { return edges.at(index); }
+		PyObject* py_at(size_t index);
 
-		std::string print(const CallGraph& call_graph, bool call_site = false, bool instruction = false,
-		                  bool functions = false) const;
+		std::string print(bool call_site = false, bool instruction = false, bool functions = false) const;
 
 		bool is_empty() const { return size() == 0; }
 
@@ -117,6 +112,17 @@ namespace ara::graph {
 		 * Deletes the nearest call from the CallPath.
 		 */
 		void pop_back();
+
+		/**
+		 * Common iterators that return a std::pair<CallPath, llvm::Value&>.
+		 */
+		auto begin() noexcept { return edges.begin(); }
+		const auto begin() const noexcept { return edges.begin(); }
+		const auto cbegin() const noexcept { return edges.cbegin(); }
+
+		auto end() noexcept { return edges.end(); }
+		const auto end() const noexcept { return edges.end(); }
+		const auto cend() const noexcept { return edges.cend(); }
 	};
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp);

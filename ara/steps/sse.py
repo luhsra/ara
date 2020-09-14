@@ -321,7 +321,7 @@ class FlatAnalysis(FlowAnalysis):
             elif (self._icfg.vp.is_exit[abb] and
                   self._icfg.vertex(abb).out_degree() > 0):
                 new_state = state.copy()
-                callsite = new_state.call_path.s(new_state.callgraph)[-1]
+                callsite = new_state.call_path[-1]
                 call = new_state.callgraph.ep.callsite[callsite]
                 neighbors = self._lcfg.vertex(call).out_neighbors()
                 new_state.next_abbs = [next(neighbors)]

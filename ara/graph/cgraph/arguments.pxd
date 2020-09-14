@@ -15,9 +15,9 @@ ctypedef Value& value_ref
 
 cdef extern from "arguments.h" namespace "ara::graph":
     cdef cppclass CallPath:
-        string print(const CallGraph&, bool, bool, bool)
-        void add_call_site(object, string)
-        object get_call_site(object, size_t)
+        string print(bool, bool, bool)
+        void add_call_site(object, object)
+        object py_at(size_t)
         size_t size()
         void pop_back()
         void pop_front()
