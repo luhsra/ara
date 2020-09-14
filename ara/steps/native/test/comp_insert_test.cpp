@@ -21,7 +21,7 @@ namespace ara::step {
 			for (auto& b : f) {
 				for (auto& i : b) {
 					bool found_double_call = false;
-					if (llvm::isa<llvm::CallBase>(i) && !isCallToLLVMIntrinsic(&i)) {
+					if (llvm::isa<llvm::CallBase>(i) && !is_call_to_intrinsic(i)) {
 						if (found_double_call) {
 							std::string call;
 							llvm::raw_string_ostream rso(call);

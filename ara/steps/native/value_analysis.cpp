@@ -98,7 +98,7 @@ namespace ara::step {
 	}
 
 	void ValueAnalysis::collectUsesOnVFG(const SVFG& vfg, const llvm::CallBase& call, graph::Arguments& args) {
-		if (isCallToLLVMIntrinsic(&call)) {
+		if (is_call_to_intrinsic(call)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
 

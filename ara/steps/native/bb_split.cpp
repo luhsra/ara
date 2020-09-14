@@ -33,7 +33,7 @@ namespace ara::step {
 				BasicBlock::iterator it = bb->begin();
 				while (it != bb->end()) {
 					while (isa<CallBase>(*it)) {
-						if (isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)) {
+						if (isInlineAsm(&*it) || is_call_to_intrinsic(*it)) {
 							++it;
 							continue;
 						}
@@ -49,7 +49,7 @@ namespace ara::step {
 							goto while_end;
 						}
 
-						if (isa<CallBase>(*it) && (!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
+						if (isa<CallBase>(*it) && (!(isInlineAsm(&*it) || is_call_to_intrinsic(*it)))) {
 							continue;
 						}
 

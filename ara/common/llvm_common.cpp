@@ -34,12 +34,6 @@ namespace ara {
 		return false;
 	}
 
-	bool isCallToLLVMIntrinsic(const Instruction* inst) {
-		if (inst == nullptr)
-			return false;
-		return is_call_to_intrinsic(*inst);
-	}
-
 	bool isInlineAsm(const Instruction* inst) {
 		if (const CallBase* call = dyn_cast<CallBase>(inst)) {
 			return call->isInlineAsm();

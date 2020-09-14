@@ -23,7 +23,7 @@ namespace ara::step {
 					if (!(llvm::isa<llvm::CallBase>(I))) {
 						continue;
 					}
-					if (isCallToLLVMIntrinsic(&I) || isInlineAsm(&I)) {
+					if (is_call_to_intrinsic(I) || isInlineAsm(&I)) {
 						continue;
 					}
 					if ((std::distance(B.begin(), B.end()) == 2) && (&B.front() == &I)) {
