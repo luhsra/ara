@@ -26,7 +26,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 2
+MAX_UPDATES = 3
 MAX_STATE_UPDATES = 3
 
 sse_counter = 0
@@ -695,12 +695,8 @@ class MultiSSE(FlowAnalysis):
                                 graph.ep.is_timed_event[e] = False
                             found = True
 
-                            last_event_time = existing_state.passed_events[-1]
                             for intervall in new_state.global_times:
-                                if intervall[0] > last_event_time:
-                                    existing_state.global_times.append(intervall)
-                            existing_state.passed_events = new_state.passed_events.copy()
-                            existing_state.merge_times()
+                                existing_state.global_times.append(intervall)
 
                             if existing_state.updated < MAX_STATE_UPDATES:
                                 existing_state.updated += 1
@@ -740,7 +736,7 @@ class MultiSSE(FlowAnalysis):
                 # state.calc_global_time()
 
                 # get next timed event
-                event_time, event = self._g.os.get_next_timed_event(state.last_event_time, state.instances, state.cpu)
+                event_time, event = self._g.os.get_next_timed_event(state.passed_events[-1], state.instances, state.cpu)
                 found_timed_event = False
 
                 # check if event time is in global time intervalls
@@ -753,7 +749,6 @@ class MultiSSE(FlowAnalysis):
                             new_state = self._g.os.execute_event(event, state)
 
                             # set timing information
-                            new_state.last_event_time = event_time
                             new_state.passed_events.append(event_time)
 
                             # cut global times of original state to maximum event time
@@ -817,7 +812,7 @@ class MultiSSE(FlowAnalysis):
 
                 if found_timed_event:
                     # advance last event timer
-                    state.last_event_time = event_time
+                    state.passed_events.append(event_time)
                 
                 ############## UPDATE TIMINGS ###################
 
@@ -844,24 +839,56 @@ class MultiSSE(FlowAnalysis):
                                 new_state.local_times.append((intervall[0] + min_time, intervall[1] + max_time))
                         
                         # update all global intervalls
-                        s_last_event_time = state.passed_events[-1]
-                        n_last_event_time = new_state.passed_events[-1]
-
-                        if s_last_event_time < n_last_event_time:
-                            new_state.global_times.append((n_last_event_time, n_last_event_time + max_time))
+                        if new_state.from_event:
+                            new_state.global_times.append((state.passed_events[-1], state.passed_events[-1] + max_time))
                         else:
                             for intervall in state.global_times.copy():
-                                if intervall[0] >= s_last_event_time:
-                                    new_state.global_times.append((intervall[0] + min_time, intervall[1] + max_time))
+                                new_min_time = intervall[0] + min_time
+                                new_max_time = intervall[1] + max_time                            
 
-                    new_state.merge_times()
+                                # find last event time before intervall starting time
+                                eventtime_before = 0
+                                index_before = 0
+                                for i, s_passed_event in enumerate(state.passed_events):
+                                    if intervall[0] >= s_passed_event:
+                                        eventtime_before = s_passed_event
+                                        index_before = i
+                                    else:
+                                        break
+                                
+                                # check if the new intervall is viable
+                                if len(state.passed_events) > index_before + 1:
+                                    if new_min_time < state.passed_events[index_before + 1]:
+                                        # cut new max time to the next event time
+                                        if len(new_state.passed_events) > index_before + 1:
+                                            if new_state.passed_events[index_before + 1] < new_max_time:
+                                                new_max_time = new_state.passed_events[index_before + 1]
+
+                                        new_state.global_times.append((new_min_time, new_max_time))
+                                else:                                    
+                                    new_state.global_times.append((new_min_time, new_max_time))
+
+                        # remove new state if it has no time intervalls
+                        if new_state in new_states and len(new_state.global_times) == 0:
+                            new_states.remove(new_state)
+
+                        # s_last_event_time = state.passed_events[-1]
+                        # n_last_event_time = new_state.passed_events[-1]
+
+                        # if s_last_event_time < n_last_event_time:
+                        #     new_state.global_times.append((n_last_event_time, n_last_event_time + max_time))
+                        # else:
+                        #     for intervall in state.global_times.copy():
+                        #         if intervall[0] >= s_last_event_time:
+                        #             new_state.global_times.append((intervall[0] + min_time, intervall[1] + max_time))
+
 
                 # merge global and local times into merged lists 
                 state.global_times_merged.extend(state.global_times)
                 state.local_times_merged.extend(state.local_times)
                 state.merge_times()
                 state.local_times = []
-                state.global_times = []               
+                state.global_times = []
 
         return new_states
 
