@@ -11,7 +11,7 @@
 namespace ara::step {
 	class SVFAnalyses : public ConfStep<SVFAnalyses> {
 	  private:
-		using ConfStep<SVFAnalyses>::ConfStep;
+		llvm::DataLayout dl;
 
 		bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) const;
 		void resolve_function_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
@@ -20,6 +20,9 @@ namespace ara::step {
 		                                        SVF::SVFModule& svfModule);
 
 	  public:
+		SVFAnalyses(PyObject* py_logger, graph::Graph graph, PyObject* py_step_manager)
+		    : ConfStep<SVFAnalyses>(py_logger, graph, py_step_manager), dl(&graph.get_module()) {}
+
 		static std::string get_name() { return "SVFAnalyses"; }
 		static std::string get_description();
 

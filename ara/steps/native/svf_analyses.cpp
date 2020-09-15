@@ -20,20 +20,47 @@ namespace ara::step {
 	 */
 	bool SVFAnalyses::is_valid_call_target(const llvm::FunctionType& caller_type,
 	                                       const llvm::Function& candidate) const {
-		if (candidate.empty() || candidate.isIntrinsic()) {
+		if (candidate.empty() || is_intrinsic(candidate)) {
 			return false;
 		}
-		// TODO this can be improved. It should also be sound, if the bitsize is the same for all types.
-		if (candidate.getFunctionType() == &caller_type) {
+
+		const auto* candidate_type = candidate.getFunctionType();
+
+		// check for several conditions, try to do this speed optimized
+		if (caller_type.getNumParams() != candidate_type->getNumParams()) {
+			return false;
+		}
+
+		if (caller_type.getNumParams() == 0) {
 			return true;
+		}
+
+		if (candidate_type == &caller_type) {
+			return true;
+		}
+
+		const auto& begin1 = candidate_type->param_begin();
+		const auto& end1 = candidate_type->param_end();
+
+		const auto& begin2 = caller_type.param_begin();
+		const auto& end2 = caller_type.param_end();
+
+		auto it1 = begin1;
+		auto it2 = begin2;
+
+		for (; it1 != end1 && it2 != end2; ++it1, ++it2) {
+			llvm::Type* type1 = *it1;
+			llvm::Type* type2 = *it2;
+			if (type1 && type2 && type1->isSized() && type2->isSized() &&
+			    dl.getTypeAllocSize(type1) == dl.getTypeAllocSize(type2)) {
+				return true;
+			}
 		}
 		return false;
 	}
 
 	void SVFAnalyses::resolve_function_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
 	                                           SVFModule& svfModule) {
-		// first try: match all function signatures. This is slightly better that using all
-		// functions as possible pointer target but of course not exact
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
 		if (is_call_to_intrinsic(*call_inst)) {
 			return;
