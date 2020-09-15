@@ -164,6 +164,13 @@ cdef class Argument:
 cdef class Arguments:
     cdef shared_ptr[CArguments] _c_arguments
 
+    cdef object make_arg(self, shared_ptr[CArgument] c_arg):
+        if (c_arg == NULL):
+            return None
+        arg = Argument()
+        arg._c_argument = c_arg
+        return arg
+
     def __cinit__(self, create=True):
         if create:
             self._c_arguments = CArguments.get()
@@ -182,10 +189,7 @@ cdef class Arguments:
             raise IndexError("Argument index out of range")
         if (key < 0):
             key = len(self) + key
-        cdef shared_ptr[CArgument] c_arg = deref(self._c_arguments).at(key)
-        arg = Argument()
-        arg._c_argument = c_arg
-        return arg
+        return self.make_arg(deref(self._c_arguments).at(key))
 
     def __iter__(self):
         class ArgumentsIterator:
@@ -201,6 +205,9 @@ cdef class Arguments:
                 return ret
 
         return ArgumentsIterator(self)
+
+    def get_return_value(self):
+        return self.make_arg(deref(self._c_arguments).get_return_value())
 
 
 cdef public object py_get_arguments(shared_ptr[CArguments] c_args):

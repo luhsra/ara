@@ -43,3 +43,4 @@ cdef extern from "arguments.h" namespace "ara::graph":
 
         size_type size()
         shared_ptr[Argument] at(size_type)
+        shared_ptr[Argument] get_return_value()
