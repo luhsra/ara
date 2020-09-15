@@ -61,6 +61,7 @@ namespace ara::step {
 				for (SVF::CallBlockNode::iterator edge_it = cbn->OutEdgeBegin(); edge_it != cbn->OutEdgeEnd();
 				     ++edge_it) {
 					SVF::ICFGEdge* edge = (*edge_it);
+					logger.debug() << "Handle CallBlockNode: " << *cbn << " with edge " << *edge << std::endl;
 					if (edge->isCallCFGEdge()) {
 						SVF::ICFGNode* dest_g = (*edge_it)->getDstNode();
 						if (SVF::FunEntryBlockNode* dest = llvm::dyn_cast<SVF::FunEntryBlockNode>(dest_g)) {
@@ -109,7 +110,8 @@ namespace ara::step {
 					    cfg.get_vertex(graph, call_abb, [&](Edge e) { return cfg.etype[e] == CFType::lcf; });
 
 					if (!link_with_svf_icfg(call_abb, after_call)) {
-						assert("This should never happen. All indirect pointers are resolved in SVFAnalyses.");
+						logger.error() << "Error in linking " << cfg.name[call_abb] << std::endl;
+						assert(false && "This should never happen. All indirect pointers are resolved in SVFAnalyses.");
 					}
 				}
 				for (auto abb :
