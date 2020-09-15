@@ -35,6 +35,10 @@ namespace ara::step {
 		// first try: match all function signatures. This is slightly better that using all
 		// functions as possible pointer target but of course not exact
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
+		if (is_call_to_intrinsic(*call_inst)) {
+			return;
+		}
+
 		logger.debug() << "Unresolved call to function pointer. Callsite: " << *call_inst << std::endl;
 		const llvm::FunctionType* call_type = call_inst->getFunctionType();
 
