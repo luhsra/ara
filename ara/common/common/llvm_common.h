@@ -31,7 +31,6 @@ namespace ara {
 	 */
 	bool is_call_to_intrinsic(const llvm::Instruction& inst);
 	bool is_intrinsic(const llvm::Function& func);
-	bool isInlineAsm(const llvm::Instruction* inst);
 } // namespace ara
 
 #endif

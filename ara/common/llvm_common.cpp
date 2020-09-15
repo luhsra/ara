@@ -6,7 +6,6 @@
 using namespace llvm;
 
 namespace ara {
-
 	std::string print_type(Type* argument) {
 		std::string type_str;
 		raw_string_ostream rso(type_str);
@@ -26,6 +25,9 @@ namespace ara {
 
 	bool is_call_to_intrinsic(const Instruction& inst) {
 		if (const CallBase* call = dyn_cast<CallBase>(&inst)) {
+			if (call->isInlineAsm()) {
+				return true;
+			}
 			const Function* func = call->getCalledFunction();
 			if (func == nullptr)
 				return false;
@@ -33,12 +35,4 @@ namespace ara {
 		}
 		return false;
 	}
-
-	bool isInlineAsm(const Instruction* inst) {
-		if (const CallBase* call = dyn_cast<CallBase>(inst)) {
-			return call->isInlineAsm();
-		}
-		return false;
-	}
-
 } // namespace ara
