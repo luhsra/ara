@@ -380,7 +380,7 @@ class MultiState:
             else: 
                 ret += "None"
             ret += ", "
-        ret = ret[:-2] + "] " + str(self.global_times_merged)
+        ret = ret[:-2] + "] " + str(self.global_times_merged) + str(self.passed_events)
         return ret
 
     def __eq__(self, other):
@@ -690,17 +690,24 @@ class MultiSSE(FlowAnalysis):
 
                         # add edge to existing state if new state is equal
                         if new_state == existing_state:
+                            found = True 
+
+                            # add edge to graph                          
                             if v not in graph.vertex(vertex).out_neighbors():
                                 e = graph.add_edge(vertex, v)
-                                graph.ep.is_timed_event[e] = False
-                            found = True
+                                if new_state.from_event:
+                                    graph.ep.is_timed_event[e] = True
+                                else:
+                                    graph.ep.is_timed_event[e] = False
 
+                            # copy all global times to existing state
                             for intervall in new_state.global_times:
                                 existing_state.global_times.append(intervall)
 
                             if existing_state.updated < MAX_STATE_UPDATES:
                                 existing_state.updated += 1
-                                stack.append(v)
+                                if not new_state.from_event and v not in stack:
+                                    stack.append(v)
                             break
 
                     # add new state to graph and append it to the stack
@@ -713,7 +720,8 @@ class MultiSSE(FlowAnalysis):
                             new_state.from_event = False
                         else:
                             graph.ep.is_timed_event[e] = False
-                        stack.append(new_vertex)
+                        if new_vertex not in stack:
+                            stack.append(new_vertex)
 
         
     def execute_state(self, state_vertex, sync_list, graph):
@@ -733,8 +741,7 @@ class MultiSSE(FlowAnalysis):
             if abb is not None:
                 min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
 
-                # state.calc_global_time()
-
+                ##################### TIMED EVENTS ######################
                 # get next timed event
                 event_time, event = self._g.os.get_next_timed_event(state.passed_events[-1], state.instances, state.cpu)
                 found_timed_event = False
@@ -742,7 +749,7 @@ class MultiSSE(FlowAnalysis):
                 # check if event time is in global time intervalls
                 if event is not None:
                     for intervall in state.global_times:
-                        if intervall[0] <= event_time and event_time <= intervall[1]:
+                        if intervall[0] < event_time and event_time <= intervall[1]:
                             found_timed_event = True
 
                             # execute event
@@ -871,17 +878,12 @@ class MultiSSE(FlowAnalysis):
                         # remove new state if it has no time intervalls
                         if new_state in new_states and len(new_state.global_times) == 0:
                             new_states.remove(new_state)
-
-                        # s_last_event_time = state.passed_events[-1]
-                        # n_last_event_time = new_state.passed_events[-1]
-
-                        # if s_last_event_time < n_last_event_time:
-                        #     new_state.global_times.append((n_last_event_time, n_last_event_time + max_time))
-                        # else:
-                        #     for intervall in state.global_times.copy():
-                        #         if intervall[0] >= s_last_event_time:
-                        #             new_state.global_times.append((intervall[0] + min_time, intervall[1] + max_time))
-
+                    
+                    # # copy passed events
+                    # for event in state.passed_events:
+                    #     if event not in new_state.passed_events:
+                    #         new_state.passed_events.append(event)
+                    # new_state.passed_events.sort()
 
                 # merge global and local times into merged lists 
                 state.global_times_merged.extend(state.global_times)
