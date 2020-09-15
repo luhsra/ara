@@ -104,8 +104,15 @@ namespace ara::step {
 		  public:
 			ICFGImpl(Graph& g, CFG& cfg, llvm::Module& mod, Logger& logger, SVF::ICFG& icfg)
 			    : graph(g), cfg(cfg), mod(mod), logger(logger), icfg(icfg) {
+
+				// we cannot change the graph while in the out_edge iterator, therefore capture all abbs and connect
+				// them after that
+				std::vector<Vertex> call_abbs;
 				for (auto call_abb : boost::make_iterator_range(
 				         boost::vertices(cfg.filter_by_abb(g, graph::ABBType::call | graph::ABBType::syscall)))) {
+					call_abbs.emplace_back(call_abb);
+				}
+				for (auto call_abb : call_abbs) {
 					const auto after_call =
 					    cfg.get_vertex(graph, call_abb, [&](Edge e) { return cfg.etype[e] == CFType::lcf; });
 
@@ -114,14 +121,20 @@ namespace ara::step {
 						assert(false && "This should never happen. All indirect pointers are resolved in SVFAnalyses.");
 					}
 				}
+
+				std::vector<std::pair<Vertex, Vertex>> to_be_connected;
 				for (auto abb :
 				     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::computation)))) {
 					for (const auto& edge : boost::make_iterator_range(boost::out_edges(abb, g))) {
 						if (cfg.etype[edge] == CFType::lcf) {
-							auto i_edge = boost::add_edge(abb, boost::target(edge, g), g);
-							cfg.etype[i_edge.first] = CFType::icf;
+							to_be_connected.emplace_back(std::make_pair(abb, boost::target(edge, g)));
 						}
 					}
+				}
+				for (const auto& [source, target] : to_be_connected) {
+					auto i_edge = boost::add_edge(source, target, g);
+					assert(i_edge.second && "Edge creation failed");
+					cfg.etype[i_edge.first] = CFType::icf;
 				}
 			}
 		};
