@@ -42,6 +42,7 @@ namespace ara::step {
 		logger.debug() << "Unresolved call to function pointer. Callsite: " << *call_inst << std::endl;
 		const llvm::FunctionType* call_type = call_inst->getFunctionType();
 
+		bool found_candidate = false;
 		for (const llvm::Function& candidate : graph.get_module()) {
 			if (is_valid_call_target(safe_deref(call_type), candidate)) {
 
@@ -53,7 +54,12 @@ namespace ara::step {
 				}
 
 				logger.info() << "Link " << *call_inst << " with " << candidate.getName().str() << std::endl;
+				found_candidate = true;
 			}
+		}
+		if (!found_candidate) {
+			logger.error() << "Callsite: " << *call_inst << std::endl;
+			fail("Unresolved function pointer.");
 		}
 	}
 
