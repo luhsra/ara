@@ -9,3 +9,9 @@
 	url = https://github.com/luhsra/SVF
 	branch = sra
 	vcs = git
+
+[external "sparsedata"]
+	path = subprojects/sparsedata
+	url = ssh://git@scm.sra.uni-hannover.de/diffusion/397/sparsedata.git
+	branch = master
+	vcs = git

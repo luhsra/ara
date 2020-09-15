@@ -203,3 +203,6 @@ class StartupCodeTemplate(CodeTemplate):
 
     def done_marker(self, snippet, args):
         return self.store_DWT_CYCCNT(f'startup_{args[0]}')
+
+    def sparse_init(self, snippet, args):
+        return "bl sparse_init"

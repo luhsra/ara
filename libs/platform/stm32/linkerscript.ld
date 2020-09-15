@@ -135,6 +135,41 @@ SECTIONS
   } >RAM AT> FLASH
 
 
+_sisparsespec = LOADADDR(.sparse.spec);
+.sparse.spec :
+{
+  . = ALIGN(4);
+  _ssparsespec = .;
+  KEEP(*(.sparse.spec*))
+  _esparsespec = .;
+  . = ALIGN(4);
+} >FLASH
+
+.sparse.data (NOLOAD) :
+{
+  . = ALIGN(4);
+  _ssparse = .;
+  *(.sparse.data*)
+  . = ALIGN(4);
+  _esparse = .;
+} >RAM
+
+.sparse.compressed.rle2 :
+{
+  . = ALIGN(4);
+  _ssparsespec2 = .;
+  KEEP(*(.sparse.compressed.rle2*))
+  . = ALIGN(4);
+  _esparsespec2 = .;
+} >FLASH =0xab
+
+.sparse.plain.rle (NOLOAD):
+{
+  . = ALIGN(4);
+  *(.sparse.plain.rle2*)
+  . = ALIGN(4);
+} >RAM
+
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss :

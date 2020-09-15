@@ -47,6 +47,11 @@ svf_proj = cmake.subproject('svf', cmake_options: '-DLLVM_DIR=' + llvm_dep.get_v
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
+sparsedata = subproject('sparsedata')
+sparse_rle = sparsedata.get_variable('libsparserle')
+sparse_rle2 = sparsedata.get_variable('libsparserle2')
+
+
 ## tools
 nop = find_program('true')
 
