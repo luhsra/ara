@@ -68,6 +68,7 @@ foreach app : ir_apps + hw_apps
 
   named_elf_targets = []
   elf_targets = []
+  profiles_list = []
   foreach target : ara_gen_freertos_targets
     # build standard and specialized variants for freertos
     #
@@ -127,68 +128,46 @@ foreach app : ir_apps + hw_apps
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
 
-    lto_app_os = custom_target(name_prefix + '-lto_app_os.ll',
-                               input: app_os,
-                               output: name_prefix + '-lto_os_app.ll',
-                               command: llvm_opt_cmd)
+    foreach lto_version : ['none', 'standard', 'rle', 'rle2']
+      lto_prefix = name_prefix + '-' + lto_version
+      lto_app_os = custom_target(lto_prefix + '-app_os.ll',
+                                 input: app_os,
+                                 depends: [sparse_rle, sparse_rle2],
+                                 output: lto_prefix + '-os_app.ll',
+                                 command: get_variable('llvm_lto_cmd_' + lto_version))
 
-    lto_o = custom_target(name_prefix + '-lto_app_os.o',
-                          input: lto_app_os,
-                          output: name_prefix + '-lto_os_app.ll.o',
-                          command: llc_cmd)
+      lto_o = custom_target(lto_prefix + '-app_os.o',
+                            input: lto_app_os,
+                            output: lto_prefix + '-os_app.ll.o',
+                            command: llc_cmd)
 
-    lto_elf = custom_target(name_prefix + '.lto.elf',
-                            input: [lto_o,
-                                    os_target[1], # startup.s
-                                    libs_targets,
-                                    get_variable('libfreertos_' + target)],
-                            output: name_prefix + '.lto.elf',
-                            depfile: name_prefix + '.lto.elf.dep',
-                            depend_files: default_linkerscript,
-                            command: clang_cpp +
-                                     libs_includes +
-                                     ld_flags +
-                                     ['-lsra'] +
-                                     ['-T' + default_linkerscript ] +
-                                     clang_flags)
+      lto_elf = custom_target(lto_prefix + '.elf',
+                              input: [lto_o,
+                                      os_target[1], # startup.s
+                                      libs_targets,
+                                      get_variable('libfreertos_' + target)],
+                              output: lto_prefix + '.elf',
+                              depfile: lto_prefix + '.elf.dep',
+                              depend_files: default_linkerscript,
+                              command: clang_cpp +
+                                       libs_includes +
+                                       ld_flags +
+                                       ['-lsra'] +
+                                       ['-T' + default_linkerscript ] +
+                                       clang_flags)
 
-    elf_target = custom_target(name_prefix + '.elf',
-                               input: [o_target,
-                                       os_target,
-                                       libs_targets,
-                                       get_variable('libfreertos_' + target)],
-                               output: name_prefix + '.elf',
-                               depfile: name_prefix + '.elf.dep',
-                               command: clang_cpp +
-                                        libs_includes +
-                                        freertos_default_config +
-                                        libplatform_default_config +
-                                        ld_flags +
-                                        ['-lsra'] +
-                                        ['-T' + default_linkerscript ] +
-                                        clang_flags)
-
-    bin_target = custom_target(name_prefix + '.bin',
-                               input: [elf_target],
-                               output: name_prefix + '.bin',
-                               command: objcopy_cmd)
-
-    lto_bin_target = custom_target(name_prefix + '.lto.bin',
-                                   input: [lto_elf],
-                                   output: name_prefix + '.lto.bin',
-                                   command: objcopy_cmd)
-
-    run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
-    run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
-    run_target('size_' + name_prefix, command: [size, elf_target])
-    run_target('size_' + name_prefix + '.lto', command: [size, lto_elf])
-    run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
-    run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
-    run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
-    elf_targets += elf_target
+      bin_target = custom_target(lto_prefix + '.bin',
+                                 input: [lto_elf],
+                                 output: lto_prefix + '.bin',
+                                 command: objcopy_cmd)
+    run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('size_' + lto_prefix, command: [size, lto_elf])
+    run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])
+    run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
+    run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [target, elf_target]
-    named_elf_targets += [target+'.lto', lto_elf]
+    named_elf_targets += [target + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', target + '-' + lto_version]
 
     if get_option('enable_qemu_tests') and app not in ir_apps
         test('run_qemu_' + name_prefix,
@@ -196,13 +175,15 @@ foreach app : ir_apps + hw_apps
              args: [qemu_test_runner,
                     qemu_cmd,
                     app,
-                    elf_target,
+                    lto_elf,
                    ],
              workdir: freertos_src_dir,
              suite: 'qemu',
              is_parallel: false,
             )
     endif
+    endforeach
+
 
 
   endforeach
@@ -212,11 +193,6 @@ foreach app : ir_apps + hw_apps
   run_target('compare_time-' + app, command: [compare_time, meson.build_root(), app], depends: elf_targets)
 
   freertos_targets += app_vanilla_ll
-  profiles_list = []
-  foreach profile: ara_gen_freertos_targets
-    profiles_list += ['--profiles', profile]
-    profiles_list += ['--profiles', profile + '.lto']
-  endforeach
   timing_exp_result = custom_target('analyze_timing-' + app,
                                     command: [files('GenericTimingExperiment.py'), '-d', meson.current_build_dir(),
                                               '-s',
