@@ -384,6 +384,7 @@ namespace ara::graph {
 		 * convenience function to get the llvm module directly
 		 */
 		llvm::Module& get_module() { return safe_deref(graph_data).get_module(); }
+		const llvm::Module& get_module() const { return safe_deref(graph_data).get_module(); }
 		/**
 		 * convenience function to get the svfg directly
 		 */
