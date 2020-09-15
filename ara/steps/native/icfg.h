@@ -15,9 +15,9 @@
 #include <graph.h>
 
 namespace ara::step {
-	class ICFG : public ConfStep<ICFG> {
+	class ICFG : public EntryPointStep<ICFG> {
 	  private:
-		using ConfStep<ICFG>::ConfStep;
+		using EntryPointStep<ICFG>::EntryPointStep;
 		static SVF::ICFG& get_icfg();
 
 	  public:

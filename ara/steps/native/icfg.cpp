@@ -52,7 +52,7 @@ namespace ara::step {
 				               << cfg.name[to] << " (" << to << ")." << std::endl;
 			}
 
-			bool link_with_svf_icfg(Vertex call_abb, Vertex after_call) {
+			bool link_with_svf_icfg(Vertex call_abb, Vertex after_call, std::queue<Vertex>& unhandled_functions) {
 				llvm::Instruction& call_instr = cfg.get_entry_bb<Graph>(call_abb)->front();
 				SVF::CallBlockNode* cbn = icfg.getCallBlockNode(&call_instr);
 				assert(cbn != nullptr);
@@ -70,12 +70,12 @@ namespace ara::step {
 							const llvm::BasicBlock* bb = dest->getBB();
 							const SVF::SVFFunction* fun = dest->getFun();
 							assert(fun != nullptr);
+							llvm::Function* lfun = fun->getLLVMFun();
+							assert(fun != nullptr);
+							Vertex callee = cfg.back_map(graph, *lfun);
+							unhandled_functions.push(callee);
 							if (bb == nullptr) {
-								llvm::Function* lfun = fun->getLLVMFun();
-								assert(fun != nullptr);
-								Vertex callee = cfg.back_map(graph, *lfun);
 								callee_abb = cfg.get_entry_abb(graph, callee);
-
 							} else {
 								callee_abb = cfg.back_map(graph, *bb);
 							}
@@ -101,40 +101,90 @@ namespace ara::step {
 				return linked;
 			}
 
-		  public:
-			ICFGImpl(Graph& g, CFG& cfg, llvm::Module& mod, Logger& logger, SVF::ICFG& icfg)
-			    : graph(g), cfg(cfg), mod(mod), logger(logger), icfg(icfg) {
+			void link_abb(Vertex abb) {
+				auto edge_its = out_edges(abb, graph);
+				std::vector<Edge> edges(edge_its.first, edge_its.second);
+				for (auto edge : edges) {
+					if (cfg.etype[edge] == CFType::lcf) {
+						auto i_edge = boost::add_edge(abb, boost::target(edge, graph), graph);
+						cfg.etype[i_edge.first] = CFType::icf;
+					}
+				}
+			}
+
+			void link_function(Vertex function, std::queue<Vertex>& unhandled_functions) {
+				// if entry is already linked, a previous ICFG step has handled this function
+				auto entry = cfg.get_entry_abb(graph, function);
+				try {
+					cfg.get_vertex(graph, entry, [&](Edge e) { return cfg.etype[e] == CFType::icf; });
+					logger.debug() << "Function " << cfg.name[function] << " already analyzed." << std::endl;
+					return;
+				} catch (VertexNotFound&) {
+				}
 
 				// we cannot change the graph while in the out_edge iterator, therefore capture all abbs and connect
 				// them after that
 				std::vector<Vertex> call_abbs;
-				for (auto call_abb : boost::make_iterator_range(
-				         boost::vertices(cfg.filter_by_abb(g, graph::ABBType::call | graph::ABBType::syscall)))) {
-					call_abbs.emplace_back(call_abb);
+				std::vector<Vertex> normal_abbs;
+				for (auto o_edge : boost::make_iterator_range(boost::out_edges(function, graph))) {
+					if (cfg.etype[o_edge] == CFType::f2a) {
+						auto abb = boost::target(o_edge, graph);
+						if (cfg.type[abb] == ABBType::call || cfg.type[abb] == ABBType::syscall) {
+							// add edges between function with SVF
+							call_abbs.emplace_back(abb);
+						} else {
+							// add edges within the same function
+							normal_abbs.emplace_back(abb);
+						}
+					}
 				}
+
+				// inter function edges
 				for (auto call_abb : call_abbs) {
 					const auto after_call =
 					    cfg.get_vertex(graph, call_abb, [&](Edge e) { return cfg.etype[e] == CFType::lcf; });
 
-					if (!link_with_svf_icfg(call_abb, after_call)) {
+					if (!link_with_svf_icfg(call_abb, after_call, unhandled_functions)) {
 						logger.error() << "Error in linking " << cfg.name[call_abb] << std::endl;
 						assert(false && "This should never happen. All indirect pointers are resolved in SVFAnalyses.");
 					}
 				}
 
-				std::vector<std::pair<Vertex, Vertex>> to_be_connected;
-				for (auto abb :
-				     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::computation)))) {
-					for (const auto& edge : boost::make_iterator_range(boost::out_edges(abb, g))) {
-						if (cfg.etype[edge] == CFType::lcf) {
-							to_be_connected.emplace_back(std::make_pair(abb, boost::target(edge, g)));
-						}
-					}
+				// intra function edges
+				for (auto abb : normal_abbs) {
+					link_abb(abb);
 				}
-				for (const auto& [source, target] : to_be_connected) {
-					auto i_edge = boost::add_edge(source, target, g);
-					assert(i_edge.second && "Edge creation failed");
-					cfg.etype[i_edge.first] = CFType::icf;
+			}
+
+		  public:
+			ICFGImpl(Graph& g, CFG& cfg, llvm::Module& mod, Logger& logger, SVF::ICFG& icfg,
+			         const std::string& entry_point)
+			    : graph(g), cfg(cfg), mod(mod), logger(logger), icfg(icfg) {
+				Vertex entry_func;
+
+				try {
+					entry_func = cfg.get_function_by_name(graph, entry_point);
+				} catch (FunctionNotFound&) {
+					std::stringstream ss;
+					ss << "Bad entry point given: " << entry_point << ". Could not be found.";
+					logger.err() << ss.str() << std::endl;
+					throw StepError("ICFG", ss.str());
+				}
+				logger.debug() << "Analyzing function: " << entry_point << std::endl;
+
+				std::set<Vertex> handled_functions;
+				std::queue<Vertex> unhandled_functions;
+				unhandled_functions.push(entry_func);
+
+				while (!unhandled_functions.empty()) {
+					Vertex current_function = unhandled_functions.front();
+					unhandled_functions.pop();
+					if (handled_functions.find(current_function) != handled_functions.end()) {
+						continue;
+					}
+
+					handled_functions.insert(current_function);
+					link_function(current_function, unhandled_functions);
 				}
 			}
 		};
@@ -153,7 +203,10 @@ namespace ara::step {
 		CFG cfg = graph.get_cfg();
 		SVF::ICFG& icfg = get_icfg();
 
-		graph_tool::gt_dispatch<>()([&](auto& g) { ICFGImpl(g, cfg, mod, logger, icfg); },
+		auto entry_point_name = this->entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+
+		graph_tool::gt_dispatch<>()([&](auto& g) { ICFGImpl(g, cfg, mod, logger, icfg, *entry_point_name); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
