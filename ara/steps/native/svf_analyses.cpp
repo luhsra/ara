@@ -35,10 +35,6 @@ namespace ara::step {
 			return true;
 		}
 
-		if (candidate_type == &caller_type) {
-			return true;
-		}
-
 		const auto& begin1 = candidate_type->param_begin();
 		const auto& end1 = candidate_type->param_end();
 
@@ -59,6 +55,24 @@ namespace ara::step {
 		return false;
 	}
 
+	void SVFAnalyses::link_indirect_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
+	                                        const llvm::Function& target, SVF::SVFModule& svfModule) {
+		// modify the SVF Callgraph
+		const SVFFunction* callee = svfModule.getSVFFunction(&target);
+		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
+		if (target.empty()) {
+			logger.warn() << "Possible indirect call to unimplemented function, skipping. Call: " << *call_inst
+			              << " Target: " << target.getName().str() << std::endl;
+			return;
+		}
+		if (0 == callgraph.getIndCallMap()[&cbn].count(callee)) {
+			callgraph.getIndCallMap()[&cbn].insert(callee);
+			callgraph.addIndirectCallGraphEdge(&cbn, cbn.getCaller(), callee);
+		}
+
+		logger.debug() << "Link " << *call_inst << " with " << target.getName().str() << std::endl;
+	}
+
 	void SVFAnalyses::resolve_function_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
 	                                           SVFModule& svfModule) {
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
@@ -66,24 +80,32 @@ namespace ara::step {
 			return;
 		}
 
-		logger.debug() << "Unresolved call to function pointer. Callsite: " << *call_inst << std::endl;
+		logger.info() << "Resolve call to function pointer. Callsite: " << *call_inst << std::endl;
 		const llvm::FunctionType* call_type = call_inst->getFunctionType();
 
-		bool found_candidate = false;
-		for (const llvm::Function& candidate : graph.get_module()) {
-			if (is_valid_call_target(safe_deref(call_type), candidate)) {
-
-				// modify the SVF Callgraph
-				const SVFFunction* callee = svfModule.getSVFFunction(&candidate);
-				if (0 == callgraph.getIndCallMap()[&cbn].count(callee)) {
-					callgraph.getIndCallMap()[&cbn].insert(callee);
-					callgraph.addIndirectCallGraphEdge(&cbn, cbn.getCaller(), callee);
-				}
-
-				logger.info() << "Link " << *call_inst << " with " << candidate.getName().str() << std::endl;
-				found_candidate = true;
+		if (signature_to_func.size() == 0) {
+			for (llvm::Function& func : graph.get_module()) {
+				signature_to_func[func.getFunctionType()].emplace_back(func);
 			}
 		}
+
+		const auto& match = signature_to_func.find(call_type);
+
+		bool found_candidate = false;
+		if (match != signature_to_func.end()) {
+			found_candidate = true;
+			for (llvm::Function& func : match->second) {
+				link_indirect_pointer(cbn, callgraph, func, svfModule);
+			}
+		} else {
+			for (const llvm::Function& func : graph.get_module()) {
+				if (is_valid_call_target(safe_deref(call_type), func)) {
+					link_indirect_pointer(cbn, callgraph, func, svfModule);
+					found_candidate = true;
+				}
+			}
+		}
+
 		if (!found_candidate) {
 			logger.error() << "Callsite: " << *call_inst << std::endl;
 			fail("Unresolved function pointer.");
