@@ -61,7 +61,7 @@ cdef class CallPath:
         return self._c_callpath.size()
 
     def __getitem__(self, index):
-        if (index >= len(self) or -index >= len(self)):
+        if (index >= len(self) or -index > len(self)):
             raise IndexError("Argument index out of range")
         if (index < 0):
             index = len(self) + index
@@ -185,7 +185,7 @@ cdef class Arguments:
         return deref(self._c_arguments).size()
 
     def __getitem__(self, key):
-        if (key >= len(self) or -key >= len(self)):
+        if (key >= len(self) or -key > len(self)):
             raise IndexError("Argument index out of range")
         if (key < 0):
             key = len(self) + key
