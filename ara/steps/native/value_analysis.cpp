@@ -66,7 +66,7 @@ namespace ara::step {
 					continue;
 				}
 			}
-			if (auto null_p = llvm::dyn_cast<NullPtrVFGNode>(current_node)) {
+			if (llvm::isa<NullPtrVFGNode>(current_node)) {
 				arg.add_variant(current_path, *llvm::ConstantPointerNull::get(llvm::PointerType::get(
 				                                  llvm::IntegerType::get(graph.get_module().getContext(), 8), 0)));
 				continue;
