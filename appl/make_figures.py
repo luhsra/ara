@@ -25,7 +25,9 @@ class CreateGraphsExp(Experiment):
         label = marker.replace('_', ' ')
         x_values = list(rows.keys())
         y_values = [float(x) for x in rows.values()]
-        return plt.plot(x_values, y_values, label=label, marker='o')[0]
+        result = plt.plot(x_values, y_values, label=label, marker='o')[0]
+        plt.xticks(rotation=90)
+        return result
 
     def new_dataset(self):
         # Plotting is done in order of insertion:
