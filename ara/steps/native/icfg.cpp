@@ -170,7 +170,6 @@ namespace ara::step {
 					logger.err() << ss.str() << std::endl;
 					throw StepError("ICFG", ss.str());
 				}
-				logger.debug() << "Analyzing function: " << entry_point << std::endl;
 
 				std::set<Vertex> handled_functions;
 				std::queue<Vertex> unhandled_functions;
