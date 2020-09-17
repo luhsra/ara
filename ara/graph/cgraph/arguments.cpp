@@ -3,6 +3,7 @@
 #include "common/llvm_common.h"
 #include "graph_data_pyx.h"
 
+#include <boost/range/adaptor/reversed.hpp>
 #include <llvm/Support/raw_ostream.h>
 
 namespace boost::detail {
@@ -99,6 +100,17 @@ namespace ara::graph {
 			return;
 		}
 		edges.pop_back();
+	}
+
+	bool CallPath::is_recursive() const {
+		std::unordered_set<graph_tool::GraphInterface::edge_t> edge_set;
+		for (const auto& edge : boost::adaptors::reverse(edges)) {
+			if (edge_set.find(edge) != edge_set.end()) {
+				return true;
+			}
+			edge_set.emplace(edge);
+		}
+		return false;
 	}
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp) {

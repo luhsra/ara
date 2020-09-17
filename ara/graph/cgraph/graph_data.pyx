@@ -51,6 +51,9 @@ cdef class CallPath:
     def pop_back(self):
         self._c_callpath.pop_back()
 
+    def is_recursive(self):
+        return self._c_callpath.is_recursive()
+
     def __copy__(self):
         cp = CallPath()
         # calls copy constructor in C++

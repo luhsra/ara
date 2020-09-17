@@ -23,6 +23,7 @@ cdef extern from "arguments.h" namespace "ara::graph":
         void pop_front()
         size_t hash()
         bool operator==(const CallPath&)
+        bool is_recursive()
 
     cdef cppclass Argument:
         ctypedef unordered_map[CallPath, value_ref].iterator iterator

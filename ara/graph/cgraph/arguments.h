@@ -114,6 +114,11 @@ namespace ara::graph {
 		void pop_back();
 
 		/**
+		 * Check if the call path is recursive, aka, contains two equal edges.
+		 */
+		bool is_recursive() const;
+
+		/**
 		 * Common iterators that return a std::pair<CallPath, llvm::Value&>.
 		 */
 		auto begin() noexcept { return edges.begin(); }
