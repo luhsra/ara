@@ -206,6 +206,8 @@ namespace ara::step {
 		auto entry_point_name = this->entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
 
+		logger.info() << "Analyzing entry point: '" << *entry_point_name << "'" << std::endl;
+
 		graph_tool::gt_dispatch<>()([&](auto& g) { ICFGImpl(g, cfg, mod, logger, icfg, *entry_point_name); },
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
