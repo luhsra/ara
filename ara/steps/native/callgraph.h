@@ -14,9 +14,9 @@
 #include <graph.h>
 
 namespace ara::step {
-	class CallGraph : public ConfStep<CallGraph> {
+	class CallGraph : public EntryPointStep<CallGraph> {
 	  private:
-		using ConfStep<CallGraph>::ConfStep;
+		using EntryPointStep<CallGraph>::EntryPointStep;
 		static SVF::PTACallGraph& get_svf_callgraph();
 
 	  public:

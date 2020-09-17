@@ -47,6 +47,7 @@ namespace ara::step {
 			llvm::Module& mod;
 			Logger& logger;
 			std::map<const SVF::PTACallGraphNode*, CallVertex> svf_to_ara_nodes;
+			std::queue<CFVertex> unhandled_functions;
 
 			CFVertex get_function(const SVF::PTACallGraphNode& svf_node) {
 				const llvm::Function* func = svf_node.getFunction()->getLLVMFun();
@@ -61,19 +62,31 @@ namespace ara::step {
 					logger.debug() << "Call node already handled: " << svf_node << std::endl;
 					call_node = cand->second;
 				} else {
-					logger.debug() << "Add new node: " << svf_node << std::endl;
-					call_node = boost::add_vertex(callg_obj);
-					svf_to_ara_nodes.insert(std::make_pair(&svf_node, call_node));
-
-					// properties
 					CFVertex func_v = (func) ? *func : get_function(svf_node);
-					static_assert(
-					    check_graph_tool_compability<decltype(callgraph.function[call_node]), decltype(func_v)>(),
-					    "The function vertex of the graph tool CFG can not be stored in CallGraph vertex property due "
-					    "to incompatible types");
-					callgraph.function[call_node] = func_v;
-					callgraph.function_name[call_node] = cfg.name[func_v];
-					callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
+					if (boost::vertex(callgraph.function[boost::vertex(cfg.call_graph_link[func_v], callg_obj)],
+					                  cfg_obj) == func_v) {
+						// already handled in a previous callgraph step
+						logger.debug() << "Call node already handled in a previous run: " << cfg.name[func_v]
+						               << std::endl;
+						call_node = boost::vertex(cfg.call_graph_link[func_v], callg_obj);
+					} else {
+
+						logger.debug() << "Add new node: " << svf_node << std::endl;
+						call_node = boost::add_vertex(callg_obj);
+						svf_to_ara_nodes.insert(std::make_pair(&svf_node, call_node));
+
+						// properties
+						unhandled_functions.push(func_v);
+						static_assert(
+						    check_graph_tool_compability<decltype(callgraph.function[call_node]), decltype(func_v)>(),
+						    "The function vertex of the graph tool CFG can not be stored in CallGraph vertex property "
+						    "due "
+						    "to incompatible types");
+						callgraph.function[call_node] = func_v;
+						callgraph.function_name[call_node] = cfg.name[func_v];
+						cfg.call_graph_link[func_v] = call_node;
+						callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
+					}
 				}
 				return call_node;
 			}
@@ -121,21 +134,44 @@ namespace ara::step {
 		  public:
 			// TODO
 			CallGraphImpl(CFGraph& cfg_obj, graph::CFG& cfg, CaGraph& callg_obj, graph::CallGraph& callgraph,
-			              SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger)
+			              SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger,
+			              const std::string& entry_point)
 			    : cfg_obj(cfg_obj), cfg(cfg), callg_obj(callg_obj), callgraph(callgraph), svf_callgraph(svf_callgraph),
 			      mod(mod), logger(logger) {
-				for (auto function : boost::make_iterator_range(boost::vertices(cfg.get_functions(cfg_obj)))) {
-					logger.debug() << "Handle function " << cfg.name[function] << std::endl;
-					link_with_svf_callgraph(function);
+				CFVertex entry_func;
+
+				// TODO, put this into the EntryPoint class. This is copied from ICFG
+				try {
+					entry_func = cfg.get_function_by_name(cfg_obj, entry_point);
+				} catch (FunctionNotFound&) {
+					std::stringstream ss;
+					ss << "Bad entry point given: " << entry_point << ". Could not be found.";
+					logger.err() << ss.str() << std::endl;
+					throw StepError("CallGraph", ss.str());
+				}
+
+				std::set<CFVertex> handled_functions;
+				unhandled_functions.push(entry_func);
+
+				while (!unhandled_functions.empty()) {
+					CFVertex current_function = unhandled_functions.front();
+					unhandled_functions.pop();
+					if (handled_functions.find(current_function) != handled_functions.end()) {
+						continue;
+					}
+					logger.debug() << "Analyzing function: " << cfg.name[current_function] << std::endl;
+					handled_functions.insert(current_function);
+					link_with_svf_callgraph(current_function);
 				}
 			}
 		};
 
 		template <typename CFGraph>
 		void map_callgraph(CFGraph& cfg_obj, graph::CFG& cfg, graph::CallGraph& callgraph,
-		                   SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger) {
+		                   SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger,
+		                   const std::string& entry_point) {
 			graph_tool::gt_dispatch<>()(
-			    [&](auto& g) { CallGraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger); },
+			    [&](auto& g) { CallGraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger, entry_point); },
 			    graph_tool::always_directed())(callgraph.graph.get_graph_view());
 		}
 	} // namespace
@@ -154,8 +190,14 @@ namespace ara::step {
 		graph::CallGraph callgraph = graph.get_callgraph();
 		SVF::PTACallGraph& svf_callgraph = get_svf_callgraph();
 
-		graph_tool::gt_dispatch<>()([&](auto& g) { map_callgraph(g, cfg, callgraph, svf_callgraph, mod, logger); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		auto entry_point_name = this->entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+
+		logger.info() << "Analyzing entry point: '" << *entry_point_name << "'" << std::endl;
+
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) { map_callgraph(g, cfg, callgraph, svf_callgraph, mod, logger, *entry_point_name); },
+		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
 			std::string uuid = step_manager.get_execution_id();
