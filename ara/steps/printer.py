@@ -28,6 +28,9 @@ class Printer(Step):
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("abbs", "instances", "callgraph"))
+    entry_point = Option(name="entry_point",
+                         help="system entry point",
+                         ty=String())
 
     def _print_init(self):
         dot = self.dot.get()
@@ -50,8 +53,16 @@ class Printer(Step):
     def print_abbs(self):
         name = self._print_init()
 
+        entry_label = self.entry_point.get()
+        if entry_label:
+            entry_func = self._graph.cfg.get_function_by_name(entry_label)
+            functions = [entry_func]
+        else:
+            functions = self._graph_cfg.vertices()
+
+        dot_nodes = set()
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
-        for function in self._graph.cfg.vertices():
+        for function in functions:
             if not self._graph.cfg.vp.is_function[function]:
                 continue
             dot_func = pydot.Cluster(self._graph.cfg.vp.name[function],
@@ -76,9 +87,13 @@ class Printer(Step):
                         style=self.SHAPES[self._graph.cfg.vp.type[abb]][1],
                         color=self.SHAPES[self._graph.cfg.vp.type[abb]][2]
                     )
+                    dot_nodes.add(str(hash(abb)))
                 dot_func.add_node(dot_abb)
         for edge in self._graph.cfg.edges():
             if self._graph.cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
+                continue
+            if any([str(hash(x)) not in dot_nodes
+                    for x in [edge.source, edge.target]]):
                 continue
             color = "black"
             if self._graph.cfg.ep.type[edge] == CFType.lcf:
