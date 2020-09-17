@@ -100,9 +100,7 @@ class CFG(graph_tool.Graph):
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
 
-    def reachable_abbs(self, func):
-        """Generator about all reachable ABBs starting at func."""
-
+    def _reachable_nodes(self, func, return_abbs):
         funcs_queue = deque([func])
         funcs_done = set()
 
@@ -111,14 +109,25 @@ class CFG(graph_tool.Graph):
             if cur_func in funcs_done:
                 continue
             funcs_done.add(cur_func)
+            if not return_abbs:
+                yield cur_func
             for abb in self.get_abbs(cur_func):
                 # find other functions
-                if self.vp.type[abb] != ABBType.computation:
+                if self.vp.type[abb] in [ABBType.syscall, ABBType.call]:
                     for edge in abb.out_edges():
                         if self.ep.type[edge] == CFType.icf:
                             new_func = self.get_function(edge.target())
                             funcs_queue.append(new_func)
-                yield abb
+                if return_abbs:
+                    yield abb
+
+    def reachable_funcs(self, func):
+        """Generator about all reachable Functions starting at func."""
+        return self._reachable_nodes(func, return_abbs=False)
+
+    def reachable_abbs(self, func):
+        """Generator about all reachable ABBs starting at func."""
+        return self._reachable_nodes(func, return_abbs=True)
 
     def get_call_targets(self, abb, func=True):
         """Generator about all call targets for a given call abb.

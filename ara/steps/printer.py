@@ -31,6 +31,11 @@ class Printer(Step):
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
+    from_entry_point = Option(name="from_entry_point",
+                              help="Print only from the given entry point.",
+                              ty=Bool(),
+                              default_value=False)
+
 
     def _print_init(self):
         dot = self.dot.get()
@@ -54,21 +59,19 @@ class Printer(Step):
         name = self._print_init()
 
         entry_label = self.entry_point.get()
-        if entry_label:
+        if self.from_entry_point.get():
             entry_func = self._graph.cfg.get_function_by_name(entry_label)
-            functions = [entry_func]
+            functions = self._graph.cfg.reachable_funcs(entry_func)
         else:
-            functions = self._graph_cfg.vertices()
+            functions = self._graph.functs.vertices()
 
         dot_nodes = set()
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
         for function in functions:
-            if not self._graph.cfg.vp.is_function[function]:
-                continue
             dot_func = pydot.Cluster(self._graph.cfg.vp.name[function],
                                      label=self._graph.cfg.vp.name[function])
             dot_graph.add_subgraph(dot_func)
-            for edge in function.out_edges():
+            for edge in self._graph.cfg.vertex(function).out_edges():
                 if self._graph.cfg.ep.type[edge] != CFType.f2a:
                     continue
                 abb = edge.target()
@@ -77,6 +80,7 @@ class Printer(Step):
                     dot_abb = pydot.Node(str(hash(abb)),
                                          label="",
                                          shape="box")
+                    dot_nodes.add(str(hash(abb)))
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
@@ -92,8 +96,8 @@ class Printer(Step):
         for edge in self._graph.cfg.edges():
             if self._graph.cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
                 continue
-            if any([str(hash(x)) not in dot_nodes
-                    for x in [edge.source, edge.target]]):
+            if not all([str(hash(x)) in dot_nodes
+                    for x in [edge.source(), edge.target()]]):
                 continue
             color = "black"
             if self._graph.cfg.ep.type[edge] == CFType.lcf:
