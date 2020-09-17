@@ -39,13 +39,13 @@ namespace ara::step {
 			nodes.pop();
 			const VFGNode* current_node = current.node;
 			graph::CallPath& current_path = current.call_path;
-			logger.info() << "Current Node: " << *current_node << std::endl;
-			logger.info() << "Current CallPath: " << current_path << std::endl;
+			logger.debug() << "Current Node: " << *current_node << std::endl;
+			logger.debug() << "Current CallPath: " << current_path << std::endl;
 
 			if (auto stmt = llvm::dyn_cast<StmtVFGNode>(current_node)) {
 				const PAGEdge* edge = stmt->getPAGEdge();
 				if (const Constant* c = llvm::dyn_cast<Constant>(edge->getValue())) {
-					logger.info() << "Constant: " << *c << std::endl;
+					logger.debug() << "Constant: " << *c << std::endl;
 					// We have a problem here. SVF gives us a constant Value what is meaningful from their site.
 					// However, we want to fill this into our Argument structure which is exposed in Python. In
 					// Python there exists no thing like const correctness because is semantically useless. That
@@ -75,7 +75,7 @@ namespace ara::step {
 			for (VFGNode::const_iterator it = current_node->InEdgeBegin(); it != current_node->InEdgeEnd(); ++it) {
 				VFGEdge* edge = *it;
 				graph::CallPath next_path = current_path;
-				logger.info() << "Next edge: " << *edge << std::endl;
+				logger.debug() << "Next edge: " << *edge << std::endl;
 				if (auto cde = llvm::dyn_cast<CallDirSVFGEdge>(edge)) {
 					const CallBlockNode* cbn = s_callgraph->getCallSite(cde->getCallSiteId());
 					assert(s_callgraph->hasCallGraphEdge(cbn) && "no call graph edge found");
@@ -84,13 +84,13 @@ namespace ara::step {
 					bi++;
 					assert(bi == s_callgraph->getCallEdgeEnd(cbn) && "more than one edge found");
 					assert(call_site->getCallSiteID() == cde->getCallSiteId() && "call side IDs does not match.");
-					logger.info() << "Callsite: " << *call_site << std::endl;
+					logger.debug() << "Callsite: " << *call_site << std::endl;
 					next_path.add_call_site(callgraph, safe_deref(call_site));
 				}
 
 				const VFGNode* next_node = (*it)->getSrcNode();
 				if (next_node != nullptr) {
-					logger.info() << "Next node: " << *next_node << std::endl;
+					logger.debug() << "Next node: " << *next_node << std::endl;
 					nodes.emplace(VFGContainer(next_node, next_path));
 				}
 			}
