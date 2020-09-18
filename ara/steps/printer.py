@@ -129,6 +129,11 @@ class Printer(Step):
     def print_callgraph(self):
         name = self._print_init()
 
+        shapes = {
+            True: ("box", "green"),
+            False: ("box", "black")
+        }
+
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
         callgraph = self._graph.callgraph
 
@@ -137,6 +142,8 @@ class Printer(Step):
             dot_node = pydot.Node(
                 str(hash(node)),
                 label=cfg.vp.name[callgraph.vp.function[node]],
+                shape=shapes[callgraph.vp.system_relevant[node]][0],
+                color=shapes[callgraph.vp.system_relevant[node]][1]
             )
             dot_graph.add_node(dot_node)
         for edge in callgraph.edges():

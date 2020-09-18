@@ -171,6 +171,7 @@ namespace ara::graph {
 		MAP(callgraph, function, vprops)
 		MAP(callgraph, function_name, vprops)
 		MAP(callgraph, svf_vlink, vprops)
+		MAP(callgraph, system_relevant, vprops)
 
 		PyObject* eprops = get_eprops(py_callgraph);
 

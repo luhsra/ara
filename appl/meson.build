@@ -34,6 +34,7 @@ ir_apps = [
   'svf',
   'start_scheduler_relation',
   'syscall',
+  'system_relevant_functions',
   'thesis_print',
   'topological_sort',
 ]

@@ -320,6 +320,7 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<long>::type function;
 		typename graph_tool::vprop_map_t<std::string>::type function_name;
 		typename graph_tool::vprop_map_t<int64_t>::type svf_vlink;
+		typename graph_tool::vprop_map_t<unsigned char>::type system_relevant;
 		/* edge properties */
 		typename graph_tool::eprop_map_t<long>::type callsite;
 		typename graph_tool::eprop_map_t<std::string>::type callsite_name;

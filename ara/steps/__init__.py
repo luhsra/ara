@@ -12,6 +12,7 @@ def provide_steps():
     from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
+    from .system_relevant_functions import SystemRelevantFunctions
 
     for step in _native_provide():
         yield step
@@ -28,3 +29,4 @@ def provide_steps():
     yield MultiSSE
     yield Syscall
     yield SysFuncts
+    yield SystemRelevantFunctions
