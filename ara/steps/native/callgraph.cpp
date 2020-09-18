@@ -85,6 +85,7 @@ namespace ara::step {
 						callgraph.function[call_node] = func_v;
 						callgraph.function_name[call_node] = cfg.name[func_v];
 						cfg.call_graph_link[func_v] = call_node;
+						cfg.call_graph_link[func_v] = call_node;
 						callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
 					}
 				}

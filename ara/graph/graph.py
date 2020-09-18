@@ -47,6 +47,7 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["syscall"] = self.new_vp("bool")
         self.vertex_properties["function"] = self.new_vp("int64_t")
         self.vertex_properties["arguments"] = self.new_vp("object")
+        self.vertex_properties["call_graph_link"] = self.new_vp("long")
 
         # edge properties
         self.edge_properties["type"] = self.new_ep("int")

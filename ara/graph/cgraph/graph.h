@@ -34,6 +34,7 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<unsigned char>::type syscall;
 		typename graph_tool::vprop_map_t<int64_t>::type function;
 		typename graph_tool::vprop_map_t<boost::python::object>::type arguments;
+		typename graph_tool::vprop_map_t<long>::type call_graph_link;
 
 		typename graph_tool::eprop_map_t<int>::type etype;
 		typename graph_tool::eprop_map_t<unsigned char>::type is_entry;

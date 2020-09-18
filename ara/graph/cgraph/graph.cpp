@@ -143,6 +143,7 @@ namespace ara::graph {
 		VMAP(syscall)
 		VMAP(function)
 		VMAP(arguments)
+		VMAP(call_graph_link)
 
 		PyObject* eprops = get_eprops(py_cfg);
 
