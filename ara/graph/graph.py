@@ -189,6 +189,15 @@ class Callgraph(graph_tool.Graph):
                 return edge
         return None
 
+    def get_node_with_name(self, name):
+        """Find a node specified by its name."""
+        node = graph_tool.util.find_vertex(self, self.vp["function_name"], name)
+        if len(node) == 0:
+            return None
+        assert len(node) == 1
+        return node[0]
+
+
 class Graph:
     """Container for all data that ARA uses from multiple steps.
 
