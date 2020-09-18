@@ -210,6 +210,12 @@ foreach app : ir_apps + hw_apps
                '--title', 'freertos-' + app,],
              depends: timing_exp_result,
             )
+  run_target('show_old-timing_result-freertos-' + app + '.dref',
+             command: [#'strace',
+               files('make_figures.py'),
+               profiles_list,
+               '--title', 'freertos-' + app,],
+            )
 endforeach
 
 # gpslogger is special
