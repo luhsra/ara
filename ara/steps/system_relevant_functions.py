@@ -4,14 +4,14 @@ from .step import Step
 from .os import get_os_syscalls
 
 from graph_tool import GraphView
-from graph_tool.topology import transitive_closure
+from graph_tool.topology import label_out_component
 
 
 class SystemRelevantFunctions(Step):
     """Mark all function that are in the Callgraph as system relevant or not."""
 
     def get_single_dependencies(self):
-        return ["CallGraph", "SysFuncts"]
+        return ["CallGraph", "SysFuncts", "LLVMMap"]
 
     def run(self):
         if self._graph.os is None:
@@ -20,19 +20,19 @@ class SystemRelevantFunctions(Step):
 
         syscalls = get_os_syscalls(self._graph.os)
         callgraph = self._graph.callgraph
+        cfg = self._graph.cfg
 
-        tc = transitive_closure(GraphView(callgraph, reversed=True))
-
-        # syscalls are always entry points
+        # begin with syscalls, they are always entry points
         for syscall, _ in syscalls:
             cg_node = callgraph.get_node_with_name(syscall)
             if cg_node is None:
                 continue
 
-            # syscalls are always system relevant
-            callgraph.vp.system_relevant[cg_node] = True
-            for node in tc.vertex(cg_node).out_neighbors():
-                callgraph.vp.system_relevant[callgraph.vertex(node)] = True
+            gv = GraphView(callgraph, reversed=True)
+            gv.set_vertex_filter(callgraph.vp.system_relevant, inverted=True)
+
+            label_out_component(gv, cg_node,
+                                label=callgraph.vp.system_relevant)
 
         if self.dump.get():
             dump_prefix = self.dump_prefix.get()
