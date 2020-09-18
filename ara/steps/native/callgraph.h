@@ -22,7 +22,9 @@ namespace ara::step {
 	  public:
 		static std::string get_name() { return "CallGraph"; }
 		static std::string get_description();
-		virtual std::vector<std::string> get_single_dependencies() override { return {"LLVMMap", "SVFAnalyses"}; }
+		virtual std::vector<std::string> get_single_dependencies() override {
+			return {"LLVMMap", "SVFAnalyses", "ResolveFunctionPointer"};
+		}
 
 		virtual void run() override;
 	};
