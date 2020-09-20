@@ -42,7 +42,7 @@ class Syscall(Step):
             name = f"CFG with syscalls (Function: {entry_label})"
             self._step_manager.chain_step({"name": "Printer",
                                            "dot": dot_file,
-                                           "graph_name": 'CFG with syscalls',
+                                           "graph_name": name,
                                            "entry_point": entry_label,
                                            "from_entry_point": True,
                                            "subgraph": 'abbs'})
