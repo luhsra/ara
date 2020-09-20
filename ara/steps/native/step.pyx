@@ -165,6 +165,7 @@ class Step(SuperStep):
         for step in step_history:
             history[step["name"]].append(step)
         remaining_deps = []
+        remaining_configured_deps = []
         for dep in single_deps:
             if isinstance(dep, str):
                 if dep not in history:
@@ -176,10 +177,10 @@ class Step(SuperStep):
                                 for k, v in dep.items() if k != "name"]):
                             break
                     else:
-                        remaining_deps.append(dep)
+                        remaining_configured_deps.append(dep)
                 else:
-                    remaining_deps.append(dep)
-        return remaining_deps
+                    remaining_configured_deps.append(dep)
+        return remaining_deps + remaining_configured_deps
 
     def get_single_dependencies(self):
         """
