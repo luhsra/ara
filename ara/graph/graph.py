@@ -87,6 +87,19 @@ class CFG(graph_tool.Graph):
         assert len(entry) == 1
         return entry[0].target()
 
+    def get_exit_abb(self, function):
+        function = self.vertex(function)
+
+        def is_exit(abb):
+            return self.vp.is_exit[abb]
+
+        entry = list(filter(is_exit, function.out_neighbors()))
+        if entry:
+            assert len(entry) == 1
+            return entry[0]
+        else:
+            return None
+
     def get_syscall_name(self, abb):
         """Return the called syscall name for a given abb."""
         abb = self.vertex(abb)
@@ -163,6 +176,9 @@ class CFGView(graph_tool.GraphView):
 
     def get_entry_abb(self, *args, **kwargs):
         return self.base.get_entry_abb(*args, **kwargs)
+
+    def get_exit_abb(self, *args, **kwargs):
+        return self.base.get_exit_abb(*args, **kwargs)
 
     def get_syscall_name(self, *args, **kwargs):
         return self.base.get_syscall_name(*args, **kwargs)
