@@ -334,7 +334,6 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.CompInsert]()),
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
-            _native_step_fac(make_step_fac[cstep.ICFG]()),
             _native_step_fac(make_step_fac[cstep.CallGraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),

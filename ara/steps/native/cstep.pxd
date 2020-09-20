@@ -40,10 +40,6 @@ cdef extern from "fn_single_exit.h" namespace "ara::step":
     cdef cppclass FnSingleExit:
         pass
 
-cdef extern from "icfg.h" namespace "ara::step":
-    cdef cppclass ICFG:
-        pass
-
 cdef extern from "callgraph.h" namespace "ara::step":
     cdef cppclass CallGraph:
         pass

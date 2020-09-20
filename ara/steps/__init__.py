@@ -7,6 +7,7 @@ def provide_steps():
     from .cfg_stats import CFGStats
     from .dummy import Dummy
     from .generator import Generator
+    from .icfg import ICFG
     from .load_oil import LoadOIL
     from .printer import Printer
     from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
@@ -22,6 +23,7 @@ def provide_steps():
     yield CFGStats
     yield Dummy
     yield Generator
+    yield ICFG
     yield InstanceGraph
     yield InteractionAnalysis
     yield LoadOIL
