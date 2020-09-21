@@ -38,6 +38,7 @@ class StepEntry:
     """Store all step relevant data."""
     name: str
     uuid: uuid.UUID
+    explicit: bool # was this step triggered by the user or by chain_step?
     step: Step = None
     runtime: float = None
     all_config: dict = None
@@ -84,11 +85,11 @@ class StepManager:
         self._execute_chain = None
         self._config = None
 
-    def _make_step_entry(self, step):
+    def _make_step_entry(self, step, explicit=False):
         """Make a StepEntry of a step dict."""
         assert "name" in step, "step without name given."
         uuid = step.get('uuid', get_uuid(step['name']))
-        se = StepEntry(name=step["name"], uuid=uuid)
+        se = StepEntry(name=step["name"], uuid=uuid, explicit=explicit)
         se.local_config = {k: v for k, v in step.items() if (k != "name" and
                                                              k != "uuid")}
         return se
@@ -144,6 +145,13 @@ class StepManager:
         config = dict(filter(lambda e: e[0] in step_opts, config.items()))
         return config
 
+    @staticmethod
+    def _make_history_dict(step_history):
+        """Reformat step_history to a dict."""
+        return [{"name": x.name,
+                 "uuid": str(x.uuid),
+                 "config": x.all_config} for x in step_history]
+
     def _execute_steps_with_deps(self, step_history):
         """
         Execute all steps from self._execute_chain including its dependencies.
@@ -169,9 +177,7 @@ class StepManager:
             current.step.apply_config(current.all_config)
 
             # dependency handling
-            d_hist = [{"name": x.name,
-                       "uuid": str(x.uuid),
-                       "config": x.all_config} for x in step_history]
+            d_hist = self._make_history_dict(step_history)
             dependencies = current.step.get_dependencies(d_hist)
             if dependencies:
                 self._log.debug(f"Step has dependencies: {dependencies}")
@@ -179,25 +185,32 @@ class StepManager:
                 self._execute_chain.append(self._make_step_entry(dependency))
                 continue
 
-            # execution
-            self._log.info(f"Execute {current.name} (UUID: {current.uuid}).")
+            d_hist = self._make_history_dict(step_history)
+            if current.explicit or current.step.is_necessary_anymore(d_hist):
+                # execution
+                self._log.info(
+                    f"Execute {current.name} (UUID: {current.uuid})."
+                )
 
-            if self._runtime_stats:
-                time_before = time.time()
+                if self._runtime_stats:
+                    time_before = time.time()
 
-            current.step.run()
+                current.step.run()
 
-            if self._runtime_stats:
-                time_after = time.time()
+                if self._runtime_stats:
+                    time_after = time.time()
 
-            # runtime stats handling
-            if self._runtime_stats:
-                current.runtime = time_after - time_before
-                self._log.debug(f"{current.name} had a runtime of "
-                                f"{current.runtime:0.2f}s.")
+                # runtime stats handling
+                if self._runtime_stats:
+                    current.runtime = time_after - time_before
+                    self._log.debug(f"{current.name} had a runtime of "
+                                    f"{current.runtime:0.2f}s.")
+                step_history.append(current)
+            else:
+                # skip step
+                self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
 
             self._execute_chain.pop()
-            step_history.append(current)
 
     def get_step(self, name):
         """Get the step with specified name or None."""
@@ -221,7 +234,8 @@ class StepManager:
             )
         self._log.debug(f"A new step was requested {step_config}")
 
-        self._execute_chain.insert(-1, self._make_step_entry(step_config))
+        self._execute_chain.insert(-1, self._make_step_entry(step_config,
+                                                             explicit=True))
 
     def change_global_config(self, new_config):
         """Apply a new global config.
@@ -287,7 +301,7 @@ class StepManager:
         runtime_stats_format = program_config['runtime_stats_format']
         dump_prefix = program_config['dump_prefix']
 
-        self._execute_chain = [self._make_step_entry(step)
+        self._execute_chain = [self._make_step_entry(step, explicit=True)
                                for step in reversed(steps)]
         self._config = config
 

@@ -40,12 +40,14 @@ cdef class SuperStep:
     cdef public object _graph
     cdef public object _log
     cdef public object _step_manager
+    cdef public object _config
 
     def __init__(self, graph, step_manager):
         """Initialize a Step."""
         self._graph = graph
         self._log = logging.getLogger(self.get_name())
         self._step_manager = step_manager
+        self._config = None
 
     def get_dependencies(self, step_history):
         """Define all dependencies of the step.
@@ -71,16 +73,25 @@ cdef class SuperStep:
         """
         return []
 
-    @classmethod
-    def get_name(cls) -> str:
-        """Return a unique name of the step. The name is used as ID for the
-        step."""
-        pass
+    def is_necessary_anymore(self, step_history) -> bool:
+        """Determines, if the step needs execution yet.
 
-    @classmethod
-    def get_description(cls):
-        """Return a descriptive string, that explains what the step is doing."""
-        pass
+        In some cases, the step was already executed as part of other
+        dependencies or user will. Steps that are not explicitly requested (per
+        user config or chain_step) but only by a dependency are therefore asked
+        with this function, if they need another run.
+
+        The default implementation decides this with this policy:
+        If the step was already executed with the same configuration it is not
+        necessary anymore.
+
+        If needed, this function should be overwritten.
+        """
+        for step in reversed(step_history):
+            if (step['name'] == self.get_name() and
+                step['config'] == self._config):
+                return False
+        return True
 
     def run(self):
         """Do the actual action of the step."""
@@ -98,7 +109,19 @@ cdef class SuperStep:
     def apply_config(self, config: dict):
         """Apply a new config to the step. This can be done multiple times, so
         different runs with different options are possible."""
-        raise NotImplementedError()
+        self._config = config
+        self._apply_config(config)
+
+    @classmethod
+    def get_name(cls) -> str:
+        """Return a unique name of the step. The name is used as ID for the
+        step."""
+        pass
+
+    @classmethod
+    def get_description(cls):
+        """Return a descriptive string, that explains what the step is doing."""
+        pass
 
     @classmethod
     def options(cls) -> List[option.Option]:
@@ -142,7 +165,7 @@ class Step(SuperStep):
             self._graph.step_data[self.get_name()] = data_class()
         return self._graph.step_data[self.get_name()]
 
-    def apply_config(self, config):
+    def _apply_config(self, config):
         for option in self._opts:
             option.check(config)
 
@@ -304,7 +327,7 @@ cdef class NativeStep(SuperStep):
     def get_side_data(self):
         super().get_side_data()
 
-    def apply_config(self, config: dict):
+    def _apply_config(self, config: dict):
         # this is a lot easier on the Python side, so do it here
         if 'dump_prefix' in config:
             config['dump_prefix'] = \
