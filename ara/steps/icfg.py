@@ -60,24 +60,33 @@ class ICFG(Step):
                     # function already handled in a previous ICFG run
                     continue
                 # find other functions
+                linked = False
                 if cfg.vp.type[abb] in [ABBType.syscall, ABBType.call]:
                     cg_vtx = cg.vertex(cfg.vp.call_graph_link[cur_func])
                     callsite_counter += 1
                     for callsite in cg_vtx.out_edges():
                         if cg.ep.callsite[callsite] == abb:
-                            callee = cg.vp.function[callsite.target()]
-                            funcs_queue.append(callee)
-                            entry = cfg.get_entry_abb(cfg.vertex(callee))
-                            to_be_linked.append((ICFG._ET.IN, abb, entry))
-                            link_counter += 1
-                            assert lcfg.vertex(abb).out_degree() == 1
-                            next_abb = next(lcfg.vertex(abb).out_neighbors())
-                            exit_abb = cfg.get_exit_abb(cfg.vertex(callee))
-                            if exit_abb:
-                                to_be_linked.append(
-                                    (ICFG._ET.OUT, exit_abb, next_abb)
-                                )
-                else:
+                            cg_callee = callsite.target()
+                            if cg.vp.system_relevant[cg_callee]:
+                                callee = cg.vp.function[callsite.target()]
+                                self._log.debug("Found system relevant call "
+                                                f"to {cfg.vp.name[callee]}.")
+                                funcs_queue.append(callee)
+                                entry = cfg.get_entry_abb(cfg.vertex(callee))
+                                to_be_linked.append((ICFG._ET.IN, abb, entry))
+                                link_counter += 1
+                                linked = True
+                                assert lcfg.vertex(abb).out_degree() == 1
+                                n_abb = next(lcfg.vertex(abb).out_neighbors())
+                                exit_abb = cfg.get_exit_abb(cfg.vertex(callee))
+                                if exit_abb:
+                                    to_be_linked.append(
+                                        (ICFG._ET.OUT, exit_abb, n_abb)
+                                    )
+                    if not linked:
+                        cfg.vp.type[abb] = ABBType.computation
+                if not linked:
+                    # link local cfg
                     for n_abb in lcfg.vertex(abb).out_neighbors():
                         to_be_linked.append((ICFG._ET.STD, abb, n_abb))
 
