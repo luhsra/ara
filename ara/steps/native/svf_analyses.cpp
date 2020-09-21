@@ -14,7 +14,6 @@ using namespace SVF;
 namespace ara::step {
 	std::string SVFAnalyses::get_description() { return "Run SVF analyses."; }
 
-
 	void SVFAnalyses::run() {
 		logger.info() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());

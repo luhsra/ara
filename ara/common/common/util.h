@@ -3,8 +3,8 @@
  */
 #pragma once
 
-#include <type_traits>
 #include <cassert>
+#include <type_traits>
 
 namespace ara {
 	template <typename T>
