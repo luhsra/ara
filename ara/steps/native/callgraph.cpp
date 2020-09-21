@@ -48,6 +48,7 @@ namespace ara::step {
 			Logger& logger;
 			std::map<const SVF::PTACallGraphNode*, CallVertex> svf_to_ara_nodes;
 			std::queue<CFVertex> unhandled_functions;
+			unsigned node_counter, edge_counter;
 
 			CFVertex get_function(const SVF::PTACallGraphNode& svf_node) {
 				const llvm::Function* func = svf_node.getFunction()->getLLVMFun();
@@ -73,6 +74,7 @@ namespace ara::step {
 
 						logger.debug() << "Add new node: " << svf_node << std::endl;
 						call_node = boost::add_vertex(callg_obj);
+						node_counter++;
 						svf_to_ara_nodes.insert(std::make_pair(&svf_node, call_node));
 
 						// properties
@@ -101,6 +103,7 @@ namespace ara::step {
 
 				auto edge = boost::add_edge(s_vert, d_vert, callg_obj);
 				assert(edge.second && "Edge already present");
+				edge_counter++;
 
 				// properties
 				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
@@ -136,9 +139,9 @@ namespace ara::step {
 			// TODO
 			CallGraphImpl(CFGraph& cfg_obj, graph::CFG& cfg, CaGraph& callg_obj, graph::CallGraph& callgraph,
 			              SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger,
-			              const std::string& entry_point)
+			              StepManager& step_manager, const std::string& entry_point)
 			    : cfg_obj(cfg_obj), cfg(cfg), callg_obj(callg_obj), callgraph(callgraph), svf_callgraph(svf_callgraph),
-			      mod(mod), logger(logger) {
+			      mod(mod), logger(logger), node_counter(0), edge_counter(0) {
 				CFVertex entry_func;
 
 				// TODO, put this into the EntryPoint class. This is copied from ICFG
@@ -164,15 +167,21 @@ namespace ara::step {
 					handled_functions.insert(current_function);
 					link_with_svf_callgraph(current_function);
 				}
+				logger.info() << "Added " << node_counter << " vertices and " << edge_counter << " edges." << std::endl;
+				if (node_counter != 0 || edge_counter != 0) {
+					step_manager.chain_step("SystemRelevantFunctions");
+				}
 			}
 		};
 
 		template <typename CFGraph>
 		void map_callgraph(CFGraph& cfg_obj, graph::CFG& cfg, graph::CallGraph& callgraph,
 		                   SVF::PTACallGraph& svf_callgraph, llvm::Module& mod, Logger& logger,
-		                   const std::string& entry_point) {
+		                   StepManager& step_manager, const std::string& entry_point) {
 			graph_tool::gt_dispatch<>()(
-			    [&](auto& g) { CallGraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger, entry_point); },
+			    [&](auto& g) {
+				    CallGraphImpl(cfg_obj, cfg, g, callgraph, svf_callgraph, mod, logger, step_manager, entry_point);
+			    },
 			    graph_tool::always_directed())(callgraph.graph.get_graph_view());
 		}
 	} // namespace
@@ -197,7 +206,9 @@ namespace ara::step {
 		logger.info() << "Analyzing entry point: '" << *entry_point_name << "'" << std::endl;
 
 		graph_tool::gt_dispatch<>()(
-		    [&](auto& g) { map_callgraph(g, cfg, callgraph, svf_callgraph, mod, logger, *entry_point_name); },
+		    [&](auto& g) {
+			    map_callgraph(g, cfg, callgraph, svf_callgraph, mod, logger, step_manager, *entry_point_name);
+		    },
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
