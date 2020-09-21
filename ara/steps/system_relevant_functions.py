@@ -29,7 +29,9 @@ class SystemRelevantFunctions(Step):
                 continue
 
             gv = GraphView(callgraph, reversed=True)
-            gv.set_vertex_filter(callgraph.vp.system_relevant, inverted=True)
+            # TODO: triggers a SEGFAULT
+            # old_sys_rel = gv.copy_property(gv.vp.system_relevant)
+            # gv.set_vertex_filter(old_sys_rel, inverted=True)
 
             label_out_component(gv, cg_node,
                                 label=callgraph.vp.system_relevant)
