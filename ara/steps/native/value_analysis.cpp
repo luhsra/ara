@@ -76,6 +76,7 @@ namespace ara::step {
 				VFGEdge* edge = *it;
 				graph::CallPath next_path = current_path;
 				logger.debug() << "Next edge: " << *edge << std::endl;
+				bool go_further = true;
 				if (auto cde = llvm::dyn_cast<CallDirSVFGEdge>(edge)) {
 					const CallBlockNode* cbn = s_callgraph->getCallSite(cde->getCallSiteId());
 					assert(s_callgraph->hasCallGraphEdge(cbn) && "no call graph edge found");
@@ -85,13 +86,20 @@ namespace ara::step {
 					assert(bi == s_callgraph->getCallEdgeEnd(cbn) && "more than one edge found");
 					assert(call_site->getCallSiteID() == cde->getCallSiteId() && "call side IDs does not match.");
 					logger.debug() << "Callsite: " << *call_site << std::endl;
-					next_path.add_call_site(callgraph, safe_deref(call_site));
+					try {
+						next_path.add_call_site(callgraph, safe_deref(call_site));
+					} catch (const ara::EdgeNotFound& _) {
+						// this is not reachable from the current entry point
+						go_further = false;
+					}
 				}
 
-				const VFGNode* next_node = (*it)->getSrcNode();
-				if (next_node != nullptr) {
-					logger.debug() << "Next node: " << *next_node << std::endl;
-					nodes.emplace(VFGContainer(next_node, next_path));
+				if (go_further) {
+					const VFGNode* next_node = (*it)->getSrcNode();
+					if (next_node != nullptr) {
+						logger.debug() << "Next node: " << *next_node << std::endl;
+						nodes.emplace(VFGContainer(next_node, next_path));
+					}
 				}
 			}
 		}
