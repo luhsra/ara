@@ -179,7 +179,7 @@ namespace ara::graph {
 					return v;
 				}
 			}
-			throw VertexNotFound();
+			throw VertexNotFound("CFG.back_map");
 		}
 
 		/**
@@ -211,7 +211,7 @@ namespace ara::graph {
 					return boost::target(cand, g);
 				}
 			}
-			throw VertexNotFound();
+			throw VertexNotFound("CFG.get_vertex");
 		}
 
 		/**
@@ -351,7 +351,7 @@ namespace ara::graph {
 		}
 
 		/**
-		 * Return Edge that belongs to the appropriate Callgraph edge.
+		 * Return edge that belongs to the appropriate Callgraph edge.
 		 *
 		 * Throws exception, if edge cannot be mapped.
 		 */
@@ -363,7 +363,7 @@ namespace ara::graph {
 					return e;
 				}
 			}
-			throw VertexNotFound();
+			throw EdgeNotFound("CallGraph.back_map");
 		}
 	};
 
