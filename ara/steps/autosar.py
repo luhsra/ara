@@ -122,9 +122,9 @@ class AUTOSAR(OSBase):
             if alarm.action == AlarmAction.ACTIVATETASK:
                 if alarm.task not in new_state.activated_tasks:
                     new_state.activated_tasks.append(alarm.task)
-                    new_state.from_event = True
                     AUTOSAR.schedule(new_state, new_state.cpu)
         
+        new_state.from_event = True
         return new_state
 
     @staticmethod

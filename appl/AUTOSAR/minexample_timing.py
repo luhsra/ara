@@ -9,8 +9,8 @@ class Timings:
         # f = getattr(Timings, str(abb_name) + '_timings', None)
         # if f is not None:
         #     return f(context)
-        # return (0, None)
-        return (1, 2)
+        # return (0, math.inf)
+        return (4, 6)
     
     @staticmethod
     def get_min_time(abb_name, context):

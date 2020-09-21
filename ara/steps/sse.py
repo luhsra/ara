@@ -26,7 +26,7 @@ from graph_tool.topology import dominator_tree, label_out_component
 # time counter for performance measures
 c_debugging = 0 # in milliseconds
 
-MAX_UPDATES = 3
+MAX_UPDATES = 2
 MAX_STATE_UPDATES = 3
 
 sse_counter = 0
@@ -545,9 +545,10 @@ class MultiSSE(FlowAnalysis):
                                     for j, intervall_n in enumerate(next_state.global_times_merged):
 
                                         # check if intervall is disjunct
-                                        if not (intervall_s[0] > intervall_n[1] or intervall_n[0] > intervall_s[1]):
+                                        if not (intervall_s[0] >= intervall_n[1] or intervall_n[0] >= intervall_s[1]):
                                             new_min = max(intervall_s[0], intervall_n[0])
                                             new_max = min(intervall_s[1], intervall_n[1])
+                                            # assert(new_min <= new_max)
                                             new_times.append((new_min, new_max))
                                 
                                 # skip this combination, if all intervalls are disjunct
@@ -704,9 +705,16 @@ class MultiSSE(FlowAnalysis):
                             for intervall in new_state.global_times:
                                 existing_state.global_times.append(intervall)
 
+                            if new_state.from_event:
+                                # copy passed event times to existing state
+                                for event_time in new_state.passed_events:
+                                    if event_time not in existing_state.passed_events:
+                                        existing_state.passed_events.append(event_time)
+                                existing_state.passed_events.sort()
+
                             if existing_state.updated < MAX_STATE_UPDATES:
                                 existing_state.updated += 1
-                                if not new_state.from_event and v not in stack:
+                                if v not in stack:
                                     stack.append(v)
                             break
 
@@ -834,7 +842,9 @@ class MultiSSE(FlowAnalysis):
                     new_task = new_state.get_scheduled_task()
 
                     new_state.local_times = []
-                    new_state.global_times = []
+
+                    if new_state in new_states:
+                        new_state.global_times = []
 
                     if new_task is not None:
                         abb = new_state.abbs[new_task.name] 
@@ -879,11 +889,15 @@ class MultiSSE(FlowAnalysis):
                         if new_state in new_states and len(new_state.global_times) == 0:
                             new_states.remove(new_state)
                     
-                    # # copy passed events
-                    # for event in state.passed_events:
-                    #     if event not in new_state.passed_events:
-                    #         new_state.passed_events.append(event)
-                    # new_state.passed_events.sort()
+                    # copy passed events
+                    # if new_state not in new_states:
+                    #     for event in state.passed_events:
+                    #         if event not in new_state.passed_events:
+                    #             new_state.passed_events.append(event)
+                    #     new_state.passed_events.sort()
+                
+                # for intervall in state.global_times:
+                    # assert(intervall[0] <= intervall[1])
 
                 # merge global and local times into merged lists 
                 state.global_times_merged.extend(state.global_times)
