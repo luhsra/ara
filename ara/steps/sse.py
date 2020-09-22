@@ -312,13 +312,26 @@ class FlatAnalysis(FlowAnalysis):
             # call handling
             elif self._icfg.vp.type[abb] == ABBType.call:
                 self._log.debug(f"Handle call: {self._icfg.vp.name[abb]}")
+                handled = False
                 for n in self._icfg.vertex(abb).out_neighbors():
+                    new_call_path = self._get_call_node(state.call_path, abb)
+                    if new_call_path.is_recursive():
+                        self._log.debug(f"Found recursive function. Callpath {new_call_path}")
+                        continue
                     new_state = state.copy()
                     new_state.next_abbs = [n]
                     new_state.call_path = self._get_call_node(state.call_path,
                                                               abb)
                     self._handle_call(state, new_state, abb)
                     new_states.append(new_state)
+                    handled = True
+                # if only recursive functions are found, handle the call like a
+                # normal computation block
+                if not handled:
+                    for n in self._lcfg.vertex(abb).out_neighbors():
+                        new_state = state.copy()
+                        new_state.next_abbs = [n]
+                        new_states.append(new_state)
 
             # exit handling
             elif (self._icfg.vp.is_exit[abb] and
