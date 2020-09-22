@@ -17,7 +17,9 @@ namespace ara::step {
 		static std::string get_name() { return "SVFAnalyses"; }
 		static std::string get_description();
 
-		virtual std::vector<std::string> get_single_dependencies() override { return {"LLVMMap"}; }
+		virtual std::vector<std::string> get_single_dependencies() override {
+			return {"FnSingleExit", "FakeEntryPoint"};
+		}
 
 		virtual void run() override;
 	};
