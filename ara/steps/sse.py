@@ -273,6 +273,9 @@ class FlatAnalysis(FlowAnalysis):
     def _handle_call(self, old_state, new_state, abb):
         pass
 
+    def _is_bad_call_target(self, abb):
+        return False
+
     def _get_categories(self):
         return SyscallCategory.every
 
@@ -313,14 +316,15 @@ class FlatAnalysis(FlowAnalysis):
                 self._log.debug(f"Handle call: {self._icfg.vp.name[abb]}")
                 handled = False
                 for n in self._icfg.vertex(abb).out_neighbors():
+                    if self._is_bad_call_target(n):
+                        continue
                     new_call_path = self._get_call_node(state.call_path, abb)
                     if new_call_path.is_recursive():
                         self._log.debug(f"Found recursive function. Callpath {new_call_path}")
                         continue
                     new_state = state.copy()
                     new_state.next_abbs = [n]
-                    new_state.call_path = self._get_call_node(state.call_path,
-                                                              abb)
+                    new_state.call_path = new_call_path
                     self._handle_call(state, new_state, abb)
                     new_states.append(new_state)
                     handled = True
@@ -450,6 +454,12 @@ class InstanceGraph(FlatAnalysis):
 
     def _get_categories(self):
         return SyscallCategory.create
+
+    def _is_bad_call_target(self, abb):
+        cfg = self._graph.cfg
+        cg = self._graph.callgraph
+        cg_vertex = cg.vertex(cfg.vp.call_graph_link[cfg.get_function(abb)])
+        return not cg.vp.syscall_category_create[cg_vertex]
 
     def _finish(self, sstg):
         super()._finish(sstg)
