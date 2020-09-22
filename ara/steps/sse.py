@@ -13,7 +13,6 @@ from .os_util import SyscallCategory
 from ara.util import VarianceDict
 
 from collections import defaultdict
-from enum import Enum
 from itertools import chain
 from graph_tool.topology import dominator_tree, label_out_component
 
@@ -36,6 +35,7 @@ class State:
         ret = f'State(Branch: {self.branch}, '
         abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
         ret += ', '.join(abbs)
+        ret += ", CallPath: " + self.call_path.print(call_site=True)
         return ret + ')'
 
     def copy(self):
@@ -107,7 +107,8 @@ class FlowAnalysis(Step):
 
         counter = 0
         while stack:
-            self._log.debug(f"Stack {counter:3d}: "
+            self._log.debug(f"Round {counter:3d}, "
+                            f"Stack with {len(stack)} state(s): "
                             f"{[sstg.vp.state[v] for v in stack]}")
             state_vertex = stack.pop()
             state = sstg.vp.state[state_vertex]
@@ -297,6 +298,7 @@ class FlatAnalysis(FlowAnalysis):
 
             # syscall handling
             if self._icfg.vp.type[abb] == ABBType.syscall:
+                self._log.debug(f"Handle syscall: {self._icfg.vp.name[abb]}")
                 fake_state = state.copy()
                 self._init_fake_state(fake_state, abb)
                 assert self._graph.os is not None
@@ -309,6 +311,7 @@ class FlatAnalysis(FlowAnalysis):
 
             # call handling
             elif self._icfg.vp.type[abb] == ABBType.call:
+                self._log.debug(f"Handle call: {self._icfg.vp.name[abb]}")
                 for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
@@ -320,6 +323,7 @@ class FlatAnalysis(FlowAnalysis):
             # exit handling
             elif (self._icfg.vp.is_exit[abb] and
                   self._icfg.vertex(abb).out_degree() > 0):
+                self._log.debug(f"Handle exit: {self._icfg.vp.name[abb]}")
                 new_state = state.copy()
                 callsite = new_state.call_path[-1]
                 call = new_state.callgraph.ep.callsite[callsite]
@@ -330,6 +334,7 @@ class FlatAnalysis(FlowAnalysis):
 
             # computation block handling
             else:
+                self._log.debug(f"Handle computation: {self._icfg.vp.name[abb]}")
                 for n in self._icfg.vertex(abb).out_neighbors():
                     new_state = state.copy()
                     new_state.next_abbs = [n]
