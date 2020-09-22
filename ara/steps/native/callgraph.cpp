@@ -213,7 +213,7 @@ namespace ara::step {
 
 		if (*dump.get()) {
 			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = *dump_prefix.get() + uuid;
+			std::string dot_file = *dump_prefix.get() + uuid + "." + *entry_point_name;
 
 			svf_callgraph.dump(dot_file + ".svf");
 
