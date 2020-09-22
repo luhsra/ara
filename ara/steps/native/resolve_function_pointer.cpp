@@ -34,11 +34,11 @@ namespace ara::step {
 			return true;
 		}
 
-		const auto& begin1 = candidate_type->param_begin();
-		const auto& end1 = candidate_type->param_end();
+		const auto& begin1 = caller_type.param_begin();
+		const auto& end1 = caller_type.param_end();
 
-		const auto& begin2 = caller_type.param_begin();
-		const auto& end2 = caller_type.param_end();
+		const auto& begin2 = candidate_type->param_begin();
+		const auto& end2 = candidate_type->param_end();
 
 		auto it1 = begin1;
 		auto it2 = begin2;
@@ -46,6 +46,15 @@ namespace ara::step {
 		for (; it1 != end1 && it2 != end2; ++it1, ++it2) {
 			llvm::Type* type1 = *it1;
 			llvm::Type* type2 = *it2;
+			if (llvm::PointerType* pt1 = llvm::dyn_cast<llvm::PointerType>(type1)) {
+				// we need extra care here, the pointer must point to a same sized type
+				type1 = pt1->getElementType();
+				if (llvm::PointerType* pt2 = llvm::dyn_cast<llvm::PointerType>(type2)) {
+					type2 = pt2->getElementType();
+				} else {
+					return false;
+				}
+			}
 			if (type1 && type2 && type1->isSized() && type2->isSized() &&
 			    dl->getTypeAllocSize(type1) == dl->getTypeAllocSize(type2)) {
 				return true;
@@ -91,12 +100,16 @@ namespace ara::step {
 		const auto& match = signature_to_func.find(call_type);
 
 		bool found_candidate = false;
+		// do the simple check, maybe the same function signature exist somewhere
 		if (match != signature_to_func.end()) {
 			found_candidate = true;
 			for (llvm::Function& func : match->second) {
 				link_indirect_pointer(cbn, callgraph, func, module);
 			}
 		} else {
+			// be more generous, only the bit sizes of the arguments must match.
+			// This can result is a _lot_ of candidate functions.
+
 			// std::vector<const llvm::Function*> functions;
 
 			int i = 0;
