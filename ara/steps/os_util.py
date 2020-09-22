@@ -8,14 +8,16 @@ class SyscallCategory(enum.Enum):
 
 
 def syscall(*args):
-    def wrap(func):
+    def wrap(func, categories=None):
         func.syscall = True
-        func.categories = set(args)
+        if categories is None:
+            func.categories = set(args)
+        else:
+            func.categories = categories
         func = staticmethod(func)
         return func
 
     if len(args) == 1 and callable(args[0]):
-        func = wrap(args[0])
-        func.categories = set((SyscallCategory.UNDEFINED, ))
+        func = wrap(args[0], set((SyscallCategory.UNDEFINED, )))
         return func
     return wrap
