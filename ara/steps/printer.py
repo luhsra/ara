@@ -142,8 +142,8 @@ class Printer(Step):
             dot_node = pydot.Node(
                 str(hash(node)),
                 label=cfg.vp.name[callgraph.vp.function[node]],
-                shape=shapes[callgraph.vp.system_relevant[node]][0],
-                color=shapes[callgraph.vp.system_relevant[node]][1]
+                shape=shapes[callgraph.vp.syscall_category_every[node]][0],
+                color=shapes[callgraph.vp.syscall_category_every[node]][1]
             )
             dot_graph.add_node(dot_node)
         for edge in callgraph.edges():

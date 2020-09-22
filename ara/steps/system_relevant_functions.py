@@ -1,5 +1,5 @@
 """Container for SystemRelevantFunction."""
-from ara.graph import Graph
+from ara.graph import Graph, SyscallCategory
 from .step import Step
 from .os import get_os_syscalls
 
@@ -22,19 +22,22 @@ class SystemRelevantFunctions(Step):
         callgraph = self._graph.callgraph
         cfg = self._graph.cfg
 
+        every_set = {SyscallCategory.every, }
+
         # begin with syscalls, they are always entry points
-        for syscall, _ in syscalls:
-            cg_node = callgraph.get_node_with_name(syscall)
-            if cg_node is None:
-                continue
+        for syscall, cls in syscalls:
+            sys_func = getattr(cls, syscall)
+            for sys_cat in every_set | getattr(cls, syscall).categories:
+                cg_node = callgraph.get_node_with_name(syscall)
+                if cg_node is None:
+                    continue
 
-            gv = GraphView(callgraph, reversed=True)
-            # TODO: triggers a SEGFAULT
-            # old_sys_rel = gv.copy_property(gv.vp.system_relevant)
-            # gv.set_vertex_filter(old_sys_rel, inverted=True)
-
-            label_out_component(gv, cg_node,
-                                label=callgraph.vp.system_relevant)
+                gv = GraphView(callgraph, reversed=True)
+                # TODO: triggers a SEGFAULT
+                # old_sys_rel = gv.copy_property(gv.vp.system_relevant)
+                # gv.set_vertex_filter(old_sys_rel, inverted=True)
+                vprop = callgraph.vp["syscall_category_" + sys_cat.name]
+                label_out_component(gv, cg_node, label=vprop)
 
         if self.dump.get():
             dump_prefix = self.dump_prefix.get()

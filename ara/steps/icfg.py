@@ -67,7 +67,7 @@ class ICFG(Step):
                     for callsite in cg_vtx.out_edges():
                         if cg.ep.callsite[callsite] == abb:
                             cg_callee = callsite.target()
-                            if cg.vp.system_relevant[cg_callee]:
+                            if cg.vp.syscall_category_every[cg_callee]:
                                 callee = cg.vp.function[callsite.target()]
                                 self._log.debug("Found system relevant call "
                                                 f"to {cfg.vp.name[callee]}.")
