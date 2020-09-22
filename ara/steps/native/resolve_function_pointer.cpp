@@ -47,7 +47,7 @@ namespace ara::step {
 			llvm::Type* type1 = *it1;
 			llvm::Type* type2 = *it2;
 			if (type1 && type2 && type1->isSized() && type2->isSized() &&
-			    dl.getTypeAllocSize(type1) == dl.getTypeAllocSize(type2)) {
+			    dl->getTypeAllocSize(type1) == dl->getTypeAllocSize(type2)) {
 				return true;
 			}
 		}
@@ -140,6 +140,7 @@ namespace ara::step {
 	}
 
 	void ResolveFunctionPointer::run() {
+		dl = DataLayout(&graph.get_module());
 		SVF::PAG* pag = SVF::PAG::getPAG();
 		SVF::ICFG* icfg = safe_deref(pag).getICFG();
 
