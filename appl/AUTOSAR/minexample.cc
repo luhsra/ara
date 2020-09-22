@@ -21,7 +21,9 @@ DeclareTask(TaskF);
 TASK(TaskA) {
     doSomethingBefore();
     ActivateTask(TaskD);
-    doSomethingAfter();
+    for (int i = 0; i < 12; i++) {   
+        doSomethingAfter();
+    }
     // ActivateTask(TaskD);
     TerminateTask();
 }
@@ -41,7 +43,7 @@ TASK(TaskF) {
 TASK(TaskC) {
     while(true) {
         doSomethingC();
-        ActivateTask(TaskB);
+        // ActivateTask(TaskB);
     }
     TerminateTask();
 }
