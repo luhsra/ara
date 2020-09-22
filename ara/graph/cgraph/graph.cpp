@@ -178,7 +178,6 @@ namespace ara::graph {
 		ARA_VMAP(function)
 		ARA_VMAP(function_name)
 		ARA_VMAP(svf_vlink)
-		ARA_VMAP(system_relevant)
 
 		// syscall categories
 		// MAP(callgraph, syscall_category_undefined, vprops)

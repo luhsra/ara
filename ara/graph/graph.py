@@ -193,7 +193,6 @@ class Callgraph(graph_tool.Graph):
         self.vertex_properties["function"] = self.new_vp("long")
         self.vertex_properties["function_name"] = self.new_vp("string")
         self.vertex_properties["svf_vlink"] = self.new_vp("int64_t")
-        self.vertex_properties["system_relevant"] = self.new_vp("bool")
         self._map_syscall_categories()
         #edge properties
         self.edge_properties["callsite"] = self.new_ep("long")
