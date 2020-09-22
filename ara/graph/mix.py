@@ -24,7 +24,6 @@ class ABBType(enum.IntEnum): # */
 # gcf = global control flow
 # f2a = function to ABB
 # a2f = ABB to function
-import enum
 class CFType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum CFType {
@@ -39,3 +38,26 @@ class CFType(enum.IntEnum): # */
     #undef pass
     #define pass };}
     pass
+
+#undef MIX
+#define MIX 1 /*
+# undefined = as the name says
+# every = syscall belongs to every category
+# create = syscall creates an instance
+# comm = syscall is causes some kind of communication
+# ATTENTION: This enum must kept in sync with syscall_category.inc
+class SyscallCategory(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum SyscallCategory {
+    pass
+
+    undefined = 0,
+    every = 1,
+    create = 2,
+    comm = 3,
+
+    #undef pass
+    #define pass };}
+    pass
+
+#undef MIX

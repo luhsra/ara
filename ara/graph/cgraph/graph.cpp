@@ -126,29 +126,32 @@ namespace ara::graph {
 		CFG cfg(get_graph(py_cfg));
 
 		// Properties
-#define MAP(Graph, Value, Type) Graph.Value = get_property<decltype(Graph.Value)>(Type, #Value);
-#define VMAP(Value) MAP(cfg, Value, vprops)
-#define EMAP(Value) MAP(cfg, Value, eprops)
+#define ARA_MAP(Graph, Value, Type) Graph.Value = get_property<decltype(Graph.Value)>(Type, #Value);
+#define ARA_VMAP(Value) ARA_MAP(cfg, Value, vprops)
+#define ARA_EMAP(Value) ARA_MAP(cfg, Value, eprops)
 
 		PyObject* vprops = get_vprops(py_cfg);
 
-		VMAP(name)
-		VMAP(type)
-		VMAP(is_function)
-		VMAP(entry_bb)
-		VMAP(exit_bb)
-		VMAP(is_exit)
-		VMAP(is_loop_head)
-		VMAP(implemented)
-		VMAP(syscall)
-		VMAP(function)
-		VMAP(arguments)
-		VMAP(call_graph_link)
+		ARA_VMAP(name)
+		ARA_VMAP(type)
+		ARA_VMAP(is_function)
+		ARA_VMAP(entry_bb)
+		ARA_VMAP(exit_bb)
+		ARA_VMAP(is_exit)
+		ARA_VMAP(is_loop_head)
+		ARA_VMAP(implemented)
+		ARA_VMAP(syscall)
+		ARA_VMAP(function)
+		ARA_VMAP(arguments)
+		ARA_VMAP(call_graph_link)
 
 		PyObject* eprops = get_eprops(py_cfg);
 
 		cfg.etype = get_property<decltype(cfg.etype)>(eprops, "type");
-		EMAP(is_entry)
+		ARA_EMAP(is_entry)
+
+#undef ARA_VMAP
+#undef ARA_EMAP
 
 		return cfg;
 	}
@@ -169,16 +172,33 @@ namespace ara::graph {
 		// Properties
 		PyObject* vprops = get_vprops(py_callgraph);
 
-		MAP(callgraph, function, vprops)
-		MAP(callgraph, function_name, vprops)
-		MAP(callgraph, svf_vlink, vprops)
-		MAP(callgraph, system_relevant, vprops)
+#define ARA_VMAP(Value) ARA_MAP(callgraph, Value, vprops)
+#define ARA_EMAP(Value) ARA_MAP(callgraph, Value, eprops)
+
+		ARA_VMAP(function)
+		ARA_VMAP(function_name)
+		ARA_VMAP(svf_vlink)
+		ARA_VMAP(system_relevant)
+
+		// syscall categories
+		// MAP(callgraph, syscall_category_undefined, vprops)
+		// MAP(callgraph, syscall_category_all, vprops)
+		// MAP(callgraph, syscall_category_create, vprops)
+		// MAP(callgraph, syscall_category_comm, vprops)
+
+#define ARA_SYS_ACTION(Value) ARA_VMAP(syscall_category_##Value)
+#include "syscall_category.inc"
+#undef ARA_SYS_ACTION
 
 		PyObject* eprops = get_eprops(py_callgraph);
 
-		MAP(callgraph, callsite, eprops)
-		MAP(callgraph, callsite_name, eprops)
-		MAP(callgraph, svf_elink, eprops)
+		ARA_EMAP(callsite)
+		ARA_EMAP(callsite_name)
+		ARA_EMAP(svf_elink)
+
+#undef ARA_VMAP
+#undef ARA_EMAP
+#undef ARA_MAP
 
 		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
 

@@ -5,11 +5,10 @@ import functools
 
 import pyllco
 
-from ara.graph import ABBType, Graph, CFGView, CFType, CallPath
+from ara.graph import ABBType, Graph, CFGView, CFType, CallPath, SyscallCategory
 from .step import Step
 from .option import Option, String, Choice
 from .freertos import Task
-from .os_util import SyscallCategory
 from ara.util import VarianceDict
 
 from collections import defaultdict
@@ -275,7 +274,7 @@ class FlatAnalysis(FlowAnalysis):
         pass
 
     def _get_categories(self):
-        return SyscallCategory.ALL
+        return SyscallCategory.every
 
     def _get_call_node(self, call_path, abb):
         """Return the call node for the given abb, respecting the call_path."""
@@ -450,7 +449,7 @@ class InstanceGraph(FlatAnalysis):
         self._cond_func[new_state.call_path] = new_state.branch
 
     def _get_categories(self):
-        return SyscallCategory.CREATE
+        return SyscallCategory.create
 
     def _finish(self, sstg):
         super()._finish(sstg)
@@ -477,7 +476,7 @@ class InteractionAnalysis(FlatAnalysis):
                 self._step_data.add(func_name)
 
     def _get_categories(self):
-        return SyscallCategory.COMM
+        return SyscallCategory.comm
 
     def _evaluate_fake_state(self, new_state, abb):
         self._graph.instances = new_state.instances

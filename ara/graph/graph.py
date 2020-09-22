@@ -7,7 +7,7 @@ import enum
 from collections import deque
 
 from .graph_data import PyGraphData
-from .mix import ABBType, CFType
+from .mix import ABBType, CFType, SyscallCategory
 
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
@@ -194,12 +194,18 @@ class Callgraph(graph_tool.Graph):
         self.vertex_properties["function_name"] = self.new_vp("string")
         self.vertex_properties["svf_vlink"] = self.new_vp("int64_t")
         self.vertex_properties["system_relevant"] = self.new_vp("bool")
+        self._map_syscall_categories()
         #edge properties
         self.edge_properties["callsite"] = self.new_ep("long")
         self.edge_properties["callsite_name"] = self.new_ep("string")
         self.edge_properties["svf_elink"] = self.new_ep("int64_t")
 
         self.graph_properties["cfg"] = self.new_gp("object", cfg)
+
+    def _map_syscall_categories(self):
+        for syscat in SyscallCategory:
+            property_name = "syscall_category_" + syscat.name
+            self.vertex_properties[property_name] = self.new_vp("bool")
 
     def get_edge_for_callsite(self, callsite):
         for edge in self.edges():

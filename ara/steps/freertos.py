@@ -1,10 +1,10 @@
-from .os_util import syscall, SyscallCategory
+from .os_util import syscall
 from .os_base import OSBase
 
 import pyllco
 
 import ara.graph as _graph
-from ara.graph import CallPath
+from ara.graph import CallPath, SyscallCategory
 from ara.util import get_logger
 
 logger = get_logger("FreeRTOS")
@@ -113,7 +113,7 @@ class FreeRTOS(OSBase):
         state.scheduler_on = False
 
     @staticmethod
-    def interpret(cfg, abb, state, categories=SyscallCategory.ALL):
+    def interpret(cfg, abb, state, categories=SyscallCategory.every):
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}")
 
@@ -122,7 +122,7 @@ class FreeRTOS(OSBase):
         if isinstance(categories, SyscallCategory):
             categories = set((categories,))
 
-        if SyscallCategory.ALL not in categories:
+        if SyscallCategory.every not in categories:
             sys_cat = syscall_function.categories
             if sys_cat | categories != sys_cat:
                 # do not interpret this syscall
@@ -158,7 +158,7 @@ class FreeRTOS(OSBase):
 
 
 
-    @syscall(SyscallCategory.CREATE)
+    @syscall(SyscallCategory.create)
     def xTaskCreate(cfg, abb, state):
         state = state.copy()
 
@@ -197,7 +197,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(SyscallCategory.CREATE)
+    @syscall(SyscallCategory.create)
     def vTaskStartScheduler(cfg, abb, state):
         state = state.copy()
 
@@ -220,7 +220,7 @@ class FreeRTOS(OSBase):
         state.scheduler_on = True
         return state
 
-    @syscall(SyscallCategory.CREATE)
+    @syscall(SyscallCategory.create)
     def xQueueGenericCreate(cfg, abb, state):
         state = state.copy()
 
@@ -247,7 +247,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(SyscallCategory.CREATE)
+    @syscall(SyscallCategory.create)
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
@@ -271,7 +271,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(SyscallCategory.COMM)
+    @syscall(SyscallCategory.comm)
     def vTaskDelay(cfg, abb, state):
         state = state.copy()
 
@@ -289,7 +289,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(SyscallCategory.COMM)
+    @syscall(SyscallCategory.comm)
     def xQueueGenericSend(cfg, abb, state):
         state = state.copy()
 
