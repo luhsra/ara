@@ -38,6 +38,7 @@ int endless_loop() {
 
 int endless_loop2(bool a) {
 	if (a) {
+		ptr_func2(a, 5.0, 3);
 		return 5;
 	}
 	while (true) {
