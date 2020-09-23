@@ -4,7 +4,7 @@
 	],
 
 	"ValueAnalysis": {
-		"log_level": "debug"
+		"log_level": "info"
 	},
 
 	"InstanceGraph": {
@@ -12,7 +12,22 @@
 		"dump": true
 	},
 
+	"ICFG": {
+		"log_level": "info",
+		"dump": true
+	},
+
 	"Syscall": {
+		"dump": true
+	},
+
+	"CallGraph": {
+		"log_level": "info",
+		"dump": true
+	},
+
+	"SystemRelevantFunctions": {
+		"log_level": "debug",
 		"dump": true
 	},
 
