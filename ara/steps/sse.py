@@ -28,6 +28,7 @@ c_debugging = 0 # in milliseconds
 
 MAX_UPDATES = 2
 MAX_STATE_UPDATES = 20
+MIN_EMULATION_TIME = 200
 
 sse_counter = 0
 
@@ -494,6 +495,18 @@ class MultiSSE(FlowAnalysis):
         self._log.info(f"Executing Metastate {state_vertex}: {metastate}")
         new_states = []
 
+        def calc_intersection(timings1, timings2):
+            new_times = []
+            for intervall_s in timings1:
+                for intervall_n in timings2:
+
+                    # check if intervall is disjunct
+                    if not (intervall_s[0] >= intervall_n[1] or intervall_n[0] >= intervall_s[1]):
+                        new_min = max(intervall_s[0], intervall_n[0])
+                        new_max = min(intervall_s[1], intervall_n[1])
+                        new_times.append((new_min, new_max))
+            return new_times
+
         for cpu, sync_list in metastate.sync_states.items():
             for state in sync_list:
                 args = []
@@ -540,16 +553,7 @@ class MultiSSE(FlowAnalysis):
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
 
                                 # calculate new timing intervalls for the new states
-                                new_times = []
-                                for i, intervall_s in enumerate(sync_state.global_times_merged):
-                                    for j, intervall_n in enumerate(next_state.global_times_merged):
-
-                                        # check if intervall is disjunct
-                                        if not (intervall_s[0] >= intervall_n[1] or intervall_n[0] >= intervall_s[1]):
-                                            new_min = max(intervall_s[0], intervall_n[0])
-                                            new_max = min(intervall_s[1], intervall_n[1])
-                                            # assert(new_min <= new_max)
-                                            new_times.append((new_min, new_max))
+                                new_times = calc_intersection(sync_state.global_times_merged, next_state.global_times_merged)
                                 
                                 # skip this combination, if all intervalls are disjunct
                                 if len(new_times) == 0:
@@ -609,19 +613,45 @@ class MultiSSE(FlowAnalysis):
             for new_state in new_states:
                 if new_state.compare_root_states(sstg_state):
                     new_states.remove(new_state)
+                    update_timings = False
 
                     # add timing intervalls to existing state
                     for cpu, graph in sstg_state.state_graph.items():
                         s_state = graph.vp.state[graph.get_vertices()[0]]
                         n_state = new_state.state_graph[cpu].vp.state[new_state.state_graph[cpu].get_vertices()[0]]
                         for intervall in n_state.global_times:
-                            s_state.global_times.append(intervall)
-                        # s_state.merge_times()
+                            if intervall not in s_state.global_times:
+                                s_state.global_times.append(intervall)
+                        
+                        intersection = calc_intersection(s_state.global_times, s_state.global_times_merged)
+                        s_state.global_times.sort(key=lambda x: x[0])
+                        intersection.sort(key=lambda x: x[0])
+                        if s_state.global_times != intersection:
+                            print(f"Merged: {s_state.global_times_merged}")
+                            print(f"Global: {s_state.global_times}")
+                            update_timings = True
+
+                    if update_timings :
+                        self.run_sse(sstg_state)
+                        # if sstg_state.updated < MAX_UPDATES:
+                            # sstg_state.updated += 1
+
+                        # append found metastate to update list if it does not exceed min emulation time 
+                        update_metastate = False
+                        for cpu, graph in sstg_state.state_graph.items():
+                            state = graph.vp.state[graph.get_vertices()[0]]   
+                            if state.global_times_merged[-1][1] < MIN_EMULATION_TIME:
+                                update_metastate = True
+                                break
+                        
+                        if update_metastate: 
+                            update_list.append(sstg_state)
+                            print(f"Appended {v} {sstg_state}")
+                        # else:
+                        #     print("Cut")
                     
-                    self.run_sse(sstg_state)
-                    if sstg_state.updated < MAX_UPDATES:   
-                        sstg_state.updated += 1 
-                        update_list.append(sstg_state)
+                    # else:
+                    #     print("No new Times!")
                     
                     # add edge to existing state in sstg
                     if v not in self.sstg.vertex(state_vertex).out_neighbors():
@@ -682,8 +712,9 @@ class MultiSSE(FlowAnalysis):
                     # if not found:
                     #     stack.append(v)
                     neighbor_state = graph.vp.state[v]
-                    if neighbor_state.updated < MAX_STATE_UPDATES:
-                        neighbor_state.updated += 1
+                    # if neighbor_state.updated < MAX_STATE_UPDATES:
+                    #     neighbor_state.updated += 1
+                    if len(neighbor_state.global_times_merged) > 0 and neighbor_state.global_times_merged[-1][1] < MIN_EMULATION_TIME and len(neighbor_state.global_times) > 0:
                         if v not in stack: 
                             stack.append(v)
 
@@ -717,8 +748,9 @@ class MultiSSE(FlowAnalysis):
                             #             existing_state.passed_events.append(event_time)
                             #     existing_state.passed_events.sort()
 
-                            if existing_state.updated < MAX_STATE_UPDATES:
-                                existing_state.updated += 1
+                            # if existing_state.updated < MAX_STATE_UPDATES:
+                            #     existing_state.updated += 1
+                            if existing_state.global_times_merged[-1][1] < MIN_EMULATION_TIME:
                                 if v not in stack:
                                     stack.append(v)
                             break

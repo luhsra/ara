@@ -44,7 +44,7 @@
 					"alarmtime": 50,
 					"action": {
 						"action": "activatetask",
-						"task": "TaskF"
+						"task": "TaskB"
 					}
 				}
 			]
