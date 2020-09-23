@@ -243,18 +243,18 @@ namespace ara::graph {
 			auto entry_abb = get_entry_abb(g, entry_function);
 			NoExitNodes<Graph> filter(&g, this);
 			boost::filtered_graph<Graph, NoExitNodes<Graph>> fg(g, filter);
-			NoBacktrackVisitor<Graph> nbv(*this, do_with_abb);
+			NoBacktrackVisitor<boost::filtered_graph<Graph, NoExitNodes<Graph>>, Graph> nbv(*this, do_with_abb, g);
 			auto indexmap = boost::get(boost::vertex_index, g);
 			auto colormap = boost::make_vector_property_map<boost::default_color_type>(indexmap);
 			try {
-				depth_first_search(g, nbv, colormap, entry_abb);
+				depth_first_search(fg, nbv, colormap, entry_abb);
 			} catch (StopDFSException&) { /*we are expecting that*/
 			}
 		}
 
 	  private:
 		/**
-		 * Filter all edges that are back edges for the ICFG.
+		 * Filter CFG by ICFG edges, but filter out all edges that are back edges.
 		 *
 		 * Helper class for execute_on_reachable_abbs
 		 */
@@ -267,7 +267,11 @@ namespace ara::graph {
 			bool operator()(const Edge& e) const {
 				assert(g != nullptr && "Graph must not be null");
 				assert(cfg != nullptr && "CFG must not be null");
-				return cfg->etype[e] == CFType::icf && !cfg->is_exit[boost::source(boost::edge(e), *g)];
+				auto src = boost::source(e, *g);
+				if (cfg->type[src] == ABBType::call || cfg->type[src] == ABBType::syscall) {
+					return cfg->etype[e] == CFType::icf || cfg->etype[e] == CFType::lcf;
+				}
+				return cfg->etype[e] == CFType::icf && !cfg->is_exit[boost::source(e, *g)];
 			}
 
 		  private:
@@ -278,19 +282,20 @@ namespace ara::graph {
 		/**
 		 * Implementation of a counting DFS visitor. Stops as soon as the first unreachable vertex is reached.
 		 */
-		template <class InnerGraph>
+		template <class FilteredGraph, class InnerGraph>
 		class NoBacktrackVisitor : public boost::default_dfs_visitor {
-			using Vertex = typename boost::graph_traits<InnerGraph>::vertex_descriptor;
+			using Vertex = typename boost::graph_traits<FilteredGraph>::vertex_descriptor;
 
 		  public:
-			NoBacktrackVisitor(CFG& cfg, std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func)
-			    : counter(0), discover_func(discover_func), cfg(cfg) {}
+			NoBacktrackVisitor(CFG& cfg, std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func,
+			                   InnerGraph& ig)
+			    : counter(0), discover_func(discover_func), cfg(cfg), ig(ig) {}
 
-			void discover_vertex(Vertex u, const InnerGraph& g) {
+			void discover_vertex(Vertex u, const FilteredGraph&) {
 				++counter;
-				discover_func(g, cfg, u);
+				discover_func(ig, cfg, boost::vertex(u, ig));
 			}
-			void finish_vertex(Vertex, const InnerGraph&) {
+			void finish_vertex(Vertex, const FilteredGraph&) {
 				--counter;
 				if (counter == 0) {
 					throw StopDFSException();
@@ -301,6 +306,7 @@ namespace ara::graph {
 			unsigned int counter;
 			std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func;
 			CFG& cfg;
+			InnerGraph& ig;
 		};
 
 		const std::string bb_get_call(const ABBType type, const llvm::BasicBlock& bb) const;
