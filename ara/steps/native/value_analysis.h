@@ -16,60 +16,62 @@
 namespace ara::step {
 	class ValueAnalysis : public EntryPointStep<ValueAnalysis> {
 	  private:
+		/**
+		 * Convenience datatype, since the Value Analysis does a depth first search about the nodes, but also needs the
+		 * call_path.
+		 */
 		struct VFGContainer {
 			const SVF::VFGNode* node;
 			graph::CallPath call_path;
+			unsigned depth;
 
-			VFGContainer(const SVF::VFGNode* node, graph::CallPath call_path) : node(node), call_path(call_path) {}
+			VFGContainer(const SVF::VFGNode* node, graph::CallPath call_path, unsigned depth)
+			    : node(node), call_path(call_path), depth(depth) {}
 			VFGContainer() {}
 		};
 
 		using EntryPointStep<ValueAnalysis>::EntryPointStep;
 
-		const static inline option::TOption<option::Bool> dump_stats_template{
-		    "dump_stats", "Export JSON statistics about the value-analysis depth."};
-		option::TOptEntity<option::Bool> dump_stats;
-
-		virtual void init_options() override;
-
-		/**
-		 * demangle a string, for example:
-		 * _ZN11MutexLockerC2EP15QueueDefinition to MutexLocker::MutexLocker(QueueDefinition*)
-		 */
-		std::string demangle(std::string name) {
-			int status = -1;
-			std::unique_ptr<char, void (*)(void*)> res{abi::__cxa_demangle(name.c_str(), NULL, NULL, &status),
-			                                           std::free};
-			return (status == 0) ? res.get() : name;
-		}
+		inline void pretty_print(const llvm::Value&, Logger::LogStream& ls) const;
 
 		void retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, graph::Argument& arg);
-		void collectUsesOnVFG(const SVF::SVFG& vfg, const llvm::CallBase& call, graph::Arguments& args);
 
-		shared_ptr<graph::Arguments> get_value(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
+		shared_ptr<graph::Arguments> get_values_for_call(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
 		template <typename Graph>
-		void get_values(Graph& g, const SVF::SVFG& vfg) {
+		void get_all_values(Graph& g, const SVF::SVFG& vfg, const std::string& entry_point) {
 			graph::CFG cfg = graph.get_cfg();
-			// ptree stats;
-			for (auto abb :
-			     boost::make_iterator_range(boost::vertices(cfg.filter_by_abb(g, graph::ABBType::syscall)))) {
-				logger.debug() << "Analyzing: " << cfg.name[abb] << std::endl;
-				llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
-				llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
-				shared_ptr<graph::Arguments> args = get_value(safe_deref(called_func), vfg);
-				// TODO this is actually inefficient. The arguments object could be updated here, not overwritten
-				cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args->get_python_obj()));
+
+			// TODO, put this into the EntryPoint class. This is copied from ICFG
+			typename boost::graph_traits<Graph>::vertex_descriptor entry_func;
+			try {
+				entry_func = cfg.get_function_by_name(g, entry_point);
+			} catch (FunctionNotFound&) {
+				std::stringstream ss;
+				ss << "Bad entry point given: " << entry_point << ". Could not be found.";
+				fail(ss.str());
 			}
-			// if (dump_stats) {
-			// 	json_parser::write_json(prefix + "value_analysis_statistics.json", stats);
-			// }
+
+			std::function<void(const Graph&, ara::graph::CFG&, typename boost::graph_traits<Graph>::vertex_descriptor)>
+			    action = [&](const Graph&, graph::CFG& cfg,
+			                 typename boost::graph_traits<Graph>::vertex_descriptor abb) {
+				    if (cfg.type[abb] != graph::ABBType::syscall) {
+					    return;
+				    }
+				    llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
+				    llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
+				    logger.debug() << "Analyzing: " << cfg.name[abb] << " ("
+				                   << safe_deref(called_func->getCalledFunction()).getName().str() << ")" << std::endl;
+				    shared_ptr<graph::Arguments> args = get_values_for_call(safe_deref(called_func), vfg);
+				    // TODO this is actually inefficient. The arguments object could be updated here, not overwritten
+				    cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args->get_python_obj()));
+			    };
+			cfg.execute_on_reachable_abbs(g, entry_func, action);
 		}
 
 	  public:
 		static std::string get_name() { return "ValueAnalysis"; }
 		static std::string get_description();
-		static Step::OptionVec get_local_options() { return {dump_stats_template}; }
 
 		virtual std::vector<std::string> get_single_dependencies() override { return {"CallGraph"}; }
 		virtual llvm::json::Array get_configured_dependencies() override;
