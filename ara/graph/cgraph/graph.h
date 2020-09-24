@@ -45,6 +45,7 @@ namespace ara::graph {
 		 * Return a CFG from the corresponding Python graph.
 		 */
 		static CFG get(PyObject* py_cfg);
+		static std::unique_ptr<CFG> get_ptr(PyObject* py_cfg);
 
 		class FunctionFilter {
 		  public:
@@ -253,6 +254,8 @@ namespace ara::graph {
 		}
 
 	  private:
+		struct CFGUniqueEnabler;
+
 		/**
 		 * Filter CFG by ICFG edges, but filter out all edges that are back edges.
 		 *
@@ -321,6 +324,8 @@ namespace ara::graph {
 		friend class Graph;
 		CallGraph(graph_tool::GraphInterface& graph) : graph(graph){};
 
+		struct CallGraphUniqueEnabler;
+
 	  public:
 		graph_tool::GraphInterface& graph;
 		/* vertex properties */
@@ -349,6 +354,7 @@ namespace ara::graph {
 		 * Return a CallGraph from the corresponding Python graph.
 		 */
 		static CallGraph get(PyObject* py_callgraph);
+		static std::unique_ptr<CallGraph> get_ptr(PyObject* py_callgraph);
 
 		/**
 		 * Return the corresponding SVF callgraph node to the given node.
@@ -413,7 +419,9 @@ namespace ara::graph {
 		PyObject* get_pygraph() { return graph; }
 
 		CFG get_cfg();
+		std::unique_ptr<CFG> get_cfg_ptr();
 
 		CallGraph get_callgraph();
+		std::unique_ptr<CallGraph> get_callgraph_ptr();
 	};
 } // namespace ara::graph

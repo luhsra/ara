@@ -120,12 +120,7 @@ namespace ara::graph {
 		return eprops;
 	}
 
-	CFG CFG::get(PyObject* py_cfg) {
-		assert(py_cfg != nullptr);
-
-		CFG cfg(get_graph(py_cfg));
-
-		// Properties
+	inline void create_properties(CFG& cfg, PyObject* py_cfg) {
 #define ARA_MAP(Graph, Value, Type) Graph.Value = get_property<decltype(Graph.Value)>(Type, #Value);
 #define ARA_VMAP(Value) ARA_MAP(cfg, Value, vprops)
 #define ARA_EMAP(Value) ARA_MAP(cfg, Value, eprops)
@@ -152,7 +147,24 @@ namespace ara::graph {
 
 #undef ARA_VMAP
 #undef ARA_EMAP
+	}
 
+	CFG CFG::get(PyObject* py_cfg) {
+		assert(py_cfg != nullptr);
+		CFG cfg(get_graph(py_cfg));
+		create_properties(cfg, py_cfg);
+		return cfg;
+	}
+
+	struct CFG::CFGUniqueEnabler : public CFG {
+		template <typename... Args>
+		CFGUniqueEnabler(Args&&... args) : CFG(std::forward<Args>(args)...) {}
+	};
+
+	std::unique_ptr<CFG> CFG::get_ptr(PyObject* py_cfg) {
+		assert(py_cfg != nullptr);
+		std::unique_ptr<CFG> cfg = std::make_unique<CFGUniqueEnabler>(get_graph(py_cfg));
+		create_properties(*cfg, py_cfg);
 		return cfg;
 	}
 
@@ -164,12 +176,15 @@ namespace ara::graph {
 		return CFG::get(pycfg);
 	}
 
-	CallGraph CallGraph::get(PyObject* py_callgraph) {
-		assert(py_callgraph != nullptr);
+	std::unique_ptr<CFG> Graph::get_cfg_ptr() {
+		// extract self.cfg from Python
+		PyObject* pycfg = PyObject_GetAttrString(graph, "cfg");
+		assert(pycfg != nullptr);
 
-		CallGraph callgraph(get_graph(py_callgraph));
+		return CFG::get_ptr(pycfg);
+	}
 
-		// Properties
+	inline void create_properties(CallGraph& callgraph, PyObject* py_callgraph) {
 		PyObject* vprops = get_vprops(py_callgraph);
 
 #define ARA_VMAP(Value) ARA_MAP(callgraph, Value, vprops)
@@ -180,11 +195,6 @@ namespace ara::graph {
 		ARA_VMAP(svf_vlink)
 
 		// syscall categories
-		// MAP(callgraph, syscall_category_undefined, vprops)
-		// MAP(callgraph, syscall_category_all, vprops)
-		// MAP(callgraph, syscall_category_create, vprops)
-		// MAP(callgraph, syscall_category_comm, vprops)
-
 #define ARA_SYS_ACTION(Value) ARA_VMAP(syscall_category_##Value)
 #include "syscall_category.inc"
 #undef ARA_SYS_ACTION
@@ -200,7 +210,24 @@ namespace ara::graph {
 #undef ARA_MAP
 
 		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
+	}
 
+	CallGraph CallGraph::get(PyObject* py_callgraph) {
+		assert(py_callgraph != nullptr);
+		CallGraph callgraph(get_graph(py_callgraph));
+		create_properties(callgraph, py_callgraph);
+		return callgraph;
+	}
+
+	struct CallGraph::CallGraphUniqueEnabler : public CallGraph {
+		template <typename... Args>
+		CallGraphUniqueEnabler(Args&&... args) : CallGraph(std::forward<Args>(args)...) {}
+	};
+
+	std::unique_ptr<CallGraph> CallGraph::get_ptr(PyObject* py_callgraph) {
+		assert(py_callgraph != nullptr);
+		std::unique_ptr<CallGraph> callgraph = std::make_unique<CallGraphUniqueEnabler>(get_graph(py_callgraph));
+		create_properties(*callgraph, py_callgraph);
 		return callgraph;
 	}
 
@@ -210,5 +237,13 @@ namespace ara::graph {
 		assert(pycallgraph != nullptr);
 
 		return CallGraph::get(pycallgraph);
+	}
+
+	std::unique_ptr<CallGraph> Graph::get_callgraph_ptr() {
+		// extract self.callgraph from Python
+		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
+		assert(pycallgraph != nullptr);
+
+		return CallGraph::get_ptr(pycallgraph);
 	}
 } // namespace ara::graph
