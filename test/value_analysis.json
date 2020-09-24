@@ -1,1 +1,1 @@
-{}
+{"vTaskStepTick": [[["Callpath([main -> _Z8do_stuffi])", 1234], ["Callpath([main -> _Z8do_stuffi])", 333], ["Callpath([_ZN5GuardD2Ev -> _Z8do_stuffi], [main -> _ZN5GuardC2Ei])", 4465]]]}

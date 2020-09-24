@@ -14,20 +14,24 @@ def main():
     cfg = m_graph.cfg
     syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
 
+    values = {}
+
     for syscall in syscalls.vertices():
-        print(syscalls.vp.name[syscall])
         args = syscalls.vp.arguments[syscall]
 
+        val_per_args = []
+
         for argument in args:
+            val_per_arg = []
             for call_path, value in argument.items():
-                print(call_path.print(m_graph.callgraph, functions=True), value)
+                val_per_arg.append(
+                    [call_path.print(functions=True), value.get()]
+                )
+            val_per_args.append(val_per_arg)
 
+        values[syscalls.get_syscall_name(syscall)] = val_per_args
 
-    # icf_edges = []
-    # for edge in filter(lambda x: cfg.ep.type[x] == CFType.icf, cfg.edges()):
-    #     icf_edges.append([hash(edge.source()),
-    #                       hash(edge.target())])
-    # fail_if(data != sorted(icf_edges), "Data not equal")
+    fail_if(data != values, "Data not equal")
 
 
 if __name__ == '__main__':
