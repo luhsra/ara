@@ -47,6 +47,13 @@
 						"task": "TaskB"
 					}
 				}
+			],
+			"isrs": [
+				{
+					"name": "Interrupt1",
+					"category": 2,
+					"priority": 10
+				}
 			]
 		},
 		{
@@ -75,7 +82,8 @@
 				}
 			],
 			"counters": [],
-			"alarms": []
+			"alarms": [],
+			"isrs": []
 		}
 	]
 }

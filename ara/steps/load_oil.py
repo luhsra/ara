@@ -4,7 +4,7 @@ import json
 import ara.graph as _graph
 from .option import Option, String
 from .step import Step
-from .autosar import Task, Counter, Alarm, AlarmAction
+from .autosar import Task, Counter, Alarm, AlarmAction, ISR
 
 import graph_tool
 
@@ -132,6 +132,31 @@ class LoadOIL(Step):
                 if instances.vp.obj[a].autostart:
                     instances.vp.obj[a].cycletime = alarm["cycletime"]
                     instances.vp.obj[a].alarmtime = alarm["alarmtime"]
+
+            # read all ISRs
+            for isr in cpu["isrs"]:
+                i = instances.add_vertex()
+                instances.vp.label[i] = isr["name"]
+
+                i_function_name = "AUTOSAR_ISR_" + isr["name"]
+                i_function = g.cfg.get_function_by_name(i_function_name)
+                instances.vp.obj[i] = ISR(isr["name"],
+                                          cpu_id,
+                                          isr["category"],
+                                          isr["priority"],
+                                          i_function)
+
+                # trigger other steps
+                self._step_manager.chain_step({"name": "ValueAnalysis",
+                                               "entry_point": i_function_name})
+                self._step_manager.chain_step({"name": "ValueAnalysisCore",
+                                               "entry_point": i_function_name})
+                self._step_manager.chain_step({"name": "CallGraph",
+                                               "entry_point": i_function_name})
+                self._step_manager.chain_step({"name": "Syscall",
+                                               "entry_point": i_function_name})
+                self._step_manager.chain_step({"name": "ICFG",
+                                               "entry_point": i_function_name})
 
         g.instances = instances
 

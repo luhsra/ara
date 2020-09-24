@@ -66,6 +66,17 @@ class Alarm:
     def __repr__(self):
         return self.name
 
+class ISR:
+    def __init__(self, name, cpu_id, category, priority, function):
+        self.cpu_id = cpu_id
+        self.name = name
+        self.category = category
+        self.priority = priority
+        self.function = function
+    
+    def __repr__(self):
+        return self.name
+
 class AUTOSAR(OSBase):
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)')]

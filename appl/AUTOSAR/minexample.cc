@@ -10,6 +10,7 @@ void doSomethingC() { }
 void doSomethingD() { }
 void doSomethingE() { }
 extern bool getBool();
+void handleSomeEvent() { }
 
 DeclareTask(TaskA);
 DeclareTask(TaskB);
@@ -17,6 +18,10 @@ DeclareTask(TaskC);
 DeclareTask(TaskD);
 DeclareTask(TaskE);
 DeclareTask(TaskF);
+
+ISR2(Interrupt1) {
+    handleSomeEvent();
+}
 
 TASK(TaskA) {
     doSomethingBefore();
