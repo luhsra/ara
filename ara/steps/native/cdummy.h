@@ -23,6 +23,7 @@ namespace ara::step {
 		option::TOptEntity<option::Choice<3>> dummy_option2;
 
 		virtual void init_options() override;
+
 	  public:
 		static std::string get_name() { return "CDummy"; }
 		static std::string get_description();

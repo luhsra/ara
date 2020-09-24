@@ -17,7 +17,7 @@ py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies
-llvm_version = ['>=9', '<10']
+llvm_version = ['>=9', '<11']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
@@ -43,7 +43,8 @@ endif
 
 ## svf
 cmake = import('cmake')
-svf_proj = cmake.subproject('svf', cmake_options: '-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'))
+svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'),
+                                                   '-DBUILD_SHARED_LIBS=on'])
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
@@ -99,20 +100,20 @@ def load(what, where):
 
 sys.path = [@1@] + sys.path
 
-load("llvm_data", "ara.graph.llvm_data")
+load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
 
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
-python_dirs = [source_dir, pyllco_dir, step_dir, llvm_data_dir]
+python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
-    depends: [step_mod, libgraph, llvm_data_mod],
+    depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )

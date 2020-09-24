@@ -4,12 +4,42 @@
 #include <sstream>
 
 namespace ara {
-	class VertexNotFound : public std::exception {
-		virtual const char* what() const throw() { return "Vertex not found in Graph"; }
+	class VertexNotFound : public std::runtime_error {
+	  private:
+		static std::string format(const std::string& action, const std::string& vertex_name) {
+			std::stringstream ss;
+			ss << action << ": Vertex " << vertex_name << " not found in Graph";
+			return ss.str();
+		}
+
+	  public:
+		explicit VertexNotFound(const std::string& action = "", const std::string& vertex_name = "")
+		    : std::runtime_error(format(action, vertex_name)) {}
 	};
 
-	class FunctionNotFound : public std::exception {
-		virtual const char* what() const throw() { return "Function not found in Graph"; }
+	class EdgeNotFound : public std::runtime_error {
+	  private:
+		static std::string format(const std::string& action, const std::string& edge_name) {
+			std::stringstream ss;
+			ss << action << ": Edge " << edge_name << " not found in Graph";
+			return ss.str();
+		}
+
+	  public:
+		explicit EdgeNotFound(const std::string& action = "", const std::string& edge_name = "")
+		    : std::runtime_error(format(action, edge_name)) {}
+	};
+
+	class FunctionNotFound : public std::runtime_error {
+	  private:
+		static std::string format(const std::string& function_name) {
+			std::stringstream ss;
+			ss << "Function " << function_name << " not found in Graph";
+			return ss.str();
+		}
+
+	  public:
+		explicit FunctionNotFound(const std::string& function_name = "") : std::runtime_error(format(function_name)) {}
 	};
 
 	class NotImplemented : public std::exception {

@@ -357,7 +357,7 @@ namespace ara::step {
 				Py_RETURN_NONE;
 			}
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
-			return PyErr_Format(PyExc_RuntimeError, "wrong function found %s", old_func->getName().str());
+			return PyErr_Format(PyExc_RuntimeError, "wrong function found %s", old_func->getName().str().data());
 		}
 
 		IRBuilder<> Builder(module.getContext());

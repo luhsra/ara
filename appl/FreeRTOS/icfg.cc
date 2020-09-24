@@ -7,7 +7,7 @@ void vTask2(void* pvParameters);
 
 int ptr_func1(int a, float b, int c) { return a + c; }
 
-int ptr_func2(int a, float b, int c) { return a - c; }
+int ptr_func2(int a, float b, int c) { vTaskDelay(5); return a - c; }
 
 typedef int (*PtrFunc)(int, float, int);
 PtrFunc get_ptr_func();
@@ -38,6 +38,7 @@ int endless_loop() {
 
 int endless_loop2(bool a) {
 	if (a) {
+		ptr_func2(a, 5.0, 3);
 		return 5;
 	}
 	while (true) {
@@ -49,6 +50,15 @@ int other_function(int a) {
 	endless_loop2(false);
 	return do_stuff(a, 6);
 }
+
+PtrFunc complex_get_ptr_func(int a) {
+	if (a < 12) {
+		return ptr_func1;
+	} else {
+		return ptr_func2;
+	}
+}
+
 
 int main(void) {
 	xTaskCreate(vTask1, "Task 1", 510, NULL, 1, NULL);
@@ -63,6 +73,10 @@ int main(void) {
 	// this is impossible to optimize out
 	auto ptr2 = get_ptr_func();
 	ptr2(23, 4.5, 20);
+
+	// this can be solved
+	auto ptr3 = complex_get_ptr_func(23);
+	ptr3(23, 4.5, 20);
 
 	vTaskStartScheduler();
 

@@ -2,7 +2,7 @@
 # technically it is packaged as a set of headers and a static library
 
 common_dependencies = [llvm_dep, boost_dep]
-libcommon = static_library('libcommon',
+libcommon = static_library('common',
     'llvm_common.cpp',
     dependencies: common_dependencies
 )

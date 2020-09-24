@@ -7,9 +7,8 @@ using namespace llvm;
 namespace ara::step {
 
 	std::string FakeEntryPoint::get_description() {
-		return "Create a fake entry point which calls all constructors before the real entry pouint is reached. "
-		       "This is task of the startup code and needs to be simulated for correctness and instance detection. "
-		       "";
+		return "Create a fake entry point which calls all constructors before the real entry point is reached. "
+		       "This is task of the startup code and needs to be simulated for correctness and instance detection.";
 	}
 
 	void FakeEntryPoint::run() {
@@ -23,6 +22,10 @@ namespace ara::step {
 
 		auto entry_point_name = this->entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
+		if (*entry_point_name != "main") {
+			logger.warn() << "Old entry point is not main. Skipping this step." << std::endl;
+			return;
+		}
 		Function* old_entry_point = module.getFunction(StringRef(*entry_point_name));
 		if (old_entry_point == nullptr) {
 			logger.warn() << "entry point " << *entry_point_name << " does not exist.";

@@ -10,7 +10,7 @@ Building
 The following dependencies are needed:
 
 - [meson](https://mesonbuild.com/) (>=0.53.2)
-- [llvm](http://llvm.org/) (==9)
+- [llvm](http://llvm.org/) (>=9, <=10)
 - [cython](https://cython.org/) (>=0.29.14)
 - [python](https://www.python.org/) (>=3.7)
 

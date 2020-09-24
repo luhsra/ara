@@ -63,5 +63,12 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('value-analysis',
+        py3_inst,
+        args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
+        env: [python_path],
+        suite: 'steps'
+    )
+
     subdir('native_step_test')
 endif

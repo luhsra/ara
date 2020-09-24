@@ -11,7 +11,7 @@ cdef extern from "step.h" namespace "ara::step":
     cdef cppclass Step:
         Step() except +
         void apply_config(dict config)
-        void run() except +
+        void run()
 
     cdef cppclass StepFactory:
         string get_name()
@@ -40,8 +40,8 @@ cdef extern from "fn_single_exit.h" namespace "ara::step":
     cdef cppclass FnSingleExit:
         pass
 
-cdef extern from "icfg.h" namespace "ara::step":
-    cdef cppclass ICFG:
+cdef extern from "callgraph.h" namespace "ara::step":
+    cdef cppclass CallGraph:
         pass
 
 cdef extern from "ir_reader.h" namespace "ara::step":
@@ -64,6 +64,18 @@ cdef extern from "load_freertos_config.h" namespace "ara::step":
     cdef cppclass LoadFreeRTOSConfig:
         pass
 
-cdef extern from "value_analysis_core.h" namespace "ara::step":
-    cdef cppclass ValueAnalysisCore:
+cdef extern from "resolve_function_pointer.h" namespace "ara::step":
+    cdef cppclass ResolveFunctionPointer:
+        pass
+
+cdef extern from "svf_analyses.h" namespace "ara::step":
+    cdef cppclass SVFAnalyses:
+        pass
+
+cdef extern from "svf_transformation.h" namespace "ara::step":
+    cdef cppclass SVFTransformation:
+        pass
+
+cdef extern from "value_analysis.h" namespace "ara::step":
+    cdef cppclass ValueAnalysis:
         pass

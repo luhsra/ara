@@ -28,7 +28,7 @@ namespace ara::step {
 
 		// link the modules
 		// use first module a main module
-		llvm::LLVMContext& context = graph.get_llvm_data().get_context();
+		llvm::LLVMContext& context = graph.get_graph_data().get_context();
 
 		logger.debug() << "Loading '" << file << "'" << std::endl;
 
@@ -51,6 +51,6 @@ namespace ara::step {
 		}
 
 		// convert unique_ptr to shared_ptr
-		graph.get_llvm_data().initialize_module(std::move(module));
+		graph.get_graph_data().initialize_module(std::move(module));
 	}
 } // namespace ara::step

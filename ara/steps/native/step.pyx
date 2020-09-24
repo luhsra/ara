@@ -1,15 +1,12 @@
 # cython: language_level=3
-"""Common description ob both Python and C++ steps. A step is a part of
-Arsa, that fulfils one specific task. There it manipulates the systemgraph in
-a specific way.
-
-Steps can have dependencies respectively depend on other steps, the
-stepmanager then fulfils this dependencies.
+"""Common description of both Python and C++ steps. A step is a part of
+ARA, that fulfils one specific task. Therefore, it manipulates the systemgraph
+in a specific way.
 """
 
 cimport cstep
 cimport cgraph
-cimport llvm_data
+cimport graph_data
 
 include "project_config.pxi"
 
@@ -43,12 +40,14 @@ cdef class SuperStep:
     cdef public object _graph
     cdef public object _log
     cdef public object _step_manager
+    cdef public object _config
 
     def __init__(self, graph, step_manager):
         """Initialize a Step."""
         self._graph = graph
         self._log = logging.getLogger(self.get_name())
         self._step_manager = step_manager
+        self._config = None
 
     def get_dependencies(self, step_history):
         """Define all dependencies of the step.
@@ -74,16 +73,25 @@ cdef class SuperStep:
         """
         return []
 
-    @classmethod
-    def get_name(cls) -> str:
-        """Return a unique name of the step. The name is used as ID for the
-        step."""
-        pass
+    def is_necessary_anymore(self, step_history) -> bool:
+        """Determines, if the step needs execution yet.
 
-    @classmethod
-    def get_description(cls):
-        """Return a descriptive string, that explains what the step is doing."""
-        pass
+        In some cases, the step was already executed as part of other
+        dependencies or user will. Steps that are not explicitly requested (per
+        user config or chain_step) but only by a dependency are therefore asked
+        with this function, if they need another run.
+
+        The default implementation decides this with this policy:
+        If the step was already executed with the same configuration it is not
+        necessary anymore.
+
+        If needed, this function should be overwritten.
+        """
+        for step in reversed(step_history):
+            if (step['name'] == self.get_name() and
+                step['config'] == self._config):
+                return False
+        return True
 
     def run(self):
         """Do the actual action of the step."""
@@ -101,7 +109,19 @@ cdef class SuperStep:
     def apply_config(self, config: dict):
         """Apply a new config to the step. This can be done multiple times, so
         different runs with different options are possible."""
-        raise NotImplementedError()
+        self._config = config
+        self._apply_config(config)
+
+    @classmethod
+    def get_name(cls) -> str:
+        """Return a unique name of the step. The name is used as ID for the
+        step."""
+        pass
+
+    @classmethod
+    def get_description(cls):
+        """Return a descriptive string, that explains what the step is doing."""
+        pass
 
     @classmethod
     def options(cls) -> List[option.Option]:
@@ -145,7 +165,7 @@ class Step(SuperStep):
             self._graph.step_data[self.get_name()] = data_class()
         return self._graph.step_data[self.get_name()]
 
-    def apply_config(self, config):
+    def _apply_config(self, config):
         for option in self._opts:
             option.check(config)
 
@@ -168,6 +188,7 @@ class Step(SuperStep):
         for step in step_history:
             history[step["name"]].append(step)
         remaining_deps = []
+        remaining_configured_deps = []
         for dep in single_deps:
             if isinstance(dep, str):
                 if dep not in history:
@@ -179,10 +200,10 @@ class Step(SuperStep):
                                 for k, v in dep.items() if k != "name"]):
                             break
                     else:
-                        remaining_deps.append(dep)
+                        remaining_configured_deps.append(dep)
                 else:
-                    remaining_deps.append(dep)
-        return remaining_deps
+                    remaining_configured_deps.append(dep)
+        return remaining_deps + remaining_configured_deps
 
     def get_single_dependencies(self):
         """
@@ -219,8 +240,8 @@ cdef class NativeStepFactory:
     def __call__(self, graph, step_manager):
         cdef unique_ptr[cstep.Step] _c_step
 
-        cdef llvm_data.PyLLVMData llvm_w = graph._llvm_data
-        cdef cgraph.Graph gwrap = cgraph.Graph(graph, llvm_w._c_data)
+        cdef graph_data.PyGraphData g_data = graph._graph_data
+        cdef cgraph.Graph gwrap = cgraph.Graph(graph, g_data._c_data)
 
         cdef NativeStep n_step = self._recipe_step(graph, step_manager,
                                                    self.get_name(),
@@ -306,7 +327,7 @@ cdef class NativeStep(SuperStep):
     def get_side_data(self):
         super().get_side_data()
 
-    def apply_config(self, config: dict):
+    def _apply_config(self, config: dict):
         # this is a lot easier on the Python side, so do it here
         if 'dump_prefix' in config:
             config['dump_prefix'] = \
@@ -337,14 +358,17 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.CompInsert]()),
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
-            _native_step_fac(make_step_fac[cstep.ICFG]()),
+            _native_step_fac(make_step_fac[cstep.CallGraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),
             _native_step_fac(make_step_fac[cstep.LLVMOptimization]()),
             _native_step_fac(make_step_fac[cstep.LoadFreeRTOSConfig]()),
             _native_step_fac_ReplaceSyscallsCreate(),
-            _native_step_fac(make_step_fac[cstep.ValueAnalysisCore]())]
+            _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
+            _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
+            _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
+            _native_step_fac(make_step_fac[cstep.ValueAnalysis]())]
 
 def provide_test_steps():
     IF STEP_TESTS:

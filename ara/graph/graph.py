@@ -6,9 +6,8 @@ import enum
 
 from collections import deque
 
-from .llvm_data import PyLLVMData
-from .mix import ABBType, CFType
-
+from .graph_data import PyGraphData
+from .mix import ABBType, CFType, SyscallCategory
 
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
@@ -48,6 +47,7 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["syscall"] = self.new_vp("bool")
         self.vertex_properties["function"] = self.new_vp("int64_t")
         self.vertex_properties["arguments"] = self.new_vp("object")
+        self.vertex_properties["call_graph_link"] = self.new_vp("long")
 
         # edge properties
         self.edge_properties["type"] = self.new_ep("int")
@@ -87,6 +87,19 @@ class CFG(graph_tool.Graph):
         assert len(entry) == 1
         return entry[0].target()
 
+    def get_exit_abb(self, function):
+        function = self.vertex(function)
+
+        def is_exit(abb):
+            return self.vp.is_exit[abb]
+
+        entry = list(filter(is_exit, function.out_neighbors()))
+        if entry:
+            assert len(entry) == 1
+            return entry[0]
+        else:
+            return None
+
     def get_syscall_name(self, abb):
         """Return the called syscall name for a given abb."""
         abb = self.vertex(abb)
@@ -101,9 +114,7 @@ class CFG(graph_tool.Graph):
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
 
-    def reachable_abbs(self, func):
-        """Generator about all reachable ABBs starting at func."""
-
+    def _reachable_nodes(self, func, return_abbs):
         funcs_queue = deque([func])
         funcs_done = set()
 
@@ -112,14 +123,25 @@ class CFG(graph_tool.Graph):
             if cur_func in funcs_done:
                 continue
             funcs_done.add(cur_func)
+            if not return_abbs:
+                yield cur_func
             for abb in self.get_abbs(cur_func):
                 # find other functions
-                if self.vp.type[abb] != ABBType.computation:
+                if self.vp.type[abb] in [ABBType.syscall, ABBType.call]:
                     for edge in abb.out_edges():
                         if self.ep.type[edge] == CFType.icf:
                             new_func = self.get_function(edge.target())
                             funcs_queue.append(new_func)
-                yield abb
+                if return_abbs:
+                    yield abb
+
+    def reachable_funcs(self, func):
+        """Generator about all reachable Functions starting at func."""
+        return self._reachable_nodes(func, return_abbs=False)
+
+    def reachable_abbs(self, func):
+        """Generator about all reachable ABBs starting at func."""
+        return self._reachable_nodes(func, return_abbs=True)
 
     def get_call_targets(self, abb, func=True):
         """Generator about all call targets for a given call abb.
@@ -155,8 +177,48 @@ class CFGView(graph_tool.GraphView):
     def get_entry_abb(self, *args, **kwargs):
         return self.base.get_entry_abb(*args, **kwargs)
 
+    def get_exit_abb(self, *args, **kwargs):
+        return self.base.get_exit_abb(*args, **kwargs)
+
     def get_syscall_name(self, *args, **kwargs):
         return self.base.get_syscall_name(*args, **kwargs)
+
+class Callgraph(graph_tool.Graph):
+    """ TODO comment on functionality
+    """
+    def __init__(self, cfg):
+        super().__init__()
+
+        #vertex properties
+        self.vertex_properties["function"] = self.new_vp("long")
+        self.vertex_properties["function_name"] = self.new_vp("string")
+        self.vertex_properties["svf_vlink"] = self.new_vp("int64_t")
+        self._map_syscall_categories()
+        #edge properties
+        self.edge_properties["callsite"] = self.new_ep("long")
+        self.edge_properties["callsite_name"] = self.new_ep("string")
+        self.edge_properties["svf_elink"] = self.new_ep("int64_t")
+
+        self.graph_properties["cfg"] = self.new_gp("object", cfg)
+
+    def _map_syscall_categories(self):
+        for syscat in SyscallCategory:
+            property_name = "syscall_category_" + syscat.name
+            self.vertex_properties[property_name] = self.new_vp("bool")
+
+    def get_edge_for_callsite(self, callsite):
+        for edge in self.edges():
+            if self.ep.callsite[edge] == callsite:
+                return edge
+        return None
+
+    def get_node_with_name(self, name):
+        """Find a node specified by its name."""
+        node = graph_tool.util.find_vertex(self, self.vp["function_name"], name)
+        if len(node) == 0:
+            return None
+        assert len(node) == 1
+        return node[0]
 
 
 class Graph:
@@ -176,9 +238,10 @@ class Graph:
 
     def __init__(self):
         # should be used only from C++, see graph.h
-        self._llvm_data = PyLLVMData()
+        self._graph_data = PyGraphData()
         self._init_cfg()
+        self.callgraph = Callgraph(self.cfg)
         self.os = None
-        self.call_graphs = {}
+        #self.call_graphs = {}
         self.instances = None
         self.step_data = {}

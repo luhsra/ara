@@ -1,9 +1,37 @@
 {
 	"steps": [
-		"InteractionAnalysis"
+		"InstanceGraph"
 	],
 
+	"ValueAnalysis": {
+		"log_level": "info"
+	},
+
+	"InstanceGraph": {
+		"log_level": "debug",
+		"dump": true
+	},
+
+	"ICFG": {
+		"log_level": "info",
+		"dump": true
+	},
+
+	"Syscall": {
+		"dump": true
+	},
+
+	"CallGraph": {
+		"log_level": "info",
+		"dump": true
+	},
+
+	"SystemRelevantFunctions": {
+		"log_level": "debug",
+		"dump": true
+	},
+
 	"logger": {
-		"StepManager": "debug"
+		"StepManager": "info"
 	}
 }

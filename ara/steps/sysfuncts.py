@@ -24,7 +24,7 @@ class SysFuncts(Step):
                 else:
                     self.fail(f"Call {call} does not fit to OS {self._graph.os}.")
         if self._graph.os is None:
-            self._log.info("OS cannot be detected. Are there any syscalls?")
+            self._log.warn("OS cannot be detected. Are there any syscalls?")
 
         if self.dump.get():
             dump_prefix = self.dump_prefix.get()

@@ -31,8 +31,10 @@ ir_apps = [
   'priority_inversion',
   # 'simple_queue_send',
   'sse',
+  'svf',
   'start_scheduler_relation',
   'syscall',
+  'system_relevant_functions',
   'thesis_print',
   'topological_sort',
 ]

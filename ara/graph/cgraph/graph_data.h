@@ -1,5 +1,8 @@
 #pragma once
 
+#include "common/util.h"
+
+#include <Graphs/SVFG.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Module.h>
 #include <memory>
@@ -20,12 +23,13 @@ namespace ara::graph {
 	} // namespace llvmext
 
 	/**
-	 * Class to encapsulate all LLVM data structures needed for accessing LLVM objects.
+	 * Class to encapsulate all C++ data structures that are not elsewhere mapped.
 	 */
-	class LLVMData {
+	class GraphData {
 	  private:
 		llvm::LLVMContext context;
 		std::unique_ptr<llvm::Module> module;
+		std::unique_ptr<SVF::SVFG> svfg;
 
 	  public:
 		/**
@@ -36,15 +40,22 @@ namespace ara::graph {
 		std::map<const llvm::Function*, llvmext::Function> functions;
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
 
-		LLVMData() : module(nullptr) {}
-
-		llvm::Module& get_module() { return *module; }
+		GraphData() : module(nullptr), svfg(nullptr) {}
 
 		llvm::LLVMContext& get_context() { return context; }
 
+		llvm::Module& get_module() { return safe_deref(module); }
+
 		void initialize_module(std::unique_ptr<llvm::Module> module) {
-			assert(this->module == nullptr);
+			assert(this->module == nullptr && "module already initialized");
 			this->module = std::move(module);
+		}
+
+		SVF::SVFG& get_svfg() { return safe_deref(svfg); }
+
+		void initialize_svfg(std::unique_ptr<SVF::SVFG> svfg) {
+			assert(this->svfg == nullptr && "module already initialized");
+			this->svfg = std::move(svfg);
 		}
 	};
 
