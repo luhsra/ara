@@ -25,12 +25,12 @@ namespace ara::step {
 		}
 	}
 
-	void ValueAnalysis::retrieve_value(const SVFG& vfg, const llvm::Value& value, graph::Argument& arg) {
+	void ValueAnalysis::do_backward_value_search(const SVFG& vfg, const llvm::Value& start, graph::Argument& arg) {
 		PAG* pag = PAG::getPAG();
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
 		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
 
-		PAGNode* pNode = pag->getPAGNode(pag->getValueNode(&value));
+		PAGNode* pNode = pag->getPAGNode(pag->getValueNode(&start));
 		assert(pNode != nullptr);
 		const VFGNode* vNode = vfg.getDefSVFGNode(pNode);
 		assert(vNode != nullptr);
@@ -138,7 +138,7 @@ namespace ara::step {
 			ls << std::endl;
 
 			std::shared_ptr<graph::Argument> arg = graph::Argument::get(attrs);
-			retrieve_value(vfg, val, *arg);
+			do_backward_value_search(vfg, val, *arg);
 			args->emplace_back(arg);
 			++t;
 		}

@@ -34,7 +34,10 @@ namespace ara::step {
 
 		inline void pretty_print(const llvm::Value&, Logger::LogStream& ls) const;
 
-		void retrieve_value(const SVF::SVFG& vfg, const llvm::Value& value, graph::Argument& arg);
+		/**
+		 * Perform a search over the SVFG, until it reaches a constant.
+		 */
+		void do_backward_value_search(const SVF::SVFG& vfg, const llvm::Value& start, graph::Argument& arg);
 
 		shared_ptr<graph::Arguments> get_values_for_call(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
