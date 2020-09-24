@@ -700,6 +700,9 @@ class MultiSSE(FlowAnalysis):
                 state = graph.vp.state[vertex]
                 found_list.append(vertex)
 
+                # execute popped state
+                new_states = self.execute_state(vertex, metastate.sync_states[cpu], graph)
+
                 # add existing neighbors to stack
                 for v in graph.vertex(vertex).out_neighbors():                   
                     # check for already found nodes
@@ -718,7 +721,7 @@ class MultiSSE(FlowAnalysis):
                         if v not in stack: 
                             stack.append(v)
 
-                for new_state in self.execute_state(vertex, metastate.sync_states[cpu], graph):
+                for new_state in new_states:
                     found = False
 
                     # check for duplicate states
@@ -750,7 +753,7 @@ class MultiSSE(FlowAnalysis):
 
                             # if existing_state.updated < MAX_STATE_UPDATES:
                             #     existing_state.updated += 1
-                            if existing_state.global_times_merged[-1][1] < MIN_EMULATION_TIME:
+                            if len(existing_state.global_times_merged) > 0 and existing_state.global_times_merged[-1][1] < MIN_EMULATION_TIME:
                                 if v not in stack:
                                     stack.append(v)
                             break
@@ -941,7 +944,7 @@ class MultiSSE(FlowAnalysis):
                 for intervall in state.global_times:
                     assert(intervall[0] <= intervall[1])
 
-                # merge global and local times into merged lists 
+                # merge global and local times into merged lists
                 state.global_times_merged.extend(state.global_times)
                 state.local_times_merged.extend(state.local_times)
                 state.merge_times()

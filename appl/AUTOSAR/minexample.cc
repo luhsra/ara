@@ -20,7 +20,10 @@ DeclareTask(TaskF);
 
 TASK(TaskA) {
     doSomethingBefore();
-    ActivateTask(TaskD);
+    if (getBool()) {
+        ActivateTask(TaskF);
+    }
+    
     // for (int i = 0; i < 12; i++) {   
     //     doSomethingAfter();
     // }
@@ -41,16 +44,17 @@ TASK(TaskF) {
 }
 
 TASK(TaskC) {
-    while(true) {
-        doSomethingC();
-        ActivateTask(TaskF);
-    }
+    // while(true) {
+    //     // doSomethingC();
+    //     ActivateTask(TaskF);
+    // }
+    ActivateTask(TaskF);
     TerminateTask();
 }
 
 TASK(TaskD) {
     doSomethingD();
-    ActivateTask(TaskE);
+    // ActivateTask(TaskE);
     TerminateTask();
 }
 
