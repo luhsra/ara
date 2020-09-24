@@ -39,7 +39,7 @@ namespace ara::step {
 		 */
 		void do_backward_value_search(const SVF::SVFG& vfg, const llvm::Value& start, graph::Argument& arg);
 
-		shared_ptr<graph::Arguments> get_values_for_call(const llvm::CallBase& called_func, const SVF::SVFG& vfg);
+		shared_ptr<graph::Arguments> get_values_for_call(llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
 		template <typename Graph>
 		void get_all_values(Graph& g, const SVF::SVFG& vfg, const std::string& entry_point) {

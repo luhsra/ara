@@ -115,8 +115,7 @@ namespace ara::step {
 		}
 	}
 
-	std::shared_ptr<graph::Arguments> ValueAnalysis::get_values_for_call(const llvm::CallBase& called_func,
-	                                                                     const SVFG& vfg) {
+	std::shared_ptr<graph::Arguments> ValueAnalysis::get_values_for_call(llvm::CallBase& called_func, const SVFG& vfg) {
 		if (is_call_to_intrinsic(called_func)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -145,10 +144,15 @@ namespace ara::step {
 
 		/* return value */
 		if (called_func.hasOneUse()) {
-			const llvm::User* ur = called_func.user_back();
-			llvm::Value* retval = ur->getOperand(1);
-			logger.debug() << "Return value: " << *retval << std::endl;
-			args->set_return_value(graph::Argument::get(llvm::AttributeSet(), *retval));
+			llvm::Value* return_value;
+			llvm::User* ur = called_func.user_back();
+			if (llvm::StoreInst* store = llvm::dyn_cast<llvm::StoreInst>(ur)) {
+				return_value = store->getOperand(1);
+			} else {
+				return_value = ur;
+			}
+			logger.debug() << "Return value: " << safe_deref(return_value) << std::endl;
+			args->set_return_value(graph::Argument::get(llvm::AttributeSet(), safe_deref(return_value)));
 		}
 
 		this->logger.info() << "Retrieved " << args->size() << " arguments for call " << called_func << std::endl;
