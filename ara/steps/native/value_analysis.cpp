@@ -35,7 +35,7 @@ namespace ara::step {
 		const VFGNode* vNode = vfg.getDefSVFGNode(pNode);
 		assert(vNode != nullptr);
 
-		graph::CallGraph callgraph = graph.get_callgraph();
+		shared_ptr<graph::CallGraph> callgraph = std::move(graph.get_callgraph_ptr());
 
 		std::stack<VFGContainer> nodes;
 

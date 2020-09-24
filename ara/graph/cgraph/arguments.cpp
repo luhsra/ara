@@ -36,17 +36,16 @@ namespace ara::graph {
 		return llvm_to_string(*inst);
 	}
 
-	void CallPath::check_and_assign(CallGraph& call_graph) {
+	void CallPath::check_and_assign(std::shared_ptr<CallGraph> call_graph) {
 		if (this->call_graph) {
-			assert(&call_graph.graph == &this->call_graph->graph && "Different call graphs are not supported.");
+			assert(&call_graph->graph == &this->call_graph->graph && "Different call graphs are not supported.");
 		} else {
-			this->call_graph = &call_graph;
+			this->call_graph = call_graph;
 		}
 	}
 
 	void CallPath::add_call_site(PyObject* call_graph, PyObject* edge) {
-		this->owned_call_graph = std::make_shared<CallGraph>(CallGraph::get(call_graph));
-		check_and_assign(*owned_call_graph);
+		check_and_assign(std::make_shared<CallGraph>(CallGraph::get(call_graph)));
 		graph_tool::EdgeBase& edge_base = boost::python::extract<graph_tool::EdgeBase&>(edge);
 		edges.emplace_back(edge_base.get_descriptor());
 	}

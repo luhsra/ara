@@ -24,12 +24,11 @@ namespace ara::graph {
 	  private:
 		std::vector<graph_tool::GraphInterface::edge_t> edges;
 		// This CallGraph should be filled, as soon as CallPath is not empty anymore.
-		CallGraph* call_graph;
-		std::shared_ptr<CallGraph> owned_call_graph;
+		std::shared_ptr<CallGraph> call_graph;
 
 		std::string get_callsite_name(const SVF::PTACallGraphEdge& edge) const;
 
-		void check_and_assign(CallGraph& call_graph);
+		void check_and_assign(std::shared_ptr<CallGraph> call_graph);
 
 		template <typename Graph>
 		void add_call_site_dispatched(Graph& g, CallGraph& call_graph, const SVF::PTACallGraphEdge& edge) {
@@ -82,10 +81,10 @@ namespace ara::graph {
 	  public:
 		CallPath() : edges(), call_graph(nullptr) {}
 
-		void add_call_site(CallGraph& call_graph, const SVF::PTACallGraphEdge& call_site) {
+		void add_call_site(std::shared_ptr<CallGraph> call_graph, const SVF::PTACallGraphEdge& call_site) {
 			check_and_assign(call_graph);
-			graph_tool::gt_dispatch<>()([&](auto& g) { add_call_site_dispatched(g, call_graph, call_site); },
-			                            graph_tool::always_directed())(call_graph.graph.get_graph_view());
+			graph_tool::gt_dispatch<>()([&](auto& g) { add_call_site_dispatched(g, *call_graph, call_site); },
+			                            graph_tool::always_directed())(call_graph->graph.get_graph_view());
 		}
 
 		void add_call_site(PyObject* call_graph, PyObject* edge);
