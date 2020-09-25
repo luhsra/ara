@@ -6,6 +6,7 @@
 #include <boost/python.hpp>
 #include <cassert>
 #include <exception>
+#include <iostream>
 
 namespace ara::graph {
 	// ABBType functions

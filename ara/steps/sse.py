@@ -14,7 +14,7 @@ from .option import Option, String, Choice
 from .freertos import Task
 from .os_util import SyscallCategory
 from ara.util import VarianceDict
-from .autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter
+from .autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter, ISR
 from appl.AUTOSAR.minexample_timing import Timings
 
 from collections import defaultdict
@@ -300,9 +300,10 @@ class MultiState:
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABB per task; key: task name, value: ABB node
         self.activated_tasks = [] # list of activated tasks 
-
+        self.activated_isrs = []  # list of ISRs currently running
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
+        self.interrupts_enabled = True # interrupt enable flag
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
@@ -318,9 +319,15 @@ class MultiState:
         self.updated = 0
         
     def get_scheduled_task(self):
-        if len(self.activated_tasks) >= 1:
+        if len(self.activated_tasks) > 0:
             return self.activated_tasks[0]
         else: 
+            return None
+    
+    def get_current_isr(self):
+        if len(self.activated_isrs) > 0:
+            return self.activated_isrs[0]
+        else:
             return None
 
     def add_time(self, min_time, max_time):
@@ -388,7 +395,9 @@ class MultiState:
         class_eq = self.__class__ == other.__class__
         abbs_eq = self.abbs == other.abbs
         activated_task_eq = self.activated_tasks == other.activated_tasks
-        return class_eq and abbs_eq and activated_task_eq
+        activated_isrs_eq = self.activated_isrs == other.activated_isrs
+        irq_enabled_eq = self.interrupts_enabled == other.interrupts_enabled
+        return class_eq and abbs_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
 
     def copy(self):
         scopy = MultiState()
@@ -398,6 +407,7 @@ class MultiState:
         scopy.instances = self.instances.copy()
         scopy.abbs = self.abbs.copy()
         scopy.activated_tasks = self.activated_tasks.copy()
+        scopy.activated_isrs = self.activated_isrs.copy()
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
@@ -456,8 +466,7 @@ class MultiSSE(FlowAnalysis):
 
                 # set entry abb for each task
                 func_name = func_name_start + task.name
-                entry_func = self._g.cfg.get_function_by_name(func_name)
-                entry_abb = self._g.cfg.get_entry_abb(entry_func)
+                entry_abb = self._g.cfg.get_entry_abb(task.function)
                 state.entry_abbs[task.name] = entry_abb
 
                 # setup abbs dict with entry abb for each task
@@ -466,13 +475,28 @@ class MultiSSE(FlowAnalysis):
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
                 state.call_nodes[task.name] = self._find_tree_root(self._g.call_graphs[func_name])
-
-                # set multi ret bool to false for all tasks
-                # state.gcfg_multi_ret[task.name] = False
                 
                 # set list of activated tasks
                 if task.autostart: 
                     state.activated_tasks.append(task)
+
+        # setup all ISRs
+        for v in self._g.instances.vertices():
+            isr = self._g.instances.vp.obj[v]
+            if isinstance(isr, ISR):
+                state = found_cpus[isr.cpu_id]
+
+                # set entry abb for each ISR
+                entry_abb = self._g.cfg.get_entry_abb(isr.function)
+                state.entry_abbs[isr.name] = entry_abb
+
+                # setup abbs dict with entry abb for each ISR
+                state.abbs[isr.name] = entry_abb
+
+                # set callgraph and entry call node for each ISR
+                state.callgraphs[isr.name] = self._g.call_graphs[isr.name]
+                state.call_nodes[isr.name] = self._find_tree_root(self._g.call_graphs[isr.name])
+
         
         # build starting times for each multistate
         for cpu, graph in metastate.state_graph.items():
@@ -483,7 +507,7 @@ class MultiSSE(FlowAnalysis):
             max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
             state.local_times = [(0, max_time)]
             state.global_times = [(0, max_time)]
-            state.root_global_times = [(0, 0)]
+            # state.root_global_times = [(0, 0)]
 
         # run single core sse for each cpu
         self.run_sse(metastate)
@@ -627,8 +651,8 @@ class MultiSSE(FlowAnalysis):
                         s_state.global_times.sort(key=lambda x: x[0])
                         intersection.sort(key=lambda x: x[0])
                         if s_state.global_times != intersection:
-                            print(f"Merged: {s_state.global_times_merged}")
-                            print(f"Global: {s_state.global_times}")
+                            # print(f"Merged: {s_state.global_times_merged}")
+                            # print(f"Global: {s_state.global_times}")
                             update_timings = True
 
                     if update_timings :
@@ -784,10 +808,19 @@ class MultiSSE(FlowAnalysis):
         
         state = graph.vp.state[state_vertex]
         task = state.get_scheduled_task()
+        isr = state.get_current_isr()
+        if isr is not None:
+            task = isr
+
         if task is not None:
             abb = state.abbs[task.name]
             if abb is not None:
                 min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+
+                ##################### INTERRUPTS ########################
+                if state.interrupts_enabled:
+                    for new_state in self._g.os.handle_isr(state):
+                        new_states.append(new_state)
 
                 ##################### TIMED EVENTS ######################
                 event_possible = True
@@ -1062,6 +1095,14 @@ class MultiSSE(FlowAnalysis):
                 log += f"{alarm}, "
         self._log.info(f"{log[:-2]})")
 
+        # print all ISRs
+        log = "ISRs ("
+        for v in instances.vertices():
+            isr = instances.vp.obj[v]
+            if isinstance(isr, ISR):
+                isr_name = isr.name[12:]
+                log += f"{isr_name}, "
+        self._log.info(f"{log[:-2]})")
     
     def _find_tree_root(self, graph):
         if graph.num_vertices() == 0:

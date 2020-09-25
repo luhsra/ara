@@ -140,7 +140,7 @@ class LoadOIL(Step):
 
                 i_function_name = "AUTOSAR_ISR_" + isr["name"]
                 i_function = g.cfg.get_function_by_name(i_function_name)
-                instances.vp.obj[i] = ISR(isr["name"],
+                instances.vp.obj[i] = ISR(i_function_name,
                                           cpu_id,
                                           isr["category"],
                                           isr["priority"],

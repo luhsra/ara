@@ -139,6 +139,33 @@ class AUTOSAR(OSBase):
         return new_state
 
     @staticmethod
+    def handle_isr(state):
+        """Handles an IRQ."""
+        new_states = []
+        current_isr = state.get_current_isr()
+        priority = 0
+
+        if current_isr is not None:
+            priority = current_isr.priority
+        
+        # go through all ISRs in instances
+        for v in state.instances.vertices():
+            isr = state.instances.vp.obj[v]
+            if isinstance(isr, ISR):
+                if isr.cpu_id == state.cpu:
+                    if (current_isr is None or isr.name != current_isr.name) and isr not in state.activated_isrs:
+                        new_state = state.copy()
+                        new_states.append(new_state)
+
+                        # activate new isr
+                        new_state.activated_isrs.append(isr)
+
+                        # schedule the interrupts
+                        new_state.activated_isrs.sort(key=lambda isr: isr.priority, reverse=True)
+
+        return new_states
+
+    @staticmethod
     def interpret(cfg, abb, state, cpu, is_global=False):
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}")
