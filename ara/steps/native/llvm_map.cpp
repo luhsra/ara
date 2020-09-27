@@ -35,15 +35,15 @@ namespace ara::step {
 		        typename boost::graph_traits<Graph>::vertex_descriptor function, bool is_entry) {
 			auto abb = boost::add_vertex(g);
 			cfg.name[abb] = name;
-			cfg.type[abb] = type;
+			cfg.type[abb] = static_cast<int>(type);
 			cfg.entry_bb[abb] = reinterpret_cast<intptr_t>(entry);
 			cfg.exit_bb[abb] = reinterpret_cast<intptr_t>(exit);
 
 			auto i_edge = boost::add_edge(abb, function, g);
-			cfg.etype[i_edge.first] = graph::CFType::a2f;
+			cfg.etype[i_edge.first] = static_cast<int>(graph::CFType::a2f);
 
 			auto o_edge = boost::add_edge(function, abb, g);
-			cfg.etype[o_edge.first] = graph::CFType::f2a;
+			cfg.etype[o_edge.first] = static_cast<int>(graph::CFType::f2a);
 
 			cfg.is_entry[o_edge.first] = is_entry;
 
@@ -104,13 +104,13 @@ namespace ara::step {
 					for (const BasicBlock* succ_b : successors(&bb)) {
 						if (abbs.find(succ_b) != abbs.end()) {
 							auto edge = boost::add_edge(abb, abbs[succ_b], g);
-							cfg.etype[edge.first] = graph::CFType::lcf;
+							cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
 						}
 					}
 					for (const BasicBlock* pred_b : predecessors(&bb)) {
 						if (abbs.find(pred_b) != abbs.end()) {
 							auto edge = boost::add_edge(abbs[pred_b], abb, g);
-							cfg.etype[edge.first] = graph::CFType::lcf;
+							cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
 						}
 					}
 				}

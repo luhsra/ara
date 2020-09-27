@@ -16,40 +16,6 @@ namespace ara::graph {
 		return get_graph_interface();
 	}
 
-	// ABBType functions
-	std::ostream& operator<<(std::ostream& str, const ABBType& ty) {
-		switch (ty) {
-		case syscall:
-			return (str << "syscall");
-		case call:
-			return (str << "call");
-		case computation:
-			return (str << "computation");
-		case not_implemented:
-			return (str << "not_implemented");
-		};
-		assert(false);
-		return str;
-	}
-
-	// CFType functions
-	std::ostream& operator<<(std::ostream& str, const CFType& ty) {
-		switch (ty) {
-		case lcf:
-			return (str << "local control flow");
-		case icf:
-			return (str << "interprocedural control flow");
-		case gcf:
-			return (str << "global control flow");
-		case f2a:
-			return (str << "function to ABB");
-		case a2f:
-			return (str << "ABB to function");
-		};
-		assert(false);
-		return str;
-	}
-
 	// ABB functions
 	const llvm::CallBase* CFG::get_call_base(const ABBType type, const llvm::BasicBlock& bb) const {
 		if (!(type == ABBType::call || type == ABBType::syscall)) {

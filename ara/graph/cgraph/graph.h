@@ -14,9 +14,6 @@
 
 namespace ara::graph {
 
-	std::ostream& operator<<(std::ostream&, const ABBType&);
-	std::ostream& operator<<(std::ostream&, const CFType&);
-
 	/* pointers are stored in the int64_t properties, so check they fit */
 	static_assert(sizeof(int64_t) == sizeof(void*));
 
