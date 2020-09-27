@@ -58,9 +58,9 @@ class SyscallCategory(enum.IntEnum): # */
     pass
 
     undefined = 0,
-    every = 1,
-    create = 2,
-    comm = 3,
+    every  = 0b11,
+    create = 0b10,
+    comm   = 0b01,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(SyscallCategory)}
