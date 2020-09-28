@@ -1,3 +1,4 @@
+#pragma once
 #include <ostream>
 
 #define EQUAL_OPERATOR(Name) bool operator==(const Name&, const int); bool operator==(const int, const Name&);

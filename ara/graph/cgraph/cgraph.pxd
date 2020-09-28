@@ -13,3 +13,6 @@ cdef extern from "graph.h" namespace "ara::graph":
     cdef cppclass CallGraph:
         @staticmethod
         CallGraph get(object)
+
+    cdef cppclass SigType:
+        pass

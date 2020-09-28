@@ -1,7 +1,7 @@
 #include "arguments.h"
 
 #include "common/llvm_common.h"
-#include "graph_data_pyx.h"
+#include "graph_data_pyx_wrapper.h"
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <llvm/Support/raw_ostream.h>

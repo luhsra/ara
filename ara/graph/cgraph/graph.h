@@ -3,6 +3,7 @@
 #include "../mix.py"
 #include "common/exceptions.h"
 #include "graph_data.h"
+#include "os.h"
 
 #include <Python.h>
 #include <boost/graph/depth_first_search.hpp>
@@ -394,6 +395,7 @@ namespace ara::graph {
 	 */
 	class Graph {
 	  private:
+		// TODO: refcount this with boost
 		PyObject* graph;
 		GraphData* graph_data;
 
@@ -414,6 +416,8 @@ namespace ara::graph {
 		GraphData& get_graph_data() { return safe_deref(graph_data); }
 
 		PyObject* get_pygraph() { return graph; }
+
+		os::OS get_os();
 
 		CFG get_cfg();
 		std::unique_ptr<CFG> get_cfg_ptr();

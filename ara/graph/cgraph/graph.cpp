@@ -150,6 +150,12 @@ namespace ara::graph {
 		return CFG::get_ptr(pycfg);
 	}
 
+	os::OS Graph::get_os() {
+		PyObject* os = PyObject_GetAttrString(graph, "os");
+		assert(os != Py_None && "OS must be set.");
+		return os::OS(os);
+	}
+
 	inline void create_properties(CallGraph& callgraph, PyObject* py_callgraph) {
 		PyObject* vprops = get_vprops(py_callgraph);
 
