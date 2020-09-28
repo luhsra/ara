@@ -620,7 +620,8 @@ class FreeRTOS(OSBase):
     def xQueueSemaphoreTake(cfg, abb, state):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value, (SigType.symbol, SigType.value)))
     def xQueueTakeMutexRecursive(cfg, abb, state):
         pass
 
@@ -716,7 +717,11 @@ class FreeRTOS(OSBase):
     def xTaskCreateRestricted(cfg, abb, state):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.create},
+             signature=(SigType.value, (SigType.symbol, SigType.value,
+                                        SigType.value, SigType.symbol,
+                                        SigType.value, SigType.symbol,
+                                        SigType.symbol)))
     def xTaskCreateStatic(cfg, abb, state):
         pass
 
