@@ -181,6 +181,7 @@ class MetaState:
             copy.sync_states[cpu] = []
             copy.state_graph[cpu].vertex_properties["state"] = copy.state_graph[cpu].new_vp("object")
             copy.state_graph[cpu].edge_properties["is_timed_event"] = copy.state_graph[cpu].new_ep("bool")
+            copy.state_graph[cpu].edge_properties["is_isr"] = copy.state_graph[cpu].new_ep("bool")
 
         return copy
     
@@ -316,6 +317,7 @@ class MultiState:
                                  # this is used to calculate which event happens next
         self.passed_events = [0] # list of times of passed events, e.g. Alarms
         self.from_event = False # indicates if this state is the result of a timed event, e.g. an Alarm
+        self.from_isr = False   # indicates if this state is the result of an ISR
         self.updated = 0
         
     def get_scheduled_task(self):
@@ -380,8 +382,11 @@ class MultiState:
         self.merge_times()
         ret = "["
         scheduled_task = self.get_scheduled_task()
+        current_isr = self.get_current_isr()
         for task_name, abb in self.abbs.items():
             if scheduled_task is not None and task_name == scheduled_task.name:
+                ret += "+"
+            if current_isr is not None and task_name == current_isr.name:
                 ret += "+"
             if abb is not None:
                 ret += self.cfg.vp.name[abb]
@@ -456,6 +461,7 @@ class MultiSSE(FlowAnalysis):
                     graph = metastate.state_graph[state.cpu]
                     graph.vertex_properties["state"] = graph.new_vp("object")
                     graph.edge_properties["is_timed_event"] = graph.new_ep("bool")
+                    graph.edge_properties["is_isr"] = graph.new_ep("bool")
                     vertex = graph.add_vertex()
                     graph.vp.state[vertex] = state
 
@@ -572,6 +578,7 @@ class MultiSSE(FlowAnalysis):
                 else:
                     for cpu_other, graph in metastate.state_graph.items():
                         if cpu != cpu_other:
+                            skipped_counter = 0
                             for vertex in args[0]:
                                 sync_state = state
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
@@ -581,7 +588,7 @@ class MultiSSE(FlowAnalysis):
                                 
                                 # skip this combination, if all intervalls are disjunct
                                 if len(new_times) == 0:
-                                    print("skipped")
+                                    skipped_counter += 1
                                     continue
 
                                 sync_state = sync_state.copy()
@@ -620,8 +627,12 @@ class MultiSSE(FlowAnalysis):
                                     next_state.add_time(min_time, max_time)                   
                                     next_state.reset_local_time()
 
+                                    next_state.passed_events = [0]
+
                                 if new_state not in new_states:    
                                     new_states.append(new_state)
+                            
+                            print(f"Skipped {skipped_counter} state combinations")
 
         # remove all timing intervalls from executed metastate
         # for cpu, graph in metastate.state_graph.items():
@@ -759,10 +770,18 @@ class MultiSSE(FlowAnalysis):
                             # add edge to graph                          
                             if v not in graph.vertex(vertex).out_neighbors():
                                 e = graph.add_edge(vertex, v)
+
+                                # edge coloring after timed events, e.g. Alarms
                                 if new_state.from_event:
                                     graph.ep.is_timed_event[e] = True
                                 else:
                                     graph.ep.is_timed_event[e] = False
+                                
+                                # edge coloring after isr
+                                if new_state.from_isr:
+                                    graph.ep.is_isr[e] = True
+                                else:
+                                    graph.ep.is_isr[e] = False
 
                             # copy all global times to existing state
                             for intervall in new_state.global_times:
@@ -787,11 +806,21 @@ class MultiSSE(FlowAnalysis):
                         new_vertex = graph.add_vertex()
                         graph.vp.state[new_vertex] = new_state
                         e = graph.add_edge(vertex, new_vertex)
+
+                        # edge coloring after timed events, e.g. Alarms
                         if new_state.from_event:
                             graph.ep.is_timed_event[e] = True
                             new_state.from_event = False
                         else:
                             graph.ep.is_timed_event[e] = False
+
+                        # edge coloring after isr
+                        if new_state.from_isr:
+                            graph.ep.is_isr[e] = True
+                            new_state.from_isr = False
+                        else:
+                            graph.ep.is_isr[e] = False
+                        
                         if new_vertex not in stack:
                             stack.append(new_vertex)
 
@@ -820,7 +849,13 @@ class MultiSSE(FlowAnalysis):
                 ##################### INTERRUPTS ########################
                 if state.interrupts_enabled:
                     for new_state in self._g.os.handle_isr(state):
-                        new_states.append(new_state)
+                        if new_state != state:
+                            new_states.append(new_state)
+
+                # handle isr exit
+                if isr is not None and self._icfg.vertex(abb).out_degree() == 0:
+                    new_state = self._g.os.exit_isr(state)
+                    new_states.append(new_state)
 
                 ##################### TIMED EVENTS ######################
                 event_possible = True

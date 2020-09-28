@@ -262,6 +262,8 @@ class Printer(Step):
                     color = "black"
                     if state_graph.ep.is_timed_event[edge]:
                         color = "green"
+                    if state_graph.ep.is_isr[edge]:
+                        color = "red"
                     dot_edge = pydot.Edge(
                         str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.source())),
                         str(hash(state_node)) + "_" + str(cpu) + "_" + str(hash(edge.target())),

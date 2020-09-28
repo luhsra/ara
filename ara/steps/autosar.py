@@ -156,6 +156,7 @@ class AUTOSAR(OSBase):
                     if (current_isr is None or isr.name != current_isr.name) and isr not in state.activated_isrs:
                         new_state = state.copy()
                         new_states.append(new_state)
+                        new_state.from_isr = True
 
                         # activate new isr
                         new_state.activated_isrs.append(isr)
@@ -164,6 +165,20 @@ class AUTOSAR(OSBase):
                         new_state.activated_isrs.sort(key=lambda isr: isr.priority, reverse=True)
 
         return new_states
+
+    @staticmethod
+    def exit_isr(state):
+        """Handles the end of an ISR."""
+        new_state = state.copy()
+        current_isr = state.get_current_isr()
+
+        # remove isr from list of activated isrs
+        new_state.activated_isrs.remove(current_isr)
+
+        # reset abb of isr to the entry abb
+        new_state.abbs[current_isr.name] = new_state.entry_abbs[current_isr.name]
+
+        return new_state
 
     @staticmethod
     def interpret(cfg, abb, state, cpu, is_global=False):
