@@ -17,7 +17,7 @@ fi
 	 # --volume "/dev/bus/usb/:/dev/bus/usb:rw"\
 
 sudo docker run --rm -it \
-	 --user $UID:$GID --workdir "$HOME" \
+	 --user $UID:$GID --workdir "$(pwd)" \
 	 --env=USER="$USER"\
 	 --volume "/etc/group:/etc/group:ro"\
 	 --volume "/etc/passwd:/etc/passwd:ro"\
