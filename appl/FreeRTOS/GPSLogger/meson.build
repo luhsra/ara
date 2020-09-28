@@ -121,8 +121,7 @@ gpslogger_runtarget = run_target('gpslogger-full',
 
 named_elf_targets = []
 elf_targets = []
-named_plain_elf_targets = []
-named_lto_elf_targets = []
+profiles_list = []
 foreach t : ara_gen_freertos_targets
   name_prefix = 'gpslogger-' + t
   ara_target = custom_target(name_prefix + '-os',
@@ -141,11 +140,6 @@ foreach t : ara_gen_freertos_targets
     lib_freertos_ll_targets += gpslogger_compile.process(src_file)
   endforeach
 
-  o_target = custom_target(name_prefix + '.o',
-                           input : app_aramodified_ll,
-                           output : name_prefix + '.ll.o',
-                           command : llc_cmd)
-
   os_ll_target = custom_target(name_prefix + '-os.cc.ll',
                                input : os_target,
                                output : name_prefix + '-os.cc.ll',
@@ -161,101 +155,95 @@ foreach t : ara_gen_freertos_targets
                          output: name_prefix + '-os_app.ll',
                          command: llvm_link_cmd)
 
-  lto_app_os = custom_target(name_prefix + '-lto_app_os.ll',
-                             input: app_os,
-                             output: name_prefix + '-lto_os_app.ll',
-                             command: llvm_opt_cmd)
 
-  lto_o = custom_target(name_prefix + '-lto_app_os.o',
-                        input: lto_app_os,
-                        output: name_prefix + '-lto_os_app.ll.o',
-                        command: llc_cmd)
+  foreach lto_version : ['none', 'standard', 'rle', 'rle2']
+    lto_prefix = name_prefix + '-' + lto_version
+    lto_app_os = custom_target(lto_prefix + '-app_os.ll',
+                               input: app_os,
+                               depends: [sparse_rle, sparse_rle2],
+                               output: lto_prefix + '-os_app.ll',
+                               command: get_variable('llvm_lto_cmd_' + lto_version))
+    
+    lto_o = custom_target(lto_prefix + '-app_os.o',
+                          input: lto_app_os,
+                          output: lto_prefix + '-os_app.ll.o',
+                          command: llc_cmd)
+    
+    lto_elf = custom_target(lto_prefix + '.elf',
+                            input: [lto_o,
+                                    os_target[1], # startup.s
+                                    libsra_ar,
+                                    # get_variable('libfreertos_' + target)
+                                   ],
+                            output: lto_prefix + '.elf',
+                            depfile: lto_prefix + '.elf.dep',
+                            depend_files: default_linkerscript,
+                            command: clang_cpp +
+                                     gpslogger_includes +
+                                     ld_flags +
+                                     gpslogger_ldflags +
+                                     ['-T' + default_linkerscript ] +
+                                     clang_flags)
+    
+    bin_target = custom_target(lto_prefix + '.bin',
+                               input: [lto_elf],
+                               output: lto_prefix + '.bin',
+                               command: objcopy_cmd)
 
-  lto_elf = custom_target(name_prefix + '.lto.elf',
-                          input: [lto_o,
-                                  os_target[1], # startup.s
-                                  libsra_ar,
-                                 ],
-                          output: name_prefix + '.lto.elf',
-                          depfile: name_prefix + '.lto.elf.dep',
-                          depend_files: default_linkerscript,
-                          command: clang_cpp +
-                                   gpslogger_includes +
-                                   ld_flags +
-                                   gpslogger_ldflags +
-                                   ['-T' + default_linkerscript ] +
-                                   clang_flags)
-
-  elf_target = custom_target(name_prefix + '.elf',
-                             input: [o_target,
-                                     os_target,
-                                     lib_freertos_ll_targets,
-                                     libsra_ar,
-                                    ],
-                             output: name_prefix + '.elf',
-                             depfile: name_prefix + '.elf.dep',
-                             depend_files: default_linkerscript,
-                             command: clang_cpp +
-                                      gpslogger_includes +
-                                      ld_flags +
-                                      gpslogger_ldflags +
-                                      ['-T' + default_linkerscript ] +
-                                      clang_flags)
-
-  bin_target = custom_target(name_prefix + '.bin',
-                             input: [elf_target],
-                             output: name_prefix + '.bin',
-                             command: objcopy_cmd)
-
-  lto_bin_target = custom_target(name_prefix + '.lto.bin',
-                                 input: [lto_elf],
-                                 output: name_prefix + '.lto.bin',
-                                 command: objcopy_cmd)
-
-  run_target('flash_' + name_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
-  run_target('flash_' + name_prefix + '.lto', command: ['st-flash', 'write', lto_bin_target, '0x8000000'])
-  run_target('size_' + name_prefix, command: [size, elf_target])
-  run_target('size_' + name_prefix + '.lto', command: [size, lto_elf])
-  run_target('run_gdb_hw_' + name_prefix, command: [gdb_hw_script, elf_target])
-  run_target('run_qemu_' + name_prefix, command: [qemu_cmd, elf_target])
-  run_target('run_gdb_qemu_' + name_prefix, command: [gdb_qemu_cmd, elf_target])
-  run_target('run_qemu_' + name_prefix + '-lto', command: [qemu_cmd, lto_elf])
-  run_target('run_gdb_qemu_' + name_prefix + '-lto', command: [gdb_qemu_cmd, lto_elf])
-  elf_targets += elf_target
-  elf_targets += lto_elf
-  named_elf_targets += [t, elf_target]
-  named_elf_targets += [t+'.lto', lto_elf]
-  named_plain_elf_targets += [t, elf_target]
-  named_lto_elf_targets += [t+'.lto', lto_elf]
-
-  if get_option('enable_gpslogger_tests')
-    test('run_qemu_' + name_prefix,
-         py3_inst,
-         args: [qemu_test_runner,
-                qemu_cmd,
-                'gpslogger',
-                elf_target,
-               ],
-         env: [python_path],
-         workdir: meson.current_source_dir(),
-         suite: 'gpslogger',
-         is_parallel: false,
-        )
-  endif
+    
+    run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('size_' + lto_prefix, command: [size, lto_elf])
+    run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])
+    run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
+    run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
+    elf_targets += lto_elf
+    named_elf_targets += [target + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', target + '-' + lto_version]
 
 
-endforeach
+    if get_option('enable_gpslogger_tests')
+      test('run_qemu_' + name_prefix,
+           py3_inst,
+           args: [qemu_test_runner,
+                  qemu_cmd,
+                  'gpslogger',
+                  lto_elf,
+                 ],
+           env: [python_path],
+           workdir: meson.current_source_dir(),
+           suite: 'gpslogger',
+           is_parallel: false,
+          )
+    endif
+    endforeach # lto_verison
+
+
+endforeach # ara specialization
 
 run_target('compare_nm-gpslogger', command: [compare_nm, nm.path(), named_elf_targets])
-run_target('compare_nm-gpslogger-plain', command: [compare_nm, nm.path(), named_plain_elf_targets])
-run_target('compare_nm-gpslogger-lto', command: [compare_nm, nm.path(), named_lto_elf_targets])
 run_target('compare_size-gpslogger', command: [size, elf_targets])
 run_target('compare_time-gpslogger', command: [compare_time, meson.build_root(), 'gpslogger'], depends: elf_targets)
-custom_target('analyze-gpslogger',
-              command: [files('GPSLoggerExperiment.py'), '-d', meson.current_build_dir(),
-                        '-s',
-                        '--run-dir', meson.build_root()],
-              output: ['gpslogger_result.dref',
-                       'gpslogger_raw.dref'],
-              console: true,
-              depends: elf_targets)
+timing_exp_result = custom_target('analyze_timing-gpslogger',
+                                  command: [GenericTimingExperiment, '-d', meson.current_build_dir(),
+                                            '-s',
+                                            '--title', 'gpslogger',
+                                            profiles_list,
+                                            '--run-dir', meson.build_root()],
+                                  output: ['timing_result-gpslogger.dref',
+                                           'timing_result_raw-gpslogger.dref'],
+                                  console: true,
+                                  depends: elf_targets)
+
+run_target('show-timing_result-gpslogger.dref',
+             command: [#'strace',
+               ShowGenericTimingExperiment,
+               profiles_list,
+               '--title', 'gpslogger',],
+             depends: timing_exp_result,
+            )
+run_target('show_old-timing_result-gpslogger.dref',
+           command: [#'strace',
+             ShowGenericTimingExperiment,
+             profiles_list,
+             '--title', 'gpslogger',],
+          )

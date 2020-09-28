@@ -1,5 +1,9 @@
 app_flags = ['-DconfigINCLUDE_ALL_DECLS=1',
-             ]
+            ]
+
+# experiment scripts
+GenericTimingExperiment = files('GenericTimingExperiment.py')
+ShowGenericTimingExperiment = files('make_figures.py')
 
 
 # FreeRTOS examples
@@ -196,7 +200,7 @@ foreach app : ir_apps + hw_apps
 
   freertos_targets += app_vanilla_ll
   timing_exp_result = custom_target('analyze_timing-' + app,
-                                    command: [files('GenericTimingExperiment.py'), '-d', meson.current_build_dir(),
+                                    command: [GenericTimingExperiment, '-d', meson.current_build_dir(),
                                               '-s',
                                               '--title', 'freertos-' + app,
                                               profiles_list,
@@ -207,14 +211,14 @@ foreach app : ir_apps + hw_apps
                                     depends: elf_targets)
   run_target('show-timing_result-freertos-' + app + '.dref',
              command: [#'strace',
-               files('make_figures.py'),
+               ShowGenericTimingExperiment,
                profiles_list,
                '--title', 'freertos-' + app,],
              depends: timing_exp_result,
             )
   run_target('show_old-timing_result-freertos-' + app + '.dref',
              command: [#'strace',
-               files('make_figures.py'),
+               ShowGenericTimingExperiment,
                profiles_list,
                '--title', 'freertos-' + app,],
             )
