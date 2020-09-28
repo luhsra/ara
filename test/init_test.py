@@ -47,7 +47,7 @@ def fail_if(condition, *arg, dry=False):
 def get_config(i_file):
     """Return the default common config."""
     return {'log_level': 'debug',
-            'dump_prefix': 'dumps/',
+            'dump_prefix': 'dumps/{step_name}.',
             'dump': False,
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
