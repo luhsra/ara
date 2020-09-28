@@ -2,7 +2,7 @@ from .syscall_generic import GenericSystemCalls
 from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        Statement, Include, CPPStatement,
                        FunctionDeclaration)
-from ara.steps.freertos import Task, Queue, Mutex
+from ara.os.freertos import Task, Queue, Mutex
 
 class StaticFullSystemCalls(GenericSystemCalls):
 

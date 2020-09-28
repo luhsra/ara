@@ -1,4 +1,4 @@
-from ara.steps.freertos import Task, Queue, Mutex
+from ara.os.freertos import Task, Queue, Mutex
 
 class BaseImpl:
     def __init__(self, instance):

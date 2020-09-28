@@ -8,7 +8,7 @@ import pyllco
 from ara.graph import ABBType, Graph, CFGView, CFType, CallPath, SyscallCategory
 from .step import Step
 from .option import Option, String, Choice
-from .freertos import Task
+from ara.os.freertos import Task
 from ara.util import VarianceDict
 
 from collections import defaultdict

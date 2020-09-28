@@ -1,7 +1,7 @@
 """Container for Sysfuncts."""
 from ara.graph import Graph
+from ara.os import get_syscalls
 from .step import Step
-from .os import get_syscalls
 
 
 class SysFuncts(Step):

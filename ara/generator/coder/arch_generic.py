@@ -1,6 +1,6 @@
 from .base import BaseCoder
 from .elements import StructDataObject, DataObjectArray, DataObject
-from ara.steps.freertos import Queue, Mutex
+from ara.os.freertos import Queue, Mutex
 
 class VanillaTaskList(StructDataObject):
     def __init__(self, tasks, container, index):

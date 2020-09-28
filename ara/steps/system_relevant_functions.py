@@ -1,7 +1,7 @@
 """Container for SystemRelevantFunction."""
 from ara.graph import Graph, SyscallCategory
+from ara.os import get_os_syscalls
 from .step import Step
-from .os import get_os_syscalls
 
 from graph_tool import GraphView
 from graph_tool.topology import label_out_component

@@ -4,7 +4,7 @@ import json
 import ara.graph as _graph
 from .option import Option, String
 from .step import Step
-from .autosar import Task
+from ara.os.autosar import Task
 
 import graph_tool
 

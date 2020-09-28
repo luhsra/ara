@@ -2,7 +2,7 @@ from replace_syscalls_create cimport ReplaceSyscallsCreate as CReplaceSyscallsCr
 from libc.stdint cimport uintptr_t
 from cy_helper cimport get_derived_raw_pointer
 
-from ara.steps.freertos import Task, Queue, Mutex
+from ara.os.freertos import Task, Queue, Mutex
 
 
 cdef class ReplaceSyscallsCreate(NativeStep):

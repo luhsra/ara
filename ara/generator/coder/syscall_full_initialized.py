@@ -3,7 +3,7 @@ from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        CPPStatement,
                        Statement, Include, InstanceDataObject, StructDataObject,
                        FunctionDeclaration)
-from ara.steps.freertos import Task, Queue, Mutex
+from ara.os.freertos import Task, Queue, Mutex
 
 
 
