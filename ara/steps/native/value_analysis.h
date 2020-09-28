@@ -34,10 +34,13 @@ namespace ara::step {
 
 		inline void pretty_print(const llvm::Value&, Logger::LogStream& ls) const;
 
+		std::map<const std::string, os::SysCall> syscalls;
+
 		/**
 		 * Perform a search over the SVFG, until it reaches a constant.
 		 */
-		void do_backward_value_search(const SVF::SVFG& vfg, const llvm::Value& start, graph::Argument& arg);
+		void do_backward_value_search(const SVF::SVFG& vfg, const llvm::Value& start, graph::Argument& arg,
+		                              graph::SigType hint);
 
 		shared_ptr<graph::Arguments> get_values_for_call(llvm::CallBase& called_func, const SVF::SVFG& vfg);
 
