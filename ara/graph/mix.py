@@ -67,6 +67,29 @@ class SyscallCategory(enum.IntEnum): # */
     pass
 
 #undef MIX
+#define MIX 1 /*
+# Signature Type, whether the syscall argument is expected to be a value or
+# symbol
+#
+# undefined = as the name says
+# every = syscall belongs to every category
+# create = syscall creates an instance
+# comm = syscall is causes some kind of communication
+# ATTENTION: This enum must kept in sync with syscall_category.inc
+class SigType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class SigType {
+    pass
+
+    undefined = 0,
+    value = 1,
+    symbol = 2,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(SigType)}
+    pass
+
+#undef MIX
 
 #undef EQUAL_OPERATOR
 #undef NOT_EQUAL_OPERATOR

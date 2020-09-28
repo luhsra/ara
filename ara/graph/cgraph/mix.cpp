@@ -69,4 +69,21 @@ namespace ara::graph {
 
 	EQUAL_OPERATOR(SyscallCategory)
 	NOT_EQUAL_OPERATOR(SyscallCategory)
+
+	// SigType functions
+	std::ostream& operator<<(std::ostream& str, const SigType& ty) {
+		switch (ty) {
+		case SigType::undefined:
+			return (str << "undefined");
+		case SigType::value:
+			return (str << "value");
+		case SigType::symbol:
+			return (str << "symbol");
+		};
+		assert(false);
+		return str;
+	}
+
+	EQUAL_OPERATOR(SigType)
+	NOT_EQUAL_OPERATOR(SigType)
 } // namespace ara::graph
