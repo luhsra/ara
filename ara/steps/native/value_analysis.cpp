@@ -215,7 +215,7 @@ namespace ara::step {
 		}
 
 		/* return value */
-		if (called_func.hasOneUse()) {
+		if (called_func.hasNUsesOrMore(1)) {
 			llvm::Value* return_value;
 			llvm::User* ur = called_func.user_back();
 			if (llvm::StoreInst* store = llvm::dyn_cast<llvm::StoreInst>(ur)) {
