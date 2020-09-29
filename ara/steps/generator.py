@@ -45,7 +45,7 @@ class Generator(Step):
         self._log.warn("get_dependencies: style: %s", self.syscall_style.get())
         if self.syscall_style.get() == 'passthrough':
             return ['IRReader']
-        return ['InstanceGraph', 'ManualCorrections']
+        return ['SIA', 'ManualCorrections']
 
     def run(self):
         # self._log.info("Executing Generator step.")

@@ -108,7 +108,7 @@ def main():
             extra_settings["steps"].append("ManualCorrections")
 
     if args.step is None and not extra_settings.get("steps", None):
-        args.step = ['InstanceGraph']
+        args.step = ['SIA']
 
     history = s_manager.execute(vars(args), extra_settings, args.step)
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}" for se in history]))

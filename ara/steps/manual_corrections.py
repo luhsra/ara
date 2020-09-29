@@ -13,7 +13,7 @@ class ManualCorrections(Step):
                                 ty=String())
 
     def get_single_dependencies(self):
-        return ['InstanceGraph']
+        return ['SIA']
 
     def run(self):
         file_name = self.manual_corrections.get()

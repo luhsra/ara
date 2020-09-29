@@ -13,7 +13,7 @@ def provide_steps():
     from .manual_corrections import ManualCorrections
     from .printer import Printer
     from .recursive_functions import RecursiveFunctions
-    from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
+    from .sse import SIA, InteractionAnalysis, MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
@@ -28,7 +28,7 @@ def provide_steps():
     yield Dummy
     yield Generator
     yield ICFG
-    yield InstanceGraph
+    yield SIA
     yield InteractionAnalysis
     yield LoadOIL
     yield ManualCorrections

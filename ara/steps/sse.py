@@ -7,7 +7,7 @@ import json
 import pyllco
 
 from ara.graph import (ABBType, Graph, CFGView, CFType, CallPath,
-                       SyscallCategory, InstanceGraph as _InstanceGraph)
+                       SyscallCategory, InstanceGraph)
 from .step import Step
 from .option import Option, String, Bool
 from ara.os.freertos import Task
@@ -29,7 +29,7 @@ class State:
             next_abbs = []
         self.next_abbs = next_abbs
 
-        self.instances = _InstanceGraph()
+        self.instances = InstanceGraph()
         self.call_path = None # call node within the call graph
         self.branch = False # is this state coming from a branch
         self.loop = False # is this state coming from a loop
@@ -83,7 +83,7 @@ class FlowAnalysis(Step):
             return ['SysFuncts']
         deps = self._graph.os.get_special_steps()
         if self._graph.os.has_dynamic_instances():
-            deps.append('InstanceGraph')
+            deps.append('SIA')
         return deps
 
     def _system_semantic(self, state):
@@ -435,8 +435,8 @@ class FlatAnalysis(FlowAnalysis):
                                            "subgraph": 'instances'})
 
 
-class InstanceGraph(FlatAnalysis):
-    """Find all application instances."""
+class SIA(FlatAnalysis):
+    """Static Instance Analysis: Find all application instances."""
 
     def _get_entry_point_dep(self, name):
         return {"name": name, "entry_point": self.entry_point.get()}

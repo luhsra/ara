@@ -132,9 +132,10 @@ if get_option('enable_toplevel_tests')
     extra_settings = files('test' / 'extra_settings.json')
     test('ara_tester',
        py3_inst,
-       args: [ara_py, gpslogger_application,
-              '--log-level', 'info', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--step-settings', extra_settings],
+       args: [ara_py, librepilot_application,
+              '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
+              '--step-settings', extra_settings,
+              '--manual-corrections', instance_corrections],
        suite: 'toplevel'
     )
 
@@ -155,37 +156,6 @@ if get_option('enable_toplevel_tests')
               '--log-level', 'debug', '--dump',
               '--generator_output', 'generator_tester-os.cc',
               '--step-settings', generator_settings],
-       suite: 'toplevel'
-    )
-
-    test('gpslogger',
-       py3_inst,
-       args: [ara_py, gpslogger_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('smartplug',
-       py3_inst,
-       args: [ara_py, smartplug_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('copter-without-alarms',
-       py3_inst,
-       args: [ara_py, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
-       suite: 'toplevel'
-    )
-
-    test('copter',
-       py3_inst,
-       args: [ara_py, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('ospert',
-       py3_inst,
-       args: [ara_py, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
        suite: 'toplevel'
     )
 
