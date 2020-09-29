@@ -51,14 +51,13 @@ def main():
             debug_print("Argument:", val_per_arg)
             val_per_args.append(val_per_arg)
         return_value = args.get_return_value()
-        if return_value is None:
-            debug_print("no return value")
-        else:
+        tracked_ret_value = "no return"
+        if return_value is not None:
             assert(len(return_value) == 1)
-            debug_print("RETVAL:",
-                        value_to_str(return_value.get_value(raw=True)))
+            tracked_ret_value = value_to_str(return_value.get_value(raw=True))
+        debug_print("RETVAL:", tracked_ret_value)
 
-        values[syscalls.get_syscall_name(syscall)] = val_per_args
+        values[syscalls.get_syscall_name(syscall)] = [tracked_ret_value, val_per_args]
 
     # import json
     # print(json.dumps(values))
