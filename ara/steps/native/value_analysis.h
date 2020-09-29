@@ -23,10 +23,14 @@ namespace ara::step {
 		struct VFGContainer {
 			const SVF::VFGNode* node;
 			graph::CallPath call_path;
-			unsigned depth;
+			unsigned global_depth;
+			unsigned local_depth;
+			unsigned call_depth;
 
-			VFGContainer(const SVF::VFGNode* node, graph::CallPath call_path, unsigned depth)
-			    : node(node), call_path(call_path), depth(depth) {}
+			VFGContainer(const SVF::VFGNode* node, graph::CallPath call_path, unsigned global_depth,
+			             unsigned local_depth, unsigned call_depth)
+			    : node(node), call_path(call_path), global_depth(global_depth), local_depth(local_depth),
+			      call_depth(call_depth) {}
 			VFGContainer() {}
 		};
 
