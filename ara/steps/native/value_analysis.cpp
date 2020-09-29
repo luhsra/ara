@@ -190,7 +190,7 @@ namespace ara::step {
 		llvm::AttributeList attrl = called_func.getAttributes();
 
 		const auto& syscall = syscalls.at(called_func.getCalledFunction()->getName().str());
-		const auto& [return_sig, arg_sigs] = syscall.get_signature();
+		const auto& arg_sigs = syscall.get_signature();
 
 		/* retrieve value of arguments */
 		int t = 0;

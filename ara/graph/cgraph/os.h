@@ -8,7 +8,6 @@
 #include <Python.h>
 #include <boost/python.hpp>
 #include <string>
-#include <utility>
 #include <vector>
 
 namespace ara::os {
@@ -25,7 +24,7 @@ namespace ara::os {
 		explicit SysCall(boost::python::object obj, boost::python::object os) : obj(obj), os(os){};
 		std::string get_name() const;
 		OS get_os() const;
-		std::pair<graph::SigType, std::vector<graph::SigType>> get_signature() const;
+		std::vector<graph::SigType> get_signature() const;
 	};
 
 	class OS {

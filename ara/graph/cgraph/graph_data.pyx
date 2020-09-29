@@ -13,7 +13,6 @@ from .cy_helper cimport to_sigtype
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
-from libcpp.utility cimport pair
 from libcpp cimport bool
 from cython.operator cimport dereference as deref, postincrement
 from ir cimport Value, AttributeSet
@@ -242,15 +241,13 @@ cdef public string py_syscall_get_name(object syscall):
     return syscall.__name__.encode('UTF-8')
 
 
-cdef public pair[CSigType, vector[CSigType]] py_syscall_get_signature(object syscall):
-    cdef pair[CSigType, vector[CSigType]] signature
+cdef public vector[CSigType] py_syscall_get_signature(object syscall):
+    cdef vector[CSigType] signature
     cdef CSigType c_arg
-    ret_value, arguments = syscall.signature
-    assert isinstance(arguments, tuple), "Invalid Signature"
-    signature.first = to_sigtype(int(ret_value))
-    for arg in arguments:
+    assert isinstance(syscall.signature, tuple), "Invalid Signature"
+    for arg in syscall.signature:
         c_arg = to_sigtype(int(arg))
-        signature.second.push_back(c_arg)
+        signature.push_back(c_arg)
     return signature
 
 

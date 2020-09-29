@@ -4,7 +4,7 @@ def syscall(*args, categories=None, signature=None):
     if categories is None:
         categories = {_SyscallCategory.undefined}
     if signature is None:
-        signature = (_SigType.undefined, [])
+        signature = tuple()
     outer_categories = categories
     outer_signature = signature
 

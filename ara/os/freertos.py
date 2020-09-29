@@ -169,9 +169,8 @@ class FreeRTOS(OSBase):
 
 
     @syscall(categories={SyscallCategory.create},
-             signature=(SigType.value, (SigType.symbol, SigType.value,
-                                        SigType.value, SigType.symbol,
-                                        SigType.value, SigType.symbol)))
+             signature=(SigType.symbol, SigType.value, SigType.value,
+                        SigType.symbol, SigType.value, SigType.symbol))
     def xTaskCreate(cfg, abb, state):
         state = state.copy()
 
@@ -234,7 +233,7 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.create},
-             signature=(SigType.symbol, (SigType.value, SigType.value, SigType.value)))
+             signature=(SigType.value, SigType.value, SigType.value))
     def xQueueGenericCreate(cfg, abb, state):
         state = state.copy()
 
@@ -265,7 +264,7 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.create},
-             signature=(SigType.symbol, (SigType.value,)))
+             signature=(SigType.value,))
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
@@ -292,7 +291,7 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(None, (SigType.value,)))
+             signature=(SigType.value,))
     def vTaskDelay(cfg, abb, state):
         state = state.copy()
 
@@ -311,8 +310,8 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.value, (SigType.symbol, SigType.value,
-                                        SigType.value, SigType.value)))
+             signature=(SigType.symbol, SigType.value, SigType.value,
+                        SigType.value))
     def xQueueGenericSend(cfg, abb, state):
         state = state.copy()
 
@@ -632,7 +631,7 @@ class FreeRTOS(OSBase):
         pass
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.value, (SigType.symbol, SigType.value)))
+             signature=(SigType.symbol, SigType.value))
     def xQueueTakeMutexRecursive(cfg, abb, state):
         pass
 
@@ -729,10 +728,9 @@ class FreeRTOS(OSBase):
         pass
 
     @syscall(categories={SyscallCategory.create},
-             signature=(SigType.value, (SigType.symbol, SigType.value,
-                                        SigType.value, SigType.symbol,
-                                        SigType.value, SigType.symbol,
-                                        SigType.symbol)))
+             signature=(SigType.symbol, SigType.value, SigType.value,
+                        SigType.symbol, SigType.value, SigType.symbol,
+                        SigType.symbol))
     def xTaskCreateStatic(cfg, abb, state):
         pass
 
