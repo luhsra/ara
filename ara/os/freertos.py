@@ -259,7 +259,8 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(categories={SyscallCategory.create})
+    @syscall(categories={SyscallCategory.create},
+             signature=(SigType.symbol, (SigType.value)))
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
