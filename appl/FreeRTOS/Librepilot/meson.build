@@ -222,7 +222,6 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                      ],
                               output: lto_prefix + '.elf',
                               depfile: lto_prefix + '.elf.dep',
-                              depend_files: default_linkerscript,
                               command: clang_cpp +
                                        librepilot_includes +
                                        ld_flags +
@@ -231,7 +230,7 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                               depend_files: [files(meson.current_source_dir() / 'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_memory.ld',
                                                    meson.current_source_dir() /'flight/pios/stm32f10x//link_STM32103CB_CC_Rev1_sections.ld',
                                                   )
-                                            ],
+                                            ] + [default_linkerscript],
                              )
       
     bin_target = custom_target(lto_prefix + '.bin',
