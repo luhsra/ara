@@ -265,10 +265,12 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.create},
-             signature=(SigType.symbol, (SigType.value)))
+             signature=(SigType.symbol, (SigType.value,)))
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
+        print("FUNC:", cfg.vp.name[cfg.get_function(abb)])
+        print("ABB:", cfg.vp.name[abb])
         cp = state.call_path
         mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
         handler_name = mutex_handler.get_value(raw=True).get_name()
