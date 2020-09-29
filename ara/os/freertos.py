@@ -116,7 +116,8 @@ class FreeRTOS(OSBase):
     @staticmethod
     def interpret(cfg, abb, state, categories=SyscallCategory.every):
         syscall = cfg.get_syscall_name(abb)
-        logger.debug(f"Get syscall: {syscall}")
+        logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
+                     f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
         syscall_function = getattr(FreeRTOS, syscall)
 
@@ -268,8 +269,6 @@ class FreeRTOS(OSBase):
     def xQueueCreateMutex(cfg, abb, state):
         state = state.copy()
         # instance properties
-        print("FUNC:", cfg.vp.name[cfg.get_function(abb)])
-        print("ABB:", cfg.vp.name[abb])
         cp = state.call_path
         mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
         handler_name = mutex_handler.get_value(raw=True).get_name()
