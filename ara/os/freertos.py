@@ -52,7 +52,7 @@ class Task:
 class Queue:
     uid_counter = 0
     def __init__(self, cfg, name, handler, length, size, abb, branch,
-                 after_scheduler):
+                 after_scheduler, q_type):
         self.cfg = cfg
         self.name = name
         self.handler = handler
@@ -62,6 +62,7 @@ class Queue:
         self.branch = branch
         self.after_scheduler = after_scheduler
         self.uid = Queue.uid_counter
+        self.q_type = q_type
         Queue.uid_counter += 1
         FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=branch)
         FreeRTOS.malloc_heap(length, size, maybe=branch)
@@ -232,7 +233,8 @@ class FreeRTOS(OSBase):
         state.scheduler_on = True
         return state
 
-    @syscall(categories={SyscallCategory.create})
+    @syscall(categories={SyscallCategory.create},
+             signature=(SigType.symbol, (SigType.value, SigType.value, SigType.value)))
     def xQueueGenericCreate(cfg, abb, state):
         state = state.copy()
 
@@ -242,6 +244,7 @@ class FreeRTOS(OSBase):
         handler_name = queue_handler.get_value(raw=True).get_name()
         queue_len = state.cfg.vp.arguments[abb][0].get_value(key=cp)
         queue_item_size = state.cfg.vp.arguments[abb][1].get_value(key=cp)
+        q_type = state.cfg.vp.arguments[abb][2].get_value(key=cp)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
@@ -254,7 +257,9 @@ class FreeRTOS(OSBase):
                                           size=queue_item_size,
                                           abb=abb,
                                           branch=state.branch,
-                                          after_scheduler=state.scheduler_on)
+                                          after_scheduler=state.scheduler_on,
+                                          q_type=q_type,
+        )
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
@@ -284,7 +289,8 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(categories={SyscallCategory.comm})
+    @syscall(categories={SyscallCategory.comm},
+             signature=(None, (SigType.value,)))
     def vTaskDelay(cfg, abb, state):
         state = state.copy()
 
@@ -302,7 +308,9 @@ class FreeRTOS(OSBase):
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(categories={SyscallCategory.comm})
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value, (SigType.symbol, SigType.value,
+                                        SigType.value, SigType.value)))
     def xQueueGenericSend(cfg, abb, state):
         state = state.copy()
 
