@@ -246,6 +246,7 @@ cdef public pair[CSigType, vector[CSigType]] py_syscall_get_signature(object sys
     cdef pair[CSigType, vector[CSigType]] signature
     cdef CSigType c_arg
     ret_value, arguments = syscall.signature
+    assert isinstance(arguments, tuple), "Invalid Signature"
     signature.first = to_sigtype(int(ret_value))
     for arg in arguments:
         c_arg = to_sigtype(int(arg))
