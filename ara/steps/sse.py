@@ -90,6 +90,7 @@ class FlowAnalysis(Step):
 
         self._step_data = self._get_step_data(set)
 
+        self._cfg = self._graph.cfg
         self._icfg = CFGView(self._graph.cfg, efilt=self._graph.cfg.ep.type.fa == CFType.icf)
         self._lcfg = CFGView(self._graph.cfg, efilt=self._graph.cfg.ep.type.fa == CFType.lcf)
 
@@ -300,7 +301,9 @@ class FlatAnalysis(FlowAnalysis):
 
             # syscall handling
             if self._icfg.vp.type[abb] == ABBType.syscall:
-                self._log.debug(f"Handle syscall: {self._icfg.vp.name[abb]}")
+                name = self._icfg.vp.name[abb]
+                syscall_name = self._cfg.get_syscall_name(abb)
+                self._log.debug(f"Handle syscall: {name} ({syscall_name})")
                 fake_state = state.copy()
                 self._init_fake_state(fake_state, abb)
                 assert self._graph.os is not None
