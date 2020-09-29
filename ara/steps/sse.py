@@ -331,6 +331,14 @@ class MultiState:
             return self.activated_isrs[0]
         else:
             return None
+    
+    def get_scheduled_instance(self):
+        """Returns the scheduled task or the current active isr, if one is active."""
+        ret = self.get_scheduled_task()
+        isr = self.get_current_isr()
+        if isr is not None:
+            ret = isr
+        return ret
 
     def add_time(self, min_time, max_time):
         self.min_time = min_time
@@ -834,6 +842,7 @@ class MultiSSE(FlowAnalysis):
 
         # Graph View without edges from timed events
         g_wo_events = graph_tool.GraphView(graph, efilt=lambda x: not graph.ep.is_timed_event[x])
+        g_only_normal_edges = graph_tool.GraphView(graph, efilt=lambda x: not graph.ep.is_timed_event[x] and not graph.ep.is_isr[x])
         
         state = graph.vp.state[state_vertex]
         task = state.get_scheduled_task()
@@ -847,7 +856,7 @@ class MultiSSE(FlowAnalysis):
                 min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
 
                 ##################### INTERRUPTS ########################
-                if state.interrupts_enabled:
+                if state.interrupts_enabled and self._icfg.vp.type[abb] != ABBType.syscall:
                     for new_state in self._g.os.handle_isr(state):
                         if new_state != state:
                             new_states.append(new_state)
@@ -895,7 +904,7 @@ class MultiSSE(FlowAnalysis):
                                 break
 
                 # check for existing neighbors
-                if len(graph.get_out_neighbors(state_vertex)) == 0:
+                if len(graph.get_out_neighbors(state_vertex)) == 0 or (len(g_only_normal_edges.get_out_neighbors(state_vertex)) < self._icfg.vertex(abb).out_degree()):
                     ########## COMPUTE NEW STATES ######################
 
                     # syscall handling
@@ -908,7 +917,8 @@ class MultiSSE(FlowAnalysis):
                         else:
                             new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
 
-                            new_states.append(new_state)
+                            if new_state is not None:
+                                new_states.append(new_state)
                     
                     # call block handling
                     elif self._icfg.vp.type[abb] == ABBType.call:
@@ -1042,8 +1052,8 @@ class MultiSSE(FlowAnalysis):
                 
                 s_state = entry_states[cpu]
 
-                s_abb = s_state.abbs[s_state.get_scheduled_task().name]
-                t_abb = t_state.abbs[t_state.get_scheduled_task().name]
+                s_abb = s_state.abbs[s_state.get_scheduled_instance().name]
+                t_abb = t_state.abbs[t_state.get_scheduled_instance().name]
                 
                 if s_abb != t_abb:
                     add_edge(s_abb, t_abb)
@@ -1057,8 +1067,8 @@ class MultiSSE(FlowAnalysis):
                     s_state = graph.vp.state[edge.source()]
                     t_state = graph.vp.state[edge.target()]
 
-                    s_task = s_state.get_scheduled_task()
-                    t_task = t_state.get_scheduled_task()
+                    s_task = s_state.get_scheduled_instance()
+                    t_task = t_state.get_scheduled_instance()
 
                     if s_task is not None and t_task is not None:
                         s_abb = s_state.abbs[s_task.name]

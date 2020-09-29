@@ -25,10 +25,11 @@ ISR2(Interrupt1) {
 
 TASK(TaskA) {
     doSomethingBefore();
+    DisableAllInterrupts();
     if (getBool()) {
         ActivateTask(TaskF);
     }
-    
+    EnableAllInterrupts();
     // for (int i = 0; i < 12; i++) {   
     //     doSomethingAfter();
     // }

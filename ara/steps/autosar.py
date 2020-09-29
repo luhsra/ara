@@ -225,6 +225,9 @@ class AUTOSAR(OSBase):
         state = graph.vp.state[v]
 
         scheduled_task = state.get_scheduled_task()
+        current_isr = state.get_current_isr()
+        if current_isr is not None:
+            scheduled_task = current_isr
 
         # get Task argument
         cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
@@ -265,6 +268,9 @@ class AUTOSAR(OSBase):
     def AUTOSAR_ActivateTask(cfg, abb, state, cpu):
         state = state.copy()
         scheduled_task = state.get_scheduled_task()
+        current_isr = state.get_current_isr()
+        if current_isr is not None:
+            scheduled_task = current_isr
 
         # get Task argument
         cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
@@ -328,12 +334,30 @@ class AUTOSAR(OSBase):
         pass
 
     @syscall
-    def AUTOSAR_DisableAllInterrupts(cfg, abb, state):
-        pass
+    def AUTOSAR_DisableAllInterrupts(cfg, abb, state, cpu):
+        new_state = state.copy()
+
+        new_state.interrupts_enabled = False
+        
+        scheduled_task = state.get_scheduled_instance()
+
+        # advance task or isr to next abb
+        new_state.abbs[scheduled_task.name] = next(cfg.vertex(abb).out_neighbors())
+            
+        return new_state
 
     @syscall
-    def AUTOSAR_EnableAllInterrupts(cfg, abb, state):
-        pass
+    def AUTOSAR_EnableAllInterrupts(cfg, abb, state, cpu):
+        new_state = state.copy()
+
+        new_state.interrupts_enabled = True
+        
+        scheduled_task = state.get_scheduled_instance()
+
+        # advance task or isr to next abb
+        new_state.abbs[scheduled_task.name] = next(cfg.vertex(abb).out_neighbors())
+            
+        return new_state
 
     @syscall
     def AUTOSAR_GetAlarm(cfg, abb, state):
