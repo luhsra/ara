@@ -159,7 +159,7 @@ namespace ara::graph {
 				return it->second;
 			}
 		}
-		throw std::out_of_range("Argument has not such value.");
+		throw std::out_of_range("Argument has no such value.");
 	}
 
 	std::ostream& operator<<(std::ostream& os, const Argument& arg) {
