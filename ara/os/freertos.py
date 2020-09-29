@@ -1,7 +1,8 @@
-from .os_util import syscall
+from .os_util import syscall, get_argument
 from .os_base import OSBase
 
 import pyllco
+import functools
 
 import ara.graph as _graph
 from ara.graph import CallPath, SyscallCategory, SigType
@@ -178,15 +179,14 @@ class FreeRTOS(OSBase):
         # instance properties
         cp = state.call_path
 
-        task_function = state.cfg.vp.arguments[abb][0].get_value(key=cp, raw=True)
-        assert isinstance(task_function, pyllco.Function), "Expecting function"
-        task_function = task_function.get_name()
+        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
 
-        task_name = state.cfg.vp.arguments[abb][1].get_value(key=cp)
-        task_stack_size = state.cfg.vp.arguments[abb][2].get_value(key=cp)
-        task_parameters = state.cfg.vp.arguments[abb][3].get_value(key=cp)
-        task_priority = state.cfg.vp.arguments[abb][4].get_value(key=cp)
-        task_handle_p = state.cfg.vp.arguments[abb][5].get_value(key=cp, raw=True)
+        task_function = p_get_argument(0, ty=pyllco.Function).get_name()
+        task_name = p_get_argument(1)
+        task_stack_size = p_get_argument(2)
+        task_parameters = p_get_argument(3, raw_value=True)
+        task_priority = p_get_argument(4)
+        task_handle_p = p_get_argument(5, raw_value=True)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = task_name
@@ -240,11 +240,14 @@ class FreeRTOS(OSBase):
 
         # instance properties
         cp = state.call_path
+
         queue_handler = state.cfg.vp.arguments[abb].get_return_value()
         handler_name = queue_handler.get_value(raw=True).get_name()
-        queue_len = state.cfg.vp.arguments[abb][0].get_value(key=cp)
-        queue_item_size = state.cfg.vp.arguments[abb][1].get_value(key=cp)
-        q_type = state.cfg.vp.arguments[abb][2].get_value(key=cp)
+
+        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
+        queue_len = p_get_argument(0)
+        queue_item_size = p_get_argument(1)
+        q_type = p_get_argument(2)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
@@ -272,7 +275,8 @@ class FreeRTOS(OSBase):
         cp = state.call_path
         mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
         handler_name = mutex_handler.get_value(raw=True).get_name()
-        mutex_type = state.cfg.vp.arguments[abb][0].get_value(key=cp)
+
+        mutex_type = get_argument(cfg, abb, cp, 0)
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"{handler_name}"
@@ -295,7 +299,7 @@ class FreeRTOS(OSBase):
         state = state.copy()
 
         cp = state.call_path
-        ticks = state.cfg.vp.arguments[abb][0].get_value(key=cp)
+        ticks = get_argument(cfg, abb, cp, 0)
 
         if state.running is None:
             # TODO proper error handling
@@ -315,13 +319,15 @@ class FreeRTOS(OSBase):
         state = state.copy()
 
         cp = state.call_path
-        handler = state.cfg.vp.arguments[abb][0].get_value(key=cp, raw=True)
+        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
+
+        handler = p_get_argument(0, raw=True)
 
         # TODO this has to be a pointer object. However, the value analysis
         # follows the pointer currently.
-        item = state.cfg.vp.arguments[abb][1].get_value(key=cp, raw=True)
-        ticks = state.cfg.vp.arguments[abb][2].get_value(key=cp)
-        action = state.cfg.vp.arguments[abb][3].get_value(key=cp)
+        item = p_get_argument(1, raw=True)
+        ticks = p_get_argument(2)
+        action = p_get_argument(3)
 
         queue = None
         for v in state.instances.vertices():
