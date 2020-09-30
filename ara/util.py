@@ -15,9 +15,15 @@ LEVEL = {"critical": logging.CRITICAL,
 
 class DieOnErrorLogger(logging.getLoggerClass()):
     werr = False
-    def error(self, *args, **kwargs):
+    def critical(self, *args, **kwargs):
         super().error(*args, **kwargs)
         sys.exit(1)
+    def error(self, *args, **kwargs):
+        if self.werr:
+            super().error(*args, **kwargs)
+            sys.exit(1)
+        else:
+            super().error(*args, **kwargs)
     def warning(self, *args, **kwargs):
         if self.werr:
             super().error(*args, **kwargs)
