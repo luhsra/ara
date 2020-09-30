@@ -143,6 +143,9 @@ class FreeRTOS(OSBase):
 
     @staticmethod
     def malloc_heap(count, size, maybe=False):
+        percent_sure=0
+        used_sure=0
+        total=0
         try:
             request = int(count) * int(size)
             used_sure = FreeRTOS.config.get('used_heap_sure', 0)
@@ -165,9 +168,8 @@ class FreeRTOS(OSBase):
             if used_maybe >= total:
                 logger.warning("FreeRTOS heap usage exceeds heap size: %s", percent_maybe)
         except Exception as e:
-            logger.error("malloc failed: %05.2f%% (%5d / %5d)",
-                         percent_sure*100, used_sure, total)
-            raise e
+            logger.error("malloc failed: %05.2f%% (%5d / %5d): %s",
+                         percent_sure*100, used_sure, total, e)
 
 
     @syscall(categories={SyscallCategory.create},
