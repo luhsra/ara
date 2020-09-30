@@ -142,14 +142,17 @@ namespace ara::step {
 
 	void ResolveFunctionPointer::resolve_indirect_function_pointers(ICFG& icfg, PTACallGraph& callgraph,
 	                                                                const LLVMModuleSet& module) {
+		int handled_blocks = 0;
 		for (ICFG::iterator it = icfg.begin(); it != icfg.end(); ++it) {
 			if (CallBlockNode* cbn = llvm::dyn_cast<CallBlockNode>(it->second)) {
 				if (!callgraph.hasCallGraphEdge(cbn)) {
 					// callblock with unresolved function pointer
 					resolve_function_pointer(safe_deref(cbn), callgraph, module);
+					handled_blocks++;
 				}
 			}
 		}
+		logger.info() << "Handled " << handled_blocks << " blocks with unresolved function pointers\n" << std::endl;
 	}
 
 	void ResolveFunctionPointer::run() {
