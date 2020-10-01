@@ -19,8 +19,13 @@ DeclareTask(TaskD);
 DeclareTask(TaskE);
 DeclareTask(TaskF);
 
-ISR2(Interrupt1) {
+// ISR2(Interrupt1) {
+//     handleSomeEvent();
+// }
+
+ISR2(Interrupt2) {
     handleSomeEvent();
+    ActivateTask(TaskB);
 }
 
 TASK(TaskA) {
@@ -28,6 +33,7 @@ TASK(TaskA) {
     DisableAllInterrupts();
     if (getBool()) {
         ActivateTask(TaskF);
+        // doSomethingAfter();
     }
     EnableAllInterrupts();
     // for (int i = 0; i < 12; i++) {   
@@ -55,6 +61,7 @@ TASK(TaskC) {
     //     ActivateTask(TaskF);
     // }
     ActivateTask(TaskF);
+    // doSomethingC();
     TerminateTask();
 }
 

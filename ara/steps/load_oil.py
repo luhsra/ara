@@ -8,7 +8,8 @@ from .autosar import Task, Counter, Alarm, AlarmAction, ISR
 
 import graph_tool
 
-
+DISABLE_ALARMS = True
+DISABLE_ISRS = False
 
 class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
@@ -91,72 +92,74 @@ class LoadOIL(Step):
                 instances.vp.label[c] = counter["name"]
 
             # read all alarms
-            for alarm in cpu["alarms"]:
-                a = instances.add_vertex()
-                instances.vp.label[a] = alarm["name"]
+            if not DISABLE_ALARMS:
+                for alarm in cpu["alarms"]:
+                    a = instances.add_vertex()
+                    instances.vp.label[a] = alarm["name"]
 
-                # find counter object in instances
-                c_name = alarm["counter"]
-                counter = find_instance_by_name(c_name, Counter)
+                    # find counter object in instances
+                    c_name = alarm["counter"]
+                    counter = find_instance_by_name(c_name, Counter)
 
-                # read alarm action
-                action = alarm["action"]
-                if action["action"].lower() == "incrementcounter":
-                    incrementcounter = find_instance_by_name(action["counter"], Counter)
-                    instances.vp.obj[a] = Alarm(alarm["name"],
-                                                cpu_id,
-                                                counter,
-                                                alarm["autostart"],
-                                                AlarmAction.INCREMENTCOUNTER,
-                                                incrementcounter=incrementcounter)
-                elif action["action"].lower() == "activatetask":
-                    task = find_instance_by_name(action["task"], Task)
-                    instances.vp.obj[a] = Alarm(alarm["name"],
-                                                cpu_id,
-                                                counter,
-                                                alarm["autostart"],
-                                                AlarmAction.ACTIVATETASK,
-                                                task=task)
-                elif action["action"].lower() == "setevent":
-                    task = find_instance_by_name(action["task"], Task)
-                    event = find_instance_by_name(action["event"], Event)
-                    instances.vp.obj[a] = Alarm(alarm["name"],
-                                                cpu_id,
-                                                counter,
-                                                alarm["autostart"],
-                                                AlarmAction.SETEVENT,
-                                                task=task,
-                                                event=event)
+                    # read alarm action
+                    action = alarm["action"]
+                    if action["action"].lower() == "incrementcounter":
+                        incrementcounter = find_instance_by_name(action["counter"], Counter)
+                        instances.vp.obj[a] = Alarm(alarm["name"],
+                                                    cpu_id,
+                                                    counter,
+                                                    alarm["autostart"],
+                                                    AlarmAction.INCREMENTCOUNTER,
+                                                    incrementcounter=incrementcounter)
+                    elif action["action"].lower() == "activatetask":
+                        task = find_instance_by_name(action["task"], Task)
+                        instances.vp.obj[a] = Alarm(alarm["name"],
+                                                    cpu_id,
+                                                    counter,
+                                                    alarm["autostart"],
+                                                    AlarmAction.ACTIVATETASK,
+                                                    task=task)
+                    elif action["action"].lower() == "setevent":
+                        task = find_instance_by_name(action["task"], Task)
+                        event = find_instance_by_name(action["event"], Event)
+                        instances.vp.obj[a] = Alarm(alarm["name"],
+                                                    cpu_id,
+                                                    counter,
+                                                    alarm["autostart"],
+                                                    AlarmAction.SETEVENT,
+                                                    task=task,
+                                                    event=event)
 
-                # set cycletime and alarmtime if autostart is true
-                if instances.vp.obj[a].autostart:
-                    instances.vp.obj[a].cycletime = alarm["cycletime"]
-                    instances.vp.obj[a].alarmtime = alarm["alarmtime"]
+                    # set cycletime and alarmtime if autostart is true
+                    if instances.vp.obj[a].autostart:
+                        instances.vp.obj[a].cycletime = alarm["cycletime"]
+                        instances.vp.obj[a].alarmtime = alarm["alarmtime"]
 
             # read all ISRs
-            for isr in cpu["isrs"]:
-                i = instances.add_vertex()
-                instances.vp.label[i] = isr["name"]
+            if not DISABLE_ISRS:
+                for isr in cpu["isrs"]:
+                    i = instances.add_vertex()
+                    instances.vp.label[i] = isr["name"]
 
-                i_function_name = "AUTOSAR_ISR_" + isr["name"]
-                i_function = g.cfg.get_function_by_name(i_function_name)
-                instances.vp.obj[i] = ISR(i_function_name,
-                                          cpu_id,
-                                          isr["category"],
-                                          isr["priority"],
-                                          i_function)
+                    i_function_name = "AUTOSAR_ISR_" + isr["name"]
+                    i_function = g.cfg.get_function_by_name(i_function_name)
+                    instances.vp.obj[i] = ISR(i_function_name,
+                                            cpu_id,
+                                            isr["category"],
+                                            isr["priority"],
+                                            i_function)
 
-                # trigger other steps
-                self._step_manager.chain_step({"name": "ValueAnalysis",
-                                               "entry_point": i_function_name})
-                self._step_manager.chain_step({"name": "ValueAnalysisCore",
-                                               "entry_point": i_function_name})
-                self._step_manager.chain_step({"name": "CallGraph",
-                                               "entry_point": i_function_name})
-                self._step_manager.chain_step({"name": "Syscall",
-                                               "entry_point": i_function_name})
-                self._step_manager.chain_step({"name": "ICFG",
-                                               "entry_point": i_function_name})
+                    # trigger other steps
+                    self._step_manager.chain_step({"name": "ValueAnalysis",
+                                                "entry_point": i_function_name})
+                    self._step_manager.chain_step({"name": "ValueAnalysisCore",
+                                                "entry_point": i_function_name})
+                    self._step_manager.chain_step({"name": "CallGraph",
+                                                "entry_point": i_function_name})
+                    self._step_manager.chain_step({"name": "Syscall",
+                                                "entry_point": i_function_name})
+                    self._step_manager.chain_step({"name": "ICFG",
+                                                "entry_point": i_function_name})
 
         g.instances = instances
 

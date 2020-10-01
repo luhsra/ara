@@ -154,15 +154,16 @@ class AUTOSAR(OSBase):
             if isinstance(isr, ISR):
                 if isr.cpu_id == state.cpu:
                     if (current_isr is None or isr.name != current_isr.name) and isr not in state.activated_isrs:
-                        new_state = state.copy()
-                        new_states.append(new_state)
-                        new_state.from_isr = True
+                        if isr.priority > priority:
+                            new_state = state.copy()
+                            new_states.append(new_state)
+                            new_state.from_isr = True
 
-                        # activate new isr
-                        new_state.activated_isrs.append(isr)
+                            # activate new isr
+                            new_state.activated_isrs.append(isr)
 
-                        # schedule the interrupts
-                        new_state.activated_isrs.sort(key=lambda isr: isr.priority, reverse=True)
+                            # schedule the interrupts
+                            new_state.activated_isrs.sort(key=lambda isr: isr.priority, reverse=True)
 
         return new_states
 

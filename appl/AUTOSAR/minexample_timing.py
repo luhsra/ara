@@ -5,7 +5,10 @@ class Timings:
     For each ABB there needs to be a function returning their min and max execution times."""
 
     @staticmethod
-    def get_timings(abb_name, context):
+    def get_timings(cfg, abb, context):
+        abb_name = cfg.vp.name[abb]
+        if cfg.vp.type[abb] == 0b1:
+            return (0, 0)
         # f = getattr(Timings, str(abb_name) + '_timings', None)
         # if f is not None:
         #     return f(context)
@@ -13,13 +16,13 @@ class Timings:
         return (4, 6)
     
     @staticmethod
-    def get_min_time(abb_name, context):
-        res = Timings.get_timings(abb_name, context)
+    def get_min_time(cfg, abb, context):
+        res = Timings.get_timings(cfg, abb, context)
         return res[0]
 
     @staticmethod
-    def get_max_time(abb_name, context):
-        res = Timings.get_timings(abb_name, context)
+    def get_max_time(cfg, abb, context):
+        res = Timings.get_timings(cfg, abb, context)
         return res[1]
 
     @staticmethod

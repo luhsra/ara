@@ -202,7 +202,7 @@ class MetaState:
                 if task is not None:
                     abb = state.abbs[task.name]
                     context = None
-                    min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                    min_time = Timings.get_min_time(self.cfg, abb, context)
 
                     for next_v in graph.vertex(v).out_neighbors():
                         next_state = graph.vp.state[next_v]
@@ -225,7 +225,7 @@ class MetaState:
                                 abb = next_state.abbs[task.name]
                                 context = None
                                 
-                                max_time = Timings.get_max_time(next_state.cfg.vp.name[abb], context)
+                                max_time = Timings.get_max_time(next_state.cfg, abb, context)
 
                                 # update all intervalls
                                 for i, intervall in enumerate(state.times):
@@ -518,7 +518,7 @@ class MultiSSE(FlowAnalysis):
             state = graph.vp.state[v]
             abb = state.abbs[state.get_scheduled_task().name]
             context = None
-            max_time = Timings.get_max_time(state.cfg.vp.name[abb], context)
+            max_time = Timings.get_max_time(state.cfg, abb, context)
             state.local_times = [(0, max_time)]
             state.global_times = [(0, max_time)]
             # state.root_global_times = [(0, 0)]
@@ -553,7 +553,7 @@ class MultiSSE(FlowAnalysis):
                 # get min and max times for the sync syscall
                 context = None # this has to be something useful later on
                 abb = state.abbs[state.get_scheduled_task().name]
-                min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                min_time = Timings.get_min_time(state.cfg, abb, context)
 
                 for cpu_other, graph in metastate.state_graph.items():
                     if cpu != cpu_other:
@@ -619,7 +619,7 @@ class MultiSSE(FlowAnalysis):
                                 new_state.entry_states[cpu_other] = next_state.copy()
                                 
                                 # execute the syscall
-                                self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_task().name], new_state, cpu, is_global=True)
+                                self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_instance().name], new_state, cpu, is_global=True)
 
                                 # calculate new times for both new states
                                 states = [next_state, sync_state]
@@ -628,7 +628,7 @@ class MultiSSE(FlowAnalysis):
                                     if next_task is not None:
                                         abb = next_state.abbs[next_task.name]
                                         context = None
-                                        max_time = Timings.get_max_time(next_state.cfg.vp.name[abb], context)
+                                        max_time = Timings.get_max_time(next_state.cfg, abb, context)
                                     else:
                                         max_time = math.inf
 
@@ -748,15 +748,6 @@ class MultiSSE(FlowAnalysis):
 
                 # add existing neighbors to stack
                 for v in graph.vertex(vertex).out_neighbors():                   
-                    # check for already found nodes
-                    # found = False
-                    # for v_found in found_list:
-                    #     if v == v_found:
-                    #         found = True
-                    #         break
-
-                    # if not found:
-                    #     stack.append(v)
                     neighbor_state = graph.vp.state[v]
                     # if neighbor_state.updated < MAX_STATE_UPDATES:
                     #     neighbor_state.updated += 1
@@ -853,7 +844,7 @@ class MultiSSE(FlowAnalysis):
         if task is not None:
             abb = state.abbs[task.name]
             if abb is not None:
-                min_time = Timings.get_min_time(state.cfg.vp.name[abb], context)
+                min_time = Timings.get_min_time(state.cfg, abb, context)
 
                 ##################### INTERRUPTS ########################
                 if state.interrupts_enabled and self._icfg.vp.type[abb] != ABBType.syscall:
@@ -978,7 +969,7 @@ class MultiSSE(FlowAnalysis):
 
                     if new_task is not None:
                         abb = new_state.abbs[new_task.name] 
-                        max_time = Timings.get_max_time(new_state.cfg.vp.name[abb], context)
+                        max_time = Timings.get_max_time(new_state.cfg, abb, context)
 
                         # update all local intervalls
                         if new_state in new_states:
@@ -1019,8 +1010,8 @@ class MultiSSE(FlowAnalysis):
                     #             new_state.passed_events.append(event)
                     #     new_state.passed_events.sort()
                 
-                for intervall in state.global_times:
-                    assert(intervall[0] <= intervall[1])
+                # for intervall in state.global_times:
+                #     assert(intervall[0] <= intervall[1])
 
                 # merge global and local times into merged lists
                 state.global_times_merged.extend(state.global_times)

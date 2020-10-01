@@ -49,10 +49,11 @@
 				}
 			],
 			"isrs": [
+
 				{
-					"name": "Interrupt1",
+					"name": "Interrupt2",
 					"category": 2,
-					"priority": 10
+					"priority": 20
 				}
 			]
 		},
