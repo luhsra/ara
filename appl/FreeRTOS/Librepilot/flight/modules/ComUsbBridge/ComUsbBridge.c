@@ -79,7 +79,11 @@ static bool bridge_enabled = false;
  * \return 0 on success
  */
 
+#ifdef ARA_MOCK_UNROLL_MODINIT
+int32_t comUsbBridgeStart(void)
+#else
 static int32_t comUsbBridgeStart(void)
+#endif
 {
     if (bridge_enabled) {
         // Start tasks
@@ -97,7 +101,11 @@ static int32_t comUsbBridgeStart(void)
  * \return -1 if initialisation failed
  * \return 0 on success
  */
+#ifdef ARA_MOCK_UNROLL_MODINIT
+int32_t comUsbBridgeInitialize(void)
+#else
 static int32_t comUsbBridgeInitialize(void)
+#endif
 {
     // TODO: Get from settings object
     usart_port = PIOS_COM_BRIDGE;

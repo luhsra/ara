@@ -261,7 +261,11 @@ static void send_update(__attribute__((unused)) UAVObjEvent *ev)
 
 static UAVObjEvent ev;
 
+#ifdef ARA_MOCK_UNROLL_MODINIT
+int32_t osdoutputStart(void)
+#else
 static int32_t osdoutputStart(void)
+#endif
 {
     if (osdoutputEnabled) {
         /* Start a periodic timer to kick sending of an update */
@@ -271,7 +275,11 @@ static int32_t osdoutputStart(void)
     return -1;
 }
 
+#ifdef ARA_MOCK_UNROLL_MODINIT
+int32_t osdoutputInitialize(void)
+#else
 static int32_t osdoutputInitialize(void)
+#endif
 {
     osd_hk_com_id    = PIOS_COM_OSDHK;
 #ifdef MODULE_OSDOUTPUT_BUILTIN

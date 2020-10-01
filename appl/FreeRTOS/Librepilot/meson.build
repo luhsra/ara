@@ -58,6 +58,7 @@ librepilot_cflags = [
 '-DBL_BANK_SIZE=0x00003000',
 '-DBL_DESC_SIZE=',
 '-mllvm', '-inline-threshold=2',
+# '-DARA_MOCK_UNROLL_MODINIT=1', # uncomment to 'unroll' the MODULE_INITIALISE_ALL loops in src code
 ]
 
 

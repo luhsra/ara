@@ -107,6 +107,172 @@ extern int32_t SystemModInitialize(void);
 
 #define SETTINGS_INITCALL(fn)     __define_settings_initcall("settings", fn)
 
+
+#ifdef ARA_MOCK_UNROLL_MODINIT
+//MODULE TASKCREATE
+extern int32_t ActuatorInitialize();
+extern int32_t AltitudeInitialize();
+extern int32_t AttitudeInitialize();
+extern int32_t CameraStabInitialize();
+extern int32_t comUsbBridgeInitialize();
+extern int32_t FirmwareIAPInitialize();
+extern int32_t GPSInitialize();
+extern int32_t ManualControlInitialize();
+extern int32_t osdoutputInitialize();
+extern int32_t ReceiverInitialize();
+extern int32_t StabilizationInitialize();
+extern int32_t SystemModInitialize();
+extern int32_t TelemetryInitialize();
+extern int32_t TxPIDInitialize();
+extern int32_t uavoMSPBridgeInitialize();
+extern int32_t uavoMavlinkBridgeInitialize();
+
+//MODULE START
+extern int32_t ActuatorStart();
+extern int32_t AltitudeStart();
+extern int32_t AttitudeStart();
+extern int32_t CameraStabStart();
+extern int32_t comUsbBridgeStart();
+extern int32_t GPSStart();
+extern int32_t ManualControlStart();
+extern int32_t osdoutputStart();
+extern int32_t ReceiverStart();
+extern int32_t StabilizationStart();
+extern int32_t TelemetryStart();
+extern int32_t TxPIDStart();
+extern int32_t uavoMSPBridgeStart();
+extern int32_t uavoMavlinkBridgeStart();
+
+//SETTTINGS
+extern int32_t AccelGyroSettingsInitialize();
+extern int32_t AccelStateInitialize();
+extern int32_t AccessoryDesiredInitialize();
+extern int32_t ActuatorCommandInitialize();
+extern int32_t ActuatorDesiredInitialize();
+extern int32_t ActuatorSettingsInitialize();
+extern int32_t AttitudeSettingsInitialize();
+extern int32_t AttitudeStateInitialize();
+extern int32_t CameraDesiredInitialize();
+extern int32_t CameraStabSettingsInitialize();
+extern int32_t FirmwareIAPObjInitialize();
+extern int32_t FlightModeSettingsInitialize();
+extern int32_t FlightStatusInitialize();
+extern int32_t FlightTelemetryStatsInitialize();
+extern int32_t GCSTelemetryStatsInitialize();
+extern int32_t GPSPositionSensorInitialize();
+extern int32_t GPSSettingsInitialize();
+extern int32_t GPSVelocitySensorInitialize();
+extern int32_t GyroStateInitialize();
+extern int32_t HwSettingsInitialize();
+extern int32_t ManualControlCommandInitialize();
+extern int32_t ManualControlSettingsInitialize();
+extern int32_t MixerSettingsInitialize();
+extern int32_t MixerStatusInitialize();
+extern int32_t MPUGyroAccelSettingsInitialize();
+extern int32_t ObjectPersistenceInitialize();
+extern int32_t RateDesiredInitialize();
+extern int32_t ReceiverActivityInitialize();
+extern int32_t ReceiverStatusInitialize();
+extern int32_t StabilizationBankInitialize();
+extern int32_t StabilizationDesiredInitialize();
+extern int32_t StabilizationSettingsInitialize();
+extern int32_t StabilizationSettingsBank1Initialize();
+extern int32_t StabilizationSettingsBank2Initialize();
+extern int32_t StabilizationSettingsBank3Initialize();
+extern int32_t StabilizationStatusInitialize();
+extern int32_t SystemAlarmsInitialize();
+extern int32_t SystemSettingsInitialize();
+extern int32_t SystemStatsInitialize();
+extern int32_t TxPIDSettingsInitialize();
+extern int32_t TxPIDStatusInitialize();
+extern int32_t WatchdogStatusInitialize();
+
+
+#define MODULE_INITIALISE_ALL \
+  do {\
+  ActuatorInitialize();\
+  AltitudeInitialize();\
+  AttitudeInitialize();\
+  CameraStabInitialize();\
+  comUsbBridgeInitialize();\
+  FirmwareIAPInitialize();\
+  GPSInitialize();\
+  ManualControlInitialize();\
+  osdoutputInitialize();\
+  ReceiverInitialize();\
+  StabilizationInitialize();\
+  SystemModInitialize();\
+  TelemetryInitialize();\
+  TxPIDInitialize();\
+  uavoMSPBridgeInitialize();\
+  uavoMavlinkBridgeInitialize();\
+  } while (0);
+
+#define MODULE_TASKCREATE_ALL \
+  do {\
+  ActuatorStart();\
+  AltitudeStart();\
+  AttitudeStart();\
+  CameraStabStart();\
+  comUsbBridgeStart();\
+  GPSStart();\
+  ManualControlStart();\
+  osdoutputStart();\
+  ReceiverStart();\
+  StabilizationStart();\
+  TelemetryStart();\
+  TxPIDStart();\
+  uavoMSPBridgeStart();\
+  uavoMavlinkBridgeStart();\
+  } while (0);
+
+#define SETTINGS_INITIALISE_ALL\
+  do {\
+  AccelGyroSettingsInitialize();\
+  AccelStateInitialize();\
+  AccessoryDesiredInitialize();\
+  ActuatorCommandInitialize();\
+  ActuatorDesiredInitialize();\
+  ActuatorSettingsInitialize();\
+  AttitudeSettingsInitialize();\
+  AttitudeStateInitialize();\
+  CameraDesiredInitialize();\
+  CameraStabSettingsInitialize();\
+  FirmwareIAPObjInitialize();\
+  FlightModeSettingsInitialize();\
+  FlightStatusInitialize();\
+  FlightTelemetryStatsInitialize();\
+  GCSTelemetryStatsInitialize();\
+  GPSPositionSensorInitialize();\
+  GPSSettingsInitialize();\
+  GPSVelocitySensorInitialize();\
+  GyroStateInitialize();\
+  HwSettingsInitialize();\
+  ManualControlCommandInitialize();\
+  ManualControlSettingsInitialize();\
+  MixerSettingsInitialize();\
+  MixerStatusInitialize();\
+  MPUGyroAccelSettingsInitialize();\
+  ObjectPersistenceInitialize();\
+  RateDesiredInitialize();\
+  ReceiverActivityInitialize();\
+  ReceiverStatusInitialize();\
+  StabilizationBankInitialize();\
+  StabilizationDesiredInitialize();\
+  StabilizationSettingsInitialize();\
+  StabilizationSettingsBank1Initialize();\
+  StabilizationSettingsBank2Initialize();\
+  StabilizationSettingsBank3Initialize();\
+  StabilizationStatusInitialize();\
+  SystemAlarmsInitialize();\
+  SystemSettingsInitialize();\
+  SystemStatsInitialize();\
+  TxPIDSettingsInitialize();\
+  TxPIDStatusInitialize();\
+  WatchdogStatusInitialize();\
+  } while (0)
+
+#else // ARA_MOCK_UNROLL_MODINIT
 #define MODULE_INITIALISE_ALL \
     { for (initmodule_t *fn = __module_initcall_start; fn < __module_initcall_end; fn++) { \
           if (fn->fn_minit) { \
@@ -131,6 +297,7 @@ extern int32_t SystemModInitialize(void);
           } \
       } \
     }
+#endif //ARA_MOCK_UNROLL_MODINIT
 
 #endif /* USE_SIM_POSIX */
 

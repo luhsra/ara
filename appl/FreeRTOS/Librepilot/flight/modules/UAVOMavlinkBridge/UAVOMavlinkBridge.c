@@ -133,7 +133,11 @@ static void updateSettings();
  * \return -1 if initialisation failed
  * \return 0 on success
  */
+#ifdef ARA_MOCK_UNROLL_MODINIT
+int32_t uavoMavlinkBridgeStart(void)
+#else
 static int32_t uavoMavlinkBridgeStart(void)
+#endif
 {
     if (module_enabled) {
         // Start tasks
@@ -149,7 +153,11 @@ static int32_t uavoMavlinkBridgeStart(void)
  * \return -1 if initialisation failed
  * \return 0 on success
  */
+#ifdef ARA_MOCK_UNROLL_MODINIT
+int32_t uavoMavlinkBridgeInitialize(void)
+#else
 static int32_t uavoMavlinkBridgeInitialize(void)
+#endif
 {
     if (PIOS_COM_MAVLINK) {
         updateSettings();
