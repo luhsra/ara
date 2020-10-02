@@ -17,13 +17,15 @@ namespace ara::step {
 		accept_list = accept_list_template.instantiate(get_name());
 		block_list = block_list_template.instantiate(get_name());
 		translation_map = translation_map_template.instantiate(get_name());
+		use_only_translation_map = use_only_translation_map_template.instantiate(get_name());
 		opts.emplace_back(accept_list);
 		opts.emplace_back(block_list);
 		opts.emplace_back(translation_map);
+		opts.emplace_back(use_only_translation_map);
 	}
 
 	Step::OptionVec ResolveFunctionPointer::get_local_options() {
-		return {accept_list_template, block_list_template, translation_map_template};
+		return {accept_list_template, block_list_template, translation_map_template, use_only_translation_map_template};
 	}
 
 	/**
@@ -122,6 +124,7 @@ namespace ara::step {
 			std::filesystem::path source = std::filesystem::canonical(
 			    std::filesystem::path(scope->getDirectory().str()) / std::filesystem::path(scope->getFilename().str()));
 			unsigned line = debug_loc.getLine();
+			logger.debug() << "Callsite is in " << source << " line: " << line << std::endl;
 			const auto& entry = pointer_targets.find(std::make_pair(source, line));
 			if (entry != pointer_targets.end()) {
 				logger.info() << "Link with predefined functions from translation map." << std::endl;
@@ -134,6 +137,11 @@ namespace ara::step {
 			}
 		} else {
 			logger.warn() << "Cannot find source code location of callsite " << call_inst << std::endl;
+		}
+
+		if (*use_only_translation_map.get()) {
+			logger.debug() << "Callsite not found in translation map, skipping..." << std::endl;
+			return;
 		}
 
 		const llvm::FunctionType* call_type = call_inst->getFunctionType();

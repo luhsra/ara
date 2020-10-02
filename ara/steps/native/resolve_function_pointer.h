@@ -47,9 +47,15 @@ namespace ara::step {
 		option::TOptEntity<option::String> block_list;
 
 		const static inline option::TOption<option::String> translation_map_template{
-		    "translation_map", "Filepath or JSON dictionary with a manual function pointer mapping.\nFor the format "
-		                       "see resolve_function_pointer.h"};
+		    "translation_map", "Filepath or JSON dictionary with a manual function pointer mapping.\n"
+		                       "For the format see resolve_function_pointer.h"};
 		option::TOptEntity<option::String> translation_map;
+
+		const static inline option::TOption<option::Bool> use_only_translation_map_template{
+		    "use_only_translation_map", "Use only the translation_map for pointer resolving and nothing else.",
+		    /* ty = */ option::Bool(),
+		    /* default = */ false};
+		option::TOptEntity<option::Bool> use_only_translation_map;
 
 		virtual void init_options() override;
 
