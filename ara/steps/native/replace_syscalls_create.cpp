@@ -397,6 +397,8 @@ namespace ara::step {
 			return replace_task_create_static(task);
 		} else if (init_type == "initialized") {
 			return replace_task_create_initialized(task);
+		} else if (init_type == "unchanged") {
+			Py_RETURN_NONE;
 		} else {
 			logger.error() << "unknown init type" << init_type << std::endl;
 		}

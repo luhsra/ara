@@ -66,14 +66,21 @@ class StaticFullSystemCalls(GenericSystemCalls):
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
 
     def replace_task_create(self, task_list):
+        static_instantiation = False
+        dynamic_instantiation = False
         self._log.warning("TODO: richtige Bedingung wählen")
         for task in task_list:
             if not task.branch:
                 task.impl.init = 'static'
+                static_instantiation = True
             else:
-                self._log.error("Can't replace initialization (branch=True): %s", instance)
-                raise RuntimeError(instance)
+                self._log.warning("Can't replace initialization (branch=True): %s", task)
+                task.impl.init = 'unchanged'
+                dynamic_instantiation = True
 
+        self.generator.source_files['.freertos_overrides.h'].declarations += [
+            CPPStatement("define", f"configSUPPORT_STATIC_ALLOCATION {int(static_instantiation)}"),
+            CPPStatement("define", f"configSUPPORT_DYNAMIC_ALLOCATION {int(dynamic_instantiation)}"),]
 
 
 

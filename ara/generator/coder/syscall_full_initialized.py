@@ -62,21 +62,32 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         mutex_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
+        all_instances = [self.ara_graph.instances.vp.obj[v]
+                         for v in self.ara_graph.instances.vertices()]
         self.generate_system_code_init_tasks(task_list)
-        self.replace_create(task_list)
-        self.replace_create(queue_list)
-        self.replace_create(mutex_list)
+        self.replace_create(all_instances)
         if len(task_list) > 0 or len(queue_list) > 0:
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
         else:
             self._log.warning("Neither Tasks nor Queues")
 
     def replace_create(self, instance_list):
+        static_instantiation = False
+        dynamic_instantiation = False
         for instance in instance_list:
             if not instance.branch:
                 instance.impl.init = 'initialized'
+                static_instantiation = True
             else:
                 self._log.error("Can't replace initialization (branch=True): %s", instance)
+                self._log.warning("mache weiter")
+                instance.impl.init = 'unchanged'
+                dynamic_instantiation = True
+
+        self.generator.source_files['.freertos_overrides.h']\
+                      .overrides['configSUPPORT_STATIC_ALLOCATION'] = int(static_instantiation)
+        self.generator.source_files['.freertos_overrides.h']\
+                      .overrides['configSUPPORT_DYNAMIC_ALLOCATION'] = int(dynamic_instantiation)
 
 
 
@@ -114,6 +125,7 @@ class InitializedFullSystemCalls(GenericSystemCalls):
             DataObject('PRIVILEGED_DATA TCB_t * volatile',
                        'pxCurrentTCB',
                        ready_lists.current_tcb.address))
+        self.generator.source_files['.freertos_overrides.h'].overrides['ARA_INITIALIZED'] = 1
 
         self.generator.source_file.data_manager.add(
             DataObject('PRIVILEGED_DATA volatile UBaseType_t',

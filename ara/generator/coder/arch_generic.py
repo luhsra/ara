@@ -40,6 +40,7 @@ class VanillaTasksLists(DataObjectArray):
         for prio in range(max_prio):
             # skip tasks where xTaskCreate is called after the scheduler starts
             p_tasks = [t for t in tasks if (t.priority == prio
+                                            and not t.branch
                                             and not t.after_scheduler)]
             self[prio] = self.arch.TaskList(p_tasks, self, prio)
             #print('after insert', self[prio]['xListEnd'].address)

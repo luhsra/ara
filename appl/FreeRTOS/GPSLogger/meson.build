@@ -129,15 +129,30 @@ foreach t : ara_gen_freertos_targets
                              depfile: name_prefix+ '-os.cc.dep',
                              output: [name_prefix + '-os.cc',
                                       name_prefix + '-os.cc.startup.s',
-                                      name_prefix + '-modifiedapp.ll'],
+                                      name_prefix + '-modifiedapp.ll',
+                                      name_prefix + '-os.cc.freertos_overrides.h',
+                                     ],
                              command: get_variable('ara_gen_cmd_' + t)
                             )
   os_target = [ara_target[0], ara_target[1]]
   app_aramodified_ll = ara_target[2]
+  freertos_overrides = ara_target[3]
 
-  lib_freertos_ll_targets = []
-  foreach src_file : get_variable('libfreertos_src_files_' + t)
-    lib_freertos_ll_targets += gpslogger_compile.process(src_file)
+  # compile freertos
+  freertos_ll_targets = []
+  foreach src: freertos_src_list
+    ll_target = custom_target(name_prefix + '-freertos_' + src,
+                              input: get_variable('libfreertos_src_vanilla_' +src),
+                              output: name_prefix + '-freertos_' +src + '.c.ll',
+                              depfile: name_prefix + '-freertos_' +src + '.dep',
+                              depends: ara_target,
+                              command: clang_c +
+                                       gpslogger_includes +
+                                       ir_flags +
+                                       gpslogger_cflags +
+                                       ['-DFREERTOS_OVERRIDES="'+freertos_overrides.full_path()+'"'] +
+                                       clang_flags)
+    freertos_ll_targets += ll_target
   endforeach
 
   os_ll_target = custom_target(name_prefix + '-os.cc.ll',
@@ -151,7 +166,7 @@ foreach t : ara_gen_freertos_targets
 
   app_os = custom_target(name_prefix + '-app_os.ll',
                          input: [app_aramodified_ll, os_ll_target,
-                                 lib_freertos_ll_targets],
+                                 freertos_ll_targets],
                          output: name_prefix + '-os_app.ll',
                          command: llvm_link_cmd)
 

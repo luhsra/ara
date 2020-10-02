@@ -79,6 +79,9 @@ class Generator:
     def open_template(self, name):
         return open(os.path.join(self.template_base, name))
 
+    def add_source_file(self, name):
+        self.source_files[name] = SourceFile(self._log)
+
     def get_dependencies(self):
         self._log.warning("dependencies: %s", self._dependencies)
         return self._dependencies

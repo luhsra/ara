@@ -108,11 +108,14 @@ foreach app : ir_apps + hw_apps
                                depfile: name_prefix+ '-os.cc.dep',
                                output: [name_prefix + '-os.cc',
                                         name_prefix + '-os.cc.startup.s',
-                                        name_prefix + '-modifiedapp.ll'],
+                                        name_prefix + '-modifiedapp.ll',
+                                        name_prefix + '-os.cc.freertos_overrides.h',
+                                       ],
                                command: get_variable('ara_gen_cmd_' + target)
                               )
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
+    freertos_overrides = ara_target[3]
 
     o_target = custom_target(name_prefix + '.o',
                              input : app_aramodified_ll,
@@ -130,8 +133,26 @@ foreach app : ir_apps + hw_apps
                                            ir_flags +
                                            clang_flags)
 
+
+    # compile freertos
+    freertos_ll_targets = []
+    foreach src: freertos_src_list
+      ll_target = custom_target(name_prefix + '-freertos_' + src,
+                                input: get_variable('libfreertos_src_vanilla_' +src),
+                                output: name_prefix + '-freertos_' +src + '.c.ll',
+                                depfile: name_prefix + '-freertos_' +src + '.dep',
+                                depends: ara_target,
+                                command: clang_c +
+                                         libs_includes +
+                                         freertos_default_config +
+                                         ['-DFREERTOS_OVERRIDES="'+freertos_overrides.full_path()+'"'] +
+                                         ir_flags +
+                                         clang_flags)
+      freertos_ll_targets += ll_target
+    endforeach
+
     app_os = custom_target(name_prefix + '-app_os.ll',
-                           input: [app_aramodified_ll, os_ll_target],
+                           input: [app_aramodified_ll, os_ll_target, freertos_ll_targets],
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
 
@@ -152,7 +173,7 @@ foreach app : ir_apps + hw_apps
                               input: [lto_o,
                                       os_target[1], # startup.s
                                       libs_targets,
-                                      get_variable('libfreertos_' + target)],
+                                     ],
                               output: lto_prefix + '.elf',
                               depfile: lto_prefix + '.elf.dep',
                               depend_files: default_linkerscript,

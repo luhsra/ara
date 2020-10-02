@@ -8,6 +8,7 @@
 from .IncludeManager import IncludeManager, Include
 from .DataObjectManager import DataObjectManager
 from .FunctionManager import FunctionManager
+from .SourceElement import CPPStatement
 from ara.generator import tools
 
 class SourceFile:
@@ -18,6 +19,7 @@ class SourceFile:
         self.function_manager = FunctionManager(_log)
         self.definitions = []
         self._log = _log.getChild(self.__class__.__name__)
+        self.overrides = {}
 
     def include(self, filename):
         self.includes.add(Include(filename))
@@ -25,6 +27,7 @@ class SourceFile:
     def source_elements(self):
         return [self.includes.source_elements()] \
             + ["\n"] \
+            + [CPPStatement("define", f"{k} {v}") for k,v in self.overrides.items()]\
             + [self.function_manager.source_element_declarations()] \
             + [self.data_manager.source_element_declaration()] \
             + [self.data_manager.source_element_allocation()] \
