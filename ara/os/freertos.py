@@ -210,6 +210,7 @@ class FreeRTOS(OSBase):
 
         # next abbs
         FreeRTOS.add_normal_cfg(cfg, abb, state)
+        logger.info(f"Create new Task {task_name} (function: {task_function})")
         return state
 
     @syscall(categories={SyscallCategory.create})
