@@ -2,19 +2,16 @@
 	{
 		"source_file": "flight/modules/System/systemmod.c",
 		"line_number": 204,
-		"call_targets": ["ActuatorInitialize", "AltitudeInitialize", "AttitudeInitialize", "CameraStabInitialize", "comUsbBridgeInitialize", "FirmwareIAPInitialize", "GPSInitialize", "ManualControlInitialize", "osdoutputInitialize", "ReceiverInitialize", "StabilizationInitialize", "SystemModInitialize", "TelemetryInitialize", "TxPIDInitialize", "uavoMSPBridgeInitialize", "uavoMavlinkBridgeInitialize" ],
-		"each_once": true
+		"call_targets": ["ActuatorInitialize", "AttitudeInitialize", "CameraStabInitialize", "comUsbBridgeInitialize", "FirmwareIAPInitialize", "GPSInitialize", "ManualControlInitialize", "osdoutputInitialize", "ReceiverInitialize", "StabilizationInitialize", "SystemModInitialize", "TelemetryInitialize", "TxPIDInitialize", "uavoMSPBridgeInitialize", "uavoMavlinkBridgeInitialize" ]
 	},
 	{
 		"source_file": "flight/modules/System/systemmod.c",
 		"line_number": 215,
-		"call_targets": ["ActuatorStart", "AltitudeStart", "AttitudeStart", "CameraStabStart", "comUsbBridgeStart", "GPSStart", "ManualControlStart", "osdoutputStart", "ReceiverStart", "StabilizationStart", "TelemetryStart", "TxPIDStart", "uavoMSPBridgeStart", "uavoMavlinkBridgeStart"],
-		"each_once": true
+		"call_targets": ["ActuatorStart", "AttitudeStart", "CameraStabStart", "comUsbBridgeStart", "GPSStart", "ManualControlStart", "osdoutputStart", "ReceiverStart", "StabilizationStart", "TelemetryStart", "TxPIDStart", "uavoMSPBridgeStart", "uavoMavlinkBridgeStart"]
 	},
 	{
 		"source_file": "flight/targets/boards/coptercontrol/firmware/pios_board.c",
 		"line_number": 164,
-		"call_targets": ["AccelGyroSettingsInitialize", "AccelStateInitialize", "AccessoryDesiredInitialize", "ActuatorCommandInitialize", "ActuatorDesiredInitialize", "ActuatorSettingsInitialize", "AttitudeSettingsInitialize", "AttitudeStateInitialize", "CameraDesiredInitialize", "CameraStabSettingsInitialize", "FirmwareIAPObjInitialize", "FlightModeSettingsInitialize", "FlightStatusInitialize", "FlightTelemetryStatsInitialize", "GCSTelemetryStatsInitialize", "GPSPositionSensorInitialize", "GPSSettingsInitialize", "GPSVelocitySensorInitialize", "GyroStateInitialize", "HwSettingsInitialize", "ManualControlCommandInitialize", "ManualControlSettingsInitialize", "MixerSettingsInitialize", "MixerStatusInitialize", "MPUGyroAccelSettingsInitialize", "ObjectPersistenceInitialize", "RateDesiredInitialize", "ReceiverActivityInitialize", "ReceiverStatusInitialize", "StabilizationBankInitialize", "StabilizationDesiredInitialize", "StabilizationSettingsInitialize", "StabilizationSettingsBank1Initialize", "StabilizationSettingsBank2Initialize", "StabilizationSettingsBank3Initialize", "StabilizationStatusInitialize", "SystemAlarmsInitialize", "SystemSettingsInitialize", "SystemStatsInitialize", "TxPIDSettingsInitialize", "TxPIDStatusInitialize", "WatchdogStatusInitialize", ],
-		"each_once": true
-	},
+		"call_targets": ["AccelGyroSettingsInitialize", "AccelStateInitialize", "AccessoryDesiredInitialize", "ActuatorCommandInitialize", "ActuatorDesiredInitialize", "ActuatorSettingsInitialize", "AttitudeSettingsInitialize", "AttitudeStateInitialize", "CameraDesiredInitialize", "CameraStabSettingsInitialize", "FirmwareIAPObjInitialize", "FlightModeSettingsInitialize", "FlightStatusInitialize", "FlightTelemetryStatsInitialize", "GCSTelemetryStatsInitialize", "GPSPositionSensorInitialize", "GPSSettingsInitialize", "GPSVelocitySensorInitialize", "GyroStateInitialize", "HwSettingsInitialize", "ManualControlCommandInitialize", "ManualControlSettingsInitialize", "MixerSettingsInitialize", "MixerStatusInitialize", "MPUGyroAccelSettingsInitialize", "ObjectPersistenceInitialize", "RateDesiredInitialize", "ReceiverActivityInitialize", "ReceiverStatusInitialize", "StabilizationBankInitialize", "StabilizationDesiredInitialize", "StabilizationSettingsInitialize", "StabilizationSettingsBank1Initialize", "StabilizationSettingsBank2Initialize", "StabilizationSettingsBank3Initialize", "StabilizationStatusInitialize", "SystemAlarmsInitialize", "SystemSettingsInitialize", "SystemStatsInitialize", "TxPIDSettingsInitialize", "TxPIDStatusInitialize", "WatchdogStatusInitialize"]
+	}
 ]
