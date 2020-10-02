@@ -316,7 +316,8 @@ class FlatAnalysis(FlowAnalysis):
 
             # call handling
             elif self._icfg.vp.type[abb] == ABBType.call:
-                self._log.debug(f"Handle call: {self._icfg.vp.name[abb]}")
+                func = self._cfg.vp.name[self._cfg.get_function(abb)]
+                self._log.debug(f"Handle call: {self._icfg.vp.name[abb]} to {func}")
                 handled = False
                 for n in self._icfg.vertex(abb).out_neighbors():
                     if self._is_bad_call_target(n):
