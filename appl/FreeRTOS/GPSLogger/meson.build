@@ -178,12 +178,12 @@ foreach t : ara_gen_freertos_targets
                                depends: [sparse_rle, sparse_rle2],
                                output: lto_prefix + '-os_app.ll',
                                command: get_variable('llvm_lto_cmd_' + lto_version))
-    
+
     lto_o = custom_target(lto_prefix + '-app_os.o',
                           input: lto_app_os,
                           output: lto_prefix + '-os_app.ll.o',
                           command: llc_cmd)
-    
+
     lto_elf = custom_target(lto_prefix + '.elf',
                             input: [lto_o,
                                     os_target[1], # startup.s
@@ -199,13 +199,13 @@ foreach t : ara_gen_freertos_targets
                                      gpslogger_ldflags +
                                      ['-T' + default_linkerscript ] +
                                      clang_flags)
-    
+
     bin_target = custom_target(lto_prefix + '.bin',
                                input: [lto_elf],
                                output: lto_prefix + '.bin',
                                command: objcopy_cmd)
 
-    
+
     run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
     run_target('size_' + lto_prefix, command: [size, lto_elf])
     run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])

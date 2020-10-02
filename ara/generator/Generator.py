@@ -83,7 +83,6 @@ class Generator:
         self.source_files[name] = SourceFile(self._log)
 
     def get_dependencies(self):
-        self._log.warning("dependencies: %s", self._dependencies)
         return self._dependencies
 
     def add_dependency(self, dependency):

@@ -215,7 +215,7 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                    freertos_ll_targets],
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
-    
+
     foreach lto_version : ['none', 'standard', 'rle', 'rle2']
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
@@ -224,18 +224,17 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                  output: lto_prefix + '-os_app.ll',
                                  command: get_variable('llvm_lto_cmd_' + lto_version))
       # -Os ? könnte platzprobleme geben
-      
+
       lto_o = custom_target(lto_prefix + '-app_os.o',
                             input: lto_app_os,
                             output: lto_prefix + '-os_app.ll.o',
                             command: llc_cmd)
-      
+
       lto_elf = custom_target(lto_prefix + '.elf',
                               input: [lto_o,
                                       #os_target[1], # startup.s
                                       files('flight/pios/stm32f10x/startup_stm32f10x_MD_CC.S'),
                                       libsra_ar,
-                                      # get_variable('libfreertos_' + target)
                                      ],
                               output: lto_prefix + '.elf',
                               depfile: lto_prefix + '.elf.dep',
@@ -249,13 +248,13 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                                   )
                                             ] + [default_linkerscript],
                              )
-      
+
     bin_target = custom_target(lto_prefix + '.bin',
                                input: [lto_elf],
                                output: lto_prefix + '.bin',
                                command: objcopy_cmd)
-    
-    
+
+
     run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
     run_target('size_' + lto_prefix, command: [size, lto_elf])
     run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])
@@ -264,9 +263,9 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
     elf_targets += lto_elf
     named_elf_targets += [target + '-' + lto_version, lto_elf]
     profiles_list += ['--profiles', target + '-' + lto_version]
-    
-    
-    
+
+
+
     if get_option('enable_librepilot_tests')
       if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
         test_elf = 'nop'
@@ -308,7 +307,7 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                              'timing_result_raw-' + application_prefix + '.dref'],
                                     console: true,
                                     depends: elf_targets)
-  
+
   run_target('show-timing_result-' + application_prefix + '.dref',
              command: [#'strace',
                ShowGenericTimingExperiment,
