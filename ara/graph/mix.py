@@ -96,3 +96,16 @@ class SigType(enum.IntEnum): # */
 #undef NOT_EQUAL_OPERATOR
 #undef STREAM_OPERATOR
 #undef STANDARD_OPERATORS
+
+
+#undef pass
+#define pass namespace ara::constants { constexpr const char*
+pass
+
+ARA_ENTRY_POINT = "__ara_fake_entry"
+
+#undef pass
+#define pass ;}
+pass
+
+#undef pass

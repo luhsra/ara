@@ -38,8 +38,8 @@ namespace ara::step {
 		LLVMContext& context = module.getContext();
 		IRBuilder<> builder(context);
 		// FunctionType* fty = FunctionType::get(Type::getVoidTy(context), false);
-		Function* fake =
-		    Function::Create(old_entry_point->getFunctionType(), Function::ExternalLinkage, "__ara_fake_entry", module);
+		Function* fake = Function::Create(old_entry_point->getFunctionType(), Function::ExternalLinkage,
+		                                  constants::ARA_ENTRY_POINT, module);
 		BasicBlock* bb = BasicBlock::Create(context, "entry", fake);
 		builder.SetInsertPoint(bb);
 
@@ -63,7 +63,7 @@ namespace ara::step {
 		}
 		logger.debug() << "new entry: " << *fake << std::endl;
 
-		llvm::json::Value v(llvm::json::Object{{"entry_point", "__ara_fake_entry"}});
+		llvm::json::Value v(llvm::json::Object{{"entry_point", constants::ARA_ENTRY_POINT}});
 		step_manager.change_global_config(v);
 	}
 } // namespace ara::step
