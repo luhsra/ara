@@ -34,7 +34,7 @@ namespace ara::step {
 	 *     }
 	 * ]
 	 * Interpreted as: The callsite in /path/to/source_file.c line 5 calls either function_name_1 or function_name_2.
-	 * The source_file path must either be absolute or relative to the working directory of the ARA invocation.
+	 * The source_file path must either be absolute or relative to the directory, where the JSON file lays.
 	 */
 	class ResolveFunctionPointer : public ConfStep<ResolveFunctionPointer> {
 	  private:
