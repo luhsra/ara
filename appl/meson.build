@@ -52,6 +52,7 @@ hw_apps = [
   'simple_mutex_constructor',
   # 'simple_pios_modules', # mini version of the librepilot/pios module system for task creation
   'simple_lazy_create',
+  'simple_runtime_create',
   'timing_xTaskCreate-preScheduler',
   'timing_xTaskCreate-postScheduler',
   'timing_xQueueCreate',
