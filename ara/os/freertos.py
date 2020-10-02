@@ -191,7 +191,7 @@ class FreeRTOS(OSBase):
         task_handle_p = p_get_argument(5, raw_value=True)
 
         v = state.instances.add_vertex()
-        state.instances.vp.label[v] = task_name
+        state.instances.vp.label[v] = f"Task: {task_name} ({task_function})"
 
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
