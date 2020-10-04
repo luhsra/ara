@@ -3,6 +3,7 @@ from .os_base import OSBase
 
 import pyllco
 import functools
+import html
 
 import ara.graph as _graph
 from ara.graph import CallPath, SyscallCategory, SigType
@@ -50,6 +51,21 @@ class Task:
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+
+    def as_dot(self):
+        wanted_attrs = ["name", "function", "stack_size", "parameters",
+                        "priority", "handle_p", "branch", "after_scheduler",
+                        "is_regular"]
+        attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
+                                 for k, v in attrs])
+
+        return {
+            "shape": "box",
+            "fillcolor": "#6fbf87",
+            "style": "filled",
+            "sublabel": sublabel
+        }
 
 # TODO make this a dataclass once we use Python 3.7
 class Queue:

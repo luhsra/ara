@@ -113,10 +113,33 @@ class Printer(Step):
         name = self._print_init()
 
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
+
+        default_fontsize = 14
+        default_fontsize_diff = 2
+
         for instance in self._graph.instances.vertices():
+            inst_obj = self._graph.instances.vp.obj[instance]
+            if inst_obj and hasattr(inst_obj, 'as_dot'):
+                attrs = inst_obj.as_dot()
+            else:
+                attrs = {}
+            if "label" in attrs:
+                del attrs["label"]
+            attrs["fontsize"] = attrs.get("fontsize", 14)
+
+            label = f"<{self._graph.instances.vp.label[instance]}<br/>{{}}>"
+            sublabel = attrs.get("sublabel", "")
+            if len(sublabel) > 0:
+                size = attrs["fontsize"] - default_fontsize_diff
+                sublabel = f"<font point-size='{size}'>{sublabel}</font>"
+            label = label.format(sublabel)
+            if "sublabel" in attrs:
+                del attrs["sublabel"]
+
             dot_node = pydot.Node(
                 str(hash(instance)),
-                label=self._graph.instances.vp.label[instance],
+                label=label,
+                **attrs
             )
             dot_graph.add_node(dot_node)
         for edge in self._graph.instances.edges():
