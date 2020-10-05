@@ -534,7 +534,7 @@ class MultiSSE(FlowAnalysis):
         new_states = []
 
         def calc_intersection(timings1, timings2):
-            new_times = []
+            intersection = []
             for intervall_s in timings1:
                 for intervall_n in timings2:
 
@@ -542,8 +542,9 @@ class MultiSSE(FlowAnalysis):
                     if not (intervall_s[0] >= intervall_n[1] or intervall_n[0] >= intervall_s[1]):
                         new_min = max(intervall_s[0], intervall_n[0])
                         new_max = min(intervall_s[1], intervall_n[1])
-                        new_times.append((new_min, new_max))
-            return new_times
+                        assert new_min < new_max, f"intervalls: {intervall_s}, {intervall_n}"
+                        intersection.append((new_min, new_max))
+            return intersection
 
         for cpu, sync_list in metastate.sync_states.items():
             for state in sync_list:
@@ -663,16 +664,32 @@ class MultiSSE(FlowAnalysis):
                         s_state = graph.vp.state[graph.get_vertices()[0]]
                         n_state = new_state.state_graph[cpu].vp.state[new_state.state_graph[cpu].get_vertices()[0]]
                         for intervall in n_state.global_times:
-                            if intervall not in s_state.global_times:
+                            # check if the global time intervalls are not already in the global times merged
+                            # only append those intervalls that are "new" to the existing state
+                            is_in_merged_times = False
+                            for intervall_m in s_state.global_times_merged:
+                                if intervall_m[0] <= intervall[0] and intervall_m[1] > intervall[0]:
+                                    if intervall[1] <= intervall_m [1]:
+                                        is_in_merged_times = True
+                                        break
+                            
+                            if not is_in_merged_times:
                                 s_state.global_times.append(intervall)
                         
-                        intersection = calc_intersection(s_state.global_times, s_state.global_times_merged)
-                        s_state.global_times.sort(key=lambda x: x[0])
-                        intersection.sort(key=lambda x: x[0])
-                        if s_state.global_times != intersection:
-                            # print(f"Merged: {s_state.global_times_merged}")
-                            # print(f"Global: {s_state.global_times}")
+                        if len(s_state.global_times) > 0:
                             update_timings = True
+
+                            # if intervall not in s_state.global_times:
+                            #     s_state.global_times.append(intervall)
+                        
+                        # check if there are new global times to explore for the found metastate
+                        # intersection = calc_intersection(s_state.global_times, s_state.global_times_merged)
+                        # s_state.global_times.sort(key=lambda x: x[0])
+                        # intersection.sort(key=lambda x: x[0])
+                        # if s_state.global_times != intersection:
+                        #     # print(f"Merged: {s_state.global_times_merged}")
+                        #     # print(f"Global: {s_state.global_times}")
+                        #     update_timings = True
 
                     if update_timings :
                         self.run_sse(sstg_state)
@@ -982,7 +999,12 @@ class MultiSSE(FlowAnalysis):
                         else:
                             for intervall in state.global_times.copy():
                                 new_min_time = intervall[0] + min_time
-                                new_max_time = intervall[1] + max_time          
+                                new_max_time = intervall[1] + max_time
+
+                                # because of intersecting global times for metastates, it can happen, that a new min time can be bigger than the new max time
+                                # a better way of fixing this is that calculation times should be stored in the states so that the min time for the abb is shorter
+                                if new_min_time >= new_max_time:
+                                    new_min_time = intervall[0]          
 
                                 # skip this intervall if it is about to cross the event timer
                                 if intervall[1] in state.passed_events and new_min_time >= intervall[1]:
@@ -993,6 +1015,7 @@ class MultiSSE(FlowAnalysis):
                                        new_max_time = passed_event
                                        break
                                 
+                                assert new_min_time < new_max_time, f"{new_min_time}, {new_max_time}, {intervall}"
                                 new_state.global_times.append((new_min_time, new_max_time))
                         
                         # debug global times
