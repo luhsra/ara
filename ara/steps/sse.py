@@ -984,64 +984,58 @@ class MultiSSE(FlowAnalysis):
                     if new_state in new_states:
                         new_state.global_times = []
 
+                    max_time = math.inf
                     if new_task is not None:
                         abb = new_state.abbs[new_task.name] 
                         max_time = Timings.get_max_time(new_state.cfg, abb, context)
 
-                        # update all local intervalls
-                        if new_state in new_states:
-                            for intervall in state.local_times:
-                                new_state.local_times.append((intervall[0] + min_time, intervall[1] + max_time))
-                        
-                        # update all global intervalls
-                        if new_state.from_event:
-                            new_state.global_times.append((new_state.passed_events[-1], new_state.passed_events[-1] + max_time))
-                        else:
-                            for intervall in state.global_times.copy():
-                                new_min_time = intervall[0] + min_time
-                                new_max_time = intervall[1] + max_time
-
-                                # because of intersecting global times for metastates, it can happen, that a new min time can be bigger than the new max time
-                                # a better way of fixing this is that calculation times should be stored in the states so that the min time for the abb is shorter
-                                if new_min_time >= new_max_time:
-                                    new_min_time = intervall[0]          
-
-                                # skip this intervall if it is about to cross the event timer
-                                if intervall[1] in state.passed_events and new_min_time >= intervall[1]:
-                                    continue
-
-                                for passed_event in new_state.passed_events:
-                                    if new_min_time < passed_event and new_max_time > passed_event:
-                                       new_max_time = passed_event
-                                       break
-                                
-                                assert new_min_time < new_max_time, f"{new_min_time}, {new_max_time}, {intervall}"
-                                new_state.global_times.append((new_min_time, new_max_time))
-                        
-                        # debug global times
-                        # for intervall in new_state.global_times:
-                        #     assert(intervall[0] <= intervall[1])
-
-                        # remove new state if it has no time intervalls
-                        if new_state in new_states and len(new_state.global_times) == 0:
-                            new_states.remove(new_state)
+                    # update all local intervalls
+                    if new_state in new_states:
+                        for intervall in state.local_times:
+                            new_state.local_times.append((intervall[0] + min_time, intervall[1] + max_time))
                     
-                    # copy passed events
-                    # if new_state not in new_states:
-                    #     for event in state.passed_events:
-                    #         if event not in new_state.passed_events:
-                    #             new_state.passed_events.append(event)
-                    #     new_state.passed_events.sort()
+                    # update all global intervalls
+                    if new_state.from_event:
+                        new_state.global_times.append((new_state.passed_events[-1], new_state.passed_events[-1] + max_time))
+                    else:
+                        for intervall in state.global_times.copy():
+                            new_min_time = intervall[0] + min_time
+                            new_max_time = intervall[1] + max_time
+
+                            # because of intersecting global times for metastates, it can happen, that a new min time can be bigger than the new max time
+                            # a better way of fixing this is that calculation times should be stored in the states so that the min time for the abb is shorter
+                            if new_min_time >= new_max_time:
+                                new_min_time = intervall[0]          
+
+                            # skip this intervall if it is about to cross the event timer
+                            if intervall[1] in state.passed_events and new_min_time >= intervall[1]:
+                                continue
+
+                            for passed_event in new_state.passed_events:
+                                if new_min_time < passed_event and new_max_time > passed_event:
+                                    new_max_time = passed_event
+                                    break
+                            
+                            assert new_min_time < new_max_time, f"{new_min_time}, {new_max_time}, {intervall}"
+                            new_state.global_times.append((new_min_time, new_max_time))
+                    
+                    # debug global times
+                    # for intervall in new_state.global_times:
+                    #     assert(intervall[0] <= intervall[1])
+
+                    # remove new state if it has no time intervalls
+                    if new_state in new_states and len(new_state.global_times) == 0:
+                        new_states.remove(new_state)
                 
                 # for intervall in state.global_times:
                 #     assert(intervall[0] <= intervall[1])
 
-                # merge global and local times into merged lists
-                state.global_times_merged.extend(state.global_times)
-                state.local_times_merged.extend(state.local_times)
-                state.merge_times()
-                state.local_times = []
-                state.global_times = []
+        # merge global and local times into merged lists
+        state.global_times_merged.extend(state.global_times)
+        state.local_times_merged.extend(state.local_times)
+        state.merge_times()
+        state.local_times = []
+        state.global_times = []
 
         return new_states
 
@@ -1066,11 +1060,12 @@ class MultiSSE(FlowAnalysis):
                 
                 s_state = entry_states[cpu]
 
-                s_abb = s_state.abbs[s_state.get_scheduled_instance().name]
-                t_abb = t_state.abbs[t_state.get_scheduled_instance().name]
-                
-                if s_abb != t_abb:
-                    add_edge(s_abb, t_abb)
+                if s_state.get_scheduled_instance() is not None and t_state.get_scheduled_instance() is not None:
+                    s_abb = s_state.abbs[s_state.get_scheduled_instance().name]
+                    t_abb = t_state.abbs[t_state.get_scheduled_instance().name]
+                    
+                    if s_abb != t_abb:
+                        add_edge(s_abb, t_abb)
         
         # add all gcfg edges that are the result of syscalls only affecting a single cpu
         for meta_vertex in self.sstg.vertices():

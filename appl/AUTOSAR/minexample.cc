@@ -31,15 +31,15 @@ ISR2(Interrupt2) {
 TASK(TaskA) {
     doSomethingBefore();
     DisableAllInterrupts();
-    // if (getBool()) {
-    //     ActivateTask(TaskF);
-    //     // doSomethingAfter();
-    // }
+    if (getBool()) {
+        ActivateTask(TaskD);
+        // doSomethingAfter();
+    }
     EnableAllInterrupts();
     // for (int i = 0; i < 12; i++) {   
     //     doSomethingAfter();
     // }
-    ActivateTask(TaskD);
+    // ActivateTask(TaskD);
     TerminateTask();
 }
 
@@ -56,12 +56,12 @@ TASK(TaskF) {
 }
 
 TASK(TaskC) {
-    while(true) {
-        doSomethingC();
-        ActivateTask(TaskF);
-    }
-    // ActivateTask(TaskF);
-    // doSomethingC();
+    // while(true) {
+    //     doSomethingC();
+    //     ActivateTask(TaskF);
+    // }
+    ActivateTask(TaskF);
+    doSomethingC();
     TerminateTask();
 }
 
