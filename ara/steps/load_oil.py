@@ -9,7 +9,7 @@ from .autosar import Task, Counter, Alarm, AlarmAction, ISR
 import graph_tool
 
 DISABLE_ALARMS = True
-DISABLE_ISRS = True
+DISABLE_ISRS = False
 
 class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
@@ -143,11 +143,18 @@ class LoadOIL(Step):
 
                     i_function_name = "AUTOSAR_ISR_" + isr["name"]
                     i_function = g.cfg.get_function_by_name(i_function_name)
+
+                    group = []
+                    for name in isr["group"]:
+                        task = find_instance_by_name(name, Task)
+                        group.append(task)
+
                     instances.vp.obj[i] = ISR(i_function_name,
                                             cpu_id,
                                             isr["category"],
                                             isr["priority"],
-                                            i_function)
+                                            i_function,
+                                            group)
 
                     # trigger other steps
                     self._step_manager.chain_step({"name": "ValueAnalysis",
