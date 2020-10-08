@@ -25,7 +25,7 @@ TaskHandle_t t2_handle;
 QueueHandle_t mutex;
 
 volatile int i = 0;
-void vTask2(void * param) {
+static void vTask2(void * param) {
     STORE_TIME_MARKER(task2_go);
     for (int i = 0; i < 3; ++i) {
         kout << 'b';

@@ -375,6 +375,11 @@ namespace ara::step {
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
 			return PyErr_Format(PyExc_RuntimeError, "wrong function found %s", old_func->getName().str().data());
 		}
+		// make task function linkable for the tcb and stack
+		Function* taskFN = dyn_cast<Function>(old_create_call->getArgOperand(0));
+		if (!taskFN->hasExternalLinkage()) {
+			taskFN->setLinkage(GlobalValue::ExternalLinkage);
+		}
 
 		IRBuilder<> Builder(module.getContext());
 		Builder.SetInsertPoint(old_create_call);
