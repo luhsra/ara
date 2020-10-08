@@ -1,4 +1,4 @@
-from .os_util import syscall, get_argument
+from .os_util import syscall, get_argument, assign_id
 from .os_base import OSBase
 
 import pyllco
@@ -15,7 +15,7 @@ logger = get_logger("FreeRTOS")
 class Task:
     uid_counter = 0
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
-                 priority, handle_p, abb, branch, is_regular=True):
+                 priority, handle_p, call_path, abb, branch, is_regular=True):
         self.cfg = cfg
         self.entry_abb = entry_abb
         self.name = name
@@ -24,6 +24,7 @@ class Task:
         self.parameters = parameters
         self.__priority = priority
         self.handle_p = handle_p
+        self.call_path = call_path
         self.abb = abb
         self.is_regular = is_regular
         self.uid = Task.uid_counter
@@ -63,10 +64,25 @@ class Task:
             "sublabel": sublabel
         }
 
+    def get_maximal_id(self):
+        handler_name = self.handle_p.get_name() if self.handle_p else "-"
+        return '.'.join(map(str, ["Task",
+                                  self.name,
+                                  self.function,
+                                  self.priority,
+                                  self.stack_size,
+                                  self.is_regular,
+                                  self.cfg.vp.name[self.abb],
+                                  handler_name,
+                                  self.parameters,
+                                  self.call_path.print(call_site=True)]))
+
+
 # TODO make this a dataclass once we use Python 3.7
 class Queue:
     uid_counter = 0
-    def __init__(self, cfg, name, handler, length, size, abb, q_type, branch):
+    def __init__(self, cfg, name, handler, length, size, abb, q_type,
+                 call_path, branch):
         self.cfg = cfg
         self.name = name
         self.handler = handler
@@ -75,6 +91,7 @@ class Queue:
         self.abb = abb
         self.uid = Queue.uid_counter
         self.q_type = q_type
+        self.call_path = call_path
         Queue.uid_counter += 1
         FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=branch)
         FreeRTOS.malloc_heap(length, size, maybe=branch)
@@ -95,11 +112,19 @@ class Queue:
             "sublabel": sublabel
         }
 
+    def get_maximal_id(self):
+        return '.'.join(map(str, ["Queue",
+                                  self.name,
+                                  self.length,
+                                  self.size,
+                                  self.handler,
+                                  self.call_path.print(call_site=True)]))
+
 
 # TODO make this a dataclass once we use Python 3.7
 class Mutex:
     uid_counter = 0
-    def __init__(self, cfg, name, handler, m_type, abb, branch):
+    def __init__(self, cfg, name, handler, m_type, abb, call_path, branch):
         self.cfg = cfg
         self.name = name
         self.handler = handler
@@ -108,6 +133,7 @@ class Mutex:
         self.uid = Queue.uid_counter
         self.size = 0
         self.length = 1
+        self.call_path = call_path
         Mutex.uid_counter += 1
         FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=branch)
 
@@ -126,6 +152,13 @@ class Mutex:
             "style": "filled",
             "sublabel": sublabel
         }
+
+    def get_maximal_id(self):
+        return '.'.join(map(str, ["Mutex",
+                                  self.name,
+                                  self.m_type,
+                                  self.handler,
+                                  self.call_path.print(call_site=True)]))
 
 
 class FreeRTOS(OSBase):
@@ -230,11 +263,14 @@ class FreeRTOS(OSBase):
                                          parameters=task_parameters,
                                          priority=task_priority,
                                          handle_p=task_handle_p,
+                                         call_path=cp,
                                          abb=abb,
                                          branch=state.branch)
         state.instances.vp.branch[v] = state.branch
         state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = state.branch
+        state.instances.vp.unique[v] = not state.branch
+
+        assign_id(state.instances, v)
 
         state.next_abbs = []
 
@@ -250,6 +286,8 @@ class FreeRTOS(OSBase):
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
 
+        cp = state.call_path
+
         #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
         state.instances.vp.obj[v] = Task(cfg, None,
                                          function='prvIdleTask',
@@ -258,12 +296,15 @@ class FreeRTOS(OSBase):
                                          parameters=0,
                                          priority=0,
                                          handle_p=0,
+                                         call_path=cp,
                                          abb=abb,
                                          branch=state.branch,
                                          is_regular=False)
         state.instances.vp.branch[v] = state.branch
         state.instances.vp.after_scheduler[v] = False
-        state.instances.vp.unique[v] = state.branch
+        state.instances.vp.unique[v] = not state.branch
+
+        assign_id(state.instances, v)
 
         state.next_abbs = []
         state.scheduler_on = True
@@ -278,7 +319,8 @@ class FreeRTOS(OSBase):
         cp = state.call_path
 
         queue_handler = state.cfg.vp.arguments[abb].get_return_value()
-        handler_name = queue_handler.get_value(raw=True).get_name()
+        queue_handler = queue_handler.get_value(raw=True)
+        handler_name = queue_handler.get_name()
 
         p_get_argument = functools.partial(get_argument, cfg, abb, cp)
         queue_len = p_get_argument(0)
@@ -286,7 +328,7 @@ class FreeRTOS(OSBase):
         q_type = p_get_argument(2)
 
         v = state.instances.add_vertex()
-        state.instances.vp.label[v] = f"{handler_name}"
+        state.instances.vp.label[v] = f"Queue: {handler_name}"
 
         # TODO: when do we know that this is an unique instance?
         state.instances.vp.obj[v] = Queue(cfg,
@@ -296,11 +338,14 @@ class FreeRTOS(OSBase):
                                           size=queue_item_size,
                                           abb=abb,
                                           q_type=q_type,
+                                          call_path=cp,
                                           branch=state.branch
         )
         state.instances.vp.branch[v] = state.branch
         state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = state.branch
+        state.instances.vp.unique[v] = not state.branch
+
+        assign_id(state.instances, v)
 
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
@@ -313,22 +358,26 @@ class FreeRTOS(OSBase):
         # instance properties
         cp = state.call_path
         mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
-        handler_name = mutex_handler.get_value(raw=True).get_name()
+        mutex_handler = mutex_handler.get_value(raw=True)
+        handler_name = mutex_handler.get_name()
 
         mutex_type = get_argument(cfg, abb, cp, 0)
 
         v = state.instances.add_vertex()
-        state.instances.vp.label[v] = f"{handler_name}"
+        state.instances.vp.label[v] = f"Mutex: {handler_name}"
 
         state.instances.vp.obj[v] = Mutex(cfg,
                                           name=handler_name,
                                           handler=mutex_handler,
                                           m_type=mutex_type,
                                           abb=abb,
+                                          call_path=cp,
                                           branch=state.branch)
         state.instances.vp.branch[v] = state.branch
         state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = state.branch
+        state.instances.vp.unique[v] = not state.branch
+
+        assign_id(state.instances, v)
 
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
@@ -374,7 +423,7 @@ class FreeRTOS(OSBase):
         for v in state.instances.vertices():
             if any([isinstance(state.instances.vp.obj[v], x)
                     for x in [Queue, Mutex]]):
-                if handler == state.instances.vp.obj[v].handler.get(raw=True):
+                if handler == state.instances.vp.obj[v].handler:
                     queue = v
         if queue is None:
             logger.error("Queue handler cannot be found. Ignoring syscall.")

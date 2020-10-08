@@ -1,3 +1,5 @@
+import os.path
+
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 
 def syscall(*args, categories=None, signature=None):
@@ -69,3 +71,30 @@ def get_argument(cfg, abb, call_path, num, raw=False, raw_value=False, can_fail=
         raise UnsuitableArgumentException(f"Expecting {ty} but got {type(value)}")
 
     return value
+
+
+def assign_id(instances, instance):
+    other_ids = [(instances.vp.id[x].split('.'), x)
+                 for x in instances.vertices()
+                 if x != instance]
+
+    target_id = instances.vp.obj[instance].get_maximal_id().split('.')
+
+    longest = 0
+    must_be_longer = None
+    for other_id, inst in other_ids:
+        prefix = os.path.commonprefix([target_id, other_id])
+        assert prefix != target_id, "Cannot find a unique id."
+        longest = max(longest, len(prefix))
+        if len(prefix) == len(other_id):
+            assert must_be_longer is None, "Something went wrong."
+            must_be_longer = inst
+
+    if must_be_longer:
+        other_id = instances.vp.obj[must_be_longer].get_maximal_id().split('.')
+        prefix = os.path.commonprefix([target_id, other_id])
+        assert prefix != target_id and prefix != other_id, "Cannot find a unique id."
+        longest = len(prefix)
+        instances.vp.id[must_be_longer] = '.'.join(other_id[:longest+1])
+
+    instances.vp.id[instance] = '.'.join(target_id[:longest+1])
