@@ -2528,7 +2528,7 @@ void vTaskInternalSetTimeOutState(TimeOut_t* const pxTimeOut) PRIVILEGED_FUNCTIO
 #endif
 
 #if configINCLUDE_ALL_DECLS
-__attribute((weak)) void __decl_all_task() {
+__attribute((weak)) int __decl_all_task() {
   int ret = 0;
   ret |= ((int) eTaskConfirmSleepModeStatus & 0x04) == NULL;
   ret |= ((int) eTaskGetState & 0x04) == NULL;

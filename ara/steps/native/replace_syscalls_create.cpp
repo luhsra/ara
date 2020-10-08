@@ -55,6 +55,11 @@ namespace ara::step {
 			logger.debug() << "found '" << name << "' candidate: " << *fn << std::endl;
 			return fn;
 		}
+		logger.error() << "function declaration '" << name << "' not found!: Candidates are:\n";
+		for (auto& fn : graph.get_module().getFunctionList()) {
+			logger.error() << fn.getName().str() << "\n";
+		}
+		logger.error() << std::endl;
 		logger.error() << "function declaration '" << name << "' not found!" << std::endl;
 		return nullptr;
 	}
