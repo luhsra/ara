@@ -793,7 +793,7 @@ void vApplicationMallocFailedHook(void)
 {
     mallocFailed = true;
     __asm volatile("bkpt 1");
-    HAL_PWR_StopQEMU(0x4eab);
+    /* HAL_PWR_StopQEMU(0x4eab); */
 #if DEBUG_MALLOC_FAILURES
     static volatile bool wait_here = true;
     while (wait_here) {
