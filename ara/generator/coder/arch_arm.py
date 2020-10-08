@@ -69,7 +69,7 @@ class ArmArch(GenericArch):
     def static_stack(self, task):
         self._log.debug("Generating stack for %s", task.name)
         stack = DataObjectArray("StackType_t",
-                                f'{task.name}_{task.uid}_static_stack',
+                                f't{task.name}_{task.uid}_static_stack',
                                 f'{task.stack_size}',
                                 extern_c = True)
         self.generator.source_file.data_manager.add(stack)
@@ -83,7 +83,7 @@ class ArmArch(GenericArch):
             tcb = self.TCB(task, initialized, extern_c=True, name_length=name_length)
         else:
             tcb = DataObject("StaticTask_t",
-                             f'{task.name}_{task.uid}_tcb',
+                             f't{task.name}_{task.uid}_tcb',
                              extern_c = True)
         self.generator.source_file.data_manager.add(tcb)
         task.impl.tcb = tcb
@@ -92,7 +92,7 @@ class ArmArch(GenericArch):
     def initialized_stack(self, task):
         self._log.debug("Generating initialized stack for %s", task.name)
         stack = InstanceDataObject("InitializedStack_t",
-                                   f'{task.name}_{task.uid}_static_stack',
+                                   f't{task.name}_{task.uid}_static_stack',
                                    [f'{task.stack_size}'],
                                    [f'(void *){task.function}'],
                                    extern_c = False)
