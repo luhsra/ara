@@ -403,7 +403,7 @@ namespace ara::step {
 		logger.debug() << "the task: " << task << std::endl;
 		object impl = task.attr("impl");
 		str init_type = extract<str>(impl.attr("init"));
-		str tcb_name = extract<str>(impl.attr("tcb").attr("name"));
+		// str tcb_name = extract<str>(impl.attr("tcb").attr("name"));
 		if (init_type == "static") {
 			return replace_task_create_static(task);
 		} else if (init_type == "initialized") {
@@ -411,7 +411,9 @@ namespace ara::step {
 		} else if (init_type == "unchanged") {
 			Py_RETURN_NONE;
 		} else {
-			logger.error() << "unknown init type" << init_type << std::endl;
+			logger.error() << "unknown init type"
+			               // << init_type
+			               << std::endl;
 		}
 		Py_RETURN_NONE;
 	}

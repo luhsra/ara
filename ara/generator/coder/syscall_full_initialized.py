@@ -38,11 +38,15 @@ class InitializedFullSystemCalls(GenericSystemCalls):
     def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''
         for task in task_list:
+            if task.branch == True:
+                continue
             self.arch_rules.initialized_stack(task)
 
     def generate_data_objects_tcb_mem(self, task_list):
         '''generate the memory for the tcbs'''
         for task in task_list:
+            if task.branch == True:
+                continue
             self.arch_rules.static_unchanged_tcb(task, initialized=True)
             if not task.is_regular and task.name == 'idle_task':
                 self.generator.source_file.data_manager.add(
@@ -84,10 +88,13 @@ class InitializedFullSystemCalls(GenericSystemCalls):
                 instance.impl.init = 'unchanged'
                 dynamic_instantiation = True
 
-        self.generator.source_files['.freertos_overrides.h']\
-                      .overrides['configSUPPORT_STATIC_ALLOCATION'] = int(static_instantiation)
-        self.generator.source_files['.freertos_overrides.h']\
-                      .overrides['configSUPPORT_DYNAMIC_ALLOCATION'] = int(dynamic_instantiation)
+        overrides = self.generator.source_files['.freertos_overrides.h'].overrides
+        overrides['configSUPPORT_STATIC_ALLOCATION'] = int(
+            getattr(overrides, 'configSUPPORT_STATIC_ALLOCATION', False)
+            or static_instantiation)
+        overrides['configSUPPORT_DYNAMIC_ALLOCATION'] = int(
+            getattr(overrides, 'configSUPPORT_DYNAMIC_ALLOCATION', False)
+            or dynamic_instantiation)
 
 
 

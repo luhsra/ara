@@ -31,6 +31,8 @@ cdef class ReplaceSyscallsCreate(NativeStep):
             self._mutex_create_static(mutex)
         elif mutex.impl.init == 'initialized':
             self._mutex_create_initialized(mutex)
+        elif mutex.impl.init == 'unchanged':
+            return
         else:
             raise RuntimeError("unknown init: %s || %s", mutex.impl.init, mutex)
 
@@ -50,6 +52,8 @@ cdef class ReplaceSyscallsCreate(NativeStep):
             self._queue_create_static(queue)
         elif queue.impl.init == 'initialized':
             self._queue_create_initialized(queue)
+        elif queue.impl.init == 'unchanged':
+            return
         else:
             raise RuntimeError("inknown init: %s", queue.impl.init)
 
