@@ -5,6 +5,7 @@ from .option import Option, String, Choice, Bool
 from .step import Step
 
 import pydot
+import html
 import os.path
 
 import graph_tool.draw
@@ -112,13 +113,22 @@ class Printer(Step):
     def print_instances(self):
         name = self._print_init()
 
+        instances = self._graph.instances
+
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
 
         default_fontsize = 14
         default_fontsize_diff = 2
 
-        for instance in self._graph.instances.vertices():
-            inst_obj = self._graph.instances.vp.obj[instance]
+        def p_str(p_map, key):
+            """Convert to a pretty string"""
+            value = p_map[key]
+            if p_map.python_value_type() == bool:
+                value = bool(value)
+            return html.escape(str(value))
+
+        for instance in instances.vertices():
+            inst_obj = instances.vp.obj[instance]
             if inst_obj and hasattr(inst_obj, 'as_dot'):
                 attrs = inst_obj.as_dot()
             else:
@@ -127,10 +137,15 @@ class Printer(Step):
                 del attrs["label"]
             attrs["fontsize"] = attrs.get("fontsize", 14)
 
-            label = f"<{self._graph.instances.vp.label[instance]}<br/>{{}}>"
+            size = attrs["fontsize"] - default_fontsize_diff
+            label = instances.vp.label[instance]
+            graph_attrs = '<br/>'.join([f"<i>{k}</i>: {p_str(v, instance)}"
+                                        for k, v in instances.vp.items()
+                                        if k not in ["label", "obj"]])
+            graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
+            label = f"<{label}<br/>{graph_attrs}<br/><br/>{{}}>"
             sublabel = attrs.get("sublabel", "")
             if len(sublabel) > 0:
-                size = attrs["fontsize"] - default_fontsize_diff
                 sublabel = f"<font point-size='{size}'>{sublabel}</font>"
             label = label.format(sublabel)
             if "sublabel" in attrs:
