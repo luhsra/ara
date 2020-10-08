@@ -82,6 +82,19 @@ class Queue:
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
 
+    def as_dot(self):
+        wanted_attrs = ["name", "handler", "length", "size"]
+        attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
+                                 for k, v in attrs])
+
+        return {
+            "shape": "box",
+            "fillcolor": "#fdbb9b",
+            "style": "filled",
+            "sublabel": sublabel
+        }
+
 
 # TODO make this a dataclass once we use Python 3.7
 class Mutex:
@@ -100,6 +113,19 @@ class Mutex:
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+
+    def as_dot(self):
+        wanted_attrs = ["name", "handler", "m_type"]
+        attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
+                                 for k, v in attrs])
+
+        return {
+            "shape": "box",
+            "fillcolor": "#fdbb9b",
+            "style": "filled",
+            "sublabel": sublabel
+        }
 
 
 class FreeRTOS(OSBase):
