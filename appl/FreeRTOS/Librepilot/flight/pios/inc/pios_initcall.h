@@ -189,9 +189,8 @@ extern int32_t WatchdogStatusInitialize();
 
 
 #define MODULE_INITIALISE_ALL \
-  do {\
+  {\
   ActuatorInitialize();\
-  AltitudeInitialize();\
   AttitudeInitialize();\
   CameraStabInitialize();\
   comUsbBridgeInitialize();\
@@ -206,12 +205,11 @@ extern int32_t WatchdogStatusInitialize();
   TxPIDInitialize();\
   uavoMSPBridgeInitialize();\
   uavoMavlinkBridgeInitialize();\
-  } while (0);
+  };
 
 #define MODULE_TASKCREATE_ALL \
-  do {\
+  {\
   ActuatorStart();\
-  AltitudeStart();\
   AttitudeStart();\
   CameraStabStart();\
   comUsbBridgeStart();\
@@ -224,10 +222,10 @@ extern int32_t WatchdogStatusInitialize();
   TxPIDStart();\
   uavoMSPBridgeStart();\
   uavoMavlinkBridgeStart();\
-  } while (0);
+  };
 
 #define SETTINGS_INITIALISE_ALL\
-  do {\
+  {\
   AccelGyroSettingsInitialize();\
   AccelStateInitialize();\
   AccessoryDesiredInitialize();\
@@ -270,7 +268,7 @@ extern int32_t WatchdogStatusInitialize();
   TxPIDSettingsInitialize();\
   TxPIDStatusInitialize();\
   WatchdogStatusInitialize();\
-  } while (0)
+  };
 
 #else // ARA_MOCK_UNROLL_MODINIT
 #define MODULE_INITIALISE_ALL \
