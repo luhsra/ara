@@ -329,6 +329,14 @@ namespace ara::step {
 		new_args[5] = task_stack;
 		new_args[6] = task_tcb;
 
+		if (new_args[2]->getType() != create_static_fn->getFunctionType()->getParamType(2)) {
+			logger.warning() << "fixing type of " << *new_args[2] << std::endl;
+			CastInst* casted_stacksize =
+			    CastInst::CreateIntegerCast(new_args[2], create_static_fn->getFunctionType()->getParamType(2), false,
+			                                "casted_stacksize", old_create_call);
+			new_args[2] = casted_stacksize;
+		}
+
 		IRBuilder<> Builder(module.getContext());
 		Builder.SetInsertPoint(old_create_call);
 		Value* new_ret = Builder.CreateCall(create_static_fn, new_args, "static_handle");
