@@ -52,7 +52,7 @@ def main():
     parser.add_argument('--oilfile', help="name of oilfile")
     parser.add_argument('--generator_output', metavar="FILE",
                         help="file to store generated OS code")
-    parser.add_argument('--step-settings', metavar="FILE",
+    parser.add_argument('--step-settings', metavar="FILE", action='append',
                         help="settings for individual steps. '-' is STDIN")
     parser.add_argument('--dependency_file',
                         help="file to write make-style dependencies into for "
@@ -84,14 +84,16 @@ def main():
     extra_settings = {}
 
     if args.step_settings:
-        try:
-            if args.step_settings == '-':
-                extra_settings = json.load(sys.stdin)
-            else:
-                with open(args.step_settings) as efile:
-                    extra_settings = json.load(efile)
-        except Exception as e:
-            parser.error(f'File for --step-settings is malformed: {e}')
+        extra_settings = {}
+        for ssettings in args.step_settings:
+            try:
+                if ssettings == '-':
+                    extra_settings = {**extra_settings, **json.load(sys.stdin)}
+                else:
+                    with open(ssettings) as efile:
+                        extra_settings = {**extra_settings, **json.load(efile)}
+            except Exception as e:
+                parser.error(f'File for --step-settings is malformed: {e}')
 
     if extra_settings.get("steps", None) and args.step:
         parser.error("Provide steps either with '--step' or in '--step-settings'.")

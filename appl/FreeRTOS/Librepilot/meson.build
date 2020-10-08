@@ -165,6 +165,7 @@ named_elf_targets = []
 elf_targets = []
 named_plain_elf_targets = []
 named_lto_elf_targets = []
+extra_settings = files('extra_settings.json')
 foreach application_prefix: ['librepilot', 'librepilot_mock']
   foreach t : ara_gen_freertos_targets
     application_ll = get_variable(application_prefix + '_ll')
@@ -177,7 +178,8 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                         name_prefix + '-modifiedapp.ll',
                                         name_prefix + '-os.cc.freertos_overrides.h',
                                        ],
-                               command: get_variable('ara_gen_cmd_' + t)
+                               command: get_variable('ara_gen_cmd_' + t) +
+                                        ['--step-settings', extra_settings]
                               )
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
