@@ -221,6 +221,23 @@ class Callgraph(graph_tool.Graph):
         return node[0]
 
 
+class InstanceGraph(graph_tool.Graph):
+    """Tracks all instances (nodes) with its flow insensitive interactions
+    (edges).
+    """
+    def __init__(self):
+        super().__init__()
+        # vertex properties
+        self.vertex_properties["label"] = self.new_vp("string")
+        self.vertex_properties["obj"] = self.new_vp("object")
+        self.vertex_properties["id"] = self.new_vp("string")
+        self.vertex_properties["branch"] = self.new_vp("bool")
+        self.vertex_properties["after_scheduler"] = self.new_vp("bool")
+        self.vertex_properties["unique"] = self.new_vp("bool")
+
+        self.edge_properties["label"] = self.new_ep("string")
+
+
 class Graph:
     """Container for all data that ARA uses from multiple steps.
 
@@ -242,6 +259,5 @@ class Graph:
         self._init_cfg()
         self.callgraph = Callgraph(self.cfg)
         self.os = None
-        #self.call_graphs = {}
-        self.instances = None
+        self.instances = InstanceGraph()
         self.step_data = {}

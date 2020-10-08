@@ -15,8 +15,7 @@ logger = get_logger("FreeRTOS")
 class Task:
     uid_counter = 0
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
-                 priority, handle_p, abb, branch, after_scheduler,
-                 is_regular=True):
+                 priority, handle_p, abb, branch, is_regular=True):
         self.cfg = cfg
         self.entry_abb = entry_abb
         self.name = name
@@ -26,8 +25,6 @@ class Task:
         self.__priority = priority
         self.handle_p = handle_p
         self.abb = abb
-        self.branch = branch
-        self.after_scheduler = after_scheduler
         self.is_regular = is_regular
         self.uid = Task.uid_counter
         Task.uid_counter += 1
@@ -54,8 +51,7 @@ class Task:
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "stack_size", "parameters",
-                        "priority", "handle_p", "branch", "after_scheduler",
-                        "is_regular"]
+                        "priority", "handle_p", "is_regular"]
         attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
         sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
                                  for k, v in attrs])
@@ -70,16 +66,13 @@ class Task:
 # TODO make this a dataclass once we use Python 3.7
 class Queue:
     uid_counter = 0
-    def __init__(self, cfg, name, handler, length, size, abb, branch,
-                 after_scheduler, q_type):
+    def __init__(self, cfg, name, handler, length, size, abb, q_type, branch):
         self.cfg = cfg
         self.name = name
         self.handler = handler
         self.length = length
         self.size = size
         self.abb = abb
-        self.branch = branch
-        self.after_scheduler = after_scheduler
         self.uid = Queue.uid_counter
         self.q_type = q_type
         Queue.uid_counter += 1
@@ -93,14 +86,12 @@ class Queue:
 # TODO make this a dataclass once we use Python 3.7
 class Mutex:
     uid_counter = 0
-    def __init__(self, cfg, name, handler, m_type, abb, branch, after_scheduler):
+    def __init__(self, cfg, name, handler, m_type, abb, branch):
         self.cfg = cfg
         self.name = name
         self.handler = handler
         self.m_type = m_type
         self.abb = abb
-        self.branch = branch
-        self.after_scheduler = after_scheduler
         self.uid = Queue.uid_counter
         self.size = 0
         self.length = 1
@@ -112,10 +103,6 @@ class Mutex:
 
 
 class FreeRTOS(OSBase):
-    vertex_properties = [('label', 'string', 'instance name'),
-                         ('obj', 'object', 'instance object (e.g. Task)')]
-    edge_properties = [('label', 'string', 'syscall name')]
-
     @staticmethod
     def get_special_steps():
         return ["LoadFreeRTOSConfig"]
@@ -126,10 +113,6 @@ class FreeRTOS(OSBase):
 
     @staticmethod
     def init(state):
-        for prop in FreeRTOS.vertex_properties:
-            state.instances.vp[prop[0]] = state.instances.new_vp(prop[1])
-        for prop in FreeRTOS.edge_properties:
-            state.instances.ep[prop[0]] = state.instances.new_ep(prop[1])
         state.scheduler_on = False
 
     @staticmethod
@@ -222,8 +205,11 @@ class FreeRTOS(OSBase):
                                          priority=task_priority,
                                          handle_p=task_handle_p,
                                          abb=abb,
-                                         branch=state.branch,
-                                         after_scheduler=state.scheduler_on)
+                                         branch=state.branch)
+        state.instances.vp.branch[v] = state.branch
+        state.instances.vp.after_scheduler[v] = state.scheduler_on
+        state.instances.vp.unique[v] = state.branch
+
         state.next_abbs = []
 
         # next abbs
@@ -248,8 +234,11 @@ class FreeRTOS(OSBase):
                                          handle_p=0,
                                          abb=abb,
                                          branch=state.branch,
-                                         after_scheduler=False,
                                          is_regular=False)
+        state.instances.vp.branch[v] = state.branch
+        state.instances.vp.after_scheduler[v] = False
+        state.instances.vp.unique[v] = state.branch
+
         state.next_abbs = []
         state.scheduler_on = True
         return state
@@ -280,10 +269,13 @@ class FreeRTOS(OSBase):
                                           length=queue_len,
                                           size=queue_item_size,
                                           abb=abb,
-                                          branch=state.branch,
-                                          after_scheduler=state.scheduler_on,
                                           q_type=q_type,
+                                          branch=state.branch
         )
+        state.instances.vp.branch[v] = state.branch
+        state.instances.vp.after_scheduler[v] = state.scheduler_on
+        state.instances.vp.unique[v] = state.branch
+
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
@@ -307,8 +299,10 @@ class FreeRTOS(OSBase):
                                           handler=mutex_handler,
                                           m_type=mutex_type,
                                           abb=abb,
-                                          branch=state.branch,
-                                          after_scheduler=state.scheduler_on)
+                                          branch=state.branch)
+        state.instances.vp.branch[v] = state.branch
+        state.instances.vp.after_scheduler[v] = state.scheduler_on
+        state.instances.vp.unique[v] = state.branch
 
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)

@@ -5,7 +5,8 @@ import functools
 
 import pyllco
 
-from ara.graph import ABBType, Graph, CFGView, CFType, CallPath, SyscallCategory
+from ara.graph import (ABBType, Graph, CFGView, CFType, CallPath,
+                       SyscallCategory, InstanceGraph as _InstanceGraph)
 from .step import Step
 from .option import Option, String, Choice
 from ara.os.freertos import Task
@@ -25,7 +26,7 @@ class State:
             next_abbs = []
         self.next_abbs = next_abbs
 
-        self.instances = graph_tool.Graph()
+        self.instances = _InstanceGraph()
         self.call_path = None # call node within the call graph
         self.branch = False # is this state coming from a branch or loop
         self.running = None # what instance (Task or ISR) is currently running
