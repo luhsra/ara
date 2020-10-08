@@ -25,11 +25,14 @@ namespace ara::step {
 			} else {
 				logger.debug() << "handle == 0 --> nothing to do" << std::endl;
 			}
+		} else if (GetElementPtrInst* EP = dyn_cast<GetElementPtrInst>(tcb_ref)) {
+			logger.debug() << "storing getelementptr: " << *EP << std::endl;
+			Builder.CreateStore(the_tcb, EP);
 		} else {
 			// TODO: use ret value. check if handle != null, set handle
 			logger.error()
-			    << "NOT IMLEMENTED: Need to generate runtime checking code for task_handle in xTaskCreate call"
-			    << std::endl;
+			    << "NOT IMLEMENTED: Need to generate runtime checking code for task_handle in xTaskCreate call for "
+			    << *the_tcb << " with " << *tcb_ref << std::endl;
 			return PyErr_Format(PyExc_NotImplementedError,
 			                    "Need to generate runtime checking code for task_handle in xTaskCreate call");
 		}

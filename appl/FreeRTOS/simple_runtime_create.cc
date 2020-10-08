@@ -15,7 +15,10 @@ TIME_MARKER(done_hello_print);
 TIME_MARKER(done_taskCreate);
 TIME_MARKER(done_maybeCreate);
 
-TaskHandle_t handle_zzz;
+struct foo {
+  int a;
+  TaskHandle_t handle_zzz;
+} wrapper;
 TaskHandle_t handle_xxx;
 TaskHandle_t t2_handle;
 
@@ -38,7 +41,7 @@ void print_handles() {
     taskENTER_CRITICAL();
     kout << endl;
     kout << "t1 my_handle: " << xTaskGetCurrentTaskHandle() << endl;
-    kout << "T1 handle: " << handle_zzz << endl;
+    kout << "T1 handle: " << wrapper.handle_zzz << endl;
     taskEXIT_CRITICAL();
     taskENTER_CRITICAL();
     kout << endl;
@@ -84,7 +87,7 @@ int main() {
     mutex = xSemaphoreCreateMutex();
 
     if ((int)main != 0xabcd) {
-      xTaskCreate(vTask1, "zzz", 1000, NULL, 1, &handle_zzz);
+      xTaskCreate(vTask1, "zzz", 1000, NULL, 1, &wrapper.handle_zzz);
       STORE_TIME_MARKER(done_maybeCreate);
     }
     STORE_TIME_MARKER(done_taskCreate);
