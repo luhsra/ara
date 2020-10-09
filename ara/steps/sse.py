@@ -234,7 +234,10 @@ class FlatAnalysis(FlowAnalysis):
 
         entry.call_path = CallPath()
         entry.scheduler_on = self._is_chained_analysis(self._entry_func)
-        entry.running = self._find_running_instance(self._entry_func)
+        instance = self._find_running_instance(self._entry_func)
+        entry.running = instance
+        if instance:
+            entry.branch = self._graph.instances.vp.branch[instance]
 
         return entry
 
