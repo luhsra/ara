@@ -59,7 +59,7 @@ def main():
                              "build system integration")
     parser.add_argument('--ir_output', '-o',
                         help="File to store modified IR into", metavar="FILE")
-    parser.add_argument('-Werr', help="Treat warnings as errors",
+    parser.add_argument('--Werr', help="Treat warnings as errors",
                         action='store_true')
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
