@@ -5,6 +5,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 #include <llvm/Support/raw_ostream.h>
+#include <unordered_set>
 
 namespace boost::detail {
 	std::size_t hash_value(const boost::detail::adj_edge_descriptor<long unsigned int>& edge) {

@@ -6,6 +6,7 @@
 #include <boost/python.hpp>
 #include <cassert>
 #include <exception>
+#include <iostream>
 
 namespace ara::graph {
 	graph_tool::GraphInterface& get_graph(PyObject* py_obj) {
