@@ -61,6 +61,8 @@ def main():
                         help="File to store modified IR into", metavar="FILE")
     parser.add_argument('-Werr', help="Treat warnings as errors",
                         action='store_true')
+    parser.add_argument('--manual-corrections', metavar="FILE",
+                        help="File with manual corrections")
 
     args = parser.parse_args()
 
@@ -98,8 +100,15 @@ def main():
     if extra_settings.get("steps", None) and args.step:
         parser.error("Provide steps either with '--step' or in '--step-settings'.")
 
+    if args.manual_corrections:
+        if args.step:
+            extra_settings["steps"] = [args.step, "ManualCorrections"]
+            args.step = None
+        else:
+            extra_settings["steps"].append("ManualCorrections")
+
     if args.step is None and not extra_settings.get("steps", None):
-        args.step = ['DisplayResultsStep']
+        args.step = ['InstanceGraph']
 
     history = s_manager.execute(vars(args), extra_settings, args.step)
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}" for se in history]))

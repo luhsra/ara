@@ -325,3 +325,5 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
              '--title', application_prefix,],
             )
 endforeach
+
+instance_corrections = files('instance_corrections.json')

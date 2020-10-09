@@ -9,6 +9,7 @@ def provide_steps():
     from .generator import Generator
     from .icfg import ICFG
     from .load_oil import LoadOIL
+    from .manual_corrections import ManualCorrections
     from .printer import Printer
     from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
     from .syscall import Syscall
@@ -28,6 +29,7 @@ def provide_steps():
     yield InteractionAnalysis
     yield LoadOIL
     yield Printer
+    yield ManualCorrections
     yield MultiSSE
     yield Syscall
     yield SysFuncts
