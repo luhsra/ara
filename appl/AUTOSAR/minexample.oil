@@ -40,8 +40,8 @@
 					"name": "Alarm1",
 					"counter": "SystemCounter",
 					"autostart": true,
-					"cycletime": 50,
-					"alarmtime": 50,
+					"cycletime": 100,
+					"alarmtime": 100,
 					"action": {
 						"action": "activatetask",
 						"task": "TaskB"
@@ -54,7 +54,7 @@
 					"name": "Interrupt2",
 					"category": 2,
 					"priority": 20,
-					"group": ["TaskB"]
+					"group": ["TaskB", "TaskF"]
 				}
 			]
 		},
@@ -83,8 +83,28 @@
 					"schedule": true
 				}
 			],
-			"counters": [],
-			"alarms": [],
+			"counters": [
+				{
+					"name": "SystemCounter2",
+					"mincycle": 1,
+					"maxallowedvalue": 1024,
+					"ticksperbase": 1,
+					"secondspertick": 0.001
+				}
+			],
+			"alarms": [
+				{
+					"name": "Alarm2",
+					"counter": "SystemCounter2",
+					"autostart": true,
+					"cycletime": 100,
+					"alarmtime": 50,
+					"action": {
+						"action": "activatetask",
+						"task": "TaskD"
+					}
+				}
+			],
 			"isrs": []
 		}
 	]

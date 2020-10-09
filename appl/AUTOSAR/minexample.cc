@@ -11,6 +11,7 @@ void doSomethingD() { }
 void doSomethingE() { }
 extern bool getBool();
 void handleSomeEvent() { }
+void doCriticalWork() {}
 
 DeclareTask(TaskA);
 DeclareTask(TaskB);
@@ -24,50 +25,39 @@ DeclareTask(TaskF);
 // }
 
 ISR2(Interrupt2) {
-    handleSomeEvent();
     ActivateTask(TaskB);
 }
 
 TASK(TaskA) {
-    doSomethingBefore();
-    DisableAllInterrupts();
-    if (getBool()) {
-        ActivateTask(TaskD);
-        // doSomethingAfter();
-    }
-    EnableAllInterrupts();
-    // for (int i = 0; i < 12; i++) {   
-    //     doSomethingAfter();
-    // }
-    // ActivateTask(TaskD);
+    while(true) {
+        doSomethingBefore();
+    } 
     TerminateTask();
 }
 
 TASK(TaskB) {
-    doSomethingBefore();
-    // ActivateTask(TaskF);
+    DisableAllInterrupts();
+    doCriticalWork();
+    EnableAllInterrupts();
+
     TerminateTask();
 }
 
 TASK(TaskF) {
-    // doSomethingImportant();
-    doSomethingBefore();
+    ActivateTask(TaskB);
     TerminateTask();
 }
 
 TASK(TaskC) {
-    // while(true) {
-    //     doSomethingC();
-    //     ActivateTask(TaskF);
-    // }
-    ActivateTask(TaskF);
-    doSomethingC();
+    while(true) {
+        doSomethingC();
+    }
     TerminateTask();
 }
 
 TASK(TaskD) {
-    doSomethingD();
-    ActivateTask(TaskE);
+    ActivateTask(TaskB);
+
     TerminateTask();
 }
 
