@@ -45,6 +45,7 @@
 
 // private includes
 #include "inc/systemmod.h"
+#include "time_markers.h"
 
 #include <notification.h>
 #ifdef PIOS_INCLUDE_WS2811
@@ -108,6 +109,7 @@ static enum { STACKOVERFLOW_NONE = 0, STACKOVERFLOW_WARNING = 1, STACKOVERFLOW_C
 static bool mallocFailed;
 static HwSettingsData bootHwSettings;
 static FrameType_t bootFrameType;
+TIME_MARKER(done_taskCreate);
 
 volatile int initTaskDone = 0;
 
@@ -217,6 +219,8 @@ static void systemTask(__attribute__((unused)) void *parameters)
     /* start the delayed callback scheduler */
     PIOS_CALLBACKSCHEDULER_Start();
 
+	STORE_TIME_MARKER(done_taskCreate);
+	print_startup_statistics();
     // Register task
     PIOS_TASK_MONITOR_RegisterTask(TASKINFO_RUNNING_SYSTEM, systemTaskHandle);
 
