@@ -1,12 +1,12 @@
 [
 	{
 		"source_file": "flight/modules/System/systemmod.c",
-		"line_number": 204,
+		"line_number": 206,
 		"call_targets": ["ActuatorInitialize", "AttitudeInitialize", "CameraStabInitialize", "comUsbBridgeInitialize", "FirmwareIAPInitialize", "GPSInitialize", "ManualControlInitialize", "osdoutputInitialize", "ReceiverInitialize", "StabilizationInitialize", "SystemModInitialize", "TelemetryInitialize", "TxPIDInitialize", "uavoMSPBridgeInitialize", "uavoMavlinkBridgeInitialize" ]
 	},
 	{
 		"source_file": "flight/modules/System/systemmod.c",
-		"line_number": 215,
+		"line_number": 217,
 		"call_targets": ["ActuatorStart", "AttitudeStart", "CameraStabStart", "comUsbBridgeStart", "GPSStart", "ManualControlStart", "osdoutputStart", "ReceiverStart", "StabilizationStart", "TelemetryStart", "TxPIDStart", "uavoMSPBridgeStart", "uavoMavlinkBridgeStart"]
 	},
 	{
