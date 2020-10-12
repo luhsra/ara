@@ -409,23 +409,29 @@ namespace ara::step {
 	}
 
 	PyObject* ReplaceSyscallsCreate::replace_task_create(PyObject* pyo_task) {
-		boost::python::object task(boost::python::borrowed<>(pyo_task));
-		logger.debug() << "the task: " << task << std::endl;
-		object impl = task.attr("impl");
-		str init_type = extract<str>(impl.attr("init"));
-		// str tcb_name = extract<str>(impl.attr("tcb").attr("name"));
-		if (init_type == "static") {
-			return replace_task_create_static(task);
-		} else if (init_type == "initialized") {
-			return replace_task_create_initialized(task);
-		} else if (init_type == "unchanged") {
+		try {
+			boost::python::object task(boost::python::borrowed<>(pyo_task));
+			logger.debug() << "the task: " << task << std::endl;
+			object impl = task.attr("impl");
+			str init_type = extract<str>(impl.attr("init"));
+			if (init_type == "static") {
+				return replace_task_create_static(task);
+			} else if (init_type == "initialized") {
+				return replace_task_create_initialized(task);
+			} else if (init_type == "unchanged") {
+				Py_RETURN_NONE;
+			} else {
+				logger.error() << "unknown init type"
+				               // << init_type
+				               << std::endl;
+			}
 			Py_RETURN_NONE;
-		} else {
-			logger.error() << "unknown init type"
-			               // << init_type
-			               << std::endl;
+		} catch (const error_already_set&) {
+			PyObject *e, *v, *t;
+			PyErr_Fetch(&e, &v, &t);
+			PyErr_Restore(e, v, t);
+			return NULL;
 		}
-		Py_RETURN_NONE;
 	}
 
 } // namespace ara::step
