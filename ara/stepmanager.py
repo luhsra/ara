@@ -23,8 +23,7 @@ from .steps import provide_steps
 from .steps.step import Step
 from .graph import Graph
 
-from .steps.util import raise_and_error as rae
-
+from .steps.util import raise_and_error as rae, current_step
 
 @dataclass
 class Config:
@@ -170,6 +169,7 @@ class StepManager:
                         exception=StepManagerException)
                 step_inst = self._steps[current.name](self._graph, self)
                 current.step = step_inst
+            current_step.set_wrappee(current.step)
 
             # apply config
             current.all_config = self._get_config(current)
