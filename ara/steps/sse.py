@@ -875,7 +875,7 @@ class MultiSSE(FlowAnalysis):
                     new_states.append(new_state)
 
                 ##################### TIMED EVENTS ######################
-                event_possible = True
+                event_possible = self._icfg.vp.type[abb] != ABBType.syscall
                 found_timed_event = False
                 next_event_time = state.passed_events[-1]
                 found_event_times = []

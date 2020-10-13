@@ -9,9 +9,9 @@ class Timings:
         abb_name = cfg.vp.name[abb]
         if cfg.vp.type[abb] == 0b1:
             return (0, 0)
-        # f = getattr(Timings, str(abb_name) + '_timings', None)
-        # if f is not None:
-        #     return f(context)
+        f = getattr(Timings, str(abb_name) + '_timings', None)
+        if f is not None:
+            return f(context)
         # return (0, math.inf)
         return (4, 6)
     
@@ -26,68 +26,10 @@ class Timings:
         return res[1]
 
     @staticmethod
-    def ABB1_timings(context):
-        return (0, None)
-    
-    @staticmethod
-    def ABB2_timings(context):
-        return (0, None)
-
-    @staticmethod
-    def ABB3_timings(context):
-        return (0, None)
-    
-    def ABB1_timings(context):
-        return (0, None)
-    
-    @staticmethod
     def ABB4_timings(context):
-        return (0, None)
+        return (1, 2)
     
     @staticmethod
-    def ABB5_timings(context):
-        return (0, None)
+    def ABB0_timings(context):
+        return (1, 2)
     
-    @staticmethod
-    def ABB6_timings(context):
-        return (0, None)
-
-    @staticmethod
-    def ABB7_timings(context):
-        return (0, None)
-    
-    @staticmethod
-    def ABB8_timings(context):
-        return (0, None)
-
-    @staticmethod
-    def ABB9_timings(context):
-        return (0, None)
-    
-    @staticmethod
-    def ABB10_timings(context):
-        return (0, None)
-
-    @staticmethod
-    def ABB11_timings(context):
-        return (0, None)
-    
-    @staticmethod
-    def ABB12_timings(context):
-        return (0, None)
-
-    @staticmethod
-    def ABB13_timings(context):
-        return (0, None)
-    
-    @staticmethod
-    def ABB14_timings(context):
-        return (0, None)
-
-    @staticmethod
-    def ABB15_timings(context):
-        return (0, None)
-    
-    @staticmethod
-    def ABB16_timings(context):
-        return (0, None)

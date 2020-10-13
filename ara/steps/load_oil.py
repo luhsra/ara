@@ -8,7 +8,7 @@ from .autosar import Task, Counter, Alarm, AlarmAction, ISR
 
 import graph_tool
 
-DISABLE_ALARMS = False
+DISABLE_ALARMS = True
 DISABLE_ISRS = True
 
 class LoadOIL(Step):

@@ -54,7 +54,7 @@
 					"name": "Interrupt2",
 					"category": 2,
 					"priority": 20,
-					"group": ["TaskB", "TaskF"]
+					"group": []
 				}
 			]
 		},
@@ -72,7 +72,7 @@
 					"activation": 1,
 					"autostart": false,
 					"name": "TaskD",
-					"priority": 2,
+					"priority": 3,
 					"schedule": true
 				},
 				{

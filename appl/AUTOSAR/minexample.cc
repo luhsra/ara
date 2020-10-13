@@ -3,9 +3,7 @@
 void doSomethingBefore() { }
 void doSomethingAfter() { }
 void doSomethingImportant2() { }
-void doSomethingImportant() {
-    doSomethingImportant2();
-}
+void doSomethingImportant() { }
 void doSomethingC() { }
 void doSomethingD() { }
 void doSomethingE() { }
@@ -25,13 +23,13 @@ DeclareTask(TaskF);
 // }
 
 ISR2(Interrupt2) {
-    ActivateTask(TaskB);
+    ActivateTask(TaskD);
 }
 
 TASK(TaskA) {
-    while(true) {
-        doSomethingBefore();
-    } 
+    doSomethingBefore(); //race condition between the runtime of this ABB
+    ActivateTask(TaskD);
+
     TerminateTask();
 }
 
@@ -44,26 +42,33 @@ TASK(TaskB) {
 }
 
 TASK(TaskF) {
-    ActivateTask(TaskB);
-    TerminateTask();
-}
-
-TASK(TaskC) {
     while(true) {
-        doSomethingC();
+        doSomethingAfter();
     }
     TerminateTask();
 }
 
+TASK(TaskC) {
+    doSomethingC(); //and between this ABB
+    ActivateTask(TaskE);
+    TerminateTask();
+}
+
 TASK(TaskD) {
-    ActivateTask(TaskB);
+    ActivateTask(TaskF);
+    while(true) {
+        doSomethingD();
+    }
 
     TerminateTask();
 }
 
 TASK(TaskE) {
-    doSomethingE();
-    ActivateTask(TaskD);
+    ActivateTask(TaskF);
+    while(true) {
+        doSomethingE();
+    }
+    
     TerminateTask();
 }
 
