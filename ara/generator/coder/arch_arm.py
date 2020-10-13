@@ -76,11 +76,15 @@ class ArmArch(GenericArch):
         task.impl.stack = stack
         return stack
 
-    def static_unchanged_tcb(self, task, initialized):
+    def static_unchanged_tcb(self, task):
         self._log.debug("Generating TCB mem for %s", task.name)
-        if initialized:
+        if task.impl.init == 'initialized':
             name_length = self.ara_graph.os.config['configMAX_TASK_NAME_LEN'].get()
-            tcb = self.TCB(task, initialized, extern_c=True, name_length=name_length)
+            try:
+                tcb = self.TCB(task, True, extern_c=True, name_length=name_length)
+            except:
+                task.impl.init == 'static'
+                return self.static_unchanged_tcb(task)
         else:
             tcb = DataObject("StaticTask_t",
                              f't{task.name}_{task.uid}_tcb',
@@ -89,31 +93,49 @@ class ArmArch(GenericArch):
         task.impl.tcb = tcb
         return tcb
 
+    def specialized_stack(self, task):
+        if task.impl.init == 'initialized':
+            return self.initialized_stack(task)
+        elif task.impl.init == 'static':
+            return self.static_stack(task)
+        elif task.impl.init == 'unchanged':
+            return None
+        else:
+            self._log.error(f"unknown init type: {task.impl.init} for {task}")
+
     def initialized_stack(self, task):
         self._log.debug("Generating initialized stack for %s", task.name)
+        try:
+            task_parameters = int(task.parameters)
+        except TypeError:
+            task.impl.init = 'static'
+            return self.static_stack(task)
         stack = InstanceDataObject("InitializedStack_t",
                                    f't{task.name}_{task.uid}_static_stack',
                                    [f'{task.stack_size}'],
-                                   [f'(void *){task.function}'],
+                                   [f'(void *){task.function}', f'(void *){task_parameters}'],
                                    extern_c = False)
         self.generator.source_file.data_manager.add(stack)
         task.impl.stack = stack
         stack.tos = f"((StackType_t*)&{stack.name}) + {task.stack_size} - 17"
         return stack
 
-    def static_unchanged_queue(self, queue, initialized):
+    def static_unchanged_queue(self, queue):
         self._log.debug("Generating Queue: %s", queue.name)
         if int(queue.size) == 0 or int(queue.length) == 0:
             self._log.debug("queue size/length = 0: %s", queue)
             queue.impl.data = self.generator.source_file.data_manager.get_nullptr()
         else:
-            data = DataObjectArray('uint8_t',
-                                   # f'{queue.name}_queue_data',
-                                   f'queue_data_{queue.name}_{queue.uid}',
-                                   queue.size * queue.length)
+            try:
+                size = queue.size * queue.length
+                name = f'queue_data_{queue.name}_{queue.uid}'
+            except:
+                queue.impl.init = 'unchanged'
+                return
+            data = DataObjectArray('uint8_t', name, size)
             self.generator.source_file.data_manager.add(data)
             queue.impl.data = data
-        head = self.QUEUE(queue, initialized, extern_c=True)
+        head = self.QUEUE(queue, extern_c=True)
         self.generator.source_file.data_manager.add(head)
         queue.impl.head = head
 

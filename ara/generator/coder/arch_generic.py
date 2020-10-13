@@ -40,7 +40,7 @@ class VanillaTasksLists(DataObjectArray):
         for prio in range(max_prio):
             # skip tasks where xTaskCreate is called after the scheduler starts
             p_tasks = [t for t in tasks if (t.priority == prio
-                                            and not t.branch
+                                            and t.impl.init == 'initialized'
                                             and not t.after_scheduler)]
             self[prio] = self.arch.TaskList(p_tasks, self, prio)
             #print('after insert', self[prio]['xListEnd'].address)
@@ -110,14 +110,20 @@ class VanillaListHead(StructDataObject):
         self['xListEnd']['pxPrevious'].do_cast = True
 
 class VanillaQueue(StructDataObject):
-    def __init__(self, queue, initialized, **kwargs):
+    def __init__(self, queue, **kwargs):
         StructDataObject.__init__(self,
                                   "Queue_t", f"__queue_head_{queue.name}{queue.uid}",
                                   **kwargs)
         self.queue = queue
         queue.impl.head = self
 
-        if not initialized:
+        if not queue.impl.init == 'initialized':
+            return
+        try:
+            length = queue.length
+            size = queue.size
+        except:
+            queue.impl.init = 'unchanged'
             return
         self['pcHead'] = DataObject('int8_t*', 'pcHead')
         self['pcWriteTo'] = DataObject('int8_t*', 'pcWriteTo')
@@ -128,12 +134,12 @@ class VanillaQueue(StructDataObject):
             self['u']['xQueue'] = StructDataObject('QueuePointers_t', 'xQueue')
             self['u']['xQueue']['pcTail'] = DataObject('int8_t*', 'pcTail')
             self['u']['xQueue']['pcTail'] = (f"{queue.impl.data.address} +"
-                                             f"({queue.length} * {queue.size})")
+                                             f"({length} * {size})")
             self['u']['xQueue']['pcTail'].do_cast = True
             self['u']['xQueue']['pcReadFrom'] = DataObject('int8_t*', 'pcReadFrom')
             self['u']['xQueue']['pcReadFrom'] = (f"{queue.impl.data.address} +"
-                                                 f"(({queue.length} - 1U) *"
-                                                 f"{queue.size})")
+                                                 f"(({length} - 1U) *"
+                                                 f"{size})")
             self['u']['xQueue']['pcReadFrom'].do_cast = True
         elif isinstance(queue, Mutex):
             self['u'] = StructDataObject("NONE", 'u')
@@ -147,8 +153,8 @@ class VanillaQueue(StructDataObject):
             raise RuntimeError(f"unknown queue type: {type(queue)}")
         self['xTasksWaitingToSend'] = VanillaListHead("xTasksWaitingToSend")
         self['xTasksWaitingToReceive'] = VanillaListHead("xTasksWaitingToReceive")
-        self['uxLength'] = queue.length
-        self['uxItemSize'] = queue.size
+        self['uxLength'] = length
+        self['uxItemSize'] = size
         self['cRxLock'] = "queueUNLOCKED"
         self['cTxLock'] = "queueUNLOCKED"
         self['pcHead'].do_cast = True

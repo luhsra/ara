@@ -22,26 +22,34 @@ class StaticFullSystemCalls(GenericSystemCalls):
         mutex_list = [self.ara_graph.instances.vp.obj[v]
                      for v in self.ara_graph.instances.vertices()
                      if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
+        self.mark_specialization_depth()
         self.generate_dataobjects_task_stacks(task_list)
         self.generate_data_objects_tcb_mem(task_list)
         self.generate_data_objects_queue_mem(queue_list, 'static')
         self.generate_data_objects_queue_mem(mutex_list, 'static')
         self.generator.source_file.includes.add(Include('queue.h'))
 
+    def mark_specialization_depth(self):
+        for v in self.ara_graph.instances.vertices():
+            inst = self.ara_graph.instances.vp.obj[v]
+            if inst.unique:
+                inst.impl.init = 'static'
+            else:
+                inst.impl.init = 'unchanged'
+
+
 
     def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''
         for task in task_list:
-            if task.branch:
-                continue
-            self.arch_rules.static_stack(task)
+            self.arch_rules.specialized_stack(task)
 
     def generate_data_objects_tcb_mem(self, task_list):
         '''generate the memory for the tcbs'''
         for task in task_list:
-            if task.branch:
+            if task.impl == 'unchanged':
                 continue
-            self.arch_rules.static_unchanged_tcb(task, initialized=False)
+            self.arch_rules.static_unchanged_tcb(task)
 
     def generate_system_code(self):
         super().generate_system_code()
@@ -54,33 +62,23 @@ class StaticFullSystemCalls(GenericSystemCalls):
         mutex_list = [self.ara_graph.instances.vp.obj[v]
                       for v in self.ara_graph.instances.vertices()
                       if isinstance(self.ara_graph.instances.vp.obj[v], Mutex)]
-
+        all_instances = [self.ara_graph.instances.vp.obj[v]
+                         for v in self.ara_graph.instances.vertices()]
         self._log.debug("Instances: %s", len(list(self.ara_graph.instances.vertices())))
         self._log.debug("Tasks: %s", len(task_list))
         self._log.debug("Queues: %s", len(queue_list))
         self._log.debug("Mutexes: %s", len(mutex_list))
-        self.replace_task_create(task_list)
+        self.mark_init_support(all_instances)
         self.generate_system_code_init_tasks(task_list)
-        config = Include('FreeRTOSConfig.h')
-        config.add_overwrite(CPPStatement('define', 'configSUPPORT_STATIC_ALLOCATION 1'))
-        self.generator.source_file.includes.add(config, 0)
-
         self.generator.source_file.includes.add(Include('FreeRTOS.h'))
         if len(task_list) or len(queue_list) or len(mutex_list):
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
 
-    def replace_task_create(self, task_list):
-        static_instantiation = False
-        dynamic_instantiation = False
-        self._log.warning("TODO: richtige Bedingung wählen")
-        for task in task_list:
-            if not task.branch:
-                task.impl.init = 'static'
-                static_instantiation = True
-            else:
-                self._log.warning("Can't replace initialization (branch=True): %s", task)
-                task.impl.init = 'unchanged'
-                dynamic_instantiation = True
+    def mark_init_support(self, instance_list):
+        static_instantiation = any([inst.impl.init in ['initialized', 'static']
+                                    for inst in instance_list])
+        dynamic_instantiation = any([inst.impl.init == 'unchanged'
+                                     for inst in instance_list])
 
         overrides = self.generator.source_files['.freertos_overrides.h'].overrides
         overrides['configSUPPORT_STATIC_ALLOCATION'] = int(
