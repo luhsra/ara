@@ -40,9 +40,9 @@ class InitializedFullSystemCalls(GenericSystemCalls):
         for v in self.ara_graph.instances.vertices():
             inst = self.ara_graph.instances.vp.obj[v]
             if inst.unique:
-                inst.impl.init = 'initialized'
+                inst.specialization_level = 'initialized'
             else:
-                inst.impl.init = 'unchanged'
+                inst.specialization_level = 'unchanged'
 
     def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''
@@ -52,7 +52,7 @@ class InitializedFullSystemCalls(GenericSystemCalls):
     def generate_data_objects_tcb_mem(self, task_list):
         '''generate the memory for the tcbs'''
         for task in task_list:
-            if task.impl.init in ['initialized', 'static']:
+            if task.specialization_level in ['initialized', 'static']:
                 self.arch_rules.static_unchanged_tcb(task)
             else:
                 continue
@@ -84,9 +84,9 @@ class InitializedFullSystemCalls(GenericSystemCalls):
             self._log.warning("Neither Tasks nor Queues")
 
     def mark_init_support(self, instance_list):
-        static_instantiation = any([inst.impl.init in ['initialized', 'static']
+        static_instantiation = any([inst.specialization_level in ['initialized', 'static']
                                     for inst in instance_list])
-        dynamic_instantiation = any([inst.impl.init == 'unchanged'
+        dynamic_instantiation = any([inst.specialization_level == 'unchanged'
                                      for inst in instance_list])
 
         overrides = self.generator.source_files['.freertos_overrides.h'].overrides

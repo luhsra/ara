@@ -3,7 +3,6 @@ from ara.os.freertos import Task, Queue, Mutex
 class BaseImpl:
     def __init__(self, instance):
         self.instance = instance
-        self.init = None
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items() if k != 'instance']) + '>'
 

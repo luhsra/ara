@@ -33,9 +33,9 @@ class StaticFullSystemCalls(GenericSystemCalls):
         for v in self.ara_graph.instances.vertices():
             inst = self.ara_graph.instances.vp.obj[v]
             if inst.unique:
-                inst.impl.init = 'static'
+                inst.specialization_level = 'static'
             else:
-                inst.impl.init = 'unchanged'
+                inst.specialization_level = 'unchanged'
 
 
 
@@ -75,9 +75,9 @@ class StaticFullSystemCalls(GenericSystemCalls):
             self.generator.ara_step._step_manager.chain_step({'name':'ReplaceSyscallsCreate'})
 
     def mark_init_support(self, instance_list):
-        static_instantiation = any([inst.impl.init in ['initialized', 'static']
+        static_instantiation = any([inst.specialization_level in ['initialized', 'static']
                                     for inst in instance_list])
-        dynamic_instantiation = any([inst.impl.init == 'unchanged'
+        dynamic_instantiation = any([inst.specialization_level == 'unchanged'
                                      for inst in instance_list])
 
         overrides = self.generator.source_files['.freertos_overrides.h'].overrides

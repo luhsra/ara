@@ -27,14 +27,14 @@ cdef class ReplaceSyscallsCreate(NativeStep):
                 self._log.error("unknown instance: %s %s", type(inst), inst)
 
     def handle_mutex(self, mutex):
-        if mutex.impl.init == 'static':
+        if mutex.specialization_level == 'static':
             self._mutex_create_static(mutex)
-        elif mutex.impl.init == 'initialized':
+        elif mutex.specialization_level == 'initialized':
             self._mutex_create_initialized(mutex)
-        elif mutex.impl.init == 'unchanged':
+        elif mutex.specialization_level == 'unchanged':
             return
         else:
-            raise RuntimeError("unknown init: %s || %s", mutex.impl.init, mutex)
+            raise RuntimeError("unknown init: %s || %s", mutex.specialization_level, mutex)
 
     def _mutex_create_static(self, mutex):
         success = deref(self._c_()).replace_mutex_create_static(self._graph.cfg.vp.entry_bb[mutex.abb], mutex.impl.head.name.encode())
@@ -48,14 +48,14 @@ cdef class ReplaceSyscallsCreate(NativeStep):
 
 
     def handle_queue(self, queue):
-        if queue.impl.init == 'static':
+        if queue.specialization_level == 'static':
             self._queue_create_static(queue)
-        elif queue.impl.init == 'initialized':
+        elif queue.specialization_level == 'initialized':
             self._queue_create_initialized(queue)
-        elif queue.impl.init == 'unchanged':
+        elif queue.specialization_level == 'unchanged':
             return
         else:
-            raise RuntimeError("inknown init: %s", queue.impl.init)
+            raise RuntimeError("inknown init: %s", queue.specialization_level)
 
     def _queue_create_static(self, queue):
         success = deref(self._c_()).replace_queue_create_static(self._graph.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode(), queue.impl.data.name.encode())

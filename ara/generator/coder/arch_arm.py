@@ -78,12 +78,12 @@ class ArmArch(GenericArch):
 
     def static_unchanged_tcb(self, task):
         self._log.debug("Generating TCB mem for %s", task.name)
-        if task.impl.init == 'initialized':
+        if task.specialization_level == 'initialized':
             name_length = self.ara_graph.os.config['configMAX_TASK_NAME_LEN'].get()
             try:
                 tcb = self.TCB(task, True, extern_c=True, name_length=name_length)
             except:
-                task.impl.init == 'static'
+                task.specialization_level == 'static'
                 return self.static_unchanged_tcb(task)
         else:
             tcb = DataObject("StaticTask_t",
@@ -94,21 +94,21 @@ class ArmArch(GenericArch):
         return tcb
 
     def specialized_stack(self, task):
-        if task.impl.init == 'initialized':
+        if task.specialization_level == 'initialized':
             return self.initialized_stack(task)
-        elif task.impl.init == 'static':
+        elif task.specialization_level == 'static':
             return self.static_stack(task)
-        elif task.impl.init == 'unchanged':
+        elif task.specialization_level == 'unchanged':
             return None
         else:
-            self._log.error(f"unknown init type: {task.impl.init} for {task}")
+            self._log.error(f"unknown init type: {task.specialization_level} for {task}")
 
     def initialized_stack(self, task):
         self._log.debug("Generating initialized stack for %s", task.name)
         try:
             task_parameters = int(task.parameters)
         except TypeError:
-            task.impl.init = 'static'
+            task.specialization_level = 'static'
             return self.static_stack(task)
         stack = InstanceDataObject("InitializedStack_t",
                                    f't{task.name}_{task.uid}_static_stack',
@@ -130,7 +130,7 @@ class ArmArch(GenericArch):
                 size = queue.size * queue.length
                 name = f'queue_data_{queue.name}_{queue.uid}'
             except:
-                queue.impl.init = 'unchanged'
+                queue.specialization_level = 'unchanged'
                 return
             data = DataObjectArray('uint8_t', name, size)
             self.generator.source_file.data_manager.add(data)

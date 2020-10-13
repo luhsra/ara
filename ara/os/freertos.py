@@ -26,6 +26,11 @@ class FreeRTOSInstance(object):
             return self.__dict__[name]
         except KeyError as ke:
             return current_step._graph.instances.vp[name][self.vidx]
+    def __setattr__(self, name, value):
+        if name in current_step._graph.instances.vp:
+            current_step._graph.instances.vp[name][self.vidx] = value
+        else:
+            self.__dict__[name] = value
 
 
 

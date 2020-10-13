@@ -234,6 +234,7 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["branch"] = self.new_vp("bool")
         self.vertex_properties["after_scheduler"] = self.new_vp("bool")
         self.vertex_properties["unique"] = self.new_vp("bool")
+        self.vertex_properties["specialization_level"] = self.new_vp("string")
 
         self.edge_properties["label"] = self.new_ep("string")
 

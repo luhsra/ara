@@ -40,7 +40,7 @@ class VanillaTasksLists(DataObjectArray):
         for prio in range(max_prio):
             # skip tasks where xTaskCreate is called after the scheduler starts
             p_tasks = [t for t in tasks if (t.priority == prio
-                                            and t.impl.init == 'initialized'
+                                            and t.specialization_level == 'initialized'
                                             and not t.after_scheduler)]
             self[prio] = self.arch.TaskList(p_tasks, self, prio)
             #print('after insert', self[prio]['xListEnd'].address)
@@ -117,13 +117,13 @@ class VanillaQueue(StructDataObject):
         self.queue = queue
         queue.impl.head = self
 
-        if not queue.impl.init == 'initialized':
+        if not queue.specialization_level == 'initialized':
             return
         try:
             length = queue.length
             size = queue.size
         except:
-            queue.impl.init = 'unchanged'
+            queue.specialization_level = 'unchanged'
             return
         self['pcHead'] = DataObject('int8_t*', 'pcHead')
         self['pcWriteTo'] = DataObject('int8_t*', 'pcWriteTo')

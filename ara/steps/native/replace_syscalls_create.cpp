@@ -413,7 +413,7 @@ namespace ara::step {
 			boost::python::object task(boost::python::borrowed<>(pyo_task));
 			logger.debug() << "the task: " << task << std::endl;
 			object impl = task.attr("impl");
-			str init_type = extract<str>(impl.attr("init"));
+			str init_type = extract<str>(task.attr("specialization_level"));
 			if (init_type == "static") {
 				return replace_task_create_static(task);
 			} else if (init_type == "initialized") {
