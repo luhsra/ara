@@ -2,13 +2,14 @@
 import graph_tool
 import copy
 import functools
+import json
 
 import pyllco
 
 from ara.graph import (ABBType, Graph, CFGView, CFType, CallPath,
                        SyscallCategory, InstanceGraph as _InstanceGraph)
 from .step import Step
-from .option import Option, String, Choice
+from .option import Option, String, Bool
 from ara.os.freertos import Task
 from ara.util import VarianceDict
 
@@ -59,6 +60,9 @@ class FlowAnalysis(Step):
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
+    stats = Option(name="stats",
+                   help="Output stats file (Respects dump_prefix).",
+                   ty=Bool())
 
     def new_vertex(self, sstg, state):
         vertex = sstg.add_vertex()
@@ -91,6 +95,8 @@ class FlowAnalysis(Step):
 
         self._step_data = self._get_step_data(set)
 
+        self._stats = { "name": entry_label }
+
         self._cfg = self._graph.cfg
         self._icfg = CFGView(self._graph.cfg, efilt=self._graph.cfg.ep.type.fa == CFType.icf)
         self._lcfg = CFGView(self._graph.cfg, efilt=self._graph.cfg.ep.type.fa == CFType.lcf)
@@ -120,7 +126,19 @@ class FlowAnalysis(Step):
             counter += 1
         self._log.info(f"Analysis needed {counter} iterations.")
 
+        self._stats["iterations"] = counter
+
         self._finish(sstg)
+
+        stats = self.stats.get()
+        if stats:
+            uuid = self._step_manager.get_execution_id()
+            stat_file = f'{uuid}.{entry_label}.statistics.json'
+            stat_file = self.dump_prefix.get() + stat_file
+
+            with open(stat_file, 'w') as f:
+                json.dump(self._stats, f, indent=4)
+
 
 class MultiState:
     def __init__(self, cfg=None, instances=None):
@@ -220,6 +238,7 @@ class FlatAnalysis(FlowAnalysis):
         self._step_data.add(self._entry_func)
 
         self._visited = defaultdict(lambda: defaultdict(lambda: False))
+        self._max_call_depth = 0
 
     def _get_initial_state(self):
         # find main
@@ -302,6 +321,9 @@ class FlatAnalysis(FlowAnalysis):
                 continue
             self._visited[state.call_path][abb] = True
             self._log.debug(f"Handle state {state}")
+            call_depth = len(state.call_path)
+            if self._max_call_depth < call_depth:
+                self._max_call_depth = call_depth
 
             # syscall handling
             if self._icfg.vp.type[abb] == ABBType.syscall:
@@ -371,6 +393,8 @@ class FlatAnalysis(FlowAnalysis):
         return
 
     def _finish(self, sstg):
+        self._log.info(f"Maximal call depth: {self._max_call_depth}")
+        self._stats["maximal_call_depth"] = self._max_call_depth
         if self.dump.get():
             uuid = self._step_manager.get_execution_id()
             dot_file = f'{uuid}.{self._entry_func}.dot'
