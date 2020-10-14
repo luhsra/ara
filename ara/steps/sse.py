@@ -553,7 +553,7 @@ class MultiSSE(FlowAnalysis):
 
                 # get min and max times for the sync syscall
                 context = None # this has to be something useful later on
-                abb = state.abbs[state.get_scheduled_task().name]
+                abb = state.abbs[state.get_scheduled_instance().name]
                 min_time = Timings.get_min_time(state.cfg, abb, context)
 
                 for cpu_other, graph in metastate.state_graph.items():
@@ -591,6 +591,13 @@ class MultiSSE(FlowAnalysis):
                             for vertex in args[0]:
                                 sync_state = state
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
+
+                                # skip combination if next state is handling a syscall
+                                instance = next_state.get_scheduled_instance()
+                                if instance is not None:
+                                    instance_abb = next_state.abbs[instance.name]
+                                    if self._g.cfg.vp.type[instance_abb] == ABBType.syscall:
+                                        continue
 
                                 # calculate new timing intervalls for the new states
                                 new_times = calc_intersection(sync_state.global_times_merged, next_state.global_times_merged)

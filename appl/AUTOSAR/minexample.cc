@@ -23,7 +23,7 @@ DeclareTask(TaskF);
 // }
 
 ISR2(Interrupt2) {
-    ActivateTask(TaskD);
+    ActivateTask(TaskF);
 }
 
 TASK(TaskA) {

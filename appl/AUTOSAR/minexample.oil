@@ -54,7 +54,7 @@
 					"name": "Interrupt2",
 					"category": 2,
 					"priority": 20,
-					"group": []
+					"group": ["TaskF"]
 				}
 			]
 		},

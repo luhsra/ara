@@ -9,7 +9,7 @@ from .autosar import Task, Counter, Alarm, AlarmAction, ISR
 import graph_tool
 
 DISABLE_ALARMS = True
-DISABLE_ISRS = True
+DISABLE_ISRS = False
 
 class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
