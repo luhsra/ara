@@ -77,3 +77,12 @@ class Generator(Step):
             with open(dep_file, 'w') as fd:
                 fd.write(gen.file_prefix + ": ")
                 fd.write("\\\n".join(src_files))
+
+        if self.dump.get():
+            uuid = self._step_manager.get_execution_id()
+            dot_file = f'{uuid}.dot'
+            dot_file = self.dump_prefix.get() + dot_file
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": 'Generated Instances',
+                                           "subgraph": 'instances'})
