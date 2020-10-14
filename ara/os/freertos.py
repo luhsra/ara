@@ -32,13 +32,22 @@ class FreeRTOSInstance(object):
         else:
             self.__dict__[name] = value
 
+    def __repr__(self):
+        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+
+
+    @property
+    def uid(self):
+        return int(self.vidx)
+
 
 
 class Task(FreeRTOSInstance):
     uid_counter = 0
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
                  vidx,
-                 priority, handle_p, call_path, abb, is_regular=True):
+                 priority, handle_p, call_path, abb, is_regular=True,
+                 static_stack=None):
         super().__init__(cfg, abb, call_path, vidx, name)
         self.entry_abb = entry_abb
         self.function = function
@@ -48,6 +57,7 @@ class Task(FreeRTOSInstance):
         self.handle_p = handle_p
         self.is_regular = is_regular
         self.uid = Task.uid_counter
+        self.static_stack = static_stack
         Task.uid_counter += 1
         FreeRTOS.malloc_heap(stack_size, FreeRTOS.config.get('STACK_TYPE_SIZE', None), maybe=self.branch)
         FreeRTOS.malloc_heap(1, FreeRTOS.config.get('TCB_SIZE', None), maybe=self.branch)
@@ -174,6 +184,30 @@ class Mutex(FreeRTOSInstance):
         return '.'.join(map(str, ["Mutex",
                                   self.name,
                                   self.m_type,
+                                  self.handler,
+                                  self.call_path.print(call_site=True)]))
+
+class StreamBuffer(FreeRTOSInstance):
+    def __init__(self, cfg, abb, call_path, vidx, handler, name, size):
+        super().__init__(cfg, abb, call_path, vidx, name)
+        self.size = size
+        self.handler = handler
+    def as_dot(self):
+        wanted_attrs = ["name", "handler", "size"]
+        attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
+                                 for k, v in attrs])
+
+        return {
+            "shape": "box",
+            "fillcolor": "#fd0b9b",
+            "style": "filled",
+            "sublabel": sublabel
+        }
+    def get_maximal_id(self):
+        return '.'.join(map(str, ["StreamBuffer",
+                                  self.name,
+                                  self.size,
                                   self.handler,
                                   self.call_path.print(call_site=True)]))
 
@@ -781,9 +815,38 @@ class FreeRTOS(OSBase):
     def xStreamBufferCreateStatic(cfg, abb, state):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.create},
+             signature=(SigType.value))
     def xStreamBufferGenericCreate(cfg, abb, state):
-        pass
+        state = state.copy()
+        cp = state.call_path
+        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
+
+        handler = state.cfg.vp.arguments[abb].get_return_value().get_value(raw=True)
+        name = handler.get_name()
+        size = p_get_argument(0)
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = f"StreamBuffer: {name}"
+        state.instances.vp.branch[v] = state.branch
+        state.instances.vp.after_scheduler[v] = state.scheduler_on
+        state.instances.vp.unique[v] = not state.branch
+
+        state.instances.vp.obj[v] = StreamBuffer(cfg,
+                                                 abb=abb,
+                                                 call_path=cp,
+                                                 vidx=v,
+                                                 handler=handler,
+                                                 name=name,
+                                                 size=size,
+        )
+
+        assign_id(state.instances, v)
+
+        state.next_abbs = []
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
+
 
     @syscall
     def xStreamBufferIsEmpty(cfg, abb, state):
@@ -846,6 +909,51 @@ class FreeRTOS(OSBase):
                         SigType.symbol, SigType.value, SigType.symbol,
                         SigType.symbol))
     def xTaskCreateStatic(cfg, abb, state):
+        state = state.copy()
+
+        # instance properties
+        cp = state.call_path
+
+        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
+
+        task_function = p_get_argument(0, ty=pyllco.Function).get_name()
+        task_name = p_get_argument(1)
+        task_stack_size = p_get_argument(2)
+        task_parameters = p_get_argument(3, raw_value=True)
+        task_priority = p_get_argument(4)
+        task_stack = p_get_argument(5, raw_value=True)
+        task_handle_p = p_get_argument(6, raw_value=True)
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = f"Task: {task_name} ({task_function})"
+
+        new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
+        assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        state.instances.vp.branch[v] = state.branch
+        state.instances.vp.after_scheduler[v] = state.scheduler_on
+        state.instances.vp.unique[v] = not state.branch
+        state.instances.vp.obj[v] = Task(cfg, new_cfg,
+                                         vidx=v,
+                                         function=task_function,
+                                         name=task_name,
+                                         stack_size=task_stack_size,
+                                         parameters=task_parameters,
+                                         priority=task_priority,
+                                         handle_p=task_handle_p,
+                                         call_path=cp,
+                                         abb=abb,
+                                         static_stack=task_stack,
+        )
+
+        assign_id(state.instances, v)
+
+        state.next_abbs = []
+
+        # next abbs
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        logger.info(f"Create new Task {task_name} (function: {task_function})")
+        return state
         pass
 
     @syscall

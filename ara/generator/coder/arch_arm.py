@@ -94,6 +94,10 @@ class ArmArch(GenericArch):
         return tcb
 
     def specialized_stack(self, task):
+        cts = self.ara_graph.cfg.get_call_targets(task.abb)
+        funcs = [self.ara_graph.cfg.vp.name[f] for f in cts]
+        if 'xTaskCreateStatic' in funcs:
+            task.specialization_level = 'unchanged'
         if task.specialization_level == 'initialized':
             return self.initialized_stack(task)
         elif task.specialization_level == 'static':
