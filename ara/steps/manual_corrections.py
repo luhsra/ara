@@ -17,7 +17,9 @@ class ManualCorrections(Step):
 
     def run(self):
         file_name = self.manual_corrections.get()
-        assert file_name, "Step execution only possible with manual_corrections"
+        if not file_name:
+            self._log.warn("manual_corrections argument not set. Skipping...")
+            return
         with open(file_name) as f:
             corrections = json.load(f)
 
