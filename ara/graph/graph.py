@@ -42,6 +42,8 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["exit_bb"] = self.new_vp("int64_t")
         self.vertex_properties["is_exit"] = self.new_vp("bool")
         self.vertex_properties["is_loop_head"] = self.new_vp("bool")
+        self.vertex_properties["file"] = self.new_vp("string")
+        self.vertex_properties["line"] = self.new_vp("int")
         # vertex properties for Function nodes
         self.vertex_properties["implemented"] = self.new_vp("bool")
         self.vertex_properties["syscall"] = self.new_vp("bool")
@@ -234,6 +236,10 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["branch"] = self.new_vp("bool")
         self.vertex_properties["after_scheduler"] = self.new_vp("bool")
         self.vertex_properties["unique"] = self.new_vp("bool")
+        self.vertex_properties["soc"] = self.new_vp("long")
+        self.vertex_properties["llvm_soc"] = self.new_vp("int64_t")
+        self.vertex_properties["file"] = self.new_vp("string")
+        self.vertex_properties["line"] = self.new_vp("int")
         self.vertex_properties["specialization_level"] = self.new_vp("string")
 
         self.edge_properties["label"] = self.new_ep("string")

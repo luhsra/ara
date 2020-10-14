@@ -2,6 +2,7 @@
 #define LLVM_COMMON
 
 #include <cassert>
+#include <filesystem>
 #include <llvm/IR/Instructions.h>
 #include <llvm/Support/raw_os_ostream.h>
 #include <memory>
@@ -31,6 +32,11 @@ namespace ara {
 	 */
 	bool is_call_to_intrinsic(const llvm::Instruction& inst);
 	bool is_intrinsic(const llvm::Function& func);
+
+	/**
+	 * @brief get source location for an instruction
+	 */
+	std::pair<std::filesystem::path, unsigned> get_source_location(const llvm::Instruction& inst);
 } // namespace ara
 
 #endif

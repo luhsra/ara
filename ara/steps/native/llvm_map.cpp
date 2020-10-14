@@ -15,124 +15,147 @@ using namespace boost::property_tree;
 namespace ara::step {
 
 	namespace {
-		bool get(const std::map<const BasicBlock*, graph::llvmext::BasicBlock> m, const BasicBlock* k,
-		         bool default_value, bool loop) {
-			if (m.find(k) == m.end()) {
-				return default_value;
-			} else {
-				if (loop) {
-					return m.at(k).is_loop_head;
+		template <typename Graph>
+		class LLVMMapImpl {
+		  private:
+			using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
+			using Edge = typename boost::graph_traits<Graph>::edge_descriptor;
+
+			Graph& g;
+			graph::CFG& cfg;
+			graph::GraphData& graph_data;
+			Logger& logger;
+
+			bool get(const std::map<const BasicBlock*, graph::llvmext::BasicBlock> m, const BasicBlock* k,
+			         bool default_value, bool loop) {
+				if (m.find(k) == m.end()) {
+					return default_value;
 				} else {
-					return m.at(k).is_exit_block;
-				}
-			}
-		}
-
-		template <typename Graph>
-		typename boost::graph_traits<Graph>::vertex_descriptor
-		add_abb(Graph& g, graph::CFG& cfg, graph::GraphData& graph_data, std::string name, graph::ABBType type,
-		        const BasicBlock* entry, const BasicBlock* exit,
-		        typename boost::graph_traits<Graph>::vertex_descriptor function, bool is_entry) {
-			auto abb = boost::add_vertex(g);
-			cfg.name[abb] = name;
-			cfg.type[abb] = static_cast<int>(type);
-			cfg.entry_bb[abb] = reinterpret_cast<intptr_t>(entry);
-			cfg.exit_bb[abb] = reinterpret_cast<intptr_t>(exit);
-
-			auto i_edge = boost::add_edge(abb, function, g);
-			cfg.etype[i_edge.first] = static_cast<int>(graph::CFType::a2f);
-
-			auto o_edge = boost::add_edge(function, abb, g);
-			cfg.etype[o_edge.first] = static_cast<int>(graph::CFType::f2a);
-
-			cfg.is_entry[o_edge.first] = is_entry;
-
-			assert(entry == exit);
-			cfg.is_exit[abb] = get(graph_data.basic_blocks, entry, false, false);
-			cfg.is_loop_head[abb] = get(graph_data.basic_blocks, entry, false, true);
-
-			return abb;
-		}
-
-		template <typename Graph>
-		void map_cfg(Graph& g, graph::CFG& cfg, graph::GraphData& graph_data, Logger& logger, bool dump_llvm_functions,
-		             const std::string& prefix) {
-			std::map<const BasicBlock*, typename boost::graph_traits<Graph>::vertex_descriptor> abbs;
-
-			unsigned name_counter = 0;
-
-			for (Function& func : graph_data.get_module()) {
-
-				if (dump_llvm_functions) {
-					// dump LLVM functions as CFG into dot files
-					std::string filename = prefix + func.getName().str() + ".dot";
-					std::error_code ec;
-					llvm::raw_fd_ostream file(filename, ec, sys::fs::OF_Text);
-
-					if (!ec) {
-						llvm::WriteGraph(file, (const Function*)&func, false);
+					if (loop) {
+						return m.at(k).is_loop_head;
 					} else {
-						logger.err() << "  error opening file for writing!" << std::endl;
+						return m.at(k).is_exit_block;
 					}
-				}
-
-				if (is_intrinsic(func)) {
-					continue;
-				}
-				auto function = boost::add_vertex(g);
-				cfg.name[function] = func.getName();
-				cfg.implemented[function] = true;
-				cfg.function[function] = reinterpret_cast<intptr_t>(&func);
-				cfg.is_function[function] = true;
-
-				logger.debug() << "Inserted new function " << cfg.name[function] << "." << std::endl;
-
-				unsigned bb_counter = 0;
-				for (BasicBlock& bb : func) {
-					std::stringstream ss;
-					ss << "ABB" << name_counter++;
-					graph::ABBType ty = graph::ABBType::computation;
-					if (isa<CallBase>(bb.front()) && !is_call_to_intrinsic(bb.front())) {
-						ty = graph::ABBType::call;
-					}
-					auto abb = add_abb(g, cfg, graph_data, ss.str(), ty, &bb, &bb, function, bb_counter == 0);
-					abbs[&bb] = abb;
-
-					bb_counter++;
-
-					// connect already mapped successors and predecessors
-					for (const BasicBlock* succ_b : successors(&bb)) {
-						if (abbs.find(succ_b) != abbs.end()) {
-							auto edge = boost::add_edge(abb, abbs[succ_b], g);
-							cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
-						}
-					}
-					for (const BasicBlock* pred_b : predecessors(&bb)) {
-						if (abbs.find(pred_b) != abbs.end()) {
-							auto edge = boost::add_edge(abbs[pred_b], abb, g);
-							cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
-						}
-					}
-				}
-				if (bb_counter == 0) {
-					add_abb(g, cfg, graph_data, "empty", graph::ABBType::not_implemented, nullptr, nullptr, function,
-					        true);
-					cfg.implemented[function] = false;
 				}
 			}
 
-			logger.info() << "Mapped " << name_counter << " ABBs." << std::endl;
-		}
+			Vertex add_abb(std::string name, graph::ABBType type, const BasicBlock* entry, const BasicBlock* exit,
+			               Vertex function, bool is_entry, const std::string& source_loc) {
+				auto abb = boost::add_vertex(g);
+				cfg.name[abb] = name;
+				cfg.type[abb] = static_cast<int>(type);
+				cfg.entry_bb[abb] = reinterpret_cast<intptr_t>(entry);
+				cfg.exit_bb[abb] = reinterpret_cast<intptr_t>(exit);
+
+				if (source_loc == "all" || (source_loc == "calls" && type == graph::ABBType::call)) {
+					try {
+						auto [file, line] = get_source_location(entry->front());
+						cfg.file[abb] = file.string();
+						cfg.line[abb] = line;
+					} catch (const LLVMError&) {
+						logger.warn() << "Debug location unknown, while requested: " << entry->front() << std::endl;
+					}
+				}
+
+				auto i_edge = boost::add_edge(abb, function, g);
+				cfg.etype[i_edge.first] = static_cast<int>(graph::CFType::a2f);
+
+				auto o_edge = boost::add_edge(function, abb, g);
+				cfg.etype[o_edge.first] = static_cast<int>(graph::CFType::f2a);
+
+				cfg.is_entry[o_edge.first] = is_entry;
+
+				assert(entry == exit);
+				cfg.is_exit[abb] = get(graph_data.basic_blocks, entry, false, false);
+				cfg.is_loop_head[abb] = get(graph_data.basic_blocks, entry, false, true);
+
+				return abb;
+			}
+
+		  public:
+			LLVMMapImpl(Graph& g, graph::CFG& cfg, graph::GraphData& graph_data, Logger& logger,
+			            bool dump_llvm_functions, const std::string& prefix, const std::string& source_loc)
+			    : g(g), cfg(cfg), graph_data(graph_data), logger(logger) {
+				std::map<const BasicBlock*, Vertex> abbs;
+
+				unsigned name_counter = 0;
+
+				for (Function& func : graph_data.get_module()) {
+
+					if (dump_llvm_functions) {
+						// dump LLVM functions as CFG into dot files
+						std::string filename = prefix + func.getName().str() + ".dot";
+						std::error_code ec;
+						llvm::raw_fd_ostream file(filename, ec, sys::fs::OF_Text);
+
+						if (!ec) {
+							llvm::WriteGraph(file, (const Function*)&func, false);
+						} else {
+							logger.err() << "  error opening file for writing!" << std::endl;
+						}
+					}
+
+					if (is_intrinsic(func)) {
+						continue;
+					}
+					auto function = boost::add_vertex(g);
+					cfg.name[function] = func.getName();
+					cfg.implemented[function] = true;
+					cfg.function[function] = reinterpret_cast<intptr_t>(&func);
+					cfg.is_function[function] = true;
+
+					logger.debug() << "Inserted new function " << cfg.name[function] << "." << std::endl;
+
+					unsigned bb_counter = 0;
+					for (BasicBlock& bb : func) {
+						std::stringstream ss;
+						ss << "ABB" << name_counter++;
+						graph::ABBType ty = graph::ABBType::computation;
+						if (isa<CallBase>(bb.front()) && !is_call_to_intrinsic(bb.front())) {
+							ty = graph::ABBType::call;
+						}
+						auto abb = add_abb(ss.str(), ty, &bb, &bb, function, bb_counter == 0, source_loc);
+						abbs[&bb] = abb;
+
+						bb_counter++;
+
+						// connect already mapped successors and predecessors
+						for (const BasicBlock* succ_b : successors(&bb)) {
+							if (abbs.find(succ_b) != abbs.end()) {
+								auto edge = boost::add_edge(abb, abbs[succ_b], g);
+								cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
+							}
+						}
+						for (const BasicBlock* pred_b : predecessors(&bb)) {
+							if (abbs.find(pred_b) != abbs.end()) {
+								auto edge = boost::add_edge(abbs[pred_b], abb, g);
+								cfg.etype[edge.first] = static_cast<int>(graph::CFType::lcf);
+							}
+						}
+					}
+					if (bb_counter == 0) {
+						add_abb("empty", graph::ABBType::not_implemented, nullptr, nullptr, function, true, source_loc);
+						cfg.implemented[function] = false;
+					}
+				}
+
+				logger.info() << "Mapped " << name_counter << " ABBs." << std::endl;
+			}
+		};
 	} // namespace
 
 	void LLVMMap::init_options() {
 		llvm_dump = llvm_dump_template.instantiate(get_name());
 		llvm_dump_prefix = llvm_dump_prefix_template.instantiate(get_name());
+		source_loc = source_loc_template.instantiate(get_name());
 		opts.emplace_back(llvm_dump);
 		opts.emplace_back(llvm_dump_prefix);
+		opts.emplace_back(source_loc);
 	}
 
-	Step::OptionVec LLVMMap::get_local_options() { return {llvm_dump_template, llvm_dump_prefix_template}; }
+	Step::OptionVec LLVMMap::get_local_options() {
+		return {llvm_dump_template, llvm_dump_prefix_template, source_loc_template};
+	}
 
 	std::string LLVMMap::get_description() {
 		return "Map llvm::Basicblock and ara::graph::ABB"
@@ -146,10 +169,13 @@ namespace ara::step {
 		const auto& prefix_opt = llvm_dump_prefix.get();
 		assert(prefix_opt);
 
+		const auto& s_loc = source_loc.get();
+
 		graph::GraphData& graph_data = graph.get_graph_data();
 		graph::CFG cfg = graph.get_cfg();
-		graph_tool::gt_dispatch<>()([&](auto& g) { map_cfg(g, cfg, graph_data, logger, dopt && *dopt, *prefix_opt); },
-		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) { LLVMMapImpl(g, cfg, graph_data, logger, dopt && *dopt, *prefix_opt, *s_loc); },
+		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
 			std::string uuid = step_manager.get_execution_id();

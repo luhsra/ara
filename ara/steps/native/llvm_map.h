@@ -20,6 +20,11 @@ namespace ara::step {
 		    /* default = */ "dumps/llvm-func."};
 		option::TOptEntity<option::String> llvm_dump_prefix;
 
+		const static inline option::TOption<option::Choice<3>> source_loc_template{
+		    "source_loc", "Get source location.",
+		    /* ty = */ option::makeChoice("never", "calls", "all"), /* default_value = */ "calls"};
+		option::TOptEntity<option::Choice<3>> source_loc;
+
 		virtual void init_options() override;
 
 	  public:
