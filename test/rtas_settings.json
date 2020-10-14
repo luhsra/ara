@@ -1,0 +1,6 @@
+{
+	"steps": [
+		"InstanceGraph",
+		"CFGStats"
+	]
+}
