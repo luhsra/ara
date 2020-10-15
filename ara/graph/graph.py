@@ -268,3 +268,4 @@ class Graph:
         self.os = None
         self.instances = InstanceGraph()
         self.step_data = {}
+        self.file_cache = {}

@@ -6,6 +6,7 @@ from .step import Step
 
 import pydot
 import html
+import os
 import os.path
 
 import graph_tool.draw
@@ -36,7 +37,10 @@ class Printer(Step):
                               help="Print only from the given entry point.",
                               ty=Bool(),
                               default_value=False)
-
+    gen_html_links = Option(name="gen_html_links",
+                            help="Generate source code links (with Pygments)",
+                            ty=Bool(),
+                            default_value=True)
 
     def _print_init(self):
         dot = self.dot.get()
@@ -55,6 +59,36 @@ class Printer(Step):
         os.makedirs(os.path.dirname(dot_path), exist_ok=True)
         dot.write(dot_path)
         self._log.info(f"Write {self.subgraph.get()} to {dot_path}.")
+
+    def _gen_html_file(self, filename):
+        try:
+            from pygments import highlight
+            from pygments.lexers import CppLexer
+            from pygments.formatters import HtmlFormatter
+        except ImportError:
+            self._log.warn("Pygments not found, skip source code linking")
+            return None
+
+        filename = os.path.abspath(filename)
+
+        if filename in self._graph.file_cache:
+            return self._graph.file_cache[filename]
+
+        hfile = os.path.join(os.path.dirname(self.dump_prefix.get()),
+                             'html_files',
+                             os.path.basename(filename) + ".html")
+        hfile = os.path.realpath(hfile)
+        self._graph.file_cache[filename] = hfile
+
+        with open(filename) as f:
+            code = f.read()
+
+        os.makedirs(os.path.dirname(hfile), exist_ok=True)
+        with open(hfile, 'w') as g:
+            g.write(highlight(code, CppLexer(),
+                              HtmlFormatter(linenos='inline',
+                                            lineanchors='line', full=True)))
+        return hfile
 
     def print_abbs(self):
         name = self._print_init()
@@ -136,6 +170,14 @@ class Printer(Step):
             if "label" in attrs:
                 del attrs["label"]
             attrs["fontsize"] = attrs.get("fontsize", 14)
+
+            if self.gen_html_links.get():
+                src_file = instances.vp.file[instance]
+                src_line = instances.vp.line[instance]
+                if (src_file != '' and src_line != 0):
+                    hfile = self._gen_html_file(src_file)
+                    if hfile is not None:
+                        attrs["URL"] = f"file://{hfile}#line-{src_line}"
 
             size = attrs["fontsize"] - default_fontsize_diff
             label = instances.vp.label[instance]
