@@ -76,6 +76,14 @@ class GenericTimingExperiment(Experiment):
             GenericTimingExperiment.trigger_reset()
             time.sleep(0.1)
 
+    @staticmethod
+    def count_successful_blocks(content):
+        # Skip those blocks printed before system-setup point is reached
+        end_markers = content.count(b"$$$")
+        if b'done_taskCreate' in content:
+            return end_markers - content.count(b'done_taskCreate: 0')
+        return end_markers
+
     def get_time(self, profile):
         reset_count = self.inputs.reset_count.value
         p = Process(target=GenericTimingExperiment.resetting, args=(reset_count+10,))
@@ -83,10 +91,16 @@ class GenericTimingExperiment(Experiment):
         with serial.Serial(self.inputs.serial_device.value, 115200 * 8,
                            timeout=0.3*reset_count) as ser:
             content = b""
-            while content.count(b"$$$") < reset_count:
+            while self.count_successful_blocks(content) < reset_count:
                 content += ser.read(10)
         p.join()
         blocks = content.decode('utf-8').split('###\r\n')
+
+        # Skip those blocks printed before system-setup point is reached
+        if b'done_taskCreate' in content:
+            blocks = [b for b in blocks if 'done_taskCreate: 0' not in b]
+        else:
+            print("WARNING: can't check for validity as there is no 'done_taskCreate' marker")
 
 
         times = defaultdict(list)
