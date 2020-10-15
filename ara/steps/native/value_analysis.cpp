@@ -26,16 +26,64 @@ namespace ara::step {
 		}
 	}
 
+	const VFGNode* ValueAnalysis::get_vfg_node(const SVFG& vfg, const llvm::Value& start) const {
+		PAG* pag = PAG::getPAG();
+
+		PAGNode* pNode = pag->getPAGNode(pag->getValueNode(&start));
+		assert(pNode != nullptr);
+		const VFGNode* vNode = vfg.getDefSVFGNode(pNode);
+		assert(vNode != nullptr);
+		return vNode;
+	}
+
+	void ValueAnalysis::do_forward_value_search(const SVFG& vfg, const llvm::Value& start, graph::Argument& arg) {
+		const VFGNode* v_node = get_vfg_node(vfg, start);
+
+		std::stack<const VFGNode*> nodes;
+		std::set<const VFGNode*> visited;
+
+		nodes.emplace(v_node);
+
+		while (!nodes.empty()) {
+			const VFGNode* current = nodes.top();
+			nodes.pop();
+
+			if (visited.find(current) != visited.end()) {
+				continue;
+			}
+			visited.insert(current);
+
+			if (const StoreVFGNode* s_node = llvm::dyn_cast<StoreVFGNode>(current)) {
+				const Value* val = s_node->getPAGEdge()->getValue();
+				const StoreInst* si = llvm::cast<StoreInst>(val);
+				const Value* target = si->getPointerOperand();
+				do_backward_value_search(vfg, safe_deref(target), arg, graph::SigType::symbol);
+				if (arg.size() == 0) {
+					// if no good value is found, store the bad one
+					// We have a problem here. SVF gives us a constant Value what is meaningful from their site.
+					// However, we want to fill this into our Argument structure which is exposed in Python. In
+					// Python there exists no thing like const correctness because is semantically useless. That
+					// means that we are forced to limit the Python types to only support methods that don't violate
+					// const correctness or do a const_cast here and hope that everything will work.
+					arg.add_variant(graph::CallPath(), *const_cast<llvm::Value*>(target));
+				}
+			} else {
+				for (VFGNode::const_iterator it = current->OutEdgeBegin(); it != current->OutEdgeEnd(); ++it) {
+					const VFGNode* next_node = (*it)->getDstNode();
+
+					nodes.emplace(next_node);
+				}
+			}
+		}
+	}
+
 	void ValueAnalysis::do_backward_value_search(const SVFG& vfg, const llvm::Value& start, graph::Argument& arg,
 	                                             graph::SigType hint) {
 		PAG* pag = PAG::getPAG();
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
 		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
 
-		PAGNode* pNode = pag->getPAGNode(pag->getValueNode(&start));
-		assert(pNode != nullptr);
-		const VFGNode* vNode = vfg.getDefSVFGNode(pNode);
-		assert(vNode != nullptr);
+		const VFGNode* vNode = get_vfg_node(vfg, start);
 
 		shared_ptr<graph::CallGraph> callgraph = std::move(graph.get_callgraph_ptr());
 
@@ -216,15 +264,10 @@ namespace ara::step {
 
 		/* return value */
 		if (called_func.hasNUsesOrMore(1)) {
-			llvm::Value* return_value;
-			llvm::User* ur = called_func.user_back();
-			if (llvm::StoreInst* store = llvm::dyn_cast<llvm::StoreInst>(ur)) {
-				return_value = store->getOperand(1);
-			} else {
-				return_value = ur;
-			}
-			logger.debug() << "Return value: " << safe_deref(return_value) << std::endl;
-			args->set_return_value(graph::Argument::get(llvm::AttributeSet(), safe_deref(return_value)));
+			std::shared_ptr<graph::Argument> return_arg = graph::Argument::get(llvm::AttributeSet());
+			do_forward_value_search(vfg, called_func, *return_arg);
+			logger.debug() << "Return value: " << *return_arg << std::endl;
+			args->set_return_value(return_arg);
 		}
 
 		this->logger.info() << "Retrieved " << args->size() << " arguments for call " << called_func << std::endl;

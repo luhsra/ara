@@ -51,10 +51,12 @@ def main():
             debug_print("Argument:", val_per_arg)
             val_per_args.append(val_per_arg)
         return_value = args.get_return_value()
-        tracked_ret_value = "no return"
+        tracked_ret_value = []
         if return_value is not None:
-            assert(len(return_value) == 1)
-            tracked_ret_value = value_to_str(return_value.get_value(raw=True))
+            for call_path, value in return_value.items():
+                tracked_ret_value.append(
+                    [call_path.print(functions=True), value_to_str(value)]
+                )
         debug_print("RETVAL:", tracked_ret_value)
 
         values[syscalls.get_syscall_name(syscall)] = [tracked_ret_value, val_per_args]

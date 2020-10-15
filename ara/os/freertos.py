@@ -1,4 +1,4 @@
-from .os_util import syscall, get_argument, assign_id
+from .os_util import syscall, get_argument, get_return_value, assign_id
 from .os_base import OSBase
 
 import pyllco
@@ -378,9 +378,11 @@ class FreeRTOS(OSBase):
         # instance properties
         cp = state.call_path
 
-        queue_handler = state.cfg.vp.arguments[abb].get_return_value()
-        queue_handler = queue_handler.get_value(raw=True)
-        handler_name = queue_handler.get_name()
+        queue_handler = get_return_value(cfg, abb, cp)
+        if queue_handler is not None:
+            handler_name = queue_handler.get_name()
+        else:
+            handler_name = ""
 
         p_get_argument = functools.partial(get_argument, cfg, abb, cp)
         queue_len = p_get_argument(0)
@@ -416,9 +418,11 @@ class FreeRTOS(OSBase):
         state = state.copy()
         # instance properties
         cp = state.call_path
-        mutex_handler = state.cfg.vp.arguments[abb].get_return_value()
-        mutex_handler = mutex_handler.get_value(raw=True)
-        handler_name = mutex_handler.get_name()
+        mutex_handler = get_return_value(cfg, abb, cp)
+        if mutex_handler is not None:
+            handler_name = mutex_handler.get_name()
+        else:
+            handler_name = ""
 
         mutex_type = get_argument(cfg, abb, cp, 0)
 
@@ -828,8 +832,11 @@ class FreeRTOS(OSBase):
         cp = state.call_path
         p_get_argument = functools.partial(get_argument, cfg, abb, cp)
 
-        handler = state.cfg.vp.arguments[abb].get_return_value().get_value(raw=True)
-        name = handler.get_name()
+        handler = get_return_value(cfg, abb, cp)
+        if handler is not None:
+            handler_name = handler.get_name()
+        else:
+            handler_name = ""
         size = p_get_argument(0)
 
         v = state.instances.add_vertex()
@@ -929,6 +936,8 @@ class FreeRTOS(OSBase):
         task_stack = p_get_argument(5, raw_value=True)
         task_handle_p = p_get_argument(6, raw_value=True)
 
+        task_handler = get_return_value(cfg, abb, cp)
+
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Task: {task_name} ({task_function})"
 
@@ -944,7 +953,7 @@ class FreeRTOS(OSBase):
                                          stack_size=task_stack_size,
                                          parameters=task_parameters,
                                          priority=task_priority,
-                                         handle_p=task_handle_p,
+                                         handle_p=task_handler,
                                          call_path=cp,
                                          abb=abb,
                                          static_stack=task_stack,

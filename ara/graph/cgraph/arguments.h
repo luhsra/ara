@@ -176,7 +176,8 @@ namespace ara::graph {
 		/**
 		 * Set a callpath dependent value.
 		 */
-		void add_variant(CallPath& key, llvm::Value& value) {
+		template <class CP = CallPath>
+		void add_variant(CP&& key, llvm::Value& value) {
 			values.insert(std::pair<CallPath, llvm::Value&>(key, value));
 		}
 

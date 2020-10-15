@@ -8,7 +8,7 @@ from .arguments cimport CallPath as CCallPath
 from .os cimport SysCall as CSysCall
 from common.cy_helper cimport to_string
 from .cgraph cimport CallGraph, SigType as CSigType
-from .cy_helper cimport to_sigtype
+from .cy_helper cimport to_sigtype, safe_get_value
 
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.vector cimport vector
@@ -123,7 +123,9 @@ cdef class Argument:
 
     def get_value(self, CallPath key=CallPath(), raw=False):
         cdef AttributeSet a_set
-        value = get_obj_from_value(deref(self._c_argument).get_value(key._c_callpath))
+        value = safe_get_value(self._c_argument, key._c_callpath)
+        if value is None:
+            raise IndexError("Argument has no such value.")
         if raw:
             return value
         else:
@@ -136,6 +138,9 @@ cdef class Argument:
 
     def __len__(self):
         return deref(self._c_argument).size()
+
+    def __bool__(self):
+        return len(self) != 0
 
     def __getitem__(self, key):
         if key not in self:

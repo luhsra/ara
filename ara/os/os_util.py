@@ -30,6 +30,21 @@ class EmptyArgumentException(Exception):
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
 
+def get_return_value(cfg, abb, call_path):
+    """Retrieve the return value.
+
+    Arguments:
+    cfg        -- control flow graph
+    abb        -- ABB in this graph
+    call_path  -- call path
+    """
+    handler = cfg.vp.arguments[abb].get_return_value()
+    try:
+        return handler.get_value(key=call_path, raw=True)
+    except IndexError:
+        return None
+
+
 
 def get_argument(cfg, abb, call_path, num, raw=False, raw_value=False, can_fail=True, ty=None):
     """Retrieve an interpreted argument.
