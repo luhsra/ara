@@ -146,6 +146,14 @@ LoopFillZerobss:
   cmp  r2, r3
   bcc  FillZerobss
 
+/* init sparse data structures */
+  bl init_sparserle2
+.global __time_startup_sparse_init
+ldr r0, =0xe0001004  // address of DWT_CYCCNT
+ldr r0, [r0, #0]     // load value of DWT_CYCCNT
+ldr r1, =__time_startup_sparse_init    //address of target symbol
+str r0, [r1, #0]     //store startup_sparse_init = r0
+
   /* call the c++ constructors */
   bl __libc_init_array
 .global __time_startup_libc_init_array_calls
