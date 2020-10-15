@@ -31,6 +31,7 @@
 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
+#include FREERTOS_OVERRIDES
 #include "task.h"
 #include "time_markers.h"
 

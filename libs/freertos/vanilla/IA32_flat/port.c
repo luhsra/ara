@@ -30,6 +30,7 @@
 
 /* Scheduler includes. */
 #include "FreeRTOS.h"
+#include FREERTOS_OVERRIDES
 #include "task.h"
 
 #if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 1 )

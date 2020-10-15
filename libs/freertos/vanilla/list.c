@@ -28,6 +28,7 @@
 
 #include <stdlib.h>
 #include "FreeRTOS.h"
+#include FREERTOS_OVERRIDES
 #include "list.h"
 
 /*-----------------------------------------------------------
