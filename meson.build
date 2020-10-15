@@ -138,6 +138,16 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel'
     )
 
+    rtas_settings = files('test' / 'rtas_settings.json')
+    test('rtas20',
+       py3_inst,
+       args: [ara_py, freertos_rtas20_example,
+              '--log-level', 'debug', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
+              '--dump',
+              '--step-settings', rtas_settings],
+       suite: 'toplevel'
+    )
+
     generator_settings = files('test/generator_settings.json')
     test('generator_tester',
        py3_inst,

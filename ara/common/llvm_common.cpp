@@ -1,5 +1,8 @@
 #include "common/llvm_common.h"
 
+#include "common/exceptions.h"
+
+#include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Intrinsics.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -34,5 +37,18 @@ namespace ara {
 			return is_intrinsic(*func);
 		}
 		return false;
+	}
+
+	std::pair<std::filesystem::path, unsigned> get_source_location(const llvm::Instruction& inst) {
+		const auto& debug_loc = inst.getDebugLoc();
+		if (debug_loc) {
+			if (const auto* scope = llvm::dyn_cast<llvm::DIScope>(debug_loc.getScope())) {
+				std::filesystem::path source = std::filesystem::path(scope->getDirectory().str()) /
+				                               std::filesystem::path(scope->getFilename().str());
+				unsigned line = debug_loc.getLine();
+				return std::make_pair(source, line);
+			}
+		}
+		throw LLVMError("Debug location unknown");
 	}
 } // namespace ara

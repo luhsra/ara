@@ -119,13 +119,11 @@ namespace ara::step {
 
 		logger.info() << "Resolve call to function pointer. Callsite: " << *call_inst << std::endl;
 
-		const auto& debug_loc = call_inst->getDebugLoc();
-		if (const auto* scope = llvm::dyn_cast<llvm::DIScope>(debug_loc.getScope())) {
-			std::filesystem::path source = std::filesystem::canonical(
-			    std::filesystem::path(scope->getDirectory().str()) / std::filesystem::path(scope->getFilename().str()));
-			unsigned line = debug_loc.getLine();
-			logger.debug() << "Callsite is in " << source << " line: " << line << std::endl;
-			const auto& entry = pointer_targets.find(std::make_pair(source, line));
+		try {
+			const auto& [source, line] = get_source_location(*call_inst);
+			auto c_source = std::filesystem::canonical(source);
+			logger.debug() << "Callsite is in " << c_source << " line: " << line << std::endl;
+			const auto& entry = pointer_targets.find(std::make_pair(c_source, line));
 			if (entry != pointer_targets.end()) {
 				logger.info() << "Link with predefined functions from translation map." << std::endl;
 				for (const auto& func_name : entry->second) {
@@ -135,7 +133,7 @@ namespace ara::step {
 				}
 				return;
 			}
-		} else {
+		} catch (const LLVMError& e) {
 			logger.warn() << "Cannot find source code location of callsite " << call_inst << std::endl;
 		}
 

@@ -3,6 +3,7 @@ import ara.steps.py_logging
 def provide_steps():
     from .step import provide_steps as _native_provide
     from .abb_merge import ABBMerge
+    from .callgraph_stats import CallGraphStats
     from .cfg_optimize import CFGOptimize
     from .cfg_stats import CFGStats
     from .dummy import Dummy
@@ -20,6 +21,7 @@ def provide_steps():
         yield step
 
     yield ABBMerge
+    yield CallGraphStats
     yield CFGOptimize
     yield CFGStats
     yield Dummy

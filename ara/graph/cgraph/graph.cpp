@@ -101,6 +101,8 @@ namespace ara::graph {
 		ARA_VMAP(exit_bb)
 		ARA_VMAP(is_exit)
 		ARA_VMAP(is_loop_head)
+		ARA_VMAP(file)
+		ARA_VMAP(line)
 		ARA_VMAP(implemented)
 		ARA_VMAP(syscall)
 		ARA_VMAP(function)

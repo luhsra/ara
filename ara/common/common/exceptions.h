@@ -42,6 +42,10 @@ namespace ara {
 		explicit FunctionNotFound(const std::string& function_name = "") : std::runtime_error(format(function_name)) {}
 	};
 
+	struct LLVMError : public std::runtime_error {
+		using std::runtime_error::runtime_error;
+	};
+
 	class NotImplemented : public std::exception {
 		virtual const char* what() const throw() { return "Not implemented."; }
 	};

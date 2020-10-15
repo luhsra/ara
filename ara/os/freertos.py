@@ -284,6 +284,15 @@ class FreeRTOS(OSBase):
     def total_heap_size():
         return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None))
 
+    def handle_soc(instances, v, branch, scheduler_on, cfg, abb):
+        instances.vp.branch[v] = branch
+        instances.vp.after_scheduler[v] = scheduler_on
+        instances.vp.unique[v] = not branch
+        instances.vp.soc[v] = abb
+        instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
+        instances.vp.file[v] = cfg.vp.file[abb]
+        instances.vp.line[v] = cfg.vp.line[abb]
+
 
     @syscall(categories={SyscallCategory.create},
              signature=(SigType.symbol, SigType.value, SigType.value,
@@ -309,9 +318,8 @@ class FreeRTOS(OSBase):
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
-        state.instances.vp.branch[v] = state.branch
-        state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = not state.branch
+        FreeRTOS.handle_soc(state.instances, v, state.branch,
+                            state.scheduler_on, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          vidx=v,
                                          function=task_function,
@@ -343,9 +351,7 @@ class FreeRTOS(OSBase):
         cp = state.call_path
 
         #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
-        state.instances.vp.branch[v] = state.branch
-        state.instances.vp.after_scheduler[v] = False
-        state.instances.vp.unique[v] = not state.branch
+        FreeRTOS.handle_soc(state.instances, v, state.branch, False, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, None,
                                          function='prvIdleTask',
                                          name='idle_task',
@@ -383,9 +389,8 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Queue: {handler_name}"
-        state.instances.vp.branch[v] = state.branch
-        state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = not state.branch
+        FreeRTOS.handle_soc(state.instances, v, state.branch,
+                            state.scheduler_on, cfg, abb)
 
         # TODO: when do we know that this is an unique instance?
         state.instances.vp.obj[v] = Queue(cfg,
@@ -419,9 +424,8 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
-        state.instances.vp.branch[v] = state.branch
-        state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = not state.branch
+        FreeRTOS.handle_soc(state.instances, v, state.branch,
+                            state.scheduler_on, cfg, abb)
 
         state.instances.vp.obj[v] = Mutex(cfg,
                                           name=handler_name,
@@ -830,9 +834,8 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"StreamBuffer: {name}"
-        state.instances.vp.branch[v] = state.branch
-        state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = not state.branch
+        FreeRTOS.handle_soc(state.instances, v, state.branch,
+                            state.scheduler_on, cfg, abb)
 
         state.instances.vp.obj[v] = StreamBuffer(cfg,
                                                  abb=abb,
@@ -932,9 +935,8 @@ class FreeRTOS(OSBase):
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
-        state.instances.vp.branch[v] = state.branch
-        state.instances.vp.after_scheduler[v] = state.scheduler_on
-        state.instances.vp.unique[v] = not state.branch
+        FreeRTOS.handle_soc(state.instances, v, state.branch,
+                            state.scheduler_on, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          vidx=v,
                                          function=task_function,
