@@ -161,12 +161,12 @@ librepilot_application = librepilot_mock_ll
 
 
 
-named_elf_targets = []
-elf_targets = []
-named_plain_elf_targets = []
-named_lto_elf_targets = []
 extra_settings = files('extra_settings.json')
 foreach application_prefix: ['librepilot', 'librepilot_mock']
+  named_elf_targets = []
+  elf_targets = []
+  named_plain_elf_targets = []
+  named_lto_elf_targets = []
   foreach t : ara_gen_freertos_targets
     application_ll = get_variable(application_prefix + '_ll')
     name_prefix = application_prefix + '-' + t
@@ -264,8 +264,8 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [target + '-' + lto_version, lto_elf]
-    profiles_list += ['--profiles', target + '-' + lto_version]
+    named_elf_targets += [t + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', t + '-' + lto_version]
 
 
 
