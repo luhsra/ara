@@ -162,6 +162,7 @@ librepilot_application = librepilot_mock_ll
 
 
 extra_settings = files('extra_settings.json')
+manual_corrections = files('instance_corrections.json')
 foreach application_prefix: ['librepilot', 'librepilot_mock']
   named_elf_targets = []
   elf_targets = []
@@ -178,8 +179,10 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                                         name_prefix + '-modifiedapp.ll',
                                         name_prefix + '-os.cc.freertos_overrides.h',
                                        ],
+                               depend_files: [extra_settings, manual_corrections],
                                command: get_variable('ara_gen_cmd_' + t) +
-                                        ['--step-settings', extra_settings]
+                                        ['--step-settings', extra_settings,] +
+                                        ['--manual-corrections', manual_corrections]
                               )
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
