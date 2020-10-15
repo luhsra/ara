@@ -353,6 +353,11 @@ PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended	= ( UBaseType_t
 #ifndef ARA_INITIALIZED
 
 	extern void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize ); /*lint !e526 Symbol not defined as it is an application callback. */
+__attribute__((weak)) void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize ) {
+  *ppxIdleTaskTCBBuffer = (StaticTask_t*) pvPortMalloc(sizeof(StaticTask_t));
+  *ppxIdleTaskStackBuffer = ( StackType_t * ) pvPortMalloc( ( ( ( size_t ) configMINIMAL_STACK_SIZE ) * sizeof( StackType_t ) ) );
+}
+  
 #endif
 #endif
 
