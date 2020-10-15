@@ -27,7 +27,8 @@ namespace ara::step {
 			}
 		} else if (GetElementPtrInst* EP = dyn_cast<GetElementPtrInst>(tcb_ref)) {
 			logger.debug() << "storing getelementptr: " << *EP << std::endl;
-			Builder.CreateStore(the_tcb, EP);
+			Value* the_tcb_casted = Builder.CreatePointerCast(the_tcb, EP->getType()->getPointerElementType(), "cst");
+			Builder.CreateStore(the_tcb_casted, EP);
 		} else if (AllocaInst* AL = dyn_cast<AllocaInst>(tcb_ref)) {
 			logger.debug() << "storing local AllocaInst: " << *AL << std::endl;
 			Value* the_tcb_casted = Builder.CreatePointerCast(the_tcb, AL->getType()->getElementType(), "casted");
