@@ -171,7 +171,7 @@ foreach t : ara_gen_freertos_targets
                          command: llvm_link_cmd)
 
 
-  foreach lto_version : ['none', 'standard', 'rle', 'rle2']
+  foreach lto_version : ['none', 'standard', 'rle2']
     lto_prefix = name_prefix + '-' + lto_version
     lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                input: app_os,
@@ -212,8 +212,8 @@ foreach t : ara_gen_freertos_targets
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [target + '-' + lto_version, lto_elf]
-    profiles_list += ['--profiles', target + '-' + lto_version]
+    named_elf_targets += [t + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', t + '-' + lto_version]
 
 
     if get_option('enable_gpslogger_tests')

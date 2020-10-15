@@ -157,7 +157,7 @@ foreach app : ir_apps + hw_apps
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
 
-    foreach lto_version : ['none', 'standard', 'rle', 'rle2']
+    foreach lto_version : ['none', 'standard', 'rle2']
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
