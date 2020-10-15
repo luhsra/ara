@@ -41,7 +41,7 @@
 					"counter": "SystemCounter",
 					"autostart": true,
 					"cycletime": 100,
-					"alarmtime": 10,
+					"alarmtime": 20,
 					"action": {
 						"action": "activatetask",
 						"task": "TaskF"

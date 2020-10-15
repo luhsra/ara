@@ -55,7 +55,7 @@ TASK(TaskC) {
 }
 
 TASK(TaskD) {
-    ActivateTask(TaskF);
+    // ActivateTask(TaskF);
     while(true) {
         doSomethingD();
     }
