@@ -211,8 +211,10 @@ void PIOS_Board_Init(void)
     PIOS_TIM_InitClock(&tim_3_cfg);
     PIOS_TIM_InitClock(&tim_4_cfg);
 
+#ifndef ARA_MOCK
 #if defined(PIOS_INCLUDE_USB)
     PIOS_BOARD_IO_Configure_USB();
+#endif
 #endif
 
     /* Configure FlexiPort */
