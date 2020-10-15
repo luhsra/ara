@@ -62,6 +62,20 @@ defined in linker script */
   .weak  Reset_Handler
   .type  Reset_Handler, %function
 Reset_Handler:
+  /* Enable DWT_CYCCOUNT */
+ldr r2, =0xe000edfc             //;address of DEMCR
+ldr  r3, [r2, #0]                       //;load DEMCR
+orr.w r3, r3, #16777216         //;DEMCR_TRCENA == 0x1000000
+str r3, [r2, #0]                        //;write back
+
+ldr r3, =0xe0001004                     //;address of DWT_CYCCNT
+mov r2, #0
+str r2, [r3, #0]                        //;clear DWT_CYCCNT
+
+ldr r2, =0xe0001000                     //;address of DWT_CTRL
+ldr r3, [r2, #0]                        //;load DWT_CTRL
+orr.w r3, r3, #1                        //;set CYCCNTENA
+str r3, [r2, #0]                        //;write back
 
 /*
  * From COrtex-M3 reference manual:
