@@ -1,12 +1,7 @@
 {
-	"Task.uavoMavlinkBridge": { "unique": true },
-	"Task.uavoMSPBridge": { "unique": true },
-	"Task.Com2UsbBridge": { "unique": true },
-	"Task.Usb2ComBridge": { "unique": true },
 	"Task.RadioTx": { "unique": true },
 	"Task.RadioRx": { "unique": true },
 	"Task.Receiver": { "unique": true },
-	"Task.GPS": { "unique": true },
 	"Task.Attitude": { "unique": true },
 	"Task.Actuator": { "unique": true }
 }
