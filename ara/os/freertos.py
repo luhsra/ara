@@ -20,6 +20,7 @@ class FreeRTOSInstance(object):
         self.call_path = call_path
         self.vidx = vidx
         self.name = name
+        self.heap_need = 0
 
     def __getattr__(self, name):
         try:
@@ -34,6 +35,21 @@ class FreeRTOSInstance(object):
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+
+    def heap_decline(self):
+        if self.specialization_level in ['static', 'initialized']:
+            return self.heap_need
+        return 0
+
+    def heap_usage_maybe(self):
+        if not self.unique:
+            return self.heap_need or 0
+        return 0
+
+    def heap_usage_sure(self):
+        if self.unique:
+            return self.heap_need
+        return 0
 
 
     @property
@@ -59,8 +75,14 @@ class Task(FreeRTOSInstance):
         self.uid = Task.uid_counter
         self.static_stack = static_stack
         Task.uid_counter += 1
-        FreeRTOS.malloc_heap(stack_size, FreeRTOS.config.get('STACK_TYPE_SIZE', None), maybe=self.branch)
-        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('TCB_SIZE', None), maybe=self.branch)
+        if static_stack is None:
+            try:
+                self.heap_need += int(stack_size) * int(FreeRTOS.config.get('STACK_TYPE_SIZE', None))
+                self.heap_need += int(FreeRTOS.config.get('TCB_SIZE', None))
+            except TypeError:
+                self.heap_need = None
+        else:
+            self.heap_need = 0
 
 
     @property
@@ -122,8 +144,11 @@ class Queue(FreeRTOSInstance):
         self.q_type = q_type
         self.call_path = call_path
         Queue.uid_counter += 1
-        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=self.branch)
-        FreeRTOS.malloc_heap(length, size, maybe=self.branch)
+        try:
+            self.heap_need +=  int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
+            self.heap_need += int(length) * int(size)
+        except TypeError:
+            self.heap_need = None
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
@@ -162,7 +187,10 @@ class Mutex(FreeRTOSInstance):
         self.length = 1
         self.call_path = call_path
         Mutex.uid_counter += 1
-        FreeRTOS.malloc_heap(1, FreeRTOS.config.get('QUEUE_HEAD_SIZE', None), maybe=self.branch)
+        try:
+            self.heap_need += int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
+        except TypeError:
+            self.heap_need = None
 
     def __repr__(self):
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
@@ -253,34 +281,8 @@ class FreeRTOS(OSBase):
                 state.next_abbs.append(oedge.target())
 
     @staticmethod
-    def malloc_heap(count, size, maybe=False):
-        percent_sure=0
-        used_sure=0
-        total=0
-        try:
-            request = int(count) * int(size)
-            used_sure = FreeRTOS.config.get('used_heap_sure', 0)
-            used_maybe = FreeRTOS.config.get('used_heap_maybe', 0)
-            used_maybe += request
-            if not maybe:
-                used_sure += request
-            FreeRTOS.config['used_heap_sure'] = used_sure
-            FreeRTOS.config['used_heap_maybe'] = used_maybe
-            total = FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None)
-            total = total.get() if total else 0
-            percent_sure = used_sure / total
-            percent_maybe = used_maybe / total
-            logger.debug("FreeRTOS heap usage sure: %05.2f%% (%5d / %5d)",
-                         percent_sure*100, used_sure, total)
-            logger.debug("FreeRTOS heap usage maybe: %05.2f%% (%5d / %5d)",
-                         percent_maybe*100, used_maybe, total)
-            if used_sure >= total:
-                logger.error("FreeRTOS heap usage exceeds heap size: %s", percent_sure)
-            if used_maybe >= total:
-                logger.warning("FreeRTOS heap usage exceeds heap size: %s", percent_maybe)
-        except Exception as e:
-            logger.error("malloc failed: %05.2f%% (%5d / %5d): %s",
-                         percent_sure*100, used_sure, total, e)
+    def total_heap_size():
+        return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None))
 
 
     @syscall(categories={SyscallCategory.create},
