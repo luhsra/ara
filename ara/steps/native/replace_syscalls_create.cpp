@@ -28,6 +28,10 @@ namespace ara::step {
 		} else if (GetElementPtrInst* EP = dyn_cast<GetElementPtrInst>(tcb_ref)) {
 			logger.debug() << "storing getelementptr: " << *EP << std::endl;
 			Builder.CreateStore(the_tcb, EP);
+		} else if (AllocaInst* AL = dyn_cast<AllocaInst>(tcb_ref)) {
+			logger.debug() << "storing local AllocaInst: " << *AL << std::endl;
+			Value* the_tcb_casted = Builder.CreatePointerCast(the_tcb, AL->getType()->getElementType(), "casted");
+			Builder.CreateStore(the_tcb_casted, tcb_ref);
 		} else {
 			// TODO: use ret value. check if handle != null, set handle
 			logger.error()
@@ -52,7 +56,7 @@ namespace ara::step {
 	Function* ReplaceSyscallsCreate::get_fn(const char* name) {
 		Function* fn = graph.get_module().getFunction(name);
 		if (fn != nullptr) {
-			logger.debug() << "found '" << name << "' candidate: " << *fn << std::endl;
+			logger.debug() << "found '" << name << "' candidate: " << fn->getName().str() << std::endl;
 			return fn;
 		}
 		logger.error() << "function declaration '" << name << "' not found!: Candidates are:\n";
@@ -302,6 +306,8 @@ namespace ara::step {
 		std::string stack_name = extract<std::string>(task.attr("impl").attr("stack").attr("name"));
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
+
+		logger.info() << "replace to xTaskCreateStatic: " << tcb_name << std::endl;
 
 		if ("xTaskCreate" != old_func->getName().str()) {
 			if ("vTaskStartScheduler" == old_func->getName().str()) {
