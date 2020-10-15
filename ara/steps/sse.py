@@ -1006,13 +1006,9 @@ class MultiSSE(FlowAnalysis):
                         new_state.global_times.append((new_state.passed_events[-1], new_state.passed_events[-1] + max_time))
                     else:
                         for intervall in state.global_times.copy():
+                            skip = False
                             new_min_time = intervall[0] + min_time
                             new_max_time = intervall[1] + max_time
-
-                            # because of intersecting global times for metastates, it can happen, that a new min time can be bigger than the new max time
-                            # a better way of fixing this is that calculation times should be stored in the states so that the min time for the abb is shorter
-                            if new_min_time >= new_max_time:
-                                new_min_time = intervall[0]          
 
                             # skip this intervall if it is about to cross the event timer
                             if intervall[1] in state.passed_events and new_min_time >= intervall[1]:
@@ -1021,10 +1017,20 @@ class MultiSSE(FlowAnalysis):
                             for passed_event in new_state.passed_events:
                                 if new_min_time < passed_event and new_max_time > passed_event:
                                     new_max_time = passed_event
+
+                                    # check if time intervall is viable, otherwise skip this intervall
+                                    if new_min_time >= new_max_time:
+                                        skip = True
                                     break
                             
-                            assert new_min_time < new_max_time, f"{new_min_time}, {new_max_time}, {intervall}"
-                            new_state.global_times.append((new_min_time, new_max_time))
+                            if not skip:
+                                # because of intersecting global times for metastates, it can happen, that a new min time can be bigger than the new max time
+                                # a better way of fixing this is that calculation times should be stored in the states so that the min time for the abb is shorter
+                                if new_min_time >= new_max_time:
+                                    new_min_time = intervall[0]
+
+                                assert new_min_time < new_max_time, f"{new_min_time}, {new_max_time}, {intervall}"
+                                new_state.global_times.append((new_min_time, new_max_time))
                     
                     # debug global times
                     # for intervall in new_state.global_times:

@@ -41,10 +41,10 @@
 					"counter": "SystemCounter",
 					"autostart": true,
 					"cycletime": 100,
-					"alarmtime": 100,
+					"alarmtime": 10,
 					"action": {
 						"action": "activatetask",
-						"task": "TaskB"
+						"task": "TaskF"
 					}
 				}
 			],
@@ -97,8 +97,8 @@
 					"name": "Alarm2",
 					"counter": "SystemCounter2",
 					"autostart": true,
-					"cycletime": 100,
-					"alarmtime": 50,
+					"cycletime": 1000,
+					"alarmtime": 500,
 					"action": {
 						"action": "activatetask",
 						"task": "TaskD"
