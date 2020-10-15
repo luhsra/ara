@@ -70,3 +70,4 @@ void Serial::puts(const char* data) {
 
 template <typename T>
 void Serial::setcolor(__attribute__((unused)) T fg, __attribute__((unused)) T bg){};
+__attribute__((weak)) extern "C" void _init() {}

@@ -131,6 +131,14 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
+
+  /* call the c++ constructors */
+  bl __libc_init_array
+.global __time_startup_libc_init_array_calls
+ldr r0, =0xe0001004  // address of DWT_CYCCNT
+ldr r0, [r0, #0]     // load value of DWT_CYCCNT
+ldr r1, =__time_startup_libc_init_array_calls    //address of target symbol
+str r0, [r1, #0]     //store startup_libc_init_array_calls = r0
 /* Call the application's entry point.*/
   bl  main
 /* will never return here */
