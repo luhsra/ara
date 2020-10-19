@@ -18,6 +18,7 @@ ir_apps = [
   'abb_merge',
   'argument_load',
   'c',
+  'condition',
   'critical_region_detection',
   'deadlock',
   'dominator',

@@ -26,19 +26,6 @@ namespace ara::step {
 			graph::GraphData& graph_data;
 			Logger& logger;
 
-			bool get(const std::map<const BasicBlock*, graph::llvmext::BasicBlock> m, const BasicBlock* k,
-			         bool default_value, bool loop) {
-				if (m.find(k) == m.end()) {
-					return default_value;
-				} else {
-					if (loop) {
-						return m.at(k).is_loop_head;
-					} else {
-						return m.at(k).is_exit_block;
-					}
-				}
-			}
-
 			Vertex add_abb(std::string name, graph::ABBType type, const BasicBlock* entry, const BasicBlock* exit,
 			               Vertex function, bool is_entry, const std::string& source_loc) {
 				auto abb = boost::add_vertex(g);
@@ -66,8 +53,11 @@ namespace ara::step {
 				cfg.is_entry[o_edge.first] = is_entry;
 
 				assert(entry == exit);
-				cfg.is_exit[abb] = get(graph_data.basic_blocks, entry, false, false);
-				cfg.is_loop_head[abb] = get(graph_data.basic_blocks, entry, false, true);
+
+				auto& map = graph_data.basic_blocks;
+				cfg.is_exit[abb] = (map.find(entry) != map.end()) ? map.at(entry).is_exit_block : false;
+				cfg.is_exit_loop_head[abb] = (map.find(entry) != map.end()) ? map.at(entry).is_exit_loop_head : false;
+				cfg.part_of_loop[abb] = (map.find(entry) != map.end()) ? map.at(entry).is_part_of_loop : false;
 
 				return abb;
 			}

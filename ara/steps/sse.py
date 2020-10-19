@@ -15,7 +15,9 @@ from ara.util import VarianceDict
 
 from collections import defaultdict
 from itertools import chain
-from graph_tool.topology import dominator_tree, label_out_component
+from graph_tool.topology import (dominator_tree, label_out_component,
+                                 all_paths, all_circuits)
+
 
 
 
@@ -29,11 +31,12 @@ class State:
 
         self.instances = _InstanceGraph()
         self.call_path = None # call node within the call graph
-        self.branch = False # is this state coming from a branch or loop
+        self.branch = False # is this state coming from a branch
+        self.loop = False # is this state coming from a loop
         self.running = None # what instance (Task or ISR) is currently running
 
     def __repr__(self):
-        ret = f'State(Branch: {self.branch}, '
+        ret = f'State(Branch: {self.branch}, Loop: {self.loop} '
         abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
         ret += ', '.join(abbs)
         ret += ", CallPath: " + self.call_path.print(call_site=True)
@@ -235,6 +238,7 @@ class FlatAnalysis(FlowAnalysis):
     def _init_analysis(self):
         self._call_graph = self._graph.callgraph
         self._cond_func = {}
+        self._loop_func = {}
         self._step_data.add(self._entry_func)
 
         self._visited = defaultdict(lambda: defaultdict(lambda: False))
@@ -257,6 +261,7 @@ class FlatAnalysis(FlowAnalysis):
         entry.running = instance
         if instance:
             entry.branch = self._graph.instances.vp.branch[instance]
+            entry.loop = self._graph.instances.vp.loop[instance]
 
         return entry
 
@@ -421,43 +426,71 @@ class InstanceGraph(FlatAnalysis):
         super()._init_analysis()
         self._new_entry_points = set()
 
-    def _dominates(self, abb_x, abb_y):
+    def _dominates(self, dom_tree, abb_x, abb_y):
         """Does abb_x dominate abb_y?"""
-        func = self._graph.cfg.get_function(abb_x)
-        func_other = self._graph.cfg.get_function(abb_y)
-        if func != func_other:
-            return False
-        dom_tree = self._create_dom_tree(func)
         while abb_y:
             if abb_x == abb_y:
                 return True
             abb_y = dom_tree[abb_y]
         return False
 
+    def _has_path(self, graph, source, target):
+        ap = all_paths(graph, graph.vertex(source), graph.vertex(target))
+        try:
+            next(ap)
+            return True
+        except StopIteration:
+            return False
+
+    @functools.lru_cache(maxsize=32)
+    def _get_func_cfg(self, func):
+        """Get LCFG of function"""
+        abb = self._cfg.get_entry_abb(func)
+        comp = label_out_component(self._lcfg, self._lcfg.vertex(abb))
+        return CFGView(self._lcfg, vfilt=comp)
+
     @functools.lru_cache(maxsize=32)
     def _create_dom_tree(self, func):
         """Create a dominator tree of the local control flow for func."""
-        abb = self._graph.cfg.get_entry_abb(func)
-        comp = label_out_component(self._lcfg, self._lcfg.vertex(abb))
-        func_cfg = CFGView(self._lcfg, vfilt=comp)
-        dom_tree = dominator_tree(func_cfg, func_cfg.vertex(abb))
+        func_cfg = self._get_func_cfg(func)
+        entry = self._cfg.get_entry_abb(func)
 
-        return dom_tree
+        # prepare LCFG, endless loops are filtered out and replaces by exit
+        # blocks
+        exit_map = func_cfg.vp.is_exit.copy(full=False)
+        keep_edge_map = func_cfg.new_ep("bool", val=True)
 
-    @functools.lru_cache(maxsize=32)
-    def _find_exit_abbs(self, func):
-        return [x for x in func.out_neighbors()
-                if self._graph.cfg.vp.is_exit[x] or self._graph.cfg.vp.is_loop_head[x]]
+        loops = CFGView(func_cfg, vfilt=func_cfg.vp.is_exit_loop_head)
+        for v in loops.vertices():
+            v = func_cfg.vertex(v)
+            for e in v.in_edges():
+                if self._has_path(func_cfg, v, e.source()):
+                    keep_edge_map[e] = False
+                    exit_map[e.source()] = True
 
-    def _is_in_condition_or_loop(self, abb):
-        """Is abb part of a condition or loop?"""
+        patched_func_cfg = CFGView(func_cfg, efilt=keep_edge_map)
+
+        # dom tree creation
+        dom_tree = dominator_tree(patched_func_cfg,
+                                  patched_func_cfg.vertex(entry))
+        return dom_tree, CFGView(func_cfg, vfilt=exit_map)
+
+    def _is_in_condition(self, abb):
+        """Is abb part of a condition?"""
         func = self._graph.cfg.get_function(abb)
-        return not all([self._dominates(abb, x)
-                        for x in self._find_exit_abbs(func)])
+        dom_tree, exit_abbs = self._create_dom_tree(func)
+        return not all([self._dominates(dom_tree, abb, x)
+                       for x in exit_abbs.vertices()])
+
+    def _is_in_loop(self, abb):
+        """Is abb part of a loop?"""
+        return self._cfg.vp.part_of_loop[abb]
 
     def _init_fake_state(self, state, abb):
         state.branch = (self._cond_func.get(state.call_path, False) or
-                        self._is_in_condition_or_loop(abb))
+                        self._is_in_condition(abb))
+        state.loop = (self._loop_func.get(state.call_path, False) or
+                      self._is_in_loop(abb))
 
     def _extract_entry_points(self):
         for task, _ in self._iterate_tasks():
@@ -481,8 +514,12 @@ class InstanceGraph(FlatAnalysis):
 
     def _handle_call(self, old_state, new_state, abb):
         new_state.branch = (self._cond_func.get(old_state.call_path, False) or
-                            self._is_in_condition_or_loop(abb))
+                            self._is_in_condition(abb))
         self._cond_func[new_state.call_path] = new_state.branch
+
+        new_state.loop = (self._loop_func.get(old_state.call_path, False) or
+                          self._is_in_loop(abb))
+        self._loop_func[new_state.call_path] = new_state.loop
 
     def _get_categories(self):
         return SyscallCategory.create
@@ -495,8 +532,8 @@ class InstanceGraph(FlatAnalysis):
 
     def _finish(self, sstg):
         super()._finish(sstg)
+        self._log.debug(f"_get_func_cfg {self._get_func_cfg.cache_info()}")
         self._log.debug(f"_create_dom_tree {self._create_dom_tree.cache_info()}")
-        self._log.debug(f"_find_exit_abbs  {self._find_exit_abbs.cache_info()}")
 
 
 class InteractionAnalysis(FlatAnalysis):

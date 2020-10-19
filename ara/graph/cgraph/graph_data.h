@@ -18,7 +18,8 @@ namespace ara::graph {
 
 		struct BasicBlock {
 			bool is_exit_block = false;
-			bool is_loop_head = false;
+			bool is_exit_loop_head = false;
+			bool is_part_of_loop = false;
 		};
 	} // namespace llvmext
 

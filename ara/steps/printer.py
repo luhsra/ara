@@ -16,9 +16,9 @@ class Printer(Step):
     """Print graphs to dot."""
 
     SHAPES = {
-        ABBType.computation: ("oval", "", "blue"),
-        ABBType.call: ("box", "", "red"),
-        ABBType.syscall: ("box", "rounded", "green")
+        ABBType.computation: ("oval", "blue"),
+        ABBType.call: ("box", "red"),
+        ABBType.syscall: ("diamond", "green")
     }
 
     dot = Option(name="dot",
@@ -123,9 +123,10 @@ class Printer(Step):
                         str(hash(abb)),
                         label=self._graph.cfg.vp.name[abb],
                         shape=self.SHAPES[self._graph.cfg.vp.type[abb]][0],
-                        style=self.SHAPES[self._graph.cfg.vp.type[abb]][1],
-                        color=self.SHAPES[self._graph.cfg.vp.type[abb]][2]
+                        color=self.SHAPES[self._graph.cfg.vp.type[abb]][1]
                     )
+                    if self._graph.cfg.vp.part_of_loop[abb]:
+                        dot_abb.set('style', 'dashed')
                     dot_nodes.add(str(hash(abb)))
                 dot_func.add_node(dot_abb)
         for edge in self._graph.cfg.edges():

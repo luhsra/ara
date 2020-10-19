@@ -94,6 +94,12 @@ namespace ara::step {
 
 			bool loop_found = false;
 			for (const Loop* loop : loop_info) {
+				if (loop->getParentLoop() == nullptr) {
+					for (auto it = loop->block_begin(); it != loop->block_end(); ++it) {
+						graph_data.basic_blocks[*it].is_part_of_loop = true;
+					}
+				}
+
 				SmallVector<BasicBlock*, 6> vec;
 				loop->getExitBlocks(vec);
 				if (vec.size() != 0) {
@@ -101,7 +107,7 @@ namespace ara::step {
 				}
 				// we have an endless loop
 				graph_data.functions[&function].endless_loops.emplace_back(loop->getHeader());
-				graph_data.basic_blocks[loop->getHeader()].is_loop_head = true;
+				graph_data.basic_blocks[loop->getHeader()].is_exit_loop_head = true;
 				loop_found = true;
 			}
 

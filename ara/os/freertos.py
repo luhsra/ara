@@ -284,10 +284,11 @@ class FreeRTOS(OSBase):
     def total_heap_size():
         return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None))
 
-    def handle_soc(instances, v, branch, scheduler_on, cfg, abb):
+    def handle_soc(instances, v, branch, loop, scheduler_on, cfg, abb):
         instances.vp.branch[v] = branch
+        instances.vp.loop[v] = loop
         instances.vp.after_scheduler[v] = scheduler_on
-        instances.vp.unique[v] = not branch
+        instances.vp.unique[v] = not (branch or loop)
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
         instances.vp.file[v] = cfg.vp.file[abb]
@@ -318,7 +319,7 @@ class FreeRTOS(OSBase):
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
-        FreeRTOS.handle_soc(state.instances, v, state.branch,
+        FreeRTOS.handle_soc(state.instances, v, state.branch, state.loop,
                             state.scheduler_on, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          vidx=v,
@@ -351,7 +352,8 @@ class FreeRTOS(OSBase):
         cp = state.call_path
 
         #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
-        FreeRTOS.handle_soc(state.instances, v, state.branch, False, cfg, abb)
+        FreeRTOS.handle_soc(state.instances, v, state.branch, state.loop,
+                            False, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, None,
                                          function='prvIdleTask',
                                          name='idle_task',
@@ -391,7 +393,7 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Queue: {handler_name}"
-        FreeRTOS.handle_soc(state.instances, v, state.branch,
+        FreeRTOS.handle_soc(state.instances, v, state.branch, state.loop,
                             state.scheduler_on, cfg, abb)
 
         # TODO: when do we know that this is an unique instance?
@@ -428,7 +430,7 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
-        FreeRTOS.handle_soc(state.instances, v, state.branch,
+        FreeRTOS.handle_soc(state.instances, v, state.branch, state.loop,
                             state.scheduler_on, cfg, abb)
 
         state.instances.vp.obj[v] = Mutex(cfg,
@@ -841,7 +843,7 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"StreamBuffer: {name}"
-        FreeRTOS.handle_soc(state.instances, v, state.branch,
+        FreeRTOS.handle_soc(state.instances, v, state.branch, state.loop,
                             state.scheduler_on, cfg, abb)
 
         state.instances.vp.obj[v] = StreamBuffer(cfg,
@@ -944,7 +946,7 @@ class FreeRTOS(OSBase):
         new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
-        FreeRTOS.handle_soc(state.instances, v, state.branch,
+        FreeRTOS.handle_soc(state.instances, v, state.branch, state.loop,
                             state.scheduler_on, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          vidx=v,
