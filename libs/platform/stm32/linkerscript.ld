@@ -77,6 +77,11 @@ SECTIONS
     __module_initcall_end   = .;
 
     _etext = .;        /* define a global symbols at end of code */
+  . = ALIGN(4);
+  _ssparsespec2 = .;
+  KEEP(*(.sparse.compressed.rle2*))
+  . = ALIGN(4);
+  _esparsespec2 = .;
   } >FLASH
 
   /* Constant data goes into FLASH */
@@ -156,11 +161,6 @@ _sisparsespec = LOADADDR(.sparse.spec);
 
 .sparse.compressed.rle2 :
 {
-  . = ALIGN(4);
-  _ssparsespec2 = .;
-  KEEP(*(.sparse.compressed.rle2*))
-  . = ALIGN(4);
-  _esparsespec2 = .;
 } >FLASH =0xab
 
 .sparse.plain.rle (NOLOAD):

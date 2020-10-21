@@ -134,6 +134,14 @@ LoopCopyDataInit:
   adds  r2, r0, r1
   cmp  r2, r3
   bcc  CopyDataInit
+
+/* data init done */
+.global __time_startup_data_copy
+ldr r0, =0xe0001004  // address of DWT_CYCCNT
+ldr r0, [r0, #0]     // load value of DWT_CYCCNT
+ldr r1, =__time_startup_data_copy    //address of target symbol
+str r0, [r1, #0]     //store startup_data_copy = r0
+
   ldr  r2, =_sbss
   b  LoopFillZerobss
 /* Zero fill the bss segment. */  
@@ -145,6 +153,14 @@ LoopFillZerobss:
   ldr  r3, = _ebss
   cmp  r2, r3
   bcc  FillZerobss
+
+/* bss done */
+.global __time_startup_bss_zero
+ldr r0, =0xe0001004  // address of DWT_CYCCNT
+ldr r0, [r0, #0]     // load value of DWT_CYCCNT
+ldr r1, =__time_startup_bss_zero    //address of target symbol
+str r0, [r1, #0]     //store startup_bss_zero = r0
+
 
 /* init sparse data structures */
   bl init_sparserle2

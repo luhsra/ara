@@ -40,6 +40,11 @@ SECTIONS
         KEEP(*(.initcallsettings.init))
 	. = ALIGN(4);
 	__settings_initcall_end   = .;
+  . = ALIGN(4);
+  _ssparsespec2 = .;
+  KEEP(*(.sparse.compressed.rle2*))
+  . = ALIGN(4);
+  _esparsespec2 = .;
     } >FLASH
 
   .preinit_array     :
@@ -76,11 +81,6 @@ SECTIONS
 
 .sparse.compressed.rle2 :
 {
-  . = ALIGN(4);
-  _ssparsespec2 = .;
-  KEEP(*(.sparse.compressed.rle2*))
-  . = ALIGN(4);
-  _esparsespec2 = .;
 } >FLASH =0xab
 
 
@@ -118,9 +118,6 @@ SECTIONS
 
 .sparse.plain.rle (NOLOAD):
 {
-  . = ALIGN(4);
-  *(.sparse.plain.rle2*)
-  . = ALIGN(4);
 } >SRAM
 
 
@@ -128,6 +125,9 @@ SECTIONS
     /* .bss section which is used for uninitialized data */
     .bss (NOLOAD) :
     {
+  . = ALIGN(4);
+  *(.sparse.plain.rle2*)
+  . = ALIGN(4);
         _sbss = . ;
         *(.bss .bss.*)
         *(COMMON)
