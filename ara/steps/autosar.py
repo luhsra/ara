@@ -3,6 +3,7 @@ from .os_base import OSBase
 from ara.util import get_logger
 from ara.graph.argument import CallPath
 
+
 from enum import Enum
 
 logger = get_logger("AUTOSAR")
@@ -219,7 +220,8 @@ class AUTOSAR(OSBase):
     @staticmethod
     def schedule(state, cpu):
         # sort actived tasks by priority
-        state.activated_tasks.sort(key=lambda task: task.priority, reverse=True)
+        for _list in state.activated_tasks.values():
+            _list.sort(key=lambda task: task.priority, reverse=True)
 
     @syscall
     def AUTOSAR_ActivateTask_global(cfg, abb, metastate, cpu):
@@ -288,15 +290,14 @@ class AUTOSAR(OSBase):
                     break
 
         # add found Task to list of activated tasks
-        if task not in state.activated_tasks:
-            state.activated_tasks.append(task)
+        state.activated_tasks.append_item(task)
 
         # old_task = state.get_scheduled_task(task.cpu_id)
 
         # advance current task to next abb
         counter = 0
         for n in cfg.vertex(abb).out_neighbors():
-            state.abbs[scheduled_task.name] = n
+            state.set_abb(scheduled_task.name, n)
             counter += 1
         assert(counter == 1)
 

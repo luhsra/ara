@@ -151,6 +151,76 @@ class GCFGInfo:
     def __init__(self, entry_states):
         self.entry_states = entry_states
 
+class OptionType(dict):
+    def __init__(self, key=None, value=None):
+        if key is not None and value is not None:
+            self[key] = value
+
+    def get_value(self):
+        """Returns the value if all values in the dict are the same, otherwise returns None."""
+        first = True
+        res = None
+        for value in self.values():
+            if first:
+                res = value
+                first = False
+            else:
+                if value != res:
+                    return None
+        
+        return res
+
+    def get_values(self):
+        """Returns a list of different values."""
+        res = []
+        for value in self.values():
+            if value not in res:
+                res.append(value)
+
+        return res
+    
+    def copy(self):
+        scopy = OptionType()
+        for key, value in self.items():
+            scopy[key] = value
+        
+        return scopy
+
+class OptionTypeList(dict):
+    def __init__(self, key=None, value=None):
+        if key is not None and value is not None:
+            assert(isinstance(value, list))
+            self[key] = value
+
+    def get_first_item(self):
+        """Returns the first item in each list if all first items are the same, otherwise returns None."""
+        first = True
+        res = None
+        for _list in self.values():
+            if len(_list) == 0:
+                return None
+            if first:
+                res = _list[0]
+                first = False
+            else: 
+                if _list[0] != res:
+                    return None
+
+        return res
+    
+    def append_item(self, item):
+        for _list in self.values():
+            if item not in _list:
+                _list.append(item)
+    
+    def copy(self):
+        scopy = OptionTypeList()
+        for key, value in self.items():
+            scopy[key] = value.copy()
+
+        return scopy
+            
+
 class MetaState:
     def __init__(self, cfg=None, instances=None):
         self.cfg = cfg
@@ -300,8 +370,8 @@ class MultiState:
                              # key: task name, value: ABB node (call node)
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABB per task; key: task name, value: ABB node
-        self.activated_tasks = [] # list of activated tasks 
-        self.activated_isrs = []  # list of ISRs currently running
+        self.activated_tasks = OptionTypeList(self, []) # list of activated tasks 
+        self.activated_isrs = OptionTypeList(self, [])  # list of ISRs currently running
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
         self.interrupts_enabled = True # interrupt enable flag
@@ -319,18 +389,18 @@ class MultiState:
         self.from_event = False # indicates if this state is the result of a timed event, e.g. an Alarm
         self.from_isr = False   # indicates if this state is the result of an ISR
         self.updated = 0
+
+    def get_running_abb(self):
+        instance = self.get_scheduled_instance()
+        if instance is not None:
+            return self.abbs[instance.name].get_value()
+        return None
         
     def get_scheduled_task(self):
-        if len(self.activated_tasks) > 0:
-            return self.activated_tasks[0]
-        else: 
-            return None
+        return self.activated_tasks.get_first_item()
     
     def get_current_isr(self):
-        if len(self.activated_isrs) > 0:
-            return self.activated_isrs[0]
-        else:
-            return None
+        return self.activated_isrs.get_first_item()
     
     def get_scheduled_instance(self):
         """Returns the scheduled task or the current active isr, if one is active."""
@@ -339,6 +409,9 @@ class MultiState:
         if isr is not None:
             ret = isr
         return ret
+    
+    def set_abb(self, task_name, abb):
+        self.abbs[task_name] = OptionType(self, abb)
 
     def add_time(self, min_time, max_time):
         self.min_time = min_time
@@ -391,16 +464,15 @@ class MultiState:
         ret = "["
         scheduled_task = self.get_scheduled_task()
         current_isr = self.get_current_isr()
-        for task_name, abb in self.abbs.items():
+        for task_name, abb_options in self.abbs.items():
             if scheduled_task is not None and task_name == scheduled_task.name:
                 ret += "+"
             if current_isr is not None and task_name == current_isr.name:
-                ret += "+"
-            if abb is not None:
-                ret += self.cfg.vp.name[abb]
-            else: 
-                ret += "None"
-            ret += ", "
+                ret += "++"
+            abbs = abb_options.get_values()
+            for abb in abbs:
+                ret += self.cfg.vp.name[abb] + "/"
+            ret = ret[:-1] + ", "
         ret = ret[:-2] + "] " + str(self.global_times_merged) + str(self.passed_events)
         return ret
 
@@ -411,6 +483,9 @@ class MultiState:
         activated_isrs_eq = self.activated_isrs == other.activated_isrs
         irq_enabled_eq = self.interrupts_enabled == other.interrupts_enabled
         return class_eq and abbs_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
+    
+    def __hash__(self):
+        return id(self)
 
     def copy(self):
         scopy = MultiState()
@@ -418,7 +493,9 @@ class MultiState:
         for key, value in self.__dict__.items():
             setattr(scopy, key, value)
         scopy.instances = self.instances.copy()
-        scopy.abbs = self.abbs.copy()
+        scopy.abbs = {}
+        for key, value in self.abbs.items():
+            scopy.abbs[key] = value.copy()
         scopy.activated_tasks = self.activated_tasks.copy()
         scopy.activated_isrs = self.activated_isrs.copy()
         scopy.callgraphs = self.callgraphs.copy()
@@ -484,7 +561,7 @@ class MultiSSE(FlowAnalysis):
                 state.entry_abbs[task.name] = entry_abb
 
                 # setup abbs dict with entry abb for each task
-                state.abbs[task.name] = entry_abb
+                state.set_abb(task.name, entry_abb)
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
@@ -492,7 +569,7 @@ class MultiSSE(FlowAnalysis):
                 
                 # set list of activated tasks
                 if task.autostart: 
-                    state.activated_tasks.append(task)
+                    state.activated_tasks.append_item(task)
 
         # setup all ISRs
         for v in self._g.instances.vertices():
@@ -505,7 +582,7 @@ class MultiSSE(FlowAnalysis):
                 state.entry_abbs[isr.name] = entry_abb
 
                 # setup abbs dict with entry abb for each ISR
-                state.abbs[isr.name] = entry_abb
+                state.set_abb(isr.name, entry_abb)
 
                 # set callgraph and entry call node for each ISR
                 state.callgraphs[isr.name] = self._g.call_graphs[isr.name]
@@ -516,7 +593,7 @@ class MultiSSE(FlowAnalysis):
         for cpu, graph in metastate.state_graph.items():
             v = graph.get_vertices()[0]
             state = graph.vp.state[v]
-            abb = state.abbs[state.get_scheduled_task().name]
+            abb = state.get_running_abb()
             context = None
             max_time = Timings.get_max_time(state.cfg, abb, context)
             state.local_times = [(0, max_time)]
@@ -850,7 +927,6 @@ class MultiSSE(FlowAnalysis):
         
     def execute_state(self, state_vertex, sync_list, graph):
         new_states = []
-        # self._log.info(f"Executing state: {state}")
 
         # context used for computing ABB timings, this should be something useful later on
         context = None
@@ -860,13 +936,14 @@ class MultiSSE(FlowAnalysis):
         g_only_normal_edges = graph_tool.GraphView(graph, efilt=lambda x: not graph.ep.is_timed_event[x] and not graph.ep.is_isr[x])
         
         state = graph.vp.state[state_vertex]
+        self._log.info(f"Executing state: {state}")
         task = state.get_scheduled_task()
         isr = state.get_current_isr()
         if isr is not None:
             task = isr
 
         if task is not None:
-            abb = state.abbs[task.name]
+            abb = state.get_running_abb()
             if abb is not None:
                 min_time = Timings.get_min_time(state.cfg, abb, context)
 
@@ -939,7 +1016,7 @@ class MultiSSE(FlowAnalysis):
                     elif self._icfg.vp.type[abb] == ABBType.call:
                         for n in self._icfg.vertex(abb).out_neighbors():
                             new_state = state.copy()
-                            new_state.abbs[task.name] = n
+                            new_state.set_abb(task.name, n)
 
                             # find next call node
                             call_node = None
@@ -957,7 +1034,7 @@ class MultiSSE(FlowAnalysis):
                         new_state = state.copy()
                         call = new_state.callgraphs[task.name].vp.cfglink[new_state.call_nodes[task.name]]
                         neighbors = self._lcfg.vertex(call).out_neighbors()
-                        new_state.abbs[task.name] = next(neighbors)
+                        new_state.set_abb(task.name, next(neighbors))
                         new_state.call_nodes[task.name] = next(state.call_nodes[task.name].in_neighbors())
 
                         new_states.append(new_state)
@@ -966,7 +1043,7 @@ class MultiSSE(FlowAnalysis):
                     elif self._icfg.vp.type[abb] == ABBType.computation:
                         for n in self._icfg.vertex(abb).out_neighbors():
                             new_state = state.copy()
-                            new_state.abbs[task.name] = n
+                            new_state.set_abb(task.name, n)
 
                             new_states.append(new_state)
 
@@ -993,7 +1070,7 @@ class MultiSSE(FlowAnalysis):
 
                     max_time = math.inf
                     if new_task is not None:
-                        abb = new_state.abbs[new_task.name] 
+                        abb = new_state.get_running_abb()
                         max_time = Timings.get_max_time(new_state.cfg, abb, context)
 
                     # update all local intervalls
