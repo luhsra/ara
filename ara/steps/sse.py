@@ -213,6 +213,10 @@ class OptionTypeList(dict):
             if item not in _list:
                 _list.append(item)
     
+    def remove_item(self, item):
+        for _list in self.values():
+            _list.remove(item)
+    
     def copy(self):
         scopy = OptionTypeList()
         for key, value in self.items():
@@ -370,8 +374,8 @@ class MultiState:
                              # key: task name, value: ABB node (call node)
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABB per task; key: task name, value: ABB node
-        self.activated_tasks = OptionTypeList(self, []) # list of activated tasks 
-        self.activated_isrs = OptionTypeList(self, [])  # list of ISRs currently running
+        self.activated_tasks = OptionTypeList(id(self), []) # list of activated tasks 
+        self.activated_isrs = OptionTypeList(id(self), [])  # list of ISRs currently running
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
         self.interrupts_enabled = True # interrupt enable flag
@@ -411,7 +415,15 @@ class MultiState:
         return ret
     
     def set_abb(self, task_name, abb):
-        self.abbs[task_name] = OptionType(self, abb)
+        option = self.abbs[task_name]
+        key_count = 0
+        for key in option:
+            option[key] = abb
+            key_count += 1
+        assert(key_count <= 1)
+    
+    def set_activated_task(self, task_list):
+        self.activated_tasks = OptionTypeList(id(self), task_list)
 
     def add_time(self, min_time, max_time):
         self.min_time = min_time
@@ -484,8 +496,8 @@ class MultiState:
         irq_enabled_eq = self.interrupts_enabled == other.interrupts_enabled
         return class_eq and abbs_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
     
-    def __hash__(self):
-        return id(self)
+    # def __hash__(self):
+    #     return id(self)
 
     def copy(self):
         scopy = MultiState()
@@ -561,7 +573,7 @@ class MultiSSE(FlowAnalysis):
                 state.entry_abbs[task.name] = entry_abb
 
                 # setup abbs dict with entry abb for each task
-                state.set_abb(task.name, entry_abb)
+                state.abbs[task.name] = OptionType(id(state), entry_abb)
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
@@ -582,7 +594,7 @@ class MultiSSE(FlowAnalysis):
                 state.entry_abbs[isr.name] = entry_abb
 
                 # setup abbs dict with entry abb for each ISR
-                state.set_abb(isr.name, entry_abb)
+                state.abbs[isr.name] = OptionType(id(state), entry_abb)
 
                 # set callgraph and entry call node for each ISR
                 state.callgraphs[isr.name] = self._g.call_graphs[isr.name]
@@ -630,7 +642,7 @@ class MultiSSE(FlowAnalysis):
 
                 # get min and max times for the sync syscall
                 context = None # this has to be something useful later on
-                abb = state.abbs[state.get_scheduled_instance().name]
+                abb = state.get_running_abb()
                 min_time = Timings.get_min_time(state.cfg, abb, context)
 
                 for cpu_other, graph in metastate.state_graph.items():
@@ -665,6 +677,7 @@ class MultiSSE(FlowAnalysis):
                     for cpu_other, graph in metastate.state_graph.items():
                         if cpu != cpu_other:
                             skipped_counter = 0
+                            compress_list = []
                             for vertex in args[0]:
                                 sync_state = state
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
@@ -672,7 +685,7 @@ class MultiSSE(FlowAnalysis):
                                 # skip combination if next state is handling a syscall
                                 instance = next_state.get_scheduled_instance()
                                 if instance is not None:
-                                    instance_abb = next_state.abbs[instance.name]
+                                    instance_abb = next_state.get_running_abb()
                                     if self._g.cfg.vp.type[instance_abb] == ABBType.syscall:
                                         continue
 
@@ -690,49 +703,50 @@ class MultiSSE(FlowAnalysis):
                                 sync_state.global_times = new_times.copy()
                                 next_state.global_times = new_times.copy()
 
-                                # construct new metastate
-                                new_state = metastate.basic_copy()
-                                v = new_state.state_graph[cpu].add_vertex()
-                                new_state.state_graph[cpu].vp.state[v] = sync_state
-                                v = new_state.state_graph[cpu_other].add_vertex()
-                                new_state.state_graph[cpu_other].vp.state[v] = next_state
-
-
                                 # save the original multistates in the new metastate before executing the syscall
                                 # this information is later on used for building the gcfg
-                                new_state.entry_states[cpu] = sync_state.copy()
-                                new_state.entry_states[cpu_other] = next_state.copy()
+                                # new_state.entry_states[cpu] = sync_state.copy()
+                                # new_state.entry_states[cpu_other] = next_state.copy()
+
+                                next_state.passed_events = [0]
+
+                                # add next state to compress list
+                                compress_list.append(next_state)
+                            
+                            compressed_state = self.compress_states(compress_list)
+                            print(f"{compressed_state}")
+
+                            # construct new metastate
+                            new_state = metastate.basic_copy()
+                            v = new_state.state_graph[cpu].add_vertex()
+                            new_state.state_graph[cpu].vp.state[v] = sync_state
+                            v = new_state.state_graph[cpu_other].add_vertex()
+                            new_state.state_graph[cpu_other].vp.state[v] = compressed_state
+
+                            # execute the syscall
+                            self._g.os.interpret(self._lcfg, sync_state.get_running_abb(), new_state, cpu, is_global=True)
+
+                            # calculate new times for both new states
+                            # states = [next_state, sync_state]
+                            # for next_state in states:                                
+                            #     next_task = next_state.get_scheduled_task()
+                            #     if next_task is not None:
+                            #         abb = next_state.abbs[next_task.name]
+                            #         context = None
+                            #         max_time = Timings.get_max_time(next_state.cfg, abb, context)
+                            #     else:
+                            #         max_time = math.inf
+
+                            #     next_state.add_time(min_time, max_time)                   
+                            #     next_state.reset_local_time()
+
                                 
-                                # execute the syscall
-                                self._g.os.interpret(self._lcfg, sync_state.abbs[sync_state.get_scheduled_instance().name], new_state, cpu, is_global=True)
 
-                                # calculate new times for both new states
-                                states = [next_state, sync_state]
-                                for next_state in states:                                
-                                    next_task = next_state.get_scheduled_task()
-                                    if next_task is not None:
-                                        abb = next_state.abbs[next_task.name]
-                                        context = None
-                                        max_time = Timings.get_max_time(next_state.cfg, abb, context)
-                                    else:
-                                        max_time = math.inf
-
-                                    next_state.add_time(min_time, max_time)                   
-                                    next_state.reset_local_time()
-
-                                    next_state.passed_events = [0]
-
-                                if new_state not in new_states:    
-                                    new_states.append(new_state)
+                            if new_state not in new_states:    
+                                new_states.append(new_state)
                             
                             print(f"Skipped {skipped_counter} state combinations")
 
-        # remove all timing intervalls from executed metastate
-        # for cpu, graph in metastate.state_graph.items():
-        #     for v in graph.vertices():
-        #         state = graph.vp.state[v]
-        #         state.merge_times()
-        #         state.times = []
 
         update_list = []
         # filter out duplicate states by comparing with states in sstg
@@ -828,6 +842,33 @@ class MultiSSE(FlowAnalysis):
         
         new_states.extend(update_list)
         return new_states
+    
+    def compress_states(self, compress_list):
+        """Compresses a list of states into a single state using the OptionTypes when the state attributes are different"""
+        res = None
+        if len(compress_list) > 0:
+            res = compress_list[0].copy()
+
+            for i, state in enumerate(compress_list):
+                if i != 0:
+                    # compress abbs
+                    for taskname, abbs in res.abbs.items():
+                        option = state.abbs[taskname]
+                        for key, value in option.items():
+                            if key not in abbs:
+                                abbs[key] = value
+                    
+                    # compress activated tasks
+                    for key, _list in state.activated_tasks.items():
+                        if key not in res.activated_tasks:
+                            res.activated_tasks[key] = _list
+
+                    # compress activated isrs
+                    for key, _list in state.activated_isrs.items():
+                        if key not in res.activated_isrs:
+                            res.activated_isrs[key] = _list
+
+        return res
 
     def run_sse(self, metastate):
         """Run the single core sse for the given metastate on each cpu."""
@@ -1007,10 +1048,10 @@ class MultiSSE(FlowAnalysis):
                             if state not in sync_list:
                                 sync_list.append(state)
                         else:
-                            new_state = self._g.os.interpret(self._lcfg, abb, state, state.cpu)
+                            for new_state in self._g.os.interpret(self._lcfg, abb, state, state.cpu):
 
-                            if new_state is not None:
-                                new_states.append(new_state)
+                                if new_state is not None:
+                                    new_states.append(new_state)
                     
                     # call block handling
                     elif self._icfg.vp.type[abb] == ABBType.call:
@@ -1182,15 +1223,15 @@ class MultiSSE(FlowAnalysis):
         print("Total time used for a certain task: " + str(c_debugging))
 
         # build global control flow graph and print it
-        self.build_gcfg()
-        if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            dot_file = f'{uuid}.GCFG.dot'
-            dot_file = self.dump_prefix.get() + dot_file
-            self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
-                                           "graph_name": 'GCFG',
-                                           "subgraph": 'abbs'})
+        # self.build_gcfg()
+        # if self.dump.get():
+        #     uuid = self._step_manager.get_execution_id()
+        #     dot_file = f'{uuid}.GCFG.dot'
+        #     dot_file = self.dump_prefix.get() + dot_file
+        #     self._step_manager.chain_step({"name": "Printer",
+        #                                    "dot": dot_file,
+        #                                    "graph_name": 'GCFG',
+        #                                    "subgraph": 'abbs'})
 
         # print the sstg by chaining a printer step
         if self.dump.get():

@@ -223,16 +223,46 @@ class AUTOSAR(OSBase):
         for _list in state.activated_tasks.values():
             _list.sort(key=lambda task: task.priority, reverse=True)
 
+    @staticmethod
+    def decompress_state(state):
+        new_states = []
+        task_names = []
+        for key, activated_tasks_list in state.activated_tasks.items():
+            if len(activated_tasks_list) > 0:
+                task = activated_tasks_list[0]
+                if task.name not in task_names:
+                    task_names.append(task.name)
+        
+        for taskname in task_names:
+            if state.abbs[taskname].get_value() is None:
+                for key, abb in state.abbs[taskname].items():
+                    new_state = state.copy()
+                    new_states.append(new_state)
+
+                    new_state.set_abb(taskname, abb)
+                    new_state.set_activated_task(state.activated_tasks[key].copy())
+            
+            else:
+                new_state = state.copy()
+                new_states.append(new_state)
+
+                for key, activated_tasks_list in state.activated_tasks.items():
+                    if len(activated_tasks_list) > 0 and activated_tasks_list[0].name != taskname:
+                        abb_option = new_state.abbs[activated_tasks_list[0].name]
+                        del abb_option[key]
+                        del new_state.activated_tasks[key]
+
+        return new_states
+
+
+
     @syscall
     def AUTOSAR_ActivateTask_global(cfg, abb, metastate, cpu):
         graph = metastate.state_graph[cpu]
         v = graph.get_vertices()[0]
         state = graph.vp.state[v]
 
-        scheduled_task = state.get_scheduled_task()
-        current_isr = state.get_current_isr()
-        if current_isr is not None:
-            scheduled_task = current_isr
+        scheduled_task = state.get_scheduled_instance()
 
         # get Task argument
         cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
@@ -254,18 +284,23 @@ class AUTOSAR(OSBase):
 
         # add found Task to list of activated tasks
         if task not in target_state.activated_tasks:
-            target_state.activated_tasks.append(task)
+            target_state.activated_tasks.append_item(task)
 
         # advance current task to next abb
         counter = 0
         for n in cfg.vertex(abb).out_neighbors():
-            state.abbs[scheduled_task.name] = n
+            state.set_abb(scheduled_task.name, n)
             counter += 1
         assert(counter == 1)
 
         # trigger scheduling 
         AUTOSAR.schedule(target_state, task.cpu_id)
 
+        states = None
+        if target_state.get_running_abb() is None:
+            states = AUTOSAR.decompress_state(target_state)
+
+        return states
         # print("Activate Task globally: " + task.name)
 
 
@@ -315,7 +350,7 @@ class AUTOSAR(OSBase):
 
         # print("Activate Task: " + task.name)
 
-        return state
+        return [state]
 
     @syscall
     def AUTOSAR_AdvanceCounter(cfg, abb, state):
@@ -348,7 +383,7 @@ class AUTOSAR(OSBase):
         # advance task or isr to next abb
         new_state.abbs[scheduled_task.name] = next(cfg.vertex(abb).out_neighbors())
             
-        return new_state
+        return [new_state]
 
     @syscall
     def AUTOSAR_EnableAllInterrupts(cfg, abb, state, cpu):
@@ -361,7 +396,7 @@ class AUTOSAR(OSBase):
         # advance task or isr to next abb
         new_state.abbs[scheduled_task.name] = next(cfg.vertex(abb).out_neighbors())
             
-        return new_state
+        return [new_state]
 
     @syscall
     def AUTOSAR_GetAlarm(cfg, abb, state):
@@ -417,10 +452,10 @@ class AUTOSAR(OSBase):
 
         # remove task from activated tasks list
         scheduled_task = state.get_scheduled_task()
-        state.activated_tasks.remove(scheduled_task)
+        state.activated_tasks.remove_item(scheduled_task)
 
         # reset abb list to entry abb
-        state.abbs[scheduled_task.name] = state.entry_abbs[scheduled_task.name]
+        state.set_abb(scheduled_task.name, state.entry_abbs[scheduled_task.name])
 
         # set this syscall for gcfg building
         state.last_syscall = SyscallInfo("TerminateTask", abb, cpu)
@@ -436,7 +471,13 @@ class AUTOSAR(OSBase):
 
         # print("Terminated Task: " + scheduled_task.name)
 
-        return state
+        states = None
+        if state.get_running_abb() is None:
+            states = AUTOSAR.decompress_state(state)
+        else:
+            return [state]
+
+        return states
 
     @syscall
     def AUTOSAR_WaitEvent(cfg, abb, state):

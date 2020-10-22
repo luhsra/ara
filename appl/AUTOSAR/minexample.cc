@@ -18,59 +18,88 @@ DeclareTask(TaskD);
 DeclareTask(TaskE);
 DeclareTask(TaskF);
 
+TASK(TaskA) {
+    doSomethingBefore();
+    doSomethingAfter();
+    TerminateTask(); 
+}
+
+TASK(TaskB) {
+    doSomethingImportant();
+    TerminateTask(); 
+}
+
+TASK(TaskC) {
+    TerminateTask(); 
+}
+
+TASK(TaskD) {
+    ActivateTask(TaskB);
+    doSomethingC();
+    TerminateTask(); 
+}
+
+TASK(TaskE) {
+    TerminateTask(); 
+}
+
+TASK(TaskF) {
+    TerminateTask(); 
+}
+
 // ISR2(Interrupt1) {
 //     handleSomeEvent();
 // }
 
-ISR2(Interrupt2) {
-    ActivateTask(TaskF);
-}
+// ISR2(Interrupt2) {
+//     ActivateTask(TaskF);
+// }
 
-TASK(TaskA) {
-    doSomethingBefore(); //race condition between the runtime of this ABB
-    ActivateTask(TaskD);
+// TASK(TaskA) {
+//     doSomethingBefore(); //race condition between the runtime of this ABB
+//     ActivateTask(TaskD);
 
-    TerminateTask();
-}
+//     TerminateTask();
+// }
 
-TASK(TaskB) {
-    DisableAllInterrupts();
-    doCriticalWork();
-    EnableAllInterrupts();
+// TASK(TaskB) {
+//     DisableAllInterrupts();
+//     doCriticalWork();
+//     EnableAllInterrupts();
 
-    TerminateTask();
-}
+//     TerminateTask();
+// }
 
-TASK(TaskF) {
-    while(true) {
-        doSomethingAfter();
-    }
-    TerminateTask();
-}
+// TASK(TaskF) {
+//     while(true) {
+//         doSomethingAfter();
+//     }
+//     TerminateTask();
+// }
 
-TASK(TaskC) {
-    doSomethingC(); //and between this ABB
-    ActivateTask(TaskE);
-    TerminateTask();
-}
+// TASK(TaskC) {
+//     doSomethingC(); //and between this ABB
+//     ActivateTask(TaskE);
+//     TerminateTask();
+// }
 
-TASK(TaskD) {
-    // ActivateTask(TaskF);
-    while(true) {
-        doSomethingD();
-    }
+// TASK(TaskD) {
+//     // ActivateTask(TaskF);
+//     while(true) {
+//         doSomethingD();
+//     }
 
-    TerminateTask();
-}
+//     TerminateTask();
+// }
 
-TASK(TaskE) {
-    ActivateTask(TaskF);
-    while(true) {
-        doSomethingE();
-    }
+// TASK(TaskE) {
+//     ActivateTask(TaskF);
+//     while(true) {
+//         doSomethingE();
+//     }
     
-    TerminateTask();
-}
+//     TerminateTask();
+// }
 
 int main(void){
     char * appmode = {"tmp"};
