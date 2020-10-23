@@ -11,7 +11,7 @@ class SystemRelevantFunctions(Step):
     """Mark all function that are in the Callgraph as system relevant or not."""
 
     def get_single_dependencies(self):
-        return ["CallGraph", "SysFuncts", "LLVMMap"]
+        return ["CallGraph", "SysFuncts"]
 
     def run(self):
         if self._graph.os is None:
@@ -20,7 +20,6 @@ class SystemRelevantFunctions(Step):
 
         syscalls = get_os_syscalls(self._graph.os)
         callgraph = self._graph.callgraph
-        cfg = self._graph.cfg
 
         every_set = {SyscallCategory.every, }
 

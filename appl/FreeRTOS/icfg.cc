@@ -59,6 +59,17 @@ PtrFunc complex_get_ptr_func(int a) {
 	}
 }
 
+void recursive();
+
+void chain() {
+	recursive();
+}
+
+void recursive() {
+	xTaskCreate(vTask1, "Recursive", 510, NULL, 1, NULL);
+	chain();
+	xTaskCreate(vTask1, "Recursive2", 510, NULL, 1, NULL);
+}
 
 int main(void) {
 	xTaskCreate(vTask1, "Task 1", 510, NULL, 1, NULL);
@@ -77,6 +88,8 @@ int main(void) {
 	// this can be solved
 	auto ptr3 = complex_get_ptr_func(23);
 	ptr3(23, 4.5, 20);
+
+	recursive();
 
 	vTaskStartScheduler();
 

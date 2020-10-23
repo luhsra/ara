@@ -6,11 +6,13 @@
 #include <Graphs/PTACallGraph.h>
 #include <Python.h>
 #include <boost/functional/hash.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 #include <boost/range/combine.hpp>
 #include <functional>
 #include <graph_python_interface.hh>
 #include <llvm/IR/Instructions.h>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 namespace boost::detail {
@@ -41,6 +43,20 @@ namespace ara::graph {
 		                              boost::python::object& new_e) {
 			auto gp = graph_tool::retrieve_graph_view<Graph>(gi, g);
 			new_e = boost::python::object(graph_tool::PythonEdge<Graph>(gp, edges.at(index)));
+		}
+
+		template <typename Graph>
+		void is_recursive_dispatched(Graph& g, bool& ret_value) const {
+			std::unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor> func_set;
+			for (const auto& edge : boost::adaptors::reverse(edges)) {
+				const auto target = boost::target(edge, g);
+				if (func_set.find(target) != func_set.end()) {
+					ret_value = true;
+					return;
+				}
+				func_set.emplace(target);
+			}
+			ret_value = false;
 		}
 
 		template <typename Graph>

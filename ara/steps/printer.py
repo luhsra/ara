@@ -226,6 +226,8 @@ class Printer(Step):
                 shape=shapes[callgraph.vp.syscall_category_every[node]][0],
                 color=shapes[callgraph.vp.syscall_category_every[node]][1]
             )
+            if callgraph.vp.recursive[node]:
+                dot_node.set('style', 'dashed')
             dot_graph.add_node(dot_node)
         for edge in callgraph.edges():
             dot_graph.add_edge(pydot.Edge(

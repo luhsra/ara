@@ -169,6 +169,7 @@ namespace ara::graph {
 		ARA_VMAP(function)
 		ARA_VMAP(function_name)
 		ARA_VMAP(svf_vlink)
+		ARA_VMAP(recursive)
 
 		// syscall categories
 #define ARA_SYS_ACTION(Value) ARA_VMAP(syscall_category_##Value)

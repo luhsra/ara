@@ -33,10 +33,11 @@ class State:
         self.call_path = None # call node within the call graph
         self.branch = False # is this state coming from a branch
         self.loop = False # is this state coming from a loop
+        self.recursive = False #is this state executing in a recursive function
         self.running = None # what instance (Task or ISR) is currently running
 
     def __repr__(self):
-        ret = f'State(Branch: {self.branch}, Loop: {self.loop} '
+        ret = f'State(B: {self.branch}, L: {self.loop}, R: {self.recursive}, '
         abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
         ret += ', '.join(abbs)
         ret += ", CallPath: " + self.call_path.print(call_site=True)
@@ -235,6 +236,9 @@ class FlatAnalysis(FlowAnalysis):
 
     This analysis does not respect loops.
     """
+    def get_single_dependencies(self):
+        return ["RecursiveFunctions"]
+
     def _init_analysis(self):
         self._call_graph = self._graph.callgraph
         self._cond_func = {}
@@ -245,18 +249,24 @@ class FlatAnalysis(FlowAnalysis):
         self._max_call_depth = 0
 
     def _get_initial_state(self):
-        # find main
-        entry_func = self._graph.cfg.get_function_by_name(self._entry_func)
-        entry_abb = self._graph.cfg.get_entry_abb(entry_func)
+        cfg = self._graph.cfg
+        callgraph = self._graph.callgraph
 
-        entry = State(cfg=self._graph.cfg,
-                      callgraph=self._graph.callgraph,
+        # find main
+        entry_func = cfg.get_function_by_name(self._entry_func)
+        entry_abb = cfg.get_entry_abb(entry_func)
+
+        entry = State(cfg=cfg,
+                      callgraph=callgraph,
                       next_abbs=[entry_abb])
 
         self._graph.os.init(entry)
 
         entry.call_path = CallPath()
         entry.scheduler_on = self._is_chained_analysis(self._entry_func)
+        entry.recursive = callgraph.vp.recursive[
+            callgraph.vertex(cfg.vp.call_graph_link[entry_func])
+        ]
         instance = self._find_running_instance(self._entry_func)
         entry.running = instance
         if instance:
@@ -348,18 +358,24 @@ class FlatAnalysis(FlowAnalysis):
             # call handling
             elif self._icfg.vp.type[abb] == ABBType.call:
                 func = self._cfg.vp.name[self._cfg.get_function(abb)]
-                self._log.debug(f"Handle call: {self._icfg.vp.name[abb]} to {func}")
+                self._log.debug(f"Handle call: {self._icfg.vp.name[abb]} in {func}")
                 handled = False
                 for n in self._icfg.vertex(abb).out_neighbors():
                     if self._is_bad_call_target(n):
                         continue
                     new_call_path = self._get_call_node(state.call_path, abb)
                     if new_call_path.is_recursive():
-                        self._log.debug(f"Found recursive function. Callpath {new_call_path}")
+                        self._log.debug(f"Reentry of recursive function. Callpath {new_call_path}")
                         continue
                     new_state = state.copy()
                     new_state.next_abbs = [n]
                     new_state.call_path = new_call_path
+                    func = new_state.cfg.get_function(new_state.cfg.vertex(n))
+                    new_state.recursive = new_state.callgraph.vp.recursive[
+                        new_state.callgraph.vertex(
+                            new_state.cfg.vp.call_graph_link[func]
+                        )
+                    ]
                     self._handle_call(state, new_state, abb)
                     new_states.append(new_state)
                     handled = True
@@ -379,7 +395,16 @@ class FlatAnalysis(FlowAnalysis):
                 callsite = new_state.call_path[-1]
                 call = new_state.callgraph.ep.callsite[callsite]
                 neighbors = self._lcfg.vertex(call).out_neighbors()
-                new_state.next_abbs = [next(neighbors)]
+                next_node = next(neighbors)
+                func = new_state.cfg.get_function(
+                    new_state.cfg.vertex(next_node)
+                )
+                new_state.recursive = new_state.callgraph.vp.recursive[
+                    new_state.callgraph.vertex(
+                        new_state.cfg.vp.call_graph_link[func]
+                    )
+                ]
+                new_state.next_abbs = [next_node]
                 new_state.call_path.pop_back()
                 new_states.append(new_state)
 
@@ -417,7 +442,8 @@ class InstanceGraph(FlatAnalysis):
         return {"name": name, "entry_point": self.entry_point.get()}
 
     def get_single_dependencies(self):
-        deps = self._get_os_specific_deps()
+        deps = super().get_single_dependencies()
+        deps += self._get_os_specific_deps()
         deps += list(map(self._get_entry_point_dep,
                          ["Syscall", "ValueAnalysis"]))
         return deps

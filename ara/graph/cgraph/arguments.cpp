@@ -3,9 +3,7 @@
 #include "common/llvm_common.h"
 #include "graph_data_pyx_wrapper.h"
 
-#include <boost/range/adaptor/reversed.hpp>
 #include <llvm/Support/raw_ostream.h>
-#include <unordered_set>
 
 namespace boost::detail {
 	std::size_t hash_value(const boost::detail::adj_edge_descriptor<long unsigned int>& edge) {
@@ -103,14 +101,14 @@ namespace ara::graph {
 	}
 
 	bool CallPath::is_recursive() const {
-		std::unordered_set<graph_tool::GraphInterface::edge_t> edge_set;
-		for (const auto& edge : boost::adaptors::reverse(edges)) {
-			if (edge_set.find(edge) != edge_set.end()) {
-				return true;
-			}
-			edge_set.emplace(edge);
+		if (is_empty()) {
+			return false;
 		}
-		return false;
+		assert(call_graph != nullptr && "call graph is not initialized");
+		bool ret_value = false;
+		graph_tool::gt_dispatch<>()([&](auto& g) { is_recursive_dispatched(g, ret_value); },
+		                            graph_tool::always_directed())(call_graph->graph.get_graph_view());
+		return ret_value;
 	}
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp) {

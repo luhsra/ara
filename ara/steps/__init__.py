@@ -12,6 +12,7 @@ def provide_steps():
     from .load_oil import LoadOIL
     from .manual_corrections import ManualCorrections
     from .printer import Printer
+    from .recursive_functions import RecursiveFunctions
     from .sse import InstanceGraph, InteractionAnalysis, MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
@@ -21,18 +22,19 @@ def provide_steps():
         yield step
 
     yield ABBMerge
-    yield CallGraphStats
     yield CFGOptimize
     yield CFGStats
+    yield CallGraphStats
     yield Dummy
     yield Generator
     yield ICFG
     yield InstanceGraph
     yield InteractionAnalysis
     yield LoadOIL
-    yield Printer
     yield ManualCorrections
     yield MultiSSE
-    yield Syscall
+    yield Printer
+    yield RecursiveFunctions
     yield SysFuncts
+    yield Syscall
     yield SystemRelevantFunctions
