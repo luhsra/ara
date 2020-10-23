@@ -19,8 +19,8 @@ DeclareTask(TaskE);
 DeclareTask(TaskF);
 
 TASK(TaskA) {
+    ActivateTask(TaskC);
     doSomethingBefore();
-    doSomethingAfter();
     TerminateTask(); 
 }
 
@@ -30,12 +30,14 @@ TASK(TaskB) {
 }
 
 TASK(TaskC) {
+    doSomethingC();
+    doSomethingAfter();
     TerminateTask(); 
 }
 
 TASK(TaskD) {
     ActivateTask(TaskB);
-    doSomethingC();
+    doSomethingD();
     TerminateTask(); 
 }
 

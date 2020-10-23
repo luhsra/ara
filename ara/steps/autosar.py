@@ -225,6 +225,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def decompress_state(state):
+        # print(f"decompress {state}")
         new_states = []
         task_names = []
         for key, activated_tasks_list in state.activated_tasks.items():
@@ -232,25 +233,30 @@ class AUTOSAR(OSBase):
                 task = activated_tasks_list[0]
                 if task.name not in task_names:
                     task_names.append(task.name)
-        
+
         for taskname in task_names:
-            if state.abbs[taskname].get_value() is None:
-                for key, abb in state.abbs[taskname].items():
-                    new_state = state.copy()
-                    new_states.append(new_state)
+            interstate = state.copy()
 
-                    new_state.set_abb(taskname, abb)
-                    new_state.set_activated_task(state.activated_tasks[key].copy())
-            
-            else:
-                new_state = state.copy()
-                new_states.append(new_state)
+            for key, activated_tasks_list in state.activated_tasks.items():
+                if len(activated_tasks_list) > 0 and activated_tasks_list[0].name != taskname:
+                    del interstate.activated_tasks[key]
 
-                for key, activated_tasks_list in state.activated_tasks.items():
-                    if len(activated_tasks_list) > 0 and activated_tasks_list[0].name != taskname:
-                        abb_option = new_state.abbs[activated_tasks_list[0].name]
+                    for name, abb_option in interstate.abbs.items():
                         del abb_option[key]
-                        del new_state.activated_tasks[key]
+            
+            # print(f"interstate {taskname}:{interstate}")
+            if interstate.abbs[taskname].get_value() is None:
+                for key, abb in interstate.abbs[taskname].items():
+                    activated_tasks_list = interstate.activated_tasks[key]
+                    if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname:
+                        new_state = interstate.copy()
+                        new_states.append(new_state)
+
+                        new_state.set_abb(taskname, abb)
+                        new_state.set_activated_task(activated_tasks_list.copy())
+                        # print(f"new_state {taskname}:{new_state}")  
+            else:
+                new_states.append(interstate)         
 
         return new_states
 

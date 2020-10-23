@@ -13,7 +13,7 @@ class Timings:
         if f is not None:
             return f(context)
         # return (0, math.inf)
-        return (4, 6)
+        return (1, 6)
     
     @staticmethod
     def get_min_time(cfg, abb, context):
@@ -25,11 +25,11 @@ class Timings:
         res = Timings.get_timings(cfg, abb, context)
         return res[1]
 
-    @staticmethod
-    def ABB4_timings(context):
-        return (1, 2)
+    # @staticmethod
+    # def ABB4_timings(context):
+    #     return (1, 2)
     
-    @staticmethod
-    def ABB0_timings(context):
-        return (1, 2)
+    # @staticmethod
+    # def ABB0_timings(context):
+    #     return (1, 2)
     

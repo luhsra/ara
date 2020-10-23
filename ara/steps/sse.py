@@ -179,12 +179,40 @@ class OptionType(dict):
 
         return res
     
-    def copy(self):
+    def copy(self, oldkey, newkey):
         scopy = OptionType()
         for key, value in self.items():
-            scopy[key] = value
+            if key == oldkey:
+                scopy[newkey] = value
+            else:
+                scopy[key] = value
         
         return scopy
+
+    def equal(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        for value in self.values():
+            found = False
+            for othervalue in other.values():
+                if value == othervalue:
+                    found = True
+                    break
+            if not found:
+                return False
+        
+        # comparing other way around
+        for value in other.values():
+            found = False
+            for othervalue in self.values():
+                if value == othervalue:
+                    found = True
+                    break
+            if not found:
+                return False
+
+        return True
 
 class OptionTypeList(dict):
     def __init__(self, key=None, value=None):
@@ -217,12 +245,40 @@ class OptionTypeList(dict):
         for _list in self.values():
             _list.remove(item)
     
-    def copy(self):
+    def copy(self, oldkey, newkey):
         scopy = OptionTypeList()
         for key, value in self.items():
-            scopy[key] = value.copy()
+            if key == oldkey:
+                scopy[newkey] = value.copy()
+            else:
+                scopy[key] = value.copy()
 
         return scopy
+    
+    def equal(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        for value in self.values():
+            found = False
+            for othervalue in other.values():
+                if value == othervalue:
+                    found = True
+                    break
+            if not found:
+                return False
+        
+        # comparing other way around
+        for value in other.values():
+            found = False
+            for othervalue in self.values():
+                if value == othervalue:
+                    found = True
+                    break
+            if not found:
+                return False
+
+        return True
             
 
 class MetaState:
@@ -415,12 +471,7 @@ class MultiState:
         return ret
     
     def set_abb(self, task_name, abb):
-        option = self.abbs[task_name]
-        key_count = 0
-        for key in option:
-            option[key] = abb
-            key_count += 1
-        assert(key_count <= 1)
+        self.abbs[task_name] = OptionType(id(self), abb)
     
     def set_activated_task(self, task_list):
         self.activated_tasks = OptionTypeList(id(self), task_list)
@@ -490,26 +541,36 @@ class MultiState:
 
     def __eq__(self, other):
         class_eq = self.__class__ == other.__class__
-        abbs_eq = self.abbs == other.abbs
-        activated_task_eq = self.activated_tasks == other.activated_tasks
-        activated_isrs_eq = self.activated_isrs == other.activated_isrs
+        # abbs_eq = self.abbs == other.abbs
+        for key, option in self.abbs.items():
+            otheroption = other.abbs[key]
+            if not option.equal(otheroption):
+                return False
+
+        activated_task_eq = self.activated_tasks.equal(other.activated_tasks)
+        activated_isrs_eq = self.activated_isrs.equal(other.activated_isrs)
         irq_enabled_eq = self.interrupts_enabled == other.interrupts_enabled
-        return class_eq and abbs_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
+        return class_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
     
     # def __hash__(self):
     #     return id(self)
 
-    def copy(self):
+    def copy(self, changekey=True):
         scopy = MultiState()
+
+        oldkey = id(self)
+        newkey = id(scopy)
+        if not changekey:
+            newkey = id(self)
 
         for key, value in self.__dict__.items():
             setattr(scopy, key, value)
         scopy.instances = self.instances.copy()
         scopy.abbs = {}
         for key, value in self.abbs.items():
-            scopy.abbs[key] = value.copy()
-        scopy.activated_tasks = self.activated_tasks.copy()
-        scopy.activated_isrs = self.activated_isrs.copy()
+            scopy.abbs[key] = value.copy(oldkey, newkey)
+        scopy.activated_tasks = self.activated_tasks.copy(oldkey, newkey)
+        scopy.activated_isrs = self.activated_isrs.copy(oldkey, newkey)
         scopy.callgraphs = self.callgraphs.copy()
         scopy.call_nodes = self.call_nodes.copy()
         scopy.entry_abbs = self.entry_abbs.copy()
@@ -676,6 +737,7 @@ class MultiSSE(FlowAnalysis):
                 else:
                     for cpu_other, graph in metastate.state_graph.items():
                         if cpu != cpu_other:
+                            sync_state = state.copy()
                             skipped_counter = 0
                             compress_list = []
                             for vertex in args[0]:
@@ -697,7 +759,7 @@ class MultiSSE(FlowAnalysis):
                                     skipped_counter += 1
                                     continue
 
-                                sync_state = sync_state.copy()
+                                # sync_state = sync_state.copy()
                                 next_state = next_state.copy()
 
                                 sync_state.global_times = new_times.copy()
@@ -714,7 +776,8 @@ class MultiSSE(FlowAnalysis):
                                 compress_list.append(next_state)
                             
                             compressed_state = self.compress_states(compress_list)
-                            print(f"{compressed_state}")
+                            
+                            sync_state.passed_events = [0]
 
                             # construct new metastate
                             new_state = metastate.basic_copy()
@@ -724,7 +787,22 @@ class MultiSSE(FlowAnalysis):
                             new_state.state_graph[cpu_other].vp.state[v] = compressed_state
 
                             # execute the syscall
-                            self._g.os.interpret(self._lcfg, sync_state.get_running_abb(), new_state, cpu, is_global=True)
+                            states = self._g.os.interpret(self._lcfg, sync_state.get_running_abb(), new_state, cpu, is_global=True)
+
+                            if states is not None:
+                                for state in states:
+                                    # construct new metastate
+                                    new_state = metastate.basic_copy()
+                                    v = new_state.state_graph[cpu].add_vertex()
+                                    new_state.state_graph[cpu].vp.state[v] = sync_state
+                                    v = new_state.state_graph[cpu_other].add_vertex()
+                                    new_state.state_graph[cpu_other].vp.state[v] = state
+
+                                    if new_state not in new_states:    
+                                        new_states.append(new_state)
+                            else:
+                                if new_state not in new_states:    
+                                    new_states.append(new_state)
 
                             # calculate new times for both new states
                             # states = [next_state, sync_state]
@@ -740,10 +818,6 @@ class MultiSSE(FlowAnalysis):
                             #     next_state.add_time(min_time, max_time)                   
                             #     next_state.reset_local_time()
 
-                                
-
-                            if new_state not in new_states:    
-                                new_states.append(new_state)
                             
                             print(f"Skipped {skipped_counter} state combinations")
 
@@ -847,7 +921,7 @@ class MultiSSE(FlowAnalysis):
         """Compresses a list of states into a single state using the OptionTypes when the state attributes are different"""
         res = None
         if len(compress_list) > 0:
-            res = compress_list[0].copy()
+            res = compress_list[0].copy(changekey=False)
 
             for i, state in enumerate(compress_list):
                 if i != 0:
@@ -873,6 +947,7 @@ class MultiSSE(FlowAnalysis):
     def run_sse(self, metastate):
         """Run the single core sse for the given metastate on each cpu."""
         for cpu, graph in metastate.state_graph.items():
+            print(f"Run SSE on cpu {cpu}")
             global sse_counter
             sse_counter += 1
 
