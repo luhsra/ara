@@ -580,7 +580,7 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vEventGroupDelete(cfg, abb, state):
-        pass
+        logger.warn("Got an vEventGroupDelete. Deleting a potientially static EventGroup.")
 
     @syscall
     def vQueueAddToRegistry(cfg, abb, state):
@@ -588,7 +588,7 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vQueueDelete(cfg, abb, state):
-        pass
+        logger.warn("Got an vQueueDelete. Deleting a potientially static Queue.")
 
     @syscall
     def vSemaphoreCreateBinary(cfg, abb, state):
@@ -596,7 +596,7 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vStreamBufferDelete(cfg, abb, state):
-        pass
+        logger.warn("Got an vStreamBufferDelete. Deleting a potientially static StreamBuffer.")
 
     @syscall
     def vTaskAllocateMPURegions(cfg, abb, state):
@@ -608,7 +608,7 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vTaskDelete(cfg, abb, state):
-        pass
+        logger.warn("Got an vTaskDelete. Deleting a potientially static Task.")
 
     @syscall
     def vTaskEnterCritical(cfg, abb, state):
