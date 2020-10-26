@@ -19,8 +19,9 @@ DeclareTask(TaskE);
 DeclareTask(TaskF);
 
 TASK(TaskA) {
-    ActivateTask(TaskC);
     doSomethingBefore();
+    ActivateTask(TaskC);
+    doSomethingAfter();
     TerminateTask(); 
 }
 

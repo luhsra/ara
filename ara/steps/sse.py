@@ -427,9 +427,9 @@ class MultiState:
         self.instances = instances
         self.entry_abbs = {} # entry abbs for each task; key: task name, value: entry abb node
         self.call_nodes = {} # call node of each task (used for handling calls)
-                             # key: task name, value: ABB node (call node)
+                             # key: task name, value: OptionType of ABB nodes (call nodes)
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
-        self.abbs = {} # active ABB per task; key: task name, value: ABB node
+        self.abbs = {} # active ABB per task; key: task name, value: OptionType of ABB nodes
         self.activated_tasks = OptionTypeList(id(self), []) # list of activated tasks 
         self.activated_isrs = OptionTypeList(id(self), [])  # list of ISRs currently running
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
@@ -475,6 +475,9 @@ class MultiState:
     
     def set_activated_task(self, task_list):
         self.activated_tasks = OptionTypeList(id(self), task_list)
+
+    def set_call_node(self, task_name, callnode):
+        self.call_nodes[task_name] = OptionType(id(self), callnode)
 
     def add_time(self, min_time, max_time):
         self.min_time = min_time
@@ -572,7 +575,9 @@ class MultiState:
         scopy.activated_tasks = self.activated_tasks.copy(oldkey, newkey)
         scopy.activated_isrs = self.activated_isrs.copy(oldkey, newkey)
         scopy.callgraphs = self.callgraphs.copy()
-        scopy.call_nodes = self.call_nodes.copy()
+        scopy.call_nodes = {}
+        for key, value in self.call_nodes.items():
+            scopy.call_nodes[key] = value.copy(oldkey, newkey)
         scopy.entry_abbs = self.entry_abbs.copy()
         scopy.global_times = self.global_times.copy()
         scopy.local_times = self.local_times.copy()
@@ -638,7 +643,7 @@ class MultiSSE(FlowAnalysis):
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
-                state.call_nodes[task.name] = self._find_tree_root(self._g.call_graphs[func_name])
+                state.set_call_node(task.name, self._find_tree_root(self._g.call_graphs[func_name]))
                 
                 # set list of activated tasks
                 if task.autostart: 
@@ -659,7 +664,7 @@ class MultiSSE(FlowAnalysis):
 
                 # set callgraph and entry call node for each ISR
                 state.callgraphs[isr.name] = self._g.call_graphs[isr.name]
-                state.call_nodes[isr.name] = self._find_tree_root(self._g.call_graphs[isr.name])
+                state.set_call_node(isr.name, self._find_tree_root(self._g.call_graphs[isr.name]))
 
         
         # build starting times for each multistate
@@ -794,7 +799,7 @@ class MultiSSE(FlowAnalysis):
                                     # construct new metastate
                                     new_state = metastate.basic_copy()
                                     v = new_state.state_graph[cpu].add_vertex()
-                                    new_state.state_graph[cpu].vp.state[v] = sync_state
+                                    new_state.state_graph[cpu].vp.state[v] = sync_state.copy()
                                     v = new_state.state_graph[cpu_other].add_vertex()
                                     new_state.state_graph[cpu_other].vp.state[v] = state
 
@@ -941,6 +946,13 @@ class MultiSSE(FlowAnalysis):
                     for key, _list in state.activated_isrs.items():
                         if key not in res.activated_isrs:
                             res.activated_isrs[key] = _list
+                    
+                    # compress call nodes
+                    for taskname, callnodes in res.call_nodes.items():
+                        option = state.call_nodes[taskname]
+                        for key, value in option.items():
+                            if key not in callnodes:
+                                callnodes[key] = value
 
         return res
 
@@ -1136,11 +1148,11 @@ class MultiSSE(FlowAnalysis):
 
                             # find next call node
                             call_node = None
-                            for neighbor in state.callgraphs[task.name].vertex(state.call_nodes[task.name]).out_neighbors():
+                            for neighbor in state.callgraphs[task.name].vertex(state.call_nodes[task.name].get_value()).out_neighbors():
                                 if state.callgraphs[task.name].vp.cfglink[neighbor] == abb:
                                     call_node = neighbor
                                     break
-                            new_state.call_nodes[task.name] = call_node
+                            new_state.set_call_node(task.name, call_node)
 
                             new_states.append(new_state)
 
@@ -1148,10 +1160,10 @@ class MultiSSE(FlowAnalysis):
                     elif (self._icfg.vp.is_exit[abb] and
                         self._icfg.vertex(abb).out_degree() > 0):
                         new_state = state.copy()
-                        call = new_state.callgraphs[task.name].vp.cfglink[new_state.call_nodes[task.name]]
+                        call = new_state.callgraphs[task.name].vp.cfglink[new_state.call_nodes[task.name].get_value()]
                         neighbors = self._lcfg.vertex(call).out_neighbors()
                         new_state.set_abb(task.name, next(neighbors))
-                        new_state.call_nodes[task.name] = next(state.call_nodes[task.name].in_neighbors())
+                        new_state.set_call_node(task.name, next(state.call_nodes[task.name].get_value().in_neighbors()))
 
                         new_states.append(new_state)
                     

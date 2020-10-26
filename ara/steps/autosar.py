@@ -200,7 +200,7 @@ class AUTOSAR(OSBase):
         if "ActivateTask" in syscall:
             # get Task argument
             scheduled_task = state.get_scheduled_task()
-            cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
+            cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name].get_value())
             arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
 
             # find task with same name as 'arg' in instance graph
@@ -237,23 +237,31 @@ class AUTOSAR(OSBase):
         for taskname in task_names:
             interstate = state.copy()
 
+            # remove every tasklist that has a different running task as taskname
             for key, activated_tasks_list in state.activated_tasks.items():
                 if len(activated_tasks_list) > 0 and activated_tasks_list[0].name != taskname:
+                    # remove the tasklist and everything with the same key
                     del interstate.activated_tasks[key]
 
                     for name, abb_option in interstate.abbs.items():
                         del abb_option[key]
+                    
+                    for call_node_option in interstate.call_nodes.values():
+                        del call_node_option[key]
             
             # print(f"interstate {taskname}:{interstate}")
+            # check if the running abb is unique
             if interstate.abbs[taskname].get_value() is None:
                 for key, abb in interstate.abbs[taskname].items():
                     activated_tasks_list = interstate.activated_tasks[key]
+                    callnode = interstate.call_nodes[taskname][key]
                     if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname:
                         new_state = interstate.copy()
                         new_states.append(new_state)
 
                         new_state.set_abb(taskname, abb)
                         new_state.set_activated_task(activated_tasks_list.copy())
+                        new_state.set_call_node(taskname, callnode)
                         # print(f"new_state {taskname}:{new_state}")  
             else:
                 new_states.append(interstate)         
@@ -271,7 +279,7 @@ class AUTOSAR(OSBase):
         scheduled_task = state.get_scheduled_instance()
 
         # get Task argument
-        cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
+        cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name].get_value())
         arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
 
         # find task with same name as 'arg' in instance graph
@@ -319,7 +327,7 @@ class AUTOSAR(OSBase):
             scheduled_task = current_isr
 
         # get Task argument
-        cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name])
+        cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name].get_value())
         arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
 
         # find task with same name as 'arg' in instance graph
