@@ -5,4 +5,5 @@ def get_syscalls():
     from .freertos import FreeRTOS
     from .osek import OSEK
     from .autosar import AUTOSAR
-    return sum(map(get_os_syscalls, [FreeRTOS, OSEK, AUTOSAR]), [])
+    from .zephyr import ZEPHYR
+    return sum(map(get_os_syscalls, [FreeRTOS, OSEK, AUTOSAR, ZEPHYR]), [])

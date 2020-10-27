@@ -1,4 +1,5 @@
 /build
+/appl/Zephyr/**/build
 __pycache__
 /native.txt
 /subprojects/*
