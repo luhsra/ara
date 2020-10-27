@@ -225,7 +225,9 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def decompress_state(state):
-        # print(f"decompress {state}")
+        print(f"decompress {state}")
+        # print(f"abbs: {state.abbs}")
+        # print(f"activated tasks: {state.activated_tasks}")
         new_states = []
         task_names = []
         for key, activated_tasks_list in state.activated_tasks.items():
@@ -248,8 +250,9 @@ class AUTOSAR(OSBase):
                     
                     for call_node_option in interstate.call_nodes.values():
                         del call_node_option[key]
+                    print(f"remove key: {key}")
             
-            # print(f"interstate {taskname}:{interstate}")
+            print(f"interstate {taskname}:{interstate}")
             # check if the running abb is unique
             if interstate.abbs[taskname].get_value() is None:
                 for key, abb in interstate.abbs[taskname].items():
@@ -259,10 +262,11 @@ class AUTOSAR(OSBase):
                         new_state = interstate.copy()
                         new_states.append(new_state)
 
+                        # new_state.remove_tasklists(taskname)
                         new_state.set_abb(taskname, abb)
                         new_state.set_activated_task(activated_tasks_list.copy())
                         new_state.set_call_node(taskname, callnode)
-                        # print(f"new_state {taskname}:{new_state}")  
+                        print(f"new_state {taskname}:{new_state}")  
             else:
                 new_states.append(interstate)         
 

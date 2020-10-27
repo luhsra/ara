@@ -20,7 +20,7 @@ DeclareTask(TaskF);
 
 TASK(TaskA) {
     doSomethingBefore();
-    ActivateTask(TaskC);
+    ActivateTask(TaskE);
     doSomethingAfter();
     TerminateTask(); 
 }
@@ -37,16 +37,23 @@ TASK(TaskC) {
 }
 
 TASK(TaskD) {
-    ActivateTask(TaskB);
-    doSomethingD();
+    while (true) {
+        doSomethingD();
+        ActivateTask(TaskB);
+    }
+    // doSomethingD();
     TerminateTask(); 
 }
 
 TASK(TaskE) {
+    doSomethingE();
+    ActivateTask(TaskF);
     TerminateTask(); 
 }
 
 TASK(TaskF) {
+    doSomethingE();
+    ActivateTask(TaskE);
     TerminateTask(); 
 }
 

@@ -474,10 +474,15 @@ class MultiState:
         self.abbs[task_name] = OptionType(id(self), abb)
     
     def set_activated_task(self, task_list):
-        self.activated_tasks = OptionTypeList(id(self), task_list)
+        # self.activated_tasks = OptionTypeList(id(self), task_list)
+        self.activated_tasks[id(self)] = task_list
 
     def set_call_node(self, task_name, callnode):
         self.call_nodes[task_name] = OptionType(id(self), callnode)
+
+    def remove_tasklists(self, taskname):
+        for key in self.abbs[taskname]:
+            del self.activated_tasks[key]
 
     def add_time(self, min_time, max_time):
         self.min_time = min_time
@@ -743,6 +748,9 @@ class MultiSSE(FlowAnalysis):
                     for cpu_other, graph in metastate.state_graph.items():
                         if cpu != cpu_other:
                             sync_state = state.copy()
+                            if self._g.cfg.vp.type[sync_state.get_running_abb()] != ABBType.syscall:
+                                print(f"ABB name sync: {self._g.cfg.vp.name[sync_state.get_running_abb()]}")
+                                print(f"ABB name state: {self._g.cfg.vp.name[state.get_running_abb()]}")
                             skipped_counter = 0
                             compress_list = []
                             for vertex in args[0]:
@@ -767,7 +775,7 @@ class MultiSSE(FlowAnalysis):
                                 # sync_state = sync_state.copy()
                                 next_state = next_state.copy()
 
-                                sync_state.global_times = new_times.copy()
+                                # sync_state.global_times = new_times.copy()
                                 next_state.global_times = new_times.copy()
 
                                 # save the original multistates in the new metastate before executing the syscall
@@ -783,6 +791,7 @@ class MultiSSE(FlowAnalysis):
                             compressed_state = self.compress_states(compress_list)
                             
                             sync_state.passed_events = [0]
+                            sync_state.global_times = compressed_state.global_times.copy()
 
                             # construct new metastate
                             new_state = metastate.basic_copy()
@@ -802,6 +811,8 @@ class MultiSSE(FlowAnalysis):
                                     new_state.state_graph[cpu].vp.state[v] = sync_state.copy()
                                     v = new_state.state_graph[cpu_other].add_vertex()
                                     new_state.state_graph[cpu_other].vp.state[v] = state
+
+                                    sync_state.global_times = state.global_times.copy()
 
                                     if new_state not in new_states:    
                                         new_states.append(new_state)
@@ -926,9 +937,11 @@ class MultiSSE(FlowAnalysis):
         """Compresses a list of states into a single state using the OptionTypes when the state attributes are different"""
         res = None
         if len(compress_list) > 0:
-            res = compress_list[0].copy(changekey=False)
+            res = compress_list[0].copy(changekey=True)
 
             for i, state in enumerate(compress_list):
+                # print(f"ABBs: {state.abbs}")
+                # print(f"id: {id(state)}, AT: {state.activated_tasks}")
                 if i != 0:
                     # compress abbs
                     for taskname, abbs in res.abbs.items():
@@ -940,12 +953,12 @@ class MultiSSE(FlowAnalysis):
                     # compress activated tasks
                     for key, _list in state.activated_tasks.items():
                         if key not in res.activated_tasks:
-                            res.activated_tasks[key] = _list
+                            res.activated_tasks[key] = _list.copy()
 
                     # compress activated isrs
                     for key, _list in state.activated_isrs.items():
                         if key not in res.activated_isrs:
-                            res.activated_isrs[key] = _list
+                            res.activated_isrs[key] = _list.copy()
                     
                     # compress call nodes
                     for taskname, callnodes in res.call_nodes.items():
@@ -953,7 +966,11 @@ class MultiSSE(FlowAnalysis):
                         for key, value in option.items():
                             if key not in callnodes:
                                 callnodes[key] = value
-
+                    
+                    # compress global times
+                    for intervall in state.global_times:
+                        if intervall not in res.global_times:
+                            res.global_times.append(intervall)
         return res
 
     def run_sse(self, metastate):
