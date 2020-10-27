@@ -64,6 +64,7 @@ namespace ara::step {
 		std::set<std::string> block_names;
 		std::set<std::string> accept_names;
 		std::map<std::pair<std::filesystem::path, unsigned>, std::set<std::string>> pointer_targets;
+		unsigned ignored_calls = 0;
 
 		void link_indirect_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);

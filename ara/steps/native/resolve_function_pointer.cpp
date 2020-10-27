@@ -139,6 +139,7 @@ namespace ara::step {
 
 		if (*use_only_translation_map.get()) {
 			logger.debug() << "Callsite not found in translation map, skipping..." << std::endl;
+			ignored_calls++;
 			return;
 		}
 
@@ -301,5 +302,9 @@ namespace ara::step {
 		resolve_indirect_function_pointers(safe_deref(icfg), safe_deref(callgraph), safe_deref(module));
 
 		icfg->updateCallGraph(callgraph);
+
+		if (*use_only_translation_map.get()) {
+			logger.warn() << "Ignored function pointers: " << ignored_calls << std::endl;
+		}
 	}
 } // namespace ara::step
