@@ -126,6 +126,8 @@ class ArmArch(GenericArch):
 
     def static_unchanged_queue(self, queue):
         self._log.debug("Generating Queue: %s", queue.name)
+        if queue.size is None or queue.length is None:
+            queue.specialization_level = 'unchanged'
         if int(queue.size) == 0 or int(queue.length) == 0:
             self._log.debug("queue size/length = 0: %s", queue)
             queue.impl.data = self.generator.source_file.data_manager.get_nullptr()
