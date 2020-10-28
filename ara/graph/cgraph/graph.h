@@ -333,13 +333,8 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<long>::type function;
 		typename graph_tool::vprop_map_t<std::string>::type function_name;
 		typename graph_tool::vprop_map_t<int64_t>::type svf_vlink;
+		typename graph_tool::vprop_map_t<unsigned char>::type recursive;
 		/* vertex properties that belong to syscall categories */
-
-		// typename graph_tool::vprop_map_t<unsigned char>::type syscall_category_undefined;
-		// typename graph_tool::vprop_map_t<unsigned char>::type syscall_category_all;
-		// typename graph_tool::vprop_map_t<unsigned char>::type syscall_category_create;
-		// typename graph_tool::vprop_map_t<unsigned char>::type syscall_category_comm;
-
 #define ARA_SYS_ACTION(Value) typename graph_tool::vprop_map_t<unsigned char>::type syscall_category_##Value;
 #include "syscall_category.inc"
 #undef ARA_SYS_ACTION
