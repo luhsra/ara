@@ -20,8 +20,10 @@ DeclareTask(TaskF);
 
 TASK(TaskA) {
     doSomethingBefore();
-    ActivateTask(TaskE);
+    DisableAllInterrupts();
+    // ActivateTask(TaskE);
     doSomethingAfter();
+    EnableAllInterrupts();
     TerminateTask(); 
 }
 
@@ -37,11 +39,12 @@ TASK(TaskC) {
 }
 
 TASK(TaskD) {
-    while (true) {
-        doSomethingD();
-        ActivateTask(TaskB);
-    }
-    // doSomethingD();
+    // while (true) {
+    //     doSomethingD();
+    //     ActivateTask(TaskB);
+    // }
+    doSomethingD();
+    ActivateTask(TaskB);
     TerminateTask(); 
 }
 

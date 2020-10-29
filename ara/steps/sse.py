@@ -434,7 +434,7 @@ class MultiState:
         self.activated_isrs = OptionTypeList(id(self), [])  # list of ISRs currently running
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
-        self.interrupts_enabled = True # interrupt enable flag
+        self.interrupts_enabled = OptionType(id(self), True) # interrupt enable flag
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
@@ -471,14 +471,26 @@ class MultiState:
         return ret
     
     def set_abb(self, task_name, abb):
-        self.abbs[task_name] = OptionType(id(self), abb)
+        # self.abbs[task_name] = OptionType(id(self), abb)
+        abb_option = self.abbs[task_name]
+        abb_option[id(self)] = abb
+        for key in abb_option:
+            abb_option[key] = abb
     
     def set_activated_task(self, task_list):
         # self.activated_tasks = OptionTypeList(id(self), task_list)
         self.activated_tasks[id(self)] = task_list
 
     def set_call_node(self, task_name, callnode):
-        self.call_nodes[task_name] = OptionType(id(self), callnode)
+        # self.call_nodes[task_name] = OptionType(id(self), callnode)
+        call_node_option = self.call_nodes[task_name]
+        call_node_option[id(self)] = callnode
+        for key in call_node_option:
+            call_node_option[key] = callnode
+    
+    def set_interrupts_enabled_flag(self, interrupts_enabled):
+        # self.interrupts_enabled = OptionType(id(self), interrupts_enabled)
+        self.interrupts_enabled[id(self)] = interrupts_enabled
 
     def remove_tasklists(self, taskname):
         for key in self.abbs[taskname]:
@@ -557,7 +569,7 @@ class MultiState:
 
         activated_task_eq = self.activated_tasks.equal(other.activated_tasks)
         activated_isrs_eq = self.activated_isrs.equal(other.activated_isrs)
-        irq_enabled_eq = self.interrupts_enabled == other.interrupts_enabled
+        irq_enabled_eq = self.interrupts_enabled.equal(other.interrupts_enabled)
         return class_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
     
     # def __hash__(self):
@@ -583,6 +595,7 @@ class MultiState:
         scopy.call_nodes = {}
         for key, value in self.call_nodes.items():
             scopy.call_nodes[key] = value.copy(oldkey, newkey)
+        scopy.interrupts_enabled = self.interrupts_enabled.copy(oldkey, newkey)
         scopy.entry_abbs = self.entry_abbs.copy()
         scopy.global_times = self.global_times.copy()
         scopy.local_times = self.local_times.copy()
@@ -648,7 +661,7 @@ class MultiSSE(FlowAnalysis):
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
-                state.set_call_node(task.name, self._find_tree_root(self._g.call_graphs[func_name]))
+                state.call_nodes[task.name] = OptionType(id(state), self._find_tree_root(self._g.call_graphs[func_name]))
                 
                 # set list of activated tasks
                 if task.autostart: 
@@ -967,6 +980,11 @@ class MultiSSE(FlowAnalysis):
                     for intervall in state.global_times:
                         if intervall not in res.global_times:
                             res.global_times.append(intervall)
+                    
+                    # compress interrupt enable flags
+                    for key, value in state.interrupts_enabled.items():
+                        if key not in res.interrupts_enabled:
+                            res.interrupts_enabled[key] = value
         return res
 
     def run_sse(self, metastate):
@@ -1089,7 +1107,7 @@ class MultiSSE(FlowAnalysis):
                 min_time = Timings.get_min_time(state.cfg, abb, context)
 
                 ##################### INTERRUPTS ########################
-                if state.interrupts_enabled and self._icfg.vp.type[abb] != ABBType.syscall:
+                if state.interrupts_enabled.get_value() and self._icfg.vp.type[abb] != ABBType.syscall:
                     for new_state in self._g.os.handle_isr(state):
                         if new_state != state:
                             new_states.append(new_state)

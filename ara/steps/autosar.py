@@ -241,11 +241,14 @@ class AUTOSAR(OSBase):
             new_states.append(state)
 
         for taskname in task_names:
+            interstates = []
             interstate = state.copy()
 
             # remove every tasklist that has a different running task as taskname
             for key, activated_tasks_list in state.activated_tasks.items():
-                if len(activated_tasks_list) > 0 and activated_tasks_list[0].name != taskname:
+                if key == id(state):
+                    key = id(interstate)
+                if len(activated_tasks_list) == 0 or activated_tasks_list[0].name != taskname:
                     # remove the tasklist and everything with the same key
                     del interstate.activated_tasks[key]
 
@@ -254,25 +257,59 @@ class AUTOSAR(OSBase):
                     
                     for call_node_option in interstate.call_nodes.values():
                         del call_node_option[key]
-                    print(f"remove key: {key}")
+                    
+                    del interstate.interrupts_enabled[key]
+                    # print(f"remove key: {key}")
+            
+            # check if the interrupts enabled flag is unique
+            if interstate.interrupts_enabled.get_value() is None:
+                new_state_true = interstate.copy()
+                new_state_false = interstate.copy()
+
+                for key, flag in interstate.interrupts_enabled.items():
+                    if flag:
+                        if key == id(interstate):
+                            key = id(new_state_false)
+                        del new_state_false.activated_tasks[key]
+                        del new_state_false.interrupts_enabled[key]
+                        for abb_option in new_state_false.abbs.values():
+                            del abb_option[key]
+                        for call_node_option in new_state_false.call_nodes.values():
+                            del call_node_option[key]
+                    else:
+                        if key == id(interstate):
+                            key = id(new_state_true)
+                        del new_state_true.activated_tasks[key]
+                        del new_state_true.interrupts_enabled[key]
+                        for abb_option in new_state_true.abbs.values():
+                            del abb_option[key]
+                        for call_node_option in new_state_true.call_nodes.values():
+                            del call_node_option[key]
+
+                interstates.append(new_state_true)
+                interstates.append(new_state_false)
+            else:
+                interstates.append(interstate)
             
             # print(f"interstate {taskname}:{interstate}")
-            # check if the running abb is unique
-            if interstate.abbs[taskname].get_value() is None:
-                for key, abb in interstate.abbs[taskname].items():
-                    activated_tasks_list = interstate.activated_tasks[key]
-                    callnode = interstate.call_nodes[taskname][key]
-                    if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname:
-                        new_state = interstate.copy()
-                        new_states.append(new_state)
 
-                        # new_state.remove_tasklists(taskname)
-                        new_state.set_abb(taskname, abb)
-                        new_state.set_activated_task(activated_tasks_list.copy())
-                        new_state.set_call_node(taskname, callnode)
-                        # print(f"new_state {taskname}:{new_state}")  
-            else:
-                new_states.append(interstate)         
+            for interstate in interstates:
+                # check if the running abb is unique
+                if interstate.abbs[taskname].get_value() is None:
+                    for key, abb in interstate.abbs[taskname].items():
+                        activated_tasks_list = interstate.activated_tasks[key]
+                        callnode = interstate.call_nodes[taskname][key]
+                        if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname:
+                            new_state = interstate.copy()
+                            new_states.append(new_state)
+
+                            # new_state.remove_tasklists(taskname)
+                            new_state.set_abb(taskname, abb)
+                            new_state.set_activated_task(activated_tasks_list.copy())
+                            new_state.set_call_node(taskname, callnode)
+                            # print(f"new_state {taskname}:{new_state}")  
+                else:
+                    new_states.append(interstate)         
 
         return new_states
 
@@ -319,7 +356,7 @@ class AUTOSAR(OSBase):
         AUTOSAR.schedule(target_state, task.cpu_id)
 
         states = None
-        if target_state.get_running_abb() is None:
+        if target_state.get_running_abb() is None or target_state.interrupts_enabled.get_value() is None:
             states = AUTOSAR.decompress_state(target_state)
 
         return states
@@ -398,12 +435,12 @@ class AUTOSAR(OSBase):
     def AUTOSAR_DisableAllInterrupts(cfg, abb, state, cpu):
         new_state = state.copy()
 
-        new_state.interrupts_enabled = False
+        new_state.set_interrupts_enabled_flag(False)
         
         scheduled_task = state.get_scheduled_instance()
 
         # advance task or isr to next abb
-        new_state.abbs[scheduled_task.name] = next(cfg.vertex(abb).out_neighbors())
+        new_state.set_abb(scheduled_task.name, next(cfg.vertex(abb).out_neighbors()))
             
         return [new_state]
 
@@ -411,12 +448,12 @@ class AUTOSAR(OSBase):
     def AUTOSAR_EnableAllInterrupts(cfg, abb, state, cpu):
         new_state = state.copy()
 
-        new_state.interrupts_enabled = True
+        new_state.set_interrupts_enabled_flag(True)
         
         scheduled_task = state.get_scheduled_instance()
 
         # advance task or isr to next abb
-        new_state.abbs[scheduled_task.name] = next(cfg.vertex(abb).out_neighbors())
+        new_state.set_abb(scheduled_task.name, next(cfg.vertex(abb).out_neighbors()))
             
         return [new_state]
 
@@ -491,10 +528,10 @@ class AUTOSAR(OSBase):
         #         # reset multi ret for gcfg building to False
         #         state.gcfg_multi_ret[new_task.name] = False
 
-        print("Terminated Task: " + scheduled_task.name)
+        # print("Terminated Task: " + scheduled_task.name)
 
         states = None
-        if state.get_running_abb() is None:
+        if state.get_running_abb() is None or state.interrupts_enabled.get_value() is None:
             states = AUTOSAR.decompress_state(state)
         else:
             return [state]
