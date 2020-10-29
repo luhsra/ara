@@ -856,7 +856,7 @@ class FreeRTOS(OSBase):
         size = p_get_argument(0)
 
         v = state.instances.add_vertex()
-        state.instances.vp.label[v] = f"StreamBuffer: {name}"
+        state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
         FreeRTOS.handle_soc(state, v, cfg, abb)
 
         state.instances.vp.obj[v] = StreamBuffer(cfg,
@@ -864,7 +864,7 @@ class FreeRTOS(OSBase):
                                                  call_path=cp,
                                                  vidx=v,
                                                  handler=handler,
-                                                 name=name,
+                                                 name=handler_name,
                                                  size=size,
         )
 

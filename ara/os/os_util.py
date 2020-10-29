@@ -39,6 +39,8 @@ def get_return_value(cfg, abb, call_path):
     call_path  -- call path
     """
     handler = cfg.vp.arguments[abb].get_return_value()
+    if handler is None:
+        return None
     try:
         return handler.get_value(key=call_path, raw=True)
     except IndexError:
