@@ -32,12 +32,15 @@ class State:
         self.instances = InstanceGraph()
         self.call_path = None # call node within the call graph
         self.branch = False # is this state coming from a branch
+        self.usually_taken = False # is this state coming from a branch where
+                                   # all other branches ends in an endless loop
         self.loop = False # is this state coming from a loop
         self.recursive = False #is this state executing in a recursive function
         self.running = None # what instance (Task or ISR) is currently running
 
     def __repr__(self):
-        ret = f'State(B: {self.branch}, L: {self.loop}, R: {self.recursive}, '
+        ret = f"State(B:{int(self.branch)},L:{int(self.loop)},"
+        ret += f"R:{int(self.recursive)},U:{int(self.usually_taken)}, "
         abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
         ret += ', '.join(abbs)
         ret += ", CallPath: " + self.call_path.print(call_site=True)
@@ -242,6 +245,7 @@ class FlatAnalysis(FlowAnalysis):
     def _init_analysis(self):
         self._call_graph = self._graph.callgraph
         self._cond_func = {}
+        self._ut_func = {}
         self._loop_func = {}
         self._step_data.add(self._entry_func)
 
@@ -476,7 +480,7 @@ class SIA(FlatAnalysis):
         return CFGView(self._lcfg, vfilt=comp)
 
     @functools.lru_cache(maxsize=32)
-    def _create_dom_tree(self, func):
+    def _create_dom_tree(self, func, ignore_endless_loops=False):
         """Create a dominator tree of the local control flow for func."""
         func_cfg = self._get_func_cfg(func)
         entry = self._cfg.get_entry_abb(func)
@@ -486,13 +490,14 @@ class SIA(FlatAnalysis):
         exit_map = func_cfg.vp.is_exit.copy(full=False)
         keep_edge_map = func_cfg.new_ep("bool", val=True)
 
-        loops = CFGView(func_cfg, vfilt=func_cfg.vp.is_exit_loop_head)
-        for v in loops.vertices():
-            v = func_cfg.vertex(v)
-            for e in v.in_edges():
-                if self._has_path(func_cfg, v, e.source()):
-                    keep_edge_map[e] = False
-                    exit_map[e.source()] = True
+        if not ignore_endless_loops:
+            loops = CFGView(func_cfg, vfilt=func_cfg.vp.is_exit_loop_head)
+            for v in loops.vertices():
+                v = func_cfg.vertex(v)
+                for e in v.in_edges():
+                    if self._has_path(func_cfg, v, e.source()):
+                        keep_edge_map[e] = False
+                        exit_map[e.source()] = True
 
         patched_func_cfg = CFGView(func_cfg, efilt=keep_edge_map)
 
@@ -501,20 +506,32 @@ class SIA(FlatAnalysis):
                                   patched_func_cfg.vertex(entry))
         return dom_tree, CFGView(func_cfg, vfilt=exit_map)
 
-    def _is_in_condition(self, abb):
+    def _is_in_condition(self, abb, ignore_endless_loops=False):
         """Is abb part of a condition?"""
         func = self._graph.cfg.get_function(abb)
-        dom_tree, exit_abbs = self._create_dom_tree(func)
-        return not all([self._dominates(dom_tree, abb, x)
-                       for x in exit_abbs.vertices()])
+        dom_tree, exit_abbs = self._create_dom_tree(func,
+                                                    ignore_endless_loops=ignore_endless_loops)
+        res = not all([self._dominates(dom_tree, abb, x)
+                      for x in exit_abbs.vertices()])
+        return res
 
     def _is_in_loop(self, abb):
         """Is abb part of a loop?"""
         return self._cfg.vp.part_of_loop[abb]
 
+    def _is_usually_taken(self, state, abb):
+        in_cond = self._is_in_condition(abb)
+        local_ut = (in_cond and not
+                    self._is_in_condition(abb, ignore_endless_loops=True))
+        extern_ut = self._ut_func.get(state.call_path, False)
+        return local_ut or (extern_ut and not in_cond)
+
     def _init_fake_state(self, state, abb):
         state.branch = (self._cond_func.get(state.call_path, False) or
                         self._is_in_condition(abb))
+
+        state.usually_taken = self._is_usually_taken(state, abb)
+
         state.loop = (self._loop_func.get(state.call_path, False) or
                       self._is_in_loop(abb))
 
@@ -542,6 +559,9 @@ class SIA(FlatAnalysis):
         new_state.branch = (self._cond_func.get(old_state.call_path, False) or
                             self._is_in_condition(abb))
         self._cond_func[new_state.call_path] = new_state.branch
+
+        new_state.usually_taken = self._is_usually_taken(old_state, abb)
+        self._ut_func[new_state.call_path] = new_state.usually_taken
 
         new_state.loop = (self._loop_func.get(old_state.call_path, False) or
                           self._is_in_loop(abb))

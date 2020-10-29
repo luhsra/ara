@@ -285,7 +285,8 @@ class FreeRTOS(OSBase):
         return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None))
 
     def handle_soc(state, v, cfg, abb,
-                   branch=None, loop=None, recursive=None, scheduler_on=None):
+                   branch=None, loop=None, recursive=None, scheduler_on=None,
+                   usually_taken=None):
         instances = state.instances
 
         def b(c1, c2):
@@ -298,11 +299,13 @@ class FreeRTOS(OSBase):
         in_loop = b(state.loop, loop)
         is_recursive = b(state.recursive, recursive)
         after_sched = b(state.scheduler_on, scheduler_on)
+        is_usually_taken = b(state.usually_taken, usually_taken)
 
         instances.vp.branch[v] = in_branch
         instances.vp.loop[v] = in_loop
         instances.vp.recursive[v] = is_recursive
         instances.vp.after_scheduler[v] = after_sched
+        instances.vp.usually_taken[v] = is_usually_taken
         instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]

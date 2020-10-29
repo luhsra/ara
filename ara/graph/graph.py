@@ -236,6 +236,7 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["obj"] = self.new_vp("object")
         self.vertex_properties["id"] = self.new_vp("string")
         self.vertex_properties["branch"] = self.new_vp("bool")
+        self.vertex_properties["usually_taken"] = self.new_vp("bool")
         self.vertex_properties["loop"] = self.new_vp("bool")
         self.vertex_properties["recursive"] = self.new_vp("bool")
         self.vertex_properties["after_scheduler"] = self.new_vp("bool")
