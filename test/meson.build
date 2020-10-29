@@ -6,16 +6,24 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('multiple-configured-steps',
+    test('dummy-test',
         py3_inst,
-        args: files('multiple_configured_steps.py'),
+        args: [ara_py, 'empty',
+               '-v',
+               '--step-settings', files('dummy_settings.json')],
+        suite: 'steps'
+    )
+
+    test('icfg',
+        py3_inst,
+        args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
         env: [python_path],
         suite: 'steps'
     )
 
-    test('oil-parsing',
+    test('instances',
         py3_inst,
-        args: [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
+        args: [files('instances.py'), files('instances.json'), freertos_instances],
         env: [python_path],
         suite: 'steps'
     )
@@ -41,24 +49,23 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('dummy-test',
+    test('multiple-configured-steps',
         py3_inst,
-        args: [ara_py, 'empty',
-               '-v',
-               '--step-settings', files('dummy_settings.json')],
+        args: files('multiple_configured_steps.py'),
+        env: [python_path],
+        suite: 'steps'
+    )
+
+    test('oil-parsing',
+        py3_inst,
+        args: [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
+        env: [python_path],
         suite: 'steps'
     )
 
     test('syscall',
         py3_inst,
         args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
-        env: [python_path],
-        suite: 'steps'
-    )
-
-    test('icfg',
-        py3_inst,
-        args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
         env: [python_path],
         suite: 'steps'
     )
