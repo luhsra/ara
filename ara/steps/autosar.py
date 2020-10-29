@@ -225,7 +225,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def decompress_state(state):
-        print(f"decompress {state}")
+        # print(f"decompress {state}")
         # print(f"abbs: {state.abbs}")
         # print(f"activated tasks: {state.activated_tasks}")
         new_states = []
@@ -235,6 +235,10 @@ class AUTOSAR(OSBase):
                 task = activated_tasks_list[0]
                 if task.name not in task_names:
                     task_names.append(task.name)
+        
+        # return the original state if no tasks are activated, e.g. idle state
+        if len(task_names) == 0:
+            new_states.append(state)
 
         for taskname in task_names:
             interstate = state.copy()
@@ -252,7 +256,7 @@ class AUTOSAR(OSBase):
                         del call_node_option[key]
                     print(f"remove key: {key}")
             
-            print(f"interstate {taskname}:{interstate}")
+            # print(f"interstate {taskname}:{interstate}")
             # check if the running abb is unique
             if interstate.abbs[taskname].get_value() is None:
                 for key, abb in interstate.abbs[taskname].items():
@@ -266,7 +270,7 @@ class AUTOSAR(OSBase):
                         new_state.set_abb(taskname, abb)
                         new_state.set_activated_task(activated_tasks_list.copy())
                         new_state.set_call_node(taskname, callnode)
-                        print(f"new_state {taskname}:{new_state}")  
+                        # print(f"new_state {taskname}:{new_state}")  
             else:
                 new_states.append(interstate)         
 
@@ -487,7 +491,7 @@ class AUTOSAR(OSBase):
         #         # reset multi ret for gcfg building to False
         #         state.gcfg_multi_ret[new_task.name] = False
 
-        # print("Terminated Task: " + scheduled_task.name)
+        print("Terminated Task: " + scheduled_task.name)
 
         states = None
         if state.get_running_abb() is None:

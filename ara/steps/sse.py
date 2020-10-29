@@ -748,13 +748,9 @@ class MultiSSE(FlowAnalysis):
                     for cpu_other, graph in metastate.state_graph.items():
                         if cpu != cpu_other:
                             sync_state = state.copy()
-                            if self._g.cfg.vp.type[sync_state.get_running_abb()] != ABBType.syscall:
-                                print(f"ABB name sync: {self._g.cfg.vp.name[sync_state.get_running_abb()]}")
-                                print(f"ABB name state: {self._g.cfg.vp.name[state.get_running_abb()]}")
                             skipped_counter = 0
                             compress_list = []
                             for vertex in args[0]:
-                                sync_state = state
                                 next_state = metastate.state_graph[cpu_other].vp.state[vertex]
 
                                 # skip combination if next state is handling a syscall
@@ -765,7 +761,7 @@ class MultiSSE(FlowAnalysis):
                                         continue
 
                                 # calculate new timing intervalls for the new states
-                                new_times = calc_intersection(sync_state.global_times_merged, next_state.global_times_merged)
+                                new_times = calc_intersection(state.global_times_merged, next_state.global_times_merged)
                                 
                                 # skip this combination, if all intervalls are disjunct
                                 if len(new_times) == 0:
@@ -976,7 +972,7 @@ class MultiSSE(FlowAnalysis):
     def run_sse(self, metastate):
         """Run the single core sse for the given metastate on each cpu."""
         for cpu, graph in metastate.state_graph.items():
-            print(f"Run SSE on cpu {cpu}")
+            # print(f"Run SSE on cpu {cpu}")
             global sse_counter
             sse_counter += 1
 
@@ -1081,7 +1077,7 @@ class MultiSSE(FlowAnalysis):
         g_only_normal_edges = graph_tool.GraphView(graph, efilt=lambda x: not graph.ep.is_timed_event[x] and not graph.ep.is_isr[x])
         
         state = graph.vp.state[state_vertex]
-        self._log.info(f"Executing state: {state}")
+        # self._log.info(f"Executing state: {state}")
         task = state.get_scheduled_task()
         isr = state.get_current_isr()
         if isr is not None:

@@ -79,7 +79,7 @@
 					"activation": 1,
 					"autostart": false,
 					"name": "TaskF",
-					"priority": 3,
+					"priority": 2,
 					"schedule": true
 				}
 			],
