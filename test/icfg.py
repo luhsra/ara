@@ -18,6 +18,7 @@ def main():
     for edge in filter(lambda x: cfg.ep.type[x] == CFType.icf, cfg.edges()):
         icf_edges.append([hash(edge.source()),
                           hash(edge.target())])
+    # print(sorted(icf_edges))
     fail_if(data != sorted(icf_edges), "Data not equal")
 
 
