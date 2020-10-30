@@ -139,8 +139,7 @@ class FlowAnalysis(Step):
 
         stats = self.stats.get()
         if stats:
-            uuid = self._step_manager.get_execution_id()
-            stat_file = f'{uuid}.{entry_label}.statistics.json'
+            stat_file = f'.{entry_label}.statistics.json'
             stat_file = self.dump_prefix.get() + stat_file
 
             with open(stat_file, 'w') as f:
@@ -430,9 +429,7 @@ class FlatAnalysis(FlowAnalysis):
         self._log.info(f"Maximal call depth: {self._max_call_depth}")
         self._stats["maximal_call_depth"] = self._max_call_depth
         if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            dot_file = f'{uuid}.{self._entry_func}.dot'
-            dot_file = self.dump_prefix.get() + dot_file
+            dot_file = f'{self.dump_prefix.get()}.{self._entry_func}.dot'
             self._step_manager.chain_step({"name": "Printer",
                                            "dot": dot_file,
                                            "graph_name": 'Instances',

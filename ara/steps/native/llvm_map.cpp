@@ -168,9 +168,7 @@ namespace ara::step {
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
-			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = *dump_prefix.get() + uuid + ".dot";
-
+			std::string dot_file = *dump_prefix.get() + ".dot";
 			llvm::json::Value printer_conf(llvm::json::Object{
 			    {"name", "Printer"}, {"dot", dot_file}, {"graph_name", "LLVM CFG"}, {"subgraph", "abbs"}});
 

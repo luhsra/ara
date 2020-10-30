@@ -39,11 +39,8 @@ namespace ara::step {
 		// we don't need to store anything here, since all SVF datastructures are stored in singletons
 
 		if (*dump.get()) {
-			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = *dump_prefix.get() + uuid;
-
-			icfg->dump(dot_file + ".svf-icfg");
-			callgraph->dump(dot_file + ".svf-callgraph");
+			icfg->dump(*dump_prefix.get() + ".svf-icfg");
+			callgraph->dump(*dump_prefix.get() + ".svf-callgraph");
 		}
 	}
 } // namespace ara::step

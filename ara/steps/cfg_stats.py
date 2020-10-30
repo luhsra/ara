@@ -85,11 +85,7 @@ class CFGStats(Step):
             self._log.info(f"Number of syscalls for category {cat.name}: {count}")
 
         if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            stat_file = f'{uuid}.json'
-            stat_file = self.dump_prefix.get() + stat_file
-
-            with open(stat_file, 'w') as f:
+            with open(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_abbs": num_abbs,
                            "num_syscalls": num_syscalls,
                            "num_calls": num_calls,

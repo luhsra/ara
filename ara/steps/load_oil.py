@@ -48,10 +48,7 @@ class LoadOIL(Step):
         self._graph.instances = instances
 
         if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            dot_file = f'{uuid}.dot'
-            dot_file = self.dump_prefix.get() + dot_file
             self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
+                                           "dot": self.dump_prefix.get(),
                                            "graph_name": 'Instances',
                                            "subgraph": 'instances'})

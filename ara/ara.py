@@ -29,9 +29,10 @@ def main():
                         default=os.environ.get('ARA_LOGLEVEL', 'warn'))
     parser.add_argument('--dump', action='store_true', default=False,
                         help="emit a meaningful dot graph where possible")
-    parser.add_argument('--dump-prefix', default='dumps/{step_name}.',
+    parser.add_argument('--dump-prefix', default='dumps/{step_name}.{uuid}.',
                         help="path that prefixes all dot files. The string "
-                             "'{step_name}' is replaced with the step name.")
+                             "'{step_name}' is replaced with the step name. "
+                             "The string '{uuid}' is replace with the uuid.")
     parser.add_argument('--runtime-stats', action='store_true', default=False,
                         help="emit statistics about step runtimes.")
     parser.add_argument('--runtime-stats-file', choices=['logger', 'dump'],

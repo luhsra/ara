@@ -39,12 +39,9 @@ class SystemRelevantFunctions(Step):
                 label_out_component(gv, cg_node, label=vprop)
 
         if self.dump.get():
-            dump_prefix = self.dump_prefix.get()
-            assert dump_prefix
-            uuid = self._step_manager.get_execution_id()
             self._step_manager.chain_step(
                 {"name": "Printer",
-                 "dot": dump_prefix + f'{uuid}.dot',
+                 "dot": self.dump_prefix.get() + '.dot',
                  "graph_name": 'System relevant functions',
                  "subgraph": 'callgraph'}
             )

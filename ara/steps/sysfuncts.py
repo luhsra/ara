@@ -27,13 +27,9 @@ class SysFuncts(Step):
             self._log.warn("OS cannot be detected. Are there any syscalls?")
 
         if self.dump.get():
-            dump_prefix = self.dump_prefix.get()
-            assert dump_prefix
-            uuid = self._step_manager.get_execution_id()
-            dot_file = dump_prefix + f'{uuid}.dot'
             self._step_manager.chain_step(
                 {"name": "Printer",
-                 "dot": dot_file,
+                 "dot": self.dump_prefix.get(),
                  "graph_name": 'CFG with syscall functions',
                  "subgraph": 'abbs'}
             )

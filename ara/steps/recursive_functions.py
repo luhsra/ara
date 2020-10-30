@@ -25,12 +25,9 @@ class RecursiveFunctions(Step):
                     visited.add(circuit_node)
 
         if self.dump.get():
-            dump_prefix = self.dump_prefix.get()
-            assert dump_prefix
-            uuid = self._step_manager.get_execution_id()
             self._step_manager.chain_step(
                 {"name": "Printer",
-                 "dot": dump_prefix + f'{uuid}.dot',
+                 "dot": self.dump_prefix.get() + '.dot',
                  "graph_name": 'Recusive functions',
                  "subgraph": 'callgraph'}
             )

@@ -213,11 +213,8 @@ namespace ara::step {
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
-			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = *dump_prefix.get() + uuid + "." + *entry_point_name;
-
+			std::string dot_file = *dump_prefix.get() + *entry_point_name;
 			svf_callgraph.dump(dot_file + ".svf");
-
 			llvm::json::Value printer_conf(llvm::json::Object{{"name", "Printer"},
 			                                                  {"dot", dot_file + ".dot"},
 			                                                  {"graph_name", "CallGraph"},

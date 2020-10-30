@@ -303,12 +303,10 @@ namespace ara::step {
 		                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
-			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = *dump_prefix.get() + uuid + ".svfg";
 			logger.warn()
 			    << "There are known cases where the SVFG dumping causes a segfault. Deactivate dumping in this cases."
 			    << std::endl;
-			svfg.dump(dot_file);
+			svfg.dump(*dump_prefix.get() + ".svfg");
 		}
 	}
 } // namespace ara::step

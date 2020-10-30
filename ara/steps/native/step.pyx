@@ -148,7 +148,7 @@ class Step(SuperStep):
     dump_prefix = option.Option("dump_prefix",
                                 "If a file is dumped, set this as "
                                 "prefix for the files"
-                                "(default: dumps/{step_name}).",
+                                "(default: dumps/{step_name}.{uuid}.).",
                                 option.String(),
                                 is_global=True)
     def __init__(self, graph, step_manager):
@@ -175,6 +175,10 @@ class Step(SuperStep):
         dump_prefix = self.dump_prefix.get()
         if dump_prefix:
             new_dp = dump_prefix.replace('{step_name}', self.get_name())
+            new_dp = dump_prefix.replace(
+                '{uuid}',
+                str(self._step_manager.get_execution_id())
+            )
             self.dump_prefix.check({'dump_prefix': new_dp})
 
     def _fail(self, msg, error=RuntimeError):
@@ -330,8 +334,11 @@ cdef class NativeStep(SuperStep):
     def _apply_config(self, config: dict):
         # this is a lot easier on the Python side, so do it here
         if 'dump_prefix' in config:
-            config['dump_prefix'] = \
-                config['dump_prefix'].replace('{step_name}', self.get_name())
+            dp = config['dump_prefix']
+            dp = dp.replace('{step_name}', self.get_name())
+            dp = dp.replace('{uuid}',
+                            str(self._step_manager.get_execution_id()))
+            config['dump_prefix'] = dp
 
         deref(self._c_step).apply_config(config)
 
