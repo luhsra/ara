@@ -8,7 +8,7 @@ from init_test import init_test, fail_if
 from ara.graph import CFType
 
 def main():
-    """Test for correct icfg mapping."""
+    """Test for correct instance detection."""
     config = {"steps": ["SIA"]}
     m_graph, data, _ = init_test(extra_config=config)
     instances = m_graph.instances
