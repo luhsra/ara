@@ -157,16 +157,18 @@ class AUTOSAR(OSBase):
             if isinstance(isr, ISR):
                 if isr.cpu_id == state.cpu:
                     if (current_isr is None or isr.name != current_isr.name) and isr not in state.activated_isrs:
-                        if isr.priority > priority and scheduled_task not in isr.group:
+                        # if isr.priority > priority and scheduled_task not in isr.group:
+                        if isr.priority > priority:
                             new_state = state.copy()
                             new_states.append(new_state)
                             new_state.from_isr = True
 
                             # activate new isr
-                            new_state.activated_isrs.append(isr)
+                            new_state.activated_isrs.append_item(isr)
 
                             # schedule the interrupts
-                            new_state.activated_isrs.sort(key=lambda isr: isr.priority, reverse=True)
+                            for _list in new_state.activated_isrs.values():
+                                _list.sort(key=lambda isr: isr.priority, reverse=True)
 
         return new_states
 
@@ -177,12 +179,15 @@ class AUTOSAR(OSBase):
         current_isr = state.get_current_isr()
 
         # remove isr from list of activated isrs
-        new_state.activated_isrs.remove(current_isr)
+        new_state.activated_isrs.remove_item(current_isr)
 
         # reset abb of isr to the entry abb
-        new_state.abbs[current_isr.name] = new_state.entry_abbs[current_isr.name]
+        new_state.set_abb(current_isr.name, new_state.entry_abbs[current_isr.name])
 
-        return new_state
+        if new_state.get_running_abb() is None or new_state.interrupts_enabled.get_value() is None:
+            return AUTOSAR.decompress_state(new_state)
+        else:
+            return [new_state]
 
     @staticmethod
     def interpret(cfg, abb, state, cpu, is_global=False):
@@ -199,7 +204,7 @@ class AUTOSAR(OSBase):
 
         if "ActivateTask" in syscall:
             # get Task argument
-            scheduled_task = state.get_scheduled_task()
+            scheduled_task = state.get_scheduled_instance()
             cp = CallPath(graph=state.callgraphs[scheduled_task.name], node=state.call_nodes[scheduled_task.name].get_value())
             arg = state.cfg.vp.arguments[abb][0].get(call_path=cp, raw=True)
 

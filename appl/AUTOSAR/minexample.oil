@@ -51,10 +51,10 @@
 			"isrs": [
 
 				{
-					"name": "Interrupt2",
+					"name": "Interrupt1",
 					"category": 2,
 					"priority": 20,
-					"group": ["TaskF"]
+					"group": ["TaskB"]
 				}
 			]
 		},

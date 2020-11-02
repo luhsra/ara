@@ -18,6 +18,11 @@ DeclareTask(TaskD);
 DeclareTask(TaskE);
 DeclareTask(TaskF);
 
+ISR2(Interrupt1) {
+    doSomethingC();
+    ActivateTask(TaskB);
+}
+
 TASK(TaskA) {
     doSomethingBefore();
     DisableAllInterrupts();

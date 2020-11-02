@@ -682,7 +682,8 @@ class MultiSSE(FlowAnalysis):
 
                 # set callgraph and entry call node for each ISR
                 state.callgraphs[isr.name] = self._g.call_graphs[isr.name]
-                state.set_call_node(isr.name, self._find_tree_root(self._g.call_graphs[isr.name]))
+                # state.set_call_node(isr.name, self._find_tree_root(self._g.call_graphs[isr.name]))
+                state.call_nodes[isr.name] = OptionType(id(state), self._find_tree_root(self._g.call_graphs[isr.name]))
 
         
         # build starting times for each multistate
@@ -997,91 +998,119 @@ class MultiSSE(FlowAnalysis):
             v_start = graph.get_vertices()[0]
             stack = [v_start]
             found_list = []
+            isr_is_not_done = True
 
-            while stack:
-                vertex = stack.pop(0)
-                state = graph.vp.state[vertex]
-                found_list.append(vertex)
+            while isr_is_not_done:
+                isr_states = []
+                isr_vertices = []
+                while stack:
+                    vertex = stack.pop(0)
+                    state = graph.vp.state[vertex]
+                    found_list.append(vertex)
 
-                # execute popped state
-                new_states = self.execute_state(vertex, metastate.sync_states[cpu], graph)
+                    # add state to isr list if interrupts enabled flag is true
+                    if state.interrupts_enabled.get_value():
+                        isr_states.append(state)
+                        isr_vertices.append(vertex)
 
-                # add existing neighbors to stack
-                for v in graph.vertex(vertex).out_neighbors():                   
-                    neighbor_state = graph.vp.state[v]
-                    # if neighbor_state.updated < MAX_STATE_UPDATES:
-                    #     neighbor_state.updated += 1
-                    if len(neighbor_state.global_times_merged) > 0 and neighbor_state.global_times_merged[-1][1] < MIN_EMULATION_TIME and len(neighbor_state.global_times) > 0:
-                        if v not in stack: 
-                            stack.append(v)
+                    # execute popped state
+                    new_states = self.execute_state(vertex, metastate.sync_states[cpu], graph)
 
-                for new_state in new_states:
-                    found = False
+                    # add existing neighbors to stack
+                    for v in graph.vertex(vertex).out_neighbors():                   
+                        neighbor_state = graph.vp.state[v]
+                        # if neighbor_state.updated < MAX_STATE_UPDATES:
+                        #     neighbor_state.updated += 1
+                        if len(neighbor_state.global_times_merged) > 0 and neighbor_state.global_times_merged[-1][1] < MIN_EMULATION_TIME and len(neighbor_state.global_times) > 0:
+                            if v not in stack: 
+                                stack.append(v)
 
-                    # check for duplicate states
-                    for v in graph.vertices():
-                        existing_state = graph.vp.state[v]
+                    for new_state in new_states:
+                        found = False
 
-                        # add edge to existing state if new state is equal
-                        if new_state == existing_state:
-                            found = True 
+                        # check for duplicate states
+                        for v in graph.vertices():
+                            existing_state = graph.vp.state[v]
 
-                            # add edge to graph                          
-                            if v not in graph.vertex(vertex).out_neighbors():
-                                e = graph.add_edge(vertex, v)
+                            # add edge to existing state if new state is equal
+                            if new_state == existing_state:
+                                found = True 
 
-                                # edge coloring after timed events, e.g. Alarms
-                                if new_state.from_event:
-                                    graph.ep.is_timed_event[e] = True
-                                else:
-                                    graph.ep.is_timed_event[e] = False
-                                
-                                # edge coloring after isr
-                                if new_state.from_isr:
-                                    graph.ep.is_isr[e] = True
-                                else:
-                                    graph.ep.is_isr[e] = False
+                                # add edge to graph                          
+                                if v not in graph.vertex(vertex).out_neighbors():
+                                    e = graph.add_edge(vertex, v)
 
-                            # copy all global times to existing state
-                            for intervall in new_state.global_times:
-                                existing_state.global_times.append(intervall)
+                                    # edge coloring after timed events, e.g. Alarms
+                                    if new_state.from_event:
+                                        graph.ep.is_timed_event[e] = True
+                                    else:
+                                        graph.ep.is_timed_event[e] = False
+                                    
+                                    # edge coloring after isr
+                                    if new_state.from_isr:
+                                        graph.ep.is_isr[e] = True
+                                    else:
+                                        graph.ep.is_isr[e] = False
 
-                            # if new_state.from_event:
-                            #     # copy passed event times to existing state
-                            #     for event_time in new_state.passed_events:
-                            #         if event_time not in existing_state.passed_events:
-                            #             existing_state.passed_events.append(event_time)
-                            #     existing_state.passed_events.sort()
+                                # copy all global times to existing state
+                                for intervall in new_state.global_times:
+                                    existing_state.global_times.append(intervall)
 
-                            # if existing_state.updated < MAX_STATE_UPDATES:
-                            #     existing_state.updated += 1
-                            if len(existing_state.global_times_merged) > 0 and existing_state.global_times_merged[-1][1] < MIN_EMULATION_TIME:
-                                if v not in stack:
-                                    stack.append(v)
-                            break
+                                # if new_state.from_event:
+                                #     # copy passed event times to existing state
+                                #     for event_time in new_state.passed_events:
+                                #         if event_time not in existing_state.passed_events:
+                                #             existing_state.passed_events.append(event_time)
+                                #     existing_state.passed_events.sort()
 
-                    # add new state to graph and append it to the stack
-                    if not found:
+                                # if existing_state.updated < MAX_STATE_UPDATES:
+                                #     existing_state.updated += 1
+                                if len(existing_state.global_times_merged) > 0 and existing_state.global_times_merged[-1][1] < MIN_EMULATION_TIME:
+                                    if v not in stack:
+                                        stack.append(v)
+                                break
+
+                        # add new state to graph and append it to the stack
+                        if not found:
+                            new_vertex = graph.add_vertex()
+                            graph.vp.state[new_vertex] = new_state
+                            e = graph.add_edge(vertex, new_vertex)
+
+                            # edge coloring after timed events, e.g. Alarms
+                            if new_state.from_event:
+                                graph.ep.is_timed_event[e] = True
+                                new_state.from_event = False
+                            else:
+                                graph.ep.is_timed_event[e] = False
+
+                            # edge coloring after isr
+                            if new_state.from_isr:
+                                graph.ep.is_isr[e] = True
+                                new_state.from_isr = False
+                            else:
+                                graph.ep.is_isr[e] = False
+                            
+                            if new_vertex not in stack:
+                                stack.append(new_vertex)
+
+                # compress states for isr routines
+                if len(isr_states) > 0:
+                    compressed_state = self.compress_states(isr_states)
+                    print(f"isr compressed state: {compressed_state}")
+                    isr_starting_states = self._g.os.handle_isr(compressed_state)
+
+                    for state in isr_starting_states:
                         new_vertex = graph.add_vertex()
-                        graph.vp.state[new_vertex] = new_state
-                        e = graph.add_edge(vertex, new_vertex)
+                        graph.vp.state[new_vertex] = state
+                        stack.append(new_vertex)
 
-                        # edge coloring after timed events, e.g. Alarms
-                        if new_state.from_event:
-                            graph.ep.is_timed_event[e] = True
-                            new_state.from_event = False
-                        else:
-                            graph.ep.is_timed_event[e] = False
-
-                        # edge coloring after isr
-                        if new_state.from_isr:
+                        for start_vertex in isr_vertices:
+                            e = graph.add_edge(start_vertex, new_vertex)
                             graph.ep.is_isr[e] = True
-                            new_state.from_isr = False
-                        else:
-                            graph.ep.is_isr[e] = False
-                        
-                        if new_vertex not in stack:
-                            stack.append(new_vertex)
+                            graph.ep.is_timed_event[e] = False
+                else:
+                    isr_is_not_done = False
+
 
         
     def execute_state(self, state_vertex, sync_list, graph):
@@ -1095,7 +1124,7 @@ class MultiSSE(FlowAnalysis):
         g_only_normal_edges = graph_tool.GraphView(graph, efilt=lambda x: not graph.ep.is_timed_event[x] and not graph.ep.is_isr[x])
         
         state = graph.vp.state[state_vertex]
-        # self._log.info(f"Executing state: {state}")
+        self._log.info(f"Executing state: {state}")
         task = state.get_scheduled_task()
         isr = state.get_current_isr()
         if isr is not None:
@@ -1107,15 +1136,15 @@ class MultiSSE(FlowAnalysis):
                 min_time = Timings.get_min_time(state.cfg, abb, context)
 
                 ##################### INTERRUPTS ########################
-                if state.interrupts_enabled.get_value() and self._icfg.vp.type[abb] != ABBType.syscall:
-                    for new_state in self._g.os.handle_isr(state):
-                        if new_state != state:
-                            new_states.append(new_state)
+                # if state.interrupts_enabled.get_value() and self._icfg.vp.type[abb] != ABBType.syscall:
+                #     for new_state in self._g.os.handle_isr(state):
+                #         if new_state != state:
+                #             new_states.append(new_state)
 
-                # handle isr exit
+                # # handle isr exit
                 if isr is not None and self._icfg.vertex(abb).out_degree() == 0:
-                    new_state = self._g.os.exit_isr(state)
-                    new_states.append(new_state)
+                    for new_state in self._g.os.exit_isr(state):
+                        new_states.append(new_state)
 
                 ##################### TIMED EVENTS ######################
                 event_possible = self._icfg.vp.type[abb] != ABBType.syscall
@@ -1278,7 +1307,8 @@ class MultiSSE(FlowAnalysis):
                 
                 # for intervall in state.global_times:
                 #     assert(intervall[0] <= intervall[1])
-
+            else:
+                print(f"abb is none")
         # merge global and local times into merged lists
         state.global_times_merged.extend(state.global_times)
         state.local_times_merged.extend(state.local_times)
