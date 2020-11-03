@@ -157,8 +157,8 @@ class AUTOSAR(OSBase):
             if isinstance(isr, ISR):
                 if isr.cpu_id == state.cpu:
                     if (current_isr is None or isr.name != current_isr.name) and isr not in state.activated_isrs:
-                        # if isr.priority > priority and scheduled_task not in isr.group:
-                        if isr.priority > priority:
+                        if isr.priority > priority and scheduled_task not in isr.group:
+                        # if isr.priority > priority:
                             new_state = state.copy()
                             new_states.append(new_state)
                             new_state.from_isr = True
@@ -230,14 +230,27 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def decompress_state(state):
+
+        def delete_key(state, key):
+            del state.activated_tasks[key]
+            del state.activated_isrs[key]
+            del state.interrupts_enabled[key]
+            for option in state.abbs.values():
+                del option[key]
+            for option in state.call_nodes.values():
+                del option[key]
+
         # print(f"decompress {state}")
         # print(f"abbs: {state.abbs}")
         # print(f"activated tasks: {state.activated_tasks}")
         new_states = []
         task_names = []
         for key, activated_tasks_list in state.activated_tasks.items():
+            activated_isrs_list = state.activated_isrs[key]
             if len(activated_tasks_list) > 0:
                 task = activated_tasks_list[0]
+                if len(activated_isrs_list) > 0:
+                    task = activated_isrs_list[0]
                 if task.name not in task_names:
                     task_names.append(task.name)
         
@@ -251,20 +264,16 @@ class AUTOSAR(OSBase):
 
             # remove every tasklist that has a different running task as taskname
             for key, activated_tasks_list in state.activated_tasks.items():
+                activated_isrs_list = state.activated_isrs[key]
                 if key == id(state):
                     key = id(interstate)
-                if len(activated_tasks_list) == 0 or activated_tasks_list[0].name != taskname:
-                    # remove the tasklist and everything with the same key
-                    del interstate.activated_tasks[key]
-
-                    for name, abb_option in interstate.abbs.items():
-                        del abb_option[key]
-                    
-                    for call_node_option in interstate.call_nodes.values():
-                        del call_node_option[key]
-                    
-                    del interstate.interrupts_enabled[key]
-                    # print(f"remove key: {key}")
+                if taskname.startswith("AUTOSAR_ISR"):
+                    if len(activated_isrs_list) == 0 or activated_isrs_list[0].name != taskname:
+                        delete_key(interstate, key)
+                else:
+                    if len(activated_tasks_list) == 0 or activated_tasks_list[0].name != taskname:
+                        # remove the tasklist and everything with the same key
+                        delete_key(interstate, key)
             
             # check if the interrupts enabled flag is unique
             if interstate.interrupts_enabled.get_value() is None:
@@ -275,21 +284,11 @@ class AUTOSAR(OSBase):
                     if flag:
                         if key == id(interstate):
                             key = id(new_state_false)
-                        del new_state_false.activated_tasks[key]
-                        del new_state_false.interrupts_enabled[key]
-                        for abb_option in new_state_false.abbs.values():
-                            del abb_option[key]
-                        for call_node_option in new_state_false.call_nodes.values():
-                            del call_node_option[key]
+                        delete_key(new_state_false, key)
                     else:
                         if key == id(interstate):
                             key = id(new_state_true)
-                        del new_state_true.activated_tasks[key]
-                        del new_state_true.interrupts_enabled[key]
-                        for abb_option in new_state_true.abbs.values():
-                            del abb_option[key]
-                        for call_node_option in new_state_true.call_nodes.values():
-                            del call_node_option[key]
+                        delete_key(new_state_true, key)
 
                 interstates.append(new_state_true)
                 interstates.append(new_state_false)
@@ -303,6 +302,7 @@ class AUTOSAR(OSBase):
                 if interstate.abbs[taskname].get_value() is None:
                     for key, abb in interstate.abbs[taskname].items():
                         activated_tasks_list = interstate.activated_tasks[key]
+                        activated_isrs_list = interstate.activated_isrs[key]
                         callnode = interstate.call_nodes[taskname][key]
                         if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname:
                             new_state = interstate.copy()
@@ -311,6 +311,7 @@ class AUTOSAR(OSBase):
                             # new_state.remove_tasklists(taskname)
                             new_state.set_abb(taskname, abb)
                             new_state.set_activated_task(activated_tasks_list.copy())
+                            new_state.set_activated_isr(activated_isrs_list.copy())
                             new_state.set_call_node(taskname, callnode)
                             # print(f"new_state {taskname}:{new_state}")  
                 else:

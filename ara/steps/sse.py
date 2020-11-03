@@ -14,7 +14,7 @@ from .option import Option, String, Choice
 from .freertos import Task
 from .os_util import SyscallCategory
 from ara.util import VarianceDict
-from .autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter, ISR
+from .autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter, ISR, AUTOSAR
 from appl.AUTOSAR.minexample_timing import Timings
 
 from collections import defaultdict
@@ -449,6 +449,7 @@ class MultiState:
         self.from_event = False # indicates if this state is the result of a timed event, e.g. an Alarm
         self.from_isr = False   # indicates if this state is the result of an ISR
         self.updated = 0
+        self.interrupt_handled = False
 
     def get_running_abb(self):
         instance = self.get_scheduled_instance()
@@ -480,6 +481,9 @@ class MultiState:
     def set_activated_task(self, task_list):
         # self.activated_tasks = OptionTypeList(id(self), task_list)
         self.activated_tasks[id(self)] = task_list
+    
+    def set_activated_isr(self, isr_list):
+        self.activated_isrs[id(self)] = isr_list
 
     def set_call_node(self, task_name, callnode):
         # self.call_nodes[task_name] = OptionType(id(self), callnode)
@@ -603,6 +607,7 @@ class MultiState:
         scopy.local_times_merged = []
         scopy.passed_events = self.passed_events.copy()
         scopy.updated = 0
+        scopy.interrupt_handled = False
 
         return scopy
 
@@ -1009,9 +1014,11 @@ class MultiSSE(FlowAnalysis):
                     found_list.append(vertex)
 
                     # add state to isr list if interrupts enabled flag is true
-                    if state.interrupts_enabled.get_value():
+                    abb = state.get_running_abb()
+                    if state.interrupts_enabled.get_value() and (abb is None or state.cfg.vp.type[abb] != ABBType.syscall) and not state.interrupt_handled:
                         isr_states.append(state)
                         isr_vertices.append(vertex)
+                        state.interrupt_handled = True
 
                     # execute popped state
                     new_states = self.execute_state(vertex, metastate.sync_states[cpu], graph)
@@ -1095,19 +1102,40 @@ class MultiSSE(FlowAnalysis):
 
                 # compress states for isr routines
                 if len(isr_states) > 0:
-                    compressed_state = self.compress_states(isr_states)
-                    print(f"isr compressed state: {compressed_state}")
-                    isr_starting_states = self._g.os.handle_isr(compressed_state)
+                    isr_starting_states = []
+                    for isr_state in isr_states:
+                        isr_starting_states.extend(self._g.os.handle_isr(isr_state))
+                    
+                    if len(isr_starting_states) > 0:
+                        compressed_state = self.compress_states(isr_starting_states)
+                        print(f"isr compressed state: {compressed_state}")
 
-                    for state in isr_starting_states:
-                        new_vertex = graph.add_vertex()
-                        graph.vp.state[new_vertex] = state
-                        stack.append(new_vertex)
+                        # combine all global times merged into the compressed state
+                        for isr_state in isr_states:
+                            for intervall in isr_state.global_times_merged:
+                                compressed_state.global_times.append(intervall)
 
-                        for start_vertex in isr_vertices:
-                            e = graph.add_edge(start_vertex, new_vertex)
-                            graph.ep.is_isr[e] = True
-                            graph.ep.is_timed_event[e] = False
+                        new_states = AUTOSAR.decompress_state(compressed_state)
+
+                    # compressed_state = self.compress_states(isr_states)
+                    # print(f"isr compressed state: {compressed_state}")
+
+                    # # combine all global times merged into the compressed state
+                    # for isr_state in isr_states:
+                    #     for intervall in isr_state.global_times_merged:
+                    #         compressed_state.global_times.append(intervall)
+
+                    # isr_starting_states = self._g.os.handle_isr(compressed_state)
+
+                        for state in new_states:
+                            new_vertex = graph.add_vertex()
+                            graph.vp.state[new_vertex] = state
+                            stack.append(new_vertex)
+
+                            for start_vertex in isr_vertices:
+                                e = graph.add_edge(start_vertex, new_vertex)
+                                graph.ep.is_isr[e] = True
+                                graph.ep.is_timed_event[e] = False
                 else:
                     isr_is_not_done = False
 
