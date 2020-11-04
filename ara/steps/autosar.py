@@ -161,7 +161,7 @@ class AUTOSAR(OSBase):
                         # if isr.priority > priority:
                             new_state = state.copy()
                             new_states.append(new_state)
-                            new_state.from_isr = True
+                            # new_state.from_isr = True
 
                             # activate new isr
                             new_state.activated_isrs.append_item(isr)
@@ -257,6 +257,8 @@ class AUTOSAR(OSBase):
         # return the original state if no tasks are activated, e.g. idle state
         if len(task_names) == 0:
             new_states.append(state)
+        
+        # print(f"tasknames: {task_names}")
 
         for taskname in task_names:
             interstates = []
@@ -271,7 +273,7 @@ class AUTOSAR(OSBase):
                     if len(activated_isrs_list) == 0 or activated_isrs_list[0].name != taskname:
                         delete_key(interstate, key)
                 else:
-                    if len(activated_tasks_list) == 0 or activated_tasks_list[0].name != taskname:
+                    if len(activated_tasks_list) == 0 or activated_tasks_list[0].name != taskname or len(activated_isrs_list) > 0:
                         # remove the tasklist and everything with the same key
                         delete_key(interstate, key)
             
@@ -304,16 +306,15 @@ class AUTOSAR(OSBase):
                         activated_tasks_list = interstate.activated_tasks[key]
                         activated_isrs_list = interstate.activated_isrs[key]
                         callnode = interstate.call_nodes[taskname][key]
-                        if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname:
-                            new_state = interstate.copy()
-                            new_states.append(new_state)
+                        # if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname or len(activated_isrs_list) > 0 and activated_isrs_list[0].name == taskname:
+                        new_state = interstate.copy()
+                        new_states.append(new_state)
 
-                            # new_state.remove_tasklists(taskname)
-                            new_state.set_abb(taskname, abb)
-                            new_state.set_activated_task(activated_tasks_list.copy())
-                            new_state.set_activated_isr(activated_isrs_list.copy())
-                            new_state.set_call_node(taskname, callnode)
-                            # print(f"new_state {taskname}:{new_state}")  
+                        new_state.set_abb(taskname, abb)
+                        new_state.set_activated_task(activated_tasks_list.copy())
+                        new_state.set_activated_isr(activated_isrs_list.copy())
+                        new_state.set_call_node(taskname, callnode)
+                        # print(f"new_state {taskname}:{new_state}")  
                 else:
                     new_states.append(interstate)         
 

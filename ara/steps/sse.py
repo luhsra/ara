@@ -1103,36 +1103,36 @@ class MultiSSE(FlowAnalysis):
                 # compress states for isr routines
                 if len(isr_states) > 0:
                     isr_starting_states = []
-                    for isr_state in isr_states:
-                        isr_starting_states.extend(self._g.os.handle_isr(isr_state))
+
+                    isr_states_left = []
+                    isr_vertices_left = []
+
+                    # handle isr for each picked state
+                    for i, isr_state in enumerate(isr_states):
+                        ret = self._g.os.handle_isr(isr_state)
+                        isr_starting_states.extend(ret)
+
+                        if len(ret) > 0:
+                            isr_states_left.append(isr_state)
+                            isr_vertices_left.append(isr_vertices[i])
                     
                     if len(isr_starting_states) > 0:
                         compressed_state = self.compress_states(isr_starting_states)
                         print(f"isr compressed state: {compressed_state}")
 
                         # combine all global times merged into the compressed state
-                        for isr_state in isr_states:
+                        for isr_state in isr_states_left:
                             for intervall in isr_state.global_times_merged:
                                 compressed_state.global_times.append(intervall)
 
                         new_states = AUTOSAR.decompress_state(compressed_state)
-
-                    # compressed_state = self.compress_states(isr_states)
-                    # print(f"isr compressed state: {compressed_state}")
-
-                    # # combine all global times merged into the compressed state
-                    # for isr_state in isr_states:
-                    #     for intervall in isr_state.global_times_merged:
-                    #         compressed_state.global_times.append(intervall)
-
-                    # isr_starting_states = self._g.os.handle_isr(compressed_state)
 
                         for state in new_states:
                             new_vertex = graph.add_vertex()
                             graph.vp.state[new_vertex] = state
                             stack.append(new_vertex)
 
-                            for start_vertex in isr_vertices:
+                            for start_vertex in isr_vertices_left:
                                 e = graph.add_edge(start_vertex, new_vertex)
                                 graph.ep.is_isr[e] = True
                                 graph.ep.is_timed_event[e] = False
