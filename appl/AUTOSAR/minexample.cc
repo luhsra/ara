@@ -23,6 +23,10 @@ ISR2(Interrupt1) {
     ActivateTask(TaskB);
 }
 
+ISR2(Interrupt2) {
+    doSomethingImportant2();
+}
+
 TASK(TaskA) {
     doSomethingBefore();
     DisableAllInterrupts();
@@ -49,7 +53,7 @@ TASK(TaskD) {
     //     ActivateTask(TaskB);
     // }
     doSomethingD();
-    ActivateTask(TaskB);
+    // ActivateTask(TaskC);
     TerminateTask(); 
 }
 

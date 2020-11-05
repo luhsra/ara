@@ -55,6 +55,12 @@
 					"category": 2,
 					"priority": 20,
 					"group": ["TaskB"]
+				},
+				{
+					"name": "Interrupt2",
+					"category": 2,
+					"priority": 30,
+					"group": []
 				}
 			]
 		},

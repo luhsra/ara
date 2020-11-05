@@ -477,6 +477,9 @@ class MultiState:
         abb_option[id(self)] = abb
         for key in abb_option:
             abb_option[key] = abb
+        
+        for name, option in self.abbs.items():
+            assert(id(self) in option)
     
     def set_activated_task(self, task_list):
         # self.activated_tasks = OptionTypeList(id(self), task_list)
@@ -560,7 +563,7 @@ class MultiState:
             for abb in abbs:
                 ret += self.cfg.vp.name[abb] + "/"
             ret = ret[:-1] + ", "
-        ret = ret[:-2] + "] " + str(self.global_times_merged) + str(self.passed_events)
+        ret = ret[:-2] + "] " + str(self.global_times_merged) + str(self.passed_events) + " " + str(len(self.activated_tasks))
         return ret
 
     def __eq__(self, other):
