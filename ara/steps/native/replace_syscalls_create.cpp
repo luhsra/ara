@@ -69,9 +69,18 @@ namespace ara::step {
 		return nullptr;
 	}
 
+	template <class Graph>
+	void create_bb_dispatched(Graph g, graph::CFG& cfg, int64_t abb, BasicBlock*& llvm_bb) {
+		llvm_bb = cfg.get_llvm_bb<Graph>(cfg.get_entry_bb(g, abb));
+	}
+
 	BasicBlock* ReplaceSyscallsCreate::create_bb(object task) {
 		graph::CFG cfg = graph.get_cfg();
-		return reinterpret_cast<BasicBlock*>(cfg.entry_bb[extract<int64_t>(task.attr("abb"))]);
+		BasicBlock* ret_bb = nullptr;
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) { create_bb_dispatched(g, cfg, extract<int64_t>(task.attr("abb")), ret_bb); },
+		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		return ret_bb;
 	}
 
 	PyObject* ReplaceSyscallsCreate::replace_call_with_activate(CallBase* call, Value* tcb) {

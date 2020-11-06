@@ -66,12 +66,12 @@ namespace ara::step {
 			}
 
 			std::function<void(const Graph&, ara::graph::CFG&, typename boost::graph_traits<Graph>::vertex_descriptor)>
-			    action = [&](const Graph&, graph::CFG& cfg,
+			    action = [&](const Graph& ig, graph::CFG& cfg,
 			                 typename boost::graph_traits<Graph>::vertex_descriptor abb) {
 				    if (cfg.type[abb] != graph::ABBType::syscall) {
 					    return;
 				    }
-				    llvm::BasicBlock* bb = cfg.get_entry_bb<Graph>(abb);
+				    llvm::BasicBlock* bb = cfg.get_llvm_bb<Graph>(cfg.get_entry_bb<Graph>(ig, abb));
 				    llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
 				    logger.debug() << "Analyzing: " << cfg.name[abb] << " ("
 				                   << safe_deref(called_func->getCalledFunction()).getName().str() << ")" << std::endl;

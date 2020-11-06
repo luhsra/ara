@@ -23,15 +23,15 @@ class ICFG(Step):
 
     def get_single_dependencies(self):
         return [{"name": "CallGraph", "entry_point": self.entry_point.get()},
-                "SystemRelevantFunctions"]
+                "CreateABBs", "SystemRelevantFunctions"]
 
     def run(self):
         entry_label = self.entry_point.get()
         entry_func = self._graph.cfg.get_function_by_name(entry_label)
 
         cfg = self._graph.cfg
-        lcfg = CFGView(cfg, efilt=self._graph.cfg.ep.type.fa == CFType.lcf)
-        icfg = CFGView(cfg, efilt=self._graph.cfg.ep.type.fa == CFType.icf)
+        lcfg = self._graph.lcfg
+        icfg = self._graph.icfg
         cg = self._graph.callgraph
 
         funcs_queue = deque([entry_func])

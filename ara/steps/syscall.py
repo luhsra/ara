@@ -28,7 +28,7 @@ class Syscall(Step):
         for abb in self._graph.cfg.reachable_abbs(entry_func):
             if self._graph.cfg.vp.type[abb] == ABBType.call:
                 for func in self._graph.cfg.get_call_targets(abb):
-                    if self._graph.cfg.vp.syscall[func]:
+                    if self._graph.cfg.vp.sysfunc[func]:
                         self._log.debug(f"Found syscall {self._graph.cfg.vp.name[func]} "
                                         f"in {self._graph.cfg.vp.name[abb]}")
                         self._graph.cfg.vp.type[abb] = ABBType.syscall

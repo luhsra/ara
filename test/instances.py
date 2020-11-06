@@ -25,6 +25,8 @@ def main():
             if name == 'llvm_soc':
                 # wild pointer, skip this
                 continue
+            if name == 'soc':
+                continue
             if prop.value_type() == 'python::object':
                 # for now, just ignore
                 # val = str(val)

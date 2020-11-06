@@ -3,6 +3,7 @@ import ara.steps.py_logging
 def provide_steps():
     from .step import provide_steps as _native_provide
     from .callgraph_stats import CallGraphStats
+    from .create_abbs import CreateABBs
     from .cfg_optimize import CFGOptimize
     from .cfg_stats import CFGStats
     from .dummy import Dummy
@@ -22,6 +23,7 @@ def provide_steps():
 
     yield CFGOptimize
     yield CFGStats
+    yield CreateABBs
     yield CallGraphStats
     yield Dummy
     yield Generator

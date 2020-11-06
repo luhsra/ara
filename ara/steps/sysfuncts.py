@@ -13,10 +13,11 @@ class SysFuncts(Step):
     def run(self):
         syscalls = dict(get_syscalls())
 
-        for nod in self._graph.functs.vertices():
-            call = self._graph.functs.vp.name[nod]
+        functs = self._graph.functs
+        for nod in functs.vertices():
+            call = functs.vp.name[nod]
             found = call in syscalls
-            self._graph.functs.vp.syscall[nod] = found
+            functs.vp.sysfunc[nod] = found
             if found:
                 os = syscalls[call]
                 if self._graph.os in [None, os]:

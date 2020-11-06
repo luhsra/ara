@@ -26,11 +26,28 @@ class ABBType(enum.IntEnum): # */
 
 #undef MIX
 #define MIX 1 /*
+import enum
+class NodeLevel(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class NodeLevel {
+    pass
+
+    function = 0b1,
+    abb = 0b10,
+    bb = 0b100,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(NodeLevel)}
+    pass
+
+
+#undef MIX
+#define MIX 1 /*
 # lcf = local control flow
 # icf = interprocedural control flow
 # gcf = global control flow
 # f2a = function to ABB
-# a2f = ABB to function
+# a2b = ABB to BB
 class CFType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class CFType {
@@ -40,7 +57,8 @@ class CFType(enum.IntEnum): # */
     icf = 1,
     gcf = 2,
     f2a = 3,
-    a2f = 4
+    a2b = 4,
+    f2b = 5
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(CFType)}

@@ -108,7 +108,8 @@ namespace ara::step {
 				// properties
 				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
 				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent();
-				CFVertex abb = cfg.back_map(cfg_obj, safe_deref(out_bb));
+				CFVertex bb = cfg.back_map(cfg_obj, safe_deref(out_bb));
+				CFVertex abb = cfg.get_abb<CFGraph>(cfg_obj, bb);
 
 				callgraph.callsite[edge.first] = abb;
 				callgraph.callsite_name[edge.first] = cfg.name[abb];
@@ -118,7 +119,7 @@ namespace ara::step {
 			}
 
 			void link_with_svf_callgraph(CFVertex function) {
-				const llvm::Function* l_func = cfg.get_function<CFGraph>(function);
+				const llvm::Function* l_func = cfg.get_llvm_function<CFGraph>(function);
 				assert(l_func != nullptr && "l_func is null.");
 				const SVF::SVFFunction* svf_func = SVF::LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(l_func);
 				assert(svf_func != nullptr && "svf_func is null.");

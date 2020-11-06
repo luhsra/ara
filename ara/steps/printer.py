@@ -1,5 +1,5 @@
 """Container for Printer."""
-from ara.graph import ABBType, CFType, Graph
+from ara.graph import ABBType, CFType, Graph, NodeLevel, CFGView
 
 from .option import Option, String, Choice, Bool
 from .step import Step
@@ -93,25 +93,26 @@ class Printer(Step):
     def print_abbs(self):
         name = self._print_init()
 
+        cfg = self._graph.cfg
+
         entry_label = self.entry_point.get()
         if self.from_entry_point.get():
             entry_func = self._graph.cfg.get_function_by_name(entry_label)
-            functions = self._graph.cfg.reachable_funcs(entry_func)
+            functions = self._graph.cfg.reachable_functs(entry_func)
         else:
-            functions = self._graph.functs.vertices()
+            functs = self._graph.functs
+            functions = functs.vertices()
 
         dot_nodes = set()
         dot_graph = pydot.Dot(graph_type='digraph', label=name)
         for function in functions:
-            dot_func = pydot.Cluster(self._graph.cfg.vp.name[function],
-                                     label=self._graph.cfg.vp.name[function])
+            function = cfg.vertex(function)
+            dot_func = pydot.Cluster(cfg.vp.name[function],
+                                     label=cfg.vp.name[function])
             dot_graph.add_subgraph(dot_func)
-            for edge in self._graph.cfg.vertex(function).out_edges():
-                if self._graph.cfg.ep.type[edge] != CFType.f2a:
-                    continue
-                abb = edge.target()
-                if self._graph.cfg.vp.type[abb] == ABBType.not_implemented:
-                    assert not self._graph.cfg.vp.implemented[function]
+            for abb in cfg.get_abbs(function):
+                if cfg.vp.type[abb] == ABBType.not_implemented:
+                    assert not cfg.vp.implemented[function]
                     dot_abb = pydot.Node(str(hash(abb)),
                                          label="",
                                          shape="box")
@@ -121,24 +122,24 @@ class Printer(Step):
                 else:
                     dot_abb = pydot.Node(
                         str(hash(abb)),
-                        label=self._graph.cfg.vp.name[abb],
+                        label=cfg.vp.name[abb],
                         shape=self.SHAPES[self._graph.cfg.vp.type[abb]][0],
                         color=self.SHAPES[self._graph.cfg.vp.type[abb]][1]
                     )
-                    if self._graph.cfg.vp.part_of_loop[abb]:
+                    if cfg.vp.part_of_loop[abb]:
                         dot_abb.set('style', 'dashed')
                     dot_nodes.add(str(hash(abb)))
                 dot_func.add_node(dot_abb)
-        for edge in self._graph.cfg.edges():
-            if self._graph.cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
+        for edge in cfg.edges():
+            if cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
                 continue
             if not all([str(hash(x)) in dot_nodes
                     for x in [edge.source(), edge.target()]]):
                 continue
             color = "black"
-            if self._graph.cfg.ep.type[edge] == CFType.lcf:
+            if cfg.ep.type[edge] == CFType.lcf:
                 color = "red"
-            if self._graph.cfg.ep.type[edge] == CFType.icf:
+            if cfg.ep.type[edge] == CFType.icf:
                 color = "blue"
             dot_graph.add_edge(pydot.Edge(str(hash(edge.source())),
                                           str(hash(edge.target())),

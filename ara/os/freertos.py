@@ -308,7 +308,7 @@ class FreeRTOS(OSBase):
         instances.vp.usually_taken[v] = is_usually_taken
         instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
         instances.vp.soc[v] = abb
-        instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
+        instances.vp.llvm_soc[v] = cfg.vp.llvm_link[abb]
         instances.vp.file[v] = cfg.vp.file[abb]
         instances.vp.line[v] = cfg.vp.line[abb]
 
