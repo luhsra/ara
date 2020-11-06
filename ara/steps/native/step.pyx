@@ -174,9 +174,9 @@ class Step(SuperStep):
             self._log.setLevel(LEVEL[level])
         dump_prefix = self.dump_prefix.get()
         if dump_prefix:
-            new_dp = dump_prefix.replace('{step_name}', self.get_name())
-            new_dp = dump_prefix.replace(
-                '{uuid}',
+            new_dp = dump_prefix.replace(r'{step_name}', self.get_name())
+            new_dp = new_dp.replace(
+                r'{uuid}',
                 str(self._step_manager.get_execution_id())
             )
             self.dump_prefix.check({'dump_prefix': new_dp})

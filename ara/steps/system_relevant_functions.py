@@ -41,7 +41,7 @@ class SystemRelevantFunctions(Step):
         if self.dump.get():
             self._step_manager.chain_step(
                 {"name": "Printer",
-                 "dot": self.dump_prefix.get() + '.dot',
+                 "dot": self.dump_prefix.get() + 'dot',
                  "graph_name": 'System relevant functions',
                  "subgraph": 'callgraph'}
             )

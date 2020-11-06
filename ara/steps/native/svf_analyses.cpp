@@ -39,8 +39,8 @@ namespace ara::step {
 		// we don't need to store anything here, since all SVF datastructures are stored in singletons
 
 		if (*dump.get()) {
-			icfg->dump(*dump_prefix.get() + ".svf-icfg");
-			callgraph->dump(*dump_prefix.get() + ".svf-callgraph");
+			icfg->dump(*dump_prefix.get() + "svf-icfg");
+			callgraph->dump(*dump_prefix.get() + "svf-callgraph");
 		}
 	}
 } // namespace ara::step
