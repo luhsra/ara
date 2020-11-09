@@ -252,7 +252,7 @@ class AUTOSAR(OSBase):
             for option in state.call_nodes.values():
                 option[id(state)] = option[oldkey]
             
-            delete_key(state, oldkey)
+            # delete_key(state, oldkey)
 
         # print(f"decompress {state}")
         # print(f"abbs: {state.abbs}")
@@ -272,7 +272,7 @@ class AUTOSAR(OSBase):
         if len(task_names) == 0:
             new_states.append(state)
         
-        print(f"tasknames: {task_names}")
+        # print(f"tasknames: {task_names}")
 
         for taskname in task_names:
             interstates = []

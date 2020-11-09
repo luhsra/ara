@@ -279,7 +279,15 @@ class OptionTypeList(dict):
                 return False
 
         return True
-            
+
+class KeyGenerator:
+    def __init__(self):
+        self.next_key = 0
+    
+    def get_key(self):
+        key = self.next_key
+        self.next_key += 1
+        return key
 
 class MetaState:
     def __init__(self, cfg=None, instances=None):
@@ -422,9 +430,13 @@ class MetaState:
         return True
 
 class MultiState:
-    def __init__(self, cfg=None, instances=None, cpu=0):
+    def __init__(self, cfg=None, instances=None, cpu=0, keygen=None):
         self.cfg = cfg
         self.instances = instances
+        self.keygen = keygen
+        if self.keygen is not None:
+            self.key = keygen.get_key()
+
         self.entry_abbs = {} # entry abbs for each task; key: task name, value: entry abb node
         self.call_nodes = {} # call node of each task (used for handling calls)
                              # key: task name, value: OptionType of ABB nodes (call nodes)
@@ -450,6 +462,7 @@ class MultiState:
         self.from_isr = False   # indicates if this state is the result of an ISR
         self.updated = 0
         self.interrupt_handled = False
+             
 
     def get_running_abb(self):
         instance = self.get_scheduled_instance()
@@ -628,6 +641,8 @@ class MultiSSE(FlowAnalysis):
     def _get_initial_state(self):
         self.print_tasks()  
 
+        keygen = KeyGenerator()
+
         # building initial metastate
         metastate = MetaState(cfg=self._g.cfg, instances=self._g.instances)
 
@@ -642,7 +657,7 @@ class MultiSSE(FlowAnalysis):
             if isinstance(task, AUTOSAR_Task):
                 if task.cpu_id not in found_cpus:
                     # create new MultiState
-                    state = MultiState(cfg=self._g.cfg,instances=self._g.instances, cpu=task.cpu_id) 
+                    state = MultiState(cfg=self._g.cfg,instances=self._g.instances, cpu=task.cpu_id, keygen=keygen) 
                     found_cpus[task.cpu_id] = state
 
                     # add new state to Metastate
