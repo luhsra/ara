@@ -490,11 +490,11 @@ class FreeRTOS(OSBase):
         cp = state.call_path
         p_get_argument = functools.partial(get_argument, cfg, abb, cp)
 
-        handler = p_get_argument(0, raw=True)
+        handler = p_get_argument(0, raw_value=True)
 
         # TODO this has to be a pointer object. However, the value analysis
         # follows the pointer currently.
-        item = p_get_argument(1, raw=True)
+        item = p_get_argument(1, raw_value=True)
         ticks = p_get_argument(2)
         action = p_get_argument(3)
 

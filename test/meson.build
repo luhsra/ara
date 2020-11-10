@@ -28,6 +28,13 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('interactions',
+        py3_inst,
+        args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
+        env: [python_path],
+        suite: 'steps'
+    )
+
     test('ir-reader',
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],

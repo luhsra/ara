@@ -25,6 +25,7 @@ ir_apps = [
   'invalid_isr_syscall',
   'invalid_mutex',
   'invalid_semaphore',
+  'interaction',
   'loop_detection',
   'multi_exit',
   'optimization',

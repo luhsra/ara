@@ -1,0 +1,84 @@
+[
+  {
+    "label": "Mutex: mutex",
+    "id": "Mutex",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/FreeRTOS/interaction.cc",
+    "line": 15,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Task: Task1 (_Z5task1Pv)",
+    "id": "Task.Task1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "../appl/FreeRTOS/interaction.cc",
+    "line": 29,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Task: Task3 (_Z5task3Pv)",
+    "id": "Task.Task3",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "../appl/FreeRTOS/interaction.cc",
+    "line": 30,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Task: User (_Z5task2Pv)",
+    "id": "Task.User",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/FreeRTOS/interaction.cc",
+    "line": 16,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "__idle_task",
+    "id": "Task.idle_task",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "../appl/FreeRTOS/interaction.cc",
+    "line": 31,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "source": "Task.Task1",
+    "target": "Mutex",
+    "label": "xQueueGenericSend",
+    "type": "interaction"
+  },
+  {
+    "source": "Task.User",
+    "target": "Mutex",
+    "label": "xQueueGenericSend",
+    "type": "interaction"
+  }
+]
