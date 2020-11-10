@@ -29,10 +29,10 @@ ISR2(Interrupt2) {
 
 TASK(TaskA) {
     doSomethingBefore();
-    DisableAllInterrupts();
-    // ActivateTask(TaskE);
+    // DisableAllInterrupts();
+    ActivateTask(TaskC);
     doSomethingAfter();
-    EnableAllInterrupts();
+    // EnableAllInterrupts();
     TerminateTask(); 
 }
 
@@ -48,11 +48,11 @@ TASK(TaskC) {
 }
 
 TASK(TaskD) {
-    // while (true) {
-    //     doSomethingD();
-    //     ActivateTask(TaskB);
-    // }
-    doSomethingD();
+    while (true) {
+        doSomethingD();
+        // ActivateTask(TaskB);
+    }
+    // doSomethingD();
     // ActivateTask(TaskC);
     TerminateTask(); 
 }

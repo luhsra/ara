@@ -972,6 +972,59 @@ class MultiSSE(FlowAnalysis):
     
     def compress_states(self, compress_list):
         """Compresses a list of states into a single state using the OptionTypes when the state attributes are different"""
+
+        def combination_in_res(res, key, state):
+            ret = True
+
+            viable_keys = []
+
+            # check activated tasks
+            target_list = state.activated_tasks[key]
+            for _key, _list in res.activated_tasks.items():
+                if _list == target_list:
+                    viable_keys.append(_key)
+
+            if len(viable_keys) == 0:
+                return False
+
+            # check activated isrs
+            target_list = state.activated_isrs[key]
+            keys = []
+            for _key in viable_keys:
+                activated_isrs_list = res.activated_isrs[_key]
+                if activated_isrs_list == target_list:
+                    keys.append(_key)
+            viable_keys = keys.copy()
+
+            if len(viable_keys) == 0:
+                return False
+
+            # check abbs
+            for name, option in res.abbs.items():
+                keys = []
+                target_value = state.abbs[name][key]
+                for _key in viable_keys:  
+                    if target_value == option[_key]:
+                        keys.append(_key)
+
+                viable_keys = keys.copy()
+                if len(viable_keys) == 0:
+                    return False           
+            
+            # check interrupt enabled flag
+            keys = []
+            target_value = state.interrupts_enabled[key]
+            for _key in viable_keys:
+                if target_value == res.interrupts_enabled[_key]:
+                    keys.append(_key)
+            
+            viable_keys = keys.copy()
+            if len(viable_keys) == 0:
+                return False
+
+
+            return ret
+
         res = None
         if len(compress_list) > 0:
             res = compress_list[0].copy(changekey=True)
@@ -980,39 +1033,66 @@ class MultiSSE(FlowAnalysis):
                 # print(f"ABBs: {state.abbs}")
                 # print(f"id: {state.key}, AT: {state.activated_tasks}")
                 if i != 0:
-                    # compress abbs
-                    for taskname, abbs in res.abbs.items():
-                        option = state.abbs[taskname]
-                        for key, value in option.items():
-                            if key not in abbs:
-                                abbs[key] = value
-                    
-                    # compress activated tasks
-                    for key, _list in state.activated_tasks.items():
-                        if key not in res.activated_tasks:
-                            res.activated_tasks[key] = _list.copy()
+                    for key in state.activated_tasks:
+                        # check if combination is already in compressed state
+                        if not combination_in_res(res, key, state):
+                            new_key = key
+                            # get new key if necessary
+                            if key in res.activated_tasks:
+                                new_key = state.keygen.get_key()
+                            
+                            for name, option in res.abbs.items():
+                                old_option = state.abbs[name]
+                                option[new_key] = old_option[key]
+                            
+                            for name, option in res.call_nodes.items():
+                                old_option = state.call_nodes[name]
+                                option[new_key] = old_option[key]
+                            
+                            res.activated_tasks[new_key] = state.activated_tasks[key].copy()
+                            res.activated_isrs[new_key] = state.activated_isrs[key].copy()
+                            res.interrupts_enabled[new_key] = state.interrupts_enabled[key]
+                        # else:
+                        #     print(f"combination already in res: {res}")
 
-                    # compress activated isrs
-                    for key, _list in state.activated_isrs.items():
-                        if key not in res.activated_isrs:
-                            res.activated_isrs[key] = _list.copy()
-                    
-                    # compress call nodes
-                    for taskname, callnodes in res.call_nodes.items():
-                        option = state.call_nodes[taskname]
-                        for key, value in option.items():
-                            if key not in callnodes:
-                                callnodes[key] = value
-                    
                     # compress global times
                     for intervall in state.global_times:
                         if intervall not in res.global_times:
                             res.global_times.append(intervall)
+
+                    # # compress abbs
+                    # for taskname, abbs in res.abbs.items():
+                    #     option = state.abbs[taskname]
+                    #     for key, value in option.items():
+                    #         if key not in abbs:
+                    #             abbs[key] = value
                     
-                    # compress interrupt enable flags
-                    for key, value in state.interrupts_enabled.items():
-                        if key not in res.interrupts_enabled:
-                            res.interrupts_enabled[key] = value
+                    # # compress activated tasks
+                    # for key, _list in state.activated_tasks.items():
+                    #     if key not in res.activated_tasks:
+                    #         res.activated_tasks[key] = _list.copy()
+
+                    # # compress activated isrs
+                    # for key, _list in state.activated_isrs.items():
+                    #     if key not in res.activated_isrs:
+                    #         res.activated_isrs[key] = _list.copy()
+                    
+                    # # compress call nodes
+                    # for taskname, callnodes in res.call_nodes.items():
+                    #     option = state.call_nodes[taskname]
+                    #     for key, value in option.items():
+                    #         if key not in callnodes:
+                    #             callnodes[key] = value
+                    
+                    # # compress global times
+                    # for intervall in state.global_times:
+                    #     if intervall not in res.global_times:
+                    #         res.global_times.append(intervall)
+                    
+                    # # compress interrupt enable flags
+                    # for key, value in state.interrupts_enabled.items():
+                    #     if key not in res.interrupts_enabled:
+                    #         res.interrupts_enabled[key] = value
         return res
 
     def run_sse(self, metastate):
@@ -1235,8 +1315,8 @@ class MultiSSE(FlowAnalysis):
 
                 # check for existing neighbors
                 if len(graph.get_out_neighbors(state_vertex)) == 0 or (len(g_only_normal_edges.get_out_neighbors(state_vertex)) < self._icfg.vertex(abb).out_degree()):
+                # if len(g_only_normal_edges.get_out_neighbours(state_vertex)) == 0:
                     ########## COMPUTE NEW STATES ######################
-
                     # syscall handling
                     if self._icfg.vp.type[abb] == ABBType.syscall:
                         assert self._g.os is not None
