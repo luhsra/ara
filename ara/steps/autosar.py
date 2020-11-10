@@ -248,9 +248,9 @@ class AUTOSAR(OSBase):
             state.set_activated_isr(state.activated_isrs[oldkey])
             state.set_interrupts_enabled_flag(state.interrupts_enabled[oldkey])
             for option in state.abbs.values():
-                option[id(state)] = option[oldkey]
+                option[state.key] = option[oldkey]
             for option in state.call_nodes.values():
-                option[id(state)] = option[oldkey]
+                option[state.key] = option[oldkey]
             
             # delete_key(state, oldkey)
 
@@ -281,8 +281,8 @@ class AUTOSAR(OSBase):
             # remove every tasklist that has a different running task as taskname
             for key, activated_tasks_list in state.activated_tasks.items():
                 activated_isrs_list = state.activated_isrs[key]
-                if key == id(state):
-                    key = id(interstate)
+                if key == state.key:
+                    key = interstate.key
                 if taskname.startswith("AUTOSAR_ISR"):
                     if len(activated_isrs_list) == 0 or activated_isrs_list[0].name != taskname:
                         delete_key(interstate, key)
@@ -299,12 +299,12 @@ class AUTOSAR(OSBase):
 
                 for key, flag in interstate.interrupts_enabled.items():
                     if flag:
-                        if key == id(interstate):
-                            key = id(new_state_false)
+                        if key == interstate.key:
+                            key = new_state_false.key
                         delete_key(new_state_false, key)
                     else:
-                        if key == id(interstate):
-                            key = id(new_state_true)
+                        if key == interstate.key:
+                            key = new_state_true.key
                         delete_key(new_state_true, key)
 
                 interstates.append(new_state_true)
@@ -316,7 +316,7 @@ class AUTOSAR(OSBase):
 
             for interstate in interstates:
                 # make sure all states have self id as a key
-                if id(interstate) not in interstate.activated_tasks:
+                if interstate.key not in interstate.activated_tasks:
                     switch_key(interstate)
 
                 # check if the running abb is unique

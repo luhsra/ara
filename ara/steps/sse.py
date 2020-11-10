@@ -287,6 +287,7 @@ class KeyGenerator:
     def get_key(self):
         key = self.next_key
         self.next_key += 1
+        # print(f"got key {key}")
         return key
 
 class MetaState:
@@ -442,11 +443,11 @@ class MultiState:
                              # key: task name, value: OptionType of ABB nodes (call nodes)
         self.callgraphs = {} # callgraphs for each task; key: task name, value: callgraph
         self.abbs = {} # active ABB per task; key: task name, value: OptionType of ABB nodes
-        self.activated_tasks = OptionTypeList(id(self), []) # list of activated tasks 
-        self.activated_isrs = OptionTypeList(id(self), [])  # list of ISRs currently running
+        self.activated_tasks = OptionTypeList(self.key, []) # list of activated tasks 
+        self.activated_isrs = OptionTypeList(self.key, [])  # list of ISRs currently running
         self.last_syscall = None # syscall that this state originated from (used for building gcfg)
                                  # Type: SyscallInfo 
-        self.interrupts_enabled = OptionType(id(self), True) # interrupt enable flag
+        self.interrupts_enabled = OptionType(self.key, True) # interrupt enable flag
         self.cpu = cpu
         self.min_time = 0
         self.max_time = 0
@@ -485,32 +486,34 @@ class MultiState:
         return ret
     
     def set_abb(self, task_name, abb):
-        # self.abbs[task_name] = OptionType(id(self), abb)
+        # self.abbs[task_name] = OptionType(self.key, abb)
         abb_option = self.abbs[task_name]
-        abb_option[id(self)] = abb
+        abb_option[self.key] = abb
         for key in abb_option:
             abb_option[key] = abb
+
+        # print(f"key: {self.key} ABBs: {self.abbs}")
         
         for name, option in self.abbs.items():
-            assert(id(self) in option)
+            assert(self.key in option)
     
     def set_activated_task(self, task_list):
-        # self.activated_tasks = OptionTypeList(id(self), task_list)
-        self.activated_tasks[id(self)] = task_list
+        # self.activated_tasks = OptionTypeList(self.key, task_list)
+        self.activated_tasks[self.key] = task_list
     
     def set_activated_isr(self, isr_list):
-        self.activated_isrs[id(self)] = isr_list
+        self.activated_isrs[self.key] = isr_list
 
     def set_call_node(self, task_name, callnode):
-        # self.call_nodes[task_name] = OptionType(id(self), callnode)
+        # self.call_nodes[task_name] = OptionType(self.key, callnode)
         call_node_option = self.call_nodes[task_name]
-        call_node_option[id(self)] = callnode
+        call_node_option[self.key] = callnode
         for key in call_node_option:
             call_node_option[key] = callnode
     
     def set_interrupts_enabled_flag(self, interrupts_enabled):
-        # self.interrupts_enabled = OptionType(id(self), interrupts_enabled)
-        self.interrupts_enabled[id(self)] = interrupts_enabled
+        # self.interrupts_enabled = OptionType(self.key, interrupts_enabled)
+        self.interrupts_enabled[self.key] = interrupts_enabled
 
     def remove_tasklists(self, taskname):
         for key in self.abbs[taskname]:
@@ -564,7 +567,7 @@ class MultiState:
 
     def __repr__(self):
         self.merge_times()
-        ret = "["
+        ret = str(self.key) + " ["
         scheduled_task = self.get_scheduled_task()
         current_isr = self.get_current_isr()
         for task_name, abb_options in self.abbs.items():
@@ -593,18 +596,19 @@ class MultiState:
         return class_eq and activated_task_eq and irq_enabled_eq and activated_isrs_eq
     
     # def __hash__(self):
-    #     return id(self)
+    #     return self.key
 
     def copy(self, changekey=True):
-        scopy = MultiState()
+        scopy = MultiState(keygen=self.keygen)
 
-        oldkey = id(self)
-        newkey = id(scopy)
+        oldkey = self.key
+        newkey = scopy.key
         if not changekey:
-            newkey = id(self)
+            newkey = oldkey
 
         for key, value in self.__dict__.items():
             setattr(scopy, key, value)
+        scopy.key = newkey
         scopy.instances = self.instances.copy()
         scopy.abbs = {}
         for key, value in self.abbs.items():
@@ -680,11 +684,11 @@ class MultiSSE(FlowAnalysis):
                 state.entry_abbs[task.name] = entry_abb
 
                 # setup abbs dict with entry abb for each task
-                state.abbs[task.name] = OptionType(id(state), entry_abb)
+                state.abbs[task.name] = OptionType(state.key, entry_abb)
 
                 # set callgraph and entry call node for each task
                 state.callgraphs[task.name] = self._g.call_graphs[func_name]
-                state.call_nodes[task.name] = OptionType(id(state), self._find_tree_root(self._g.call_graphs[func_name]))
+                state.call_nodes[task.name] = OptionType(state.key, self._find_tree_root(self._g.call_graphs[func_name]))
                 
                 # set list of activated tasks
                 if task.autostart: 
@@ -701,12 +705,12 @@ class MultiSSE(FlowAnalysis):
                 state.entry_abbs[isr.name] = entry_abb
 
                 # setup abbs dict with entry abb for each ISR
-                state.abbs[isr.name] = OptionType(id(state), entry_abb)
+                state.abbs[isr.name] = OptionType(state.key, entry_abb)
 
                 # set callgraph and entry call node for each ISR
                 state.callgraphs[isr.name] = self._g.call_graphs[isr.name]
                 # state.set_call_node(isr.name, self._find_tree_root(self._g.call_graphs[isr.name]))
-                state.call_nodes[isr.name] = OptionType(id(state), self._find_tree_root(self._g.call_graphs[isr.name]))
+                state.call_nodes[isr.name] = OptionType(state.key, self._find_tree_root(self._g.call_graphs[isr.name]))
 
         
         # build starting times for each multistate
@@ -974,7 +978,7 @@ class MultiSSE(FlowAnalysis):
 
             for i, state in enumerate(compress_list):
                 # print(f"ABBs: {state.abbs}")
-                # print(f"id: {id(state)}, AT: {state.activated_tasks}")
+                # print(f"id: {state.key}, AT: {state.activated_tasks}")
                 if i != 0:
                     # compress abbs
                     for taskname, abbs in res.abbs.items():
