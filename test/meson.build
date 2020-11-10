@@ -70,6 +70,13 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('recursive',
+        py3_inst,
+        args: [files('recursive.py'), files('recursive.json'), freertos_icfg],
+        env: [python_path],
+        suite: 'steps'
+    )
+
     test('syscall',
         py3_inst,
         args: [files('syscall.py'), files('syscall.json'), freertos_syscall],

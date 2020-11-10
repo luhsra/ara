@@ -1,0 +1,14 @@
+[
+  [ "_Z12get_ptr_funcv", false ],
+  [ "_Z20complex_get_ptr_funci", false ],
+  [ "_Z5chainv", true ],
+  [ "_Z8do_stuffii", false ],
+  [ "_Z9ptr_func1ifi", false ],
+  [ "_Z9ptr_func2ifi", false ],
+  [ "_Z9recursivev", true ],
+  [ "__ara_fake_entry", false ],
+  [ "main", false ],
+  [ "vTaskDelay", false ],
+  [ "vTaskStartScheduler", false ],
+  [ "xTaskCreate", false ]
+]
