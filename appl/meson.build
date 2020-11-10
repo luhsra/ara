@@ -14,17 +14,13 @@ freertos_targets = []
 # these apps are not meant to ever run on real hardware, but are used for unit tests etc.
 # they are only compiled to IR
 ir_apps = [
-  'a',
   'abb_merge',
   'argument_load',
-  'c',
   'condition',
   'critical_region_detection',
   'deadlock',
   'dominator',
   'eventgroup',
-  'f',
-  'g',
   'icfg',
   'invalid_isr_syscall',
   'invalid_mutex',
