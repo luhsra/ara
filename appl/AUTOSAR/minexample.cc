@@ -30,7 +30,7 @@ ISR2(Interrupt2) {
 TASK(TaskA) {
     doSomethingBefore();
     // DisableAllInterrupts();
-    ActivateTask(TaskC);
+    ActivateTask(TaskE);
     doSomethingAfter();
     // EnableAllInterrupts();
     TerminateTask(); 
@@ -50,7 +50,7 @@ TASK(TaskC) {
 TASK(TaskD) {
     while (true) {
         doSomethingD();
-        // ActivateTask(TaskB);
+        ActivateTask(TaskB);
     }
     // doSomethingD();
     // ActivateTask(TaskC);
