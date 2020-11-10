@@ -126,6 +126,7 @@ class StepManager:
         # output
         if stats_file == 'dump':
             file_name = dump_prefix.replace('{step_name}', 'ARA')
+            file_name = file_name.replace('{uuid}', '-')
             ending = {'human': '.txt', 'json': '.json'}[stats_format]
             with open(file_name + 'runtime_stats' + ending, 'w') as f:
                 f.write(stats_string)
