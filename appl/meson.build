@@ -294,6 +294,15 @@ osek_examples = run_target('osek-examples',
 subdir('AUTOSAR')
 
 
+# Zephyr samples
+subdir('Zephyr')
+
+zephyr_examples = alias_target('zephyr_examples', zephyr_targets)
+
+run_target('z_clean', 
+    command: ['rm', '-rf', join_paths(meson.current_build_dir(), 'Zephyr')])
+
 examples = run_target('examples',
                       command: nop,
-                      depends: [osek_targets, freertos_targets])
+                      depends: [osek_targets, freertos_targets, zephyr_targets])
+
