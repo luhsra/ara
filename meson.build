@@ -48,10 +48,18 @@ svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
+## sparsedata
 sparsedata = subproject('sparsedata')
 sparse_rle = sparsedata.get_variable('libsparserle')
 sparse_rle2 = sparsedata.get_variable('libsparserle2')
 
+## ara-link
+ara_link = find_program('ara-link', version: llvm_version, required: false)
+if not ara_link.found()
+    ara_link_proj = subproject('ara-link')
+    ara_link = ara_link_proj.get_variable('ara_link')
+    message('Using ara-link from subproject.')
+endif
 
 ## tools
 nop = find_program('true')

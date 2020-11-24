@@ -113,7 +113,7 @@ clang_cpp = [clang, clang_base, cxx_std]
 ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']
 llc_cmd = [llc, '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ] + llc_flags
 objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
-llvm_link_cmd = [llvm_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
+llvm_link_cmd = [ara_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
 llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 
 ara_gen_cmd = [py3_inst, ara_py,
