@@ -11,6 +11,7 @@ from ara.graph import (ABBType, Graph, CFGView, CFType, CallPath,
 from .step import Step
 from .option import Option, String, Bool
 from ara.os.freertos import Task
+from ara.os.zephyr import Thread, ISR
 from ara.util import VarianceDict
 
 from collections import defaultdict
@@ -271,7 +272,8 @@ class FlatAnalysis(FlowAnalysis):
             return
         for v in self._graph.instances.vertices():
             os_obj = self._graph.instances.vp.obj[v]
-            if isinstance(os_obj, Task) and os_obj.is_regular:
+            if (isinstance(os_obj, Task) and os_obj.is_regular or
+                    isinstance(os_obj, Thread) or isinstance(os_obj, ISR)):
                 yield os_obj, v
 
     def _get_task_function(self, task):

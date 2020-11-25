@@ -7,12 +7,6 @@
 		"log_level": "info",
 		"dump": true
 	},
-	"FakeEntryPoint": {
-		"entry_point": "threadA"
-	},
-	"CallGraph": {
-		"entry_point": "threadA"
-	},
 	"InstanceGraph": {
 		"dump": true
 	}
