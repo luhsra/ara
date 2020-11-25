@@ -21,8 +21,6 @@ args = parser.parse_args()
 
 # Clear the build dir if it exits and we can't prove that the existing build is for the same board.
 # This is required by the zephyr build system. Otherwise cmake runs into caching issues.
-# TODO: Think of some way that this still regenerates if the CMakeText.txt of the app changes.
-# TODO: Make sure meson fails if the build in here fails
 # TODO: Investigate how ninja clean handles zephyr 
 same_board = False
 try: 

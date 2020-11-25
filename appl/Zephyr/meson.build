@@ -1,24 +1,31 @@
 
-# Not all apps are compatible with the nucleo_f103rb
-zephyr_apps = [
-'blinky',
-#'blinky_pwm',
-'button',
-'cpp_synchronization',
-'dynamic_synchronization',
-#'fade_led',
-'minimal',
-'mutex',
-#'rgb_led',
-#'servo_motor',
-#'shared_mem',
-'sthread',
-'synchronization',
-#'threads'
+# Apps that run on virtually any board since there are no hw dependencies
+z_easy_apps = [
+    'cpp_sems',
+    'dyn_queue',
+    'dyn_stack',
+    'dyn_sems',
+    'minimal',
+    'static_queue',
+    'static_sems',
+    'static_stack'
 ]
 
-#zephyr_apps = ['dynamic_synchronization']
-#zephyr_apps = ['mutex']
+# Apps that require boards that support userspace applications
+z_userspace_apps = [
+    'prod_consumer',
+    'shared_mem'
+]
+
+# Apps that require hardware (gpio, interrupt controller) and therefore run on the nucleo_f103rb
+z_hw_apps = [
+    'blinky',
+    'button',
+    'dyn_isr',
+    'static_isr'
+]
+
+zephyr_apps = z_easy_apps
 
 # Currently only two boards are supported:
 # Arm: The nucleo f103rb
@@ -30,6 +37,7 @@ if get_option('arch') == 'i386'
 elif get_option('arch') == 'arm'
     l_gcc = libgcc_dir
     board = 'nucleo_f103rb'
+    zephyr_apps += z_hw_apps
 endif
 
 zephyr_targets = []
