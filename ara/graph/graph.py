@@ -356,6 +356,8 @@ class InstanceGraph(graph_tool.Graph):
     def __init__(self):
         super().__init__()
         # vertex properties
+        # ATTENTION: If you modify this values, you also have to update
+        # cgraph/graph.cpp and cgraph/graph.h.
         self.vertex_properties["label"] = self.new_vp("string")
         self.vertex_properties["obj"] = self.new_vp("object")
         self.vertex_properties["id"] = self.new_vp("string")
