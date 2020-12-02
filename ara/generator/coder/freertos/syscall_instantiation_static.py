@@ -4,7 +4,7 @@ from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        FunctionDeclaration)
 from ara.os.freertos import Task, Queue, Mutex
 
-class StaticFullSystemCalls(GenericSystemCalls):
+class SystemCallsInstantiationStatic(GenericSystemCalls):
 
 
     def generate_data_objects(self):

@@ -10,7 +10,7 @@ from ara.os.freertos import Task, Queue, Mutex
 
 
 
-class InitializedFullSystemCalls(GenericSystemCalls):
+class SystemCallsInstantiationInitialized(GenericSystemCalls):
 
     def generate_data_objects(self):
         '''generate the data objects for tasks and queues'''
