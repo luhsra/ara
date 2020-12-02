@@ -1,5 +1,5 @@
-from .syscall_generic import GenericSystemCalls
-from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
+from ..syscall_generic import GenericSystemCalls
+from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        Statement, Include, CPPStatement,
                        FunctionDeclaration)
 from ara.os.freertos import Task, Queue, Mutex

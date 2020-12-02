@@ -1,5 +1,5 @@
 from .arch_generic import GenericArch
-from .elements import (
+from ..elements import (
     CodeTemplate,
     DataObject,
     DataObjectArray,

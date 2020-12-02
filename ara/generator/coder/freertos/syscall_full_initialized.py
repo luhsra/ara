@@ -1,5 +1,5 @@
-from .syscall_generic import GenericSystemCalls
-from .elements import (DataObjectArray, DataObject, Function, FunctionCall,
+from ..syscall_generic import GenericSystemCalls
+from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        CPPStatement,
                        Statement, Include, InstanceDataObject, StructDataObject,
                        FunctionDeclaration)

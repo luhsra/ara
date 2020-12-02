@@ -5,7 +5,8 @@
 		}
 	],
 	"Generator": {
-		"syscall_style": "passthrough",
+		"instantiation_style": "passthrough",
+		"interaction_style": "passthrough",
 		"arch": "arm",
 		"os": "freertos"
 	}

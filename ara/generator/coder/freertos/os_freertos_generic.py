@@ -1,7 +1,28 @@
-from .os_generic import GenericOS
-from .elements.IncludeManager import Include
+from ..os_generic import GenericOS
+from ..elements.IncludeManager import Include
+
+from .arch_arm import ArmArch
+from .syscall_full_initialized import InitializedFullSystemCalls
+from .syscall_full_static import StaticFullSystemCalls
+
+from ..syscall_vanilla import VanillaSystemCalls
+from .implementations import add_impl as _add_impl
+
+
 
 class FreeRTOSGenericOS(GenericOS):
+
+    arch_choices = {'arm':ArmArch}
+
+    instantiation_choices= {'passthrough': VanillaSystemCalls,
+                            'vanilla': VanillaSystemCalls,
+                            'static': StaticFullSystemCalls,
+                            'initialized': InitializedFullSystemCalls,
+                            }
+
+    interaction_choices = {'vanilla':VanillaSystemCalls,
+                           }
+
 
     def set_generator(self, generator):
         super().set_generator(generator)
@@ -42,3 +63,7 @@ class FreeRTOSGenericOS(GenericOS):
         overrides = self.generator.source_files['.freertos_overrides.h'].overrides
         overrides['ara_heap_decline'] = heap_decline
         overrides['configTOTAL_HEAP_SIZE'] = heap_size_total - heap_decline
+
+    @staticmethod
+    def add_impl(instance):
+        _add_impl(instance)

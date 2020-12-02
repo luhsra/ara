@@ -1,5 +1,5 @@
-from .base import BaseCoder
-from .elements import StructDataObject, DataObjectArray, DataObject
+from ..base import BaseCoder
+from ..elements import StructDataObject, DataObjectArray, DataObject
 from ara.os.freertos import Queue, Mutex
 
 class VanillaTaskList(StructDataObject):

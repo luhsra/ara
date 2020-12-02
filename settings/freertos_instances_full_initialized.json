@@ -3,7 +3,8 @@
 		{
 			"name": "Generator",
 			"arch": "arm",
-			"syscall_style": "generic_initialized",
+			"instantiation_style": "initialized",
+			"interaction_style": "vanilla",
 			"os": "freertos"
 		}
 	],
