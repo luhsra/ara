@@ -1,4 +1,5 @@
 from .os_generic import GenericOS
+from .elements.IncludeManager import Include
 
 class FreeRTOSGenericOS(GenericOS):
 
@@ -6,8 +7,8 @@ class FreeRTOSGenericOS(GenericOS):
         super().set_generator(generator)
         self.generator.add_source_file('.freertos_overrides.h')
     def generate_data_objects(self):
-        self._log.info("FreeRTOSGenericOS has no data objects")
-        pass
+        #include "freertos.h"
+        self.generator.source_file.includes.add(Include('FreeRTOS.h'))
 
     def generate_system_code(self):
         self.calculate_heap_declinement()

@@ -29,9 +29,6 @@ class Generator:
         self.source_file = SourceFile(self._log)
         self.source_files[''] = self.source_file
 
-        #include "freertos.h"
-        self.source_file.includes.add(Include('FreeRTOS.h'))
-
         if not passthrough:
             self.generate_code()
         self.generate_startup_code()
