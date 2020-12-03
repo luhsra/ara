@@ -23,6 +23,7 @@ ir_apps = [
   'eventgroup',
   'function_pointer',
   'icfg',
+  'instances',
   'invalid_isr_syscall',
   'invalid_mutex',
   'invalid_semaphore',
@@ -32,6 +33,7 @@ ir_apps = [
   'optimization',
   'ospert',
   'priority_inversion',
+  'rtas20_example',
   # 'simple_queue_send',
   'sse',
   'svf',
@@ -44,8 +46,6 @@ ir_apps = [
 
 # these apps are meant to run on real hardware and are compiled into an elf
 hw_apps = [
-  'rtas20_example',
-  'instances',
   'simple_print',
   'simple_delay',
   'simple_queue_send',
