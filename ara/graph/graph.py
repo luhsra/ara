@@ -9,6 +9,9 @@ from collections import deque
 from .graph_data import PyGraphData
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel
 
+class CFGError(Exception):
+    """Some error with a CFG function."""
+
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
 
@@ -98,6 +101,20 @@ class CFG(graph_tool.Graph):
         for edge in self.vertex(abb).out_edges():
             if self.ep.type[edge] == CFType.a2b:
                 yield edge.target()
+
+    def get_single_bb(self, abb):
+        """Get the single BB for an ABB.
+
+        Also ensure it is the only existing one.
+        """
+        ret = None
+        for node in self.get_bbs(abb):
+            if ret:
+                raise CFGError("More than one BB.")
+            ret = node
+        if not ret:
+            raise CFGError("No BB found.")
+        return ret
 
     def get_entry_abb(self, function):
         """Return the entry_abb of the given function."""

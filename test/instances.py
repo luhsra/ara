@@ -24,6 +24,7 @@ def main():
                 val = os.path.relpath(val, start=script_dir)
             if name == 'llvm_soc':
                 # wild pointer, skip this
+                assert(val != 0)
                 continue
             if name == 'soc':
                 continue
