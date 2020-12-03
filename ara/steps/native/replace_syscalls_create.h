@@ -20,6 +20,12 @@ namespace ara::step {
 		llvm::Function* get_fn(const char* name);
 		llvm::BasicBlock* create_bb(boost::python::object task);
 		PyObject* replace_call_with_activate(llvm::CallBase* call, llvm::Value* tcb);
+		PyObject* replace_task_create_static(boost::python::object o);
+		PyObject* replace_task_create_initialized(boost::python::object o);
+		PyObject* replace_queue_create_static(boost::python::object o);
+		PyObject* replace_queue_create_initialized(boost::python::object o);
+		PyObject* replace_mutex_create_static(boost::python::object o);
+		PyObject* replace_mutex_create_initialized(boost::python::object o);
 
 	  public:
 		static std::string get_name() { return "ReplaceSyscallsCreate"; }
@@ -27,14 +33,8 @@ namespace ara::step {
 
 		virtual void run() override;
 
-		bool replace_mutex_create_static(uintptr_t where, char* symbol_metadata);
-		bool replace_mutex_create_initialized(uintptr_t where, char* symbol_metadata);
-		bool replace_queue_create_static(uintptr_t where, char* symbol_metadata, char* symbol_storage);
-		bool replace_queue_create_initialized(uintptr_t where, char* symbol_metadata);
-		bool replace_task_create_static(uintptr_t where, char* handle_name, char* stack_name);
-		bool replace_task_create_initialized(uintptr_t where, char* handle_name);
-		PyObject* replace_task_create_static(boost::python::object task);
-		PyObject* replace_task_create_initialized(boost::python::object task);
+		PyObject* replace_mutex_create(PyObject* pyo_task);
+		PyObject* replace_queue_create(PyObject* pyo_task);
 		PyObject* replace_task_create(PyObject* pyo_task);
 	};
 } // namespace ara::step

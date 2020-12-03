@@ -27,45 +27,10 @@ cdef class ReplaceSyscallsCreate(NativeStep):
                 self._log.error("unknown instance: %s %s", type(inst), inst)
 
     def handle_mutex(self, mutex):
-        if mutex.specialization_level == 'static':
-            self._mutex_create_static(mutex)
-        elif mutex.specialization_level == 'initialized':
-            self._mutex_create_initialized(mutex)
-        elif mutex.specialization_level == 'unchanged':
-            return
-        else:
-            raise RuntimeError("unknown init: %s || %s", mutex.specialization_level, mutex)
-
-    def _mutex_create_static(self, mutex):
-        success = deref(self._c_()).replace_mutex_create_static(self._graph.cfg.vp.entry_bb[mutex.abb], mutex.impl.head.name.encode())
-        if not success:
-            raise RuntimeError(f"Failed to create static create syscall for {mutex}")
-
-    def _mutex_create_initialized(self, mutex):
-        success = deref(self._c_()).replace_mutex_create_initialized(self._graph.cfg.vp.entry_bb[mutex.abb], mutex.impl.head.name.encode())
-        if not success:
-            raise RuntimeError(f"Failed to create static create syscall for {mutex}")
-
+        deref(self._c_()).replace_mutex_create(mutex)
 
     def handle_queue(self, queue):
-        if queue.specialization_level == 'static':
-            self._queue_create_static(queue)
-        elif queue.specialization_level == 'initialized':
-            self._queue_create_initialized(queue)
-        elif queue.specialization_level == 'unchanged':
-            return
-        else:
-            raise RuntimeError("inknown init: %s", queue.specialization_level)
-
-    def _queue_create_static(self, queue):
-        success = deref(self._c_()).replace_queue_create_static(self._graph.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode(), queue.impl.data.name.encode())
-        if not success:
-            raise RuntimeError(f"Failed to create static create syscall for {queue}")
-
-    def _queue_create_initialized(self, queue):
-        success = deref(self._c_()).replace_queue_create_initialized(self._graph.cfg.vp.entry_bb[queue.abb], queue.impl.head.name.encode())
-        if not success:
-            raise RuntimeError(f"Failed to create static create syscall for {queue}")
+        deref(self._c_()).replace_queue_create(queue)
 
     def handle_task(self, task):
         deref(self._c_()).replace_task_create(task)
