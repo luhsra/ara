@@ -29,7 +29,7 @@ else
   test_pxd = []
   conf_data.set('step_tests', 'False')
 endif
-configure_file(input: 'project_config.pxi.in',
+conf_file = configure_file(input: 'project_config.pxi.in',
   output: 'project_config.pxi',
   configuration: conf_data)
 
@@ -43,6 +43,7 @@ step_pyx_gen = custom_target('step_pyx',
                  'replace_syscalls_create.pxd',
                  'replace_syscalls_create.pxi') + test_pxd + common_cython_files],
   command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '-I', step_dir, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
+  depend_files: [conf_file],
 )
 
 step_pyx_cpp = step_pyx_gen[0]
