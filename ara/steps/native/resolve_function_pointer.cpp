@@ -212,6 +212,25 @@ namespace ara::step {
 						changed = (old_size != compatible_types[sty].size());
 					}
 				}
+				// Handle a special case where Clang generate two types for one C++ class with a vTable.
+				// Clang introduces padding in classes with vTables.
+				// If this class is a base class then Clang dublicates it in a class with (original name) and without
+				// padding (name suffixed with ".base") and uses the one without padding to embed it in the child
+				// classes.
+				if (ty->hasName() && ty->getName().endswith(".base")) {
+					auto n_ty_name = ty->getName().drop_back(5); // drop ".base"
+					StructType* n_ty = graph.get_module().getTypeByName(n_ty_name);
+					if (n_ty) {
+						auto& compat_1 = compatible_types[ty];
+						auto& compat_2 = compatible_types[n_ty];
+						size_t c1_size = compat_1.size();
+						size_t c2_size = compat_2.size();
+						// create union of both sets
+						compat_1.insert(compat_2.begin(), compat_2.end());
+						compat_2.insert(compat_1.begin(), compat_1.end());
+						changed = changed || (c1_size != compat_1.size() || c2_size != compat_2.size());
+					}
+				}
 			}
 		} while (changed);
 	}

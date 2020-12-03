@@ -1,5 +1,21 @@
 [
   [
+    "_Z6get_bsv",
+    "_Z3numv"
+  ],
+  [
+    "_Z6get_bsv",
+    "_ZN17DerivedBaseSuffixC2Ev"
+  ],
+  [
+    "_Z6get_bsv",
+    "_Znwj"
+  ],
+  [
+    "_Z6get_bsv",
+    "llvm.memset.p0i8.i32"
+  ],
+  [
     "_Z6get_orv",
     "_Z3numv"
   ],
@@ -34,6 +50,18 @@
   [
     "_Z9ptr_func2ifi",
     "vTaskDelay"
+  ],
+  [
+    "_ZN10BaseSuffix8do_stuffEv",
+    "vTaskDelay"
+  ],
+  [
+    "_ZN17DerivedBaseSuffix8do_stuffEv",
+    "vTaskDelay"
+  ],
+  [
+    "_ZN17DerivedBaseSuffixC2Ev",
+    "_ZN10BaseSuffixC2Ev"
   ],
   [
     "_ZN3Bar8do_stuffEv",
@@ -93,6 +121,10 @@
   ],
   [
     "main",
+    "_Z6get_bsv"
+  ],
+  [
+    "main",
     "_Z6get_orv"
   ],
   [
@@ -122,6 +154,14 @@
   [
     "main",
     "_Z9ptr_func2ifi"
+  ],
+  [
+    "main",
+    "_ZN10BaseSuffix8do_stuffEv"
+  ],
+  [
+    "main",
+    "_ZN17DerivedBaseSuffix8do_stuffEv"
   ],
   [
     "main",

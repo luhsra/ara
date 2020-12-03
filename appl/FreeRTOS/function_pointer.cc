@@ -51,6 +51,21 @@ struct Multi : public OneRoot, public TwoRoot {
 	}
 };
 
+struct BaseSuffix {
+	char c;
+	virtual ~BaseSuffix() {}
+	virtual void do_stuff() {
+		vTaskDelay(5);
+	}
+};
+
+struct DerivedBaseSuffix : public BaseSuffix {
+	char a;
+	void do_stuff() override {
+		vTaskDelay(2);
+	}
+};
+
 int num();
 
 Foo* get_foo();
@@ -64,6 +79,13 @@ OneRoot* get_or() {
 TwoRoot* get_tr() {
 	if (num()) {
 		return new Multi(num());
+	}
+	return nullptr;
+}
+
+BaseSuffix* get_bs() {
+	if (num()) {
+		return new DerivedBaseSuffix();
 	}
 	return nullptr;
 }
@@ -110,6 +132,10 @@ int main(void) {
 	o->quack();
 	TwoRoot* t = get_tr();
 	t->run();
+
+	// base class padding
+	BaseSuffix* bs = get_bs();
+	bs->do_stuff();
 
 	return 0;
 }
