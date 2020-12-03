@@ -21,6 +21,7 @@ ir_apps = [
   'deadlock',
   'dominator',
   'eventgroup',
+  'function_pointer',
   'icfg',
   'invalid_isr_syscall',
   'invalid_mutex',

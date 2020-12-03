@@ -4,6 +4,8 @@
 
 #include "step.h"
 
+#include <boost/functional/hash.hpp>
+#include <boost/iterator/iterator_facade.hpp>
 #include <filesystem>
 #include <graph.h>
 #include <optional>
@@ -13,11 +15,16 @@ namespace ara::step {
 	 * Resolve function pointer. The algorithm works with multiple steps:
 	 * Do for every function pointer:
 	 *   1. If a translation_map is given, use always this.
-	 *   2. Match the signature. If a signature is found that fits and is either in the accept_list if given or not in
-	 *      the block_list if given, then the call target is valid.
-	 *   3. If no direct fitting signature is found, match the sizes of the arguments. If the argument is a pointer,
-	 *      match the size of the pointee. If a fitting target is found that is either in the accept_list if given or
-	 *      not in the block_list if given, then the call target is valid.
+	 *   2. Match the signature with respect to C++ inheritance.
+	 *      C++ realizes inheritance with vTables and compound types that simple include their base classes as data
+	 * member. There an indirect call with a base class pointer can call a function that takes a subclass pointer.
+	 * Therefore the algorithm has some substeps: 2.1 calculate a map between "function signature" (key) and "list of
+	 * fitting functions" (value) 2.2 calculate a list of compatible pointers, especially "base*" is compatible with
+	 * "derived*". 2.3 iterate over all signatures of possible combinations of these pointers and match with the map of
+	 * step 2.1
+	 *
+	 * If a signature is found that fits and is either in the accept_list if given or not in
+	 * the block_list if given, then the call target is valid.
 	 *
 	 * The format of the accept_list and block_list is either a file path pointing to a valid file with a string or
 	 * directly a string that can be interpreted as JSON list. The list must be in the format
@@ -38,6 +45,48 @@ namespace ara::step {
 	 */
 	class ResolveFunctionPointer : public ConfStep<ResolveFunctionPointer> {
 	  private:
+		using TypeMap = std::map<llvm::Type*, std::set<llvm::Type*>>;
+
+		class FuzzyFuncType;
+
+		class FuzzyFuncTypeIterator
+		    : public boost::iterator_facade<FuzzyFuncTypeIterator, llvm::FunctionType*,
+		                                    boost::incrementable_traversal_tag, llvm::FunctionType*> {
+		  private:
+			friend class FuzzyFuncType;
+			friend class boost::iterator_core_access;
+			FuzzyFuncTypeIterator(FuzzyFuncType& fft, bool end = false)
+			    : fft(fft), positions(std::vector<size_t>(fft.getNumArguments(), 0)), end(end) {}
+
+			void increment();
+
+			bool equal(const FuzzyFuncTypeIterator& other) const {
+				return end == other.end && fft == other.fft && positions == other.positions;
+			}
+
+			llvm::FunctionType* dereference() const;
+
+			FuzzyFuncType& fft;
+			std::vector<size_t> positions;
+			bool end;
+		};
+
+		class FuzzyFuncType {
+			std::vector<std::variant<llvm::Type*, std::vector<llvm::Type*>>> types;
+			llvm::Type* return_type;
+			friend class FuzzyFuncTypeIterator;
+
+		  public:
+			FuzzyFuncType(const llvm::FunctionType&, const TypeMap&);
+
+			FuzzyFuncTypeIterator begin();
+			FuzzyFuncTypeIterator end();
+
+			bool operator==(const FuzzyFuncType& other) { return types == other.types; }
+
+			size_t getNumArguments() { return types.size(); }
+		};
+
 		const static inline option::TOption<option::String> accept_list_template{
 		    "accept_list", "Filepath or JSON list with valid call targets for function pointer."};
 		option::TOptEntity<option::String> accept_list;
@@ -60,11 +109,22 @@ namespace ara::step {
 		virtual void init_options() override;
 
 		std::optional<llvm::DataLayout> dl;
-		std::map<const llvm::FunctionType*, std::vector<std::reference_wrapper<llvm::Function>>> signature_to_func;
+		// FunctionType pointers are guaranteed to be unique, see llvm-sources/lib/IR/Types.cpp
+		std::unordered_map<llvm::FunctionType*, std::vector<std::reference_wrapper<llvm::Function>>> signature_to_func;
+		TypeMap compatible_types;
 		std::set<std::string> block_names;
 		std::set<std::string> accept_names;
 		std::map<std::pair<std::filesystem::path, unsigned>, std::set<std::string>> pointer_targets;
 		unsigned ignored_calls = 0;
+
+		/**
+		 * Initialize a map of compatible types.
+		 *
+		 * That are types where their pointer can be used interchangeable.
+		 * Especially this is the case for C++ subclass pointer, that can be used interchangeable with their
+		 * superclasses.
+		 */
+		void init_compatible_types();
 
 		void link_indirect_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);

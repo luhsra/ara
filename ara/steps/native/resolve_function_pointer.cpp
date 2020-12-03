@@ -3,10 +3,92 @@
 #include "resolve_function_pointer.h"
 
 #include <WPA/Andersen.h>
+#include <boost/range/adaptor/indexed.hpp>
+#include <llvm/IR/TypeFinder.h>
 
 namespace ara::step {
 
 	using namespace SVF;
+
+	void ResolveFunctionPointer::FuzzyFuncTypeIterator::increment() {
+		bool has_fuzzy_type = false;
+		bool overflow = false;
+		for (const auto& elem : fft.types | boost::adaptors::indexed(0)) {
+			size_t& pos = positions[elem.index()];
+			if (std::holds_alternative<std::vector<llvm::Type*>>(elem.value())) {
+				overflow = false;
+				has_fuzzy_type = true;
+				if (std::get<std::vector<llvm::Type*>>(elem.value()).size() > pos + 1) {
+					++pos;
+					break;
+				} else {
+					pos = 0;
+					overflow = true;
+				}
+			}
+		}
+		if (overflow || !has_fuzzy_type) {
+			end = true;
+		}
+	}
+
+	llvm::FunctionType* ResolveFunctionPointer::FuzzyFuncTypeIterator::dereference() const {
+		std::vector<llvm::Type*> fixed_types;
+		for (const auto& elem : fft.types | boost::adaptors::indexed(0)) {
+			if (std::holds_alternative<std::vector<llvm::Type*>>(elem.value())) {
+				const auto& choices = std::get<std::vector<llvm::Type*>>(elem.value());
+				fixed_types.emplace_back(choices[positions[elem.index()]]);
+			} else {
+				fixed_types.emplace_back(std::get<llvm::Type*>(elem.value()));
+			}
+		}
+		return llvm::FunctionType::get(fft.return_type, llvm::ArrayRef<Type*>(fixed_types), false);
+	}
+
+	ResolveFunctionPointer::FuzzyFuncType::FuzzyFuncType(const llvm::FunctionType& ty, const TypeMap& t_map)
+	    : return_type(ty.getReturnType()) {
+		for (auto it = ty.param_begin(); it != ty.param_end(); ++it) {
+			if (PointerType* ptr = llvm::dyn_cast<PointerType>(*it)) {
+				const auto o_it = t_map.find(ptr->getElementType());
+				std::set<llvm::Type*> o_types;
+				if (o_it != t_map.end()) {
+					o_types = t_map.at(ptr->getElementType());
+				}
+				std::vector<Type*> alter_types;
+				alter_types.emplace_back(ptr);
+				for (llvm::Type* type : o_types) {
+					alter_types.emplace_back(llvm::PointerType::get(type, ptr->getAddressSpace()));
+				}
+				types.emplace_back(alter_types);
+			} else {
+				types.emplace_back(*it);
+			}
+		}
+		/*
+		// debug printing
+		llvm::errs() << "Types: ";
+		for (const auto& elem : types) {
+		    if (std::holds_alternative<std::vector<llvm::Type*>>(elem)) {
+		        const auto& choices = std::get<std::vector<llvm::Type*>>(elem);
+		        for (const auto& ty : choices) {
+		            llvm::errs() << "|" << *ty << "|";
+		        }
+		        llvm::errs() << ", ";
+		    } else {
+		        llvm::errs() << *std::get<llvm::Type*>(elem) << ", ";
+		    }
+		}
+		llvm::errs() << "\n";
+		*/
+	}
+
+	ResolveFunctionPointer::FuzzyFuncTypeIterator ResolveFunctionPointer::FuzzyFuncType::begin() {
+		return ResolveFunctionPointer::FuzzyFuncTypeIterator(*this);
+	}
+
+	ResolveFunctionPointer::FuzzyFuncTypeIterator ResolveFunctionPointer::FuzzyFuncType::end() {
+		return ResolveFunctionPointer::FuzzyFuncTypeIterator(*this, /*end=*/true);
+	}
 
 	std::string ResolveFunctionPointer::get_description() {
 		return "Resolve all function pointers that are not already resolved by SVF.\n"
@@ -110,6 +192,26 @@ namespace ara::step {
 		logger.debug() << "Link " << *call_inst << " with " << target.getName().str() << std::endl;
 	}
 
+	void ResolveFunctionPointer::init_compatible_types() {
+		llvm::TypeFinder s_types;
+		s_types.run(graph.get_module(), true);
+
+		bool changed = false;
+
+		do {
+			for (llvm::StructType* ty : s_types) {
+				for (auto it = ty->element_begin(); it != ty->element_end(); ++it) {
+					if (llvm::StructType* sty = llvm::dyn_cast<llvm::StructType>(*it)) {
+						size_t old_size = compatible_types[sty].size();
+						compatible_types[sty].insert(ty);
+						compatible_types[sty].insert(compatible_types[ty].begin(), compatible_types[ty].end());
+						changed = (old_size != compatible_types[sty].size());
+					}
+				}
+			}
+		} while (changed);
+	}
+
 	void ResolveFunctionPointer::resolve_function_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
 	                                                      const LLVMModuleSet& module) {
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
@@ -119,6 +221,7 @@ namespace ara::step {
 
 		logger.info() << "Resolve call to function pointer. Callsite: " << *call_inst << std::endl;
 
+		// handle user defined translation map
 		try {
 			const auto& [source, line] = get_source_location(*call_inst);
 			auto c_source = std::filesystem::canonical(source);
@@ -143,8 +246,9 @@ namespace ara::step {
 			return;
 		}
 
-		const llvm::FunctionType* call_type = call_inst->getFunctionType();
+		// automatic resolving
 
+		// create a map between FunctionType and the list of corresponding functions
 		if (signature_to_func.size() == 0) {
 			for (llvm::Function& func : graph.get_module()) {
 				const auto& func_name = func.getName().str();
@@ -158,41 +262,45 @@ namespace ara::step {
 			}
 		}
 
-		const auto& match = signature_to_func.find(call_type);
+		// fill compatible types map
+		if (compatible_types.size() == 0) {
+			init_compatible_types();
+		}
 
+		/*
+		// debug printing
+		for (const auto& [key, value] : compatible_types) {
+		    logger.warn() << "Key: " << *key << ":";
+		    for (const auto& elem : value) {
+		        logger.warn() << " " << *elem;
+		    }
+		    logger.warn() << std::endl;
+		}
+		*/
+
+		// find all compatible types for this specific signature
+		FuzzyFuncType fft(safe_deref(call_inst->getFunctionType()), compatible_types);
+		logger.debug() << "Original type: " << *call_inst->getFunctionType() << std::endl;
+
+		// iterate the cross product of all compatible types and link
 		bool found_candidate = false;
-		// do the simple check, maybe the same function signature exist somewhere
-		if (match != signature_to_func.end()) {
-			found_candidate = true;
-			for (llvm::Function& func : match->second) {
-				link_indirect_pointer(cbn, callgraph, func, module);
-			}
-		} else {
-			// be more generous, only the bit sizes of the arguments must match.
-			// This can result is a _lot_ of candidate functions.
-
-			// std::vector<const llvm::Function*> functions;
-
-			int i = 0;
-			for (const llvm::Function& func : graph.get_module()) {
-				if (is_valid_call_target(safe_deref(call_type), func)) {
-					// functions.emplace_back(&func);
+		unsigned i = 0;
+		for (const auto func_type : fft) {
+			logger.debug() << "New type: " << *func_type << std::endl;
+			const auto& match = signature_to_func.find(func_type);
+			if (match != signature_to_func.end()) {
+				found_candidate = true;
+				for (llvm::Function& func : match->second) {
 					link_indirect_pointer(cbn, callgraph, func, module);
 					++i;
-					found_candidate = true;
 				}
 			}
-			// 20 is an arbitrary constant
-			if (i > 20) {
-				logger.warn() << "Unknown function pointer. Callsite: " << *call_inst << std::endl;
-				logger.warn() << "More than 20 candidates found. Found " << i << " candidates." << std::endl;
-			}
-			// for (const llvm::Function* func : functions) {
-			// 	link_indirect_pointer(cbn, callgraph, *func, module);
-			// 	// if (i++ > 1) {
-			// 	break;
-			// 	//}
-			// }
+		}
+
+		// 20 is an arbitrary constant
+		if (i > 20) {
+			logger.warn() << "Unknown function pointer. Callsite: " << *call_inst << std::endl;
+			logger.warn() << "More than 20 candidates found. Found " << i << " candidates." << std::endl;
 		}
 
 		if (!found_candidate) {

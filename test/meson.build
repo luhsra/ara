@@ -14,6 +14,13 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('function-pointer',
+        py3_inst,
+        args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
+        env: [python_path],
+        suite: 'steps'
+    )
+
     test('icfg',
         py3_inst,
         args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
