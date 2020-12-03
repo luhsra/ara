@@ -322,13 +322,13 @@ namespace ara::step {
 
 		// 20 is an arbitrary constant
 		if (i > 20) {
-			logger.warn() << "Unknown function pointer. Callsite: " << *call_inst << std::endl;
+			logger.warn() << "At Callsite: " << *call_inst << std::endl;
 			logger.warn() << "More than 20 candidates found. Found " << i << " candidates." << std::endl;
 		}
 
 		if (!found_candidate) {
-			logger.error() << "Callsite: " << *call_inst << std::endl;
-			fail("Unresolved function pointer.");
+			logger.warn() << "At Callsite: " << *call_inst << std::endl;
+			logger.warn() << "Unresolved function pointer!" << std::endl;
 		}
 	}
 
