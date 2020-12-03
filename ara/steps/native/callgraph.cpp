@@ -196,6 +196,13 @@ namespace ara::step {
 		return *ptacallgraph;
 	}
 
+	llvm::json::Array CallGraph::get_configured_dependencies() {
+		const auto& entry_point_name = entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+		return llvm::json::Array{
+		    llvm::json::Object{{{"name", "ResolveFunctionPointer"}, {"entry_point", *entry_point_name}}}};
+	}
+
 	void CallGraph::run() {
 		llvm::Module& mod = graph.get_module();
 		graph::CFG cfg = graph.get_cfg();

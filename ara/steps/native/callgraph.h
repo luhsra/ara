@@ -25,6 +25,7 @@ namespace ara::step {
 		virtual std::vector<std::string> get_single_dependencies() override {
 			return {"CreateABBs", "SVFAnalyses", "ResolveFunctionPointer"};
 		}
+		virtual llvm::json::Array get_configured_dependencies() override;
 
 		virtual void run() override;
 	};

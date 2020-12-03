@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <graph.h>
 #include <optional>
+#include <queue>
 
 namespace ara::step {
 	/**
@@ -43,7 +44,7 @@ namespace ara::step {
 	 * Interpreted as: The callsite in /path/to/source_file.c line 5 calls either function_name_1 or function_name_2.
 	 * The source_file path must either be absolute or relative to the directory, where the JSON file lays.
 	 */
-	class ResolveFunctionPointer : public ConfStep<ResolveFunctionPointer> {
+	class ResolveFunctionPointer : public EntryPointStep<ResolveFunctionPointer> {
 	  private:
 		using TypeMap = std::map<llvm::Type*, std::set<llvm::Type*>>;
 
@@ -116,6 +117,7 @@ namespace ara::step {
 		std::set<std::string> accept_names;
 		std::map<std::pair<std::filesystem::path, unsigned>, std::set<std::string>> pointer_targets;
 		unsigned ignored_calls = 0;
+		std::queue<const llvm::Function*> unhandled_functions;
 
 		/**
 		 * Initialize a map of compatible types.
@@ -132,7 +134,7 @@ namespace ara::step {
 		void resolve_function_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
 		                              const SVF::LLVMModuleSet& svfModule);
 		void resolve_indirect_function_pointers(SVF::ICFG& icfg, SVF::PTACallGraph& callgraph,
-		                                        const SVF::LLVMModuleSet& module);
+		                                        const SVF::LLVMModuleSet& module, std::string entry_point);
 
 		// const T& obj not possible since operator bool for llvm::Expected is not const
 		template <class T, class String>
@@ -152,7 +154,7 @@ namespace ara::step {
 
 	  public:
 		ResolveFunctionPointer(PyObject* py_logger, graph::Graph graph, PyObject* py_step_manager)
-		    : ConfStep<ResolveFunctionPointer>(py_logger, graph, py_step_manager), dl(std::nullopt) {}
+		    : EntryPointStep<ResolveFunctionPointer>(py_logger, graph, py_step_manager), dl(std::nullopt) {}
 
 		static std::string get_name() { return "ResolveFunctionPointer"; }
 		static std::string get_description();

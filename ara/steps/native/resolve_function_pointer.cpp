@@ -2,6 +2,7 @@
 
 #include "resolve_function_pointer.h"
 
+#include <Util/SVFUtil.h>
 #include <WPA/Andersen.h>
 #include <boost/range/adaptor/indexed.hpp>
 #include <llvm/IR/TypeFinder.h>
@@ -96,6 +97,7 @@ namespace ara::step {
 	}
 
 	void ResolveFunctionPointer::init_options() {
+		EntryPointStep<ResolveFunctionPointer>::init_options();
 		accept_list = accept_list_template.instantiate(get_name());
 		block_list = block_list_template.instantiate(get_name());
 		translation_map = translation_map_template.instantiate(get_name());
@@ -188,6 +190,8 @@ namespace ara::step {
 			callgraph.getIndCallMap()[&cbn].insert(callee);
 			callgraph.addIndirectCallGraphEdge(&cbn, cbn.getCaller(), callee);
 		}
+		// update stack
+		unhandled_functions.push(&target);
 
 		logger.debug() << "Link " << *call_inst << " with " << target.getName().str() << std::endl;
 	}
@@ -310,17 +314,44 @@ namespace ara::step {
 	}
 
 	void ResolveFunctionPointer::resolve_indirect_function_pointers(ICFG& icfg, PTACallGraph& callgraph,
-	                                                                const LLVMModuleSet& module) {
+	                                                                const LLVMModuleSet& module,
+	                                                                std::string entry_point) {
 		int handled_blocks = 0;
-		for (ICFG::iterator it = icfg.begin(); it != icfg.end(); ++it) {
-			if (CallBlockNode* cbn = llvm::dyn_cast<CallBlockNode>(it->second)) {
-				if (!callgraph.hasCallGraphEdge(cbn)) {
-					// callblock with unresolved function pointer
-					resolve_function_pointer(safe_deref(cbn), callgraph, module);
-					handled_blocks++;
+		llvm::Function* entry = graph.get_module().getFunction(entry_point);
+
+		std::set<const llvm::Function*> handled_functions;
+		unhandled_functions.push(entry);
+
+		while (!unhandled_functions.empty()) {
+			const llvm::Function* current_function = unhandled_functions.front();
+			unhandled_functions.pop();
+			if (handled_functions.find(current_function) != handled_functions.end()) {
+				continue;
+			}
+			handled_functions.insert(current_function);
+
+			logger.debug() << "Analyzing function: " << current_function->getName().str() << std::endl;
+
+			for (const auto& bb : *current_function) {
+				for (const auto& i : bb) {
+					if (SVFUtil::isCallSite(&i) && SVFUtil::isNonInstricCallSite(&i)) {
+						CallBlockNode* cbn = icfg.getCallBlockNode(&i);
+						if (callgraph.hasCallGraphEdge(cbn)) {
+							// add all following functions to unhandled_functions
+							for (auto it = callgraph.getCallEdgeBegin(cbn); it != callgraph.getCallEdgeEnd(cbn); ++it) {
+								PTACallGraphNode* call_node = (*it)->getDstNode();
+								unhandled_functions.push(call_node->getFunction()->getLLVMFun());
+							}
+						} else {
+							// callblock with unresolved function pointer
+							resolve_function_pointer(safe_deref(cbn), callgraph, module);
+							handled_blocks++;
+						}
+					}
 				}
 			}
 		}
+
 		logger.info() << "Handled " << handled_blocks << " blocks with unresolved function pointers\n" << std::endl;
 	}
 
@@ -407,7 +438,13 @@ namespace ara::step {
 
 		SVF::LLVMModuleSet* module = SVF::LLVMModuleSet::getLLVMModuleSet();
 
-		resolve_indirect_function_pointers(safe_deref(icfg), safe_deref(callgraph), safe_deref(module));
+		auto entry_point_name = this->entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+
+		logger.info() << "Analyzing entry point: '" << *entry_point_name << "'" << std::endl;
+
+		resolve_indirect_function_pointers(safe_deref(icfg), safe_deref(callgraph), safe_deref(module),
+		                                   *entry_point_name);
 
 		icfg->updateCallGraph(callgraph);
 
