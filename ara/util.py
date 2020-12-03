@@ -21,7 +21,6 @@ class DieOnErrorLogger(logging.getLoggerClass()):
     def error(self, *args, **kwargs):
         if self.werr:
             super().error(*args, **kwargs)
-            sys.exit(1)
         else:
             super().error(*args, **kwargs)
     def warning(self, *args, **kwargs):
