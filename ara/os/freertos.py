@@ -505,7 +505,9 @@ class FreeRTOS(OSBase):
                 if handler == state.instances.vp.obj[v].handler:
                     queue = v
         if queue is None:
-            logger.error("Queue handler cannot be found. Ignoring syscall.")
+            logger.error(f"xQueueGenericSend (file: {cfg.vp.file[abb]}, "
+                         f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
+                         "found. Ignoring syscall.")
         else:
             e = state.instances.add_edge(state.running, queue)
             state.instances.ep.label[e] = f"xQueueGenericSend"
