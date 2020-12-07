@@ -130,7 +130,7 @@ class  FunctionManager:
         for x in current_scope:
             if x.name == function.name:
                 if isinstance(function, FunctionDeclaration):
-                    self._log.warning("Duplicate function name %s", function.name)
+                    self._log.info("Duplicate function declaration name %s", function.name)
                 else:
                     assert x.name != function.name, "Duplicate function name %s" % function.name
         current_scope.append(function)

@@ -11,19 +11,24 @@
 #include <llvm/Transforms/Utils.h>
 
 namespace ara::step {
-	std::string IRReader::get_description() const {
+	std::string IRReader::get_description() {
 		return "Parse IR file into an LLVM module and prepare it for ARA.\n"
 		       "Currently this means: Execute the mem2reg pass.";
 	}
 
-	void IRReader::run(graph::Graph& graph) {
+	void IRReader::init_options() {
+		input_file = input_file_template.instantiate(get_name());
+		opts.emplace_back(input_file);
+	}
+
+	void IRReader::run() {
 		// get file arguments from config
 		assert(input_file.get());
 		std::string file = *input_file.get();
 
 		// link the modules
 		// use first module a main module
-		llvm::LLVMContext& context = graph.get_llvm_data().get_context();
+		llvm::LLVMContext& context = graph.get_graph_data().get_context();
 
 		logger.debug() << "Loading '" << file << "'" << std::endl;
 
@@ -46,6 +51,6 @@ namespace ara::step {
 		}
 
 		// convert unique_ptr to shared_ptr
-		graph.get_llvm_data().initialize_module(std::move(module));
+		graph.get_graph_data().initialize_module(std::move(module));
 	}
 } // namespace ara::step

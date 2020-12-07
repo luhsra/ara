@@ -113,7 +113,7 @@ clang_cpp = [clang, clang_base, cxx_std]
 ar_cmd = [ar, 'qcs', '@OUTPUT@', '@INPUT@']
 llc_cmd = [llc, '-filetype=obj', '-o', '@OUTPUT@', '@INPUT@', ] + llc_flags
 objcopy_cmd = [objcopy, '-Obinary', '@INPUT@', '@OUTPUT@']
-llvm_link_cmd = [llvm_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
+llvm_link_cmd = [ara_link, '-S', '-o', '@OUTPUT@', '@INPUT@',]
 llvm_opt_cmd = [llvm_opt, '-S', '-o', '@OUTPUT@', '@INPUT@'] + llvm_opt_flags
 
 ara_gen_cmd = [py3_inst, ara_py,
@@ -137,3 +137,7 @@ foreach target : ara_gen_freertos_targets
                              ]
               )
 endforeach
+llvm_lto_cmd_none = ['cp', '@INPUT@', '@OUTPUT@']
+llvm_lto_cmd_standard = llvm_opt_cmd
+llvm_lto_cmd_rle = llvm_opt_cmd + ['-load', sparse_rle.full_path(), '-SparseRLE']
+llvm_lto_cmd_rle2 = llvm_opt_cmd + ['-load', sparse_rle2.full_path(), '-SparseRLE2']

@@ -26,6 +26,7 @@
  */
 
 #include "FreeRTOS.h"
+#include FREERTOS_OVERRIDES
 #include "task.h"
 #include "croutine.h"
 

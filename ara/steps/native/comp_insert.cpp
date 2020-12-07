@@ -14,22 +14,22 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string CompInsert::get_description() const {
+	std::string CompInsert::get_description() {
 		return "Insert a nop (computation block) after calls so that every call is followed by a non call."
 		       "\n"
 		       "Insert the nop only, if the call is followed by another call or at the end. ";
 	}
 
-	std::vector<std::string> CompInsert::get_dependencies() { return {"CFGOptimize"}; }
+	std::vector<std::string> CompInsert::get_single_dependencies() { return {"CFGOptimize", "SVFTransformation"}; }
 
-	void CompInsert::run(graph::Graph& graph) {
+	void CompInsert::run() {
 		llvm::Module& module = graph.get_module();
 		unsigned nop_count = 0;
 		for (auto& function : module) {
 			for (BasicBlock& bb : function) {
 				bool found_call = false;
 				for (Instruction& i : bb) {
-					if (isa<CallBase>(&i) && !isCallToLLVMIntrinsic(&i)) {
+					if (isa<CallBase>(&i) && !is_call_to_intrinsic(i)) {
 						if (found_call) {
 							// second call found
 							// insert nop before it and leave found_call untouched (a third call can come)

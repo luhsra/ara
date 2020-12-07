@@ -3,13 +3,7 @@
 #include <sstream>
 #include <string>
 
-// namespace ara::cfg {
-// 	class Function;
-// 	class FunctionDescriptor;
-// }
-
 namespace ara::cy_helper {
-
 	template <class T>
 	std::string to_string(const T& obj) {
 		std::stringstream st;

@@ -9,12 +9,15 @@
 
 namespace ara::step {
 
-	class BBSplit : public Step {
-	  public:
-		virtual std::string get_name() const override { return "BBSplit"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
+	class BBSplit : public ConfStep<BBSplit> {
+	  private:
+		using ConfStep<BBSplit>::ConfStep;
 
-		virtual void run(graph::Graph& graph) override;
+	  public:
+		static std::string get_name() { return "BBSplit"; }
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
+
+		virtual void run() override;
 	};
 } // namespace ara::step

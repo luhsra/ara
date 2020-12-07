@@ -22,9 +22,9 @@ class BaseCoder:
 
 
     def generate_data_objects(self):
-        self._log.warning("generate_data_objects not implemented: %s",
+        self._log.info("generate_data_objects not implemented: %s",
                             self)
 
     def generate_system_code(self):
-        self._log.warning("generate_system_code not implemented: %s",
+        self._log.info("generate_system_code not implemented: %s",
                             self)

@@ -12,7 +12,7 @@ def fake_step_module():
         module = importlib.import_module(what)
         sys.modules[where] = module
 
-    load("llvm_data", "ara.graph.llvm_data")
+    load("graph_data", "ara.graph.graph_data")
     load("py_logging", "ara.steps.py_logging")
     load("step", "ara.steps.step")
 
@@ -47,7 +47,7 @@ def fail_if(condition, *arg, dry=False):
 def get_config(i_file):
     """Return the default common config."""
     return {'log_level': 'debug',
-            'dump_prefix': 'dumps/',
+            'dump_prefix': 'dumps/{step_name}.',
             'dump': False,
             'runtime_stats': True,
             'runtime_stats_file': 'logger',

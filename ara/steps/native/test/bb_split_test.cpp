@@ -11,11 +11,11 @@
 #include <string>
 
 namespace ara::step {
-	std::string BBSplitTest::get_name() const { return "BBSplitTest"; }
+	std::string BBSplitTest::get_name() { return "BBSplitTest"; }
 
-	std::string BBSplitTest::get_description() const { return "Step for testing the BBSplit step"; }
+	std::string BBSplitTest::get_description() { return "Step for testing the BBSplit step"; }
 
-	void BBSplitTest::run(graph::Graph& graph) {
+	void BBSplitTest::run() {
 		llvm::Module& module = graph.get_module();
 		for (auto& F : module) {
 			for (auto& B : F) {
@@ -23,7 +23,7 @@ namespace ara::step {
 					if (!(llvm::isa<llvm::CallBase>(I))) {
 						continue;
 					}
-					if (isCallToLLVMIntrinsic(&I) || isInlineAsm(&I)) {
+					if (is_call_to_intrinsic(I)) {
 						continue;
 					}
 					if ((std::distance(B.begin(), B.end()) == 2) && (&B.front() == &I)) {
@@ -45,5 +45,5 @@ namespace ara::step {
 		}
 	}
 
-	std::vector<std::string> BBSplitTest::get_dependencies() { return {"BBSplit"}; }
+	std::vector<std::string> BBSplitTest::get_single_dependencies() { return {"BBSplit"}; }
 } // namespace ara::step

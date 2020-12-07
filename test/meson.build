@@ -6,16 +6,38 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('multiple-configured-steps',
+    test('dummy-test',
         py3_inst,
-        args: files('multiple_configured_steps.py'),
+        args: [ara_py, 'empty',
+               '-v',
+               '--step-settings', files('dummy_settings.json')],
+        suite: 'steps'
+    )
+
+    test('function-pointer',
+        py3_inst,
+        args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
         env: [python_path],
         suite: 'steps'
     )
 
-    test('oil-parsing',
+    test('icfg',
         py3_inst,
-        args: [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
+        args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
+        env: [python_path],
+        suite: 'steps'
+    )
+
+    test('instances',
+        py3_inst,
+        args: [files('instances.py'), files('instances.json'), freertos_instances],
+        env: [python_path],
+        suite: 'steps'
+    )
+
+    test('interactions',
+        py3_inst,
+        args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
         env: [python_path],
         suite: 'steps'
     )
@@ -41,11 +63,24 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('dummy-test',
+    test('multiple-configured-steps',
         py3_inst,
-        args: [ara_py, 'empty',
-               '-v',
-               '--step-settings', files('dummy_settings.json')],
+        args: files('multiple_configured_steps.py'),
+        env: [python_path],
+        suite: 'steps'
+    )
+
+    test('oil-parsing',
+        py3_inst,
+        args: [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
+        env: [python_path],
+        suite: 'steps'
+    )
+
+    test('recursive',
+        py3_inst,
+        args: [files('recursive.py'), files('recursive.json'), freertos_icfg],
+        env: [python_path],
         suite: 'steps'
     )
 
@@ -56,9 +91,9 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('icfg',
+    test('value-analysis',
         py3_inst,
-        args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
+        args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
         env: [python_path],
         suite: 'steps'
     )

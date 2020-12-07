@@ -5,6 +5,7 @@ src_files = [
   'queue',
   'tasks',
   'timers',
+  'stream_buffer',
   'heap_1',
 ]
 freertos_src_list = src_files

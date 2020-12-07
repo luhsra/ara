@@ -70,6 +70,12 @@ SECTIONS
     KEEP (*(.fini))
 
     . = ALIGN(4);
+    /* module sections */
+    __module_initcall_start = .;
+        KEEP(*(.initcallmodule.init))
+    . = ALIGN(4);
+    __module_initcall_end   = .;
+
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
 
@@ -128,6 +134,41 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
 
+
+_sisparsespec = LOADADDR(.sparse.spec);
+.sparse.spec :
+{
+  . = ALIGN(4);
+  _ssparsespec = .;
+  KEEP(*(.sparse.spec*))
+  _esparsespec = .;
+  . = ALIGN(4);
+} >FLASH
+
+.sparse.data (NOLOAD) :
+{
+  . = ALIGN(4);
+  _ssparse = .;
+  *(.sparse.data*)
+  . = ALIGN(4);
+  _esparse = .;
+} >RAM
+
+.sparse.compressed.rle2 :
+{
+  . = ALIGN(4);
+  _ssparsespec2 = .;
+  KEEP(*(.sparse.compressed.rle2*))
+  . = ALIGN(4);
+  _esparsespec2 = .;
+} >FLASH =0xab
+
+.sparse.plain.rle (NOLOAD):
+{
+  . = ALIGN(4);
+  *(.sparse.plain.rle2*)
+  . = ALIGN(4);
+} >RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);

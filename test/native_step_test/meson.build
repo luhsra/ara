@@ -35,7 +35,7 @@ test('fn-single-exit',
 
 test('llvm-map',
     py3_inst,
-    args: [files('run_test_step.py'), 'LLVMMapTest', gpslogger_application],
+    args: [files('run_test_step.py'), 'LLVMMapTest', freertos_icfg],
     env: [python_path],
     suite: 'steps'
 )

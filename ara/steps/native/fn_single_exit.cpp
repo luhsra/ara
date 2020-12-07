@@ -19,9 +19,7 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string FnSingleExit::get_description() const { return "Find unique exit BB and endless loops for functions"; }
-
-	std::vector<std::string> FnSingleExit::get_dependencies() { return {"BBSplit"}; }
+	std::string FnSingleExit::get_description() { return "Find unique exit BB and endless loops for functions."; }
 
 	inline void FnSingleExit::fill_unreachable_and_exit(BasicBlock*& unreachable, BasicBlock*& exit,
 	                                                    BasicBlock& probe) const {
@@ -37,9 +35,9 @@ namespace ara::step {
 		}
 	}
 
-	void FnSingleExit::run(graph::Graph& graph) {
-		graph::LLVMData& llvm_data = graph.get_llvm_data();
-		for (auto& function : llvm_data.get_module()) {
+	void FnSingleExit::run() {
+		graph::GraphData& graph_data = graph.get_graph_data();
+		for (auto& function : graph_data.get_module()) {
 			if (function.empty() || function.isIntrinsic()) {
 				continue;
 			}
@@ -84,8 +82,8 @@ namespace ara::step {
 					exit_block = &_bb;
 				}
 			}
-			llvm_data.functions[&function].exit_block = exit_block;
-			llvm_data.basic_blocks[exit_block].is_exit_block = true;
+			graph_data.functions[&function].exit_block = exit_block;
+			graph_data.basic_blocks[exit_block].is_exit_block = true;
 
 			// endless loop detection
 			DominatorTree dom_tree = DominatorTree(function);
@@ -96,14 +94,20 @@ namespace ara::step {
 
 			bool loop_found = false;
 			for (const Loop* loop : loop_info) {
+				if (loop->getParentLoop() == nullptr) {
+					for (auto it = loop->block_begin(); it != loop->block_end(); ++it) {
+						graph_data.basic_blocks[*it].is_part_of_loop = true;
+					}
+				}
+
 				SmallVector<BasicBlock*, 6> vec;
 				loop->getExitBlocks(vec);
 				if (vec.size() != 0) {
 					continue;
 				}
 				// we have an endless loop
-				llvm_data.functions[&function].endless_loops.emplace_back(loop->getHeader());
-				llvm_data.basic_blocks[loop->getHeader()].is_loop_head = true;
+				graph_data.functions[&function].endless_loops.emplace_back(loop->getHeader());
+				graph_data.basic_blocks[loop->getHeader()].is_exit_loop_head = true;
 				loop_found = true;
 			}
 

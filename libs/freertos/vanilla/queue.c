@@ -34,6 +34,7 @@ task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
 #include "FreeRTOS.h"
+#include FREERTOS_OVERRIDES // ninja is stupid. Just try again once more
 #include "task.h"
 #include "queue.h"
 

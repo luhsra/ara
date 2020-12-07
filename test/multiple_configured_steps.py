@@ -1,45 +1,40 @@
 #!/usr/bin/env python3.6
+"""
+Test double execution of steps if the dependencies cannot be solved in a
+way, where each step is executed once.
+"""
 
 from init_test import get_config
 
 import logging
 
-from ara.stepmanager import StepManager, SolverException
+from ara.stepmanager import StepManager
 from ara.graph import Graph
 from ara.steps.step import Step
 from ara.steps.option import Option, String
 from ara.util import init_logging
 
-shared_state = ""
-
 class TestStep(Step):
     """Only for testing purposes"""
-    def _fill_options(self):
-        self.opt = Option(name="opt",
-                          help="Just for testing",
-                          step_name=self.get_name(),
-                          ty=String())
-        self.opts.append(self.opt)
+    opt = Option(name="opt",
+                 help="Just for testing",
+                 ty=String())
 
-    def run(self, graph: Graph):
-        """Write unique string for testing."""
-        opt = self.opt.get()
-        global shared_state
-        shared_state += f"Run: {self.get_name()}\n"
-        if opt:
-            shared_state += f"Opt: {opt}\n"
+    def run(self):
+        pass
 
 
 # Run 1 (valid):
-# Test0 -> Test1 -> Test2 -> Special -> Test3 -> Special
-#   ^        ^-------´ ^-----------------´ |
+# Test1 -> Test2 -> Special -> Test0 -> Test3 -> Special
+#   ^        ^-------------------^-------´ |
 #   `--------------------------------------´
 
-# Run 2 (invalid):
+# Run 2 (double execution of Test2):
 # Test0 -> Test1 -> Test3 -> Special -> Test2 -> Special
 #   ^        ^       | `-----------------^ |
 #   |        `-------+---------------------´
 #   `----------------´
+# Text0 -> Test1 -> Test2 -> Test3 -> Special -> Test2 -> Special
 
 
 class Test0Step(TestStep):
@@ -51,12 +46,12 @@ class Test1Step(TestStep):
 
 
 class Test2Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test1Step"]
 
 
 class Test3Step(TestStep):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test0Step", "Test2Step"]
 
 
@@ -65,24 +60,31 @@ class Special(TestStep):
 
 
 def provide():
-    yield Test0Step()
-    yield Test1Step()
-    yield Test2Step()
-    yield Test3Step()
-    yield Special()
+    yield Test0Step
+    yield Test1Step
+    yield Test2Step
+    yield Test3Step
+    yield Special
 
 
-trace = """
-Run: Test1Step
-Opt: defined
-Run: Test0Step
-Run: Test2Step
-Run: Special
-Opt: run1
-Run: Test3Step
-Run: Special
-Opt: run2
-"""[1:]
+TRACE = [
+    [
+        ('Test1Step', 'defined'),
+        ('Test2Step', None),
+        ('Special', 'run1'),
+        ('Test0Step', None),
+        ('Test3Step', None),
+        ('Special', 'run2')
+    ], [
+        ('Test0Step', None),
+        ('Test1Step', 'defined'),
+        ('Test2Step', None),
+        ('Test3Step', None),
+        ('Special', 'run1'),
+        ('Test2Step', None),
+        ('Special', 'run2')
+    ]
+]
 
 
 def main():
@@ -97,12 +99,10 @@ def main():
                               {"name": "Special", "opt": "run2"}],
                     "Test1Step": {"opt": "defined"}}
 
-    global shared_state
+    hist = p_manager.execute(config, extra_config, None)
+    hist = [(step.name, step.all_config.get("opt", None)) for step in hist]
+    assert hist == TRACE[0]
 
-    p_manager.execute(config, extra_config, None)
-    assert(shared_state == trace)
-
-    shared_state = ""
     config = get_config('/dev/null')
     extra_config = {"steps": ["Test3Step",
                               {"name": "Special", "opt": "run1"},
@@ -110,11 +110,9 @@ def main():
                               {"name": "Special", "opt": "run2"}],
                     "Test1Step": {"opt": "defined"}}
 
-    try:
-        p_manager.execute(config, extra_config, None)
-    except SolverException as e:
-        assert (str(e) ==
-                "Test3Step depends on Test2Step but is scheduled after it")
+    hist = p_manager.execute(config, extra_config, None)
+    hist = [(step.name, step.all_config.get("opt", None)) for step in hist]
+    assert hist == TRACE[1]
 
 
 if __name__ == '__main__':

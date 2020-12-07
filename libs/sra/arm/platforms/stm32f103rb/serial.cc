@@ -5,6 +5,17 @@
 
 Serial::Serial() {}
 
+
+//from CMSIS/Device/ST/STM32F1xx/Source/system_stm32f1xx.c:127
+__attribute__((weak)) const uint8_t APBPrescTable[8U] = {0, 0, 0, 0, 1, 2, 3, 4};
+
+// from STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_rcc.c:1057
+__attribute__((weak)) uint32_t HAL_RCC_GetPCLK1Freq(void) {
+  /* Get HCLK source and Compute PCLK1 frequency ---------------------------*/
+  return (HAL_RCC_GetHCLKFreq() >> APBPrescTable[(RCC->CFGR & RCC_CFGR_PPRE1) >> RCC_CFGR_PPRE1_Pos]);
+}
+__attribute__((weak)) uint32_t HAL_RCC_GetHCLKFreq(void) { return 72000000; } //72MHz
+
 void Serial::init() {
 	static int inited = 0;
 	if (inited)
@@ -59,3 +70,4 @@ void Serial::puts(const char* data) {
 
 template <typename T>
 void Serial::setcolor(__attribute__((unused)) T fg, __attribute__((unused)) T bg){};
+__attribute__((weak)) extern "C" void _init() {}

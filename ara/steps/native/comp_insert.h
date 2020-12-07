@@ -9,7 +9,7 @@
 #include <string>
 
 namespace ara::step {
-	class CompInsert : public Step {
+	class CompInsert : public ConfStep<CompInsert> {
 	  private:
 		/**
 		 * Insert a Nop at anchor.
@@ -24,12 +24,13 @@ namespace ara::step {
 			llvm::Function* f = llvm::Intrinsic::getDeclaration(m, llvm::Intrinsic::donothing);
 			llvm::CallInst::Create(f, {}, "", anchor);
 		}
+		using ConfStep<CompInsert>::ConfStep;
 
 	  public:
-		virtual std::string get_name() const override { return "CompInsert"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override;
+		static std::string get_name() { return "CompInsert"; }
+		static std::string get_description();
+		virtual std::vector<std::string> get_single_dependencies() override;
 
-		virtual void run(graph::Graph& graph) override;
+		virtual void run() override;
 	};
 } // namespace ara::step

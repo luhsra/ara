@@ -13,6 +13,7 @@ class CodeTemplate:
         self.generator = generator
         if generator:
             filename = os.path.join(generator.template_base, filename)
+            generator.add_dependency(filename)
 
         self.begin = begin
         self.end   = end

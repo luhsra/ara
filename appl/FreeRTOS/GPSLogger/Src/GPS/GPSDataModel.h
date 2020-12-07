@@ -57,6 +57,7 @@ private:
 	GPSDataModel();
 	GPSDataModel( const GPSDataModel &c );
 	GPSDataModel& operator=( const GPSDataModel &c );
+	static GPSDataModel _the_instance;
 }; //GPSDataModel
 
 #endif //__GPSDATA_H__

@@ -1,0 +1,8 @@
+{
+	"ResolveFunctionPointer": {
+		"log_level": "debug",
+		"block_list": "[ \"main\" ]",
+		"translation_map": "../appl/FreeRTOS/Librepilot/function_pointer_translation_map.json",
+		"use_only_translation_map": true
+	}
+}

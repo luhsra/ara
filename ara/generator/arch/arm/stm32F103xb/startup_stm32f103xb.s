@@ -82,6 +82,11 @@ LoopCopyDataInit:
 /* data init done */
 {{{generate:done_marker:data_copy}}}
 
+/* init sparse data structures */
+  bl init_sparserle2
+/*;; {{{generate:sparse_init}}} */
+{{{generate:done_marker:sparse_init}}}
+
 /* start bss zeroing */
   ldr r2, =_sbss
   b LoopFillZerobss

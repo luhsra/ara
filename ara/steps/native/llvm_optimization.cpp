@@ -12,17 +12,18 @@
 
 namespace ara::step {
 	using namespace llvm;
-	std::string LLVMOptimization::get_description() const {
+	std::string LLVMOptimization::get_description() {
 		return "Modifies the CFG to prepare it for further usage."
 		       "\n"
 		       "Performs various LLVM Passes on the IR to simplify the CFG.";
 	}
 
-	std::vector<std::string> LLVMOptimization::get_dependencies() { return {"IRReader"}; }
+	void LLVMOptimization::init_options() {
+		pass_list = pass_list_template.instantiate(get_name());
+		opts.emplace_back(pass_list);
+	}
 
-	void LLVMOptimization::fill_options() { opts.emplace_back(pass_list); }
-
-	void LLVMOptimization::run(graph::Graph& graph) {
+	void LLVMOptimization::run() {
 		// The PassManagers have no way to do debug logging to an own ostream. They use dbgs() which always prints to
 		// stdout. Nevertheless, debug logging can be switched on and off, therefore we approximate this with our
 		// log_level.

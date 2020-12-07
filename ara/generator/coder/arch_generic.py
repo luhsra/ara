@@ -1,6 +1,6 @@
 from .base import BaseCoder
 from .elements import StructDataObject, DataObjectArray, DataObject
-from ara.steps.freertos import Queue, Mutex
+from ara.os.freertos import Queue, Mutex
 
 class VanillaTaskList(StructDataObject):
     def __init__(self, tasks, container, index):
@@ -17,7 +17,6 @@ class VanillaTaskList(StructDataObject):
         if not self.tasks:
             return
         prev = self['xListEnd']
-        end = prev
         for index, task in enumerate(self.tasks):
             task.impl.tcb['xStateListItem']['pxPrevious'] = prev.address
             task.impl.tcb['xStateListItem']['pxContainer'] = self.address
@@ -39,7 +38,10 @@ class VanillaTasksLists(DataObjectArray):
         self.prio_is_bit_encoded = prio_is_bit_encoded
         self.used_prios = []
         for prio in range(max_prio):
-            p_tasks = [t for t in tasks if t.priority == prio]
+            # skip tasks where xTaskCreate is called after the scheduler starts
+            p_tasks = [t for t in tasks if (t.priority == prio
+                                            and t.specialization_level == 'initialized'
+                                            and not t.after_scheduler)]
             self[prio] = self.arch.TaskList(p_tasks, self, prio)
             #print('after insert', self[prio]['xListEnd'].address)
             if p_tasks:
@@ -57,7 +59,7 @@ class VanillaTasksLists(DataObjectArray):
 class VanillaTCB(StructDataObject):
     def __init__(self, task, initialized, name_length, **kwargs):
         StructDataObject.__init__(self,
-                                    "TCB_t", f"{task.name}_tcb",
+                                    "TCB_t", f"t{task.name}_{task.uid}_tcb",
                                   **kwargs)
         self.task = task
         task.impl.tcb = self
@@ -79,8 +81,9 @@ class VanillaListItem(StructDataObject):
         tn = 'MiniListItem_t' if mini else 'ListItem_t'
         StructDataObject.__init__(self, tn, name)
         self.mini = mini
-        self['pxNext'] = DataObject('ListItem_t *', 'pxNext', 'NULL')
-        self['pxPrevious'] = DataObject('ListItem_t *', 'pxPrevious', 'NULL')
+        # empty lists are mini loops
+        self['pxNext'] = DataObject('ListItem_t *', 'pxNext', lambda: self.address)
+        self['pxPrevious'] = DataObject('ListItem_t *', 'pxPrevious', lambda: self.address)
         if mini:
             return
         self['xItemValue'] = 0
@@ -107,14 +110,20 @@ class VanillaListHead(StructDataObject):
         self['xListEnd']['pxPrevious'].do_cast = True
 
 class VanillaQueue(StructDataObject):
-    def __init__(self, queue, initialized, **kwargs):
+    def __init__(self, queue, **kwargs):
         StructDataObject.__init__(self,
                                   "Queue_t", f"__queue_head_{queue.name}{queue.uid}",
                                   **kwargs)
         self.queue = queue
         queue.impl.head = self
 
-        if not initialized:
+        if not queue.specialization_level == 'initialized':
+            return
+        try:
+            length = queue.length
+            size = queue.size
+        except:
+            queue.specialization_level = 'unchanged'
             return
         self['pcHead'] = DataObject('int8_t*', 'pcHead')
         self['pcWriteTo'] = DataObject('int8_t*', 'pcWriteTo')
@@ -125,12 +134,12 @@ class VanillaQueue(StructDataObject):
             self['u']['xQueue'] = StructDataObject('QueuePointers_t', 'xQueue')
             self['u']['xQueue']['pcTail'] = DataObject('int8_t*', 'pcTail')
             self['u']['xQueue']['pcTail'] = (f"{queue.impl.data.address} +"
-                                             f"({queue.length} * {queue.size})")
+                                             f"({length} * {size})")
             self['u']['xQueue']['pcTail'].do_cast = True
             self['u']['xQueue']['pcReadFrom'] = DataObject('int8_t*', 'pcReadFrom')
             self['u']['xQueue']['pcReadFrom'] = (f"{queue.impl.data.address} +"
-                                                 f"(({queue.length} - 1U) *"
-                                                 f"{queue.size})")
+                                                 f"(({length} - 1U) *"
+                                                 f"{size})")
             self['u']['xQueue']['pcReadFrom'].do_cast = True
         elif isinstance(queue, Mutex):
             self['u'] = StructDataObject("NONE", 'u')
@@ -144,8 +153,8 @@ class VanillaQueue(StructDataObject):
             raise RuntimeError(f"unknown queue type: {type(queue)}")
         self['xTasksWaitingToSend'] = VanillaListHead("xTasksWaitingToSend")
         self['xTasksWaitingToReceive'] = VanillaListHead("xTasksWaitingToReceive")
-        self['uxLength'] = queue.length
-        self['uxItemSize'] = queue.size
+        self['uxLength'] = length
+        self['uxItemSize'] = size
         self['cRxLock'] = "queueUNLOCKED"
         self['cTxLock'] = "queueUNLOCKED"
         self['pcHead'].do_cast = True
@@ -170,16 +179,12 @@ class GenericArch(BaseCoder):
 
 
     def generate_linkerscript(self):
-        self._log.warning("generate_linkerscript not implemented: %s",
+        self._log.error("generate_linkerscript not implemented: %s",
                             self)
 
     def generate_default_interrupt_handlers(self):
-        self._log.warning("generate_default_interrupt_handlers not implemented: %s",
+        self._log.error("generate_default_interrupt_handlers not implemented: %s",
                             self)
 
     def generate_startup_code(self):
-        self._log.warning("generate_startup_code not implemented: %s", self)
-
-
-
-    pass
+        self._log.error("generate_startup_code not implemented: %s", self)

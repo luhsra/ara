@@ -8,6 +8,7 @@
 #include "Python.h"
 #include "py_logging.h"
 
+#include <boost/python.hpp>
 #include <boost/type_traits.hpp>
 #include <llvm/Support/raw_os_ostream.h>
 #include <map>
@@ -94,6 +95,14 @@ namespace ara {
 			 */
 			LogStream& operator<<(std::ostream& (*manip)(std::ostream&)) {
 				stream << manip;
+				return *this;
+			}
+
+			/**
+			 * Enable operator<< for boost::python objects.
+			 */
+			LogStream& operator<<(boost::python::object x) {
+				stream << boost::python::extract<std::string>(boost::python::str(x))();
 				return *this;
 			}
 

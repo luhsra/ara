@@ -1,72 +1,99 @@
 """Container for CFGStats."""
-from ara.graph import ABBType, CFGView, CFType, Graph
+from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory, NodeLevel
 from .step import Step
-from .option import Option, Integer
+from graph_tool.topology import label_components
+from ara.os import get_syscalls
 
 import graph_tool
+import json
 import sys
+import numpy
+import statistics
 
 class CFGStats(Step):
     """Gather statistics about the Control Flow Graph."""
 
-    def get_dependencies(self):
-        return ["IRReader"]
+    def get_single_dependencies(self):
+        return ["CreateABBs"]
 
-    def run(self, g: Graph):
-        self._log.info("Executing CFGStats step.")
-        cfg = g.cfg
+    def run(self):
+        cfg = self._graph.cfg
+        icfg = self._graph.icfg
+        lcfg = self._graph.lcfg
+        abbs = self._graph.abbs
+        syscalls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.syscall)
+        calls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.call)
+        computation = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.computation)
+        functs = self._graph.functs
 
-        # Count number of Nodes (ABBs + non implemented functions)
-        num_abbs = 0;
+        num_abbs = abbs.num_vertices()
+        num_syscalls = syscalls.num_vertices()
+        num_calls = calls.num_vertices()
+        num_computation = computation.num_vertices()
+        num_functions = functs.num_vertices()
+        num_ledges = lcfg.num_edges()
+        num_iedges = icfg.num_edges()
 
-        for v in cfg.vertices() :
-            if g.cfg.vp.is_function[v]:
+        # syscall categories
+        model_calls = dict([(x, getattr(cls, x).categories)
+                            for x, cls in get_syscalls()])
+
+        cat_counter = dict([(c, 0) for c in SyscallCategory])
+
+        for syscall in syscalls.vertices():
+            categories = model_calls[syscalls.get_syscall_name(syscall)]
+            for cat in categories:
+                cat_counter[cat] += 1
+
+        # cyclomatic complexities
+        _, ihist = label_components(icfg, None, None, False)
+        num_icomp = len(ihist)
+
+        lvs = []
+        for func in functs.vertices():
+            if not functs.vp.implemented[func]:
                 continue
-            num_abbs += 1
+            component = cfg.new_vertex_property("bool")
+            for abb in cfg.vertex(func).out_neighbors():
+                if cfg.vp.level[abb] == NodeLevel.abb:
+                    component[abb] = True
+            func_cfg = CFGView(lcfg, vfilt=component)
+            lv = func_cfg.num_edges() - func_cfg.num_vertices() + 1
+            lvs.append(lv)
+        lv = statistics.mean(lvs)
+        lv_box = (min(lvs),
+                  *[numpy.quantile(lvs, x) for x in [0.25, 0.5, 0.75]],
+                  max(lvs))
 
-        self._log.info("Number of ABBs: " + str(num_abbs))
-
-        # Count number of control flow sensitive edges
-
-        num_ledges = 0;
-        num_iedges = 0;
-
-        for e in cfg.edges() :
-            if cfg.ep.type[e] == CFType.lcf:
-                num_ledges += 1
-            if cfg.ep.type[e] == CFType.icf:
-                num_iedges += 1
-
-        self._log.info("Number of local edges: " + str(num_ledges))
-        self._log.info("Number of interp. edges: " + str(num_iedges))
-
-        # Count number of connected components
-        lcfg = CFGView(cfg, efilt=lambda e: cfg.ep.type[e] != CFType.icf)
-        icfg = CFGView(cfg, efilt=lambda e: cfg.ep.type[e] != CFType.lcf)
-
-        num_lcomp = 0
-        lproperty_map, lhist = graph_tool.topology.label_components(lcfg,
-                                                                    None,
-                                                                    None,
-                                                                    False)
-        for comp in lhist :
-            num_lcomp += 1
-        self._log.info("Number of local components: " + str(num_lcomp))
-
-        num_icomp = 0
-        iproperty_map, ihist = graph_tool.topology.label_components(icfg,
-                                                                    None,
-                                                                    None,
-                                                                    False)
-        for comp in ihist :
-            num_icomp += 1
-        self._log.info("Number of interprocedural components: " + str(num_icomp))
-
-        # Calculate cyclomatic complexities
-        lv = num_ledges - num_abbs + 2 * num_lcomp
+        _, ihist = label_components(icfg, None, None, False)
+        num_icomp = len(ihist)
         iv = num_iedges - num_abbs + 2 * num_icomp
 
-        self._log.info("Local cyclomatic complexity: " + str(lv))
-        self._log.info("Interprocedural cyclomatic complexity: " + str(iv))
-        # Only used for bulk testing
-        sys.stdout.write(str(num_abbs) + " " + str(lv) + " " + str(iv) + "\n")
+        self._log.info(f"Number of ABBs: {num_abbs}")
+        self._log.info(f"Number of syscalls: {num_syscalls}")
+        self._log.info(f"Number of calls: {num_calls}")
+        self._log.info(f"Number of computation: {num_computation}")
+        self._log.info(f"Number of functions: {num_functions}")
+        self._log.info(f"Number of local edges: {num_ledges}")
+        self._log.info(f"Number of interp. edges: {num_iedges}")
+        self._log.info(f"Local average cyclomatic complexity: {lv}")
+        self._log.info(f"Local boxplot cyclomatic complexity: {lv_box}")
+        self._log.info(f"Interprocedural cyclomatic complexity: {iv}")
+        for cat, count in cat_counter.items():
+            self._log.info(f"Number of syscalls for category {cat.name}: {count}")
+
+        if self.dump.get():
+            with open(self.dump_prefix.get() + '.json', 'w') as f:
+                values = {"num_abbs": num_abbs,
+                           "num_syscalls": num_syscalls,
+                           "num_calls": num_calls,
+                           "num_computation": num_computation,
+                           "num_functions": num_functions,
+                           "num_local_edges": num_ledges,
+                           "num_interprocedural_edges": num_iedges,
+                           "local_average_cyclomatic_complexity": lv,
+                           "local_boxplot_cyclomatic_complexity": lv_box,
+                           "interprocedural_cyclomatic_complexity": iv}
+                for cat, count in cat_counter.items():
+                    values[f"num_category_{cat.name}"] = count
+                json.dump(values, f, indent=4)

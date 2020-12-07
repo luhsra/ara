@@ -6,15 +6,12 @@
 using namespace llvm;
 namespace ara::step {
 
-	std::string FakeEntryPoint::get_description() const {
-		return "Create a fake entry point which calls all constructors before the real entry pouint is reached. "
-		       "This is task of the startup code and needs to be simulated for correctness and instance detection. "
-		       "";
+	std::string FakeEntryPoint::get_description() {
+		return "Create a fake entry point which calls all constructors before the real entry point is reached. "
+		       "This is task of the startup code and needs to be simulated for correctness and instance detection.";
 	}
 
-	void FakeEntryPoint::fill_options() { opts.emplace_back(entry_point); }
-
-	void FakeEntryPoint::run(graph::Graph& graph) {
+	void FakeEntryPoint::run() {
 		static int run = 0;
 		if (run++) {
 			std::stringstream ss;
@@ -25,6 +22,10 @@ namespace ara::step {
 
 		auto entry_point_name = this->entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
+		if (*entry_point_name != "main") {
+			logger.warn() << "Old entry point is not main. Skipping this step." << std::endl;
+			return;
+		}
 		Function* old_entry_point = module.getFunction(StringRef(*entry_point_name));
 		if (old_entry_point == nullptr) {
 			logger.warn() << "entry point " << *entry_point_name << " does not exist.";
@@ -37,8 +38,8 @@ namespace ara::step {
 		LLVMContext& context = module.getContext();
 		IRBuilder<> builder(context);
 		// FunctionType* fty = FunctionType::get(Type::getVoidTy(context), false);
-		Function* fake =
-		    Function::Create(old_entry_point->getFunctionType(), Function::ExternalLinkage, "__ara_fake_entry", module);
+		Function* fake = Function::Create(old_entry_point->getFunctionType(), Function::ExternalLinkage,
+		                                  constants::ARA_ENTRY_POINT, module);
 		BasicBlock* bb = BasicBlock::Create(context, "entry", fake);
 		builder.SetInsertPoint(bb);
 
@@ -62,7 +63,7 @@ namespace ara::step {
 		}
 		logger.debug() << "new entry: " << *fake << std::endl;
 
-		llvm::json::Value v(llvm::json::Object{{"entry_point", "__ara_fake_entry"}});
+		llvm::json::Value v(llvm::json::Object{{"entry_point", constants::ARA_ENTRY_POINT}});
 		step_manager.change_global_config(v);
 	}
 } // namespace ara::step

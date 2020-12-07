@@ -1,0 +1,7 @@
+{
+	"Task.RadioTx": { "unique": true },
+	"Task.RadioRx": { "unique": true },
+	"Task.Receiver": { "unique": true },
+	"Task.Attitude": { "unique": true },
+	"Task.Actuator": { "unique": true }
+}

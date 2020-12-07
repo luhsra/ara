@@ -5,26 +5,36 @@
 #include "option.h"
 #include "step.h"
 
+#include <boost/python.hpp>
 #include <graph.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Value.h>
 
 namespace ara::step {
-	class ReplaceSyscallsCreate : public Step {
+	class ReplaceSyscallsCreate : public ConfStep<ReplaceSyscallsCreate> {
 	  private:
-		virtual void fill_options() override;
+		using ConfStep<ReplaceSyscallsCreate>::ConfStep;
+		PyObject* handle_tcb_ref_param(llvm::IRBuilder<>& Builder, llvm::Value* tcb_ref, llvm::Value* the_tcb);
+		PyObject* replace_call_with_true(llvm::CallBase* call);
+		llvm::Function* get_fn(const char* name);
+		llvm::BasicBlock* create_bb(boost::python::object task);
+		PyObject* replace_call_with_activate(llvm::CallBase* call, llvm::Value* tcb);
 
 	  public:
-		virtual std::string get_name() const override { return "ReplaceSyscallsCreate"; }
-		virtual std::string get_description() const override;
-		virtual std::vector<std::string> get_dependencies() override { return {}; }
+		static std::string get_name() { return "ReplaceSyscallsCreate"; }
+		static std::string get_description();
 
-		virtual void run(graph::Graph& graph) override;
-		bool replace_mutex_create_static(graph::Graph& graph, uintptr_t where, char* symbol_metadata);
-		bool replace_mutex_create_initialized(graph::Graph& graph, uintptr_t where, char* symbol_metadata);
-		bool replace_queue_create_static(graph::Graph& graph, uintptr_t where, char* symbol_metadata,
-		                                 char* symbol_storage);
-		bool replace_queue_create_initialized(graph::Graph& graph, uintptr_t where, char* symbol_metadata);
-		bool replace_task_create_static(graph::Graph& graph, uintptr_t where, char* handle_name, char* stack_name);
-		bool replace_task_create_initialized(graph::Graph& graph, uintptr_t where, char* handle_name);
+		virtual void run() override;
+
+		bool replace_mutex_create_static(uintptr_t where, char* symbol_metadata);
+		bool replace_mutex_create_initialized(uintptr_t where, char* symbol_metadata);
+		bool replace_queue_create_static(uintptr_t where, char* symbol_metadata, char* symbol_storage);
+		bool replace_queue_create_initialized(uintptr_t where, char* symbol_metadata);
+		bool replace_task_create_static(uintptr_t where, char* handle_name, char* stack_name);
+		bool replace_task_create_initialized(uintptr_t where, char* handle_name);
+		PyObject* replace_task_create_static(boost::python::object task);
+		PyObject* replace_task_create_initialized(boost::python::object task);
+		PyObject* replace_task_create(PyObject* pyo_task);
 	};
 } // namespace ara::step

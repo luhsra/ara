@@ -2,20 +2,19 @@
 
 #include "../mix.py"
 #include "common/exceptions.h"
-#include "llvm_data.h"
+#include "graph_data.h"
+#include "os.h"
 
 #include <Python.h>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/python.hpp>
 #include <graph_tool.hh>
+#include <iostream>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <memory>
 
 namespace ara::graph {
-
-	std::ostream& operator<<(std::ostream&, const ABBType&);
-	std::ostream& operator<<(std::ostream&, const CFType&);
 
 	/* pointers are stored in the int64_t properties, so check they fit */
 	static_assert(sizeof(int64_t) == sizeof(void*));
@@ -25,15 +24,17 @@ namespace ara::graph {
 		/* see graph.py for python definitions */
 		typename graph_tool::vprop_map_t<std::string>::type name;
 		typename graph_tool::vprop_map_t<int>::type type;
-		typename graph_tool::vprop_map_t<unsigned char>::type is_function;
-		typename graph_tool::vprop_map_t<int64_t>::type entry_bb;
-		typename graph_tool::vprop_map_t<int64_t>::type exit_bb;
+		typename graph_tool::vprop_map_t<int>::type level;
+		typename graph_tool::vprop_map_t<int64_t>::type llvm_link;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit;
-		typename graph_tool::vprop_map_t<unsigned char>::type is_loop_head;
+		typename graph_tool::vprop_map_t<unsigned char>::type is_exit_loop_head;
+		typename graph_tool::vprop_map_t<unsigned char>::type part_of_loop;
+		typename graph_tool::vprop_map_t<std::string>::type file;
+		typename graph_tool::vprop_map_t<int>::type line;
 		typename graph_tool::vprop_map_t<unsigned char>::type implemented;
-		typename graph_tool::vprop_map_t<unsigned char>::type syscall;
-		typename graph_tool::vprop_map_t<int64_t>::type function;
+		typename graph_tool::vprop_map_t<unsigned char>::type sysfunc;
 		typename graph_tool::vprop_map_t<boost::python::object>::type arguments;
+		typename graph_tool::vprop_map_t<long>::type call_graph_link;
 
 		typename graph_tool::eprop_map_t<int>::type etype;
 		typename graph_tool::eprop_map_t<unsigned char>::type is_entry;
@@ -41,21 +42,173 @@ namespace ara::graph {
 		CFG(graph_tool::GraphInterface& graph) : graph(graph){};
 
 		/**
+		 * Return a CFG from the corresponding Python graph.
+		 */
+		static CFG get(PyObject* py_cfg);
+		static std::unique_ptr<CFG> get_ptr(PyObject* py_cfg);
+
+		/**
+		 * Get the type of the Node (as ABBType)
+		 */
+		template <class Graph>
+		ABBType get_type(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return static_cast<ABBType>(type[v]);
+		}
+		/**
+		 * Set the type of the Node (as ABBType)
+		 */
+		template <class Graph>
+		void set_type(typename boost::graph_traits<Graph>::vertex_descriptor v, ABBType ty) {
+			type[v] = static_cast<int>(ty);
+		}
+
+		/**
+		 * Get the level of the Node (as NodeLevel)
+		 */
+		template <class Graph>
+		NodeLevel get_level(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return static_cast<NodeLevel>(level[v]);
+		}
+		/**
+		 * Set the level of the Node (as NodeLevel)
+		 */
+		template <class Graph>
+		void set_level(typename boost::graph_traits<Graph>::vertex_descriptor v, NodeLevel lev) {
+			lev[v] = static_cast<int>(lev);
+		}
+
+		/**
+		 * Predicate object for boost::filtered_graph. Can filter vertices by their level.
+		 *
+		 * Example usage:
+		 * LevelFilter<Graph> f(<level_mask>);
+		 * boost::filter_graph<Graph, boost::keep_all, LevelFilter<Graph>> foo(g, boost::keep_all(), f);
+		 */
+		class LevelFilter {
+		  public:
+			LevelFilter() : level_filter(0), cfg(nullptr) {}
+			LevelFilter(const unsigned level_filter, const CFG* cfg) : level_filter(level_filter), cfg(cfg) {}
+			template <class Vertex>
+			bool operator()(const Vertex& v) const {
+				std::cout << "LEVEL: " << static_cast<NodeLevel>(cfg->level[v]) << std::endl;
+				std::cout << cfg->level[v] << " " << level_filter << " " << (cfg->level[v] & level_filter) << std::endl;
+				return (cfg->level[v] & level_filter) != 0;
+			}
+
+		  private:
+			const unsigned level_filter;
+			const CFG* cfg;
+		};
+
+		template <typename Graph>
+		auto filter_by_level(Graph& g, const unsigned level_filter) const -> auto {
+			return boost::filtered_graph<Graph, boost::keep_all, LevelFilter>(g, boost::keep_all(),
+			                                                                  LevelFilter(level_filter, this));
+		}
+
+		template <typename Graph>
+		auto filter_by_level(Graph& g, const NodeLevel level_filter) const -> auto {
+			return filter_by_level(g, static_cast<unsigned>(level_filter));
+		}
+
+		/**
+		 * return a graph that contains only the function nodes
+		 */
+		template <class Graph>
+		auto get_functions(Graph& g) const -> auto {
+			return filter_by_level(g, NodeLevel::function);
+		}
+		/**
+		 * return a graph that contains only the abb nodes
+		 */
+		template <class Graph>
+		auto get_abbs(Graph& g) const -> auto {
+			return filter_by_level(g, NodeLevel::abb);
+		}
+		/**
+		 * return a graph that contains only the abb nodes
+		 */
+		template <class Graph>
+		auto get_bbs(Graph& g) const -> auto {
+			return filter_by_level(g, NodeLevel::bb);
+		}
+
+		/**
+		 * Predicate object for boost::filtered_graph. Can filter ABB by their types.
+		 *
+		 * Example usage:
+		 * ABBTypeFilter<ABBGraph> f(<abb_type_mask>);
+		 * boost::filter_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> foo(g, boost::keep_all(), f);
+		 */
+		class ABBTypeFilter {
+		  public:
+			ABBTypeFilter() : type_filter(0), cfg(nullptr) {}
+			ABBTypeFilter(const unsigned type_filter, const CFG* cfg) : type_filter(type_filter), cfg(cfg) {}
+			template <class Vertex>
+			bool operator()(const Vertex& v) const {
+				return (cfg->type[v] & type_filter) != 0;
+			}
+
+		  private:
+			const unsigned type_filter;
+			const CFG* cfg;
+		};
+
+		template <typename Graph>
+		auto filter_by_abb(Graph& g, const unsigned type_filter) const -> auto {
+			return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(),
+			                                                                    ABBTypeFilter(type_filter, this));
+		}
+
+		/**
+		 * Return the llvm bb of the given BB.
+		 */
+		template <class Graph>
+		llvm::BasicBlock* get_llvm_bb(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			assert(get_level<Graph>(v) == NodeLevel::bb);
+			return reinterpret_cast<llvm::BasicBlock*>(llvm_link[v]);
+		}
+
+		/**
+		 * Return the llvm function of the given function.
+		 */
+		template <class Graph>
+		llvm::Function* get_llvm_function(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			assert(get_level<Graph>(v) == NodeLevel::function);
+			return reinterpret_cast<llvm::Function*>(llvm_link[v]);
+		}
+
+		/**
+		 * Return the name to the call that this BB calls.
+		 *
+		 * Only valid in call or syscall BBs, return "" otherwise.
+		 */
+		template <class Graph>
+		std::string bb_get_callname(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			if (!(get_type(v) == ABBType::call || get_type(v) == ABBType::syscall)) {
+				return "";
+			}
+			return llvm_bb_get_callname(safe_deref(get_llvm_bb(v)));
+		}
+		/**
 		 * Return the name to the call that this ABB calls.
 		 *
 		 * Only valid in call or syscall ABBs, return "" otherwise.
 		 */
 		template <class Graph>
-		std::string abb_get_call(typename boost::graph_traits<Graph>::vertex_descriptor v) {
-			return bb_get_call(static_cast<ABBType>(type[v]), *(reinterpret_cast<llvm::BasicBlock*>(entry_bb[v])));
+		std::string abb_get_callname(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			return bb_get_call(get_entry_bb(v));
 		}
 
 		/**
-		 * Return, if the call in a call or syscall ABB is an indirect call.
+		 * Return, if the call in a call or syscall BB is an indirect call.
 		 */
 		template <class Graph>
-		bool abb_is_indirect(typename boost::graph_traits<Graph>::vertex_descriptor v) {
-			return bb_is_indirect(static_cast<ABBType>(type[v]), *(reinterpret_cast<llvm::BasicBlock*>(entry_bb[v])));
+		bool bb_is_indirect(typename boost::graph_traits<Graph>::vertex_descriptor v) {
+			if (!(get_type(v) == ABBType::call || get_type(v) == ABBType::syscall)) {
+				return nullptr;
+			}
+			return bb_is_indirect(safe_deref(get_llvm_bb(v)));
 		}
 
 		/**
@@ -67,15 +220,15 @@ namespace ara::graph {
 		typename boost::graph_traits<Graph>::vertex_descriptor back_map(const Graph g,
 		                                                                const llvm::Function& func) const {
 			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
-				if (reinterpret_cast<llvm::Function*>(function[v]) == &func) {
+				if (get_level<Graph>(v) == NodeLevel::function && get_llvm_function<Graph>(v) == &func) {
 					return v;
 				}
 			}
-			throw FunctionNotFound();
+			throw FunctionNotFound(func.getName().str());
 		}
 
 		/**
-		 * Return ABB that belongs to bb.
+		 * Return BB that belongs to bb.
 		 *
 		 * Throws exception, if bb cannot be mapped.
 		 */
@@ -83,12 +236,11 @@ namespace ara::graph {
 		typename boost::graph_traits<Graph>::vertex_descriptor back_map(const Graph g,
 		                                                                const llvm::BasicBlock& bb) const {
 			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
-				if (reinterpret_cast<llvm::BasicBlock*>(entry_bb[v]) == &bb ||
-				    reinterpret_cast<llvm::BasicBlock*>(exit_bb[v]) == &bb) {
+				if (get_level<Graph>(v) == NodeLevel::bb && get_llvm_bb<Graph>(v) == &bb) {
 					return v;
 				}
 			}
-			throw VertexNotFound();
+			throw VertexNotFound(bb.getName().str());
 		}
 
 		/**
@@ -104,7 +256,7 @@ namespace ara::graph {
 					return v;
 				}
 			}
-			throw FunctionNotFound();
+			throw FunctionNotFound(func_name);
 		}
 
 		/**
@@ -120,7 +272,7 @@ namespace ara::graph {
 					return boost::target(cand, g);
 				}
 			}
-			throw VertexNotFound();
+			throw VertexNotFound("CFG.get_vertex");
 		}
 
 		/**
@@ -134,6 +286,51 @@ namespace ara::graph {
 			return get_vertex(g, function, [&](typename boost::graph_traits<Graph>::edge_descriptor e) {
 				return etype[e] == CFType::f2a && is_entry[e];
 			});
+		}
+
+		/**
+		 * Return the entry BB of an ABB.
+		 *
+		 * Throws exception, if entry cannot be found.
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::vertex_descriptor
+		get_entry_bb(const Graph& g, typename boost::graph_traits<Graph>::vertex_descriptor abb) const {
+			return get_vertex(g, abb, [&](typename boost::graph_traits<Graph>::edge_descriptor e) {
+				return etype[e] == CFType::a2b && is_entry[e];
+			});
+		}
+
+		/**
+		 * Get the function of an ABB or BB.
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::vertex_descriptor
+		get_function(const Graph& g, typename boost::graph_traits<Graph>::vertex_descriptor abb) const {
+			CFType ty;
+			if (this->level[abb] == NodeLevel::abb) {
+				ty = CFType::f2a;
+			} else if (this->level[abb] == NodeLevel::bb) {
+				ty = CFType::f2b;
+			} else {
+				assert(false && "CFG.get_function, false Node type");
+			}
+			auto [begin, end] = boost::in_edges(abb, g);
+			auto match = std::find_if(begin, end, [&](auto e) -> bool { return this->etype[e] == ty; });
+			assert(match != end && "CFG.get_function");
+			return boost::source(*match, g);
+		}
+
+		/**
+		 * Get the ABB of an BB.
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::vertex_descriptor
+		get_abb(const Graph& g, typename boost::graph_traits<Graph>::vertex_descriptor bb) const {
+			auto [begin, end] = boost::in_edges(bb, g);
+			auto match = std::find_if(begin, end, [&](auto e) -> bool { return this->etype[e] == graph::CFType::a2b; });
+			assert(match != end && "CFG.get_abb");
+			return boost::source(*match, g);
 		}
 
 		/**
@@ -152,18 +349,20 @@ namespace ara::graph {
 			auto entry_abb = get_entry_abb(g, entry_function);
 			NoExitNodes<Graph> filter(&g, this);
 			boost::filtered_graph<Graph, NoExitNodes<Graph>> fg(g, filter);
-			NoBacktrackVisitor<Graph> nbv(*this, do_with_abb);
+			NoBacktrackVisitor<boost::filtered_graph<Graph, NoExitNodes<Graph>>, Graph> nbv(*this, do_with_abb, g);
 			auto indexmap = boost::get(boost::vertex_index, g);
 			auto colormap = boost::make_vector_property_map<boost::default_color_type>(indexmap);
 			try {
-				depth_first_search(g, nbv, colormap, entry_abb);
+				depth_first_search(fg, nbv, colormap, entry_abb);
 			} catch (StopDFSException&) { /*we are expecting that*/
 			}
 		}
 
 	  private:
+		struct CFGUniqueEnabler;
+
 		/**
-		 * Filter all edges that are back edges for the ICFG.
+		 * Filter CFG by ICFG edges, but filter out all edges that are back edges.
 		 *
 		 * Helper class for execute_on_reachable_abbs
 		 */
@@ -176,7 +375,11 @@ namespace ara::graph {
 			bool operator()(const Edge& e) const {
 				assert(g != nullptr && "Graph must not be null");
 				assert(cfg != nullptr && "CFG must not be null");
-				return cfg->etype[e] == CFType::icf && !cfg->is_exit[boost::source(boost::edge(e), *g)];
+				auto src = boost::source(e, *g);
+				if (cfg->type[src] == ABBType::call || cfg->type[src] == ABBType::syscall) {
+					return cfg->etype[e] == CFType::icf || cfg->etype[e] == CFType::lcf;
+				}
+				return cfg->etype[e] == CFType::icf && !cfg->is_exit[boost::source(e, *g)];
 			}
 
 		  private:
@@ -187,19 +390,20 @@ namespace ara::graph {
 		/**
 		 * Implementation of a counting DFS visitor. Stops as soon as the first unreachable vertex is reached.
 		 */
-		template <class InnerGraph>
+		template <class FilteredGraph, class InnerGraph>
 		class NoBacktrackVisitor : public boost::default_dfs_visitor {
-			using Vertex = typename boost::graph_traits<InnerGraph>::vertex_descriptor;
+			using Vertex = typename boost::graph_traits<FilteredGraph>::vertex_descriptor;
 
 		  public:
-			NoBacktrackVisitor(CFG& cfg, std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func)
-			    : counter(0), discover_func(discover_func), cfg(cfg) {}
+			NoBacktrackVisitor(CFG& cfg, std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func,
+			                   InnerGraph& ig)
+			    : counter(0), discover_func(discover_func), cfg(cfg), ig(ig) {}
 
-			void discover_vertex(Vertex u, const InnerGraph& g) {
+			void discover_vertex(Vertex u, const FilteredGraph&) {
 				++counter;
-				discover_func(g, cfg, u);
+				discover_func(ig, cfg, boost::vertex(u, ig));
 			}
-			void finish_vertex(Vertex, const InnerGraph&) {
+			void finish_vertex(Vertex, const FilteredGraph&) {
 				--counter;
 				if (counter == 0) {
 					throw StopDFSException();
@@ -210,65 +414,117 @@ namespace ara::graph {
 			unsigned int counter;
 			std::function<void(const InnerGraph&, CFG&, Vertex)> discover_func;
 			CFG& cfg;
+			InnerGraph& ig;
 		};
 
-		const std::string bb_get_call(const ABBType type, const llvm::BasicBlock& bb) const;
-		bool bb_is_indirect(const ABBType type, const llvm::BasicBlock& bb) const;
-		const llvm::CallBase* get_call_base(const ABBType type, const llvm::BasicBlock& bb) const;
+		const std::string llvm_bb_get_callname(const llvm::BasicBlock& bb) const;
+		bool bb_is_indirect(const llvm::BasicBlock& bb) const;
+		const llvm::CallBase* get_call_base(const llvm::BasicBlock& bb) const;
 	};
 
-	/**
-	 * Predicate object for boost::filtered_graph. Can filter ABB by their types.
-	 *
-	 * Example usage:
-	 * ABBTypeFilter<ABBGraph> f(<abb_type_mask>);
-	 * boost::filter_graph<ABBGraph, boost::keep_all, ABBTypeFilter<ABBGraph>> foo(g, boost::keep_all(), f);
-	 */
-	class ABBTypeFilter {
+	class Graph;
+
+	struct CallGraph {
+	  private:
+		friend class Graph;
+		CallGraph(graph_tool::GraphInterface& graph) : graph(graph){};
+
+		struct CallGraphUniqueEnabler;
+
 	  public:
-		ABBTypeFilter() : type_filter(0), cfg(nullptr) {}
-		ABBTypeFilter(const unsigned type_filter, const CFG* cfg) : type_filter(type_filter), cfg(cfg) {}
-		template <class Vertex>
-		bool operator()(const Vertex& v) const {
-			return (cfg->type[v] & type_filter) != 0;
+		graph_tool::GraphInterface& graph;
+		/* vertex properties */
+		typename graph_tool::vprop_map_t<long>::type function;
+		typename graph_tool::vprop_map_t<std::string>::type function_name;
+		typename graph_tool::vprop_map_t<int64_t>::type svf_vlink;
+		typename graph_tool::vprop_map_t<unsigned char>::type recursive;
+		/* vertex properties that belong to syscall categories */
+#define ARA_SYS_ACTION(Value) typename graph_tool::vprop_map_t<unsigned char>::type syscall_category_##Value;
+#include "syscall_category.inc"
+#undef ARA_SYS_ACTION
+
+		/* edge properties */
+		typename graph_tool::eprop_map_t<long>::type callsite;
+		typename graph_tool::eprop_map_t<std::string>::type callsite_name;
+		typename graph_tool::eprop_map_t<int64_t>::type svf_elink;
+
+		typename graph_tool::gprop_map_t<PyObject*>::type cfg;
+
+		/**
+		 * Return a CallGraph from the corresponding Python graph.
+		 */
+		static CallGraph get(PyObject* py_callgraph);
+		static std::unique_ptr<CallGraph> get_ptr(PyObject* py_callgraph);
+
+		/**
+		 * Return the corresponding SVF callgraph node to the given node.
+		 */
+		template <class Graph>
+		const SVF::PTACallGraphNode* get_svf_vlink(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return reinterpret_cast<const SVF::PTACallGraphNode*>(svf_vlink[v]);
 		}
 
-	  private:
-		const unsigned type_filter;
-		const CFG* cfg;
-	};
+		/**
+		 * Return the corresponding SVF callgraph edge to the given edge.
+		 */
+		template <class Graph>
+		const SVF::PTACallGraphEdge* get_svf_elink(typename boost::graph_traits<Graph>::edge_descriptor v) const {
+			return reinterpret_cast<const SVF::PTACallGraphEdge*>(svf_elink[v]);
+		}
 
-	template <typename Graph>
-	auto filter_by_abb(const unsigned type_filter, Graph& g, const CFG& cfg)
-	    -> boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter> {
-		return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(),
-		                                                                    ABBTypeFilter(type_filter, &cfg));
-	}
+		/**
+		 * Return edge that belongs to the appropriate Callgraph edge.
+		 *
+		 * Throws exception, if edge cannot be mapped.
+		 */
+		template <class Graph>
+		typename boost::graph_traits<Graph>::edge_descriptor back_map(const Graph g,
+		                                                              const SVF::PTACallGraphEdge& edge) const {
+			for (auto e : boost::make_iterator_range(boost::edges(g))) {
+				if (get_svf_elink<Graph>(e) == &edge) {
+					return e;
+				}
+			}
+			throw EdgeNotFound("CallGraph.back_map");
+		}
+	};
 
 	/**
 	 * C++ representation of the graph.
 	 *
-	 * It stores the Python graph and LLVMData separately, although the Python graph contains the LLVMData.
+	 * It stores the Python graph and GraphData separately, although the Python graph contains the GraphData.
 	 * This is for convenience since the actual extraction is done with Cython.
 	 */
 	class Graph {
 	  private:
+		// TODO: refcount this with boost
 		PyObject* graph;
-		LLVMData* llvm_data;
+		GraphData* graph_data;
 
 	  public:
-		Graph() : graph(nullptr), llvm_data(nullptr) {}
-		Graph(PyObject* g, LLVMData& llvm_data) : graph(g), llvm_data(&llvm_data) {}
+		Graph() : graph(nullptr), graph_data(nullptr) {}
+		Graph(PyObject* g, GraphData& graph_data) : graph(g), graph_data(&graph_data) {}
 
 		/**
 		 * convenience function to get the llvm module directly
 		 */
-		llvm::Module& get_module() { return llvm_data->get_module(); }
+		llvm::Module& get_module() { return safe_deref(graph_data).get_module(); }
+		const llvm::Module& get_module() const { return safe_deref(graph_data).get_module(); }
+		/**
+		 * convenience function to get the svfg directly
+		 */
+		SVF::SVFG& get_svfg() { return safe_deref(graph_data).get_svfg(); }
 
-		LLVMData& get_llvm_data() { return *llvm_data; }
+		GraphData& get_graph_data() { return safe_deref(graph_data); }
 
 		PyObject* get_pygraph() { return graph; }
 
+		os::OS get_os();
+
 		CFG get_cfg();
+		std::unique_ptr<CFG> get_cfg_ptr();
+
+		CallGraph get_callgraph();
+		std::unique_ptr<CallGraph> get_callgraph_ptr();
 	};
 } // namespace ara::graph

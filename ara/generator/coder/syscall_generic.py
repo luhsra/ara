@@ -8,9 +8,9 @@ class GenericSystemCalls(BaseCoder):
 
     def generate_system_code(self):
         self.generator.source_file.function_manager.add(self._init)
-        init_board = FunctionDeclaration('InitBoard', 'void', [])
-        self.generator.source_file.function_manager.add(init_board)
-        self._init.add(FunctionCall('InitBoard',[]))
+        # init_board = FunctionDeclaration('InitBoard', 'void', [])
+        # self.generator.source_file.function_manager.add(init_board)
+        # self._init.add(FunctionCall('InitBoard',[]))
 
         stack_hook = Function('vApplicationStackOverflowHook', 'void',
                               [], extern_c=True, attributes=['__attribute__((weak))'])
@@ -25,10 +25,4 @@ class GenericSystemCalls(BaseCoder):
         self._log.debug("generate_data_objects_queue_mem: %s instances", len(queue_list))
         for queue in queue_list:
             self._log.debug('Queue: %s', queue.name)
-            if not queue.branch:
-                queue.impl.init = init
-                self.arch_rules.static_unchanged_queue(queue, initialized=(init == 'initialized'))
-            else:
-                msg = f"Can't create queue static cause it is inside a branch: {queue}"
-                self._log.error(msg)
-                raise RuntimeError(msg)
+            self.arch_rules.static_unchanged_queue(queue)

@@ -9,52 +9,21 @@
 #include <iostream>
 
 namespace ara::graph {
-	// ABBType functions
-	std::ostream& operator<<(std::ostream& str, const ABBType& ty) {
-		switch (ty) {
-		case syscall:
-			return (str << "syscall");
-		case call:
-			return (str << "call");
-		case computation:
-			return (str << "computation");
-		case not_implemented:
-			return (str << "not_implemented");
-		};
-		assert(false);
-		return str;
-	}
-
-	// CFType functions
-	std::ostream& operator<<(std::ostream& str, const CFType& ty) {
-		switch (ty) {
-		case lcf:
-			return (str << "local control flow");
-		case icf:
-			return (str << "interprocedural control flow");
-		case gcf:
-			return (str << "global control flow");
-		case f2a:
-			return (str << "function to ABB");
-		case a2f:
-			return (str << "ABB to function");
-		};
-		assert(false);
-		return str;
+	graph_tool::GraphInterface& get_graph(PyObject* py_obj) {
+		PyObject* pyobj_graph = PyObject_GetAttrString(py_obj, "_Graph__graph");
+		assert(pyobj_graph != nullptr);
+		boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pyobj_graph);
+		assert(get_graph_interface.check());
+		return get_graph_interface();
 	}
 
 	// ABB functions
-	const llvm::CallBase* CFG::get_call_base(const ABBType type, const llvm::BasicBlock& bb) const {
-		if (!(type == ABBType::call || type == ABBType::syscall)) {
-			return nullptr;
-		}
-		const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(&bb.front());
-		assert(call);
-		return call;
+	const llvm::CallBase* CFG::get_call_base(const llvm::BasicBlock& bb) const {
+		return llvm::dyn_cast<llvm::CallBase>(&bb.front());
 	}
 
-	const std::string CFG::bb_get_call(const ABBType type, const llvm::BasicBlock& bb) const {
-		auto call = get_call_base(type, bb);
+	const std::string CFG::llvm_bb_get_callname(const llvm::BasicBlock& bb) const {
+		auto call = get_call_base(bb);
 		if (!call) {
 			return "";
 		}
@@ -74,8 +43,8 @@ namespace ara::graph {
 		return func->getName();
 	}
 
-	bool CFG::bb_is_indirect(const ABBType type, const llvm::BasicBlock& bb) const {
-		auto call = get_call_base(type, bb);
+	bool CFG::bb_is_indirect(const llvm::BasicBlock& bb) const {
+		auto call = get_call_base(bb);
 		if (!call) {
 			return false;
 		}
@@ -101,44 +70,150 @@ namespace ara::graph {
 		}
 	}
 
+	PyObject* get_vprops(PyObject* graph) {
+		PyObject* vprops = PyObject_GetAttrString(graph, "vertex_properties");
+		assert(vprops != nullptr);
+		return vprops;
+	}
+
+	PyObject* get_eprops(PyObject* graph) {
+		PyObject* eprops = PyObject_GetAttrString(graph, "edge_properties");
+		assert(eprops != nullptr);
+		return eprops;
+	}
+
+	inline void create_properties(CFG& cfg, PyObject* py_cfg) {
+#define ARA_MAP(Graph, Value, Type) Graph.Value = get_property<decltype(Graph.Value)>(Type, #Value);
+#define ARA_VMAP(Value) ARA_MAP(cfg, Value, vprops)
+#define ARA_EMAP(Value) ARA_MAP(cfg, Value, eprops)
+
+		PyObject* vprops = get_vprops(py_cfg);
+
+		ARA_VMAP(name)
+		ARA_VMAP(type)
+		ARA_VMAP(level)
+		ARA_VMAP(llvm_link)
+		ARA_VMAP(is_exit)
+		ARA_VMAP(is_exit_loop_head)
+		ARA_VMAP(part_of_loop)
+		ARA_VMAP(file)
+		ARA_VMAP(line)
+		ARA_VMAP(implemented)
+		ARA_VMAP(sysfunc)
+		ARA_VMAP(arguments)
+		ARA_VMAP(call_graph_link)
+
+		PyObject* eprops = get_eprops(py_cfg);
+
+		cfg.etype = get_property<decltype(cfg.etype)>(eprops, "type");
+		ARA_EMAP(is_entry)
+
+#undef ARA_VMAP
+#undef ARA_EMAP
+	}
+
+	CFG CFG::get(PyObject* py_cfg) {
+		assert(py_cfg != nullptr);
+		CFG cfg(get_graph(py_cfg));
+		create_properties(cfg, py_cfg);
+		return cfg;
+	}
+
+	struct CFG::CFGUniqueEnabler : public CFG {
+		template <typename... Args>
+		CFGUniqueEnabler(Args&&... args) : CFG(std::forward<Args>(args)...) {}
+	};
+
+	std::unique_ptr<CFG> CFG::get_ptr(PyObject* py_cfg) {
+		assert(py_cfg != nullptr);
+		std::unique_ptr<CFG> cfg = std::make_unique<CFGUniqueEnabler>(get_graph(py_cfg));
+		create_properties(*cfg, py_cfg);
+		return cfg;
+	}
+
 	CFG Graph::get_cfg() {
 		// extract self.cfg from Python
 		PyObject* pycfg = PyObject_GetAttrString(graph, "cfg");
 		assert(pycfg != nullptr);
 
-		// GraphInterface
-		PyObject* pycfg_graph = PyObject_GetAttrString(pycfg, "_Graph__graph");
-		assert(pycfg_graph != nullptr);
-		boost::python::extract<graph_tool::GraphInterface&> get_graph_interface(pycfg_graph);
-		assert(get_graph_interface.check());
-		CFG cfg(get_graph_interface());
+		return CFG::get(pycfg);
+	}
 
-		// Properties
-#define MAP(Value, Type) cfg.Value = get_property<decltype(cfg.Value)>(Type, #Value);
-#define VMAP(Value) MAP(Value, vprops)
-#define EMAP(Value) MAP(Value, eprops)
+	std::unique_ptr<CFG> Graph::get_cfg_ptr() {
+		// extract self.cfg from Python
+		PyObject* pycfg = PyObject_GetAttrString(graph, "cfg");
+		assert(pycfg != nullptr);
 
-		PyObject* vprops = PyObject_GetAttrString(pycfg, "vertex_properties");
-		assert(vprops != nullptr);
+		return CFG::get_ptr(pycfg);
+	}
 
-		VMAP(name)
-		VMAP(type)
-		VMAP(is_function)
-		VMAP(entry_bb)
-		VMAP(exit_bb)
-		VMAP(is_exit)
-		VMAP(is_loop_head)
-		VMAP(implemented)
-		VMAP(syscall)
-		VMAP(function)
-		VMAP(arguments)
+	os::OS Graph::get_os() {
+		PyObject* os = PyObject_GetAttrString(graph, "os");
+		assert(os != Py_None && "OS must be set.");
+		return os::OS(os);
+	}
 
-		PyObject* eprops = PyObject_GetAttrString(pycfg, "edge_properties");
-		assert(eprops != nullptr);
+	inline void create_properties(CallGraph& callgraph, PyObject* py_callgraph) {
+		PyObject* vprops = get_vprops(py_callgraph);
 
-		cfg.etype = get_property<decltype(cfg.etype)>(eprops, "type");
-		EMAP(is_entry)
+#define ARA_VMAP(Value) ARA_MAP(callgraph, Value, vprops)
+#define ARA_EMAP(Value) ARA_MAP(callgraph, Value, eprops)
 
-		return cfg;
+		ARA_VMAP(function)
+		ARA_VMAP(function_name)
+		ARA_VMAP(svf_vlink)
+		ARA_VMAP(recursive)
+
+		// syscall categories
+#define ARA_SYS_ACTION(Value) ARA_VMAP(syscall_category_##Value)
+#include "syscall_category.inc"
+#undef ARA_SYS_ACTION
+
+		PyObject* eprops = get_eprops(py_callgraph);
+
+		ARA_EMAP(callsite)
+		ARA_EMAP(callsite_name)
+		ARA_EMAP(svf_elink)
+
+#undef ARA_VMAP
+#undef ARA_EMAP
+#undef ARA_MAP
+
+		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
+	}
+
+	CallGraph CallGraph::get(PyObject* py_callgraph) {
+		assert(py_callgraph != nullptr);
+		CallGraph callgraph(get_graph(py_callgraph));
+		create_properties(callgraph, py_callgraph);
+		return callgraph;
+	}
+
+	struct CallGraph::CallGraphUniqueEnabler : public CallGraph {
+		template <typename... Args>
+		CallGraphUniqueEnabler(Args&&... args) : CallGraph(std::forward<Args>(args)...) {}
+	};
+
+	std::unique_ptr<CallGraph> CallGraph::get_ptr(PyObject* py_callgraph) {
+		assert(py_callgraph != nullptr);
+		std::unique_ptr<CallGraph> callgraph = std::make_unique<CallGraphUniqueEnabler>(get_graph(py_callgraph));
+		create_properties(*callgraph, py_callgraph);
+		return callgraph;
+	}
+
+	CallGraph Graph::get_callgraph() {
+		// extract self.callgraph from Python
+		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
+		assert(pycallgraph != nullptr);
+
+		return CallGraph::get(pycallgraph);
+	}
+
+	std::unique_ptr<CallGraph> Graph::get_callgraph_ptr() {
+		// extract self.callgraph from Python
+		PyObject* pycallgraph = PyObject_GetAttrString(graph, "callgraph");
+		assert(pycallgraph != nullptr);
+
+		return CallGraph::get_ptr(pycallgraph);
 	}
 } // namespace ara::graph

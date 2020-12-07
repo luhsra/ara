@@ -3,9 +3,7 @@
 if __name__ == '__main__':
     __package__ = 'test.native_step_test'
 
-from ..init_test import fail_if, get_config
-
-import logging
+from ..init_test import get_config
 
 from ara.stepmanager import StepManager
 from ara.graph import Graph
@@ -21,39 +19,41 @@ from ara.steps.step import Step, provide_test_steps
 
 
 class Test3Step(Step):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test2Step"]
 
-    def run(self, graph: Graph):
-        log = logging.getLogger(self.__class__.__name__)
-        log.info("Running...")
+    def run(self):
+        self._log.info("Running...")
 
 
 class Test1Step(Step):
-    def get_dependencies(self):
+    def get_single_dependencies(self):
         return ["Test0Step"]
 
-    def run(self, graph: Graph):
-        log = logging.getLogger(self.__class__.__name__)
-        log.info("Running...")
+    def run(self):
+        self._log.info("Running...")
 
 
 def provide():
     """Provide all classes for the StepManager."""
     for step in provide_test_steps():
         yield step
-    yield Test1Step()
-    yield Test3Step()
+    yield Test1Step
+    yield Test3Step
 
 
 def main():
     """Checks the interoperability of Python and C++ passes."""
-    g = Graph()
+    graph = Graph()
     config = get_config('/dev/null')
     extra_config = {}
-    p_manager = StepManager(g, provides=provide)
+    p_manager = StepManager(graph, provides=provide)
 
-    p_manager.execute(config, extra_config, ['Test3Step'])
+    hist = p_manager.execute(config, extra_config, ['Test3Step'])
+    assert [step.name for step in hist] == ['Test0Step',
+                                            'Test1Step',
+                                            'Test2Step',
+                                            'Test3Step']
 
 
 if __name__ == '__main__':

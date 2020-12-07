@@ -4,7 +4,7 @@ import json
 import ara.graph as _graph
 from .option import Option, String
 from .step import Step
-from .autosar import Task, Counter, Alarm, AlarmAction, ISR
+from ara.os.autosar import Task, Counter, Alarm, AlarmAction, ISR
 
 import graph_tool
 
@@ -17,17 +17,11 @@ class LoadOIL(Step):
     Expect the path to the oil file to be in the config 'oilfile' key.
     The syntax is changed to JSON. Take a look at tests/oil/1.oil.
     """
-    def _fill_options(self):
-        self.oilfile = Option(name="oilfile",
-                              help="Path to JSON oil file.",
-                              step_name=self.get_name(),
-                              ty=String())
-        self.opts.append(self.oilfile)
+    oilfile = Option(name="oilfile",
+                     help="Path to JSON oil file.",
+                     ty=String())
 
-    def get_dependencies(self):
-        return []
-
-    def run(self, g: _graph.Graph):
+    def run(self):
         # load the json file
         oilfile = self.oilfile.get()
         if not oilfile:
@@ -36,8 +30,7 @@ class LoadOIL(Step):
         with open(oilfile) as f:
             oil = json.load(f)
 
-        instances = graph_tool.Graph()
-        g.os.init(instances)
+        instances = self._graph.instances
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
 
@@ -46,8 +39,8 @@ class LoadOIL(Step):
                 t = instances.add_vertex()
                 t_name = task["name"]
                 t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
-                t_func = g.cfg.get_function_by_name(t_func_name)
-                instances.vp.obj[t] = Task(g.cfg, t_name, t_func,
+                t_func = self._graph.cfg.get_function_by_name(t_func_name)
+                instances.vp.obj[t] = Task(self._graph.cfg, t_name, t_func,
                                            task["priority"],
                                            task["activation"],
                                            task["autostart"],
@@ -58,15 +51,9 @@ class LoadOIL(Step):
                 # trigger other steps
                 self._step_manager.chain_step({"name": "ValueAnalysis",
                                                "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "ValueAnalysisCore",
-                                               "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "CallGraph",
-                                               "entry_point": t_func_name})
                 self._step_manager.chain_step({"name": "Syscall",
                                                "entry_point": t_func_name})
-                self._step_manager.chain_step({"name": "ICFG",
-                                               "entry_point": t_func_name})
-        
+
         def find_instance_by_name(name, _class):
             obj = None
             for v in instances.vertices():
@@ -159,22 +146,11 @@ class LoadOIL(Step):
                     # trigger other steps
                     self._step_manager.chain_step({"name": "ValueAnalysis",
                                                 "entry_point": i_function_name})
-                    self._step_manager.chain_step({"name": "ValueAnalysisCore",
-                                                "entry_point": i_function_name})
-                    self._step_manager.chain_step({"name": "CallGraph",
-                                                "entry_point": i_function_name})
                     self._step_manager.chain_step({"name": "Syscall",
                                                 "entry_point": i_function_name})
-                    self._step_manager.chain_step({"name": "ICFG",
-                                                "entry_point": i_function_name})
-
-        g.instances = instances
 
         if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            dot_file = f'{uuid}.dot'
-            dot_file = self.dump_prefix.get() + dot_file
             self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
+                                           "dot": self.dump_prefix.get(),
                                            "graph_name": 'Instances',
                                            "subgraph": 'instances'})

@@ -11,11 +11,11 @@
 #include <string>
 
 namespace ara::step {
-	std::string FnSingleExitTest::get_name() const { return "FnSingleExitTest"; }
+	std::string FnSingleExitTest::get_name() { return "FnSingleExitTest"; }
 
-	std::string FnSingleExitTest::get_description() const { return "Step for testing the FnSingleExit step"; }
+	std::string FnSingleExitTest::get_description() { return "Step for testing the FnSingleExit step"; }
 
-	void FnSingleExitTest::run(graph::Graph& graph) {
+	void FnSingleExitTest::run() {
 		llvm::Module& module = graph.get_module();
 
 		bool fail = false;
@@ -42,5 +42,5 @@ namespace ara::step {
 		}
 	}
 
-	std::vector<std::string> FnSingleExitTest::get_dependencies() { return {"FnSingleExit"}; }
+	std::vector<std::string> FnSingleExitTest::get_single_dependencies() { return {"FnSingleExit"}; }
 } // namespace ara::step

@@ -41,13 +41,14 @@ task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
 #include "FreeRTOS.h"
+#include FREERTOS_OVERRIDES
 #include "task.h"
 
 #undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE
 
-#if( configSUPPORT_DYNAMIC_ALLOCATION == 0 )
-	#error This file must not be used if configSUPPORT_DYNAMIC_ALLOCATION is 0
-#endif
+#if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
+/* 	#error This file must not be used if configSUPPORT_DYNAMIC_ALLOCATION is 0 */
+/* #endif */
 
 /* A few bytes might be lost to byte aligning the heap start address. */
 #define configADJUSTED_HEAP_SIZE	( configTOTAL_HEAP_SIZE - portBYTE_ALIGNMENT )
@@ -144,3 +145,12 @@ size_t xPortGetFreeHeapSize( void )
 
 
 
+
+void xPortIncreaseHeapSize( size_t bytes )
+{
+  //TODO: reactivate for librepilot?
+    /* vTaskSuspendAll(); */
+    /* currentTOTAL_HEAP_SIZE = configTOTAL_HEAP_SIZE + bytes; */
+    /* xTaskResumeAll(); */
+}
+#endif //configSUPPORT_DYNAMIC_ALLOCATION

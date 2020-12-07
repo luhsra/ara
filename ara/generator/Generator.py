@@ -11,6 +11,7 @@ class Generator:
         self.os_rules = os_rules
         self.syscall_rules = syscall_rules
         self._log = _log
+        self._dependencies = []
 
         self.file_prefix = None
         self.source_file = None
@@ -77,3 +78,12 @@ class Generator:
 
     def open_template(self, name):
         return open(os.path.join(self.template_base, name))
+
+    def add_source_file(self, name):
+        self.source_files[name] = SourceFile(self._log)
+
+    def get_dependencies(self):
+        return self._dependencies
+
+    def add_dependency(self, dependency):
+        self._dependencies.append(dependency)

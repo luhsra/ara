@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.6
+#!/usr/bin/env python3
 import json
 
 # Note: init_test must be imported first
@@ -8,7 +8,7 @@ from ara.graph import ABBType, CFType
 
 def f_exp(cfg, ty):
     def actual_filter(abb):
-        return cfg.vp.tpye[abb] == ty
+        return cfg.vp.type[abb] == ty
     return actual_filter
 
 
@@ -23,10 +23,12 @@ def main():
 
     m_graph, data, _ = init_test(['Syscall'])
     cfg = m_graph.cfg
+    functs = m_graph.functs
     stats = {}
-    for function in cfg.vertices():
-        if cfg.vp.is_function[function]:
-            return
+    for function in functs.vertices():
+        function = cfg.vertex(function)
+        if not cfg.vp.implemented[function]:
+            continue
         syscalls = sum(1 for _ in
                        (filter(f_exp(cfg, ABBType.syscall),
                                cfg.get_abbs(function))))
@@ -34,6 +36,7 @@ def main():
                     (filter(f_exp(cfg, ABBType.call),
                             cfg.get_abbs(function))))
         stats[cfg.vp.name[function]] = {"syscalls": syscalls, "calls": calls}
+    # print(json.dumps(stats, indent=2))
     fail_if(data != stats, "Data not equal")
 
 

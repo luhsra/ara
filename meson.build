@@ -13,10 +13,11 @@ cython = find_program('cython', version: '>=0.29.14')
 cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
+# TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies
-llvm_version = ['>=9', '<10']
+llvm_version = ['>=9', '<11']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
@@ -42,9 +43,23 @@ endif
 
 ## svf
 cmake = import('cmake')
-svf_proj = cmake.subproject('svf', cmake_options: '-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'))
+svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'),
+                                                   '-DBUILD_SHARED_LIBS=on'])
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
+
+## sparsedata
+sparsedata = subproject('sparsedata')
+sparse_rle = sparsedata.get_variable('libsparserle')
+sparse_rle2 = sparsedata.get_variable('libsparserle2')
+
+## ara-link
+ara_link = find_program('ara-link', version: llvm_version, required: false)
+if not ara_link.found()
+    ara_link_proj = subproject('ara-link')
+    ara_link = ara_link_proj.get_variable('ara_link')
+    message('Using ara-link from subproject.')
+endif
 
 ## tools
 nop = find_program('true')
@@ -93,20 +108,20 @@ def load(what, where):
 
 sys.path = [@1@] + sys.path
 
-load("llvm_data", "ara.graph.llvm_data")
+load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
 
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
-python_dirs = [source_dir, pyllco_dir, step_dir, llvm_data_dir]
+python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 
 ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
-    depends: [step_mod, libgraph, llvm_data_mod],
+    depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )
@@ -125,9 +140,20 @@ if get_option('enable_toplevel_tests')
     extra_settings = files('test' / 'extra_settings.json')
     test('ara_tester',
        py3_inst,
-       args: [ara_py, gpslogger_application,
+       args: [ara_py, librepilot_application,
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--step-settings', extra_settings],
+              '--step-settings', extra_settings,
+              '--manual-corrections', instance_corrections],
+       suite: 'toplevel'
+    )
+
+    rtas_settings = files('test' / 'rtas_settings.json')
+    test('rtas20',
+       py3_inst,
+       args: [ara_py, freertos_rtas20_example,
+              '--log-level', 'debug', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
+              '--dump',
+              '--step-settings', rtas_settings],
        suite: 'toplevel'
     )
 
@@ -138,37 +164,6 @@ if get_option('enable_toplevel_tests')
               '--log-level', 'debug', '--dump',
               '--generator_output', 'generator_tester-os.cc',
               '--step-settings', generator_settings],
-       suite: 'toplevel'
-    )
-
-    test('gpslogger',
-       py3_inst,
-       args: [ara_py, gpslogger_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('smartplug',
-       py3_inst,
-       args: [ara_py, smartplug_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('copter-without-alarms',
-       py3_inst,
-       args: [ara_py, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
-       suite: 'toplevel'
-    )
-
-    test('copter',
-       py3_inst,
-       args: [ara_py, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('ospert',
-       py3_inst,
-       args: [ara_py, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
        suite: 'toplevel'
     )
 

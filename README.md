@@ -10,9 +10,15 @@ Building
 The following dependencies are needed:
 
 - [meson](https://mesonbuild.com/) (>=0.53.2)
-- [llvm](http://llvm.org/) (==9)
+- [llvm](http://llvm.org/) (>=9, <=10)
 - [cython](https://cython.org/) (>=0.29.14)
-- [python](https://www.python.org/) (>=3.6)
+- [python](https://www.python.org/) (>=3.7)
+- [pydot](https://pypi.org/project/pydot/)
+- [graph-tool](https://graph-tool.skewed.de/)
+
+Optional dependencies:
+
+- [pygments](https://pygments.org/) (Runtime depedency to get dot files linked to the source code)
 
 Getting packages in SRA lab:
 ```

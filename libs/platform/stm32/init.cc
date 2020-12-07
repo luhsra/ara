@@ -59,6 +59,10 @@ void StopBoard(void) {
 	HAL_PWR_StopQEMU(0);
 }
 
+void StopBoard(int status) {
+	HAL_PWR_StopQEMU(status);
+}
+
 __attribute__((weak)) extern "C" void vApplicationMallocFailedHook( void )
 {
 	/* vApplicationMallocFailedHook() will only be called if
@@ -80,3 +84,5 @@ __attribute__((weak)) extern "C" void vApplicationStackOverflowHook( void )
 }
 
 __attribute__((weak)) extern "C" void _init() {}
+
+__attribute__((weak)) extern "C" void vApplicationIdleHook( void ) {}

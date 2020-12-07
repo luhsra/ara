@@ -15,13 +15,11 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string BBSplit::get_description() const {
-		return "Split basic blocks in function call and computation blocks.";
-	}
+	std::string BBSplit::get_description() { return "Split basic blocks in function call and computation blocks."; }
 
-	std::vector<std::string> BBSplit::get_dependencies() { return {"CompInsert"}; }
+	std::vector<std::string> BBSplit::get_single_dependencies() { return {"CompInsert"}; }
 
-	void BBSplit::run(graph::Graph& graph) {
+	void BBSplit::run() {
 		llvm::Module& module = graph.get_module();
 		unsigned split_counter = 0;
 
@@ -35,7 +33,7 @@ namespace ara::step {
 				BasicBlock::iterator it = bb->begin();
 				while (it != bb->end()) {
 					while (isa<CallBase>(*it)) {
-						if (isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)) {
+						if (is_call_to_intrinsic(*it)) {
 							++it;
 							continue;
 						}
@@ -51,7 +49,7 @@ namespace ara::step {
 							goto while_end;
 						}
 
-						if (isa<CallBase>(*it) && (!(isInlineAsm(&*it) || isCallToLLVMIntrinsic(&*it)))) {
+						if (isa<CallBase>(*it) && (!is_call_to_intrinsic(*it))) {
 							continue;
 						}
 
