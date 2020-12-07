@@ -137,16 +137,26 @@ namespace ara::step {
 					}
 
 					if (const GlobalVariable* gv = llvm::dyn_cast<GlobalVariable>(val)) {
-						const llvm::Value* gvv = gv->getOperand(0);
-						if (gvv != nullptr) {
-							if (const ConstantData* gvvc = llvm::dyn_cast<ConstantData>(gvv)) {
-								auto& ls = logger.debug()
-								           << std::string(global_depth, ' ') << "Found global constant data: ";
-								pretty_print(*gvvc, ls);
-								ls << std::endl;
-								arg.add_variant(current_path, const_cast<ConstantData&>(*gvvc));
-								found_on_level[call_depth] = true;
-								continue;
+						logger.warn() << "GV: " << *gv << " " << gv->hasExternalLinkage() << std::endl;
+						if (gv->hasExternalLinkage()) {
+							auto& ls = logger.debug()
+							           << std::string(global_depth, ' ') << "Found global external constant: ";
+							pretty_print(*gv, ls);
+							ls << std::endl;
+							arg.add_variant(current_path, const_cast<GlobalVariable&>(*gv));
+							found_on_level[call_depth] = true;
+						} else {
+							const llvm::Value* gvv = gv->getOperand(0);
+							if (gvv != nullptr) {
+								if (const ConstantData* gvvc = llvm::dyn_cast<ConstantData>(gvv)) {
+									auto& ls = logger.debug()
+									           << std::string(global_depth, ' ') << "Found global constant data: ";
+									pretty_print(*gvvc, ls);
+									ls << std::endl;
+									arg.add_variant(current_path, const_cast<ConstantData&>(*gvvc));
+									found_on_level[call_depth] = true;
+									continue;
+								}
 							}
 						}
 					}
