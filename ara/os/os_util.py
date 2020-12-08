@@ -1,4 +1,5 @@
 import os.path
+import pyllco
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 
@@ -61,7 +62,8 @@ def get_argument(cfg, abb, call_path, num, raw=False, raw_value=False, can_fail=
     raw       -- return the uninterpreted argument
     raw_value -- return the uninterpreted llvm value. Implies raw=False.
     can_fail  -- return None if an argument does not contain a value,
-                 throw an EmptyArgumentException otherwise. Implies raw=False.
+                 throw an EmptyArgumentException or pyllco.InvalidValue
+                 otherwise. Implies raw=False.
     ty        -- check for this specific type. This automatically implies
                  raw=False, raw_value=True, can_fail=False. Throw an
                  UnsuitableArgumentException, if the type does not fit.
@@ -83,7 +85,13 @@ def get_argument(cfg, abb, call_path, num, raw=False, raw_value=False, can_fail=
         else:
             raise EmptyArgumentException("Argument is empty.")
 
-    value = arg.get_value(key=call_path, raw=raw_value)
+    try:
+        value = arg.get_value(key=call_path, raw=raw_value)
+    except pyllco.InvalidValue as iv:
+        if can_fail:
+            return None
+        else:
+            raise iv
     if ty is not None and not isinstance(value, ty):
         raise UnsuitableArgumentException(f"Expecting {ty} but got {type(value)}")
 

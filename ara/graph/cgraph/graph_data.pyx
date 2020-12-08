@@ -122,6 +122,18 @@ cdef class Argument:
         return deref(self._c_argument).has_value(key._c_callpath)
 
     def get_value(self, CallPath key=CallPath(), raw=False):
+        """Retrieve the value of the argument.
+
+        Keyword arguments:
+        key -- Retrieve value of a specific call path. Is set the the empty
+               call path per default.
+        raw -- Get raw LLVM value, if set. Tries to translate the LLVM value in
+               a Python value otherwise.
+
+        Can raise an IndexError, if no value at this key is found.
+        Can raise an pyllco.InvalidValue, if the LLVM value cannot be
+        interpreted.
+        """
         cdef AttributeSet a_set
         value = safe_get_value(self._c_argument, key._c_callpath)
         if value is None:
