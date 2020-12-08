@@ -72,7 +72,19 @@
   {
     "source": "Task.Task1",
     "target": "Mutex",
+    "label": "xQueueSemaphoreTake",
+    "type": "interaction"
+  },
+  {
+    "source": "Task.Task1",
+    "target": "Mutex",
     "label": "xQueueGenericSend",
+    "type": "interaction"
+  },
+  {
+    "source": "Task.User",
+    "target": "Mutex",
+    "label": "xQueueSemaphoreTake",
     "type": "interaction"
   },
   {
