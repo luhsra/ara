@@ -73,8 +73,10 @@ namespace ara::step {
 				    }
 				    llvm::BasicBlock* bb = cfg.get_llvm_bb<Graph>(cfg.get_entry_bb<Graph>(ig, abb));
 				    llvm::CallBase* called_func = llvm::dyn_cast<llvm::CallBase>(&safe_deref(bb).front());
+				    logger.debug() << "------------------------------" << std::endl;
 				    logger.debug() << "Analyzing: " << cfg.name[abb] << " ("
-				                   << safe_deref(called_func->getCalledFunction()).getName().str() << ")" << std::endl;
+				                   << safe_deref(called_func->getCalledFunction()).getName().str() << ")"
+				                   << " in " << cfg.file[abb] << ":" << cfg.line[abb] << std::endl;
 				    shared_ptr<graph::Arguments> args = get_values_for_call(safe_deref(called_func), vfg);
 				    // TODO this is actually inefficient. The arguments object could be updated here, not overwritten
 				    cfg.arguments[abb] = boost::python::object(boost::python::handle<>(args->get_python_obj()));
