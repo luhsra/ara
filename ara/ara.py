@@ -111,11 +111,15 @@ def main():
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
 
-    history = s_manager.execute(vars(args), extra_settings, args.step)
-    logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}" for se in history]))
+    s_manager.execute(vars(args), extra_settings, args.step)
 
     if args.ir_output:
-        s_manager.execute(vars(args), {'steps': [{'name':'IRWriter', 'ir_file': args.ir_output}]}, None)
+        s_manager.execute(vars(args),
+                          {'steps': [{'name':'IRWriter',
+                                      'ir_file': args.ir_output}]}, None)
+
+    logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
+                                           for se in s_manager.get_history()]))
 
 
 if __name__ == '__main__':
