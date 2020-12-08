@@ -12,6 +12,7 @@
 #include <WPA/Andersen.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/python.hpp>
+#include <deque>
 #include <llvm/ADT/GraphTraits.h>
 
 using namespace boost::property_tree;
@@ -87,16 +88,16 @@ namespace ara::step {
 
 		shared_ptr<graph::CallGraph> callgraph = std::move(graph.get_callgraph_ptr());
 
-		std::queue<VFGContainer> nodes;
+		std::deque<VFGContainer> nodes;
 
-		nodes.emplace(VFGContainer(vNode, graph::CallPath(), 0, 0, 0));
+		nodes.emplace_front(VFGContainer(vNode, graph::CallPath(), 0, 0, 0));
 
 		std::map<unsigned, bool> found_on_level;
 		std::set<const SVF::VFGNode*> visited;
 
 		while (!nodes.empty()) {
 			VFGContainer current = std::move(nodes.front());
-			nodes.pop();
+			nodes.pop_front();
 
 			const VFGNode* current_node = current.node;
 
@@ -117,6 +118,11 @@ namespace ara::step {
 			if (global_depth > 100 || local_depth > 100) {
 				fail("The value analysis reached a backtrack level of 100. Aborting due to preventing a to long "
 				     "runtime.");
+			}
+
+			if (local_depth == 0) {
+				// the are in a new layer of the call depth. In this layer a node was not found, so resetting the map.
+				found_on_level[call_depth] = false;
 			}
 
 			if (auto stmt = llvm::dyn_cast<StmtVFGNode>(current_node)) {
@@ -197,7 +203,9 @@ namespace ara::step {
 				VFGEdge* edge = *it;
 				graph::CallPath next_path = current_path;
 				bool go_further = true;
+				bool is_call = false;
 				if (auto cde = llvm::dyn_cast<CallDirSVFGEdge>(edge)) {
+					is_call = true;
 					const CallBlockNode* cbn = s_callgraph->getCallSite(cde->getCallSiteId());
 					assert(s_callgraph->hasCallGraphEdge(cbn) && "no call graph edge found");
 					SVF::PTACallGraphEdge* call_site = nullptr;
@@ -225,8 +233,12 @@ namespace ara::step {
 				if (go_further) {
 					const VFGNode* next_node = (*it)->getSrcNode();
 					if (next_node != nullptr) {
-						nodes.emplace(
-						    VFGContainer(next_node, next_path, global_depth + 1, next_local_depth, call_depth));
+						VFGContainer t(next_node, next_path, global_depth + 1, next_local_depth, call_depth);
+						if (is_call) {
+							nodes.emplace_back(std::move(t));
+						} else {
+							nodes.emplace_front(std::move(t));
+						}
 					}
 				}
 			}

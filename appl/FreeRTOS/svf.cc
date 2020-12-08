@@ -25,6 +25,34 @@ class Guard {
 	~Guard() { do_stuff(hidden); }
 };
 
+class Guard2 {
+  private:
+	SemaphoreHandle_t mutex;
+
+  public:
+	Guard2(SemaphoreHandle_t mtx) {
+		mutex = mtx;
+		xSemaphoreTake(mutex, portMAX_DELAY);
+	}
+	~Guard2() {
+		xSemaphoreGive(mutex);
+	}
+};
+
+class Wrapper {
+  private:
+	SemaphoreHandle_t mtx;
+
+  public:
+	Wrapper() {
+		mtx = xSemaphoreCreateMutex();
+	}
+	int do_stuff(int a) {
+		Guard2 g(mtx);
+		return a + 20;
+	}
+};
+
 void make_mutex(xSemaphoreHandle* mutex_p) {
 	*mutex_p = xSemaphoreCreateRecursiveMutex();
 }
@@ -58,5 +86,8 @@ int main() {
 	xSemaphoreTakeRecursive(mutex, 5);
 	xSemaphoreTakeRecursive(mutex2, 5);
 	xSemaphoreTakeRecursive(mutex2, 5);
+
+	Wrapper w;
+	x = w.do_stuff(x);
 	return x;
 }
