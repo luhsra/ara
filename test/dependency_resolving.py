@@ -241,39 +241,49 @@ def main():
     p_manager = stepmanager.StepManager(g, provides=provide)
 
     # standard tests
-    hist = p_manager.execute(config, extra_config, ['Test8Step'])
-    assert TESTS[0] == [x.name for x in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, ['Test8Step'])
+    assert TESTS[0] == [x.name for x in p_manager.get_history()]
 
-    hist = p_manager.execute(config, extra_config, ['Test9Step'])
-    assert TESTS[1] == [x.name for x in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, ['Test9Step'])
+    assert TESTS[1] == [x.name for x in p_manager.get_history()]
 
-    hist = p_manager.execute(config, extra_config, ['Test8Step', 'Test9Step'])
-    assert TESTS[2] == [x.name for x in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, ['Test8Step', 'Test9Step'])
+    assert TESTS[2] == [x.name for x in p_manager.get_history()]
 
     # conditional dependencies
     config['cond'] = False
-    hist = p_manager.execute(config, extra_config, ['TestDep1'])
-    assert [x.name for x in hist] == ['TestDep1']
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, ['TestDep1'])
+    assert [x.name for x in p_manager.get_history()] == ['TestDep1']
 
     config['cond'] = True
-    hist = p_manager.execute(config, extra_config, ['TestDep1'])
-    assert [x.name for x in hist] == ['TestDep0', 'TestDep1']
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, ['TestDep1'])
+    assert [x.name for x in p_manager.get_history()] == ['TestDep0', 'TestDep1']
 
     # dependencies to conditionals
     config['cond'] = False
     extra_config2 = {"TestCond0": {'cond': True}}
-    hist = p_manager.execute(config, extra_config2, ['TestCond0', 'TestCond1'])
-    assert TESTS[3] == [(x.name, x.all_config['cond']) for x in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config2, ['TestCond0', 'TestCond1'])
+    assert TESTS[3] == [(x.name, x.all_config['cond'])
+                        for x in p_manager.get_history()]
 
     # chain step
-    hist = p_manager.execute(config, extra_config, ['TestChain4'])
-    assert TESTS[4] == [x.name for x in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, ['TestChain4'])
+    assert TESTS[4] == [x.name for x in p_manager.get_history()]
 
     # global config test
     config2 = get_config('/dev/null')
     config2["dump"] = False
-    hist = p_manager.execute(config2, extra_config, ['TestConfig1'])
-    assert TESTS[5] == [(x.name, x.all_config['dump']) for x in hist]
+    p_manager.clear_history()
+    p_manager.execute(config2, extra_config, ['TestConfig1'])
+    assert TESTS[5] == [(x.name, x.all_config['dump'])
+                        for x in p_manager.get_history()]
 
 
 if __name__ == '__main__':
