@@ -802,7 +802,8 @@ class FreeRTOS(OSBase):
     def xQueueSelectFromSetFromISR(cfg, abb, state):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.value))
     def xQueueSemaphoreTake(cfg, abb, state):
         pass
 
