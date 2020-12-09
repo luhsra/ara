@@ -200,6 +200,7 @@ namespace ara::step {
 
 			for (VFGNode::const_iterator it = current_node->InEdgeBegin(); it != current_node->InEdgeEnd(); ++it) {
 				unsigned next_local_depth = local_depth + 1;
+				unsigned next_call_depth = call_depth;
 				VFGEdge* edge = *it;
 				graph::CallPath next_path = current_path;
 				bool go_further = true;
@@ -222,18 +223,20 @@ namespace ara::step {
 						// this is not reachable from the current entry point
 						go_further = false;
 					}
-					call_depth++;
-					next_local_depth = 0;
-					logger.debug() << std::string(global_depth, ' ') << "Going one call up. Callsite: " << *call_site
-					               << std::endl;
+					if (go_further) {
+						next_call_depth++;
+						next_local_depth = 0;
+						logger.debug() << std::string(global_depth, ' ') << "Going one call up. Callsite: " << *call_site
+						               << std::endl;
+					}
 				} else {
-					go_further = !found_on_level[call_depth];
+					go_further = !found_on_level[next_call_depth];
 				}
 
 				if (go_further) {
 					const VFGNode* next_node = (*it)->getSrcNode();
 					if (next_node != nullptr) {
-						VFGContainer t(next_node, next_path, global_depth + 1, next_local_depth, call_depth);
+						VFGContainer t(next_node, next_path, global_depth + 1, next_local_depth, next_call_depth);
 						if (is_call) {
 							nodes.emplace_back(std::move(t));
 						} else {
