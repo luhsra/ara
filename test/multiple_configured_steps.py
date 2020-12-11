@@ -99,8 +99,10 @@ def main():
                               {"name": "Special", "opt": "run2"}],
                     "Test1Step": {"opt": "defined"}}
 
-    hist = p_manager.execute(config, extra_config, None)
-    hist = [(step.name, step.all_config.get("opt", None)) for step in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, None)
+    hist = [(step.name, step.all_config.get("opt", None))
+            for step in p_manager.get_history()]
     assert hist == TRACE[0]
 
     config = get_config('/dev/null')
@@ -110,8 +112,10 @@ def main():
                               {"name": "Special", "opt": "run2"}],
                     "Test1Step": {"opt": "defined"}}
 
-    hist = p_manager.execute(config, extra_config, None)
-    hist = [(step.name, step.all_config.get("opt", None)) for step in hist]
+    p_manager.clear_history()
+    p_manager.execute(config, extra_config, None)
+    hist = [(step.name, step.all_config.get("opt", None))
+            for step in p_manager.get_history()]
     assert hist == TRACE[1]
 
 

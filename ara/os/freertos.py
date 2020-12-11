@@ -497,6 +497,7 @@ class FreeRTOS(OSBase):
         item = p_get_argument(1, raw_value=True)
         ticks = p_get_argument(2)
         action = p_get_argument(3)
+        # TODO do something with the values
 
         queue = None
         for v in state.instances.vertices():
@@ -511,6 +512,39 @@ class FreeRTOS(OSBase):
         else:
             e = state.instances.add_edge(state.running, queue)
             state.instances.ep.label[e] = f"xQueueGenericSend"
+
+        state.next_abbs = []
+        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.value))
+    def xQueueSemaphoreTake(cfg, abb, state):
+        state = state.copy()
+
+        cp = state.call_path
+        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
+
+        handler = p_get_argument(0, raw_value=True)
+
+        # TODO this has to be a pointer object. However, the value analysis
+        # follows the pointer currently.
+        ticks = p_get_argument(1)
+        # TODO do something with ticks
+
+        queue = None
+        for v in state.instances.vertices():
+            if any([isinstance(state.instances.vp.obj[v], x)
+                    for x in [Queue, Mutex]]):
+                if handler == state.instances.vp.obj[v].handler:
+                    queue = v
+        if queue is None:
+            logger.error(f"xQueueSemaphoreTake (file: {cfg.vp.file[abb]}, "
+                         f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
+                         "found. Ignoring syscall.")
+        else:
+            e = state.instances.add_edge(state.running, queue)
+            state.instances.ep.label[e] = f"xQueueSemaphoreTake"
 
         state.next_abbs = []
         FreeRTOS.add_normal_cfg(cfg, abb, state)
@@ -800,10 +834,6 @@ class FreeRTOS(OSBase):
 
     @syscall
     def xQueueSelectFromSetFromISR(cfg, abb, state):
-        pass
-
-    @syscall
-    def xQueueSemaphoreTake(cfg, abb, state):
         pass
 
     @syscall(categories={SyscallCategory.comm},

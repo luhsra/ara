@@ -12,6 +12,7 @@
 #include <WPA/Andersen.h>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/python.hpp>
+#include <deque>
 #include <llvm/ADT/GraphTraits.h>
 
 using namespace boost::property_tree;
@@ -87,16 +88,16 @@ namespace ara::step {
 
 		shared_ptr<graph::CallGraph> callgraph = std::move(graph.get_callgraph_ptr());
 
-		std::queue<VFGContainer> nodes;
+		std::deque<VFGContainer> nodes;
 
-		nodes.emplace(VFGContainer(vNode, graph::CallPath(), 0, 0, 0));
+		nodes.emplace_front(VFGContainer(vNode, graph::CallPath(), 0, 0, 0));
 
 		std::map<unsigned, bool> found_on_level;
 		std::set<const SVF::VFGNode*> visited;
 
 		while (!nodes.empty()) {
 			VFGContainer current = std::move(nodes.front());
-			nodes.pop();
+			nodes.pop_front();
 
 			const VFGNode* current_node = current.node;
 
@@ -106,24 +107,36 @@ namespace ara::step {
 			visited.insert(current_node);
 
 			graph::CallPath& current_path = current.call_path;
-			unsigned global_depth = current.global_depth;
-			unsigned local_depth = current.local_depth;
-			unsigned call_depth = current.call_depth;
+			unsigned global_depth = current.global_depth; // absolute amount of iterations
+			unsigned local_depth = current.local_depth;   // amount of iterations within this function layer
+			unsigned call_depth = current.call_depth;     // amount of function layers
 
-			logger.debug() << std::string(global_depth, ' ') << "Current Node (" << local_depth << "/" << call_depth
-			               << "): " << *current_node << std::endl;
-			logger.debug() << std::string(global_depth, ' ') << "Current CallPath: " << current_path << std::endl;
+			auto dbg = [&]() -> auto& {
+				return logger.debug() << std::string(call_depth, ' ') << '|' << std::string(local_depth, ' ');
+			};
 
-			if (global_depth > 100 || local_depth > 100) {
-				fail("The value analysis reached a backtrack level of 100. Aborting due to preventing a to long "
+			dbg() << "Current Node (" << local_depth << "/" << call_depth << "): " << *current_node << std::endl;
+			dbg() << "Current CallPath: " << current_path << std::endl;
+
+			if (global_depth > 300) {
+				fail("The value analysis reached a backtrack level of 300. Aborting due to preventing a too long "
 				     "runtime.");
+			}
+			if (local_depth > 200) {
+				fail("The value analysis reached a local backtrack level of 200. Aborting due to preventing a too long "
+				     "runtime.");
+			}
+
+			if (local_depth == 0) {
+				// the are in a new layer of the call depth. In this layer a node was not found, so resetting the map.
+				found_on_level[call_depth] = false;
 			}
 
 			if (auto stmt = llvm::dyn_cast<StmtVFGNode>(current_node)) {
 				const Value* val = stmt->getPAGEdge()->getValue();
 				if (hint == graph::SigType::value || hint == graph::SigType::undefined) {
 					if (const ConstantData* c = llvm::dyn_cast<ConstantData>(val)) {
-						auto& ls = logger.debug() << std::string(global_depth, ' ') << "Found constant data: ";
+						auto& ls = dbg() << "Found constant data: ";
 						pretty_print(*c, ls);
 						ls << std::endl;
 						// We have a problem here. SVF gives us a constant Value what is meaningful from their site.
@@ -139,8 +152,7 @@ namespace ara::step {
 					if (const GlobalVariable* gv = llvm::dyn_cast<GlobalVariable>(val)) {
 						logger.warn() << "GV: " << *gv << " " << gv->hasExternalLinkage() << std::endl;
 						if (gv->hasExternalLinkage()) {
-							auto& ls = logger.debug()
-							           << std::string(global_depth, ' ') << "Found global external constant: ";
+							auto& ls = dbg() << "Found global external constant: ";
 							pretty_print(*gv, ls);
 							ls << std::endl;
 							arg.add_variant(current_path, const_cast<GlobalVariable&>(*gv));
@@ -149,8 +161,7 @@ namespace ara::step {
 							const llvm::Value* gvv = gv->getOperand(0);
 							if (gvv != nullptr) {
 								if (const ConstantData* gvvc = llvm::dyn_cast<ConstantData>(gvv)) {
-									auto& ls = logger.debug()
-									           << std::string(global_depth, ' ') << "Found global constant data: ";
+									auto& ls = dbg() << "Found global constant data: ";
 									pretty_print(*gvvc, ls);
 									ls << std::endl;
 									arg.add_variant(current_path, const_cast<ConstantData&>(*gvvc));
@@ -164,7 +175,7 @@ namespace ara::step {
 
 				if (hint == graph::SigType::symbol) {
 					if (const GlobalValue* gv = llvm::dyn_cast<GlobalValue>(val)) {
-						auto& ls = logger.debug() << std::string(global_depth, ' ') << "Found global value: ";
+						auto& ls = dbg() << "Found global value: ";
 						pretty_print(*gv, ls);
 						ls << std::endl;
 						arg.add_variant(current_path, const_cast<GlobalValue&>(*gv));
@@ -173,8 +184,7 @@ namespace ara::step {
 					}
 
 					if (const AllocaInst* ai = llvm::dyn_cast<AllocaInst>(val)) {
-						auto& ls = logger.debug()
-						           << std::string(global_depth, ' ') << "Found alloca instruction (local variable): ";
+						auto& ls = dbg() << "Found alloca instruction (local variable): ";
 						pretty_print(*ai, ls);
 						ls << std::endl;
 						arg.add_variant(current_path, const_cast<AllocaInst&>(*ai));
@@ -185,7 +195,7 @@ namespace ara::step {
 			}
 			if (llvm::isa<NullPtrVFGNode>(current_node)) {
 				// Sigtype is not important here, a nullptr serves as value and symbol.
-				logger.debug() << std::string(global_depth, ' ') << "Found a nullptr." << std::endl;
+				dbg() << "Found a nullptr." << std::endl;
 				arg.add_variant(current_path, *llvm::ConstantPointerNull::get(llvm::PointerType::get(
 				                                  llvm::IntegerType::get(graph.get_module().getContext(), 8), 0)));
 				found_on_level[call_depth] = true;
@@ -194,10 +204,13 @@ namespace ara::step {
 
 			for (VFGNode::const_iterator it = current_node->InEdgeBegin(); it != current_node->InEdgeEnd(); ++it) {
 				unsigned next_local_depth = local_depth + 1;
+				unsigned next_call_depth = call_depth;
 				VFGEdge* edge = *it;
 				graph::CallPath next_path = current_path;
 				bool go_further = true;
+				bool is_call = false;
 				if (auto cde = llvm::dyn_cast<CallDirSVFGEdge>(edge)) {
+					is_call = true;
 					const CallBlockNode* cbn = s_callgraph->getCallSite(cde->getCallSiteId());
 					assert(s_callgraph->hasCallGraphEdge(cbn) && "no call graph edge found");
 					SVF::PTACallGraphEdge* call_site = nullptr;
@@ -214,19 +227,24 @@ namespace ara::step {
 						// this is not reachable from the current entry point
 						go_further = false;
 					}
-					call_depth++;
-					next_local_depth = 0;
-					logger.debug() << std::string(global_depth, ' ') << "Going one call up. Callsite: " << *call_site
-					               << std::endl;
+					if (go_further) {
+						next_call_depth++;
+						next_local_depth = 0;
+						dbg() << "Going one call up. Callsite: " << *call_site << std::endl;
+					}
 				} else {
-					go_further = !found_on_level[call_depth];
+					go_further = !found_on_level[next_call_depth];
 				}
 
 				if (go_further) {
 					const VFGNode* next_node = (*it)->getSrcNode();
 					if (next_node != nullptr) {
-						nodes.emplace(
-						    VFGContainer(next_node, next_path, global_depth + 1, next_local_depth, call_depth));
+						VFGContainer t(next_node, next_path, global_depth + 1, next_local_depth, next_call_depth);
+						if (is_call) {
+							nodes.emplace_back(std::move(t));
+						} else {
+							nodes.emplace_front(std::move(t));
+						}
 					}
 				}
 			}
