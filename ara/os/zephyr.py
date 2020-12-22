@@ -130,9 +130,9 @@ class Queue(ZephyrInstance):
 @dataclass
 class Stack(ZephyrInstance):
     # The k_stack object
-    stack: object
-    # The buffer where elements are stacked
     data: object
+    # The buffer where elements are stacked
+    buf: object
     # The max number of entries that this stack can hold
     max_entries: int
 
@@ -149,7 +149,6 @@ class Empty(ZephyrInstance):
 class ZEPHYR(OSBase):
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)'),
-                         ('test', 'string', 'Something'),
                          ]
     edge_properties = [('label', 'string', 'syscall name')]
 
@@ -162,6 +161,23 @@ class ZEPHYR(OSBase):
         for oedge in cfg.vertex(abb).out_edges():
             if cfg.ep.type[oedge] == _graph.CFType.lcf:
                 state.next_abbs.append(oedge.target())
+
+    @staticmethod
+    def create_instance(cfg, abb, state, label: str, obj: ZephyrInstance, ident: str = ""):
+        instances = state.instances
+        v = instances.add_vertex()
+        instances.vp.label[v] = label
+        instances.vp.obj[v] = obj
+        instances.vp.id[v] = ident
+        instances.vp.branch[v] = state.branch
+        instances.vp.loop[v] = state.loop
+        instances.vp.after_scheduler[v] = state.scheduler_on
+        instances.vp.unique[v] = not (state.branch or state.loop)
+        instances.vp.soc[v] = abb
+        instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
+        instances.vp.file[v] = cfg.vp.file[abb]
+        instances.vp.line[v] = cfg.vp.line[abb]
+        instances.vp.specialization_level[v] = "" #TODO: Figure this out
 
     @staticmethod
     def init(state):
@@ -186,8 +202,6 @@ class ZEPHYR(OSBase):
                         SigType.value))
     def k_thread_create(cfg, abb, state):
         state = state.copy()
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "Thread"
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         stack = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
@@ -216,8 +230,7 @@ class ZEPHYR(OSBase):
             delay
         )
 
-        state.instances.vp.obj[v] = instance
-
+        ZEPHYR.create_instance(cfg, abb, state, "Thread", instance, data.get_name())
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -230,8 +243,6 @@ class ZEPHYR(OSBase):
                         SigType.value, SigType.value))
     def irq_connect_dynamic(cfg, abb, state):
         state = state.copy()
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "ISR"
 
         irq_number = get_argument(cfg, abb, state.call_path, 0)
         priority = get_argument(cfg, abb, state.call_path, 1)
@@ -251,7 +262,7 @@ class ZEPHYR(OSBase):
             flags
         )
 
-        state.instances.vp.obj[v] = instance
+        ZEPHYR.create_instance(cfg, abb, state, "ISR", instance, handler_name)
 
         state.next_abbs = []
 
@@ -263,8 +274,6 @@ class ZEPHYR(OSBase):
             signature=(SigType.symbol, SigType.value, SigType.value))
     def k_sem_init(cfg, abb, state):
         state = state.copy()
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "Semaphore"
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         count = get_argument(cfg, abb, state.call_path, 1)
@@ -276,7 +285,7 @@ class ZEPHYR(OSBase):
             limit
         )
 
-        state.instances.vp.obj[v] = instance
+        ZEPHYR.create_instance(cfg, abb, state, "Semaphore", instance, data.get_name())
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -288,8 +297,6 @@ class ZEPHYR(OSBase):
             signature=(SigType.symbol))
     def k_mutex_init(cfg, abb, state):
         state = state.copy()
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "Mutex"
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
@@ -297,7 +304,7 @@ class ZEPHYR(OSBase):
             data
         )
 
-        state.instances.vp.obj[v] = instance
+        ZEPHYR.create_instance(cfg, abb, state, "Mutex", instance, data.get_name())
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -311,8 +318,6 @@ class ZEPHYR(OSBase):
             signature=(SigType.symbol))
     def k_queue_init(cfg, abb, state):
         state = state.copy()
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "Queue"
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
@@ -320,7 +325,7 @@ class ZEPHYR(OSBase):
             data
         )
 
-        state.instances.vp.obj[v] = instance
+        ZEPHYR.create_instance(cfg, abb, state, "Queue", instance, data.get_name())
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -332,22 +337,20 @@ class ZEPHYR(OSBase):
             signature=(SigType.symbol, SigType.value))
     def k_stack_alloc_init(cfg, abb, state):
         state = state.copy()
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "Stack"
 
-        stack = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
-        #data = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         max_entries = get_argument(cfg, abb, state.call_path, 1)
 
         instance = Stack(
-            stack,
+            data,
             # When creating a stack with k_stack_alloc_init() the buffer is created in kernel
             # address space
             None,
             max_entries
         )
 
-        state.instances.vp.obj[v] = instance
+        ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, data.get_name())
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
