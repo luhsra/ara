@@ -242,8 +242,9 @@ namespace ara::graph {
 		ARA_VMAP(specialization_level)
 
 		PyObject* eprops = get_eprops(py_instancegraph);
-
-		ARA_EMAP(elabel)
+		
+		// FIXME: Mapping fails for some reason
+		// ARA_EMAP(elabel)
 
 #undef ARA_VMAP
 #undef ARA_EMAP
