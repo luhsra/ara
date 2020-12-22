@@ -334,6 +334,29 @@ class ZEPHYR(OSBase):
 
     # void k_stack_init(struct k_stack *stack, stack_data_t *buffer, uint32_t num_entries)
     @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.symbol, SigType.value))
+    def k_stack_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+        max_entries = get_argument(cfg, abb, state.call_path, 1)
+
+        instance = Stack(
+            data,
+            buf,
+            max_entries
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, data.get_name())
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_stack_init(struct k_stack *stack, stack_data_t *buffer, uint32_t num_entries)
+    @syscall(categories={SyscallCategory.create},
             signature=(SigType.symbol, SigType.value))
     def k_stack_alloc_init(cfg, abb, state):
         state = state.copy()
