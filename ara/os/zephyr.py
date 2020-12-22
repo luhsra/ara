@@ -140,6 +140,18 @@ class Stack(ZephyrInstance):
         attribs = ["max_entries"]
         return self.instance_dot(attribs, "#6fbf87")
 
+# Pipes can be created with two syscalls, k_pipe_init requries a user allocted buffer, 
+# while k_pipe_alloc_init creates one from the internal memory pool.
+@dataclass
+class Pipe(ZephyrInstance):
+    # The k_pipe object
+    data: object
+    # The size of the backing ring buffer in bytes
+    size: int
+    def as_dot(self):
+        attribs = ["size"]
+        return self.instance_dot(attribs, "#6fbf87")
+
 @dataclass
 class Empty(ZephyrInstance):
     def as_dot(self):
@@ -374,6 +386,48 @@ class ZEPHYR(OSBase):
         )
 
         ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, data.get_name())
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+# void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+    @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.symbol, SigType.value))
+    def k_pipe_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        size = get_argument(cfg, abb, state.call_path, 2)
+
+        instance = Stack(
+            data,
+            size
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, data.get_name())
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
+    @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.value))
+    def k_pipe_alloc_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        size = get_argument(cfg, abb, state.call_path, 1)
+
+        instance = Stack(
+            data,
+            size
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, data.get_name())
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
