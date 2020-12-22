@@ -16,6 +16,7 @@ def provide_steps():
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
+    from .zephyr_static_post import ZephyrStaticPost
 
     for step in _native_provide():
         yield step
@@ -36,3 +37,4 @@ def provide_steps():
     yield Syscall
     yield SysFuncts
     yield SystemRelevantFunctions
+    yield ZephyrStaticPost

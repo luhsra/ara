@@ -166,7 +166,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def get_special_steps():
-        return []
+        return ["ZephyrStaticPost"]
 
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
