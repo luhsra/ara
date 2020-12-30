@@ -2,13 +2,16 @@
 # Apps that run on virtually any board since there are no hw dependencies
 z_easy_apps = [
     'cpp_sems',
+    'dyn_pipe',
     'dyn_queue',
     'dyn_stack',
     'dyn_sems',
     'minimal',
+    'static_pipe',
     'static_queue',
     'static_sems',
-    'static_stack'
+    'static_stack',
+    'static_threads'
 ]
 
 # Apps that require boards that support userspace applications
