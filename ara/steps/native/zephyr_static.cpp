@@ -23,6 +23,14 @@ namespace ara::step {
 			using Vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
 			using Parser = std::function<Vertex(const ZephyrStaticImpl& context)>;
 
+			struct ParserInfo {
+				// If true, the parser only is used for globals that sit in a ".static." section.
+				// This is true most of the time, but e.g. for sys_sem with userspace enabled it is
+				// not.
+				bool requires_section;
+				Parser parser;
+			};
+
 			Graph& g;
 			graph::InstanceGraph& instances;
 			Logger& logger;
@@ -220,9 +228,15 @@ namespace ara::step {
 				return py_dict({{"", py_none()}});
 			}
 
-			std::unordered_map<std::string, Parser> parsers{
-			    {"_static_thread_data", parse_thread}, {"k_sem", parse_semaphore}, {"k_mutex", default_parser("Mutex")},
-			    {"k_queue", default_parser("Queue")},  {"k_stack", parse_stack},   {"k_pipe", parse_pipe},
+			std::unordered_map<std::string, ParserInfo> parsers{
+			    {"_static_thread_data", {true, parse_thread}},
+			    {"k_sem", {true, parse_semaphore}},
+			    {"k_mutex", {true, default_parser("Mutex")}},
+			    {"k_queue", {true, default_parser("Queue")}},
+			    {"k_lifo", {true, default_parser("Queue")}},
+			    {"k_fifo", {true, default_parser("Queue")}},
+			    {"k_stack", {true, parse_stack}},
+			    {"k_pipe", {true, parse_pipe}},
 			};
 
 		  public:
@@ -232,11 +246,15 @@ namespace ara::step {
 				for (auto gl = module.global_begin(); gl != module.global_end(); gl++) {
 					global = const_cast<llvm::GlobalVariable*>(&*gl);
 					llvm::StringRef section = global->getSection();
-					if (section.empty()) {
-						continue;
-					}
 
 					initializer = global->getInitializer();
+					if (initializer->isZeroValue() && section.empty()) {
+						// Ignore globals without a section if they are zero initialized.
+						// This is to avoid false positives since this step would detect all
+						// declarations of dynamically initialized instances as well.
+						// Skipping should be fine in allmost all cases.
+						continue;
+					}
 
 					// If possible, extract debug information about the current
 					// aggregate type.
@@ -244,17 +262,23 @@ namespace ara::step {
 					global->getDebugInfo(dbg);
 
 					info_node = dbg.size() > 0 ? llvm::dyn_cast<llvm::DIVariable>(dbg[0]->getVariable()) : nullptr;
-					// The sections are named like this: ._typename.static.identifier.
-					// Using the typename to find the right parser should be sufficient.
-					size_t ident_end = section.find('.', 1);
-					std::string ident = section.slice(2, ident_end).str();
-					auto parser = parsers.find(ident);
-					if (parser == parsers.end()) {
-						logger.warning() << "Unknown zephyr type, skipping " << ident;
+					llvm::StructType* type = llvm::dyn_cast_or_null<llvm::StructType>(initializer->getType());
+
+					if (type == nullptr) {
+						// No struct type, skipping this one
 						continue;
 					}
-					logger.debug() << "Analyzing " << ident << std::endl;
-					parser->second(*this);
+					llvm::StringRef type_name = type->getStructName();
+					assert(type_name.consume_front("struct."));
+					auto parser = parsers.find(type_name.str());
+					if (parser == parsers.end()) {
+						logger.warning() << "Unknown zephyr type, skipping " << type_name;
+						continue;
+					}
+					if ((parser->second.requires_section && !section.empty()) || !parser->second.requires_section) {
+						logger.debug() << "Analyzing " << type_name << std::endl;
+						parser->second.parser(*this);
+					}
 				}
 			}
 		};
