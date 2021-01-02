@@ -5,12 +5,14 @@ z_easy_apps = [
     'dyn_pipe',
     'dyn_queue',
     'dyn_stack',
+    'dyn_sys_sems',
     'dyn_sems',
     'minimal',
     'static_pipe',
     'static_queue',
     'static_sems',
     'static_stack',
+    'static_sys_sems',
     'static_threads'
 ]
 

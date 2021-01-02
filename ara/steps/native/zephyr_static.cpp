@@ -184,17 +184,47 @@ namespace ara::step {
 				return add_instance(context, "Thread", obj, thread_name.str());
 			}
 
-			static Vertex parse_semaphore(const ZephyrStaticImpl& context) {
-				// Zephyr actually enforces that these two are int constants
-				const llvm::ConstantInt* count = llvm::dyn_cast<llvm::ConstantInt>(
-				    get_element_checked(*context.initializer, 1, context.info_node, "count"));
-				const llvm::ConstantInt* limit = llvm::dyn_cast<llvm::ConstantInt>(
-				    get_element_checked(*context.initializer, 2, context.info_node, "limit"));
-				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
-				                         {"count", py_int(safe_deref(count).getValue())},
-				                         {"limit", py_int(safe_deref(limit).getValue())}});
+			static PyObject* parse_k_sem(llvm::GlobalVariable& global, const llvm::Constant& sem,
+			                             const llvm::DIVariable* info_node) {
+				// Zephyr actually enforces that these two are int constants and limit != 0
+				const llvm::ConstantInt* count =
+				    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(sem, 1, info_node, "count"));
+				const llvm::ConstantInt* limit =
+				    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(sem, 2, info_node, "limit"));
+				return py_dict({{"data", get_obj_from_value(global)},
+				                {"count", py_int(safe_deref(count).getValue())},
+				                {"limit", py_int(safe_deref(limit).getValue())}});
+			}
 
-				return add_instance(context, "Semaphore", obj, safe_deref(context.global).getName().str());
+			static Vertex parse_kernel_semaphore(const ZephyrStaticImpl& context) {
+				PyObject* obj = parse_k_sem(*context.global, *context.initializer, context.info_node);
+				return add_instance(context, "KernelSemaphore", obj, safe_deref(context.global).getName().str());
+			}
+
+			static Vertex parse_user_semaphore(const ZephyrStaticImpl& context) {
+				// When userspace is disabled struct sys_sem is just a wrapper around a k_sem.
+				// This means that zephyr puts both of them in the same section, but they still
+				// can be distinguished by their respective types.
+				PyObject* obj = nullptr;
+				if (const llvm::Constant* k_sem =
+				        get_element_checked(*context.initializer, 0, context.info_node, "kernel_sem")) {
+					// No user space, sys_sem is just a wrapper for k_sem.
+					// NOTE: There is no reliable way of finding a debug node for inners of
+					// aggregate types.
+					obj = parse_k_sem(*context.global, safe_deref(k_sem), nullptr);
+				} else if (const llvm::Constant* futex =
+				               get_element_checked(*context.initializer, 0, context.info_node, "futex")) {
+					// User space is enabled, sys_sem constists of a futex (counter) and a limit.
+					const llvm::ConstantInt* count =
+					    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(*futex, 0, context.info_node, "val"));
+					const llvm::ConstantInt* limit = llvm::dyn_cast<llvm::ConstantInt>(
+					    get_element_checked(*context.initializer, 1, context.info_node, "limit"));
+
+					obj = py_dict({{"count", py_int(safe_deref(count).getValue())},
+					               {"limit", py_int(safe_deref(limit).getValue())}});
+				}
+
+				return add_instance(context, "UserSemaphore", obj, safe_deref(context.global).getName().str());
 			}
 
 			static Vertex parse_stack(const ZephyrStaticImpl& context) {
@@ -230,7 +260,8 @@ namespace ara::step {
 
 			std::unordered_map<std::string, ParserInfo> parsers{
 			    {"_static_thread_data", {true, parse_thread}},
-			    {"k_sem", {true, parse_semaphore}},
+			    {"k_sem", {true, parse_kernel_semaphore}},
+			    {"sys_sem", {false, parse_user_semaphore}},
 			    {"k_mutex", {true, default_parser("Mutex")}},
 			    {"k_queue", {true, default_parser("Queue")}},
 			    {"k_lifo", {true, default_parser("Queue")}},

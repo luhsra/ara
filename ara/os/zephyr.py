@@ -99,6 +99,14 @@ class Semaphore(ZephyrInstance):
         return self.instance_dot(attribs, "#6fbf87")
 
 @dataclass
+class KernelSemaphore(Semaphore):
+    pass
+
+@dataclass
+class UserSemaphore(Semaphore):
+    pass
+
+@dataclass
 class Mutex(ZephyrInstance):
     #The k_mutex object
     data: object
@@ -346,13 +354,36 @@ class ZEPHYR(OSBase):
         count = get_argument(cfg, abb, state.call_path, 1)
         limit = get_argument(cfg, abb, state.call_path, 2)
 
-        instance = Semaphore(
+        instance = KernelSemaphore(
             data,
             count,
             limit
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Semaphore", instance, data.get_name(), "k_sem_init")
+        ZEPHYR.create_instance(cfg, abb, state, "KernelSemaphore", instance, data.get_name(), "k_sem_init")
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int sys_sem_init(struct sys_sem *sem, unsigned int initial_count, unsigned int limit)
+    @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.value, SigType.value))
+    def sys_sem_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        count = get_argument(cfg, abb, state.call_path, 1)
+        limit = get_argument(cfg, abb, state.call_path, 2)
+
+        instance = UserSemaphore(
+            data,
+            count,
+            limit
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "UserSemaphore", instance, data.get_name(), "sys_sem_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -604,6 +635,48 @@ class ZEPHYR(OSBase):
 
         return state
 
+    # int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.value))
+    def sys_sem_take(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        timeout = get_argument(cfg, abb, state.call_path, 1)
+        ZEPHYR.add_instance_comm(state, data, "sys_sem_take")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int sys_sem_give(struct sys_sem *sem)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, ))
+    def sys_sem_give(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "sys_sem_give")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # unsigned int sys_sem_count_get(struct sys_sem *sem)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, ))
+    def sys_sem_count_get(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "sys_sem_count_get")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
     #
     # Mutex
     #
@@ -772,7 +845,6 @@ class ZEPHYR(OSBase):
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         into = get_argument(cfg, abb, state.call_path, 1)
-        print(type(data))
 
         ZEPHYR.add_instance_comm(state, data, "k_queue_get")
         state.next_abbs = []
