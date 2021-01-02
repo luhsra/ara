@@ -237,7 +237,7 @@ class ZEPHYR(OSBase):
         if len(matches) == 0:
             logger.warning(f"No matching instance found. Skipping.\n{type(instance)}\n{instance}")
         elif len(matches) > 1:
-            logger.waring("Multiple matching instances found. Skipping.")
+            logger.warning("Multiple matching instances found. Skipping.")
         else:
             match = matches[0]
             ZEPHYR.add_comm(state, match, call)
