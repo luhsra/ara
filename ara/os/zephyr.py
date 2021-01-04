@@ -160,6 +160,19 @@ class Pipe(ZephyrInstance):
         attribs = ["size"]
         return self.instance_dot(attribs, "#6fbf87")
 
+# Heaps are created by the user as neccessary and can be shared between threads.
+# However, using k_malloc and k_free, threads also have access to a system memory pool.
+@dataclass
+class Heap(ZephyrInstance):
+    # The k_heap object, None for the system memory pool since it cannot be referecend by app code.
+    data: object
+    # The max size
+    limit: int
+
+    def as_dot(self):
+        attribs = ["limit"]
+        return self.instance_dot(attribs, "#6fbf87")
+
 @dataclass
 class Empty(ZephyrInstance):
     def as_dot(self):
@@ -228,6 +241,23 @@ class ZEPHYR(OSBase):
         #instances.vp.line[v] = cfg.vp.line[entry_abb]
 
         ZEPHYR.main = v
+
+    system_heap = None
+    @staticmethod
+    def get_system_heap(state) -> int:
+        if ZEPHYR.system_heap != None:
+            return ZEPHYR.system_heap
+        instances = state.instances
+        v = instances.add_vertex()
+        instances.vp.label[v] = "System Heap"
+        instances.vp.obj[v] = Heap(None, None) 
+        instances.vp.id[v] = "__system_heap"
+        instances.vp.branch[v] = False
+        instances.vp.loop[v] = False
+        instances.vp.after_scheduler[v] = True
+        instances.vp.unique[v] = True
+        ZEPHYR.system_heap = v
+        return ZEPHYR.system_heap
 
     @staticmethod
     def add_comm(state, to, call: str):
@@ -515,6 +545,28 @@ class ZEPHYR(OSBase):
         )
 
         ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, data.get_name(), "k_pipe_alloc_init")
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_heap_init(struct k_heap *h, void *mem, size_t bytes)
+    @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.symbol, SigType.value))
+    def k_heap_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+        limit = get_argument(cfg, abb, state.call_path, 2)
+
+        instance = Heap(
+            data,
+            limit
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "Heap", instance, data.get_name(), "k_heap_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -1089,4 +1141,79 @@ class ZEPHYR(OSBase):
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
         return state
+
+    # void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.value, SigType.value))
+    def k_heap_alloc(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        size = get_argument(cfg, abb, state.call_path, 1)
+        timeout = get_argument(cfg, abb, state.call_path, 2)
+
+        ZEPHYR.add_instance_comm(state, data, "k_heap_alloc")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_heap_free(struct k_heap *h, void *mem)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.symbol))
+    def k_heap_free(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        #mem = get_argument(cfg, abb, state.call_path, 1)
+
+        ZEPHYR.add_instance_comm(state, data, "k_heap_free")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void *k_malloc(size_t size)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value, ))
+    def k_malloc(cfg, abb, state):
+        state = state.copy()
+
+        size = get_argument(cfg, abb, state.call_path, 0)
+
+        ZEPHYR.add_comm(state, ZEPHYR.get_system_heap(state), "k_malloc")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_free(void *ptr)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, ))
+    def k_free(cfg, abb, state):
+        state = state.copy()
+
+        mem = get_argument(cfg, abb, state.call_path, 0)
+
+        ZEPHYR.add_comm(state, ZEPHYR.get_system_heap(state), "k_free")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void *k_calloc(size_t nmemb, size_t size)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value, SigType.value))
+    def k_calloc(cfg, abb, state):
+        state = state.copy()
+
+        num_elements = get_argument(cfg, abb, state.call_path, 0)
+        element_size = get_argument(cfg, abb, state.call_path, 1)
+
+        ZEPHYR.add_comm(state, ZEPHYR.get_system_heap(state), "k_calloc")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
 

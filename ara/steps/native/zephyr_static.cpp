@@ -253,9 +253,19 @@ namespace ara::step {
 				return add_instance(context, "Pipe", obj, safe_deref(context.global).getName().str());
 			}
 
-			static PyObject* parse_(const ZephyrStaticImpl& context) {
-				context.instances.label[context.v] = "";
-				return py_dict({{"", py_none()}});
+			static Vertex parse_heap(const ZephyrStaticImpl& context) {
+				// struct kheap is a wrapper around struct sys_heap which also provides
+				// synchronization through a spinlock. This means a k_heap may be shared between
+				// threads. sys_heap contains a field storing the max size of the heap although the
+				// comments suggest that this is only for the init macro and the actual meta data is
+				// stored elsewhere.
+				const llvm::Constant* sys_heap =
+				    get_element_checked(*context.initializer, 0, context.info_node, "heap");
+				const llvm::ConstantInt* limit = llvm::dyn_cast_or_null<llvm::ConstantInt>(
+				    get_element_checked(safe_deref(sys_heap), 2, nullptr, "init_bytes"));
+				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
+				                {"limit", py_int(safe_deref(limit).getValue())}});
+				return add_instance(context, "Heap", obj, safe_deref(context.global).getName().str());
 			}
 
 			std::unordered_map<std::string, ParserInfo> parsers{
@@ -268,6 +278,7 @@ namespace ara::step {
 			    {"k_fifo", {true, default_parser("Queue")}},
 			    {"k_stack", {true, parse_stack}},
 			    {"k_pipe", {true, parse_pipe}},
+			    {"k_heap", {true, parse_heap}},
 			};
 
 		  public:
