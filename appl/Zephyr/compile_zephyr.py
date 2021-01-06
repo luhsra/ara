@@ -13,6 +13,7 @@ parser.add_argument('--size', type=str)
 parser.add_argument('--nm', type=str)
 parser.add_argument('--source_dir', type=str)
 parser.add_argument('--build_dir', type=str)
+parser.add_argument('--zephyr_root', type=str)
 parser.add_argument('--board', type=str)
 parser.add_argument('--libgcc', type=str)
 parser.add_argument('name', metavar='N', type=str)
@@ -50,8 +51,8 @@ if not same_board:
     cmake_call = 'cmake -G Ninja'
     cmake_call += ' -D BOARD=' + args.board
     cmake_call += ' -D ZEPHYR_TOOLCHAIN_VARIANT=llvm'
-    cmake_call += ' -D ZEPHYR_BASE=' + '/home/kenny/zephyrproject/zephyr'
-    cmake_call += ' -D TOOLCHAIN_ROOT=' + '/home/kenny/zephyrproject/zephyr'
+    cmake_call += ' -D ZEPHYR_BASE=' + args.zephyr_root
+    cmake_call += ' -D TOOLCHAIN_ROOT=' + args.zephyr_root
     # Normally cmake *should* find them by itself, but this seems to be the only way to make it work
     # reliably
     cmake_call += ' -D CMAKE_OBJCOPY=' + args.objcopy

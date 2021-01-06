@@ -18,4 +18,4 @@ option('arm_gcc_version', type: 'string', value: 'default',
 option('arm_gcc_dir', type: 'string', value: '/usr/lib/gcc/arm-none-eabi/@0@/thumb/v7-m/nofp/',
     description: 'The path to the GCC ARM toolchain. Note that @0@ is replaced with the arm_gcc_version. Only relevant, if arch==arm. (Sometimes need to remove trailing nofp/)')
 option('zephyr_dir', type: 'string', value: '',
-    description: 'The path to where the zephyr source is located. This has to be the actual zephyr repo NOT the zephyrproject folder. More information on the zephyr setup can be found in the README')
+    description: 'The path where the zephyr source is located, so the zephyrproject folder. More information on the zephyr setup can be found in the README')

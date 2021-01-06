@@ -48,7 +48,7 @@ elif get_option('arch') == 'arm'
 endif
 
 zephyr_targets = []
-zephyr_root = get_option('zephyr_dir')
+zephyr_root = join_paths(get_option('zephyr_dir'), 'zephyr')
 
 
 # Add all available zephyr apps to zephyr_apps.
@@ -76,6 +76,7 @@ foreach app : zephyr_apps
         app,
         '--source_dir=' + join_paths(meson.current_source_dir(), app),
         '--build_dir=' + join_paths(meson.current_build_dir(), app),
+        '--zephyr_root=' + zephyr_root,
         '--ld=' + ld.full_path(),
         '--objcopy=' + objcopy.full_path(),
         '--objdump=' + objdump.full_path(),
@@ -86,9 +87,4 @@ foreach app : zephyr_apps
         output: app + '.ll',
         build_always_stale: true)
 endforeach
-
-
-
-
-# Message: libgcc directory: /usr/lib/gcc/arm-none-eabi/9.2.1/thumb/v7-m/nofp/
 
