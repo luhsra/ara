@@ -48,6 +48,28 @@ ninja ara.py
 
 There are some build options to deactivate parts of the project. Take a look at `meson configure` for that.
 
+Zephyr
+------
+In order to build and analyze Zephyr-RTOS apps some additional steps are required:
+To obtain Zephyr and its dependencies follow steps 1 to 3 (inclusive) from their [starter guide](https://docs.zephyrproject.org/2.4.0/getting_started/index.html).
+
+Delete the zephyrproject/zephyr repo and replace it with our [internal one](https://scm.sra.uni-hannover.de/diffusion/412/repository/ara/). 
+Switch to branch `ara` and update the dependencies with west.
+```
+rm -rf ./zephyr
+git clone -b ara ssh://git@scm.sra.uni-hannover.de/diffusion/412/zephyrproject-rtos.git zephyr
+west update
+```
+Configure meson so that it finds the zephyr install.
+```
+meson configure -D zephyr_dir=<...>/zephyrproject/
+```
+Because they significantly impact compile time, the included apps are not build with the rest of ara. Instead use:
+```
+ninja zephyr_examples
+ninja z_clean
+```
+
 Usage
 -----
 
