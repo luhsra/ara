@@ -253,6 +253,18 @@ namespace ara::step {
 				return add_instance(context, "Pipe", obj, safe_deref(context.global).getName().str());
 			}
 
+			static Vertex parse_msgq(const ZephyrStaticImpl& context) {
+				const llvm::ConstantInt* msg_size = llvm::dyn_cast<llvm::ConstantInt>(
+				    get_element_checked(*context.initializer, 2, context.info_node, "msg_size"));
+				const llvm::ConstantInt* max_msgs = llvm::dyn_cast<llvm::ConstantInt>(
+				    get_element_checked(*context.initializer, 3, context.info_node, "max_msgs"));
+
+				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
+				                         {"msg_size", py_int(safe_deref(msg_size).getValue())},
+				                         {"max_msgs", py_int(safe_deref(max_msgs).getValue())}});
+				return add_instance(context, "MSGQ", obj, safe_deref(context.global).getName().str());
+			}
+
 			static Vertex parse_heap(const ZephyrStaticImpl& context) {
 				// struct kheap is a wrapper around struct sys_heap which also provides
 				// synchronization through a spinlock. This means a k_heap may be shared between
@@ -264,7 +276,7 @@ namespace ara::step {
 				const llvm::ConstantInt* limit = llvm::dyn_cast_or_null<llvm::ConstantInt>(
 				    get_element_checked(safe_deref(sys_heap), 2, nullptr, "init_bytes"));
 				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
-				                {"limit", py_int(safe_deref(limit).getValue())}});
+				                         {"limit", py_int(safe_deref(limit).getValue())}});
 				return add_instance(context, "Heap", obj, safe_deref(context.global).getName().str());
 			}
 
@@ -279,6 +291,7 @@ namespace ara::step {
 			    {"k_stack", {true, parse_stack}},
 			    {"k_pipe", {true, parse_pipe}},
 			    {"k_heap", {true, parse_heap}},
+                {"k_msgq", {true, parse_msgq}},
 			};
 
 		  public:

@@ -3,6 +3,7 @@
 z_easy_apps = [
     'cpp_sems',
     'dyn_heap',
+    'dyn_msgq',
     'dyn_pipe',
     'dyn_queue',
     'dyn_stack',
@@ -10,6 +11,7 @@ z_easy_apps = [
     'dyn_sems',
     'minimal',
     'static_heap',
+    'static_msgq',
     'static_pipe',
     'static_queue',
     'static_sems',

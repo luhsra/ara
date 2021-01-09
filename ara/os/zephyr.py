@@ -174,6 +174,18 @@ class Heap(ZephyrInstance):
         return self.instance_dot(attribs, "#6fbf87")
 
 @dataclass
+class MSGQ(ZephyrInstance):
+    # The k_msgq object
+    data: object
+    # The size of a single message
+    msg_size: int
+    # This max number of messages that fit into the buffer
+    max_msgs: int
+    def as_dot(self):
+        attribs = ["msg_size", "max_msgs"]
+        return self.instance_dot(attribs, "#6fbf87")
+
+@dataclass
 class Empty(ZephyrInstance):
     def as_dot(self):
         attribs = []
@@ -567,6 +579,53 @@ class ZEPHYR(OSBase):
         )
 
         ZEPHYR.create_instance(cfg, abb, state, "Heap", instance, data.get_name(), "k_heap_init")
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size, uint32_t max_msgs)
+    @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.symbol, SigType.value, SigType.value))
+    def k_msgq_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+        msg_size = get_argument(cfg, abb, state.call_path, 2)
+        max_msgs = get_argument(cfg, abb, state.call_path, 3)
+
+        instance = MSGQ(
+            data,
+            msg_size,
+            max_msgs
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, data.get_name(), "k_msgq_init")
+        state.next_abbs = []
+
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size, uint32_t max_msgs)
+    @syscall(categories={SyscallCategory.create},
+            signature=(SigType.symbol, SigType.value, SigType.value))
+    def k_msgq_alloc_init(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        msg_size = get_argument(cfg, abb, state.call_path, 1)
+        max_msgs = get_argument(cfg, abb, state.call_path, 2)
+
+        instance = MSGQ(
+            data,
+            msg_size,
+            max_msgs
+        )
+
+        ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, data.get_name(), "k_msgq_alloc_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -1216,4 +1275,124 @@ class ZEPHYR(OSBase):
 
         return state
 
+    # int k_msgq_cleanup(struct k_msgq *msgq)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol,))
+    def k_msgq_cleanup(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_cleanup")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.symbol, SigType.value))
+    def k_msgq_put(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+        timeout = get_argument(cfg, abb, state.call_path, 2)
+
+        print(data)
+        print(type(data))
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_put")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.symbol, SigType.value))
+    def k_msgq_get(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+        timeout = get_argument(cfg, abb, state.call_path, 2)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_get")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int k_msgq_peek(struct k_msgq *msgq, void *data)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.symbol))
+    def k_msgq_peek(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_peek")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_msgq_purge(struct k_msgq *msgq)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol,))
+    def k_msgq_purge(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_purge")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # uint32_t k_msgq_num_free_get(struct k_msgq *msgq)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol,))
+    def k_msgq_num_free_get(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_num_free_get")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_msgq_get_attrs(struct k_msgq *msgq, struct k_msgq_attrs *attrs)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, SigType.symbol))
+    def k_msgq_get_attrs(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        attributes = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_get_attrs")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+
+    # uint32_t k_msgq_num_used_get(struct k_msgq *msgq)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol,))
+    def k_msgq_num_used_get(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_msgq_num_used_get")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
 
