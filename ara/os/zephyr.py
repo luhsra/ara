@@ -222,7 +222,7 @@ class ZEPHYR(OSBase):
         instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
         instances.vp.file[v] = cfg.vp.file[abb]
         instances.vp.line[v] = cfg.vp.line[abb]
-        instances.vp.specialization_level[v] = "" #TODO: Figure this out
+        instances.vp.specialization_level[v] = ""
         ZEPHYR.add_comm(state, v, call)
 
     @staticmethod
@@ -298,10 +298,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def init(state):
-        for prop in ZEPHYR.vertex_properties:
-            state.instances.vp[prop[0]] = state.instances.new_vp(prop[1])
-        for prop in ZEPHYR.edge_properties:
-            state.instances.ep[prop[0]] = state.instances.new_ep(prop[1])
+        pass
 
     @staticmethod
     def interpret(cfg, abb, state, categories=SyscallCategory.every):
@@ -626,23 +623,6 @@ class ZEPHYR(OSBase):
         )
 
         ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, data.get_name(), "k_msgq_alloc_init")
-        state.next_abbs = []
-
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
-        return state
-
-    # Syscall that resolves to a nop and is used to make sure ARA detects zephyr as the OS when only
-    # static instances are used and therefore no sycalls can be found.
-    # FIXME: Add an option to specify the OS manually when running ARA.
-    @syscall(categories={SyscallCategory.create},
-            signature=())
-    def zephyr_dummy_syscall(cfg, abb, state):
-        print("------------Dummy syscall------------------------")
-        #print(state.running)
-        #print(state.instances.vp.label[state.running])
-        state = state.copy()
-
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -1299,8 +1279,6 @@ class ZEPHYR(OSBase):
         item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 2)
 
-        print(data)
-        print(type(data))
         ZEPHYR.add_instance_comm(state, data, "k_msgq_put")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
