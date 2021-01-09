@@ -22,7 +22,7 @@ class SysFuncts(Step):
                 if self._graph.os in [None, os]:
                     self._graph.os = os
                 else:
-                    self.fail(f"Call {call} does not fit to OS {self._graph.os}.")
+                    self._log.critical(f"Call {call} does not fit to OS {self._graph.os}.")
         if self._graph.os is None:
             self._log.warn("OS cannot be detected. Are there any syscalls?")
 

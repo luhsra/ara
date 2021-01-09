@@ -10,6 +10,7 @@ import sys
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
+from .os import autosar, freertos, zephyr
 
 from .steplisting import print_avail_steps
 
@@ -63,6 +64,9 @@ def main():
                         action='store_true')
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
+    parser.add_argument('--os', help="the os of the given application",
+                        choices=['auto', 'Autosar', 'FreeRTOS', 'Zephyr'],
+                        default='auto')
 
     args = parser.parse_args()
 
@@ -74,6 +78,13 @@ def main():
     g = Graph()
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
+
+    if args.os == "Autosar":
+        g.os = autosar.AUTOSAR
+    elif args.os == "FreeRTOS":
+        g.os = freertos.FreeRTOS
+    elif args.os == "Zephyr":
+        g.os = zephyr.ZEPHYR
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
