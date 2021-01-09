@@ -109,7 +109,7 @@ namespace ara::step {
 				context.instances.id[v] = id;
 				context.instances.branch[v] = false;
 				context.instances.loop[v] = false;
-				context.instances.after_scheduler[v] = true;
+				context.instances.after_scheduler[v] = false;
 				context.instances.unique[v] = true;
 
 				// These two are meaningless in the context of static instances,
