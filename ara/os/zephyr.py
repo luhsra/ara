@@ -301,10 +301,24 @@ class ZEPHYR(OSBase):
         pass
 
     @staticmethod
+    def syscall_in_category(syscall, category):
+        syscall_category = syscall.categories
+        categories = set((category,))
+        return SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
+
+    @staticmethod
     def interpret(cfg, abb, state, categories=SyscallCategory.every):
-        syscall = cfg.get_syscall_name(abb)
-        logger.info(f"Interpreting syscall: {syscall}")
-        return getattr(ZEPHYR, syscall)(cfg, abb, state)
+        syscall_name = cfg.get_syscall_name(abb)
+        syscall = getattr(ZEPHYR, syscall_name)
+
+        if ZEPHYR.syscall_in_category(syscall, categories):
+            logger.info(f"Interpreting syscall: {syscall_name}")
+            return syscall(cfg, abb, state)
+        else:
+            state = state.copy()
+            state.next_abbs = []
+            ZEPHYR.add_normal_cfg(cfg, abb, state)
+            return state
 
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size, 
     #   k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio, uint32_t options,
