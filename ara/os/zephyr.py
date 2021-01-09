@@ -431,7 +431,7 @@ class ZEPHYR(OSBase):
 
     # int k_mutex_init(struct k_mutex *mutex)
     @syscall(categories={SyscallCategory.create},
-            signature=(SigType.value))
+            signature=(SigType.symbol, ))
     def k_mutex_init(cfg, abb, state):
         state = state.copy()
 
@@ -452,7 +452,7 @@ class ZEPHYR(OSBase):
     # k_lifo_init(lifo)
     # k_fifo_init(fifo)
     @syscall(categories={SyscallCategory.create},
-            signature=(SigType.symbol))
+            signature=(SigType.symbol, ))
     def k_queue_init(cfg, abb, state):
         state = state.copy()
 
@@ -637,7 +637,7 @@ class ZEPHYR(OSBase):
     # Thread
     #
 
-    @syscall(categories={SyscallCategory.create},
+    @syscall(categories={SyscallCategory.comm},
              signature=(SigType.value,))
     def k_msleep(cfg, abb, state):
         state = state.copy()
@@ -648,7 +648,7 @@ class ZEPHYR(OSBase):
         return state
 
 
-    @syscall(categories={SyscallCategory.create})
+    @syscall(categories={SyscallCategory.comm})
     def k_yield(cfg, abb, state):
         state = state.copy()
         ZEPHYR.add_self_comm(state, "k_yield")
@@ -656,7 +656,7 @@ class ZEPHYR(OSBase):
         ZEPHYR.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(categories={SyscallCategory.create},
+    @syscall(categories={SyscallCategory.comm},
             signature=(SigType.symbol, SigType.value))
     def k_thread_join(cfg, abb, state):
         state = state.copy()
@@ -809,7 +809,7 @@ class ZEPHYR(OSBase):
 
     # void k_queue_cancel_wait(struct k_queue *queue)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol))
+             signature=(SigType.symbol, ))
     def k_queue_cancel_wait(cfg, abb, state):
         state = state.copy()
 
@@ -975,7 +975,7 @@ class ZEPHYR(OSBase):
 
     # int k_queue_is_empty(struct k_queue *queue)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol))
+             signature=(SigType.symbol, ))
     def k_queue_is_empty(cfg, abb, state):
         state = state.copy()
 
@@ -989,7 +989,7 @@ class ZEPHYR(OSBase):
 
     # void *k_queue_peek_head(struct k_queue *queue)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol))
+             signature=(SigType.symbol, ))
     def k_queue_peek_head(cfg, abb, state):
         state = state.copy()
 
@@ -1003,7 +1003,7 @@ class ZEPHYR(OSBase):
 
     # void *k_queue_peek_tail(struct k_queue *queue)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol))
+             signature=(SigType.symbol, ))
     def k_queue_peek_tail(cfg, abb, state):
         state = state.copy()
 
