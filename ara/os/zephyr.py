@@ -51,7 +51,7 @@ class Thread(ZephyrInstance):
     delay: int
 
     def as_dot(self):
-        attribs = ["entry_name", "stack_size", "entry_params", "priority", "options", "delay"]
+        attribs = ["entry_name", "stack_size", "priority", "options", "delay"]
         return self.instance_dot(attribs, "#6fbf87")
 
 # Interrupt service routine. Like every other kernel resource, these can be created
