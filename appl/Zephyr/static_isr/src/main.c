@@ -32,11 +32,19 @@ void produce_work_isr(const void* args) {
     k_mutex_unlock(&guard);
 }
 
+void produce_more_work_isr(const void* args) {
+    // This isr won't work of course, it is just for testing purposes
+    if (k_is_in_isr()){
+        k_mutex_lock(&guard, K_FOREVER);
+        k_stack_push(&work, (stack_data_t)1);
+        k_mutex_unlock(&guard);
+    }
+}
 
 void main(void) {
     k_tid_t workerId = k_thread_create(&worker, worker_stack_area,
         STACKSIZE, do_work, NULL, NULL, NULL, PRIORITY, 0, K_FOREVER);
-    
+
     while(true) {
         k_mutex_lock(&guard, K_FOREVER);
         k_stack_push(&work, (stack_data_t)0);
@@ -44,6 +52,8 @@ void main(void) {
     }
 
     IRQ_CONNECT(WORK_IRQ, WORK_IRQ_PRIORITY, produce_work_isr, NULL, 0);
+    IRQ_DIRECT_CONNECT(WORK_IRQ + 1, WORK_IRQ_PRIORITY + 1, produce_more_work_isr, 0);
     irq_enable(WORK_IRQ);
+    irq_enable(WORK_IRQ + 1);
 }
 

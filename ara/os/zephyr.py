@@ -68,18 +68,20 @@ class ISR(ZephyrInstance):
     # that
     priority: int
     # The handler function
-    handler: object
+    entry: object
     # The name of the hander function
-    handler_name: str
+    entry_name: str
     # The first abb of the handler function. Needed for SSE (see Thread.entry_abb)
     entry_abb: object
     # Parameter for the handler
     handler_param: object
     # Architecture specific flags
     flags: int
+    # Always none but required for all zephyr instances
+    data: object = None
 
     def as_dot(self):
-        attribs = ["irq_number", "priority", "handler_name", "flags"]
+        attribs = ["irq_number", "priority", "entry_name", "flags"]
         return self.instance_dot(attribs, "#6fbf87")
 
 # There are actually two types of semaphores: k_sems are kernelobjects that are
@@ -227,6 +229,8 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def find_instance_by_symbol(state, instance):
+        if instance is None:
+            return []
         return filter(lambda v: state.instances.vp.obj[v].data == instance,
                 state.instances.vertices())
 
@@ -363,7 +367,7 @@ class ZEPHYR(OSBase):
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
         return state
-    
+
     # int irq_connect_dynamic(unsigned int irq, unsigned int priority, 
     #   void (*routine)(const void *parameter), const void *parameter, uint32_t flags)
     @syscall(categories={SyscallCategory.create},
@@ -374,23 +378,23 @@ class ZEPHYR(OSBase):
 
         irq_number = get_argument(cfg, abb, state.call_path, 0)
         priority = get_argument(cfg, abb, state.call_path, 1)
-        handler = get_argument(cfg, abb, state.call_path, 2, ty=pyllco.Function)
-        handler_name = handler.get_name()
-        entry_abb = cfg.get_entry_abb(cfg.get_function_by_name(handler_name))
+        entry = get_argument(cfg, abb, state.call_path, 2, ty=pyllco.Function)
+        entry_name = entry.get_name()
+        entry_abb = cfg.get_entry_abb(cfg.get_function_by_name(entry_name))
         handler_param = get_argument(cfg, abb, state.call_path, 3)
         flags = get_argument(cfg, abb, state.call_path, 4)
-        
+
         instance = ISR(
             irq_number,
             priority,
-            handler,
-            handler_name,
+            entry,
+            entry_name,
             entry_abb,
             handler_param,
             flags
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "ISR", instance, handler_name, "irq_connect_dynamic")
+        ZEPHYR.create_instance(cfg, abb, state, "ISR", instance, entry_name, "irq_connect_dynamic")
 
         state.next_abbs = []
 

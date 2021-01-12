@@ -184,6 +184,32 @@ namespace ara::step {
 				return add_instance(context, "Thread", obj, thread_name.str());
 			}
 
+			static Vertex parse_isr(const ZephyrStaticImpl& context) {
+                // This works for normal and direct interrups.
+				// All statically defined ISRs are put into the .intList section for all platforms
+				// except x86. In later build stages the real IRQ Tables are constructed.
+				// Note that the priority is not included in here or anywhere else in the IR
+				// (somehow).
+				const llvm::ConstantInt* irq_number = llvm::dyn_cast<llvm::ConstantInt>(
+				    get_element_checked(*context.initializer, 0, context.info_node, "irq"));
+				const llvm::ConstantInt* flags = llvm::dyn_cast<llvm::ConstantInt>(
+				    get_element_checked(*context.initializer, 1, context.info_node, "flags"));
+				const llvm::ConstantExpr* entry_pointer = llvm::dyn_cast<llvm::ConstantExpr>(
+				    get_element_checked(*context.initializer, 2, context.info_node, "func"));
+				llvm::Function* entry = llvm::dyn_cast_or_null<llvm::Function>(safe_deref(entry_pointer).getOperand(0));
+				llvm::Constant* param = llvm::dyn_cast<llvm::Constant>(
+				    get_element_checked(*context.initializer, 3, context.info_node, "param"));
+
+				PyObject* obj = py_dict({{"data", py_none()},
+				                         {"irq_number", py_int(safe_deref(irq_number).getValue())},
+				                         {"priority", py_none()},
+				                         {"entry", get_obj_from_value(safe_deref(entry))},
+				                         {"entry_name", py_str(entry->getName())},
+				                         {"handler_param", get_obj_from_value(safe_deref(param))},
+				                         {"flags", py_int(safe_deref(flags).getValue())}});
+				return add_instance(context, "ISR", obj, safe_deref(context.global).getName().str());
+			}
+
 			static PyObject* parse_k_sem(llvm::GlobalVariable& global, const llvm::Constant& sem,
 			                             const llvm::DIVariable* info_node) {
 				// Zephyr actually enforces that these two are int constants and limit != 0
@@ -282,6 +308,7 @@ namespace ara::step {
 
 			std::unordered_map<std::string, ParserInfo> parsers{
 			    {"_static_thread_data", {true, parse_thread}},
+			    {"_isr_list", {true, parse_isr}},
 			    {"k_sem", {true, parse_kernel_semaphore}},
 			    {"sys_sem", {false, parse_user_semaphore}},
 			    {"k_mutex", {true, default_parser("Mutex")}},
