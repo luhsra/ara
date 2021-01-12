@@ -22,24 +22,23 @@ namespace ara::step {
 
 		auto entry_point_name = this->entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
-		if (*entry_point_name != "main") {
-			logger.warn() << "Old entry point is not main. Skipping this step." << std::endl;
-			return;
-		}
+
 		Function* old_entry_point = module.getFunction(StringRef(*entry_point_name));
+		LLVMContext& context = module.getContext();
+		FunctionType* fake_entry_ty = nullptr;
 		if (old_entry_point == nullptr) {
 			logger.warn() << "entry point " << *entry_point_name << " does not exist.";
-		}
-		if (!(old_entry_point->getReturnType()->isVoidTy() || old_entry_point->getReturnType()->isIntegerTy())) {
+			fake_entry_ty = FunctionType::get(Type::getVoidTy(context), false);
+		} else if (!(old_entry_point->getReturnType()->isVoidTy() || old_entry_point->getReturnType()->isIntegerTy())) {
 			fail("Entry point must return void or int.");
+		} else {
+			fake_entry_ty = old_entry_point->getFunctionType();
+			logger.debug() << "Old entry point: " << *entry_point_name << std::endl;
 		}
-		logger.debug() << "Old entry point: " << *entry_point_name << std::endl;
 
-		LLVMContext& context = module.getContext();
 		IRBuilder<> builder(context);
 		// FunctionType* fty = FunctionType::get(Type::getVoidTy(context), false);
-		Function* fake = Function::Create(old_entry_point->getFunctionType(), Function::ExternalLinkage,
-		                                  constants::ARA_ENTRY_POINT, module);
+		Function* fake = Function::Create(fake_entry_ty, Function::ExternalLinkage, constants::ARA_ENTRY_POINT, module);
 		BasicBlock* bb = BasicBlock::Create(context, "entry", fake);
 		builder.SetInsertPoint(bb);
 
@@ -51,15 +50,21 @@ namespace ara::step {
 				builder.CreateCall(&cur, std::vector<Value*>());
 			}
 		}
-		std::vector<Value*> args;
-		for (Argument& arg : fake->args()) {
-			args.emplace_back(&arg);
-		}
-		CallInst* o_call = builder.CreateCall(old_entry_point, args, "old_entry");
-		if (old_entry_point->getReturnType()->isVoidTy()) {
+		// Only call old entry if it exists, otherwise fake_entry_point just returns.
+		if (old_entry_point == nullptr) {
 			builder.CreateRetVoid();
 		} else {
-			builder.CreateRet(o_call);
+			std::vector<Value*> args;
+			for (Argument& arg : fake->args()) {
+				args.emplace_back(&arg);
+			}
+
+			CallInst* o_call = builder.CreateCall(old_entry_point, args, "old_entry");
+			if (old_entry_point->getReturnType()->isVoidTy()) {
+				builder.CreateRetVoid();
+			} else {
+				builder.CreateRet(o_call);
+			}
 		}
 		logger.debug() << "new entry: " << *fake << std::endl;
 
