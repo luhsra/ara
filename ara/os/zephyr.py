@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import ara.graph as _graph
 import pyllco
 import html
+import graph_tool
 
 logger = get_logger("ZEPHYR")
 
@@ -20,6 +21,17 @@ class ZephyrInstance:
             "style": "filled",
             "sublabel": self.attribs_to_dot(attribs)
         }
+
+# The node representing the Zehpyr kernel. This should only exist once in the instance graph.
+# It it used for syscalls that do not operate on user created instances but rather on ones
+# that are build into the kernel e.g. the scheduler or the system heap.
+@dataclass
+class ZephyrKernel(ZephyrInstance):
+    # Always none, but required
+    data: object = None
+    def as_dot(self):
+        attribs = []
+        return self.instance_dot(attribs, "#6fbf87")
 
 # SSE finds suitable entrypoints by using isinstance (_iterate_tasks(). This reuquries hashability).
 # There are two way this can be achieved with dataclasses. Either mark them as frozen
@@ -262,22 +274,15 @@ class ZEPHYR(OSBase):
 
         ZEPHYR.main = v
 
-    system_heap = None
+    kernel = None
     @staticmethod
-    def get_system_heap(state) -> int:
-        if ZEPHYR.system_heap != None:
-            return ZEPHYR.system_heap
-        instances = state.instances
-        v = instances.add_vertex()
-        instances.vp.label[v] = "System Heap"
-        instances.vp.obj[v] = Heap(None, None) 
-        instances.vp.id[v] = "__system_heap"
-        instances.vp.branch[v] = False
-        instances.vp.loop[v] = False
-        instances.vp.after_scheduler[v] = True
-        instances.vp.unique[v] = True
-        ZEPHYR.system_heap = v
-        return ZEPHYR.system_heap
+    def get_kernel(state) -> int:
+        if ZEPHYR.kernel != None:
+            return ZEPHYR.kernel
+        matches = graph_tool.util.find_vertex(state.instances, state.instances.vp['label'], 'Zephyr')
+        assert len(matches) == 1
+        ZEPHYR.kernel = matches[0]
+        return ZEPHYR.kernel
 
     @staticmethod
     def add_comm(state, to, call: str):
@@ -1242,7 +1247,7 @@ class ZEPHYR(OSBase):
 
         size = get_argument(cfg, abb, state.call_path, 0)
 
-        ZEPHYR.add_comm(state, ZEPHYR.get_system_heap(state), "k_malloc")
+        ZEPHYR.add_comm(state, ZEPHYR.get_kernel(state), "k_malloc")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1256,7 +1261,7 @@ class ZEPHYR(OSBase):
 
         mem = get_argument(cfg, abb, state.call_path, 0)
 
-        ZEPHYR.add_comm(state, ZEPHYR.get_system_heap(state), "k_free")
+        ZEPHYR.add_comm(state, ZEPHYR.get_kernel(state), "k_free")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1271,7 +1276,7 @@ class ZEPHYR(OSBase):
         num_elements = get_argument(cfg, abb, state.call_path, 0)
         element_size = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_comm(state, ZEPHYR.get_system_heap(state), "k_calloc")
+        ZEPHYR.add_comm(state, ZEPHYR.get_kernel(state), "k_calloc")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
