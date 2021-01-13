@@ -504,7 +504,7 @@ class ZEPHYR(OSBase):
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
-        max_entries = get_argument(cfg, abb, state.call_path, 1)
+        max_entries = get_argument(cfg, abb, state.call_path, 2)
 
         instance = Stack(
             data,
@@ -1114,13 +1114,13 @@ class ZEPHYR(OSBase):
     # int k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write, size_t *bytes_written,
     # size_t min_xfer, k_timeout_t timeout)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol, SigType.value, SigType.value, SigType.symbol, SigType.value,
+             signature=(SigType.symbol, SigType.symbol, SigType.value, SigType.symbol, SigType.value,
                  SigType.value))
     def k_pipe_put(cfg, abb, state):
         state = state.copy()
 
         data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
-        item = get_argument(cfg, abb, state.call_path, 1)
+        item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         item_size = get_argument(cfg, abb, state.call_path, 2)
         # Does not really make sense as a value, since at call time this contains garbage
         #bytes_written = get_argument(cfg, abb, state.call_path, 3)
