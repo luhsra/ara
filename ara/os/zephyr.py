@@ -664,33 +664,241 @@ class ZEPHYR(OSBase):
     # Thread
     #
 
+    # int k_thread_join(struct k_thread *thread, k_timeout_t timeout)
+    @syscall(categories={SyscallCategory.comm},
+            signature=(SigType.symbol, SigType.value))
+    def k_thread_join(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        timeout = get_argument(cfg, abb, state.call_path, 1)
+
+        ZEPHYR.add_instance_comm(state, data, "k_thread_join")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int32_t k_sleep(k_timeout_t timeout)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value,))
+    def k_sleep(cfg, abb, state):
+        state = state.copy()
+
+        timeout = get_argument(cfg, abb, state.call_path, 0)
+
+        ZEPHYR.add_self_comm(state, "k_sleep")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int32_t k_msleep(int32_t ms)
     @syscall(categories={SyscallCategory.comm},
              signature=(SigType.value,))
     def k_msleep(cfg, abb, state):
         state = state.copy()
+
+        ms = get_argument(cfg, abb, state.call_path, 0)
+
         ZEPHYR.add_self_comm(state, "k_msleep")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
         return state
 
+    # int32_t k_usleep(int32_t us)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value,))
+    def k_usleep(cfg, abb, state):
+        state = state.copy()
 
+        us = get_argument(cfg, abb, state.call_path, 0)
+
+        ZEPHYR.add_self_comm(state, "k_usleep")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_busy_wait(uint32_t usec_to_wait)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value,))
+    def k_busy_wait(cfg, abb, state):
+        state = state.copy()
+
+        us = get_argument(cfg, abb, state.call_path, 0)
+
+        ZEPHYR.add_self_comm(state, "k_busy_wait")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_yield(void)
     @syscall(categories={SyscallCategory.comm})
     def k_yield(cfg, abb, state):
         state = state.copy()
+
         ZEPHYR.add_self_comm(state, "k_yield")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
+
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-            signature=(SigType.symbol, SigType.value))
-    def k_thread_join(cfg, abb, state):
+    # void k_wakeup(k_tid_t thread)
+    @syscall(categories={SyscallCategory.comm})
+    def k_wakeup(cfg, abb, state):
         state = state.copy()
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
-        ZEPHYR.add_instance_comm(state, data, "k_thread_join")
+
+        #ZEPHYR.add_self_comm(state, "k_wakeup")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # k_tid_t k_current_get(void)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value))
+    def k_current_get(cfg, abb, state):
+        state = state.copy()
+
+        tid = get_return_value(cfg, abb, state.call_path)
+        print(tid)
+        print(type(tid))
+
+        ZEPHYR.add_self_comm(state, "k_current_get")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+
+    # k_ticks_t k_thread_timeout_expires_ticks(struct k_thread *t)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, ))
+    def k_thread_timeout_expires_ticks(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_thread_timeout_expires_ticks")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # k_ticks_t k_thread_timeout_remaining_ticks(struct k_thread *t)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, ))
+    def k_thread_timeout_remaining_ticks(cfg, abb, state):
+        state = state.copy()
+
+        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_instance_comm(state, data, "k_thread_timeout_remaining_ticks")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_sched_time_slice_set(int32_t slice, int prio)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.value, SigType.value))
+    def k_sched_time_slice_set(cfg, abb, state):
+        state = state.copy()
+
+        time_slice = get_argument(cfg, abb, state.call_path, 0)
+        prio = get_argument(cfg, abb, state.call_path, 1)
+
+        ZEPHYR.add_comm(state, ZEPHYR.get_kernel(state), "k_sched_time_slice_set")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_sched_lock(void)
+    @syscall(categories={SyscallCategory.comm})
+    def k_sched_lock(cfg, abb, state):
+        state = state.copy()
+
+        ZEPHYR.add_comm(state, ZEPHYR.get_kernel(state), "k_sched_lock")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_sched_unlock(void)
+    @syscall(categories={SyscallCategory.comm})
+    def k_sched_unlock(cfg, abb, state):
+        state = state.copy()
+
+        ZEPHYR.add_comm(state, ZEPHYR.get_kernel(state), "k_sched_unlock")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void k_thread_custom_data_set(void *value)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.symbol, ))
+    def k_thread_custom_data_set(cfg, abb, state):
+        state = state.copy()
+
+        custom_data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+
+        ZEPHYR.add_self_comm(state, "k_thread_custom_data_set")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # void *k_thread_custom_data_get(void)
+    @syscall(categories={SyscallCategory.comm})
+    def k_thread_custom_data_get(cfg, abb, state):
+        state = state.copy()
+
+        ZEPHYR.add_self_comm(state, "k_thread_custom_data_get")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    #
+    # ISR
+    #
+
+    # bool k_is_in_isr(void)
+    @syscall(categories={SyscallCategory.comm})
+    def k_is_in_isr(cfg, abb, state):
+        state = state.copy()
+
+        ZEPHYR.add_self_comm(state, "k_is_in_isr")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # int k_is_preempt_thread(void)
+    @syscall(categories={SyscallCategory.comm})
+    def k_is_preempt_thread(cfg, abb, state):
+        state = state.copy()
+
+        ZEPHYR.add_self_comm(state, "k_is_preempt_thread")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
+        return state
+
+    # bool k_is_pre_kernel(void)
+    @syscall(categories={SyscallCategory.comm})
+    def k_is_pre_kernel(cfg, abb, state):
+        state = state.copy()
+
+        ZEPHYR.add_self_comm(state, "k_is_pre_kernel")
+        state.next_abbs = []
+        ZEPHYR.add_normal_cfg(cfg, abb, state)
+
         return state
 
     #
