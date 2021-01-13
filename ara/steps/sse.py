@@ -266,6 +266,7 @@ class FlatAnalysis(FlowAnalysis):
 
         return entry
 
+    # TODO: Move into OS model
     def _iterate_tasks(self):
         """Return a generator over all tasks in self._graph.instances."""
         if self._graph.instances is None:
@@ -411,7 +412,7 @@ class FlatAnalysis(FlowAnalysis):
                                            "graph_name": 'Instances',
                                            "subgraph": 'instances'})
 
-
+instance_graph_first_exec: bool = True
 class InstanceGraph(FlatAnalysis):
     """Find all application instances."""
 
@@ -427,6 +428,16 @@ class InstanceGraph(FlatAnalysis):
     def _init_analysis(self):
         super()._init_analysis()
         self._new_entry_points = set()
+        # TODO: Move into OS model after rebase
+        global instance_graph_first_exec
+        if instance_graph_first_exec:
+            for v in self._graph.instances.vertices():
+                instance = self._graph.instances.vp.obj[v]
+                if isinstance(instance, Thread):
+                    self._step_manager.chain_step({"name": "InstanceGraph", "entry_point":
+                        instance.entry_name})
+                    self._step_data.add(instance.entry_name)
+            instance_graph_first_exec = False
 
     def _dominates(self, dom_tree, abb_x, abb_y):
         """Does abb_x dominate abb_y?"""
