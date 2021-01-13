@@ -204,6 +204,10 @@ class ZEPHYR(OSBase):
         return ["ZephyrStaticPost"]
 
     @staticmethod
+    def has_dynamic_instances():
+        return True 
+
+    @staticmethod
     def add_normal_cfg(cfg, abb, state):
         for oedge in cfg.vertex(abb).out_edges():
             if cfg.ep.type[oedge] == _graph.CFType.lcf:

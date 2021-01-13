@@ -1,14 +1,23 @@
 {
 	"steps": [
-		"InstanceGraph"
+		"InteractionAnalysis",
+        "Printer"
 	],
 
 	"LLVMMap": {
 		"log_level": "info",
-		"dump": true
+		"dump": false
 	},
-	"InstanceGraph": {
-		"dump": true
-	}
+    "SysFuncts": {
+        "dump": true
+    },
+	"InteractionAnalysis": {
+		"dump": false
+	},
+    "Printer": {
+        "dot": "./dumps/instances.dot",
+        "name": "Instances",
+        "subgraph": "instances"
+    }
 }
 
