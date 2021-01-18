@@ -1,6 +1,6 @@
 """Container for Sysfuncts."""
 from ara.graph import Graph
-from ara.os import get_syscalls
+from ara.os import get_oses
 from .step import Step
 
 
@@ -10,19 +10,22 @@ class SysFuncts(Step):
     def get_single_dependencies(self):
         return ["LLVMMap"]
 
-    def run(self):
-        syscalls = dict(get_syscalls())
-
-        for nod in self._graph.functs.vertices():
-            call = self._graph.functs.vp.name[nod]
-            found = call in syscalls
-            self._graph.functs.vp.syscall[nod] = found
-            if found:
-                os = syscalls[call]
+    def is_syscall(self, syscall_name):
+        for os in self.oses:
+            if os.is_syscall(syscall_name):
                 if self._graph.os in [None, os]:
                     self._graph.os = os
                 else:
-                    self._log.critical(f"Call {call} does not fit to OS {self._graph.os}.")
+                    self.fail(f"Call {syscall_name} does not fit to OS {self._graph.os}.")
+                return True
+        return False
+
+    def run(self):
+        self.oses = get_oses()
+
+        for nod in self._graph.functs.vertices():
+            call = self._graph.functs.vp.name[nod]
+            self._graph.functs.vp.syscall[nod] = self.is_syscall(call)
         if self._graph.os is None:
             self._log.warn("OS cannot be detected. Are there any syscalls?")
 

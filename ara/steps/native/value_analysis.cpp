@@ -293,9 +293,7 @@ namespace ara::step {
 		const auto& entry_point_name = entry_point.get();
 		assert(entry_point_name && "Entry point argument not given");
 
-		for (const os::SysCall& syscall : graph.get_os().get_syscalls()) {
-			syscalls.insert({syscall.get_name(), syscall});
-		}
+		syscalls = graph.get_os().detected_syscalls();
 
 		SVFG& svfg = graph.get_svfg();
 

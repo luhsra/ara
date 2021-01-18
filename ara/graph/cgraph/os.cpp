@@ -21,8 +21,5 @@ namespace ara::os {
 
 	std::string OS::get_name() const { return py_os_get_name(obj.ptr()); }
 
-	std::vector<SysCall> OS::get_syscalls() const { return py_os_get_syscalls(obj.ptr()); }
-
-	std::vector<SysCall> get_syscalls() { return py_get_syscalls(); }
-
+	std::map<const std::string, SysCall> OS::detected_syscalls() const { return py_os_detected_syscalls(obj.ptr()); }
 } // namespace ara::os

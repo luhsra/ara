@@ -2,7 +2,6 @@
 from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory
 from .step import Step
 from graph_tool.topology import label_components
-from ara.os import get_syscalls
 
 import graph_tool
 import json

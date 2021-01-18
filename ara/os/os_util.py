@@ -2,18 +2,23 @@ import os.path
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 
-def syscall(*args, categories=None, signature=None):
+def syscall(*args, categories=None, signature=None, aliases=None):
     if categories is None:
         categories = {_SyscallCategory.undefined}
     if signature is None:
         signature = tuple()
+    if aliases is None:
+        aliases = []
     outer_categories = categories
     outer_signature = signature
+    outer_aliases = aliases
 
-    def wrap(func, categories=outer_categories, signature=outer_signature):
+    def wrap(func, categories=outer_categories, signature=outer_signature,
+             aliases=outer_aliases):
         func.syscall = True
         func.categories = categories
         func.signature = signature
+        func.aliases = aliases
         func = staticmethod(func)
         return func
 
