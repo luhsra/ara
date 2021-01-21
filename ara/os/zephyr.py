@@ -7,6 +7,7 @@ import ara.graph as _graph
 import pyllco
 import html
 import graph_tool
+import re
 
 logger = get_logger("ZEPHYR")
 
@@ -205,6 +206,8 @@ class Empty(ZephyrInstance):
         attribs = []
         return self.instance_dot(attribs, "#6fbf87")
 
+llvm_suffix = re.compile(".+\.\d+")
+
 class ZEPHYR(OSBase):
     vertex_properties = [('label', 'string', 'instance name'),
                          ('obj', 'object', 'instance object (e.g. Task)'),
@@ -217,7 +220,26 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def has_dynamic_instances():
-        return True 
+        return True
+
+    @staticmethod
+    def drop_llvm_suffix(name):
+        if llvm_suffix.match(name) is not None:
+            return name.rsplit('.', 1)[0]
+        return name
+
+    @classmethod
+    def is_syscall(cls, function_name):
+        # Drop the llvm suffix for all functions. Should not pose a problem since they can't occur
+        # in regular C identifiers
+        alias_name = function_name
+        function_name = ZEPHYR.drop_llvm_suffix(function_name)
+
+        if hasattr(cls, function_name) and hasattr(getattr(cls, function_name), 'syscall'):
+            if alias_name != function_name:
+                getattr(cls, function_name).aliases.append(alias_name)
+            return True
+        return False
 
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
@@ -322,6 +344,8 @@ class ZEPHYR(OSBase):
     @staticmethod
     def interpret(cfg, abb, state, categories=SyscallCategory.every):
         syscall_name = cfg.get_syscall_name(abb)
+        syscall_name = ZEPHYR.drop_llvm_suffix(syscall_name)
+
         syscall = getattr(ZEPHYR, syscall_name)
 
         if ZEPHYR.syscall_in_category(syscall, categories):
