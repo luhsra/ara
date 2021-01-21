@@ -2,6 +2,7 @@
 # Apps that run on virtually any board since there are no hw dependencies
 z_easy_apps = [
     'cpp_sems',
+    'duplicate_syscalls',
     'dyn_heap',
     'dyn_msgq',
     'dyn_pipe',
