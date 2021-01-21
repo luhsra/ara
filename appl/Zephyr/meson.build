@@ -1,6 +1,7 @@
 
 # Apps that run on virtually any board since there are no hw dependencies
 z_easy_apps = [
+    'app_kernel',
     'cpp_sems',
     'duplicate_syscalls',
     'dyn_heap',
@@ -18,7 +19,8 @@ z_easy_apps = [
     'static_sems',
     'static_stack',
     'static_sys_sems',
-    'static_threads'
+    'static_threads',
+    'sys_kernel'
 ]
 
 # Apps that require boards that support userspace applications
