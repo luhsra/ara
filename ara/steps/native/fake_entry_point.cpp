@@ -27,7 +27,7 @@ namespace ara::step {
 		LLVMContext& context = module.getContext();
 		FunctionType* fake_entry_ty = nullptr;
 		if (old_entry_point == nullptr) {
-			logger.warn() << "entry point " << *entry_point_name << " does not exist.";
+			logger.warn() << "entry point " << *entry_point_name << " does not exist." << std::endl;
 			fake_entry_ty = FunctionType::get(Type::getVoidTy(context), false);
 		} else if (!(old_entry_point->getReturnType()->isVoidTy() || old_entry_point->getReturnType()->isIntegerTy())) {
 			fail("Entry point must return void or int.");
