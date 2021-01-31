@@ -185,7 +185,7 @@ namespace ara::step {
 			}
 
 			static Vertex parse_isr(const ZephyrStaticImpl& context) {
-                // This works for normal and direct interrups.
+				// This works for normal and direct interrups.
 				// All statically defined ISRs are put into the .intList section for all platforms
 				// except x86. In later build stages the real IRQ Tables are constructed.
 				// Note that the priority is not included in here or anywhere else in the IR
@@ -318,7 +318,7 @@ namespace ara::step {
 			    {"k_stack", {true, parse_stack}},
 			    {"k_pipe", {true, parse_pipe}},
 			    {"k_heap", {true, parse_heap}},
-                {"k_msgq", {true, parse_msgq}},
+			    {"k_msgq", {true, parse_msgq}},
 			};
 
 		  public:
@@ -350,8 +350,12 @@ namespace ara::step {
 						// No struct type, skipping this one
 						continue;
 					}
-					llvm::StringRef type_name = type->getStructName();
-					assert(type_name.consume_front("struct."));
+
+                    // Typenames (hopefully) have the following structure: struct\..+\.\d+
+					llvm::StringRef full_type_name = type->getStructName();
+					assert(full_type_name.consume_front("struct."));
+					auto [type_name, suffix] = full_type_name.split('.');
+					assert(suffix.drop_while([](char c){return c >= '0' && c <='9';}).empty());
 					auto parser = parsers.find(type_name.str());
 					if (parser == parsers.end()) {
 						logger.warning() << "Unknown zephyr type, skipping " << type_name;
