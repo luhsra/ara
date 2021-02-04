@@ -2,6 +2,7 @@ import graph_tool.util
 from ara.graph import Graph
 from .step import Step
 from pydoc import locate
+from ara.os.zephyr import ZephyrInstance, Thread, ISR, ZephyrKernel, ZEPHYR
 from .option import Option, String
 
 class ZephyrStaticPost(Step):
@@ -33,6 +34,7 @@ class ZephyrStaticPost(Step):
         instances.vp.file[v] = ""
         instances.vp.line[v] = 0
         instances.vp.specialization_level[v] = ""
+        return v
 
     def read_autoconf(self):
         # Python 3.9 has a remove_suffix method
@@ -70,5 +72,5 @@ class ZephyrStaticPost(Step):
 
         # Create a unique node for the Zephyr kernel.
         kernel = ZephyrKernel(int(ZEPHYR.config['CONFIG_HEAP_MEM_POOL_SIZE']))
-        ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
+        ZEPHYR.kernel = ZephyrStaticPost.create_static_instance(self._graph.instances, "Zephyr", kernel, "__kernel", False)
 
