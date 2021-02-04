@@ -745,7 +745,8 @@ class ZEPHYR(OSBase):
         return state
 
     # void k_wakeup(k_tid_t thread)
-    @syscall(categories={SyscallCategory.comm})
+    @syscall(categories={SyscallCategory.comm},
+             signature=(SigType.Value, ))
     def k_wakeup(cfg, abb, state):
         state = state.copy()
 
@@ -757,7 +758,7 @@ class ZEPHYR(OSBase):
 
     # k_tid_t k_current_get(void)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.value))
+             signature=(SigType.value, ))
     def k_current_get(cfg, abb, state):
         state = state.copy()
 
