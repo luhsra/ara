@@ -3,6 +3,10 @@ import os
 import shutil
 import string
 
+import sys
+sys.path.insert(0,'../../ara')
+from ara.util import KConfigFile
+
 parser = ArgumentParser()
 parser.add_argument('--objcopy', type=str)
 parser.add_argument('--objdump', type=str)
@@ -26,18 +30,14 @@ args = parser.parse_args()
 same_board = False
 try: 
     if os.path.exists(args.build_dir):
-        with open(os.path.join(args.build_dir, 'zephyr/.config'), 'r') as config:
-            for line in config.readlines():
-                board = line.find('CONFIG_BOARD="')
-                if board > -1:
-                    board = line[board+len('CONFIG_BOARD="'):]
-                    if board.find(args.board) == 0:
-                        print('Board has not changed, skipping cmake...')
-                        same_board = True
-
+        config = KConfigFile(os.path.join(args.build_dir, 'zephyr/.config'))
+        same_board = config['CONFIG_BOARD'] == args.board
         if not same_board:
             print('Board might have changed, regenerating cmake...')
             shutil.rmtree(args.build_dir)
+        else:
+            print('Board has not changed, skipping cmake...')
+
 except FileNotFoundError:
     print('Could not detect board, regenerating...')
     shutil.rmtree(args.build_dir)
@@ -85,6 +85,8 @@ try:
         '..', args.name + '.ll'))
     shutil.copyfile(os.path.join(args.build_dir, 'zephyr/include/generated/autoconf.h'), os.path.join(args.build_dir,
         '..', args.name + '_autoconf.h'))
+    shutil.copyfile(os.path.join(args.build_dir, 'zephyr/.config'), os.path.join(args.build_dir,
+        '..', args.name + '.config'))
 except FileNotFoundError:
     pass
 
