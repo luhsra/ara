@@ -219,6 +219,9 @@ class ZEPHYR(OSBase):
     """The kernel node"""
     kernel = None
 
+    """A dict<str, int> that stores the number of times an identifier was requested."""
+    id_count = {}
+
     @staticmethod
     def get_special_steps():
         return ["ZephyrStaticPost"]
@@ -253,12 +256,24 @@ class ZEPHYR(OSBase):
                 state.next_abbs.append(oedge.target())
 
     @staticmethod
+    def get_unique_id(ident: str) -> str:
+        """Generate a unique id by taking the actual one and appending a number to deduplicate"""
+        count = ZEPHYR.id_count.get(ident)
+        if count is None:
+            ZEPHYR.id_count[ident] = 1
+        else:
+            ZEPHYR.id_count[ident] = count + 1
+            ident = f"{ident}.{count}"
+
+        return ident
+
+    @staticmethod
     def create_instance(cfg, abb, state, label: str, obj: ZephyrInstance, ident: str, call: str):
         instances = state.instances
         v = instances.add_vertex()
         instances.vp.label[v] = label
         instances.vp.obj[v] = obj
-        instances.vp.id[v] = ident
+        instances.vp.id[v] = ZEPHYR.get_unique_id(ident)
         instances.vp.branch[v] = state.branch
         instances.vp.loop[v] = state.loop
         instances.vp.after_scheduler[v] = state.scheduler_on

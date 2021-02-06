@@ -48,6 +48,9 @@ class ZephyrStaticPost(Step):
             if instance_type is Thread or instance_type is ISR:
                 vals['entry_abb'] = self._graph.cfg.get_entry_abb(self._graph.cfg.get_function_by_name(vals['entry_name']))
             inst = instance_type(**vals)
+            # Mark the ids of all static instances as used. Since we use symbol names we know
+            # them to be unique
+            ZEPHYR.id_count[self._graph.instances.vp.id[instance]] = 1
             self._graph.instances.vp.obj[instance] = inst
 
         # If there is a main, also add a thread for that. We don't no much about the properties of
