@@ -42,20 +42,37 @@ class ZephyrStaticPost(Step):
 
         ZEPHYR.config = KConfigFile(self.input_file.get()[:-3] + '.config')
 
+        duplicate_instances = []
         for instance in self._graph.instances.vertices():
             vals = self._graph.instances.vp.obj[instance]
             instance_type = locate('ara.os.zephyr.' + self._graph.instances.vp.label[instance])
             if instance_type is Thread or instance_type is ISR:
-                vals['entry_abb'] = self._graph.cfg.get_entry_abb(self._graph.cfg.get_function_by_name(vals['entry_name']))
+                # Fill out the entry abb because it is easier in python than in c++.
+                # Skip instance creation if we already have an instance with the same entry point.
+                entry_abb = self._graph.cfg.get_entry_abb(self._graph.cfg.get_function_by_name(vals['entry_name']))
+                clone = ZEPHYR.explored_entry_points.get(entry_abb)
+                if clone != None:
+                    self._graph.instances.vp.unique[clone] = False
+                    duplicate_instances.append(instance)
+                    continue
+                vals['entry_abb'] = entry_abb
+
             inst = instance_type(**vals)
+            if inst.has_entry():
+                ZEPHYR.explored_entry_points[inst.entry_abb] = instance
+
             # Mark the ids of all static instances as used. Since we use symbol names we know
             # them to be unique
             ZEPHYR.id_count[self._graph.instances.vp.id[instance]] = 1
             self._graph.instances.vp.obj[instance] = inst
 
-        # If there is a main, also add a thread for that. We don't no much about the properties of
-        # the main thread, more info might be retrieved from the kconfig file
+        for v in duplicate_instances:
+            self._graph.instances.remove_vertex(v)
+
+        # If there is a main, also add a thread for that.
         # Also, there is no matching abb to give to the vertex
+        # NOTE: main() can not be the entry point of a second normal thread because the signature
+        # does not match
         main = graph_tool.util.find_vertex(self._graph.cfg, self._graph.cfg.vp['name'], 'main')
         if len(main) == 1:
             main_entry_abb = self._graph.cfg.get_entry_abb(main[0])

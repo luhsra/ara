@@ -23,6 +23,10 @@ class ZephyrInstance:
             "sublabel": self.attribs_to_dot(attribs)
         }
 
+    # TODO: This is a work around until there is a general abstraction for runnable instances
+    def has_entry(self):
+        return hasattr(self, "entry_abb")
+
 # The node representing the Zehpyr kernel. This should only exist once in the instance graph.
 # It it used for syscalls that do not operate on user created instances but rather on ones
 # that are build into the kernel e.g. the scheduler or the system heap.
@@ -222,6 +226,10 @@ class ZEPHYR(OSBase):
     """A dict<str, int> that stores the number of times an identifier was requested."""
     id_count = {}
 
+    """A dict<abb(Vertex), instance(Vertex)> tracking which entry point was explored with which
+    running instance."""
+    explored_entry_points = {}
+
     @staticmethod
     def get_special_steps():
         return ["ZephyrStaticPost"]
@@ -269,6 +277,39 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def create_instance(cfg, abb, state, label: str, obj: ZephyrInstance, ident: str, call: str):
+        """
+        Adds a new instance and an edge for the create syscall to the instance graph.
+        If there already exists an instance that is matched to the same symbol another one will be
+        created and will inherit all interactions from his sibling. All future comm syscalls will
+        add edges to all instances that share the same symbol. There is currently no way to
+        distinguish between them. Those rules also apply to instances that add entry points (Thread, ISR).
+        An exception is made for instances that share entry points. Adding one of those will mark
+        add new info to the instance graph."""
+        if obj.has_entry():
+            # For now assume that no entry points are shared between different instance types
+            original = ZEPHYR.explored_entry_points.get(obj.entry_abb)
+            if original != None:
+                # When we encounter a thread creation with an already searched entry point, mark all
+                # instances as non unique
+                logger.warning(f"Creation of instance with already known entry point, marking as non unique. {obj}")
+                clones = [original]
+                # Mark the clone and all his created instances as non unique.
+                while len(clones) > 0:
+                    clone = clones.pop(0)
+                    state.instances.vp.unique[clone] = False
+                    for e, n in zip(clone.out_edges(), clone.out_neighbors()):
+                        syscall = getattr(ZEPHYR, state.instances.ep.label[e])
+                        if ZEPHYR.syscall_in_category(syscall, SyscallCategory.create):
+                            state.instances.vp.unique[n] = False
+                            # If we find an instance which is now non-unique and adds an entry point we
+                            # need to repeat the process for its node.
+                            if clone.has_entry():
+                                clones.append(n)
+
+                return
+
+        siblings = list(ZEPHYR.find_instance_by_symbol(state, obj.data))
+
         instances = state.instances
         v = instances.add_vertex()
         instances.vp.label[v] = label
@@ -277,12 +318,31 @@ class ZEPHYR(OSBase):
         instances.vp.branch[v] = state.branch
         instances.vp.loop[v] = state.loop
         instances.vp.after_scheduler[v] = state.scheduler_on
-        instances.vp.unique[v] = not (state.branch or state.loop)
+        # Creating an instance from a thread that is not unique will result in a non unique instance
+        instances.vp.unique[v] = not (state.branch or state.loop) and instances.vp.unique[state.running]
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
         instances.vp.file[v] = cfg.vp.file[abb]
         instances.vp.line[v] = cfg.vp.line[abb]
         instances.vp.specialization_level[v] = ""
+
+        if obj.has_entry():
+            ZEPHYR.explored_entry_points[obj.entry_abb] = v
+
+        # If we have some siblings, clone all edges
+        to_add = []
+        if len(siblings) > 0:
+            logger.warning(f"Multiple init calls to same symbol: {obj.data}")
+            for c in siblings[0].out_edges():
+                to_add.append(((v, c.target()), instances.ep.label[c]))
+            for c in siblings[0].in_edges():
+                # Ignore the syscall that created the siblings
+                syscall = getattr(ZEPHYR, state.instances.ep.label[c])
+                if not ZEPHYR.syscall_in_category(syscall, SyscallCategory.create):
+                    to_add.append(((c.source(), v), instances.ep.label[c]))
+            for ((s, t), label) in to_add:
+                e = instances.add_edge(s, t)
+                instances.ep.label[e] = label
         ZEPHYR.add_comm(state, v, call)
 
     @staticmethod
@@ -296,9 +356,13 @@ class ZEPHYR(OSBase):
     def add_comm(state, to, call: str):
             instance = state.running
             if instance == None:
-                logger.warn("syscall but no running instance. Maybe from main()?")
-                ZEPHYR.add_main_instance(state)
-                instance = ZEPHYR.main
+                logger.error("syscall but no running instance. Maybe from main()?")
+                return
+            skip_duplicate_edges = True
+            if skip_duplicate_edges:
+                if len(list(filter(lambda e: e.target() == to and state.instances.ep.label[e] ==
+                    call, instance.out_edges()))) > 0:
+                        return
             e = state.instances.add_edge(instance, to)
             state.instances.ep.label[e] = call
 
@@ -306,12 +370,12 @@ class ZEPHYR(OSBase):
     def add_instance_comm(state, instance, call: str):
         matches = list(ZEPHYR.find_instance_by_symbol(state, instance))
         if len(matches) == 0:
-            logger.warning(f"No matching instance found. Skipping.\n{type(instance)}\n{instance}")
-        elif len(matches) > 1:
-            logger.warning("Multiple matching instances found. Skipping.")
+            logger.error(f"No matching instance found. Skipping.\n{type(instance)}\n{instance}")
         else:
-            match = matches[0]
-            ZEPHYR.add_comm(state, match, call)
+            if len(matches) > 1:
+                logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
+            for match in matches:
+                ZEPHYR.add_comm(state, match, call)
 
     @staticmethod
     def add_self_comm(state, call: str):
@@ -758,7 +822,7 @@ class ZEPHYR(OSBase):
 
     # void k_wakeup(k_tid_t thread)
     @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.Value, ))
+             signature=(SigType.value, ))
     def k_wakeup(cfg, abb, state):
         state = state.copy()
 
