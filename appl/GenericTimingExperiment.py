@@ -95,9 +95,12 @@ class GenericTimingExperiment(Experiment):
             raise e
 
     def flash(self, profile):
+        print("check for board")
+        GenericTimingExperiment.trigger_reset()
+
         print("flashing ", profile)
         subprocess.run(["ninja", f"flash_{self.title}-{profile}"], cwd=self.run_dir, check=True)
-        with serial.Serial(self.inputs.serial_device.value, 115200 * 8) as ser:
+        with serial.Serial(self.inputs.serial_device.value, 115200) as ser:
             # empty the serial buffer
             ser.read()
 
@@ -123,9 +126,9 @@ class GenericTimingExperiment(Experiment):
 
     def get_time(self, profile):
         reset_count = self.inputs.reset_count.value
-        p = Process(target=GenericTimingExperiment.resetting, args=(reset_count+10,))
+        p = Process(target=GenericTimingExperiment.resetting, args=(reset_count+20,))
         p.start()
-        with serial.Serial(self.inputs.serial_device.value, 115200 * 8,
+        with serial.Serial(self.inputs.serial_device.value, 115200,
                            timeout=0.3*reset_count) as ser:
             content = b""
             while self.count_successful_blocks(content) < reset_count:
@@ -143,6 +146,9 @@ class GenericTimingExperiment(Experiment):
         times = defaultdict(list)
 
         if len(blocks) < reset_count+1:
+            print("len(blocks) = ", len(blocks))
+            for b in blocks:
+                print("B: ", b[:10], "...")
             raise RuntimeError("Hardware behaves strange, block barriers not found")
         for idx in range(1, reset_count+1):
             block = blocks[idx]
@@ -167,6 +173,22 @@ class GenericTimingExperiment(Experiment):
         self.outputs.results[f"{profile}/n"] = reset_count
 
 
+    def generate_dummy_values(self, profile):
+        import random
+        fake_keys = ['done_sched_start',# gpslogger
+                     'done_taskCreate', #librepilot
+                     'done_queueCreate', #queueCreate
+                     'main_reached', #gpslogger
+                     'main_start', #micro
+                     'startup_bss_zero',
+                     'startup_sparse_init',
+                     'startup_data_copy',
+                     ]
+        for key in fake_keys:
+            self.outputs.results[f"{profile}/{key}"] = 1 + random.random()
+            self.outputs.results[f"{profile}/{key} stdev"] = 1
+        self.outputs.results[f"{profile}/n"] = 0
+
     def run(self):
         print(self.inputs.profiles)
         for profile in self.inputs.profiles:
@@ -174,10 +196,16 @@ class GenericTimingExperiment(Experiment):
             for k,v in self.get_size(profile).items():
                 self.outputs.results[f"{profile}/size {k}"] = v
 
-            self.flash(profile)
+            try:
+                self.flash(profile)
+            except subprocess.CalledProcessError as e:
+                print("board not found, return")
+                self.generate_dummy_values(profile)
+                continue
             try:
                 self.get_time(profile)
-            except:
+            except Exception as e:
+                raise e
                 # try again
                 print(f"Retry {profile}")
                 self.get_time(profile)

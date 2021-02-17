@@ -42,12 +42,12 @@ ir_apps = [
   'system_relevant_functions',
   'thesis_print',
   'topological_sort',
+  'instances',
 ]
 
 # these apps are meant to run on real hardware and are compiled into an elf
 hw_apps = [
   'rtas20_example',
-  'instances',
   'simple_print',
   'simple_delay',
   'simple_queue_send',
@@ -159,7 +159,7 @@ foreach app : ir_apps + hw_apps
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
 
-    foreach lto_version : ['none', 'standard', 'rle2']
+    foreach lto_version : ['standard', 'rle2']
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
@@ -201,7 +201,7 @@ foreach app : ir_apps + hw_apps
     profiles_list += ['--profiles', target + '-' + lto_version]
 
     if get_option('enable_qemu_tests') and app not in ir_apps
-        test('run_qemu_' + name_prefix,
+        test('run_qemu_' + lto_prefix,
              py3_inst,
              args: [qemu_test_runner,
                     qemu_cmd,

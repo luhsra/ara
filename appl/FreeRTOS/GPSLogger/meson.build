@@ -171,7 +171,7 @@ foreach t : ara_gen_freertos_targets
                          command: llvm_link_cmd)
 
 
-  foreach lto_version : ['none', 'standard', 'rle2']
+  foreach lto_version : ['standard', 'rle2']
     lto_prefix = name_prefix + '-' + lto_version
     lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                input: app_os,
@@ -217,7 +217,7 @@ foreach t : ara_gen_freertos_targets
 
 
     if get_option('enable_gpslogger_tests')
-      test('run_qemu_' + name_prefix,
+      test('run_qemu_' + lto_prefix,
            py3_inst,
            args: [qemu_test_runner,
                   qemu_cmd,

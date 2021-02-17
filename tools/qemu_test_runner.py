@@ -18,7 +18,7 @@ def main():
             print("Always good")
             sys.exit(0)
         result = subprocess.run([emulator, elf],
-                                timeout=20,
+#                                timeout=20,
                                 check=False,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)

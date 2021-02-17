@@ -3,18 +3,21 @@ from ara.graph import Graph
 from .step import Step
 
 from graph_tool.topology import all_paths
+import graph_tool
 
 class RecursiveFunctions(Step):
     """Mark all function that are in the Callgraph as recursive or not."""
 
     def get_single_dependencies(self):
-        return ["CallGraph"]
+        return ["CallGraph", "SystemRelevantFunctions"]
 
     def run(self):
         callgraph = self._graph.callgraph
         cfg = self._graph.cfg
 
         visited = set()
+
+        callgraph = graph_tool.GraphView(callgraph, vfilt=callgraph.vp.syscall_category_create)
 
         for v in callgraph.vertices():
             if v in visited:

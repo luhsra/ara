@@ -163,7 +163,7 @@ librepilot_application = librepilot_mock_ll
 
 extra_settings = files('extra_settings.json')
 manual_corrections = files('instance_corrections.json')
-foreach application_prefix: ['librepilot', 'librepilot_mock']
+foreach application_prefix: ['librepilot_mock']
   named_elf_targets = []
   elf_targets = []
   named_plain_elf_targets = []
@@ -223,7 +223,7 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
                            output: name_prefix + '-os_app.ll',
                            command: llvm_link_cmd)
 
-    foreach lto_version : ['none', 'standard', 'rle2']
+    foreach lto_version : ['standard', 'rle2']
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
@@ -274,12 +274,8 @@ foreach application_prefix: ['librepilot', 'librepilot_mock']
 
 
     if get_option('enable_librepilot_tests')
-      if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
-        test_elf = 'nop'
-      else
-        test_elf = lto_elf
-      endif
-      test('run_qemu_' + name_prefix,
+      test_elf = lto_elf
+      test('run_qemu_' + lto_prefix,
            py3_inst,
            args: [qemu_test_runner,
                   qemu_cmd,
