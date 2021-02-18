@@ -21,6 +21,7 @@ ir_apps = [
   'deadlock',
   'dominator',
   'eventgroup',
+  'foo',
   'function_pointer',
   'icfg',
   'instances',

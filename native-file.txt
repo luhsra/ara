@@ -1,0 +1,2 @@
+[binaries]
+cython = '/usr/bin/cython3'

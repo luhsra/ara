@@ -1,0 +1,12 @@
+1. Paper lesen
+2. C-Applikation erstellen, die nicht gegen die stdlib gelinkt werden muss und einen syscall benutzt.
+3. Die in ll-Datei übersetzen (clang ... -g -O0 -S -emit-llvm).
+4. ARA um POSIX-OS-Modell erweitern (ara/os/posix.py), kopieren von (ara/os/freertos.py).
+   4.1. In diesem Modell den einen Syscall implementieren (temporär mit category=create markieren).
+5. ./ara.py -s SIA foo.ll --dump aufrufen um Ergebnis zu testen
+
+Tipps:
+- README lesen
+- test/extra_settings.json anschauen
+- meson.build: test('ara_tester', ...) (Meson Testfälle anschauen)
+
