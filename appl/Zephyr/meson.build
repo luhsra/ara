@@ -11,6 +11,7 @@ z_easy_apps = [
     'dyn_stack',
     'dyn_sys_sems',
     'dyn_sems',
+    'latency_measure',
     'minimal',
     'static_heap',
     'static_msgq',
