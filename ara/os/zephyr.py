@@ -1421,9 +1421,9 @@ class ZEPHYR(OSBase):
         symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         #item = get_argument(cfg, abb, state.call_path, 1)
         item_size = get_argument(cfg, abb, state.call_path, 2)
-        # Does not really make sense as a value, since at call time this contains garbage
+        # TODO: Figure out why those destroy the value analysis
         #bytes_read = get_argument(cfg, abb, state.call_path, 3)
-        min_bytes_to_read = get_argument(cfg, abb, state.call_path, 4)
+        #min_bytes_to_read = get_argument(cfg, abb, state.call_path, 4)
         timeout = get_argument(cfg, abb, state.call_path, 5)
 
         ZEPHYR.add_instance_comm(state, symbol, "k_pipe_get")
