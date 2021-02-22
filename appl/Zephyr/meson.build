@@ -41,15 +41,16 @@ z_hw_apps = [
 
 zephyr_apps = z_easy_apps
 
-# Currently only two boards are supported:
-# Arm: The nucleo f103rb
-# i386: The native posix target
+# Currently only three targets are supported:
+# Arm: The nucleo f103rb and nucleo_f303re
+# i386: native_posix
 # TODO: Find at least one arm board that supports user mode.
 if get_option('arch') == 'i386'
     l_gcc = ''
     board = 'native_posix'
 elif get_option('arch') == 'arm'
     l_gcc = libgcc_dir
+    # The f303re has a bigger flash which is needed for a few bigger samples.
     #board = 'nucleo_f103rb'
     board = 'nucleo_f303re'
     zephyr_apps += z_hw_apps

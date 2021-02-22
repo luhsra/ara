@@ -27,6 +27,13 @@ pip3 install --user meson
 . ~/.profile
 ```
 
+Outside of the SRA lab some extra dependencies might be needed:
+```
+sudo apt install cmake pkgconf libboost-all-dev libsparsehash-dev gcc-arm-none-eabi libcairo2-dev python3-dev
+pip3 install -U pycairo matplotlib
+```
+
+
 To initialize the external modules, run the init script:
 ```
 ./init
@@ -68,6 +75,11 @@ Because they significantly impact compile time, the included apps are not build 
 ```
 ninja zephyr_examples
 ninja z_clean
+```
+
+To analyze them with ARA:
+```
+./ara.py --os Zephyr --step-settings ../settings/zephyr.json --entry-point="" ./appl/Zephyr/static_threads.ll
 ```
 
 Usage
