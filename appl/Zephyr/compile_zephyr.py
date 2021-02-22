@@ -79,12 +79,10 @@ if not same_board:
 ret = os.system('ninja -C ' + args.build_dir)
 if ret != 0:
     raise RuntimeError("Ninja failed!")
-# Copy the lib.ll and autoconf.h to the top level for ease of use
+# Copy the lib.ll and .config to the top level for ease of use
 try:
     shutil.copyfile(os.path.join(args.build_dir, 'app/libapp.ll'), os.path.join(args.build_dir,
         '..', args.name + '.ll'))
-    shutil.copyfile(os.path.join(args.build_dir, 'zephyr/include/generated/autoconf.h'), os.path.join(args.build_dir,
-        '..', args.name + '_autoconf.h'))
     shutil.copyfile(os.path.join(args.build_dir, 'zephyr/.config'), os.path.join(args.build_dir,
         '..', args.name + '.config'))
 except FileNotFoundError:
