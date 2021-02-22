@@ -329,6 +329,9 @@ namespace ara::step {
 					global = const_cast<llvm::GlobalVariable*>(&*gl);
 					llvm::StringRef section = global->getSection();
 
+					if (!global->hasInitializer()) {
+						continue;
+					}
 					initializer = global->getInitializer();
 					if (initializer->isZeroValue() && section.empty()) {
 						// Ignore globals without a section if they are zero initialized.
