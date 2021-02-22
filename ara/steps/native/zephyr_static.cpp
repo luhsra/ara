@@ -354,14 +354,15 @@ namespace ara::step {
 						continue;
 					}
 
-                    // Typenames (hopefully) have the following structure: struct\..+\.\d+
+					// Typenames (hopefully) have the following structure: struct\..+\.\d+
 					llvm::StringRef full_type_name = type->getStructName();
 					assert(full_type_name.consume_front("struct."));
 					auto [type_name, suffix] = full_type_name.split('.');
-					assert(suffix.drop_while([](char c){return c >= '0' && c <='9';}).empty());
+					// Make sure the detected suffix is numeric. This seems to be the fastest way to check
+					assert(suffix.drop_while([](char c) { return c >= '0' && c <= '9'; }).empty());
 					auto parser = parsers.find(type_name.str());
 					if (parser == parsers.end()) {
-						logger.warning() << "Unknown zephyr type, skipping " << type_name;
+						logger.warning() << "Unknown zephyr type, skipping " << type_name << std::endl;
 						continue;
 					}
 					if ((parser->second.requires_section && !section.empty()) || !parser->second.requires_section) {
