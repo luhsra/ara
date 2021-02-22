@@ -49,7 +49,8 @@ if get_option('arch') == 'i386'
     board = 'native_posix'
 elif get_option('arch') == 'arm'
     l_gcc = libgcc_dir
-    board = 'nucleo_f103rb'
+    #board = 'nucleo_f103rb'
+    board = 'nucleo_f303re'
     zephyr_apps += z_hw_apps
 endif
 
