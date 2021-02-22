@@ -42,6 +42,7 @@ void piperecvtask(void)
 	/* matching (ALL_N) */
 
 	for (getsize = 8; getsize <= MESSAGE_SIZE_PIPE; getsize <<= 1) {
+#if 1
 		for (pipe = 0; pipe < 3; pipe++) {
 			getcount = NR_OF_PIPE_RUNS;
 			pipeget(test_pipes[pipe], _ALL_N, getsize,
@@ -52,12 +53,41 @@ void piperecvtask(void)
 			/* acknowledge to master */
 			k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
 		}
+#else
+        getcount = NR_OF_PIPE_RUNS;
+        pipeget(&PIPE_NOBUFF, _ALL_N, getsize,
+            getcount, &gettime);
+        getinfo.time = gettime;
+        getinfo.size = getsize;
+        getinfo.count = getcount;
+        /* acknowledge to master */
+        k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
+
+        getcount = NR_OF_PIPE_RUNS;
+        pipeget(&PIPE_SMALLBUFF, _ALL_N, getsize,
+            getcount, &gettime);
+        getinfo.time = gettime;
+        getinfo.size = getsize;
+        getinfo.count = getcount;
+        /* acknowledge to master */
+        k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
+
+        getcount = NR_OF_PIPE_RUNS;
+        pipeget(&PIPE_BIGBUFF, _ALL_N, getsize,
+            getcount, &gettime);
+        getinfo.time = gettime;
+        getinfo.size = getsize;
+        getinfo.count = getcount;
+        /* acknowledge to master */
+        k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
+#endif
 	}
 
 	for (prio = 0; prio < 2; prio++) {
 		/* non-matching (1_TO_N) */
 	for (getsize = (MESSAGE_SIZE_PIPE); getsize >= 8; getsize >>= 1) {
 		getcount = MESSAGE_SIZE_PIPE / getsize;
+#if USE_ARRAY
 		for (pipe = 0; pipe < 3; pipe++) {
 			/* size*count == MESSAGE_SIZE_PIPE */
 			pipeget(test_pipes[pipe], _1_TO_N,
@@ -68,6 +98,34 @@ void piperecvtask(void)
 			/* acknowledge to master */
 			k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
 		}
+#else
+        /* size*count == MESSAGE_SIZE_PIPE */
+        pipeget(&PIPE_NOBUFF, _1_TO_N,
+                getsize, getcount, &gettime);
+        getinfo.time = gettime;
+        getinfo.size = getsize;
+        getinfo.count = getcount;
+        /* acknowledge to master */
+        k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
+
+        /* size*count == MESSAGE_SIZE_PIPE */
+        pipeget(&PIPE_SMALLBUFF, _1_TO_N,
+                getsize, getcount, &gettime);
+        getinfo.time = gettime;
+        getinfo.size = getsize;
+        getinfo.count = getcount;
+        /* acknowledge to master */
+        k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
+
+        /* size*count == MESSAGE_SIZE_PIPE */
+        pipeget(&PIPE_BIGBUFF, _1_TO_N,
+                getsize, getcount, &gettime);
+        getinfo.time = gettime;
+        getinfo.size = getsize;
+        getinfo.count = getcount;
+        /* acknowledge to master */
+        k_msgq_put(&CH_COMM, &getinfo, K_FOREVER);
+#endif
 	}
 	}
 

@@ -130,6 +130,8 @@ void pipe_test(void)
 	PRINT_STRING(dashline, output_file);
 
 	for (putsize = 8U; putsize <= MESSAGE_SIZE_PIPE; putsize <<= 1) {
+#if 1
+//#if USE_ARRAY
 		for (pipe = 0; pipe < 3; pipe++) {
 			putcount = NR_OF_PIPE_RUNS;
 			pipeput(test_pipes[pipe], _ALL_N, putsize, putcount,
@@ -138,6 +140,28 @@ void pipe_test(void)
 			/* waiting for ack */
 			k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
 		}
+#else
+        /*putcount = NR_OF_PIPE_RUNS;
+        pipeput(&PIPE_NOBUFF, _ALL_N, putsize, putcount,
+             &puttime[0]);*/
+
+        /* waiting for ack */
+        k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+
+        putcount = NR_OF_PIPE_RUNS;
+        pipeput(&PIPE_SMALLBUFF, _ALL_N, putsize, putcount,
+             &puttime[1]);
+
+        /* waiting for ack */
+        k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+
+        /*putcount = NR_OF_PIPE_RUNS;
+        pipeput(&PIPE_BIGBUFF, _ALL_N, putsize, putcount,
+             &puttime[2]);*/
+
+        /* waiting for ack */
+        k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+#endif
 		PRINT_ALL_TO_N();
 	}
 	PRINT_STRING(dashline, output_file);
@@ -165,6 +189,7 @@ void pipe_test(void)
 
 	for (putsize = 8U; putsize <= (MESSAGE_SIZE_PIPE); putsize <<= 1) {
 		putcount = MESSAGE_SIZE_PIPE / putsize;
+#if USE_ARRAY
 		for (pipe = 0; pipe < 3; pipe++) {
 			pipeput(test_pipes[pipe], _1_TO_N, putsize,
 					 putcount, &puttime[pipe]);
@@ -173,6 +198,29 @@ void pipe_test(void)
 			k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
 			getsize = getinfo.size;
 		}
+#else
+        pipeput(&PIPE_NOBUFF, _1_TO_N, putsize,
+                 putcount, &puttime[0]);
+        /* size*count == MESSAGE_SIZE_PIPE */
+        /* waiting for ack */
+        k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+        getsize = getinfo.size;
+
+        pipeput(&PIPE_SMALLBUFF, _1_TO_N, putsize,
+                 putcount, &puttime[1]);
+        /* size*count == MESSAGE_SIZE_PIPE */
+        /* waiting for ack */
+        k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+        getsize = getinfo.size;
+
+        pipeput(&PIPE_BIGBUFF, _1_TO_N, putsize,
+                 putcount, &puttime[2]);
+        /* size*count == MESSAGE_SIZE_PIPE */
+        /* waiting for ack */
+        k_msgq_get(&CH_COMM, &getinfo, K_FOREVER);
+        getsize = getinfo.size;
+#endif
+
 		PRINT_1_TO_N();
 	}
 		PRINT_STRING(dashline, output_file);

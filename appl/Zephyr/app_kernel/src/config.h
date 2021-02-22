@@ -36,4 +36,6 @@
 /* flag for performing the Event benchmark */
 #define EVENT_BENCH
 
+#define USE_ARRAY 0
+
 #endif /* _CONFIG_H */
