@@ -15,10 +15,11 @@ class ZephyrInstance:
     def attribs_to_dot(self, attribs: [str]):
         return "<br/>".join([f"<i>{a}</i>: {html.escape(str(getattr(self, a)))}" for a in attribs])
 
-    def instance_dot(self, attribs: [str], color: str):
+    def instance_dot(self, attribs: [str], color: str, border_color: str = "#000000"):
         return {
             "shape": "box",
             "fillcolor": color,
+            "color": border_color,
             "style": "filled",
             "sublabel": self.attribs_to_dot(attribs)
         }
@@ -38,7 +39,7 @@ class ZephyrKernel(ZephyrInstance):
     data: object = None
     def as_dot(self):
         attribs = ["heap_size"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#e1d5e7", "#9673a6")
 
 # SSE finds suitable entrypoints by using isinstance (_iterate_tasks(). This reuquries hashability).
 # There are two way this can be achieved with dataclasses. Either mark them as frozen
@@ -71,7 +72,7 @@ class Thread(ZephyrInstance):
 
     def as_dot(self):
         attribs = ["entry_name", "stack_size", "priority", "options", "delay"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#dae8fc", "#6c8ebf")
 
 # Interrupt service routine. Like every other kernel resource, these can be created
 # dynamically via irq_connect_dynamic() (which is not a syscall) or statically by 
@@ -101,7 +102,7 @@ class ISR(ZephyrInstance):
 
     def as_dot(self):
         attribs = ["irq_number", "priority", "entry_name", "flags"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#dae8fc", "#6c8ebf")
 
 # There are actually two types of semaphores: k_sems are kernelobjects that are
 # managed via the k_sem_* syscalls while sys_sems live in user memory (provided
@@ -117,7 +118,7 @@ class Semaphore(ZephyrInstance):
 
     def as_dot(self):
         attribs = ["count", "limit"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 @dataclass
 class KernelSemaphore(Semaphore):
@@ -134,7 +135,7 @@ class Mutex(ZephyrInstance):
 
     def as_dot(self):
         attribs = []
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 # The zephyr kernel offers two kinds of queues: FIFO and LIFO which both use queues internally
 # They are created via separate "functions" k_{lifo,fifo}_init
@@ -150,7 +151,7 @@ class Queue(ZephyrInstance):
 
     def as_dot(self):
         attribs = []
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 # Stacks are created via the k_stack_alloc_init syscall which allocates an internal buffer.
 # However, it is also possible to initialize a stack with a given buffer with k_stack_init 
@@ -167,7 +168,7 @@ class Stack(ZephyrInstance):
 
     def as_dot(self):
         attribs = ["max_entries"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 # Pipes can be created with two syscalls, k_pipe_init requries a user allocted buffer, 
 # while k_pipe_alloc_init creates one from the internal memory pool.
@@ -179,7 +180,7 @@ class Pipe(ZephyrInstance):
     size: int
     def as_dot(self):
         attribs = ["size"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 # Heaps are created by the user as neccessary and can be shared between threads.
 # However, using k_malloc and k_free, threads also have access to a system memory pool.
@@ -192,7 +193,7 @@ class Heap(ZephyrInstance):
 
     def as_dot(self):
         attribs = ["limit"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 @dataclass
 class MSGQ(ZephyrInstance):
@@ -204,7 +205,7 @@ class MSGQ(ZephyrInstance):
     max_msgs: int
     def as_dot(self):
         attribs = ["msg_size", "max_msgs"]
-        return self.instance_dot(attribs, "#6fbf87")
+        return self.instance_dot(attribs, "#f8cecc", "#b85450")
 
 @dataclass
 class Empty(ZephyrInstance):
