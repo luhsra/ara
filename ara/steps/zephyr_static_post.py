@@ -79,7 +79,7 @@ class ZephyrStaticPost(Step):
             prio = int(ZEPHYR.config['CONFIG_MAIN_THREAD_PRIORITY'])
             stack_size = int(ZEPHYR.config['CONFIG_MAIN_STACK_SIZE'])
             main_thread = Thread(None, None, stack_size, None, "main", main_entry_abb, (None, None, None), prio, 0, 0)
-            ZephyrStaticPost.create_static_instance(self._graph.instances, "Main", main_thread, "__main", True)
+            ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", main_thread, "__main", True)
 
         # Create a unique node for the Zephyr kernel.
         kernel = ZephyrKernel(int(ZEPHYR.config['CONFIG_HEAP_MEM_POOL_SIZE']))
