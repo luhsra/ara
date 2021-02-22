@@ -359,11 +359,6 @@ class ZEPHYR(OSBase):
             if instance == None:
                 logger.error("syscall but no running instance. Maybe from main()?")
                 return
-            skip_duplicate_edges = True
-            if skip_duplicate_edges:
-                if len(list(filter(lambda e: e.target() == to and state.instances.ep.label[e] ==
-                    call, instance.out_edges()))) > 0:
-                        return
             e = state.instances.add_edge(instance, to)
             state.instances.ep.label[e] = call
 
