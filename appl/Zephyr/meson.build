@@ -13,6 +13,7 @@ z_easy_apps = [
     'dyn_sems',
     'latency_measure',
     'minimal',
+    'multi_init',
     'static_heap',
     'static_msgq',
     'static_pipe',
