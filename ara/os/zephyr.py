@@ -375,7 +375,7 @@ class ZEPHYR(OSBase):
         """Adds an interaction (edge) with the given callname to all instances with the given symbol"""
         matches = list(ZEPHYR.find_instance_by_symbol(state, symbol))
         if len(matches) == 0:
-            logger.error(f"No matching instance found. Skipping.\n{type(instance)}\n{instance}")
+            logger.error(f"No matching instance found. Skipping.\n{type(symbol)}\n{symbol}")
         else:
             if len(matches) > 1:
                 logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
