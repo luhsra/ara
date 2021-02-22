@@ -36,7 +36,7 @@ class ZephyrKernel(ZephyrInstance):
     # Size of the system heap. Zero if not present
     heap_size: int
     # Always none, but required
-    data: object = None
+    symbol: object = None
     def as_dot(self):
         attribs = ["heap_size"]
         return self.instance_dot(attribs, "#e1d5e7", "#9673a6")
@@ -48,7 +48,7 @@ class ZephyrKernel(ZephyrInstance):
 @dataclass(frozen=True)
 class Thread(ZephyrInstance):
     # Pointer to uninitialized struct k_thread.
-    data: object
+    symbol: object
     # Pointer to the stack space.
     stack: object
     # Stack size in bytes.
@@ -98,7 +98,7 @@ class ISR(ZephyrInstance):
     # Architecture specific flags
     flags: int
     # Always none but required for all zephyr instances
-    data: object = None
+    symbol: object = None
 
     def as_dot(self):
         attribs = ["irq_number", "priority", "entry_name", "flags"]
@@ -110,7 +110,7 @@ class ISR(ZephyrInstance):
 @dataclass
 class Semaphore(ZephyrInstance):
     # Pointer to unitialized struct k_sem
-    data: object
+    symbol: object
     # The internal counter
     count: int
     # The maximum permitted count
@@ -131,7 +131,7 @@ class UserSemaphore(Semaphore):
 @dataclass
 class Mutex(ZephyrInstance):
     #The k_mutex object
-    data: object
+    symbol: object
 
     def as_dot(self):
         attribs = []
@@ -147,7 +147,7 @@ class Mutex(ZephyrInstance):
 @dataclass
 class Queue(ZephyrInstance):
     # The k_queue object
-    data: object
+    symbol: object
 
     def as_dot(self):
         attribs = []
@@ -160,7 +160,7 @@ class Queue(ZephyrInstance):
 @dataclass
 class Stack(ZephyrInstance):
     # The k_stack object
-    data: object
+    symbol: object
     # The buffer where elements are stacked
     buf: object
     # The max number of entries that this stack can hold
@@ -175,7 +175,7 @@ class Stack(ZephyrInstance):
 @dataclass
 class Pipe(ZephyrInstance):
     # The k_pipe object
-    data: object
+    symbol: object
     # The size of the backing ring buffer in bytes
     size: int
     def as_dot(self):
@@ -187,7 +187,7 @@ class Pipe(ZephyrInstance):
 @dataclass
 class Heap(ZephyrInstance):
     # The k_heap object, None for the system memory pool since it cannot be referecend by app code.
-    data: object
+    symbol: object
     # The max size
     limit: int
 
@@ -198,7 +198,7 @@ class Heap(ZephyrInstance):
 @dataclass
 class MSGQ(ZephyrInstance):
     # The k_msgq object
-    data: object
+    symbol: object
     # The size of a single message
     msg_size: int
     # This max number of messages that fit into the buffer
@@ -309,7 +309,7 @@ class ZEPHYR(OSBase):
 
                 return
 
-        siblings = list(ZEPHYR.find_instance_by_symbol(state, obj.data))
+        siblings = list(ZEPHYR.find_instance_by_symbol(state, obj.symbol))
 
         instances = state.instances
         v = instances.add_vertex()
@@ -333,7 +333,7 @@ class ZEPHYR(OSBase):
         # If we have some siblings, clone all edges
         to_add = []
         if len(siblings) > 0:
-            logger.warning(f"Multiple init calls to same symbol: {obj.data}")
+            logger.warning(f"Multiple init calls to same symbol: {obj.symbol}")
             for c in siblings[0].out_edges():
                 to_add.append(((v, c.target()), instances.ep.label[c]))
             for c in siblings[0].in_edges():
@@ -347,10 +347,10 @@ class ZEPHYR(OSBase):
         ZEPHYR.add_comm(state, v, call)
 
     @staticmethod
-    def find_instance_by_symbol(state, instance):
-        if instance is None:
+    def find_instance_by_symbol(state, symbol):
+        if symbol is None:
             return []
-        return filter(lambda v: state.instances.vp.obj[v].data == instance,
+        return filter(lambda v: state.instances.vp.obj[v].symbol == symbol,
                 state.instances.vertices())
 
     @staticmethod
@@ -414,7 +414,7 @@ class ZEPHYR(OSBase):
     def k_thread_create(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         stack = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         stack_size = get_argument(cfg, abb, state.call_path, 2)
         entry = get_argument(cfg, abb, state.call_path, 3, ty=pyllco.Function)
@@ -429,7 +429,7 @@ class ZEPHYR(OSBase):
         delay = get_argument(cfg, abb, state.call_path, 9)
 
         instance = Thread(
-            data,
+            symbol,
             stack,
             stack_size,
             entry,
@@ -441,7 +441,7 @@ class ZEPHYR(OSBase):
             delay
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Thread", instance, data.get_name(), "k_thread_create")
+        ZEPHYR.create_instance(cfg, abb, state, "Thread", instance, symbol.get_name(), "k_thread_create")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -486,17 +486,17 @@ class ZEPHYR(OSBase):
     def k_sem_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         count = get_argument(cfg, abb, state.call_path, 1)
         limit = get_argument(cfg, abb, state.call_path, 2)
 
         instance = KernelSemaphore(
-            data,
+            symbol,
             count,
             limit
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "KernelSemaphore", instance, data.get_name(), "k_sem_init")
+        ZEPHYR.create_instance(cfg, abb, state, "KernelSemaphore", instance, symbol.get_name(), "k_sem_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -509,17 +509,17 @@ class ZEPHYR(OSBase):
     def sys_sem_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         count = get_argument(cfg, abb, state.call_path, 1)
         limit = get_argument(cfg, abb, state.call_path, 2)
 
         instance = UserSemaphore(
-            data,
+            symbol,
             count,
             limit
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "UserSemaphore", instance, data.get_name(), "sys_sem_init")
+        ZEPHYR.create_instance(cfg, abb, state, "UserSemaphore", instance, symbol.get_name(), "sys_sem_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -532,13 +532,13 @@ class ZEPHYR(OSBase):
     def k_mutex_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
         instance = Mutex(
-            data
+            symbol
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Mutex", instance, data.get_name(), "k_mutex_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Mutex", instance, symbol.get_name(), "k_mutex_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -553,13 +553,13 @@ class ZEPHYR(OSBase):
     def k_queue_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
         instance = Queue(
-            data
+            symbol
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Queue", instance, data.get_name(), "k_queue_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Queue", instance, symbol.get_name(), "k_queue_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -572,17 +572,17 @@ class ZEPHYR(OSBase):
     def k_stack_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         max_entries = get_argument(cfg, abb, state.call_path, 2)
 
         instance = Stack(
-            data,
+            symbol,
             buf,
             max_entries
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, data.get_name(), "k_stack_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, symbol.get_name(), "k_stack_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -595,19 +595,19 @@ class ZEPHYR(OSBase):
     def k_stack_alloc_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         max_entries = get_argument(cfg, abb, state.call_path, 1)
 
         instance = Stack(
-            data,
+            symbol,
             # When creating a stack with k_stack_alloc_init() the buffer is created in kernel
             # address space
             None,
             max_entries
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, data.get_name(), "k_stack_alloc_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Stack", instance, symbol.get_name(), "k_stack_alloc_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -620,16 +620,16 @@ class ZEPHYR(OSBase):
     def k_pipe_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         size = get_argument(cfg, abb, state.call_path, 2)
 
         instance = Pipe(
-            data,
+            symbol,
             size
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, data.get_name(), "k_pipe_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, symbol.get_name(), "k_pipe_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -642,15 +642,15 @@ class ZEPHYR(OSBase):
     def k_pipe_alloc_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         size = get_argument(cfg, abb, state.call_path, 1)
 
         instance = Pipe(
-            data,
+            symbol,
             size
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, data.get_name(), "k_pipe_alloc_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Pipe", instance, symbol.get_name(), "k_pipe_alloc_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -663,16 +663,16 @@ class ZEPHYR(OSBase):
     def k_heap_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         limit = get_argument(cfg, abb, state.call_path, 2)
 
         instance = Heap(
-            data,
+            symbol,
             limit
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "Heap", instance, data.get_name(), "k_heap_init")
+        ZEPHYR.create_instance(cfg, abb, state, "Heap", instance, symbol.get_name(), "k_heap_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -685,18 +685,18 @@ class ZEPHYR(OSBase):
     def k_msgq_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         msg_size = get_argument(cfg, abb, state.call_path, 2)
         max_msgs = get_argument(cfg, abb, state.call_path, 3)
 
         instance = MSGQ(
-            data,
+            symbol,
             msg_size,
             max_msgs
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, data.get_name(), "k_msgq_init")
+        ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, symbol.get_name(), "k_msgq_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -709,17 +709,17 @@ class ZEPHYR(OSBase):
     def k_msgq_alloc_init(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         msg_size = get_argument(cfg, abb, state.call_path, 1)
         max_msgs = get_argument(cfg, abb, state.call_path, 2)
 
         instance = MSGQ(
-            data,
+            symbol,
             msg_size,
             max_msgs
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, data.get_name(), "k_msgq_alloc_init")
+        ZEPHYR.create_instance(cfg, abb, state, "MSGQ", instance, symbol.get_name(), "k_msgq_alloc_init")
         state.next_abbs = []
 
         ZEPHYR.add_normal_cfg(cfg, abb, state)
@@ -740,10 +740,10 @@ class ZEPHYR(OSBase):
     def k_thread_join(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_thread_join")
+        ZEPHYR.add_instance_comm(state, symbol, "k_thread_join")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -849,9 +849,9 @@ class ZEPHYR(OSBase):
     def k_thread_timeout_expires_ticks(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_thread_timeout_expires_ticks")
+        ZEPHYR.add_instance_comm(state, symbol, "k_thread_timeout_expires_ticks")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -863,9 +863,9 @@ class ZEPHYR(OSBase):
     def k_thread_timeout_remaining_ticks(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_thread_timeout_remaining_ticks")
+        ZEPHYR.add_instance_comm(state, symbol, "k_thread_timeout_remaining_ticks")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -980,9 +980,9 @@ class ZEPHYR(OSBase):
     def k_sem_take(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 1)
-        ZEPHYR.add_instance_comm(state, data, "k_sem_take")
+        ZEPHYR.add_instance_comm(state, symbol, "k_sem_take")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -994,9 +994,9 @@ class ZEPHYR(OSBase):
     def k_sem_give(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_sem_give")
+        ZEPHYR.add_instance_comm(state, symbol, "k_sem_give")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1008,9 +1008,9 @@ class ZEPHYR(OSBase):
     def k_sem_reset(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_sem_reset")
+        ZEPHYR.add_instance_comm(state, symbol, "k_sem_reset")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1022,9 +1022,9 @@ class ZEPHYR(OSBase):
     def k_sem_count_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_sem_count_get")
+        ZEPHYR.add_instance_comm(state, symbol, "k_sem_count_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1036,9 +1036,9 @@ class ZEPHYR(OSBase):
     def sys_sem_take(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 1)
-        ZEPHYR.add_instance_comm(state, data, "sys_sem_take")
+        ZEPHYR.add_instance_comm(state, symbol, "sys_sem_take")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1050,9 +1050,9 @@ class ZEPHYR(OSBase):
     def sys_sem_give(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "sys_sem_give")
+        ZEPHYR.add_instance_comm(state, symbol, "sys_sem_give")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1064,9 +1064,9 @@ class ZEPHYR(OSBase):
     def sys_sem_count_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "sys_sem_count_get")
+        ZEPHYR.add_instance_comm(state, symbol, "sys_sem_count_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1083,10 +1083,10 @@ class ZEPHYR(OSBase):
     def k_mutex_lock(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_mutex_lock")
+        ZEPHYR.add_instance_comm(state, symbol, "k_mutex_lock")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1099,9 +1099,9 @@ class ZEPHYR(OSBase):
     def k_mutex_unlock(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_mutex_unlock")
+        ZEPHYR.add_instance_comm(state, symbol, "k_mutex_unlock")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1117,9 +1117,9 @@ class ZEPHYR(OSBase):
     def k_queue_cancel_wait(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_cancel_wait")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_cancel_wait")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1131,10 +1131,10 @@ class ZEPHYR(OSBase):
     def k_queue_append(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_append")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_append")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1146,10 +1146,10 @@ class ZEPHYR(OSBase):
     def k_queue_alloc_append(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_alloc_append")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_alloc_append")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1161,10 +1161,10 @@ class ZEPHYR(OSBase):
     def k_queue_prepend(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_prepend")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_prepend")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1176,10 +1176,10 @@ class ZEPHYR(OSBase):
     def k_queue_alloc_prepend(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_alloc_prepend")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_alloc_prepend")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1191,11 +1191,11 @@ class ZEPHYR(OSBase):
     def k_queue_insert(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         prev = get_argument(cfg, abb, state.call_path, 1)
         item = get_argument(cfg, abb, state.call_path, 2)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_insert")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_insert")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1207,11 +1207,11 @@ class ZEPHYR(OSBase):
     def k_queue_append_list(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         head = get_argument(cfg, abb, state.call_path, 1)
         tail = get_argument(cfg, abb, state.call_path, 2)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_append_list")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_append_list")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1223,10 +1223,10 @@ class ZEPHYR(OSBase):
     def k_queue_merge_slist(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         other = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_merge_list")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_merge_list")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1238,10 +1238,10 @@ class ZEPHYR(OSBase):
     def k_queue_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         into = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_get")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1253,10 +1253,10 @@ class ZEPHYR(OSBase):
     def k_queue_remove(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         other = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_remove")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_remove")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1268,10 +1268,10 @@ class ZEPHYR(OSBase):
     def k_queue_unique_append(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         other = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_unique_append")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_unique_append")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1283,9 +1283,9 @@ class ZEPHYR(OSBase):
     def k_queue_is_empty(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_is_empty")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_is_empty")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1297,9 +1297,9 @@ class ZEPHYR(OSBase):
     def k_queue_peek_head(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_peek_head")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_peek_head")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1311,9 +1311,9 @@ class ZEPHYR(OSBase):
     def k_queue_peek_tail(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_queue_peek_tail")
+        ZEPHYR.add_instance_comm(state, symbol, "k_queue_peek_tail")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1330,9 +1330,9 @@ class ZEPHYR(OSBase):
     def k_stack_cleanup(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_stack_cleanup")
+        ZEPHYR.add_instance_comm(state, symbol, "k_stack_cleanup")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1344,10 +1344,10 @@ class ZEPHYR(OSBase):
     def k_stack_push(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_stack_push")
+        ZEPHYR.add_instance_comm(state, symbol, "k_stack_push")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1359,11 +1359,11 @@ class ZEPHYR(OSBase):
     def k_stack_pop(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         into = get_argument(cfg, abb, state.call_path, 1)
         timeout = get_argument(cfg, abb, state.call_path, 2)
 
-        ZEPHYR.add_instance_comm(state, data, "k_stack_pop")
+        ZEPHYR.add_instance_comm(state, symbol, "k_stack_pop")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1380,9 +1380,9 @@ class ZEPHYR(OSBase):
     def k_pipe_cleanup(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_pipe_cleanup")
+        ZEPHYR.add_instance_comm(state, symbol, "k_pipe_cleanup")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1396,15 +1396,15 @@ class ZEPHYR(OSBase):
     def k_pipe_put(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        print(state.call_path)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value, raw_value=True)
         item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         item_size = get_argument(cfg, abb, state.call_path, 2)
         # Does not really make sense as a value, since at call time this contains garbage
         #bytes_written = get_argument(cfg, abb, state.call_path, 3)
         min_bytes_to_write = get_argument(cfg, abb, state.call_path, 4)
         timeout = get_argument(cfg, abb, state.call_path, 5)
-
-        ZEPHYR.add_instance_comm(state, data, "k_pipe_put")
+        ZEPHYR.add_instance_comm(state, symbol, "k_pipe_put")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1418,7 +1418,7 @@ class ZEPHYR(OSBase):
     def k_pipe_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         #item = get_argument(cfg, abb, state.call_path, 1)
         item_size = get_argument(cfg, abb, state.call_path, 2)
         # Does not really make sense as a value, since at call time this contains garbage
@@ -1426,7 +1426,7 @@ class ZEPHYR(OSBase):
         min_bytes_to_read = get_argument(cfg, abb, state.call_path, 4)
         timeout = get_argument(cfg, abb, state.call_path, 5)
 
-        ZEPHYR.add_instance_comm(state, data, "k_pipe_get")
+        ZEPHYR.add_instance_comm(state, symbol, "k_pipe_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1441,12 +1441,12 @@ class ZEPHYR(OSBase):
         # calls give() on sem (which is OPTIONAL).
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1)
         item_size = get_argument(cfg, abb, state.call_path, 2)
         sem = get_argument(cfg, abb, state.call_path, 4)
 
-        ZEPHYR.add_instance_comm(state, data, "k_pipe_block_put")
+        ZEPHYR.add_instance_comm(state, symbol, "k_pipe_block_put")
         # For now just add a k_sem_give from the tread to the given semaphore, if present.
         # This should work, because sem has to be created externally
         if sem != None:
@@ -1463,9 +1463,9 @@ class ZEPHYR(OSBase):
     def k_pipe_read_avail(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_pipe_read_avail")
+        ZEPHYR.add_instance_comm(state, symbol, "k_pipe_read_avail")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1477,9 +1477,9 @@ class ZEPHYR(OSBase):
     def k_pipe_write_avail(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_pipe_write_avail")
+        ZEPHYR.add_instance_comm(state, symbol, "k_pipe_write_avail")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1491,11 +1491,11 @@ class ZEPHYR(OSBase):
     def k_heap_alloc(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         size = get_argument(cfg, abb, state.call_path, 1)
         timeout = get_argument(cfg, abb, state.call_path, 2)
 
-        ZEPHYR.add_instance_comm(state, data, "k_heap_alloc")
+        ZEPHYR.add_instance_comm(state, symbol, "k_heap_alloc")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1507,10 +1507,10 @@ class ZEPHYR(OSBase):
     def k_heap_free(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         #mem = get_argument(cfg, abb, state.call_path, 1)
 
-        ZEPHYR.add_instance_comm(state, data, "k_heap_free")
+        ZEPHYR.add_instance_comm(state, symbol, "k_heap_free")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1565,9 +1565,9 @@ class ZEPHYR(OSBase):
     def k_msgq_cleanup(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_cleanup")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_cleanup")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1579,11 +1579,11 @@ class ZEPHYR(OSBase):
     def k_msgq_put(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 2)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_put")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_put")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1595,11 +1595,11 @@ class ZEPHYR(OSBase):
     def k_msgq_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         timeout = get_argument(cfg, abb, state.call_path, 2)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_get")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1611,10 +1611,10 @@ class ZEPHYR(OSBase):
     def k_msgq_peek(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_peek")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_peek")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1626,9 +1626,9 @@ class ZEPHYR(OSBase):
     def k_msgq_purge(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_purge")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_purge")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1640,9 +1640,9 @@ class ZEPHYR(OSBase):
     def k_msgq_num_free_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_num_free_get")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_num_free_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1654,10 +1654,10 @@ class ZEPHYR(OSBase):
     def k_msgq_get_attrs(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
         attributes = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_get_attrs")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_get_attrs")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 
@@ -1670,9 +1670,9 @@ class ZEPHYR(OSBase):
     def k_msgq_num_used_get(cfg, abb, state):
         state = state.copy()
 
-        data = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
+        symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
 
-        ZEPHYR.add_instance_comm(state, data, "k_msgq_num_used_get")
+        ZEPHYR.add_instance_comm(state, symbol, "k_msgq_num_used_get")
         state.next_abbs = []
         ZEPHYR.add_normal_cfg(cfg, abb, state)
 

@@ -132,7 +132,7 @@ namespace ara::step {
 			static inline Parser default_parser(const std::string name) {
 				return [&name](const ZephyrStaticImpl& context) {
 					// context.instances.label[context.v] = name;
-					PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))}});
+					PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))}});
 					return add_instance(context, name, obj, context.global->getName().str());
 				};
 			}
@@ -147,11 +147,11 @@ namespace ara::step {
 				// k_thread" one of those is created as well. It can be found
 				// by its name "_k_thread_obj_<thread name>". The thread name can be deduced from
 				// the name of the _static_thread_data which is called "_k_thread_data_<thread name>".
-				llvm::GlobalValue* data = nullptr;
+				llvm::GlobalValue* symbol = nullptr;
 				llvm::StringRef thread_name = safe_deref(context.global).getName();
 				if (thread_name.consume_front("_k_thread_data_")) {
 					std::string obj_name = "_k_thread_obj_" + thread_name.str();
-					data = context.module.getNamedValue(obj_name);
+					symbol = context.module.getNamedValue(obj_name);
 				}
 
 				const llvm::ConstantInt* stack_size = llvm::dyn_cast<llvm::ConstantInt>(
@@ -166,7 +166,7 @@ namespace ara::step {
 				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));
 
 				PyObject* obj = py_dict({
-				    {"data", data ? get_obj_from_value(*data) : py_none()},
+				    {"symbol", symbol ? get_obj_from_value(*symbol) : py_none()},
 				    {"stack", py_none()},
 				    {"stack_size", py_int(safe_deref(stack_size).getValue())},
 				    {"entry", get_obj_from_value(entry)},
@@ -200,7 +200,7 @@ namespace ara::step {
 				llvm::Constant* param = llvm::dyn_cast<llvm::Constant>(
 				    get_element_checked(*context.initializer, 3, context.info_node, "param"));
 
-				PyObject* obj = py_dict({{"data", py_none()},
+				PyObject* obj = py_dict({{"symbol", py_none()},
 				                         {"irq_number", py_int(safe_deref(irq_number).getValue())},
 				                         {"priority", py_none()},
 				                         {"entry", get_obj_from_value(safe_deref(entry))},
@@ -217,7 +217,7 @@ namespace ara::step {
 				    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(sem, 1, info_node, "count"));
 				const llvm::ConstantInt* limit =
 				    llvm::dyn_cast<llvm::ConstantInt>(get_element_checked(sem, 2, info_node, "limit"));
-				return py_dict({{"data", get_obj_from_value(global)},
+				return py_dict({{"symbol", get_obj_from_value(global)},
 				                {"count", py_int(safe_deref(count).getValue())},
 				                {"limit", py_int(safe_deref(limit).getValue())}});
 			}
@@ -264,7 +264,7 @@ namespace ara::step {
 				assert(buf_ptr);
 				llvm::ArrayType* buf = llvm::dyn_cast<llvm::ArrayType>(safe_deref(buf_ptr).getElementType());
 
-				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
+				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
 				                         {"buf", py_none()},
 				                         {"max_entries", py_int(safe_deref(buf).getNumElements())}});
 				return add_instance(context, "Stack", obj, safe_deref(context.global).getName().str());
@@ -274,7 +274,7 @@ namespace ara::step {
 				const llvm::ConstantInt* size = llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 1, context.info_node, "size"));
 
-				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
+				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
 				                         {"size", py_int(safe_deref(size).getValue())}});
 				return add_instance(context, "Pipe", obj, safe_deref(context.global).getName().str());
 			}
@@ -285,7 +285,7 @@ namespace ara::step {
 				const llvm::ConstantInt* max_msgs = llvm::dyn_cast<llvm::ConstantInt>(
 				    get_element_checked(*context.initializer, 3, context.info_node, "max_msgs"));
 
-				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
+				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
 				                         {"msg_size", py_int(safe_deref(msg_size).getValue())},
 				                         {"max_msgs", py_int(safe_deref(max_msgs).getValue())}});
 				return add_instance(context, "MSGQ", obj, safe_deref(context.global).getName().str());
@@ -301,7 +301,7 @@ namespace ara::step {
 				    get_element_checked(*context.initializer, 0, context.info_node, "heap");
 				const llvm::ConstantInt* limit = llvm::dyn_cast_or_null<llvm::ConstantInt>(
 				    get_element_checked(safe_deref(sys_heap), 2, nullptr, "init_bytes"));
-				PyObject* obj = py_dict({{"data", get_obj_from_value(safe_deref(context.global))},
+				PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
 				                         {"limit", py_int(safe_deref(limit).getValue())}});
 				return add_instance(context, "Heap", obj, safe_deref(context.global).getName().str());
 			}
