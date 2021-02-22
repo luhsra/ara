@@ -42,6 +42,7 @@ namespace ara::step {
 			const llvm::DIVariable* info_node;
 			Vertex v;
 
+            // Tries to figure out the position of a named member field within a struct
 			static unsigned index_of(const llvm::DIVariable* info, const llvm::StringRef& name) {
 				const llvm::DICompositeType* type = llvm::dyn_cast<llvm::DICompositeType>(info->getType());
 				assert(type != nullptr);
@@ -61,6 +62,8 @@ namespace ara::step {
 				return 0;
 			}
 
+            // Returns the element at position 'index' of a struct. If a meta-node is given, it checks wether
+            // 'index' and 'name' match.
 			static llvm::Constant* get_element_checked(const llvm::Constant& c, unsigned index,
 			                                           const llvm::DIVariable* meta, const llvm::StringRef& name) {
 				assert(meta == nullptr || (meta != nullptr && index == index_of(meta, name)));

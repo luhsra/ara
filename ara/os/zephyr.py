@@ -240,13 +240,18 @@ class ZEPHYR(OSBase):
         return True
 
     @staticmethod
-    def drop_llvm_suffix(name):
+    def drop_llvm_suffix(name: str) -> str:
+        """Removes the llvm suffix from a name"""
         if llvm_suffix.match(name) is not None:
             return name.rsplit('.', 1)[0]
         return name
 
     @classmethod
-    def is_syscall(cls, function_name):
+    def is_syscall(cls, function_name: str) -> bool:
+        """
+        Returns true if the given name belongs to a syscall, ignoring a potential llvm suffix.
+        This overrides the behaviour of OSBase
+        """
         # Drop the llvm suffix for all functions. Should not pose a problem since they can't occur
         # in regular C identifiers
         alias_name = function_name
@@ -260,6 +265,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
+        """Adds all normal control flow abbs to the next_abbs list of the given state"""
         for oedge in cfg.vertex(abb).out_edges():
             if cfg.ep.type[oedge] == _graph.CFType.lcf:
                 state.next_abbs.append(oedge.target())
@@ -348,6 +354,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def find_instance_by_symbol(state, symbol):
+        """Returns an iterator over all instances with the given symbol"""
         if symbol is None:
             return []
         return filter(lambda v: state.instances.vp.obj[v].symbol == symbol,
@@ -355,6 +362,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def add_comm(state, to, call: str):
+            """Adds an interaction (edge) from running to 'to' with the given callname"""
             instance = state.running
             if instance == None:
                 logger.error("syscall but no running instance. Maybe from main()?")
@@ -363,8 +371,9 @@ class ZEPHYR(OSBase):
             state.instances.ep.label[e] = call
 
     @staticmethod
-    def add_instance_comm(state, instance, call: str):
-        matches = list(ZEPHYR.find_instance_by_symbol(state, instance))
+    def add_instance_comm(state, symbol, call: str):
+        """Adds an interaction (edge) with the given callname to all instances with the given symbol"""
+        matches = list(ZEPHYR.find_instance_by_symbol(state, symbol))
         if len(matches) == 0:
             logger.error(f"No matching instance found. Skipping.\n{type(instance)}\n{instance}")
         else:
@@ -375,6 +384,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def add_self_comm(state, call: str):
+        """Adds a self ref edge from running to running"""
         ZEPHYR.add_comm(state, state.running, call)
 
     @staticmethod
@@ -383,6 +393,7 @@ class ZEPHYR(OSBase):
 
     @staticmethod
     def syscall_in_category(syscall, category):
+        """Checks wether a syscall interpreter belongs to the given category"""
         syscall_category = syscall.categories
         categories = set((category,))
         return SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
@@ -1396,7 +1407,6 @@ class ZEPHYR(OSBase):
     def k_pipe_put(cfg, abb, state):
         state = state.copy()
 
-        print(state.call_path)
         symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value, raw_value=True)
         item = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
         item_size = get_argument(cfg, abb, state.call_path, 2)

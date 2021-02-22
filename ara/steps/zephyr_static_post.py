@@ -40,6 +40,7 @@ class ZephyrStaticPost(Step):
     def run(self):
         assert self._graph.instances is not None
 
+        # Currently, we just look for a config with the same name as the app.ll
         ZEPHYR.config = KConfigFile(self.input_file.get()[:-3] + '.config')
 
         duplicate_instances = []
