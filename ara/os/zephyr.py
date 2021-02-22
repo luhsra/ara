@@ -1,4 +1,4 @@
-from .os_util import syscall, get_argument
+from .os_util import syscall, get_argument, get_return_value
 from .os_base import OSBase
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType
@@ -835,8 +835,6 @@ class ZEPHYR(OSBase):
         state = state.copy()
 
         tid = get_return_value(cfg, abb, state.call_path)
-        print(tid)
-        print(type(tid))
 
         ZEPHYR.add_self_comm(state, "k_current_get")
         state.next_abbs = []
