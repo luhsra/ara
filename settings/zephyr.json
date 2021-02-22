@@ -8,8 +8,11 @@
 		"log_level": "info",
 		"dump": false
 	},
+    "CallGraph": {
+        "dump": false
+    },
     "SysFuncts": {
-        "dump": true
+        "dump": false
     },
 	"InteractionAnalysis": {
 		"dump": false
