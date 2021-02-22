@@ -161,9 +161,9 @@ void main(void)
 
 		test_result = 0;
 
-		//test_result += sema_test();
-		//test_result += lifo_test();
-		//test_result += fifo_test();
+		test_result += sema_test();
+		test_result += lifo_test();
+		test_result += fifo_test();
 		test_result += stack_test();
 
 		if (test_result) {
