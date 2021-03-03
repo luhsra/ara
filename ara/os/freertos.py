@@ -1,4 +1,4 @@
-from .os_util import syscall, get_argument, get_return_value, assign_id
+from .os_util import syscall, syscall2, get_argument, assign_id, Arg
 from .os_base import OSBase
 
 import pyllco
@@ -34,7 +34,8 @@ class FreeRTOSInstance(object):
             self.__dict__[name] = value
 
     def __repr__(self):
-        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+        attrs = ', '.join([f"{k}={repr(v)}" for k,v in self.__dict__.items()])
+        return f"{type(self).__name__}({attrs})"
 
     def heap_decline(self):
         if self.specialization_level in ['static', 'initialized']:
@@ -100,9 +101,6 @@ class Task(FreeRTOSInstance):
             logger.warning("No value for configMAX_PRIORITIES found")
         return self.__priority
 
-    def __repr__(self):
-        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
-
     def as_dot(self):
         wanted_attrs = ["name", "function", "stack_size", "parameters",
                         "priority", "handle_p", "is_regular"]
@@ -118,6 +116,7 @@ class Task(FreeRTOSInstance):
         }
 
     def get_maximal_id(self):
+        print(self.handle_p)
         handler_name = self.handle_p.get_name() if self.handle_p else "-"
         return '.'.join(map(str, ["Task",
                                   self.name,
@@ -243,7 +242,9 @@ class StreamBuffer(FreeRTOSInstance):
 class FreeRTOS(OSBase):
     @staticmethod
     def get_special_steps():
-        return ["LoadFreeRTOSConfig"]
+        from ara.steps import get_native_component
+        ValueAnalyzer = get_native_component("ValueAnalyzer")
+        return ValueAnalyzer.get_dependencies() + ["LoadFreeRTOSConfig"]
 
     @staticmethod
     def has_dynamic_instances():
@@ -254,7 +255,8 @@ class FreeRTOS(OSBase):
         state.scheduler_on = False
 
     @staticmethod
-    def interpret(cfg, abb, state, categories=SyscallCategory.every):
+    def interpret(graph, abb, state, categories=SyscallCategory.every):
+        cfg = graph.cfg
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
@@ -272,7 +274,7 @@ class FreeRTOS(OSBase):
                 state.next_abbs = []
                 FreeRTOS.add_normal_cfg(cfg, abb, state)
                 return state
-        return getattr(FreeRTOS, syscall)(cfg, abb, state)
+        return getattr(FreeRTOS, syscall)(graph, abb, state)
 
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
@@ -313,64 +315,51 @@ class FreeRTOS(OSBase):
         instances.vp.line[v] = cfg.vp.line[abb]
 
 
-    @syscall(categories={SyscallCategory.create},
-             signature=(SigType.symbol, SigType.value, SigType.value,
-                        SigType.symbol, SigType.value, SigType.symbol))
-    def xTaskCreate(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.create},
+              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
+                         Arg("task_name"),
+                         Arg("task_stack_size"),
+                         Arg("task_parameters", hint=SigType.symbol),
+                         Arg("task_priority"),
+                         Arg("task_handle_p", hint=SigType.instance)))
+    def xTaskCreate(graph, abb, state, args, va):
         state = state.copy()
 
-        # instance properties
-        cp = state.call_path
-
-        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
-
-        task_function = p_get_argument(0, ty=pyllco.Function).get_name()
-        task_name = p_get_argument(1)
-        task_stack_size = p_get_argument(2)
-        task_parameters = p_get_argument(3, raw_value=True)
-        task_priority = p_get_argument(4)
-        task_handle_p = p_get_argument(5, raw_value=True)
-
         v = state.instances.add_vertex()
-        state.instances.vp.label[v] = f"Task: {task_name} ({task_function})"
+        func_name = args.task_function.get_name()
+        state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
 
-        new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
+        new_cfg = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name))
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
-        FreeRTOS.handle_soc(state, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg, new_cfg,
+        FreeRTOS.handle_soc(state, v, graph.cfg, abb)
+        state.instances.vp.obj[v] = Task(graph.cfg, new_cfg,
                                          vidx=v,
-                                         function=task_function,
-                                         name=task_name,
-                                         stack_size=task_stack_size,
-                                         parameters=task_parameters,
-                                         priority=task_priority,
-                                         handle_p=task_handle_p,
-                                         call_path=cp,
+                                         function=func_name,
+                                         name=args.task_name,
+                                         stack_size=args.task_stack_size,
+                                         parameters=args.task_parameters,
+                                         priority=args.task_priority,
+                                         handle_p=args.task_handle_p,
+                                         call_path=state.call_path,
                                          abb=abb,
         )
 
+        args.task_handle_p = state.instances.vp.obj[v]
+
         assign_id(state.instances, v)
 
-        state.next_abbs = []
-
-        # next abbs
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
-        logger.info(f"Create new Task {task_name} (function: {task_function})")
+        logger.info(f"Create new Task {args.task_name} (function: {func_name})")
         return state
 
-    @syscall(categories={SyscallCategory.create})
-    def vTaskStartScheduler(cfg, abb, state):
-        state = state.copy()
-
+    @syscall2(categories={SyscallCategory.create}, custom_control_flow=True)
+    def vTaskStartScheduler(graph, abb, state, args, va):
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
 
-        cp = state.call_path
-
         #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
-        FreeRTOS.handle_soc(state, v, cfg, abb, scheduler_on=False)
-        state.instances.vp.obj[v] = Task(cfg, None,
+        FreeRTOS.handle_soc(state, v, graph.cfg, abb, scheduler_on=False)
+        state.instances.vp.obj[v] = Task(graph.cfg, None,
                                          function='prvIdleTask',
                                          name='idle_task',
                                          vidx=v,
@@ -378,23 +367,27 @@ class FreeRTOS(OSBase):
                                          parameters=0,
                                          priority=0,
                                          handle_p=0,
-                                         call_path=cp,
+                                         call_path=state.call_path,
                                          abb=abb,
                                          is_regular=False)
 
         assign_id(state.instances, v)
 
-        state.next_abbs = []
+        # this syscall is an exit node
         state.scheduler_on = True
         return state
 
-    @syscall(categories={SyscallCategory.create},
-             signature=(SigType.value, SigType.value, SigType.value))
-    def xQueueGenericCreate(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.create},
+              signature=(Arg("queue_len"),
+                         Arg("queue_item_size"),
+                         Arg("q_type")))
+    def XQueueGenericCreate(graph, abb, state, args, va):
         state = state.copy()
 
         # instance properties
         cp = state.call_path
+
+        ret_val = va.get_return_value(abb, callpath=cp)
 
         queue_handler = get_return_value(cfg, abb, cp)
         if queue_handler is not None:
@@ -425,23 +418,18 @@ class FreeRTOS(OSBase):
 
         assign_id(state.instances, v)
 
-        state.next_abbs = []
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
-    @syscall(categories={SyscallCategory.create},
-             signature=(SigType.value,))
-    def xQueueCreateMutex(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.create},
+              signature=(Arg("mutex_type"),))
+    def xQueueCreateMutex(graph, abb, state, args, va):
         state = state.copy()
         # instance properties
         cp = state.call_path
-        mutex_handler = get_return_value(cfg, abb, cp)
-        if mutex_handler is not None:
-            handler_name = mutex_handler.get_name()
-        else:
-            handler_name = ""
+        cfg = graph.cfg
 
-        mutex_type = get_argument(cfg, abb, cp, 0)
+        ret_val = va.get_return_value(abb, cp)
+        handler_name = ret_val.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
@@ -449,8 +437,8 @@ class FreeRTOS(OSBase):
 
         state.instances.vp.obj[v] = Mutex(cfg,
                                           name=handler_name,
-                                          handler=mutex_handler,
-                                          m_type=mutex_type,
+                                          handler=ret_val,
+                                          m_type=args.mutex_type,
                                           abb=abb,
                                           call_path=cp,
                                           vidx=v,
@@ -458,8 +446,8 @@ class FreeRTOS(OSBase):
 
         assign_id(state.instances, v)
 
-        state.next_abbs = []
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -477,8 +465,6 @@ class FreeRTOS(OSBase):
         e = state.instances.add_edge(state.running, state.running)
         state.instances.ep.label[e] = f"vTaskDelay({ticks})"
 
-        state.next_abbs = []
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -513,8 +499,6 @@ class FreeRTOS(OSBase):
             e = state.instances.add_edge(state.running, queue)
             state.instances.ep.label[e] = f"xQueueGenericSend"
 
-        state.next_abbs = []
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -546,8 +530,6 @@ class FreeRTOS(OSBase):
             e = state.instances.add_edge(state.running, queue)
             state.instances.ep.label[e] = f"xQueueSemaphoreTake"
 
-        state.next_abbs = []
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
         return state
 
     ## HERE BEGINS THE TODO sections, all following syscalls are stubs
@@ -873,19 +855,14 @@ class FreeRTOS(OSBase):
     def xStreamBufferCreateStatic(cfg, abb, state):
         pass
 
-    @syscall(categories={SyscallCategory.create},
-             signature=(SigType.value))
-    def xStreamBufferGenericCreate(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.create}, signature=(Arg("size"),))
+    def xStreamBufferGenericCreate(graph, abb, state, args, va):
         state = state.copy()
+        cfg = graph.cfg
         cp = state.call_path
-        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
 
-        handler = get_return_value(cfg, abb, cp)
-        if handler is not None:
-            handler_name = handler.get_name()
-        else:
-            handler_name = ""
-        size = p_get_argument(0)
+        handler = va.get_return_value(abb, callpath=cp)
+        handler_name = handler.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
@@ -897,13 +874,12 @@ class FreeRTOS(OSBase):
                                                  vidx=v,
                                                  handler=handler,
                                                  name=handler_name,
-                                                 size=size,
+                                                 size=args.size,
         )
-
         assign_id(state.instances, v)
 
-        state.next_abbs = []
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
+        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+
         return state
 
 
@@ -963,55 +939,50 @@ class FreeRTOS(OSBase):
     def xTaskCreateRestricted(cfg, abb, state):
         pass
 
-    @syscall(categories={SyscallCategory.create},
-             signature=(SigType.symbol, SigType.value, SigType.value,
-                        SigType.symbol, SigType.value, SigType.symbol,
-                        SigType.symbol))
-    def xTaskCreateStatic(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.create},
+              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
+                         Arg("task_name"),
+                         Arg("task_stack_size"),
+                         Arg("task_parameters", hint=SigType.symbol),
+                         Arg("task_priority"),
+                         Arg("task_stack", hint=SigType.symbol),
+                         Arg("task_handle_p", hint=SigType.instance)))
+    def xTaskCreateStatic(graph, abb, state, args, va):
         state = state.copy()
+        cfg = graph.cfg
 
         # instance properties
         cp = state.call_path
 
-        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
-
-        task_function = p_get_argument(0, ty=pyllco.Function).get_name()
-        task_name = p_get_argument(1)
-        task_stack_size = p_get_argument(2)
-        task_parameters = p_get_argument(3, raw_value=True)
-        task_priority = p_get_argument(4)
-        task_stack = p_get_argument(5, raw_value=True)
-        task_handle_p = p_get_argument(6, raw_value=True)
-
-        task_handler = get_return_value(cfg, abb, cp)
+        task_handler = va.get_return_value(abb, callpath=cp)
 
         v = state.instances.add_vertex()
-        state.instances.vp.label[v] = f"Task: {task_name} ({task_function})"
+        func_name = args.task_function.get_name()
+        state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
 
-        new_cfg = cfg.get_entry_abb(cfg.get_function_by_name(task_function))
+        new_cfg = cfg.get_entry_abb(
+            cfg.get_function_by_name(func_name)
+        )
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(state, v, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg, new_cfg,
                                          vidx=v,
-                                         function=task_function,
-                                         name=task_name,
-                                         stack_size=task_stack_size,
-                                         parameters=task_parameters,
-                                         priority=task_priority,
+                                         function=func_name,
+                                         name=args.task_name,
+                                         stack_size=args.task_stack_size,
+                                         parameters=args.task_parameters,
+                                         priority=args.task_priority,
                                          handle_p=task_handler,
                                          call_path=cp,
                                          abb=abb,
-                                         static_stack=task_stack,
+                                         static_stack=args.task_stack,
         )
 
         assign_id(state.instances, v)
+        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
 
-        state.next_abbs = []
-
-        # next abbs
-        FreeRTOS.add_normal_cfg(cfg, abb, state)
-        logger.info(f"Create new Task {task_name} (function: {task_function})")
+        logger.info(f"Create new Task {args.task_name} (function: {func_name})")
         return state
         pass
 

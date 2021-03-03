@@ -15,7 +15,7 @@ IF STEP_TESTS:
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr, unique_ptr
-from backported_utility cimport move
+from common.backported_utility cimport move
 from libcpp.memory cimport static_pointer_cast as spc
 from libcpp.string cimport string
 from libc.stdint cimport int64_t
@@ -23,6 +23,11 @@ from cy_helper cimport make_step_fac
 
 cimport cy_helper
 cimport option as coption
+
+# includes for value_analyzer.pxi
+from value_analyzer cimport ValueAnalyzer as CVA
+from graph_data cimport CallPath, PyGraphData
+
 
 import json
 import logging
@@ -32,7 +37,6 @@ from collections import defaultdict
 
 from ara.steps import option
 from ara.util import LEVEL
-
 
 cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
@@ -344,6 +348,7 @@ cdef class NativeStep(SuperStep):
 
 
 include "replace_syscalls_create.pxi"
+include "value_analyzer.pxi"
 
 cdef _native_step_fac(unique_ptr[cstep.StepFactory] step_fac):
     """Construct a NativeStep. Expects an already constructed C++-Step pointer.
@@ -374,8 +379,7 @@ def provide_steps():
             _native_step_fac_ReplaceSyscallsCreate(),
             _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
-            _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
-            _native_step_fac(make_step_fac[cstep.ValueAnalysis]())]
+            _native_step_fac(make_step_fac[cstep.SVFTransformation]())]
 
 def provide_test_steps():
     IF STEP_TESTS:

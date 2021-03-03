@@ -6,15 +6,26 @@
 void task1(void*) { }
 
 static xSemaphoreHandle mutex;
-static xSemaphoreHandle mutex2;
 static xSemaphoreHandle mutex3;
 static xSemaphoreHandle mutex4;
 static xSemaphoreHandle mutex5;
 static xTaskHandle t;
 
+int task_data = 746;
+int global_value = 0;
+
 void do_stuff(int a) {
 	vTaskStepTick(a);
 }
+
+class Embed {
+  private:
+	int hidden = 5;
+
+  public:
+	void update(int a) { hidden = a; }
+	void call() { vTaskStepTick(hidden); }
+};
 
 class Guard {
   private:
@@ -32,7 +43,7 @@ class Guard2 {
   public:
 	Guard2(SemaphoreHandle_t mtx) {
 		mutex = mtx;
-		xSemaphoreTake(mutex, portMAX_DELAY);
+		xSemaphoreTake(mutex, 10);
 	}
 	~Guard2() {
 		xSemaphoreGive(mutex);
@@ -62,14 +73,19 @@ int main() {
 	int b = 333;
 	int c = 6;
 	int d = 4465;
+	Embed embed;
+	embed.update(1);
+	embed.update(34);
+	embed.call();
+	// embed.update(89);
+	// embed.call();
 	xTaskHandle t2 = xTaskCreateStatic(task1, "TaskStatic", 11114, NULL, 1, NULL, NULL);
+	xTaskHandle t3 = xTaskCreateStatic(task1, "TaskStatic1", 12344, &task_data, 5, NULL, NULL);
 	// used one time
 	mutex = xSemaphoreCreateRecursiveMutex();
 	if (!mutex) {
 		return;
 	}
-	// used multiple times
-	mutex2 = xSemaphoreCreateRecursiveMutex();
 	// not used anymore
 	mutex3 = xSemaphoreCreateRecursiveMutex();
 	// argument handle
@@ -84,10 +100,14 @@ int main() {
 	do_stuff(a);
 	do_stuff(b);
 	xSemaphoreTakeRecursive(mutex, 5);
-	xSemaphoreTakeRecursive(mutex2, 5);
-	xSemaphoreTakeRecursive(mutex2, 5);
+	xSemaphoreTakeRecursive(mutex4, 80);
+	xSemaphoreTakeRecursive(mutex5, 14);
+	global_value = 10101;
+	vTaskStepTick(global_value);
 
 	Wrapper w;
 	x = w.do_stuff(x);
+	Wrapper w2;
+	x += w2.do_stuff(x);
 	return x;
 }

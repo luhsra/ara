@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../mix.py"
 #include "common/exceptions.h"
 #include "graph_data.h"
+#include "mix.h"
 #include "os.h"
 
 #include <Python.h>

@@ -49,6 +49,23 @@ namespace ara::graph {
 		edges.emplace_back(edge_base.get_descriptor());
 	}
 
+	template <class G>
+	void foo(SVF::PTACallGraphEdge** edge, graph::CallGraph& callgraph, graph_tool::GraphInterface::edge_t o_edge) {
+		*edge = const_cast<SVF::PTACallGraphEdge*>(callgraph.get_svf_elink<G>(o_edge));
+	}
+
+	const SVF::PTACallGraphEdge* CallPath::svf_at(size_t index) const {
+		assert(call_graph != nullptr && "CallGraph must not be null");
+		SVF::PTACallGraphEdge* edge = nullptr;
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) {
+			    edge = const_cast<SVF::PTACallGraphEdge*>(
+			        call_graph->get_svf_elink<typename std::remove_reference<decltype(g)>::type>(this->at(index)));
+		    },
+		    graph_tool::always_directed())(call_graph->graph.get_graph_view());
+		return edge;
+	}
+
 	PyObject* CallPath::py_at(size_t index) {
 		if (is_empty()) {
 			throw std::out_of_range("CallPath has no elements.");

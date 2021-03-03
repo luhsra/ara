@@ -1735,7 +1735,7 @@ class FlatAnalysis(FlowAnalysis):
                 self._init_fake_state(fake_state, abb)
                 assert self._graph.os is not None
                 new_state = self._graph.os.interpret(
-                    self._graph.cfg, abb, fake_state,
+                    self._graph, abb, fake_state,
                     categories=self._get_categories()
                 )
                 self._evaluate_fake_state(new_state, abb)
@@ -1829,7 +1829,7 @@ class SIA(FlatAnalysis):
         deps = super().get_single_dependencies()
         deps += self._get_os_specific_deps()
         deps += list(map(self._get_entry_point_dep,
-                         ["Syscall", "ValueAnalysis"]))
+                         ["Syscall"]))
         return deps
 
     def _init_analysis(self):

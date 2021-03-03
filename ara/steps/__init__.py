@@ -38,3 +38,9 @@ def provide_steps():
     yield SysFuncts
     yield Syscall
     yield SystemRelevantFunctions
+
+def get_native_component(name: str):
+    # direct import would result in dependency conflicts
+    from .step import ValueAnalyzer
+    components = {"ValueAnalyzer": ValueAnalyzer}
+    return components[name]

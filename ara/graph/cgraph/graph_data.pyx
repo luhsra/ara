@@ -1,14 +1,13 @@
 # cython: language_level=3
 # vim: set et ts=4 sw=4:
 
-from .graph_data cimport PyGraphData
+from graph_data cimport PyGraphData, CallPath
 
-from .arguments cimport Argument as CArgument, Arguments as CArguments
-from .arguments cimport CallPath as CCallPath
-from .os cimport SysCall as CSysCall
+from carguments cimport Argument as CArgument, Arguments as CArguments, CallPath as CCallPath
+from os cimport SysCall as CSysCall
 from common.cy_helper cimport to_string
-from .cgraph cimport CallGraph, SigType as CSigType
-from .cy_helper cimport to_sigtype, safe_get_value
+from cgraph cimport CallGraph, SigType as CSigType
+from cy_helper cimport to_sigtype, safe_get_value
 
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.vector cimport vector
@@ -26,8 +25,6 @@ cdef extern from 'pyllco.h':
 
 
 cdef class CallPath:
-    cdef CCallPath _c_callpath
-
     def __cinit__(self):
         pass
 

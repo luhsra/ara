@@ -9,7 +9,7 @@ from libcpp.unordered_map cimport unordered_map
 
 from ir cimport Value, AttributeSet
 
-from .cgraph cimport CallGraph
+from cgraph cimport CallGraph
 
 ctypedef Value& value_ref
 

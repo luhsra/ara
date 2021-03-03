@@ -91,9 +91,9 @@ class SyscallCategory(enum.IntEnum): # */
 # symbol
 #
 # undefined = as the name says
-# every = syscall belongs to every category
-# create = syscall creates an instance
-# comm = syscall is causes some kind of communication
+# value = syscall argument is a value (42, "hello world", nullptr, ...)
+# symbol = syscall argument is a symbol (Function, GlobalPointer, nullptr, ...)
+# instance = syscall argument is an instance handler
 # ATTENTION: This enum must kept in sync with syscall_category.inc
 class SigType(enum.IntEnum): # */
     #undef pass
@@ -103,6 +103,7 @@ class SigType(enum.IntEnum): # */
     undefined = 0,
     value = 1,
     symbol = 2,
+    instance = 3,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(SigType)}

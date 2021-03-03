@@ -105,7 +105,9 @@ namespace ara::graph {
 
 		void add_call_site(PyObject* call_graph, PyObject* edge);
 
+		const graph_tool::GraphInterface::edge_t at(size_t index) const { return edges.at(index); }
 		graph_tool::GraphInterface::edge_t at(size_t index) { return edges.at(index); }
+		const SVF::PTACallGraphEdge* svf_at(size_t index) const;
 		PyObject* py_at(size_t index);
 
 		std::string print(bool call_site = false, bool instruction = false, bool functions = false) const;

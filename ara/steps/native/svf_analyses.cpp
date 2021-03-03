@@ -41,6 +41,7 @@ namespace ara::step {
 		if (*dump.get()) {
 			icfg->dump(*dump_prefix.get() + "svf-icfg");
 			callgraph->dump(*dump_prefix.get() + "svf-callgraph");
+			graph.get_svfg().dump(*dump_prefix.get() + "svfg");
 		}
 	}
 } // namespace ara::step

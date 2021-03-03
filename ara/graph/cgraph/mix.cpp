@@ -1,4 +1,4 @@
-#include "../mix.py"
+#include "mix.h"
 
 #include <cassert>
 
@@ -98,6 +98,8 @@ namespace ara::graph {
 			return (str << "value");
 		case SigType::symbol:
 			return (str << "symbol");
+		case SigType::instance:
+			return (str << "instance");
 		};
 		assert(false);
 		return str;

@@ -46,8 +46,8 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB
-        self.vertex_properties["file"] = self.new_vp("string") # BB
-        self.vertex_properties["line"] = self.new_vp("int") # BB
+        self.vertex_properties["file"] = self.new_vp("string") # BB/call ABB
+        self.vertex_properties["line"] = self.new_vp("int") # BB/call ABB
         self.vertex_properties["implemented"] = self.new_vp("bool") # Function
         self.vertex_properties["sysfunc"] = self.new_vp("bool") # Function
         self.vertex_properties["arguments"] = self.new_vp("object") # Function

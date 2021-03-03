@@ -38,7 +38,7 @@ cdef public void py_log(LogLevel level, PyLogger& logger, string msg):
         log.error(msg.decode('UTF-8'))
         return
     if level == WARNING:
-        log.warn(msg.decode('UTF-8'))
+        log.warning(msg.decode('UTF-8'))
         return
     if level == INFO:
         log.info(msg.decode('UTF-8'))
