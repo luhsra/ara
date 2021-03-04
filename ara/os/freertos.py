@@ -480,7 +480,7 @@ class FreeRTOS(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('handler'),
                         Arg('type')))
-    def xQueueSemaphoreTake(cfg, abb, state):
+    def xQueueSemaphoreTake(graph, abb, state, args, va):
         state = state.copy()
 
         cp = state.call_path
@@ -582,445 +582,445 @@ class FreeRTOS(OSBase):
     ## HERE BEGINS THE TODO sections, all following syscalls are stubs
 
     @syscall
-    def eTaskGetState(cfg, abb, state):
+    def eTaskGetState(graph, abb, state, args, va):
         pass
 
     @syscall
-    def pcQueueGetName(cfg, abb, state):
+    def pcQueueGetName(graph, abb, state, args, va):
         pass
 
     @syscall
-    def pcTaskGetName(cfg, abb, state):
+    def pcTaskGetName(graph, abb, state, args, va):
         pass
 
     @syscall
-    def pcTimerGetName(cfg, abb, state):
+    def pcTimerGetName(graph, abb, state, args, va):
         pass
 
     @syscall
-    def portDISABLE_INTERRUPTS(cfg, abb, state):
+    def portDISABLE_INTERRUPTS(graph, abb, state, args, va):
         pass
 
     @syscall
-    def portENABLE_INTERRUPTS(cfg, abb, state):
+    def portENABLE_INTERRUPTS(graph, abb, state, args, va):
         pass
 
     @syscall
-    def portSET_INTERRUPT_MASK_FROM_ISR(cfg, abb, state):
+    def portSET_INTERRUPT_MASK_FROM_ISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def portYIELD(cfg, abb, state):
+    def portYIELD(graph, abb, state, args, va):
         pass
 
     @syscall
-    def pvTaskGetThreadLocalStoragePointer(cfg, abb, state):
+    def pvTaskGetThreadLocalStoragePointer(graph, abb, state, args, va):
         pass
 
     @syscall
-    def pvTimerGetTimerID(cfg, abb, state):
+    def pvTimerGetTimerID(graph, abb, state, args, va):
         pass
 
     @syscall
-    def ulTaskNotifyTake(cfg, abb, state):
+    def ulTaskNotifyTake(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxQueueMessagesWaiting(cfg, abb, state):
+    def uxQueueMessagesWaiting(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxQueueMessagesWaitingFromISR(cfg, abb, state):
+    def uxQueueMessagesWaitingFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxQueueSpacesAvailable(cfg, abb, state):
+    def uxQueueSpacesAvailable(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxTaskGetNumberOfTasks(cfg, abb, state):
+    def uxTaskGetNumberOfTasks(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxTaskGetStackHighWaterMark(cfg, abb, state):
+    def uxTaskGetStackHighWaterMark(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxTaskGetSystemState(cfg, abb, state):
+    def uxTaskGetSystemState(graph, abb, state, args, va):
         pass
 
     @syscall
-    def uxTaskPriorityGet(cfg, abb, state):
+    def uxTaskPriorityGet(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vCoRoutineSchedule(cfg, abb, state):
+    def vCoRoutineSchedule(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vEventGroupDelete(cfg, abb, state):
+    def vEventGroupDelete(graph, abb, state, args, va):
         logger.warn("Got an vEventGroupDelete. Deleting a potientially static EventGroup.")
 
     @syscall
-    def vQueueAddToRegistry(cfg, abb, state):
+    def vQueueAddToRegistry(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vQueueDelete(cfg, abb, state):
+    def vQueueDelete(graph, abb, state, args, va):
         logger.warn("Got an vQueueDelete. Deleting a potientially static Queue.")
 
     @syscall
-    def vSemaphoreCreateBinary(cfg, abb, state):
+    def vSemaphoreCreateBinary(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vStreamBufferDelete(cfg, abb, state):
+    def vStreamBufferDelete(graph, abb, state, args, va):
         logger.warn("Got an vStreamBufferDelete. Deleting a potientially static StreamBuffer.")
 
     @syscall
-    def vTaskAllocateMPURegions(cfg, abb, state):
+    def vTaskAllocateMPURegions(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskDelayUntil(cfg, abb, state):
+    def vTaskDelayUntil(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskDelete(cfg, abb, state):
+    def vTaskDelete(graph, abb, state, args, va):
         logger.warn("Got an vTaskDelete. Deleting a potientially static Task.")
 
     @syscall
-    def vTaskEnterCritical(cfg, abb, state):
+    def vTaskEnterCritical(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskExitCritical(cfg, abb, state):
+    def vTaskExitCritical(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskGetRunTimeStats(cfg, abb, state):
+    def vTaskGetRunTimeStats(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskList(cfg, abb, state):
+    def vTaskList(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskNotifyGiveFromISR(cfg, abb, state):
+    def vTaskNotifyGiveFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskPrioritySet(cfg, abb, state):
+    def vTaskPrioritySet(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskResume(cfg, abb, state):
+    def vTaskResume(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskSetApplicationTaskTag(cfg, abb, state):
+    def vTaskSetApplicationTaskTag(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskSetThreadLocalStoragePointer(cfg, abb, state):
+    def vTaskSetThreadLocalStoragePointer(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskSetTimeOutState(cfg, abb, state):
+    def vTaskSetTimeOutState(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskStepTick(cfg, abb, state):
+    def vTaskStepTick(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskSuspend(cfg, abb, state):
+    def vTaskSuspend(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTaskSuspendAll(cfg, abb, state):
+    def vTaskSuspendAll(graph, abb, state, args, va):
         pass
 
     @syscall
-    def vTimerSetTimerID(cfg, abb, state):
+    def vTimerSetTimerID(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xCoRoutineCreate(cfg, abb, state):
+    def xCoRoutineCreate(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupClearBits(cfg, abb, state):
+    def xEventGroupClearBits(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupClearBitsFromISR(cfg, abb, state):
+    def xEventGroupClearBitsFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupCreate(cfg, abb, state):
+    def xEventGroupCreate(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupCreateStatic(cfg, abb, state):
+    def xEventGroupCreateStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupGetBitsFromISR(cfg, abb, state):
+    def xEventGroupGetBitsFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupSetBits(cfg, abb, state):
+    def xEventGroupSetBits(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupSetBitsFromISR(cfg, abb, state):
+    def xEventGroupSetBitsFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupSync(cfg, abb, state):
+    def xEventGroupSync(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xEventGroupWaitBits(cfg, abb, state):
+    def xEventGroupWaitBits(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xMessageBufferCreateStatic(cfg, abb, state):
+    def xMessageBufferCreateStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueAddToSet(cfg, abb, state):
+    def xQueueAddToSet(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueCreateCountingSemaphore(cfg, abb, state):
+    def xQueueCreateCountingSemaphore(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueCreateSet(cfg, abb, state):
+    def xQueueCreateSet(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueCreateStatic(cfg, abb, state):
+    def xQueueCreateStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueGenericSendFromISR(cfg, abb, state):
+    def xQueueGenericSendFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueGetMutexHolder(cfg, abb, state):
+    def xQueueGetMutexHolder(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueGetMutexHolderFromISR(cfg, abb, state):
+    def xQueueGetMutexHolderFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueGiveFromISR(cfg, abb, state):
+    def xQueueGiveFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueGiveMutexRecursive(cfg, abb, state):
+    def xQueueGiveMutexRecursive(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueIsQueueEmptyFromISR(cfg, abb, state):
+    def xQueueIsQueueEmptyFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueIsQueueFullFromISR(cfg, abb, state):
+    def xQueueIsQueueFullFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueuePeek(cfg, abb, state):
+    def xQueuePeek(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueuePeekFromISR(cfg, abb, state):
+    def xQueuePeekFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueReceive(cfg, abb, state):
+    def xQueueReceive(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueReceiveFromISR(cfg, abb, state):
+    def xQueueReceiveFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueRemoveFromSet(cfg, abb, state):
+    def xQueueRemoveFromSet(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueReset(cfg, abb, state):
+    def xQueueReset(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueSelectFromSet(cfg, abb, state):
+    def xQueueSelectFromSet(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xQueueSelectFromSetFromISR(cfg, abb, state):
+    def xQueueSelectFromSetFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateBinary(cfg, abb, state):
+    def xSemaphoreCreateBinary(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateBinaryStatic(cfg, abb, state):
+    def xSemaphoreCreateBinaryStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateCountingStatic(cfg, abb, state):
+    def xSemaphoreCreateCountingStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateMutexStatic(cfg, abb, state):
+    def xSemaphoreCreateMutexStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateRecursiveMutex(cfg, abb, state):
+    def xSemaphoreCreateRecursiveMutex(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateRecursiveMutexStatic(cfg, abb, state):
+    def xSemaphoreCreateRecursiveMutexStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferBytesAvailable(cfg, abb, state):
+    def xStreamBufferBytesAvailable(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferCreateStatic(cfg, abb, state):
+    def xStreamBufferCreateStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferIsEmpty(cfg, abb, state):
+    def xStreamBufferIsEmpty(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferIsFull(cfg, abb, state):
+    def xStreamBufferIsFull(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferReceive(cfg, abb, state):
+    def xStreamBufferReceive(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferReceiveFromISR(cfg, abb, state):
+    def xStreamBufferReceiveFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferReset(cfg, abb, state):
+    def xStreamBufferReset(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferResetFromISR(cfg, abb, state):
+    def xStreamBufferResetFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferSend(cfg, abb, state):
+    def xStreamBufferSend(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferSendFromISR(cfg, abb, state):
+    def xStreamBufferSendFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferSetTriggerLevel(cfg, abb, state):
+    def xStreamBufferSetTriggerLevel(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xStreamBufferSpacesAvailable(cfg, abb, state):
+    def xStreamBufferSpacesAvailable(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskAbortDelay(cfg, abb, state):
+    def xTaskAbortDelay(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskCallApplicationTaskHook(cfg, abb, state):
+    def xTaskCallApplicationTaskHook(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskCheckForTimeOut(cfg, abb, state):
+    def xTaskCheckForTimeOut(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskCreateRestricted(cfg, abb, state):
+    def xTaskCreateRestricted(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskGetApplicationTaskTag(cfg, abb, state):
+    def xTaskGetApplicationTaskTag(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskGetCurrentTaskHandle(cfg, abb, state):
+    def xTaskGetCurrentTaskHandle(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskGetHandle(cfg, abb, state):
+    def xTaskGetHandle(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskGetIdleTaskHandle(cfg, abb, state):
+    def xTaskGetIdleTaskHandle(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskGetTickCount(cfg, abb, state):
+    def xTaskGetTickCount(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskGetTickCountFromISR(cfg, abb, state):
+    def xTaskGetTickCountFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskNotifyStateClear(cfg, abb, state):
+    def xTaskNotifyStateClear(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskResumeAll(cfg, abb, state):
+    def xTaskResumeAll(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTaskResumeFromISR(cfg, abb, state):
+    def xTaskResumeFromISR(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerCreate(cfg, abb, state):
+    def xTimerCreate(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerCreateStatic(cfg, abb, state):
+    def xTimerCreateStatic(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerGenericCommand(cfg, abb, state):
+    def xTimerGenericCommand(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerGetExpiryTime(cfg, abb, state):
+    def xTimerGetExpiryTime(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerGetPeriod(cfg, abb, state):
+    def xTimerGetPeriod(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerGetTimerDaemonTaskHandle(cfg, abb, state):
+    def xTimerGetTimerDaemonTaskHandle(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerIsTimerActive(cfg, abb, state):
+    def xTimerIsTimerActive(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerPendFunctionCall(cfg, abb, state):
+    def xTimerPendFunctionCall(graph, abb, state, args, va):
         pass
 
     @syscall
-    def xTimerPendFunctionCallFromISR(cfg, abb, state):
+    def xTimerPendFunctionCallFromISR(graph, abb, state, args, va):
         pass
