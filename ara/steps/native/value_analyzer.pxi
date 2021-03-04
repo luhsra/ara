@@ -23,7 +23,7 @@ cdef class ValueAnalyzer:
     def __cinit__(self, graph):
         self._graph = graph
         self._log = get_logger("ValueAnalyzer")
-        self._sys_objects = []
+        self._sys_objects = self._graph._va_system_objects
 
         cdef graph_data.PyGraphData g_data = graph._graph_data
         cdef cgraph.Graph gwrap = cgraph.Graph(graph, g_data._c_data)

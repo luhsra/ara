@@ -40,6 +40,10 @@ namespace ara::graph {
 		 */
 		std::map<const llvm::Function*, llvmext::Function> functions;
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
+		/**
+		 * Workaround for SVF classes where we need additional attributes.
+		 */
+		std::map<SVF::NodeID, unsigned> obj_map;
 
 		GraphData() : module(nullptr), svfg(nullptr) {}
 

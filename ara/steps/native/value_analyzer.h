@@ -158,7 +158,7 @@ namespace ara::step {
 		graph::CFG cfg;
 		Logger logger;
 		/* Map between: Key = VFGNode, Value = Python system object */
-		std::map<SVF::NodeID, unsigned> obj_map;
+		std::map<SVF::NodeID, unsigned>& obj_map;
 
 		/**
 		 * Convenience datatype, since the Value Analysis does a depth first search about the nodes, but also needs the
@@ -213,7 +213,8 @@ namespace ara::step {
 		// WARNING: do not use this class alone, always use the Python ValueAnalyzer.
 		// If Cython would support this, this constructor would be private.
 		ValueAnalyzer(graph::Graph&& graph, PyObject* logger)
-		    : graph(std::move(graph)), cfg(graph.get_cfg()), logger(Logger(logger)) {}
+		    : graph(std::move(graph)), cfg(graph.get_cfg()), logger(Logger(logger)),
+		      obj_map(graph.get_graph_data().obj_map) {}
 
 		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* logger) {
 			return std::make_unique<ValueAnalyzer>(std::move(graph), logger);
