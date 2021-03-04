@@ -75,7 +75,3 @@ cdef extern from "svf_analyses.h" namespace "ara::step":
 cdef extern from "svf_transformation.h" namespace "ara::step":
     cdef cppclass SVFTransformation:
         pass
-
-cdef extern from "value_analysis.h" namespace "ara::step":
-    cdef cppclass ValueAnalysis:
-        pass
