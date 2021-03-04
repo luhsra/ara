@@ -33,11 +33,13 @@ class Task(POSIXInstance):
 
 @dataclass
 class Thread(POSIXInstance):
+    entry_abb: any
+    function: any
     threadID: int
     priority: int
     sched_policy: str
     floating_point_env: any # TODO: check type
-    partOfTask: Task = None
+    partOfTask: Task
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "priority"]
@@ -52,6 +54,14 @@ class Thread(POSIXInstance):
             "sublabel": sublabel
         }
 
+    def get_maximal_id(self):
+        # TODO: use a better max_id
+        return '.'.join(map(str, ["Thread",
+                                  self.name,
+                                  self.function,
+                                  self.priority,
+                                 ]))
+
 
 class POSIX(OSBase):
     
@@ -65,11 +75,13 @@ class POSIX(OSBase):
 
     @staticmethod
     def init(state):
-        pass
+        state.scheduler_on = True  # The Scheduler is always on in POSIX.
 
     @staticmethod
     def interpret(cfg, abb, state, categories=SyscallCategory.every):
         """interprets a detected syscall"""
+
+        logger.debug("interpret called")
 
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
@@ -91,6 +103,35 @@ class POSIX(OSBase):
 
         return getattr(POSIX, syscall)(cfg, abb, state)
 
+    def handle_soc(state, v, cfg, abb,
+                   branch=None, loop=None, recursive=None, scheduler_on=None,
+                   usually_taken=None):
+        instances = state.instances
+
+        def b(c1, c2):
+            if c2 is None:
+                return c1
+            else:
+                return c2
+
+        in_branch = b(state.branch, branch)
+        in_loop = b(state.loop, loop)
+        is_recursive = b(state.recursive, recursive)
+        logger.debug("scheduler " + str(state.scheduler_on)) # TODO: fix scheduler off issue
+        after_sched = b(state.scheduler_on, scheduler_on)
+        is_usually_taken = b(state.usually_taken, usually_taken)
+
+        instances.vp.branch[v] = in_branch
+        instances.vp.loop[v] = in_loop
+        instances.vp.recursive[v] = is_recursive
+        instances.vp.after_scheduler[v] = after_sched
+        instances.vp.usually_taken[v] = is_usually_taken
+        instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
+        instances.vp.soc[v] = abb
+        instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
+        instances.vp.file[v] = cfg.vp.file[abb]
+        instances.vp.line[v] = cfg.vp.line[abb]
+
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
         for oedge in cfg.vertex(abb).out_edges():
@@ -108,16 +149,31 @@ class POSIX(OSBase):
 
         state = state.copy()
 
+        # instance properties
         cp = state.call_path
-        #ticks = get_argument(cfg, abb, cp, 0)
 
-        #if state is None or state.running is None:
-            # TODO proper error handling
-        #    logger.error("ERROR: pause() called without running Thread")
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = "Thread"
 
-        #e = state.instances.add_edge(state.running, state.running)
-        #state.instances.ep.label[e] = "pause()"
+        #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
+        #assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        POSIX.handle_soc(state, v, cfg, abb)
+        state.instances.vp.obj[v] = Thread(cfg, abb=None, call_path=None, name="Test thread",
+                                        entry_abb = None,
+                                        function = None,
+                                        threadID = 3,
+                                        priority = 2,
+                                        sched_policy = None,
+                                        floating_point_env = None, # TODO: check type
+                                        partOfTask = None
+        )
 
-        #state.next_abbs = []
+        assign_id(state.instances, v)
+
+        state.next_abbs = []
+
+        # next abbs
         POSIX.add_normal_cfg(cfg, abb, state)
+        logger.info("Create new Task task_name (function: task_function)")
         return state
