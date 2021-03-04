@@ -3,33 +3,10 @@ import typing
 import dataclasses
 import pyllco
 
+from typing import Tuple
+
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType
-
-def syscall(*args, categories=None, signature=None):
-    if categories is None:
-        categories = {_SyscallCategory.undefined}
-    if signature is None:
-        signature = tuple()
-    outer_categories = categories
-    outer_signature = signature
-
-    def wrap(func, categories=outer_categories, signature=outer_signature):
-        func.syscall = True
-        func.categories = categories
-        func.signature = signature
-        func = staticmethod(func)
-        return func
-
-    if len(args) == 1 and callable(args[0]):
-        func = wrap(args[0], categories, signature)
-        return func
-    return wrap
-
-
-class EmptyArgumentException(Exception):
-    """The argument is empty, aka contains no values."""
-
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
@@ -49,8 +26,8 @@ def get_argument(value, arg):
     """Retrieve an interpreted argument.
 
     Arguments:
-    value      -- LLVM raw value
-    attr       -- LLVM attributes
+    value -- LLVM raw value
+    arg   -- Argument for this value
     """
     if is_llvm_type(arg.ty):
         print("TY")
@@ -75,6 +52,12 @@ def get_argument(value, arg):
 
 @dataclasses.dataclass
 class Argument:
+    """Class that captures an argument.
+
+    name must be given. It is the field name of the args argument.
+    If hint is SigType.symbol or SigType.instance raw_value is automatically
+    true.
+    """
     name: str
     ty: typing.Any = typing.Any
     # WARNING: raw_value must come _before_ hint, since hint modifies raw_value
@@ -93,6 +76,16 @@ Arg = Argument
 
 
 class SysCall:
+    """Defines a system call.
+
+    A system call consists of a several attributes:
+    1. func_body: The function that is called to interpret this system call.
+    2. categories: The categories of this system call.
+    3. signature: The arguments of the system call.
+
+    A Syscall objects acts like a (static) function and can be called.
+    """
+
     def __init__(self, func_body, categories, signature, custom_control_flow):
         # visible attributes
         self.syscall = True
@@ -107,6 +100,27 @@ class SysCall:
         return self
 
     def __call__(self, graph, abb, state):
+        """Interpret the system call.
+
+        In principal, this function performs a value analysis, then calls
+        func_body with the retrieved arguments, takes a new state back from
+        func_body and follows the normal control flow patterns if wanted.
+
+        In particular func_body is called with this arguments:
+        graph -- the system graph
+        abb   -- the ABB of the system call
+        state -- the OS state
+        args  -- A special args object, that contains the retrieved arguments.
+                 It has as fields the attribute names that are given by the
+                 Argument tuple.
+        va    -- The value analyzer.
+
+        Arguments:
+        graph -- the graph object
+        abb   -- the abb ob the system call
+        state -- the OS state
+        """
+
         if _SyscallCategory.undefined in self.categories:
             raise NotImplementedError(f"{self._func.__name__} is only a stub.")
 
@@ -165,7 +179,19 @@ class SysCall:
         return new_state
 
 
-def syscall2(*args, categories=None, signature=None, custom_control_flow=False):
+def syscall(*args,
+            categories: Tuple[_SyscallCategory] = None,
+            signature: Tuple[Argument] = None,
+            custom_control_flow: bool = False):
+    """System call decorator. Changes a function into a system call.
+
+    Returns a Syscall object. See it's documentation for more information.
+
+    Arguments:
+    categories          -- Categories of the system call
+    signature           -- Specification of all system call arguments
+    custom_control_flow -- Does this system call alter the control flow?
+    """
     if categories is None:
         categories = {_SyscallCategory.undefined}
     if signature is None:
@@ -192,25 +218,23 @@ def syscall2(*args, categories=None, signature=None, custom_control_flow=False):
     return wrap
 
 
-def get_return_value(cfg, abb, call_path):
-    """Retrieve the return value.
-
-    Arguments:
-    cfg        -- control flow graph
-    abb        -- ABB in this graph
-    call_path  -- call path
-    """
-    handler = cfg.vp.arguments[abb].get_return_value()
-    if handler is None:
-        return None
-    try:
-        return handler.get_value(key=call_path, raw=True)
-    except IndexError:
-        return None
-
-
-
 def assign_id(instances, instance):
+    """Assign the shortest unique prefix ID to instance.
+
+    This function uses instance.get_maximal_id() to assign the shortest unique
+    prefix ID to this instance. If other instance IDs needs update they are
+    updated.
+
+    Example:
+        Instance | ID  | Maximal ID
+        ---------|-----|-----------
+        I1       | 1.2 | 1.2.3.4
+        I2       | 2   | 2.1.1
+        I3       | 1.3 | 1.3.1.2.1
+
+    Now Instance I4 with the maximal ID 1.3.1.1.1 should be added. The algorithm
+    then assigns the ID 1.3.1.1 to I4 and 1.3.1.2 to I3.
+    """
     other_ids = [(instances.vp.id[x].split('.'), x)
                  for x in instances.vertices()
                  if x != instance]

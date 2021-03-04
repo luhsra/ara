@@ -1,4 +1,4 @@
-from .os_util import syscall, syscall2, get_argument, assign_id, Arg
+from .os_util import syscall, assign_id, Arg
 from .os_base import OSBase
 
 import pyllco
@@ -315,13 +315,13 @@ class FreeRTOS(OSBase):
         instances.vp.line[v] = cfg.vp.line[abb]
 
 
-    @syscall2(categories={SyscallCategory.create},
-              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
-                         Arg("task_name"),
-                         Arg("task_stack_size"),
-                         Arg("task_parameters", hint=SigType.symbol),
-                         Arg("task_priority"),
-                         Arg("task_handle_p", hint=SigType.instance)))
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
+                        Arg("task_name"),
+                        Arg("task_stack_size"),
+                        Arg("task_parameters", hint=SigType.symbol),
+                        Arg("task_priority"),
+                        Arg("task_handle_p", hint=SigType.instance)))
     def xTaskCreate(graph, abb, state, args, va):
         state = state.copy()
 
@@ -352,7 +352,7 @@ class FreeRTOS(OSBase):
         logger.info(f"Create new Task {args.task_name} (function: {func_name})")
         return state
 
-    @syscall2(categories={SyscallCategory.create}, custom_control_flow=True)
+    @syscall(categories={SyscallCategory.create}, custom_control_flow=True)
     def vTaskStartScheduler(graph, abb, state, args, va):
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
@@ -377,28 +377,18 @@ class FreeRTOS(OSBase):
         state.scheduler_on = True
         return state
 
-    @syscall2(categories={SyscallCategory.create},
-              signature=(Arg("queue_len"),
-                         Arg("queue_item_size"),
-                         Arg("q_type")))
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("queue_len"),
+                        Arg("queue_item_size"),
+                        Arg("q_type")))
     def XQueueGenericCreate(graph, abb, state, args, va):
         state = state.copy()
 
         # instance properties
         cp = state.call_path
 
-        ret_val = va.get_return_value(abb, callpath=cp)
-
-        queue_handler = get_return_value(cfg, abb, cp)
-        if queue_handler is not None:
-            handler_name = queue_handler.get_name()
-        else:
-            handler_name = ""
-
-        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
-        queue_len = p_get_argument(0)
-        queue_item_size = p_get_argument(1)
-        q_type = p_get_argument(2)
+        queue_handler = va.get_return_value(abb, callpath=cp)
+        handler_name = queue_handler.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Queue: {handler_name}"
@@ -409,10 +399,10 @@ class FreeRTOS(OSBase):
                                           vidx=v,
                                           name=handler_name,
                                           handler=queue_handler,
-                                          length=queue_len,
-                                          size=queue_item_size,
+                                          length=args.queue_len,
+                                          size=args.queue_item_size,
                                           abb=abb,
-                                          q_type=q_type,
+                                          q_type=args.q_type,
                                           call_path=cp,
         )
 
@@ -420,8 +410,8 @@ class FreeRTOS(OSBase):
 
         return state
 
-    @syscall2(categories={SyscallCategory.create},
-              signature=(Arg("mutex_type"),))
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("mutex_type"),))
     def xQueueCreateMutex(graph, abb, state, args, va):
         state = state.copy()
         # instance properties
@@ -450,8 +440,8 @@ class FreeRTOS(OSBase):
 
         return state
 
-    @syscall2(categories={SyscallCategory.comm},
-              signature=(Arg("ticks"),))
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("ticks"),))
     def vTaskDelay(graph, abb, state, args, va):
         state = state.copy()
 
@@ -466,11 +456,11 @@ class FreeRTOS(OSBase):
 
         return state
 
-    @syscall2(categories={SyscallCategory.comm},
-              signature=(Arg('handler'),
-                         Arg('item', raw_value=True),
-                         Arg('ticks'),
-                         Arg('action')))
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('handler'),
+                        Arg('item', raw_value=True),
+                        Arg('ticks'),
+                        Arg('action')))
     def xQueueGenericSend(graph, abb, state, args, va):
         state = state.copy()
 
@@ -487,7 +477,7 @@ class FreeRTOS(OSBase):
 
         return state
 
-    @syscall2(categories={SyscallCategory.comm},
+    @syscall(categories={SyscallCategory.comm},
              signature=(Arg('handler'),
                         Arg('type')))
     def xQueueSemaphoreTake(cfg, abb, state):
@@ -507,14 +497,14 @@ class FreeRTOS(OSBase):
         return state
 
 
-    @syscall2(categories={SyscallCategory.create},
-              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
-                         Arg("task_name"),
-                         Arg("task_stack_size"),
-                         Arg("task_parameters", hint=SigType.symbol),
-                         Arg("task_priority"),
-                         Arg("task_stack", hint=SigType.symbol),
-                         Arg("task_handle_p", hint=SigType.instance)))
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
+                        Arg("task_name"),
+                        Arg("task_stack_size"),
+                        Arg("task_parameters", hint=SigType.symbol),
+                        Arg("task_priority"),
+                        Arg("task_stack", hint=SigType.symbol),
+                        Arg("task_handle_p", hint=SigType.instance)))
     def xTaskCreateStatic(graph, abb, state, args, va):
         state = state.copy()
         cfg = graph.cfg
@@ -555,13 +545,13 @@ class FreeRTOS(OSBase):
         pass
 
 
-    @syscall2(categories={SyscallCategory.comm},
-              signature=(Arg('handler'), Arg('type')))
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('handler'), Arg('type')))
     def xQueueTakeMutexRecursive(graph, abb, state, args, va):
         pass
 
 
-    @syscall2(categories={SyscallCategory.create}, signature=(Arg("size"),))
+    @syscall(categories={SyscallCategory.create}, signature=(Arg("size"),))
     def xStreamBufferGenericCreate(graph, abb, state, args, va):
         state = state.copy()
         cfg = graph.cfg
