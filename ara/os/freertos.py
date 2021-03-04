@@ -450,47 +450,33 @@ class FreeRTOS(OSBase):
 
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.value,))
-    def vTaskDelay(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.comm},
+              signature=(Arg("ticks"),))
+    def vTaskDelay(graph, abb, state, args, va):
         state = state.copy()
 
         cp = state.call_path
-        ticks = get_argument(cfg, abb, cp, 0)
 
         if state.running is None:
             # TODO proper error handling
             logger.error("ERROR: vTaskDelay called without running Task")
 
         e = state.instances.add_edge(state.running, state.running)
-        state.instances.ep.label[e] = f"vTaskDelay({ticks})"
+        state.instances.ep.label[e] = f"vTaskDelay({args.ticks})"
 
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol, SigType.value, SigType.value,
-                        SigType.value))
-    def xQueueGenericSend(cfg, abb, state):
+    @syscall2(categories={SyscallCategory.comm},
+              signature=(Arg('handler'),
+                         Arg('item', raw_value=True),
+                         Arg('ticks'),
+                         Arg('action')))
+    def xQueueGenericSend(graph, abb, state, args, va):
         state = state.copy()
 
         cp = state.call_path
-        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
 
-        handler = p_get_argument(0, raw_value=True)
-
-        # TODO this has to be a pointer object. However, the value analysis
-        # follows the pointer currently.
-        item = p_get_argument(1, raw_value=True)
-        ticks = p_get_argument(2)
-        action = p_get_argument(3)
-        # TODO do something with the values
-
-        queue = None
-        for v in state.instances.vertices():
-            if any([isinstance(state.instances.vp.obj[v], x)
-                    for x in [Queue, Mutex]]):
-                if handler == state.instances.vp.obj[v].handler:
-                    queue = v
+        queue = args.handler
         if queue is None:
             logger.error(f"xQueueGenericSend (file: {cfg.vp.file[abb]}, "
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
@@ -501,27 +487,15 @@ class FreeRTOS(OSBase):
 
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol, SigType.value))
+    @syscall2(categories={SyscallCategory.comm},
+             signature=(Arg('handler'),
+                        Arg('type')))
     def xQueueSemaphoreTake(cfg, abb, state):
         state = state.copy()
 
         cp = state.call_path
-        p_get_argument = functools.partial(get_argument, cfg, abb, cp)
 
-        handler = p_get_argument(0, raw_value=True)
-
-        # TODO this has to be a pointer object. However, the value analysis
-        # follows the pointer currently.
-        ticks = p_get_argument(1)
-        # TODO do something with ticks
-
-        queue = None
-        for v in state.instances.vertices():
-            if any([isinstance(state.instances.vp.obj[v], x)
-                    for x in [Queue, Mutex]]):
-                if handler == state.instances.vp.obj[v].handler:
-                    queue = v
+        queue = args.handler
         if queue is None:
             logger.error(f"xQueueSemaphoreTake (file: {cfg.vp.file[abb]}, "
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
@@ -531,6 +505,89 @@ class FreeRTOS(OSBase):
             state.instances.ep.label[e] = f"xQueueSemaphoreTake"
 
         return state
+
+
+    @syscall2(categories={SyscallCategory.create},
+              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
+                         Arg("task_name"),
+                         Arg("task_stack_size"),
+                         Arg("task_parameters", hint=SigType.symbol),
+                         Arg("task_priority"),
+                         Arg("task_stack", hint=SigType.symbol),
+                         Arg("task_handle_p", hint=SigType.instance)))
+    def xTaskCreateStatic(graph, abb, state, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+
+        # instance properties
+        cp = state.call_path
+
+        task_handler = va.get_return_value(abb, callpath=cp)
+
+        v = state.instances.add_vertex()
+        func_name = args.task_function.get_name()
+        state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
+
+        new_cfg = cfg.get_entry_abb(
+            cfg.get_function_by_name(func_name)
+        )
+        assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        FreeRTOS.handle_soc(state, v, cfg, abb)
+        state.instances.vp.obj[v] = Task(cfg, new_cfg,
+                                         vidx=v,
+                                         function=func_name,
+                                         name=args.task_name,
+                                         stack_size=args.task_stack_size,
+                                         parameters=args.task_parameters,
+                                         priority=args.task_priority,
+                                         handle_p=task_handler,
+                                         call_path=cp,
+                                         abb=abb,
+                                         static_stack=args.task_stack,
+        )
+
+        assign_id(state.instances, v)
+        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+
+        logger.info(f"Create new Task {args.task_name} (function: {func_name})")
+        return state
+        pass
+
+
+    @syscall2(categories={SyscallCategory.comm},
+              signature=(Arg('handler'), Arg('type')))
+    def xQueueTakeMutexRecursive(graph, abb, state, args, va):
+        pass
+
+
+    @syscall2(categories={SyscallCategory.create}, signature=(Arg("size"),))
+    def xStreamBufferGenericCreate(graph, abb, state, args, va):
+        state = state.copy()
+        cfg = graph.cfg
+        cp = state.call_path
+
+        handler = va.get_return_value(abb, callpath=cp)
+        handler_name = handler.get_name()
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
+        FreeRTOS.handle_soc(state, v, cfg, abb)
+
+        state.instances.vp.obj[v] = StreamBuffer(cfg,
+                                                 abb=abb,
+                                                 call_path=cp,
+                                                 vidx=v,
+                                                 handler=handler,
+                                                 name=handler_name,
+                                                 size=args.size,
+        )
+        assign_id(state.instances, v)
+
+        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+
+        return state
+
 
     ## HERE BEGINS THE TODO sections, all following syscalls are stubs
 
@@ -818,11 +875,6 @@ class FreeRTOS(OSBase):
     def xQueueSelectFromSetFromISR(cfg, abb, state):
         pass
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=(SigType.symbol, SigType.value))
-    def xQueueTakeMutexRecursive(cfg, abb, state):
-        pass
-
     @syscall
     def xSemaphoreCreateBinary(cfg, abb, state):
         pass
@@ -854,34 +906,6 @@ class FreeRTOS(OSBase):
     @syscall
     def xStreamBufferCreateStatic(cfg, abb, state):
         pass
-
-    @syscall2(categories={SyscallCategory.create}, signature=(Arg("size"),))
-    def xStreamBufferGenericCreate(graph, abb, state, args, va):
-        state = state.copy()
-        cfg = graph.cfg
-        cp = state.call_path
-
-        handler = va.get_return_value(abb, callpath=cp)
-        handler_name = handler.get_name()
-
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
-        FreeRTOS.handle_soc(state, v, cfg, abb)
-
-        state.instances.vp.obj[v] = StreamBuffer(cfg,
-                                                 abb=abb,
-                                                 call_path=cp,
-                                                 vidx=v,
-                                                 handler=handler,
-                                                 name=handler_name,
-                                                 size=args.size,
-        )
-        assign_id(state.instances, v)
-
-        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
-
-        return state
-
 
     @syscall
     def xStreamBufferIsEmpty(cfg, abb, state):
@@ -937,53 +961,6 @@ class FreeRTOS(OSBase):
 
     @syscall
     def xTaskCreateRestricted(cfg, abb, state):
-        pass
-
-    @syscall2(categories={SyscallCategory.create},
-              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
-                         Arg("task_name"),
-                         Arg("task_stack_size"),
-                         Arg("task_parameters", hint=SigType.symbol),
-                         Arg("task_priority"),
-                         Arg("task_stack", hint=SigType.symbol),
-                         Arg("task_handle_p", hint=SigType.instance)))
-    def xTaskCreateStatic(graph, abb, state, args, va):
-        state = state.copy()
-        cfg = graph.cfg
-
-        # instance properties
-        cp = state.call_path
-
-        task_handler = va.get_return_value(abb, callpath=cp)
-
-        v = state.instances.add_vertex()
-        func_name = args.task_function.get_name()
-        state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
-
-        new_cfg = cfg.get_entry_abb(
-            cfg.get_function_by_name(func_name)
-        )
-        assert new_cfg is not None
-        # TODO: when do we know that this is an unique instance?
-        FreeRTOS.handle_soc(state, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg, new_cfg,
-                                         vidx=v,
-                                         function=func_name,
-                                         name=args.task_name,
-                                         stack_size=args.task_stack_size,
-                                         parameters=args.task_parameters,
-                                         priority=args.task_priority,
-                                         handle_p=task_handler,
-                                         call_path=cp,
-                                         abb=abb,
-                                         static_stack=args.task_stack,
-        )
-
-        assign_id(state.instances, v)
-        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
-
-        logger.info(f"Create new Task {args.task_name} (function: {func_name})")
-        return state
         pass
 
     @syscall
