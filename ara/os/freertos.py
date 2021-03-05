@@ -239,6 +239,13 @@ class StreamBuffer(FreeRTOSInstance):
                                   self.call_path.print(call_site=True)]))
 
 
+def find_instance_node(instances, obj):
+    for ins in instances.vertices():
+        if instances.vp.obj[ins] is obj:
+            return ins
+    raise RuntimeError("Instance could not be found.")
+
+
 class FreeRTOS(OSBase):
     @staticmethod
     def get_special_steps():
@@ -457,7 +464,7 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler'),
+             signature=(Arg('handler', ty=Mutex),
                         Arg('item', raw_value=True),
                         Arg('ticks'),
                         Arg('action')))
@@ -472,13 +479,14 @@ class FreeRTOS(OSBase):
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
-            e = state.instances.add_edge(state.running, queue)
+            queue_node = find_instance_node(state.instances, queue)
+            e = state.instances.add_edge(state.running, queue_node)
             state.instances.ep.label[e] = f"xQueueGenericSend"
 
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler'),
+             signature=(Arg('handler', ty=Mutex),
                         Arg('type')))
     def xQueueSemaphoreTake(graph, abb, state, args, va):
         state = state.copy()
@@ -491,7 +499,8 @@ class FreeRTOS(OSBase):
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
-            e = state.instances.add_edge(state.running, queue)
+            queue_node = find_instance_node(state.instances, queue)
+            e = state.instances.add_edge(state.running, queue_node)
             state.instances.ep.label[e] = f"xQueueSemaphoreTake"
 
         return state

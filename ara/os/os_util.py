@@ -29,10 +29,11 @@ def get_argument(value, arg):
     value -- LLVM raw value
     arg   -- Argument for this value
     """
-    if is_llvm_type(arg.ty):
-        print("TY")
-        assert type(value.value) == arg.ty
-        return value.value
+    if arg.ty != typing.Any:
+        if type(value.value) == arg.ty:
+            return value.value
+        else:
+            raise UnsuitableArgumentException(f"Value type {type(value.value)} does not match wanted type {arg.ty}.")
     if arg.raw_value:
         if arg.hint == _SigType.instance:
             return value.value
