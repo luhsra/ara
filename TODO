@@ -10,3 +10,19 @@ Tipps:
 - test/extra_settings.json anschauen
 - meson.build: test('ara_tester', ...) (Meson Testfälle anschauen)
 
+
+# Nächste Schritte:
+
+- C-Programm mit Highlevel-Funktion und 2 C-Dateien verwenden
+- Gegen Musl-Libc linken
+- Versuchen eine vollständige ll-Datei zu bekommen
+
+.c -> clang -> .o ----> linker -> elf
+.c -> clang -> .o /
+
+.c -> clang -emit-llvm -S -> .ll ----> llvm-link (ara-link) -> ll
+.c -> clang -emit-llvm -S -> .ll /
+
+ara-link ist in subprojects/ara-link
+
+- rebase auf soso
