@@ -93,6 +93,12 @@ class Task(FreeRTOSInstance):
         clamp = FreeRTOS.config.get('configMAX_PRIORITIES', None)
         if clamp is not None:
             clamp = clamp.get()
+            try:
+                prio = int(self.__priority)
+            except ValueError:
+                logger.warning("Task %s priority is not statically assigned (was %s)",
+                                self.name, self.__priority)
+                return self.__priority
             if self.__priority >= clamp:
                 logger.warning("Task %s priority clamped to %s (was %s)",
                                 self.name, clamp -1, self.__priority)
@@ -388,11 +394,12 @@ class FreeRTOS(OSBase):
              signature=(Arg("queue_len"),
                         Arg("queue_item_size"),
                         Arg("q_type")))
-    def XQueueGenericCreate(graph, abb, state, args, va):
+    def xQueueGenericCreate(graph, abb, state, args, va):
         state = state.copy()
 
         # instance properties
         cp = state.call_path
+        cfg = graph.cfg
 
         queue_handler = va.get_return_value(abb, callpath=cp)
         handler_name = queue_handler.get_name()
