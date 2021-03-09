@@ -27,7 +27,7 @@ def main():
     parser.add_argument('--log-level', help="choose the log level",
                         choices=['warn', 'info', 'debug'],
                         default=os.environ.get('ARA_LOGLEVEL', 'warn'))
-    parser.add_argument('--dump', action='store_true', default=False,
+    parser.add_argument('--dump', action='store_true', default=bool(os.environ.get('ARA_DUMP', '')),
                         help="emit a meaningful dot graph where possible")
     parser.add_argument('--dump-prefix', default='dumps/{step_name}.{uuid}.',
                         help="path that prefixes all dot files. The string "
