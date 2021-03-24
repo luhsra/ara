@@ -4,9 +4,10 @@ import json
 import ara.graph as _graph
 from .option import Option, String
 from .step import Step
-from ara.os.autosar import Task, Counter, Alarm, AlarmAction, ISR
+from ara.os.autosar import Task, Counter, Alarm, AlarmAction, ISR, Event
 
 import graph_tool
+import functools
 
 DISABLE_ALARMS = True
 DISABLE_ISRS = True
@@ -49,11 +50,10 @@ class LoadOIL(Step):
                 instances.vp.label[t] = t_name
 
                 # trigger other steps
-                self._step_manager.chain_step({"name": "ValueAnalysis",
-                                               "entry_point": t_func_name})
                 self._step_manager.chain_step({"name": "Syscall",
                                                "entry_point": t_func_name})
 
+        @functools.lru_cache(maxsize=8)
         def find_instance_by_name(name, _class):
             obj = None
             for v in instances.vertices():
@@ -79,75 +79,79 @@ class LoadOIL(Step):
                 instances.vp.label[c] = counter["name"]
 
             # read all alarms
-            if not DISABLE_ALARMS:
-                for alarm in cpu["alarms"]:
-                    a = instances.add_vertex()
-                    instances.vp.label[a] = alarm["name"]
+            if DISABLE_ALARMS:
+                cpu["alarms"] = []
 
-                    # find counter object in instances
-                    c_name = alarm["counter"]
-                    counter = find_instance_by_name(c_name, Counter)
+            for alarm in cpu["alarms"]:
+                a = instances.add_vertex()
+                instances.vp.label[a] = alarm["name"]
 
-                    # read alarm action
-                    action = alarm["action"]
-                    if action["action"].lower() == "incrementcounter":
-                        incrementcounter = find_instance_by_name(action["counter"], Counter)
-                        instances.vp.obj[a] = Alarm(alarm["name"],
-                                                    cpu_id,
-                                                    counter,
-                                                    alarm["autostart"],
-                                                    AlarmAction.INCREMENTCOUNTER,
-                                                    incrementcounter=incrementcounter)
-                    elif action["action"].lower() == "activatetask":
-                        task = find_instance_by_name(action["task"], Task)
-                        instances.vp.obj[a] = Alarm(alarm["name"],
-                                                    cpu_id,
-                                                    counter,
-                                                    alarm["autostart"],
-                                                    AlarmAction.ACTIVATETASK,
-                                                    task=task)
-                    elif action["action"].lower() == "setevent":
-                        task = find_instance_by_name(action["task"], Task)
-                        event = find_instance_by_name(action["event"], Event)
-                        instances.vp.obj[a] = Alarm(alarm["name"],
-                                                    cpu_id,
-                                                    counter,
-                                                    alarm["autostart"],
-                                                    AlarmAction.SETEVENT,
-                                                    task=task,
-                                                    event=event)
+                counter = find_instance_by_name(alarm["counter"], Counter)
 
-                    # set cycletime and alarmtime if autostart is true
-                    if instances.vp.obj[a].autostart:
-                        instances.vp.obj[a].cycletime = alarm["cycletime"]
-                        instances.vp.obj[a].alarmtime = alarm["alarmtime"]
+                # read alarm action
+                action = alarm["action"]
+                if action["action"].lower() == "incrementcounter":
+                    incrcounter = find_instance_by_name(action["counter"],
+                                                        Counter)
+                    instances.vp.obj[a] = Alarm(alarm["name"],
+                                                cpu_id,
+                                                counter,
+                                                alarm["autostart"],
+                                                AlarmAction.INCREMENTCOUNTER,
+                                                incrementcounter=incrcounter)
+                elif action["action"].lower() == "activatetask":
+                    task = find_instance_by_name(action["task"], Task)
+                    instances.vp.obj[a] = Alarm(alarm["name"],
+                                                cpu_id,
+                                                counter,
+                                                alarm["autostart"],
+                                                AlarmAction.ACTIVATETASK,
+                                                task=task)
+                elif action["action"].lower() == "setevent":
+                    task = find_instance_by_name(action["task"], Task)
+                    event = find_instance_by_name(action["event"], Event)
+                    instances.vp.obj[a] = Alarm(alarm["name"],
+                                                cpu_id,
+                                                counter,
+                                                alarm["autostart"],
+                                                AlarmAction.SETEVENT,
+                                                task=task,
+                                                event=event)
+
+                # set cycletime and alarmtime if autostart is true
+                if instances.vp.obj[a].autostart:
+                    instances.vp.obj[a].cycletime = alarm["cycletime"]
+                    instances.vp.obj[a].alarmtime = alarm["alarmtime"]
 
             # read all ISRs
-            if not DISABLE_ISRS:
-                for isr in cpu["isrs"]:
-                    i = instances.add_vertex()
-                    instances.vp.label[i] = isr["name"]
+            if DISABLE_ISRS:
+                cpu["isrs"] = []
 
-                    i_function_name = "AUTOSAR_ISR_" + isr["name"]
-                    i_function = g.cfg.get_function_by_name(i_function_name)
+            for isr in cpu["isrs"]:
+                i = instances.add_vertex()
+                instances.vp.label[i] = isr["name"]
 
-                    group = []
-                    for name in isr["group"]:
-                        task = find_instance_by_name(name, Task)
-                        group.append(task)
+                i_function_name = "AUTOSAR_ISR_" + isr["name"]
+                i_function = g.cfg.get_function_by_name(i_function_name)
 
-                    instances.vp.obj[i] = ISR(i_function_name,
-                                            cpu_id,
-                                            isr["category"],
-                                            isr["priority"],
-                                            i_function,
-                                            group)
+                group = []
+                for name in isr["group"]:
+                    task = find_instance_by_name(name, Task)
+                    group.append(task)
 
-                    # trigger other steps
-                    self._step_manager.chain_step({"name": "ValueAnalysis",
+                instances.vp.obj[i] = ISR(i_function_name,
+                                          cpu_id,
+                                          isr["category"],
+                                          isr["priority"],
+                                          i_function,
+                                          group)
+
+                # trigger other steps
+                self._step_manager.chain_step({"name": "Syscall",
                                                 "entry_point": i_function_name})
-                    self._step_manager.chain_step({"name": "Syscall",
-                                                "entry_point": i_function_name})
+
+        self._log.debug("find_instance_by_name "
+                        f"{find_instance_by_name.cache_info()}")
 
         if self.dump.get():
             self._step_manager.chain_step({"name": "Printer",

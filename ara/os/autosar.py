@@ -81,6 +81,14 @@ class ISR:
     def __repr__(self):
         return self.name
 
+class Event:
+    def __init__(self, name, cpu_id):
+        self.cpu_id = cpu_id
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
 class AUTOSAR(OSBase):
     @staticmethod
     def get_special_steps():
