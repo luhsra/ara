@@ -15,7 +15,7 @@ cd "$(dirname "$0")" || exit
 
 # Compile musl lib-c with wllvm
 export LLVM_COMPILER=clang
-CC=wllvm WLLVM_CONFIGURE_ONLY=1 "${MUSL_LIB_C_SRC_PATH}"/configure
+(cd "${MUSL_LIB_C_SRC_PATH}" && CC=wllvm WLLVM_CONFIGURE_ONLY=1 ./configure)
 (cd "${MUSL_LIB_C_SRC_PATH}" && make)
 
 # Generate .bc bitcode
