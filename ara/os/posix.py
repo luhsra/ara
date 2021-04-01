@@ -1,4 +1,4 @@
-from .os_util import syscall, get_argument, get_return_value, assign_id
+from .os_util import syscall, assign_id, Arg
 from .os_base import OSBase
 
 import pyllco
@@ -78,9 +78,10 @@ class POSIX(OSBase):
         state.scheduler_on = True  # The Scheduler is always on in POSIX.
 
     @staticmethod
-    def interpret(cfg, abb, state, categories=SyscallCategory.every):
+    def interpret(graph, abb, state, categories=SyscallCategory.every):
         """interprets a detected syscall"""
 
+        cfg = graph.cfg
         logger.debug("interpret called")
 
         syscall = cfg.get_syscall_name(abb)
@@ -101,7 +102,7 @@ class POSIX(OSBase):
                 POSIX.add_normal_cfg(cfg, abb, state)
                 return state
 
-        return getattr(POSIX, syscall)(cfg, abb, state)
+        return getattr(POSIX, syscall)(graph, abb, state)
 
     def handle_soc(state, v, cfg, abb,
                    branch=None, loop=None, recursive=None, scheduler_on=None,
@@ -144,7 +145,7 @@ class POSIX(OSBase):
 
 
     @syscall(categories={SyscallCategory.create})
-    def pause(cfg, abb, state):
+    def pause(graph, abb, state, args, va):
         logger.debug("found pause() syscall")
 
         state = state.copy()
@@ -158,8 +159,8 @@ class POSIX(OSBase):
         #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
         #assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
-        POSIX.handle_soc(state, v, cfg, abb)
-        state.instances.vp.obj[v] = Thread(cfg, abb=None, call_path=None, name="Test thread",
+        POSIX.handle_soc(state, v, graph.cfg, abb)
+        state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Test thread",
                                         entry_abb = None,
                                         function = None,
                                         threadID = 3,
@@ -173,7 +174,4 @@ class POSIX(OSBase):
 
         state.next_abbs = []
 
-        # next abbs
-        POSIX.add_normal_cfg(cfg, abb, state)
-        logger.info("Create new Task task_name (function: task_function)")
         return state
