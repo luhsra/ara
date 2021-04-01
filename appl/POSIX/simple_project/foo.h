@@ -1,0 +1,2 @@
+
+int foo(char value);
