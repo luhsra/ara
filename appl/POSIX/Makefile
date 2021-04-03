@@ -62,7 +62,7 @@ $(OBJ_BUILD)/%.ll: %.c
 
 $(POSIX_BUILD)/musl_libc.ll: build_GNU_toolchain_app.sh
 	@$(CREATE_DEST_DIR)
-	./build_GNU_toolchain_app.sh $(MUSL_LIB_C_SRC_PATH) ${MUSL_LIB_C_SRC_PATH}/lib/libc.so $@
+	./build_GNU_toolchain_app.sh $(MUSL_LIB_C_SRC_PATH) ${MUSL_LIB_C_SRC_PATH}/lib/libc.so $@ --enable-debug
 
 
 ########################################### Custom Project Rules ############################################
@@ -83,4 +83,4 @@ $(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c
 # --- GNU Make ---
 $(OBJ_BUILD)/GNU_make.ll: build_GNU_toolchain_app.sh
 	@$(CREATE_DEST_DIR)
-	./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@
+	./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ CFLAGS=-g
