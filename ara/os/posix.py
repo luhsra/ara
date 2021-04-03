@@ -62,9 +62,10 @@ class Thread(POSIXInstance):
                                   self.priority,
                                  ]))
 
+_id_ = 1
 
 class POSIX(OSBase):
-    
+
     @staticmethod
     def get_special_steps():
         return []
@@ -161,6 +162,79 @@ class POSIX(OSBase):
         # TODO: when do we know that this is an unique instance?
         POSIX.handle_soc(state, v, graph.cfg, abb)
         state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Test thread",
+                                        entry_abb = None,
+                                        function = None,
+                                        threadID = 3,
+                                        priority = 2,
+                                        sched_policy = None,
+                                        floating_point_env = None, # TODO: check type
+                                        partOfTask = None
+        )
+
+        assign_id(state.instances, v)
+
+        state.next_abbs = []
+
+        return state
+
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg('fildes', hint=SigType.value),
+                        Arg('buf', hint=SigType.symbol),
+                        Arg('nbyte', hint=SigType.value)))
+    def write(graph, abb, state, args, va):
+        logger.debug("found write() syscall")
+        global _id_
+        _id_ += 1
+        state = state.copy()
+
+        # instance properties
+        cp = state.call_path
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = "Write"
+
+        #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
+        #assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        POSIX.handle_soc(state, v, graph.cfg, abb)
+        state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Write_test_thread_" + str(_id_),
+                                        entry_abb = None,
+                                        function = None,
+                                        threadID = 3,
+                                        priority = 2,
+                                        sched_policy = None,
+                                        floating_point_env = None, # TODO: check type
+                                        partOfTask = None
+        )
+
+        assign_id(state.instances, v)
+
+        state.next_abbs = []
+
+        return state
+
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg('ptr', hint=SigType.symbol),
+                        Arg('size', hint=SigType.value),
+                        Arg('nitems', hint=SigType.value),
+                        Arg('stream', hint=SigType.symbol)))
+    def fwrite(graph, abb, state, args, va):
+        logger.debug("found fwrite() syscall")
+        global _id_
+        _id_ += 1
+        state = state.copy()
+
+        # instance properties
+        cp = state.call_path
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = "FWrite"
+
+        #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
+        #assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        POSIX.handle_soc(state, v, graph.cfg, abb)
+        state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Write_test_thread_" + str(_id_),
                                         entry_abb = None,
                                         function = None,
                                         threadID = 3,
