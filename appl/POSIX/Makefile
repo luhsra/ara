@@ -54,6 +54,7 @@ clean:
 $(TARGETS): $(POSIX_BUILD)/%.ll : $(OBJ_BUILD)/%.ll $(POSIX_BUILD)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(ARA_LINK) -S -o $@ $< $(POSIX_BUILD)/musl_libc.ll
+	opt -S -o $@ --dce $@
 
 # Compile simple POSIX C files
 $(OBJ_BUILD)/%.ll: %.c
