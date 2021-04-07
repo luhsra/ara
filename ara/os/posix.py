@@ -1,3 +1,5 @@
+from __future__ import annotations # Activate Postponed Evaluation of Annotations
+
 from .os_util import syscall, assign_id, Arg
 from .os_base import OSBase
 
@@ -7,26 +9,89 @@ import html
 
 import ara.graph as _graph
 from ara.graph import CallPath, SyscallCategory, SigType
+from ara.graph.graph import CFG
 from ara.util import get_logger
 from ara.steps.util import current_step
+from graph_tool import Vertex
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
 
 logger = get_logger("POSIX")
 
+# TODO: Add task in sse.py
 
 @dataclass
 class POSIXInstance(object):
-    cfg: any
-    abb: any
-    call_path: any
+    cfg: CFG            # the control flow graph
+    abb: Vertex         # the ABB of the system call which created this instance
+    call_path: Vertex   # call node within the call graph of the system call which created this instance [state.call_path]
     name: str
-
+    vidx: Vertex        # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
 
 @dataclass
-class Task(POSIXInstance):
-    pass
-    # TODO: add more values
+class User(POSIXInstance):
+    userID: int
+    init_group: Group
+    init_working_dir: str
+    init_user_program: str
+
+@dataclass
+class Group(POSIXInstance):
+    groupID: int
+    allowed_users: list[User]
+
+class FileType(Enum):
+    REGULAR = 0
+    DIRECTORY = 1
+    # TODO: Add all file types
+
+@dataclass
+class File(POSIXInstance):
+    absolute_pathname: str
+    file_type: FileType
+    # TODO: Add further file mode data
+
+@dataclass
+class FileDescriptor(POSIXInstance):
+    value: int
+
+@dataclass
+class Session(POSIXInstance):
+    process_groups: list[ProcessGroup] # TODO: Init to []
+    session_leader: Process
+    # TODO: init this class
+
+@dataclass
+class ProcessGroup(POSIXInstance):
+    process_group_ID: int = field(init=False)
+    process_group_leader: Process
+    session_membership: Session
+    processes: list[Process] = field(init=False)
+
+    def __post_init__(self):
+        self.process_group_ID = self.process_group_leader
+        self.processes = list(self.process_group_leader)
+
+@dataclass
+class Process(POSIXInstance):
+    process_ID: int
+    parent_process: Process
+    process_group: ProcessGroup
+    #session_membership: Session # TODO: investigate: Can a process change its session membership without changing the process group
+    real_user: User
+    effective_user: User
+    saved_user: User
+    real_group: Group
+    effective_group: Group
+    saved_group: Group
+    supplementary_groups: list[Group]
+    working_dir: str
+    root_dir: str
+    file_mode_creation_mask: any # TODO: determine type of this field
+    file_descriptors: list[int] # TODO: Init to []
+    threads: list[Thread] # TODO: Init to []
+    isLiving: bool = True
 
     def as_dot(self):
         pass
@@ -39,7 +104,7 @@ class Thread(POSIXInstance):
     priority: int
     sched_policy: str
     floating_point_env: any # TODO: check type
-    partOfTask: Task
+    partOfProcess: Process
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "priority"]
@@ -149,6 +214,8 @@ class POSIX(OSBase):
     def pause(graph, abb, state, args, va):
         logger.debug("found pause() syscall")
 
+        print(type(graph.cfg))
+
         state = state.copy()
 
         # instance properties
@@ -162,6 +229,7 @@ class POSIX(OSBase):
         # TODO: when do we know that this is an unique instance?
         POSIX.handle_soc(state, v, graph.cfg, abb)
         state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Test thread",
+                                        vidx = v,
                                         entry_abb = None,
                                         function = None,
                                         threadID = 3,
@@ -198,6 +266,7 @@ class POSIX(OSBase):
         # TODO: when do we know that this is an unique instance?
         POSIX.handle_soc(state, v, graph.cfg, abb)
         state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Write_test_thread_" + str(_id_),
+                                        vidx = v,
                                         entry_abb = None,
                                         function = None,
                                         threadID = 3,
@@ -235,13 +304,14 @@ class POSIX(OSBase):
         # TODO: when do we know that this is an unique instance?
         POSIX.handle_soc(state, v, graph.cfg, abb)
         state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Write_test_thread_" + str(_id_),
+                                        vidx = v,
                                         entry_abb = None,
                                         function = None,
                                         threadID = 3,
                                         priority = 2,
                                         sched_policy = None,
                                         floating_point_env = None, # TODO: check type
-                                        partOfTask = None
+                                        partOfProcess = None
         )
 
         assign_id(state.instances, v)
