@@ -14,8 +14,10 @@ from ara.util import get_logger
 from ara.steps.util import current_step
 from graph_tool import Vertex
 
+from queue import Queue
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, IntEnum
+from typing import Any, Union, Optional, Dict
 
 logger = get_logger("POSIX")
 
@@ -55,11 +57,99 @@ class File(POSIXInstance):
 @dataclass
 class FileDescriptor(POSIXInstance):
     value: int
+    connectedToFile: Optional[File]
+
+@dataclass
+class Locale(POSIXInstance):
+    pass    # Save only the name for now.
+            # The POSIX locale is called "POSIX" or "C".
+            # The default locale is implementation defined.
+
+@dataclass
+class Terminal(POSIXInstance):
+    foreground_process_group: Optional[ProcessGroup]
+    canonical_mode_input_processing: bool # If true the terminal read in lines.
+
+class SignalType(IntEnum):
+    """ The values of these signals are Linux specific.
+
+        All values are copied from <bits/signum-generic.h> and <bits/signum-arch.h> included by <signal.h>
+    """
+
+    # Non architecture dependend signals <bits/signum-generic.h>
+    SIGINT =    2	# Interactive attention signal.
+    SIGILL =    4	# Illegal instruction.
+    SIGABRT =   6	# Abnormal termination.
+    SIGFPE =    8	# Erroneous arithmetic operation.
+    SIGSEGV =   11	# Invalid access to storage.
+    SIGTERM	=   15	# Termination request.
+    SIGHUP =    1	# Hangup.
+    SIGQUIT =   3	# Quit.
+    SIGTRAP =   5	# Trace/breakpoint trap.
+    SIGKILL	=   9	# Killed.
+    SIGPIPE	=   13	# Broken pipe.
+    SIGALRM	=   14	# Alarm clock.
+
+    # Architecture dependend signals <bits/signum-arch.h>
+    SIGBUS =    7	# Bus error.
+    SIGSYS =    31	# Bad system call.
+    SIGURG =    23	# Urgent data is available at a socket.
+    SIGSTOP	=   19	# Stop, unblockable.
+    SIGTSTP	=   20	# Keyboard stop.
+    SIGCONT	=   18	# Continue.
+    SIGCHLD	=   17	# Child terminated or stopped.
+    SIGTTIN	=   21	# Background read from control terminal.
+    SIGTTOU	=   22	# Background write to control terminal.
+    SIGPOLL	=   29	# Pollable event occurred (System V).
+    SIGXFSZ	=   25	# File size limit exceeded.
+    SIGXCPU	=   24	# CPU time limit exceeded.
+    SIGVTALRM = 26	# Virtual timer expired.
+    SIGPROF	=   27	# Profiling timer expired.
+    SIGUSR1	=   10	# User-defined signal 1.
+    SIGUSR2	=   12	# User-defined signal 2.
+
+    # Non POSIX signals
+    #SIGSTKFLT =    16	# Stack fault (obsolete).
+    #SIGPWR	=       30	# Power failure imminent.
+    #SIGWINCH =     28	# Window size change (4.3 BSD, Sun).
+
+class _SignalDefaultAction(Enum):
+    T = 0   # Abnormal termination of the process.
+    A = 1   # Abnormal termination of the process with additional actions. 
+    I = 2   # Ignore the signal.
+    S = 3   # Stop the process.
+    C = 4   # Continue the process, if it is stopped; otherwise, ignore the signal.
+
+defaultActionOfSignal: Dict[SignalType, _SignalDefaultAction] = {
+    SignalType.SIGABRT: _SignalDefaultAction.A,
+    SignalType.SIGALRM: _SignalDefaultAction.T,
+    SignalType.SIGBUS: _SignalDefaultAction.A,
+    # TODO: fill in the rest of signal default actions 
+}
+
+@dataclass
+class Signal(POSIXInstance):
+    signal_type: SignalType
+    value: Any # TODO: change this type
+    destination: Union[Process, Thread]
+
+class _SignalAction_DFL_IGN(Enum):
+    SIG_DFL = 0     # Default signal action
+    SIG_IGN = 1     # Ignore the signal
+
+_SignalAction_Function = Any # TODO: determine type of a signal handler function
+
+SignalAction = Union[_SignalAction_DFL_IGN, _SignalAction_Function]
+
+@dataclass
+class SignalMask(object):
+    pass # TODO: define
 
 @dataclass
 class Session(POSIXInstance):
     process_groups: list[ProcessGroup] # TODO: Init to []
     session_leader: Process
+    controlling_terminal: Optional[Terminal]
     # TODO: init this class
 
 @dataclass
@@ -88,8 +178,11 @@ class Process(POSIXInstance):
     supplementary_groups: list[Group]
     working_dir: str
     root_dir: str
-    file_mode_creation_mask: any # TODO: determine type of this field
-    file_descriptors: list[int] # TODO: Init to []
+    file_mode_creation_mask: Any # TODO: determine type of this field
+    file_descriptors: list[FileDescriptor] # TODO: Init to []
+    global_locale: Locale
+    controlling_terminal: Optional[Terminal]
+    pending_signals: Queue[Signal] # TODO: Do all POSIX processes and threads have a signal queue? If yes how big is the queue?
     threads: list[Thread] # TODO: Init to []
     isLiving: bool = True
 
@@ -98,12 +191,16 @@ class Process(POSIXInstance):
 
 @dataclass
 class Thread(POSIXInstance):
-    entry_abb: any
-    function: any
+    entry_abb: Any
+    function: Any
     threadID: int
     priority: int
     sched_policy: str
-    floating_point_env: any # TODO: check type
+    floating_point_env: Any # TODO: check type
+    current_locale: Optional[Locale]
+    signal_mask: SignalMask
+    pending_signals: Queue[Signal] # TODO: Do all POSIX processes and threads have a signal queue? If yes how big is the queue?
+    errno: int
     partOfProcess: Process
 
     def as_dot(self):
@@ -273,7 +370,8 @@ class POSIX(OSBase):
                                         priority = 2,
                                         sched_policy = None,
                                         floating_point_env = None, # TODO: check type
-                                        partOfTask = None
+                                        partOfTask = None,
+                                        
         )
 
         assign_id(state.instances, v)
