@@ -11,6 +11,7 @@ readonly PROJECT_PATH="$1"      # The path to the project source dir of the prog
 readonly BINARY_FILE="$2"       # The path to the binary file which will be created by the projects Makefile.
 readonly OUTPUT_FILE="$3"       # This is the output file of this script.
 readonly CONFIGURE_ARGS="$4"    # Arguments to be applied to the ./configure script in ${PROJECT_PATH}. [optional]
+readonly EXEC_MAKE_INSTALL="$5" # If this boolean is set to "true" than this script executes "make install" after "make". [optional, default: false]
 
 if [ "x${PROJECT_PATH}" = "x" ] || [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_FILE}" = "x" ] ; then
     echo "Missing argument(s)!"
@@ -31,6 +32,9 @@ fi
 export LLVM_COMPILER=clang
 (cd "${PROJECT_PATH}" && CC=wllvm WLLVM_CONFIGURE_ONLY=1 ./configure ${CONFIGURE_ARGS})
 (cd "${PROJECT_PATH}" && make)
+if [ "${EXEC_MAKE_INSTALL}" = "true" ] ; then
+    (cd "${PROJECT_PATH}" && make install)
+fi
 
 # Generate .bc bitcode
 extract-bc -o app_binary.bc "${BINARY_FILE}"

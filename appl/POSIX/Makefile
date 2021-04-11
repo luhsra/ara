@@ -31,6 +31,10 @@ ARA_LINK = ../../subprojects/ara-link/build/ara-link
 POSIX_BUILD = $(BUILD_DIR)/appl/POSIX
 OBJ_BUILD = $(POSIX_BUILD)/objs
 
+# Make sure this path is always absolute
+MUSL_INSTALL_DIR := $(shell pwd)/$(POSIX_BUILD)/musl_install_dir
+MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
+
 AWK_TO_TARGET = awk '{ print "$(POSIX_BUILD)/" $$0 ".ll" }'
 PROJECT_TARGETS = $(shell (echo $(PROJECT_NAMES) | tr ' ' '\n') | $(AWK_TO_TARGET))
 
@@ -39,8 +43,9 @@ PROJECT_TARGETS = $(shell (echo $(PROJECT_NAMES) | tr ' ' '\n') | $(AWK_TO_TARGE
 # PROJECT_TARGETS will be added to the list of targets.
 TARGETS = $(shell (find *.c | cut -f 1 -d '.') | $(AWK_TO_TARGET)) $(PROJECT_TARGETS)
 
+COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 CC = clang
-CFLAGS = -g -O0 -S -emit-llvm
+CFLAGS = -g -O0 -S -emit-llvm -Wall $(COMPILE_WITH_MUSL_INCLUDE)
 CREATE_DEST_DIR = mkdir -p $(@D)
 
 all: $(TARGETS)
@@ -57,13 +62,15 @@ $(TARGETS): $(POSIX_BUILD)/%.ll : $(OBJ_BUILD)/%.ll $(POSIX_BUILD)/musl_libc.ll
 	opt -S -o $@ --dce $@
 
 # Compile simple POSIX C files
-$(OBJ_BUILD)/%.ll: %.c
+$(OBJ_BUILD)/%.ll: %.c $(POSIX_BUILD)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
+# Build and install musl libc
 $(POSIX_BUILD)/musl_libc.ll: build_GNU_toolchain_app.sh
 	@$(CREATE_DEST_DIR)
-	./build_GNU_toolchain_app.sh $(MUSL_LIB_C_SRC_PATH) ${MUSL_LIB_C_SRC_PATH}/lib/libc.so $@ --enable-debug
+	@mkdir -p $(MUSL_INSTALL_DIR)
+	./build_GNU_toolchain_app.sh $(MUSL_LIB_C_SRC_PATH) ${MUSL_INSTALL_DIR}/lib/libc.so $@ "--enable-debug --prefix=$(MUSL_INSTALL_DIR)/" true
 
 
 ########################################### Custom Project Rules ############################################
@@ -76,12 +83,12 @@ $(OBJ_BUILD)/simple_project.ll: $(OBJ_BUILD)/simple_project/foo.ll $(OBJ_BUILD)/
 	$(ARA_LINK) -S -o $@ $^
 
 # Compile
-$(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c
+$(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c $(POSIX_BUILD)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
 
 # --- GNU Make ---
-$(OBJ_BUILD)/GNU_make.ll: build_GNU_toolchain_app.sh
+$(OBJ_BUILD)/GNU_make.ll: build_GNU_toolchain_app.sh $(POSIX_BUILD)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
-	./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ CFLAGS=-g
+	./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ CFLAGS=$$(echo "-g $(COMPILE_WITH_MUSL_INCLUDE)") false
