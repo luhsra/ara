@@ -6,7 +6,7 @@
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from .posix_utils import debug_log, logger, handle_soc
-from .file import FileSyscalls
+from .file import FileSyscalls, generate_std_streams
 from .locale import LocaleSyscalls
 from .process import SessionSyscalls, TerminalSyscalls, ProcessGroupSyscalls, ProcessSyscalls
 from .signal import SignalSyscalls
@@ -28,6 +28,8 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
     @staticmethod
     def init(state):
         state.scheduler_on = True  # The Scheduler is always on in POSIX.
+        debug_log("init standard streams")
+        generate_std_streams(state)
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):
