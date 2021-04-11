@@ -91,4 +91,7 @@ $(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c $(POSIX_BUILD
 # --- GNU Make ---
 $(OBJ_BUILD)/GNU_make.ll: build_GNU_toolchain_app.sh $(POSIX_BUILD)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
-	./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ CFLAGS=$$(echo "-g $(COMPILE_WITH_MUSL_INCLUDE)") false
+	@# GNU make is not POSIX compliant. See src/dir.h line 1336 in make-4.3. It uses glob_t->gl_opendir, glob_t->gl_readdir, ...
+	@# 	CFLAGS="-g $(COMPILE_WITH_MUSL_INCLUDE)" ./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ "" false
+	@# So we need to compile it with GNU libc headers (Suppose that these are the standard headers on this system):
+	./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ "" false
