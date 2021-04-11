@@ -11,12 +11,12 @@ logger = get_logger("POSIX")
 
 # Switch to set all POSIX debug logs to "info" 
 # -> this highlights all POSIX debug messages. 
-_POSIX_DEBUG_LOG_LEVEL = LEVEL["debug"]
-#_POSIX_DEBUG_LOG_LEVEL = LEVEL["info"]
+#_POSIX_DEBUG_LOG_LEVEL = LEVEL["debug"]
+_POSIX_DEBUG_LOG_LEVEL = LEVEL["info"]
 
 def debug_log(msg, *args, **kwargs):
     """Logs a debug message in the POSIX package"""
-    logger.log(_POSIX_DEBUG_LOG_LEVEL, msg, args, **kwargs)
+    logger.log(_POSIX_DEBUG_LOG_LEVEL, msg, *args, **kwargs)
 
 @dataclass
 class POSIXInstance(object):
