@@ -5,7 +5,7 @@
 
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
-from .posix_utils import debug_log, handle_soc
+from .posix_utils import debug_log, logger, handle_soc
 from .file import FileSyscalls
 from .locale import LocaleSyscalls
 from .process import SessionSyscalls, TerminalSyscalls, ProcessGroupSyscalls, ProcessSyscalls
@@ -35,7 +35,10 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
 
         cfg = graph.cfg
 
+        debug_log("in interpret")
+
         syscall = cfg.get_syscall_name(abb)
+        debug_log('get syscall: %s', syscall)
         debug_log(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 

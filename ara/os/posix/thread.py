@@ -49,44 +49,6 @@ class Thread(POSIXInstance):
 _id_ = 1
 
 class ThreadSyscalls:
-    
-    @syscall(categories={SyscallCategory.create})
-    def pause(graph, abb, state, args, va):
-
-        debug_log("found pause() syscall")
-
-        state = state.copy()
-
-        # instance properties
-        cp = state.call_path
-
-        v = state.instances.add_vertex()
-        state.instances.vp.label[v] = "Thread"
-
-        #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
-        #assert new_cfg is not None
-        # TODO: when do we know that this is an unique instance?
-        handle_soc(state, v, graph.cfg, abb)
-        state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Test thread",
-                                        vidx = v,
-                                        entry_abb = None,
-                                        function = None,
-                                        threadID = 3,
-                                        priority = 2,
-                                        sched_policy = None,
-                                        floating_point_env = None,
-                                        partOfTask = None,
-                                        current_locale = None,
-                                        signal_mask = None,
-                                        pending_signals = None,
-                                        errno = 0
-        )
-
-        assign_id(state.instances, v)
-
-        state.next_abbs = []
-
-        return state
 
     @syscall(categories={SyscallCategory.create},
              signature=(Arg('fildes', hint=SigType.value),
@@ -155,7 +117,7 @@ class ThreadSyscalls:
         #assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
         handle_soc(state, v, graph.cfg, abb)
-        state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Write_test_thread_" + str(_id_),
+        state.instances.vp.obj[v] = Thread(graph.cfg, abb=None, call_path=None, name="Write_test_thread_" + str(_id_) + "_Size_" + str(args.size),
                                         vidx = v,
                                         entry_abb = None,
                                         function = None,

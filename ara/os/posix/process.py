@@ -19,6 +19,7 @@ from .user import User, Group
 from .file import FileDescriptor
 from .signal import Signal
 from .thread import Thread
+from .locale import Locale
 
 @dataclass
 class Session(POSIXInstance):

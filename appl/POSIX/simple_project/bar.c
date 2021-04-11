@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include "foo.h"
 
 long super_puts(char* str) {
@@ -8,5 +9,7 @@ long super_puts(char* str) {
 }
 
 int main() {
+    chdir("/");
+    //pause();
     return foo('>');
 }
