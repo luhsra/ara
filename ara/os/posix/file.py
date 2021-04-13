@@ -126,7 +126,7 @@ class FileSyscalls:
 
     # void *malloc(size_t size);
     @syscall(categories={SyscallCategory.create},
-             signature=(Arg('size', hint=SigType.value)),)
+             signature=(Arg('size', hint=SigType.value),))
     def malloc(graph, abb, state, args, va):
         debug_log("found malloc() syscall")
 
@@ -189,9 +189,7 @@ class FileSyscalls:
              signature=(Arg('path', hint=SigType.symbol),))
     def chdir(graph, abb, state, args, va):
 
-        print("Im here")
         debug_log("found chdir() syscall")
-        print("after this")
         state = state.copy()
 
         # instance properties
@@ -207,6 +205,36 @@ class FileSyscalls:
         state.instances.vp.obj[v] = File(graph.cfg, abb=None, call_path=None, name="Super File in " + str(args.path),
                                         vidx = v,
                                         absolute_pathname = "Mega File",
+                                        file_type = FileType.REGULAR
+                                        
+        )
+
+        assign_id(state.instances, v)
+
+        return state
+
+    # char *strcpy(char *restrict s1, const char *restrict s2);
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg('s1', hint=SigType.symbol),
+                        Arg('s2', hint=SigType.symbol)))
+    def strcpy(graph, abb, state, args, va):
+
+        debug_log("found strcpy() syscall")
+        state = state.copy()
+
+        # instance properties
+        cp = state.call_path
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = "Chdir"
+
+        #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
+        #assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        handle_soc(state, v, graph.cfg, abb)
+        state.instances.vp.obj[v] = File(graph.cfg, abb=None, call_path=None, name="strcpy",
+                                        vidx = v,
+                                        absolute_pathname = "STRCPY file",
                                         file_type = FileType.REGULAR
                                         
         )

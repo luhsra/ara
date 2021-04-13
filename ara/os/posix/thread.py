@@ -80,7 +80,7 @@ class ThreadSyscalls:
                                         priority = 2,
                                         sched_policy = None,
                                         floating_point_env = None, # TODO: check type
-                                        partOfTask = None,
+                                        partOfProcess = None,
                                         current_locale = None,
                                         signal_mask = None,
                                         pending_signals = None,
