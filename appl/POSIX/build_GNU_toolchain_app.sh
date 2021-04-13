@@ -11,7 +11,8 @@ readonly PROJECT_PATH="$1"      # The path to the project source dir of the prog
 readonly BINARY_FILE="$2"       # The path to the binary file which will be created by the projects Makefile.
 readonly OUTPUT_FILE="$3"       # This is the output file of this script.
 readonly CONFIGURE_ARGS="$4"    # Arguments to be applied to the ./configure script in ${PROJECT_PATH}. [optional]
-readonly EXEC_MAKE_INSTALL="$5" # If this boolean is set to "true" than this script executes "make install" after "make". [optional, default: false]
+readonly EXTRACT_BC_ARGS="$5"   # Arguments to be applied to the WLLVM extract-bc tool. [optional]
+readonly EXEC_MAKE_INSTALL="$6" # If this boolean is set to "true" than this script executes "make install" after "make". [optional, default: false]
 
 if [ "x${PROJECT_PATH}" = "x" ] || [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_FILE}" = "x" ] ; then
     echo "Missing argument(s)!"
@@ -37,7 +38,7 @@ if [ "${EXEC_MAKE_INSTALL}" = "true" ] ; then
 fi
 
 # Generate .bc bitcode
-extract-bc -o app_binary.bc "${BINARY_FILE}"
+extract-bc ${EXTRACT_BC_ARGS} -o app_binary.bc "${BINARY_FILE}"
 
 # Dissassemble .bc -> .ll
 llvm-dis -o "${OUTPUT_FILE}" app_binary.bc
