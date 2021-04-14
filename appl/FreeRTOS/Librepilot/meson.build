@@ -163,7 +163,9 @@ librepilot_application = librepilot_mock_ll
 
 extra_settings = files('extra_settings.json')
 manual_corrections = files('instance_corrections.json')
-foreach application_prefix: ['librepilot', 'librepilot_mock']
+#foreach application_prefix: ['librepilot', 'librepilot_mock']
+# use only the mock-ed version as the 'standard' version is not compilable withput settings for external flash
+foreach application_prefix: ['librepilot_mock']
   named_elf_targets = []
   elf_targets = []
   named_plain_elf_targets = []
