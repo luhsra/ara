@@ -73,7 +73,7 @@ Architecture
 
 ARA is divided into steps that operate on the same system model. When starting the program the correct chain of steps is calculated and then executed. A listing of the steps can be retrieved by:
 ```
-build/ara.sh -l
+build/ara.py -l
 ```
 Steps can be written into Python (defined in `steps`) or in C++ (defined in `steps/native`).
 The model is written in C++ with Python bindings (defined in `graph`).
@@ -83,10 +83,10 @@ Program configuration
 
 ARA can be configured in multiple ways:
 
-1. Global options: Options specified per command line. See `build/ara.sh -h` for all available options.
+1. Global options: Options specified per command line. See `build/ara.py -h` for all available options.
 2. Per-step options: See the following text.
 
-Steps can define their own options. See `build/ara.sh -l` for a list of steps and their options.
+Steps can define their own options. See `build/ara.py -l` for a list of steps and their options.
 Step wise configuration can be configured with the `--step-settings` command line switch.
 
 Input must be a JSON file with this syntax:
