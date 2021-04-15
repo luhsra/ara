@@ -33,7 +33,7 @@ CLEAN_UP_TARGETS = clean-patric
 # Change this vars to specify another path
 
 #MUSL_LIB_C_SRC_PATH = ~/Downloads/musl-1.2.2
-MUSL_LIB_C_SRC_PATH = ~/Downloads/musllvm-master
+MUSL_LIB_C_SRC_PATH = ~/Downloads/musllvm
 #GNU_MAKE_SRC_PATH = ~/Downloads/make-4.3
 
 # All target and intermediate files will be saved in this directory.
