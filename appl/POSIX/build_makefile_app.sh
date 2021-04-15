@@ -21,6 +21,8 @@ readonly EXEC_MAKE_INSTALL # If this boolean is set to "true" than this script e
 readonly CONFIGURE_ARGS    # Arguments to be applied to the ./configure script in ${PROJECT_PATH} if EXEC_CONFIGURE is set. [optional]
 readonly MAKE_ARGS         # Arguments to be applied to the make call. [optional]
 readonly EXTRACT_BC_ARGS   # Arguments to be applied to the WLLVM extract-bc tool. [optional]
+#        LLVM_DIS          # Command to execute llvm-dis [optional, default: "llvm-dis"]
+
 
 if [ "x${PROJECT_PATH}" = "x" ] || [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_FILE}" = "x" ] ; then
     echo "Missing argument(s)!"
@@ -30,6 +32,10 @@ if [ "x${PROJECT_PATH}" = "x" ] || [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_F
     echo "OUTPUT_FILE=<output file> \\"
     echo "./build_GNU_toolchain_app.sh"
     exit
+fi
+
+if [ "x${LLVM_DIS}" = "x" ] ; then
+    LLVM_DIS="llvm-dis"
 fi
 
 # Make sure that this file will be executed in the dir of that file
@@ -57,5 +63,5 @@ fi
 extract-bc ${EXTRACT_BC_ARGS} -o app_binary.bc "${BINARY_FILE}"
 
 # Dissassemble .bc -> .ll
-llvm-dis -o "${OUTPUT_FILE}" app_binary.bc
+${LLVM_DIS} -o "${OUTPUT_FILE}" app_binary.bc
 rm app_binary.bc

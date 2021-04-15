@@ -23,6 +23,9 @@
 
 #SHELL := /bin/bash
 
+# LLVM version to be used. Only required for some systems (see LLVM_SUFFIX)
+LLVM_VERSION ?= "10"
+
 # Add here new project names
 PROJECT_NAMES = simple_project patric_gbs_a5
 
@@ -32,12 +35,15 @@ CLEAN_UP_TARGETS = clean-patric
 
 # Change this vars to specify another path
 
-#MUSL_LIB_C_SRC_PATH = ~/Downloads/musl-1.2.2
-MUSL_LIB_C_SRC_PATH = ~/Downloads/musllvm
-#GNU_MAKE_SRC_PATH = ~/Downloads/make-4.3
+#MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musl-1.2.2
+MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musllvm
+#GNU_MAKE_SRC_PATH ?= ~/Downloads/make-4.3
+
+# The path to the ARA link utility.
+ARA_LINK ?= ../../subprojects/ara-link/build/ara-link
 
 # All target and intermediate files will be saved in this directory.
-BUILD_DIR = ../../build/appl/POSIX
+BUILD_DIR ?= ../../build/appl/POSIX
 
 # In this directory are all LLVM IR targets located without the musl libc included.
 OBJ_BUILD = $(BUILD_DIR)/objs
@@ -45,30 +51,57 @@ OBJ_BUILD = $(BUILD_DIR)/objs
 # In this directory are all executables located.
 BIN_PATH = $(BUILD_DIR)/bin
 
-# The path to the ARA link utility.
-ARA_LINK = ../../subprojects/ara-link/build/ara-link
-
-# Make sure this path is always absolute
-MUSL_INSTALL_DIR := $(shell pwd)/$(BUILD_DIR)/musl_install_dir
-MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
-
 # Tools
-TO_LIST = tr ' ' '\n'
 AWK_TO_TARGET = awk '{ print "$(BUILD_DIR)/" $$0 ".ll" }'
 AWK_TO_BIN_TARGET = awk '{ print "$(BIN_PATH)/" $$0 }'
 CREATE_DEST_DIR = mkdir -p $(@D)
 
-SINGLE_FILE_APPL := $(shell find *.c | cut -f 1 -d '.')
-APPLICATIONS = $(SINGLE_FILE_APPL) $(PROJECT_NAMES)
+# Function: to_absolute(path)
+# Returns the path $(1) as absolute path.
+CASE_DO = )
+define to_absolute
+$(shell case $(1) in \
+			/*$(CASE_DO) echo "$(1)" ;; \
+			*$(CASE_DO) echo "$$(pwd)/$(1)" ;; \
+		esac)
+endef
+
+# Function: do_for_all(list, shell_code) 
+# Execute shell code $(2) for all elements in $(1). Delimited by " " or "\n".
+define do_for_all
+$(shell (echo $(1) | tr ' ' '\n') | $(2))
+endef
+
+# Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
+# If "" not working than choose "-$(LLVM_VERSION)".
+LLVM_SUFFIX := $(shell 	if type llvm-dis > /dev/null; then \
+					   		echo ""; \
+						else \
+							echo "-$(LLVM_VERSION)"; \
+						fi)
+
+LLVM_LLC ?= llc$(LLVM_SUFFIX)
+LLVM_OPT ?= opt$(LLVM_SUFFIX)
+LLVM_DIS ?= llvm-dis$(LLVM_SUFFIX)
+
+# Make LLVM_DIS callable from build_makefile_app.sh
+export LLVM_DIS
+
+# Make sure the path is always absolute
+MUSL_INSTALL_DIR := $(call to_absolute,$(BUILD_DIR)/musl_install_dir)
+MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
+
+SINGLE_FILE_APPLICATIONS := $(shell find *.c | cut -f 1 -d '.')
+APPLICATIONS = $(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)
 
 # Generate list of LLVM IR targets.
 # These are all .c files in this dir but with file expansion .ll instead and located in the POSIX build dir.
 # All project target files described with PROJECT_NAMES will be added to the list of target files.
-TARGETS = $(shell (echo $(APPLICATIONS) | $(TO_LIST)) | $(AWK_TO_TARGET))
+TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_TARGET))
 
 # Generate list of executable targets in BIN_PATH.
 # These are all applications in APPLICATIONS (like in TARGETS) but in the BIN_PATH dir.
-BIN_TARGETS = $(shell (echo $(APPLICATIONS) | $(TO_LIST)) | $(AWK_TO_BIN_TARGET))
+BIN_TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_BIN_TARGET))
 
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 CC = clang
@@ -101,7 +134,7 @@ clean-bin:
 # Create test executables (to validate the correctness of the generated LLVM IR and to display linking errors from applications)
 $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	@$(CREATE_DEST_DIR)
-	llc -filetype=obj -o $@.o $<
+	$(LLVM_LLC) -filetype=obj -o $@.o $<
 	$(CC) $(LDFLAGS) $@.o ${MUSL_INSTALL_DIR}/lib/crt1.o ${MUSL_INSTALL_DIR}/lib/libc.a -lgcc -o $@
 	rm $@.o
 
@@ -109,7 +142,7 @@ $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 $(TARGETS): $(BUILD_DIR)/%.ll : $(OBJ_BUILD)/%.ll $(BUILD_DIR)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(ARA_LINK) -S -o $@ $< $(BUILD_DIR)/musl_libc.ll
-	@#opt -S -o $@ --dce $@
+	@#$(LLVM_OPT) -S -o $@ --dce $@
 
 # Compile simple POSIX C files
 $(OBJ_BUILD)/%.ll: %.c $(BUILD_DIR)/musl_libc.ll
