@@ -106,7 +106,7 @@ BIN_TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_BIN_TARGET))
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 CC = clang
 #CFLAGS = -g -O0 -Wall -fno-builtin -nobuiltininc $(COMPILE_WITH_MUSL_INCLUDE)
-CFLAGS = -g -O0 -Wall $(COMPILE_WITH_MUSL_INCLUDE)
+CFLAGS = -g -O0 -Wall -fno-builtin $(COMPILE_WITH_MUSL_INCLUDE)
 CFLAGS_TO_EMIT_LLVM = -S -emit-llvm $(CFLAGS)
 #LDFLAGS = -static -nostdlib --no-undefined
 LDFLAGS = -static -nostdlib
@@ -135,7 +135,8 @@ clean-bin:
 $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	@$(CREATE_DEST_DIR)
 	$(LLVM_LLC) -filetype=obj -o $@.o $<
-	$(CC) $(LDFLAGS) $@.o ${MUSL_INSTALL_DIR}/lib/crt1.o ${MUSL_INSTALL_DIR}/lib/libc.a -lgcc -o $@
+	@# Add -lgcc to the linkage list if you get linker errors associated with compiler intrinsics.
+	$(CC) $(LDFLAGS) $@.o ${MUSL_INSTALL_DIR}/lib/crt1.o ${MUSL_INSTALL_DIR}/lib/libc.a -o $@
 	rm $@.o
 
 # Link POSIX applications with musl lib c
@@ -149,9 +150,19 @@ $(OBJ_BUILD)/%.ll: %.c $(BUILD_DIR)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
 
+# Link musl libc with _llvm_builtin_replacement.ll
+# This is required to fix the missing compiler-rt builtins in the musl libc LLVM IR.
+# See _llvm_builtin_replacement/llvm_builtin_replacement.c for more details.
+$(BUILD_DIR)/musl_libc.ll: $(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll $(BUILD_DIR)/_llvm_builtin_replacement.ll
+	$(ARA_LINK) -S -o $@ $^
+
+# Compile _llvm_builtin_replacement/llvm_builtin_replacement.c
+$(BUILD_DIR)/_llvm_builtin_replacement.ll: _llvm_builtin_replacement/llvm_builtin_replacement.c $(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll
+	@$(CREATE_DEST_DIR)
+	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
+
 # Build and install musl libc. 
-# Get static libc.a in LLVM IR.
-$(BUILD_DIR)/musl_libc.ll: build_makefile_app.sh
+$(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll: build_makefile_app.sh
 	@$(CREATE_DEST_DIR)
 	@mkdir -p $(MUSL_INSTALL_DIR)
 
