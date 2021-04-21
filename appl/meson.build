@@ -298,3 +298,13 @@ subdir('AUTOSAR')
 examples = run_target('examples',
                       command: nop,
                       depends: [osek_targets, freertos_targets])
+
+
+# run target to invoke POSIX build Makefile (rule: all)
+posix_dir = join_paths(meson.current_source_dir(), 'POSIX')
+run_target('POSIX',
+  command: ['make', '-C', posix_dir])
+
+# run target to remove POSIX build generated files.
+run_target('POSIX-clean',
+  command: ['make', '-C', posix_dir, 'clean'])
