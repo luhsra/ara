@@ -10,7 +10,7 @@ int foo(char value) {
     //char* super_puts_str = "> Test";
     char* super_puts_str = malloc(25);
     char* test = "> Test";
-    strcpy(super_puts_str, test);
+    //strcpy(super_puts_str, test);
     super_puts(test);
     free(super_puts_str);
     write(0, 0, 45);

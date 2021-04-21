@@ -27,9 +27,10 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
 
     @staticmethod
     def init(state):
-        state.scheduler_on = True  # The Scheduler is always on in POSIX.
-        debug_log("init standard streams")
-        generate_std_streams(state)
+        pass
+        #state.scheduler_on = True  # The Scheduler is always on in POSIX.
+        #debug_log("init standard streams")
+        #generate_std_streams(state)
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):
@@ -59,3 +60,7 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
                 return state
 
         return getattr(POSIX, syscall)(graph, abb, state)
+
+    #@syscall(categories={SyscallCategory.create})
+    #def llvm.donothing(graph, abb, state, args, va):
+    #    debug_log("in llvm.donothing")

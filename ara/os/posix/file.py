@@ -242,3 +242,33 @@ class FileSyscalls:
         assign_id(state.instances, v)
 
         return state
+
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg('value1', hint=SigType.value),
+                        Arg('value2', hint=SigType.value),
+                        Arg('value3', hint=SigType.value),
+                        Arg('value4', hint=SigType.value)))
+    def __muldc3(graph, abb, state, args, va):
+        debug_log("GOT __muldc3")
+        state = state.copy()
+
+        # instance properties
+        cp = state.call_path
+
+        v = state.instances.add_vertex()
+        state.instances.vp.label[v] = "Chdir"
+
+        #new_cfg = cfg.get_entry_abb(cfg.get_function_by_name("task_function"))
+        #assert new_cfg is not None
+        # TODO: when do we know that this is an unique instance?
+        handle_soc(state, v, graph.cfg, abb)
+        state.instances.vp.obj[v] = File(graph.cfg, abb=None, call_path=None, name="strcpy",
+                                        vidx = v,
+                                        absolute_pathname = "STRCPY file",
+                                        file_type = FileType.REGULAR
+                                        
+        )
+
+        assign_id(state.instances, v)
+
+        return state
