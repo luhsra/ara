@@ -35,8 +35,8 @@ CLEAN_UP_TARGETS = clean-patric
 
 # Change this vars to specify another path
 
-#MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musl-1.2.2
-MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musllvm
+MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musl-1.2.2
+#MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musllvm
 #GNU_MAKE_SRC_PATH ?= ~/Downloads/make-4.3
 
 # The path to the ARA link utility.
@@ -168,7 +168,6 @@ $(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll: build_makefile_app.sh
 
 	@# invoke Makefile with WLLVM.
 	@# The environment variables CFLAGS and LDFLAGS are set for the ./configure script.
-	@# Remove "--target=LLVM --build=LLVM" in CONFIGURE_ARGS if you build with standard musl libc
 	PROJECT_PATH=$(MUSL_LIB_C_SRC_PATH) \
 	BINARY_FILE=${MUSL_INSTALL_DIR}/lib/libc.a \
 	OUTPUT_FILE=$@ \
