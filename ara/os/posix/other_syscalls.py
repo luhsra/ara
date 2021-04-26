@@ -8,11 +8,10 @@ from ara.graph import SyscallCategory, SigType
 from ..os_util import syscall, assign_id, Arg
 from .posix_utils import POSIXInstance, debug_log, handle_soc
 
-@dataclass
-class Locale(POSIXInstance):
-    pass    # Save only the name for now.
-            # The POSIX locale is called "POSIX" or "C".
-            # The default locale is implementation defined.
+class OtherSyscalls:
 
-class LocaleSyscalls:
-    pass
+    @syscall(categories={SyscallCategory.comm})
+    def pause(graph, abb, state, args, va):
+
+        debug_log("found pause() syscall")
+        return state

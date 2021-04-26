@@ -64,12 +64,6 @@ defaultActionOfSignal: Dict[SignalType, _SignalDefaultAction] = {
     # TODO: fill in the rest of signal default actions 
 }
 
-@dataclass
-class Signal(POSIXInstance):
-    signal_type: SignalType
-    value: Any # TODO: change this type
-    destination: Union['Process', 'Thread']
-
 class _SignalAction_DFL_IGN(Enum):
     SIG_DFL = 0     # Default signal action
     SIG_IGN = 1     # Ignore the signal
@@ -79,9 +73,8 @@ _SignalAction_Function = Any # TODO: determine type of a signal handler function
 SignalAction = Union[_SignalAction_DFL_IGN, _SignalAction_Function]
 
 @dataclass
-class SignalMask(object):
+class SignalHandler(POSIXInstance):
     pass # TODO: define
-
 
 class SignalSyscalls:
     pass

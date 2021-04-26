@@ -5,17 +5,16 @@
 
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
-from .posix_utils import debug_log, logger, handle_soc
-from .file import FileSyscalls, generate_std_streams
-from .locale import LocaleSyscalls
-from .process import SessionSyscalls, TerminalSyscalls, ProcessGroupSyscalls, ProcessSyscalls
+from .posix_utils import debug_log, logger, handle_soc, add_normal_cfg
+from .file import FileSyscalls
+from .file_descriptor import FileDescriptorSyscalls
+from .mutex import MutexSyscalls
 from .signal import SignalSyscalls
 from .thread import ThreadSyscalls
-from .user import UserSyscalls, GroupSyscalls
+from .other_syscalls import OtherSyscalls
 
-class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls, 
-                    ProcessSyscalls, ProcessGroupSyscalls, SessionSyscalls, 
-                    SignalSyscalls, TerminalSyscalls, ThreadSyscalls, UserSyscalls):
+class POSIX(OSBase, MutexSyscalls, FileSyscalls, FileDescriptorSyscalls,
+                    SignalSyscalls, ThreadSyscalls, OtherSyscalls):
 
     @staticmethod
     def get_special_steps():
@@ -27,10 +26,7 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
 
     @staticmethod
     def init(state):
-        pass
-        #state.scheduler_on = True  # The Scheduler is always on in POSIX.
-        #debug_log("init standard streams")
-        #generate_std_streams(state)
+        state.scheduler_on = True  # The Scheduler is always on in POSIX.
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):
@@ -38,10 +34,7 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
 
         cfg = graph.cfg
 
-        debug_log("in interpret")
-
         syscall = cfg.get_syscall_name(abb)
-        debug_log('get syscall: %s', syscall)
         debug_log(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
@@ -60,7 +53,3 @@ class POSIX(OSBase, FileSyscalls, GroupSyscalls, LocaleSyscalls,
                 return state
 
         return getattr(POSIX, syscall)(graph, abb, state)
-
-    #@syscall(categories={SyscallCategory.create})
-    #def llvm.donothing(graph, abb, state, args, va):
-    #    debug_log("in llvm.donothing")

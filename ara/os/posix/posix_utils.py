@@ -27,26 +27,6 @@ class POSIXInstance(object):
     name: str
     vidx: Vertex        # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
 
-def add_initial_instance_to_state(state, instance, label: str):
-    v = state.instances.add_vertex()
-    state.instances.vp.label[v] = label
-    state.instances.vp.obj[v] = instance
-    assign_id(state.instances, v)
-    debug_log(type(state))
-
-    instances = state.instances
-    instances.vp.branch[v] = False
-    instances.vp.loop[v] = False
-    instances.vp.recursive[v] = False
-    instances.vp.after_scheduler[v] = False
-    instances.vp.usually_taken[v] = True
-    instances.vp.unique[v] = True
-    instances.vp.soc[v] = 0
-    instances.vp.llvm_soc[v] = 0
-    instances.vp.file[v] = 0
-    instances.vp.line[v] = 0
-
-
 def handle_soc(state, v, cfg, abb,
                 branch=None, loop=None, recursive=None, scheduler_on=None,
                 usually_taken=None):
