@@ -1811,12 +1811,12 @@ class FlatAnalysis(FlowAnalysis):
     def _finish(self, sstg):
         self._log.info(f"Maximal call depth: {self._max_call_depth}")
         self._stats["maximal_call_depth"] = self._max_call_depth
-        if self.dump.get():
-            dot_file = f'{self.dump_prefix.get()}.{self._entry_func}.dot'
-            self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
-                                           "graph_name": 'Instances',
-                                           "subgraph": 'instances'})
+        #if self.dump.get():
+        dot_file = f'{self.dump_prefix.get()}.{self._entry_func}.dot'
+        self._step_manager.chain_step({"name": "Printer",
+                                        "dot": dot_file,
+                                        "graph_name": 'Instances',
+                                        "subgraph": 'instances'})
 
 
 class SIA(FlatAnalysis):

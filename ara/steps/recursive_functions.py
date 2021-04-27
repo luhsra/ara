@@ -12,6 +12,12 @@ class RecursiveFunctions(Step):
         return ["CallGraph"]
 
     def run(self):
+        
+        #####
+        self._log.warning("RecursiveFunctions is disabled to improve performance of the analysis!")
+        return
+        #####
+
         callgraph = self._graph.callgraph
         cfg = self._graph.cfg
 
