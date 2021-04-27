@@ -21,11 +21,11 @@ def debug_log(msg, *args, **kwargs):
 
 @dataclass
 class POSIXInstance(object):
-    cfg: CFG            # the control flow graph
-    abb: Vertex         # the ABB of the system call which created this instance
-    call_path: Vertex   # call node within the call graph of the system call which created this instance [state.call_path]
+    cfg: CFG            = field(init=False)     # the control flow graph
+    abb: Vertex         = field(init=False)     # the ABB of the system call which created this instance
+    call_path: Vertex   = field(init=False)     # call node within the call graph of the system call which created this instance [state.call_path]
+    vidx: Vertex        = field(init=False)     # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
     name: str
-    vidx: Vertex        # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
 
 def handle_soc(state, v, cfg, abb,
                 branch=None, loop=None, recursive=None, scheduler_on=None,
@@ -55,6 +55,23 @@ def handle_soc(state, v, cfg, abb,
     instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
     instances.vp.file[v] = cfg.vp.file[abb]
     instances.vp.line[v] = cfg.vp.line[abb]
+
+def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state, va):
+
+    debug_log(f"Create new instance with label: {label}")
+    state = state.copy()
+    v = state.instances.add_vertex()
+    state.instances.vp.label[v] = label
+    handle_soc(state, v, graph.cfg, abb)
+
+    new_instance.cfg=graph.cfg, 
+    new_instance.abb=abb, 
+    new_instance.call_path=state.call_path, 
+    new_instance.vidx = v
+    state.instances.vp.obj[v] = new_instance
+    assign_id(state.instances, v)
+
+    return state
 
 def add_normal_cfg(cfg, abb, state):
     for oedge in cfg.vertex(abb).out_edges():

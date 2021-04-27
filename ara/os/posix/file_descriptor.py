@@ -17,21 +17,21 @@ class FileDescriptorSyscalls:
 
     @syscall(categories={SyscallCategory.comm},
             signature=(Arg('fildes', hint=SigType.value),
-                    Arg('buf', hint=SigType.symbol),
-                    Arg('nbyte', hint=SigType.value)))
+                       Arg('buf', hint=SigType.symbol),
+                       Arg('nbyte', hint=SigType.value)))
     def write(graph, abb, state, args, va):
 
         debug_log("found write() syscall")
         return state
 
 
-    # TODO: Remove this unimplemented fwrite()
-    @syscall(categories={SyscallCategory.comm},
-            signature=(Arg('ptr', hint=SigType.symbol),
-                    Arg('size', hint=SigType.value),
-                    Arg('nitems', hint=SigType.value),
-                    Arg('stream', hint=SigType.symbol)))
-    def fwrite(graph, abb, state, args, va):
+    # # TODO: Remove this unimplemented fwrite()
+    # @syscall(categories={SyscallCategory.comm},
+    #         signature=(Arg('ptr', hint=SigType.symbol),
+    #                    Arg('size', hint=SigType.value),
+    #                    Arg('nitems', hint=SigType.value),
+    #                    Arg('stream', hint=SigType.symbol)))
+    # def fwrite(graph, abb, state, args, va):
 
-        debug_log("found fwrite() syscall")
-        return state
+    #     debug_log("found fwrite() syscall")
+    #     return state
