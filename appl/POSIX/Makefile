@@ -51,9 +51,16 @@ OBJ_BUILD = $(BUILD_DIR)/objs
 # In this directory are all executables located.
 BIN_PATH = $(BUILD_DIR)/bin
 
+# Directory of all C files that needs to be added to the musl libc.
+ADD_TO_MUSL_LIBC_SRC_DIR = _add_to_musl_libc
+
+# Destination dir for the LLVM IR of all files in ADD_TO_MUSL_LIBC_SRC_DIR
+ADD_TO_MUSL_LIBC_DEST_DIR = $(BUILD_DIR)/add_to_musl_libc
+
 # Tools
 AWK_TO_TARGET = awk '{ print "$(BUILD_DIR)/" $$0 ".ll" }'
 AWK_TO_BIN_TARGET = awk '{ print "$(BIN_PATH)/" $$0 }'
+AWK_TO_ADD_TO_MUSL_TARGET = awk '{ print "$(ADD_TO_MUSL_LIBC_DEST_DIR)/" $$0 ".ll" }'
 CREATE_DEST_DIR = mkdir -p $(@D)
 
 # Function: to_absolute(path)
@@ -92,6 +99,7 @@ MUSL_INSTALL_DIR := $(call to_absolute,$(BUILD_DIR)/musl_install_dir)
 MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
 
 SINGLE_FILE_APPLICATIONS := $(shell find *.c | cut -f 1 -d '.')
+ADD_TO_MUSL_LIBC_CODE := $(shell find ./$(ADD_TO_MUSL_LIBC_SRC_DIR)/ -type f -printf "%f\n" | cut -f 1 -d '.')
 APPLICATIONS = $(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)
 
 # Generate list of LLVM IR targets.
@@ -102,6 +110,10 @@ TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_TARGET))
 # Generate list of executable targets in BIN_PATH.
 # These are all applications in APPLICATIONS (like in TARGETS) but in the BIN_PATH dir.
 BIN_TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_BIN_TARGET))
+
+# List of all targets that will be added to the musl libc.
+# All these targets will be linked with the original musl libc LLVM IR.
+ADD_TO_MUSL_LIBC_TARGETS = $(call do_for_all,$(ADD_TO_MUSL_LIBC_CODE),$(AWK_TO_ADD_TO_MUSL_TARGET))
 
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 CC = clang
@@ -139,7 +151,7 @@ $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	$(CC) $(LDFLAGS) $@.o ${MUSL_INSTALL_DIR}/lib/crt1.o ${MUSL_INSTALL_DIR}/lib/libc.a -o $@
 	rm $@.o
 
-# Link POSIX applications with musl lib c
+# Link POSIX applications with musl libc
 $(TARGETS): $(BUILD_DIR)/%.ll : $(OBJ_BUILD)/%.ll $(BUILD_DIR)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(ARA_LINK) -S -o $@ $< $(BUILD_DIR)/musl_libc.ll
@@ -150,19 +162,17 @@ $(OBJ_BUILD)/%.ll: %.c $(BUILD_DIR)/musl_libc.ll
 	@$(CREATE_DEST_DIR)
 	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
 
-# Link musl libc with _llvm_builtin_replacement.ll
-# This is required to fix the missing compiler-rt builtins in the musl libc LLVM IR.
-# See _llvm_builtin_replacement/llvm_builtin_replacement.c for more details.
-$(BUILD_DIR)/musl_libc.ll: $(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll $(BUILD_DIR)/_llvm_builtin_replacement.ll
+# Link musl libc with ADD_TO_MUSL_LIBC_TARGETS.
+$(BUILD_DIR)/musl_libc.ll: $(OBJ_BUILD)/musl_libc_original.ll $(ADD_TO_MUSL_LIBC_TARGETS)
 	$(ARA_LINK) -S -o $@ $^
 
-# Compile _llvm_builtin_replacement/llvm_builtin_replacement.c
-$(BUILD_DIR)/_llvm_builtin_replacement.ll: _llvm_builtin_replacement/llvm_builtin_replacement.c $(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll
+# Compile ADD_TO_MUSL_LIBC_TARGETS
+$(ADD_TO_MUSL_LIBC_TARGETS): $(ADD_TO_MUSL_LIBC_DEST_DIR)/%.ll: $(ADD_TO_MUSL_LIBC_SRC_DIR)/%.c $(OBJ_BUILD)/musl_libc_original.ll
 	@$(CREATE_DEST_DIR)
 	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
 
 # Build and install musl libc. 
-$(OBJ_BUILD)/musl_libc_without_llvm_builtins.ll: build_makefile_app.sh
+$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	@$(CREATE_DEST_DIR)
 	@mkdir -p $(MUSL_INSTALL_DIR)
 
