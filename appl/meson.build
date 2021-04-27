@@ -308,3 +308,8 @@ run_target('POSIX',
 # run target to remove POSIX build generated files.
 run_target('POSIX-clean',
   command: ['make', '-C', posix_dir, 'clean'])
+
+# run target to clear POSIX build directory.
+# This is useful if you want to rebuild all POSIX targets without rebuilding the musl libc.
+run_target('POSIX-clean-build-dir',
+  command: ['make', '-C', posix_dir, 'clean-build-dir'])
