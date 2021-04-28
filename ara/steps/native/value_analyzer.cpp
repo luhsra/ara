@@ -601,7 +601,9 @@ namespace ara::step {
 	}
 
 	llvm::Module& Bookkeeping::get_module() const { return va.graph.get_module(); }
+
 	Logger& Bookkeeping::get_logger() const { return va.logger; }
+
 	std::optional<unsigned> Bookkeeping::get_obj_id(const SVF::NodeID id) const {
 		auto it = va.obj_map.find(id);
 		if (it != va.obj_map.end()) {

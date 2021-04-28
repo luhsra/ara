@@ -11,6 +11,15 @@ class ValuesUnknown(RuntimeError):
 cdef public object py_valueerror = ValuesUnknown
 
 cdef class ValueAnalyzer:
+    """Python wrapper class for the C++ Value Analyzer.
+
+    This class provides all entry functions for the ValueAnalyzer.
+    It acts as wrapper for the actual C++ Analysis and as storage container for
+    Python objects (mainly self._sys_objects).
+
+    See the C++ class for an actual documentation of the internal working.
+    """
+
     cdef unique_ptr[CVA] _c_va
     cdef object _graph
     cdef object _log
