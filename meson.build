@@ -166,15 +166,4 @@ if get_option('enable_toplevel_tests')
               '--step-settings', generator_settings],
        suite: 'toplevel'
     )
-
-    autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
-    test('multisse',
-       py3_inst,
-       args: [ara_py, autosar_minexample[0],
-              '--oilfile', autosar_minexample[1],
-              '--log-level', 'info',
-              '--dump',
-              '--step-settings', autosar_minexample_settings],
-       suite: 'toplevel'
-    )
 endif
