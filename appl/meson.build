@@ -303,7 +303,7 @@ examples = run_target('examples',
 # run target to invoke POSIX build Makefile (rule: all)
 posix_dir = join_paths(meson.current_source_dir(), 'POSIX')
 run_target('POSIX',
-  command: ['make', '-C', posix_dir])
+  command: ['make', '-C', posix_dir, '-j4'])
 
 # run target to remove POSIX build generated files.
 run_target('POSIX-clean',
