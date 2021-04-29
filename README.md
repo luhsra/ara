@@ -201,6 +201,19 @@ Then configure your build directory with:
 meson build --native-file native.txt
 ```
 
+### Python modules cannot be imported
+On certain systems (where multiple Python versions can be installed in parallel) it may be that some Python modules cannot be imported. A possible reason is that the modules are build against another version of Python than the version of the actual running interpreter.
+
+Again this can be changed with an explicit information about the Python version:
+```
+[binaries]
+python = '/usr/bin/python3.8'
+```
+Then configure your build directory with:
+```
+meson build --native-file native.txt
+```
+
 ### meson directory is really/too big
 This is because of precompiled headers. They fasten the build a little bit but need a lot of disk space. You can deactivate precompiled headers with:
 ```
