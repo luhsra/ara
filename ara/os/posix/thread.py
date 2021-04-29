@@ -9,7 +9,11 @@ from ara.graph import SyscallCategory, SigType
 from ..os_util import syscall, assign_id, Arg
 from .posix_utils import POSIXInstance, debug_log, register_instance
 
-@dataclass
+# SIA and InteractionAnalysis requires a Hash for the Thread/Task instance.
+# We provide one but allow the class to be mutable because register_instance() needs 
+# to add some info to the instances before they can be registered in the InstanceGraph.
+# A modification of instances later on is not designated.
+@dataclass(unsafe_hash = True)
 class Thread(POSIXInstance):
     entry_abb: Any
     function: Any
@@ -21,6 +25,7 @@ class Thread(POSIXInstance):
     #signal_mask: SignalMask
     #pending_signals: Queue # of Type: Queue[Signal]; TODO: Do all POSIX processes and threads have a signal queue? If yes how big is the queue?
     #errno: int
+    is_regular: bool = True # Always True if this thread is not the main thread.
 
     def as_dot(self):
         wanted_attrs = ["name", "function"]
@@ -58,6 +63,7 @@ class ThreadSyscalls:
         thread_name = args.thread.get_name()
         func_name = args.start_routine.get_name()
         new_thread = Thread(name = f"Thread: {thread_name}",
+                            #entry_abb = None,
                             entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
                             function = func_name,
                             threadID = args.thread,

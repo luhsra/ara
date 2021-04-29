@@ -26,7 +26,8 @@ class POSIX(OSBase, MutexSyscalls, FileSyscalls, FileDescriptorSyscalls,
 
     @staticmethod
     def init(state):
-        state.scheduler_on = True  # The Scheduler is always on in POSIX.
+        pass
+        #state.scheduler_on = True  # The Scheduler is always on in POSIX.
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):

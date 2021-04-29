@@ -14,4 +14,5 @@ class OtherSyscalls:
     def pause(graph, abb, state, args, va):
 
         debug_log("found pause() syscall")
+        #state = state.copy()
         return state
