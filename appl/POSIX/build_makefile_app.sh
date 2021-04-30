@@ -50,9 +50,9 @@ fi
 export LLVM_COMPILER=clang
 if [ "${EXEC_CONFIGURE}" = "true" ] ; then
     (cd "${PROJECT_PATH}" && CC=wllvm WLLVM_CONFIGURE_ONLY=1 ./configure ${CONFIGURE_ARGS})
-    (cd "${PROJECT_PATH}" && make -j4)
+    (cd "${PROJECT_PATH}" && make -j$(nproc))
 else
-    (cd "${PROJECT_PATH}" && make -j4 CC=wllvm ${MAKE_ARGS})
+    (cd "${PROJECT_PATH}" && make -j$(nproc) CC=wllvm ${MAKE_ARGS})
 fi
 
 if [ "${EXEC_MAKE_INSTALL}" = "true" ] ; then

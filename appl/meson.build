@@ -302,14 +302,15 @@ examples = run_target('examples',
 
 # run target to invoke POSIX build Makefile (rule: all)
 posix_dir = join_paths(meson.current_source_dir(), 'POSIX')
-run_target('POSIX',
-  command: ['make', '-C', posix_dir, '-j4'])
+cpus = run_command('nproc', '|', 'tr', '-d', '\n').stdout()
+run_target('posix',
+  command: ['make', '-C', posix_dir, '-j' + cpus])
 
 # run target to remove POSIX build generated files.
-run_target('POSIX-clean',
+run_target('posix-clean',
   command: ['make', '-C', posix_dir, 'clean'])
 
 # run target to clear POSIX build directory.
 # This is useful if you want to rebuild all POSIX targets without rebuilding the musl libc.
-run_target('POSIX-clean-build-dir',
+run_target('posix-clean-build-dir',
   command: ['make', '-C', posix_dir, 'clean-build-dir'])
