@@ -4,6 +4,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <llvm/Support/FileSystem.h>
+#include <unordered_set>
 
 namespace ara::step {
 	std::string IRWriter::get_description() { return "Print current IR code."; }
