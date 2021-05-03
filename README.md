@@ -18,7 +18,7 @@ The following dependencies are needed:
 
 Optional dependencies:
 
-- [pygments](https://pygments.org/) (Runtime depedency to get dot files linked to the source code)
+- [pygments](https://pygments.org/) (Runtime dependency to get dot files linked to the source code)
 
 Getting packages in SRA lab:
 ```
