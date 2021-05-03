@@ -63,7 +63,6 @@ class ThreadSyscalls:
         thread_name = args.thread.get_name()
         func_name = args.start_routine.get_name()
         new_thread = Thread(name = f"Thread: {thread_name}",
-                            #entry_abb = None,
                             entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
                             function = func_name,
                             threadID = args.thread,

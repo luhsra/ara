@@ -1668,7 +1668,6 @@ class FlatAnalysis(FlowAnalysis):
         for v in self._graph.instances.vertices():
             os_obj = self._graph.instances.vp.obj[v]
             if (isinstance(os_obj, Task) or isinstance(os_obj, Thread)) and os_obj.is_regular:
-                self._log.warning("Detected Thread")
                 yield os_obj, v
 
     def _get_task_function(self, task):

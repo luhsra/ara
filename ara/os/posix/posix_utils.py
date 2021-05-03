@@ -16,8 +16,20 @@ logger = get_logger("POSIX")
 _POSIX_DEBUG_LOG_LEVEL = LEVEL["info"]
 
 def debug_log(msg, *args, **kwargs):
-    """Logs a debug message in the POSIX package"""
+    """ Logs a debug message in the POSIX package. """
     logger.log(_POSIX_DEBUG_LOG_LEVEL, msg, *args, **kwargs)
+
+_already_done_warnings = set()
+
+def no_double_warning_cust_logger(cust_logger, msg: str):
+    """ Issues a warning only once with a custom logger. """
+    if not msg in _already_done_warnings:
+        cust_logger.warning(msg)
+        _already_done_warnings.add(msg)
+
+def no_double_warning(msg: str):
+    """ Issues a warning only once. """
+    no_double_warning_cust_logger(logger, msg)
 
 @dataclass
 class POSIXInstance(object):

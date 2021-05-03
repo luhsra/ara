@@ -5,6 +5,8 @@ from .step import Step
 from graph_tool.topology import all_paths
 import numpy
 
+from ara.os.posix.posix_utils import no_double_warning_cust_logger 
+
 class RecursiveFunctions(Step):
     """Mark all function that are in the Callgraph as recursive or not."""
 
@@ -14,7 +16,7 @@ class RecursiveFunctions(Step):
     def run(self):
         
         #####
-        self._log.warning("RecursiveFunctions is disabled to improve performance of the analysis!")
+        no_double_warning_cust_logger(self._log, "RecursiveFunctions is disabled to improve performance of the analysis!")
         return
         #####
 
