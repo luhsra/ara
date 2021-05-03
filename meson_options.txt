@@ -8,6 +8,8 @@ option('enable_toplevel_tests', type: 'boolean', value: true,
     description: 'Not actual tests, but stored common commandlines and examples for calling ARA.')
 option('enable_gpslogger_tests', type: 'boolean', value: true)
 option('enable_librepilot_tests', type: 'boolean', value: true)
+option('enable_posix_tests', type: 'boolean', value: true,
+    description: 'All POSIX tests are located in test/posix_test. The enable_step_tests option will be ignored for POSIX tests.')
 
 option('arm_include_dirs', type: 'array', value: ['/usr/lib/arm-none-eabi/include'],
     description: 'A list of include dirs for compiling for ARM. Only relevant, if arch==arm.')

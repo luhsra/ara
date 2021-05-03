@@ -109,3 +109,7 @@ if get_option('enable_step_tests')
 
     subdir('native_step_test')
 endif
+
+if get_option('enable_posix_tests')
+    subdir('posix_test')
+endif
