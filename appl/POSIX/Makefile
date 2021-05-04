@@ -2,8 +2,6 @@
 # - Makefile to compile all POSIX applications (requires GNU Make) -
 #
 # Make sure you have whole-program-llvm (https://github.com/travitch/whole-program-llvm) installed.
-# Make sure you have ara-link compiled before you build.
-# Make sure $(MUSL_LIB_C_SRC_PATH) specifies the correct path to your local Musl Lib-C source dir.
 #
 #
 # HOW TO:
@@ -35,15 +33,17 @@ CLEAN_UP_TARGETS = clean-patric
 
 # Change this vars to specify another path
 
-MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musl-1.2.2
-#MUSL_LIB_C_SRC_PATH ?= ~/Downloads/musllvm
-#GNU_MAKE_SRC_PATH ?= ~/Downloads/make-4.3
-
-# The path to the ARA link utility.
-ARA_LINK ?= ../../subprojects/ara-link/build/ara-link
+# Meson build root directory.
+BUILD_ROOT ?= ../../build
 
 # All target and intermediate files will be saved in this directory.
-BUILD_DIR ?= ../../build/appl/POSIX
+BUILD_DIR ?= $(BUILD_ROOT)/appl/POSIX
+
+# The path to the ARA link utility binary.
+ARA_LINK ?= $(BUILD_ROOT)/subprojects/ara-link/ara-link
+
+# The path to the modded musl libc
+MUSL_LIB_C_SRC_PATH ?= ../../subprojects/musl-libc
 
 # In this directory are all LLVM IR targets located without the musl libc included.
 OBJ_BUILD = $(BUILD_DIR)/objs
@@ -117,10 +117,8 @@ ADD_TO_MUSL_LIBC_TARGETS = $(call do_for_all,$(ADD_TO_MUSL_LIBC_CODE),$(AWK_TO_A
 
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 CC = clang
-#CFLAGS = -g -O0 -Wall -fno-builtin -nobuiltininc $(COMPILE_WITH_MUSL_INCLUDE)
 CFLAGS = -g -O0 -Wall -fno-builtin $(COMPILE_WITH_MUSL_INCLUDE)
 CFLAGS_TO_EMIT_LLVM = -S -emit-llvm $(CFLAGS)
-#LDFLAGS = -static -nostdlib --no-undefined
 LDFLAGS = -static -nostdlib
 
 # Build everything (LLVM IR + Binary files)
@@ -141,7 +139,16 @@ clean-build-dir:
 clean-bin:
 	rm -f -r $(BIN_PATH)
 
-.PHONY: all bin validate ll llvm-ir clean clean-bin clean-build-dir clean-musl-libc $(CLEAN_UP_TARGETS)
+# Check whether wllvm is installed.
+test-for-wllvm:
+	@if ! command -v extract-bc &> /dev/null; then \
+		echo >&2 "wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed!"; \
+		echo >&2 "	install via \"pip3 install wllvm\""; \
+		false; \
+	fi \
+
+
+.PHONY: all bin validate ll llvm-ir clean clean-bin clean-build-dir clean-musl-libc wllvm $(CLEAN_UP_TARGETS)
 
 # Create test executables (to validate the correctness of the generated LLVM IR and to display linking errors from applications)
 $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
@@ -172,7 +179,7 @@ $(ADD_TO_MUSL_LIBC_TARGETS): $(ADD_TO_MUSL_LIBC_DEST_DIR)/%.ll: $(ADD_TO_MUSL_LI
 	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
 
 # Build and install musl libc. 
-$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
+$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh test-for-wllvm
 	@$(CREATE_DEST_DIR)
 	@mkdir -p $(MUSL_INSTALL_DIR)
 
@@ -206,7 +213,7 @@ $(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c $(BUILD_DIR)/
 
 # --- patric_gbs_a5 ---
 PATRIC_DIR = ./patric_gbs_a5
-$(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
+$(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll test-for-wllvm
 
 	@# invoke Makefile with WLLVM.
 	@# The environment variable CFLAGS is set to override CFLAGS in the calling Makefile.

@@ -7,7 +7,7 @@
 [external "svf"]
 	path = subprojects/svf
 	url = https://github.com/luhsra/SVF
-	branch = sra
+	branch = pairfix
 	vcs = git
 
 [external "sparsedata"]
@@ -19,5 +19,11 @@
 [external "ara-link"]
 	path = subprojects/ara-link
 	url = https://scm.sra.uni-hannover.de/source/ara-link.git
+	branch = master
+	vcs = git
+
+[external "musl-libc"]
+	path = subprojects/musl-libc
+	url = https://scm.sra.uni-hannover.de/source/musl.git
 	branch = master
 	vcs = git
