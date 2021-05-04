@@ -29,6 +29,13 @@ from .syscall_set import syscall_set
     To detect the syscalls correctly we need to provide an implementation for these prefixed functions.
     This is done by redirecting POSIX.__syscall -> POSIX.syscall. (See _POSIXMetaClass)
 
+    Note: There might be other weak aliases than the __{syscall name} version in the musl libc.
+          These syscalls/C-Functions are not supported. 
+          Check the musl libc implementation with:
+                grep -rnw '<path to musl libc src>' -e "weak_alias"
+          and search for you desired/undetected syscall.
+          You can create a redirection as Syscall Method in this model to provide an implementation for this weak alias.
+
     To add a syscall stub the only thing you need to do is adding the syscall name to the syscall_set. (See syscall_set.py)
     
     If you want to implement a new instance for the InstanceGraph create a new module in this package and make sure
