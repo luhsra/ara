@@ -75,3 +75,7 @@ cdef extern from "svf_analyses.h" namespace "ara::step":
 cdef extern from "svf_transformation.h" namespace "ara::step":
     cdef cppclass SVFTransformation:
         pass
+
+cdef extern from "remove_syscall_def.h" namespace "ara::step":
+    cdef cppclass RemoveSyscallDef:
+        pass

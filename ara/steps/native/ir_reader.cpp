@@ -52,5 +52,10 @@ namespace ara::step {
 
 		// convert unique_ptr to shared_ptr
 		graph.get_graph_data().initialize_module(std::move(module));
+
+		// Call RemoveSyscallDef Step
+		llvm::json::Value call_remove_syscall_def(llvm::json::Object{{"name", "RemoveSyscallDef"}});
+		step_manager.chain_step(call_remove_syscall_def);
+
 	}
 } // namespace ara::step
