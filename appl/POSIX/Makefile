@@ -145,7 +145,7 @@ test-for-wllvm:
 		echo >&2 "wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed!"; \
 		echo >&2 "	install via \"pip3 install wllvm\""; \
 		false; \
-	fi \
+	fi
 
 
 .PHONY: all bin validate ll llvm-ir clean clean-bin clean-build-dir clean-musl-libc wllvm $(CLEAN_UP_TARGETS)
