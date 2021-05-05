@@ -25,5 +25,5 @@
 [external "musl-libc"]
 	path = subprojects/musl-libc
 	url = https://scm.sra.uni-hannover.de/source/musl.git
-	branch = master
+	branch = posix
 	vcs = git
