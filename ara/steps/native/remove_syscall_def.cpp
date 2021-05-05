@@ -43,7 +43,7 @@ namespace ara::step {
         py_assert(PyFunction_Check(get_syscalls), "ara.os.get_posix_syscalls() is not a python function!", get_syscalls);
 
         // Call ara.os.get_posix_syscalls()
-        PyObject* syscall_list = PyObject_CallNoArgs(get_syscalls);
+        PyObject* syscall_list = PyObject_CallObject(get_syscalls, NULL);
         py_assert(syscall_list != nullptr, "Error while calling ara.os.get_posix_syscalls() python function!");
 
         PyObject* syscall_iter = PyObject_GetIter(syscall_list);
