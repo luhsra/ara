@@ -141,7 +141,7 @@ clean-bin:
 
 # Check whether wllvm is installed.
 test-for-wllvm:
-	@if ! command -v extract-bc &> /dev/null; then \
+	@if ! command -v extract-bc > /dev/null; then \
 		echo >&2 "wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed!"; \
 		echo >&2 "	install via \"pip3 install wllvm\""; \
 		false; \
