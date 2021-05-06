@@ -13,15 +13,20 @@ namespace ara::step {
 	class IRReader : public ConfStep<IRReader> {
 	  private:
 		using ConfStep<IRReader>::ConfStep;
+
 		static const inline option::TOption<option::String> input_file_template{"input_file", "Get input file."};
 		option::TOptEntity<option::String> input_file;
+
+		static const inline option::TOption<option::Bool> no_syscall_body_template{
+			"no_syscall_body", "Chains the step RemoveSyscallBody if true."};
+		option::TOptEntity<option::Bool> no_syscall_body;
 
 		virtual void init_options();
 
 	  public:
 		static std::string get_name() { return "IRReader"; }
 		static std::string get_description();
-		static Step::OptionVec get_local_options() { return {input_file_template}; }
+		static Step::OptionVec get_local_options() { return {input_file_template, no_syscall_body_template}; }
 
 		virtual void run() override;
 	};

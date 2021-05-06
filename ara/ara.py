@@ -10,6 +10,7 @@ import sys
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
+from .os import get_os_model_names, get_os_model_by_name
 
 from .steplisting import print_avail_steps
 
@@ -65,7 +66,19 @@ def main():
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
 
+    # --- POSIX --- #
+    os_model_names = get_os_model_names()
+    os_model_names.append("auto")
+    parser.add_argument('--os', help="Uses the specified OS Model for the analysis.",
+                        choices=os_model_names, default="auto")
+    parser.add_argument('--no-syscall-body', help="Runs the RemoveSyscallBody step after IRReader. Only the POSIX OS Model is supported by this option.",
+                        action='store_true')
+    parser.add_argument('--no-recursive-funcs', help="Disables the RecursiveFunctions Step to improve performance.",
+                        action='store_true')
+
     args = parser.parse_args()
+
+    del os_model_names
 
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
@@ -107,6 +120,17 @@ def main():
             args.step = None
         else:
             extra_settings["steps"].append("ManualCorrections")
+    
+    if args.os and args.os != "auto":
+        g.os = get_os_model_by_name(args.os)
+
+    if args.no_syscall_body:
+        if not args.os or args.os == "auto":
+            logger.warning("--os not set. Only POSIX is supported for --no-syscall-body. Set os = POSIX.")
+            args.os = get_os_model_by_name("POSIX")
+        elif args.os != "POSIX":
+            logger.warning(f"--os is set to {args.os}. Only POSIX is supported for --no-syscall-body. Disable the --no-syscall-body option.")
+            args.no_syscall_body = False
 
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']

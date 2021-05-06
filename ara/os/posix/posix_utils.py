@@ -12,20 +12,21 @@ logger = get_logger("POSIX")
 
 # Switch to set all POSIX debug logs to "info" 
 # -> this highlights all POSIX debug messages. 
-#_POSIX_DEBUG_LOG_LEVEL = LEVEL["debug"]
-_POSIX_DEBUG_LOG_LEVEL = LEVEL["info"]
+#_POSIX_DEBUG_LOG_LEVEL: int = LEVEL["debug"]
+_POSIX_DEBUG_LOG_LEVEL: int = LEVEL["info"]
 
 def debug_log(msg, *args, **kwargs):
     """ Logs a debug message in the POSIX package. """
     logger.log(_POSIX_DEBUG_LOG_LEVEL, msg, *args, **kwargs)
 
-_already_done_warnings = set()
+_already_done_messages = set()
 
-def no_double_warning_cust_logger(cust_logger, msg: str):
-    """ Issues a warning only once with a custom logger. """
-    if not msg in _already_done_warnings:
-        cust_logger.warning(msg)
-        _already_done_warnings.add(msg)
+def no_double_output(cust_logger, log_level: int, msg: str):
+    """ Issues a message with log_level only once. Using the custom logger. """
+    identifier = str(log_level) + msg
+    if not identifier in _already_done_messages:
+        cust_logger.log(log_level, msg)
+        _already_done_messages.add(identifier)
 
 def no_double_warning(msg: str):
     """ Issues a warning only once. """

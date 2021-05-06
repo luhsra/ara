@@ -1,14 +1,20 @@
 """Container for RecursiveFuntions."""
 from ara.graph import Graph, CFGView
+from .option import Option, Bool
 from .step import Step
 
 from graph_tool.topology import all_paths
 import numpy
 
-from ara.os.posix.posix_utils import no_double_warning_cust_logger 
+from ara.os.posix.posix_utils import no_double_output
+from ara.util import LEVEL
 
 class RecursiveFunctions(Step):
     """Mark all function that are in the Callgraph as recursive or not."""
+
+    no_recursive_funcs = Option(name="no_recursive_funcs",
+                                help="Disables this step. True means: this step does nothing.",
+                                ty=Bool())
 
     def get_single_dependencies(self):
         return ["CallGraph"]
@@ -16,8 +22,9 @@ class RecursiveFunctions(Step):
     def run(self):
         
         #####
-        no_double_warning_cust_logger(self._log, "RecursiveFunctions is disabled to improve performance of the analysis!")
-        return
+        if self.no_recursive_funcs.get():
+            no_double_output(self._log, LEVEL["info"], "--no-recursive-funcs: RecursiveFunctions is disabled!")
+            return
         #####
 
         callgraph = self._graph.callgraph

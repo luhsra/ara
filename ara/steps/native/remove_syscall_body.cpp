@@ -11,7 +11,9 @@ namespace ara::step {
 	using namespace llvm;
 
 	std::string RemoveSyscallBody::get_description() {
-		return "Removes the libc function body of syscalls which should be interpreted by the OS Model. Currently only the POSIX OS Model is supported.";
+		return "Removes the libc function body of syscalls which should be interpreted by the OS Model.\n"
+               "This improves the performance of the analysis and cleans the CallGraph.\n" 
+               "Currently only the POSIX OS Model is supported.";
 	}
 
     /*
