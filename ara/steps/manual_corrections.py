@@ -32,7 +32,7 @@ class ManualCorrections(Step):
                 correction = corrections[i_id]
                 for prop in correction:
                     if prop == "obj":
-                        fail("obj attribute cannot be modified.")
+                        self._fail("obj attribute cannot be modified.")
                     self._log.debug(f"Setting {prop} to {correction[prop]}")
                     instances.vp[prop][instance] = correction[prop]
 

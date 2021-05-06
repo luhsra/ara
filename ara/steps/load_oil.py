@@ -26,7 +26,7 @@ class LoadOIL(Step):
         # load the json file
         oilfile = self.oilfile.get()
         if not oilfile:
-            self.fail("No oilfile provided")
+            self._fail("No oilfile provided")
         self._log.info(f"Reading oil file {oilfile}")
         with open(oilfile) as f:
             oil = json.load(f)
@@ -62,7 +62,7 @@ class LoadOIL(Step):
                     if obj.name == name:
                         return obj
 
-            self.fail("Couldn't find instance with name " + name)
+            self._fail("Couldn't find instance with name " + name)
 
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
