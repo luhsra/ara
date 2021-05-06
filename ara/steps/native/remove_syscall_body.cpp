@@ -1,5 +1,5 @@
 
-#include "remove_syscall_def.h"
+#include "remove_syscall_body.h"
 
 #include <Python.h>
 #include <pyllco.h>
@@ -10,8 +10,8 @@
 namespace ara::step {
 	using namespace llvm;
 
-	std::string RemoveSyscallDef::get_description() {
-		return "Removes the libc implementation of syscalls which will be interpreted by the OS Model. Currently only the POSIX OS Model is supported.";
+	std::string RemoveSyscallBody::get_description() {
+		return "Removes the libc function body of syscalls which should be interpreted by the OS Model. Currently only the POSIX OS Model is supported.";
 	}
 
     /*
@@ -19,7 +19,7 @@ namespace ara::step {
         Python Exceptions are shown in the terminal.
         If you provide the error_with_obj obj then will this function print the python Type of this object. (Only if cond == false)
     */
-    void RemoveSyscallDef::py_assert(bool cond, std::string msg, PyObject* error_with_obj = nullptr) {
+    void RemoveSyscallBody::py_assert(bool cond, std::string msg, PyObject* error_with_obj = nullptr) {
         if(!cond) {
             logger.err() << msg << std::endl;
             if(PyErr_Occurred())
@@ -33,7 +33,7 @@ namespace ara::step {
         }
     }
 
-	void RemoveSyscallDef::run() {
+	void RemoveSyscallBody::run() {
 
         PyObject* ara_os = PyImport_ImportModule("ara.os");
         py_assert(ara_os != nullptr, "ara.os python module not found!");

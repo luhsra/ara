@@ -6,13 +6,13 @@
 #include <graph.h>
 
 namespace ara::step {
-	class RemoveSyscallDef : public ConfStep<RemoveSyscallDef> {
+	class RemoveSyscallBody : public ConfStep<RemoveSyscallBody> {
 	  private:
-		using ConfStep<RemoveSyscallDef>::ConfStep;
+		using ConfStep<RemoveSyscallBody>::ConfStep;
         void py_assert(bool cond, std::string msg, PyObject* error_with_obj);
 
 	  public:
-		static std::string get_name() { return "RemoveSyscallDef"; }
+		static std::string get_name() { return "RemoveSyscallBody"; }
 		static std::string get_description();
 
 		virtual std::vector<std::string> get_single_dependencies() override { return {"IRReader"}; }

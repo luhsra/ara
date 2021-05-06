@@ -4,7 +4,7 @@
     This set contains all syscalls that are in interest for an OS analysis.
     For all syscalls in this set the OS model will generate a stub function.
     Even when there is no implementation for a syscall, ARA will detect at least all syscalls in this set.
-    For all detected syscalls it is possible to remove the libc implementation with the POSIX_Remove_Sys_Impl step.
+    For all detected syscalls it is possible to remove the libc implementation with the RemoveSyscallBody step.
     
     If you add an implementation for a new syscall which is not in this set, consider to add the name in this set beforehand,
     then we have a complete list/set of all syscalls.
