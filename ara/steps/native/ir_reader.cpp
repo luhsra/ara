@@ -60,6 +60,5 @@ namespace ara::step {
 			llvm::json::Value call_remove_syscall_body(llvm::json::Object{{"name", "RemoveSyscallBody"}});
 			step_manager.chain_step(call_remove_syscall_body);
 		}
-
 	}
 } // namespace ara::step

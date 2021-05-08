@@ -9,7 +9,7 @@ namespace ara::step {
 	class RemoveSyscallBody : public ConfStep<RemoveSyscallBody> {
 	  private:
 		using ConfStep<RemoveSyscallBody>::ConfStep;
-        void py_assert(bool cond, std::string msg, PyObject* error_with_obj);
+		void py_assert(bool cond, std::string msg, PyObject* error_with_obj);
 
 	  public:
 		static std::string get_name() { return "RemoveSyscallBody"; }
