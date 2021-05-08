@@ -131,6 +131,10 @@ ifeq ($(call command_availiable	,$(LLVM_DIS)), false)
 $(error command $(LLVM_DIS) not found!)
 endif
 
+ifeq ($(call command_availiable	,$(ARA_LINK)), false)
+$(error command $(ARA_LINK) not found!)
+endif
+
 # Make sure the path is always absolute
 MUSL_INSTALL_DIR := $(call to_absolute,$(BUILD_DIR)/musl_install_dir)
 MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
