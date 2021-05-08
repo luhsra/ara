@@ -61,6 +61,9 @@ ADD_TO_MUSL_LIBC_DEST_DIR = $(BUILD_DIR)/add_to_musl_libc
 AWK_TO_TARGET = awk '{ print "$(BUILD_DIR)/" $$0 ".ll" }'
 AWK_TO_BIN_TARGET = awk '{ print "$(BIN_PATH)/" $$0 }'
 AWK_TO_ADD_TO_MUSL_TARGET = awk '{ print "$(ADD_TO_MUSL_LIBC_DEST_DIR)/" $$0 ".ll" }'
+
+# Creates the dest directory in a rule.
+# Just call this var at the beginning of the rule.
 CREATE_DEST_DIR = mkdir -p $(@D)
 
 # Function: to_absolute(path)
@@ -79,9 +82,25 @@ define do_for_all
 $(shell (echo $(1) | tr ' ' '\n') | $(2))
 endef
 
+# Function: command_availiable_shell(command)
+# Returns shell failure if the command is not avaliable on the system.
+define command_availiable_shell
+command -v $(1) > /dev/null;
+endef
+
+# Function: command_availiable(command)
+# Returns false if the command is not avaliable on the system.
+define command_availiable
+$(shell if $(call command_availiable_shell,$(1)) then \
+			echo "true"; \
+		else \
+			echo "false"; \
+		fi)
+endef
+
 # Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
 # If "" not working than choose "-$(LLVM_VERSION)".
-LLVM_SUFFIX := $(shell 	if type llvm-dis > /dev/null; then \
+LLVM_SUFFIX := $(shell 	if $(call command_availiable_shell,llvm-dis) then \
 					   		echo ""; \
 						else \
 							echo "-$(LLVM_VERSION)"; \
@@ -93,6 +112,24 @@ LLVM_DIS ?= llvm-dis$(LLVM_SUFFIX)
 
 # Make LLVM_DIS callable from build_makefile_app.sh
 export LLVM_DIS
+
+# Check dependencies
+ifeq ($(call command_availiable,extract-bc), false)
+$(info command extract-bc not found!)
+$(error wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed! Install via "pip3 install wllvm")
+endif
+
+ifeq ($(call command_availiable,$(LLVM_LLC)), false)
+$(error command $(LLVM_LLC) not found!)
+endif
+
+ifeq ($(call command_availiable,$(LLVM_OPT)), false)
+$(error command $(LLVM_OPT) not found!)
+endif
+
+ifeq ($(call command_availiable	,$(LLVM_DIS)), false)
+$(error command $(LLVM_DIS) not found!)
+endif
 
 # Make sure the path is always absolute
 MUSL_INSTALL_DIR := $(call to_absolute,$(BUILD_DIR)/musl_install_dir)
@@ -139,16 +176,7 @@ clean-build-dir:
 clean-bin:
 	rm -f -r $(BIN_PATH)
 
-# Check whether wllvm is installed.
-test-for-wllvm:
-	@if ! command -v extract-bc > /dev/null; then \
-		echo >&2 "wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed!"; \
-		echo >&2 "	install via \"pip3 install wllvm\""; \
-		false; \
-	fi
-
-
-.PHONY: all bin validate ll llvm-ir clean clean-bin clean-build-dir clean-musl-libc wllvm $(CLEAN_UP_TARGETS)
+.PHONY: all bin validate ll llvm-ir clean clean-bin clean-build-dir clean-musl-libc $(CLEAN_UP_TARGETS)
 
 # Create test executables (to validate the correctness of the generated LLVM IR and to display linking errors from applications)
 $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
@@ -179,7 +207,7 @@ $(ADD_TO_MUSL_LIBC_TARGETS): $(ADD_TO_MUSL_LIBC_DEST_DIR)/%.ll: $(ADD_TO_MUSL_LI
 	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
 
 # Build and install musl libc. 
-$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh test-for-wllvm
+$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	@$(CREATE_DEST_DIR)
 	@mkdir -p $(MUSL_INSTALL_DIR)
 
@@ -213,7 +241,7 @@ $(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c $(BUILD_DIR)/
 
 # --- patric_gbs_a5 ---
 PATRIC_DIR = ./patric_gbs_a5
-$(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll test-for-wllvm
+$(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 
 	@# invoke Makefile with WLLVM.
 	@# The environment variable CFLAGS is set to override CFLAGS in the calling Makefile.
