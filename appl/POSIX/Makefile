@@ -22,7 +22,7 @@
 #SHELL := /bin/bash
 
 # LLVM version to be used. Only required for some systems (see LLVM_SUFFIX)
-LLVM_VERSION ?= "10"
+LLVM_VERSION ?= 10
 
 # Add here new project names
 PROJECT_NAMES = simple_project patric_gbs_a5
@@ -100,15 +100,15 @@ endef
 
 # Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
 # If "" not working than choose "-$(LLVM_VERSION)".
-LLVM_SUFFIX := $(shell 	if $(call command_availiable_shell,llvm-dis) then \
-					   		echo ""; \
-						else \
-							echo "-$(LLVM_VERSION)"; \
-						fi)
+LLVM_SUFFIX := $(shell echo "")
+ifeq ($(call command_availiable,llvm-dis), false)
+$(warning command llvm-dis not found! Using llvm_suffix -$(LLVM_VERSION) instead.)
+LLVM_SUFFIX := -$(LLVM_VERSION)
+endif
 
+LLVM_DIS ?= llvm-dis$(LLVM_SUFFIX)
 LLVM_LLC ?= llc$(LLVM_SUFFIX)
 LLVM_OPT ?= opt$(LLVM_SUFFIX)
-LLVM_DIS ?= llvm-dis$(LLVM_SUFFIX)
 
 # Make LLVM_DIS callable from build_makefile_app.sh
 export LLVM_DIS
@@ -119,16 +119,16 @@ $(info command extract-bc not found!)
 $(error wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed! Install via "pip3 install wllvm")
 endif
 
+ifeq ($(call command_availiable	,$(LLVM_DIS)), false)
+$(error command $(LLVM_DIS) not found!)
+endif
+
 ifeq ($(call command_availiable,$(LLVM_LLC)), false)
 $(error command $(LLVM_LLC) not found!)
 endif
 
 ifeq ($(call command_availiable,$(LLVM_OPT)), false)
 $(error command $(LLVM_OPT) not found!)
-endif
-
-ifeq ($(call command_availiable	,$(LLVM_DIS)), false)
-$(error command $(LLVM_DIS) not found!)
 endif
 
 ifeq ($(call command_availiable	,$(ARA_LINK)), false)
