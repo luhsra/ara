@@ -11,6 +11,7 @@ from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
 from .os import get_os_model_names, get_os_model_by_name
+from .os.posix.syscall_count import SyscallCount
 
 from .steplisting import print_avail_steps
 
@@ -75,6 +76,8 @@ def main():
                         action='store_true')
     parser.add_argument('--no-recursive-funcs', help="Disables the RecursiveFunctions Step to improve performance.",
                         action='store_true')
+    parser.add_argument('--count-syscalls', help="Counts all interpreted POSIX syscalls. Only the POSIX OS Model is supported by this option.",
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -124,13 +127,21 @@ def main():
     if args.os and args.os != "auto":
         g.os = get_os_model_by_name(args.os)
 
-    if args.no_syscall_body:
-        if not args.os or args.os == "auto":
-            logger.warning("--os not set. Only POSIX is supported for --no-syscall-body. Set os = POSIX.")
-            args.os = get_os_model_by_name("POSIX")
-        elif args.os != "POSIX":
-            logger.warning(f"--os is set to {args.os}. Only POSIX is supported for --no-syscall-body. Disable the --no-syscall-body option.")
-            args.no_syscall_body = False
+    def option_only_supported_for_os(option: str, req_os: str):
+        if getattr(args, option):
+            if not args.os or args.os == "auto":
+                logger.warning(f"--os not set. Only {req_os} is supported for --{option}. Set os = {req_os}.")
+                args.os = req_os
+                g.os = get_os_model_by_name(req_os)
+            elif args.os != req_os:
+                logger.warning(f"--os is set to {args.os}. Only POSIX is supported for --{option}. Disable the --{option} option.")
+                setattr(args, option, False)
+
+    option_only_supported_for_os("no_syscall_body", "POSIX")
+    option_only_supported_for_os("count_syscalls", "POSIX")
+
+    if args.count_syscalls:
+        SyscallCount.enable()
 
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
@@ -145,6 +156,8 @@ def main():
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
                                            for se in s_manager.get_history()]))
 
+    if args.count_syscalls:
+        SyscallCount.print_stats()
 
 if __name__ == '__main__':
     main()

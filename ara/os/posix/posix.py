@@ -6,7 +6,7 @@
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from ..os_util import syscall
-from .posix_utils import debug_log, logger, handle_soc, add_normal_cfg
+from .posix_utils import debug_log, logger, handle_soc, add_normal_cfg, get_weak_alias, is_weak_alias, get_orig_of_weak_alias, do_not_interpret_syscall
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .mutex import MutexSyscalls
@@ -15,6 +15,7 @@ from .thread import ThreadSyscalls
 from .other_syscalls import OtherSyscalls
 from .warning_syscalls import WarningSyscalls
 from .syscall_set import syscall_set
+from .syscall_count import SyscallCount
 
 '''
     Hold on! To understand this file you need some information.
@@ -42,24 +43,10 @@ from .syscall_set import syscall_set
     that _POSIXSyscalls inherit from the new syscall class that contains the new syscalls.
 '''
 
-@syscall
+@syscall(categories={SyscallCategory.create}) # Make sure this syscall stub will be called to allow syscall count.
 def syscall_stub(graph, abb, state, args, va):
     """ An empty stub for all not implemented syscalls in the syscall_set. """
-    pass
-
-def get_weak_alias(syscall):
-    """ Returns the musl libc weak alias name version of the syscall name.
-
-        For example: "pthread_create" -> "__pthread_create"
-
-        For all names which start with a '_' there is no weak alias version.
-        In this case this function will return None.
-    """
-    return "__" + syscall if syscall[0] != '_' else None
-
-def is_weak_alias(syscall):
-    """ Returns True if the syscall name is a musl libc weak alias name. """
-    return len(syscall) > 2 and syscall[0:2] == "__" and syscall[2] != '_'
+    return do_not_interpret_syscall(graph, abb, state)
 
 
 class _POSIXSyscalls(MutexSyscalls, FileSyscalls, FileDescriptorSyscalls,
@@ -99,7 +86,7 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
             e.g. A non implemented Syscall in syscall_set will be redirected to syscall_stub()
         """
         if is_weak_alias(syscall):
-            orig_syscall = syscall[2:]
+            orig_syscall = get_orig_of_weak_alias(syscall)
             syscall_func = getattr(_POSIXSyscalls, orig_syscall, None)
             if syscall_func != None:
                 return syscall_func
@@ -133,7 +120,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):
-        """interprets a detected syscall"""
+        """ Interprets a detected syscall. """
 
         cfg = graph.cfg
 
@@ -149,10 +136,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         if SyscallCategory.every not in categories:
             sys_cat = syscall_function.categories
             if sys_cat | categories != sys_cat:
-                # do not interpret this syscall
-                state = state.copy()
-                state.next_abbs = []
-                add_normal_cfg(cfg, abb, state)
-                return state
+                return do_not_interpret_syscall(graph, abb, state)
 
-        return getattr(POSIX, syscall)(graph, abb, state)
+        SyscallCount.add_syscall(syscall)
+        return syscall_function(graph, abb, state)
