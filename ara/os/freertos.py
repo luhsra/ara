@@ -262,9 +262,7 @@ def find_instance_node(instances, obj):
 class FreeRTOS(OSBase):
     @staticmethod
     def get_special_steps():
-        from ara.steps import get_native_component
-        ValueAnalyzer = get_native_component("ValueAnalyzer")
-        return ValueAnalyzer.get_dependencies() + ["LoadFreeRTOSConfig"]
+        return OSBase.get_special_steps() + ["LoadFreeRTOSConfig"]
 
     @staticmethod
     def has_dynamic_instances():
