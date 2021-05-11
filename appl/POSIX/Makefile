@@ -113,6 +113,10 @@ LLVM_OPT ?= opt$(LLVM_SUFFIX)
 # Make LLVM_DIS callable from build_makefile_app.sh
 export LLVM_DIS
 
+# Global argument for build_makefile_app.sh
+EXTRACT_BC_ARGS = --linker $(ARA_LINK) --bitcode
+export EXTRACT_BC_ARGS
+
 # Check dependencies
 ifeq ($(call command_availiable,extract-bc), false)
 $(info command extract-bc not found!)
@@ -187,7 +191,7 @@ $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	@$(CREATE_DEST_DIR)
 	$(LLVM_LLC) -filetype=obj -o $@.o $<
 	@# Add -lgcc to the linkage list if you get linker errors associated with compiler intrinsics.
-	$(CC) $(LDFLAGS) $@.o ${MUSL_INSTALL_DIR}/lib/crt1.o ${MUSL_INSTALL_DIR}/lib/libc.a -o $@
+	$(CC) $(LDFLAGS) $@.o $(MUSL_INSTALL_DIR)/lib/crt1.o $(MUSL_INSTALL_DIR)/lib/libc.a -o $@
 	rm $@.o
 
 # Link POSIX applications with musl libc
@@ -223,7 +227,6 @@ $(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	EXEC_CONFIGURE=true \
 	EXEC_MAKE_INSTALL=true \
 	CONFIGURE_ARGS="--enable-debug --target=LLVM --build=LLVM --prefix=$(MUSL_INSTALL_DIR)/" \
-	EXTRACT_BC_ARGS="--linker $(ARA_LINK) --bitcode" \
 	CFLAGS="-O0 -fno-builtin" \
 	LDFLAGS="-fno-builtin" \
 		./build_makefile_app.sh
@@ -255,7 +258,6 @@ $(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 	EXEC_CONFIGURE=false \
 	EXEC_MAKE_INSTALL=false \
 	MAKE_ARGS="--environment-overrides" \
-	EXTRACT_BC_ARGS="--linker $(ARA_LINK) --bitcode" \
 	CFLAGS="-std=c11 -Wall -Werror -pedantic -D_XOPEN_SOURCE=700 -pthread -g -O0 $(COMPILE_WITH_MUSL_INCLUDE)" \
 		./build_makefile_app.sh
 
