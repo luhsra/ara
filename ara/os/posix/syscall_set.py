@@ -164,6 +164,14 @@ syscall_set = set({
     "sigsetjmp",
     "siglongjmp",
 
-    # Syscall which only return some info to the program are not included. (eg. mq_getattr)
+    # Info: Syscall which only return some info to the program are not included. (eg. mq_getattr)
+
+    # Remove body of these functions
+    # We do not want to interpret this
+    "exit",
+    "abort",
+    "fork",
+    "posix_spawn",
+    "posix_spawnp"
 
 })

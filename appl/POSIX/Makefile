@@ -25,7 +25,9 @@
 LLVM_VERSION ?= 10
 
 # Add here new project names
-PROJECT_NAMES = simple_project patric_gbs_a5
+PROJECT_NAMES = simple_project patric_gbs_a5 pulse_audio
+
+BIN_PROJECT_NAMES = simple_project patric_gbs_a5
 
 # Add here new clean up targets
 # All clean up targets will be executed with 'make clean'
@@ -117,6 +119,8 @@ export LLVM_DIS
 EXTRACT_BC_ARGS = --linker $(ARA_LINK) --bitcode
 export EXTRACT_BC_ARGS
 
+export LLVM_COMPILER=clang
+
 # Check dependencies
 ifeq ($(call command_availiable,extract-bc), false)
 $(info command extract-bc not found!)
@@ -145,16 +149,15 @@ MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
 
 SINGLE_FILE_APPLICATIONS := $(shell find *.c | cut -f 1 -d '.')
 ADD_TO_MUSL_LIBC_CODE := $(shell find ./$(ADD_TO_MUSL_LIBC_SRC_DIR)/ -type f -printf "%f\n" | cut -f 1 -d '.')
-APPLICATIONS = $(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)
 
 # Generate list of LLVM IR targets.
 # These are all .c files in this dir but with file expansion .ll instead and located in the POSIX build dir.
 # All project target files described with PROJECT_NAMES will be added to the list of target files.
-TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_TARGET))
+TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES),$(AWK_TO_TARGET))
 
 # Generate list of executable targets in BIN_PATH.
 # These are all applications in APPLICATIONS (like in TARGETS) but in the BIN_PATH dir.
-BIN_TARGETS = $(call do_for_all,$(APPLICATIONS),$(AWK_TO_BIN_TARGET))
+BIN_TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(BIN_PROJECT_NAMES),$(AWK_TO_BIN_TARGET))
 
 # List of all targets that will be added to the musl libc.
 # All these targets will be linked with the original musl libc LLVM IR.
@@ -272,3 +275,54 @@ clean-patric:
 #	@# CFLAGS="-g $(COMPILE_WITH_MUSL_INCLUDE)" ./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ "" "--linker $(ARA_LINK)" false
 #	@# So we need to compile it with GNU libc headers (Suppose that these are the standard headers on this system):
 #	@CFLAGS="-g" ./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ "" "--linker $(ARA_LINK)" false
+
+# --- PulseAudio ---
+# TODO: change this var
+PULSE_AUDIO_SRC_DIR ?= $(call to_absolute,../../../../../Downloads/pulseaudio)
+PULSE_AUDIO_BUILD_DIR ?= $(BUILD_DIR)/pulse_audio_build
+
+$(OBJ_BUILD)/pulse_audio.ll: $(OBJ_BUILD)/pulse_audio_lib.ll $(OBJ_BUILD)/pulse_audio_core.ll $(OBJ_BUILD)/pulse_audio_daemon.ll
+	@$(CREATE_DEST_DIR)
+	$(ARA_LINK) -S -o $@ $^
+
+#$(OBJ_BUILD)/pulse_audio_common.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
+	#@# Generate .bc bitcode
+	#extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary3.bc $(PULSE_AUDIO_BUILD_DIR)/src/libpulsecommon-14.0.so
+
+	#@# Dissassemble .bc -> .ll
+	#$(LLVM_DIS) -o $@ pulse_binary3.bc
+	#rm pulse_binary3.bc
+
+$(OBJ_BUILD)/pulse_audio_lib.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
+	@# Generate .bc bitcode
+	extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary2.bc $(PULSE_AUDIO_BUILD_DIR)/src/pulse/libpulse.so.0.23.0
+
+	@# Dissassemble .bc -> .ll
+	$(LLVM_DIS) -o $@ pulse_binary2.bc
+	rm pulse_binary2.bc
+
+$(OBJ_BUILD)/pulse_audio_core.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
+	@# Generate .bc bitcode
+	extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary1.bc $(PULSE_AUDIO_BUILD_DIR)/src/pulsecore/libpulsecore-14.0.so
+
+	@# Dissassemble .bc -> .ll
+	$(LLVM_DIS) -o $@ pulse_binary1.bc
+	rm pulse_binary1.bc
+
+$(OBJ_BUILD)/pulse_audio_daemon.ll: $(BUILD_DIR)/musl_libc.ll
+
+	(cd "$(PULSE_AUDIO_SRC_DIR)" && \
+		CC=wllvm \
+		CXX=wllvm++ \
+		CFLAGS="-g -O0 -DNDEBUG" \
+		CXXFLAGS="-g -O0 -DNDEBUG" \
+			meson $(PULSE_AUDIO_BUILD_DIR) -Dtests=false -Dadrian-aec=false --prefix=$(MUSL_INCLUDE_DIR) --includedir=$(MUSL_INCLUDE_DIR) \
+	)
+	meson compile -C $(PULSE_AUDIO_BUILD_DIR)
+
+	@# Generate .bc bitcode
+	extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary.bc $(PULSE_AUDIO_BUILD_DIR)/src/daemon/pulseaudio
+
+	@# Dissassemble .bc -> .ll
+	$(LLVM_DIS) -o $@ pulse_binary.bc
+	rm pulse_binary.bc
