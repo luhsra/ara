@@ -1,8 +1,10 @@
 
 from typing import List
+from ara.util import get_logger, LEVEL
 
-_os_models = None # Dictionary with names -> OS-model-object
-_syscalls = None # Caches get_os_syscalls() return value.
+
+_os_models : dict = None # Dictionary with names -> OS-model-object
+_syscalls : list = None # Caches get_syscalls() return value to improve performance.
 
 def init_os_package():
     """ Initializes this package.
@@ -20,13 +22,8 @@ def init_os_package():
         from .autosar import AUTOSAR
         from .posix.posix import POSIX
 
-        # And here:
-        _os_models = {
-            "FreeRTOS": FreeRTOS,
-            "OSEK": OSEK,
-            "AUTOSAR": AUTOSAR,
-            "POSIX": POSIX
-        }
+        _os_models = {model.__name__: model for model 
+                            in [FreeRTOS, OSEK, AUTOSAR, POSIX]} # And here
 
 
 def get_os_model_names() -> List[str]:
