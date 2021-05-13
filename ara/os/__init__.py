@@ -1,10 +1,7 @@
 
 from typing import List
-from ara.util import get_logger, LEVEL
-
 
 _os_models : dict = None # Dictionary with names -> OS-model-object
-_syscalls : list = None # Caches get_syscalls() return value to improve performance.
 
 def init_os_package():
     """ Initializes this package.
@@ -27,35 +24,16 @@ def init_os_package():
 
 
 def get_os_model_names() -> List[str]:
+    """ Return all supported OSes as string. """
     init_os_package()
     return list(_os_models.keys())
 
 def get_os_model_by_name(name: str):
+    """ Return the os called name. """
     init_os_package()
     return _os_models[name]
 
-
-def get_os_syscalls(os):
-    return [(x, os) for x in dir(os) if hasattr(getattr(os, x), 'syscall')]
-
-def get_syscalls():
+def get_oses() -> List:
+    """ Return all supported OSes as os model objects. """
     init_os_package()
-    global _syscalls
-    if _syscalls == None:
-        _syscalls = sum(map(get_os_syscalls, list(_os_models.values())), [])
-    return _syscalls
-
-
-def get_os_syscall_list(os_model) -> List[str]:
-    """ Returns a list of all syscall names from os_model. """
-    return map( (lambda x_os : x_os[0]), 
-                   get_os_syscalls(os_model))
-
-def get_posix_syscalls() -> List[str]:
-    """ Returns a list of all POSIX syscall names.
-
-        This function will be called by the remove_syscall_body native step.
-        The sole purpose of this function is to ease the native call.
-    """
-    init_os_package()
-    return get_os_syscall_list(get_os_model_by_name("POSIX"))
+    return _os_models.values()

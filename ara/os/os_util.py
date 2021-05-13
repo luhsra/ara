@@ -87,10 +87,11 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, signature, custom_control_flow):
+    def __init__(self, func_body, categories, signature, custom_control_flow, aliases):
         # visible attributes
         self.syscall = True
         self.categories = categories
+        self.aliases = aliases
         self._func = func_body
         self._signature = signature
         self._ccf = custom_control_flow
@@ -185,7 +186,8 @@ class SysCall:
 def syscall(*args,
             categories: Tuple[_SyscallCategory] = None,
             signature: Tuple[Argument] = None,
-            custom_control_flow: bool = False):
+            custom_control_flow: bool = False,
+            aliases: Tuple[str] = None):
     """System call decorator. Changes a function into a system call.
 
     Returns a Syscall object. See it's documentation for more information.
@@ -194,25 +196,29 @@ def syscall(*args,
     categories          -- Categories of the system call
     signature           -- Specification of all system call arguments
     custom_control_flow -- Does this system call alter the control flow?
+    aliases             -- Alias names of the system call.
     """
     if categories is None:
         categories = {_SyscallCategory.undefined}
     if signature is None:
         signature = []
+    if aliases is None:
+        aliases = []
 
     outer_categories = categories
     outer_signature = signature
+    outer_aliases = aliases
     outer_ccf = custom_control_flow
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
-             custom_control_flow=outer_ccf):
-        wrapper = SysCall(func, categories, signature, custom_control_flow)
+             custom_control_flow=outer_ccf, aliases=outer_aliases):
+        wrapper = SysCall(func, categories, signature, custom_control_flow, aliases)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, signature, custom_control_flow)
+        func = wrap(args[0], categories, signature, custom_control_flow, aliases)
         return func
 
     # decorator was called with keyword arguments, the returned function is

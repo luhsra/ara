@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "os.h"
+
 #include <Python.h>
 #include <memory>
 #include <pyllco.h>
@@ -17,5 +19,9 @@ namespace ara::graph {
 		} catch (const std::out_of_range&) {
 			return Py_None;
 		}
+	}
+
+	void insert_in_map(std::map<const std::string, os::SysCall>& syscalls, std::string& name, os::SysCall&& syscall) {
+		syscalls.insert({name, syscall});
 	}
 } // namespace ara::graph

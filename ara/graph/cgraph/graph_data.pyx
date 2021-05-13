@@ -7,15 +7,15 @@ from carguments cimport Argument as CArgument, Arguments as CArguments, CallPath
 from os cimport SysCall as CSysCall
 from common.cy_helper cimport to_string
 from cgraph cimport CallGraph, SigType as CSigType
-from cy_helper cimport to_sigtype, safe_get_value
+from cy_helper cimport to_sigtype, safe_get_value, insert_in_map
 
 from libcpp.memory cimport unique_ptr, shared_ptr
+from libcpp.map cimport map as cppmap
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
 from cython.operator cimport dereference as deref, postincrement
 from ir cimport Value, AttributeSet
-from ara.os import get_syscalls, get_os_syscalls
 
 # workaround for https://github.com/cython/cython/issues/3816
 # from pyllco cimport get_obj_from_value
@@ -239,18 +239,6 @@ cdef public object py_get_arguments(shared_ptr[CArguments] c_args):
 
 
 # functions for os.h
-cdef vector[CSysCall] _get_syscalls(object iterator):
-    cdef vector[CSysCall] syscalls
-    for syscall, cls in iterator:
-        sys_func = getattr(cls, syscall)
-        syscalls.push_back(CSysCall(sys_func, cls))
-    return syscalls
-
-
-cdef public vector[CSysCall] py_get_syscalls():
-    return _get_syscalls(get_syscalls())
-
-
 cdef public string py_syscall_get_name(object syscall):
     return syscall.__name__.encode('UTF-8')
 
@@ -269,5 +257,9 @@ cdef public string py_os_get_name(object os):
     return os.get_name().encode('UTF-8')
 
 
-cdef public vector[CSysCall] py_os_get_syscalls(object os):
-    return _get_syscalls(get_os_syscalls(os))
+cdef public cppmap[const string, CSysCall] py_os_detected_syscalls(object os):
+    cdef cppmap[const string, CSysCall] syscalls
+    for syscall_name, syscall in os.detected_syscalls().items():
+        insert_in_map(syscalls, syscall_name.encode('UTF-8'),
+                      CSysCall(syscall, os))
+    return syscalls

@@ -72,8 +72,8 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
         for syscall in total_syscalls:
             syscall_list.append(syscall)
             weak_alias_version = get_weak_alias(syscall)
-            if weak_alias_version != None:
-                syscall_list.append(weak_alias_version)
+            #if weak_alias_version != None:
+                #syscall_list.append(weak_alias_version)
         # Uncomment this line if you need all functions from dir():
         #syscall_list.extend(["get_special_steps", "has_dynamic_instances", "init", "interpret", "config", "get_name"])
         return syscall_list
@@ -85,16 +85,17 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
             e.g. __pthread_create() will be redirected to the implementation of pthread_create()
             e.g. A non implemented Syscall in syscall_set will be redirected to syscall_stub()
         """
-        if is_weak_alias(syscall):
-            orig_syscall = get_orig_of_weak_alias(syscall)
-            syscall_func = getattr(_POSIXSyscalls, orig_syscall, None)
-            if syscall_func != None:
-                return syscall_func
-            elif orig_syscall in syscall_set:
-                return syscall_stub
-            else:
-                raise AttributeError
+        #if is_weak_alias(syscall):
+        #    orig_syscall = get_orig_of_weak_alias(syscall)
+        #    syscall_func = getattr(_POSIXSyscalls, orig_syscall, None)
+        #    if syscall_func != None:
+        #        return syscall_func
+        #    elif orig_syscall in syscall_set:
+        #        return syscall_stub
+        #    else:
+        #        raise AttributeError
 
+        print(syscall)
         if syscall in syscall_set:
             return syscall_stub
         else:
@@ -128,7 +129,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         debug_log(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
-        syscall_function = getattr(POSIX, syscall)
+        syscall_function = POSIX.detected_syscalls()[syscall] # Alias handling
 
         if isinstance(categories, SyscallCategory):
             categories = set((categories,))

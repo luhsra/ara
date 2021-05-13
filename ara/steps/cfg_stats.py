@@ -2,7 +2,6 @@
 from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory, NodeLevel
 from .step import Step
 from graph_tool.topology import label_components
-from ara.os import get_syscalls
 
 import graph_tool
 import json
@@ -14,7 +13,7 @@ class CFGStats(Step):
     """Gather statistics about the Control Flow Graph."""
 
     def get_single_dependencies(self):
-        return ["CreateABBs"]
+        return ["CreateABBs", "Syscall"]
 
     def run(self):
         cfg = self._graph.cfg
@@ -35,8 +34,10 @@ class CFGStats(Step):
         num_iedges = icfg.num_edges()
 
         # syscall categories
-        model_calls = dict([(x, getattr(cls, x).categories)
-                            for x, cls in get_syscalls()])
+        model_syscalls = {}
+        if self._graph.os is not None:
+            model_syscalls = self._graph.os.detected_syscalls()
+        model_calls = dict([(n, o.categories) for n, o in model_syscalls.items()])
 
         cat_counter = dict([(c, 0) for c in SyscallCategory])
 

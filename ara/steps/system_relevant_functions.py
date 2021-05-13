@@ -1,6 +1,5 @@
 """Container for SystemRelevantFunction."""
 from ara.graph import Graph, SyscallCategory
-from ara.os import get_os_syscalls
 from .step import Step
 
 from graph_tool import GraphView
@@ -18,15 +17,13 @@ class SystemRelevantFunctions(Step):
             self._log.warn("No OS detected. This step is meaningless then.")
             return
 
-        syscalls = get_os_syscalls(self._graph.os)
         callgraph = self._graph.callgraph
 
         every_set = {SyscallCategory.every, }
 
         # begin with syscalls, they are always entry points
-        for syscall, cls in syscalls:
-            sys_func = getattr(cls, syscall)
-            for sys_cat in every_set | getattr(cls, syscall).categories:
+        for syscall, sys_func in self._graph.os.detected_syscalls().items():
+            for sys_cat in every_set | sys_func.categories:
                 cg_node = callgraph.get_node_with_name(syscall)
                 if cg_node is None:
                     continue
