@@ -1717,6 +1717,13 @@ class FlatAnalysis(FlowAnalysis):
         state = self.sstg.vp.state[state_vertex]
         new_states = []
         self._init_execution(state)
+
+        entry_func = self._graph.cfg.get_function_by_name(self._entry_func)
+        exit_abb = self._graph.cfg.get_exit_abb(entry_func)
+
+        def is_exit_abb(abb):
+            return abb == exit_abb
+
         for abb in state.next_abbs:
             # don't handle already visited vertices
             if self._visited[state.call_path][abb]:
@@ -1726,6 +1733,10 @@ class FlatAnalysis(FlowAnalysis):
             call_depth = len(state.call_path)
             if self._max_call_depth < call_depth:
                 self._max_call_depth = call_depth
+
+            # don't handle entry_funcs exit_abb
+            if is_exit_abb(abb):
+                continue
 
             # syscall handling
             if self._icfg.vp.type[abb] == ABBType.syscall:
