@@ -95,7 +95,7 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
         #    else:
         #        raise AttributeError
 
-        print(syscall)
+        #print(syscall)
         if syscall in syscall_set:
             return syscall_stub
         else:

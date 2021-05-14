@@ -57,7 +57,8 @@ class ThreadSyscalls:
              signature=(Arg('thread', hint=SigType.instance),
                         Arg('attr', hint=SigType.symbol),
                         Arg('start_routine', hint=SigType.symbol, ty=pyllco.Function),
-                        Arg('arg', hint=SigType.symbol)))
+                        Arg('arg', hint=SigType.symbol)),
+                        aliases={"__pthread_create"})
     def pthread_create(graph, abb, state, args, va):
         
         thread_name = args.thread.get_name()
