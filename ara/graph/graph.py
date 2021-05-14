@@ -147,10 +147,22 @@ class CFG(graph_tool.Graph):
             return ''
         syscall = [x.target() for x in abb.out_edges()
                    if self.ep.type[x] == CFType.icf]
-        assert len(syscall) == 1
-        syscall_func = [x.source() for x in syscall[0].in_edges()
-                        if self.ep.type[x] == CFType.f2a]
-        assert len(syscall_func) == 1
+        assert len(syscall) >= 1, f"ABB {abb} calls no function!"
+
+        def get_func(syscall):
+            syscall_funcs = [x.source() for x in syscall.in_edges()
+                if self.ep.type[x] == CFType.f2a]
+            assert len(syscall_funcs) == 1
+            return syscall_funcs[0]
+
+        syscall_func = list(map(get_func, syscall))
+        assert len(syscall) == len(syscall_func)
+        if len(syscall_func) > 1:
+            # Filter for the actual syscall
+            actual_syscall_func = list(filter(lambda func: self.vp.sysfunc[func], syscall_func))
+            assert len(actual_syscall_func) >= 1, "Error in filter function!"
+            assert len(actual_syscall_func) == 1, "Detected multiple syscalls! This is not implemented yet!"
+            syscall_func = actual_syscall_func
         return self.vp.name[syscall_func[0]]
 
     def _reachable_nodes(self, func, return_abbs):
