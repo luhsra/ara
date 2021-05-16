@@ -66,7 +66,7 @@ class POSIXInstance(object):
     name: str
 
 def do_not_interpret_syscall(graph, abb, state):
-    """ Call this function via 'return do_not_interpret_syscall(cfg, abb, state)' if the syscall should not be interpreted in POSIX.interpret(). """
+    """ Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret(). """
     state = state.copy()
     state.next_abbs = []
     add_normal_cfg(graph.cfg, abb, state)

@@ -43,7 +43,7 @@ from .syscall_count import SyscallCount
     that _POSIXSyscalls inherit from the new syscall class that contains the new syscalls.
 '''
 
-@syscall(categories={SyscallCategory.create}) # Make sure this syscall stub will be called to allow syscall count.
+@syscall
 def syscall_stub(graph, abb, state, args, va):
     """ An empty stub for all not implemented syscalls in the syscall_set. """
     return do_not_interpret_syscall(graph, abb, state)
