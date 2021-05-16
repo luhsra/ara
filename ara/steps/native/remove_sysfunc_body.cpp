@@ -1,14 +1,13 @@
 
 #include "remove_sysfunc_body.h"
-#include <os.h>
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Module.h"
 
 #include <Python.h>
+#include <os.h>
 #include <pyllco.h>
-
 #include <vector>
 
 namespace ara::step {
@@ -16,14 +15,15 @@ namespace ara::step {
 
 	std::string RemoveSysfuncBody::get_description() {
 		return "Removes the libc function body of system functions which should be interpreted by the OS Model.\n"
-		       "This improves the performance of the analysis and cleans the CallGraph.";
+		       "This improves the performance of the analysis and cleans the CallGraph.\n"
+		       "Warning: This step is only for the analysis!";
 	}
 
 	/*
 	    Prints an Error Message and quits the program if the condition cond is not true.
 	    Python Exceptions are shown in the terminal.
 	    If you provide the error_with_obj obj then this function prints the python Type of this object.
-		(Only if cond == false)
+	    (Only if cond == false)
 	*/
 	void RemoveSysfuncBody::py_assert(bool cond, std::string msg, PyObject* error_with_obj = nullptr) {
 		if (!cond) {
@@ -40,7 +40,7 @@ namespace ara::step {
 	}
 
 	/*
-		Calls ara.os.get_oses() and returns all OS objects in a vector.
+	    Calls ara.os.get_oses() and returns all OS objects in a vector.
 	*/
 	std::vector<ara::os::OS> RemoveSysfuncBody::py_get_oses() {
 
@@ -49,8 +49,7 @@ namespace ara::step {
 
 		PyObject* get_oses = PyObject_GetAttrString(ara_os, "get_oses");
 		this->py_assert(get_oses != nullptr, "ara.os.get_oses() python function not found!");
-		this->py_assert(PyFunction_Check(get_oses), "ara.os.get_oses() is not a python function!",
-		          get_oses);
+		this->py_assert(PyFunction_Check(get_oses), "ara.os.get_oses() is not a python function!", get_oses);
 
 		// Call ara.os.get_oses()
 		PyObject* os_list = PyObject_CallObject(get_oses, NULL);
@@ -58,16 +57,17 @@ namespace ara::step {
 
 		PyObject* os_iter = PyObject_GetIter(os_list);
 		this->py_assert(os_iter != nullptr,
-		          "ara.os.get_oses() python function returned an object that cannot be cast to an Iterator!",
-		          os_list);
+		                "ara.os.get_oses() python function returned an object that cannot be cast to an Iterator!",
+		                os_list);
 
 		// Map Python OS Model -> ara::os::OS
 		std::vector<ara::os::OS> os_vec;
 		PyObject* os;
 		while ((os = PyIter_Next(os_iter))) {
-			this->py_assert(PyObject_HasAttrString(os, "detected_syscalls"), "os object has no detected_syscalls() attribute!", os);
+			this->py_assert(PyObject_HasAttrString(os, "detected_syscalls"),
+			                "os object has no detected_syscalls() attribute!", os);
 			os_vec.emplace_back(os);
-			Py_DECREF(os); // OS object increases ref count.
+			// Py_DECREF(os);
 		}
 
 		// handle error
@@ -83,12 +83,11 @@ namespace ara::step {
 		Py_DECREF(ara_os);
 
 		return os_vec;
-
 	}
 
 	/*
-		Returns the syscall map (name -> SysCall) of the current OS.
-		Detects the current OS if --os is not set.
+	    Returns the syscall map (name -> SysCall) of the current OS.
+	    Detects the current OS if --os is not set.
 	*/
 	syscall_map RemoveSysfuncBody::get_os_syscalls() {
 
@@ -103,7 +102,7 @@ namespace ara::step {
 			syscall_map os_syscalls = os.detected_syscalls();
 			for (const auto& syscall : os_syscalls) {
 				if (module.getFunction(StringRef(syscall.first)) != nullptr) { // if function found
-					logger.debug() << "Detected " << os.get_name() << " OS."<< std::endl;
+					logger.debug() << "Detected " << os.get_name() << " OS." << std::endl;
 					return os_syscalls;
 				}
 			}
@@ -111,7 +110,6 @@ namespace ara::step {
 
 		logger.err() << "No Syscalls detected!" << std::endl;
 		abort();
-
 	}
 
 	void RemoveSysfuncBody::run() {
@@ -128,7 +126,7 @@ namespace ara::step {
 				logger.debug() << "Remove function body of " << syscall.first << std::endl;
 				func->deleteBody();
 			}
-			//else {
+			// else {
 			//    logger.err() << "Could not find function with name \'" << syscall.first << "\' in LLVM IR." <<
 			//    std::endl;
 			//}
