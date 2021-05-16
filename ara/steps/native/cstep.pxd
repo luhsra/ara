@@ -76,6 +76,6 @@ cdef extern from "svf_transformation.h" namespace "ara::step":
     cdef cppclass SVFTransformation:
         pass
 
-cdef extern from "remove_syscall_body.h" namespace "ara::step":
-    cdef cppclass RemoveSyscallBody:
+cdef extern from "remove_sysfunc_body.h" namespace "ara::step":
+    cdef cppclass RemoveSysfuncBody:
         pass

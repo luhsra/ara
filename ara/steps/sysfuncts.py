@@ -10,6 +10,10 @@ class SysFuncts(Step):
         return ["LLVMMap"]
 
     def is_syscall(self, syscall_name):
+        """Returns True if syscall_name is a syscall for the current OS.
+
+        This method also auto detects the OS if self._graph.os is not set.
+        """
         for os in self.oses:
             if os.is_syscall(syscall_name):
                 if self._graph.os in [None, os]:

@@ -72,7 +72,7 @@ def main():
     os_model_names.append("auto")
     parser.add_argument('--os', help="Uses the specified OS Model for the analysis.",
                         choices=os_model_names, default="auto")
-    parser.add_argument('--no-syscall-body', help="Runs the RemoveSyscallBody step after IRReader. Only the POSIX OS Model is supported by this option.",
+    parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader. Warning: Do not use this argument for the synthesis!",
                         action='store_true')
     parser.add_argument('--no-recursive-funcs', help="Disables the RecursiveFunctions Step to improve performance.",
                         action='store_true')
@@ -137,7 +137,6 @@ def main():
                 logger.warning(f"--os is set to {args.os}. Only POSIX is supported for --{option}. Disable the --{option} option.")
                 setattr(args, option, False)
 
-    option_only_supported_for_os("no_syscall_body", "POSIX")
     option_only_supported_for_os("count_syscalls", "POSIX")
 
     if args.count_syscalls:
