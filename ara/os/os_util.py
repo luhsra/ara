@@ -87,7 +87,7 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, signature, custom_control_flow, aliases):
+    def __init__(self, func_body, categories, signature, custom_control_flow, aliases, name):
         # visible attributes
         self.syscall = True
         self.categories = categories
@@ -95,6 +95,11 @@ class SysCall:
         self._func = func_body
         self._signature = signature
         self._ccf = custom_control_flow
+        self.name = name if name != None else func_body.__name__
+
+    def get_name(self):
+        """Returns the name of the syscall function."""
+        return self.name
 
     def __get__(self, obj, objtype=None):
         """Simulate bound descriptor access. However a systemcall acts like a
@@ -187,7 +192,8 @@ def syscall(*args,
             categories: Tuple[_SyscallCategory] = None,
             signature: Tuple[Argument] = None,
             custom_control_flow: bool = False,
-            aliases: Tuple[str] = None):
+            aliases: Tuple[str] = None,
+            name: str = None):
     """System call decorator. Changes a function into a system call.
 
     Returns a Syscall object. See it's documentation for more information.
@@ -197,6 +203,8 @@ def syscall(*args,
     signature           -- Specification of all system call arguments
     custom_control_flow -- Does this system call alter the control flow?
     aliases             -- Alias names of the system call.
+    name                -- The name of the syscall. 
+                           If not set, the name of the syscalls equals the name of the decorated function.
     """
     if categories is None:
         categories = {_SyscallCategory.undefined}
@@ -209,16 +217,17 @@ def syscall(*args,
     outer_signature = signature
     outer_aliases = aliases
     outer_ccf = custom_control_flow
+    outer_name = name
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
-             custom_control_flow=outer_ccf, aliases=outer_aliases):
-        wrapper = SysCall(func, categories, signature, custom_control_flow, aliases)
+             custom_control_flow=outer_ccf, aliases=outer_aliases, name=outer_name):
+        wrapper = SysCall(func, categories, signature, custom_control_flow, aliases, name)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, signature, custom_control_flow, aliases)
+        func = wrap(args[0], categories, signature, custom_control_flow, aliases, name)
         return func
 
     # decorator was called with keyword arguments, the returned function is

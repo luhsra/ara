@@ -240,7 +240,7 @@ cdef public object py_get_arguments(shared_ptr[CArguments] c_args):
 
 # functions for os.h
 cdef public string py_syscall_get_name(object syscall):
-    return syscall.__name__.encode('UTF-8')
+    return syscall.get_name().encode('UTF-8')
 
 
 cdef public vector[CSigType] py_syscall_get_signature(object syscall):

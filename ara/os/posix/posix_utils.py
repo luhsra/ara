@@ -32,30 +32,14 @@ def no_double_warning(msg: str):
     """ Issues a warning only once. """
     no_double_output(logger, LEVEL["warning"], msg)
 
+def get_musl_weak_alias(syscall: str) -> str:
+    """Returns the musl libc weak alias name version of the syscall name.
 
-def get_weak_alias(syscall: str) -> str:
-    """ Returns the musl libc weak alias name version of the syscall name.
-
-        For example: "pthread_create" -> "__pthread_create"
-
-        For all names which start with a '_' there is no weak alias version.
-        In this case this function will return None.
+    For example: "pthread_create" -> "__pthread_create"
+    For all names which start with a '_' there is no weak alias version.
+    In this case this function will return None.
     """
     return "__" + syscall if syscall[0] != '_' else None
-
-def is_weak_alias(syscall: str) -> bool:
-    """ Returns True if the syscall name is a musl libc weak alias name. """
-    return len(syscall) > 2 and syscall[0:2] == "__" and syscall[2] != '_'
-
-def get_orig_of_weak_alias(weak_alias: str) -> str:
-    """ Returns the original syscall name of the musl libc weak alias name weak_alias. 
-
-        For example: "__pthread_create" -> "pthread_create"
-
-        No check is performed whether weak_alias is a valid weak alias.
-    """
-    return weak_alias[2:]
-
 
 @dataclass
 class POSIXInstance(object):
@@ -66,7 +50,7 @@ class POSIXInstance(object):
     name: str
 
 def do_not_interpret_syscall(graph, abb, state):
-    """ Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret(). """
+    """Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret()."""
     state = state.copy()
     state.next_abbs = []
     add_normal_cfg(graph.cfg, abb, state)
