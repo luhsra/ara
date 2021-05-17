@@ -13,6 +13,7 @@ from ara.graph import (ABBType, Graph, CFGView, CFType, CallPath,
                        SyscallCategory, InstanceGraph)
 from .step import Step
 from .option import Option, String, Bool
+from .syscall_count import SyscallCount
 from ara.os.freertos import Task
 from ara.util import VarianceDict
 from ara.os.autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter, ISR, AUTOSAR
@@ -1733,9 +1734,11 @@ class FlatAnalysis(FlowAnalysis):
                 name = self._icfg.vp.name[abb]
                 syscall_name = self._cfg.get_syscall_name(abb)
                 self._log.debug(f"Handle syscall: {name} ({syscall_name})")
+                assert self._graph.os is not None
+                if hasattr(self, "count_syscalls") and self.count_syscalls.get():
+                    SyscallCount.add_syscall(self._graph.os, syscall_name)
                 fake_state = state.copy()
                 self._init_fake_state(fake_state, abb)
-                assert self._graph.os is not None
                 new_state = self._graph.os.interpret(
                     self._graph, abb, fake_state,
                     categories=self._get_categories()
@@ -1826,6 +1829,12 @@ class FlatAnalysis(FlowAnalysis):
 
 class SIA(FlatAnalysis):
     """Static Instance Analysis: Find all application instances."""
+
+    count_syscalls = Option(name="count_syscalls",
+                          help="If set to True SIA invokes SyscallCount.add_syscall() for all handled syscalls."
+                               "Do not set this option step local. Use the global commandline argument --count-syscalls instead.",
+                          ty=Bool(),
+                          default_value=False)
 
     def _get_entry_point_dep(self, name):
         return {"name": name, "entry_point": self.entry_point.get()}

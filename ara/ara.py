@@ -11,7 +11,7 @@ from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
 from .os import get_os_model_names, get_os_model_by_name
-from .os.posix.syscall_count import SyscallCount
+from .steps.syscall_count import SyscallCount
 
 from .steplisting import print_avail_steps
 
@@ -67,10 +67,9 @@ def main():
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
 
-    # --- POSIX --- #
     os_model_names = get_os_model_names()
     os_model_names.append("auto")
-    parser.add_argument('--os', help="Uses the specified OS Model for the analysis.",
+    parser.add_argument('--os', help="Uses the specified OS Model.",
                         choices=os_model_names, default="auto")
     parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader."
                                             "This will increase the performance of the analysis."
@@ -78,7 +77,8 @@ def main():
                         action='store_true')
     parser.add_argument('--no-recursive-funcs', help="Disables the RecursiveFunctions Step to improve performance.",
                         action='store_true')
-    parser.add_argument('--count-syscalls', help="Counts all interpreted POSIX syscalls. Only the POSIX OS Model is supported by this option.",
+    parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (SIA) and writes them to stdout."
+                                                 "Requires the SIA step. Make sure to execute this step.",
                         action='store_true')
 
     args = parser.parse_args()
@@ -126,23 +126,8 @@ def main():
         else:
             extra_settings["steps"].append("ManualCorrections")
     
-    if args.os and args.os != "auto":
+    if args.os != "auto":
         g.os = get_os_model_by_name(args.os)
-
-    def option_only_supported_for_os(option: str, req_os: str):
-        if getattr(args, option):
-            if not args.os or args.os == "auto":
-                logger.warning(f"--os not set. Only {req_os} is supported for --{option}. Set os = {req_os}.")
-                args.os = req_os
-                g.os = get_os_model_by_name(req_os)
-            elif args.os != req_os:
-                logger.warning(f"--os is set to {args.os}. Only POSIX is supported for --{option}. Disable the --{option} option.")
-                setattr(args, option, False)
-
-    option_only_supported_for_os("count_syscalls", "POSIX")
-
-    if args.count_syscalls:
-        SyscallCount.enable()
 
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
