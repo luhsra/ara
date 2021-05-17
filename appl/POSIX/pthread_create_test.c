@@ -5,6 +5,7 @@
 
 void* new_thread_routine(void* arg) {
     printf("arg = \"%s\"\n", (char*)arg);
+    pause();
     return NULL;
 }
 

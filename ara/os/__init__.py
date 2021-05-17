@@ -4,11 +4,11 @@ from typing import List
 _os_models : dict = None # Dictionary with names -> OS-model-object
 
 def init_os_package():
-    """ Initializes this package.
+    """Initializes this package.
 
-        It is not required to call this function.
-        All functions in this file will call this function automatically to ensure _os_models is initlialized.
-        This function is a workaround to force Python not to load the OS models at program startup where some objects are not correctly initialized.
+    It is not required to call this function.
+    All functions in this file will call this function automatically to ensure _os_models is initlialized.
+    This function is a workaround to force Python not to load the OS models at program startup where some objects are not correctly initialized.
     """
     global _os_models
     if _os_models == None:
@@ -24,16 +24,16 @@ def init_os_package():
 
 
 def get_os_model_names() -> List[str]:
-    """ Return all supported OSes as string. """
+    """Return all supported OSes as string."""
     init_os_package()
     return list(_os_models.keys())
 
 def get_os_model_by_name(name: str):
-    """ Return the os called name. """
+    """Return the os called name."""
     init_os_package()
     return _os_models[name]
 
 def get_oses() -> List:
-    """ Return all supported OSes as os model objects. """
+    """Return all supported OSes as os model objects."""
     init_os_package()
     return _os_models.values()

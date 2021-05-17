@@ -53,12 +53,12 @@ class ThreadSyscalls:
     # int pthread_create(pthread_t *restrict thread,
     #                    const pthread_attr_t *restrict attr,
     #                    void *(*start_routine)(void*), void *restrict arg);
-    @syscall(categories={SyscallCategory.create},
+    @syscall(aliases={"__pthread_create"},
+             categories={SyscallCategory.create},
              signature=(Arg('thread', hint=SigType.instance),
                         Arg('attr', hint=SigType.symbol),
                         Arg('start_routine', hint=SigType.symbol, ty=pyllco.Function),
-                        Arg('arg', hint=SigType.symbol)),
-                        aliases={"__pthread_create"})
+                        Arg('arg', hint=SigType.symbol)))
     def pthread_create(graph, abb, state, args, va):
         
         thread_name = args.thread.get_name()

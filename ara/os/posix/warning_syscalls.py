@@ -1,5 +1,4 @@
-""" This module contains syscall implementations that only throw a warning.
-"""
+"""This module contains syscall implementations that only throw a warning."""
 
 from ara.graph import SyscallCategory
 from ..os_util import syscall
