@@ -1,0 +1,52 @@
+
+# The path to the modded musl libc
+MUSL_LIB_C_SRC_PATH ?= ../../subprojects/musl-libc
+
+# Directory of all C files that needs to be added to the musl libc.
+ADD_TO_MUSL_LIBC_SRC_DIR = _add_to_musl_libc
+
+# Destination dir for the LLVM IR of all files in ADD_TO_MUSL_LIBC_SRC_DIR
+ADD_TO_MUSL_LIBC_DEST_DIR = $(BUILD_DIR)/add_to_musl_libc
+
+# Make sure the path is always absolute
+MUSL_INSTALL_DIR := $(shell $(REALPATH) $(BUILD_DIR)/musl_install_dir)
+MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
+
+AWK_TO_ADD_TO_MUSL_TARGET = awk '{ print "$(ADD_TO_MUSL_LIBC_DEST_DIR)/" $$0 ".ll" }'
+ADD_TO_MUSL_LIBC_CODE := $(shell find ./$(ADD_TO_MUSL_LIBC_SRC_DIR)/ -type f -printf "%f\n" | cut -f 1 -d '.')
+
+# List of all targets that will be added to the musl libc.
+# All these targets will be linked with the original musl libc LLVM IR.
+ADD_TO_MUSL_LIBC_TARGETS = $(call do_for_all,$(ADD_TO_MUSL_LIBC_CODE),$(AWK_TO_ADD_TO_MUSL_TARGET))
+
+
+# ---- Rules ---- #
+
+# Link musl libc with ADD_TO_MUSL_LIBC_TARGETS.
+$(BUILD_DIR)/musl_libc.ll: $(OBJ_BUILD)/musl_libc_original.ll $(ADD_TO_MUSL_LIBC_TARGETS)
+	$(LINK_TOGETHER)
+
+# Compile ADD_TO_MUSL_LIBC_TARGETS
+$(ADD_TO_MUSL_LIBC_TARGETS): $(ADD_TO_MUSL_LIBC_DEST_DIR)/%.ll: $(ADD_TO_MUSL_LIBC_SRC_DIR)/%.c $(OBJ_BUILD)/musl_libc_original.ll
+	$(BUILD_TO_LLVM)
+
+# Build and install musl libc. 
+$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
+	@$(CREATE_DEST_DIR)
+	@mkdir -p $(MUSL_INSTALL_DIR)
+
+	@# invoke Makefile with WLLVM.
+	@# The environment variables CFLAGS and LDFLAGS are set for the ./configure script.
+	PROJECT_PATH=$(MUSL_LIB_C_SRC_PATH) \
+	BINARY_FILE=$(MUSL_LIB_C_SRC_PATH)/lib/libc.a \
+	OUTPUT_FILE=$@ \
+	EXEC_CONFIGURE=true \
+	EXEC_MAKE_RULE="install-headers" \
+	CONFIGURE_ARGS="--enable-debug --target=LLVM --build=LLVM --prefix=$(MUSL_INSTALL_DIR)/" \
+	CFLAGS="-O0 -fno-builtin" \
+	LDFLAGS="-fno-builtin" \
+		./build_makefile_app.sh
+
+clean-musl-libc:
+	(cd $(MUSL_LIB_C_SRC_PATH) && make clean)
+CLEAN_UP_TARGETS += clean-musl-libc
