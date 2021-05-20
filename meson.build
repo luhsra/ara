@@ -63,6 +63,7 @@ endif
 
 ## tools
 nop = find_program('true')
+st_flash = find_program('st-flash', required: false, disabler: true)
 
 ## arch specific build tools
 if get_option('arch') == 'i386'

@@ -189,7 +189,7 @@ foreach app : ir_apps + hw_apps
                                  input: [lto_elf],
                                  output: lto_prefix + '.bin',
                                  command: objcopy_cmd)
-    run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
+    run_target('flash_' + lto_prefix, command: [st_flash, 'write', bin_target, '0x8000000'])
     run_target('size_' + lto_prefix, command: [size, '-A', lto_elf])
     run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
