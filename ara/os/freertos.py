@@ -471,7 +471,7 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler', ty=Mutex),
+             signature=(Arg('handler', ty=[Mutex, Queue]),
                         Arg('item', raw_value=True),
                         Arg('ticks'),
                         Arg('action')))

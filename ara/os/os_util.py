@@ -29,8 +29,9 @@ def get_argument(value, arg):
     value -- LLVM raw value
     arg   -- Argument for this value
     """
-    if arg.ty != typing.Any:
-        if type(value.value) == arg.ty:
+    tys_allowed = arg.ty if isinstance(arg.ty, list) else [arg.ty]
+    if not typing.Any in tys_allowed:
+        if type(value.value) in tys_allowed:
             return value.value
         else:
             raise UnsuitableArgumentException(f"Value type {type(value.value)} does not match wanted type {arg.ty}.")
@@ -147,19 +148,40 @@ class SysCall:
         values = []
 
         # retrieve arguments
+        ValuesUnknown = get_native_component("ValuesUnknown")
         for idx, arg in enumerate(self._signature):
             hint = arg.hint
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
-            value, attrs, offset = va.get_argument_value(abb, idx,
-                                                         callpath=state.call_path,
-                                                         hint=hint)
 
-            # TODO, ignore offset for now
+            try:
+                value, attrs, offset = va.get_argument_value(abb, idx,
+                                                callpath=state.call_path,
+                                                hint=hint)
+                
+                # TODO, ignore offset for now
+                
+            except ValuesUnknown:
+                values.append(None)
+                fields.append(arg.name)
+                continue
 
-            value = LLVMRawValue(value=value, attrs=attrs)
-            values.append(get_argument(value, arg))
-            fields.append((arg.name, arg.ty))
+            llvm_value = LLVMRawValue(value=value, attrs=attrs)
+            extracted_value = get_argument(llvm_value, arg)
+            values.append(extracted_value)
+
+            # identify the type of arg.ty that matched
+            arg_single_ty = None
+            if isinstance(arg.ty, list):
+                if typing.Any in arg.ty:
+                    arg_single_ty = typing.Any
+                else:
+                    arg_single_ty_index = arg.ty.index(type(extracted_value))
+                    arg_single_ty = arg.ty[arg_single_ty_index]
+            else:
+                arg_single_ty = arg.ty
+
+            fields.append((arg.name, arg_single_ty))
 
         # repack into dataclass
         Arguments = dataclasses.make_dataclass('Arguments', fields)

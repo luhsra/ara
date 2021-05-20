@@ -43,6 +43,6 @@ def provide_steps():
 
 def get_native_component(name: str):
     # direct import would result in dependency conflicts
-    from .step import ValueAnalyzer
-    components = {"ValueAnalyzer": ValueAnalyzer}
+    from .step import ValueAnalyzer, ValuesUnknown
+    components = {"ValueAnalyzer": ValueAnalyzer, "ValuesUnknown": ValuesUnknown}
     return components[name]
