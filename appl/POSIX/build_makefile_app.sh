@@ -8,7 +8,7 @@
 #   PROJECT_PATH=<project path> \
 #   BINARY_FILE=<binary file> \
 #   OUTPUT_FILE=<output file> \
-#   ./build_GNU_toolchain_app.sh
+#   ./build_makefile_app.sh
 
 # Required environment variables
 readonly PROJECT_PATH      # The path to the project source dir of the program to be build.
@@ -17,7 +17,7 @@ readonly OUTPUT_FILE       # This is the output file of this script.
 
 # Optional environment variables
 readonly EXEC_CONFIGURE    # if this boolean is set to "true" than this script executes "./configure" before "make" [optional, default: false]
-readonly EXEC_MAKE_INSTALL # If this boolean is set to "true" than this script executes "make install" after "make". [optional, default: false]
+readonly EXEC_MAKE_RULE    # If this var is set than this script executes the rule EXEC_MAKE_RULE "make <EXEC_MAKE_RULE>" after "make". MAKE_ARGS will not applied to this target. [optional]
 readonly CONFIGURE_ARGS    # Arguments to be applied to the ./configure script in ${PROJECT_PATH} if EXEC_CONFIGURE is set. [optional]
 readonly MAKE_ARGS         # Arguments to be applied to the make call. [optional]
 readonly EXTRACT_BC_ARGS   # Arguments to be applied to the WLLVM extract-bc tool. [optional]
@@ -30,38 +30,36 @@ if [ "x${PROJECT_PATH}" = "x" ] || [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_F
     echo "PROJECT_PATH=<project path> \\"
     echo "BINARY_FILE=<binary file> \\"
     echo "OUTPUT_FILE=<output file> \\"
-    echo "./build_GNU_toolchain_app.sh"
-    exit
+    echo "./build_makefile_app.sh"
+    exit 1
 fi
 
 if [ "x${LLVM_DIS}" = "x" ] ; then
     LLVM_DIS="llvm-dis"
 fi
+readonly LLVM_DIS
 
 # Make sure that this file will be executed in the dir of that file
-cd "$(dirname "$0")" || exit
+cd "$(dirname "$0")" || exit 1
 
 if ! [ -e "${PROJECT_PATH}"/Makefile ] ; then
     echo "No Makefile found in \"${PROJECT_PATH}\"!"
-    exit
+    exit 1
 fi
 
 # Compile project with wllvm
 export LLVM_COMPILER=clang
 if [ "${EXEC_CONFIGURE}" = "true" ] ; then
-    (cd "${PROJECT_PATH}" && CC=wllvm WLLVM_CONFIGURE_ONLY=1 ./configure ${CONFIGURE_ARGS})
-    (cd "${PROJECT_PATH}" && make -j$(nproc))
+    (cd "${PROJECT_PATH}" && CC=wllvm WLLVM_CONFIGURE_ONLY=1 ./configure ${CONFIGURE_ARGS}) || exit 1
+    (cd "${PROJECT_PATH}" && make -j$(nproc) ${MAKE_ARGS}) || exit 1
 else
-    (cd "${PROJECT_PATH}" && make -j$(nproc) CC=wllvm ${MAKE_ARGS})
+    (cd "${PROJECT_PATH}" && make -j$(nproc) CC=wllvm ${MAKE_ARGS}) || exit 1
 fi
 
-if [ "${EXEC_MAKE_INSTALL}" = "true" ] ; then
-    (cd "${PROJECT_PATH}" && make install)
+if ! [ "x${EXEC_MAKE_RULE}" = "x" ] ; then
+    (cd "${PROJECT_PATH}" && make ${EXEC_MAKE_RULE}) || exit 1
 fi
 
-# Generate .bc bitcode
-extract-bc ${EXTRACT_BC_ARGS} -o app_binary.bc "${BINARY_FILE}"
-
-# Dissassemble .bc -> .ll
-${LLVM_DIS} -o "${OUTPUT_FILE}" app_binary.bc
-rm app_binary.bc
+# Extract LLVM IR code of ${BINARY_FILE}
+# Redirect environment variables from this script to:
+    ./extract_llvm_ir.sh

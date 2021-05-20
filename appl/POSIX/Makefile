@@ -2,20 +2,34 @@
 # - Makefile to compile all POSIX applications (requires GNU Make) -
 #
 # Make sure you have whole-program-llvm (https://github.com/travitch/whole-program-llvm) installed.
-#
+# WARNING: Never ever run this Makefile as root!
 #
 # HOW TO:
 #
 # - add a new single source file application:
-# 		Just simply create the file in this directory.
+# 		Just simply create the .c file in this directory.
+#		This script will detect the file automatically.
 #		The name of the project is the filename.
 #
 # - add a new complex application: 
-#		Write the name of the project in the $(PROJECT_NAMES) list.
-#		Create new rules in this Makefile to build the project to a .ll file (without musl libc linkage).
-#		Musl libc linkage and binary generation will be applied automatically.
-#		Use the build_makefile_app.sh script to generate LLVM IR of external projects which uses a Makefile to build.
-#		Write a cleanup .PHONY target to clean object files in the external project directory (Register them in CLEAN_UP_TARGETS).
+#		Create a new .mk file in the $(MAKE_INCLUDE_DIR) dir. This is normally ./project_makefiles
+#		Append the name of the project in the $(PROJECT_NAMES) list. (As a PROJECT_NAMES += name in the new file)
+#		Create new rules in this Makefile to build the project to a .ll file in $(OBJ_BUILD)/ (without musl libc linkage).
+#		Musl libc linkage will be applied automatically.
+#		Below you find a list of include directives. Add your new file to the list.
+#
+#		Notes on writing modules for this Makefile:
+#			Use the build_makefile_app.sh script to generate LLVM IR of external projects which uses a Makefile to build.
+#
+#			Write a cleanup .PHONY target to clean object files in an external project directory (Register them in CLEAN_UP_TARGETS).
+#			If you want to invoke rm -rf directly, stop. Implement a short check against empty variables beforehand:
+#				test -n "$(DIRECTORY)" && $(RM) -rf "$(DIRECTORY)"/*
+#
+#			To validate the correctness of the generated LLVM IR file it can be useful to compile it to binary.
+#			This will detect linking errors and you can check whether the program is runnable.
+#			Register your project name in $(BIN_PROJECT_NAMES) to automatically build the LLVM IR to binary.
+#
+#			See simple_project.mk as a simple example of writing a module.
 #
 # Note: The destination file for all applications is <project name>.ll in $(BUILD_DIR)
 
@@ -24,58 +38,56 @@
 # LLVM version to be used. Only required for some systems (see LLVM_SUFFIX)
 LLVM_VERSION ?= 10
 
-# Add here new project names
-PROJECT_NAMES = simple_project patric_gbs_a5 pulse_audio
-
-BIN_PROJECT_NAMES = simple_project patric_gbs_a5
-
-# Add here new clean up targets
-# All clean up targets will be executed with 'make clean'
-CLEAN_UP_TARGETS = clean-patric
-
 # Change this vars to specify another path
 
 # Meson build root directory.
 BUILD_ROOT ?= ../../build
 
 # All target and intermediate files will be saved in this directory.
+# Warning: The clean target will delete all files in this dir.
+# So make sure to set this var to a dir fully reserved for building with this Makefile.
 BUILD_DIR ?= $(BUILD_ROOT)/appl/POSIX
+
+ifeq "$(BUILD_DIR)" ""
+$(error BUILD_DIR variable is empty!)
+endif
 
 # The path to the ARA link utility binary.
 ARA_LINK ?= $(BUILD_ROOT)/subprojects/ara-link/ara-link
 
-# The path to the modded musl libc
-MUSL_LIB_C_SRC_PATH ?= ../../subprojects/musl-libc
+# Command to convert a relative path to an absolute one.
+# Change this command if you do not have support for realpath on your system.
+REALPATH ?= realpath -m
+
+# The path to the directory containing the build-to-LLVM Makefiles for a specific application/project.
+MAKE_INCLUDE_DIR ?= project_makefiles
 
 # In this directory are all LLVM IR targets located without the musl libc included.
 OBJ_BUILD = $(BUILD_DIR)/objs
 
 # In this directory are all executables located.
-BIN_PATH = $(BUILD_DIR)/bin
-
-# Directory of all C files that needs to be added to the musl libc.
-ADD_TO_MUSL_LIBC_SRC_DIR = _add_to_musl_libc
-
-# Destination dir for the LLVM IR of all files in ADD_TO_MUSL_LIBC_SRC_DIR
-ADD_TO_MUSL_LIBC_DEST_DIR = $(BUILD_DIR)/add_to_musl_libc
+BIN_PATH := $(BUILD_DIR)/bin
 
 # Tools
 AWK_TO_TARGET = awk '{ print "$(BUILD_DIR)/" $$0 ".ll" }'
 AWK_TO_BIN_TARGET = awk '{ print "$(BIN_PATH)/" $$0 }'
-AWK_TO_ADD_TO_MUSL_TARGET = awk '{ print "$(ADD_TO_MUSL_LIBC_DEST_DIR)/" $$0 ".ll" }'
 
 # Creates the dest directory in a rule.
 # Just call this var at the beginning of the rule.
 CREATE_DEST_DIR = mkdir -p $(@D)
 
-# Function: to_absolute(path)
-# Returns the path $(1) as absolute path.
-CASE_DO = )
-define to_absolute
-$(shell case $(1) in \
-			/*$(CASE_DO) echo "$(1)" ;; \
-			*$(CASE_DO) echo "$$(pwd)/$(1)" ;; \
-		esac)
+# Links all prerequisites together to the target.
+define LINK_TOGETHER
+@$(CREATE_DEST_DIR)
+$(ARA_LINK) -S -o $@ $^
+@#$(LLVM_OPT) -S -o $@ --dce $@
+endef
+
+# Builds the first C prerequisite to LLVM IR code.
+# The first prerequisite must be .c file.
+define BUILD_TO_LLVM
+@$(CREATE_DEST_DIR)
+$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
 endef
 
 # Function: do_for_all(list, shell_code) 
@@ -127,7 +139,7 @@ $(info command extract-bc not found!)
 $(error wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed! Install via "pip3 install wllvm")
 endif
 
-ifeq ($(call command_availiable	,$(LLVM_DIS)), false)
+ifeq ($(call command_availiable,$(LLVM_DIS)), false)
 $(error command $(LLVM_DIS) not found!)
 endif
 
@@ -139,29 +151,38 @@ ifeq ($(call command_availiable,$(LLVM_OPT)), false)
 $(error command $(LLVM_OPT) not found!)
 endif
 
-ifeq ($(call command_availiable	,$(ARA_LINK)), false)
+ifeq ($(call command_availiable,$(ARA_LINK)), false)
 $(error command $(ARA_LINK) not found!)
 endif
 
-# Make sure the path is always absolute
-MUSL_INSTALL_DIR := $(call to_absolute,$(BUILD_DIR)/musl_install_dir)
-MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
+ifeq ($(call command_availiable,$(REALPATH)), false)
+$(error command $(REALPATH) not found!)
+endif
 
 SINGLE_FILE_APPLICATIONS := $(shell find *.c | cut -f 1 -d '.')
-ADD_TO_MUSL_LIBC_CODE := $(shell find ./$(ADD_TO_MUSL_LIBC_SRC_DIR)/ -type f -printf "%f\n" | cut -f 1 -d '.')
 
-# Generate list of LLVM IR targets.
-# These are all .c files in this dir but with file expansion .ll instead and located in the POSIX build dir.
-# All project target files described with PROJECT_NAMES will be added to the list of target files.
-TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES),$(AWK_TO_TARGET))
+_default_rule: all
 
-# Generate list of executable targets in BIN_PATH.
-# These are all applications in APPLICATIONS (like in TARGETS) but in the BIN_PATH dir.
-BIN_TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(BIN_PROJECT_NAMES),$(AWK_TO_BIN_TARGET))
+# Be careful with the rm command!
+# If you remove files from a directory do a check for empty variables.
+# E.g. test -n "$(DIRECTORY)" && $(RM) -rf "$(DIRECTORY)"/*
+RM = rm --preserve-root=all
 
-# List of all targets that will be added to the musl libc.
-# All these targets will be linked with the original musl libc LLVM IR.
-ADD_TO_MUSL_LIBC_TARGETS = $(call do_for_all,$(ADD_TO_MUSL_LIBC_CODE),$(AWK_TO_ADD_TO_MUSL_TARGET))
+# Project names to build [Append in a module]
+PROJECT_NAMES =
+
+# Project names that will be compiled to binary. [Append in a module]
+BIN_PROJECT_NAMES =
+
+# Clean up targets. [Append in a module]
+# All clean up targets will be executed with 'make clean'
+CLEAN_UP_TARGETS =
+
+# Extra targets to build in rule "all". [Append in a module]
+EXTRA_TARGETS =
+
+# Include Musl libc module
+include $(MAKE_INCLUDE_DIR)/musl_libc.mk
 
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 CC = clang
@@ -169,160 +190,63 @@ CFLAGS = -g -O0 -Wall -fno-builtin $(COMPILE_WITH_MUSL_INCLUDE)
 CFLAGS_TO_EMIT_LLVM = -S -emit-llvm $(CFLAGS)
 LDFLAGS = -static -nostdlib
 
+# --- Module include --- #
+
+# Fully working modules
+include $(MAKE_INCLUDE_DIR)/simple_project.mk
+#include $(MAKE_INCLUDE_DIR)/patric_gbs_a5.mk
+
+# C++ Test
+include $(MAKE_INCLUDE_DIR)/llvm_libcxx.mk
+include $(MAKE_INCLUDE_DIR)/llvm_libcxxabi.mk
+include $(MAKE_INCLUDE_DIR)/cpp_test.mk
+include $(MAKE_INCLUDE_DIR)/llvm_libcxx_binary.mk
+
+# Not working modules
+#include $(MAKE_INCLUDE_DIR)/gnu_make.mk
+#include $(MAKE_INCLUDE_DIR)/pulse_audio.mk
+
+# Generate list of LLVM IR targets.
+# These are all .c files in this dir but with file expansion .ll instead and located in the POSIX build dir.
+# All project target files described with PROJECT_NAMES will be added to the list of target files.
+TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES),$(AWK_TO_TARGET))
+
+# Generate list of executable targets in BIN_PATH.
+# These are all binaries with the names in SINGLE_FILE_APPLICATIONS or BIN_PROJECT_NAMES.
+BIN_TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(BIN_PROJECT_NAMES),$(AWK_TO_BIN_TARGET))
+
 # Build everything (LLVM IR + Binary files)
-all: $(TARGETS) $(BIN_TARGETS)
+all: $(TARGETS) $(BIN_TARGETS) $(EXTRA_TARGETS)
+
 bin: $(BIN_TARGETS)
+extra: $(EXTRA_TARGETS)
 validate: bin
 
-# Build only LLVM IR (Use these .PHONY targets if you encounter strange errors with the 'all' target)
+# Build only LLVM IR
 ll: $(TARGETS)
 llvm-ir: ll
 
-clean: clean-build-dir clean-musl-libc $(CLEAN_UP_TARGETS)
+clean: clean-build-dir $(CLEAN_UP_TARGETS)
 
-clean-musl-libc:
-	(cd $(MUSL_LIB_C_SRC_PATH) && make clean)
 clean-build-dir:
-	rm -f -r $(BUILD_DIR)/*
+	test -n "$(BUILD_DIR)" && $(RM) -rf "$(BUILD_DIR)"/*
 clean-bin:
-	rm -f -r $(BIN_PATH)
+	test -n "$(BIN_PATH)" && $(RM) -rf "$(BIN_PATH)"
 
-.PHONY: all bin validate ll llvm-ir clean clean-bin clean-build-dir clean-musl-libc $(CLEAN_UP_TARGETS)
+.PHONY: _default_rule all bin extra validate ll llvm-ir clean clean-bin clean-build-dir $(CLEAN_UP_TARGETS)
 
 # Create test executables (to validate the correctness of the generated LLVM IR and to display linking errors from applications)
 $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	@$(CREATE_DEST_DIR)
 	$(LLVM_LLC) -filetype=obj -o $@.o $<
 	@# Add -lgcc to the linkage list if you get linker errors associated with compiler intrinsics.
-	$(CC) $(LDFLAGS) $@.o $(MUSL_INSTALL_DIR)/lib/crt1.o $(MUSL_INSTALL_DIR)/lib/libc.a -o $@
-	rm $@.o
+	$(CC) $(LDFLAGS) $@.o $(MUSL_LIB_C_SRC_PATH)/lib/crt1.o $(MUSL_LIB_C_SRC_PATH)/lib/libc.a -o $@
+	$(RM) $@.o
 
 # Link POSIX applications with musl libc
 $(TARGETS): $(BUILD_DIR)/%.ll : $(OBJ_BUILD)/%.ll $(BUILD_DIR)/musl_libc.ll
-	@$(CREATE_DEST_DIR)
-	$(ARA_LINK) -S -o $@ $< $(BUILD_DIR)/musl_libc.ll
-	@#$(LLVM_OPT) -S -o $@ --dce $@
+	$(LINK_TOGETHER)
 
 # Compile simple POSIX C files
 $(OBJ_BUILD)/%.ll: %.c $(BUILD_DIR)/musl_libc.ll
-	@$(CREATE_DEST_DIR)
-	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
-
-# Link musl libc with ADD_TO_MUSL_LIBC_TARGETS.
-$(BUILD_DIR)/musl_libc.ll: $(OBJ_BUILD)/musl_libc_original.ll $(ADD_TO_MUSL_LIBC_TARGETS)
-	$(ARA_LINK) -S -o $@ $^
-
-# Compile ADD_TO_MUSL_LIBC_TARGETS
-$(ADD_TO_MUSL_LIBC_TARGETS): $(ADD_TO_MUSL_LIBC_DEST_DIR)/%.ll: $(ADD_TO_MUSL_LIBC_SRC_DIR)/%.c $(OBJ_BUILD)/musl_libc_original.ll
-	@$(CREATE_DEST_DIR)
-	$(CC) $(CFLAGS_TO_EMIT_LLVM) -o $@ $<
-
-# Build and install musl libc. 
-$(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
-	@$(CREATE_DEST_DIR)
-	@mkdir -p $(MUSL_INSTALL_DIR)
-
-	@# invoke Makefile with WLLVM.
-	@# The environment variables CFLAGS and LDFLAGS are set for the ./configure script.
-	PROJECT_PATH=$(MUSL_LIB_C_SRC_PATH) \
-	BINARY_FILE=${MUSL_INSTALL_DIR}/lib/libc.a \
-	OUTPUT_FILE=$@ \
-	EXEC_CONFIGURE=true \
-	EXEC_MAKE_INSTALL=true \
-	CONFIGURE_ARGS="--enable-debug --target=LLVM --build=LLVM --prefix=$(MUSL_INSTALL_DIR)/" \
-	CFLAGS="-O0 -fno-builtin" \
-	LDFLAGS="-fno-builtin" \
-		./build_makefile_app.sh
-
-########################################### Custom Project Rules ############################################
-
-# --- simple_project ---
-
-# Link
-$(OBJ_BUILD)/simple_project.ll: $(OBJ_BUILD)/simple_project/foo.ll $(OBJ_BUILD)/simple_project/bar.ll
-	@$(CREATE_DEST_DIR)
-	$(ARA_LINK) -S -o $@ $^
-
-# Compile
-$(OBJ_BUILD)/simple_project/%.ll : $(OBJ_BUILD)/simple_project/%.c $(BUILD_DIR)/musl_libc.ll
-	@$(CREATE_DEST_DIR)
-	$(CC) $(CFLAGS) -o $@ $<
-
-
-# --- patric_gbs_a5 ---
-PATRIC_DIR = ./patric_gbs_a5
-$(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
-
-	@# invoke Makefile with WLLVM.
-	@# The environment variable CFLAGS is set to override CFLAGS in the calling Makefile.
-	PROJECT_PATH=$(PATRIC_DIR) \
-	BINARY_FILE=$(PATRIC_DIR)/patric \
-	OUTPUT_FILE=$@ \
-	EXEC_CONFIGURE=false \
-	EXEC_MAKE_INSTALL=false \
-	MAKE_ARGS="--environment-overrides" \
-	CFLAGS="-std=c11 -Wall -Werror -pedantic -D_XOPEN_SOURCE=700 -pthread -g -O0 $(COMPILE_WITH_MUSL_INCLUDE)" \
-		./build_makefile_app.sh
-
-clean-patric:
-	(cd $(PATRIC_DIR) && make clean)
-	rm -f $$(find "$(PATRIC_DIR)" -name ".*.bc")
-
-# --- GNU Make ---
-#$(OBJ_BUILD)/GNU_make.ll: build_GNU_toolchain_app.sh $(BUILD_DIR)/musl_libc.ll
-#	@$(CREATE_DEST_DIR)
-#	@# GNU make is not POSIX compliant. See src/dir.h line 1336 in make-4.3. It uses glob_t->gl_opendir, glob_t->gl_readdir, ...
-#	@# CFLAGS="-g $(COMPILE_WITH_MUSL_INCLUDE)" ./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ "" "--linker $(ARA_LINK)" false
-#	@# So we need to compile it with GNU libc headers (Suppose that these are the standard headers on this system):
-#	@CFLAGS="-g" ./build_GNU_toolchain_app.sh $(GNU_MAKE_SRC_PATH) $(GNU_MAKE_SRC_PATH)/make $@ "" "--linker $(ARA_LINK)" false
-
-# --- PulseAudio ---
-# TODO: change this var
-PULSE_AUDIO_SRC_DIR ?= $(call to_absolute,../../../../../Downloads/pulseaudio)
-PULSE_AUDIO_BUILD_DIR ?= $(BUILD_DIR)/pulse_audio_build
-
-$(OBJ_BUILD)/pulse_audio.ll: $(OBJ_BUILD)/pulse_audio_lib.ll $(OBJ_BUILD)/pulse_audio_core.ll $(OBJ_BUILD)/pulse_audio_daemon.ll
-	@$(CREATE_DEST_DIR)
-	$(ARA_LINK) -S -o $@ $^
-
-#$(OBJ_BUILD)/pulse_audio_common.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
-	#@# Generate .bc bitcode
-	#extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary3.bc $(PULSE_AUDIO_BUILD_DIR)/src/libpulsecommon-14.0.so
-
-	#@# Dissassemble .bc -> .ll
-	#$(LLVM_DIS) -o $@ pulse_binary3.bc
-	#rm pulse_binary3.bc
-
-$(OBJ_BUILD)/pulse_audio_lib.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
-	@# Generate .bc bitcode
-	extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary2.bc $(PULSE_AUDIO_BUILD_DIR)/src/pulse/libpulse.so.0.23.0
-
-	@# Dissassemble .bc -> .ll
-	$(LLVM_DIS) -o $@ pulse_binary2.bc
-	rm pulse_binary2.bc
-
-$(OBJ_BUILD)/pulse_audio_core.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
-	@# Generate .bc bitcode
-	extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary1.bc $(PULSE_AUDIO_BUILD_DIR)/src/pulsecore/libpulsecore-14.0.so
-
-	@# Dissassemble .bc -> .ll
-	$(LLVM_DIS) -o $@ pulse_binary1.bc
-	rm pulse_binary1.bc
-
-$(OBJ_BUILD)/pulse_audio_daemon.ll: $(BUILD_DIR)/musl_libc.ll
-
-	(cd "$(PULSE_AUDIO_SRC_DIR)" && \
-		CC=wllvm \
-		CXX=wllvm++ \
-		CFLAGS="-g -O0 -DNDEBUG" \
-		CXXFLAGS="-g -O0 -DNDEBUG" \
-			meson $(PULSE_AUDIO_BUILD_DIR) -Dtests=false -Dadrian-aec=false --prefix=$(MUSL_INCLUDE_DIR) --includedir=$(MUSL_INCLUDE_DIR) \
-	)
-	meson compile -C $(PULSE_AUDIO_BUILD_DIR)
-
-	@# Generate .bc bitcode
-	extract-bc $(EXTRACT_BC_ARGS) -o pulse_binary.bc $(PULSE_AUDIO_BUILD_DIR)/src/daemon/pulseaudio
-
-	@# Dissassemble .bc -> .ll
-	$(LLVM_DIS) -o $@ pulse_binary.bc
-	rm pulse_binary.bc
+	$(BUILD_TO_LLVM)
