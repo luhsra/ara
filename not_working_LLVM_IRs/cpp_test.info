@@ -1,0 +1,8 @@
+
+cpp_test.ll is a simple C++ appl. (See appl/POSIX/cpp_test.cpp)
+
+It is linked with Musl libc + LLVM libcxx + LLVM libcxxabi.
+
+Step BBSplit is stuck in an endless loop. (Or too slow, we will never know)
+
+ARA incocation: ./ara.py -s InteractionAnalysis appl/POSIX/cpp_test.ll -v --os POSIX
