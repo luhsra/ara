@@ -56,7 +56,7 @@ def get_config(i_file):
             'input_file': i_file}
 
 
-def init_test(steps=None, extra_config=None, logger_name=None):
+def init_test(steps=None, extra_config=None, logger_name=None, os=None):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
 
@@ -79,6 +79,8 @@ def init_test(steps=None, extra_config=None, logger_name=None):
     if not extra_config:
         extra_config = {}
     g = Graph()
+    if os != None:
+        g.os = os
     assert len(sys.argv) == 3
     json_file = sys.argv[1]
     i_file = sys.argv[2]

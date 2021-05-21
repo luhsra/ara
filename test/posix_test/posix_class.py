@@ -28,6 +28,7 @@ OS_interface = set({
 })
 
 def main():
+    """Test the POSIX OS model class."""
 
     # Check the OS interface
     for OS_method in OS_interface:
