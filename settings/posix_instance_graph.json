@@ -1,0 +1,25 @@
+{
+	"steps": [
+		"InteractionAnalysis"
+	],
+
+	"InteractionAnalysis": {
+		"dump": true
+	},
+
+	"SystemRelevantFunctions": {
+		"dump": true
+	},
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+
+    "RecursiveFunctions": {
+        "no_recursive_funcs": true
+    },
+
+	"logger": {
+		"POSIX": "debug"
+	}
+}
