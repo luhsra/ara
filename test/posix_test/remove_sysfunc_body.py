@@ -22,5 +22,5 @@ def test_remove_sysfunc_step(os):
         call_edges.append([get_func_name(callgraph, cfg, edge.source()),
                            get_func_name(callgraph, cfg, edge.target())])
 
-    print(sorted(call_edges))
+    #print(sorted(call_edges))
     fail_if(data != sorted(call_edges), f"Data not equal for os={os}")
