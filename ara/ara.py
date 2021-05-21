@@ -69,17 +69,17 @@ def main():
 
     os_model_names = get_os_model_names()
     os_model_names.append("auto")
-    parser.add_argument('--os', help="Uses the specified OS Model.",
+    parser.add_argument('--os', help="Use the specified OS Model.",
                         choices=os_model_names, default="auto")
-    parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader."
-                                            "This will increase the performance of the analysis."
+    parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader. "
+                                            "This will increase the performance of the analysis. "
                                             "Warning: Do not use this argument for the synthesis!",
-                        action='store_true')
+                        action='store_true', default=False)
     parser.add_argument('--no-recursive-funcs', help="Disables the RecursiveFunctions Step to improve performance.",
-                        action='store_true')
-    parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (SIA) and writes them to stdout."
+                        action='store_true', default=False)
+    parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (SIA) and writes them to stdout. "
                                                  "Requires the SIA step. Make sure to execute this step.",
-                        action='store_true')
+                        action='store_true', default=False)
 
     args = parser.parse_args()
 

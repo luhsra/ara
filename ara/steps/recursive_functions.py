@@ -6,7 +6,6 @@ from .step import Step
 from graph_tool.topology import all_paths
 import numpy
 
-from ara.os.posix.posix_utils import no_double_output
 from ara.util import LEVEL
 
 class RecursiveFunctions(Step):
@@ -23,7 +22,7 @@ class RecursiveFunctions(Step):
         
         #####
         if self.no_recursive_funcs.get():
-            no_double_output(self._log, LEVEL["info"], "--no-recursive-funcs: RecursiveFunctions is disabled!")
+            self._log.info("RecursiveFunctions is disabled!")
             return
         #####
 

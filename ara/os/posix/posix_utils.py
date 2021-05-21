@@ -10,15 +10,6 @@ from ..os_util import syscall, assign_id, Arg
 
 logger = get_logger("POSIX")
 
-# Switch to set all POSIX debug logs to "info" 
-# -> this highlights all POSIX debug messages. 
-#_POSIX_DEBUG_LOG_LEVEL: int = LEVEL["debug"]
-_POSIX_DEBUG_LOG_LEVEL: int = LEVEL["info"]
-
-def debug_log(msg, *args, **kwargs):
-    """ Logs a debug message in the POSIX package. """
-    logger.log(_POSIX_DEBUG_LOG_LEVEL, msg, *args, **kwargs)
-
 _already_done_messages = set()
 
 def no_double_output(cust_logger, log_level: int, msg: str):
@@ -70,7 +61,7 @@ def handle_soc(state, v, cfg, abb,
     in_branch = b(state.branch, branch)
     in_loop = b(state.loop, loop)
     is_recursive = b(state.recursive, recursive)
-    debug_log("scheduler " + str(state.scheduler_on)) # TODO: fix scheduler off issue
+    logger.debug("scheduler " + str(state.scheduler_on)) # TODO: fix scheduler off issue
     after_sched = b(state.scheduler_on, scheduler_on)
     is_usually_taken = b(state.usually_taken, usually_taken)
 
@@ -87,7 +78,7 @@ def handle_soc(state, v, cfg, abb,
 
 def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state, va):
 
-    debug_log(f"Create new instance with label: {label}")
+    logger.debug(f"Create new instance with label: {label}")
     state = state.copy()
     v = state.instances.add_vertex()
     state.instances.vp.label[v] = label

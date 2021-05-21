@@ -7,7 +7,7 @@ from queue import Queue
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, debug_log, register_instance
+from .posix_utils import POSIXInstance, logger, register_instance
 
 # SIA and InteractionAnalysis requires a Hash for the Thread/Task instance.
 # We provide one but allow the class to be mutable because register_instance() needs 

@@ -5,7 +5,7 @@ from typing import Any, Union, Optional, Dict
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, debug_log, handle_soc
+from .posix_utils import POSIXInstance, logger, handle_soc
 
 class SignalType(IntEnum):
     """ The values of these signals are Linux specific.

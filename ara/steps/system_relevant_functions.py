@@ -35,10 +35,10 @@ class SystemRelevantFunctions(Step):
                 vprop = callgraph.vp["syscall_category_" + sys_cat.name]
                 label_out_component(gv, cg_node, label=vprop)
 
-        #if self.dump.get():
-        self._step_manager.chain_step(
-            {"name": "Printer",
-                "dot": self.dump_prefix.get() + 'dot',
-                "graph_name": 'System relevant functions',
-                "subgraph": 'callgraph'}
-        )
+        if self.dump.get():
+            self._step_manager.chain_step(
+                {"name": "Printer",
+                    "dot": self.dump_prefix.get() + 'dot',
+                    "graph_name": 'System relevant functions',
+                    "subgraph": 'callgraph'}
+            )

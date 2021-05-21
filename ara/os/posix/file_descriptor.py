@@ -7,7 +7,7 @@ from ara.graph import SyscallCategory, SigType
 import pyllco
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, debug_log, handle_soc, do_not_interpret_syscall
+from .posix_utils import POSIXInstance, logger, handle_soc, do_not_interpret_syscall
 
 # This FileDescriptor is not an instance in the Instance Graph
 @dataclass
@@ -22,7 +22,7 @@ class FileDescriptorSyscalls:
                        Arg('nbyte', hint=SigType.value)))
     def write(graph, abb, state, args, va):
 
-        debug_log("found write() syscall")
+        logger.debug("found write() syscall")
         return do_not_interpret_syscall(graph, abb, state)
 
 
@@ -34,5 +34,5 @@ class FileDescriptorSyscalls:
     #                    Arg('stream', hint=SigType.symbol)))
     # def fwrite(graph, abb, state, args, va):
 
-    #     debug_log("found fwrite() syscall")
+    #     logger.debug("found fwrite() syscall")
     #     return state

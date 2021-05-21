@@ -6,7 +6,7 @@ Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from ..os_util import syscall
-from .posix_utils import debug_log, logger, handle_soc, add_normal_cfg, get_musl_weak_alias, do_not_interpret_syscall
+from .posix_utils import logger, handle_soc, add_normal_cfg, get_musl_weak_alias, do_not_interpret_syscall
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .mutex import MutexSyscalls
@@ -101,7 +101,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         cfg = graph.cfg
 
         syscall = cfg.get_syscall_name(abb)
-        debug_log(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
+        logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
         syscall_function = POSIX.detected_syscalls()[syscall] # Alias handling

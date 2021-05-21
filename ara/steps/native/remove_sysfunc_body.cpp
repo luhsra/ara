@@ -14,7 +14,7 @@ namespace ara::step {
 	using namespace llvm;
 
 	std::string RemoveSysfuncBody::get_description() {
-		return "Removes the libc function body of system functions which should be interpreted by the OS Model.\n"
+		return "Removes the libc function body of system functions that the OS model interprets.\n"
 		       "This improves the performance of the analysis and cleans the CallGraph.\n"
 		       "Warning: This step is only for the analysis!";
 	}

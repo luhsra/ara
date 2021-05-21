@@ -6,13 +6,11 @@ from queue import Queue
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, debug_log, handle_soc
+from .posix_utils import POSIXInstance, logger, handle_soc, do_not_interpret_syscall
 
 class OtherSyscalls:
 
     @syscall(categories={SyscallCategory.comm})
     def pause(graph, abb, state, args, va):
-
-        debug_log("found pause() syscall")
-        #state = state.copy()
-        return state
+        logger.debug("found pause() syscall")
+        return do_not_interpret_syscall(graph, abb, state)
