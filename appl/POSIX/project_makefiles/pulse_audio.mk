@@ -34,6 +34,8 @@ $(OBJ_BUILD)/pulse_audio_core.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR
 
 $(OBJ_BUILD)/pulse_audio_daemon.ll: $(BUILD_DIR)/musl_libc.ll
 
+	@# Note: we build pulseaudio with Compiler intrinsics.
+	@# With the "-fno-builtin" flag the compile process throws lots of errors. 
 	(cd "$(PULSE_AUDIO_SRC_DIR)" && \
 		CC=wllvm \
 		CXX=wllvm++ \
