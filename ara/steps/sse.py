@@ -1831,8 +1831,8 @@ class SIA(FlatAnalysis):
     """Static Instance Analysis: Find all application instances."""
 
     count_syscalls = Option(name="count_syscalls",
-                          help="If set to True SIA invokes SyscallCount.add_syscall() for all handled syscalls."
-                               "Do not set this option step local. Use the global commandline argument --count-syscalls instead.",
+                          help="If set to True SIA invokes SyscallCount.add_syscall() for all handled syscalls. "
+                               "At the end of ARA the syscall count state will be printed to stdout.",
                           ty=Bool(),
                           default_value=False)
 

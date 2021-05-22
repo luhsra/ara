@@ -19,6 +19,10 @@
         "no_recursive_funcs": true
     },
 
+	"SIA": {
+		"count_syscalls": true
+	},
+
 	"logger": {
 		"POSIX": "debug"
 	}
