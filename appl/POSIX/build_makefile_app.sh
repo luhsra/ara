@@ -42,8 +42,8 @@ readonly LLVM_DIS
 # Make sure that this file will be executed in the dir of that file
 cd "$(dirname "$0")" || exit 1
 
-if ! [ -e "${PROJECT_PATH}"/Makefile ] ; then
-    echo "No Makefile found in \"${PROJECT_PATH}\"!"
+if [ ! -e "${PROJECT_PATH}"/Makefile ] && [ ! -e "${PROJECT_PATH}"/configure ] ; then
+    echo "No Makefile or configure script found in \"${PROJECT_PATH}\"!"
     exit 1
 fi
 
