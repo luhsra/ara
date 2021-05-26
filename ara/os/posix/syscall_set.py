@@ -174,4 +174,14 @@ syscall_set = set({
     "posix_spawn",
     "posix_spawnp"
 
+    # The following are musl libc specific functions.
+    #   These ARE NO Syscalls.
+    #   But we want to remove the costly impl. of these calls. (With remove_sysfunc_body step)
+    #   All of them are accessing function pointers to more than ~93 possible functions.
+    "libc_start_init",
+    "libc_exit_fini",
+    "__pthread_tsd_run_dtors",
+    "at_quick_exit",
+    "call" # Hopefully nobody names his/her function "call" or "__call".
+
 })
