@@ -20,27 +20,12 @@ class File(POSIXInstance):
     file_type: FileType
     # TODO: Add further file mode data
 
-    def as_dot(self):
-        wanted_attrs = ["name", "absolute_pathname", "file_type"]
-        attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
-        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
-                                    for k, v in attrs])
-
-        return {
-            "shape": "box",
-            "fillcolor": "#6fbf87",
-            "style": "filled",
-            "sublabel": sublabel
-        }
-
-    def get_maximal_id(self):
-        # TODO: use a better max_id
-        return '.'.join(map(str, ["Thread",
-                                  self.name,
-                                  self.absolute_pathname,
-                                  self.file_type,
-                                 ]))
-
+    wanted_attrs = ["name", "absolute_pathname", "file_type"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#6fbf87",
+        "style": "filled"
+    }
 
 class FileSyscalls:
     pass
