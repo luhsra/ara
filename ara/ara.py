@@ -85,9 +85,9 @@ def main():
     parser.add_argument('--no-recursive-funcs', help="Disables the RecursiveFunctions Step to improve performance.",
                         action='store_true', default=False)
 
-    # Option for SIA
-    parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (SIA) and writes them to stdout. "
-                                                 "Requires the SIA step. Make sure to execute this step.",
+    # Option for InteractionAnalysis
+    parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (in INA step) and writes them to stdout. "
+                                                 "Requires the InteractionAnalysis step. Make sure to execute this step.",
                         action='store_true', default=False)
 
     args = parser.parse_args()

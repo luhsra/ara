@@ -1830,12 +1830,6 @@ class FlatAnalysis(FlowAnalysis):
 class SIA(FlatAnalysis):
     """Static Instance Analysis: Find all application instances."""
 
-    count_syscalls = Option(name="count_syscalls",
-                          help="If set to True SIA invokes SyscallCount.add_syscall() for all handled syscalls. "
-                               "At the end of ARA the syscall count state will be printed to stdout.",
-                          ty=Bool(),
-                          default_value=False)
-
     def _get_entry_point_dep(self, name):
         return {"name": name, "entry_point": self.entry_point.get()}
 
@@ -1978,6 +1972,12 @@ class SIA(FlatAnalysis):
 
 class InteractionAnalysis(FlatAnalysis):
     """Find the flow insensitive interactions between instances."""
+
+    count_syscalls = Option(name="count_syscalls",
+                          help="If set to True this step invokes SyscallCount.add_syscall() for all handled syscalls. "
+                               "At the end of ARA the syscall count state will be printed to stdout.",
+                          ty=Bool(),
+                          default_value=False)
 
     def get_single_dependencies(self):
         return self._require_instances()

@@ -4,7 +4,8 @@
 	],
 
 	"InteractionAnalysis": {
-		"dump": true
+		"dump": true,
+		"count_syscalls": true
 	},
 
 	"SystemRelevantFunctions": {
@@ -19,8 +20,8 @@
         "no_recursive_funcs": true
     },
 
-	"SIA": {
-		"count_syscalls": true
+	"ICFG": {
+		"dump": true
 	},
 
 	"logger": {
