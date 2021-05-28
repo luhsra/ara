@@ -8,7 +8,7 @@ CPP_BIN_TARGETS = $(call do_for_all,$(CPP_BIN_PROJECT_NAMES),$(AWK_TO_BIN_TARGET
 $(CPP_BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	@$(CREATE_DEST_DIR)
 	$(LLVM_LLC) -filetype=obj -o $@.o $<
-	$(CC) $(LDFLAGS) $@.o $(MUSL_LIB_C_SRC_PATH)/lib/crt1.o $(MUSL_LIB_C_SRC_PATH)/lib/libc.a -lgcc -lgcc_eh -fno-use-cxa-atexit -o $@
+	$(CC) $(LDFLAGS_WITH_LLVM_TO_BIN) $@.o $(LINK_WITH_MUSL_BIN) -lgcc -lgcc_eh -fno-use-cxa-atexit -o $@
 	$(RM) $@.o
 
 EXTRA_TARGETS += $(CPP_BIN_TARGETS)

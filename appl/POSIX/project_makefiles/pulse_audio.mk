@@ -1,6 +1,11 @@
 
 # Built for PulseAudio 14.2
 # Attention: This module is not working correctly. See notes below
+# TODO: Use $(USE_MUSL_CLANG) during build process.
+#		Currently this leads to the error:
+#			Has header "atomic_ops.h" : NO 
+#			meson.build:525:2: ERROR: Assert failed: Need libatomic_ops
+#		This header is missing in musl libc.
 
 # TODO: change this var
 PULSE_AUDIO_SRC_DIR ?= $(shell $(REALPATH) ~/Downloads/pulseaudio)

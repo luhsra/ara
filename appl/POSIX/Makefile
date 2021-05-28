@@ -4,6 +4,9 @@
 # Make sure you have whole-program-llvm (https://github.com/travitch/whole-program-llvm) installed.
 # WARNING: Never ever run this Makefile as root!
 #
+# Note: You can safely ignore warnings of type:  WARNING:Could not find ".llvm_bc" ELF section in ...
+#		This is the result of assembly source files being processed by wllvm.
+#
 # HOW TO:
 #
 # - add a new single source file application:
@@ -185,10 +188,19 @@ EXTRA_TARGETS =
 include $(MAKE_INCLUDE_DIR)/musl_libc.mk
 
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
+
+# Generates an argument to WLLVM for build_makefile_app.sh or another direct build system call (e.g. cmake).
+# This argument sets the compiler of wllvm to musl-clang instead of clang.
+# With musl-clang we can use the musl libc in a complex build process during linking phase.
+USE_MUSL_CLANG := LLVM_COMPILER_PATH="$(MUSL_INSTALL_DIR)/bin"
+
 CC = clang
-CFLAGS = -g -O0 -Wall -fno-builtin $(COMPILE_WITH_MUSL_INCLUDE)
-CFLAGS_TO_EMIT_LLVM = -S -emit-llvm $(CFLAGS)
-LDFLAGS = -static -nostdlib
+CFLAGS_NO_MUSL_INCL = -g -O0 -Wall -fno-builtin -Wno-unused-command-line-argument
+CFLAGS := $(CFLAGS_NO_MUSL_INCL) -nostdinc $(COMPILE_WITH_MUSL_INCLUDE)
+CFLAGS_TO_EMIT_LLVM := -S -emit-llvm $(CFLAGS)
+
+LINK_WITH_MUSL_BIN := $(MUSL_INSTALL_DIR)/lib/crt1.o $(MUSL_INSTALL_DIR)/lib/libc.a
+LDFLAGS_WITH_LLVM_TO_BIN = -static -nostdlib
 
 # --- Module include --- #
 
@@ -199,10 +211,10 @@ include $(MAKE_INCLUDE_DIR)/libmicrohttpd.mk
 include $(MAKE_INCLUDE_DIR)/microhttpd_demo.mk
 
 # C++ Test
-include $(MAKE_INCLUDE_DIR)/llvm_libcxx.mk
-include $(MAKE_INCLUDE_DIR)/llvm_libcxxabi.mk
-include $(MAKE_INCLUDE_DIR)/cpp_test.mk
-include $(MAKE_INCLUDE_DIR)/llvm_libcxx_binary.mk
+#include $(MAKE_INCLUDE_DIR)/llvm_libcxx.mk
+#include $(MAKE_INCLUDE_DIR)/llvm_libcxxabi.mk
+#include $(MAKE_INCLUDE_DIR)/cpp_test.mk
+#include $(MAKE_INCLUDE_DIR)/llvm_libcxx_binary.mk
 
 # Not working modules
 #include $(MAKE_INCLUDE_DIR)/gnu_make.mk
@@ -242,7 +254,7 @@ $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	@$(CREATE_DEST_DIR)
 	$(LLVM_LLC) -filetype=obj -o $@.o $<
 	@# Add -lgcc to the linkage list if you get linker errors associated with compiler intrinsics.
-	$(CC) $(LDFLAGS) $@.o $(MUSL_LIB_C_SRC_PATH)/lib/crt1.o $(MUSL_LIB_C_SRC_PATH)/lib/libc.a -o $@
+	$(CC) $(LDFLAGS_WITH_LLVM_TO_BIN) $@.o $(LINK_WITH_MUSL_BIN) -o $@
 	$(RM) $@.o
 
 # Link POSIX applications with musl libc

@@ -6,14 +6,15 @@ LIBMICROHTTPD_DIR := $(shell $(REALPATH) $(LIBMICROHTTPD_DIR))
 
 $(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 
-	@# invoke Makefile with WLLVM.
+	@# Invoke Makefile with WLLVM.
 	@# The environment variable CFLAGS is set to override CFLAGS in the calling Makefile.
 	PROJECT_PATH="$(LIBMICROHTTPD_DIR)" \
 	BINARY_FILE="$(LIBMICROHTTPD_DIR)/src/microhttpd/.libs/libmicrohttpd.a" \
 	OUTPUT_FILE="$@" \
 	EXEC_CONFIGURE=true \
 	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix" \
-	CFLAGS="$(CFLAGS)" \
+	$(USE_MUSL_CLANG) \
+	CFLAGS="$(CFLAGS_NO_MUSL_INCL)" \
 		./build_makefile_app.sh
 
 clean-libmicrohttpd:

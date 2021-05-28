@@ -30,6 +30,8 @@ $(BUILD_DIR)/musl_libc.ll: $(OBJ_BUILD)/musl_libc_original.ll $(ADD_TO_MUSL_LIBC
 $(ADD_TO_MUSL_LIBC_TARGETS): $(ADD_TO_MUSL_LIBC_DEST_DIR)/%.ll: $(ADD_TO_MUSL_LIBC_SRC_DIR)/%.c $(OBJ_BUILD)/musl_libc_original.ll
 	$(BUILD_TO_LLVM)
 
+REMOVE_LLVM_BC_ELF_SECTION = objcopy --remove-section .llvm_bc
+
 # Build and install musl libc. 
 $(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	@$(CREATE_DEST_DIR)
@@ -41,11 +43,21 @@ $(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	BINARY_FILE=$(MUSL_LIB_C_SRC_PATH)/lib/libc.a \
 	OUTPUT_FILE=$@ \
 	EXEC_CONFIGURE=true \
-	EXEC_MAKE_RULE="install-headers" \
-	CONFIGURE_ARGS="--enable-debug --target=LLVM --build=LLVM --prefix=$(MUSL_INSTALL_DIR)/" \
+	EXEC_MAKE_RULE="install" \
+	CONFIGURE_ARGS="--enable-debug --target=LLVM --build=LLVM --prefix="$(MUSL_INSTALL_DIR)/" --syslibdir="$(MUSL_INSTALL_DIR)/"" \
 	CFLAGS="-O0 -fno-builtin" \
 	LDFLAGS="-fno-builtin" \
 		./build_makefile_app.sh
+
+	@# Remove .llvm_bc section in runtime lib files crt1.o Scrt1.o and rcrt1.o
+	@# With the following commands we make sure that WLLVM can not extract the LLVM bitcode of _start_c() or _start().
+	@# ARA crashes with custom _start_c or _start symbols.
+	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/crt1.o
+	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/Scrt1.o
+	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/rcrt1.o
+
+	@# Make sure that WLLVM executes musl-clang instead of clang.
+	ln -s $(MUSL_INSTALL_DIR)/bin/musl-clang $(MUSL_INSTALL_DIR)/bin/clang
 
 clean-musl-libc:
 	(cd $(MUSL_LIB_C_SRC_PATH) && make clean)

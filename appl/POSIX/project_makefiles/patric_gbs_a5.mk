@@ -19,7 +19,8 @@ $(OBJ_BUILD)/patric_gbs_a5.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 	OUTPUT_FILE=$@ \
 	EXEC_CONFIGURE=false \
 	MAKE_ARGS="--environment-overrides" \
-	CFLAGS="-std=c11 -Wall -Werror -pedantic -D_XOPEN_SOURCE=700 -pthread -g -O0 $(COMPILE_WITH_MUSL_INCLUDE)" \
+	$(USE_MUSL_CLANG) \
+	CFLAGS="-std=c11 -D_XOPEN_SOURCE=700 -pthread $(CFLAGS_NO_MUSL_INCL)" \
 		./build_makefile_app.sh
 
 clean-patric:

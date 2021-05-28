@@ -1,12 +1,16 @@
 
 # Built for libcxxabi in LLVM 12.0.0
 
+# TODO: Use $(USE_MUSL_CLANG) to build with musl libc binaries.
+#		Currently this is not working because musl-clang is not supporting C++.
+
 LLVM_LIBCXXABI_SRC_PATH ?= ~/Downloads/llvm-project/libcxxabi
 LLVM_LIBCXXABI_BUILD_DIR ?= $(BUILD_DIR)/llvm_libcxxabi_build
 
 $(OBJ_BUILD)/llvm_libcxxabi.ll: $(OBJ_BUILD)/llvm_libcxx.ll $(BUILD_DIR)/musl_libc.ll build_makefile_app.sh
 	@$(CREATE_DEST_DIR)
 	@mkdir -p "$(LLVM_LIBCXXABI_BUILD_DIR)"
+
 	cmake -B "$(LLVM_LIBCXXABI_BUILD_DIR)" -S "$(LLVM_LIBCXXABI_SRC_PATH)" \
 		-DCMAKE_CROSSCOMPILING=True \
 		-DCMAKE_C_COMPILER=wllvm \

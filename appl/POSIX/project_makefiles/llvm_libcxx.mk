@@ -4,6 +4,9 @@
 # For example: llvm_libcxxabi.
 # If you change the ABI update LLVM_LIBCXXABI_INCLUDE.
 
+# TODO: Use $(USE_MUSL_CLANG) to build with musl libc binaries.
+#		Currently this is not working because musl-clang is not supporting C++.
+
 # Include the file llvm_libcxx_binary.mk after all C++ application modules.
 
 # --- Library --- #
@@ -14,7 +17,8 @@ LLVM_LIBCXX_BUILD_DIR ?= $(BUILD_DIR)/llvm_libcxx_build
 # Change this directory 
 LLVM_LIBCXXABI_INCLUDE ?= $(LLVM_LIBCXX_SRC_PATH)/../libcxxabi/include
 
-CXXFLAGS_FOR_LIBCXX = -O0 -Wall -fno-builtin -fno-use-cxa-atexit $(COMPILE_WITH_MUSL_INCLUDE)
+# No -nostdinc because the header linux/futex.h is required.
+CXXFLAGS_FOR_LIBCXX = $(CFLAGS_NO_MUSL_INCL) -fno-use-cxa-atexit $(COMPILE_WITH_MUSL_INCLUDE)
 
 $(BUILD_DIR)/llvm_libcxx.ll: $(OBJ_BUILD)/llvm_libcxx.ll $(OBJ_BUILD)/llvm_libcxxabi.ll
 	$(LINK_TOGETHER)
@@ -22,6 +26,7 @@ $(BUILD_DIR)/llvm_libcxx.ll: $(OBJ_BUILD)/llvm_libcxx.ll $(OBJ_BUILD)/llvm_libcx
 $(OBJ_BUILD)/llvm_libcxx.ll: $(BUILD_DIR)/musl_libc.ll build_makefile_app.sh
 	@$(CREATE_DEST_DIR)
 	@mkdir -p "$(LLVM_LIBCXX_BUILD_DIR)"
+
 	cmake -B "$(LLVM_LIBCXX_BUILD_DIR)" -S "$(LLVM_LIBCXX_SRC_PATH)" \
 		-DCMAKE_CROSSCOMPILING=True \
 		-DCMAKE_C_COMPILER=wllvm \
