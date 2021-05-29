@@ -83,7 +83,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
 
     @staticmethod
     def get_special_steps():
-        return []
+        return ["POSIXInit"]
 
     @staticmethod
     def has_dynamic_instances():
@@ -91,8 +91,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
 
     @staticmethod
     def init(state):
-        pass
-        #state.scheduler_on = True  # The Scheduler is always on in POSIX.
+        state.scheduler_on = True  # The Scheduler is always on in POSIX.
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):

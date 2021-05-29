@@ -9,10 +9,9 @@ from ..os_util import syscall, assign_id, Arg
 from .posix_utils import POSIXInstance, IDInstance, logger, register_instance, do_not_interpret_syscall
 
 # SIA and InteractionAnalysis requires a Hash for the Thread/Task instance.
-# We provide one but allow the class to be mutable because register_instance() needs 
-# to add some info to the instances before they can be registered in the InstanceGraph.
-# A modification of instances later on is not designated.
-@dataclass(unsafe_hash = True)
+# We provide an id based implementation and allow the class to be mutable.
+# Make sure to not alter the num_id field of a Thread.
+@dataclass(eq = False)
 class Thread(IDInstance):
     entry_abb: Any
     function: Any
@@ -34,6 +33,9 @@ class Thread(IDInstance):
 
     def __post_init__(self):
         super().__init__()
+
+    def __hash__(self):
+        return hash(self.num_id)
 
 
 class ThreadSyscalls:

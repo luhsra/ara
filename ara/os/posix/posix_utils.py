@@ -35,11 +35,11 @@ def get_musl_weak_alias(syscall: str) -> str:
 
 @dataclass
 class POSIXInstance(ABC):
-    cfg: CFG            = field(init=False)     # the control flow graph
-    abb: Vertex         = field(init=False)     # the ABB of the system call which created this instance
-    call_path: Vertex   = field(init=False)     # call node within the call graph of the system call which created this instance [state.call_path]
-    vidx: Vertex        = field(init=False)     # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
-    name: str
+    #cfg: CFG            = field(init=False)     # the control flow graph
+    #abb: Vertex         = field(init=False)     # the ABB of the system call which created this instance
+    #call_path: Vertex   = field(init=False)     # call node within the call graph of the system call which created this instance [state.call_path]
+    #vidx: Vertex        = field(init=False)     # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
+    name: str   # The name of the instance. This is not an id for the instance.
 
     @property
     @abstractmethod
@@ -71,7 +71,6 @@ class POSIXInstance(ABC):
     def get_maximal_id(self):
         max_id_components = list(map(lambda obj_name: getattr(self, obj_name), self.wanted_attrs))
         max_id_components.append(self.__class__.__name__)
-        print(max_id_components)
         return '.'.join(map(str, max_id_components))
 
 class IDInstance(POSIXInstance):
@@ -82,10 +81,10 @@ class IDInstance(POSIXInstance):
     It is still possible to assign a name to the instance. The auto name will only applied if name == None.
     Make sure to call the __init__() of this class with a __post_init__() method.
     """
-    id_counter = 0
+    _id_counter = 0
     def __init__(self):
-        self.num_id = self.__class__.id_counter
-        self.__class__.id_counter += 1
+        self.num_id = self.__class__._id_counter
+        self.__class__._id_counter += 1
         if not self.name:
             self.name = f"{self.__class__.__name__} {self.num_id}"
 
@@ -111,20 +110,20 @@ def handle_soc(state, v, cfg, abb,
     in_branch = b(state.branch, branch)
     in_loop = b(state.loop, loop)
     is_recursive = b(state.recursive, recursive)
-    logger.debug("scheduler " + str(state.scheduler_on)) # TODO: fix scheduler off issue
-    after_sched = b(state.scheduler_on, scheduler_on)
     is_usually_taken = b(state.usually_taken, usually_taken)
 
     instances.vp.branch[v] = in_branch
     instances.vp.loop[v] = in_loop
+    # If you are interested in the recursive field make sure that the option no_recursive_funcs is not set for RecursiveFunctions step.
     instances.vp.recursive[v] = is_recursive
-    instances.vp.after_scheduler[v] = after_sched
+    instances.vp.after_scheduler[v] = True # POSIX is dynamic. The scheduler is always on.
     instances.vp.usually_taken[v] = is_usually_taken
     instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
     instances.vp.soc[v] = abb
     instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
     instances.vp.file[v] = cfg.vp.file[abb]
     instances.vp.line[v] = cfg.vp.line[abb]
+
 
 def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state, va):
 
@@ -134,10 +133,10 @@ def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state
     state.instances.vp.label[v] = label
     handle_soc(state, v, graph.cfg, abb)
 
-    new_instance.cfg=graph.cfg, 
-    new_instance.abb=abb, 
-    new_instance.call_path=state.call_path, 
-    new_instance.vidx = v
+    #new_instance.cfg = graph.cfg
+    #new_instance.abb = abb
+    #new_instance.call_path = state.call_path
+    #new_instance.vidx = v
     assert hasattr(new_instance, "name"), f"New instance of type {type(new_instance)} has no name."
     state.instances.vp.obj[v] = new_instance
     assign_id(state.instances, v)
