@@ -17,6 +17,7 @@ def provide_steps():
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
+    from .posix_init import POSIXInit
 
     for step in _native_provide():
         yield step
@@ -38,6 +39,7 @@ def provide_steps():
     yield SysFuncts
     yield Syscall
     yield SystemRelevantFunctions
+    yield POSIXInit
 
 def get_native_component(name: str):
     # direct import would result in dependency conflicts
