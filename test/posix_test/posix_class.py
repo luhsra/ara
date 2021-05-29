@@ -6,15 +6,23 @@ from ..init_test import init_test, fail_if
 from ara.os.posix.posix import POSIX, _POSIXSyscalls
 from ara.os.posix.syscall_set import syscall_set
 
-def get_musl_weak_alias(syscall):
-    """ Returns the musl libc weak alias name version of the syscall name.
-
-        For example: "pthread_create" -> "__pthread_create"
-
-        For all names which start with a '_' there is no weak alias version.
-        In this case this function will return just the input.
+def weak_alias_existing(syscall):
+    """Returns True if a musl weak alias is existing for syscall.
+    
+    This is the case when there is no '_' at the beginning of the name.
     """
-    return "__" + syscall if syscall[0] != '_' else syscall
+    return syscall[0] != '_'
+
+def get_musl_weak_alias(syscall):
+    """Returns the musl libc weak alias name of the syscall name.
+
+    For example: "pthread_create" -> "__pthread_create"
+
+    For all names which start with a '_' there is no weak alias
+    but this function will return the non existing weak alias version in this case.
+    Use weak_alias_existing() to check if a weak alias is available.
+    """
+    return "__" + syscall
 
 OS_interface = set({
     "get_special_steps",
@@ -51,8 +59,13 @@ def main():
 
         # If the syscall is not implemented:
         if not hasattr(_POSIXSyscalls, syscall):
+            alias_available = weak_alias_existing(syscall)
             musl_weak_alias = get_musl_weak_alias(syscall)
-            fail_if(list(posix_detected_syscalls[syscall].aliases) != [musl_weak_alias], f"Alias for syscall stub {syscall} is not set correctly!")
+            if alias_available:
+                fail_if(list(posix_detected_syscalls[syscall].aliases) != [musl_weak_alias], f"Alias for syscall stub {syscall} is not set correctly!")
+            else:
+                fail_if(list(posix_detected_syscalls[syscall].aliases) != [], f"Alias for syscall stub {syscall} is not set correctly!")
+                fail_if(posix_detected_syscalls.get(musl_weak_alias, None) != None, f"Alias for syscall stub {syscall} is not set correctly!")
 
         for alias in posix_detected_syscalls[syscall].aliases:
             # Test for right name
