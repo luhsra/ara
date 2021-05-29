@@ -77,7 +77,7 @@ def main():
 
     # Option for IRReader
     parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader. "
-                                            "This will increase the performance of the analysis. "
+                                            "This will increase the performance of the analysis and reduces the false-positive syscall detection rate. "
                                             "Warning: Do not use this argument for the synthesis!",
                         action='store_true', default=False)
 

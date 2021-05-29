@@ -15,7 +15,7 @@ namespace ara::step {
 
 	std::string RemoveSysfuncBody::get_description() {
 		return "Removes the libc function body of system functions that the OS model interprets.\n"
-		       "This improves the performance of the analysis and cleans the CallGraph.\n"
+		       "This improves the performance of the analysis, cleans the CallGraph and reduces the false-positive syscall detection rate.\n"
 		       "Warning: This step is only for the analysis!";
 	}
 
