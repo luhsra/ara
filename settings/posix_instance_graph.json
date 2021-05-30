@@ -5,11 +5,23 @@
 
 	"InteractionAnalysis": {
 		"dump": true,
-		"count_syscalls": true
+		"count_syscalls": false
 	},
 
 	"SystemRelevantFunctions": {
 		"dump": true
+	},
+
+	"CallGraph": {
+		"dump": true
+	},
+
+	"ResolveFunctionPointer": {
+		"log_level": "debug"
+	},
+
+	"SysFuncts": {
+		"no_stubs": true
 	},
 
     "IRReader": {

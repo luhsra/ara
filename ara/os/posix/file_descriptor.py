@@ -16,12 +16,11 @@ class FileDescriptor:
 
 class FileDescriptorSyscalls:
 
-    @syscall(categories={SyscallCategory.comm},
-            signature=(Arg('fildes', hint=SigType.value, raw_value=True),
-                       Arg('buf', hint=SigType.symbol),
-                       Arg('nbyte', hint=SigType.value)))
+    @syscall(categories={SyscallCategory.comm}, is_stub=True,
+             signature=(Arg('fildes', hint=SigType.value, raw_value=True),
+                        Arg('buf', hint=SigType.symbol),
+                        Arg('nbyte', hint=SigType.value)))
     def write(graph, abb, state, args, va):
-
         logger.debug("found write() syscall")
         return do_not_interpret_syscall(graph, abb, state)
 

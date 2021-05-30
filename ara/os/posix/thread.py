@@ -39,7 +39,9 @@ class Thread(IDInstance):
 
 
 class ThreadSyscalls:
-    
+
+    entry_points = set()
+
     # int pthread_create(pthread_t *restrict thread,
     #                    const pthread_attr_t *restrict attr,
     #                    void *(*start_routine)(void*), void *restrict arg);
@@ -53,7 +55,13 @@ class ThreadSyscalls:
         
         # Name is not working:
         #thread_name = args.thread.get_name()
+
         func_name = args.start_routine.get_name()
+        if func_name in ThreadSyscalls.entry_points:
+            logger.error(f"There is already an thread with the entry point {func_name}! Ignore ...")
+            return do_not_interpret_syscall(graph, abb, state)
+        ThreadSyscalls.entry_points.add(func_name)
+        
         new_thread = Thread(entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
                             function = func_name,
                             name=None
@@ -64,7 +72,7 @@ class ThreadSyscalls:
 
 
     # int pthread_join(pthread_t thread, void **value_ptr);
-    @syscall(aliases={"__pthread_join"},
+    @syscall(aliases={"__pthread_join"}, is_stub=True,
              categories={SyscallCategory.comm},
              signature=(Arg('thread', hint=SigType.instance),
                         Arg('value_ptr', hint=SigType.symbol)))

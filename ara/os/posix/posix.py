@@ -15,6 +15,7 @@ from .thread import ThreadSyscalls
 from .other_syscalls import OtherSyscalls
 from .warning_syscalls import WarningSyscalls
 from .syscall_set import syscall_set
+from .syscall_stub_aliases import SyscallStubAliases
 
 '''
     Hold on! To understand this file you need some information.
@@ -43,7 +44,7 @@ def syscall_stub(graph, abb, state, args, va):
 
 class _POSIXSyscalls(MutexSyscalls, FileSyscalls, FileDescriptorSyscalls,
                      SignalSyscalls, ThreadSyscalls, OtherSyscalls,
-                     WarningSyscalls):
+                     WarningSyscalls, SyscallStubAliases):
     """This class combines all implemented syscall methods."""
     pass
 
@@ -72,7 +73,7 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
             musl_alias = get_musl_weak_alias(syscall_name)
             if musl_alias != None:
                 musl_alias = {musl_alias}
-            return syscall(syscall_stub, aliases=musl_alias, name=syscall_name) # Decorate syscall_stub to set the default musl libc alias and the syscall name.
+            return syscall(syscall_stub, aliases=musl_alias, name=syscall_name, is_stub=True) # Decorate syscall_stub to set the default musl libc alias and the syscall name.
         else:
             raise AttributeError
 
