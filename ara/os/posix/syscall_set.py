@@ -182,6 +182,12 @@ syscall_set = set({
     #"calloc", # calloc is not working with SVF but with the help of musl libc we can do:  [calloc, realloc] -> malloc
     #"realloc",
     "free",
+    "memccpy",
+    "memchr",
+    #"memcmp",
+    "memcpy",
+    "memmove",
+    "memset",
 
     # Stack unwinding functions (Throw warning if we detect one)
     "setjmp",
