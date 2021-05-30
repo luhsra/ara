@@ -72,7 +72,7 @@ def main():
     parser.add_argument('--os', help="Use the specified OS Model.",
                         choices=os_model_names, default="auto")
 
-    # The following arguments set an option for a specific step.
+    # The following arguments set an option for a specific/multiple step(s).
     # If you do not want them to be a global switch, remove them.
 
     # Option for IRReader
@@ -88,6 +88,12 @@ def main():
     # Option for InteractionAnalysis
     parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (in INA step) and writes them to stdout. "
                                                  "Requires the InteractionAnalysis step. Make sure to execute this step.",
+                        action='store_true', default=False)
+
+    # Option for [SysFuncts, SystemRelevantFunctions]. Always set this option for both steps otherwise this leads to undefined behaviour.
+    parser.add_argument('--no-stubs', help="Do not handle system functions that are declared as stub. "
+                                           "This can increase the performance of the analysis if you have many stubs in your OS model. "
+                                           "Note: The RemoveSysfuncBody step will always handle all system functions [stubs included. This is intended.]",
                         action='store_true', default=False)
 
     args = parser.parse_args()

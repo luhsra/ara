@@ -7,10 +7,11 @@ class SysFuncts(Step):
     """Label system functions as such and detect the OS."""
 
     no_stubs = Option(name="no_stubs",
-                          help="Do not label system functions that are declared as stub. "
-                               "This can increase the performance of the analysis if you have many stubs in your OS model.",
-                          ty=Bool(),
-                          default_value=False)
+                      help="Do not label system functions that are declared as stub. "
+                            "This can increase the performance of the analysis if you have many stubs in your OS model. "
+                            "Set this option also for SystemRelevantFunctions or set the commandline argument --no-stubs.",
+                      ty=Bool(),
+                      default_value=False)
 
     def get_single_dependencies(self):
         return ["LLVMMap"]

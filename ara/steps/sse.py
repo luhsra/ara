@@ -1975,7 +1975,8 @@ class InteractionAnalysis(FlatAnalysis):
 
     count_syscalls = Option(name="count_syscalls",
                           help="If set to True this step invokes SyscallCount.add_syscall() for all handled syscalls. "
-                               "At the end of ARA the syscall count state will be printed to stdout.",
+                               "At the end of ARA the syscall count state will be printed to stdout. "
+                               "If you want to see all handled syscalls make sure to not set the argument --no-stubs",
                           ty=Bool(),
                           default_value=False)
 
@@ -2003,10 +2004,3 @@ class InteractionAnalysis(FlatAnalysis):
     def _init_execution(self, state):
         if self._graph.instances is not None:
             state.instances = self._graph.instances
-
-    def _is_bad_call_target(self, abb):
-        if not self.count_syscalls.get(): # We want to count all syscalls if count_syscalls is set.
-            cfg = self._graph.cfg
-            cg = self._graph.callgraph
-            cg_vertex = cg.vertex(cfg.vp.call_graph_link[cfg.get_function(abb)])
-            return not cg.vp.syscall_category_comm[cg_vertex]

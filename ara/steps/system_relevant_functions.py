@@ -4,10 +4,18 @@ from .step import Step
 
 from graph_tool import GraphView
 from graph_tool.topology import label_out_component
+from .option import Option, Bool
 
 
 class SystemRelevantFunctions(Step):
     """Mark all function that are in the Callgraph as system relevant or not."""
+
+    no_stubs = Option(name="no_stubs",
+                          help="Do not mark system functions that are declared as stub. "
+                               "This can increase the performance of the analysis if you have many stubs in your OS model. "
+                               "Set this option also for the SysFuncts step or set the commandline argument --no-stubs.",
+                          ty=Bool(),
+                          default_value=False)
 
     def get_single_dependencies(self):
         return ["CallGraph", "SysFuncts"]
@@ -23,6 +31,8 @@ class SystemRelevantFunctions(Step):
 
         # begin with syscalls, they are always entry points
         for syscall, sys_func in self._graph.os.detected_syscalls().items():
+            if self.no_stubs.get() and sys_func.is_stub:
+                continue
             for sys_cat in every_set | sys_func.categories:
                 cg_node = callgraph.get_node_with_name(syscall)
                 if cg_node is None:

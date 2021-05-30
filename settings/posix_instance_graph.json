@@ -5,11 +5,21 @@
 
 	"InteractionAnalysis": {
 		"dump": true,
-		"count_syscalls": false
+		"count_syscalls": true,
+		"log_level": "info"
+	},
+
+	"RemoveSysfuncBody": {
+		"log_level": "debug"
+	},
+
+	"SysFuncts": {
+		"no_stubs": true
 	},
 
 	"SystemRelevantFunctions": {
-		"dump": true
+		"dump": true,
+		"no_stubs": true
 	},
 
 	"CallGraph": {
@@ -18,10 +28,6 @@
 
 	"ResolveFunctionPointer": {
 		"log_level": "debug"
-	},
-
-	"SysFuncts": {
-		"no_stubs": true
 	},
 
     "IRReader": {
