@@ -46,6 +46,8 @@ class POSIXInit(Step):
         assert self._graph.cfg != None, "Missing control flow graph!"
         main_thread = Thread(entry_abb = None,
                              function = "main",
+                             attr=None,
+                             arg=None,
                              name="Main Thread",
                              is_regular=False
         )

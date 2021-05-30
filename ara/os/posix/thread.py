@@ -15,6 +15,8 @@ from .posix_utils import POSIXInstance, IDInstance, logger, register_instance, d
 class Thread(IDInstance):
     entry_abb: Any
     function: Any
+    attr: Any
+    arg: Any
     #priority: int
     #sched_policy: str
     #floating_point_env: Any # TODO: check type
@@ -24,7 +26,7 @@ class Thread(IDInstance):
     #errno: int
     is_regular: bool = True # Always True if this thread is not the main thread.
 
-    wanted_attrs = ["name", "function", "num_id"]
+    wanted_attrs = ["name", "function", "attr", "arg", "num_id"]
     dot_appearance = {
         "shape": "box",
         "fillcolor": "#6fbf87",
@@ -64,6 +66,8 @@ class ThreadSyscalls:
         
         new_thread = Thread(entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
                             function = func_name,
+                            attr=args.attr,
+                            arg=args.arg,
                             name=None
         )
         
