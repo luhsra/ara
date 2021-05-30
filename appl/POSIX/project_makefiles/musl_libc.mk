@@ -49,12 +49,14 @@ $(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	LDFLAGS="-fno-builtin" \
 		./build_makefile_app.sh
 
-	@# Remove .llvm_bc section in runtime lib files crt1.o Scrt1.o and rcrt1.o
+	@# Remove .llvm_bc section in runtime lib files crt1.o Scrt1.o and rcrt1.o (also in libc.a and libc.so to make sure that nothing is (re)extracting the .bc files)
 	@# With the following commands we make sure that WLLVM can not extract the LLVM bitcode of _start_c() or _start().
 	@# ARA crashes with custom _start_c or _start symbols.
 	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/crt1.o
 	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/Scrt1.o
 	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/rcrt1.o
+	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/libc.a
+	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/libc.so
 
 	@# Make sure that WLLVM executes musl-clang instead of clang.
 	ln -s $(MUSL_INSTALL_DIR)/bin/musl-clang $(MUSL_INSTALL_DIR)/bin/clang
