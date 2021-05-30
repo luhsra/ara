@@ -177,7 +177,13 @@ syscall_set = set({
     "clock_gettime",
     "clock_getres",
 
-    # Stack unwinding functions
+    # Let SVF handle those functions for us:
+    "malloc",
+    #"calloc", # calloc is not working with SVF but with the help of musl libc we can do:  [calloc, realloc] -> malloc
+    #"realloc",
+    "free",
+
+    # Stack unwinding functions (Throw warning if we detect one)
     "setjmp",
     "longjmp",
     "_setjmp",
