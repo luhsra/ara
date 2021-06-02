@@ -7,6 +7,9 @@ from typing import Tuple
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType
+from ara.util import get_logger
+
+logger = get_logger("os_util.py")
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
@@ -161,7 +164,8 @@ class SysCall:
                 
                 # TODO, ignore offset for now
                 
-            except ValuesUnknown:
+            except ValuesUnknown as va_unknown_exc:
+                logger.warning(f"ValueAnalyzer could not get argument {idx}. Exception: \"{va_unknown_exc}\"")
                 values.append(None)
                 fields.append(arg.name)
                 continue
@@ -197,9 +201,12 @@ class SysCall:
                 if arg.hint != _SigType.instance:
                     continue
                 sys_obj = getattr(args, dataclasses.fields(args)[idx].name)
-                va.assign_system_object(abb, sys_obj,
-                                        callpath=state.call_path,
-                                        argument_nr=idx)
+                try:
+                    va.assign_system_object(abb, sys_obj,
+                                            callpath=state.call_path,
+                                            argument_nr=idx)
+                except ValuesUnknown as va_unknown_exc:
+                    logger.warning(f"ValueAnalyzer could not assign Instance to argument pointer {idx} in signature. Exception: \"{va_unknown_exc}\"") 
 
         # add standard control flow successors if wanted
         new_state.next_abbs = []
