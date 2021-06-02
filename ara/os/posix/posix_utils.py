@@ -43,7 +43,7 @@ class POSIXInstance(ABC):
 
     @property
     @abstractmethod
-    def wanted_attrs(self) -> list[str]:
+    def wanted_attrs(self) -> list:     # list[str]
         """Return all attributes as strings that are relevent to be printed as dot.
 
         This attribute will influence as_dot() and get_maximal_id().
@@ -51,7 +51,7 @@ class POSIXInstance(ABC):
 
     @property
     @abstractmethod
-    def dot_appearance(self) -> dict[str, str]:
+    def dot_appearance(self) -> dict:   # dict[str, str]
         """Return dot rendering properties.
 
         Make sure to provide the following properties:
