@@ -1,5 +1,6 @@
 from .step import Step
 from ara.os.os_util import assign_id
+from ara.os.posix.posix_utils import MainThread
 from ara.os.posix.thread import Thread
 
 class POSIXInit(Step):
@@ -20,6 +21,7 @@ class POSIXInit(Step):
 
         instances = self._graph.instances
         v = instances.add_vertex()
+        inst.vertex = v
         instances.vp.obj[v] = inst
         instances.vp.label[v] = label
 
@@ -52,3 +54,4 @@ class POSIXInit(Step):
                              is_regular=False
         )
         self.register_default_instance(main_thread, "Main Thread")
+        MainThread.set(main_thread)

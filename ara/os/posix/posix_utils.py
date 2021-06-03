@@ -40,6 +40,7 @@ class POSIXInstance(ABC):
     #call_path: Vertex   = field(init=False)     # call node within the call graph of the system call which created this instance [state.call_path]
     #vidx: Vertex        = field(init=False)     # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
     name: str   # The name of the instance. This is not an id for the instance.
+    vertex: Vertex      = field(init=False)     # vertex for this instance in the InstanceGraph
 
     @property
     @abstractmethod
@@ -87,6 +88,17 @@ class IDInstance(POSIXInstance):
         self.__class__._id_counter += 1
         if not self.name:
             self.name = f"{self.__class__.__name__} {self.num_id}"
+
+class MainThread:
+    main_thread = None
+
+    @classmethod
+    def get(cls):
+        return cls.main_thread
+
+    @classmethod
+    def set(cls, main_thread: POSIXInstance):
+        cls.main_thread = main_thread
 
 
 def do_not_interpret_syscall(graph, abb, state):
@@ -137,6 +149,7 @@ def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state
     #new_instance.abb = abb
     #new_instance.call_path = state.call_path
     #new_instance.vidx = v
+    new_instance.vertex = v
     assert hasattr(new_instance, "name"), f"New instance of type {type(new_instance)} has no name."
     state.instances.vp.obj[v] = new_instance
     assign_id(state.instances, v)
@@ -147,3 +160,27 @@ def add_normal_cfg(cfg, abb, state):
     for oedge in cfg.vertex(abb).out_edges():
         if cfg.ep.type[oedge] == _graph.CFType.lcf:
             state.next_abbs.append(oedge.target())
+
+def get_running_thread(state):
+    return state.instances.vp.obj[state.running] if state.running != None else MainThread.get()
+
+def add_interaction_edge(instances, source: POSIXInstance, dest: POSIXInstance, label: str):
+    edge = instances.add_edge(source.vertex, dest.vertex)
+    instances.ep.label[edge] = label
+
+def add_edge_from_self_to(graph, abb, state, to: POSIXInstance, label: str):
+    running_thread = get_running_thread(state)
+    if to == None:
+        logger.warning(f"Could not create edge from \"{running_thread.name}\" to None Object with label: \"{label}\"! Was there an exception in ValueAnalyzer?")
+        return do_not_interpret_syscall(graph, abb, state)
+    logger.debug(f"Create new edge from \"{running_thread.name}\" to \"{to.name}\" with label: \"{label}\"")
+    state = state.copy()
+    add_interaction_edge(state.instances, running_thread, to, label)
+    return state
+
+def add_self_edge(state, label: str):
+    running_thread = get_running_thread(state)
+    logger.debug(f"Create new self edge for \"{running_thread.name}\" with label: \"{label}\"")
+    state = state.copy()
+    add_interaction_edge(state.instances, running_thread, running_thread, label)
+    return state
