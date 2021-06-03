@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h> 
 
 struct thread_struct {
     pthread_t handle;
