@@ -6,7 +6,7 @@ from queue import Queue
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, IDInstance, logger, register_instance, do_not_interpret_syscall
+from .posix_utils import POSIXInstance, IDInstance, logger, register_instance, do_not_interpret_syscall, add_edge_from_self_to
 
 # SIA and InteractionAnalysis requires a Hash for the Thread/Task instance.
 # We provide an id based implementation and allow the class to be mutable.
@@ -76,10 +76,9 @@ class ThreadSyscalls:
 
 
     # int pthread_join(pthread_t thread, void **value_ptr);
-    @syscall(aliases={"__pthread_join"}, is_stub=True,
+    @syscall(aliases={"__pthread_join"},
              categories={SyscallCategory.comm},
              signature=(Arg('thread', hint=SigType.instance),
                         Arg('value_ptr', hint=SigType.symbol)))
     def pthread_join(graph, abb, state, args, va):
-        #print(args.thread)
-        return do_not_interpret_syscall(graph, abb, state)
+        return add_edge_from_self_to(graph, abb, state, args.thread, "pthread_join()")
