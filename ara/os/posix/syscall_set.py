@@ -179,12 +179,12 @@ syscall_set = set({
 
     # Let SVF handle those functions for us:
     "malloc",
-    #"calloc", # calloc is not working with SVF but with the help of musl libc we can do:  [calloc, realloc] -> malloc
-    #"realloc",
+    "calloc", # calloc is not working with SVF but with the help of musl libc we can do:  calloc -> malloc
+    "realloc",
     "free",
     "memccpy",
     "memchr",
-    #"memcmp",
+    "memcmp",
     "memcpy",
     "memmove",
     "memset",
@@ -204,6 +204,12 @@ syscall_set = set({
     "fork",
     "posix_spawn",
     "posix_spawnp",
+    #"daemon",
+    
+    #"va_arg",
+    #"va_copy",
+    #"va_end",
+    #"va_start",
 
     # The following are musl libc specific functions.
     #   These ARE NO Syscalls.
