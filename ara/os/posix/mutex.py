@@ -15,6 +15,9 @@ class Mutex(IDInstance):
         "style": "filled"
     }
 
+    def __post_init__(self):
+        super().__init__()
+
 class MutexSyscalls:
 
     # int pthread_mutex_init(pthread_mutex_t *restrict mutex,
