@@ -48,7 +48,7 @@ def get_config(i_file):
     """Return the default common config."""
     return {'log_level': 'debug',
             'dump_prefix': 'dumps/{step_name}.',
-            'dump': True,
+            'dump': False, # dump = True can be really really slow. Especially with bigger programs or with musl libc.
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
@@ -81,7 +81,7 @@ def init_test(steps=None, extra_config=None, logger_name=None, os=None):
     g = Graph()
     if os != None:
         g.os = os
-    assert len(sys.argv) == 3
+    assert len(sys.argv) >= 3
     json_file = sys.argv[1]
     i_file = sys.argv[2]
     print(f"Testing with JSON: '{json_file}'"

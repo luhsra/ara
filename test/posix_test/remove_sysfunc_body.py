@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 if __name__ == '__main__':
     __package__ = 'test.posix_test'
 
 from ..init_test import init_test, fail_if
+from ..common_json_graphs import json_callgraph
 import json
 
 def get_func_name(callgraph, cfg, node):
@@ -15,12 +18,7 @@ def test_remove_sysfunc_step(os):
                 }
              }
     graph, data, _ = init_test(extra_config=config, os=os)
-    callgraph = graph.callgraph
-    cfg = graph.cfg
-    call_edges = []
-    for edge in callgraph.edges():
-        call_edges.append([get_func_name(callgraph, cfg, edge.source()),
-                           get_func_name(callgraph, cfg, edge.target())])
+    call_edges = json_callgraph(graph.callgraph)
 
-    #print(sorted(call_edges))
-    fail_if(data != sorted(call_edges), f"Data not equal for os={os}")
+    #print(call_edges)
+    fail_if(data != call_edges, f"Data not equal for os={os}")

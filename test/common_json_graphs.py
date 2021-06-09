@@ -1,15 +1,20 @@
-#!/usr/bin/env python3
+"""This file contains functions to translate common graphs to there JSON equivalent."""
 
-# Note: init_test must be imported first
-from init_test import init_test, fail_if
-from common_json_graphs import json_instance_graph
-from ara.graph import CFType
+import os.path
 
-def main():
-    """Test for correct interaction detection."""
-    config = {"steps": ["InteractionAnalysis"]}
-    m_graph, data, log, _ = init_test(extra_config=config)
-    instances = m_graph.instances
+def json_callgraph(callgraph):
+    """callgraph -> JSON Callgraph
+    
+    In this graph only the edges are contained.
+    """
+    c_edges = []
+    for edge in callgraph.edges():
+        c_edges.append([callgraph.vp.function_name[edge.source()],
+                        callgraph.vp.function_name[edge.target()]])
+    return sorted(c_edges)
+
+def json_instance_graph(instances):
+    """instances + interactions -> JSON Instance Graph"""
     dump = []
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -19,7 +24,8 @@ def main():
         for name, prop in instances.vp.items():
             val = prop[instance]
             if name == 'file':
-                val = os.path.relpath(val, start=script_dir)
+                if not val == 'N/A' and not val == '' and not val == ' ': 
+                    val = os.path.relpath(val, start=script_dir)
             if name == 'llvm_soc':
                 # wild pointer, skip this
                 continue
@@ -48,9 +54,4 @@ def main():
             return "0" + item['id']
         return "1"
 
-    # log.info(json.dumps(sorted(dump, key=sort_key), indent=2))
-    fail_if(data != sorted(dump, key=sort_key), "Data not equal")
-
-
-if __name__ == '__main__':
-    main()
+    return sorted(dump, key=sort_key)
