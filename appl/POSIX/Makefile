@@ -3,6 +3,7 @@
 #
 # Make sure you have whole-program-llvm (https://github.com/travitch/whole-program-llvm) installed.
 # WARNING: Never ever run this Makefile as root!
+# WARNING: Do not create files containing whitespace in this directory
 #
 # Note: You can safely ignore warnings of type:  WARNING:Could not find ".llvm_bc" ELF section in ...
 #		This is the result of assembly source files being processed by wllvm.
@@ -10,9 +11,9 @@
 # HOW TO:
 #
 # - add a new single source file application:
-# 		Just simply create the .c file in this directory.
+# 		Just simply create the .c file in this directory or in the $(UNIT_TEST_C_FILES) directory.
 #		This script will detect the file automatically.
-#		The name of the project is the filename.
+#		The name of the project is the filename without file extension.
 #
 # - add a new complex application: 
 #		Create a new .mk file in the $(MAKE_INCLUDE_DIR) dir. This is normally ./project_makefiles
@@ -63,7 +64,7 @@ ARA_LINK ?= $(BUILD_ROOT)/subprojects/ara-link/ara-link
 REALPATH ?= realpath -m
 
 # The path to the directory containing the build-to-LLVM Makefiles for a specific application/project.
-MAKE_INCLUDE_DIR ?= project_makefiles
+MAKE_INCLUDE_DIR = project_makefiles
 
 # In this directory are all LLVM IR targets located without the musl libc included.
 OBJ_BUILD = $(BUILD_DIR)/objs
@@ -71,9 +72,13 @@ OBJ_BUILD = $(BUILD_DIR)/objs
 # In this directory are all executables located.
 BIN_PATH := $(BUILD_DIR)/bin
 
+# Directory of all unit test C files. All files in this directory are single file applications.
+UNIT_TEST_C_FILES = unit_tests
+
 # Tools
 AWK_TO_TARGET = awk '{ print "$(BUILD_DIR)/" $$0 ".ll" }'
 AWK_TO_BIN_TARGET = awk '{ print "$(BIN_PATH)/" $$0 }'
+AWK_TO_OBJS_TARGET = awk '{ print "$(OBJ_BUILD)/" $$0 ".ll" }'
 
 # Creates the dest directory in a rule.
 # Just call this var at the beginning of the rule.
@@ -113,6 +118,15 @@ $(shell if $(call command_availiable_shell,$(1)) then \
 		else \
 			echo "false"; \
 		fi)
+endef
+
+# Function: list_filenames_of_dir(filename_extension, dir)
+# Returns a list of all files in dir with filename_extension (e.g. ".c")
+# Only the filename without the filename_extension will be returned. (e.g. dir/test.c -> test)
+define list_filenames_of_dir
+$(shell for file in $(2)/*$(1); do \
+			echo $$(basename $${file} | cut -f 1 -d '.'); \
+		done)
 endef
 
 # Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
@@ -162,7 +176,7 @@ ifeq ($(call command_availiable,$(REALPATH)), false)
 $(error command $(REALPATH) not found!)
 endif
 
-SINGLE_FILE_APPLICATIONS := $(shell find *.c | cut -f 1 -d '.')
+SINGLE_FILE_APPLICATIONS := $(call list_filenames_of_dir,.c,.) $(call list_filenames_of_dir,.c,$(UNIT_TEST_C_FILES))
 
 _default_rule: all
 
@@ -240,6 +254,13 @@ validate: bin
 ll: $(TARGETS)
 llvm-ir: ll
 
+# Write all targets in the files $(BUILD_DIR)/make_musl_targets.txt [with musl] and $(BUILD_DIR)/make_objs_targets.txt [without musl]
+# This is required to provide the targets to Meson.
+get-targets:
+	@$(CREATE_DEST_DIR)
+	@(echo "$(TARGETS) $(EXTRA_TARGETS)" | tr ' ' '\n') > $(BUILD_DIR)/make_musl_targets.txt
+	@(echo "$(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES),$(AWK_TO_OBJS_TARGET))" | tr ' ' '\n') > $(BUILD_DIR)/make_objs_targets.txt
+
 clean: clean-build-dir $(CLEAN_UP_TARGETS)
 
 clean-build-dir:
@@ -247,7 +268,7 @@ clean-build-dir:
 clean-bin:
 	test -n "$(BIN_PATH)" && $(RM) -rf "$(BIN_PATH)"
 
-.PHONY: _default_rule all bin extra validate ll llvm-ir clean clean-bin clean-build-dir $(CLEAN_UP_TARGETS)
+.PHONY: _default_rule all bin extra validate ll llvm-ir get-targets clean clean-bin clean-build-dir $(CLEAN_UP_TARGETS)
 
 # Create test executables (to validate the correctness of the generated LLVM IR and to display linking errors from applications)
 $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
@@ -257,10 +278,12 @@ $(BIN_TARGETS): $(BIN_PATH)/% : $(BUILD_DIR)/%.ll
 	$(CC) $(LDFLAGS_WITH_LLVM_TO_BIN) $@.o $(LINK_WITH_MUSL_BIN) -o $@
 	$(RM) $@.o
 
-# Link POSIX applications with musl libc
+# Link all POSIX applications with musl libc
 $(TARGETS): $(BUILD_DIR)/%.ll : $(OBJ_BUILD)/%.ll $(BUILD_DIR)/musl_libc.ll
 	$(LINK_TOGETHER)
 
-# Compile simple POSIX C files
+# Compile simple POSIX C files (single file applications)
 $(OBJ_BUILD)/%.ll: %.c $(BUILD_DIR)/musl_libc.ll
+	$(BUILD_TO_LLVM)
+$(OBJ_BUILD)/%.ll: $(UNIT_TEST_C_FILES)/%.c $(BUILD_DIR)/musl_libc.ll
 	$(BUILD_TO_LLVM)

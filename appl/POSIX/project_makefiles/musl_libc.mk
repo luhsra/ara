@@ -13,7 +13,7 @@ MUSL_INSTALL_DIR := $(shell $(REALPATH) $(BUILD_DIR)/musl_install_dir)
 MUSL_INCLUDE_DIR := $(MUSL_INSTALL_DIR)/include/
 
 AWK_TO_ADD_TO_MUSL_TARGET = awk '{ print "$(ADD_TO_MUSL_LIBC_DEST_DIR)/" $$0 ".ll" }'
-ADD_TO_MUSL_LIBC_CODE := $(shell find ./$(ADD_TO_MUSL_LIBC_SRC_DIR)/ -type f -printf "%f\n" | cut -f 1 -d '.')
+ADD_TO_MUSL_LIBC_CODE := $(call list_filenames_of_dir,.c,$(ADD_TO_MUSL_LIBC_SRC_DIR))
 
 # List of all targets that will be added to the musl libc.
 # All these targets will be linked with the original musl libc LLVM IR.
