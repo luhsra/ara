@@ -7,7 +7,9 @@ from ara.graph import SyscallCategory, SigType
 import pyllco
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, logger, handle_soc, do_not_interpret_syscall
+from .posix_utils import IDInstance, logger, handle_soc, do_not_interpret_syscall, add_edge_from_self_to
+from .file import File
+from .pipe import Pipe
 
 # This FileDescriptor is not an instance in the Instance Graph
 @dataclass
@@ -16,14 +18,21 @@ class FileDescriptor:
 
 class FileDescriptorSyscalls:
 
-    @syscall(categories={SyscallCategory.comm}, is_stub=True,
-             signature=(Arg('fildes', hint=SigType.value, raw_value=True),
+    # ssize_t read(int fildes, void *buf, size_t nbyte);
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('fildes', hint=SigType.instance, ty=[File, Pipe]),
+                        Arg('buf', hint=SigType.symbol),
+                        Arg('nbyte', hint=SigType.value)))
+    def read(graph, abb, state, args, va):
+        return add_edge_from_self_to(graph, abb, state, args.fildes, "read()")
+
+    # ssize_t write(int fildes, const void *buf, size_t nbyte);
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('fildes', hint=SigType.instance, ty=[File, Pipe]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
     def write(graph, abb, state, args, va):
-        logger.debug("found write() syscall")
-        return do_not_interpret_syscall(graph, abb, state)
-
+        return add_edge_from_self_to(graph, abb, state, args.fildes, "write()")
 
     # # TODO: Remove this unimplemented fwrite()
     # @syscall(categories={SyscallCategory.comm},
