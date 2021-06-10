@@ -1,0 +1,74 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance"
+  },
+  {
+    "label": "Mutex 0",
+    "id": "Mutex 0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/POSIX/unit_tests/mutex_counter.c",
+    "line": 21,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Thread 1 (new_thread_routine)",
+    "id": "Thread 1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/POSIX/unit_tests/mutex_counter.c",
+    "line": 22,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_lock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_join()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_lock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
+    "type": "interaction"
+  }
+]

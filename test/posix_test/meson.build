@@ -42,3 +42,10 @@ test('pthread_create_musl',
         suite: 'posix',
         timeout: 300
 )
+
+test('mutex_counter',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'mutex_counter.json', posix_mutex_counter],
+        env: [python_path],
+        suite: 'posix'
+)

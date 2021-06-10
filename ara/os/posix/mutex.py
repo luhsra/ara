@@ -39,7 +39,7 @@ class MutexSyscalls:
     # int pthread_mutex_lock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_lock"},
              categories={SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance)))
+             signature=(Arg('mutex', hint=SigType.instance),))
     def pthread_mutex_lock(graph, abb, state, args, va):
         return add_edge_from_self_to(graph, abb, state, args.mutex, "pthread_mutex_lock()")
 
@@ -47,7 +47,7 @@ class MutexSyscalls:
     # int pthread_mutex_trylock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_trylock"},
              categories={SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance)))
+             signature=(Arg('mutex', hint=SigType.instance),))
     def pthread_mutex_trylock(graph, abb, state, args, va):
         return add_edge_from_self_to(graph, abb, state, args.mutex, "pthread_mutex_trylock()")
 
@@ -57,7 +57,7 @@ class MutexSyscalls:
     @syscall(aliases={"__pthread_mutex_timedlock"},
              categories={SyscallCategory.comm},
              signature=(Arg('mutex', hint=SigType.instance),
-                        Arg('abstime', hint=SigType.symbol)))
+                        Arg('abstime', hint=SigType.symbol),))
     def pthread_mutex_timedlock(graph, abb, state, args, va):
         return add_edge_from_self_to(graph, abb, state, args.mutex, "pthread_mutex_timedlock()") # TODO: decode abstime
 
@@ -65,6 +65,6 @@ class MutexSyscalls:
     # int pthread_mutex_unlock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_unlock"},
              categories={SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance)))
+             signature=(Arg('mutex', hint=SigType.instance),))
     def pthread_mutex_unlock(graph, abb, state, args, va):
         return add_edge_from_self_to(graph, abb, state, args.mutex, "pthread_mutex_unlock()")
