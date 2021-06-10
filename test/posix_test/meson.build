@@ -49,3 +49,10 @@ test('mutex_counter',
         env: [python_path],
         suite: 'posix'
 )
+
+test('pipe',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'pipe.json', posix_pipe],
+        env: [python_path],
+        suite: 'posix'
+)

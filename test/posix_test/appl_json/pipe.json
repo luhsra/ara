@@ -1,0 +1,62 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance"
+  },
+  {
+    "label": "Pipe 0",
+    "id": "Pipe 0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/POSIX/unit_tests/pipe.c",
+    "line": 19,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Thread 1 (sender_thread)",
+    "id": "Thread 1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/POSIX/unit_tests/pipe.c",
+    "line": 22,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
+    "label": "read()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Main Thread",
+    "label": "sleep(1)",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Pipe 0",
+    "label": "write()",
+    "type": "interaction"
+  }
+]
