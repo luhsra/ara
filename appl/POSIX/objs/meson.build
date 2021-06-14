@@ -1,10 +1,9 @@
 
-# All non musl libc linked targets 
-foreach target : make_objs_targets
-  appl_name = run_command('basename', target).stdout().split('.ll')[0]
-  target_name = 'posix_' + appl_name
+# All non musl libc linked llvm files
+foreach appl : appl_list
+  target_name = 'posix_' + appl
   posix_target = custom_target(target_name,
-                            output : [appl_name + '.ll'],
+                            output : [appl + '.ll'],
                             # See custom targets in appl/POSIX/meson.build for more information
                             depends : posix_make_cust_target,
                             command : ['true'])

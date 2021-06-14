@@ -18,10 +18,8 @@ run_target('posix-clean-build-dir',
   command: posix_make_command + ['clean-build-dir'])
 
 
-# Get targets of Makefile as text files
-run_command(posix_make_command + ['get-targets'])
-make_musl_targets = run_command('cat', posix_output_dir / 'make_musl_targets.txt').stdout().split()
-make_objs_targets = run_command('cat', posix_output_dir / 'make_objs_targets.txt').stdout().split()
+# Get all target applications of Makefile
+appl_list = run_command('cat', posix_src_dir / 'appl_list.txt').stdout().split()
 
 # Custom Target to execute the "all" Rule in Makefile.
 # This is a workaround to avoid Mesons parallel execution of multiple posix make targets.
@@ -30,12 +28,11 @@ posix_make_cust_target = custom_target('posix-make',
           build_always_stale : true,
           command : posix_make_command + ['-j' + cpus])
 
-# All musl libc linked targets 
-foreach target : make_musl_targets
-  appl_name = run_command('basename', target).stdout().split('.ll')[0]
-  target_name = 'posix_' + appl_name + '_musl'
+# All musl libc linked llvm files 
+foreach appl : appl_list
+  target_name = 'posix_' + appl + '_musl'
   posix_target = custom_target(target_name,
-                            output : [appl_name + '.ll'],
+                            output : [appl + '.ll'],
                               # Sadly, this is not working properly: (Meson executes all Make invocations parallel. We have no switch like is_parallel to deactivate this.)
                               # command : posix_make_command + ['-j' + cpus, target])
                             depends : posix_make_cust_target,

@@ -234,6 +234,12 @@ include $(MAKE_INCLUDE_DIR)/microhttpd_demo.mk
 #include $(MAKE_INCLUDE_DIR)/gnu_make.mk
 #include $(MAKE_INCLUDE_DIR)/pulse_audio.mk
 
+# Remove unnecessary whitespace
+PROJECT_NAMES := $(shell echo $(PROJECT_NAMES) | xargs)
+BIN_PROJECT_NAMES := $(shell echo $(BIN_PROJECT_NAMES) | xargs)
+CLEAN_UP_TARGETS := $(shell echo $(CLEAN_UP_TARGETS) | xargs)
+EXTRA_TARGETS := $(shell echo $(EXTRA_TARGETS) | xargs)
+
 # Generate list of LLVM IR targets.
 # These are all .c files in this dir but with file expansion .ll instead and located in the POSIX build dir.
 # All project target files described with PROJECT_NAMES will be added to the list of target files.
@@ -243,8 +249,14 @@ TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES),$(AWK_T
 # These are all binaries with the names in SINGLE_FILE_APPLICATIONS or BIN_PROJECT_NAMES.
 BIN_TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(BIN_PROJECT_NAMES),$(AWK_TO_BIN_TARGET))
 
+# Write the name of all applications in the appl_list.txt file.
+# This is required to provide the names to Meson.
+get-appl-names:
+	@$(CREATE_DEST_DIR)
+	@(echo "$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)" | tr ' ' '\n') > appl_list.txt
+
 # Build everything (LLVM IR + Binary files)
-all: $(TARGETS) $(BIN_TARGETS) $(EXTRA_TARGETS)
+all: $(TARGETS) $(BIN_TARGETS) $(EXTRA_TARGETS) get-appl-names
 
 bin: $(BIN_TARGETS)
 extra: $(EXTRA_TARGETS)
@@ -253,13 +265,6 @@ validate: bin
 # Build only LLVM IR
 ll: $(TARGETS)
 llvm-ir: ll
-
-# Write all targets in the files $(BUILD_DIR)/make_musl_targets.txt [with musl] and $(BUILD_DIR)/make_objs_targets.txt [without musl]
-# This is required to provide the targets to Meson.
-get-targets:
-	@$(CREATE_DEST_DIR)
-	@(echo "$(TARGETS) $(EXTRA_TARGETS)" | tr ' ' '\n') > $(BUILD_DIR)/make_musl_targets.txt
-	@(echo "$(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES),$(AWK_TO_OBJS_TARGET))" | tr ' ' '\n') > $(BUILD_DIR)/make_objs_targets.txt
 
 clean: clean-build-dir $(CLEAN_UP_TARGETS)
 
