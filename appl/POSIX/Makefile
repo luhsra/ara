@@ -252,8 +252,15 @@ BIN_TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(BIN_PROJECT_NAMES)
 # Write the name of all applications in the appl_list.txt file.
 # This is required to provide the names to Meson.
 get-appl-names:
-	@$(CREATE_DEST_DIR)
-	@(echo "$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)" | tr ' ' '\n') > appl_list.txt
+	@# Write only to appl_list.txt if the content is changed.
+	@# This avoids unnecessary Meson reloads.
+	@OLD_APPL_LIST_CONTENT="$$((cat appl_list.txt | tr '\n' ' ') | xargs)"; \
+	NEW_APPL_LIST_CONTENT="$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)"; \
+	if [ "$${OLD_APPL_LIST_CONTENT}" != "$${NEW_APPL_LIST_CONTENT}" ]; then \
+		echo "$${OLD_APPL_LIST_CONTENT}"; \
+		echo "$${NEW_APPL_LIST_CONTENT}"; \
+		(echo "$${NEW_APPL_LIST_CONTENT}" | tr ' ' '\n') > appl_list.txt; \
+	fi
 
 # Build everything (LLVM IR + Binary files)
 all: $(TARGETS) $(BIN_TARGETS) $(EXTRA_TARGETS) get-appl-names
