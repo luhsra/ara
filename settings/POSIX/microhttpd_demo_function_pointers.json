@@ -1,0 +1,12 @@
+[
+    {
+        "source_file": "../../../../../Downloads/embedded_repos/libmicrohttpd-0.9.73/src/microhttpd/response.c",
+        "line_number": 1427,
+        "call_targets": [ "free" ]
+    },
+    {
+        "source_file": "../../../../../Downloads/embedded_repos/libmicrohttpd-0.9.73/src/microhttpd/connection.c",
+        "line_number": 714,
+        "call_targets": [ "response_completed_callback" ]
+    }
+]

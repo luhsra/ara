@@ -1,0 +1,53 @@
+{
+	"steps": [
+		"InteractionAnalysis"
+	],
+
+    "SIA": {
+        "dump": true
+    },
+
+	"InteractionAnalysis": {
+		"dump": true,
+		"count_syscalls": true,
+		"log_level": "info"
+	},
+
+	"RemoveSysfuncBody": {
+		"log_level": "debug"
+	},
+
+	"SysFuncts": {
+		"no_stubs": true
+	},
+
+	"SystemRelevantFunctions": {
+		"dump": true,
+		"no_stubs": true
+	},
+
+	"CallGraph": {
+		"dump": true
+	},
+
+	"ResolveFunctionPointer": {
+		"log_level": "debug",
+        "translation_map": "/home/inodanus/Uni/Bachelorarbeit/ara/settings/POSIX/microhttpd_demo_function_pointers.json"
+	},
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+
+    "RecursiveFunctions": {
+        "no_recursive_funcs": false
+    },
+
+	"ICFG": {
+		"dump": true
+	},
+
+	"logger": {
+		"POSIX": "debug"
+	}
+}

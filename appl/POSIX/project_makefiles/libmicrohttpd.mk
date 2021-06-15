@@ -12,7 +12,7 @@ $(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 	BINARY_FILE="$(LIBMICROHTTPD_DIR)/src/microhttpd/.libs/libmicrohttpd.a" \
 	OUTPUT_FILE="$@" \
 	EXEC_CONFIGURE=true \
-	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix" \
+	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix --disable-curl --disable-largefile --disable-messages --disable-dauth --disable-httpupgrade --disable-epoll" \
 	$(USE_MUSL_CLANG) \
 	CFLAGS="$(CFLAGS_NO_MUSL_INCL)" \
 		./build_makefile_app.sh
