@@ -56,3 +56,48 @@ test('pipe',
         env: [python_path],
         suite: 'posix'
 )
+
+test('file_read',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'file_read.json', posix_file_read],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('file_write',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'file_write.json', posix_file_write],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('open_twice',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'open_twice.json', posix_open_twice],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('file_read_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'file_read.json', posix_file_read_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('file_write_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'file_write.json', posix_file_write_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('open_twice_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'open_twice.json', posix_open_twice_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)

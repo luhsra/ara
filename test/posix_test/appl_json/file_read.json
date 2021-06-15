@@ -1,0 +1,42 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance"
+  },
+  {
+    "label": "testfile.txt",
+    "id": "testfile",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../appl/POSIX/unit_tests/file_read.c",
+    "line": 7,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "open()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "read()",
+    "type": "interaction"
+  }
+]

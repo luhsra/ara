@@ -14,6 +14,7 @@ pthread_create_loop
 pthread_name
 very_simple_posix_function_call
 file_read
+file_write
 mutex_counter
 open_twice
 pipe
