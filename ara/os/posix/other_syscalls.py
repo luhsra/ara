@@ -5,7 +5,7 @@ from .posix_utils import logger, do_not_interpret_syscall, add_self_edge
 
 class OtherSyscalls:
 
-
+    # int pause(void);
     @syscall(categories={SyscallCategory.comm})
     def pause(graph, abb, state, args, va):
         return add_self_edge(state, "pause()")

@@ -6,7 +6,7 @@ Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from ..os_util import syscall
-from .posix_utils import logger, handle_soc, add_normal_cfg, get_musl_weak_alias, do_not_interpret_syscall
+from .posix_utils import logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
@@ -116,4 +116,5 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             if sys_cat | categories != sys_cat:
                 return do_not_interpret_syscall(graph, abb, state)
 
+        CurrentSyscallCategories.set(categories)
         return syscall_function(graph, abb, state)

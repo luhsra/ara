@@ -219,6 +219,9 @@ syscall_set = set({
     "libc_exit_fini",
     "__pthread_tsd_run_dtors",
     "at_quick_exit",
-    "call" # Hopefully nobody names his/her function "call" or "__call".
+    "call", # Hopefully nobody names his/her function "call" or "__call".
+
+    # More unwanted musl libc specific functions
+    "__syscall_cp"
 
 })

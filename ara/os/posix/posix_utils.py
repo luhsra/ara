@@ -7,6 +7,7 @@ from graph_tool import Vertex
 from ara.util import get_logger, LEVEL
 from ara.graph.graph import CFG
 import ara.graph as _graph
+from ara.graph import SyscallCategory
 from ..os_util import syscall, assign_id, Arg
 
 logger = get_logger("POSIX")
@@ -100,6 +101,17 @@ class MainThread:
     def set(cls, main_thread: POSIXInstance):
         cls.main_thread = main_thread
 
+
+class CurrentSyscallCategories:
+    current_syscall_cats: SyscallCategory = None
+
+    @classmethod
+    def get(cls):
+        return cls.current_syscall_cats
+
+    @classmethod
+    def set(cls, syscall_cats: SyscallCategory):
+        cls.current_syscall_cats = syscall_cats
 
 def do_not_interpret_syscall(graph, abb, state):
     """Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret()."""
