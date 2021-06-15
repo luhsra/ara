@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
+import json
+import io
+import os.path
 
 # Note: init_test must be imported first
 from init_test import init_test, fail_if
-from common_json_graphs import json_instance_graph
 from ara.graph import CFType
 
 def main():
     """Test for correct interaction detection."""
     config = {"steps": ["InteractionAnalysis"]}
+<<<<<<< HEAD
     m_graph, data, log, _ = init_test(extra_config=config)
     instances = m_graph.instances
     dump = []
@@ -50,6 +53,51 @@ def main():
 
     # log.info(json.dumps(sorted(dump, key=sort_key), indent=2))
     fail_if(data != sorted(dump, key=sort_key), "Data not equal")
+=======
+    m_graph, data, _ = init_test(extra_config=config)
+    instances = m_graph.instances
+    dump = []
+ 
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+
+    for instance in instances.vertices():
+        i_dump = {}
+        for name, prop in instances.vp.items():
+            val = prop[instance]
+            if name == 'file':
+                val = os.path.relpath(val, start=script_dir)
+            if name == 'llvm_soc':
+                # wild pointer, skip this
+                continue
+            if name == 'soc':
+                continue
+            if prop.value_type() == 'python::object':
+                # for now, just ignore
+                # val = str(val)
+                continue
+            i_dump[name] = val
+        i_dump["type"] = "instance"
+        dump.append(i_dump)
+    for edge in instances.edges():
+        i_dump = {
+            "source": instances.vp.id[edge.source()],
+            "target": instances.vp.id[edge.target()],
+        }
+        for name, prop in instances.ep.items():
+            val = prop[edge]
+            i_dump[name] = val
+        i_dump["type"] = "interaction"
+        dump.append(i_dump)
+
+    def sort_key(item):
+        if item['type'] == "instance":
+            return "0" + item['id']
+        return "1"
+
+    # print(json.dumps(sorted(dump, key=sort_key), indent=2))
+    fail_if(data != sorted(dump, key=sort_key), "Data not equal")
+
+>>>>>>> 449d68bb (Improved posix instance graph testcases.)
 
 
 if __name__ == '__main__':

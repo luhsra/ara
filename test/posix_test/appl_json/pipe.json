@@ -11,7 +11,12 @@
     "file": "N/A",
     "line": 0,
     "specialization_level": "N/A",
-    "type": "instance"
+    "type": "instance",
+    "arg": null,
+    "attr": null,
+    "function": "main",
+    "name": "Main Thread",
+    "num_id": 0
   },
   {
     "label": "Pipe 0",
@@ -22,10 +27,12 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../appl/POSIX/unit_tests/pipe.c",
+    "file": "../../appl/POSIX/unit_tests/pipe.c",
     "line": 19,
     "specialization_level": "",
-    "type": "instance"
+    "type": "instance",
+    "name": "Pipe 0",
+    "num_id": 0
   },
   {
     "label": "Thread 1 (sender_thread)",
@@ -36,10 +43,15 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../appl/POSIX/unit_tests/pipe.c",
+    "file": "../../appl/POSIX/unit_tests/pipe.c",
     "line": 22,
     "specialization_level": "",
-    "type": "instance"
+    "type": "instance",
+    "arg": "<Object: LLVMRawValue>",
+    "attr": "<Object: LLVMRawValue>",
+    "function": "sender_thread",
+    "name": "Thread 1",
+    "num_id": 1
   },
   {
     "source": "Main Thread",
