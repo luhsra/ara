@@ -254,7 +254,7 @@ BIN_TARGETS = $(call do_for_all,$(SINGLE_FILE_APPLICATIONS) $(BIN_PROJECT_NAMES)
 get-appl-names:
 	@# Write only to appl_list.txt if the content is changed.
 	@# This avoids unnecessary Meson reloads.
-	@OLD_APPL_LIST_CONTENT="$$((cat appl_list.txt | tr '\n' ' ') | xargs)"; \
+	@OLD_APPL_LIST_CONTENT="$$( (cat appl_list.txt | tr '\n' ' ') | xargs )"; \
 	NEW_APPL_LIST_CONTENT="$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)"; \
 	if [ "$${OLD_APPL_LIST_CONTENT}" != "$${NEW_APPL_LIST_CONTENT}" ]; then \
 		echo "$${OLD_APPL_LIST_CONTENT}"; \
