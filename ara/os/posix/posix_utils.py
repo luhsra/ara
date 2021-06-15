@@ -170,8 +170,8 @@ def add_interaction_edge(instances, source: POSIXInstance, dest: POSIXInstance, 
 
 def add_edge_from_self_to(graph, abb, state, to: POSIXInstance, label: str):
     running_thread = get_running_thread(state)
-    if to == None:
-        logger.warning(f"Could not create edge from \"{running_thread.name}\" to None Object with label: \"{label}\"! Was there an exception in ValueAnalyzer?")
+    if not isinstance(to, POSIXInstance):
+        logger.warning(f"Could not create edge from \"{running_thread.name}\" to \"{to}\" with label: \"{label}\"! This is mostly an issue with the ValueAnalyzer.")
         return do_not_interpret_syscall(graph, abb, state)
     logger.debug(f"Create new edge from \"{running_thread.name}\" to \"{to.name}\" with label: \"{label}\"")
     state = state.copy()

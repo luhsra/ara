@@ -58,10 +58,22 @@ class ThreadSyscalls:
         # Name is not working:
         #thread_name = args.thread.get_name()
 
+        if args.start_routine == None:
+            new_thread = Thread(entry_abb = None,
+                                function = None,
+                                attr=args.attr,
+                                arg=args.arg,
+                                name=None,
+                                is_regular=False
+            )
+            args.thread = new_thread
+            logger.warning(f"Could not get entry point for the new Thread {new_thread}.")
+            return register_instance(new_thread, f"{new_thread.name}", graph, abb, state, va)
+
+
         func_name = args.start_routine.get_name()
         if func_name in ThreadSyscalls.entry_points:
-            logger.error(f"There is already an thread with the entry point {func_name}! Ignore ...")
-            return do_not_interpret_syscall(graph, abb, state)
+            logger.info(f"There is already an thread with the entry point {func_name}.")
         ThreadSyscalls.entry_points.add(func_name)
         
         new_thread = Thread(entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
@@ -78,7 +90,7 @@ class ThreadSyscalls:
     # int pthread_join(pthread_t thread, void **value_ptr);
     @syscall(aliases={"__pthread_join"},
              categories={SyscallCategory.comm},
-             signature=(Arg('thread', hint=SigType.instance),
+             signature=(Arg('thread', hint=SigType.instance, ty=Thread),
                         Arg('value_ptr', hint=SigType.symbol)))
     def pthread_join(graph, abb, state, args, va):
         return add_edge_from_self_to(graph, abb, state, args.thread, "pthread_join()")

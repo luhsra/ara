@@ -104,6 +104,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
+        logger.debug(f"found syscall in Callpath: {state.call_path}")
 
         syscall_function = POSIX.detected_syscalls()[syscall] # Alias handling
 

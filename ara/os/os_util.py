@@ -171,7 +171,14 @@ class SysCall:
                 continue
 
             llvm_value = LLVMRawValue(value=value, attrs=attrs)
-            extracted_value = get_argument(llvm_value, arg)
+            try:
+                extracted_value = get_argument(llvm_value, arg)
+            except UnsuitableArgumentException as uns_arg_exc:
+                logger.warning(f"Received argument value has wrong type. Exception: \"{uns_arg_exc}\"")
+                values.append(None)
+                fields.append(arg.name)
+                continue
+
             values.append(extracted_value)
 
             # identify the type of arg.ty that matched
