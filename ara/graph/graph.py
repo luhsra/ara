@@ -328,7 +328,7 @@ class Graph:
         # should be used only from C++, see graph.h
         self._graph_data = PyGraphData()
         # persitent data for of the value analyzer
-        self._va_system_objects = []
+        self._va_system_objects = {}
         self._init_cfg()
         self.callgraph = Callgraph(self.cfg)
         self.os = None

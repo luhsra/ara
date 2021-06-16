@@ -424,7 +424,7 @@ namespace ara::step {
 
 	FoundValue Traverser::get_best_find(std::vector<Report>&& finds) const {
 		// current heuristic: if a previous assigned instance is found, take that, otherwise the first one
-		auto found_instance = [](Report& r) { return std::holds_alternative<unsigned>(std::get<FoundValue>(r).value); };
+		auto found_instance = [](Report& r) { return std::holds_alternative<uint64_t>(std::get<FoundValue>(r).value); };
 		auto it = std::find_if(finds.begin(), finds.end(), found_instance);
 		if (it != finds.end()) {
 			return std::get<FoundValue>(std::move(*it));
@@ -570,7 +570,7 @@ namespace ara::step {
 		caretaker.stop();
 	}
 
-	const std::pair<std::variant<const llvm::Value*, unsigned>, const SVF::VFGNode*> Manager::get_value() {
+	const std::pair<std::variant<const llvm::Value*, uint64_t>, const SVF::VFGNode*> Manager::get_value() {
 		assert(value && "no value");
 		return std::make_pair(value->value, value->source);
 	}
@@ -604,9 +604,9 @@ namespace ara::step {
 
 	Logger& Bookkeeping::get_logger() const { return va.logger; }
 
-	std::optional<unsigned> Bookkeeping::get_obj_id(const SVF::NodeID id) const {
-		auto it = va.obj_map.find(id);
-		if (it != va.obj_map.end()) {
+	std::optional<uint64_t> Bookkeeping::get_obj_id(const SVF::NodeID id) const {
+		auto it = va.obj_map.left.find(id);
+		if (it != va.obj_map.left.end()) {
 			return it->second;
 		}
 		return std::nullopt;
@@ -627,7 +627,7 @@ namespace ara::step {
 		return vNode;
 	}
 
-	std::pair<std::variant<const llvm::Value*, unsigned>, const SVF::VFGNode*>
+	std::pair<std::variant<const llvm::Value*, uint64_t>, const SVF::VFGNode*>
 	ValueAnalyzer::do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath, graph::SigType hint) {
 		SVF::PAG* pag = SVF::PAG::getPAG();
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
@@ -646,7 +646,7 @@ namespace ara::step {
 		return safe_deref(use.get());
 	}
 
-	std::pair<std::variant<const llvm::Value*, unsigned>, llvm::AttributeSet>
+	std::pair<std::variant<const llvm::Value*, uint64_t>, llvm::AttributeSet>
 	ValueAnalyzer::get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 	                                  graph::SigType hint, PyObject* type) {
 		if (is_call_to_intrinsic(callsite)) {
@@ -671,8 +671,8 @@ namespace ara::step {
 		auto [value, _] = do_backward_value_search(v_node, callpath, hint);
 
 		// printing
-		if (std::holds_alternative<unsigned>(value)) {
-			logger.debug() << "Found previous object. ID: " << std::get<unsigned>(value) << std::endl;
+		if (std::holds_alternative<uint64_t>(value)) {
+			logger.debug() << "Found previous object. ID: " << std::get<uint64_t>(value) << std::endl;
 		} else {
 			logger.debug() << "Found value: " << pretty_print(*std::get<const llvm::Value*>(value)) << std::endl;
 		}
@@ -703,7 +703,7 @@ namespace ara::step {
 		return nullptr;
 	}
 
-	void ValueAnalyzer::assign_system_object(llvm::CallBase& callsite, unsigned obj_index, graph::CallPath callpath,
+	void ValueAnalyzer::assign_system_object(llvm::CallBase& callsite, uint64_t obj_index, graph::CallPath callpath,
 	                                         int argument_nr) {
 		assert(!callsite.getFunctionType()->getReturnType()->isVoidTy() && "Callsite has no return value");
 
@@ -732,18 +732,47 @@ namespace ara::step {
 
 		if (id != 0) {
 			logger.debug() << "Assign object ID " << obj_index << " to SVF node ID: " << id << "." << std::endl;
-			obj_map[id] = obj_index;
+			obj_map.insert(boost::bimap<SVF::NodeID, uint64_t>::value_type(id, obj_index));
 		} else {
 			logger.debug() << "Assign object ID " << obj_index << " to nothing. A nullptr was given." << std::endl;
 		}
 	}
 
+	bool ValueAnalyzer::has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
+	                                   uint64_t obj_index) {
+		if (is_call_to_intrinsic(callsite)) {
+			throw ValuesUnknown("Called function is an intrinsic.");
+		}
+		if (callsite.isIndirectCall()) {
+			throw ValuesUnknown("Called function is indirect.");
+		}
+
+		if (argument_nr >= callsite.getNumArgOperands()) {
+			throw ValuesUnknown("Argument number is too big.");
+		}
+
+		/* retrieve SVFG node for input triple */
+		const llvm::Value& val = get_nth_arg(callsite, argument_nr);
+		const SVF::VFGNode* input_node = get_vfg_node(graph.get_svfg(), val);
+
+		/* retrieve SVFG node for system object */
+		const SVF::VFGNode* target_node = graph.get_svfg().getGNode(obj_map.right.at(obj_index));
+
+		logger.debug() << "Find connection between " << *input_node << " and " << *target_node << std::endl;
+
+		// TODO
+
+		return false;
+	}
+
 	PyObject*
-	ValueAnalyzer::py_repack(std::pair<std::variant<const llvm::Value*, unsigned>, llvm::AttributeSet> result) const {
+	ValueAnalyzer::py_repack(std::pair<std::variant<const llvm::Value*, uint64_t>, llvm::AttributeSet> result) const {
 		PyObject* obj_index;
 		PyObject* value;
-		if (std::holds_alternative<unsigned>(result.first)) {
-			obj_index = PyLong_FromLong(std::get<unsigned>(result.first));
+		if (std::holds_alternative<uint64_t>(result.first)) {
+			uint64_t raw_index = std::get<uint64_t>(result.first);
+			obj_index = PyLong_FromUnsignedLongLong(raw_index);
+			assert(PyLong_AsUnsignedLongLong(obj_index) == raw_index && "Python long conversion failed");
 			value = Py_None;
 			Py_INCREF(value);
 		} else {

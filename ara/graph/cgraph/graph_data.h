@@ -3,6 +3,7 @@
 #include "common/util.h"
 
 #include <Graphs/SVFG.h>
+#include <boost/bimap.hpp>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Module.h>
 #include <memory>
@@ -43,7 +44,7 @@ namespace ara::graph {
 		/**
 		 * Workaround for SVF classes where we need additional attributes.
 		 */
-		std::map<SVF::NodeID, unsigned> obj_map;
+		boost::bimap<SVF::NodeID, uint64_t> obj_map;
 
 		GraphData() : module(nullptr), svfg(nullptr) {}
 
