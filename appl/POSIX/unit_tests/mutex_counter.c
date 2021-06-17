@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-unsigned long long counter = 0;
+volatile unsigned long long counter = 0;
 pthread_mutex_t mutex;
 
 void* new_thread_routine(void* arg) {

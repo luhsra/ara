@@ -101,3 +101,10 @@ test('open_twice_musl',
         suite: 'posix',
         timeout: 300
 )
+
+test('semaphore',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'semaphore.json', posix_semaphore],
+        env: [python_path],
+        suite: 'posix'
+)

@@ -11,6 +11,7 @@ from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
 from .mutex import MutexSyscalls
+from .semaphore import SemaphoreSyscalls
 from .signal import SignalSyscalls
 from .thread import ThreadSyscalls
 from .other_syscalls import OtherSyscalls
@@ -43,9 +44,10 @@ def syscall_stub(graph, abb, state, args, va):
     return do_not_interpret_syscall(graph, abb, state)
 
 
-class _POSIXSyscalls(MutexSyscalls, PipeSyscalls, FileSyscalls, 
-                     FileDescriptorSyscalls, SignalSyscalls, ThreadSyscalls, 
-                     OtherSyscalls, WarningSyscalls, SyscallStubAliases):
+class _POSIXSyscalls(MutexSyscalls, SemaphoreSyscalls, PipeSyscalls, 
+                     FileSyscalls, FileDescriptorSyscalls, SignalSyscalls,
+                     ThreadSyscalls, OtherSyscalls, WarningSyscalls,
+                     SyscallStubAliases):
     """This class combines all implemented syscall methods."""
     pass
 

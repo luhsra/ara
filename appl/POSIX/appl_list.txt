@@ -1,3 +1,5 @@
+access_of_struct
+access_of_struct_mutex
 call_entrypoint
 call_test
 exit_test
@@ -19,5 +21,7 @@ mutex_counter
 open_twice
 pipe
 pthread_create
+semaphore
+semaphore_ring_buffer
 simple_project
 microhttpd_demo
