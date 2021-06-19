@@ -1,8 +1,15 @@
 
 # Built for version 0.9.73
 
-LIBMICROHTTPD_DIR ?= ~/Downloads/embedded_repos/libmicrohttpd-0.9.73
+LIBMICROHTTPD_DIR ?= ~/Downloads/embedded_repos/libmicrohttpd-0.9.73_modded
 LIBMICROHTTPD_DIR := $(shell $(REALPATH) $(LIBMICROHTTPD_DIR))
+
+# Only execute configure if there is no Makefile in $(LIBMICROHTTPD_DIR)
+MHD_REBUILD_MAKEFILE := $(shell if [ -e "$(LIBMICROHTTPD_DIR)"/Makefile ]; then \
+									echo "false"; \
+								else \
+									echo "true"; \
+								fi)
 
 $(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 
@@ -11,8 +18,8 @@ $(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
 	PROJECT_PATH="$(LIBMICROHTTPD_DIR)" \
 	BINARY_FILE="$(LIBMICROHTTPD_DIR)/src/microhttpd/.libs/libmicrohttpd.a" \
 	OUTPUT_FILE="$@" \
-	EXEC_CONFIGURE=true \
-	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix --disable-curl --disable-largefile --disable-messages --disable-dauth --disable-httpupgrade --disable-epoll" \
+	EXEC_CONFIGURE="$(MHD_REBUILD_MAKEFILE)" \
+	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix --disable-curl --disable-largefile --disable-messages --disable-dauth --disable-httpupgrade --disable-epoll --disable-postprocessor" \
 	$(USE_MUSL_CLANG) \
 	CFLAGS="$(CFLAGS_NO_MUSL_INCL)" \
 		./build_makefile_app.sh
