@@ -4,7 +4,7 @@ from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, do_not_interpret_syscall, logger, register_instance, add_edge_from_self_to, CurrentSyscallCategories
+from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, CurrentSyscallCategories
 
 @dataclass
 class Mutex(IDInstance):
@@ -40,35 +40,28 @@ class MutexSyscalls:
         )
         
         args.mutex = new_mutex
-        return register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state, va)
+        return register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state)
 
 
     def mutex_interaction_impl(graph, abb, state, args, va, edge_label: str):
         """The Implementation of all Mutex Interaction Calls"""
 
-        action_done = False
-        
-        # If Category "Create": Create a new Mutex object if args.mutex is a pyllco.GlobalVariable (args.mutex = PTHREAD_MUTEX_INITIALIZER)
+        # If Category "create": Create a new Mutex object if args.mutex is a pyllco.GlobalVariable (args.mutex = PTHREAD_MUTEX_INITIALIZER)
         if SyscallCategory.create in CurrentSyscallCategories.get():
             if MutexSyscalls.ENABLE_STATIC_INITIALIZER_DETECTION and type(args.mutex) == pyllco.GlobalVariable:
                 new_mutex = Mutex(attr=None,
                                   name=None
                 )
                 args.mutex = new_mutex
-                state = register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state, va)
-                action_done = True
+                state = register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state)
 
         # If Category "comm": Handle the edge creation in a normal way.
         if SyscallCategory.comm in CurrentSyscallCategories.get():
             if type(args.mutex) != pyllco.GlobalVariable or not MutexSyscalls.ENABLE_STATIC_INITIALIZER_DETECTION:
-                state = add_edge_from_self_to(graph, abb, state, args.mutex, edge_label)
-                action_done = True
+                state = add_edge_from_self_to(state, args.mutex, edge_label)
             else:
                 logger.warning("Could not create Mutex interaction edge. args.mutex is of type pyllco.GlobalVariable. Probably there was an error in the PTHREAD_MUTEX_INITIALIZER detection.")
 
-        # Do not interpret the syscall if no action was done.
-        if not action_done:
-            return do_not_interpret_syscall(graph, abb, state)
         return state
 
     # int pthread_mutex_lock(pthread_mutex_t *mutex);

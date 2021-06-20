@@ -1,10 +1,8 @@
-from dataclasses import dataclass, field
-from enum import Enum, IntEnum
-from typing import Any, Union, Optional, Dict
 import os
+from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, assign_id, Arg
+from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCategories, add_edge_from_self_to, assign_instance_to_return_value
 
 
@@ -38,13 +36,11 @@ class FileSyscalls:
                         Arg('mode', hint=SigType.value)))
     def open(graph, abb, state, args, va):
 
-        state = state.copy()
         cp = state.call_path
         file = None
 
-        # If Category "Create": Create File Object
+        # If Category "create": Create File Object
         if SyscallCategory.create in CurrentSyscallCategories.get():
-            logger.debug("Execute SyscallCategory.create part of open()")
             if args.path == None:
                 logger.warning("Could not get path argument in open(). The File object is now untrackable for interaction open() calls.")
             if args.path in FileSyscalls.files:
@@ -55,7 +51,7 @@ class FileSyscalls:
                             name=(os.path.basename(args.path) if args.path != None else None)
                 )
                 
-                state = register_instance(file, f"{file.name}", graph, abb, state, va)
+                state = register_instance(file, f"{file.name}", graph, abb, state)
                 if args.path != None:
                     FileSyscalls.files[args.path] = file
             # Set the return value to the new filedescriptor (This file)
@@ -63,10 +59,9 @@ class FileSyscalls:
 
         # If Category "comm": Create edge to the addressed File object
         if SyscallCategory.comm in CurrentSyscallCategories.get():
-            logger.debug("Execute SyscallCategory.comm part of open()")
             file = FileSyscalls.files.get(args.path, None)
             if file != None:
-                state = add_edge_from_self_to(graph, abb, state, file, "open()")
+                state = add_edge_from_self_to(state, file, "open()")
             else:
                 logger.warning(f"File with path {args.path} not found!")
 

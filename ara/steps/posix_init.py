@@ -14,11 +14,6 @@ class POSIXInit(Step):
         
         E.g. the Main Thread is available in all programs.
         """
-        #inst.cfg = None
-        #inst.abb = None 
-        #inst.call_path = None 
-        #inst.vidx = None
-
         instances = self._graph.instances
         v = instances.add_vertex()
         inst.vertex = v
@@ -43,7 +38,7 @@ class POSIXInit(Step):
 
     def run(self):
         
-        # Generate POSIX default instances
+        # Generate POSIX Main Thread
         assert self._graph.instances != None, "Missing instance graph!"
         assert self._graph.cfg != None, "Missing control flow graph!"
         main_thread = Thread(entry_abb = None,

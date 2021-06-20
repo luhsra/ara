@@ -1,12 +1,10 @@
 import pyllco
 from dataclasses import dataclass, field
-from enum import Enum, IntEnum
-from typing import Any, Union, Optional, Dict
-from queue import Queue
+from typing import Any
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance, IDInstance, logger, register_instance, do_not_interpret_syscall, add_edge_from_self_to
+from ..os_util import syscall, Arg
+from .posix_utils import IDInstance, logger, register_instance, do_not_interpret_syscall, add_edge_from_self_to
 
 # SIA and InteractionAnalysis requires a Hash for the Thread/Task instance.
 # We provide an id based implementation and allow the class to be mutable.
@@ -17,13 +15,6 @@ class Thread(IDInstance):
     function: Any
     attr: Any
     arg: Any
-    #priority: int
-    #sched_policy: str
-    #floating_point_env: Any # TODO: check type
-    #current_locale: Optional[Locale]
-    #signal_mask: SignalMask
-    #pending_signals: Queue # of Type: Queue[Signal]; TODO: Do all POSIX processes and threads have a signal queue? If yes how big is the queue?
-    #errno: int
     is_regular: bool = True # Always True if this thread is not the main thread.
 
     wanted_attrs = ["name", "function", "attr", "arg", "num_id"]
@@ -42,6 +33,8 @@ class Thread(IDInstance):
 
 class ThreadSyscalls:
 
+    # A set of all entry points without __ara_fake_entry.
+    # This set allows us to detect multiple threads with the same entry point. 
     entry_points = set()
 
     # int pthread_create(pthread_t *restrict thread,
@@ -54,10 +47,8 @@ class ThreadSyscalls:
                         Arg('start_routine', hint=SigType.symbol, ty=pyllco.Function),
                         Arg('arg', hint=SigType.symbol)))
     def pthread_create(graph, abb, state, args, va):
-        
-        # Name is not working:
-        #thread_name = args.thread.get_name()
 
+        # Handling for the case that we can not get the start_routine argument.
         if args.start_routine == None:
             new_thread = Thread(entry_abb = None,
                                 function = None,
@@ -68,24 +59,24 @@ class ThreadSyscalls:
             )
             args.thread = new_thread
             logger.warning(f"Could not get entry point for the new Thread {new_thread}.")
-            return register_instance(new_thread, f"{new_thread.name}", graph, abb, state, va)
+            return register_instance(new_thread, f"{new_thread.name}", graph, abb, state)
 
-
+        # Avoid the creation of multiple threads with the same entry point.
         func_name = args.start_routine.get_name()
         if func_name in ThreadSyscalls.entry_points:
             logger.warning(f"There is already an thread with the entry point {func_name}. Ignore this thread for now.")
             return do_not_interpret_syscall(graph, abb, state)
         ThreadSyscalls.entry_points.add(func_name)
         
+        # Create the new thread.
         new_thread = Thread(entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
                             function = func_name,
                             attr=args.attr,
                             arg=args.arg,
                             name=None
         )
-        
         args.thread = new_thread
-        return register_instance(new_thread, f"{new_thread.name} ({func_name})", graph, abb, state, va)
+        return register_instance(new_thread, f"{new_thread.name} ({func_name})", graph, abb, state)
 
 
     # int pthread_join(pthread_t thread, void **value_ptr);
@@ -94,4 +85,4 @@ class ThreadSyscalls:
              signature=(Arg('thread', hint=SigType.instance, ty=Thread),
                         Arg('value_ptr', hint=SigType.symbol)))
     def pthread_join(graph, abb, state, args, va):
-        return add_edge_from_self_to(graph, abb, state, args.thread, "pthread_join()")
+        return add_edge_from_self_to(state, args.thread, "pthread_join()")

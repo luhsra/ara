@@ -3,6 +3,8 @@
 Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 """
 
+from os import stat
+import ara.graph as _graph
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from ..os_util import syscall
@@ -116,7 +118,16 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         if SyscallCategory.every not in categories:
             sys_cat = syscall_function.categories
             if sys_cat | categories != sys_cat:
-                return do_not_interpret_syscall(graph, abb, state)
+                state = state.copy()
+                state.next_abbs = []
+                POSIX.add_normal_cfg(cfg, abb, state)
+                return state
 
         CurrentSyscallCategories.set(categories)
         return syscall_function(graph, abb, state)
+
+    @staticmethod
+    def add_normal_cfg(cfg, abb, state):
+        for oedge in cfg.vertex(abb).out_edges():
+            if cfg.ep.type[oedge] == _graph.CFType.lcf:
+                state.next_abbs.append(oedge.target())

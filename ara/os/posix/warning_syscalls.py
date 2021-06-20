@@ -5,6 +5,7 @@ from ..os_util import syscall
 from .posix_utils import no_double_warning, do_not_interpret_syscall
 
 class WarningSyscalls:
+    """Implement a warning for problematic syscalls."""
 
     @syscall(categories={SyscallCategory.create})
     def setjmp(graph, abb, state, args, va):

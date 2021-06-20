@@ -1,10 +1,8 @@
-from dataclasses import dataclass, field
-from enum import Enum, IntEnum
-from typing import Any, Union, Optional, Dict
+from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import IDInstance, logger, handle_soc, register_instance
+from .posix_utils import IDInstance, register_instance
 
 @dataclass
 class Pipe(IDInstance):
@@ -28,4 +26,4 @@ class PipeSyscalls:
         new_pipe = Pipe(name=None)
         
         args.fildes = new_pipe
-        return register_instance(new_pipe, f"{new_pipe.name}", graph, abb, state, va)
+        return register_instance(new_pipe, f"{new_pipe.name}", graph, abb, state)

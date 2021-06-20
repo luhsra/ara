@@ -1,10 +1,9 @@
 import pyllco
 from dataclasses import dataclass
-from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to
+from .posix_utils import IDInstance, register_instance, add_edge_from_self_to
 
 @dataclass
 class Semaphore(IDInstance):
@@ -39,19 +38,19 @@ class SemaphoreSyscalls:
         )
         
         args.sem = new_semaphore
-        return register_instance(new_semaphore, f"{new_semaphore.name}", graph, abb, state, va)
+        return register_instance(new_semaphore, f"{new_semaphore.name}", graph, abb, state)
 
     # int sem_wait(sem_t *sem);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
     def sem_wait(graph, abb, state, args, va):
-        return add_edge_from_self_to(graph, abb, state, args.sem, "sem_wait()")
+        return add_edge_from_self_to(state, args.sem, "sem_wait()")
 
     # int sem_trywait(sem_t *sem);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
     def sem_trywait(graph, abb, state, args, va):
-        return add_edge_from_self_to(graph, abb, state, args.sem, "sem_trywait()")
+        return add_edge_from_self_to(state, args.sem, "sem_trywait()")
 
     # TODO: maybe add sem_timedwait()
 
@@ -59,4 +58,4 @@ class SemaphoreSyscalls:
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
     def sem_post(graph, abb, state, args, va):
-        return add_edge_from_self_to(graph, abb, state, args.sem, "sem_post()")
+        return add_edge_from_self_to(state, args.sem, "sem_post()")

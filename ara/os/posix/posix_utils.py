@@ -5,24 +5,23 @@ from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from graph_tool import Vertex
 from ara.util import get_logger, LEVEL
-from ara.graph.graph import CFG
-import ara.graph as _graph
-from ara.graph import SyscallCategory
-from ..os_util import syscall, assign_id, Arg
+from ..os_util import assign_id
 
 logger = get_logger("POSIX")
 
+# A set of all messages created via no_double_output().
+# We do not want to repeat messages of a second call to no_double_output() with the same message.
 _already_done_messages = set()
 
 def no_double_output(cust_logger, log_level: int, msg: str):
-    """ Issues a message with log_level only once. Using the custom logger. """
+    """Issues a message with log_level only once in runtime. Using the custom logger."""
     identifier = str(log_level) + msg
     if not identifier in _already_done_messages:
         cust_logger.log(log_level, msg)
         _already_done_messages.add(identifier)
 
 def no_double_warning(msg: str):
-    """ Issues a warning only once. """
+    """Issues a warning only once in runtime."""
     no_double_output(logger, LEVEL["warning"], msg)
 
 def get_musl_weak_alias(syscall: str) -> str:
@@ -36,12 +35,8 @@ def get_musl_weak_alias(syscall: str) -> str:
 
 @dataclass
 class POSIXInstance(ABC):
-    #cfg: CFG            = field(init=False)     # the control flow graph
-    #abb: Vertex         = field(init=False)     # the ABB of the system call which created this instance
-    #call_path: Vertex   = field(init=False)     # call node within the call graph of the system call which created this instance [state.call_path]
-    #vidx: Vertex        = field(init=False)     # vertex for this instance in the InstanceGraph of the state which created this instance [state.instances.add_vertex()]
-    name: str   # The name of the instance. This is not an id for the instance.
-    vertex: Vertex      = field(init=False)     # vertex for this instance in the InstanceGraph
+    name: str                           # The name of the instance. This is not an id for the instance.
+    vertex: Vertex = field(init=False)  # vertex for this instance in the InstanceGraph.
 
     @property
     @abstractmethod
@@ -81,7 +76,7 @@ class IDInstance(POSIXInstance):
     This class will auto generate a name and a numeric id called num_id.
     The name is based on the numeric id and the name of the derived class.
     It is still possible to assign a name to the instance. The auto name will only applied if name == None.
-    Make sure to call the __init__() of this class with a __post_init__() method.
+    Make sure to call the __init__() method of this class in a __post_init__() method.
     """
     _id_counter = 0
     def __init__(self):
@@ -91,6 +86,10 @@ class IDInstance(POSIXInstance):
             self.name = f"{self.__class__.__name__} {self.num_id}"
 
 class MainThread:
+    """This static class wraps the MainThread instance.
+    
+    Call MainThread.get() to get the MainThread.
+    """
     main_thread = None
 
     @classmethod
@@ -103,26 +102,27 @@ class MainThread:
 
 
 class CurrentSyscallCategories:
-    current_syscall_cats: SyscallCategory = None
+    """This static class wraps the current syscall categories that are analyzed in the current step.
+    
+    Call CurrentSyscallCategories.get() to get the current categories as set.
+    """
+    current_syscall_cats: set = None
 
     @classmethod
     def get(cls):
         return cls.current_syscall_cats
 
     @classmethod
-    def set(cls, syscall_cats: SyscallCategory):
+    def set(cls, syscall_cats: set):
         cls.current_syscall_cats = syscall_cats
 
 def do_not_interpret_syscall(graph, abb, state):
     """Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret()."""
-    state = state.copy()
-    state.next_abbs = []
-    add_normal_cfg(graph.cfg, abb, state)
+    # Add your custom do_not_interpret code here.
     return state
 
 def handle_soc(state, v, cfg, abb,
-                branch=None, loop=None, recursive=None, scheduler_on=None,
-                usually_taken=None):
+               branch=None, loop=None, recursive=None, usually_taken=None):
     instances = state.instances
 
     def b(c1, c2):
@@ -149,18 +149,14 @@ def handle_soc(state, v, cfg, abb,
     instances.vp.line[v] = cfg.vp.line[abb]
 
 
-def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state, va):
+def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state):
+    """Register the POSIX Instance <new_instance> in the Instance Graph."""
 
     logger.debug(f"Create new instance with label: {label}")
-    state = state.copy()
     v = state.instances.add_vertex()
     state.instances.vp.label[v] = label
     handle_soc(state, v, graph.cfg, abb)
 
-    #new_instance.cfg = graph.cfg
-    #new_instance.abb = abb
-    #new_instance.call_path = state.call_path
-    #new_instance.vidx = v
     new_instance.vertex = v
     assert hasattr(new_instance, "name"), f"New instance of type {type(new_instance)} has no name."
     state.instances.vp.obj[v] = new_instance
@@ -168,32 +164,29 @@ def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state
 
     return state
 
-def add_normal_cfg(cfg, abb, state):
-    for oedge in cfg.vertex(abb).out_edges():
-        if cfg.ep.type[oedge] == _graph.CFType.lcf:
-            state.next_abbs.append(oedge.target())
-
-def get_running_thread(state):
+def get_running_thread(state) -> POSIXInstance:
+    """Get the currently running thread as Instance object."""
     return state.instances.vp.obj[state.running] if state.running != None else MainThread.get()
 
 def add_interaction_edge(instances, source: POSIXInstance, dest: POSIXInstance, label: str):
+    """Add an edge from <source> to <dest> in the Instance Graph <instances>."""
     edge = instances.add_edge(source.vertex, dest.vertex)
     instances.ep.label[edge] = label
 
-def add_edge_from_self_to(graph, abb, state, to: POSIXInstance, label: str):
+def add_edge_from_self_to(state, to: POSIXInstance, label: str):
+    """Add an edge from the current thread to <to>."""
     running_thread = get_running_thread(state)
     if not isinstance(to, POSIXInstance):
         logger.warning(f"Could not create edge from \"{running_thread.name}\" to \"{to}\" with label: \"{label}\"! This is mostly an issue with the ValueAnalyzer.")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
     logger.debug(f"Create new edge from \"{running_thread.name}\" to \"{to.name}\" with label: \"{label}\"")
-    state = state.copy()
     add_interaction_edge(state.instances, running_thread, to, label)
     return state
 
 def add_self_edge(state, label: str):
+    """Add an edge from the current thread to the current thread."""
     running_thread = get_running_thread(state)
     logger.debug(f"Create new self edge for \"{running_thread.name}\" with label: \"{label}\"")
-    state = state.copy()
     add_interaction_edge(state.instances, running_thread, running_thread, label)
     return state
 
