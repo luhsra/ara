@@ -73,7 +73,8 @@ class ThreadSyscalls:
 
         func_name = args.start_routine.get_name()
         if func_name in ThreadSyscalls.entry_points:
-            logger.info(f"There is already an thread with the entry point {func_name}.")
+            logger.warning(f"There is already an thread with the entry point {func_name}. Ignore this thread for now.")
+            return do_not_interpret_syscall(graph, abb, state)
         ThreadSyscalls.entry_points.add(func_name)
         
         new_thread = Thread(entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),

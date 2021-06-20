@@ -196,3 +196,17 @@ def add_self_edge(state, label: str):
     state = state.copy()
     add_interaction_edge(state.instances, running_thread, running_thread, label)
     return state
+
+def assign_instance_to_return_value(va, abb, call_path, instance: POSIXInstance) -> bool:
+    """Calls va.assign_system_object() with proper error handling.
+    
+    Returns True on success. False if an error occurred in ValueAnalyzer.
+    """
+    from ara.steps import get_native_component # avoid dependency conflicts, therefore import dynamically
+    ValuesUnknown = get_native_component("ValuesUnknown")
+    try:
+        va.assign_system_object(abb, instance, callpath=call_path)
+        return True
+    except ValuesUnknown as va_unknown_exc:
+        logger.warning(f"ValueAnalyzer could not assign Instance {instance} to return value. Exception: \"{va_unknown_exc}\"")
+        return False 

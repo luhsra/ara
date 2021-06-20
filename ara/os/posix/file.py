@@ -5,7 +5,7 @@ import os
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, assign_id, Arg
-from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCategories, add_edge_from_self_to, do_not_interpret_syscall
+from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCategories, add_edge_from_self_to, assign_instance_to_return_value
 
 
 @dataclass
@@ -59,7 +59,7 @@ class FileSyscalls:
                 if args.path != None:
                     FileSyscalls.files[args.path] = file
             # Set the return value to the new filedescriptor (This file)
-            va.assign_system_object(abb, file, callpath=cp)
+            assign_instance_to_return_value(va, abb, cp, file)
 
         # If Category "comm": Create edge to the addressed File object
         if SyscallCategory.comm in CurrentSyscallCategories.get():
