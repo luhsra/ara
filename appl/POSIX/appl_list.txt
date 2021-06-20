@@ -19,6 +19,7 @@ very_simple_posix_function_call
 file_read
 file_write
 mutex_counter
+mutex_initializer
 open_twice
 pipe
 pthread_create

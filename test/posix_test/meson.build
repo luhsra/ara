@@ -108,3 +108,10 @@ test('semaphore',
         env: [python_path],
         suite: 'posix'
 )
+
+test('mutex_initializer',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'mutex_initializer.json', posix_mutex_initializer],
+        env: [python_path],
+        suite: 'posix'
+)
