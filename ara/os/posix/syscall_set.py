@@ -221,7 +221,36 @@ syscall_set = set({
     "at_quick_exit",
     "call", # Hopefully nobody names his/her function "call" or "__call".
 
+    # Remove musl libc x64 asm functions
+    # SVF tries to match a function pointer to the __asm__ call.
+    # We do not want this.
+    "__syscall0",
+    "__syscall1",
+    "__syscall2",
+    "__syscall3",
+    "__syscall4",
+    "__syscall5",
+    "__syscall6",
+    "a_cas",
+    "a_cas_p",
+    "a_swap",
+    "a_fetch_add",
+    "a_and",
+    "a_or",
+    "a_and_64",
+    "a_or_64",
+    "a_inc",
+    "a_dec",
+    "a_store",
+    "a_barrier",
+    "a_spin",
+    "a_crash",
+    "a_ctz_64",
+    "a_clz_64",
+    "__get_tp",
+
     # More unwanted musl libc specific functions
-    "__syscall_cp"
+    "__syscall_cp", # All Syscalls as cancellation point. This function results in a pretty big callgraph.
+    "fopencookie", # I do not know what this API function does. It is not in the POSIX or C Standard and is not called internally. Just remove it, it leads to more wrong matched function pointers.
 
 })
