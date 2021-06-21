@@ -115,3 +115,63 @@ test('mutex_initializer',
         env: [python_path],
         suite: 'posix'
 )
+
+test('signal_handler',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'signal_handler.json', posix_signal_handler],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('signal_handler_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'signal_handler.json', posix_signal_handler_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('signal_handler_siginfo',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'signal_handler_siginfo.json', posix_signal_handler_siginfo],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('signal_handler_siginfo_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'signal_handler_siginfo.json', posix_signal_handler_siginfo_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('ignore_signal',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'ignore_signal.json', posix_ignore_signal],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('ignore_signal_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'ignore_signal.json', posix_ignore_signal_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('multiple_sigactions',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'multiple_sigactions.json', posix_multiple_sigactions],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('multiple_sigactions_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), appl_json / 'multiple_sigactions.json', posix_multiple_sigactions_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)

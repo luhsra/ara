@@ -1,0 +1,21 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "arg": null,
+    "attr": null,
+    "function": "main",
+    "name": "Main Thread",
+    "num_id": 0
+  }
+]

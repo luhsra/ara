@@ -1,3 +1,4 @@
+import pyllco
 from ara.graph import SyscallCategory, SigType
 from ..os_util import syscall, Arg
 from .posix_utils import add_edge_from_self_to
@@ -8,18 +9,22 @@ class FileDescriptorSyscalls:
 
     # ssize_t read(int fildes, void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('fildes', hint=SigType.instance, ty=[File, Pipe]),
+             signature=(Arg('fildes', ty=[File, Pipe, pyllco.ConstantInt]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
     def read(graph, abb, state, args, va):
+        if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
+            return state
         return add_edge_from_self_to(state, args.fildes, "read()")
 
     # ssize_t write(int fildes, const void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('fildes', hint=SigType.instance, ty=[File, Pipe]),
+             signature=(Arg('fildes', ty=[File, Pipe, pyllco.ConstantInt]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
     def write(graph, abb, state, args, va):
+        if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
+            return state
         return add_edge_from_self_to(state, args.fildes, "write()")
 
     # # TODO: Remove this unimplemented fwrite()

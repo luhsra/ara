@@ -19,6 +19,7 @@ from ara.util import VarianceDict
 from ara.os.autosar import Task as AUTOSAR_Task, SyscallInfo, Alarm, Counter, ISR, AUTOSAR
 from appl.AUTOSAR.minexample_timing import Timings
 from ara.os.posix.thread import Thread
+from ara.os.posix.signal import SignalCatchingFunc
 
 from collections import defaultdict
 from itertools import chain
@@ -1668,7 +1669,7 @@ class FlatAnalysis(FlowAnalysis):
             return
         for v in self._graph.instances.vertices():
             os_obj = self._graph.instances.vp.obj[v]
-            if (isinstance(os_obj, Task) or isinstance(os_obj, Thread)) and os_obj.is_regular:
+            if (isinstance(os_obj, Task) or isinstance(os_obj, Thread) or isinstance(os_obj, SignalCatchingFunc)) and os_obj.is_regular:
                 yield os_obj, v
 
     def _get_task_function(self, task):

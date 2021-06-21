@@ -12,7 +12,7 @@ from .posix_utils import IDInstance, logger, register_instance, do_not_interpret
 @dataclass(eq = False)
 class Thread(IDInstance):
     entry_abb: Any
-    function: Any
+    function: pyllco.Function
     attr: Any
     arg: Any
     is_regular: bool = True # Always True if this thread is not the main thread.
@@ -50,15 +50,15 @@ class ThreadSyscalls:
 
         # Handling for the case that we can not get the start_routine argument.
         if args.start_routine == None:
-            new_thread = Thread(entry_abb = None,
-                                function = None,
+            new_thread = Thread(entry_abb=None,
+                                function=None,
                                 attr=args.attr,
                                 arg=args.arg,
                                 name=None,
                                 is_regular=False
             )
             args.thread = new_thread
-            logger.warning(f"Could not get entry point for the new Thread {new_thread}.")
+            logger.warning(f"Could not get entry point for the new Thread {new_thread.name}.")
             return register_instance(new_thread, f"{new_thread.name}", graph, abb, state)
 
         # Avoid the creation of multiple threads with the same entry point.
@@ -69,8 +69,8 @@ class ThreadSyscalls:
         ThreadSyscalls.entry_points.add(func_name)
         
         # Create the new thread.
-        new_thread = Thread(entry_abb = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
-                            function = func_name,
+        new_thread = Thread(entry_abb=graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
+                            function=func_name,
                             attr=args.attr,
                             arg=args.arg,
                             name=None

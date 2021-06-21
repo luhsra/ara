@@ -42,9 +42,14 @@ def json_instance_graph(instances):
         # Add all other instance specific attributes.
         for attr in sorted(posix_instance.wanted_attrs):
             val = getattr(posix_instance, attr)
-            if val != None and (not type(val) in (bool, str, int, float)):
-                val = f"<Object: {val.__class__.__name__}>"
-            i_dump[attr] = val
+            if val == None or type(val) in (bool, str, int, float):
+                i_dump[attr] = val
+            elif type(val) in (list, tuple, range, set, frozenset):
+                i_dump[attr] = sorted(val)
+            elif type(val) == dict:
+                i_dump[attr] = dict(sorted(val.items()))
+            else:
+                i_dump[attr] = f"<Object: {val.__class__.__name__}>"
         dump.append(i_dump)
     
     # Interactions

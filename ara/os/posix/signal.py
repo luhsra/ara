@@ -1,80 +1,158 @@
-import html
-from dataclasses import dataclass, field
-from enum import Enum, IntEnum
-from typing import Any, Union, Optional, Dict
+import pyllco
+from dataclasses import dataclass
+from typing import Any
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, assign_id, Arg
-from .posix_utils import POSIXInstance
+from ..os_util import syscall, Arg
+from .posix_utils import IDInstance, register_instance, logger
 
-class SignalType(IntEnum):
-    """ The values of these signals are Linux specific.
-
-        All values are copied from <bits/signum-generic.h> and <bits/signum-arch.h> included by <signal.h>
-    """
+SIGNAL_TYPES = dict({ 
+    # The values of these signals are Linux specific.
+    # All values are copied from glibcs <bits/signum-generic.h> and <bits/signum-arch.h> included by <signal.h>.
+    # This list was compared to musl libc's signal list generated in <bits/signal.h>.
 
     # Non architecture dependend signals <bits/signum-generic.h>
-    SIGINT =    2	# Interactive attention signal.
-    SIGILL =    4	# Illegal instruction.
-    SIGABRT =   6	# Abnormal termination.
-    SIGFPE =    8	# Erroneous arithmetic operation.
-    SIGSEGV =   11	# Invalid access to storage.
-    SIGTERM	=   15	# Termination request.
-    SIGHUP =    1	# Hangup.
-    SIGQUIT =   3	# Quit.
-    SIGTRAP =   5	# Trace/breakpoint trap.
-    SIGKILL	=   9	# Killed.
-    SIGPIPE	=   13	# Broken pipe.
-    SIGALRM	=   14	# Alarm clock.
+    (2, 'SIGINT'),      # Interactive attention signal.
+    (4, 'SIGILL'),      # Illegal instruction.
+    (6, 'SIGABRT'),     # Abnormal termination. (aka: SIGIOT)
+    (8, 'SIGFPE'),      # Erroneous arithmetic operation.
+    (11, 'SIGSEGV'),    # Invalid access to storage.
+    (15, 'SIGTERM'),    # Termination request.
+    (1, 'SIGHUP'),      # Hangup.
+    (3, 'SIGQUIT'),     # Quit.
+    (5, 'SIGTRAP'),     # Trace/breakpoint trap.
+    (9, 'SIGKILL'),     # Killed.
+    (13, 'SIGPIPE'),    # Broken pipe.
+    (14, 'SIGALRM'),    # Alarm clock.
 
     # Architecture dependend signals <bits/signum-arch.h>
-    SIGBUS =    7	# Bus error.
-    SIGSYS =    31	# Bad system call.
-    SIGURG =    23	# Urgent data is available at a socket.
-    SIGSTOP	=   19	# Stop, unblockable.
-    SIGTSTP	=   20	# Keyboard stop.
-    SIGCONT	=   18	# Continue.
-    SIGCHLD	=   17	# Child terminated or stopped.
-    SIGTTIN	=   21	# Background read from control terminal.
-    SIGTTOU	=   22	# Background write to control terminal.
-    SIGPOLL	=   29	# Pollable event occurred (System V).
-    SIGXFSZ	=   25	# File size limit exceeded.
-    SIGXCPU	=   24	# CPU time limit exceeded.
-    SIGVTALRM = 26	# Virtual timer expired.
-    SIGPROF	=   27	# Profiling timer expired.
-    SIGUSR1	=   10	# User-defined signal 1.
-    SIGUSR2	=   12	# User-defined signal 2.
+    (7, 'SIGBUS'),      # Bus error.
+    (31, 'SIGSYS'),     # Bad system call. (aka: SIGUNUSED)
+    (23, 'SIGURG'),     # Urgent data is available at a socket.
+    (19, 'SIGSTOP'),    # Stop, unblockable.
+    (20, 'SIGTSTP'),    # Keyboard stop.
+    (18, 'SIGCONT'),    # Continue.
+    (17, 'SIGCHLD'),    # Child terminated or stopped.
+    (21, 'SIGTTIN'),    # Background read from control terminal.
+    (22, 'SIGTTOU'),    # Background write to control terminal.
+    (29, 'SIGPOLL'),    # Pollable event occurred (System V). (aka: SIGIO)
+    (25, 'SIGXFSZ'),    # File size limit exceeded.
+    (24, 'SIGXCPU'),    # CPU time limit exceeded.
+    (26, 'SIGVTALRM'),  # Virtual timer expired.
+    (27, 'SIGPROF'),    # Profiling timer expired.
+    (10, 'SIGUSR1'),    # User-defined signal 1.
+    (12, 'SIGUSR2'),    # User-defined signal 2.
 
     # Non POSIX signals
-    #SIGSTKFLT =    16	# Stack fault (obsolete).
-    #SIGPWR	=       30	# Power failure imminent.
-    #SIGWINCH =     28	# Window size change (4.3 BSD, Sun).
-
-class _SignalDefaultAction(Enum):
-    T = 0   # Abnormal termination of the process.
-    A = 1   # Abnormal termination of the process with additional actions. 
-    I = 2   # Ignore the signal.
-    S = 3   # Stop the process.
-    C = 4   # Continue the process, if it is stopped; otherwise, ignore the signal.
-
-defaultActionOfSignal: Dict[SignalType, _SignalDefaultAction] = {
-    SignalType.SIGABRT: _SignalDefaultAction.A,
-    SignalType.SIGALRM: _SignalDefaultAction.T,
-    SignalType.SIGBUS: _SignalDefaultAction.A,
-    # TODO: fill in the rest of signal default actions 
-}
-
-class _SignalAction_DFL_IGN(Enum):
-    SIG_DFL = 0     # Default signal action
-    SIG_IGN = 1     # Ignore the signal
-
-_SignalAction_Function = Any # TODO: determine type of a signal handler function
-
-SignalAction = Union[_SignalAction_DFL_IGN, _SignalAction_Function]
+    (16, 'SIGSTKFLT'),	# Stack fault (obsolete).
+    (30, 'SIGPWR'),	    # Power failure imminent.
+    (28, 'SIGWINCH'),   # Window size change (4.3 BSD, Sun).
+})
 
 @dataclass
-class SignalHandler(POSIXInstance):
-    pass # TODO: define
+class SignalCatchingFunc(IDInstance):
+    entry_abb: Any
+    function: pyllco.Function
+    catching_signals: set # set[Signal]
+    is_regular: bool = True # True if the entry function is available
+
+    wanted_attrs = ["name", "function", "catching_signals"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#ffa500",
+        "style": "filled"
+    }
+
+    def __post_init__(self):
+        super().__init__()
+
+    def __hash__(self):
+        return hash(self.num_id)
+
+SA_SIGINFO = 4
 
 class SignalSyscalls:
-    pass
+
+    # Keep track of all already created signal catching functions.
+    # This allows us to add more signals to an already existing signal catching function.
+    signal_catching_functions = dict()
+
+    # int sigaction(int sig, const struct sigaction *restrict act,
+    #       struct sigaction *restrict oact);
+    @syscall(categories={SyscallCategory.create},
+             signature=(Arg('sig', hint=SigType.value, ty=pyllco.ConstantInt),
+                        Arg('sa_handler', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull]),
+                        Arg('sa_mask', hint=SigType.symbol),
+                        Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero]),
+                        Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull]),
+                        Arg('oact', hint=SigType.symbol)))   
+    def _ARA_sigaction_syscall_(graph, abb, state, args, va): # sigaction()
+        
+        # suppress some "argument is of wrong type" warnings
+        sa_handler = args.sa_handler
+        sa_sigaction = args.sa_sigaction
+        sa_flags = args.sa_flags
+        if type(sa_handler) == pyllco.ConstantPointerNull:
+            sa_handler = None
+        if type(sa_sigaction) == pyllco.ConstantPointerNull:
+            sa_sigaction = None
+        if type(sa_flags) == pyllco.ConstantAggregateZero:
+            sa_flags = None
+
+        # Search for a valid function pointer
+        function_pointer = None
+
+        # If: no function pointer is avaliable
+        if sa_handler == None and sa_sigaction == None:
+            logger.info("No function pointer found in sigaction() call. Ignore ...")
+            return state
+
+        # Get the expected function pointer field (SA_SIGINFO in args.sa_flags)
+        expected_func_ptr_field = None
+        if sa_flags != None:
+            expected_func_ptr_field = "sa_sigaction" if (sa_flags.get() & SA_SIGINFO) == SA_SIGINFO else "sa_handler"
+        else:
+            expected_func_ptr_field = "sa_handler"
+
+        # If: sa_handler and sa_sigaction both are set [This is not allowed in POSIX].
+        # We handle this case but throw a warning.
+        if sa_handler != None and sa_sigaction != None:
+            logger.warning(f"sa_handler and sa_sigaction both are set in sigaction() [This is not allowed in POSIX]. Choose {expected_func_ptr_field} due to sa_flags.")
+            function_pointer = getattr(args, expected_func_ptr_field)
+
+        # If: Only one field is set (sa_handler or sa_sigaction).
+        # We also check for consistency with SA_SIGINFO in sa_flags.
+        else:
+            set_func_ptr_field = "sa_handler" if sa_handler != None else "sa_sigaction"
+            if set_func_ptr_field != expected_func_ptr_field:
+                logger.warning(f"{set_func_ptr_field} is set in sigaction() but {expected_func_ptr_field} is expected due to sa_flags. Choose {set_func_ptr_field}.")
+            function_pointer = getattr(args, set_func_ptr_field)
+
+
+        # So now we have a valid function pointer.
+        assert(type(function_pointer) == pyllco.Function)
+        func_name = function_pointer.get_name()
+
+        # Translate the args.sig argument to a meaningful string.
+        catching_signal = None
+        if args.sig != None:
+            catching_signal = SIGNAL_TYPES.get(args.sig.get(), None)
+            if catching_signal == None:
+                logger.warning(f"Unknown signal type with id {args.sig.get()}")
+        else:
+            logger.warning("Could not get sig (signal) field in sigaction()")
+
+        # Check if there is already a signal catching function with the received function pointer.
+        if func_name in SignalSyscalls.signal_catching_functions:
+            if catching_signal != None:
+                SignalSyscalls.signal_catching_functions[func_name].add(catching_signal)
+            return state
+
+        # Create new signal catching function.
+        new_scf = SignalCatchingFunc(entry_abb=graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
+                                     function=func_name,
+                                     catching_signals=set({catching_signal}) if catching_signal != None else set(),
+                                     name=f"{func_name}()"
+        )
+        SignalSyscalls.signal_catching_functions[func_name] = new_scf
+        return register_instance(new_scf, new_scf.name, graph, abb, state)

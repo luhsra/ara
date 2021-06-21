@@ -1,0 +1,66 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "arg": null,
+    "attr": null,
+    "function": "main",
+    "name": "Main Thread",
+    "num_id": 0
+  },
+  {
+    "label": "signal_catching_func_1()",
+    "id": "signal_catching_func_1()",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/unit_tests/multiple_sigactions.c",
+    "line": 30,
+    "specialization_level": "",
+    "type": "instance",
+    "catching_signals": [
+      "SIGUSR1",
+      "SIGUSR2"
+    ],
+    "function": "signal_catching_func_1",
+    "name": "signal_catching_func_1()"
+  },
+  {
+    "label": "signal_catching_func_2()",
+    "id": "signal_catching_func_2()",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/unit_tests/multiple_sigactions.c",
+    "line": 33,
+    "specialization_level": "",
+    "type": "instance",
+    "catching_signals": [
+      "SIGSYS"
+    ],
+    "function": "signal_catching_func_2",
+    "name": "signal_catching_func_2()"
+  },
+  {
+    "source": "signal_catching_func_1()",
+    "target": "signal_catching_func_1()",
+    "label": "pause()",
+    "type": "interaction"
+  }
+]

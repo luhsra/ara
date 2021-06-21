@@ -3,7 +3,6 @@
 Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 """
 
-from os import stat
 import ara.graph as _graph
 from ara.graph import SyscallCategory
 from ..os_base import OSBase

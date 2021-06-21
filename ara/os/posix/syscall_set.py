@@ -47,7 +47,7 @@ syscall_set = set({
     "sem_trywait",
     "sem_timedwait",
     "sem_post",
-    "sigaction",
+    "_ARA_sigaction_syscall_", # Special Musl wrapper for sigaction()
     "signal",
     "sigwait",
     "sigwaitinfo",
