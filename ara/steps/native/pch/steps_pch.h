@@ -4,6 +4,10 @@
 // extracted with:
 // rg "#include <" -N -I -g '!pch' | sort | uniq
 
+// clang-format off
+#include <graph_tool.hh> // this must stand at the beginning, see https://git.skewed.de/count0/graph-tool/-/issues/704
+// clang-format on
+
 #include <Graphs/GenericGraph.h>
 #include <Graphs/ICFG.h>
 #include <Graphs/PAG.h>
