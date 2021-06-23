@@ -7,7 +7,7 @@ import ara.graph as _graph
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from ..os_util import syscall
-from .posix_utils import logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories
+from .posix_utils import logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories, PosixClass
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
@@ -19,6 +19,7 @@ from .other_syscalls import OtherSyscalls
 from .warning_syscalls import WarningSyscalls
 from .syscall_set import syscall_set
 from .syscall_stub_aliases import SyscallStubAliases
+from .native_musl_syscalls import MuslSyscalls
 
 '''
     Hold on! To understand this file you need some information.
@@ -48,7 +49,7 @@ def syscall_stub(graph, abb, state, args, va):
 class _POSIXSyscalls(MutexSyscalls, SemaphoreSyscalls, PipeSyscalls, 
                      FileSyscalls, FileDescriptorSyscalls, SignalSyscalls,
                      ThreadSyscalls, OtherSyscalls, WarningSyscalls,
-                     SyscallStubAliases):
+                     SyscallStubAliases, MuslSyscalls):
     """This class combines all implemented syscall methods."""
     pass
 
@@ -97,6 +98,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
     @staticmethod
     def init(state):
         state.scheduler_on = True  # The Scheduler is always on in POSIX.
+        PosixClass.set(POSIX)
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):

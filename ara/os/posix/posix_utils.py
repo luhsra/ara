@@ -100,7 +100,6 @@ class MainThread:
     def set(cls, main_thread: POSIXInstance):
         cls.main_thread = main_thread
 
-
 class CurrentSyscallCategories:
     """This static class wraps the current syscall categories that are analyzed in the current step.
     
@@ -115,6 +114,18 @@ class CurrentSyscallCategories:
     @classmethod
     def set(cls, syscall_cats: set):
         cls.current_syscall_cats = syscall_cats
+
+class PosixClass:
+    posix_class = None
+
+    @classmethod
+    def get(cls):
+        return cls.posix_class
+
+    @classmethod
+    def set(cls, posix_class):
+        cls.posix_class = posix_class
+
 
 def do_not_interpret_syscall(graph, abb, state):
     """Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret()."""

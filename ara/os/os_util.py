@@ -52,6 +52,8 @@ def get_argument(value, arg):
             return value.value.get(attrs=value.attrs)
         except pyllco.InvalidValue:
             return None
+        except NotImplementedError as not_imp_error:
+            raise UnsuitableArgumentException(f"NotImplementedError in pyllco: {not_imp_error}")
     raise UnsuitableArgumentException("Value cannot be interpreted as Python value")
 
 
@@ -105,6 +107,44 @@ class SysCall:
     def get_name(self):
         """Returns the name of the syscall function."""
         return self.name
+
+    def direct_call(self, graph, abb, state, arg_dict: dict, va):
+
+        assert len(arg_dict) == len(self._signature)
+        fields = []
+        values = []
+        
+        for idx, arg in enumerate(self._signature):
+            arg_types = arg.ty
+            if not isinstance(arg.ty, list):
+                arg_types = [arg.ty]
+            if not type(arg_dict[idx]) in arg_types:
+                logger.warning(f"Value type {type(arg_dict[idx])} does not match wanted types {arg_types}.")
+                values.append(None)
+                fields.append(arg.name)
+            else:
+                values.append(arg_dict[idx])
+                fields.append((arg.name, type(arg_dict[idx])))
+        
+        # repack into dataclass
+        Arguments = dataclasses.make_dataclass('Arguments', fields)
+        args = Arguments(*values)
+
+        # Perform the direct call
+        state = self._func(graph, abb, state, args, va)
+
+        write_back_list = []
+
+        # write instances back for SOCs if they are handled via argument
+        # pointers
+        if _SyscallCategory.create in self.categories:
+            for idx, arg in enumerate(self._signature):
+                if arg.hint != _SigType.instance:
+                    continue
+                sys_obj = getattr(args, dataclasses.fields(args)[idx].name)
+                write_back_list.append((idx, sys_obj))
+        
+        return state, write_back_list
 
     def __get__(self, obj, objtype=None):
         """Simulate bound descriptor access. However a systemcall acts like a

@@ -221,16 +221,18 @@ syscall_set = set({
     "at_quick_exit",
     "call", # Hopefully nobody names his/her function "call" or "__call".
 
+    # musl libc native Kernel syscalls
+    "_musl_syscall0", # __syscall0 [function name in musl libc]
+    "_musl_syscall1", # __syscall1
+    "_musl_syscall2", # __syscall2
+    "_musl_syscall3", # __syscall3
+    "_musl_syscall4", # __syscall4
+    "_musl_syscall5", # __syscall5
+    "_musl_syscall6", # __syscall6
+
     # Remove musl libc x64 asm functions
     # SVF tries to match a function pointer to the __asm__ call.
     # We do not want this.
-    "__syscall0",
-    "__syscall1",
-    "__syscall2",
-    "__syscall3",
-    "__syscall4",
-    "__syscall5",
-    "__syscall6",
     "a_cas",
     "a_cas_p",
     "a_swap",
