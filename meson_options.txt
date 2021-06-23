@@ -6,6 +6,8 @@ option('enable_step_tests', type: 'boolean', value: true,
     description: 'Unit tests for ARA itself.')
 option('enable_toplevel_tests', type: 'boolean', value: true,
     description: 'Not actual tests, but stored common commandlines and examples for calling ARA.')
+option('enable_posix_toplevel_tests', type: 'boolean', value: false,
+    description: 'Allowed the execution of time intensive posix toplevel tests [toplevel tests are a way to store common commandlines (Not actual tests)]')
 option('enable_gpslogger_tests', type: 'boolean', value: true)
 option('enable_librepilot_tests', type: 'boolean', value: true)
 option('enable_posix_tests', type: 'boolean', value: true,

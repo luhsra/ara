@@ -27,3 +27,9 @@
 	url = https://scm.sra.uni-hannover.de/source/musl.git
 	branch = posix
 	vcs = git
+
+[external "libmicrohttpd"]
+	path = subprojects/libmicrohttpd
+	url = https://scm.sra.uni-hannover.de/source/libmicrohttpd.git
+	branch = posix
+	vcs = git

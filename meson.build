@@ -179,4 +179,26 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel',
        timeout: 30
     )
+
+    if get_option('enable_posix_toplevel_tests')
+        libmicrohttpd_settings = files('settings' / 'posix_instance_graph.json')
+        test('microhttpd_demo',
+            py3_inst,
+            args: [ara_py, posix_microhttpd_demo_musl,
+                    '--os', 'POSIX',
+                    '-v',
+                    '--step-settings', libmicrohttpd_settings],
+            suite: 'toplevel',
+            timeout: 7200 # The execution can take some time depending on your hardware. 
+        )
+        test('microhttpd_fileserver_dirs',
+            py3_inst,
+            args: [ara_py, posix_microhttpd_fileserver_dirs_musl,
+                    '--os', 'POSIX',
+                    '-v',
+                    '--step-settings', libmicrohttpd_settings],
+            suite: 'toplevel',
+            timeout: 7200
+        )
+    endif
 endif
