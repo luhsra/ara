@@ -4,7 +4,7 @@ from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, CurrentSyscallCategories
+from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, CurrentSyscallCategories, PosixOptions
 
 @dataclass
 class Mutex(IDInstance):
@@ -20,12 +20,6 @@ class Mutex(IDInstance):
         super().__init__()
 
 class MutexSyscalls:
-
-    # Toggle detection of PTHREAD_MUTEX_INITIALIZER.
-    # Sometimes it is useful to disable this feature.
-    # E.g. if the value analyzer can not retrieve the Mutex handle.
-    # In this case every Mutex interaction call creates a new useless Mutex in the Interaction Graph.
-    ENABLE_STATIC_INITIALIZER_DETECTION = True
 
     # int pthread_mutex_init(pthread_mutex_t *restrict mutex,
     #   const pthread_mutexattr_t *restrict attr);
@@ -48,7 +42,7 @@ class MutexSyscalls:
 
         # If Category "create": Create a new Mutex object if args.mutex is a pyllco.GlobalVariable (args.mutex = PTHREAD_MUTEX_INITIALIZER)
         if SyscallCategory.create in CurrentSyscallCategories.get():
-            if MutexSyscalls.ENABLE_STATIC_INITIALIZER_DETECTION and type(args.mutex) == pyllco.GlobalVariable:
+            if PosixOptions.enable_static_init_detection and type(args.mutex) == pyllco.GlobalVariable:
                 new_mutex = Mutex(attr=None,
                                   name=None
                 )
@@ -57,7 +51,7 @@ class MutexSyscalls:
 
         # If Category "comm": Handle the edge creation in a normal way.
         if SyscallCategory.comm in CurrentSyscallCategories.get():
-            if type(args.mutex) != pyllco.GlobalVariable or not MutexSyscalls.ENABLE_STATIC_INITIALIZER_DETECTION:
+            if type(args.mutex) != pyllco.GlobalVariable or not PosixOptions.enable_static_init_detection:
                 state = add_edge_from_self_to(state, args.mutex, edge_label)
             else:
                 logger.warning("Could not create Mutex interaction edge. args.mutex is of type pyllco.GlobalVariable. Probably there was an error in the PTHREAD_MUTEX_INITIALIZER detection.")

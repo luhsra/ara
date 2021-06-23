@@ -2,13 +2,11 @@ import re
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import PosixClass, CurrentSyscallCategories
+from .posix_utils import PosixClass, CurrentSyscallCategories, PosixOptions
 
 LINUX_SYSCALL_IDS = dict({
     (2, 'open'),
 })
-
-ENABLE_MUSL_SYSCALLS = True
 
 class MuslSyscalls:
 
@@ -33,23 +31,20 @@ class MuslSyscalls:
             setattr(args, f"a{idx}", arg)
         return state
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall0"},
+    @syscall(aliases={"__syscall0"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),))
     def _musl_syscall0(graph, abb, state, args, va):
         return MuslSyscalls.perform_musl_syscall(graph, abb, state, args, va)
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall1"},
+    @syscall(aliases={"__syscall1"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),
                         Arg('a1', hint=SigType.value)))
     def _musl_syscall1(graph, abb, state, args, va):
         return MuslSyscalls.perform_musl_syscall(graph, abb, state, args, va)
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall2"},
+    @syscall(aliases={"__syscall2"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),
                         Arg('a1', hint=SigType.value),
@@ -57,8 +52,7 @@ class MuslSyscalls:
     def _musl_syscall2(graph, abb, state, args, va):
         return MuslSyscalls.perform_musl_syscall(graph, abb, state, args, va)
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall3"},
+    @syscall(aliases={"__syscall3"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),
                         Arg('a1', hint=SigType.value),
@@ -67,8 +61,7 @@ class MuslSyscalls:
     def _musl_syscall3(graph, abb, state, args, va):
         return MuslSyscalls.perform_musl_syscall(graph, abb, state, args, va)
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall4"},
+    @syscall(aliases={"__syscall4"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),
                         Arg('a1', hint=SigType.value),
@@ -78,8 +71,7 @@ class MuslSyscalls:
     def _musl_syscall4(graph, abb, state, args, va):
         return MuslSyscalls.perform_musl_syscall(graph, abb, state, args, va)
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall5"},
+    @syscall(aliases={"__syscall5"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),
                         Arg('a1', hint=SigType.value),
@@ -90,8 +82,7 @@ class MuslSyscalls:
     def _musl_syscall5(graph, abb, state, args, va):
         return MuslSyscalls.perform_musl_syscall(graph, abb, state, args, va)
 
-    @syscall(is_stub = not ENABLE_MUSL_SYSCALLS,
-             aliases={"__syscall6"},
+    @syscall(aliases={"__syscall6"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value),
                         Arg('a1', hint=SigType.value),

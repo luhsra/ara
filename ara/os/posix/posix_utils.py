@@ -85,6 +85,15 @@ class IDInstance(POSIXInstance):
         if not self.name:
             self.name = f"{self.__class__.__name__} {self.num_id}"
 
+
+class PosixOptions:
+    """This static class contains the values of all OS Model options.
+    
+    All options can be set as step options for POSIXInit.
+    """
+    enable_static_init_detection: bool = None
+    enable_musl_syscalls: bool = None
+
 class MainThread:
     """This static class wraps the MainThread instance.
     

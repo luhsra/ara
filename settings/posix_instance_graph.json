@@ -3,6 +3,11 @@
 		"InteractionAnalysis"
 	],
 
+	"POSIXInit": {
+		"enable_static_init_detection": true,
+		"enable_musl_syscalls": false
+	},
+
 	"InteractionAnalysis": {
 		"dump": true,
 		"count_syscalls": true,
