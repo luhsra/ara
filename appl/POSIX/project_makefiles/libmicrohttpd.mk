@@ -11,7 +11,11 @@ MHD_REBUILD_MAKEFILE := $(shell if [ -e "$(LIBMICROHTTPD_DIR)"/Makefile ]; then 
 									echo "true"; \
 								fi)
 
-$(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll
+# Generate autotools configure
+$(LIBMICROHTTPD_DIR)/configure:
+	$(LIBMICROHTTPD_DIR)/bootstrap
+
+$(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll $(LIBMICROHTTPD_DIR)/configure
 
 	@# Invoke Makefile with WLLVM.
 	@# The environment variable CFLAGS is set to override CFLAGS in the calling Makefile.

@@ -176,6 +176,14 @@ ifeq ($(call command_availiable,$(REALPATH)), false)
 $(error command $(REALPATH) not found!)
 endif
 
+ifeq ($(call command_availiable,autoconf), false)
+$(error command autoconf not found!)
+endif
+
+ifeq ($(call command_availiable,automake), false)
+$(error command automake not found!)
+endif
+
 SINGLE_FILE_APPLICATIONS := $(call list_filenames_of_dir,.c,.) $(call list_filenames_of_dir,.c,$(UNIT_TEST_C_FILES))
 
 _default_rule: all
