@@ -1,7 +1,16 @@
 
 posix_src_dir = meson.current_source_dir()
 posix_output_dir = meson.current_build_dir()
-posix_make_command = ['make', '-C', posix_src_dir, 'BUILD_ROOT=' + meson.build_root(), 'BUILD_DIR=' + posix_output_dir]
+posix_make_command = ['make', '-C', posix_src_dir,
+                      'BUILD_ROOT=' + meson.build_root(),
+                      'BUILD_DIR=' + posix_output_dir, 
+                      'ARA_LINK=' + ara_link.full_path(),
+                      #'CLANG=' + clang.full_path(), # clang needs to be available via PATH. WLLVM requires that.
+                      'LLVM_DIS=' + llvm_dis.full_path(),
+                      'LLVM_LLC=' + llc.full_path(),
+                      'LLVM_OPT=' + llvm_opt.full_path(),
+                      'WLLVM=' + wllvm.full_path(),
+                      'EXTRACT_BC=' + extract_bc.full_path()]
 cpus = run_command('nproc').stdout().split('\n')[0]
 
 # run target to invoke POSIX build Makefile (rule: all)

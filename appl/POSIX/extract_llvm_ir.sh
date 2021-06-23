@@ -18,6 +18,7 @@ readonly OUTPUT_FILE       # This is the output file of this script.
 
 # Optional environment variables
 readonly EXTRACT_BC_ARGS   # Arguments to be applied to the WLLVM extract-bc tool. [optional]
+#        EXTRACT_BC        # Command to execute extract-bc [optional, default: "extract-bc"]
 #        LLVM_DIS          # Command to execute llvm-dis [optional, default: "llvm-dis"]
 
 
@@ -29,6 +30,11 @@ if [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_FILE}" = "x" ] ; then
     echo "./extract_llvm_ir.sh"
     exit 1
 fi
+
+if [ "x${EXTRACT_BC}" = "x" ] ; then
+    EXTRACT_BC="extract-bc"
+fi
+readonly EXTRACT_BC
 
 if [ "x${LLVM_DIS}" = "x" ] ; then
     LLVM_DIS="llvm-dis"
@@ -45,7 +51,7 @@ if [ $? -gt 0 ] ; then
 fi
 
 # Generate .bc bitcode
-extract-bc ${EXTRACT_BC_ARGS} -o "${BITCODE_NAME}".bc "${BINARY_FILE}" || exit 1
+${EXTRACT_BC} ${EXTRACT_BC_ARGS} -o "${BITCODE_NAME}".bc "${BINARY_FILE}" || exit 1
 
 # Dissassemble .bc -> .ll
 ${LLVM_DIS} -o "${OUTPUT_FILE}" "${BITCODE_NAME}".bc || exit 1

@@ -129,31 +129,43 @@ $(shell for file in $(2)/*$(1); do \
 		done)
 endef
 
+# Tools in use by this POSIX build system.
+# CLANG ?= clang # clang needs to be available via PATH.
+LLVM_DIS ?= llvm-dis
+LLVM_LLC ?= llc
+LLVM_OPT ?= opt
+WLLVM ?= wllvm
+EXTRACT_BC ?= extract-bc
+
 # Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
 # If "" not working than choose "-$(LLVM_VERSION)".
 LLVM_SUFFIX := $(shell echo "")
-ifeq ($(call command_availiable,llvm-dis), false)
+ifeq ($(call command_availiable,$(LLVM_DIS)), false)
 $(warning command llvm-dis not found! Using llvm_suffix -$(LLVM_VERSION) instead.)
 LLVM_SUFFIX := -$(LLVM_VERSION)
 endif
 
-LLVM_DIS ?= llvm-dis$(LLVM_SUFFIX)
-LLVM_LLC ?= llc$(LLVM_SUFFIX)
-LLVM_OPT ?= opt$(LLVM_SUFFIX)
-
-# Make LLVM_DIS callable from build_makefile_app.sh
-export LLVM_DIS
+LLVM_DIS := llvm-dis$(LLVM_SUFFIX)
+LLVM_LLC := llc$(LLVM_SUFFIX)
+LLVM_OPT := opt$(LLVM_SUFFIX)
 
 # Global argument for build_makefile_app.sh
 EXTRACT_BC_ARGS = --linker $(ARA_LINK) --bitcode
 export EXTRACT_BC_ARGS
 
-export LLVM_COMPILER=clang
-
 # Check dependencies
-ifeq ($(call command_availiable,extract-bc), false)
-$(info command extract-bc not found!)
+ifeq ($(call command_availiable,$(WLLVM)), false)
+$(info command $(WLLVM) not found!)
 $(error wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed! Install via "pip3 install wllvm")
+endif
+
+ifeq ($(call command_availiable,$(EXTRACT_BC)), false)
+$(info command $(EXTRACT_BC) not found!)
+$(error wllvm tool (https://github.com/travitch/whole-program-llvm) is not installed! Install via "pip3 install wllvm")
+endif
+
+ifeq ($(call command_availiable,clang), false)
+$(error command clang not found!)
 endif
 
 ifeq ($(call command_availiable,$(LLVM_DIS)), false)
@@ -183,6 +195,11 @@ endif
 ifeq ($(call command_availiable,automake), false)
 $(error command automake not found!)
 endif
+
+# Make tools callable from build_makefile_app.sh and extract_llvm_ir.sh
+export LLVM_DIS
+export WLLVM
+export EXTRACT_BC
 
 SINGLE_FILE_APPLICATIONS := $(call list_filenames_of_dir,.c,.) $(call list_filenames_of_dir,.c,$(UNIT_TEST_C_FILES))
 

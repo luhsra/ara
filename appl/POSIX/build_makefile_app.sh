@@ -22,6 +22,8 @@ readonly CONFIGURE_ARGS     # Arguments to be applied to the ./configure script 
 readonly MAKE_ARGS          # Arguments to be applied to the make call. [optional]
 readonly EXTRACT_BC_ARGS    # Arguments to be applied to the WLLVM extract-bc tool. [optional]
 readonly LLVM_COMPILER_PATH # The path to the compiler directory used by WLLVM. See WLLVM env var LLVM_COMPILER_PATH. [optional, default: Use standard clang]
+#        WLLVM              # Command to execute wllvm [optional, default: "wllvm"]
+#        EXTRACT_BC         # Command to execute extract-bc [optional, default: "extract-bc"]
 #        LLVM_DIS           # Command to execute llvm-dis [optional, default: "llvm-dis"]
 
 
@@ -34,6 +36,16 @@ if [ "x${PROJECT_PATH}" = "x" ] || [ "x${BINARY_FILE}" = "x" ] || [ "x${OUTPUT_F
     echo "./build_makefile_app.sh"
     exit 1
 fi
+
+if [ "x${WLLVM}" = "x" ] ; then
+    WLLVM="wllvm"
+fi
+readonly WLLVM
+
+if [ "x${EXTRACT_BC}" = "x" ] ; then
+    EXTRACT_BC="extract-bc"
+fi
+readonly EXTRACT_BC
 
 if [ "x${LLVM_DIS}" = "x" ] ; then
     LLVM_DIS="llvm-dis"
@@ -52,10 +64,10 @@ fi
 export LLVM_COMPILER=clang
 export LLVM_COMPILER_PATH
 if [ "${EXEC_CONFIGURE}" = "true" ] ; then
-    (cd "${PROJECT_PATH}" && CC=wllvm WLLVM_CONFIGURE_ONLY=1 ./configure ${CONFIGURE_ARGS}) || exit 1
+    (cd "${PROJECT_PATH}" && CC="${WLLVM}" WLLVM_CONFIGURE_ONLY=1 ./configure ${CONFIGURE_ARGS}) || exit 1
     (cd "${PROJECT_PATH}" && make -j$(nproc) ${MAKE_ARGS}) || exit 1
 else
-    (cd "${PROJECT_PATH}" && make -j$(nproc) CC=wllvm ${MAKE_ARGS}) || exit 1
+    (cd "${PROJECT_PATH}" && make -j$(nproc) CC="${WLLVM}" ${MAKE_ARGS}) || exit 1
 fi
 
 if ! [ "x${EXEC_MAKE_RULE}" = "x" ] ; then

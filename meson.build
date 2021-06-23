@@ -23,6 +23,7 @@ llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
 clang = find_program(llvm_bindir / 'clang', version: llvm_version)
 llc = find_program(llvm_bindir / 'llc', version: llvm_version)
+llvm_dis = find_program(llvm_bindir / 'llvm-dis', version: llvm_version)
 llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
 llvm_opt = find_program(llvm_bindir / 'opt', version: llvm_version)
 
@@ -64,6 +65,14 @@ endif
 ## tools
 nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
+
+## POSIX
+wllvm = find_program('wllvm')
+extract_bc = find_program('extract-bc') # provided by wllvm
+
+# Note: libmicrohttpd needs this tools available via PATH:
+autoconf = find_program('autoconf')
+automake = find_program('automake')
 
 ## arch specific build tools
 if get_option('arch') == 'i386'
