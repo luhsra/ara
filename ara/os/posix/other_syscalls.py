@@ -1,3 +1,4 @@
+import pyllco
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
@@ -10,8 +11,12 @@ class OtherSyscalls:
     def pause(graph, abb, state, args, va):
         return add_self_edge(state, "pause()")
 
-    # unsigned sleep(unsigned seconds);
+    # int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('seconds', hint=SigType.value),))
-    def sleep(graph, abb, state, args, va):
-        return add_self_edge(state, f"sleep({args.seconds})")
+             signature=(Arg('tv_sec', hint=SigType.value, ty=pyllco.ConstantInt),
+                        Arg('tv_nsec', hint=SigType.value, ty=pyllco.ConstantInt),
+                        Arg('rmtp', hint=SigType.symbol)))
+    def _ARA_nanosleep_syscall_(graph, abb, state, args, va):
+        tv_sec = args.tv_sec.get() if args.tv_sec != None else "Unknown"
+        tv_nsec = args.tv_nsec.get() if args.tv_nsec != None else "Unknown"
+        return add_self_edge(state, f"nanosleep(tv_sec: {tv_sec}, tv_nsec: {tv_nsec})")

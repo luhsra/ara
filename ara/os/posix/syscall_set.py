@@ -53,8 +53,8 @@ syscall_set = set({
     "sigwaitinfo",
     "sigtimedwait",
     "pause",
-    "sleep",
-    "nanosleep",
+    #"sleep", We want to redirect sleep() -> nanosleep()
+    "_ARA_nanosleep_syscall_", # Special Musl wrapper for nanosleep()
     "clock_nanosleep",
     "alarm",
     "timer_create",

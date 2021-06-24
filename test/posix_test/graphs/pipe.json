@@ -62,7 +62,7 @@
   {
     "source": "Main Thread",
     "target": "Main Thread",
-    "label": "sleep(1)",
+    "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
     "type": "interaction"
   },
   {

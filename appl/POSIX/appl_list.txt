@@ -31,12 +31,14 @@ ignore_signal
 multiple_sigactions
 mutex_counter
 mutex_initializer
+nanosleep
 open_twice
 pipe
 pthread_create
 semaphore
 signal_handler
 signal_handler_siginfo
+sleep
 simple_project
 microhttpd_demo
 microhttpd_fileserver_dirs

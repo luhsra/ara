@@ -52,9 +52,10 @@ test('mutex_counter',
 
 test('pipe',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pipe.json', posix_pipe],
+        args: [files('posix_instance_graph.py'), graphs / 'pipe.json', posix_pipe_musl],
         env: [python_path],
-        suite: 'posix'
+        suite: 'posix',
+        timeout: 300
 )
 
 test('file_read',
@@ -197,4 +198,27 @@ test('filestream_open_musl_syscall',
         env: [python_path],
         suite: 'posix',
         timeout: 400
+)
+
+test('nanosleep',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'nanosleep.json', posix_nanosleep],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('nanosleep_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'nanosleep.json', posix_nanosleep_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('sleep',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'sleep.json', posix_sleep_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
 )
