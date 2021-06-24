@@ -27,13 +27,22 @@ class FileDescriptorSyscalls:
             return state
         return add_edge_from_self_to(state, args.fildes, "write()")
 
-    # # TODO: Remove this unimplemented fwrite()
-    # @syscall(categories={SyscallCategory.comm},
-    #         signature=(Arg('ptr', hint=SigType.symbol),
-    #                    Arg('size', hint=SigType.value),
-    #                    Arg('nitems', hint=SigType.value),
-    #                    Arg('stream', hint=SigType.symbol)))
-    # def fwrite(graph, abb, state, args, va):
+    # ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('fildes', ty=[File, Pipe, pyllco.ConstantInt]),
+                        Arg('iov', hint=SigType.symbol),
+                        Arg('iovcnt', hint=SigType.value)))
+    def writev(graph, abb, state, args, va):
+        if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
+            return state
+        return add_edge_from_self_to(state, args.fildes, "writev()")
 
-    #     logger.debug("found fwrite() syscall")
-    #     return state
+    # ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('fildes', ty=[File, Pipe, pyllco.ConstantInt]),
+                        Arg('iov', hint=SigType.symbol),
+                        Arg('iovcnt', hint=SigType.value)))
+    def readv(graph, abb, state, args, va):
+        if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
+            return state
+        return add_edge_from_self_to(state, args.fildes, "readv()")
