@@ -3,6 +3,8 @@ access_of_struct_mutex
 call_entrypoint
 call_test
 exit_test
+filestream_write
+filestream_write_printf
 indirect_pthread_create
 indirect_pthread_create_handle_func_calloc
 indirect_pthread_create_malloc
@@ -21,8 +23,10 @@ struct_test_func_call
 struct_test_single_call
 very_simple_posix_function_call
 file_read
-file_stream
+file_readv
+filestream_open
 file_write
+file_writev
 ignore_signal
 multiple_sigactions
 mutex_counter

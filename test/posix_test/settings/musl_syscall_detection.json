@@ -1,0 +1,21 @@
+{
+	"steps": [
+		"InteractionAnalysis"
+	],
+
+	"SysFuncts": {
+		"no_stubs": true
+	},
+
+	"SystemRelevantFunctions": {
+		"no_stubs": true
+	},
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+
+    "POSIXInit": {
+        "enable_musl_syscalls": true
+    }
+}

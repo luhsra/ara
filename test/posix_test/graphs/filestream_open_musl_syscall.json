@@ -1,0 +1,43 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "arg": null,
+    "attr": null,
+    "function": "main",
+    "name": "Main Thread",
+    "num_id": 0
+  },
+  {
+    "label": "file_stream.txt",
+    "id": "file_stream",
+    "branch": 1,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 0,
+    "file": "../../subprojects/musl-libc/src/stdio/fopen.c",
+    "line": 21,
+    "specialization_level": "",
+    "type": "instance",
+    "name": "file_stream.txt",
+    "path": "file_stream.txt"
+  },
+  {
+    "source": "Main Thread",
+    "target": "file_stream",
+    "label": "open()",
+    "type": "interaction"
+  }
+]
