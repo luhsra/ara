@@ -77,5 +77,5 @@ class POSIXInit(Step):
         PosixOptions.enable_static_init_detection = self.enable_static_init_detection.get()
         PosixOptions.enable_musl_syscalls = self.enable_musl_syscalls.get()
         if not PosixOptions.enable_musl_syscalls:
-            for i in range(0, 6):
+            for i in range(0, 7):
                 getattr(POSIX, "_musl_syscall" + str(i)).is_stub = True

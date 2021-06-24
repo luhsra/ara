@@ -254,5 +254,9 @@ syscall_set = set({
     # More unwanted musl libc specific functions
     "__syscall_cp", # All Syscalls as cancellation point. This function results in a pretty big callgraph.
     "fopencookie", # I do not know what this API function does. It is not in the POSIX or C Standard and is not called internally. Just remove it, it leads to more wrong matched function pointers.
+    
+    # Musl wrapper around futex() calls. These are not required if we are not interested in futex. 
+    "__wake",
+    "__futexwait",
 
 })

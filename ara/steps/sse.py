@@ -1736,8 +1736,7 @@ class FlatAnalysis(FlowAnalysis):
                 syscall_name = self._cfg.get_syscall_name(abb)
                 self._log.debug(f"Handle syscall: {name} ({syscall_name})")
                 assert self._graph.os is not None
-                if hasattr(self, "count_syscalls") and self.count_syscalls.get():
-                    SyscallCount.add_syscall(self._graph.os, syscall_name)
+                SyscallCount.add_syscall(self._graph.os, syscall_name)
                 fake_state = state.copy()
                 self._init_fake_state(fake_state, abb)
                 new_state = self._graph.os.interpret(
@@ -1986,6 +1985,8 @@ class InteractionAnalysis(FlatAnalysis):
 
     def _init_analysis(self):
         super()._init_analysis()
+        if hasattr(self, "count_syscalls") and self.count_syscalls.get():
+            SyscallCount.enable()
         self._chain_entry_points()
 
     def _chain_entry_points(self):

@@ -109,22 +109,40 @@ class SysCall:
         return self.name
 
     def direct_call(self, graph, abb, state, arg_dict: dict, va):
+        """Calls the syscall function without invoking the ValueAnalyzer.
+        
+        Arguments:
+        graph    -- the graph object
+        abb      -- the abb ob the system call
+        state    -- the OS state
+        arg_dict -- This dictionary must contain exactly all the arguments for the syscall.
+                    key: defines the position of the argument starting at 0.
+                    value: contains the value of the Argument object.
+        va       -- The value analyzer.
 
-        assert len(arg_dict) == len(self._signature)
+        Returns:
+        1. state           -- The new updated OS state 
+        2. write_back_list -- All updated instance values in args to write back for the ValueAnalyzer.
+                              In this form: (position, new instance)
+        """
+        assert len(arg_dict) == len(self._signature), "arg_dict is not exactly covering syscalls signature."
         fields = []
         values = []
         
+        # Get Argument fields and values.
+        # Also perform type checks.
         for idx, arg in enumerate(self._signature):
             arg_types = arg.ty
             if not isinstance(arg.ty, list):
                 arg_types = [arg.ty]
-            if not type(arg_dict[idx]) in arg_types:
-                logger.warning(f"Value type {type(arg_dict[idx])} does not match wanted types {arg_types}.")
-                values.append(None)
-                fields.append(arg.name)
-            else:
-                values.append(arg_dict[idx])
-                fields.append((arg.name, type(arg_dict[idx])))
+            if not typing.Any in arg_types:
+                if not type(arg_dict[idx]) in arg_types:
+                    logger.warning(f"{self.name}(): Value type {type(arg_dict[idx])} of argument {arg.name} does not match wanted types {arg_types}.")
+                    values.append(None)
+                    fields.append(arg.name)
+                    continue
+            values.append(arg_dict[idx])
+            fields.append((arg.name, type(arg_dict[idx])))
         
         # repack into dataclass
         Arguments = dataclasses.make_dataclass('Arguments', fields)
@@ -133,10 +151,8 @@ class SysCall:
         # Perform the direct call
         state = self._func(graph, abb, state, args, va)
 
+        # Fill write_back_list with instances to write back.
         write_back_list = []
-
-        # write instances back for SOCs if they are handled via argument
-        # pointers
         if _SyscallCategory.create in self.categories:
             for idx, arg in enumerate(self._signature):
                 if arg.hint != _SigType.instance:
@@ -205,7 +221,7 @@ class SysCall:
                 # TODO, ignore offset for now
                 
             except ValuesUnknown as va_unknown_exc:
-                logger.warning(f"ValueAnalyzer could not get argument {idx}. Exception: \"{va_unknown_exc}\"")
+                logger.warning(f"{self.name}(): ValueAnalyzer could not get argument {arg.name}. Exception: \"{va_unknown_exc}\"")
                 values.append(None)
                 fields.append(arg.name)
                 continue
@@ -214,7 +230,7 @@ class SysCall:
             try:
                 extracted_value = get_argument(llvm_value, arg)
             except UnsuitableArgumentException as uns_arg_exc:
-                logger.warning(f"Received argument value has wrong type. Exception: \"{uns_arg_exc}\"")
+                logger.warning(f"{self.name}(): Extracted value of argument {arg.name} has wrong type. Exception: \"{uns_arg_exc}\"")
                 values.append(None)
                 fields.append(arg.name)
                 continue
@@ -253,7 +269,7 @@ class SysCall:
                                             callpath=state.call_path,
                                             argument_nr=idx)
                 except ValuesUnknown as va_unknown_exc:
-                    logger.warning(f"ValueAnalyzer could not assign Instance to argument pointer {idx} in signature. Exception: \"{va_unknown_exc}\"") 
+                    logger.warning(f"{self.name}(): ValueAnalyzer could not assign Instance to argument pointer {arg.name} in signature. Exception: \"{va_unknown_exc}\"") 
 
         # add standard control flow successors if wanted
         new_state.next_abbs = []
