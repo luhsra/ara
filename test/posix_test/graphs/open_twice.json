@@ -64,7 +64,7 @@
   {
     "source": "Main Thread",
     "target": "testfile",
-    "label": "open()",
+    "label": "open(O_RDONLY)",
     "type": "interaction"
   },
   {
@@ -76,7 +76,7 @@
   {
     "source": "Thread 1",
     "target": "testfile",
-    "label": "open()",
+    "label": "open(O_WRONLY)",
     "type": "interaction"
   },
   {

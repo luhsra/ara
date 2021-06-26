@@ -1,4 +1,5 @@
 import os
+import pyllco
 from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
@@ -20,6 +21,14 @@ class File(IDInstance):
     def __post_init__(self):
         super().__init__()
 
+# Musl libc file access modes for open()
+FILE_ACCESS_MODES = dict({
+    (0o0, 'O_RDONLY'),
+    (0o1, 'O_WRONLY'),
+    (0o2, 'O_RDWR'),
+    # O_SEARCH and O_EXEC equal O_PATH with id 010000000 in musl libc. We do not handle these.
+})
+
 class FileSyscalls:
 
     # Map path -> File object
@@ -32,7 +41,7 @@ class FileSyscalls:
     @syscall(aliases={"_ARA_open_syscall_", "open64"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('path', hint=SigType.value),
-                        Arg('oflag', hint=SigType.value),
+                        Arg('oflag', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('mode', hint=SigType.value)))
     def open(graph, abb, state, args, va):
 
@@ -42,7 +51,7 @@ class FileSyscalls:
         # If Category "create": Create File Object
         if SyscallCategory.create in CurrentSyscallCategories.get():
             if args.path == None:
-                logger.warning("Could not get path argument in open(). The File object is now untrackable for interaction open() calls.")
+                logger.warning("open(): Could not get path argument. The File object is now untrackable for interaction open() calls.")
             if args.path in FileSyscalls.files:
                 file = FileSyscalls.files[args.path]
                 logger.debug(f"open() call to already created File object: {file}")
@@ -61,8 +70,20 @@ class FileSyscalls:
         if SyscallCategory.comm in CurrentSyscallCategories.get():
             file = FileSyscalls.files.get(args.path, None)
             if file != None:
-                state = add_edge_from_self_to(state, file, "open()")
+                # Detect file access mode.
+                fam = ""
+                if args.oflag != None:
+                    fam = [FILE_ACCESS_MODES.get(mode, None) for mode in FILE_ACCESS_MODES.keys()
+                            if (args.oflag.get() & 0b11) == mode]
+                    if len(fam) < 1 or fam[0] == None:
+                        logger.warning(f"open(): Could not detect file access mode in value {args.oflag.get()}.")
+                        fam = ""
+                    assert len(fam) == 1
+                    fam = fam[0]
+                else:
+                    logger.warning("open(): No file access mode detection because oflag argument is missing!")
+                state = add_edge_from_self_to(state, file, f"open({fam})")
             else:
-                logger.warning(f"File with path {args.path} not found!")
+                logger.warning(f"open(): File with path {args.path} not found!")
 
         return state

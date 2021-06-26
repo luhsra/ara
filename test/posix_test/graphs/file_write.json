@@ -38,7 +38,7 @@
   {
     "source": "Main Thread",
     "target": "testfile",
-    "label": "open()",
+    "label": "open(O_RDWR)",
     "type": "interaction"
   },
   {

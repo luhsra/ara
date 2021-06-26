@@ -222,4 +222,4 @@ def assign_instance_to_return_value(va, abb, call_path, instance: POSIXInstance)
         return True
     except ValuesUnknown as va_unknown_exc:
         logger.warning(f"ValueAnalyzer could not assign Instance {instance} to return value. Exception: \"{va_unknown_exc}\"")
-        return False 
+        return False
