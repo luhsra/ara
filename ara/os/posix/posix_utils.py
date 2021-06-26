@@ -1,9 +1,12 @@
 """This module contains useful functions and classes for all POSIX modules in this package."""
 
 import html
+import pyllco
 from dataclasses import dataclass, field
+from typing import Callable
 from abc import ABC, abstractmethod
 from graph_tool import Vertex
+from ara.graph import SyscallCategory
 from ara.util import get_logger, LEVEL
 from ..os_util import assign_id
 
@@ -223,3 +226,19 @@ def assign_instance_to_return_value(va, abb, call_path, instance: POSIXInstance)
     except ValuesUnknown as va_unknown_exc:
         logger.warning(f"ValueAnalyzer could not assign Instance {instance} to return value. Exception: \"{va_unknown_exc}\"")
         return False
+
+def static_init_detection(create_static_inst: Callable, comm_func: Callable, inst_obj, graph, abb, state, args, va):
+
+    # If Category "create": Create a new object if inst_obj is a pyllco.GlobalVariable (e.g. args.mutex == PTHREAD_MUTEX_INITIALIZER)
+    if SyscallCategory.create in CurrentSyscallCategories.get():
+        if PosixOptions.enable_static_init_detection and type(inst_obj) == pyllco.GlobalVariable:
+            state = create_static_inst(graph, abb, state, args, va)
+
+    # If Category "comm": Handle the normal edge creation by calling comm_part.
+    if SyscallCategory.comm in CurrentSyscallCategories.get():
+        if type(inst_obj) != pyllco.GlobalVariable or not PosixOptions.enable_static_init_detection:
+            state = comm_func(graph, abb, state, args, va)
+        else:
+            logger.warning("static_init_detection(): inst_obj is of type pyllco.GlobalVariable. Probably there was an error in the PTHREAD_*_INITIALIZER detection.")
+
+    return state

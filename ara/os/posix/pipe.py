@@ -9,7 +9,7 @@ class Pipe(IDInstance):
     wanted_attrs = ["name", "num_id"]
     dot_appearance = {
         "shape": "box",
-        "fillcolor": "#b95c1e ",
+        "fillcolor": "#b95c1e",
         "style": "filled"
     }
 

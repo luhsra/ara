@@ -22,6 +22,9 @@ struct_test_double_call
 struct_test_func_call
 struct_test_single_call
 very_simple_posix_function_call
+condition_var_broadcast
+condition_variable
+condition_var_initializer
 file_read
 file_readv
 filestream_open

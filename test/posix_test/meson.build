@@ -267,3 +267,48 @@ test('pthread_cancel',
         suite: 'posix',
         timeout: 300
 )
+
+test('condition_variable',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'condition_variable.json', posix_condition_variable],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('condition_variable_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'condition_variable.json', posix_condition_variable_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('condition_var_initializer',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'condition_var_initializer.json', posix_condition_var_initializer],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('condition_var_initializer_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'condition_var_initializer.json', posix_condition_var_initializer_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('condition_var_broadcast',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('condition_var_broadcast_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
