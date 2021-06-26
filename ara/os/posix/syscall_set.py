@@ -83,7 +83,7 @@ syscall_set = set({
     "pthread_attr_setdetachstate",
     "pthread_attr_setguardsize",
     "pthread_attr_setinheritsched",
-    "pthread_attr_setschedparam",
+    "_ARA_pthread_attr_setschedparam_syscall_" # Special Musl wrapper for pthread_attr_setschedparam(),
     "pthread_attr_setschedpolicy",
     "pthread_attr_setscope",
     "pthread_attr_setstack",

@@ -12,11 +12,12 @@
     "line": 0,
     "specialization_level": "N/A",
     "type": "instance",
-    "arg": null,
-    "attr": null,
     "function": "main",
+    "inherited_sched_attr": null,
     "name": "Main Thread",
-    "num_id": 0
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
   },
   {
     "label": "signal_catching_func_1()",

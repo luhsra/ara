@@ -34,8 +34,12 @@ mutex_initializer
 nanosleep
 open_twice
 pipe
+pthread_cancel
 pthread_create
+pthread_detach
 semaphore
+set_thread_attr
+set_thread_attr_inheritance
 signal_handler
 signal_handler_siginfo
 sleep

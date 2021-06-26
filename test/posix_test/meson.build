@@ -222,3 +222,48 @@ test('sleep',
         suite: 'posix',
         timeout: 300
 )
+
+test('set_thread_attr',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'set_thread_attr.json', posix_set_thread_attr],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('set_thread_attr_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'set_thread_attr.json', posix_set_thread_attr_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('set_thread_attr_inheritance',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'set_thread_attr_inheritance.json', posix_set_thread_attr_inheritance],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('set_thread_attr_inherit_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'set_thread_attr_inheritance.json', posix_set_thread_attr_inheritance_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('pthread_detach',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'pthread_detach.json', posix_pthread_detach],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('pthread_cancel',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'pthread_cancel.json', posix_pthread_cancel_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)

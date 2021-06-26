@@ -20,25 +20,35 @@
     "sched_priority": "<default>"
   },
   {
-    "label": "file_stream.txt",
-    "id": "file_stream",
-    "branch": 1,
+    "label": "Test Thread",
+    "id": "Test Thread",
+    "branch": 0,
     "usually_taken": 0,
     "loop": 0,
     "recursive": 0,
     "after_scheduler": 1,
-    "unique": 0,
-    "file": "../../subprojects/musl-libc/src/stdio/fopen.c",
-    "line": 21,
+    "unique": 1,
+    "file": "../../appl/POSIX/unit_tests/set_thread_attr.c",
+    "line": 25,
     "specialization_level": "",
     "type": "instance",
-    "name": "file_stream.txt",
-    "path": "file_stream.txt"
+    "function": "new_thread_routine",
+    "inherited_sched_attr": "<default>",
+    "name": "Test Thread",
+    "num_id": 1,
+    "sched_policy": "SCHED_RR",
+    "sched_priority": 7
   },
   {
     "source": "Main Thread",
-    "target": "file_stream",
-    "label": "open()",
+    "target": "Test Thread",
+    "label": "pthread_join()",
+    "type": "interaction"
+  },
+  {
+    "source": "Test Thread",
+    "target": "Test Thread",
+    "label": "pause()",
     "type": "interaction"
   }
 ]

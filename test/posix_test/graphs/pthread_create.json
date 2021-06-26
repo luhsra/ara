@@ -12,11 +12,12 @@
     "line": 0,
     "specialization_level": "N/A",
     "type": "instance",
-    "arg": null,
-    "attr": null,
     "function": "main",
+    "inherited_sched_attr": null,
     "name": "Main Thread",
-    "num_id": 0
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
   },
   {
     "label": "Thread 1 (new_thread_routine)",
@@ -31,11 +32,12 @@
     "line": 14,
     "specialization_level": "",
     "type": "instance",
-    "arg": "<Object: LLVMRawValue>",
-    "attr": "<Object: LLVMRawValue>",
     "function": "new_thread_routine",
+    "inherited_sched_attr": "<default>",
     "name": "Thread 1",
-    "num_id": 1
+    "num_id": 1,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
   },
   {
     "source": "Main Thread",

@@ -49,11 +49,11 @@ SIGNAL_TYPES = dict({
     (28, 'SIGWINCH'),   # Window size change (4.3 BSD, Sun).
 })
 
-@dataclass
+@dataclass(eq = False)
 class SignalCatchingFunc(IDInstance):
     entry_abb: Any
     function: pyllco.Function
-    catching_signals: set # set[Signal]
+    catching_signals: set   # set[Signal]
     is_regular: bool = True # True if the entry function is available
 
     wanted_attrs = ["name", "function", "catching_signals"]

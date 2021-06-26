@@ -8,8 +8,7 @@ from .posix_utils import IDInstance, logger, register_instance, add_edge_from_se
 
 @dataclass
 class Mutex(IDInstance):
-    attr: Any
-    wanted_attrs = ["name", "attr", "num_id"]
+    wanted_attrs = ["name", "num_id"]
     dot_appearance = {
         "shape": "box",
         "fillcolor": "#2980b9",
@@ -28,11 +27,7 @@ class MutexSyscalls:
              signature=(Arg('mutex', hint=SigType.instance),
                         Arg('attr', hint=SigType.symbol)))
     def pthread_mutex_init(graph, abb, state, args, va):
-        
-        new_mutex = Mutex(attr=args.attr,
-                          name=None
-        )
-        
+        new_mutex = Mutex(name=None)
         args.mutex = new_mutex
         return register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state)
 
@@ -43,9 +38,7 @@ class MutexSyscalls:
         # If Category "create": Create a new Mutex object if args.mutex is a pyllco.GlobalVariable (args.mutex = PTHREAD_MUTEX_INITIALIZER)
         if SyscallCategory.create in CurrentSyscallCategories.get():
             if PosixOptions.enable_static_init_detection and type(args.mutex) == pyllco.GlobalVariable:
-                new_mutex = Mutex(attr=None,
-                                  name=None
-                )
+                new_mutex = Mutex(name=None)
                 args.mutex = new_mutex
                 state = register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state)
 
@@ -64,25 +57,6 @@ class MutexSyscalls:
              signature=(Arg('mutex', hint=SigType.instance, ty=[Mutex, pyllco.GlobalVariable]),))
     def pthread_mutex_lock(graph, abb, state, args, va):
         return MutexSyscalls.mutex_interaction_impl(graph, abb, state, args, va, "pthread_mutex_lock()")
-
-
-    # int pthread_mutex_trylock(pthread_mutex_t *mutex);
-    @syscall(aliases={"__pthread_mutex_trylock"},
-             categories={SyscallCategory.create, SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance, ty=[Mutex, pyllco.GlobalVariable]),))
-    def pthread_mutex_trylock(graph, abb, state, args, va):
-        return MutexSyscalls.mutex_interaction_impl(graph, abb, state, args, va, "pthread_mutex_trylock()")
-
-
-    # int pthread_mutex_timedlock(pthread_mutex_t *restrict mutex,
-    #   const struct timespec *restrict abstime);
-    @syscall(aliases={"__pthread_mutex_timedlock"},
-             categories={SyscallCategory.create, SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance, ty=[Mutex, pyllco.GlobalVariable]),
-                        Arg('abstime', hint=SigType.symbol),))
-    def pthread_mutex_timedlock(graph, abb, state, args, va):
-        return MutexSyscalls.mutex_interaction_impl(graph, abb, state, args, va, "pthread_mutex_timedlock()") # TODO: decode abstime
-
 
     # int pthread_mutex_unlock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_unlock"},
