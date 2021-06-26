@@ -63,8 +63,8 @@
   },
   {
     "source": "Main Thread",
-    "target": "Main Thread",
-    "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
+    "target": "Thread 1",
+    "label": "pthread_join()",
     "type": "interaction"
   },
   {

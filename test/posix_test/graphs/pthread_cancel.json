@@ -29,7 +29,7 @@
     "after_scheduler": 1,
     "unique": 1,
     "file": "../../appl/POSIX/unit_tests/pthread_cancel.c",
-    "line": 16,
+    "line": 21,
     "specialization_level": "",
     "type": "instance",
     "function": "new_thread_routine",

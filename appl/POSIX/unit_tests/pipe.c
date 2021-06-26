@@ -25,5 +25,6 @@ int main() {
     read(pipe_fds[PIPE_READ], msg_buf, 100);
 
     puts(msg_buf);
-    sleep(1);
+    void* output;
+    pthread_join(new_thread, &output);
 }
