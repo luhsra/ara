@@ -105,17 +105,18 @@ class ThreadSyscalls:
                             name=thread_name,
         )
         args.thread = new_thread
+        state = register_instance(new_thread, thread_name if thread_name != None else f"{new_thread.name} ({func_name})", graph, abb, state)
 
         # Handle the creation of multiple threads with the same entry point.
         if func_name in ThreadSyscalls.entry_points.keys():
             logger.warning(f"pthread_create(): There is already an thread with the entry point {func_name}. I do not analyse the entry point again.")
             # Add info edge:
-            add_interaction_edge(new_thread, ThreadSyscalls.entry_points[func_name], "Info: Same entry point as")
+            add_interaction_edge(state.instances, new_thread, ThreadSyscalls.entry_points[func_name], "Info: Same entry point as")
             new_thread.is_regular = False
         else:
             ThreadSyscalls.entry_points[func_name] = new_thread
 
-        return register_instance(new_thread, thread_name if thread_name != None else f"{new_thread.name} ({func_name})", graph, abb, state)
+        return state
 
 
     # int pthread_join(pthread_t thread, void **value_ptr);
