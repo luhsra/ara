@@ -104,10 +104,6 @@
     "_ZN7TwoRootC2Ev"
   ],
   [
-    "_ZThn4_N5Multi3runEv",
-    "_ZN5Multi3runEv"
-  ],
-  [
     "__ara_fake_entry",
     "main"
   ],
@@ -193,7 +189,11 @@
   ],
   [
     "main",
-    "_ZN5Multi5quackEv"
+    "_ZN5Multi3runEv"
+  ],
+  [
+    "main",
+    "_ZN5Multi3runEv"
   ],
   [
     "main",
@@ -201,11 +201,7 @@
   ],
   [
     "main",
-    "_ZThn4_N5Multi3runEv"
-  ],
-  [
-    "main",
-    "_ZThn4_N5Multi3runEv"
+    "_ZN5Multi5quackEv"
   ],
   [
     "main",
