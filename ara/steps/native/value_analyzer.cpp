@@ -717,6 +717,12 @@ namespace ara::step {
 				logger.warn() << "Assignment to storage node not possible. Assign to call node itself." << std::endl;
 				id = node->getId();
 			} else {
+				if (callpath.size() == 0) {
+					// we can directly assign to the store node, since is has to be unique.
+					logger.debug() << "Assign object ID " << obj_index << " to storage SVF node ID: " << store->getId()
+					               << "." << std::endl;
+					obj_map.insert(boost::bimap<SVF::NodeID, uint64_t>::value_type(store->getId(), obj_index));
+				}
 				auto [_, target] = do_backward_value_search(store, callpath, graph::SigType::symbol);
 				id = safe_deref(target).getId();
 			}

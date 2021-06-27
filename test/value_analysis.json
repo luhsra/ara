@@ -1,24 +1,24 @@
 {
 	"vTaskStepTick": {
-		"27": [
+		"34": [
 			{
-				"callpath": [{"line": 79, "functs": ["main", "_ZN5Embed4callEv"]}],
+				"callpath": [{"line": 86, "functs": ["main", "_ZN5Embed4callEv"]}],
 				"args": [["value", 34]]
 			}
 		],
-		"18": [
+		"25": [
 			{
-				"callpath": [{"line": 100, "functs": ["main", "_Z8do_stuffi"]}],
+				"callpath": [{"line": 107, "functs": ["main", "_Z8do_stuffi"]}],
 				"args": [["value", 1234]]
 			}, {
-				"callpath": [{"line": 101, "functs": ["main", "_Z8do_stuffi"]}],
+				"callpath": [{"line": 108, "functs": ["main", "_Z8do_stuffi"]}],
 				"args": [["value", 333]]
 			}, {
-				"callpath": [{"line": 113, "functs": ["main", "_ZN5GuardD2Ev"]},{"line": 36, "functs": ["_ZN5GuardD2Ev", "_Z8do_stuffi"]}],
+				"callpath": [{"line": 125, "functs": ["main", "_ZN5GuardD2Ev"]},{"line": 43, "functs": ["_ZN5GuardD2Ev", "_Z8do_stuffi"]}],
 				"args": [["value", 4465]]
 			}
 		],
-		"106": [
+		"113": [
 			{
 				"callpath": [],
 				"args": [["value", 10101]]
@@ -26,51 +26,65 @@
 		]
 	},
 	"xQueueCreateMutex": {
-		"59": [
+		"66": [
 			{
-				"callpath": [{"line": 108, "functs": ["main", "_ZN7WrapperC2Ev"]}],
+				"callpath": [{"line": 120, "functs": ["main", "_ZN7WrapperC2Ev"]}],
 				"args": [["value", 1]],
 				"is_creation": {"name": "OBJ: mtx"}
 			}, {
-				"callpath": [{"line": 110, "functs": ["main", "_ZN7WrapperC2Ev"]}],
+				"callpath": [{"line": 122, "functs": ["main", "_ZN7WrapperC2Ev"]}],
 				"args": [["value", 1]],
 				"is_creation": {"name": "OBJ: mtx2"}
 			}
 		],
-		"68": [
+		"75": [
 			{
-				"callpath": [{"line": 92, "functs": ["main", "_Z10make_mutexPP15QueueDefinition"]}],
+				"callpath": [{"line": 99, "functs": ["main", "_Z10make_mutexPP15QueueDefinition"]}],
 				"args": [["value", 4]],
 				"is_creation": {"name": "OBJ: mutex4"}
 			}, {
-				"callpath": [{"line": 93, "functs": ["main", "_Z10make_mutexPP15QueueDefinition"]}],
+				"callpath": [{"line": 100, "functs": ["main", "_Z10make_mutexPP15QueueDefinition"]}],
 				"args": [["value", 4]],
 				"is_creation": {"name": "OBJ: mutex5"}
 			}
 		],
-		"85": [
+		"92": [
 			{
 				"callpath": [],
 				"args": [["value", 4]],
 				"is_creation": {"name": "OBJ: mutex"}
 			}
 		],
-		"90": [
+		"97": [
 			{
 				"callpath": [],
 				"args": [["value", 4]],
 				"is_creation": {"name": "OBJ: mutex3"}
 			}
+		],
+		"115": [
+			{
+				"callpath": [],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutexes.m1"}
+			}
+		],
+		"116": [
+			{
+				"callpath": [],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutexes.m2"}
+			}
 		]
 	},
 	"xTaskCreateStatic": {
-		"82": [
+		"89": [
 			{
 				"callpath": [],
 				"args": [["value", "Function: _Z5task1Pv"], ["value", "TaskStatic"], ["value", 11114], ["symbol", "null"], ["value", 1], ["symbol", "null"], ["symbol", "null"]]
 			}
 		],
-		"83": [
+		"90": [
 			{
 				"callpath": [],
 				"args": [["value", "Function: _Z5task1Pv"], ["value", "TaskStatic1"], ["value", 12344], ["symbol", "GlobalVariable: task_data"], ["value", 5], ["symbol", "null"], ["symbol", "null"]]
@@ -78,19 +92,19 @@
 		]
 	},
 	"xTaskCreate": {
-		"94": [
+		"101": [
 			{
 				"callpath": [],
 				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 1"], ["value", 6667], ["symbol", "null"], ["value", 6], ["symbol", "null"]]
 			}
 		],
-		"95": [
+		"102": [
 			{
 				"callpath": [],
 				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 2"], ["value", 8889], ["symbol", "null"], ["value", 6], ["symbol", "GlobalVariable: _ZL1t"]]
 			}
 		],
-		"96": [
+		"103": [
 			{
 				"callpath": [],
 				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 3"], ["value", 9993], ["symbol", "null"], ["value", 6], ["symbol", "Alloca: t2"]]
@@ -98,19 +112,19 @@
 		]
 	},
 	"xQueueTakeMutexRecursive": {
-		"102": [
+		"109": [
 			{
 				"callpath": [],
 				"args": [["value", "OBJ: mutex"], ["value", 5]]
 			}
 		],
-		"103": [
+		"110": [
 			{
 				"callpath": [],
 				"args": [["value", "OBJ: mutex4"], ["value", 80]]
 			}
 		],
-		"104": [
+		"111": [
 			{
 				"callpath": [],
 				"args": [["value", "OBJ: mutex5"], ["value", 14]]
@@ -118,23 +132,35 @@
 		]
 	},
 	"xQueueSemaphoreTake": {
-		"46": [
+		"53": [
 			{
-				"callpath": [{"line": 109, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 62, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2C2EP15QueueDefinition"]}],
+				"callpath": [{"line": 121, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 69, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2C2EP15QueueDefinition"]}],
 				"args": [["value", "OBJ: mtx"], ["value", 10]]
 			}, {
-				"callpath": [{"line": 111, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 62, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2C2EP15QueueDefinition"]}],
+				"callpath": [{"line": 123, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 69, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2C2EP15QueueDefinition"]}],
 				"args": [["value", "OBJ: mtx2"], ["value", 10]]
+			}
+		],
+		"117": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutexes.m1"], ["value", 10]]
+			}
+		],
+		"118": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutexes.m2"], ["value", 10]]
 			}
 		]
 	},
 	"xQueueGenericSend": {
-		"49": [
+		"56": [
 			{
-				"callpath": [{"line": 109, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 64, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2D2Ev"]}],
+				"callpath": [{"line": 121, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 71, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2D2Ev"]}],
 				"args": [["value", "OBJ: mtx"]]
 			}, {
-				"callpath": [{"line": 111, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 64, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2D2Ev"]}],
+				"callpath": [{"line": 123, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 71, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2D2Ev"]}],
 				"args": [["value", "OBJ: mtx2"]]
 			}
 		]

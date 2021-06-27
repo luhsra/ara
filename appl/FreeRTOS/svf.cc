@@ -11,6 +11,13 @@ static xSemaphoreHandle mutex4;
 static xSemaphoreHandle mutex5;
 static xTaskHandle t;
 
+struct SemStruct {
+	xSemaphoreHandle m1;
+	xSemaphoreHandle m2;
+};
+
+static SemStruct mutexes;
+
 int task_data = 746;
 int global_value = 0;
 
@@ -104,6 +111,11 @@ int main() {
 	xSemaphoreTakeRecursive(mutex5, 14);
 	global_value = 10101;
 	vTaskStepTick(global_value);
+
+	mutexes.m1 = xSemaphoreCreateRecursiveMutex();
+	mutexes.m2 = xSemaphoreCreateRecursiveMutex();
+	xSemaphoreTake(mutexes.m1, 10);
+	xSemaphoreTake(mutexes.m2, 10);
 
 	Wrapper w;
 	x = w.do_stuff(x);
