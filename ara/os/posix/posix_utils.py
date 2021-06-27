@@ -138,6 +138,16 @@ class PosixClass:
     def set(cls, posix_class):
         cls.posix_class = posix_class
 
+class StaticInitSyscalls:
+    static_init_syscalls = list()
+
+    @classmethod
+    def get_comms(cls):
+        return cls.static_init_syscalls
+
+    @classmethod
+    def add_comms(cls, comms: list):
+        cls.static_init_syscalls.extend(comms)
 
 def do_not_interpret_syscall(graph, abb, state):
     """Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret()."""

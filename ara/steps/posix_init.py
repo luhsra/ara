@@ -1,7 +1,8 @@
 from .step import Step
 from .option import Option, Bool
 from ara.os.os_util import assign_id
-from ara.os.posix.posix_utils import MainThread, PosixOptions
+from ara.graph import SyscallCategory
+from ara.os.posix.posix_utils import MainThread, PosixOptions, StaticInitSyscalls
 from ara.os.posix.thread import Thread
 from ara.os.posix.posix import POSIX
 
@@ -77,6 +78,15 @@ class POSIXInit(Step):
         # Set OS Model options
         PosixOptions.enable_static_init_detection = self.enable_static_init_detection.get()
         PosixOptions.enable_musl_syscalls = self.enable_musl_syscalls.get()
+
+        # Disable SyscallCategory.create in StaticInitSyscalls
+        # if static init detection is disabled.
+        if not PosixOptions.enable_static_init_detection:
+            for comm_func in StaticInitSyscalls.get_comms():
+                comm_func.categories = {SyscallCategory.comm}
+
+        # Set musl syscall detection functions to stubs
+        # if musl syscalls are disabled.
         if not PosixOptions.enable_musl_syscalls:
             for i in range(0, 7):
                 getattr(POSIX, "_musl_syscall" + str(i)).is_stub = True

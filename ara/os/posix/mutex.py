@@ -4,7 +4,7 @@ from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, register_instance, add_edge_from_self_to, static_init_detection
+from .posix_utils import IDInstance, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
 
 @dataclass
 class Mutex(IDInstance):
@@ -54,3 +54,5 @@ class MutexSyscalls:
                     lambda graph, abb, state, args, va: 
                         add_edge_from_self_to(state, args.mutex, "pthread_mutex_unlock()"), 
                     args.mutex, graph, abb, state, args, va)
+
+StaticInitSyscalls.add_comms([MutexSyscalls.pthread_mutex_lock, MutexSyscalls.pthread_mutex_unlock])

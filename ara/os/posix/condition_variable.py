@@ -4,7 +4,7 @@ from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, static_init_detection
+from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
 from .mutex import Mutex, create_mutex
 
 @dataclass
@@ -70,3 +70,5 @@ class CondSyscalls:
                     lambda graph, abb, state, args, va:
                         add_edge_from_self_to(state, args.mutex, "pthread_cond_wait()"),
                     args.mutex, graph, abb, state, args, va)
+
+StaticInitSyscalls.add_comms([CondSyscalls.pthread_cond_broadcast, CondSyscalls.pthread_cond_signal, CondSyscalls.pthread_cond_wait])
