@@ -10,7 +10,7 @@ from ara.graph import CFType
 def main():
     """Test for correct instance detection."""
     config = {"steps": ["SIA"]}
-    m_graph, data, _ = init_test(extra_config=config)
+    m_graph, data, log, _ = init_test(extra_config=config)
     instances = m_graph.instances
     dump = []
 
@@ -35,7 +35,7 @@ def main():
             i_dump[name] = val
         dump.append(i_dump)
 
-    # print(json.dumps(sorted(dump, key=lambda x: x['id']), indent=2))
+    # log.info(json.dumps(sorted(dump, key=lambda x: x['id']), indent=2))
     fail_if(data != sorted(dump, key=lambda x: x['id']), "Data not equal")
 
 

@@ -26,8 +26,10 @@ def value_to_py(value, attrs):
     return str(type(value)) + ": " + str(value)
 
 
+logger = None
 def debug_print(*args):
-    print(*args)
+    global logger
+    logger.info(' '.join([str(x) for x in args]))
     pass
 
 
@@ -62,7 +64,9 @@ def create_callpath(graph, cp_desc):
 def main():
     """Test for correct value analysis recognition."""
     config = {"steps": ["Syscall"] + ValueAnalyzer.get_dependencies()}
-    m_graph, data, _ = init_test(extra_config=config)
+    m_graph, data, log, _ = init_test(extra_config=config)
+    global logger
+    logger = log
     va = ValueAnalyzer(m_graph)
 
     cfg = m_graph.cfg

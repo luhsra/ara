@@ -21,7 +21,7 @@ def abbs(cfg, function):
 def main():
     """Test for correct syscall mapping."""
 
-    m_graph, data, _ = init_test(['Syscall'])
+    m_graph, data, log, _ = init_test(['Syscall'])
     cfg = m_graph.cfg
     functs = m_graph.functs
     stats = {}
@@ -36,7 +36,7 @@ def main():
                     (filter(f_exp(cfg, ABBType.call),
                             cfg.get_abbs(function))))
         stats[cfg.vp.name[function]] = {"syscalls": syscalls, "calls": calls}
-    # print(json.dumps(stats, indent=2))
+    # log.info(json.dumps(stats, indent=2))
     fail_if(data != stats, "Data not equal")
 
 

@@ -12,13 +12,13 @@ def main():
                                  "entry_point": "_Z14other_functioni"},
                         "ICFG", {"name": "ICFG",
                                  "entry_point": "main"}]}
-    m_graph, data, _ = init_test(extra_config=config)
+    m_graph, data, log, _ = init_test(extra_config=config)
     cfg = m_graph.cfg
     icf_edges = []
     for edge in filter(lambda x: cfg.ep.type[x] == CFType.icf, cfg.edges()):
         icf_edges.append([hash(edge.source()),
                           hash(edge.target())])
-    # print(sorted(icf_edges))
+    # log.info(str(sorted(icf_edges)))
     fail_if(data != sorted(icf_edges), "Data not equal")
 
 

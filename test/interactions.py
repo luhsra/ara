@@ -10,7 +10,7 @@ from ara.graph import CFType
 def main():
     """Test for correct interaction detection."""
     config = {"steps": ["InteractionAnalysis"]}
-    m_graph, data, _ = init_test(extra_config=config)
+    m_graph, data, log, _ = init_test(extra_config=config)
     instances = m_graph.instances
     dump = []
 
@@ -50,7 +50,7 @@ def main():
             return "0" + item['id']
         return "1"
 
-    # print(json.dumps(sorted(dump, key=sort_key), indent=2))
+    # log.info(json.dumps(sorted(dump, key=sort_key), indent=2))
     fail_if(data != sorted(dump, key=sort_key), "Data not equal")
 
 

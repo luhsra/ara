@@ -12,7 +12,8 @@ def main():
                         "IRWriter",
                         "ResolveFunctionPointer",
                         "CallGraphStats"]}
-    m_graph, data, _ = init_test(extra_config=config)
+    m_graph, data, log, _ = init_test(extra_config=config,
+                                      logger_name="fpointer")
     callgraph = m_graph.callgraph
 
     c_edges = []
@@ -21,7 +22,7 @@ def main():
                         callgraph.vp.function_name[edge.target()]])
 
 
-    # print(json.dumps(sorted(c_edges), indent=2))
+    # log.info(json.dumps(sorted(c_edges), indent=2))
     fail_if(data != sorted(c_edges), "Data not equal")
 
 

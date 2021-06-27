@@ -21,7 +21,7 @@ fake_step_module()
 
 
 # this imports has to be _below_ the call to fake_step_module
-from ara.util import init_logging
+from ara.util import init_logging, get_logger
 from ara.graph import Graph
 from ara.stepmanager import StepManager
 
@@ -56,7 +56,7 @@ def get_config(i_file):
             'input_file': i_file}
 
 
-def init_test(steps=None, extra_config=None):
+def init_test(steps=None, extra_config=None, logger_name=None):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
 
@@ -70,8 +70,12 @@ def init_test(steps=None, extra_config=None):
                   Stepmanager.execute.
     extra_config: Dict with extra configuration, see the `extra_config`
                   argument of Stepmanager.execute.
+    logger_name:  Create a logger with this name. Otherwise the root logger is
+                  returned.
     """
-    init_logging(level=logging.DEBUG)
+    logger = init_logging(level=logging.DEBUG, root_name='ara.test')
+    if logger_name is not None:
+        logger = get_logger(logger_name)
     if not extra_config:
         extra_config = {}
     g = Graph()
@@ -93,4 +97,4 @@ def init_test(steps=None, extra_config=None):
 
     s_manager.execute(get_config(i_file), extra_config, steps)
 
-    return g, data, s_manager
+    return g, data, logger, s_manager
