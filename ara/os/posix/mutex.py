@@ -6,7 +6,7 @@ from ara.graph import SyscallCategory, SigType
 from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
 
-@dataclass
+@dataclass(eq = False)
 class Mutex(IDInstance):
     wanted_attrs = ["name", "num_id"]
     dot_appearance = {

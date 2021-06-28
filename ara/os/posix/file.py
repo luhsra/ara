@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
+from .file_descriptor import create_file_desc_of
 from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCategories, add_edge_from_self_to, assign_instance_to_return_value
 
-
-@dataclass
+@dataclass(eq = False)
 class File(IDInstance):
     path: str
 
@@ -64,7 +64,7 @@ class FileSyscalls:
                 if args.path != None:
                     FileSyscalls.files[args.path] = file
             # Set the return value to the new filedescriptor (This file)
-            assign_instance_to_return_value(va, abb, cp, file)
+            assign_instance_to_return_value(va, abb, cp, create_file_desc_of(file))
 
         # If Category "comm": Create edge to the addressed File object
         if SyscallCategory.comm in CurrentSyscallCategories.get():

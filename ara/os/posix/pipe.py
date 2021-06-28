@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, assign_id, Arg
+from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, register_instance
+from .file_descriptor import create_file_desc_of
 
-@dataclass
+@dataclass(eq = False)
 class Pipe(IDInstance):
     wanted_attrs = ["name", "num_id"]
     dot_appearance = {
@@ -25,5 +26,5 @@ class PipeSyscalls:
         
         new_pipe = Pipe(name=None)
         
-        args.fildes = new_pipe
+        args.fildes = create_file_desc_of(new_pipe)
         return register_instance(new_pipe, f"{new_pipe.name}", graph, abb, state)

@@ -7,7 +7,7 @@ from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
 from .mutex import Mutex, create_mutex
 
-@dataclass
+@dataclass(eq = False)
 class ConditionVariable(IDInstance):
     wanted_attrs = ["name", "num_id"]
     dot_appearance = {
@@ -18,7 +18,7 @@ class ConditionVariable(IDInstance):
 
     def __post_init__(self):
         super().__init__()
-
+        
 class CondSyscalls:
 
     def _create_cond(graph, abb, state, args, va):

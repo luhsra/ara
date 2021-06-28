@@ -5,7 +5,7 @@ from ara.graph import SyscallCategory, SigType
 from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, register_instance, add_edge_from_self_to
 
-@dataclass
+@dataclass(eq = False)
 class Semaphore(IDInstance):
     process_shared: bool    # Is the Semaphore available for other processes.
     init_counter: int       # The initial counter state. (e.g. the total amount of managed resources)

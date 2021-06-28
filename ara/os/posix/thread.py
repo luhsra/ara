@@ -6,9 +6,6 @@ from ara.graph import SyscallCategory, SigType
 from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, logger, register_instance, add_edge_from_self_to, get_running_thread, add_interaction_edge
 
-# SIA and InteractionAnalysis requires a Hash for the Thread/Task instance.
-# We provide an id based implementation and allow the class to be mutable.
-# Make sure to not alter the num_id field of a Thread.
 @dataclass(eq = False)
 class Thread(IDInstance):
     entry_abb: Any              # The entry point as abb type
@@ -28,15 +25,15 @@ class Thread(IDInstance):
     def __post_init__(self):
         super().__init__()
 
-    def __hash__(self):
-        return hash(self.num_id)
-
-@dataclass
+@dataclass(eq = False)
 class ThreadAttr:
     sched_priority: int
     sched_policy: str
     inheritsched: bool
     name: str
+
+    def __hash__(self):
+        return id(self)
 
 # Scheduling policies supported by musl libc.
 SCHEDULING_POLICIES = dict({

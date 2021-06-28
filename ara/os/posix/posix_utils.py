@@ -36,7 +36,12 @@ def get_musl_weak_alias(syscall: str) -> str:
     """
     return "__" + syscall if syscall[0] != '_' else None
 
-@dataclass
+# The new ValueAnalyzer Interface and some algorithms in sse.py requires system instances to be hashable.
+# The default hash method for dataclasses is based on the fields in the class.
+# A change in the instance will result in an change of the hash. 
+# We do not want this. We want both, hashable and mutable instances.
+# Therefore we provide an custom hash based on the id. This id is always unique for an instance.
+@dataclass(eq = False)
 class POSIXInstance(ABC):
     name: str                           # The name of the instance. This is not an id for the instance.
     vertex: Vertex = field(init=False)  # vertex for this instance in the InstanceGraph.
@@ -72,6 +77,9 @@ class POSIXInstance(ABC):
         max_id_components = list(map(lambda obj_name: getattr(self, obj_name), self.wanted_attrs))
         max_id_components.append(self.__class__.__name__)
         return '.'.join(map(str, max_id_components))
+
+    def __hash__(self):
+        return id(self)
 
 class IDInstance(POSIXInstance):
     """Use this base class instead of POSIXInstance if you can not generate a meaningful name for the instance.
@@ -128,6 +136,11 @@ class CurrentSyscallCategories:
         cls.current_syscall_cats = syscall_cats
 
 class PosixClass:
+    """This static class contains the POSIX OS Model class.
+    
+    We need this for the musl syscall detection.
+    This detection must be able to call all syscalls in the OS Model.
+    """
     posix_class = None
 
     @classmethod
@@ -139,14 +152,21 @@ class PosixClass:
         cls.posix_class = posix_class
 
 class StaticInitSyscalls:
+    """This static class contains all static initializer syscalls.
+    
+    Add all static initializer syscalls via add_comms() to register them.
+    POSIXInit will optimize them if static initializer detection is disabled.
+    """
     static_init_syscalls = list()
 
     @classmethod
-    def get_comms(cls):
+    def get_comms(cls) -> list:
+        """Get a list of all static initializer syscalls."""
         return cls.static_init_syscalls
 
     @classmethod
     def add_comms(cls, comms: list):
+        """Adds all syscalls in comms to the list of static initializer syscalls."""
         cls.static_init_syscalls.extend(comms)
 
 def do_not_interpret_syscall(graph, abb, state):
@@ -238,6 +258,23 @@ def assign_instance_to_return_value(va, abb, call_path, instance: POSIXInstance)
         return False
 
 def static_init_detection(create_static_inst: Callable, comm_func: Callable, inst_obj, graph, abb, state, args, va):
+    """Handles the static init detection (e.g. detection of PTHREAD_MUTEX_INITIALIZER).
+    
+    Call this function in all comm syscalls related to an instance that can be created statically.
+    Make sure the calling syscall is of both categories {create, comm}.
+    Make sure the calling syscall also accepts the type pyllco.GlobalVariable as instance argument.
+
+    Arguments:
+    create_static_inst              -- A function that creates a new instance. Signature: create_static_inst(graph, abb, state, args, va)
+    comm_func                       -- A function that handles the communication (e.g. create a new edge). Signature: comm_func(graph, abb, state, args, va)
+    inst_obj                        -- The instance object in args.
+    (graph, abb, state, args, va)   -- The signature for syscalls. Just put your local values for this variables into this function.
+
+    Returns the new state object so that you can do: return static_init_detection(...).
+    Make sure to provide the calling syscall also globally to the function StaticInitSyscalls.add_comms().
+    Via this way your syscall is registered as static initializer syscall.
+    Note that only comm syscalls can be static initializer syscalls.
+    """
 
     # If Category "create": Create a new object if inst_obj is a pyllco.GlobalVariable (e.g. args.mutex == PTHREAD_MUTEX_INITIALIZER)
     if SyscallCategory.create in CurrentSyscallCategories.get():
