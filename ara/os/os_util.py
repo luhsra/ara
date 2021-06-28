@@ -264,12 +264,14 @@ class SysCall:
                 if arg.hint != _SigType.instance:
                     continue
                 sys_obj = getattr(args, dataclasses.fields(args)[idx].name)
-                try:
-                    va.assign_system_object(abb, sys_obj,
-                                            callpath=state.call_path,
-                                            argument_nr=idx)
-                except ValuesUnknown as va_unknown_exc:
-                    logger.warning(f"{self.name}(): ValueAnalyzer could not assign Instance to argument pointer {arg.name} in signature. Exception: \"{va_unknown_exc}\"") 
+                # Only assign this instance if it is changed.
+                if values[idx] != None and (not sys_obj is values[idx]):
+                    try:
+                        va.assign_system_object(abb, sys_obj,
+                                                callpath=state.call_path,
+                                                argument_nr=idx)
+                    except ValuesUnknown as va_unknown_exc:
+                        logger.warning(f"{self.name}(): ValueAnalyzer could not assign Instance to argument pointer {arg.name} in signature. Exception: \"{va_unknown_exc}\"") 
 
         # add standard control flow successors if wanted
         new_state.next_abbs = []
