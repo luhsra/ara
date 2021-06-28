@@ -247,7 +247,7 @@ LDFLAGS_WITH_LLVM_TO_BIN = -static -nostdlib
 include $(MAKE_INCLUDE_DIR)/simple_project.mk
 #include $(MAKE_INCLUDE_DIR)/patric_gbs_a5.mk
 include $(MAKE_INCLUDE_DIR)/libmicrohttpd.mk
-include $(MAKE_INCLUDE_DIR)/microhttpd_demo.mk
+#include $(MAKE_INCLUDE_DIR)/microhttpd_demo.mk
 include $(MAKE_INCLUDE_DIR)/microhttpd_fileserver_dirs.mk
 
 # C++ Test
