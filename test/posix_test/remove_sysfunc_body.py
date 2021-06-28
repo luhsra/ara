@@ -5,7 +5,6 @@ if __name__ == '__main__':
 
 from ..init_test import init_test, fail_if
 from ..common_json_graphs import json_callgraph
-import json
 
 def get_func_name(callgraph, cfg, node):
     return cfg.vp.name[callgraph.vp.function[node]]

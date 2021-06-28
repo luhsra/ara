@@ -4,7 +4,7 @@ define dso_local i8 @sleep() #0 {
 	ret i8 1
 }
 
-define dso_local i32 @printf() #0 {
+define dso_local i32 @_printf() #0 {
 	call i8* @___pause()
 	ret i32 0
 }
@@ -45,7 +45,7 @@ define dso_local i8 @pthread_cond_timedwait() #0 {
 }
 
 define dso_local i32 @main() #0 {
-	call i32 @printf()
+	call i32 @_printf()
 	call i32 @pthread_join()
 	call i8 @pause()
 	call i8* @___pause()
