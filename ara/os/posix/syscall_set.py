@@ -259,4 +259,10 @@ syscall_set = set({
     "__wake",
     "__futexwait",
 
+    # Does normally not result to an interessting syscall. (if we do not analyze stdin, stdout, stderr, ...)
+    # These calls are expensive for the analysis.
+    "printf",
+    "sprintf",
+    "snprintf",
+
 })
