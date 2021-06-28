@@ -13,7 +13,7 @@ def main():
                         "IRWriter",
                         "ResolveFunctionPointer",
                         "CallGraphStats"]}
-    m_graph, data, _ = init_test(extra_config=config)
+    m_graph, data, log, _ = init_test(extra_config=config)
     c_edges = json_callgraph(m_graph.callgraph)
 
     # log.info(json.dumps(c_edges, indent=2))

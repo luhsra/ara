@@ -100,7 +100,7 @@ def main():
     with open(setting_file, "r") as f:
         config = json.load(f)
     
-    m_graph, data, _ = init_test(extra_config=config, os=POSIX)
+    m_graph, data, log, _ = init_test(extra_config=config, os=POSIX)
     dump = json_instance_graph(m_graph.instances)
     
     if self_is_testcase:

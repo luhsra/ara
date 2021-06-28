@@ -17,7 +17,7 @@ def test_remove_sysfunc_step(os):
                     "no_sysfunc_body": True
                 }
              }
-    graph, data, _ = init_test(extra_config=config, os=os)
+    graph, data, log, _ = init_test(extra_config=config, os=os)
     call_edges = json_callgraph(graph.callgraph)
 
     #print(call_edges)
