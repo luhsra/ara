@@ -265,4 +265,21 @@ syscall_set = set({
     "sprintf",
     "snprintf",
 
+    # functions in libmicrohttpd that leads to problems.
+    "file_free_callback",
+    "free_callback",
+    "dir_free_callback",
+    "unescape_wrapper",
+    "MHD_http_unescape",
+    "recv_param_adapter",
+
+    # Problematic functions in musl libc.
+    "tdelete",
+    "__tsearch_balance",
+    "__stdio_exit",
+    "__stdio_seek",
+    "__stdio_close",
+    "munmap",
+    "setsockopt",
+
 })
