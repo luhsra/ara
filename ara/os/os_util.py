@@ -108,60 +108,6 @@ class SysCall:
         """Returns the name of the syscall function."""
         return self.name
 
-    def direct_call(self, graph, abb, state, arg_dict: dict, va):
-        """Calls the syscall function without invoking the ValueAnalyzer.
-        
-        Arguments:
-        graph    -- the graph object
-        abb      -- the abb ob the system call
-        state    -- the OS state
-        arg_dict -- This dictionary must contain exactly all the arguments for the syscall.
-                    key: defines the position of the argument starting at 0.
-                    value: contains the value of the Argument object.
-        va       -- The value analyzer.
-
-        Returns:
-        1. state           -- The new updated OS state 
-        2. write_back_list -- All updated instance values in args to write back for the ValueAnalyzer.
-                              In this form: (position, new instance)
-        """
-        assert len(arg_dict) == len(self._signature), "arg_dict is not exactly covering syscalls signature."
-        fields = []
-        values = []
-        
-        # Get Argument fields and values.
-        # Also perform type checks.
-        for idx, arg in enumerate(self._signature):
-            arg_types = arg.ty
-            if not isinstance(arg.ty, list):
-                arg_types = [arg.ty]
-            if not typing.Any in arg_types:
-                if not type(arg_dict[idx]) in arg_types:
-                    logger.warning(f"{self.name}(): Value type {type(arg_dict[idx])} of argument {arg.name} does not match wanted types {arg_types}.")
-                    values.append(None)
-                    fields.append(arg.name)
-                    continue
-            values.append(arg_dict[idx])
-            fields.append((arg.name, type(arg_dict[idx])))
-        
-        # repack into dataclass
-        Arguments = dataclasses.make_dataclass('Arguments', fields)
-        args = Arguments(*values)
-
-        # Perform the direct call
-        state = self._func(graph, abb, state, args, va)
-
-        # Fill write_back_list with instances to write back.
-        write_back_list = []
-        if _SyscallCategory.create in self.categories:
-            for idx, arg in enumerate(self._signature):
-                if arg.hint != _SigType.instance:
-                    continue
-                sys_obj = getattr(args, dataclasses.fields(args)[idx].name)
-                write_back_list.append((idx, sys_obj))
-        
-        return state, write_back_list
-
     def __get__(self, obj, objtype=None):
         """Simulate bound descriptor access. However a systemcall acts like a
         static method so just return itself here."""

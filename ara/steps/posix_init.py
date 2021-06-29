@@ -26,7 +26,7 @@ class POSIXInit(Step):
              "In combination with the --no-stubs option the deactivation of this option will speed up the analysis. "
              "This feature can be pretty time intensive.",
         ty=Bool(),
-        default_value=False)
+        default_value=True)
     
 
     def get_single_dependencies(self):

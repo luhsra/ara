@@ -113,7 +113,7 @@ class MainThread:
     main_thread = None
 
     @classmethod
-    def get(cls):
+    def get(cls) -> POSIXInstance:
         return cls.main_thread
 
     @classmethod
@@ -128,28 +128,12 @@ class CurrentSyscallCategories:
     current_syscall_cats: set = None
 
     @classmethod
-    def get(cls):
+    def get(cls) -> set:
         return cls.current_syscall_cats
 
     @classmethod
     def set(cls, syscall_cats: set):
         cls.current_syscall_cats = syscall_cats
-
-class PosixClass:
-    """This static class contains the POSIX OS Model class.
-    
-    We need this for the musl syscall detection.
-    This detection must be able to call all syscalls in the OS Model.
-    """
-    posix_class = None
-
-    @classmethod
-    def get(cls):
-        return cls.posix_class
-
-    @classmethod
-    def set(cls, posix_class):
-        cls.posix_class = posix_class
 
 class StaticInitSyscalls:
     """This static class contains all static initializer syscalls.

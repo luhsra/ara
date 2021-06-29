@@ -6,8 +6,8 @@ Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 import ara.graph as _graph
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
-from ..os_util import syscall
-from .posix_utils import logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories, PosixClass
+from ..os_util import SysCall, syscall
+from .posix_utils import PosixOptions, logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
@@ -20,7 +20,7 @@ from .other_syscalls import OtherSyscalls
 from .warning_syscalls import WarningSyscalls
 from .syscall_set import syscall_set
 from .syscall_stub_aliases import SyscallStubAliases
-from .native_musl_syscalls import MuslSyscalls
+from .native_musl_syscalls import MuslSyscalls, is_musl_syscall_wrapper, get_musl_syscall
 
 '''
     Hold on! To understand this file you need some information.
@@ -85,6 +85,7 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
 
 
 class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
+    """The POSIX OS Model class."""
 
     __metaclass__ = _POSIXMetaClass
 
@@ -99,11 +100,32 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
     @staticmethod
     def init(state):
         state.scheduler_on = True  # The Scheduler is always on in POSIX.
-        PosixClass.set(POSIX)
+
+    @staticmethod
+    def _add_normal_cfg(cfg, abb, state):
+        """Default control flow handling if the current syscall should not be interpreted."""
+        for oedge in cfg.vertex(abb).out_edges():
+            if cfg.ep.type[oedge] == _graph.CFType.lcf:
+                state.next_abbs.append(oedge.target())
+
+    @staticmethod
+    def _do_not_interpret(cfg, abb, state):
+        """Handling for the case that the current syscall should not be interpreted."""
+        state = state.copy()
+        state.next_abbs = []
+        POSIX._add_normal_cfg(cfg, abb, state)
+        return state
+
+    @staticmethod
+    def _syscall_category_matching(syscall: SysCall, categories: set) -> bool:
+        """Does the set of categories in syscall matching to categories?"""
+        if SyscallCategory.every not in categories:
+            sys_cat = syscall.categories
+            return (sys_cat | categories) == sys_cat
 
     @staticmethod
     def interpret(graph, abb, state, categories=SyscallCategory.every):
-        """ Interprets a detected syscall. """
+        """Interprets a detected syscall."""
 
         cfg = graph.cfg
 
@@ -112,24 +134,23 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
         logger.debug(f"found syscall in Callpath: {state.call_path}")
 
-        syscall_function = POSIX.detected_syscalls()[syscall] # Alias handling
+        syscall_function = None
+        sig_offest = 0
+        if PosixOptions.enable_musl_syscalls and is_musl_syscall_wrapper(syscall):
+            musl_syscall = get_musl_syscall(syscall, graph, abb, state)
+            if musl_syscall == None:
+                return POSIX._do_not_interpret(cfg, abb, state)
+            syscall_function = getattr(POSIX, musl_syscall)
+            sig_offest = 1 # Ignore first argument
+        else:
+            syscall_function = POSIX.detected_syscalls()[syscall] # Alias handling
 
         if isinstance(categories, SyscallCategory):
             categories = set((categories,))
 
-        if SyscallCategory.every not in categories:
-            sys_cat = syscall_function.categories
-            if sys_cat | categories != sys_cat:
-                state = state.copy()
-                state.next_abbs = []
-                POSIX.add_normal_cfg(cfg, abb, state)
-                return state
+        if not POSIX._syscall_category_matching(syscall_function, categories):
+            return POSIX._do_not_interpret(cfg, abb, state)
 
+        # Call the syscall function.
         CurrentSyscallCategories.set(categories)
-        return syscall_function(graph, abb, state)
-
-    @staticmethod
-    def add_normal_cfg(cfg, abb, state):
-        for oedge in cfg.vertex(abb).out_edges():
-            if cfg.ep.type[oedge] == _graph.CFType.lcf:
-                state.next_abbs.append(oedge.target())
+        return syscall_function(graph, abb, state, sig_offest)

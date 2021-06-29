@@ -5,7 +5,7 @@
 
 	"POSIXInit": {
 		"enable_static_init_detection": true,
-		"enable_musl_syscalls": false
+		"enable_musl_syscalls": true
 	},
 
 	"InteractionAnalysis": {

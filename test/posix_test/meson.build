@@ -228,8 +228,7 @@ test('file_writev_musl',
 # Linux syscall detection is only possible with musl libc.
 test('filestream_open_musl_syscall',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'filestream_open_musl_syscall.json', 
-               posix_filestream_open_musl, posix_test_settings / 'musl_syscall_detection.json'],
+        args: [files('posix_instance_graph.py'), graphs / 'filestream_open_musl_syscall.json', posix_filestream_open_musl],
         env: [python_path],
         suite: 'posix',
         timeout: 400
