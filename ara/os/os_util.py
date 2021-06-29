@@ -167,7 +167,7 @@ class SysCall:
         static method so just return itself here."""
         return self
 
-    def __call__(self, graph, abb, state):
+    def __call__(self, graph, abb, state, sig_offest=0):
         """Interpret the system call.
 
         In principal, this function performs a value analysis, then calls
@@ -184,9 +184,12 @@ class SysCall:
         va    -- The value analyzer.
 
         Arguments:
-        graph -- the graph object
-        abb   -- the abb ob the system call
-        state -- the OS state
+        graph       -- the graph object
+        abb         -- the abb ob the system call
+        state       -- the OS state
+        sig_offset  -- offset at which position the signature for the syscall function starts.
+                       The default value is 0. Do not set this value unless you have at least 
+                       one argument at the beginning that does not belong to the syscall signature.
         """
 
         if _SyscallCategory.undefined in self.categories:
@@ -214,7 +217,7 @@ class SysCall:
                 hint = _SigType.symbol
 
             try:
-                value, attrs, offset = va.get_argument_value(abb, idx,
+                value, attrs, offset = va.get_argument_value(abb, idx + sig_offest,
                                                 callpath=state.call_path,
                                                 hint=hint)
                 
@@ -269,7 +272,7 @@ class SysCall:
                     try:
                         va.assign_system_object(abb, sys_obj,
                                                 callpath=state.call_path,
-                                                argument_nr=idx)
+                                                argument_nr=idx+sig_offest)
                     except ValuesUnknown as va_unknown_exc:
                         logger.warning(f"{self.name}(): ValueAnalyzer could not assign Instance to argument pointer {arg.name} in signature. Exception: \"{va_unknown_exc}\"") 
 
