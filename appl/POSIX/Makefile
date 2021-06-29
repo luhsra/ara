@@ -223,6 +223,9 @@ CLEAN_UP_TARGETS =
 # Extra targets to build in rule "all". [Append in a module]
 EXTRA_TARGETS =
 
+# Names of extra targets. These names will be propagated to Meson. [Append in a module]
+EXTRA_TARGET_NAMES =
+
 # Include Musl libc module
 include $(MAKE_INCLUDE_DIR)/musl_libc.mk
 
@@ -244,6 +247,7 @@ LDFLAGS_WITH_LLVM_TO_BIN = -static -nostdlib
 # --- Module include --- #
 
 # Fully working modules
+include $(MAKE_INCLUDE_DIR)/no_musl_linkage_unit_tests.mk
 include $(MAKE_INCLUDE_DIR)/simple_project.mk
 #include $(MAKE_INCLUDE_DIR)/patric_gbs_a5.mk
 include $(MAKE_INCLUDE_DIR)/libmicrohttpd.mk
@@ -265,6 +269,7 @@ PROJECT_NAMES := $(shell echo $(PROJECT_NAMES) | xargs)
 BIN_PROJECT_NAMES := $(shell echo $(BIN_PROJECT_NAMES) | xargs)
 CLEAN_UP_TARGETS := $(shell echo $(CLEAN_UP_TARGETS) | xargs)
 EXTRA_TARGETS := $(shell echo $(EXTRA_TARGETS) | xargs)
+EXTRA_TARGET_NAMES := $(shell echo $(EXTRA_TARGET_NAMES) | xargs)
 
 # Generate list of LLVM IR targets.
 # These are all .c files in this dir but with file expansion .ll instead and located in the POSIX build dir.
@@ -281,7 +286,7 @@ get-appl-names:
 	@# Write only to appl_list.txt if the content is changed.
 	@# This avoids unnecessary Meson reloads.
 	@OLD_APPL_LIST_CONTENT="$$( (cat appl_list.txt | tr '\n' ' ') | xargs )"; \
-	NEW_APPL_LIST_CONTENT="$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES)"; \
+	NEW_APPL_LIST_CONTENT="$(SINGLE_FILE_APPLICATIONS) $(PROJECT_NAMES) $(EXTRA_TARGET_NAMES)"; \
 	if [ "$${OLD_APPL_LIST_CONTENT}" != "$${NEW_APPL_LIST_CONTENT}" ]; then \
 		echo "$${OLD_APPL_LIST_CONTENT}"; \
 		echo "$${NEW_APPL_LIST_CONTENT}"; \

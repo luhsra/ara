@@ -1,0 +1,78 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "function": "main",
+    "inherited_sched_attr": null,
+    "name": "Main Thread",
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "Pipe 0",
+    "id": "Pipe 0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/unit_tests/no_musl_linkage/linux_syscalls.c",
+    "line": 25,
+    "specialization_level": "",
+    "type": "instance",
+    "name": "Pipe 0",
+    "num_id": 0
+  },
+  {
+    "label": "testfile.txt",
+    "id": "testfile",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/unit_tests/no_musl_linkage/linux_syscalls.c",
+    "line": 21,
+    "specialization_level": "",
+    "type": "instance",
+    "name": "testfile.txt",
+    "path": "testdir/testfile.txt"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "open(O_RDWR)",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "read()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
+    "label": "write()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "writev()",
+    "type": "interaction"
+  }
+]

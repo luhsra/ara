@@ -19,11 +19,12 @@ pthread_create_loop
 pthread_create_two_funcs_in_struct
 pthread_name
 semaphore_ring_buffer
+sticky_svf
+sticky_svf_finer
 struct_test_double_call
 struct_test_func_call
 struct_test_single_call
 very_simple_posix_function_call
-wrong_func_pointer_test
 condition_var_broadcast
 condition_variable
 condition_var_initializer
@@ -50,3 +51,4 @@ signal_handler_siginfo
 sleep
 simple_project
 microhttpd_fileserver_dirs
+linux_syscalls

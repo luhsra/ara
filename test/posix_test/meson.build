@@ -355,3 +355,11 @@ test('condition_var_broadcast_musl',
         suite: 'posix',
         timeout: 300
 )
+
+# In this test we issue the Linux syscalls directly without the musl libc.
+test('linux_syscalls',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_syscalls.json', posix_linux_syscalls],
+        env: [python_path],
+        suite: 'posix'
+)
