@@ -145,7 +145,7 @@ class SignalSyscalls:
         # Check if there is already a signal catching function with the received function pointer.
         if func_name in SignalSyscalls.signal_catching_functions:
             if catching_signal != None:
-                SignalSyscalls.signal_catching_functions[func_name].add(catching_signal)
+                SignalSyscalls.signal_catching_functions[func_name] = catching_signal
             return state
 
         # Create new signal catching function.
