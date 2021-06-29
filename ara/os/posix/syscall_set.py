@@ -272,6 +272,7 @@ syscall_set = set({
     "unescape_wrapper",
     "MHD_http_unescape",
     "recv_param_adapter",
+    "try_ready_chunked_body",
 
     # Problematic functions in musl libc.
     "tdelete",
@@ -281,5 +282,17 @@ syscall_set = set({
     "__stdio_close",
     "munmap",
     "setsockopt",
+    "wms_seek",
+    "ms_write",
+    "mseek",
+    "mwrite",
+    "mread",
+    "__stdio_seek", # Remove this if you want to detect seek functions.
+    "ms_seek",
+    "wms_write",
+    "readdir"
+
+    "send",
+    "recv",
 
 })
