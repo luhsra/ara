@@ -124,7 +124,10 @@ class MuslSyscalls:
         """
         return do_not_interpret_syscall(graph, abb, state)
 
-    @syscall(aliases={"__syscall4"},
+    # Currently we are not analysing syscalls with more than 3 arguments. 
+    # So let us save a bit of performance by deactivating the analysis for syscalls with more arguments.
+    # If you want to analyse syscalls with more than 3 arguments remove the is_stub field for the following syscalls:
+    @syscall(aliases={"__syscall4"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('a1'),
@@ -139,7 +142,7 @@ class MuslSyscalls:
         """
         return do_not_interpret_syscall(graph, abb, state)
 
-    @syscall(aliases={"__syscall5"},
+    @syscall(aliases={"__syscall5"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('a1'),
@@ -155,7 +158,7 @@ class MuslSyscalls:
         """
         return do_not_interpret_syscall(graph, abb, state)
 
-    @syscall(aliases={"__syscall6"},
+    @syscall(aliases={"__syscall6"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('a1'),
