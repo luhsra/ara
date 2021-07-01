@@ -16,6 +16,7 @@ LINUX_SYSCALL_IDS = dict({
     (22, 'pipe'),
     (34, 'pause'),
     (35, 'nanosleep'),
+    # We do not need to analyse rt_sigaction() because this Linux Syscall is only called in musl libc´s sigaction() implementation.
 })
 
 # Pattern to detect if a syscall name is a musl syscall wrapper function.

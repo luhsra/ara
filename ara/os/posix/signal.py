@@ -69,6 +69,7 @@ class SignalCatchingFunc(IDInstance):
     def __hash__(self):
         return hash(self.num_id)
 
+# SA_SIGINFO flag for sigaction.sa_sigaction
 SA_SIGINFO = 4
 
 class SignalSyscalls:
