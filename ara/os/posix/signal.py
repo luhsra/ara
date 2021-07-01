@@ -82,10 +82,10 @@ class SignalSyscalls:
     #       struct sigaction *restrict oact);
     @syscall(categories={SyscallCategory.create},
              signature=(Arg('sig', hint=SigType.value, ty=pyllco.ConstantInt),
-                        Arg('sa_handler', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull]),
+                        Arg('sa_handler', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable]),
                         Arg('sa_mask', hint=SigType.symbol),
-                        Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero]),
-                        Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull]),
+                        Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero, pyllco.GlobalVariable]),
+                        Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable]),
                         Arg('oact', hint=SigType.symbol)))   
     def _ARA_sigaction_syscall_(graph, abb, state, args, va): # sigaction()
         
@@ -93,11 +93,11 @@ class SignalSyscalls:
         sa_handler = args.sa_handler
         sa_sigaction = args.sa_sigaction
         sa_flags = args.sa_flags
-        if type(sa_handler) == pyllco.ConstantPointerNull:
+        if type(sa_handler) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable]:
             sa_handler = None
-        if type(sa_sigaction) == pyllco.ConstantPointerNull:
+        if type(sa_sigaction) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable]:
             sa_sigaction = None
-        if type(sa_flags) == pyllco.ConstantAggregateZero:
+        if type(sa_flags) in [pyllco.ConstantAggregateZero, pyllco.GlobalVariable]:
             sa_flags = None
 
         # Search for a valid function pointer
@@ -146,7 +146,7 @@ class SignalSyscalls:
         # Check if there is already a signal catching function with the received function pointer.
         if func_name in SignalSyscalls.signal_catching_functions:
             if catching_signal != None:
-                SignalSyscalls.signal_catching_functions[func_name] = catching_signal
+                SignalSyscalls.signal_catching_functions[func_name].catching_signals.add(catching_signal)
             return state
 
         # Create new signal catching function.
