@@ -11,12 +11,10 @@ void signal_catching_func(int signo, siginfo_t *info, void *context) {
     return;
 }
 
-struct sigaction act;
+struct sigaction act = {.sa_sigaction = signal_catching_func, .sa_flags = SA_SIGINFO | SA_RESTART};
 struct sigaction oact;
 
 int main() {
-    act.sa_sigaction = signal_catching_func;
-    act.sa_flags = SA_SIGINFO | SA_RESTART;
     sigaction(SIGSEGV, &act, &oact);
     while (1) {};
 }
