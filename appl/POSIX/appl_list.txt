@@ -35,6 +35,7 @@ file_write
 file_writev
 ignore_signal
 multiple_sigactions
+mutex
 mutex_counter
 mutex_initializer
 nanosleep

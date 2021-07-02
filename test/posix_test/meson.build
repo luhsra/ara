@@ -43,6 +43,20 @@ test('pthread_create_musl',
         timeout: 300
 )
 
+test('mutex',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'mutex.json', posix_mutex],
+        env: [python_path],
+        suite: 'posix'
+)
+test('mutex_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'mutex.json', posix_mutex_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 test('mutex_counter',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'mutex_counter.json', posix_mutex_counter],
