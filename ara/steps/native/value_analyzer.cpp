@@ -510,11 +510,7 @@ namespace ara::step {
 				auto worker = workers.begin()->second;
 				boss->hire(worker);
 				workers.clear();
-				if (reports.size() != 1) {
-					dbg() << "Assertion failed (reports.size() == 1) workers and reports size must match here" << std::endl;
-					throw ValuesUnknown("Assertion failed (reports.size() == 1) workers and reports size must match here");
-				}
-				//assert(reports.size() == 1 && "workers and reports size must match here");
+				assert(reports.size() == 1 && "workers and reports size must match here");
 				// we have no job anymore, just die()
 				dbg() << "Found PHI with one possible continuation. Continue with T" << worker->get_id() << " (boss=T"
 				      << boss->get_id() << "). Removing ourself." << std::endl;
