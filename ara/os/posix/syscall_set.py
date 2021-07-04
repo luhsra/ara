@@ -148,6 +148,18 @@ syscall_set = set({
     "clock_settime",
     "clock_nanosleep",
 
+    # musl libc native Kernel syscalls
+    "_musl_syscall0", # __syscall0 [function name in musl libc]
+    "_musl_syscall1", # __syscall1
+    "_musl_syscall2", # __syscall2
+    "_musl_syscall3", # __syscall3
+    "_musl_syscall4", # __syscall4
+    "_musl_syscall5", # __syscall5
+    "_musl_syscall6", # __syscall6
+
+    ###########################################################
+    ### Functions that we want to remove instead of analyse ###
+
     # Unwanted Getter [We can remove these with the remove_sysfunc_body step]
     "pthread_attr_getname_np",
     "pthread_getname_np",
@@ -177,9 +189,13 @@ syscall_set = set({
     "clock_gettime",
     "clock_getres",
 
-    # Let SVF handle those functions for us:
+    # Musl libc implementation is hard to analyse for this function.
+    # We do not want to analyse close() so simply remove it.
+    "fclose",
+
+    # Let SVF handle these functions for us:
     "malloc",
-    "calloc", # calloc is not working with SVF but with the help of musl libc we can do:  calloc -> malloc
+    "calloc",
     "realloc",
     "free",
     "memccpy",
@@ -188,6 +204,56 @@ syscall_set = set({
     "memcpy",
     "memmove",
     "memset",
+    
+    # String functions can easily lead to statements that copy points-to targets.
+    # Additionally these functions do not lead to syscalls.
+    # In libmicrohttpd most structs have the same points-to targets because of these functions.
+    "stpcpy",
+    "stpncpy",
+    "strcasecmp",
+    "strcasecmp_l",
+    "strcat",
+    "strchr",
+    "strcmp",
+    "strcoll",
+    "strcoll_l",
+    "strcpy",
+    "strcspn",
+    "strdup",
+    "strerror",
+    "strerror_l",
+    "strerror_r",
+    "strfmon",
+    "strfmon_l",
+    "strftime",
+    "strftime_l",
+    "strlen",
+    "strncasecmp",
+    "strncasecmp_l",
+    "strncat",
+    "strncmp",
+    "strncpy",
+    "strndup",
+    "strnlen",
+    "strpbrk",
+    "strptime",
+    "strrchr",
+    "strsignal",
+    "strspn",
+    "strstr",
+    "strtod",
+    "strtof",
+    "strtoimax",
+    "strtok",
+    "strtok_r",
+    "strtold",
+    "strtol",
+    "strtoll",
+    "strtoul",
+    "strtoull",
+    "strtoumax",
+    "strxfrm",
+    "strxfrm_l",
 
     # Stack unwinding functions (Throw warning if we detect one)
     "setjmp",
@@ -205,30 +271,18 @@ syscall_set = set({
     "posix_spawn",
     "posix_spawnp",
     #"daemon",
-    
-    #"va_arg",
-    #"va_copy",
-    #"va_end",
-    #"va_start",
 
     # The following are musl libc specific functions.
     #   These ARE NO Syscalls.
     #   But we want to remove the costly impl. of these calls. (With remove_sysfunc_body step)
-    #   All of them are accessing function pointers to more than ~93 possible functions.
+    #   Some of them are accessing function pointers to more than ~93 possible functions.
     "libc_start_init",
     "libc_exit_fini",
     "__pthread_tsd_run_dtors",
     "at_quick_exit",
-    "call", # Hopefully nobody names his/her function "call" or "__call".
-
-    # musl libc native Kernel syscalls
-    "_musl_syscall0", # __syscall0 [function name in musl libc]
-    "_musl_syscall1", # __syscall1
-    "_musl_syscall2", # __syscall2
-    "_musl_syscall3", # __syscall3
-    "_musl_syscall4", # __syscall4
-    "_musl_syscall5", # __syscall5
-    "_musl_syscall6", # __syscall6
+    "call",             # Hopefully nobody names his/her function "call" or "__call".
+    "__syscall_cp",     # Cancellation point implementation for some syscalls.
+                        # This function results in a pretty big callgraph.
 
     # Remove musl libc x64 asm functions
     # SVF tries to match a function pointer to the __asm__ call.
@@ -250,49 +304,45 @@ syscall_set = set({
     "a_ctz_64",
     "a_clz_64",
     "__get_tp",
-
-    # More unwanted musl libc specific functions
-    "__syscall_cp", # All Syscalls as cancellation point. This function results in a pretty big callgraph.
-    "fopencookie", # I do not know what this API function does. It is not in the POSIX or C Standard and is not called internally. Just remove it, it leads to more wrong matched function pointers.
     
     # Musl wrapper around futex() calls. These are not required if we are not interested in futex. 
     "__wake",
     "__futexwait",
 
     # Does normally not result to an interessting syscall. (if we do not analyze stdin, stdout, stderr, ...)
-    # These calls are expensive for the analysis.
+    # These calls are expensive to analyse.
     "printf",
     "sprintf",
     "snprintf",
 
-    # functions in libmicrohttpd that leads to problems.
-    "file_free_callback",
-    "free_callback",
-    "dir_free_callback",
-    "unescape_wrapper",
-    "MHD_http_unescape",
-    "recv_param_adapter",
-    "try_ready_chunked_body",
-
-    # Problematic functions in musl libc.
-    "tdelete",
-    "__tsearch_balance",
-    "__stdio_exit",
-    "__stdio_seek",
-    "__stdio_close",
-    "munmap",
-    "setsockopt",
+    # These are functions that are possible call targets of calls to f->write(), f->read(), ... inside musl libc.
+    # We are not interested in analysing these functions so we can increase performance and precision of the analysis a lot by removing these functions.
     "wms_seek",
-    "ms_write",
-    "mseek",
-    "mwrite",
-    "mread",
-    "__stdio_seek", # Remove this if you want to detect seek functions.
-    "ms_seek",
-    "wms_write",
-    "readdir"
+	"wms_write",
+	"ms_seek",
+	"cookieseek",
+	"cookiewrite",
+	"mwrite",
+	"mread",
+	"mseek",
+	"__stdio_seek", # Remove this if you want to detect seek functions.
+	"ms_write",
+	"cookieread",
+    "__stdout_write",
+    "sw_write",
+    "sn_write",
+    "string_read",
+    "wstring_read",
+    "do_read",
+    "wms_close",
+	"cookieclose",
+	"mclose",
+	"ms_close",
+	"__stdio_close",
 
+    # Socket functions we do not want to analyse.
     "send",
+    "sendfile",
     "recv",
 
 })
