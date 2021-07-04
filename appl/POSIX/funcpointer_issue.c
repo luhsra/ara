@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 
 struct _FILE {
     size_t (*write)(char);
@@ -15,7 +14,8 @@ size_t _fwrite(void *obj, struct _FILE *f) {
 }
 
 size_t sticky_func(void* _) {
-    return open("hallo.txt", O_RDONLY);
+    pause();
+    return 0;
 }
 
 struct stickyStruct {
@@ -27,6 +27,6 @@ struct _FILE file_struct;
 
 int main() {
     sticky_struct.func_ptr = &sticky_func;
-    write(_fwrite(&sticky_struct, &file_struct), NULL, 0);
+    _fwrite(&sticky_struct, &file_struct);
     sticky_struct.func_ptr(NULL);
 }
