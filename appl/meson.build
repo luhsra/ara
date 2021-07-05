@@ -42,6 +42,7 @@ ir_apps = [
   'system_relevant_functions',
   'thesis_print',
   'topological_sort',
+  'value_analysis_struct',
 ]
 
 # these apps are meant to run on real hardware and are compiled into an elf

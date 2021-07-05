@@ -95,7 +95,15 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
         env: [python_path],
-        dependencies: ara_py,
+        depends: ara_py,
+        suite: 'steps'
+    )
+
+    test('value-analysis-struct',
+        py3_inst,
+        args: [files('value_analysis.py'), files('value_analysis_struct.json'), freertos_value_analysis_struct],
+        env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
