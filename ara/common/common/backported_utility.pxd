@@ -1,5 +1,5 @@
 # taken from https://github.com/cython/cython/blob/master/Cython/Includes/libcpp/utility.pxd
-# to avaid dependency on Cython >= 0.29.17 which is not available in
+# to avoid dependency on Cython >= 0.29.17 which is not available in
 # Ubuntu 20.04
 
 cdef extern from "<utility>" namespace "std" nogil:
