@@ -13,9 +13,13 @@ namespace ara::cython {
 
 namespace ara::step {
 	struct EndOfFunction {};
+
+	using OSObject = uint64_t;
+	using RawValue = std::variant<const llvm::Value*, OSObject>;
 	struct FoundValue {
-		std::variant<const llvm::Value*, uint64_t> value;
-		const SVF::VFGNode* source;
+		RawValue value;                        /* found LLVM value or previously assigned object */
+		const SVF::VFGNode* source;            /* SVF node of the found value */
+		const llvm::GetElementPtrInst* offset; /* offset within a struct */
 	};
 	using Report = std::variant<EndOfFunction, FoundValue>;
 
@@ -116,6 +120,10 @@ namespace ara::step {
 		WaitingReason reason = WaitingReason::not_set;
 		size_t id;
 		unsigned level = 0;
+		/**
+		 * Store the one elementptr that is found on the traversers way
+		 */
+		const llvm::GetElementPtrInst* offset = nullptr;
 
 		virtual void handle_found_value(FoundValue&& report);
 		FoundValue get_best_find(std::vector<Report>&& finds) const;
@@ -232,7 +240,7 @@ namespace ara::step {
 		// proxy functions
 		llvm::Module& get_module() const;
 		Logger& get_logger() const;
-		std::optional<uint64_t> get_obj_id(const SVF::NodeID id) const;
+		std::optional<OSObject> get_obj_id(const SVF::NodeID id, const llvm::GetElementPtrInst* offset) const;
 	};
 
 	/**
@@ -256,7 +264,7 @@ namespace ara::step {
 
 		bool eval_node_result(Result&& result);
 		void do_step() override;
-		const std::pair<std::variant<const llvm::Value*, uint64_t>, const SVF::VFGNode*> get_value();
+		const FoundValue get_value();
 	};
 
 	/**
@@ -279,7 +287,7 @@ namespace ara::step {
 		graph::CFG cfg;
 		Logger logger;
 		/* Map between: Key = VFGNode, Value = Python system object */
-		boost::bimap<SVF::NodeID, uint64_t>& obj_map;
+		graph::GraphData::ObjMap& obj_map;
 
 		/**
 		 * Output an error to the log and raise an ValuesUnknown exception.
@@ -306,8 +314,7 @@ namespace ara::step {
 		 *
 		 * \return a pair of the found llvm::Value and the corresponding SVF::VFGNode
 		 */
-		std::pair<std::variant<const llvm::Value*, uint64_t>, const SVF::VFGNode*>
-		do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath, graph::SigType hint);
+		FoundValue do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath, graph::SigType hint);
 
 		/**
 		 * Retrieve the argument value of the nth argument of a call.
@@ -320,7 +327,7 @@ namespace ara::step {
 		 * \param hint        what type of analysis should be done
 		 * \param type        the expected object type, currently unused
 		 */
-		std::pair<std::variant<const llvm::Value*, uint64_t>, llvm::AttributeSet>
+		std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*>
 		get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 		                   graph::SigType hint, PyObject* type);
 
@@ -339,7 +346,7 @@ namespace ara::step {
 		 * assigned to the return value of this call, otherwise to nth argument which is assumed to be a pointer or
 		 * reference.
 		 */
-		void assign_system_object(llvm::CallBase& callsite, uint64_t obj_index, graph::CallPath callpath,
+		void assign_system_object(llvm::CallBase& callsite, OSObject obj_index, graph::CallPath callpath,
 		                          int argument_nr);
 
 		/**
@@ -354,7 +361,7 @@ namespace ara::step {
 		 * \return whether a connection is found
 		 */
 		bool has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
-		                    uint64_t obj_index);
+		                    OSObject obj_index);
 
 		/**
 		 * Converts a ARA (Python) callsite to an LLVM callsite.
@@ -371,7 +378,7 @@ namespace ara::step {
 		/**
 		 * Repack the C++ result of the value analysis to a Python tuple for further usage in Python.
 		 */
-		PyObject* py_repack(std::pair<std::variant<const llvm::Value*, uint64_t>, llvm::AttributeSet> result) const;
+		PyObject* py_repack(std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*> result) const;
 
 		/**
 		 * Get the nth argument (llvm::Value) for a specific callsite.
@@ -425,7 +432,7 @@ namespace ara::step {
 		/**
 		 * Wrapper call for assign_system_object. See its documentation for details.
 		 */
-		void py_assign_system_object(PyObject* callsite, uint64_t obj_index, graph::CallPath callpath,
+		void py_assign_system_object(PyObject* callsite, OSObject obj_index, graph::CallPath callpath,
 		                             int argument_nr) {
 			llvm::CallBase* ll_callsite;
 			graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
@@ -449,7 +456,7 @@ namespace ara::step {
 		/**
 		 * Wrapper call for has_connection. See its documentation for details.
 		 */
-		bool py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, uint64_t obj_index) {
+		bool py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, OSObject obj_index) {
 			llvm::CallBase* ll_callsite;
 			graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
 			                            graph_tool::always_directed())(cfg.graph.get_graph_view());

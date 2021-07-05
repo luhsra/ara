@@ -144,9 +144,11 @@ class SysCall:
             hint = arg.hint
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
-            value, attrs = va.get_argument_value(abb, idx,
-                                                callpath=state.call_path,
-                                                hint=hint)
+            value, attrs, offset = va.get_argument_value(abb, idx,
+                                                         callpath=state.call_path,
+                                                         hint=hint)
+
+            # TODO, ignore offset for now
 
             value = LLVMRawValue(value=value, attrs=attrs)
             values.append(get_argument(value, arg))

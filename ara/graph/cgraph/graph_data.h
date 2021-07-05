@@ -44,7 +44,8 @@ namespace ara::graph {
 		/**
 		 * Workaround for SVF classes where we need additional attributes.
 		 */
-		boost::bimap<SVF::NodeID, uint64_t> obj_map;
+		using ObjMap = boost::bimap<std::pair<SVF::NodeID, int64_t>, uint64_t>;
+		ObjMap obj_map;
 
 		GraphData() : module(nullptr), svfg(nullptr) {}
 

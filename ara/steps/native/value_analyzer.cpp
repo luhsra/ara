@@ -33,6 +33,26 @@ namespace ara::step {
 				}
 			};
 		}
+
+		/**
+		 * Return the (static) calculated offset to a given getelementptr instruction.
+		 *
+		 * Return 0, if the value cannot be calculated.
+		 */
+		int64_t get_offset(const llvm::GetElementPtrInst* gep) {
+			assert(gep != nullptr && "GEP is null");
+			const auto layout = gep->getModule()->getDataLayout();
+			llvm::APInt ap_offset(layout.getIndexSizeInBits(gep->getPointerAddressSpace()), 0, true);
+			bool success = gep->accumulateConstantOffset(layout, ap_offset);
+			if (!success) {
+				return 0;
+			}
+			return ap_offset.getSExtValue();
+		}
+
+		/* Special offset value to mark a map entry as "not specified with offset */
+		const static int64_t no_offset = INT64_MAX - 42;
+
 	} // namespace
 
 	std::ostream& operator<<(std::ostream& os, const WaitingReason& w) {
@@ -238,6 +258,7 @@ namespace ara::step {
 				continue;
 			}
 			auto worker = make_shared<Traverser>(new_boss, edge, cp, caretaker);
+			worker->offset = offset;
 			worker->level = level;
 			worker->update_call_path(action, cg_edge);
 			new_boss->hire(worker);
@@ -308,47 +329,55 @@ namespace ara::step {
 
 	Result Traverser::handle_node(const SVF::VFGNode* node) {
 		dbg() << "Handle node: " << *node << std::endl;
-		auto id = caretaker.get_obj_id(node->getId());
+		auto id = caretaker.get_obj_id(node->getId(), offset);
 		if (id) {
 			dbg() << "Found a previous assigned object." << std::endl;
 			dbg() << "CallPath: " << call_path << std::endl;
-			return Finished{FoundValue{*id, node}};
+			return Finished{FoundValue{*id, node, nullptr}};
 		}
 		if (llvm::isa<SVF::NullPtrVFGNode>(node)) {
 			// Sigtype is not important here, a nullptr serves as value and symbol.
 			dbg() << "Found a nullptr." << std::endl;
 			auto nullval = llvm::ConstantPointerNull::get(
 			    llvm::PointerType::get(llvm::IntegerType::get(caretaker.get_module().getContext(), 8), 0));
-			return Finished{FoundValue{nullval, node}};
+			return Finished{FoundValue{nullval, node, offset}};
 		}
 
 		if (auto stmt = llvm::dyn_cast<SVF::StmtVFGNode>(node)) {
 			const llvm::Value* val = stmt->getPAGEdge()->getValue();
 			auto hint = caretaker.get_hint();
 
+			if (const llvm::GetElementPtrInst* i = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
+				dbg() << "Found GetElementPtrInst: " << pretty_print(*i) << std::endl;
+				if (offset) {
+					throw ValuesUnknown("Found a (not supported) second GetElementPtr on the traversers path.");
+				}
+				offset = i;
+			}
+
 			if (hint == graph::SigType::value || hint == graph::SigType::undefined) {
 				if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(val)) {
 					dbg() << "Found constant data: " << pretty_print(*c) << std::endl;
-					return Finished{FoundValue{c, node}};
+					return Finished{FoundValue{c, node, offset}};
 				}
 
 				if (const llvm::Function* func = llvm::dyn_cast<llvm::Function>(val)) {
 					dbg() << "Found function: " << pretty_print(*func) << std::endl;
-					return Finished{FoundValue{func, node}};
+					return Finished{FoundValue{func, node, offset}};
 				}
 
 				if (const llvm::GlobalVariable* gv = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
-					if (gv->hasExternalLinkage()) {
-						dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
-						return Finished{FoundValue{gv, node}};
-					} else {
+					if (!gv->hasExternalLinkage() && (!offset || (offset && get_offset(offset) == 0))) {
 						const llvm::Value* gvv = gv->getOperand(0);
 						if (gvv != nullptr) {
 							if (const llvm::ConstantData* gvvc = llvm::dyn_cast<llvm::ConstantData>(gvv)) {
 								dbg() << "Found global constant data: " << pretty_print(*gvvc) << std::endl;
-								return Finished{FoundValue{gvvc, node}};
+								return Finished{FoundValue{gvvc, node, nullptr}};
 							}
 						}
+					} else {
+						dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
+						return Finished{FoundValue{gv, node, offset}};
 					}
 				}
 			}
@@ -356,12 +385,12 @@ namespace ara::step {
 			if (hint == graph::SigType::symbol) {
 				if (const llvm::GlobalValue* gv = llvm::dyn_cast<llvm::GlobalValue>(val)) {
 					dbg() << "Found global value: " << pretty_print(*gv) << std::endl;
-					return Finished{FoundValue{gv, node}};
+					return Finished{FoundValue{gv, node, offset}};
 				}
 
 				if (const llvm::AllocaInst* ai = llvm::dyn_cast<llvm::AllocaInst>(val)) {
 					dbg() << "Found alloca instruction (local variable): " << pretty_print(*ai) << std::endl;
-					return Finished{FoundValue{ai, node}};
+					return Finished{FoundValue{ai, node, offset}};
 				}
 			}
 		}
@@ -424,7 +453,7 @@ namespace ara::step {
 
 	FoundValue Traverser::get_best_find(std::vector<Report>&& finds) const {
 		// current heuristic: if a previous assigned instance is found, take that, otherwise the first one
-		auto found_instance = [](Report& r) { return std::holds_alternative<uint64_t>(std::get<FoundValue>(r).value); };
+		auto found_instance = [](Report& r) { return std::holds_alternative<OSObject>(std::get<FoundValue>(r).value); };
 		auto it = std::find_if(finds.begin(), finds.end(), found_instance);
 		if (it != finds.end()) {
 			return std::get<FoundValue>(std::move(*it));
@@ -570,9 +599,9 @@ namespace ara::step {
 		caretaker.stop();
 	}
 
-	const std::pair<std::variant<const llvm::Value*, uint64_t>, const SVF::VFGNode*> Manager::get_value() {
+	const FoundValue Manager::get_value() {
 		assert(value && "no value");
-		return std::make_pair(value->value, value->source);
+		return *value;
 	}
 
 	void Bookkeeping::run() {
@@ -604,8 +633,12 @@ namespace ara::step {
 
 	Logger& Bookkeeping::get_logger() const { return va.logger; }
 
-	std::optional<uint64_t> Bookkeeping::get_obj_id(const SVF::NodeID id) const {
-		auto it = va.obj_map.left.find(id);
+	std::optional<OSObject> Bookkeeping::get_obj_id(const SVF::NodeID id, const llvm::GetElementPtrInst* offset) const {
+		int64_t l_offset = no_offset;
+		if (offset) {
+			l_offset = get_offset(offset);
+		}
+		auto it = va.obj_map.left.find(std::make_pair(id, l_offset));
 		if (it != va.obj_map.left.end()) {
 			return it->second;
 		}
@@ -627,8 +660,8 @@ namespace ara::step {
 		return vNode;
 	}
 
-	std::pair<std::variant<const llvm::Value*, uint64_t>, const SVF::VFGNode*>
-	ValueAnalyzer::do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath, graph::SigType hint) {
+	FoundValue ValueAnalyzer::do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath,
+	                                                   graph::SigType hint) {
 		SVF::PAG* pag = SVF::PAG::getPAG();
 		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
 		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
@@ -646,7 +679,7 @@ namespace ara::step {
 		return safe_deref(use.get());
 	}
 
-	std::pair<std::variant<const llvm::Value*, uint64_t>, llvm::AttributeSet>
+	std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*>
 	ValueAnalyzer::get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 	                                  graph::SigType hint, PyObject* type) {
 		if (is_call_to_intrinsic(callsite)) {
@@ -668,16 +701,16 @@ namespace ara::step {
 		logger.debug() << "Analyzing argument " << argument_nr << ": " << pretty_print(val) << std::endl;
 
 		const SVF::VFGNode* v_node = get_vfg_node(graph.get_svfg(), val);
-		auto [value, _] = do_backward_value_search(v_node, callpath, hint);
+		FoundValue value = do_backward_value_search(v_node, callpath, hint);
 
 		// printing
-		if (std::holds_alternative<uint64_t>(value)) {
-			logger.debug() << "Found previous object. ID: " << std::get<uint64_t>(value) << std::endl;
+		if (std::holds_alternative<OSObject>(value.value)) {
+			logger.debug() << "Found previous object. ID: " << std::get<OSObject>(value.value) << std::endl;
 		} else {
-			logger.debug() << "Found value: " << pretty_print(*std::get<const llvm::Value*>(value)) << std::endl;
+			logger.debug() << "Found value: " << pretty_print(*std::get<const llvm::Value*>(value.value)) << std::endl;
 		}
 
-		return std::make_pair(value, std::move(attrs));
+		return std::make_tuple(value.value, std::move(attrs), value.offset);
 	}
 
 	const SVF::VFGNode* ValueAnalyzer::find_next_store(const SVF::VFGNode* start) {
@@ -703,11 +736,12 @@ namespace ara::step {
 		return nullptr;
 	}
 
-	void ValueAnalyzer::assign_system_object(llvm::CallBase& callsite, uint64_t obj_index, graph::CallPath callpath,
+	void ValueAnalyzer::assign_system_object(llvm::CallBase& callsite, OSObject obj_index, graph::CallPath callpath,
 	                                         int argument_nr) {
 		assert(!callsite.getFunctionType()->getReturnType()->isVoidTy() && "Callsite has no return value");
 
 		SVF::NodeID id;
+		int64_t offset;
 		if (argument_nr == -1) {
 			const SVF::VFGNode* node = get_vfg_node(graph.get_svfg(), callsite);
 			logger.debug() << "Assign: Initial node " << *node << std::endl;
@@ -716,15 +750,11 @@ namespace ara::step {
 			if (store == nullptr) {
 				logger.warn() << "Assignment to storage node not possible. Assign to call node itself." << std::endl;
 				id = node->getId();
+				offset = 0;
 			} else {
-				if (callpath.size() == 0) {
-					// we can directly assign to the store node, since is has to be unique.
-					logger.debug() << "Assign object ID " << obj_index << " to storage SVF node ID: " << store->getId()
-					               << "." << std::endl;
-					obj_map.insert(boost::bimap<SVF::NodeID, uint64_t>::value_type(store->getId(), obj_index));
-				}
-				auto [_, target] = do_backward_value_search(store, callpath, graph::SigType::symbol);
-				id = safe_deref(target).getId();
+				auto target = do_backward_value_search(store, callpath, graph::SigType::symbol);
+				id = safe_deref(target.source).getId();
+				offset = (target.offset) ? get_offset(target.offset) : no_offset;
 			}
 		} else {
 			assert(argument_nr >= 0);
@@ -732,20 +762,25 @@ namespace ara::step {
 			const llvm::Value& val = get_nth_arg(callsite, static_cast<unsigned>(argument_nr));
 			logger.debug() << "Assign to argument " << argument_nr << " " << val << std::endl;
 			const SVF::VFGNode* v_node = get_vfg_node(graph.get_svfg(), val);
-			auto [_, target] = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
-			id = safe_deref(target).getId();
+			auto target = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
+			id = safe_deref(target.source).getId();
+			offset = (target.offset) ? get_offset(target.offset) : no_offset;
 		}
 
 		if (id != 0) {
-			logger.debug() << "Assign object ID " << obj_index << " to SVF node ID: " << id << "." << std::endl;
-			obj_map.insert(boost::bimap<SVF::NodeID, uint64_t>::value_type(id, obj_index));
+			logger.debug() << "Assign object ID " << obj_index << " to SVF node ID: " << id;
+			if (offset != no_offset) {
+				logger.debug() << " with offset " << offset;
+			}
+			logger.debug() << "." << std::endl;
+			obj_map.insert(graph::GraphData::ObjMap::value_type(std::make_pair(id, offset), obj_index));
 		} else {
 			logger.debug() << "Assign object ID " << obj_index << " to nothing. A nullptr was given." << std::endl;
 		}
 	}
 
 	bool ValueAnalyzer::has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
-	                                   uint64_t obj_index) {
+	                                   OSObject obj_index) {
 		if (is_call_to_intrinsic(callsite)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -762,7 +797,7 @@ namespace ara::step {
 		const SVF::VFGNode* input_node = get_vfg_node(graph.get_svfg(), val);
 
 		/* retrieve SVFG node for system object */
-		const SVF::VFGNode* target_node = graph.get_svfg().getGNode(obj_map.right.at(obj_index));
+		const SVF::VFGNode* target_node = graph.get_svfg().getGNode(obj_map.right.at(obj_index).first);
 
 		logger.debug() << "Find connection between " << *input_node << " and " << *target_node << std::endl;
 
@@ -772,23 +807,31 @@ namespace ara::step {
 	}
 
 	PyObject*
-	ValueAnalyzer::py_repack(std::pair<std::variant<const llvm::Value*, uint64_t>, llvm::AttributeSet> result) const {
+	ValueAnalyzer::py_repack(std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*> result) const {
 		PyObject* obj_index;
-		PyObject* value;
-		if (std::holds_alternative<uint64_t>(result.first)) {
-			uint64_t raw_index = std::get<uint64_t>(result.first);
+		PyObject* py_value;
+		PyObject* py_offset;
+		auto& [value, attrs, offset] = result;
+		if (std::holds_alternative<OSObject>(value)) {
+			static_assert(std::is_same<uint64_t, OSObject>::value);
+			uint64_t raw_index = std::get<OSObject>(value);
 			obj_index = PyLong_FromUnsignedLongLong(raw_index);
 			assert(PyLong_AsUnsignedLongLong(obj_index) == raw_index && "Python long conversion failed");
-			value = Py_None;
-			Py_INCREF(value);
+			py_value = Py_None;
+			Py_INCREF(py_value);
 		} else {
 			obj_index = Py_None;
 			Py_INCREF(obj_index);
 			// it would be nice to return a const value here, however const correctness and Python are not compatible
-			value =
-			    get_obj_from_value(safe_deref(const_cast<llvm::Value*>(std::get<const llvm::Value*>(result.first))));
+			py_value = get_obj_from_value(safe_deref(const_cast<llvm::Value*>(std::get<const llvm::Value*>(value))));
 		}
-		return PyTuple_Pack(3, value, get_obj_from_attr_set(result.second), obj_index);
+		if (offset) {
+			py_offset = get_obj_from_value(safe_deref(const_cast<llvm::GetElementPtrInst*>(offset)));
+		} else {
+			py_offset = Py_None;
+		}
+
+		return PyTuple_Pack(4, py_value, get_obj_from_attr_set(attrs), obj_index, py_offset);
 	}
 
 	const llvm::Value* ValueAnalyzer::get_llvm_return(const llvm::CallBase& callsite) const {
@@ -814,9 +857,9 @@ namespace ara::step {
 			return get_llvm_return(callsite);
 		} else {
 			try {
-				auto [value, _] = do_backward_value_search(store, callpath, graph::SigType::symbol);
-				if (std::holds_alternative<const llvm::Value*>(value)) {
-					const llvm::Value* ret = std::get<const llvm::Value*>(value);
+				auto value = do_backward_value_search(store, callpath, graph::SigType::symbol);
+				if (std::holds_alternative<const llvm::Value*>(value.value)) {
+					const llvm::Value* ret = std::get<const llvm::Value*>(value.value);
 					logger.debug() << "Found return value: " << pretty_print(*ret) << std::endl;
 					return ret;
 				}

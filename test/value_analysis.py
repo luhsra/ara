@@ -90,9 +90,9 @@ def main():
                     expected_error = val.split(' ')[1]
 
                 try:
-                    value, attr = va.get_argument_value(syscall, idx,
-                                                        callpath=callpath,
-                                                        hint=get_hint(hint))
+                    value, attr, offset = va.get_argument_value(syscall, idx,
+                                                                callpath=callpath,
+                                                                hint=get_hint(hint))
                 except Exception as e:
                     if type(e).__name__ == expected_error:
                         debug_print(f"Got expected error: {type(e).__name__}")
@@ -102,7 +102,11 @@ def main():
                 if no_except:
                     py_val = value_to_py(value, attr)
                     debug_print("Retrieved", py_val)
-                    assert val == py_val
+                    if offset:
+                        debug_print(f"With Offset: {offset.get_offset()} ({offset})")
+                        assert val == [py_val, offset.get_offset()]
+                    else:
+                        assert val == py_val
             if "is_creation" in entry:
                 obj = entry["is_creation"]
                 debug_print(f"Assign {obj['name']}.")

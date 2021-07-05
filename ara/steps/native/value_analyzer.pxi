@@ -64,12 +64,16 @@ cdef class ValueAnalyzer:
         argument_nr -- number of argument (index begins at 0)
         hint        -- specify what argument should be searched and how
         ty          -- retrieve only this specific type
+
+        Return the found value, the call specific attributes and an offset.
+        value is either an LLVM value or an previously assigned object.
+        offset is an optional offset into the value (if it is a compount type).
         """
         callsite = self._check_callsite(callsite)
         if callpath is None:
             callpath = CallPath()
         cdef unsigned arg_nr = argument_nr
-        value, attr, idx = deref(self._c_va).py_get_argument_value(
+        value, attr, idx, offset = deref(self._c_va).py_get_argument_value(
             callsite,
             callpath._c_callpath,
             arg_nr,
@@ -78,10 +82,9 @@ cdef class ValueAnalyzer:
         )
 
         if idx is not None:
-            self._log.warn(f"objects {self._sys_objects}")
             value = self._sys_objects[idx]
 
-        return value, attr
+        return value, attr, offset
 
     def assign_system_object(self, callsite, sys_obj,
                              callpath: CallPath = None, argument_nr=-1):
@@ -107,7 +110,7 @@ cdef class ValueAnalyzer:
                                                   argument_nr)
 
     def get_return_value(self, callsite, callpath: CallPath = None):
-        """Retrieve the next store of return value of the next store.
+        """Retrieve the next store of return value of the callsite.
 
         Arguments:
         callsite -- callsite, which return value should be retrieved
