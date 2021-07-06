@@ -46,14 +46,6 @@ class SemaphoreSyscalls:
     def sem_wait(graph, abb, state, args, va):
         return add_edge_from_self_to(state, args.sem, "sem_wait()")
 
-    # int sem_trywait(sem_t *sem);
-    @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
-    def sem_trywait(graph, abb, state, args, va):
-        return add_edge_from_self_to(state, args.sem, "sem_trywait()")
-
-    # TODO: maybe add sem_timedwait()
-
     # int sem_post(sem_t *sem);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
