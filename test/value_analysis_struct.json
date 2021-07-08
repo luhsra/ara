@@ -3,14 +3,14 @@
 		"17": [
 			{
 				"callpath": [],
-				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 1"], ["value", 0], ["symbol", "null"], ["value", 0], ["symbol", ["GlobalVariable: task_struct", 0]]],
+				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 1"], ["value", 0], ["symbol", "null"], ["value", 0], ["symbol", ["GlobalVariable: task_struct", [0]]]],
 				"is_creation": {"name": "OBJ: task_struct.task1", "arg": 5}
 			}
 		],
 		"18": [
 			{
 				"callpath": [],
-				"args": [["value", "Function: _Z5task2Pv"], ["value", "Task 2"], ["value", 0], ["symbol", "null"], ["value", 0], ["symbol", ["GlobalVariable: task_struct", 4]]],
+				"args": [["value", "Function: _Z5task2Pv"], ["value", "Task 2"], ["value", 0], ["symbol", "null"], ["value", 0], ["symbol", ["GlobalVariable: task_struct", [4]]]],
 				"is_creation": {"name": "OBJ: task_struct.task2", "arg": 5}
 			}
 		]

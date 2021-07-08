@@ -67,7 +67,7 @@ cdef class ValueAnalyzer:
 
         Return the found value, the call specific attributes and an offset.
         value is either an LLVM value or an previously assigned object.
-        offset is an optional offset into the value (if it is a compount type).
+        offset is a tuple of offsets into the value (if it is a compount type).
         """
         callsite = self._check_callsite(callsite)
         if callpath is None:

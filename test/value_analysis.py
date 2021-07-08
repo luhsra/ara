@@ -103,8 +103,9 @@ def main():
                     py_val = value_to_py(value, attr)
                     debug_print("Retrieved", py_val)
                     if offset:
-                        debug_print(f"With Offset: {offset.get_offset()} ({offset})")
-                        assert val == [py_val, offset.get_offset()]
+                        num_offsets = [x.get_offset() for x in offset]
+                        debug_print(f"With Offsets: {num_offsets} ({offset})")
+                        assert val == [py_val, num_offsets]
                     else:
                         assert val == py_val
             if "is_creation" in entry:

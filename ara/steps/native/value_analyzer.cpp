@@ -34,24 +34,45 @@ namespace ara::step {
 			};
 		}
 
+		Manip offset_print(const std::vector<const llvm::GetElementPtrInst*>& vec) {
+			return [&](Logger::LogStream& ls) -> Logger::LogStream& {
+				ls << "[";
+				for (const auto& gep : vec) {
+					ls << *gep << ", ";
+				}
+				ls << "]";
+				return ls;
+			};
+		}
+
 		/**
-		 * Return the (static) calculated offset to a given getelementptr instruction.
+		 * Calculate the static offset of a GetElementPtrInst.
 		 *
-		 * Return 0, if the value cannot be calculated.
+		 * Return an offset, std::nullopt otherwise.
 		 */
-		int64_t get_offset(const llvm::GetElementPtrInst* gep) {
+		std::optional<int64_t> get_offset(const llvm::GetElementPtrInst* gep) {
 			assert(gep != nullptr && "GEP is null");
 			const auto layout = gep->getModule()->getDataLayout();
 			llvm::APInt ap_offset(layout.getIndexSizeInBits(gep->getPointerAddressSpace()), 0, true);
 			bool success = gep->accumulateConstantOffset(layout, ap_offset);
 			if (!success) {
-				return 0;
+				return std::nullopt;
 			}
 			return ap_offset.getSExtValue();
 		}
 
-		/* Special offset value to mark a map entry as "not specified with offset */
-		const static int64_t no_offset = INT64_MAX - 42;
+		std::optional<std::vector<int64_t>>
+		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets) {
+			std::vector<int64_t> number_offsets;
+			for (const auto& gep : offsets) {
+				auto number = get_offset(gep);
+				if (!number) {
+					return std::nullopt;
+				}
+				number_offsets.push_back(*number);
+			}
+			return number_offsets;
+		}
 
 	} // namespace
 
@@ -333,7 +354,8 @@ namespace ara::step {
 		if (id) {
 			dbg() << "Found a previous assigned object." << std::endl;
 			dbg() << "CallPath: " << call_path << std::endl;
-			return Finished{FoundValue{*id, node, nullptr}};
+			dbg() << "Asked for: " << node->getId() << " " << offset_print(offset) << std::endl;
+			return Finished{FoundValue{*id, node, {}}};
 		}
 		if (llvm::isa<SVF::NullPtrVFGNode>(node)) {
 			// Sigtype is not important here, a nullptr serves as value and symbol.
@@ -349,10 +371,7 @@ namespace ara::step {
 
 			if (const llvm::GetElementPtrInst* i = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
 				dbg() << "Found GetElementPtrInst: " << pretty_print(*i) << std::endl;
-				if (offset) {
-					throw ValuesUnknown("Found a (not supported) second GetElementPtr on the traversers path.");
-				}
-				offset = i;
+				offset.emplace_back(i);
 			}
 
 			if (hint == graph::SigType::value || hint == graph::SigType::undefined) {
@@ -367,12 +386,12 @@ namespace ara::step {
 				}
 
 				if (const llvm::GlobalVariable* gv = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
-					if (!gv->hasExternalLinkage() && (!offset || (offset && get_offset(offset) == 0))) {
+					if (!gv->hasExternalLinkage()) { // TODO consider using offset
 						const llvm::Value* gvv = gv->getOperand(0);
 						if (gvv != nullptr) {
 							if (const llvm::ConstantData* gvvc = llvm::dyn_cast<llvm::ConstantData>(gvv)) {
 								dbg() << "Found global constant data: " << pretty_print(*gvvc) << std::endl;
-								return Finished{FoundValue{gvvc, node, nullptr}};
+								return Finished{FoundValue{gvvc, node, {}}};
 							}
 						}
 					} else {
@@ -560,7 +579,7 @@ namespace ara::step {
 	bool Manager::eval_node_result(Result&& result) {
 		bool ret = false;
 		std::visit(overloaded{[&](Finished f) {
-			                      this->value = std::get<FoundValue>(f.report);
+			                      this->value = std::move(std::get<FoundValue>(f.report));
 			                      this->caretaker.stop();
 			                      ret = true;
 		                      },
@@ -633,12 +652,13 @@ namespace ara::step {
 
 	Logger& Bookkeeping::get_logger() const { return va.logger; }
 
-	std::optional<OSObject> Bookkeeping::get_obj_id(const SVF::NodeID id, const llvm::GetElementPtrInst* offset) const {
-		int64_t l_offset = no_offset;
-		if (offset) {
-			l_offset = get_offset(offset);
+	std::optional<OSObject> Bookkeeping::get_obj_id(const SVF::NodeID id,
+	                                                const std::vector<const llvm::GetElementPtrInst*>& offset) const {
+		auto num_offsets = convert_to_number_offsets(offset);
+		if (!num_offsets) {
+			return std::nullopt;
 		}
-		auto it = va.obj_map.left.find(std::make_pair(id, l_offset));
+		auto it = va.obj_map.left.find(std::make_pair(id, *num_offsets));
 		if (it != va.obj_map.left.end()) {
 			return it->second;
 		}
@@ -679,7 +699,7 @@ namespace ara::step {
 		return safe_deref(use.get());
 	}
 
-	std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*>
+	std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>
 	ValueAnalyzer::get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 	                                  graph::SigType hint, PyObject* type) {
 		if (is_call_to_intrinsic(callsite)) {
@@ -741,7 +761,7 @@ namespace ara::step {
 		assert(!callsite.getFunctionType()->getReturnType()->isVoidTy() && "Callsite has no return value");
 
 		SVF::NodeID id;
-		int64_t offset;
+		std::vector<const llvm::GetElementPtrInst*> offset;
 		if (argument_nr == -1) {
 			const SVF::VFGNode* node = get_vfg_node(graph.get_svfg(), callsite);
 			logger.debug() << "Assign: Initial node " << *node << std::endl;
@@ -750,11 +770,11 @@ namespace ara::step {
 			if (store == nullptr) {
 				logger.warn() << "Assignment to storage node not possible. Assign to call node itself." << std::endl;
 				id = node->getId();
-				offset = 0;
+				offset = {};
 			} else {
 				auto target = do_backward_value_search(store, callpath, graph::SigType::symbol);
 				id = safe_deref(target.source).getId();
-				offset = (target.offset) ? get_offset(target.offset) : no_offset;
+				offset = std::move(target.offset);
 			}
 		} else {
 			assert(argument_nr >= 0);
@@ -764,16 +784,21 @@ namespace ara::step {
 			const SVF::VFGNode* v_node = get_vfg_node(graph.get_svfg(), val);
 			auto target = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
 			id = safe_deref(target.source).getId();
-			offset = (target.offset) ? get_offset(target.offset) : no_offset;
+			offset = std::move(target.offset);
 		}
 
 		if (id != 0) {
 			logger.debug() << "Assign object ID " << obj_index << " to SVF node ID: " << id;
-			if (offset != no_offset) {
-				logger.debug() << " with offset " << offset;
+			if (offset.size() != 0) {
+				logger.debug() << " with offset " << offset_print(offset);
 			}
 			logger.debug() << "." << std::endl;
-			obj_map.insert(graph::GraphData::ObjMap::value_type(std::make_pair(id, offset), obj_index));
+			auto num_offsets = convert_to_number_offsets(offset);
+			if (num_offsets) {
+				obj_map.insert(graph::GraphData::ObjMap::value_type(std::make_pair(id, *num_offsets), obj_index));
+			} else {
+				logger.debug() << "Cannot calculate get_element_ptr offsets. Do not assign anything." << std::endl;
+			}
 		} else {
 			logger.debug() << "Assign object ID " << obj_index << " to nothing. A nullptr was given." << std::endl;
 		}
@@ -806,11 +831,10 @@ namespace ara::step {
 		return false;
 	}
 
-	PyObject*
-	ValueAnalyzer::py_repack(std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*> result) const {
+	PyObject* ValueAnalyzer::py_repack(
+	    std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>& result) const {
 		PyObject* obj_index;
 		PyObject* py_value;
-		PyObject* py_offset;
 		auto& [value, attrs, offset] = result;
 		if (std::holds_alternative<OSObject>(value)) {
 			static_assert(std::is_same<uint64_t, OSObject>::value);
@@ -825,10 +849,11 @@ namespace ara::step {
 			// it would be nice to return a const value here, however const correctness and Python are not compatible
 			py_value = get_obj_from_value(safe_deref(const_cast<llvm::Value*>(std::get<const llvm::Value*>(value))));
 		}
-		if (offset) {
-			py_offset = get_obj_from_value(safe_deref(const_cast<llvm::GetElementPtrInst*>(offset)));
-		} else {
-			py_offset = Py_None;
+
+		PyObject* py_offset = PyTuple_New(offset.size());
+		for (const auto& [index, gep] : offset | boost::adaptors::indexed()) {
+			PyObject* py_gep = get_obj_from_value(safe_deref(const_cast<llvm::GetElementPtrInst*>(gep)));
+			PyTuple_SET_ITEM(py_offset, index, py_gep);
 		}
 
 		return PyTuple_Pack(4, py_value, get_obj_from_attr_set(attrs), obj_index, py_offset);

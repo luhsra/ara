@@ -19,7 +19,7 @@ namespace ara::step {
 	struct FoundValue {
 		RawValue value;                        /* found LLVM value or previously assigned object */
 		const SVF::VFGNode* source;            /* SVF node of the found value */
-		const llvm::GetElementPtrInst* offset; /* offset within a struct */
+		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
 	};
 	using Report = std::variant<EndOfFunction, FoundValue>;
 
@@ -123,7 +123,7 @@ namespace ara::step {
 		/**
 		 * Store the one elementptr that is found on the traversers way
 		 */
-		const llvm::GetElementPtrInst* offset = nullptr;
+		std::vector<const llvm::GetElementPtrInst*> offset;
 
 		virtual void handle_found_value(FoundValue&& report);
 		FoundValue get_best_find(std::vector<Report>&& finds) const;
@@ -240,7 +240,8 @@ namespace ara::step {
 		// proxy functions
 		llvm::Module& get_module() const;
 		Logger& get_logger() const;
-		std::optional<OSObject> get_obj_id(const SVF::NodeID id, const llvm::GetElementPtrInst* offset) const;
+		std::optional<OSObject> get_obj_id(const SVF::NodeID id,
+		                                   const std::vector<const llvm::GetElementPtrInst*>& offset) const;
 	};
 
 	/**
@@ -327,7 +328,7 @@ namespace ara::step {
 		 * \param hint        what type of analysis should be done
 		 * \param type        the expected object type, currently unused
 		 */
-		std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*>
+		std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>
 		get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 		                   graph::SigType hint, PyObject* type);
 
@@ -378,7 +379,8 @@ namespace ara::step {
 		/**
 		 * Repack the C++ result of the value analysis to a Python tuple for further usage in Python.
 		 */
-		PyObject* py_repack(std::tuple<RawValue, llvm::AttributeSet, const llvm::GetElementPtrInst*> result) const;
+		PyObject* py_repack(
+		    std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>& result) const;
 
 		/**
 		 * Get the nth argument (llvm::Value) for a specific callsite.
