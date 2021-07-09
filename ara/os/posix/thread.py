@@ -215,3 +215,16 @@ class ThreadSyscalls:
             return state
         args.attr.name = args.name
         return state
+
+    # int pthread_setname_np(pthread_t thread, const char *name);
+    @syscall(categories={SyscallCategory.create},
+            signature=(Arg('thread', hint=SigType.instance, ty=Thread),
+                       Arg('name')))
+    def pthread_setname_np(graph, abb, state, args, va):
+        if args.thread == None or args.name == None:
+            logger.warning(f"pthread_setname_np(): Could not set thread name because argument "
+                           f"\"{'thread' if args.thread == None else 'name'}\" is unknown.")
+            return state
+        args.thread.name = args.name
+        state.instances.vp.label[args.thread.vertex] = args.name
+        return state

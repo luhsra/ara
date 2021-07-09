@@ -143,8 +143,8 @@ syscall_set = set({
     "mq_setattr",
     "mq_close",
     "mq_unlink",
-    "pthread_attr_setname_np",
-    "pthread_setname_np",
+    "pthread_attr_setname_np", # IBM specific
+    "pthread_setname_np", # GNU specific
     "clock_settime",
     "clock_nanosleep",
 
@@ -161,8 +161,8 @@ syscall_set = set({
     ### Functions that we want to remove instead of analyse ###
 
     # Unwanted Getter [We can remove these with the remove_sysfunc_body step]
-    "pthread_attr_getname_np",
-    "pthread_getname_np",
+    "pthread_attr_getname_np", # IBM specific
+    "pthread_getname_np", # GNU specific
     "pthread_attr_getdetachstate",
     "pthread_attr_getguardsize",
     "pthread_attr_getinheritsched",

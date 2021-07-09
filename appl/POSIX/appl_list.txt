@@ -45,6 +45,7 @@ pipe
 pthread_cancel
 pthread_create
 pthread_detach
+pthread_setname_np
 semaphore
 set_thread_attr
 set_thread_attr_inheritance

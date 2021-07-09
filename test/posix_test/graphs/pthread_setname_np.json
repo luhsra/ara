@@ -1,0 +1,54 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "function": "main",
+    "inherited_sched_attr": null,
+    "name": "Main Thread",
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "This is the threads name!",
+    "id": "Thread 1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/unit_tests/pthread_setname_np.c",
+    "line": 16,
+    "specialization_level": "",
+    "type": "instance",
+    "function": "new_thread_routine",
+    "inherited_sched_attr": "<default>",
+    "name": "This is the threads name!",
+    "num_id": 1,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_join()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Thread 1",
+    "label": "pause()",
+    "type": "interaction"
+  }
+]

@@ -43,6 +43,20 @@ test('pthread_create_musl',
         timeout: 300
 )
 
+test('pthread_setname_np',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'pthread_setname_np.json', posix_pthread_setname_np],
+        env: [python_path],
+        suite: 'posix'
+)
+test('pthread_setname_np_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'pthread_setname_np.json', posix_pthread_setname_np_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 test('mutex',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'mutex.json', posix_mutex],
