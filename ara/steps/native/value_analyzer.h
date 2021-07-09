@@ -4,8 +4,10 @@
 #include "graph.h"
 #include "logging.h"
 
+#include <WPA/Andersen.h>
 #include <boost/bimap.hpp>
 #include <graph_tool.hh>
+#include <memory>
 
 namespace ara::cython {
 	void raise_py_valueerror();
@@ -17,8 +19,8 @@ namespace ara::step {
 	using OSObject = uint64_t;
 	using RawValue = std::variant<const llvm::Value*, OSObject>;
 	struct FoundValue {
-		RawValue value;                        /* found LLVM value or previously assigned object */
-		const SVF::VFGNode* source;            /* SVF node of the found value */
+		RawValue value;                                     /* found LLVM value or previously assigned object */
+		const SVF::VFGNode* source;                         /* SVF node of the found value */
 		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
 	};
 	using Report = std::variant<EndOfFunction, FoundValue>;
@@ -170,7 +172,7 @@ namespace ara::step {
 		 *
 		 * The function assumes that all subtraverses sleeping at CallEdges.
 		 */
-		std::vector<shared_ptr<Traverser>> choose_best_next_traversers();
+		std::vector<std::shared_ptr<Traverser>> choose_best_next_traversers();
 		Logger::LogStream& dbg() const;
 		void remove(size_t traverser_id);
 

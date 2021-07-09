@@ -3,7 +3,9 @@
 #include "common/llvm_common.h"
 #include "common/util.h"
 
+#include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <pyllco.h>
 
 extern PyObject* py_valueerror;
 

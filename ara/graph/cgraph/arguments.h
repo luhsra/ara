@@ -1,8 +1,8 @@
 #pragma once
+#include "callpath.h"
 #include "common/exceptions.h"
 #include "common/util.h"
 #include "graph.h"
-#include "callpath.h"
 
 #include <Graphs/PTACallGraph.h>
 #include <Python.h>

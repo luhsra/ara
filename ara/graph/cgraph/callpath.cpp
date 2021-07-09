@@ -1,6 +1,6 @@
 #include "callpath.h"
-#include "common/llvm_common.h"
 
+#include "common/llvm_common.h"
 #include "graph_data_pyx_wrapper.h"
 
 namespace ara::graph {
@@ -122,4 +122,4 @@ namespace ara::graph {
 		os << cp.print(/* call_site = */ true, /* instruction = */ false, /* functions = */ true);
 		return os;
 	}
-}
+} // namespace ara::graph

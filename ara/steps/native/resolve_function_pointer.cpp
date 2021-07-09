@@ -2,9 +2,12 @@
 
 #include "resolve_function_pointer.h"
 
+#include "common/llvm_common.h"
+
 #include <Util/SVFUtil.h>
 #include <WPA/Andersen.h>
 #include <boost/range/adaptor/indexed.hpp>
+#include <fstream>
 #include <llvm/IR/TypeFinder.h>
 
 namespace ara::step {

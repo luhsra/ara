@@ -2,9 +2,9 @@
 
 #include "graph.h"
 
+#include <boost/range/adaptor/reversed.hpp>
 #include <graph_python_interface.hh>
 #include <memory>
-#include <boost/range/adaptor/reversed.hpp>
 
 namespace ara::graph {
 	class CallPath : boost::equality_comparable<CallPath> {
@@ -139,4 +139,3 @@ namespace ara::graph {
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp);
 } // namespace ara::graph
-
