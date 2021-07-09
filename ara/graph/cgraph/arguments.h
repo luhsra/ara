@@ -145,6 +145,11 @@ namespace ara::graph {
 		auto end() noexcept { return edges.end(); }
 		const auto end() const noexcept { return edges.end(); }
 		const auto cend() const noexcept { return edges.cend(); }
+
+		/**
+		 * Return a copy of the current object as Python object.
+		 */
+		PyObject* get_python_obj() const;
 	};
 
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp);

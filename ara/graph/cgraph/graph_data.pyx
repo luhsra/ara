@@ -271,3 +271,8 @@ cdef public string py_os_get_name(object os):
 
 cdef public vector[CSysCall] py_os_get_syscalls(object os):
     return _get_syscalls(get_os_syscalls(os))
+
+cdef public object py_get_callpath(const CCallPath& callpath):
+    cp = CallPath()
+    cp._c_callpath = callpath
+    return cp

@@ -128,6 +128,8 @@ namespace ara::graph {
 		return ret_value;
 	}
 
+	PyObject* CallPath::get_python_obj() const { return py_get_callpath(*this); }
+
 	std::ostream& operator<<(std::ostream& os, const CallPath& cp) {
 		os << cp.print(/* call_site = */ true, /* instruction = */ false, /* functions = */ true);
 		return os;

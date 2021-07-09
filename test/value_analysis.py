@@ -108,14 +108,20 @@ def main():
                         assert val == [py_val, num_offsets]
                     else:
                         assert val == py_val
+                    if "is_creation" in entry:
+                        obj = entry["is_creation"]
+                        if "arg" in obj and obj['arg'] == idx:
+                            debug_print(f"Assign {obj['name']} to argument {idx}.")
+                            va.assign_system_object(value, obj['name'], offset)
             if "is_creation" in entry:
                 obj = entry["is_creation"]
                 debug_print(f"Assign {obj['name']}.")
                 if "arg" not in obj:
-                    va.assign_system_object(syscall, obj["name"], callpath)
-                else:
-                    va.assign_system_object(syscall, obj["name"], callpath,
-                                            obj["arg"])
+                    store = va.get_return_value(syscall, callpath)
+                    debug_print(f"Got store: {store}")
+                    value, offset = va.get_memory_value(store, callpath)
+                    debug_print(f"Got store: {store}, value: {value}, offset: {offset}")
+                    va.assign_system_object(value, obj["name"], offset)
 
 
 if __name__ == '__main__':

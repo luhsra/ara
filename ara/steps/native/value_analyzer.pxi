@@ -1,10 +1,10 @@
 # ATTENTION: see step.pyx for c imports. Cython is really bad with double
 # imports
 
-import pyllco
 import sys
 from ara.util import get_logger
 from ara.graph import SigType, ABBType, NodeLevel
+from typing import List
 
 class ValuesUnknown(RuntimeError):
   pass
@@ -51,11 +51,10 @@ cdef class ValueAnalyzer:
         """Get positive hash."""
         return hash(obj) % ((sys.maxsize + 1) * 2)
 
-
     def get_argument_value(self, callsite, argument_nr,
                            callpath: CallPath = None,
                            hint: SigType = SigType.undefined,
-                           ty = None) -> pyllco.Value:
+                           ty = None):
         """Retrieve a parameter.
 
         Arguments:
@@ -73,7 +72,7 @@ cdef class ValueAnalyzer:
         if callpath is None:
             callpath = CallPath()
         cdef unsigned arg_nr = argument_nr
-        value, attr, idx, offset = deref(self._c_va).py_get_argument_value(
+        value, attr, offset = deref(self._c_va).py_get_argument_value(
             callsite,
             callpath._c_callpath,
             arg_nr,
@@ -81,33 +80,10 @@ cdef class ValueAnalyzer:
             ty
         )
 
-        if idx is not None:
-            value = self._sys_objects[idx]
+        if isinstance(value, int):
+            value = self._sys_objects[value]
 
         return value, attr, offset
-
-    def assign_system_object(self, callsite, sys_obj,
-                             callpath: CallPath = None, argument_nr=-1):
-        """Assign the system object sys_obj to a given (LLVM) callsite.
-
-        Arguments:
-        callsite    -- callsite, to which the obj should be assigned
-        sys_obj     -- the object that should be assigned
-        callpath    -- callpath that is leading to this specific object
-                       assignment
-        argument_nr -- if specified, assign the sys_obj to the specific
-                       (pointer) argument
-        """
-        callsite = self._check_callsite(callsite)
-        if callpath is None:
-            callpath = CallPath()
-        obj_index = self._phash(sys_obj)
-        assert obj_index not in self._sys_objects, "Got two objects with the same hash, when it should not be"
-        self._sys_objects[obj_index] = sys_obj
-        self._log.debug(f"Assign ID {obj_index} to object {sys_obj}.")
-        deref(self._c_va).py_assign_system_object(callsite, obj_index,
-                                                  callpath._c_callpath,
-                                                  argument_nr)
 
     def get_return_value(self, callsite, callpath: CallPath = None):
         """Retrieve the next store of return value of the callsite.
@@ -120,6 +96,75 @@ cdef class ValueAnalyzer:
             callpath = CallPath()
         return deref(self._c_va).py_get_return_value(callsite,
                                                      callpath._c_callpath)
+
+    def get_memory_value(self, intermediate_value: Value, callpath: CallPath = None):
+        """Retrieve the most specific memory location of an arbitrary llvm::Value
+
+        For example, the actual memory location of get_return_value
+        can be retrieved with that.
+
+        Arguments:
+        intermediate_value -- value, which should be followed
+        callpath           -- context for the search
+
+        Return the found value and an optional offset within that memory location.
+        """
+        if callpath is None:
+            callpath = CallPath()
+        value, offsets = deref(self._c_va).py_get_memory_value(intermediate_value._val, callpath._c_callpath)
+
+        if isinstance(value, int):
+            value = self._sys_objects[value]
+
+        return value, offsets
+
+
+
+    def get_assignments(self, value: Value,
+                        offset: List[GetElementPtrInst] = [],
+                        callpath: CallPath = None):
+        """Return all assignments to value or a part of value specified by offset.
+
+        Arguments:
+        value    -- The value which assignments should be returned.
+        offset   -- optional specifier to restrict the value assignments to this
+                    offset (useful for assignments to structs).
+        callpath -- callpath to optionally specify the context
+        """
+        if callpath is None:
+            callpath = CallPath()
+        cdef vector[const CGep*] c_offset
+        cdef GetElementPtrInst gep
+        for py_gep in offset:
+            gep = py_gep
+            c_offset.push_back(gep._gep_inst())
+        deref(self._c_va).py_get_assignments(value._val,
+                                             c_offset,
+                                             callpath._c_callpath)
+
+    def assign_system_object(self, value: Value, sys_obj, offset: List[GetElementPtrInst]):
+        """Assign the system object sys_obj to a given (LLVM) value.
+
+        Normally, these values are retrieved via get_argument_value
+        or get_memory_value.
+
+        Arguments:
+        value       -- the value, to which the obj should be assigned
+        sys_obj     -- the object that should be assigned
+                       assignment
+                       (pointer) argument
+        offset      -- list of offset, to which the object is assigned
+        """
+        obj_index = self._phash(sys_obj)
+        assert obj_index not in self._sys_objects, "Got two objects with the same hash, when it should not be"
+        self._sys_objects[obj_index] = sys_obj
+        self._log.debug(f"Assign ID {obj_index} to object {sys_obj}.")
+        cdef vector[const CGep*] c_offset
+        cdef GetElementPtrInst gep
+        for py_gep in offset:
+            gep = py_gep
+            c_offset.push_back(gep._gep_inst())
+        deref(self._c_va).assign_system_object(value._val, obj_index, c_offset)
 
     def has_connection(self, callsite, callpath: CallPath, argument_nr, sys_obj):
         """Check, if an syscall argument and a target candidate are connected.
