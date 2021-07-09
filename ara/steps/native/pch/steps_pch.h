@@ -8,11 +8,9 @@
 #include <graph_tool.hh> // this must stand at the beginning, see https://git.skewed.de/count0/graph-tool/-/issues/704
 // clang-format on
 
-#include <Graphs/GenericGraph.h>
 #include <Graphs/ICFG.h>
 #include <Graphs/PAG.h>
 #include <Graphs/PTACallGraph.h>
-#include <Graphs/SVFG.h>
 #include <Graphs/VFGNode.h>
 #include <Python.h>
 #include <SVF-FE/BreakConstantExpr.h>
@@ -22,19 +20,22 @@
 #include <WPA/Andersen.h>
 #include <assert.h>
 #include <boost/algorithm/string.hpp>
+#include <boost/bimap.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/iterator/iterator_facade.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/python.hpp>
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/range/adaptor/map.hpp>
 #include <boost/type_traits.hpp>
 #include <cassert>
 #include <common/llvm_common.h>
-#include <cxxabi.h>
 #include <filesystem>
+#include <fstream>
 #include <functional>
 #include <graph.h>
+#include <graph_tool.hh>
 #include <iostream>
 #include <list>
 #include <llvm/ADT/GraphTraits.h>
@@ -76,6 +77,7 @@
 #include <tuple>
 #include <type_traits>
 #include <typeinfo>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
