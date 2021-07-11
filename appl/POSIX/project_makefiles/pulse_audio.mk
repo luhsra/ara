@@ -21,7 +21,7 @@ $(OBJ_BUILD)/pulse_audio.ll: $(OBJ_BUILD)/pulse_audio_lib.ll $(OBJ_BUILD)/pulse_
 
 # Do not build the following target because of the unresolved error: Linking globals named 'table': symbol multiply defined!
 #$(OBJ_BUILD)/pulse_audio_common.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
-#BINARY_FILE=$(PULSE_AUDIO_BUILD_DIR)/src/libpulsecommon-14.0.so \
+#BINARY_FILE=$(PULSE_AUDIO_BUILD_DIR)/src/libpulsecommon-14.2.so \
 #OUTPUT_FILE=$@ \
 #./extract_llvm_ir.sh
 
@@ -33,7 +33,7 @@ $(OBJ_BUILD)/pulse_audio_lib.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)
 
 $(OBJ_BUILD)/pulse_audio_core.ll: $(OBJ_BUILD)/pulse_audio_daemon.ll $(BUILD_DIR)/musl_libc.ll
 
-	BINARY_FILE=$(PULSE_AUDIO_BUILD_DIR)/src/pulsecore/libpulsecore-14.0.so \
+	BINARY_FILE=$(PULSE_AUDIO_BUILD_DIR)/src/pulsecore/libpulsecore-14.2.so \
 	OUTPUT_FILE=$@ \
 		./extract_llvm_ir.sh
 

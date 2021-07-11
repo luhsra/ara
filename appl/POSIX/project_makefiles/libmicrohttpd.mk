@@ -1,5 +1,6 @@
 
 # Built for version 0.9.73
+# Include this script after all applications using libmicrohttpd.
 
 LIBMICROHTTPD_DIR ?= ../../subprojects/libmicrohttpd
 LIBMICROHTTPD_DIR := $(shell $(REALPATH) $(LIBMICROHTTPD_DIR))
@@ -10,6 +11,9 @@ MHD_REBUILD_MAKEFILE := $(shell if [ -e "$(LIBMICROHTTPD_DIR)"/Makefile ]; then 
 								else \
 									echo "true"; \
 								fi)
+
+# A libmicrohttpd demo application module that needs the postprocessor can override this variable.  
+DISABLE_POSTPROCESSOR ?= --disable-postprocessor
 
 # Generate autotools configure
 $(LIBMICROHTTPD_DIR)/configure:
@@ -23,7 +27,7 @@ $(BUILD_DIR)/libmicrohttpd.ll: build_makefile_app.sh $(BUILD_DIR)/musl_libc.ll $
 	BINARY_FILE="$(LIBMICROHTTPD_DIR)/src/microhttpd/.libs/libmicrohttpd.a" \
 	OUTPUT_FILE="$@" \
 	EXEC_CONFIGURE="$(MHD_REBUILD_MAKEFILE)" \
-	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix --disable-curl --disable-largefile --disable-messages --disable-dauth --disable-httpupgrade --disable-epoll --disable-poll --enable-itc=pipe --disable-postprocessor" \
+	CONFIGURE_ARGS="--disable-nls --enable-https=no --without-gnutls --with-threads=posix --disable-curl --disable-largefile --disable-messages --disable-dauth --disable-httpupgrade --disable-epoll --disable-poll --enable-itc=pipe $(DISABLE_POSTPROCESSOR)" \
 	$(USE_MUSL_CLANG) \
 	CFLAGS="$(CFLAGS_NO_MUSL_INCL)" \
 		./build_makefile_app.sh

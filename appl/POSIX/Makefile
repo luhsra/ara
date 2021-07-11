@@ -156,6 +156,9 @@ LLVM_OPT := opt$(LLVM_SUFFIX)
 EXTRACT_BC_ARGS = --linker $(ARA_LINK) --bitcode
 export EXTRACT_BC_ARGS
 
+# Make sure to always use clang with WLLVM.
+export LLVM_COMPILER = clang
+
 # Check dependencies
 ifeq ($(call command_availiable,$(WLLVM)), false)
 $(info command $(WLLVM) not found!)
@@ -254,9 +257,9 @@ LDFLAGS_WITH_LLVM_TO_BIN = -static -nostdlib
 include $(MAKE_INCLUDE_DIR)/no_musl_linkage_unit_tests.mk
 include $(MAKE_INCLUDE_DIR)/simple_project.mk
 #include $(MAKE_INCLUDE_DIR)/patric_gbs_a5.mk
-include $(MAKE_INCLUDE_DIR)/libmicrohttpd.mk
 #include $(MAKE_INCLUDE_DIR)/microhttpd_demo.mk
 include $(MAKE_INCLUDE_DIR)/microhttpd_fileserver_dirs.mk
+include $(MAKE_INCLUDE_DIR)/libmicrohttpd.mk
 
 # C++ Test
 #include $(MAKE_INCLUDE_DIR)/llvm_libcxx.mk
