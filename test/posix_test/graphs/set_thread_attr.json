@@ -28,7 +28,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/unit_tests/set_thread_attr.c",
+    "file": "../../appl/POSIX/test_appl/set_thread_attr.c",
     "line": 25,
     "specialization_level": "",
     "type": "instance",

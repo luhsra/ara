@@ -28,7 +28,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/unit_tests/pthread_create.c",
+    "file": "../../appl/POSIX/test_appl/pthread_create.c",
     "line": 14,
     "specialization_level": "",
     "type": "instance",

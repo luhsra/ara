@@ -14,12 +14,12 @@
 # HOW TO:
 #
 # - add a new single source file application:
-# 		Just simply create the .c file in this directory or in the $(UNIT_TEST_C_FILES) directory.
+# 		Just simply create the .c file in this directory or in the $(TEST_C_FILES) directory.
 #		This script will detect the file automatically.
 #		The name of the project is the filename without file extension.
 #
 # - add a new complex application: 
-#		Create a new .mk file in the $(MAKE_INCLUDE_DIR) dir. This is normally ./project_makefiles
+#		Create a new .mk file in the $(MAKE_INCLUDE_DIR) dir. This is normally ./modules
 #		Append the name of the project in the $(PROJECT_NAMES) list. (As a PROJECT_NAMES += name in the new file)
 #		Create new rules in this Makefile to build the project to a .ll file in $(OBJ_BUILD)/ (without musl libc linkage).
 #		Musl libc linkage will be applied automatically.
@@ -40,7 +40,7 @@
 #
 # Note: The destination file for all applications is <project name>.ll in $(BUILD_DIR)
 
-#SHELL := /bin/bash
+#SHELL := /bin/sh
 
 # LLVM version to be used. Only required for some systems (see LLVM_SUFFIX)
 LLVM_VERSION ?= 10
@@ -67,7 +67,7 @@ ARA_LINK ?= $(BUILD_ROOT)/subprojects/ara-link/ara-link
 REALPATH ?= realpath -m
 
 # The path to the directory containing the build-to-LLVM Makefiles for a specific application/project.
-MAKE_INCLUDE_DIR = project_makefiles
+MAKE_INCLUDE_DIR = modules
 
 # In this directory are all LLVM IR targets located without the musl libc included.
 OBJ_BUILD = $(BUILD_DIR)/objs
@@ -75,8 +75,8 @@ OBJ_BUILD = $(BUILD_DIR)/objs
 # In this directory are all executables located.
 BIN_PATH := $(BUILD_DIR)/bin
 
-# Directory of all unit test C files. All files in this directory are single file applications.
-UNIT_TEST_C_FILES = unit_tests
+# Directory of all C files used in test cases. All files in this directory are single file applications.
+TEST_C_FILES = test_appl
 
 # Tools
 AWK_TO_TARGET = awk '{ print "$(BUILD_DIR)/" $$0 ".ll" }'
@@ -207,7 +207,7 @@ export LLVM_DIS
 export WLLVM
 export EXTRACT_BC
 
-SINGLE_FILE_APPLICATIONS := $(call list_filenames_of_dir,.c,.) $(call list_filenames_of_dir,.c,$(UNIT_TEST_C_FILES))
+SINGLE_FILE_APPLICATIONS := $(call list_filenames_of_dir,.c,.) $(call list_filenames_of_dir,.c,$(TEST_C_FILES))
 
 _default_rule: all
 
@@ -254,7 +254,7 @@ LDFLAGS_WITH_LLVM_TO_BIN = -static -nostdlib
 # --- Module include --- #
 
 # Fully working modules
-include $(MAKE_INCLUDE_DIR)/no_musl_linkage_unit_tests.mk
+include $(MAKE_INCLUDE_DIR)/no_musl_linkage_test_appl.mk
 include $(MAKE_INCLUDE_DIR)/simple_project.mk
 #include $(MAKE_INCLUDE_DIR)/patric_gbs_a5.mk
 #include $(MAKE_INCLUDE_DIR)/microhttpd_demo.mk
@@ -335,5 +335,5 @@ $(TARGETS): $(BUILD_DIR)/%.ll : $(OBJ_BUILD)/%.ll $(BUILD_DIR)/musl_libc.ll
 # Compile simple POSIX C files (single file applications)
 $(OBJ_BUILD)/%.ll: %.c $(BUILD_DIR)/musl_libc.ll
 	$(BUILD_TO_LLVM)
-$(OBJ_BUILD)/%.ll: $(UNIT_TEST_C_FILES)/%.c $(BUILD_DIR)/musl_libc.ll
+$(OBJ_BUILD)/%.ll: $(TEST_C_FILES)/%.c $(BUILD_DIR)/musl_libc.ll
 	$(BUILD_TO_LLVM)

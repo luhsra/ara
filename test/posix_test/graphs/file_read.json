@@ -28,7 +28,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/unit_tests/file_read.c",
+    "file": "../../appl/POSIX/test_appl/file_read.c",
     "line": 7,
     "specialization_level": "",
     "type": "instance",

@@ -28,7 +28,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/unit_tests/signal_handler_siginfo.c",
+    "file": "../../appl/POSIX/test_appl/signal_handler_siginfo.c",
     "line": 18,
     "specialization_level": "",
     "type": "instance",
