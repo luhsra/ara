@@ -70,6 +70,7 @@ class Argument:
     # WARNING: raw_value must come _before_ hint, since hint modifies raw_value
     raw_value: bool = False
     hint: _SigType = _SigType.value
+    optional: bool = False  # Set this to True if this argument is an optional argument for the syscall. 
 
     def get_hint(self) -> _SigType:
         return self._hint
@@ -170,7 +171,9 @@ class SysCall:
                 # TODO, ignore offset for now
                 
             except ValuesUnknown as va_unknown_exc:
-                logger.warning(f"{self.name}(): ValueAnalyzer could not get argument {arg.name}. Exception: \"{va_unknown_exc}\"")
+                # Do not throw warning if an optional argument is not applied:
+                if not (arg.optional and str(va_unknown_exc) == "Argument number is too big."):
+                    logger.warning(f"{self.name}(): ValueAnalyzer could not get argument {arg.name}. Exception: \"{va_unknown_exc}\"")
                 values.append(None)
                 fields.append(arg.name)
                 continue
