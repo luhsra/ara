@@ -58,9 +58,6 @@ $(OBJ_BUILD)/musl_libc_original.ll: build_makefile_app.sh
 	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/libc.a
 	$(REMOVE_LLVM_BC_ELF_SECTION) $(MUSL_INSTALL_DIR)/lib/libc.so
 
-	@# Make sure that WLLVM executes musl-clang instead of clang.
-	ln -s $(MUSL_INSTALL_DIR)/bin/musl-clang $(MUSL_INSTALL_DIR)/bin/clang
-
 clean-musl-libc:
 	(cd $(MUSL_LIB_C_SRC_PATH) && make clean)
 CLEAN_UP_TARGETS += clean-musl-libc
