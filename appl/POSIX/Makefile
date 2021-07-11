@@ -7,6 +7,9 @@
 #
 # Note: You can safely ignore warnings of type:  WARNING:Could not find ".llvm_bc" ELF section in ...
 #		This is the result of assembly source files being processed by wllvm.
+#		
+# Note: You can safely ignore warnings of type:  Did not recognize the compiler flag ...
+#		This is caused by the musl-clang wrapper script that is executing wllvm with arguments that are not applicable for the current source file.
 #
 # HOW TO:
 #
@@ -231,10 +234,11 @@ include $(MAKE_INCLUDE_DIR)/musl_libc.mk
 
 COMPILE_WITH_MUSL_INCLUDE := -isystem$(MUSL_INCLUDE_DIR)
 
-# Generates an argument to WLLVM for build_makefile_app.sh or another direct build system call (e.g. cmake).
-# This argument sets the compiler of wllvm to musl-clang instead of clang.
+# Generates an argument to WLLVM for build_makefile_app.sh.
+# This argument sets the compiler to musl-clang instead of wllvm.
+# musl-clang will then invoke wllvm internally.
 # With musl-clang we can use the musl libc in a complex build process during linking phase.
-USE_MUSL_CLANG := LLVM_COMPILER_PATH="$(MUSL_INSTALL_DIR)/bin"
+USE_MUSL_CLANG := WLLVM="$(MUSL_INSTALL_DIR)/bin/musl-clang"
 
 CC = clang
 CFLAGS_NO_MUSL_INCL = -g -O0 -Wall -fno-builtin -Wno-unused-command-line-argument
