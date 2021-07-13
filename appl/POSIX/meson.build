@@ -33,7 +33,8 @@ appl_list = run_command('cat', posix_src_dir / 'appl_list.txt').stdout().split()
 # Custom Target to execute the "all" Rule in Makefile.
 # This is a workaround to avoid Mesons parallel execution of multiple posix make targets.
 posix_make_cust_target = custom_target('posix-make',
-          output : ['musl_libc.ll'],
+          output : ['musl_libc.ll'], # This output is irrelevant. We set build_always_stale to always execute the Makefile.
+          depends: ara_link,
           build_always_stale : true,
           command : posix_make_command + ['-j' + cpus])
 
