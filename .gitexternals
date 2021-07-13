@@ -7,7 +7,7 @@
 [external "svf"]
 	path = subprojects/svf
 	url = https://github.com/luhsra/SVF
-	branch = pairfix
+	branch = posix
 	vcs = git
 
 [external "sparsedata"]
