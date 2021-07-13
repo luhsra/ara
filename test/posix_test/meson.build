@@ -239,6 +239,20 @@ test('multiple_sigactions_musl',
         timeout: 300
 )
 
+test('sigaction_macro_test',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'sigaction_macro_test.json', posix_sigaction_macro_test],
+        env: [python_path],
+        suite: 'posix'
+)
+test('sigaction_macro_test_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'sigaction_macro_test.json', posix_sigaction_macro_test_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 test('file_readv',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'file_readv.json', posix_file_readv],

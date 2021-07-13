@@ -51,6 +51,7 @@ pthread_setname_np
 semaphore
 set_thread_attr
 set_thread_attr_inheritance
+sigaction_macro_test
 signal_handler
 signal_handler_siginfo
 sleep
