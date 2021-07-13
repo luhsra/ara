@@ -141,6 +141,20 @@ test('open_twice_musl',
         timeout: 300
 )
 
+test('open_two_files',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'open_two_files.json', posix_open_two_files],
+        env: [python_path],
+        suite: 'posix'
+)
+test('open_two_files_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'open_two_files.json', posix_open_two_files_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 test('semaphore',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'semaphore.json', posix_semaphore],
@@ -379,6 +393,20 @@ test('condition_var_broadcast',
 test('condition_var_broadcast_musl',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('create_everything',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'create_everything.json', posix_create_everything],
+        env: [python_path],
+        suite: 'posix'
+)
+test('create_everything_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'create_everything.json', posix_create_everything_musl],
         env: [python_path],
         suite: 'posix',
         timeout: 300

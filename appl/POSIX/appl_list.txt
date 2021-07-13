@@ -29,6 +29,7 @@ write_file_to_struct
 condition_var_broadcast
 condition_variable
 condition_var_initializer
+create_everything
 file_read
 file_readv
 filestream_open
@@ -41,6 +42,7 @@ mutex_counter
 mutex_initializer
 nanosleep
 open_twice
+open_two_files
 pipe
 pthread_cancel
 pthread_create
