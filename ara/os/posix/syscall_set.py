@@ -47,14 +47,14 @@ syscall_set = set({
     "sem_trywait",
     "sem_timedwait",
     "sem_post",
-    "_ARA_sigaction_syscall_", # Special Musl wrapper for sigaction()
+    "ARA_sigaction_syscall_", # Special Musl wrapper for sigaction()
     "signal",
     "sigwait",
     "sigwaitinfo",
     "sigtimedwait",
     "pause",
     #"sleep", We want to redirect sleep() -> nanosleep()
-    "_ARA_nanosleep_syscall_", # Special Musl wrapper for nanosleep()
+    "ARA_nanosleep_syscall_", # Special Musl wrapper for nanosleep()
     "clock_nanosleep",
     "alarm",
     "timer_create",
@@ -83,7 +83,7 @@ syscall_set = set({
     "pthread_attr_setdetachstate",
     "pthread_attr_setguardsize",
     "pthread_attr_setinheritsched",
-    "_ARA_pthread_attr_setschedparam_syscall_" # Special Musl wrapper for pthread_attr_setschedparam(),
+    "ARA_pthread_attr_setschedparam_syscall_" # Special Musl wrapper for pthread_attr_setschedparam(),
     "pthread_attr_setschedpolicy",
     "pthread_attr_setscope",
     "pthread_attr_setstack",

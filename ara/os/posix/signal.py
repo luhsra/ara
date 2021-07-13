@@ -87,7 +87,7 @@ class SignalSyscalls:
                         Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero, pyllco.GlobalVariable]),
                         Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable]),
                         Arg('oact', hint=SigType.symbol)))   
-    def _ARA_sigaction_syscall_(graph, abb, state, args, va): # sigaction()
+    def ARA_sigaction_syscall_(graph, abb, state, args, va): # sigaction()
         
         # suppress some "argument is of wrong type" warnings
         sa_handler = args.sa_handler

@@ -16,7 +16,7 @@ class OtherSyscalls:
              signature=(Arg('tv_sec', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('tv_nsec', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('rmtp', hint=SigType.symbol)))
-    def _ARA_nanosleep_syscall_(graph, abb, state, args, va):
+    def ARA_nanosleep_syscall_(graph, abb, state, args, va):
         tv_sec = args.tv_sec.get() if args.tv_sec != None else "Unknown"
         tv_nsec = args.tv_nsec.get() if args.tv_nsec != None else "Unknown"
         return add_self_edge(state, f"nanosleep(tv_sec: {tv_sec}, tv_nsec: {tv_nsec})")

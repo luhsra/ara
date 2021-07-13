@@ -155,7 +155,7 @@ class ThreadSyscalls:
     @syscall(categories={SyscallCategory.create},
              signature=(Arg('attr', hint=SigType.instance, ty=ThreadAttr),
                         Arg('sched_priority', hint=SigType.value, ty=pyllco.ConstantInt)))
-    def _ARA_pthread_attr_setschedparam_syscall_(graph, abb, state, args, va): # pthread_attr_setschedparam()
+    def ARA_pthread_attr_setschedparam_syscall_(graph, abb, state, args, va): # pthread_attr_setschedparam()
         if args.attr == None or args.sched_priority == None:
             logger.warning(f"pthread_attr_setschedparam(): Could not set thread priority because argument "
                            f"\"{'attr' if args.attr == None else 'sched_priority'}\" is unknown.")
