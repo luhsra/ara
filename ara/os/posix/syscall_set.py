@@ -149,13 +149,13 @@ syscall_set = set({
     "clock_nanosleep",
 
     # musl libc native Kernel syscalls
-    "_musl_syscall0", # __syscall0 [function name in musl libc]
-    "_musl_syscall1", # __syscall1
-    "_musl_syscall2", # __syscall2
-    "_musl_syscall3", # __syscall3
-    "_musl_syscall4", # __syscall4
-    "_musl_syscall5", # __syscall5
-    "_musl_syscall6", # __syscall6
+    "musl_syscall0_", # __syscall0 [function name in musl libc]
+    "musl_syscall1_", # __syscall1
+    "musl_syscall2_", # __syscall2
+    "musl_syscall3_", # __syscall3
+    "musl_syscall4_", # __syscall4
+    "musl_syscall5_", # __syscall5
+    "musl_syscall6_", # __syscall6
 
     ###########################################################
     ### Functions that we want to remove instead of analyse ###
