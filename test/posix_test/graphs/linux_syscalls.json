@@ -20,22 +20,6 @@
     "sched_priority": "<default>"
   },
   {
-    "label": "Pipe 0",
-    "id": "Pipe 0",
-    "branch": 0,
-    "usually_taken": 0,
-    "loop": 0,
-    "recursive": 0,
-    "after_scheduler": 1,
-    "unique": 1,
-    "file": "../../appl/POSIX/test_appl/no_musl_linkage/linux_syscalls.c",
-    "line": 25,
-    "specialization_level": "",
-    "type": "instance",
-    "name": "Pipe 0",
-    "num_id": 0
-  },
-  {
     "label": "testfile.txt",
     "id": "testfile",
     "branch": 0,
@@ -45,7 +29,7 @@
     "after_scheduler": 1,
     "unique": 1,
     "file": "../../appl/POSIX/test_appl/no_musl_linkage/linux_syscalls.c",
-    "line": 21,
+    "line": 26,
     "specialization_level": "",
     "type": "instance",
     "name": "testfile.txt",
@@ -65,7 +49,7 @@
   },
   {
     "source": "Main Thread",
-    "target": "Pipe 0",
+    "target": "testfile",
     "label": "write()",
     "type": "interaction"
   },
@@ -73,6 +57,12 @@
     "source": "Main Thread",
     "target": "testfile",
     "label": "writev()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Main Thread",
+    "label": "pause()",
     "type": "interaction"
   }
 ]
