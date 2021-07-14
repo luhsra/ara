@@ -13,9 +13,9 @@ LINUX_SYSCALL_IDS = dict({
     (2, 'open'),
     (19, 'readv'),
     (20, 'writev'),
-    (22, 'pipe'),
+    #(22, 'pipe'), We can not redirect Linux syscall pipe -> ARA_pipe_syscall_.
     (34, 'pause'),
-    (35, 'nanosleep'),
+    #(35, 'nanosleep'), We can not redirect Linux syscall nanosleep -> ARA_nanosleep_syscall_.
     # We do not need to analyse rt_sigaction() because this Linux Syscall is only called in musl libc´s sigaction() implementation.
 })
 
@@ -44,7 +44,7 @@ def get_musl_syscall(syscall_wrapper_name: str, graph, abb, state) -> str:
     ValuesUnknown = get_native_component("ValuesUnknown")
     value = None
     try:
-        value, attrs = va.get_argument_value(abb, 0,
+        value, attrs, offset = va.get_argument_value(abb, 0,
                                         callpath=state.call_path,
                                         hint=SigType.value)
     except ValuesUnknown as va_unknown_exc:
