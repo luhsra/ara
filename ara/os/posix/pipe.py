@@ -3,7 +3,7 @@ from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, register_instance
-from .file_descriptor import create_file_desc_of
+from .file_descriptor import create_file_desc_of, FDType
 
 @dataclass(eq = False)
 class Pipe(IDInstance):
@@ -21,10 +21,12 @@ class PipeSyscalls:
 
     # int pipe(int fildes[2]);
     @syscall(categories={SyscallCategory.create},
-             signature=(Arg('fildes', hint=SigType.instance),))
-    def pipe(graph, abb, state, args, va):
+             signature=(Arg('fildes_read', hint=SigType.instance),
+                        Arg('fildes_write', hint=SigType.instance)))
+    def ARA_pipe_syscall_(graph, abb, state, args, va):
         
         new_pipe = Pipe(name=None)
         
-        args.fildes = create_file_desc_of(new_pipe)
+        args.fildes_read = create_file_desc_of(new_pipe, FDType.READ)
+        args.fildes_write = create_file_desc_of(new_pipe, FDType.WRITE)
         return register_instance(new_pipe, f"{new_pipe.name}", graph, abb, state)

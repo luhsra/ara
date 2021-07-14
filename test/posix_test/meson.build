@@ -99,6 +99,20 @@ test('pipe_musl',
         timeout: 300
 )
 
+test('wrong_pipe_access',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'wrong_pipe_access.json', posix_wrong_pipe_access],
+        env: [python_path],
+        suite: 'posix'
+)
+test('wrong_pipe_access_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'wrong_pipe_access.json', posix_wrong_pipe_access_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 test('file_read',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'file_read.json', posix_file_read],
