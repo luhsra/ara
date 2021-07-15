@@ -43,9 +43,7 @@ class FileSyscalls:
     files = dict()
 
     # int open(const char *path, int oflag, ...);
-    #
-    # _ARA_open_syscall_ is the name of open() in the musl libc modification. This is required to circumvent the variable argument signature.
-    @syscall(aliases={"open64"},
+    @syscall(aliases={"open64"}, signal_safe=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('path', hint=SigType.value),
                         Arg('oflag', hint=SigType.value, ty=pyllco.ConstantInt),

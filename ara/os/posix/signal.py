@@ -80,7 +80,7 @@ class SignalSyscalls:
 
     # int sigaction(int sig, const struct sigaction *restrict act,
     #       struct sigaction *restrict oact);
-    @syscall(categories={SyscallCategory.create},
+    @syscall(categories={SyscallCategory.create}, signal_safe=True,
              signature=(Arg('sig', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('sa_handler', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable]),
                         Arg('sa_mask', hint=SigType.symbol),

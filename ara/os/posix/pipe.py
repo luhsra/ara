@@ -20,7 +20,7 @@ class Pipe(IDInstance):
 class PipeSyscalls:
 
     # int pipe(int fildes[2]);
-    @syscall(categories={SyscallCategory.create},
+    @syscall(categories={SyscallCategory.create}, signal_safe=True,
              signature=(Arg('fildes_read', hint=SigType.instance),
                         Arg('fildes_write', hint=SigType.instance)))
     def ARA_pipe_syscall_(graph, abb, state, args, va):

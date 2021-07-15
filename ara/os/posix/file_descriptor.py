@@ -47,7 +47,7 @@ class FileDescriptorSyscalls:
         return add_edge_from_self_to(state, args.fildes.points_to, label)
 
     # ssize_t read(int fildes, void *buf, size_t nbyte);
-    @syscall(categories={SyscallCategory.comm},
+    @syscall(categories={SyscallCategory.comm}, signal_safe=True,
              signature=(Arg('fildes', ty=[FileDescriptor, pyllco.ConstantInt]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
@@ -55,7 +55,7 @@ class FileDescriptorSyscalls:
         return FileDescriptorSyscalls.fd_syscall_impl(graph, state, args, "read()", FDType.READ)
 
     # ssize_t write(int fildes, const void *buf, size_t nbyte);
-    @syscall(categories={SyscallCategory.comm},
+    @syscall(categories={SyscallCategory.comm}, signal_safe=True,
              signature=(Arg('fildes', ty=[FileDescriptor, pyllco.ConstantInt]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))

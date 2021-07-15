@@ -7,14 +7,14 @@ import ara.graph as _graph
 from ara.graph import SyscallCategory
 from ..os_base import OSBase
 from ..os_util import SysCall, syscall
-from .posix_utils import PosixOptions, logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories
+from .posix_utils import PosixOptions, logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories, get_running_thread
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
 from .mutex import MutexSyscalls
 from .semaphore import SemaphoreSyscalls
 from .condition_variable import CondSyscalls
-from .signal import SignalSyscalls
+from .signal import SignalCatchingFunc, SignalSyscalls
 from .thread import ThreadSyscalls
 from .other_syscalls import OtherSyscalls
 from .warning_syscalls import WarningSyscalls
@@ -149,6 +149,12 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             categories = set((categories,))
 
         if not POSIX._syscall_category_matching(syscall_function, categories):
+            return POSIX._do_not_interpret(cfg, abb, state)
+
+        # Throw error if a non-async-signal-safe syscalls is called in signal handler
+        thread = get_running_thread(state)
+        if type(thread) == SignalCatchingFunc and not syscall_function.signal_safe:
+            logger.error(f"signal catching function {thread.name} has called not async-signal-safe syscall {syscall_function.name}(). Ignoring ...")
             return POSIX._do_not_interpret(cfg, abb, state)
 
         # Call the syscall function.

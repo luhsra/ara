@@ -225,6 +225,20 @@ test('signal_handler_siginfo_musl',
         timeout: 300
 )
 
+test('wrong_call_in_sighandler',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'wrong_call_in_sighandler.json', posix_wrong_call_in_sighandler],
+        env: [python_path],
+        suite: 'posix'
+)
+test('wrong_call_in_sighandler_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'wrong_call_in_sighandler.json', posix_wrong_call_in_sighandler_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 test('ignore_signal',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'ignore_signal.json', posix_ignore_signal],

@@ -316,6 +316,7 @@ syscall_set = set({
     "snprintf",
     "puts",
     "putchar",
+    "perror",
 
     # These are functions that are possible call targets of calls to f->write(), f->read(), ... inside musl libc.
     # We are not interested in analysing these functions so we can increase performance and precision of the analysis a lot by removing these functions.
