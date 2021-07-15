@@ -7,6 +7,9 @@ from ara.steps.syscall_count import SyscallCount
 from .posix_utils import logger, do_not_interpret_syscall
 
 # All the Linux syscalls we want to detect with there ids.
+# We are not analysing syscalls with 1, 2, 4, 5 or 6 arguments.
+# If you add a syscall with this number of arguments,
+# remove the is_stub field in the matching musl syscall function below in MuslSyscalls.
 LINUX_SYSCALL_IDS = dict({
     (0, 'read'),
     (1, 'write'),
@@ -86,6 +89,9 @@ class MuslSyscalls:
         """
         return do_not_interpret_syscall(graph, abb, state)
 
+    # We are not analysing syscalls with one argument.
+    # Setting this function to a stub saves performance.
+    # If you want to analyse a syscall with one argument, remove the is_stub field
     @syscall(aliases={"__syscall1"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
@@ -98,7 +104,10 @@ class MuslSyscalls:
         """
         return do_not_interpret_syscall(graph, abb, state)
 
-    @syscall(aliases={"__syscall2"},
+    # We are not analysing syscalls with 2 arguments.
+    # Setting this function to a stub saves performance.
+    # If you want to analyse a syscall with 2 arguments, remove the is_stub field
+    @syscall(aliases={"__syscall2"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('a1'),
@@ -127,7 +136,7 @@ class MuslSyscalls:
 
     # Currently we are not analysing syscalls with more than 3 arguments. 
     # So let us save a bit of performance by deactivating the analysis for syscalls with more arguments.
-    # If you want to analyse syscalls with more than 3 arguments remove the is_stub field for the following syscalls:
+    # If you want to analyse syscalls with more than 3 arguments, remove the is_stub field for the following syscalls:
     @syscall(aliases={"__syscall4"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
