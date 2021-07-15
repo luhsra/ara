@@ -42,7 +42,7 @@ class FileDescriptorSyscalls:
         assert args.fildes.points_to != None and args.fildes.type != None
         print(args.fildes.type.name)
         if args.fildes.type & expected_type != expected_type:
-            logger.info(f"{label}: file descriptor type {args.fildes.type.name} is not matching {expected_type.name}.")
+            logger.error(f"{label}: file descriptor type {args.fildes.type.name} is not matching {expected_type.name}.")
             label = f"used {label} with {args.fildes.type.name} fd"
         return add_edge_from_self_to(state, args.fildes.points_to, label)
 

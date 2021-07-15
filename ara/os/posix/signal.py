@@ -118,7 +118,7 @@ class SignalSyscalls:
         # If: sa_handler and sa_sigaction both are set [This is not allowed in POSIX].
         # We handle this case but throw a warning.
         if sa_handler != None and sa_sigaction != None:
-            logger.warning(f"sa_handler and sa_sigaction both are set in sigaction() [This is not allowed in POSIX]. Choose {expected_func_ptr_field} due to sa_flags.")
+            logger.error(f"sa_handler and sa_sigaction both are set in sigaction() [This is not allowed in POSIX]. Choose {expected_func_ptr_field} due to sa_flags.")
             function_pointer = getattr(args, expected_func_ptr_field)
 
         # If: Only one field is set (sa_handler or sa_sigaction).
@@ -126,7 +126,7 @@ class SignalSyscalls:
         else:
             set_func_ptr_field = "sa_handler" if sa_handler != None else "sa_sigaction"
             if set_func_ptr_field != expected_func_ptr_field:
-                logger.warning(f"{set_func_ptr_field} is set in sigaction() but {expected_func_ptr_field} is expected due to sa_flags. Choose {set_func_ptr_field}.")
+                logger.error(f"{set_func_ptr_field} is set in sigaction() but {expected_func_ptr_field} is expected due to sa_flags. Choose {set_func_ptr_field}.")
             function_pointer = getattr(args, set_func_ptr_field)
 
 
@@ -139,7 +139,7 @@ class SignalSyscalls:
         if args.sig != None:
             catching_signal = SIGNAL_TYPES.get(args.sig.get(), None)
             if catching_signal == None:
-                logger.warning(f"Unknown signal type with id {args.sig.get()}")
+                logger.error(f"Unknown signal type with id {args.sig.get()}")
         else:
             logger.warning("Could not get sig (signal) field in sigaction()")
 
