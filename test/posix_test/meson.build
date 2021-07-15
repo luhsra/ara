@@ -295,6 +295,20 @@ test('file_writev_musl',
         timeout: 300
 )
 
+test('wrong_file_access',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'wrong_file_access.json', posix_wrong_file_access],
+        env: [python_path],
+        suite: 'posix'
+)
+test('wrong_file_access_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'wrong_file_access.json', posix_wrong_file_access_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 # Linux syscall detection is only possible with musl libc.
 test('filestream_open_musl_syscall',
         py3_inst,

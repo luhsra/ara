@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .file_descriptor import create_file_desc_of
+from .file_descriptor import create_file_desc_of, FDType
 from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCategories, add_edge_from_self_to, assign_instance_to_return_value
 
 @dataclass(eq = False)
@@ -23,10 +23,17 @@ class File(IDInstance):
 
 # Musl libc file access modes for open()
 FILE_ACCESS_MODES = dict({
-    (0o0, 'O_RDONLY'),
-    (0o1, 'O_WRONLY'),
-    (0o2, 'O_RDWR'),
+    (0o0, FDType.READ),
+    (0o1, FDType.WRITE),
+    (0o2, FDType.BOTH),
     # O_SEARCH and O_EXEC equal O_PATH with id 010000000 in musl libc. We do not handle these.
+})
+
+# POSIX file access mode identifier.
+FAM_IDENTIFIER = dict({
+    (FDType.READ, 'O_RDONLY'),
+    (FDType.WRITE, 'O_WRONLY'),
+    (FDType.BOTH, 'O_RDWR'),
 })
 
 class FileSyscalls:
@@ -48,6 +55,20 @@ class FileSyscalls:
         cp = state.call_path
         file = None
 
+        # Detect file access mode.
+        fam: FDType = None
+        if args.oflag != None:
+            fam = [FILE_ACCESS_MODES.get(mode, None) for mode in FILE_ACCESS_MODES.keys()
+                    if (args.oflag.get() & 0b11) == mode]
+            if len(fam) < 1 or fam[0] == None:
+                logger.warning(f"open(): Could not detect file access mode in value {args.oflag.get()}.")
+                fam = None
+            assert len(fam) == 1
+            fam = fam[0]
+            assert type(fam) == FDType
+        else:
+            logger.warning("open(): No file access mode detection because oflag argument is missing!")
+
         # If Category "create": Create File Object
         if SyscallCategory.create in CurrentSyscallCategories.get():
             if args.path == None:
@@ -64,25 +85,13 @@ class FileSyscalls:
                 if args.path != None:
                     FileSyscalls.files[args.path] = file
             # Set the return value to the new filedescriptor (This file)
-            assign_instance_to_return_value(va, abb, cp, create_file_desc_of(file))
+            assign_instance_to_return_value(va, abb, cp, create_file_desc_of(file, fam if fam != None else FDType.BOTH))
 
         # If Category "comm": Create edge to the addressed File object
         if SyscallCategory.comm in CurrentSyscallCategories.get():
             file = FileSyscalls.files.get(args.path, None)
             if file != None:
-                # Detect file access mode.
-                fam = ""
-                if args.oflag != None:
-                    fam = [FILE_ACCESS_MODES.get(mode, None) for mode in FILE_ACCESS_MODES.keys()
-                            if (args.oflag.get() & 0b11) == mode]
-                    if len(fam) < 1 or fam[0] == None:
-                        logger.warning(f"open(): Could not detect file access mode in value {args.oflag.get()}.")
-                        fam = ""
-                    assert len(fam) == 1
-                    fam = fam[0]
-                else:
-                    logger.warning("open(): No file access mode detection because oflag argument is missing!")
-                state = add_edge_from_self_to(state, file, f"open({fam})")
+                state = add_edge_from_self_to(state, file, f"open({FAM_IDENTIFIER[fam] if fam != None else ''})")
             else:
                 logger.warning(f"open(): File with path {args.path} not found!")
 

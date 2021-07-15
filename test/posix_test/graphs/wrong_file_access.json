@@ -1,0 +1,50 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "function": "main",
+    "inherited_sched_attr": null,
+    "name": "Main Thread",
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "testfile.txt",
+    "id": "testfile",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/wrong_file_access.c",
+    "line": 6,
+    "specialization_level": "",
+    "type": "instance",
+    "name": "testfile.txt",
+    "path": "testdir_42/testfile.txt"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "open(O_WRONLY)",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "testfile",
+    "label": "used read() with WRITE fd",
+    "type": "interaction"
+  }
+]
