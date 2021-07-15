@@ -461,3 +461,18 @@ test('linux_syscalls',
         env: [python_path],
         suite: 'posix'
 )
+
+# Complex application test
+test('semaphore_ring_buffer',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'semaphore_ring_buffer.json', posix_semaphore_ring_buffer],
+        env: [python_path],
+        suite: 'posix'
+)
+test('semaphore_ring_buffer_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'semaphore_ring_buffer.json', posix_semaphore_ring_buffer_musl],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)

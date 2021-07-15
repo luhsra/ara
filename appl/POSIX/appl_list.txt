@@ -19,7 +19,6 @@ pthread_create_calloc_pid
 pthread_create_loop
 pthread_create_two_funcs_in_struct
 pthread_name
-semaphore_ring_buffer
 sticky_svf
 struct_test_double_call
 struct_test_func_call
@@ -49,6 +48,7 @@ pthread_create
 pthread_detach
 pthread_setname_np
 semaphore
+semaphore_ring_buffer
 set_thread_attr
 set_thread_attr_inheritance
 sigaction_macro_test

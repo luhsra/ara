@@ -86,9 +86,9 @@ int main() {
     int one = 1;
     int two = 2;
     pthread_create(&producer_thread_1, NULL, &producer_thread_routine, &one);
-    //pthread_create(&producer_thread_2, NULL, &producer_thread_routine, &two);
+    pthread_create(&producer_thread_2, NULL, &producer_thread_routine, &two);
     void* output;
     pthread_join(consumer_thread, &output);
     pthread_join(producer_thread_1, &output);
-    //pthread_join(producer_thread_2, &output);
+    pthread_join(producer_thread_2, &output);
 }

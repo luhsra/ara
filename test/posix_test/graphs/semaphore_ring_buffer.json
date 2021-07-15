@@ -1,0 +1,208 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "function": "main",
+    "inherited_sched_attr": null,
+    "name": "Main Thread",
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "Semaphore 0",
+    "id": "Semaphore 0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/semaphore_ring_buffer.c",
+    "line": 25,
+    "specialization_level": "",
+    "type": "instance",
+    "init_counter": 1,
+    "name": "Semaphore 0",
+    "num_id": 0,
+    "process_shared": true
+  },
+  {
+    "label": "Semaphore 1",
+    "id": "Semaphore 1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/semaphore_ring_buffer.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance",
+    "init_counter": 25,
+    "name": "Semaphore 1",
+    "num_id": 1,
+    "process_shared": false
+  },
+  {
+    "label": "Semaphore 2",
+    "id": "Semaphore 2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/semaphore_ring_buffer.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance",
+    "init_counter": 0,
+    "name": "Semaphore 2",
+    "num_id": 2,
+    "process_shared": false
+  },
+  {
+    "label": "Thread 1 (consumer_thread_routine)",
+    "id": "Thread 1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/semaphore_ring_buffer.c",
+    "line": 85,
+    "specialization_level": "",
+    "type": "instance",
+    "function": "consumer_thread_routine",
+    "inherited_sched_attr": "<default>",
+    "name": "Thread 1",
+    "num_id": 1,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "Thread 2 (producer_thread_routine)",
+    "id": "Thread 2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/semaphore_ring_buffer.c",
+    "line": 88,
+    "specialization_level": "",
+    "type": "instance",
+    "function": "producer_thread_routine",
+    "inherited_sched_attr": "<default>",
+    "name": "Thread 2",
+    "num_id": 2,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "Thread 3 (producer_thread_routine)",
+    "id": "Thread 3",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "file": "../../appl/POSIX/test_appl/semaphore_ring_buffer.c",
+    "line": 89,
+    "specialization_level": "",
+    "type": "instance",
+    "function": "producer_thread_routine",
+    "inherited_sched_attr": "<default>",
+    "name": "Thread 3",
+    "num_id": 3,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_join()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 2",
+    "label": "pthread_join()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 3",
+    "label": "pthread_join()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Semaphore 2",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Semaphore 0",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Semaphore 0",
+    "label": "sem_post()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Semaphore 1",
+    "label": "sem_post()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Semaphore 1",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Semaphore 0",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Semaphore 0",
+    "label": "sem_post()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Semaphore 2",
+    "label": "sem_post()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 3",
+    "target": "Thread 2",
+    "label": "Info: Same entry point as",
+    "type": "interaction"
+  }
+]
