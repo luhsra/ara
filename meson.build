@@ -69,6 +69,7 @@ st_flash = find_program('st-flash', required: false, disabler: true)
 ## POSIX
 wllvm = find_program('wllvm')
 extract_bc = find_program('extract-bc') # provided by wllvm
+realpath = find_program('realpath')
 
 # Note: libmicrohttpd needs this tools available via PATH:
 autoconf = find_program('autoconf')

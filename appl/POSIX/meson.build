@@ -10,7 +10,8 @@ posix_make_command = ['make', '-C', posix_src_dir,
                       'LLVM_LLC=' + llc.full_path(),
                       'LLVM_OPT=' + llvm_opt.full_path(),
                       'WLLVM=' + wllvm.full_path(),
-                      'EXTRACT_BC=' + extract_bc.full_path()]
+                      'EXTRACT_BC=' + extract_bc.full_path(),
+                      'REALPATH=' + realpath.full_path()]
 cpus = run_command('nproc').stdout().split('\n')[0]
 
 # run target to invoke POSIX build Makefile (rule: all)

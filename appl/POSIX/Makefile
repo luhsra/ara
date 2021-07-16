@@ -64,7 +64,8 @@ ARA_LINK ?= $(BUILD_ROOT)/subprojects/ara-link/ara-link
 
 # Command to convert a relative path to an absolute one.
 # Change this command if you do not have support for realpath on your system.
-REALPATH ?= realpath -m
+REALPATH ?= realpath
+REALPATH := $(REALPATH) -m
 
 # The path to the directory containing the build-to-LLVM Makefiles for a specific application/project.
 MAKE_INCLUDE_DIR = modules
@@ -91,7 +92,7 @@ CREATE_DEST_DIR = mkdir -p $(@D)
 define LINK_TOGETHER
 @$(CREATE_DEST_DIR)
 $(ARA_LINK) -S -o $@ $^
-@#$(LLVM_OPT) -S -o $@ --dce $@
+@#$(LLVM_OPT) -S -o $@ -dce $@
 endef
 
 # Builds the first C prerequisite to LLVM IR code.
@@ -214,7 +215,7 @@ _default_rule: all
 # Be careful with the rm command!
 # If you remove files from a directory do a check for empty variables.
 # E.g. test -n "$(DIRECTORY)" && $(RM) -rf "$(DIRECTORY)"/*
-RM = rm --preserve-root=all
+RM = rm
 
 # Project names to build [Append in a module]
 PROJECT_NAMES =
