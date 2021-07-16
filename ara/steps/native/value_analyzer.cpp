@@ -851,9 +851,9 @@ namespace ara::step {
 		}
 
 		PyObject* py_offset = PyTuple_New(offset.size());
-		for (const auto& [index, gep] : offset | boost::adaptors::indexed()) {
-			PyObject* py_gep = get_obj_from_value(safe_deref(const_cast<llvm::GetElementPtrInst*>(gep)));
-			PyTuple_SET_ITEM(py_offset, index, py_gep);
+		for (const auto& gep : offset | boost::adaptors::indexed()) {
+			PyObject* py_gep = get_obj_from_value(safe_deref(const_cast<llvm::GetElementPtrInst*>(gep.value())));
+			PyTuple_SET_ITEM(py_offset, gep.index(), py_gep);
 		}
 
 		return PyTuple_Pack(4, py_value, get_obj_from_attr_set(attrs), obj_index, py_offset);
