@@ -23,8 +23,6 @@ void* new_thread_routine(void* arg) {
 
 int main() {
     pthread_t new_thread;
-    pthread_mutex_init(&mutex, NULL);
-    pthread_cond_init(&one_second_cond, NULL);
     pthread_create(&new_thread, NULL, new_thread_routine, "test argument");
     pthread_detach(new_thread);
     while (true) {
