@@ -21,7 +21,7 @@ class ConditionVariable(IDInstance):
         
 class CondSyscalls:
 
-    def _create_cond(graph, abb, state, args, va):
+    def _create_cond(graph, abb, state, args, va, register_instance=register_instance):
         """Creates a new ConditionVariable instance."""
         new_cond = ConditionVariable(name=None)
         args.cond = new_cond

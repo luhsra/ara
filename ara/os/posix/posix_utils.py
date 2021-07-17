@@ -158,41 +158,44 @@ def do_not_interpret_syscall(graph, abb, state):
     # Add your custom do_not_interpret code here.
     return state
 
-def handle_soc(state, v, cfg, abb,
-               branch=None, loop=None, recursive=None, usually_taken=None):
+def handle_soc(state, v, cfg, abb):
     instances = state.instances
-
-    def b(c1, c2):
-        if c2 is None:
-            return c1
-        else:
-            return c2
-
-    in_branch = b(state.branch, branch)
-    in_loop = b(state.loop, loop)
-    is_recursive = b(state.recursive, recursive)
-    is_usually_taken = b(state.usually_taken, usually_taken)
-
-    instances.vp.branch[v] = in_branch
-    instances.vp.loop[v] = in_loop
+    instances.vp.branch[v] = state.branch
+    instances.vp.loop[v] = state.loop
     # If you are interested in the recursive field make sure that the option no_recursive_funcs is not set for RecursiveFunctions step.
-    instances.vp.recursive[v] = is_recursive
+    instances.vp.recursive[v] = state.recursive
     instances.vp.after_scheduler[v] = True # POSIX is dynamic. The scheduler is always on.
-    instances.vp.usually_taken[v] = is_usually_taken
-    instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
+    instances.vp.usually_taken[v] = state.usually_taken
+    instances.vp.unique[v] = not (state.recursive or state.branch or state.loop)
     instances.vp.soc[v] = abb
     instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
     instances.vp.file[v] = cfg.vp.file[abb]
     instances.vp.line[v] = cfg.vp.line[abb]
 
+def handle_static_soc(instances, v):
+    instances.vp.branch[v] = False
+    instances.vp.loop[v] = False
+    instances.vp.recursive[v] = False
+    instances.vp.after_scheduler[v] = False
+    instances.vp.usually_taken[v] = True
+    instances.vp.unique[v] = True
 
-def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state):
+    # The following values are not applicable
+    instances.vp.soc[v] = 0
+    instances.vp.llvm_soc[v] = 0
+    instances.vp.file[v] = "N/A"
+    instances.vp.line[v] = 0
+
+def register_instance(new_instance: POSIXInstance, label: str, graph, abb, state, is_static=False):
     """Register the POSIX Instance <new_instance> in the Instance Graph."""
 
     logger.debug(f"Create new instance with label: {label}")
     v = state.instances.add_vertex()
     state.instances.vp.label[v] = label
-    handle_soc(state, v, graph.cfg, abb)
+    if is_static:
+        handle_static_soc(state.instances, v)
+    else:
+        handle_soc(state, v, graph.cfg, abb)
 
     new_instance.vertex = v
     assert hasattr(new_instance, "name"), f"New instance of type {type(new_instance)} has no name."
@@ -249,8 +252,9 @@ def static_init_detection(create_static_inst: Callable, comm_func: Callable, ins
     Make sure the calling syscall also accepts the type pyllco.GlobalVariable as instance argument.
 
     Arguments:
-    create_static_inst              -- A function that creates a new instance. Signature: create_static_inst(graph, abb, state, args, va)
-    comm_func                       -- A function that handles the communication (e.g. create a new edge). Signature: comm_func(graph, abb, state, args, va)
+    create_static_inst              -- A function that creates a new instance. Signature: create_static_inst(graph, abb, state, args, va, register_instance).
+                                       Use the delivered register_instance() function to register the new instance.
+    comm_func                       -- A function that handles the communication (e.g. create a new edge). Signature: comm_func(graph, abb, state, args, va).
     inst_obj                        -- The instance object in args.
     (graph, abb, state, args, va)   -- The signature for syscalls. Just put your local values for this variables into this function.
 
@@ -263,7 +267,9 @@ def static_init_detection(create_static_inst: Callable, comm_func: Callable, ins
     # If Category "create": Create a new object if inst_obj is a pyllco.GlobalVariable (e.g. args.mutex == PTHREAD_MUTEX_INITIALIZER)
     if SyscallCategory.create in CurrentSyscallCategories.get():
         if PosixOptions.enable_static_init_detection and type(inst_obj) == pyllco.GlobalVariable:
-            state = create_static_inst(graph, abb, state, args, va)
+            state = create_static_inst(graph, abb, state, args, va,
+                                            lambda new_instance, label, graph, abb, state:
+                                                register_instance(new_instance, label, graph, abb, state, is_static=True))
 
     # If Category "comm": Handle the normal edge creation by calling comm_part.
     if SyscallCategory.comm in CurrentSyscallCategories.get():

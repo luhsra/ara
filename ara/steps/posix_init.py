@@ -2,7 +2,7 @@ from .step import Step
 from .option import Option, Bool
 from ara.os.os_util import assign_id
 from ara.graph import SyscallCategory
-from ara.os.posix.posix_utils import MainThread, PosixOptions, StaticInitSyscalls
+from ara.os.posix.posix_utils import MainThread, PosixOptions, StaticInitSyscalls, handle_static_soc
 from ara.os.posix.thread import Thread
 from ara.os.posix.posix import POSIX
 
@@ -43,18 +43,7 @@ class POSIXInit(Step):
         instances.vp.obj[v] = inst
         instances.vp.label[v] = label
 
-        instances.vp.branch[v] = False
-        instances.vp.loop[v] = False
-        instances.vp.recursive[v] = False
-        instances.vp.after_scheduler[v] = False
-        instances.vp.usually_taken[v] = True
-        instances.vp.unique[v] = True
-
-        # The following values are not applicable
-        instances.vp.soc[v] = 0
-        instances.vp.llvm_soc[v] = 0
-        instances.vp.file[v] = "N/A"
-        instances.vp.line[v] = 0
+        handle_static_soc(instances, v)
         instances.vp.specialization_level[v] = "N/A"
 
         assign_id(instances, v)

@@ -18,7 +18,7 @@ class Mutex(IDInstance):
     def __post_init__(self):
         super().__init__()
 
-def create_mutex(graph, abb, state, args, va):
+def create_mutex(graph, abb, state, args, va, register_instance=register_instance):
     """Creates a new Mutex instance."""
     new_mutex = Mutex(name=None)
     args.mutex = new_mutex
