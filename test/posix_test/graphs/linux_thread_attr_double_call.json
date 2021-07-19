@@ -1,23 +1,23 @@
 [
   {
-    "label": "Test Thread",
-    "id": "<likely: Test Thread>",
+    "label": "This is the threads name!",
+    "id": "<unknown>",
     "branch": 0,
     "usually_taken": 0,
     "loop": 0,
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/test_appl/thread_attr_not_unique.c",
-    "line": 24,
+    "file": "../../appl/POSIX/test_appl/thread_attr_double_call.c",
+    "line": 29,
     "specialization_level": "",
     "type": "instance",
     "function": "new_thread_routine",
-    "inherited_sched_attr": "<likely: False>",
-    "name": "<likely: Test Thread>",
+    "inherited_sched_attr": false,
+    "name": "<unknown>",
     "num_id": 1,
-    "sched_policy": "<likely: SCHED_RR>",
-    "sched_priority": "<likely: 7>"
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 7
   },
   {
     "label": "Main Thread",
@@ -36,18 +36,18 @@
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,
-    "sched_policy": "<default>",
-    "sched_priority": "<default>"
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 0
   },
   {
     "source": "Main Thread",
-    "target": "<likely: Test Thread>",
+    "target": "<unknown>",
     "label": "pthread_join()",
     "type": "interaction"
   },
   {
-    "source": "<likely: Test Thread>",
-    "target": "<likely: Test Thread>",
+    "source": "<unknown>",
+    "target": "<unknown>",
     "label": "pause()",
     "type": "interaction"
   }

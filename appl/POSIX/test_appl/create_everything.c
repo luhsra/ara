@@ -23,6 +23,7 @@ int main() {
 
     pthread_attr_t attr;
     pthread_attr_init(&attr);
+    pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
     struct sched_param sched_prio;
     sched_prio.sched_priority = 5;
     pthread_attr_setschedparam(&attr, &sched_prio);

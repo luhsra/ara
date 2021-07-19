@@ -440,6 +440,92 @@ test('thread_setname_cond_musl',
         timeout: 300
 )
 
+test('system_profile_inheritance',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'system_profile_inheritance.json', posix_system_profile_inheritance],
+        env: [python_path],
+        suite: 'posix'
+)
+
+# Thread attribute tests with Linux profile
+test('linux_pthread_create',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_pthread_create.json', posix_pthread_create, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+test('linux_pthread_create_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_pthread_create.json', posix_pthread_create_musl, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+test('linux_set_thread_attr',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_set_thread_attr.json', posix_set_thread_attr, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_thread_attr_inherit',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_inheritance.json', posix_thread_attr_inheritance, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_thread_attr_not_uniq',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_not_unique.json', posix_thread_attr_not_unique, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_thread_attr_double',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_double_call.json', posix_thread_attr_double_call, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_thread_attr_cond',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_cond_calls.json', posix_thread_attr_cond_calls, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_pthread_setname_np',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_pthread_setname_np.json', posix_pthread_setname_np, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_thread_setname_cond',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_setname_cond_calls.json', posix_thread_setname_cond_calls, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('linux_profile_inherit',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_profile_inherit.json', posix_system_profile_inheritance, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+test('linux_profile_inherit_musl',
+        py3_inst,
+        args: [files('posix_instance_graph.py'), graphs / 'linux_profile_inherit.json', posix_system_profile_inheritance_musl, files('settings/system_profile_linux.json')],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
+
 test('pthread_detach',
         py3_inst,
         args: [files('posix_instance_graph.py'), graphs / 'pthread_detach.json', posix_pthread_detach],

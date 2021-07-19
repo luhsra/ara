@@ -60,6 +60,7 @@ int main() {
     sched_prio.sched_priority = 8;
     pthread_attr_setschedparam(&attr, &sched_prio);
 
+    pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
     pthread_attr_setname_np(&attr, "Inheritance Thread");
 

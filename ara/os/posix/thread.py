@@ -6,6 +6,7 @@ from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg, assign_id
 from .posix_utils import IDInstance, POSIXInstance, logger, register_instance, add_edge_from_self_to, get_running_thread, add_interaction_edge, is_soc_unique, Unknown, NotSet, Likely 
+from .system_profiles import Profile
 
 @dataclass(eq = False)
 class Thread(IDInstance):
@@ -70,18 +71,26 @@ class ThreadSyscalls:
     def pthread_create(graph, abb, state, args, va):
 
         # Detect Thread Attribute fields
-        sched_priority = NotSet()
-        sched_policy = NotSet()
-        inherited_sched_attr = NotSet()
+        sched_priority=Profile.get_value("default_sched_priority")
+        sched_policy=Profile.get_value("default_sched_policy")
+        inherited_sched_attr=Profile.get_value("default_inheritsched")
         thread_name = NotSet()
         if args.attr != None and type(args.attr) == ThreadAttr:
             threadattr = args.attr
             thread_name = threadattr.name
             inherited_sched_attr = threadattr.inheritsched
-            if type(inherited_sched_attr) == bool and inherited_sched_attr:
-                threadattr = get_running_thread(state) # Duck typing -> Use sched_prio and policy from current thread instead.
-            sched_priority = threadattr.sched_priority
-            sched_policy = threadattr.sched_policy
+            if type(inherited_sched_attr) == bool or type(inherited_sched_attr) == Likely: 
+                if ThreadSyscalls._get_value(inherited_sched_attr):
+                    threadattr = get_running_thread(state) # Duck typing -> Use sched_prio and policy from current thread instead.
+                sched_priority = threadattr.sched_priority
+                sched_policy = threadattr.sched_policy
+                # Set scheduling parameter to Likely if Thread attributes inheritsched is also only Likely.
+                if type(inherited_sched_attr) == Likely:
+                    sched_priority = Likely(sched_priority) if type(sched_priority) == bool else sched_priority
+                    sched_policy = Likely(sched_policy) if type(sched_policy) == bool else sched_policy
+            else:
+                sched_priority = Unknown()
+                sched_policy = Unknown()
         if type(thread_name) == Likely:
             logger.warning(f"pthread_create(): The name of the thread {thread_name.value} is not ensured. pthread_attr_setname_np() call is not unique.")
 
@@ -150,9 +159,9 @@ class ThreadSyscalls:
     @syscall(categories={SyscallCategory.create},
              signature=(Arg('attr', hint=SigType.instance),))
     def pthread_attr_init(graph, abb, state, args, va):
-        thread_attr = ThreadAttr(sched_priority=NotSet(),
-                                 sched_policy=NotSet(),
-                                 inheritsched=NotSet(),
+        thread_attr = ThreadAttr(sched_priority=Profile.get_value("default_sched_priority"),
+                                 sched_policy=Profile.get_value("default_sched_policy"),
+                                 inheritsched=Profile.get_value("default_inheritsched"),
                                  name=NotSet(),
                                  unique=is_soc_unique(state)
         )

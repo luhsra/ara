@@ -54,6 +54,7 @@ sigaction_macro_test
 signal_handler
 signal_handler_siginfo
 sleep
+system_profile_inheritance
 thread_attr_cond_calls
 thread_attr_double_call
 thread_attr_inheritance

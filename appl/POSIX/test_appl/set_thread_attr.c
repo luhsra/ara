@@ -19,6 +19,7 @@ int main() {
 
     pthread_attr_setschedpolicy(&attr, SCHED_RR);
 
+    pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
     pthread_attr_setname_np(&attr, "Test Thread");
 
     pthread_t new_thread;

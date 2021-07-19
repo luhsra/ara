@@ -2,14 +2,14 @@
   {
     "label": "Test Thread",
     "id": "<likely: Test Thread>",
-    "branch": 0,
+    "branch": 1,
     "usually_taken": 0,
     "loop": 0,
     "recursive": 0,
     "after_scheduler": 1,
-    "unique": 1,
-    "file": "../../appl/POSIX/test_appl/thread_attr_not_unique.c",
-    "line": 24,
+    "unique": 0,
+    "file": "../../appl/POSIX/test_appl/thread_attr_cond_calls.c",
+    "line": 25,
     "specialization_level": "",
     "type": "instance",
     "function": "new_thread_routine",
@@ -36,8 +36,8 @@
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,
-    "sched_policy": "<default>",
-    "sched_priority": "<default>"
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 0
   },
   {
     "source": "Main Thread",

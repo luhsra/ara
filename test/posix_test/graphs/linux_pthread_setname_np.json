@@ -16,38 +16,38 @@
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,
-    "sched_policy": "<default>",
-    "sched_priority": "<default>"
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 0
   },
   {
-    "label": "Test Thread",
-    "id": "Test Thread",
+    "label": "This is the threads name!",
+    "id": "This is the threads name!",
     "branch": 0,
     "usually_taken": 0,
     "loop": 0,
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/test_appl/set_thread_attr.c",
-    "line": 26,
+    "file": "../../appl/POSIX/test_appl/pthread_setname_np.c",
+    "line": 16,
     "specialization_level": "",
     "type": "instance",
     "function": "new_thread_routine",
-    "inherited_sched_attr": false,
-    "name": "Test Thread",
+    "inherited_sched_attr": true,
+    "name": "This is the threads name!",
     "num_id": 1,
-    "sched_policy": "SCHED_RR",
-    "sched_priority": 7
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 0
   },
   {
     "source": "Main Thread",
-    "target": "Test Thread",
+    "target": "This is the threads name!",
     "label": "pthread_join()",
     "type": "interaction"
   },
   {
-    "source": "Test Thread",
-    "target": "Test Thread",
+    "source": "This is the threads name!",
+    "target": "This is the threads name!",
     "label": "pause()",
     "type": "interaction"
   }

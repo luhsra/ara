@@ -3,6 +3,12 @@
 		"InteractionAnalysis"
 	],
 
+	"POSIXInit": {
+		"system_profile": "Linux",
+		"enable_static_init_detection": true,
+		"enable_musl_syscalls": true
+	},
+
 	"SysFuncts": {
 		"no_stubs": true
 	},
@@ -13,9 +19,5 @@
 
     "IRReader": {
         "no_sysfunc_body": true
-    },
-
-	"RecursiveFunctions": {
-		"no_recursive_funcs": true
-	}
+    }
 }

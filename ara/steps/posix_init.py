@@ -1,15 +1,26 @@
 from .step import Step
-from .option import Option, Bool
+from .option import Option, Bool, Choice
 from ara.os.os_util import assign_id
 from ara.graph import SyscallCategory
 from ara.os.posix.posix_utils import MainThread, PosixOptions, StaticInitSyscalls, handle_static_soc
 from ara.os.posix.thread import Thread
+from ara.os.posix.system_profiles import SYSTEM_PROFILES, Profile
 from ara.os.posix.posix import POSIX
 
 class POSIXInit(Step):
     """Initializes the POSIX OS Model."""
 
     # Options for the POSIX OS Model
+    system_profile = Option(
+        name="system_profile",
+        help="The POSIX system profile that is in use. "
+             "The default option is \"POSIX\" that lets this OS model behave in a standard conformant way. "
+             "Set this option to \"Linux\" if your target OS is Linux. "
+             "Currently the system profile describes default scheduling parameters of new threads.",
+        ty=Choice(*SYSTEM_PROFILES.keys()),
+        default_value="POSIX"
+    )
+
     enable_static_init_detection = Option(
         name="enable_static_init_detection",
         help="Toggle detection of PTHREAD_MUTEX_INITIALIZER. "
@@ -17,7 +28,8 @@ class POSIXInit(Step):
              "E.g. if the value analyzer can not retrieve the Mutex handle. "
              "In this case every Mutex interaction call creates a new useless Mutex in the Instance Graph.",
         ty=Bool(),
-        default_value=True)
+        default_value=True
+    )
 
     enable_musl_syscalls = Option(
         name="enable_musl_syscalls",
@@ -26,7 +38,8 @@ class POSIXInit(Step):
              "In combination with the --no-stubs option the deactivation of this option will speed up the analysis. "
              "This feature can be pretty time intensive.",
         ty=Bool(),
-        default_value=True)
+        default_value=True
+    )
     
 
     def get_single_dependencies(self):
@@ -50,13 +63,16 @@ class POSIXInit(Step):
 
     def run(self):
         
+        # Activate system profile
+        Profile.set(self.system_profile.get())
+
         # Generate POSIX Main Thread
         assert self._graph.instances != None, "Missing instance graph!"
         assert self._graph.cfg != None, "Missing control flow graph!"
         main_thread = Thread(entry_abb = None,
                              function = "main",
-                             sched_priority="<default>",
-                             sched_policy="<default>",
+                             sched_priority=Profile.get_value("default_sched_priority"),
+                             sched_policy=Profile.get_value("default_sched_policy"),
                              inherited_sched_attr=None,
                              name="Main Thread",
                              is_regular=False

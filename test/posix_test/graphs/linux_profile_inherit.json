@@ -16,8 +16,8 @@
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,
-    "sched_policy": "<default>",
-    "sched_priority": "<default>"
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 0
   },
   {
     "label": "Test Thread",
@@ -28,16 +28,16 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/test_appl/set_thread_attr.c",
-    "line": 26,
+    "file": "../../appl/POSIX/test_appl/system_profile_inheritance.c",
+    "line": 23,
     "specialization_level": "",
     "type": "instance",
     "function": "new_thread_routine",
-    "inherited_sched_attr": false,
+    "inherited_sched_attr": true,
     "name": "Test Thread",
     "num_id": 1,
-    "sched_policy": "SCHED_RR",
-    "sched_priority": 7
+    "sched_policy": "SCHED_OTHER",
+    "sched_priority": 0
   },
   {
     "source": "Main Thread",

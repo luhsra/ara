@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
         sched_prio.sched_priority = 7;
         if (argc > 3)
             pthread_attr_setschedparam(&attr, &sched_prio);
+        pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
         pthread_attr_setschedpolicy(&attr, SCHED_RR);
         pthread_attr_setname_np(&attr, "Test Thread");
         pthread_t new_thread;
