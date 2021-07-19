@@ -50,11 +50,15 @@ pthread_setname_np
 semaphore
 semaphore_ring_buffer
 set_thread_attr
-set_thread_attr_inheritance
 sigaction_macro_test
 signal_handler
 signal_handler_siginfo
 sleep
+thread_attr_cond_calls
+thread_attr_double_call
+thread_attr_inheritance
+thread_attr_not_unique
+thread_setname_cond_calls
 wrong_call_in_sighandler
 wrong_file_access
 wrong_pipe_access

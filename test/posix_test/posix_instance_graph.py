@@ -5,6 +5,7 @@ if __name__ == '__main__':
 
 from ..init_test import init_test, fail_if
 from ara.os.posix.posix import POSIX
+from ara.os.posix.posix_utils import Unknown, NotSet, Likely
 import json
 import os
 import sys
@@ -48,6 +49,8 @@ def json_instance_graph(instances):
                 i_dump[attr] = sorted(val)
             elif type(val) == dict:
                 i_dump[attr] = dict(sorted(val.items()))
+            elif type(val) in (Unknown, NotSet, Likely):
+                i_dump[attr] = str(val)
             else:
                 i_dump[attr] = f"<Object: {val.__class__.__name__}>"
         dump.append(i_dump)

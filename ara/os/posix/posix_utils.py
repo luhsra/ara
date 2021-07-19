@@ -153,10 +153,34 @@ class StaticInitSyscalls:
         """Adds all syscalls in comms to the list of static initializer syscalls."""
         cls.static_init_syscalls.extend(comms)
 
+class Unknown:
+    def __init__(self):
+        self.value = None
+
+    def __str__(self):
+        return "<unknown>"
+
+class NotSet:
+    def __init__(self, default_value="<default>"):
+        self.value = default_value
+
+    def __str__(self):
+        return str(self.value)
+
+class Likely:
+    def __init__(self, likely_value):
+        self.value = likely_value
+
+    def __str__(self):
+        return f"<likely: {self.value}>"
+
 def do_not_interpret_syscall(graph, abb, state):
     """Call this function via 'return do_not_interpret_syscall(graph, abb, state)' if the syscall should not be interpreted in POSIX.interpret()."""
     # Add your custom do_not_interpret code here.
     return state
+
+def is_soc_unique(state):
+    return not (state.recursive or state.branch or state.loop)
 
 def handle_soc(state, v, cfg, abb):
     instances = state.instances
@@ -166,7 +190,7 @@ def handle_soc(state, v, cfg, abb):
     instances.vp.recursive[v] = state.recursive
     instances.vp.after_scheduler[v] = True # POSIX is dynamic. The scheduler is always on.
     instances.vp.usually_taken[v] = state.usually_taken
-    instances.vp.unique[v] = not (state.recursive or state.branch or state.loop)
+    instances.vp.unique[v] = is_soc_unique(state)
     instances.vp.soc[v] = abb
     instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
     instances.vp.file[v] = cfg.vp.file[abb]
