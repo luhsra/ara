@@ -60,7 +60,7 @@ def get_musl_syscall(syscall_wrapper_name: str, graph, abb, state) -> str:
     linux_syscall = LINUX_SYSCALL_IDS.get(value.get(), None)
     if linux_syscall == None:
         return None # We do not want to analyse this syscall if not in LINUX_SYSCALL_IDS.
-    logger.info(f"Detected Linux Syscall: {linux_syscall}")
+    logger.debug(f"Detected Linux Syscall: {linux_syscall}")
     SyscallCount.direct_add_syscall(linux_syscall)
     return linux_syscall
 

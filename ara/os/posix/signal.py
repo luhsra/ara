@@ -82,10 +82,10 @@ class SignalSyscalls:
     #       struct sigaction *restrict oact);
     @syscall(categories={SyscallCategory.create}, signal_safe=True,
              signature=(Arg('sig', hint=SigType.value, ty=pyllco.ConstantInt),
-                        Arg('sa_handler', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable]),
+                        Arg('sa_handler', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]),
                         Arg('sa_mask', hint=SigType.symbol),
-                        Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero, pyllco.GlobalVariable]),
-                        Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable]),
+                        Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero, pyllco.GlobalVariable, pyllco.AllocaInst]),
+                        Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]),
                         Arg('oact', hint=SigType.symbol)))   
     def ARA_sigaction_syscall_(graph, abb, state, args, va): # sigaction()
         
@@ -93,11 +93,11 @@ class SignalSyscalls:
         sa_handler = args.sa_handler
         sa_sigaction = args.sa_sigaction
         sa_flags = args.sa_flags
-        if type(sa_handler) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable]:
+        if type(sa_handler) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]:
             sa_handler = None
-        if type(sa_sigaction) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable]:
+        if type(sa_sigaction) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]:
             sa_sigaction = None
-        if type(sa_flags) in [pyllco.ConstantAggregateZero, pyllco.GlobalVariable]:
+        if type(sa_flags) in [pyllco.ConstantAggregateZero, pyllco.GlobalVariable, pyllco.AllocaInst]:
             sa_flags = None
 
         # Search for a valid function pointer
@@ -130,7 +130,7 @@ class SignalSyscalls:
             function_pointer = getattr(args, set_func_ptr_field)
 
 
-        # So now we have a valid function pointer.
+        # So, now we have a valid function pointer.
         assert(type(function_pointer) == pyllco.Function)
         func_name = function_pointer.get_name()
 
