@@ -94,4 +94,6 @@ class POSIXInit(Step):
         # if musl syscalls are disabled.
         if not PosixOptions.enable_musl_syscalls:
             for i in range(0, 7):
-                getattr(POSIX, "_musl_syscall" + str(i)).is_stub = True
+                musl_syscall_func = getattr(POSIX, "_musl_syscall" + str(i), None)
+                if musl_syscall_func != None:
+                    musl_syscall_func.is_stub = True
