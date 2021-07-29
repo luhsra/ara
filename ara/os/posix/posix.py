@@ -23,9 +23,9 @@ from .syscall_stub_aliases import SyscallStubAliases
 from .native_musl_syscalls import MuslSyscalls, is_musl_syscall_wrapper, get_musl_syscall
 
 '''
-    Hold on! To understand this file you need some information.
+    --- General information ---
 
-    The musl libc makes heavy use of weak aliases.
+    The musl libc uses weak aliases for some syscall. Most notable: the pthread functions.
     E.g. The implementation of pthread_create() is provided in the function __pthread_create().
     pthread_create() is only a weak alias to __pthread_create().
     To detect syscalls like pthread_create() correctly make sure to set an alias to __{syscall_name}.
@@ -36,10 +36,10 @@ from .native_musl_syscalls import MuslSyscalls, is_musl_syscall_wrapper, get_mus
                 grep -rnw '<path to musl libc src>' -e "weak_alias"
           and search for you desired/undetected syscall.
 
-    To add a syscall stub the only thing you need to do is adding the syscall name to the syscall_set. (See syscall_set.py)
+    To add a syscall stub, the only thing you need to do is adding the syscall name to the syscall_set. (See syscall_set.py)
     
-    If you want to implement a new instance for the InstanceGraph create a new module in this package and make sure
-    that _POSIXSyscalls inherit from the new syscall class that contains the new syscalls.
+    If you want to implement a new instance for the Instance Graph, create a new module in this package and make sure
+    that _POSIXSyscalls inherits from the new syscall class that contains the new syscall methods.
 '''
 
 def syscall_stub(graph, abb, state, args, va):
@@ -73,7 +73,7 @@ class _POSIXMetaClass(type(_POSIXSyscalls)):
         """This method provides all attributes that are not directly included in the POSIX class.
 
         These are all stub syscalls.
-        e.g. A non implemented Syscall in syscall_set will be redirected to syscall_stub()
+        e.g. A non implemented syscall in syscall_set will be redirected to syscall_stub()
         """
         if syscall_name in syscall_set:
             musl_alias = get_musl_weak_alias(syscall_name)
@@ -91,7 +91,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
 
     @staticmethod
     def get_special_steps():
-        return ["POSIXInit"]
+        return ["POSIXInit"] # This step initializes this OS Model.
 
     @staticmethod
     def has_dynamic_instances():
@@ -118,7 +118,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
 
     @staticmethod
     def _syscall_category_matching(syscall: SysCall, categories: set) -> bool:
-        """Does the set of categories in syscall matching to categories?"""
+        """Does the set of categories in syscall matching to <categories> argument?"""
         if SyscallCategory.every not in categories:
             sys_cat = syscall.categories
             return (sys_cat | categories) == sys_cat
@@ -134,6 +134,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
         logger.debug(f"found syscall in Callpath: {state.call_path}")
 
+        # Get syscall function. (Handles Musl/Linux syscalls)
         syscall_function = None
         sig_offest = 0
         if PosixOptions.enable_musl_syscalls and is_musl_syscall_wrapper(syscall):

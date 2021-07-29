@@ -18,7 +18,7 @@ class FDType(IntFlag):
 @dataclass(eq = False)
 class FileDescriptor:
     points_to: Any # An object like File, Pipe, ...
-    type: FDType
+    type: FDType   # Type of the file descriptor.
 
     def __hash__(self):
         return id(self)
@@ -33,7 +33,14 @@ def create_file_desc_of(instance: POSIXInstance, type: FDType = FDType.BOTH):
 
 class FileDescriptorSyscalls:
 
-    def fd_syscall_impl(graph, state, args, label: str, expected_type: FDType):
+    def _fd_syscall_impl(graph, state, args, label: str, expected_type: FDType):
+        """Implementation for all file descriptor interaction systemcalls.
+
+        Arguments:
+        label           -- label for the interaction edge.
+        expected_type   -- The file descriptor type that the systemcall requires.
+                           (e.g. for read() it is FDType.READ)
+        """
         if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
             return state
         if type(args.fildes) != FileDescriptor:
@@ -51,7 +58,7 @@ class FileDescriptorSyscalls:
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
     def read(graph, abb, state, args, va):
-        return FileDescriptorSyscalls.fd_syscall_impl(graph, state, args, "read()", FDType.READ)
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "read()", FDType.READ)
 
     # ssize_t write(int fildes, const void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm}, signal_safe=True,
@@ -59,7 +66,7 @@ class FileDescriptorSyscalls:
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
     def write(graph, abb, state, args, va):
-        return FileDescriptorSyscalls.fd_syscall_impl(graph, state, args, "write()", FDType.WRITE)
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "write()", FDType.WRITE)
 
     # ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
     @syscall(categories={SyscallCategory.comm},
@@ -67,7 +74,7 @@ class FileDescriptorSyscalls:
                         Arg('iov', hint=SigType.symbol),
                         Arg('iovcnt', hint=SigType.value)))
     def writev(graph, abb, state, args, va):
-        return FileDescriptorSyscalls.fd_syscall_impl(graph, state, args, "writev()", FDType.WRITE)
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "writev()", FDType.WRITE)
 
     # ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
     @syscall(categories={SyscallCategory.comm},
@@ -75,4 +82,4 @@ class FileDescriptorSyscalls:
                         Arg('iov', hint=SigType.symbol),
                         Arg('iovcnt', hint=SigType.value)))
     def readv(graph, abb, state, args, va):
-        return FileDescriptorSyscalls.fd_syscall_impl(graph, state, args, "readv()", FDType.READ)
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "readv()", FDType.READ)

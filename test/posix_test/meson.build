@@ -1,3 +1,5 @@
+# This file describes all testcases of the POSIX test suite.
+
 test('posix_class',
     py3_inst,
     args: files('posix_class.py'),

@@ -7,7 +7,7 @@ from .posix_utils import IDInstance, register_instance, add_edge_from_self_to
 
 @dataclass(eq = False)
 class Semaphore(IDInstance):
-    process_shared: bool    # Is the Semaphore available for other processes.
+    process_shared: bool    # Is the Semaphore available for other processes?
     init_counter: int       # The initial counter state. (e.g. the total amount of managed resources)
     wanted_attrs = ["name", "process_shared", "init_counter", "num_id"]
     dot_appearance = {

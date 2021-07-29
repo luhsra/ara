@@ -1,6 +1,6 @@
 /*
     The only purpose of this file is to provide an implementation for some LLVM compiler-rt builtins used by musl-libc.
-    wllvm/clang with '-O3 -fno-builtin' can not fix this issue. So we need to provide this simple file. 
+    wllvm/clang with '-fno-builtin' can not fix this issue. So we need to provide this simple file. 
 */
 
 #include <complex.h>

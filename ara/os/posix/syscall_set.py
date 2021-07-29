@@ -2,7 +2,7 @@
 """This module contains the syscall_set.
 
 This set contains all syscalls that are in interest for an OS analysis.
-For all syscalls in this set the OS model will generate a stub function.
+For all syscalls in this set, the OS model will generate a stub function.
 Even when there is no implementation for a syscall, ARA will detect at least all syscalls in this set.
 For all detected syscalls it is possible to remove the libc implementation with the RemoveSysfuncBody step.
     
@@ -157,10 +157,18 @@ syscall_set = set({
     "musl_syscall5_", # __syscall5
     "musl_syscall6_", # __syscall6
 
+    # Stack unwinding functions (Throw warning if we detect one)
+    "setjmp",
+    "longjmp",
+    "_setjmp",
+    "_longjmp",
+    "sigsetjmp",
+    "siglongjmp",
+
     ###########################################################
     ### Functions that we want to remove instead of analyse ###
 
-    # Unwanted Getter [We can remove these with the remove_sysfunc_body step]
+    # Uninteresting Getter
     "pthread_attr_getname_np", # IBM specific
     "pthread_getname_np", # GNU specific
     "pthread_attr_getdetachstate",
@@ -205,9 +213,8 @@ syscall_set = set({
     "memmove",
     "memset",
     
-    # String functions can easily lead to statements that copy points-to targets.
+    # String functions are hard to analyse.
     # Additionally these functions do not lead to syscalls.
-    # In libmicrohttpd most structs have the same points-to targets because of these functions.
     "stpcpy",
     "stpncpy",
     "strcasecmp",
@@ -255,36 +262,42 @@ syscall_set = set({
     "strxfrm",
     "strxfrm_l",
 
-    # Stack unwinding functions (Throw warning if we detect one)
-    "setjmp",
-    "longjmp",
-    "_setjmp",
-    "_longjmp",
-    "sigsetjmp",
-    "siglongjmp",
-
-    # Remove body of these functions
-    # We do not want to interpret this
+    # We do not want to interpret these functions.
     "exit",
     "abort",
     "fork",
     "posix_spawn",
     "posix_spawnp",
-    #"daemon",
 
-    # The following are musl libc specific functions.
-    #   These ARE NO Syscalls.
-    #   But we want to remove the costly impl. of these calls. (With remove_sysfunc_body step)
-    #   Some of them are accessing function pointers to more than ~93 possible functions.
+    # Socket functions we do not want to analyse.
+    "send",
+    "sendfile",
+    "recv",
+
+    # Does normally not result to an interessting syscall. (if we do not analyze stdin, stdout, stderr, ...)
+    # These calls are expensive to analyse.
+    "printf",
+    "sprintf",
+    "snprintf",
+    "puts",
+    "putchar",
+    "perror",
+
+
+    #### Musl libc internal functions ####
+
+
+    # Some of these functions are accessing function pointers to more than ~93 possible functions.
     "libc_start_init",
     "libc_exit_fini",
     "__pthread_tsd_run_dtors",
     "at_quick_exit",
     "call",             # Hopefully nobody names his/her function "call" or "__call".
+
     "__syscall_cp",     # Cancellation point implementation for some syscalls.
                         # This function results in a pretty big callgraph.
 
-    # Remove musl libc x64 asm functions
+    # Remove musl libc x64 asm functions.
     # SVF tries to match a function pointer to the __asm__ call.
     # We do not want this.
     "a_cas",
@@ -309,17 +322,8 @@ syscall_set = set({
     "__wake",
     "__futexwait",
 
-    # Does normally not result to an interessting syscall. (if we do not analyze stdin, stdout, stderr, ...)
-    # These calls are expensive to analyse.
-    "printf",
-    "sprintf",
-    "snprintf",
-    "puts",
-    "putchar",
-    "perror",
-
     # These are functions that are possible call targets of calls to f->write(), f->read(), ... inside musl libc.
-    # We are not interested in analysing these functions so we can increase performance and precision of the analysis a lot by removing these functions.
+    # We are not interested in analysing these functions, so we can increase performance and precision of the analysis a lot by removing these functions.
     "wms_seek",
 	"wms_write",
 	"ms_seek",
@@ -342,10 +346,5 @@ syscall_set = set({
 	"mclose",
 	"ms_close",
 	"__stdio_close",
-
-    # Socket functions we do not want to analyse.
-    "send",
-    "sendfile",
-    "recv",
 
 })

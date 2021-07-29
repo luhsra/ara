@@ -16,7 +16,9 @@ class Thread(IDInstance):
     sched_policy: str                   # The scheduling policy [SCHED_FIFO, SCHED_RR, ...].
     inherited_sched_attr: bool          # Thread inherited scheduling attributes from creating thread.
     is_regular: bool = True             # True if this thread should be analyzed by an algorithm in sse.py (e.g. SIA).
-    last_setname_np_value: str = None   # Last value of a pthread_setname_np() call on this thread. Used to determine whether a second leads to ambiguous thread name 
+    
+    last_setname_np_value: str = None   # Last value of a pthread_setname_np() call on this thread.
+                                        # Used to determine whether a second call leads to ambiguous thread name.
 
     wanted_attrs = ["name", "sched_priority", "sched_policy", "inherited_sched_attr", "function", "num_id"]
     dot_appearance = {
@@ -30,11 +32,11 @@ class Thread(IDInstance):
 
 @dataclass(eq = False)
 class ThreadAttr:
-    sched_priority: int
-    sched_policy: str
-    inheritsched: bool
-    name: str
-    unique: bool
+    sched_priority: int # Scheduling priority
+    sched_policy: str   # Scheduling policy
+    inheritsched: bool  # Are scheduling parameters inherited from the creating thread?
+    name: str           # Thread name
+    unique: bool        # Was the pthread_attr_init() call unique?
 
     def __hash__(self):
         return id(self)
@@ -57,6 +59,10 @@ class ThreadSyscalls:
     entry_points = dict()
 
     def _get_value(value):
+        """Get the value of Unknown, NotSet or Likely objects.
+        
+        If value is not of the types above simply return value.
+        """
         return value if not type(value) in (Unknown, NotSet, Likely) else value.value
 
     # int pthread_create(pthread_t *restrict thread,
@@ -169,6 +175,7 @@ class ThreadSyscalls:
         return state
 
     def _set_attr_option(attr: ThreadAttr, option: str, value, state):
+        """Set an option into a thread attribute object."""
 
         # Set to likely if soc is not unique
         unique = attr.unique and is_soc_unique(state)

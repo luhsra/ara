@@ -3,7 +3,7 @@
 #
 # Make sure you have whole-program-llvm (https://github.com/travitch/whole-program-llvm) installed.
 # WARNING: Never ever run this Makefile as root!
-# WARNING: Do not create files containing whitespace in this directory
+# WARNING: Do not create files containing whitespace in this directory.
 #
 # Note: You can safely ignore warnings of type:  WARNING:Could not find ".llvm_bc" ELF section in ...
 #		This is the result of assembly source files being processed by wllvm.
@@ -44,8 +44,6 @@
 
 # LLVM version to be used. Only required for some systems (see LLVM_SUFFIX)
 LLVM_VERSION ?= 10
-
-# Change this vars to specify another path
 
 # Meson build root directory.
 BUILD_ROOT ?= ../../build
@@ -134,12 +132,12 @@ $(shell for file in $(2)/*$(1); do \
 endef
 
 # Tools in use by this POSIX build system.
-# CLANG ?= clang # clang needs to be available via PATH.
 LLVM_DIS ?= llvm-dis
 LLVM_LLC ?= llc
 LLVM_OPT ?= opt
 WLLVM ?= wllvm
 EXTRACT_BC ?= extract-bc
+# CLANG ?= clang # clang needs to be available via PATH.
 
 # Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
 # If "" not working than choose "-$(LLVM_VERSION)".

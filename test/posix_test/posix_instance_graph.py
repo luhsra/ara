@@ -81,12 +81,12 @@ def path_next_to_self_file(file):
 
 
 def main():
-    """Backend to test the Instance Graph of implementation with a LLVM IR file.
+    """Backend to test the Instance Graph of the implementation with a LLVM IR file.
     
     This script accepts an extra shell argument to set the ARA step settings. 
     If no extra argument is set, it will default to settings/posix_default.json
 
-    If the JSON file (sys.argv[1]) is not existing this script will auto generate it with the provided LLVM IR.
+    If the JSON file (sys.argv[1]) is not existing, this script will auto generate it with the provided LLVM IR.
     In this case, this test is no test case anymore but a useful script to generate a JSON Instance Graph.
     """
     self_is_testcase = True

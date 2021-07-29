@@ -51,10 +51,10 @@ SIGNAL_TYPES = dict({
 
 @dataclass(eq = False)
 class SignalCatchingFunc(IDInstance):
-    entry_abb: Any
-    function: pyllco.Function
-    catching_signals: set   # set[Signal]
-    is_regular: bool = True # True if the entry function is available
+    entry_abb: Any              # The entry point as abb type
+    function: pyllco.Function   # The entry point as function type
+    catching_signals: set       # all signals that the handler is catching (of type: set[str])
+    is_regular: bool = True     # True if the entry function is available
 
     wanted_attrs = ["name", "function", "catching_signals"]
     dot_appearance = {
@@ -116,12 +116,12 @@ class SignalSyscalls:
             expected_func_ptr_field = "sa_handler"
 
         # If: sa_handler and sa_sigaction both are set [This is not allowed in POSIX].
-        # We handle this case but throw a warning.
+        # We handle this case but throw an error.
         if sa_handler != None and sa_sigaction != None:
             logger.error(f"sa_handler and sa_sigaction both are set in sigaction() [This is not allowed in POSIX]. Choose {expected_func_ptr_field} due to sa_flags.")
             function_pointer = getattr(args, expected_func_ptr_field)
 
-        # If: Only one field is set (sa_handler or sa_sigaction).
+        # If: only one field is set (sa_handler or sa_sigaction).
         # We also check for consistency with SA_SIGINFO in sa_flags.
         else:
             set_func_ptr_field = "sa_handler" if sa_handler != None else "sa_sigaction"

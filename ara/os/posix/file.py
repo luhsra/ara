@@ -9,7 +9,7 @@ from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCa
 
 @dataclass(eq = False)
 class File(IDInstance):
-    path: str
+    path: str # Path to the file
 
     wanted_attrs = ["name", "path"]
     dot_appearance = {
@@ -39,7 +39,7 @@ FAM_IDENTIFIER = dict({
 class FileSyscalls:
 
     # Map path -> File object
-    # Note: chdir() is not supported and we can not detect multiple open() calls to the same file from different files.
+    # Note: chdir() is not supported and we can not detect multiple open() calls to the same file from different directories.
     files = dict()
 
     # int open(const char *path, int oflag, ...);

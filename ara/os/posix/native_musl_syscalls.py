@@ -30,7 +30,7 @@ def is_musl_syscall_wrapper(syscall_name: str) -> bool:
     return musl_syscall_pattern.match(syscall_name)
 
 def get_musl_syscall(syscall_wrapper_name: str, graph, abb, state) -> str:
-    """Returns the name of the native musl syscall that syscall wrapper calls.
+    """Returns the name of the native musl syscall (Linux Syscall) that syscall wrapper calls.
     
     Arguments:
     syscall_wrapper_name    -- the name of the musl syscall wrapper that is currently handled.

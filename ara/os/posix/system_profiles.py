@@ -1,3 +1,4 @@
+"""This module contains all system profiles."""
 
 from .posix_utils import NotSet
 
@@ -23,7 +24,7 @@ SYSTEM_PROFILES = dict((
 class Profile:
     """This static class wraps the current system profile.
     
-    Call Profile.get() to get the current system profile.
+    Call Profile.get_value() to get the value of <key> in the current system profile.
     """
     profile: dict = None
 
