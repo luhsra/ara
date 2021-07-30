@@ -162,7 +162,7 @@ foreach app : ir_apps + hw_apps
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
-                                 depends: [sparse_rle, sparse_rle2],
+                                 depends: [sparse_rle2],
                                  output: lto_prefix + '-os_app.ll',
                                  command: get_variable('llvm_lto_cmd_' + lto_version))
 

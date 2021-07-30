@@ -50,7 +50,6 @@ cudd_dep = svf_proj.dependency('Cudd')
 
 ## sparsedata
 sparsedata = subproject('sparsedata')
-sparse_rle = sparsedata.get_variable('libsparserle')
 sparse_rle2 = sparsedata.get_variable('libsparserle2')
 
 ## ara-link
