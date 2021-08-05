@@ -17,7 +17,7 @@ py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies
-llvm_version = ['>=10', '<11']
+llvm_version = ['>=10', '<12']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')

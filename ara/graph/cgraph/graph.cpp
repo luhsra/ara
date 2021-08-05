@@ -30,7 +30,7 @@ namespace ara::graph {
 		const llvm::Function* func = call->getCalledFunction();
 		// function are sometimes values with alias to a function
 		if (!func) {
-			const llvm::Value* value = call->getCalledValue();
+			const llvm::Value* value = call->getCalledOperand();
 			if (const llvm::Constant* alias = llvm::dyn_cast<llvm::Constant>(value)) {
 				if (llvm::Function* tmp_func = llvm::dyn_cast<llvm::Function>(alias->getOperand(0))) {
 					func = tmp_func;
@@ -40,7 +40,7 @@ namespace ara::graph {
 		if (!func) {
 			return "";
 		}
-		return func->getName();
+		return func->getName().str();
 	}
 
 	bool CFG::bb_is_indirect(const llvm::BasicBlock& bb) const {

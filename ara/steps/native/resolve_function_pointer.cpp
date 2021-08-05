@@ -423,7 +423,7 @@ namespace ara::step {
 				auto source_file = entry_d->getString("source_file");
 				fail_if_empty(source_file, opt_name, "Invalid JSON. Expecting a source_file entry.");
 				std::filesystem::path source_path = std::filesystem::canonical(
-				    std::filesystem::path(*opt).parent_path() / std::filesystem::path(*source_file));
+				    std::filesystem::path(*opt).parent_path() / std::filesystem::path(source_file->str()));
 				auto line_number = entry_d->getInteger("line_number");
 				fail_if_empty(line_number, opt_name, "Invalid JSON. Expecting a line_number entry.");
 				auto call_targets = entry_d->getArray("call_targets");
