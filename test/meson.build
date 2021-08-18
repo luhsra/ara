@@ -32,6 +32,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('instances.py'), files('instances.json'), freertos_instances],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
@@ -39,6 +40,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
