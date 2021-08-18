@@ -26,7 +26,7 @@ llc = find_program(llvm_bindir / 'llc', version: llvm_version)
 llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
 llvm_opt = find_program(llvm_bindir / 'opt', version: llvm_version)
 
-boost_dep = dependency('boost', modules: ['graph', 'python3'])
+boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
 ## pyllco
