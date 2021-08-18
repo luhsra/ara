@@ -3,7 +3,7 @@ import typing
 import dataclasses
 import pyllco
 
-from typing import Tuple
+from typing import Tuple, List
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType
@@ -16,6 +16,7 @@ class UnsuitableArgumentException(Exception):
 class LLVMRawValue:
     value: typing.Any
     attrs: pyllco.AttributeSet
+    offset: List[int]
 
 
 def is_llvm_type(ty):
@@ -35,10 +36,7 @@ def get_argument(value, arg):
         else:
             raise UnsuitableArgumentException(f"Value type {type(value.value)} does not match wanted type {arg.ty}.")
     if arg.raw_value:
-        if arg.hint == _SigType.instance:
-            return value.value
-        else:
-            return value
+        return value
     if value is None:
         return None
     if isinstance(value.value, pyllco.ConstantPointerNull):
@@ -148,9 +146,7 @@ class SysCall:
                                                          callpath=state.call_path,
                                                          hint=hint)
 
-            # TODO, ignore offset for now
-
-            value = LLVMRawValue(value=value, attrs=attrs)
+            value = LLVMRawValue(value=value, attrs=attrs, offset=offset)
             values.append(get_argument(value, arg))
             fields.append((arg.name, arg.ty))
 
@@ -160,17 +156,6 @@ class SysCall:
 
         # syscall specific handling
         new_state = self._func(graph, abb, state, args, va)
-
-        # write instances back for SOCs if they are handled via argument
-        # pointers
-        if _SyscallCategory.create in self.categories:
-            for idx, arg in enumerate(self._signature):
-                if arg.hint != _SigType.instance:
-                    continue
-                sys_obj = getattr(args, dataclasses.fields(args)[idx].name)
-                va.assign_system_object(abb, sys_obj,
-                                        callpath=state.call_path,
-                                        argument_nr=idx)
 
         # add standard control flow successors if wanted
         new_state.next_abbs = []
@@ -262,3 +247,27 @@ def assign_id(instances, instance):
         instances.vp.id[must_be_longer] = '.'.join(other_id[:longest+1])
 
     instances.vp.id[instance] = '.'.join(target_id[:longest+1])
+
+
+def find_return_value(abb, callpath, va):
+    """Try to retrieve the best possible return value.
+
+    The function first get the raw return value (the next store) and try to
+    follow it back to the original value.
+
+    Arguments:
+    abb      -- The call instruction which return value should be retrieved.
+    callpath -- The call context.
+    va.      -- A ValueAnalyzer instance.
+
+    Returns an LLVMRawValue with empty attrs.
+    """
+    from ara.steps import get_native_component
+    ValuesUnknown = get_native_component("ValuesUnknown")
+
+    ret_val = va.get_return_value(abb, callpath=callpath)
+    try:
+        ret_val, offsets = va.get_memory_value(ret_val, callpath=callpath)
+    except ValuesUnknown:
+        return LLVMRawValue(ret_val, None, None)
+    return LLVMRawValue(ret_val, None, offsets)

@@ -1,4 +1,4 @@
-from .os_util import syscall, assign_id, Arg
+from .os_util import syscall, assign_id, Arg, LLVMRawValue, find_return_value
 from .os_base import OSBase
 
 import pyllco
@@ -123,7 +123,7 @@ class Task(FreeRTOSInstance):
 
     def get_maximal_id(self):
         print(self.handle_p)
-        handler_name = self.handle_p.get_name() if self.handle_p else "-"
+        handler_name = self.handle_p.value.get_name() if self.handle_p else "-"
         return '.'.join(map(str, ["Task",
                                   self.name,
                                   self.function,
@@ -327,7 +327,6 @@ class FreeRTOS(OSBase):
         instances.vp.file[v] = cfg.vp.file[abb]
         instances.vp.line[v] = cfg.vp.line[abb]
 
-
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
                         Arg("task_name"),
@@ -358,7 +357,9 @@ class FreeRTOS(OSBase):
                                          abb=abb,
         )
 
-        args.task_handle_p = state.instances.vp.obj[v]
+        va.assign_system_object(args.task_handle_p.value,
+                                state.instances.vp.obj[v],
+                                args.task_handle_p.offset)
 
         assign_id(state.instances, v)
 
@@ -401,8 +402,8 @@ class FreeRTOS(OSBase):
         cp = state.call_path
         cfg = graph.cfg
 
-        queue_handler = va.get_return_value(abb, callpath=cp)
-        handler_name = queue_handler.get_name()
+        queue_handler = find_return_value(abb, cp, va)
+        handler_name = queue_handler.value.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Queue: {handler_name}"
@@ -422,6 +423,11 @@ class FreeRTOS(OSBase):
 
         assign_id(state.instances, v)
 
+        va.assign_system_object(queue_handler.value,
+                                state.instances.vp.obj[v],
+                                queue_handler.offset)
+
+
         return state
 
     @syscall(categories={SyscallCategory.create},
@@ -432,8 +438,8 @@ class FreeRTOS(OSBase):
         cp = state.call_path
         cfg = graph.cfg
 
-        ret_val = va.get_return_value(abb, cp)
-        handler_name = ret_val.get_name()
+        ret_val = find_return_value(abb, cp, va)
+        handler_name = ret_val.value.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
@@ -445,12 +451,13 @@ class FreeRTOS(OSBase):
                                           m_type=args.mutex_type,
                                           abb=abb,
                                           call_path=cp,
-                                          vidx=v,
-        )
+                                          vidx=v)
 
         assign_id(state.instances, v)
 
-        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+        va.assign_system_object(ret_val.value,
+                                state.instances.vp.obj[v],
+                                ret_val.offset)
 
         return state
 
@@ -528,7 +535,7 @@ class FreeRTOS(OSBase):
         # instance properties
         cp = state.call_path
 
-        task_handler = va.get_return_value(abb, callpath=cp)
+        task_handler = find_return_value(abb, cp, va)
 
         v = state.instances.add_vertex()
         func_name = args.task_function.get_name()
@@ -554,18 +561,17 @@ class FreeRTOS(OSBase):
         )
 
         assign_id(state.instances, v)
-        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+        va.assign_system_object(args.task_handle_p.value,
+                                state.instances.vp.obj[v],
+                                args.task_handle_p.offset)
 
         logger.info(f"Create new Task {args.task_name} (function: {func_name})")
         return state
-        pass
-
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('handler'), Arg('type')))
     def xQueueTakeMutexRecursive(graph, abb, state, args, va):
         pass
-
 
     @syscall(categories={SyscallCategory.create}, signature=(Arg("size"),))
     def xStreamBufferGenericCreate(graph, abb, state, args, va):
@@ -573,8 +579,8 @@ class FreeRTOS(OSBase):
         cfg = graph.cfg
         cp = state.call_path
 
-        handler = va.get_return_value(abb, callpath=cp)
-        handler_name = handler.get_name()
+        handler = find_return_value(abb, cp, va)
+        handler_name = handler.value.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
@@ -590,12 +596,13 @@ class FreeRTOS(OSBase):
         )
         assign_id(state.instances, v)
 
-        va.assign_system_object(abb, state.instances.vp.obj[v], callpath=cp)
+        va.assign_system_object(handler.value,
+                                state.instances.vp.obj[v],
+                                handler.offset)
 
         return state
 
-
-    ## HERE BEGINS THE TODO sections, all following syscalls are stubs
+    # HERE BEGINS THE TODO sections, all following syscalls are stubs
 
     @syscall
     def eTaskGetState(graph, abb, state, args, va):
