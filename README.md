@@ -20,6 +20,11 @@ Optional dependencies:
 
 - [pygments](https://pygments.org/) (Runtime depedency to get dot files linked to the source code)
 
+Dependencies that are built as subproject:
+
+- [SVF](http://svf-tools.github.io/SVF/)
+  - SVF needs [Z3](https://github.com/Z3Prover/z3) additionally
+
 Getting packages in SRA lab:
 ```
 echo addpackage llvm-9.0 >> ~/.bashrc
