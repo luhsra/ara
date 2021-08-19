@@ -394,7 +394,11 @@ namespace ara::step {
 				}
 
 				if (const llvm::GlobalVariable* gv = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
-					if (!gv->hasExternalLinkage()) { // TODO consider using offset
+					if (gv->hasExternalLinkage()) {
+						dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
+						return Finished{FoundValue{gv, node, offset}};
+					} else if (gv->getNumOperands() > 0) { // TODO consider using offset
+						// special handling for strings, they are pointer to constant data
 						const llvm::Value* gvv = gv->getOperand(0);
 						if (gvv != nullptr) {
 							if (const llvm::ConstantData* gvvc = llvm::dyn_cast<llvm::ConstantData>(gvv)) {
@@ -402,9 +406,6 @@ namespace ara::step {
 								return Finished{FoundValue{gvvc, node, {}}};
 							}
 						}
-					} else {
-						dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
-						return Finished{FoundValue{gv, node, offset}};
 					}
 				}
 			}
