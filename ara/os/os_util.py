@@ -13,6 +13,20 @@ class UnsuitableArgumentException(Exception):
 
 
 @dataclasses.dataclass
+class UnknownArgument:
+    """A wrapper class to indicate that an argument cannot be found.
+
+    The specific reason is stored in the exception.
+    """
+    exception: Exception
+    value: pyllco.Value
+
+    def __bool__(self):
+        """Allow `if self:`"""
+        return False
+
+
+@dataclasses.dataclass
 class LLVMRawValue:
     value: typing.Any
     attrs: pyllco.AttributeSet
@@ -139,16 +153,22 @@ class SysCall:
 
         # retrieve arguments
         for idx, arg in enumerate(self._signature):
+            fields.append((arg.name, arg.ty))
             hint = arg.hint
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
-            value, attrs, offset = va.get_argument_value(abb, idx,
-                                                         callpath=state.call_path,
-                                                         hint=hint)
-
+            try:
+                value, attrs, offset = va.get_argument_value(abb, idx,
+                                                             callpath=state.call_path,
+                                                             hint=hint)
+            except ValuesUnknown as e:
+                values.append(UnknownArgument(exception=e, value=None))
+                continue
             value = LLVMRawValue(value=value, attrs=attrs, offset=offset)
-            values.append(get_argument(value, arg))
-            fields.append((arg.name, arg.ty))
+            try:
+                values.append(get_argument(value, arg))
+            except UnsuitableArgumentException as e:
+                values.append(UnknownArgument(exception=e, value=value))
 
         # repack into dataclass
         Arguments = dataclasses.make_dataclass('Arguments', fields)
