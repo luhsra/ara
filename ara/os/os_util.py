@@ -142,6 +142,7 @@ class SysCall:
         # avoid dependency conflicts, therefore import dynamically
         from ara.steps import get_native_component
         ValueAnalyzer = get_native_component("ValueAnalyzer")
+        ValuesUnknown = get_native_component("ValuesUnknown")
 
         va = ValueAnalyzer(graph)
 
@@ -289,5 +290,5 @@ def find_return_value(abb, callpath, va):
     try:
         ret_val, offsets = va.get_memory_value(ret_val, callpath=callpath)
     except ValuesUnknown:
-        return LLVMRawValue(ret_val, None, None)
+        return LLVMRawValue(ret_val, None, [])
     return LLVMRawValue(ret_val, None, offsets)

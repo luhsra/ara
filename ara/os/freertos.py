@@ -1,4 +1,4 @@
-from .os_util import syscall, assign_id, Arg, LLVMRawValue, find_return_value
+from .os_util import syscall, assign_id, Arg, LLVMRawValue, find_return_value, UnknownArgument
 from .os_base import OSBase
 
 import pyllco
@@ -27,6 +27,7 @@ class FreeRTOSInstance(object):
             return self.__dict__[name]
         except KeyError as ke:
             return current_step._graph.instances.vp[name][self.vidx]
+
     def __setattr__(self, name, value):
         if name in current_step._graph.instances.vp:
             current_step._graph.instances.vp[name][self.vidx] = value
@@ -88,7 +89,7 @@ class Task(FreeRTOSInstance):
 
     @property
     def priority(self):
-        if self.__priority is None:
+        if not self.__priority:
             return None
         clamp = FreeRTOS.config.get('configMAX_PRIORITIES', None)
         if clamp is not None:
@@ -356,10 +357,13 @@ class FreeRTOS(OSBase):
                                          call_path=state.call_path,
                                          abb=abb,
         )
-
-        va.assign_system_object(args.task_handle_p.value,
-                                state.instances.vp.obj[v],
-                                args.task_handle_p.offset)
+        if args.task_handle_p:
+            va.assign_system_object(args.task_handle_p.value,
+                                    state.instances.vp.obj[v],
+                                    args.task_handle_p.offset)
+        else:
+            logger.warn(f"Task for ABB {graph.cfg.vp.name[abb]} not assigned,"
+                        f" since the task handle cannot be retrieved.")
 
         assign_id(state.instances, v)
 
@@ -403,6 +407,7 @@ class FreeRTOS(OSBase):
         cfg = graph.cfg
 
         queue_handler = find_return_value(abb, cp, va)
+        assert(isinstance(queue_handler.value, pyllco.Value))
         handler_name = queue_handler.value.get_name()
 
         v = state.instances.add_vertex()
@@ -561,9 +566,13 @@ class FreeRTOS(OSBase):
         )
 
         assign_id(state.instances, v)
-        va.assign_system_object(args.task_handle_p.value,
-                                state.instances.vp.obj[v],
-                                args.task_handle_p.offset)
+        if args.task_handle_p:
+            va.assign_system_object(args.task_handle_p.value,
+                                    state.instances.vp.obj[v],
+                                    args.task_handle_p.offset)
+        else:
+            logger.warn(f"Task for ABB {graph.cfg.vp.name[abb]} not assigned,"
+                        f" since the task handle cannot be retrieved.")
 
         logger.info(f"Create new Task {args.task_name} (function: {func_name})")
         return state
