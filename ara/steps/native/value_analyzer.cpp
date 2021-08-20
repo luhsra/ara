@@ -8,6 +8,7 @@
 #include <pyllco.h>
 
 extern PyObject* py_valueerror;
+extern PyObject* py_connectionerror;
 
 namespace ara::cython {
 
@@ -16,6 +17,8 @@ namespace ara::cython {
 			throw;
 		} catch (ValuesUnknown& e) {
 			PyErr_SetString(py_valueerror, e.what());
+		} catch (ConnectionStatusUnknown& e) {
+			PyErr_SetString(py_connectionerror, e.what());
 		} catch (const std::exception& e) {
 			PyErr_SetString(PyExc_RuntimeError, e.what());
 		}
@@ -821,26 +824,88 @@ namespace ara::step {
 	bool ValueAnalyzer::has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 	                                   OSObject obj_index) {
 		if (is_call_to_intrinsic(callsite)) {
-			throw ValuesUnknown("Called function is an intrinsic.");
+			throw ConnectionStatusUnknown("Called function is an intrinsic.");
 		}
 		if (callsite.isIndirectCall()) {
-			throw ValuesUnknown("Called function is indirect.");
+			throw ConnectionStatusUnknown("Called function is indirect.");
 		}
 
 		if (argument_nr >= callsite.getNumArgOperands()) {
-			throw ValuesUnknown("Argument number is too big.");
+			throw ConnectionStatusUnknown("Argument number is too big.");
 		}
+
+		/* check whether we have a node stored for the system object */
+		auto it = obj_map.right.find(obj_index);
+		if (it == obj_map.right.end()) {
+			/* we cannot rule out a connection */
+			throw ConnectionStatusUnknown("Object has no corresponding node in SVFG.");
+		}
+		auto id = it->second;
+
+		/* retrieve SVFG node for system object */
+		const SVF::VFGNode* obj_node = graph.get_svfg().getGNode(id);
 
 		/* retrieve SVFG node for input triple */
 		const llvm::Value& val = get_nth_arg(callsite, argument_nr);
 		const SVF::VFGNode* input_node = get_vfg_node(graph.get_svfg(), val);
 
-		/* retrieve SVFG node for system object */
-		const SVF::VFGNode* target_node = graph.get_svfg().getGNode(obj_map.right.at(obj_index).first);
+		logger.debug() << "Find connection between " << *input_node << " and " << *obj_node << std::endl;
 
-		logger.debug() << "Find connection between " << *input_node << " and " << *target_node << std::endl;
+		std::set<const SVF::VFGNode*> visited;
+		std::stack<const SVF::VFGNode*> node_stack;
 
-		// TODO
+		/* starting the search from the object node makes the search terminate quickly in many cases */
+		auto starting_node = obj_node;
+		auto target_node = input_node;
+		visited.emplace(starting_node);
+		node_stack.push(starting_node);
+		if (starting_node == target_node) {
+			// This should not happen?!
+			logger.warn() << "Asked for connection between identical nodes." << std::endl;
+			return true;
+		}
+
+		/* do a DFS, storing the path in 'node_stack' and marking nodes by adding them to the 'visited' set */
+		while (!node_stack.empty()) {
+			auto current_node = node_stack.top();
+			node_stack.pop();
+
+			for (const SVF::VFGEdge* edge :
+			     boost::make_iterator_range(current_node->OutEdgeBegin(), current_node->OutEdgeEnd())) {
+				auto node = edge->getDstNode();
+				if (visited.find(node) == visited.end()) {
+					if (llvm::isa<SVF::MRSVFGNode>(node))
+						continue; // helps constructed example
+					if (llvm::isa<SVF::NullPtrVFGNode>(node))
+						continue; // helps gpslogger
+					if (node == target_node) {
+						logger.debug() << "Found connection after visiting " << visited.size() << " nodes."
+						               << std::endl;
+						return true;
+					}
+					visited.emplace(node);
+					node_stack.push(node);
+				}
+			}
+			for (const SVF::VFGEdge* edge :
+			     boost::make_iterator_range(current_node->InEdgeBegin(), current_node->InEdgeEnd())) {
+				auto node = edge->getSrcNode();
+				if (visited.find(node) == visited.end()) {
+					if (llvm::isa<SVF::MRSVFGNode>(node))
+						continue;
+					if (llvm::isa<SVF::NullPtrVFGNode>(node))
+						continue;
+					if (node == target_node) {
+						logger.debug() << "Found connection after visiting " << visited.size() << " nodes."
+						               << std::endl;
+						return true;
+					}
+					visited.emplace(node);
+					node_stack.push(node);
+				}
+			}
+		}
+		logger.debug() << "No connection after visiting " << visited.size() << " nodes." << std::endl;
 
 		return false;
 	}

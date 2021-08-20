@@ -345,7 +345,7 @@ namespace ara::step {
 		 * argument_nr) and the given obj_index.
 		 *
 		 * \param callsite    the callsite whose argument should be checked
-		 * \param callpath    the callpath (currect context) which applies for this call
+		 * \param callpath    the callpath (currect context) which applies for this call. TODO: not used
 		 * \param argument_nr the argument which should be checked
 		 * \param obj_index   the unique ID of the object (the actual object is stored in Python)
 		 *

@@ -69,6 +69,11 @@ namespace ara {
 		explicit ValuesUnknown(const std::string& message) : std::runtime_error(message) {}
 	};
 
+	class ConnectionStatusUnknown : public std::runtime_error {
+	  public:
+		explicit ConnectionStatusUnknown(const std::string& message) : std::runtime_error(message) {}
+	};
+
 	class StepError : public std::runtime_error {
 	  private:
 		static std::string format(const std::string& step_name, const std::string& message) {

@@ -11,6 +11,11 @@ class ValuesUnknown(RuntimeError):
 
 cdef public object py_valueerror = ValuesUnknown
 
+class ConnectionStatusUnknown(RuntimeError):
+  pass
+
+cdef public object py_connectionerror = ConnectionStatusUnknown
+
 cdef class ValueAnalyzer:
     """Python wrapper class for the C++ Value Analyzer.
 
@@ -179,15 +184,18 @@ cdef class ValueAnalyzer:
         The sys_obj must already be assigned to the ValueAnalyzer
         via assign_system_object.
 
+        The callpath is currently ignored but might have potential to improve
+        the search algorithm.
+
         Arguments:
         callsite    -- callsite, which arguments should be checked
-        callpath    -- callpath, which leads to this callsite
+        callpath    -- callpath, which leads to this callsite. TODO: not used
         argument_nr -- number of argument (index begins at 0)
         sys_obj     -- target candidate
         """
         callsite = self._check_callsite(callsite)
         obj_index = self._phash(sys_obj)
-        assert obj_index not in self._sys_objects, "sys_obj not assigned"
+        assert obj_index in self._sys_objects, "sys_obj not assigned"
         return deref(self._c_va).py_has_connection(callsite,
                                                    callpath._c_callpath,
                                                    argument_nr,
