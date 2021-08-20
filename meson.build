@@ -43,8 +43,14 @@ endif
 
 ## svf
 cmake = import('cmake')
-svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'),
-                                                   '-DBUILD_SHARED_LIBS=on'])
+svf_opts = cmake.subproject_options()
+svf_opts.append_compile_args('cpp', '-Wno-unused-parameter')
+svf_opts.append_compile_args('cpp', '-Wno-unused-variable')
+svf_opts.append_compile_args('cpp', '-Wno-unused-function')
+svf_opts.append_compile_args('cpp', '-Wno-maybe-uninitialized')
+svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
+                            'BUILD_SHARED_LIBS': 'on'})
+svf_proj = cmake.subproject('svf', options: svf_opts)
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
