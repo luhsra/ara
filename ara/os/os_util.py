@@ -44,22 +44,23 @@ def get_argument(value, arg):
     value -- LLVM raw value
     arg   -- Argument for this value
     """
-    if arg.ty != typing.Any:
-        if type(value.value) == arg.ty:
-            return value.value
+    def check_ty(lvalue, ty):
+        if ty == typing.Any or type(lvalue) == ty:
+            return lvalue
         else:
-            raise UnsuitableArgumentException(f"Value type {type(value.value)} does not match wanted type {arg.ty}.")
+            raise UnsuitableArgumentException(f"Value type {type(lvalue)} does not match wanted type {ty}.")
+
+    if arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
+        return check_ty(value.value, arg.ty)
     if arg.raw_value:
         return value
     if value is None:
         return None
     if isinstance(value.value, pyllco.ConstantPointerNull):
+        check_ty(value.value, arg.ty)
         return "nullptr"
     if isinstance(value.value, pyllco.Constant):
-        try:
-            return value.value.get(attrs=value.attrs)
-        except pyllco.InvalidValue:
-            return None
+        return check_ty(value.value.get(attrs=value.attrs), arg.ty)
     raise UnsuitableArgumentException("Value cannot be interpreted as Python value")
 
 
@@ -168,7 +169,7 @@ class SysCall:
             value = LLVMRawValue(value=value, attrs=attrs, offset=offset)
             try:
                 values.append(get_argument(value, arg))
-            except UnsuitableArgumentException as e:
+            except (UnsuitableArgumentException, pyllco.InvalidValue) as e:
                 values.append(UnknownArgument(exception=e, value=value))
 
         # repack into dataclass
