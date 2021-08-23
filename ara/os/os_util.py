@@ -26,13 +26,6 @@ class UnknownArgument:
         return False
 
 
-@dataclasses.dataclass
-class LLVMRawValue:
-    value: typing.Any
-    attrs: pyllco.AttributeSet
-    offset: List[int]
-
-
 def is_llvm_type(ty):
     return getattr(ty, '__module__', None) == pyllco.__name__
 
@@ -160,17 +153,16 @@ class SysCall:
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
             try:
-                value, attrs, offset = va.get_argument_value(abb, idx,
-                                                             callpath=state.call_path,
-                                                             hint=hint)
+                result = va.get_argument_value(abb, idx,
+                                               callpath=state.call_path,
+                                               hint=hint)
             except ValuesUnknown as e:
                 values.append(UnknownArgument(exception=e, value=None))
                 continue
-            value = LLVMRawValue(value=value, attrs=attrs, offset=offset)
             try:
-                values.append(get_argument(value, arg))
+                values.append(get_argument(result, arg))
             except (UnsuitableArgumentException, pyllco.InvalidValue) as e:
-                values.append(UnknownArgument(exception=e, value=value))
+                values.append(UnknownArgument(exception=e, value=result))
 
         # repack into dataclass
         Arguments = dataclasses.make_dataclass('Arguments', fields)
@@ -282,14 +274,14 @@ def find_return_value(abb, callpath, va):
     callpath -- The call context.
     va.      -- A ValueAnalyzer instance.
 
-    Returns an LLVMRawValue with empty attrs.
+    Returns a ValueAnalyzerResult with empty attrs.
     """
     from ara.steps import get_native_component
     ValuesUnknown = get_native_component("ValuesUnknown")
+    ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
 
     ret_val = va.get_return_value(abb, callpath=callpath)
     try:
-        ret_val, offsets = va.get_memory_value(ret_val, callpath=callpath)
+        return va.get_memory_value(ret_val, callpath=callpath)
     except ValuesUnknown:
-        return LLVMRawValue(ret_val, None, [])
-    return LLVMRawValue(ret_val, None, offsets)
+        return ValueAnalyzerResult(ret_val, [], None, callpath)

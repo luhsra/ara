@@ -22,6 +22,7 @@ namespace ara::step {
 		RawValue value;                                     /* found LLVM value or previously assigned object */
 		const SVF::VFGNode* source;                         /* SVF node of the found value */
 		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
+		std::optional<graph::CallPath> callpath;            /* call context of this value */
 	};
 	using Report = std::variant<EndOfFunction, FoundValue>;
 
@@ -36,7 +37,7 @@ namespace ara::step {
 	};
 	struct KeepGoing {};
 	struct Die {};
-	using Result = std::variant<Finished, Wait, KeepGoing, Die>;
+	using TraversalResult = std::variant<Finished, Wait, KeepGoing, Die>;
 
 	enum class Status { active, sleeping, dead };
 	std::ostream& operator<<(std::ostream&, const Status&);
@@ -135,22 +136,22 @@ namespace ara::step {
 		 */
 		void handle_reports();
 
-		bool eval_result(Result&& result);
+		bool eval_result(TraversalResult&& result);
 		void hire(std::shared_ptr<Traverser> worker);
 
 		/**
 		 * Handle a single Edge.
 		 */
-		Result handle_edge(const SVF::VFGEdge*);
+		TraversalResult handle_edge(const SVF::VFGEdge*);
 		/**
 		 * Handle a single Node.
 		 */
-		Result handle_node(const SVF::VFGNode*);
+		TraversalResult handle_node(const SVF::VFGNode*);
 
 		/**
 		 * Advance one edge further. May spawn other traversers (colleagues).
 		 */
-		Result advance(const SVF::VFGNode* node, bool only_delegate = false);
+		TraversalResult advance(const SVF::VFGNode* node, bool only_delegate = false);
 
 		void sleep_and_send(Report&& report);
 		void die_and_notify();
@@ -242,7 +243,8 @@ namespace ara::step {
 		llvm::Module& get_module() const;
 		Logger& get_logger() const;
 		std::optional<OSObject> get_obj_id(const SVF::NodeID id,
-		                                   const std::vector<const llvm::GetElementPtrInst*>& offset) const;
+		                                   const std::vector<const llvm::GetElementPtrInst*>& offset,
+		                                   const graph::CallPath& callpath) const;
 	};
 
 	/**
@@ -264,7 +266,7 @@ namespace ara::step {
 			reason = WaitingReason::i_am_manager;
 		}
 
-		bool eval_node_result(Result&& result);
+		bool eval_node_result(TraversalResult&& result);
 		void do_step() override;
 		const FoundValue get_value();
 	};
@@ -283,6 +285,14 @@ namespace ara::step {
 	 * (assign a system object to a return target or pointer).
 	 */
 	class ValueAnalyzer {
+	  public:
+		struct Result {
+			RawValue value;                                     /* found LLVM value or previously assigned object */
+			std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
+			std::optional<llvm::AttributeSet> attrs;            /* attributes specific to this callsite */
+			std::optional<graph::CallPath> callpath;            /* call context of this value */
+		};
+
 	  private:
 		friend class Bookkeeping;
 		graph::Graph graph;
@@ -336,9 +346,8 @@ namespace ara::step {
 		 * \param hint        what type of analysis should be done
 		 * \param type        the expected object type, currently unused
 		 */
-		std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>
-		get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
-		                   graph::SigType hint, PyObject* type);
+		ValueAnalyzer::Result get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath,
+		                                         unsigned argument_nr, graph::SigType hint, PyObject* type);
 
 		/**
 		 * Check if there is a connection within the SVFG between the SVFG node specified by (callsite, callpath,
@@ -393,12 +402,13 @@ namespace ara::step {
 		 */
 		const llvm::Value* get_return_value(const llvm::CallBase& callsite, graph::CallPath callpath);
 
-		std::pair<RawValue, const std::vector<const llvm::GetElementPtrInst*>>
-		get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath);
+		ValueAnalyzer::Result get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath);
 
 		std::vector<std::pair<const llvm::Value*, graph::CallPath>>
 		get_assignments(const llvm::Value* value, const std::vector<const llvm::GetElementPtrInst*>& gep,
 		                graph::CallPath callpath);
+
+		PyObject* py_repack(ValueAnalyzer::Result&& result) const;
 
 	  public:
 		// WARNING: do not use this class alone, always use the Python ValueAnalyzer.
@@ -446,7 +456,7 @@ namespace ara::step {
 		 * reference.
 		 */
 		void assign_system_object(const llvm::Value* value, OSObject obj_index,
-		                          const std::vector<const llvm::GetElementPtrInst*>&);
+		                          const std::vector<const llvm::GetElementPtrInst*>&, const graph::CallPath& callpath);
 
 		// /**
 		//  * Wrapper call for assign_system_object. See its documentation for details.

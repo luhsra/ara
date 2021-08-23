@@ -1,6 +1,7 @@
 # ATTENTION: see step.pyx for c imports. Cython is really bad with double
 # imports
 
+import dataclasses
 import sys
 from ara.util import get_logger
 from ara.graph import SigType, ABBType, NodeLevel
@@ -16,6 +17,24 @@ class ConnectionStatusUnknown(RuntimeError):
 
 cdef public object py_connectionerror = ConnectionStatusUnknown
 
+
+# TODO make this a dataclass once we have Cython 3
+class ValueAnalyzerResult:
+        # value: typing.Any
+        # offset: List[int]
+        # attrs: pyllco.AttributeSet
+        # callpath: CallPath
+
+        def __init__(self, value, offset, attrs, callpath):
+            self.value = value
+            self.offset = offset
+            self.attrs = attrs
+            self.callpath = callpath
+
+        def __repr__(self):
+            return f"ValueAnalyzerResult(value={self.value}, offset={self.offset}, attrs={self.attrs}, callpath={self.callpath})"
+
+
 cdef class ValueAnalyzer:
     """Python wrapper class for the C++ Value Analyzer.
 
@@ -25,7 +44,6 @@ cdef class ValueAnalyzer:
 
     See the C++ class for an actual documentation of the internal working.
     """
-
     cdef unique_ptr[CVA] _c_va
     cdef object _graph
     cdef object _log
@@ -77,7 +95,7 @@ cdef class ValueAnalyzer:
         if callpath is None:
             callpath = CallPath()
         cdef unsigned arg_nr = argument_nr
-        value, attr, offset = deref(self._c_va).py_get_argument_value(
+        value, offset, attr, rcallpath = deref(self._c_va).py_get_argument_value(
             callsite,
             callpath._c_callpath,
             arg_nr,
@@ -88,7 +106,8 @@ cdef class ValueAnalyzer:
         if isinstance(value, int):
             value = self._sys_objects[value]
 
-        return value, attr, offset
+        return ValueAnalyzerResult(value=value, offset=offset, attrs=attr,
+                                   callpath=rcallpath)
 
     def get_return_value(self, callsite, callpath: CallPath = None):
         """Retrieve the next store of return value of the callsite.
@@ -116,13 +135,14 @@ cdef class ValueAnalyzer:
         """
         if callpath is None:
             callpath = CallPath()
-        value, offsets = deref(self._c_va).py_get_memory_value(intermediate_value._val, callpath._c_callpath)
+        value, offset, attr, rcallpath = deref(self._c_va).py_get_memory_value(intermediate_value._val,
+                                                                               callpath._c_callpath)
 
         if isinstance(value, int):
             value = self._sys_objects[value]
 
-        return value, offsets
-
+        return ValueAnalyzerResult(value=value, offset=offset, attrs=attr,
+                                   callpath=rcallpath)
 
 
     def get_assignments(self, value: Value,
@@ -147,7 +167,9 @@ cdef class ValueAnalyzer:
                                              c_offset,
                                              callpath._c_callpath)
 
-    def assign_system_object(self, value: Value, sys_obj, offset: List[GetElementPtrInst]):
+    def assign_system_object(self, value: Value, sys_obj,
+                             offset: List[GetElementPtrInst],
+                             callpath: CallPath=None):
         """Assign the system object sys_obj to a given (LLVM) value.
 
         Normally, these values are retrieved via get_argument_value
@@ -160,6 +182,8 @@ cdef class ValueAnalyzer:
                        (pointer) argument
         offset      -- list of offset, to which the object is assigned
         """
+        if callpath is None:
+            callpath = CallPath()
         obj_index = self._phash(sys_obj)
         assert obj_index not in self._sys_objects, "Got two objects with the same hash, when it should not be"
         self._sys_objects[obj_index] = sys_obj
@@ -169,7 +193,8 @@ cdef class ValueAnalyzer:
         for py_gep in offset:
             gep = py_gep
             c_offset.push_back(gep._gep_inst())
-        deref(self._c_va).assign_system_object(value._val, obj_index, c_offset)
+        deref(self._c_va).assign_system_object(value._val, obj_index, c_offset,
+                                               callpath._c_callpath)
 
     def has_connection(self, callsite, callpath: CallPath, argument_nr, sys_obj):
         """Check, if an syscall argument and a target candidate are connected.

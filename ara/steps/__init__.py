@@ -39,10 +39,13 @@ def provide_steps():
     yield Syscall
     yield SystemRelevantFunctions
 
+
 def get_native_component(name: str):
     # direct import would result in dependency conflicts
-    from .step import ValueAnalyzer, ValuesUnknown, ConnectionStatusUnknown
+    from .step import (ValueAnalyzer, ValueAnalyzerResult, ValuesUnknown,
+                       ConnectionStatusUnknown)
     components = {"ValueAnalyzer": ValueAnalyzer,
+                  "ValueAnalyzerResult": ValueAnalyzerResult,
                   "ValuesUnknown": ValuesUnknown,
                   "ConnectionStatusUnknown": ConnectionStatusUnknown}
     return components[name]

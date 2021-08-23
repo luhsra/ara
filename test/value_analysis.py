@@ -82,7 +82,8 @@ def main():
         for entry in record:
             callpath = create_callpath(m_graph, entry["callpath"])
             for idx, [hint, val] in enumerate(entry["args"]):
-                debug_print(f"Searching arg {idx}, expected: {val}, cp: {callpath}")
+                debug_print(f"Searching arg {idx}, expected: {val}, "
+                            f"cp: {callpath}")
 
                 expected_error = None
                 no_except = True
@@ -90,9 +91,9 @@ def main():
                     expected_error = val.split(' ')[1]
 
                 try:
-                    value, attr, offset = va.get_argument_value(syscall, idx,
-                                                                callpath=callpath,
-                                                                hint=get_hint(hint))
+                    result = va.get_argument_value(syscall, idx,
+                                                   callpath=callpath,
+                                                   hint=get_hint(hint))
                 except Exception as e:
                     if type(e).__name__ == expected_error:
                         debug_print(f"Got expected error: {type(e).__name__}")
@@ -100,28 +101,35 @@ def main():
                     else:
                         raise e
                 if no_except:
-                    py_val = value_to_py(value, attr)
+                    py_val = value_to_py(result.value, result.attrs)
                     debug_print("Retrieved", py_val)
-                    if offset:
-                        num_offsets = [x.get_offset() for x in offset]
-                        debug_print(f"With Offsets: {num_offsets} ({offset})")
+                    if result.offset:
+                        num_offsets = [x.get_offset() for x in result.offset]
+                        debug_print(f"With Offsets: "
+                                    f"{num_offsets} ({result.offset})")
                         assert val == [py_val, num_offsets]
                     else:
                         assert val == py_val
                     if "is_creation" in entry:
                         obj = entry["is_creation"]
                         if "arg" in obj and obj['arg'] == idx:
-                            debug_print(f"Assign {obj['name']} to argument {idx}.")
-                            va.assign_system_object(value, obj['name'], offset)
+                            debug_print(f"Assign {obj['name']} "
+                                        f"to argument {idx}.")
+                            va.assign_system_object(result.value,
+                                                    obj['name'],
+                                                    result.offset)
             if "is_creation" in entry:
                 obj = entry["is_creation"]
                 debug_print(f"Assign {obj['name']}.")
                 if "arg" not in obj:
                     store = va.get_return_value(syscall, callpath)
                     debug_print(f"Got store: {store}")
-                    value, offset = va.get_memory_value(store, callpath)
-                    debug_print(f"Got store: {store}, value: {value}, offset: {offset}")
-                    va.assign_system_object(value, obj["name"], offset)
+                    result = va.get_memory_value(store, callpath)
+                    debug_print(f"Got store: {store}, value: {result.value}, "
+                                f"offset: {result.offset}")
+                    va.assign_system_object(result.value,
+                                            obj["name"],
+                                            result.offset)
 
 
 if __name__ == '__main__':

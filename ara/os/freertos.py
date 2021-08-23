@@ -1,4 +1,4 @@
-from .os_util import syscall, assign_id, Arg, LLVMRawValue, find_return_value, UnknownArgument
+from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument
 from .os_base import OSBase
 
 import pyllco
@@ -123,7 +123,6 @@ class Task(FreeRTOSInstance):
         }
 
     def get_maximal_id(self):
-        print(self.handle_p)
         handler_name = self.handle_p.value.get_name() if self.handle_p else "-"
         return '.'.join(map(str, ["Task",
                                   self.name,
@@ -337,6 +336,7 @@ class FreeRTOS(OSBase):
                         Arg("task_handle_p", hint=SigType.instance)))
     def xTaskCreate(graph, abb, state, args, va):
         state = state.copy()
+        cp = state.call_path
 
         v = state.instances.add_vertex()
         func_name = args.task_function.get_name()
@@ -354,13 +354,14 @@ class FreeRTOS(OSBase):
                                          parameters=args.task_parameters,
                                          priority=args.task_priority,
                                          handle_p=args.task_handle_p,
-                                         call_path=state.call_path,
+                                         call_path=cp,
                                          abb=abb,
         )
         if args.task_handle_p:
             va.assign_system_object(args.task_handle_p.value,
                                     state.instances.vp.obj[v],
-                                    args.task_handle_p.offset)
+                                    args.task_handle_p.offset,
+                                    args.task_handle_p.callpath)
         else:
             logger.warn(f"Task for ABB {graph.cfg.vp.name[abb]} not assigned,"
                         f" since the task handle cannot be retrieved.")
@@ -407,7 +408,7 @@ class FreeRTOS(OSBase):
         cfg = graph.cfg
 
         queue_handler = find_return_value(abb, cp, va)
-        assert(isinstance(queue_handler.value, pyllco.Value))
+        assert isinstance(queue_handler.value, pyllco.Value)
         handler_name = queue_handler.value.get_name()
 
         v = state.instances.add_vertex()
@@ -430,8 +431,8 @@ class FreeRTOS(OSBase):
 
         va.assign_system_object(queue_handler.value,
                                 state.instances.vp.obj[v],
-                                queue_handler.offset)
-
+                                queue_handler.offset,
+                                queue_handler.callpath)
 
         return state
 
@@ -462,7 +463,8 @@ class FreeRTOS(OSBase):
 
         va.assign_system_object(ret_val.value,
                                 state.instances.vp.obj[v],
-                                ret_val.offset)
+                                ret_val.offset,
+                                ret_val.callpath)
 
         return state
 
@@ -483,42 +485,38 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler', ty=Mutex),
+             signature=(Arg('handler', ty=Mutex, hint=SigType.instance),
                         Arg('item', raw_value=True),
                         Arg('ticks'),
                         Arg('action')))
     def xQueueGenericSend(graph, abb, state, args, va):
         state = state.copy()
 
-        cp = state.call_path
-
         queue = args.handler
-        if queue is None:
+        if not queue:
             logger.error(f"xQueueGenericSend (file: {cfg.vp.file[abb]}, "
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
-            queue_node = find_instance_node(state.instances, queue)
+            queue_node = find_instance_node(state.instances, queue.value)
             e = state.instances.add_edge(state.running, queue_node)
             state.instances.ep.label[e] = f"xQueueGenericSend"
 
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler', ty=Mutex),
+             signature=(Arg('handler', ty=Mutex, hint=SigType.instance),
                         Arg('type')))
     def xQueueSemaphoreTake(graph, abb, state, args, va):
         state = state.copy()
 
-        cp = state.call_path
-
         queue = args.handler
-        if queue is None:
+        if not queue:
             logger.error(f"xQueueSemaphoreTake (file: {cfg.vp.file[abb]}, "
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
-            queue_node = find_instance_node(state.instances, queue)
+            queue_node = find_instance_node(state.instances, queue.value)
             e = state.instances.add_edge(state.running, queue_node)
             state.instances.ep.label[e] = f"xQueueSemaphoreTake"
 
@@ -569,7 +567,8 @@ class FreeRTOS(OSBase):
         if args.task_handle_p:
             va.assign_system_object(args.task_handle_p.value,
                                     state.instances.vp.obj[v],
-                                    args.task_handle_p.offset)
+                                    args.task_handle_p.offset,
+                                    args.task_handle_p.callpath)
         else:
             logger.warn(f"Task for ABB {graph.cfg.vp.name[abb]} not assigned,"
                         f" since the task handle cannot be retrieved.")
@@ -607,7 +606,8 @@ class FreeRTOS(OSBase):
 
         va.assign_system_object(handler.value,
                                 state.instances.vp.obj[v],
-                                handler.offset)
+                                handler.offset,
+                                handler.callpath)
 
         return state
 
