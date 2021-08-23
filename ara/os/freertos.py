@@ -89,7 +89,7 @@ class Task(FreeRTOSInstance):
 
     @property
     def priority(self):
-        if self.__priority is None:
+        if self.__priority is None or isinstance(self.__priority, UnknownArgument):
             return None
         clamp = FreeRTOS.config.get('configMAX_PRIORITIES', None)
         if clamp is not None:
