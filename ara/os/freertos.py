@@ -81,7 +81,7 @@ class Task(FreeRTOSInstance):
             try:
                 self.heap_need += int(stack_size) * int(FreeRTOS.config.get('STACK_TYPE_SIZE', None))
                 self.heap_need += int(FreeRTOS.config.get('TCB_SIZE', None))
-            except TypeError:
+            except (TypeError, ValueError):
                 self.heap_need = None
         else:
             self.heap_need = 0
