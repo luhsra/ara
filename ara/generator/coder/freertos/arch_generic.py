@@ -117,13 +117,15 @@ class VanillaQueue(StructDataObject):
         self.queue = queue
         queue.impl.head = self
 
-        if not queue.specialization_level == 'initialized':
+        assert queue.specialization_level != 'unchanged' , "Queue is to be generated but is marked as 'unchanged': %s"
+        if queue.specialization_level == 'static':
             return
         try:
             length = queue.length
             size = queue.size
-        except:
+        except Error as e:
             queue.specialization_level = 'unchanged'
+            self.arch._log.warning("Queue: fallback to unchanged: %s", e)
             return
         self['pcHead'] = DataObject('int8_t*', 'pcHead')
         self['pcWriteTo'] = DataObject('int8_t*', 'pcWriteTo')
@@ -176,6 +178,7 @@ class GenericArch(BaseCoder):
         self.TaskList.arch = self
         self.TasksLists.arch = self
         self.TCB.arch = self
+        self.QUEUE.arch = self
 
 
     def generate_linkerscript(self):
