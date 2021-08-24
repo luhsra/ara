@@ -8,6 +8,8 @@ from ..elements import (
     StructDataObject,
 )
 
+import pyllco
+
 default_traps = [
     'NMI_Handler',
     'HardFault_Handler',
@@ -109,9 +111,16 @@ class ArmArch(GenericArch):
 
     def initialized_stack(self, task):
         self._log.debug("Generating initialized stack for %s", task.name)
-        try:
-            task_parameters = int(task.parameters)
-        except TypeError:
+        if isinstance(task.parameters, str) or isinstance(task.parameters, int):
+            task_parameters = task.parameters
+        elif isinstance(task.parameters, pyllco.Constant):
+            try:
+                task_parameters = task.parameters.get()
+            except:
+                task_parameters = task.parameters.get_name()
+        else:
+            self._log.info("Fallback to static stack for %s: not a pyllco.Constant: %s",
+                           task.name, task.parameters)
             task.specialization_level = 'static'
             return self.static_stack(task)
         stack = InstanceDataObject("InitializedStack_t",

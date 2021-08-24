@@ -342,6 +342,12 @@ class FreeRTOS(OSBase):
         func_name = args.task_function.get_name()
         state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
 
+        #check if task_parameters is call path independent
+        if args.task_parameters.value and args.task_parameters.callpath is None:
+            task_parameters = args.task_parameters.value
+        else:
+            task_parameters = args.task_parameters
+
         new_cfg = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name))
         assert new_cfg is not None
         # TODO: when do we know that this is an unique instance?
@@ -351,7 +357,7 @@ class FreeRTOS(OSBase):
                                          function=func_name,
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
-                                         parameters=args.task_parameters,
+                                         parameters=task_parameters,
                                          priority=args.task_priority,
                                          handle_p=args.task_handle_p,
                                          call_path=cp,
@@ -544,6 +550,12 @@ class FreeRTOS(OSBase):
         func_name = args.task_function.get_name()
         state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
 
+        #check if task_parameters is call path independent
+        if args.task_parameters.value and args.task_parameters.callpath is None:
+            task_parameters = args.task_parameters.value
+        else:
+            task_parameters = args.task_parameters
+
         new_cfg = cfg.get_entry_abb(
             cfg.get_function_by_name(func_name)
         )
@@ -555,7 +567,7 @@ class FreeRTOS(OSBase):
                                          function=func_name,
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
-                                         parameters=args.task_parameters,
+                                         parameters=task_parameters,
                                          priority=args.task_priority,
                                          handle_p=task_handler,
                                          call_path=cp,
@@ -573,7 +585,7 @@ class FreeRTOS(OSBase):
             logger.warn(f"Task for ABB {graph.cfg.vp.name[abb]} not assigned,"
                         f" since the task handle cannot be retrieved.")
 
-        logger.info(f"Create new Task {args.task_name} (function: {func_name})")
+        logger.info(f"Create new Task {args.task_name} (function: {func_name}) (parameters: {args.task_parameters})")
         return state
 
     @syscall(categories={SyscallCategory.comm},
