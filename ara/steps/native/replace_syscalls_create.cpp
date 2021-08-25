@@ -69,6 +69,17 @@ namespace ara::step {
 		return nullptr;
 	}
 
+	PyObject* ReplaceSyscallsCreate::change_linkage_to_global(GlobalVariable* gv) {
+		// GlobalVariable * gv = graph.get_module().getGlobalVariable(name, true);
+		logger.debug() << "change linkage of " << *gv << " from " << gv->getLinkage() << " to external" << std::endl;
+		if (gv == nullptr) {
+			logger.info() << "global is nullptr" << std::endl;
+			Py_RETURN_NONE;
+		}
+		gv->setLinkage(GlobalValue::ExternalLinkage);
+		Py_RETURN_NONE;
+	}
+
 	template <class Graph>
 	void create_bb_dispatched(Graph g, graph::CFG& cfg, int64_t abb, BasicBlock*& llvm_bb) {
 		llvm_bb = cfg.get_llvm_bb<Graph>(cfg.get_entry_bb(g, abb));
@@ -420,6 +431,12 @@ namespace ara::step {
 			logger.debug() << "create is before_scheduler: " << old_create_call << std::endl;
 			if (!replace_call_with_true(old_create_call)) {
 				return nullptr;
+			}
+		}
+		object py_task_parameters = extract<object>(task.attr("parameters"));
+		if (! py_task_parameters.is_none()) {
+			if (GlobalVariable* gv = dyn_cast_or_null<GlobalVariable>(get_value_from_obj(py_task_parameters.ptr()))) {
+				change_linkage_to_global(gv);
 			}
 		}
 		Py_RETURN_NONE;

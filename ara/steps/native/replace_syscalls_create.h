@@ -26,6 +26,7 @@ namespace ara::step {
 		PyObject* replace_queue_create_initialized(boost::python::object o);
 		PyObject* replace_mutex_create_static(boost::python::object o);
 		PyObject* replace_mutex_create_initialized(boost::python::object o);
+		PyObject* change_linkage_to_global(llvm::GlobalVariable* gv);
 
 	  public:
 		static std::string get_name() { return "ReplaceSyscallsCreate"; }
