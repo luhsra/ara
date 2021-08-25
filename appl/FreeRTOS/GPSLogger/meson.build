@@ -215,6 +215,18 @@ foreach target : ara_gen_freertos_targets
     named_elf_targets += [target + '-' + lto_version, lto_elf]
     profiles_list += ['--profiles', target + '-' + lto_version]
 
+    test('validate_generator_' + lto_prefix,
+         py3_inst,
+         args: [validate_generator_runner,
+                'gpslogger',
+                target,
+                ara_target,
+                os_target[0].full_path(),
+                lto_elf,
+               ],
+         workdir:  meson.current_source_dir(),
+         suite: 'generator'
+        )
 
     if get_option('enable_gpslogger_tests')
       test('run_qemu_' + name_prefix,

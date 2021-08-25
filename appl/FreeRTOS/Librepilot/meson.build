@@ -274,6 +274,19 @@ foreach application_prefix: ['librepilot_mock']
     profiles_list += ['--profiles', target + '-' + lto_version]
 
 
+    test('validate_generator_' + lto_prefix,
+         py3_inst,
+         args: [validate_generator_runner,
+                application_prefix,
+                target,
+                ara_target,
+                os_target[0].full_path(),
+                lto_elf,
+               ],
+         workdir:  meson.current_source_dir(),
+         suite: 'generator'
+        )
+
 
     if get_option('enable_librepilot_tests')
       if target in ['instances_full_static', 'instances_full_initialized', 'vanilla']

@@ -199,6 +199,21 @@ foreach app : ir_apps + hw_apps
     named_elf_targets += [target + '-' + lto_version, lto_elf]
     profiles_list += ['--profiles', target + '-' + lto_version]
 
+    if app not in ir_apps
+      test('validate_generator_' + lto_prefix,
+           py3_inst,
+           args: [validate_generator_runner,
+                  app,
+                  target,
+                  ara_target,
+                  os_target[0].full_path(),
+                  lto_elf,
+                 ],
+           workdir: freertos_src_dir,
+           suite: 'generator'
+          )
+      endif
+
     if get_option('enable_qemu_tests') and app not in ir_apps
         test('run_qemu_' + name_prefix,
              py3_inst,

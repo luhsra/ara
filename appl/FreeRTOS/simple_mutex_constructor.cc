@@ -19,23 +19,23 @@ class GuardedSingleton {
   public:
 	static GuardedSingleton& instance() { return _the_instance; }
 	void putc(char c) {
-		xSemaphoreTake(_mutex, portMAX_DELAY);
+		xSemaphoreTake(guard_mutex, portMAX_DELAY);
 		kout << c;
-		xSemaphoreGive(_mutex);
+		xSemaphoreGive(guard_mutex);
 	}
 
   private:
-	GuardedSingleton() { _mutex = xSemaphoreCreateMutex(); }
+	GuardedSingleton() { guard_mutex = xSemaphoreCreateMutex(); }
 	GuardedSingleton(const GuardedSingleton& s) = delete;
 	GuardedSingleton(const GuardedSingleton&& s) = delete;
-	SemaphoreHandle_t _mutex;
+	SemaphoreHandle_t guard_mutex;
 	static GuardedSingleton _the_instance;
 };
 GuardedSingleton GuardedSingleton::_the_instance;
 
 TaskHandle_t handle_zzz;
 
-QueueHandle_t mutex;
+QueueHandle_t global_mutex;
 
 volatile int i = 0;
 void vTask2(void* param) {
@@ -78,7 +78,7 @@ int main() {
 	kout << "hello from main" << endl;
 	STORE_TIME_MARKER(done_hello_print);
 
-	mutex = xSemaphoreCreateMutex();
+	global_mutex = xSemaphoreCreateMutex();
 
 	xTaskCreate(vTask1, "zzz", 1000, NULL, 1, &handle_zzz);
 	xTaskCreate(vTask2, "xxx", 1000, NULL, 1, NULL);
