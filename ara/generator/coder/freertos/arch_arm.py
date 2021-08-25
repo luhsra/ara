@@ -3,6 +3,7 @@ from ..elements import (
     CodeTemplate,
     DataObject,
     DataObjectArray,
+    ExternalDataObject,
     Include,
     InstanceDataObject,
     StructDataObject,
@@ -117,7 +118,9 @@ class ArmArch(GenericArch):
             try:
                 task_parameters = task.parameters.get()
             except:
-                task_parameters = task.parameters.get_name()
+                task_parameters = "&" + task.parameters.get_name()
+                param_decl = ExternalDataObject('unsigned', task.parameters.get_name())
+                self.generator.source_file.data_manager.add(param_decl)
         else:
             self._log.info("Fallback to static stack for %s: not a pyllco.Constant: %s",
                            task.name, task.parameters)
