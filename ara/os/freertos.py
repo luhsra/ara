@@ -348,11 +348,11 @@ class FreeRTOS(OSBase):
         else:
             task_parameters = args.task_parameters
 
-        new_cfg = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name))
-        assert new_cfg is not None
+        entry = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name))
+        assert entry is not None
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(state, v, graph.cfg, abb)
-        state.instances.vp.obj[v] = Task(graph.cfg, new_cfg,
+        state.instances.vp.obj[v] = Task(graph.cfg, entry,
                                          vidx=v,
                                          function=func_name,
                                          name=args.task_name,
@@ -361,7 +361,7 @@ class FreeRTOS(OSBase):
                                          priority=args.task_priority,
                                          handle_p=args.task_handle_p,
                                          call_path=cp,
-                                         abb=abb,
+                                         abb=graph.cfg.vertex(abb),
         )
         if args.task_handle_p:
             va.assign_system_object(args.task_handle_p.value,
@@ -393,7 +393,7 @@ class FreeRTOS(OSBase):
                                          priority=0,
                                          handle_p=0,
                                          call_path=state.call_path,
-                                         abb=abb,
+                                         abb=graph.cfg.vertex(abb),
                                          is_regular=False)
 
         assign_id(state.instances, v)
@@ -465,12 +465,15 @@ class FreeRTOS(OSBase):
                                           call_path=cp,
                                           vidx=v)
 
+        logger.info(f"Create new Mutex {handler_name}")
+
         assign_id(state.instances, v)
 
         va.assign_system_object(ret_val.value,
                                 state.instances.vp.obj[v],
                                 ret_val.offset,
                                 ret_val.callpath)
+
 
         return state
 
@@ -524,7 +527,7 @@ class FreeRTOS(OSBase):
         else:
             queue_node = find_instance_node(state.instances, queue.value)
             e = state.instances.add_edge(state.running, queue_node)
-            state.instances.ep.label[e] = f"xQueueSemaphoreTake"
+            state.instances.ep.label[e] = "xQueueSemaphoreTake"
 
         return state
 
@@ -556,13 +559,13 @@ class FreeRTOS(OSBase):
         else:
             task_parameters = args.task_parameters
 
-        new_cfg = cfg.get_entry_abb(
+        entry = cfg.get_entry_abb(
             cfg.get_function_by_name(func_name)
         )
-        assert new_cfg is not None
+        assert entry is not None
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(state, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg, new_cfg,
+        state.instances.vp.obj[v] = Task(cfg, entry,
                                          vidx=v,
                                          function=func_name,
                                          name=args.task_name,
@@ -571,7 +574,7 @@ class FreeRTOS(OSBase):
                                          priority=args.task_priority,
                                          handle_p=task_handler,
                                          call_path=cp,
-                                         abb=abb,
+                                         abb=cfg.vertex(abb),
                                          static_stack=args.task_stack,
         )
 

@@ -1,0 +1,334 @@
+"""Container for SIA."""
+from ara.graph import (ABBType, CFGView, SyscallCategory, CallPath,
+                       InstanceGraph)
+from .step import Step
+from .option import Option, String
+
+# TODO no FreeRTOS specific code
+from ara.os.freertos import Task
+
+from graph_tool import GraphView
+from graph_tool.topology import all_paths, dominator_tree, label_out_component
+from graph_tool.util import find_vertex
+from itertools import chain
+
+import copy
+import functools
+
+
+class State:
+    def __init__(self, cfg=None, callgraph=None, next_abbs=None):
+        self.cfg = cfg
+        self.callgraph = callgraph
+        if not next_abbs:
+            next_abbs = []
+        self.next_abbs = next_abbs
+
+        self.instances = InstanceGraph()
+        self.call_path = None  # call node within the call graph
+        self.branch = False  # is this state coming from a branch
+        self.usually_taken = False  # is this state coming from a branch where
+                                    # all other branches ends in an endless loop
+        self.loop = False  # is this state coming from a loop
+        self.recursive = False  # is this state executing on a recursive path
+        self.running = None  # what instance (Task or ISR) is currently running
+
+    def __repr__(self):
+        ret = f"State(B:{int(self.branch)},L:{int(self.loop)},"
+        ret += f"R:{int(self.recursive)},U:{int(self.usually_taken)}, "
+        abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
+        ret += ', '.join(abbs)
+        ret += ", CallPath: " + self.call_path.print(call_site=True)
+        return ret + ')'
+
+    def copy(self):
+        scopy = State()
+        scopy.instances = self.instances.copy()
+        scopy.call_path = copy.copy(self.call_path)
+        for key, value in self.__dict__.items():
+            if key in ['instances', 'call_path']:
+                continue
+            setattr(scopy, key, value)
+        return scopy
+
+
+class FlatAnalysis(Step):
+    """Flat Analysis"""
+    def get_single_dependencies(self):
+        raise NotImplementedError
+
+    def _get_os_specific_deps(self):
+        if self._graph.os is None:
+            return ['SysFuncts']
+        return self._graph.os.get_special_steps()
+
+    def _dominates(self, dom_tree, abb_x, abb_y):
+        """Does abb_x dominate abb_y?"""
+        while abb_y:
+            if abb_x == abb_y:
+                return True
+            abb_y = dom_tree[abb_y]
+        return False
+
+    def _has_path(self, graph, source, target):
+        """Is there a path from source to target?"""
+        ap = all_paths(graph, graph.vertex(source), graph.vertex(target))
+        try:
+            next(ap)
+            return True
+        except StopIteration:
+            return False
+
+    @functools.lru_cache(maxsize=32)
+    def _get_func_cfg(self, func):
+        """Get LCFG of function"""
+        abb = self._graph.cfg.get_entry_abb(func)
+        comp = label_out_component(self._graph.lcfg,
+                                   self._graph.lcfg.vertex(abb))
+        return CFGView(self._graph.lcfg, vfilt=comp)
+
+    @functools.lru_cache(maxsize=32)
+    def _create_dom_tree(self, func, respect_endless_loops=True):
+        """Create a dominator tree of the local control flow for func.
+
+        Return the dominator tree and a list of exit blocks for the function.
+        """
+        func_cfg = self._get_func_cfg(func)
+        entry = self._graph.cfg.get_entry_abb(func)
+
+        # prepare LCFG:
+        # If respect_endless_loops is set (the default), endless loops are
+        # considered as possible exit blocks.
+        # This is done by detecting and replacing them with real exit blocks.
+        exit_map = func_cfg.vp.is_exit.copy(full=False)
+        keep_edge_map = func_cfg.new_ep("bool", val=True)
+
+        if respect_endless_loops:
+            # iterate all exit loops (AKA endless loops)
+            loops = CFGView(func_cfg, vfilt=func_cfg.vp.is_exit_loop_head)
+            for loop_head in loops.vertices():
+                loop_head = func_cfg.vertex(loop_head)
+                for e in loop_head.in_edges():
+                    loop_end = e.source()
+                    if self._has_path(func_cfg, loop_head, loop_end):
+                        # if edge that is a part of the loop
+                        # drop it
+                        keep_edge_map[e] = False
+                        exit_map[loop_end] = True
+
+        patched_func_cfg = CFGView(func_cfg, efilt=keep_edge_map)
+
+        # dom tree creation
+        dom_tree = dominator_tree(patched_func_cfg,
+                                  patched_func_cfg.vertex(entry))
+        return dom_tree, CFGView(func_cfg, vfilt=exit_map)
+
+    def _is_in_condition(self, abb, respect_endless_loops=True):
+        """Is abb part of a condition?"""
+        # Algorithm: abb must not dominate all exits
+        func = self._graph.cfg.get_function(abb)
+        dom_tree, exit_abbs = self._create_dom_tree(
+                func,
+                respect_endless_loops=respect_endless_loops
+        )
+        return not all([self._dominates(dom_tree, abb, x)
+                       for x in exit_abbs.vertices()])
+
+    def _is_usually_taken(self, abb):
+        """Is this abb usually taken?
+
+        Usually taken means that the abb is part of a branch, where all sibling
+        branches end is an endless loop.
+
+        Consider this example:
+         1o
+          |`--.
+          |   v
+         2o  3o <.
+              |  |
+              v  |
+             4o--´
+        The node 2 is usually taken.
+        """
+        return (self._is_in_condition(abb, respect_endless_loops=True) and not
+                self._is_in_condition(abb, respect_endless_loops=False))
+
+    def _is_chained_analysis(self):
+        return self.get_name() in {x.name
+                                   for x in self._step_manager.get_history()}
+
+    def _set_flags(self, state, abb):
+        state.branch |= self._is_in_condition(abb)
+        state.loop |= self._graph.cfg.vp.part_of_loop[abb]
+        state.usually_taken = (self._is_usually_taken(abb) or
+                               (state.usually_taken and
+                                not self._is_in_condition(abb)))
+
+    def _iterate_task_entry_points(self):
+        """Return a generator over all tasks in self._graph.instances.
+
+        Return a tuple of the cfg function and the instance vertex.
+        """
+        cfg = self._graph.cfg
+        if self._graph.instances is None:
+            return
+        for v in self._graph.instances.vertices():
+            task = self._graph.instances.vp.obj[v]
+            if isinstance(task, Task) and task.is_regular:
+                assert task.entry_abb is not None, "Not a regular Task."
+                yield cfg.get_function(cfg.vertex(task.entry_abb)), v
+
+    def _dump_names(self):
+        raise NotImplementedError
+
+    def _search_category(self):
+        raise NotImplementedError
+
+    def _get_entry_points(self):
+        raise NotImplementedError
+
+    def _trigger_new_steps(self):
+        pass
+
+    def run(self):
+        cfg = self._graph.cfg
+        callg = self._graph.callgraph
+        os = self._graph.os
+
+        entry_points = self._get_entry_points()
+
+        # actual algorithm
+        syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
+        for syscall in syscalls.vertices():
+            sys_name = cfg.get_syscall_name(syscall)
+            if self._search_category() not in getattr(os, sys_name).categories:
+                continue
+
+            cfg_function = cfg.get_function(syscall)
+            function = callg.vertex(cfg.vp.call_graph_link[cfg_function])
+
+            rev_cg = GraphView(callg, reversed=True)
+            for entry_point, inst in entry_points:
+                if inst is not None:
+                    inst = self._graph.instances.vertex(inst)
+                    branch = self._graph.instances.vp.branch[inst]
+                    loop = self._graph.instances.vp.loop[inst]
+                else:
+                    branch = False
+                    loop = False
+
+                self._log.debug(f"Handle {sys_name} with entry_point "
+                                f"{callg.vp.function_name[entry_point]}")
+                path_to_self = [[]] if entry_point == function else []
+                for path in chain(all_paths(rev_cg, function, entry_point,
+                                            edges=True), path_to_self):
+                    state = State(cfg, callg, [])
+                    state.instances = self._graph.instances
+                    state.call_path = CallPath()
+                    state.branch = branch
+                    state.loop = loop
+                    state.recursive = False
+                    state.usually_taken = False
+                    state.scheduler_on = self._is_chained_analysis()
+                    state.running = inst
+
+                    for edge in reversed(path):
+                        abb = cfg.vertex(callg.ep.callsite[edge])
+                        state.call_path.add_call_site(callg, edge)
+                        self._set_flags(state, abb)
+                        state.recursive |= callg.vp.recursive[edge.target()]
+
+                    self._set_flags(state, syscall)
+                    state.recursive |= callg.vp.recursive[function]
+
+                    new_state = os.interpret(
+                            self._graph,
+                            cfg.vertex(syscall),
+                            state,
+                            categories=self._search_category()
+                    )
+                    self._graph.instances = new_state.instances
+
+        self._trigger_new_steps()
+
+        if self.dump.get():
+            spec, graph_name = self._dump_names()
+            dot_file = f'{self.dump_prefix.get()}.{spec}.dot'
+            self._step_manager.chain_step({"name": "Printer",
+                                           "dot": dot_file,
+                                           "graph_name": graph_name,
+                                           "subgraph": 'instances'})
+
+
+class SIA(FlatAnalysis):
+    """Static Instance Analysis: Find all application instances."""
+    entry_point = Option(name="entry_point",
+                         help="system entry point",
+                         ty=String())
+
+    def get_single_dependencies(self):
+        deps = ["RecursiveFunctions",
+                {"name": "Syscall", "entry_point": self.entry_point.get()}]
+        deps += self._get_os_specific_deps()
+        return deps
+
+    def _trigger_new_steps(self):
+        step_data = self._get_step_data(set)
+
+        for entry, _ in self._iterate_task_entry_points():
+            func_name = self._graph.cfg.vp.name[entry]
+            if func_name not in step_data:
+                self._step_manager.chain_step(
+                        {"name": self.get_name(),
+                         "entry_point": func_name}
+                )
+                step_data.add(func_name)
+
+    def _get_entry_points(self):
+        # find entry point in callgraph
+        self.ep_name = self.entry_point.get()
+        callgraph = self._graph.callgraph
+        entry_points = find_vertex(callgraph, callgraph.vp.function_name,
+                                   self.ep_name)
+        if len(entry_points) != 1:
+            self._fail(f"Entry Point {self.ep_name} cannot be found")
+        entry_point = entry_points[0]
+
+        # find instance that belongs to this point
+        cfg_func = self._graph.cfg.vertex(callgraph.vp.function[entry_point])
+
+        instances = [v for func, v in self._iterate_task_entry_points()
+                     if func == cfg_func]
+
+        result = [(entry_point, x) for x in instances]
+        if result:
+            return result
+        return [(entry_point, None)]
+
+    def _dump_names(self):
+        return self.ep_name, 'Instances'
+
+    def _search_category(self):
+        return SyscallCategory.create
+
+
+class InteractionAnalysis(FlatAnalysis):
+    """Find the flow insensitive interactions between instances."""
+
+    def get_single_dependencies(self):
+        deps = self._get_os_specific_deps()
+        if self._graph.os and self._graph.os.has_dynamic_instances():
+            deps.append('SIA')
+        return deps
+
+    def _dump_names(self):
+        return '', 'Interactions'
+
+    def _search_category(self):
+        return SyscallCategory.comm
+
+    def _get_entry_points(self):
+        cfg = self._graph.cfg
+        cg = self._graph.callgraph
+        return [(cg.vertex(cfg.vp.call_graph_link[x]), v)
+                for x, v in self._iterate_task_entry_points()]
