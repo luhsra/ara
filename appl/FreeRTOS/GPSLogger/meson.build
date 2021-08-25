@@ -122,8 +122,8 @@ gpslogger_runtarget = run_target('gpslogger-full',
 named_elf_targets = []
 elf_targets = []
 profiles_list = []
-foreach t : ara_gen_freertos_targets
-  name_prefix = 'gpslogger-' + t
+foreach target : ara_gen_freertos_targets
+  name_prefix = 'gpslogger-' + target
   ara_target = custom_target(name_prefix + '-os',
                              input: gpslogger_application,
                              depfile: name_prefix+ '-os.cc.dep',
@@ -132,7 +132,7 @@ foreach t : ara_gen_freertos_targets
                                       name_prefix + '-modifiedapp.ll',
                                       name_prefix + '-os.cc.freertos_overrides.h',
                                      ],
-                             command: get_variable('ara_gen_cmd_' + t)
+                             command: get_variable('ara_gen_cmd_' + target)
                             )
   os_target = [ara_target[0], ara_target[1]]
   app_aramodified_ll = ara_target[2]
@@ -212,8 +212,8 @@ foreach t : ara_gen_freertos_targets
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [t + '-' + lto_version, lto_elf]
-    profiles_list += ['--profiles', t + '-' + lto_version]
+    named_elf_targets += [target + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', target + '-' + lto_version]
 
 
     if get_option('enable_gpslogger_tests')
