@@ -13,8 +13,8 @@ def provide_steps():
     from .manual_corrections import ManualCorrections
     from .printer import Printer
     from .recursive_functions import RecursiveFunctions
-    # from .sia import SIA, InteractionAnalysis
-    from .sse import SIA, InteractionAnalysis, MultiSSE
+    from .sia import SIA, InteractionAnalysis
+    from .sse import MultiSSE
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
