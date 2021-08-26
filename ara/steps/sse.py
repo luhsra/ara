@@ -1656,7 +1656,9 @@ class FlatAnalysis(FlowAnalysis):
         entry.running = instance
         if instance:
             entry.branch = self._graph.instances.vp.branch[instance]
+            self._cond_func[entry.call_path] = entry.branch
             entry.loop = self._graph.instances.vp.loop[instance]
+            self._loop_func[entry.call_path] = entry.loop
 
         return entry
 
