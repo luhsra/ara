@@ -8,6 +8,7 @@
 #include <WPA/Andersen.h>
 #include <boost/range/adaptor/indexed.hpp>
 #include <fstream>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/TypeFinder.h>
 
 namespace ara::step {
@@ -222,7 +223,11 @@ namespace ara::step {
 				// classes.
 				if (ty->hasName() && ty->getName().endswith(".base")) {
 					auto n_ty_name = ty->getName().drop_back(5); // drop ".base"
+#if LLVM_VERSION_MAJOR <= 11
 					StructType* n_ty = graph.get_module().getTypeByName(n_ty_name);
+#else
+					StructType* n_ty = llvm::StructType::getTypeByName(graph.get_module().getContext(), n_ty_name);
+#endif
 					if (n_ty) {
 						auto& compat_1 = compatible_types[ty];
 						auto& compat_2 = compatible_types[n_ty];
