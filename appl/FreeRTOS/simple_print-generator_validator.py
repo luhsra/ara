@@ -12,6 +12,6 @@ def check_instances_full_initialized(app_name, modified_app, generated_os, elf):
         assert False, 'missing initialized stack for zzz'
 
 def check_instances_full_static(app_name, modified_app, generated_os, elf):
-    assert 'InitializedStack_t<1000> tzzz_0_static_stack' not in generated_os
-    assert 'extern "C" StaticTask_t tzzz_0_tcb;' in generated_os
+    assert not re.search('InitializedStack_t<1000> tzzz_\d+_static_stack', generated_os)
+    assert re.search('extern "C" StaticTask_t tzzz_\d+_tcb;', generated_os)
 
