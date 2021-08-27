@@ -43,6 +43,12 @@ class SystemCallsInstantiationInitialized(GenericSystemCalls):
                 inst.specialization_level = 'initialized'
             else:
                 inst.specialization_level = 'unchanged'
+            self._log.debug("mark depth: %015s (unique: %s, branch: %s, loop: %s) ==> %s",
+                            inst.name,
+                            inst.unique,
+                            inst.branch,
+                            inst.loop,
+                            inst.specialization_level)
 
     def generate_dataobjects_task_stacks(self, task_list):
         '''generate the stack space for the tasks'''

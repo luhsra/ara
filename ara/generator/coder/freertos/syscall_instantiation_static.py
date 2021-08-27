@@ -36,6 +36,12 @@ class SystemCallsInstantiationStatic(GenericSystemCalls):
                 inst.specialization_level = 'static'
             else:
                 inst.specialization_level = 'unchanged'
+            self._log.debug("mark: %015s (unique: %s, branch: %s, loop: %s) ==> %s",
+                            inst.name,
+                            inst.unique,
+                            inst.branch,
+                            inst.loop,
+                            inst.specialization_level)
 
 
 
