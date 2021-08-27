@@ -36,6 +36,7 @@ StackType_t stack[1024];
 StaticTask_t tcb;
 
 void t6_entry(void*) { for (;;) { /* ... */  } }
+void t7_entry(void*) { for (;;) { /* ... */  } }
 
 void o_func();
 
@@ -94,7 +95,10 @@ void t1_entry(void*) {
 
 void t2_entry(void*) { for (;;) { /* ... */  } }
 
-void t3_entry(void*) { for (;;) { /* ... */  } }
+void t3_entry(void*) {
+  xTaskCreate(t7_entry, "task7", 893, NULL, 5, NULL);
+  for (;;) { /* ... */  }
+}
 
 void t4_entry(void*) {
   xTaskCreate(t5_entry, "task5", 512, NULL, 2, NULL);

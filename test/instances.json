@@ -9,7 +9,7 @@
     "after_scheduler": 0,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 86,
+    "line": 87,
     "specialization_level": ""
   },
   {
@@ -22,7 +22,7 @@
     "after_scheduler": 0,
     "unique": 0,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 66,
+    "line": 67,
     "specialization_level": ""
   },
   {
@@ -35,7 +35,7 @@
     "after_scheduler": 0,
     "unique": 0,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 54,
+    "line": 55,
     "specialization_level": ""
   },
   {
@@ -48,7 +48,7 @@
     "after_scheduler": 0,
     "unique": 0,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 68,
+    "line": 69,
     "specialization_level": ""
   },
   {
@@ -61,7 +61,7 @@
     "after_scheduler": 0,
     "unique": 0,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 56,
+    "line": 57,
     "specialization_level": ""
   },
   {
@@ -74,7 +74,7 @@
     "after_scheduler": 1,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 106,
+    "line": 110,
     "specialization_level": ""
   },
   {
@@ -87,7 +87,7 @@
     "after_scheduler": 0,
     "unique": 0,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 43,
+    "line": 44,
     "specialization_level": ""
   },
   {
@@ -100,7 +100,7 @@
     "after_scheduler": 0,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 81,
+    "line": 82,
     "specialization_level": ""
   },
   {
@@ -113,7 +113,7 @@
     "after_scheduler": 0,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 73,
+    "line": 74,
     "specialization_level": ""
   },
   {
@@ -126,7 +126,7 @@
     "after_scheduler": 1,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 91,
+    "line": 92,
     "specialization_level": ""
   },
   {
@@ -139,7 +139,7 @@
     "after_scheduler": 0,
     "unique": 0,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 75,
+    "line": 76,
     "specialization_level": ""
   },
   {
@@ -152,7 +152,7 @@
     "after_scheduler": 0,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 78,
+    "line": 79,
     "specialization_level": ""
   },
   {
@@ -165,7 +165,20 @@
     "after_scheduler": 1,
     "unique": 1,
     "file": "../appl/FreeRTOS/instances.cc",
-    "line": 100,
+    "line": 104,
+    "specialization_level": ""
+  },
+  {
+    "label": "Task: task7 (t7_entry)",
+    "id": "Task.task7",
+    "branch": 1,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 0,
+    "file": "../appl/FreeRTOS/instances.cc",
+    "line": 99,
     "specialization_level": ""
   }
 ]
