@@ -3,10 +3,11 @@ import typing
 import dataclasses
 import pyllco
 
-from typing import Tuple, List
+from typing import Tuple
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType
+
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
