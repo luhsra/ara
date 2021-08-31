@@ -53,7 +53,7 @@ class SystemCallsInstantiationStatic(GenericSystemCalls):
     def generate_data_objects_tcb_mem(self, task_list):
         '''generate the memory for the tcbs'''
         for task in task_list:
-            if task.impl == 'unchanged':
+            if task.specialization_level == 'unchanged':
                 continue
             self.arch_rules.static_unchanged_tcb(task)
 
