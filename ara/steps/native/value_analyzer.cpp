@@ -684,8 +684,16 @@ namespace ara::step {
 	}
 
 	const SVF::VFGNode* ValueAnalyzer::get_vfg_node(const SVF::SVFG& vfg, const llvm::Value& start, int argument_nr) {
-		logger.debug() << "get_vfg_node: " << start << std::endl;
+		logger.debug() << "get_vfg_node: " << start << " || argument_nr: " << argument_nr << std::endl;
+
 		auto nodes = vfg.fromValue(&start);
+		for (const SVF::SVFGNode* node : nodes) {
+			logger.debug() << "node: " << *node << std::endl;
+			for (const SVF::VFGEdge* edge : boost::make_iterator_range(node->InEdgeBegin(), node->InEdgeEnd())) {
+				SVF::VFGNode* cand = edge->getSrcNode();
+				logger.debug() << "src node: " << *cand << std::endl;
+			}
+		}
 		if (nodes.size() == 0) {
 			throw ValuesUnknown("Cannot go back from llvm::Value to an SVF node");
 		}
@@ -693,6 +701,8 @@ namespace ara::step {
 			return *nodes.begin();
 		}
 		// more than one node, map back with a heuristic
+		const SVF::AddrVFGNode* addr = nullptr;
+		bool addr_pattern_valid = true;
 		for (const SVF::SVFGNode* node : nodes) {
 			if (argument_nr >= 0) {
 				// we are searching an argument, the next node has to be a FormalParmPHI
@@ -713,6 +723,50 @@ namespace ara::step {
 						}
 					}
 				}
+			} else {
+				if (addr_pattern_valid) {
+					// metric: we have only one addressnode and multiple pointer to this node
+					if (auto laddr = llvm::dyn_cast<SVF::AddrVFGNode>(node)) {
+						// we found the addr node
+						if (laddr == addr) {
+						} else if (addr != nullptr) {
+							logger.debug() << "Addr pattern failed. Found a second addr node." << std::endl;
+							addr_pattern_valid = false;
+						} else {
+							addr = laddr;
+						}
+					} else if (llvm::isa<SVF::GepVFGNode>(node)) {
+						bool first_node = true;
+						for (const SVF::VFGEdge* edge :
+						     boost::make_iterator_range(node->InEdgeBegin(), node->InEdgeEnd())) {
+							if (!first_node) {
+								logger.debug()
+								    << "Addr pattern failed. Found a pointer to more than one node." << std::endl;
+								addr_pattern_valid = false;
+								break;
+							}
+							SVF::VFGNode* cand = edge->getSrcNode();
+							logger.debug() << "cand: " << *cand << std::endl;
+							if (auto laddr = llvm::dyn_cast<SVF::AddrVFGNode>(cand)) {
+								if (laddr == addr) {
+									continue;
+								}
+								if (addr != nullptr) {
+									logger.debug()
+									    << "Addr pattern failed. Found a pointer to another addr node." << std::endl;
+									addr_pattern_valid = false;
+								} else {
+									addr = laddr;
+								}
+							} else {
+								logger.debug()
+								    << "Addr pattern failed. Found a pointer to a non AddrVFGNode" << std::endl;
+								addr_pattern_valid = false;
+							}
+							first_node = false;
+						}
+					}
+				}
 			}
 
 			if (llvm::isa<SVF::NullPtrVFGNode>(node)) {
@@ -720,6 +774,10 @@ namespace ara::step {
 			}
 			logger.debug() << "Got node: " << *node << std::endl;
 		}
+		if (addr_pattern_valid && addr) {
+			return addr;
+		}
+
 		assert(false && "This must not happen. Update the above for loop.");
 	}
 
