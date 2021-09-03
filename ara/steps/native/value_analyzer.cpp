@@ -710,7 +710,7 @@ namespace ara::step {
 		auto assign_addr = [&](const SVF::AddrVFGNode* n) {
 			if (n == addr) {
 				return;
-			} else if (n != nullptr) {
+			} else if (n != nullptr && addr != nullptr) {
 				fail_with_msg("Addr pattern failed. Found a second addr node.");
 			} else {
 				addr = n;
