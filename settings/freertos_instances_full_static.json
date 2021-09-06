@@ -8,8 +8,10 @@
 			"os": "freertos"
 		}
 	],
-
-	"LLVMMap": {
-		"log_level": "info"
+	"ClassifySpecializationsFreeRTOS": {
+		"graceful_degrade": true,
+		"static_memory": true,
+		"initialized_memory": false,
+		"allow_runtime_init": true
 	}
 }

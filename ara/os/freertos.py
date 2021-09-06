@@ -395,6 +395,7 @@ class FreeRTOS(OSBase):
                                          call_path=state.call_path,
                                          abb=graph.cfg.vertex(abb),
                                          is_regular=False)
+        graph.os.idle_task = state.instances.vp.obj[v]
 
         assign_id(state.instances, v)
 

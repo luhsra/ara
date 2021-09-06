@@ -100,7 +100,7 @@ class ArmArch(GenericArch):
         cts = self.ara_graph.cfg.get_call_targets(task.abb)
         funcs = [self.ara_graph.cfg.vp.name[f] for f in cts]
         if 'xTaskCreateStatic' in funcs:
-            task.specialization_level = 'unchanged'
+            assert False, "Not implemented"
         if task.specialization_level == 'initialized':
             return self.initialized_stack(task)
         elif task.specialization_level == 'static':
@@ -122,10 +122,7 @@ class ArmArch(GenericArch):
                 param_decl = ExternalDataObject('unsigned', task.parameters.get_name())
                 self.generator.source_file.data_manager.add(param_decl)
         else:
-            self._log.info("Fallback to static stack for %s: not a pyllco.Constant: %s",
-                           task.name, task.parameters)
-            task.specialization_level = 'static'
-            return self.static_stack(task)
+            assert False, 'unexpected init stack fallback'
         stack = InstanceDataObject("InitializedStack_t",
                                    f't{task.name}_{task.uid}_static_stack',
                                    [f'{task.stack_size}'],
@@ -139,7 +136,7 @@ class ArmArch(GenericArch):
     def static_unchanged_queue(self, queue):
         self._log.debug("Generating Queue: %s", queue.name)
         if queue.size is None or queue.length is None or not queue.unique:
-            queue.specialization_level = 'unchanged'
+            assert queue.specialization_level == 'unchanged', queue.specialization_level
             return
         if int(queue.size) == 0 or int(queue.length) == 0:
             self._log.debug("queue size/length = 0: %s", queue)
@@ -149,7 +146,7 @@ class ArmArch(GenericArch):
                 size = queue.size * queue.length
                 name = f'queue_data_{queue.name}_{queue.uid}'
             except:
-                queue.specialization_level = 'unchanged'
+                assert queue.specialization_level == 'unchanged'
                 return
             data = DataObjectArray('uint8_t', name, size)
             self.generator.source_file.data_manager.add(data)

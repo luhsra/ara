@@ -7,9 +7,5 @@
 			"interaction_style": "vanilla",
 			"os": "freertos"
 		}
-	],
-
-	"LLVMMap": {
-		"log_level": "info"
-	}
+	]
 }

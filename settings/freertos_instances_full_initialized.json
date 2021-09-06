@@ -9,7 +9,9 @@
 		}
 	],
 
-	"LLVMMap": {
-		"log_level": "info"
+	"ClassifySpecializationsFreeRTOS": {
+		"graceful_degrade": true,
+		"initialized_memory": true,
+		"allow_runtime_init": true
 	}
 }

@@ -3,14 +3,13 @@ from .coder.elements import SourceFile, Include
 
 class Generator:
     def __init__(self, ara_graph, ara_step, arch_rules, os_rules,
-                 instantiation_rules, interaction_rules, _log):
+                 syscall_rules, _log):
         self.ara_graph = ara_graph
         self.ara_step = ara_step
         self.ara_graph.generator = self
         self.arch_rules = arch_rules
         self.os_rules = os_rules
-        self.instantiation_rules = instantiation_rules
-        self.interaction_rules = interaction_rules
+        self.syscall_rules = syscall_rules
         self._log = _log
         self._dependencies = []
 
@@ -21,8 +20,7 @@ class Generator:
 
         os_rules.set_generator(self)
         arch_rules.set_generator(self)
-        instantiation_rules.set_generator(self)
-        interaction_rules.set_generator(self)
+        syscall_rules.set_generator(self)
 
 
     def generate(self, out_file, passthrough=False):
@@ -46,12 +44,12 @@ class Generator:
         # generate all system objects
         self.arch_rules.generate_data_objects()
         self.os_rules.generate_data_objects()
-        self.instantiation_rules.generate_data_objects()
+        self.syscall_rules.generate_data_objects()
 
         #generate os and system code
         self.arch_rules.generate_system_code()
         self.os_rules.generate_system_code()
-        self.instantiation_rules.generate_system_code()
+        self.syscall_rules.generate_system_code()
 
 
         self.arch_rules.generate_default_interrupt_handlers()

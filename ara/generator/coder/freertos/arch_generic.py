@@ -191,3 +191,8 @@ class GenericArch(BaseCoder):
 
     def generate_startup_code(self):
         self._log.error("generate_startup_code not implemented: %s", self)
+
+    def generate_data_objects(self):
+        pass
+    def generate_system_code(self):
+        pass

@@ -8,18 +8,16 @@ class BaseCoder:
 
         self.arch_rules = None
         self.os_rules = None
-        self.instantiation_rules = None
-        self.interaction_rules = None
+        self.syscall_rules = None
         self._log = None
 
 
     def set_generator(self, generator):
         self.generator = generator
         self.ara_graph = generator.ara_graph
-        self.instantiation_rules = generator.instantiation_rules
-        self.interaction_rules = generator.interaction_rules
         self.arch_rules = generator.arch_rules
         self.os_rules = generator.os_rules
+        self.syscall_rules = generator.syscall_rules
         self._log = generator._log.getChild(self.__class__.__name__)
 
 
