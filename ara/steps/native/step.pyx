@@ -172,6 +172,9 @@ class Step(SuperStep):
             self._graph.step_data[self.get_name()] = data_class()
         return self._graph.step_data[self.get_name()]
 
+    def _set_step_data(self, value):
+        self._graph.step_data[self.get_name()] = value
+
     def _apply_config(self, config):
         for option in self._opts:
             option.check(config)
