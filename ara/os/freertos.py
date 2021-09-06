@@ -65,6 +65,7 @@ class FreeRTOSInstance(object):
 
 class Task(FreeRTOSInstance):
     uid_counter = 0
+    never_deleted = True
     def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
                  vidx,
                  priority, handle_p, call_path, abb, is_regular=True,
@@ -141,6 +142,7 @@ class Task(FreeRTOSInstance):
 
 # TODO make this a dataclass once we use Python 3.7
 class Queue(FreeRTOSInstance):
+    never_deleted = True
     uid_counter = 0
     def __init__(self, cfg, name, handler, length, size, abb, q_type,
                  call_path, vidx):
@@ -185,6 +187,7 @@ class Queue(FreeRTOSInstance):
 
 # TODO make this a dataclass once we use Python 3.7
 class Mutex(FreeRTOSInstance):
+    never_deleted = True
     uid_counter = 0
     def __init__(self, cfg, name, handler, m_type, abb, call_path, vidx):
         super().__init__(cfg, abb, call_path, vidx, name)
@@ -224,6 +227,7 @@ class Mutex(FreeRTOSInstance):
                                   self.call_path.print(call_site=True)]))
 
 class StreamBuffer(FreeRTOSInstance):
+    never_deleted = True
     def __init__(self, cfg, abb, call_path, vidx, handler, name, size):
         super().__init__(cfg, abb, call_path, vidx, name)
         self.size = size
@@ -718,6 +722,8 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vQueueDelete(graph, abb, state, args, va):
+        Queue.never_deleted = False
+        Mutex.never_deleted = False
         logger.warn("Got an vQueueDelete. Deleting a potientially static Queue.")
 
     @syscall
@@ -726,6 +732,7 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vStreamBufferDelete(graph, abb, state, args, va):
+        StreamBuffer.never_deleted = False
         logger.warn("Got an vStreamBufferDelete. Deleting a potientially static StreamBuffer.")
 
     @syscall
@@ -738,6 +745,7 @@ class FreeRTOS(OSBase):
 
     @syscall
     def vTaskDelete(graph, abb, state, args, va):
+        Task.never_deleted = False
         logger.warn("Got an vTaskDelete. Deleting a potientially static Task.")
 
     @syscall
