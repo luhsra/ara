@@ -26,7 +26,10 @@ class FreeRTOSInstance(object):
         try:
             return self.__dict__[name]
         except KeyError as ke:
-            return current_step._graph.instances.vp[name][self.vidx]
+            try:
+                return current_step._graph.instances.vp[name][self.vidx]
+            except KeyError as ke:
+                raise AttributeError
 
     def __setattr__(self, name, value):
         if name in current_step._graph.instances.vp:
