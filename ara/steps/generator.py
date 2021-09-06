@@ -78,6 +78,8 @@ class Generator(Step):
             src_files = [getattr(m, '__file__') for m in sys.modules.values()
                          if base_path in (getattr(m, '__file__', '') or "")]
             src_files += gen.get_dependencies()
+            if self._step_manager._config.program['step_settings']:
+                src_files += self._step_manager._config.program['step_settings']
             with open(dep_file, 'w') as fd:
                 fd.write(gen.file_prefix + ": ")
                 fd.write("\\\n".join(src_files))
