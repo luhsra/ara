@@ -58,6 +58,8 @@ class ICFG(Step):
                     callsite_counter += 1
                     for callsite in cg_vtx.out_edges():
                         if cg.ep.callsite[callsite] == bb:
+                            # for all callsites in the callgraph belonging to
+                            # this BB
                             cg_callee = callsite.target()
                             if cg.vp.syscall_category_every[cg_callee]:
                                 callee = cg.vp.function[callsite.target()]
@@ -68,18 +70,18 @@ class ICFG(Step):
                                 link_counter += 1
                                 linked = True
                                 assert lcfg.vertex(bb).out_degree() == 1
-                                n_abb = next(lcfg.vertex(bb).out_neighbors())
-                                exit_abb = cfg.get_exit_abb(cfg.vertex(callee))
-                                if exit_abb:
+                                n_bb = next(lcfg.vertex(bb).out_neighbors())
+                                exit_bb = cfg.get_function_exit_bb(cfg.vertex(callee))
+                                if exit_bb:
                                     to_be_linked.append(
-                                        (ICFG._ET.OUT, exit_abb, n_abb)
+                                        (ICFG._ET.OUT, exit_bb, n_bb)
                                     )
                     if not linked:
                         cfg.vp.type[bb] = ABBType.computation
                 if not linked:
                     # link local cfg
-                    for n_abb in lcfg.vertex(bb).out_neighbors():
-                        to_be_linked.append((ICFG._ET.STD, bb, n_abb))
+                    for n_bb in lcfg.vertex(bb).out_neighbors():
+                        to_be_linked.append((ICFG._ET.STD, bb, n_bb))
 
             # link abbs
             for ty, src, target in to_be_linked:
@@ -102,4 +104,4 @@ class ICFG(Step):
                                            "graph_name": name,
                                            "entry_point": entry_label,
                                            "from_entry_point": True,
-                                           "subgraph": 'abbs'})
+                                           "subgraph": 'bbs'})
