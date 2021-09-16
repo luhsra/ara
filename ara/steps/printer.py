@@ -29,7 +29,7 @@ class Printer(Step):
                         ty=String())
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
-                      ty=Choice("abbs", "instances", "callgraph",
+                      ty=Choice("bbs", "abbs", "instances", "callgraph",
                                 "multistates", "sstg_full", "sstg_simple"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
@@ -91,7 +91,7 @@ class Printer(Step):
                                             lineanchors='line', full=True)))
         return hfile
 
-    def print_abbs(self):
+    def print_xbbs(self, bbs=False):
         name = self._print_init()
 
         cfg = self._graph.cfg
@@ -112,31 +112,37 @@ class Printer(Step):
             dot_func = pydot.Cluster(cfg.vp.name[function],
                                      label=cfg.vp.name[function])
             dot_graph.add_subgraph(dot_func)
-            for abb in cfg.get_abbs(function):
-                if cfg.vp.type[abb] == ABBType.not_implemented:
+
+            if bbs:
+                nodes = cfg.get_function_bbs(function)
+            else:
+                nodes = cfg.get_abbs(function)
+
+            for block in nodes:
+                if cfg.vp.type[block] == ABBType.not_implemented:
                     assert not cfg.vp.implemented[function]
-                    dot_abb = pydot.Node(str(hash(abb)),
+                    dot_abb = pydot.Node(str(hash(block)),
                                          label="",
                                          shape="box")
-                    dot_nodes.add(str(hash(abb)))
+                    dot_nodes.add(str(hash(block)))
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
                     dot_abb = pydot.Node(
-                        str(hash(abb)),
-                        label=cfg.vp.name[abb],
-                        shape=self.SHAPES[self._graph.cfg.vp.type[abb]][0],
-                        color=self.SHAPES[self._graph.cfg.vp.type[abb]][1]
+                        str(hash(block)),
+                        label=cfg.vp.name[block],
+                        shape=self.SHAPES[self._graph.cfg.vp.type[block]][0],
+                        color=self.SHAPES[self._graph.cfg.vp.type[block]][1]
                     )
-                    if cfg.vp.part_of_loop[abb]:
+                    if cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
-                    dot_nodes.add(str(hash(abb)))
+                    dot_nodes.add(str(hash(block)))
                 dot_func.add_node(dot_abb)
         for edge in cfg.edges():
             if cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
                 continue
             if not all([str(hash(x)) in dot_nodes
-                    for x in [edge.source(), edge.target()]]):
+                       for x in [edge.source(), edge.target()]]):
                 continue
             color = "black"
             if cfg.ep.type[edge] == CFType.lcf:
@@ -398,8 +404,10 @@ class Printer(Step):
 
     def run(self):
         subgraph = self.subgraph.get()
+        if subgraph == 'bbs':
+            self.print_xbbs(bbs=True)
         if subgraph == 'abbs':
-            self.print_abbs()
+            self.print_xbbs(bbs=False)
         if subgraph == 'instances':
             self.print_instances()
         if subgraph == 'sstg_full':
