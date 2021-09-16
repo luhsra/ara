@@ -14,8 +14,7 @@ class CreateABBs(Step):
                          ty=String())
 
     def get_single_dependencies(self):
-        return [{"name": "ICFG", "entry_point": self.entry_point.get()},
-                "CheckGraph"]
+        return [{"name": "ICFG", "entry_point": self.entry_point.get()}]
 
     def run(self):
         cfg = self._graph.cfg
