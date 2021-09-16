@@ -83,14 +83,31 @@ class CreateABBs(Step):
             new_abbs.add(abb)
 
         # link icf edges
+        icf_edges = set()
         for abb in new_abbs:
             bb = cfg.get_single_bb(abb)
             for bb_edge in bb.out_edges():
                 if cfg.ep.type[bb_edge] == CFType.icf:
-                    other_abb = cfg.get_abb(bb_edge.target())
-                    if other_abb:
-                        edge = cfg.add_edge(abb, other_abb)
+                    src = abb
+                    tgt = cfg.get_abb(bb_edge.target())
+                    if tgt and (src, tgt) not in icf_edges:
+                        self._log.debug(f"ICFG edge from {cfg.vp.name[src]} "
+                                        f"to {cfg.vp.name[tgt]} (outgoing)")
+                        edge = cfg.add_edge(src, tgt)
                         cfg.ep.type[edge] = CFType.icf
+                        icf_edges.add((src, tgt))
+            for bb_edge in bb.in_edges():
+                if cfg.vp.name[abb] == "ABB4":
+                    self._log.debug(f"IN EDGE, TYPE {CFType(cfg.ep.type[bb_edge])}")
+                if cfg.ep.type[bb_edge] == CFType.icf:
+                    src = cfg.get_abb(bb_edge.source())
+                    tgt = abb
+                    if src and (src, tgt) not in icf_edges:
+                        self._log.debug(f"ICFG edge from {cfg.vp.name[src]} "
+                                        f"to {cfg.vp.name[tgt]} (ingoing)")
+                        edge = cfg.add_edge(src, tgt)
+                        cfg.ep.type[edge] = CFType.icf
+                        icf_edges.add((src, tgt))
 
         # remap callgraph links to ABBs instead of BBs
         callgraph = self._graph.callgraph
