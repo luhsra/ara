@@ -15,6 +15,7 @@ from collections import defaultdict
 
 import pyllco
 
+TASK_PREFIX = "AUTOSAR_TASK_"
 logger = get_logger("AUTOSAR")
 
 
@@ -41,6 +42,10 @@ class Task(ControlInstance):
 
     def __repr__(self):
         return self.name
+
+    def __hash__(self):
+        # the name of a Task must be unique
+        return hash("TASK" + self.name)
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "priority", "cpu_id"]
