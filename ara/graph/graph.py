@@ -142,17 +142,23 @@ class CFG(graph_tool.Graph):
         """Return the entry bb of the given function."""
         return self._get_entry(function, edge_type=CFType.f2b)
 
-    def get_exit_abb(self, function):
+    def _get_exit(self, function, level):
         function = self.vertex(function)
 
-        def is_exit(abb):
-            return self.vp.is_exit[abb] and self.vp.level[abb] == NodeLevel.abb
+        def is_exit(block):
+            return self.vp.is_exit[block] and self.vp.level[block] == level
 
         entry = list(filter(is_exit, function.out_neighbors()))
         if entry:
             assert len(entry) == 1, f"Multiple exits in function {self.vp.name[function]}"
             return entry[0]
         return None
+
+    def get_function_exit_bb(self, function):
+        return self._get_exit(function, level=NodeLevel.bb)
+
+    def get_exit_abb(self, function):
+        return self._get_exit(function, level=NodeLevel.abb)
 
     def get_syscall_name(self, abb):
         """Return the called syscall name for a given abb."""
