@@ -4,7 +4,8 @@ import json
 import ara.graph as _graph
 from .option import Option, String
 from .step import Step
-from ara.os.autosar import Task, Counter, Alarm, AlarmAction, ISR, Event
+from ara.os.autosar import (Task, Counter, Alarm, AlarmAction, ISR, Event,
+                            TASK_PREFIX)
 from ara.os.os_base import TaskStatus
 
 import functools
@@ -24,10 +25,14 @@ class LoadOIL(Step):
                      ty=String())
 
     def get_single_dependencies(self):
-        return ["LLVMMap"]
+        return ["LLVMMap", "SVFAnalyses"]
 
     def run(self):
         cfg = self._graph.cfg
+
+        from ara.steps import get_native_component
+        ValueAnalyzer = get_native_component("ValueAnalyzer")
+        va = ValueAnalyzer(self._graph)
 
         # load the json file
         oilfile = self.oilfile.get()
@@ -68,6 +73,11 @@ class LoadOIL(Step):
                                            status=t_status,
                                            call_path=_graph.CallPath())
                 instances.vp.label[t] = t_name
+
+                # assign object to the concrete code
+                code_instance = va.find_global(TASK_PREFIX + t_name)
+                if code_instance is not None:
+                    va.assign_system_object(code_instance, instances.vp.obj[t])
 
                 # trigger other steps
                 self._step_manager.chain_step({"name": "Syscall",

@@ -168,7 +168,7 @@ cdef class ValueAnalyzer:
                                              callpath._c_callpath)
 
     def assign_system_object(self, value: Value, sys_obj,
-                             offset: List[GetElementPtrInst],
+                             offset: List[GetElementPtrInst]=None,
                              callpath: CallPath=None):
         """Assign the system object sys_obj to a given (LLVM) value.
 
@@ -184,6 +184,8 @@ cdef class ValueAnalyzer:
         """
         if callpath is None:
             callpath = CallPath()
+        if offset is None:
+            offset = []
         obj_index = self._phash(sys_obj)
         assert obj_index not in self._sys_objects, "Got two objects with the same hash, when it should not be"
         self._sys_objects[obj_index] = sys_obj
@@ -225,3 +227,7 @@ cdef class ValueAnalyzer:
                                                    callpath._c_callpath,
                                                    argument_nr,
                                                    obj_index)
+
+    def find_global(self, name):
+        """Return the global LLVM value with the given name (or None)."""
+        return deref(self._c_va).py_find_global(name.encode("UTF-8"))

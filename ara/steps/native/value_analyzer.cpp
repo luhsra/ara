@@ -1117,4 +1117,17 @@ namespace ara::step {
 		return has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
 	}
 
+	llvm::GlobalValue* ValueAnalyzer::find_global(const std::string& name) {
+		llvm::Module& mod = graph.get_module();
+		return mod.getNamedValue(name);
+	}
+
+	PyObject* ValueAnalyzer::py_find_global(const std::string& name) {
+		auto global = find_global(name);
+		if (global == nullptr) {
+			return Py_None;
+		}
+		return get_obj_from_value(*global);
+	}
+
 } // namespace ara::step
