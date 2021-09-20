@@ -4,7 +4,7 @@ import copy
 import enum
 
 from dataclasses import dataclass, field
-from typing import List, Any
+from typing import List, Any, Dict
 
 from ara.graph import SyscallCategory, CallPath, CFG, CFType
 
@@ -21,15 +21,21 @@ class CrossCoreAction(Exception):
 
 
 @dataclass
+class Context:
+    """Changing context for a ControlInstance"""
+    status: TaskStatus
+    abb: graph_tool.Vertex
+    call_path: CallPath
+
+
+@dataclass
 class ControlInstance:
     """All operating system instances (system objects) that contain control
     flow should inherit from this class. Typically, these are threads, tasks,
     ISRs.
     """
-    status: TaskStatus
-    abb: graph_tool.Vertex
     cfg: CFG
-    call_path: CallPath
+    context: Dict[int, Context]
 
 
 @dataclass
@@ -50,11 +56,13 @@ class CPU:
                    call_path=copy.copy(self.call_path),
                    analysis_context=new_ac)
 
+
 _state_id = 0
 def _get_id():
     global _state_id
     _state_id += 1
     return _state_id
+
 
 @dataclass
 class OSState:
@@ -64,7 +72,8 @@ class OSState:
 
     def copy(self):
         new_cpus = [cpu.copy() for cpu in self.cpus]
-        return OSState(cpus=new_cpus, instances=self.instances.copy())
+        new_state = OSState(cpus=new_cpus, instances=self.instances)
+        return new_state
 
 
 class OSBase:
