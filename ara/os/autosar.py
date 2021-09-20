@@ -1,5 +1,5 @@
 from .os_util import syscall, Arg
-from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus
+from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, Context, CrossCoreAction
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType
 
@@ -149,25 +149,38 @@ class AUTOSAR(OSBase):
 
         # get cpu mapping
         cpu_map = defaultdict(list)
-        for v in instances.vertices():
+        for v in instances.get_controls().vertices():
             obj = instances.vp.obj[v]
-            if isinstance(obj, ControlInstance) and obj.status in [TaskStatus.running, TaskStatus.ready]:
+            if obj.autostart:
                 cpu_map[obj.cpu_id].append((v, obj))
 
         # construct actual CPUs
         cpus = []
+        running_tasks = []
         for cpu_id, tasks in cpu_map.items():
-            prio_task = max(tasks, key=lambda t: t[1].priority)
-            entry_abb = cfg.get_entry_abb(prio_task[1].function)
+            prio_vert, prio_task = max(tasks, key=lambda t: t[1].priority)
+            entry_abb = cfg.get_entry_abb(prio_task.function)
             cpus.append(CPU(id=cpu_id,
                             irq_on=True,
-                            control_instance=prio_task[0],
+                            control_instance=prio_vert,
                             abb=entry_abb,
                             call_path=CallPath(),
                             analysis_context=None))
-            logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_task[0])]} for CPU {cpu_id}.")
+            running_tasks.append(prio_task)
+            logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
 
-        return OSState(cpus=cpus, instances=instances)
+        state = OSState(cpus=cpus, instances=instances)
+
+        # give initial running context
+        for v in instances.get_controls().vertices():
+            obj = instances.vp.obj[v]
+            obj.context[state.id] = Context(status=TaskStatus.suspended,
+                                            abb=cfg.get_entry_abb(obj.function),
+                                            call_path=CallPath())
+        for task in running_tasks:
+            task.context[state.id].status = TaskStatus.running
+
+        return state
 
     @staticmethod
     def init(instances):
@@ -329,9 +342,9 @@ class AUTOSAR(OSBase):
 
         # get cpu mapping
         cpu_map = defaultdict(list)
-        for v in state.instances.vertices():
+        for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            if isinstance(obj, ControlInstance) and obj.status in [TaskStatus.running, TaskStatus.ready]:
+            if obj.context[state.id].status in [TaskStatus.running, TaskStatus.ready]:
                 cpu_map[obj.cpu_id].append((v, obj))
 
         # update cpus
@@ -348,16 +361,16 @@ class AUTOSAR(OSBase):
                     continue
 
                 # write old values back to instance
-                cur_task = state.instances.vp.obj[cpu.control_instance]
-                cur_task.abb = cpu.abb
-                cur_task.call_path = cpu.call_path
-                if cur_task.status is TaskStatus.running:
-                    cur_task.status = TaskStatus.ready
+                cur_task_ctx = state.instances.vp.obj[cpu.control_instance].context[state.id]
+                cur_task_ctx.abb = cpu.abb
+                cur_task_ctx.call_path = cpu.call_path
+                if cur_task_ctx.status is TaskStatus.running:
+                    cur_task_ctx.status = TaskStatus.ready
 
                 # load new values
                 cpu.abb = prio_task[0]
-                cpu.call_path = prio_task[1].call_path
-                prio_task[1].status = TaskStatus.ready
+                cpu.call_path = prio_task[1].context[state.id].call_path
+                prio_task[1].context[state.id].status = TaskStatus.ready
         logger.debug(f"Scheduling state {state}")
 
     @staticmethod
@@ -527,9 +540,12 @@ class AUTOSAR(OSBase):
 
         logger.debug(f"Setting Task {args.task} ready.")
 
-        args.task.status = TaskStatus.ready
+        cpu_ids = set([x.id for x in state.cpus])
 
-        return [state]
+        if args.task.cpu_id in cpu_ids:
+            args.task.context[state.id].status = TaskStatus.ready
+            return [state]
+        raise CrossCoreAction
 
     @syscall
     def AUTOSAR_AdvanceCounter(cfg, abb, state):

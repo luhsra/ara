@@ -35,7 +35,7 @@ class ControlInstance:
     ISRs.
     """
     cfg: CFG
-    context: Dict[int, Context]
+    context: Dict[int, Context] = field(default_factory=dict, init=False)
 
 
 @dataclass
@@ -70,9 +70,20 @@ class OSState:
     cpus: List[CPU]
     instances: graph_tool.Graph
 
+    def __post_init__(self):
+        # ensure a context object exists at construction
+        for c_instance in self.instances.get_controls().vertices():
+            inst = self.instances.vp.obj[c_instance]
+            inst.context[self.id] = None
+
     def copy(self):
         new_cpus = [cpu.copy() for cpu in self.cpus]
         new_state = OSState(cpus=new_cpus, instances=self.instances)
+        # new context for control instances
+        for c_instance in new_state.instances.get_controls().vertices():
+            inst = new_state.instances.vp.obj[c_instance]
+            assert inst.context[self.id] is not None, f"{inst} has invalid context in {self}."
+            inst.context[new_state.id] = inst.context[self.id]
         return new_state
 
 

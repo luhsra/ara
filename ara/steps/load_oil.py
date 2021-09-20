@@ -57,21 +57,18 @@ class LoadOIL(Step):
                 t_name = task["name"]
                 t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
                 t_func = cfg.get_function_by_name(t_func_name)
-                t_status = TaskStatus.ready if task["autostart"] else TaskStatus.suspended
                 # Use a fake ABB, since we don't have real ones yet.
                 # Leave this to the RegisterTaskEntry step
                 self._log.debug(f"Found Task {t_name}")
-                instances.vp.obj[t] = Task(abb=0,
-                                           cfg=cfg,
+                instances.vp.obj[t] = Task(cfg=cfg,
                                            name=t_name,
                                            function=t_func,
                                            priority=task["priority"],
                                            activation=task["activation"],
                                            autostart=task["autostart"],
                                            schedule=task["schedule"],
-                                           cpu_id=cpu_id,
-                                           status=t_status,
-                                           call_path=_graph.CallPath())
+                                           cpu_id=cpu_id)
+                instances.vp.is_control[t] = True
                 instances.vp.label[t] = t_name
 
                 # assign object to the concrete code

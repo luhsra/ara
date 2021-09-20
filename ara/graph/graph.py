@@ -2,16 +2,15 @@
 import graph_tool
 import graph_tool.util
 
-import enum
-
-from collections import deque
 from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel
 
+
 class CFGError(Exception):
     """Some error with a CFG function."""
+
 
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
@@ -297,11 +296,15 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["unique"] = self.new_vp("bool")
         self.vertex_properties["soc"] = self.new_vp("long")
         self.vertex_properties["llvm_soc"] = self.new_vp("int64_t")
+        self.vertex_properties["is_control"] = self.new_vp("bool")
         self.vertex_properties["file"] = self.new_vp("string")
         self.vertex_properties["line"] = self.new_vp("int")
         self.vertex_properties["specialization_level"] = self.new_vp("string")
 
         self.edge_properties["label"] = self.new_ep("string")
+
+    def get_controls(self):
+        return graph_tool.GraphView(self, vfilt=self.vp.is_control)
 
 
 class Graph:

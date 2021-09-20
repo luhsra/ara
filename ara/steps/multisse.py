@@ -39,10 +39,11 @@ class MetaState:
     """State containing the summarized independent states for a single core
     execution"""
 
-    def __init__(self, graph, instances):
+    def __init__(self, graph, instances, context_id):
         self.id = get_id()
         self.graph = graph
         self.instances = instances
+        self.context_id = context_id
         self.state_graph = {}  # graph of Multistates for each cpu
         # key: cpu id, value: graph of Multistates
         self.sync_states = {}  # list of MultiStates for each cpu, which handle
@@ -154,6 +155,11 @@ class MultiSSE(Step):
             )
 
             init_state = OSState(cpus=[cpu], instances=metastate.instances)
+
+            for c_instance in init_state.instances.get_controls().vertices():
+                inst = init_state.instances.vp.obj[c_instance]
+                assert inst.context[metastate.context_id] is not None, f"{inst} has invalid context for multisse"
+                inst.context[init_state.id] = inst.context[metastate.context_id]
 
             id_map = {init_state.id: entry}
 
@@ -348,7 +354,8 @@ class MultiSSE(Step):
         )
 
         # building initial metastate
-        metastate = MetaState(graph=self._graph, instances=os_state.instances)
+        metastate = MetaState(graph=self._graph, instances=os_state.instances,
+                              context_id=os_state.id)
 
         for cpu in os_state.cpus:
             print("CPU:", cpu)
