@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
-"""Parse OIL (OSEK Implementation Language) files.
-   see: http://portal.osek-vdx.org/files/pdf/specs/oil25.pdf
 """
+Parse and convert OIL (OSEK Implementation Language) files.
+
+Output are ARA compatible JSON files.
+
+see: http://portal.osek-vdx.org/files/pdf/specs/oil25.pdf
+"""
+import argparse
+import json
+import sys
+
 from pyparsing import (Word, alphanums, alphas, hexnums,
                        nums, Optional, Keyword, QuotedString, Suppress,
                        Group, Forward, ZeroOrMore, cStyleComment, restOfLine)
@@ -242,7 +250,6 @@ class Alarm(OILObject):
     def subtask(self, value):
         self.action_params.TASK = value
 
-
     @property
     def event(self):
         if hasattr(self.action_params, "EVENT") and self.action_params.EVENT:
@@ -255,7 +262,6 @@ class Alarm(OILObject):
     @event.setter
     def event(self, value):
         self.action_params.EVENT = value
-
 
     def __str__(self):
         ret = super(Alarm, self).__str__()
@@ -694,10 +700,107 @@ class OILSystemDescription:
     def getEvents(self):
         return self.refined.events.values()
 
-
     def __str__(self):
         return str(self.refined)
 
+
+def to_json_tasks(tasks):
+    j_tasks = {}
+    for task in tasks:
+        j_task = {
+            "activation": task.max_activations,
+            "autostart": task.autostart,
+            "priority": task.static_priority,
+            "schedule": task.preemptable,
+        }
+        if task.events:
+            j_task["events"] = list(task.events.keys())
+        if task.resources:
+            j_task["resources"] = list(task.resources.keys())
+        j_tasks[task.name] = j_task
+    return j_tasks
+
+
+def convert_to_json(cpus):
+    j_cpus = []
+    for idx, cpu in enumerate(cpus):
+        # task groups and tasks
+        j_task_groups = {}
+        handled_tasks = set()
+        for task_group_name, task_group in cpu.task_groups.items():
+            j_task_group = {"promises": task_group.promises}
+            # search all tasks that belong to this group
+            tasks = [task for task in cpu.tasks.values()
+                     if task.taskgroup == task_group_name]
+            j_task_group["tasks"] = to_json_tasks(tasks)
+            handled_tasks |= set([x.name for x in tasks])
+            j_task_groups[task_group_name] = j_task_group
+
+        for task_name, task in cpu.tasks.items():
+            if task_name not in handled_tasks:
+                j_task_groups[task.taskgroup] = {
+                    "promises": [],
+                    "tasks": to_json_tasks([task])
+                }
+
+        # resources
+        j_res = {}
+        for resource_name, resource in cpu.resources.items():
+            # skip resource_property for now
+            j_res[resource_name] = {}
+
+        # events
+        j_events = {}
+        for event_name, event in cpu.events.items():
+            # skip event mask for now
+            j_events[event_name] = {}
+
+        # alarm
+        j_alarms = {}
+        for alarm_name, alarm in cpu.alarms.items():
+            j_alarms[alarm_name] = {"counter": alarm.counter}
+
+            if isinstance(alarm.action_params, Alarm.ACTIVATETASK):
+                j_alarms[alarm_name]["action"] = {
+                    "action": "activatetask",
+                    "task": alarm.action_params.TASK.name
+                }
+
+            if alarm.armed:
+                j_alarms[alarm.name]["autostart"] = alarm.armed
+            if alarm.cycletime:
+                j_alarms[alarm.name]["cycletime"] = alarm.cycletime
+            if alarm.reltime:
+                j_alarms[alarm.name]["alarmtime"] = alarm.reltime
+
+        # counter
+        j_counters = {}
+        for counter_name, counter in cpu.counters.items():
+            j_counters[counter_name] = {
+                "maxallowedvalue": counter.maxallowedvalue,
+                "ticksperbase": counter.ticksperbase,
+                "mincycle": counter.mincycle
+            }
+
+        j_cpus.append({"id": idx,
+                       "task_groups": j_task_groups,
+                       "resources": j_res,
+                       "events": j_events,
+                       "alarms": j_alarms,
+                       "counters": j_counters})
+    return {"cpus": j_cpus}
+
+
 if __name__ == "__main__":
-    oil = OILSystemDescription('test/example.oil')
-    print(oil)
+    parser = argparse.ArgumentParser(
+        prog=sys.argv[0],
+        description=sys.modules[__name__].__doc__,
+        formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('OIL', help="OIL input file")
+    args = parser.parse_args()
+
+    oil = OILSystemDescription(args.OIL)
+    # we support only one CPU currently
+    cpus = [oil.refined]
+
+    print(json.dumps(convert_to_json(cpus), indent=2))
