@@ -59,14 +59,13 @@ class MetaState:
 class MultiSSE(Step):
     """Run the MultiCore SSE."""
 
-    entry_point = Option(name="entry_point", help="system entry point", ty=String())
+    entry_point = Option(name="entry_point", help="system entry point",
+                         ty=String())
 
     def get_single_dependencies(self):
         if self._graph.os is None:
             return ["SysFuncts"]
         deps = self._graph.os.get_special_steps()
-        if self._graph.os.has_dynamic_instances():
-            deps.append("SIA")
         return deps
 
     def _singlecore_state_as_dot(self, state_graph, state_vert, instances):
