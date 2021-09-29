@@ -51,34 +51,35 @@ class LoadOIL(Step):
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
 
-            # read all tasks
-            for task in cpu["tasks"]:
-                t = instances.add_vertex()
-                t_name = task["name"]
-                t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
-                t_func = cfg.get_function_by_name(t_func_name)
-                # Use a fake ABB, since we don't have real ones yet.
-                # Leave this to the RegisterTaskEntry step
-                self._log.debug(f"Found Task {t_name}")
-                instances.vp.obj[t] = Task(cfg=cfg,
-                                           name=t_name,
-                                           function=t_func,
-                                           priority=task["priority"],
-                                           activation=task["activation"],
-                                           autostart=task["autostart"],
-                                           schedule=task["schedule"],
-                                           cpu_id=cpu_id)
-                instances.vp.is_control[t] = True
-                instances.vp.label[t] = t_name
+            for task_group in cpu["task_groups"]:
+                # read all tasks
+                for task in cpu["tasks"]:
+                    t = instances.add_vertex()
+                    t_name = task["name"]
+                    t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
+                    t_func = cfg.get_function_by_name(t_func_name)
+                    # Use a fake ABB, since we don't have real ones yet.
+                    # Leave this to the RegisterTaskEntry step
+                    self._log.debug(f"Found Task {t_name}")
+                    instances.vp.obj[t] = Task(cfg=cfg,
+                                               name=t_name,
+                                               function=t_func,
+                                               priority=task["priority"],
+                                               activation=task["activation"],
+                                               autostart=task["autostart"],
+                                               schedule=task["schedule"],
+                                               cpu_id=cpu_id)
+                    instances.vp.is_control[t] = True
+                    instances.vp.label[t] = t_name
 
-                # assign object to the concrete code
-                code_instance = va.find_global(TASK_PREFIX + t_name)
-                if code_instance is not None:
-                    va.assign_system_object(code_instance, instances.vp.obj[t])
+                    # assign object to the concrete code
+                    code_instance = va.find_global(TASK_PREFIX + t_name)
+                    if code_instance is not None:
+                        va.assign_system_object(code_instance, instances.vp.obj[t])
 
-                # trigger other steps
-                self._step_manager.chain_step({"name": "Syscall",
-                                               "entry_point": t_func_name})
+                    # trigger other steps
+                    self._step_manager.chain_step({"name": "Syscall",
+                                                   "entry_point": t_func_name})
 
         @functools.lru_cache(maxsize=8)
         def find_instance_by_name(name, _class):
