@@ -1,5 +1,14 @@
-#include "os.h"
-#include "fail/trace.h"
+#include "autosar/os.h"
+
+// #include "autosar/fail/trace.h"
+// nop
+#define test_trace(x) 0
+#define test_finish(x) 0
+#define TEST_MAKE_OS_MAIN(body) \
+	int main(void) {            \
+		body;                   \
+	}                           \
+
 
 //typedef struct spi_reply_message {
 //    TaskType event1_task;
