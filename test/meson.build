@@ -86,6 +86,13 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('sse',
+        py3_inst,
+        args: [files('sse.py'), files('sse.json'), autosar_isorc[0], autosar_isorc[1]],
+        env: [python_path],
+        suite: 'steps'
+    )
+
     test('syscall',
         py3_inst,
         args: [files('syscall.py'), files('syscall.json'), freertos_syscall],

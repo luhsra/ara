@@ -56,7 +56,8 @@ def get_config(i_file):
             'input_file': i_file}
 
 
-def init_test(steps=None, extra_config=None, logger_name=None):
+def init_test(steps=None, extra_config=None, logger_name=None,
+              extra_input=None):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
 
@@ -72,6 +73,10 @@ def init_test(steps=None, extra_config=None, logger_name=None):
                   argument of Stepmanager.execute.
     logger_name:  Create a logger with this name. Otherwise the root logger is
                   returned.
+    extra_input:  Special dict which can be used to do extra stuff with input
+                  arguments.  Expected is a [str: function]
+                  The str becomes to a normal ARA config string, the function
+                  gets sys.argv as argument and should return a valid value.
     """
     logger = init_logging(level=logging.DEBUG, root_name='ara.test')
     if logger_name is not None:
@@ -79,22 +84,30 @@ def init_test(steps=None, extra_config=None, logger_name=None):
     if not extra_config:
         extra_config = {}
     g = Graph()
-    assert len(sys.argv) == 3
+
     json_file = sys.argv[1]
     i_file = sys.argv[2]
-    print(f"Testing with JSON: '{json_file}'"
-          f", and file: {i_file}")
+
+    if not extra_input:
+        extra_input = {}
+    for key in extra_input:
+        extra_input[key] = extra_input[key](sys.argv)
+
+    logger.info(f"Testing with JSON: '{json_file}'"
+                f", and file: {i_file}")
     if steps:
-        print(f"Executing steps: {steps}")
+        logger.info(f"Executing steps: {steps}")
     elif extra_config:
-        print(f"Executing with config: {extra_config}")
+        logger.info(f"Executing with config: {extra_config}")
     else:
         assert False
+    conf = {**get_config(i_file), **extra_input}
+    logger.debug(f"Full config: {conf}")
     with open(json_file) as f:
         data = json.load(f)
 
     s_manager = StepManager(g)
 
-    s_manager.execute(get_config(i_file), extra_config, steps)
+    s_manager.execute(conf, extra_config, steps)
 
     return g, data, logger, s_manager
