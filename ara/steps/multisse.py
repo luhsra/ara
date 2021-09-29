@@ -448,17 +448,18 @@ class MultiSSE(Step):
         metastate = sstg.vp.state[state_vertex]
         for cpu_id, state_id in metastate.sync_states.items():
             for state in state_id:
+                pass
                 # evaluate state
-                sctg = metastate.state_graph[cpu_id]
-                sctg.vp.
+                # sctg = metastate.state_graph[cpu_id]
+                # sctg.vp.
 
-                os_state = 
+                # os_state = 
 
-                new_states = self.graph.os.interpret(self.graph, os_state, cpu_id, SyscallCategory.every)
-                for new_state in new_states:
-                    # cross product with every state on every other cpu
+                # new_states = self.graph.os.interpret(self.graph, os_state, cpu_id, SyscallCategory.every)
+                # for new_state in new_states:
+                #     # cross product with every state on every other cpu
 
-        for state_vertex
+        # for state_vertex
         return []
 
     def _new_vertex(self, sstg, state):
