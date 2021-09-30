@@ -76,6 +76,9 @@ class OSState:
             inst = self.instances.vp.obj[c_instance]
             inst.context[self.id] = None
 
+    def __hash__(self):
+        return self.id
+
     def copy(self):
         new_cpus = [cpu.copy() for cpu in self.cpus]
         new_state = OSState(cpus=new_cpus, instances=self.instances)
