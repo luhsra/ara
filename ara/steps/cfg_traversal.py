@@ -45,6 +45,9 @@ class Visitor:
     def schedule(self, new_states):
         raise NotImplementedError
 
+    def cross_core_action(state_id):
+        pass
+
 
 class _SSERunner:
     def __init__(self, graph, os, logger, visitor):
