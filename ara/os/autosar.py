@@ -6,7 +6,7 @@ from ara.graph import CallPath, SyscallCategory, SigType
 import graph_tool
 import html
 
-from typing import List, Any
+from typing import Any
 
 from dataclasses import dataclass
 
@@ -31,14 +31,24 @@ class SyscallInfo:
 
 
 @dataclass
-class Task(ControlInstance):
+class AUTOSARInstance:
     name: str
+    cpu_id: int
+
+
+@dataclass
+class TaskGroup(AUTOSARInstance):
+    name: str
+    promises: dict
+
+
+@dataclass
+class Task(ControlInstance, AUTOSARInstance):
     function: graph_tool.Vertex
     priority: int
     activation: Any
     autostart: bool
     schedule: Any
-    cpu_id: int
 
     def __repr__(self):
         return self.name
@@ -61,40 +71,17 @@ class Task(ControlInstance):
         }
 
 
-class Counter:
-    def __init__(self, name, cpu_id, mincycle, maxallowedvalue, ticksperbase, secondspertick):
-        self.cpu_id = cpu_id
-        self.mincycle = mincycle
-        self.maxallowedvalue = maxallowedvalue
-        self.ticksperbase = ticksperbase
-        self.secondspertick = secondspertick
-        self.name = name
-
-    def __repr__(self):
-        return self.name
+@dataclass
+class Counter(AUTOSARInstance):
+    mincycle: int
+    maxallowedvalue: int
+    ticksperbase: int
+    secondspertick: int
 
 
-class AlarmAction(Enum):
-    ACTIVATETASK = 1,
-    SETEVENT = 2,
-    INCREMENTCOUNTER = 3
-
-
-class Alarm:
-    def __init__(self, name, cpu_id, counter, autostart, action, task=None, event=None, incrementcounter=None, alarmtime=None, cycletime=None):
-        self.cpu_id = cpu_id
-        self.name = name
-        self.counter = counter
-        self.autostart = autostart
-        self.action = action
-        self.task = task
-        self.event = event
-        self.incrementcounter = incrementcounter,
-        self.alarmtime = alarmtime,
-        self.cycletime = cycletime
-
-    def __repr__(self):
-        return self.name
+@dataclass
+class Alarm(AUTOSARInstance):
+    pass
 
 
 class ISR:
@@ -110,13 +97,12 @@ class ISR:
         return self.name
 
 
-class Event:
-    def __init__(self, name, cpu_id):
-        self.cpu_id = cpu_id
-        self.name = name
+class Event(AUTOSARInstance):
+    pass
 
-    def __repr__(self):
-        return self.name
+
+class Resource(AUTOSARInstance):
+    pass
 
 
 class AUTOSAR(OSBase):
