@@ -204,7 +204,8 @@
         "one_ms_counter": {
           "maxallowedvalue": 50000,
           "ticksperbase": 1,
-          "mincycle": 1
+          "mincycle": 1,
+          "secondspertick": 0.001
         }
       }
     }
