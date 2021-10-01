@@ -4,6 +4,9 @@ from .option import Option, String
 from .cfg_traversal import Visitor, run_sse
 
 import graph_tool
+import html
+import os
+import pydot
 
 
 class SSE(Step):
@@ -17,6 +20,59 @@ class SSE(Step):
             return ["SysFuncts"]
         deps = self._graph.os.get_special_steps()
         return deps
+
+    def _state_as_dot(self, sstg, state_vert):
+        attrs = {"fontsize": 14}
+        size = 12
+        label = f"State {state_vert}"
+        cfg = self._graph.cfg
+
+        obj = sstg.vp.state[state_vert]
+        cpu = obj.cpus[0]
+        graph_attrs = "<br/>".join(
+            [
+                f"<i>{k}</i>: {html.escape(str(v))}"
+                for k, v in [
+                    ("irq_on", cpu.irq_on),
+                    (
+                        "instance",
+                        obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)],
+                    ),
+                    ("abb", cfg.vp.name[cpu.abb]),
+                    ("call_path", cpu.call_path),
+                ]
+            ]
+        )
+        graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
+        attrs["label"] = f"<{label}<br/>{graph_attrs}>"
+        return attrs
+
+    def dump_sstg(self, sstg, extra=''):
+        dot_graph = pydot.Dot(graph_type="digraph", label="SSTG")
+
+        for state_vert in sstg.vertices():
+            attrs = self._state_as_dot(
+                sstg, state_vert
+            )
+            dot_state = pydot.Node(str(state_vert), **attrs)
+            dot_graph.add_node(dot_state)
+        for edge in sstg.edges():
+            dot_graph.add_edge(
+                pydot.Edge(
+                    str(edge.source()),
+                    str(edge.target()),
+                    color="black",
+                )
+            )
+
+        if extra:
+            extra = f'.{extra}'
+        dot_file = self.dump_prefix.get() + f"sstg{extra}.dot"
+        dot_path = os.path.abspath(dot_file)
+        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
+        dot_graph.write(dot_path)
+
+        self._log.info(f"Write SSTG to {dot_path}.")
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -69,7 +125,8 @@ class SSE(Step):
 
             @staticmethod
             def next_step(counter):
-                pass
+                if self.dump.get():
+                    self.dump_sstg(sstg, extra=counter)
 
         run_sse(
             self._graph,
@@ -77,3 +134,6 @@ class SSE(Step):
             visitor=SSEVisitor(),
             logger=self._log,
         )
+
+        if self.dump.get():
+            self.dump_sstg(sstg)
