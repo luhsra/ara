@@ -16,6 +16,8 @@ from collections import defaultdict
 import pyllco
 
 TASK_PREFIX = "AUTOSAR_TASK_"
+ALARM_PREFIX = "AUTOSAR_ALARM_"
+
 logger = get_logger("AUTOSAR")
 
 
@@ -81,7 +83,8 @@ class Counter(AUTOSARInstance):
 
 @dataclass
 class Alarm(AUTOSARInstance):
-    pass
+    increment: int = None
+    cycle: int = None
 
 
 class ISR:
@@ -471,54 +474,6 @@ class AUTOSAR(OSBase):
         return new_states
 
 
-
-    @syscall
-    def AUTOSAR_ActivateTask_global(cfg, abb, metastate, cpu):
-        graph = metastate.state_graph[cpu]
-        v = graph.get_vertices()[0]
-        state = graph.vp.state[v]
-
-        scheduled_task = state.get_scheduled_instance()
-
-        # get Task argument
-        cp = state.call_path
-        task_name = get_argument(cfg, abb, cp, 0, ty=pyllco.GlobalVariable).get_name()
-
-        # find task with same name as 'task_name' in instance graph
-        task = None
-        for v in state.instances.vertices():
-            task = state.instances.vp.obj[v]
-            if isinstance(task, Task):
-                if task.name in task_name:
-                    break
-
-        # find target state
-        target_cpu = task.cpu_id
-        t_graph = metastate.state_graph[target_cpu]
-        t_vertex = t_graph.get_vertices()[0]
-        target_state = t_graph.vp.state[t_vertex]
-
-        # add found Task to list of activated tasks
-        if task not in target_state.activated_tasks:
-            target_state.activated_tasks.append_item(task)
-
-        # advance current task to next abb
-        counter = 0
-        for n in cfg.vertex(abb).out_neighbors():
-            state.set_abb(scheduled_task.name, n)
-            counter += 1
-        assert(counter == 1)
-
-        # trigger scheduling
-        AUTOSAR.schedule(target_state, task.cpu_id)
-
-        states = None
-        if target_state.get_running_abb() is None or target_state.interrupts_enabled.get_value() is None:
-            states = AUTOSAR.decompress_state(target_state)
-
-        return states
-        # print("Activate Task globally: " + task.name)
-
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
@@ -607,8 +562,29 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SetEvent(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_SetRelAlarm(cfg, abb, state):
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
+                        Arg("increment"),
+                        Arg("cycle")))
+    def AUTOSAR_SetRelAlarm(cfg, state, cpu_id, args, va):
+        """
+        This call starts an alarm running and sets the number of counter ticks
+        that will occur before the alarm is triggered. The alarm may be
+        triggered once only (if cycle is equal to zero) or repeatedly (cycle
+        gives the number of counter ticks before the alarm is triggered again).
+        When the alarm is triggered, the task associated with the alarm is
+        activated. The alarm can activate a task, set an event or call an alarm
+        callback (depending on configuration).
+        The behavior when increment is zero is dependant on configuration
+        as follows:
+        - OSEK (default) the alarm occurs in maxallowedvalue+1 ticks of
+          the counter
+        - OSEK (SetRelAlarm(,0) disallowed) the alarm is not set and the
+          API call returns E_OS_VALUE
+        - AUTOSAR the alarm is not set and the API call returns
+          E_OS_VALUE
+        """
+        args.alar
         pass
 
     @syscall

@@ -153,6 +153,11 @@ class LoadOIL(Step):
                 e = instances.add_edge(c_v, a)
                 instances.ep.label[e] = "trigger"
 
+                # assign object to the concrete code
+                code_instance = va.find_global(_autosar.ALARM_PREFIX + a_name)
+                if code_instance is not None:
+                    va.assign_system_object(code_instance, instances.vp.obj[a])
+
                 # read alarm action
                 action = alarm["action"]
                 if action["action"].lower() == "incrementcounter":
