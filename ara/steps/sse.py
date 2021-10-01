@@ -32,7 +32,9 @@ class SSE(Step):
             self._graph.cfg, self._graph.instances
         )
 
-        state_map = {}
+        s = sstg.add_vertex()
+        sstg.vp.state[s] = os_state
+        state_map = {os_state: s}
 
         assert len(os_state.cpus) == 1, "SSE does not support more than one CPU."
 
