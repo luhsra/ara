@@ -117,7 +117,6 @@ class OSBase:
         Arguments:
         instances -- the already detected global instances
         """
-        instances
         raise NotImplementedError
 
     @staticmethod
@@ -131,9 +130,7 @@ class OSBase:
         categories -- interpret only specific system calls (for performance)
 
         Return:
-        A list of follow up states.
-
-        TODO: signaling an external action
+        The follow up state.
         """
         raise NotImplementedError()
 

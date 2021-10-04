@@ -536,7 +536,7 @@ class AUTOSAR(OSBase):
         # advance task or isr to next abb
         new_state.set_abb(scheduled_task.name, next(cfg.vertex(abb).out_neighbors()))
 
-        return [new_state]
+        return new_state
 
     @syscall
     def AUTOSAR_EnableAllInterrupts(cfg, abb, state, cpu):
@@ -549,7 +549,7 @@ class AUTOSAR(OSBase):
         # advance task or isr to next abb
         new_state.set_abb(scheduled_task.name, next(cfg.vertex(abb).out_neighbors()))
 
-        return [new_state]
+        return new_state
 
     @syscall
     def AUTOSAR_GetAlarm(cfg, abb, state):

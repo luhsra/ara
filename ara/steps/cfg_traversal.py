@@ -186,7 +186,7 @@ class _SSERunner:
             if self._visitor.PREVENT_MULTIPLE_VISITS:
                 return
             else:
-                raise NotImplementedError #TODO
+                raise NotImplementedError  # TODO
         self._visited[call_path][abb] += 1
 
         self._log.debug(f"Handle state {state}")
@@ -202,11 +202,11 @@ class _SSERunner:
             syscall_name = self._cfg.get_syscall_name(abb)
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             try:
-                new_states = self._os.interpret(
+                new_state = self._os.interpret(
                     self._graph, state, 0,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
-                return new_states
+                return [new_state]
             except CrossCoreAction:
                 self._visitor.cross_core_action(state.id)
                 # end analysis on this path
