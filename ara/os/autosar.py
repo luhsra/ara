@@ -1,5 +1,5 @@
 from .os_util import syscall, Arg, set_next_abb
-from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, Context, CrossCoreAction
+from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType
 
@@ -101,10 +101,16 @@ class Counter(AUTOSARInstance):
     secondspertick: int
 
 
-@dataclass
+@dataclass(eq=False)
 class Alarm(AUTOSARInstance):
-    increment: int = None
-    cycle: int = None
+    pass
+
+
+@dataclass
+class AlarmContext:
+    increment: int
+    cycle: int
+    active: bool
 
 
 class ISR:

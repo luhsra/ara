@@ -21,7 +21,7 @@ class CrossCoreAction(Exception):
 
 
 @dataclass
-class Context:
+class ControlContext:
     """Changing context for a ControlInstance"""
     status: TaskStatus
     abb: graph_tool.Vertex
@@ -35,7 +35,6 @@ class ControlInstance:
     ISRs.
     """
     cfg: CFG
-    context: Dict[int, Context] = field(default_factory=dict, init=False)
 
 
 @dataclass
@@ -69,25 +68,30 @@ class OSState:
     id: int = field(init=False, default_factory=_get_id)
     cpus: List[CPU]
     instances: graph_tool.Graph
+    cfg: CFG
 
-    def __post_init__(self):
-        # ensure a context object exists at construction
-        for c_instance in self.instances.get_controls().vertices():
-            inst = self.instances.vp.obj[c_instance]
-            inst.context[self.id] = None
+    # key: some instance, value: mutable context
+    context: dict = field(default_factory=dict, init=False)
 
     def __hash__(self):
         return self.id
 
     def copy(self):
         new_cpus = [cpu.copy() for cpu in self.cpus]
-        new_state = OSState(cpus=new_cpus, instances=self.instances)
+        new_state = OSState(cpus=new_cpus, instances=self.instances,
+                            cfg=self.cfg)
         # new context for control instances
-        for c_instance in new_state.instances.get_controls().vertices():
-            inst = new_state.instances.vp.obj[c_instance]
-            assert inst.context[self.id] is not None, f"{inst} has invalid context in {self}."
-            inst.context[new_state.id] = inst.context[self.id]
+        for inst, ctx in self.context.items():
+            new_state.context[inst] = copy.copy(ctx)
         return new_state
+
+    def cur_control_inst(self, cpu_id):
+        """Return the current running object for the given CPU."""
+        return self.instances.vp.obj[self.cpus[cpu_id].control_instance]
+
+    def cur_context(self, cpu_id):
+        """Return the context of current running object for the given CPU."""
+        return self.context[self.cur_control_inst(cpu_id)]
 
 
 class OSBase:
