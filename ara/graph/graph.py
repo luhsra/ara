@@ -324,6 +324,16 @@ class InstanceGraph(graph_tool.Graph):
     def get_controls(self):
         return graph_tool.GraphView(self, vfilt=self.vp.is_control)
 
+    def get(self, instance_type):
+        """Generator over all instances with a specific type.
+
+        Returns a tuple containing the vertex and instance object.
+        """
+        for inst in self.vertices():
+            obj = self.vp.obj[inst]
+            if isinstance(obj, instance_type):
+                yield inst, obj
+
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
