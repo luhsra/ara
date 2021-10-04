@@ -32,10 +32,18 @@ class SyscallInfo:
         self.multi_ret = True
 
 
-@dataclass
+@dataclass(eq=False)
 class AUTOSARInstance:
     name: str
     cpu_id: int
+
+    def __eq__(self, other):
+        # the name of an arbitrary AUTOSAR instance must be unique
+        return self.name == other.name
+
+    def __hash__(self):
+        # the name of an arbitrary AUTOSAR instance must be unique
+        return hash(self.__class__.__name__ + self.name)
 
 
 @dataclass
