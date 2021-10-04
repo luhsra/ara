@@ -122,6 +122,7 @@ class LoadOIL(Step):
                     # link to TaskGroup
                     e = instances.add_edge(tg, t)
                     instances.ep.label[e] = "contains"
+                    instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # link to events
                     if "events" in task:
@@ -129,6 +130,7 @@ class LoadOIL(Step):
                             event = find_instance_by_name(e_name, _autosar.Event)
                             e = instances.add_edge(t, event)
                             instances.ep.label[e] = "has"
+                            instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # link to resources
                     if "resources" in task:
@@ -136,6 +138,7 @@ class LoadOIL(Step):
                             resource = find_instance_by_name(r_name, _autosar.Resource)
                             e = instances.add_edge(t, resource)
                             instances.ep.label[e] = "use"
+                            instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # assign object to the concrete code
                     code_instance = va.find_global(_autosar.TASK_PREFIX + t_name)
@@ -159,6 +162,7 @@ class LoadOIL(Step):
                 c_v = find_instance_by_name(alarm["counter"], _autosar.Counter)
                 e = instances.add_edge(c_v, a)
                 instances.ep.label[e] = "trigger"
+                instances.ep.type[e] = _autosar.InstanceEdge.trigger
 
                 # assign object to the concrete code
                 code_instance = va.find_global(_autosar.ALARM_PREFIX + a_name)
@@ -181,6 +185,7 @@ class LoadOIL(Step):
                     task = find_instance_by_name(action["task"], _autosar.Task)
                     e = instances.add_edge(a, task)
                     instances.ep.label[e] = "activate"
+                    instances.ep.type[e] = _autosar.InstanceEdge.activate
                 elif action["action"].lower() == "setevent":
                     raise NotImplementedError
                     # task = find_instance_by_name(action["task"], Task)

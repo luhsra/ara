@@ -320,6 +320,7 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["specialization_level"] = self.new_vp("string")
 
         self.edge_properties["label"] = self.new_ep("string")
+        self.edge_properties["type"] = self.new_ep("int")
 
     def get_controls(self):
         return graph_tool.GraphView(self, vfilt=self.vp.is_control)

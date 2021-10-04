@@ -10,7 +10,7 @@ from typing import Any
 
 from dataclasses import dataclass
 
-from enum import Enum
+from enum import IntEnum
 from collections import defaultdict
 
 import pyllco
@@ -30,6 +30,12 @@ class SyscallInfo:
 
     def set_multi_ret(self):
         self.multi_ret = True
+
+
+class InstanceEdge(IntEnum):
+    have = 1
+    trigger = 2
+    activate = 3
 
 
 @dataclass(eq=False)
