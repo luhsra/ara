@@ -8,6 +8,25 @@ from .graph_data import PyGraphData
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel
 
 
+class FailedGraphConstraint(Exception):
+    """The graph has another structure than anticipated."""
+
+
+def single_check(iterator):
+    """Check, if iterator is exhausted after exactly one iteration.
+
+    It returns the single element, if it exists and raises an
+    FailedGraphConstraint otherwise.
+    """
+    first = next(iterator, None)
+    if first is None:
+        raise FailedGraphConstraint("No element present.")
+    second = next(iterator, None)
+    if second is not None:
+        raise FailedGraphConstraint("More than one element present.")
+    return first
+
+
 class CFGError(Exception):
     """Some error with a CFG function."""
 
@@ -163,7 +182,6 @@ class CFG(graph_tool.Graph):
         """Return the called syscall name for a given abb."""
         abb = self.vertex(abb)
         if not self.vp.type[abb] == ABBType.syscall:
-            print("no syscall", abb)
             return ''
         syscall = [x.target() for x in abb.out_edges()
                    if self.ep.type[x] == CFType.icf]
@@ -343,7 +361,6 @@ class Graph:
     @property
     def lcfg(self):
         return CFGView(self.abbs, efilt=self.cfg.ep.type.fa == CFType.lcf)
-
 
     def __init__(self):
         # should be used only from C++, see graph.h
