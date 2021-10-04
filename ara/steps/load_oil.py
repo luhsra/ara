@@ -1,11 +1,11 @@
 """Container for OilStep."""
-import json
-
 from .option import Option, String
 from .step import Step
 import ara.os.autosar as _autosar
 
+import json
 import functools
+import pyllco
 
 
 class LoadOIL(Step):
@@ -70,8 +70,15 @@ class LoadOIL(Step):
 
             # events
             for e_name in cpu["events"].keys():
+                code_instance = va.find_global(e_name)
+                assert isinstance(code_instance, pyllco.GlobalVariable) and code_instance.is_constant()
+                constant = code_instance.get_initializer()
+                index = constant.get()
+
                 c = instances.add_vertex()
-                instances.vp.obj[c] = _autosar.Event(name=e_name, cpu_id=cpu_id)
+                instances.vp.obj[c] = _autosar.Event(name=e_name,
+                                                     cpu_id=cpu_id,
+                                                     index=index)
                 instances.vp.label[c] = e_name
 
             # resources

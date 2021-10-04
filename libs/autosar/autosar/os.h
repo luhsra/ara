@@ -66,10 +66,7 @@
 #define ReleaseResource(x)				\
   AUTOSAR_ReleaseResource(AUTOSAR_RESOURCE_##x)
 
-#define DeclareEvent(x)							\
-	extern const EventMaskType AUTOSAR_EVENT_ ## x;			\
-    static dosek_unused const EventMaskType &x = AUTOSAR_EVENT_ ## x
-
+#define DeclareEvent(x, c) extern const EventMaskType x = (c);
 
 #define SetEvent(task,event)						\
   AUTOSAR_SetEvent(AUTOSAR_TASK_##task,event)

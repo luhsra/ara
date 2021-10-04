@@ -74,6 +74,12 @@ class Task(ControlInstance, AUTOSARInstance):
 
 
 @dataclass
+class TaskContext(ControlContext):
+    dyn_prio: int
+    received_events: int = 0
+
+
+@dataclass
 class Counter(AUTOSARInstance):
     mincycle: int
     maxallowedvalue: int
@@ -100,10 +106,12 @@ class ISR:
         return self.name
 
 
+@dataclass
 class Event(AUTOSARInstance):
-    pass
+    index: int
 
 
+@dataclass
 class Resource(AUTOSARInstance):
     pass
 
@@ -158,16 +166,17 @@ class AUTOSAR(OSBase):
             running_tasks.append(prio_task)
             logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
 
-        state = OSState(cpus=cpus, instances=instances)
+        state = OSState(cpus=cpus, instances=instances, cfg=cfg)
 
         # give initial running context
         for v in instances.get_controls().vertices():
             obj = instances.vp.obj[v]
-            obj.context[state.id] = Context(status=TaskStatus.suspended,
-                                            abb=cfg.get_entry_abb(obj.function),
-                                            call_path=CallPath())
+            state.context[obj] = TaskContext(status=TaskStatus.suspended,
+                                             abb=cfg.get_entry_abb(obj.function),
+                                             call_path=CallPath(),
+                                             dyn_prio=obj.priority)
         for task in running_tasks:
-            task.context[state.id].status = TaskStatus.running
+            state.context[task].status = TaskStatus.running
 
         return state
 
@@ -603,39 +612,34 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SuspendOSInterrupts(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_TerminateTask(cfg, abb, state, cpu):
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple(),
+             custom_control_flow=True)
+    def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
         state = state.copy()
 
-        # remove task from activated tasks list
-        scheduled_task = state.get_scheduled_task()
-        state.activated_tasks.remove_item(scheduled_task)
+        cur_task = state.cur_control_inst(cpu_id)
+        assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
-        # reset abb list to entry abb
-        state.set_abb(scheduled_task.name, state.entry_abbs[scheduled_task.name])
+        state.context[cur_task].status = TaskStatus.suspended
 
-        # set this syscall for gcfg building
-        state.last_syscall = SyscallInfo("TerminateTask", abb, cpu)
+        logger.debug(f"Terminate Task {cur_task.name}.")
 
-        # set multi ret in syscall info
-        # new_task = state.get_scheduled_task()
-        # if new_task is not None:
-        #     if state.gcfg_multi_ret[new_task.name]:
-        #         state.last_syscall.set_multi_ret()
+        return state
 
-        #         # reset multi ret for gcfg building to False
-        #         state.gcfg_multi_ret[new_task.name] = False
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("event_mask"),),
+             custom_control_flow=True)
+    def AUTOSAR_WaitEvent(cfg, state, cpu_id, args, va):
+        logger.debug(args.event_mask)
+        assert(isinstance(args.event_mask, int))
+        state = state.copy()
 
-        # print("Terminated Task: " + scheduled_task.name)
+        cur_ctx = state.cur_context(cpu_id)
 
-        states = None
-        if state.get_running_abb() is None or state.interrupts_enabled.get_value() is None:
-            states = AUTOSAR.decompress_state(state)
+        if args.event_mask & state.cur_context(cpu_id).received_events != 0:
+            set_next_abb(state, cpu_id)
         else:
-            return [state]
+            cur_ctx.status = TaskStatus.blocked
 
-        return states
-
-    @syscall
-    def AUTOSAR_WaitEvent(cfg, abb, state):
-        pass
+        return state

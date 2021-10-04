@@ -24,19 +24,21 @@ DeclareAlarm(SignalGatherTimeoutAlarm);
 DeclareAlarm(ActuateAlarm);
 DeclareAlarm(CopterControlWatchdogAlarm);
 
-DeclareEvent(CopterControlReceiveEvent);
-DeclareEvent(MavMsgReceiveEvent);
-DeclareEvent(EthernetReceiveEvent);
-DeclareEvent(SPIReceiveEvent);
-DeclareEvent(SignalGatherAnalogEvent);
-DeclareEvent(SignalGatherDigital1Event);
-DeclareEvent(SignalGatherDigital2bEvent);
-DeclareEvent(SignalGatherDigital2aEvent);
-DeclareEvent(SignalGatherDigital1TimeoutEvent);
-DeclareEvent(SignalGatherDigital2bTimeoutEvent);
-DeclareEvent(SignalGatherDigital2aTimeoutEvent);
-DeclareEvent(FlightControlActuateEvent);
-DeclareEvent(FlightControlAttitudeEvent);
+#define DecEvent(x) DeclareEvent(x, 1 << __COUNTER__)
+
+DecEvent(CopterControlReceiveEvent);
+DecEvent(MavMsgReceiveEvent);
+DecEvent(EthernetReceiveEvent);
+DecEvent(SPIReceiveEvent);
+DecEvent(SignalGatherAnalogEvent);
+DecEvent(SignalGatherDigital1Event);
+DecEvent(SignalGatherDigital2bEvent);
+DecEvent(SignalGatherDigital2aEvent);
+DecEvent(SignalGatherDigital1TimeoutEvent);
+DecEvent(SignalGatherDigital2bTimeoutEvent);
+DecEvent(SignalGatherDigital2aTimeoutEvent);
+DecEvent(FlightControlActuateEvent);
+DecEvent(FlightControlAttitudeEvent);
 
 DeclareTask(InitTask);
 DeclareTask(SignalGatherInitiateTask);
