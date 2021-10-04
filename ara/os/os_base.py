@@ -143,10 +143,3 @@ class OSBase:
         cpus  -- a list of cpu_ids, defaults to all CPUs
         """
         raise NotImplementedError()
-
-    @staticmethod
-    def _add_normal_cfg(state, cpu_id, icfg):
-        abb = state.cpus[cpu_id].abb
-        neighbors = list(icfg.vertex(abb).out_neighbors())
-        assert len(neighbors) == 1, "Multiple ABBs follow a syscall."
-        state.cpus[cpu_id].abb = neighbors[0]

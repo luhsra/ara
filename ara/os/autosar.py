@@ -1,4 +1,4 @@
-from .os_util import syscall, Arg
+from .os_util import syscall, Arg, set_next_abb
 from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, Context, CrossCoreAction
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType
@@ -309,7 +309,7 @@ class AUTOSAR(OSBase):
             if sys_cat | categories != sys_cat:
                 # do not interpret this syscall
                 state = state.copy()
-                OSBase._add_normal_cfg(state, cpu_id, graph.icfg)
+                set_next_abb(state, cpu_id)
                 return state
         return syscall_function(graph, state, cpu_id)
 

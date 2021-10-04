@@ -1,4 +1,4 @@
-from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument
+from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb
 from .os_base import OSBase
 
 import pyllco
@@ -89,7 +89,6 @@ class Task(FreeRTOSInstance):
                 self.heap_need = None
         else:
             self.heap_need = 0
-
 
     @property
     def priority(self):
@@ -290,15 +289,9 @@ class FreeRTOS(OSBase):
                 # do not interpret this syscall
                 state = state.copy()
                 state.next_abbs = []
-                FreeRTOS.add_normal_cfg(cfg, abb, state)
+                set_next_abb(state, 0)
                 return state
         return syscall_function(graph, abb, state)
-
-    @staticmethod
-    def add_normal_cfg(cfg, abb, state):
-        for oedge in cfg.vertex(abb).out_edges():
-            if cfg.ep.type[oedge] == _graph.CFType.lcf:
-                state.next_abbs.append(oedge.target())
 
     @staticmethod
     def total_heap_size():

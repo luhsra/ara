@@ -6,7 +6,7 @@ import pyllco
 from typing import Tuple
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
-from ara.graph import CFType as _CFType
+from ara.graph import CFType as _CFType, CFGView as _CFGView
 
 
 class UnsuitableArgumentException(Exception):
@@ -85,6 +85,19 @@ Argument.hint = property(Argument.get_hint, Argument.set_hint)
 Arg = Argument
 
 
+def set_next_abb(state, cpu_id):
+    """Set the CPU specified with cpu_id to the next abb.
+
+    Note: Call this functions on syscalls only.
+    """
+    lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
+    cpu = state.cpus[cpu_id]
+    for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
+        if idx > 1:
+            raise RuntimeError("A syscall must not have more than one successor.")
+        cpu.abb = next_abb
+
+
 class SysCall:
     """Defines a system call.
 
@@ -134,7 +147,7 @@ class SysCall:
         if _SyscallCategory.undefined in self.categories:
             raise NotImplementedError(f"{self._func.__name__} is only a stub.")
 
-        cfg = graph.cfg
+        lcfg = graph.lcfg
 
         # avoid dependency conflicts, therefore import dynamically
         from ara.steps import get_native_component
@@ -178,11 +191,8 @@ class SysCall:
         new_state = self._func(graph, state, cpu_id, args, va)
 
         # add standard control flow successors if wanted
-        new_state.next_abbs = []
         if not self._ccf:
-            for oedge in cfg.vertex(abb).out_edges():
-                if cfg.ep.type[oedge] == _CFType.lcf:
-                    new_state.next_abbs.append(oedge.target())
+            set_next_abb(new_state, cpu_id)
 
         return new_state
 
