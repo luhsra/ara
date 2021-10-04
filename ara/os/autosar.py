@@ -68,7 +68,7 @@ class Task(ControlInstance, AUTOSARInstance):
         return hash("TASK" + self.name)
 
     def as_dot(self):
-        wanted_attrs = ["name", "function", "priority", "cpu_id"]
+        wanted_attrs = ["name", "autostart", "priority", "cpu_id"]
         attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
         sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
                                  for k, v in attrs])
