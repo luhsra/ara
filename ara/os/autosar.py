@@ -529,19 +529,31 @@ class AUTOSAR(OSBase):
         return new_states
 
 
+    @staticmethod
+    def check_cpu(state, cpu_id):
+        """Check, if cpu_id is supported in state.
+
+        Raise a CrossCoreAction otherwise
+        """
+        cpu_ids = set([x.id for x in state.cpus])
+
+        if cpu_id not in cpu_ids:
+            raise CrossCoreAction
+
+    @staticmethod
+    def ActivateTask(state, cpu_id, task):
+        state = state.copy()
+
+        logger.debug(f"Setting Task {task} ready.")
+
+        AUTOSAR.check_cpu(state, task.cpu_id)
+        state.context[task].status = TaskStatus.ready
+        return state
+
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
-        state = state.copy()
-
-        logger.debug(f"Setting Task {args.task} ready.")
-
-        cpu_ids = set([x.id for x in state.cpus])
-
-        if args.task.cpu_id in cpu_ids:
-            args.task.context[state.id].status = TaskStatus.ready
-            return [state]
-        raise CrossCoreAction
+        return AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
     @syscall
     def AUTOSAR_AdvanceCounter(cfg, abb, state):
@@ -639,8 +651,16 @@ class AUTOSAR(OSBase):
         - AUTOSAR the alarm is not set and the API call returns
           E_OS_VALUE
         """
-        args.alar
-        pass
+        assert(isinstance(args.increment, int))
+        assert(isinstance(args.cycle, int))
+
+        AUTOSAR.check_cpu(state, args.alarm.cpu_id)
+
+        state = state.copy()
+        state.context[args.alarm] = AlarmContext(increment=args.increment,
+                                                 cycle=args.cycle,
+                                                 active=True)
+        return state
 
     @syscall
     def AUTOSAR_ShutdownOS(cfg, abb, state):
