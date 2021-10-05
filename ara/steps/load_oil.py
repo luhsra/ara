@@ -155,7 +155,7 @@ class LoadOIL(Step):
 
             for a_name, alarm in cpu["alarms"].items():
                 a = instances.add_vertex()
-                instances.vp.obj[a] = _autosar.Resource(name=a_name, cpu_id=cpu_id)
+                instances.vp.obj[a] = _autosar.Alarm(name=a_name, cpu_id=cpu_id)
                 instances.vp.label[a] = a_name
 
                 # link to Counter
