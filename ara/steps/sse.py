@@ -24,11 +24,22 @@ class SSE(Step):
     def _state_as_dot(self, sstg, state_vert):
         attrs = {"fontsize": 14}
         size = 12
-        label = f"State {state_vert}"
         cfg = self._graph.cfg
 
         obj = sstg.vp.state[state_vert]
+        label = f"State {obj.id}"
         cpu = obj.cpus[0]
+        if cpu.control_instance:
+            instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
+        else:
+            instance = "Idle"
+        if cpu.abb:
+            syscall = cfg.get_syscall_name(cpu.abb)
+            if syscall != "":
+                syscall = f" ({syscall})"
+            abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
+        else:
+            abb = "None"
         graph_attrs = "<br/>".join(
             [
                 f"<i>{k}</i>: {html.escape(str(v))}"
@@ -36,9 +47,9 @@ class SSE(Step):
                     ("irq_on", cpu.irq_on),
                     (
                         "instance",
-                        obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)],
+                        instance,
                     ),
-                    ("abb", cfg.vp.name[cpu.abb]),
+                    ("abb", abb),
                     ("call_path", cpu.call_path),
                 ]
             ]
