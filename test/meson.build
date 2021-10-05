@@ -90,6 +90,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('sse.py'), files('sse.json'), autosar_isorc[0], autosar_isorc[1]],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
