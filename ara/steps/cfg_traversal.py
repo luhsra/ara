@@ -192,9 +192,22 @@ class _SSERunner:
         self._log.debug(f"Handle state {state}")
 
         # statistics
-        call_depth = len(call_path)
+        call_depth = len(call_path) if call_path else 0
         if self._max_call_depth < call_depth:
             self._max_call_depth = call_depth
+
+        # idle state
+        if abb is None:
+            # Trigger all interrupts. We are _not_ deciding over interarrival
+            # times here. This should be done by the operation system model.
+            self._log.debug("Handle idle. Trigger all interrupts.")
+            new_states = []
+            if state.cpus[0].irq_on:
+                for irq in self._available_irqs:
+                    new_state = self._os.handle_irq(self._graph, state, 0, irq)
+                    if new_state is not None:
+                        new_states.append(new_state)
+            return new_states
 
         # syscall handling
         if self._cfg.vp.type[abb] == ABBType.syscall:
@@ -275,6 +288,13 @@ class _SSERunner:
             new_state = state.copy()
             new_state.cpus[0].abb = n
             new_states.append(new_state)
+        # Trigger all interrupts. We are _not_ deciding over interarrival times
+        # here. This should be done by the operation system model.
+        # if state.cpus[0].irq_on:
+        #     for irq in self._available_irqs:
+        #         new_state = self._os.handle_irq(self._graph, state, 0, irq)
+        #         if new_state is not None:
+        #             new_states.append(new_state)
         return new_states
 
     def _system_semantic(self, state: OSState):
