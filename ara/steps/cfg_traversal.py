@@ -70,6 +70,8 @@ class _SSERunner:
         self._ut_func = {}
         self._loop_func = {}
 
+        self._available_irqs = self._os.get_interrupts(graph.instances)
+
     def _fail(self, msg, error=RuntimeError):
         """Print msg to as error and raise error."""
         self._log.error(msg)
