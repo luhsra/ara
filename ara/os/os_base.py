@@ -124,13 +124,33 @@ class OSBase:
         raise NotImplementedError
 
     @staticmethod
-    def interpret(graph, state, cpu, categories=SyscallCategory.every):
+    def get_interrupts(instances):
+        """Get all interrupts that lead to an OS action."""
+        raise NotImplementedError
+
+    @staticmethod
+    def handle_irq(graph, state, cpu_id, irq):
+        """Handle an (asynchronous) IRQ.
+
+        Arguments:
+        graph      -- the system graph
+        state      -- the current system state (see the State class)
+        cpu_id     -- the CPU where the system call occurs
+        irq        -- the IRQ number
+
+        Return:
+        The follow up state or None if the IRQ is invalid.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
         """Entry point for a synchronous os action (system call).
 
         Arguments:
         graph      -- the system graph
         state      -- the current system state (see the State class)
-        cpu        -- the CPU where the system call occurs
+        cpu_id     -- the CPU where the system call occurs
         categories -- interpret only specific system calls (for performance)
 
         Return:

@@ -1,7 +1,7 @@
 from .os_util import syscall, Arg, set_next_abb
 from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction
 from ara.util import get_logger
-from ara.graph import CallPath, SyscallCategory, SigType
+from ara.graph import CallPath, SyscallCategory, SigType, single_check
 
 import graph_tool
 import html
@@ -301,6 +301,30 @@ class AUTOSAR(OSBase):
             return AUTOSAR.decompress_state(new_state)
         else:
             return [new_state]
+
+    @staticmethod
+    def handle_irq(graph, state, cpu_id, irq):
+        # we handle alarms only
+        instances = state.instances
+        alarm_vertex = instances.vertex(irq)
+        alarm = instances.vp.obj[alarm_vertex]
+        alarm_ctx = state.context.get(alarm, False)
+        # TODO interarrival times
+        if alarm_ctx and alarm_ctx.active:
+            activates = graph_tool.GraphView(
+                    state.instances,
+                    efilt=state.instances.ep.type.fa == int(InstanceEdge.activate)
+            )
+            task_vertex = single_check(activates.vertex(alarm_vertex).out_neighbors())
+            task = state.instances.vp.obj[task_vertex]
+
+            logger.debug(f"Alarm {alarm.name} activates {task.name}.")
+            return AUTOSAR.ActivateTask(state, cpu_id, task)
+        return None
+
+    @staticmethod
+    def get_interrupts(instances):
+        return [v for v, _ in instances.get(Alarm)]
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
