@@ -186,7 +186,7 @@ class _SSERunner:
         visit_count = self._visited[call_path][abb]
         if visit_count > 0:
             if self._visitor.PREVENT_MULTIPLE_VISITS:
-                return
+                return 42
             else:
                 raise NotImplementedError  # TODO
         self._visited[call_path][abb] += 1
