@@ -358,38 +358,64 @@ class AUTOSAR(OSBase):
         if cpus is None:
             cpus = [cpu.id for cpu in state.cpus]
 
+        logger.debug(f"Scheduling state {state} on CPUs: {cpus}")
+
         # get cpu mapping
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            if obj.context[state.id].status in [TaskStatus.running, TaskStatus.ready]:
-                cpu_map[obj.cpu_id].append((v, obj))
+            if state.context[obj].status in [TaskStatus.running, TaskStatus.ready]:
+                cpu_map[obj.cpu_id].append((v, state.context[obj]))
 
         # update cpus
-        for cpu in state.cpus:
-            if cpu.id in cpus:
-                assert cpu.id in cpu_map and len(cpu_map[cpu.id]) != 0
-                prio_task = max(cpu_map[cpu.id], key=lambda t: t[1].priority)
-                logger.debug(f"Schedule on CPU {cpu.id}: "
-                             f"From {state.instances.vp.obj[state.instances.vertex(cpu.control_instance)]} "
-                             f"to {state.instances.vp.obj[state.instances.vertex(prio_task[0])]}")
+        for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
+            if not (cpu.id in cpu_map and len(cpu_map[cpu.id]) != 0):
+                # idle state
+                new_vertex = None
+                new_ctx = None
+                new_label = "Idle state"
+            else:
+                new_vertex, new_ctx = max(cpu_map[cpu.id],
+                                          key=lambda t: t[1].dyn_prio)
+                new_vertex = state.instances.vertex(new_vertex)
+                new_label = state.instances.vp.label[new_vertex]
 
-                # shortcut for same task
-                if prio_task[0] == cpu.control_instance:
-                    continue
+            # not coming from idle
+            if cpu.control_instance:
+                old_vertex = state.instances.vertex(cpu.control_instance)
+                old_task = state.instances.vp.obj[old_vertex]
+                old_label = state.instances.vp.label[old_vertex]
+            else:
+                old_vertex = None
+                old_label = "Idle state"
 
-                # write old values back to instance
-                cur_task_ctx = state.instances.vp.obj[cpu.control_instance].context[state.id]
-                cur_task_ctx.abb = cpu.abb
-                cur_task_ctx.call_path = cpu.call_path
-                if cur_task_ctx.status is TaskStatus.running:
-                    cur_task_ctx.status = TaskStatus.ready
+            logger.debug(f"Schedule on CPU {cpu.id}: "
+                         f"From {old_label} "
+                         f"to {new_label}")
 
-                # load new values
-                cpu.abb = prio_task[0]
-                cpu.call_path = prio_task[1].context[state.id].call_path
-                prio_task[1].context[state.id].status = TaskStatus.ready
-        logger.debug(f"Scheduling state {state}")
+            # shortcut for same task
+            if new_vertex == old_vertex:
+                continue
+
+            # write old values back to instance
+            if old_vertex:
+                old_ctx = state.context[old_task]
+                old_ctx.abb = state.cfg.vertex(cpu.abb)
+                old_ctx.call_path = cpu.call_path
+                if old_ctx.status is TaskStatus.running:
+                    old_ctx.status = TaskStatus.ready
+
+            # load new values
+            if new_vertex:
+                cpu.abb = state.cfg.vertex(new_ctx.abb)
+                cpu.call_path = new_ctx.call_path
+                new_ctx.status = TaskStatus.running
+
+                cpu.control_instance = state.instances.vertex(new_vertex)
+            else:
+                cpu.abb = None
+                cpu.call_path = None
+                cpu.control_instance = None
 
     @staticmethod
     def decompress_state(state):
