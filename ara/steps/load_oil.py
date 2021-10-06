@@ -83,9 +83,13 @@ class LoadOIL(Step):
 
             # resources
             for r_name in cpu["resources"].keys():
-                c = instances.add_vertex()
-                instances.vp.obj[c] = _autosar.Resource(name=r_name, cpu_id=cpu_id)
-                instances.vp.label[c] = r_name
+                r = instances.add_vertex()
+                instances.vp.obj[r] = _autosar.Resource(name=r_name, cpu_id=cpu_id)
+                instances.vp.label[r] = r_name
+
+                code_instance = va.find_global(_autosar.RESOURCE_PREFIX + r_name)
+                if code_instance is not None:
+                    va.assign_system_object(code_instance, instances.vp.obj[r])
 
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
