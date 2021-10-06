@@ -183,13 +183,11 @@ class _SSERunner:
         call_path = state.cpus[0].call_path
 
         # check handling of already visited vertices
-        visit_count = self._visited[call_path][abb]
-        if visit_count > 0:
-            if self._visitor.PREVENT_MULTIPLE_VISITS:
-                return 42
-            else:
-                raise NotImplementedError  # TODO
-        self._visited[call_path][abb] += 1
+        if self._visitor.PREVENT_MULTIPLE_VISITS:
+            visit_count = self._visited[call_path][abb]
+            if visit_count > 0:
+                return []
+            self._visited[call_path][abb] += 1
 
         self._log.debug(f"Handle state {state}")
 
@@ -318,10 +316,10 @@ class _SSERunner:
                             f"{stack}")
             state = stack.pop(0)
             for new_state in self._system_semantic(state):
-                self._visitor.add_state(new_state)
+                is_new = self._visitor.add_state(new_state)
                 self._visitor.add_transition(state, new_state)
 
-                if new_state not in stack:
+                if is_new:
                     stack.append(new_state)
 
             counter += 1
