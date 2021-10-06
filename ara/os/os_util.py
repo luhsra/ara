@@ -189,6 +189,7 @@ class SysCall:
 
         # syscall specific handling
         new_state = self._func(graph, state, cpu_id, args, va)
+        assert new_state is not None, "The syscall does not return anything."
 
         # add standard control flow successors if wanted
         if not self._ccf:
