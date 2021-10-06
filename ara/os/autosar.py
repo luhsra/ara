@@ -87,7 +87,7 @@ class Task(ControlInstance, AUTOSARInstance):
         }
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class TaskContext(ControlContext):
     dyn_prio: int
     received_events: int = 0
@@ -106,7 +106,7 @@ class Alarm(AUTOSARInstance):
     pass
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class AlarmContext:
     increment: int
     cycle: int
@@ -186,7 +186,7 @@ class AUTOSAR(OSBase):
             running_tasks.append(prio_task)
             logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
 
-        state = OSState(cpus=cpus, instances=instances, cfg=cfg)
+        state = OSState(cpus=tuple(cpus), instances=instances, cfg=cfg)
 
         # give initial running context
         for v in instances.get_controls().vertices():

@@ -4,9 +4,9 @@ import copy
 import enum
 
 from dataclasses import dataclass, field
-from typing import List, Any, Dict
+from typing import Tuple, Any
 
-from ara.graph import SyscallCategory, CallPath, CFG, CFType
+from ara.graph import SyscallCategory, CallPath, CFG
 
 
 class TaskStatus(enum.Enum):
@@ -55,6 +55,14 @@ class CPU:
                    call_path=copy.copy(self.call_path),
                    analysis_context=new_ac)
 
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+    def __hash__(self):
+        ci = self.control_instance and int(self.control_instance)
+        abb = self.abb and int(self.abb)
+        return hash((self.irq_on, ci, abb, self.call_path))
+
 
 _state_id = 0
 def _get_id():
@@ -66,18 +74,22 @@ def _get_id():
 @dataclass
 class OSState:
     id: int = field(init=False, default_factory=_get_id)
-    cpus: List[CPU]
+    cpus: Tuple[CPU]
     instances: graph_tool.Graph
     cfg: CFG
 
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
 
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
     def __hash__(self):
-        return self.id
+        return hash((self.cpus, tuple([(hash(k), hash(v))
+                                       for k, v in self.context.items()])))
 
     def copy(self):
-        new_cpus = [cpu.copy() for cpu in self.cpus]
+        new_cpus = tuple([cpu.copy() for cpu in self.cpus])
         new_state = OSState(cpus=new_cpus, instances=self.instances,
                             cfg=self.cfg)
         # new context for control instances
