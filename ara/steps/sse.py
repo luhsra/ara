@@ -105,12 +105,12 @@ class SSE(Step):
 
         s = sstg.add_vertex()
         sstg.vp.state[s] = os_state
-        state_map = {os_state: s}
+        state_map = {hash(os_state): s}
 
         assert len(os_state.cpus) == 1, "SSE does not support more than one CPU."
 
         class SSEVisitor(Visitor):
-            PREVENT_MULTIPLE_VISITS = True
+            PREVENT_MULTIPLE_VISITS = False
 
             @staticmethod
             def get_initial_state():
@@ -130,13 +130,17 @@ class SSE(Step):
 
             @staticmethod
             def add_state(new_state):
-                s = sstg.add_vertex()
-                sstg.vp.state[s] = new_state
-                state_map[new_state] = s
+                s_hash = hash(new_state)
+                if s_hash not in state_map:
+                    s = sstg.add_vertex()
+                    sstg.vp.state[s] = new_state
+                    state_map[s_hash] = s
+                    return True
+                return False
 
             @staticmethod
             def add_transition(source, target):
-                sstg.add_edge(state_map[source], state_map[target])
+                sstg.add_edge(state_map[hash(source)], state_map[hash(target)])
 
             @staticmethod
             def next_step(counter):
