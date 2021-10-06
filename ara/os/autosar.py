@@ -17,6 +17,7 @@ import pyllco
 
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
+RESOURCE_PREFIX = "AUTOSAR_RESOURCE_"
 
 logger = get_logger("AUTOSAR")
 
@@ -131,7 +132,7 @@ class Event(AUTOSARInstance):
     index: int
 
 
-@dataclass
+@dataclass(eq=False)
 class Resource(AUTOSARInstance):
     pass
 
