@@ -195,7 +195,7 @@ class AUTOSAR(OSBase):
             state.context[obj] = TaskContext(status=TaskStatus.suspended,
                                              abb=cfg.get_entry_abb(obj.function),
                                              call_path=CallPath(),
-                                             dyn_prio=obj.priority)
+                                             dyn_prio=2*obj.priority)
         for task in running_tasks:
             state.context[task].status = TaskStatus.running
 
@@ -584,21 +584,47 @@ class AUTOSAR(OSBase):
     def AUTOSAR_AdvanceCounter(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_CancelAlarm(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),))
+    def AUTOSAR_CancelAlarm(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.alarm, Alarm))
+        state = state.copy()
 
-    @syscall
-    def AUTOSAR_ChainTask(cfg, abb, state):
-        pass
+        if args.alarm in state.context:
+            state.context[args.alarm].active = False
+
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("task", ty=Task, hint=SigType.instance),))
+    def AUTOSAR_ChainTask(cfg, state, cpu_id, args, va):
+        state = state.copy()
+        AUTOSAR.check_cpu(state, args.task.cpu_id)
+
+        logger.debug(f"Setting Task {args.task} ready.")
+
+        cur_task = state.cur_control_inst(cpu_id)
+        assert isinstance(cur_task, Task), "ChainTask must be called in a task"
+
+        state.context[cur_task].status = TaskStatus.suspended
+        state.context[args.task].status = TaskStatus.ready
+
+        return state
 
     @syscall
     def AUTOSAR_CheckAlarm(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_ClearEvent(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("event_mask"),))
+    def AUTOSAR_ClearEvent(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.event_mask, int))
+        state = state.copy()
+
+        cur_ctx = state.cur_context(cpu_id)
+        cur_ctx.received_events &= ~args.event_mask
+
+        return state
 
     @syscall
     def AUTOSAR_DisableAllInterrupts(cfg, abb, state, cpu):
@@ -634,13 +660,29 @@ class AUTOSAR(OSBase):
     def AUTOSAR_GetEvent(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_GetResource(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
+    def AUTOSAR_GetResource(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.resource, Resource))
+        state = state.copy()
 
-    @syscall
-    def AUTOSAR_ReleaseResource(cfg, abb, state):
-        pass
+        # get correct dyn_prio
+        res_vertex = single_check(filter(lambda x: state.instances.vp.obj[x] == args.resource, state.instances.vertices()))
+        dyn_prio = max([state.instances.vp.obj[x].priority for x in res_vertex.in_neighbors()]) * 2 + 1
+
+        state.cur_context(cpu_id).dyn_prio = dyn_prio
+        logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} to the dynamic priority {dyn_prio}.")
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
+    def AUTOSAR_ReleaseResource(cfg, state, cpu_id, args, va):
+        state = state.copy()
+        dyn_prio = state.cur_control_inst(cpu_id).priority * 2
+        state.cur_context(cpu_id).dyn_prio = dyn_prio
+        logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
+
+        return state
 
     @syscall
     def AUTOSAR_ResumeAllInterrupts(cfg, abb, state):
@@ -650,9 +692,27 @@ class AUTOSAR(OSBase):
     def AUTOSAR_ResumeOSInterrupts(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_SetEvent(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("task", ty=Task, hint=SigType.instance),
+                        Arg("event_mask")))
+    def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.task, Task))
+        assert(isinstance(args.event_mask, int))
+
+        state = state.copy()
+
+        task_ctx = state.context[args.task]
+        if task_ctx.status == TaskStatus.blocked and \
+           args.event_mask & task_ctx.received_events != 0:
+            # this task already waits for this event
+            task_ctx.status == TaskStatus.ready
+            # clear old events on which the task has waited, set all other
+            task_ctx.received_events = ~task_ctx.received_events & args.event_mask
+        else:
+            # just set the additional events
+            task_ctx.received_events |= args.event_mask
+
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
@@ -719,18 +779,23 @@ class AUTOSAR(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
-             signature=(Arg("event_mask"),),
-             custom_control_flow=True)
+             signature=(Arg("event_mask"),))
     def AUTOSAR_WaitEvent(cfg, state, cpu_id, args, va):
-        logger.debug(args.event_mask)
         assert(isinstance(args.event_mask, int))
         state = state.copy()
 
         cur_ctx = state.cur_context(cpu_id)
 
-        if args.event_mask & state.cur_context(cpu_id).received_events != 0:
-            set_next_abb(state, cpu_id)
-        else:
+        if args.event_mask & cur_ctx.received_events == 0:
             cur_ctx.status = TaskStatus.blocked
+            # store event that is waited for in received_events since this
+            # field is unused as long as the task is blocked
+            cur_ctx.received_events = args.event_mask
+            # release resource
+            dyn_prio = state.cur_control_inst(cpu_id).priority * 2
+            state.cur_context(cpu_id).dyn_prio = dyn_prio
+
+        # the next ABB will be set _after_ this call. However, since this task
+        # is blocked this isn't a problem.
 
         return state
