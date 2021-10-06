@@ -1,6 +1,6 @@
 """Container for SSE."""
 from .step import Step
-from .option import Option, String
+from .option import Option, String, Bool
 from .cfg_traversal import Visitor, run_sse
 
 import graph_tool
@@ -14,6 +14,10 @@ class SSE(Step):
 
     entry_point = Option(name="entry_point", help="system entry point",
                          ty=String())
+
+    detailed_dump = Option(name="detailed_dump", help="Output the state graph every iteration (WARNING: produces _a lot of_ files).",
+                           ty=Bool(),
+                           default_value=False)
 
     def get_single_dependencies(self):
         if self._graph.os is None:
@@ -136,7 +140,7 @@ class SSE(Step):
 
             @staticmethod
             def next_step(counter):
-                if self.dump.get():
+                if self.detailed_dump.get():
                     self.dump_sstg(sstg, extra=counter)
 
         run_sse(
