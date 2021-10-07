@@ -1,0 +1,23 @@
+{
+  "vertices": [
+    [0, ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"]],
+    [1, ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"]],
+    [2, ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"]],
+    [3, ["AUTOSAR_TerminateTask", "Handler11", "CallPath()"]],
+    [4, ["AUTOSAR_TerminateTask", "Handler11", "CallPath()"]],
+    [5, ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"]],
+    [6, ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"]],
+    [7, ["Idle"]],
+    [8, ["Init"]]
+  ],
+  "edges": [
+    [8, 0],
+    [8, 1],
+    [0, 2],
+    [1, 5],
+    [5, 3],
+    [2, 6],
+    [6, 4],
+    [3, 7]
+  ]
+}
