@@ -86,13 +86,15 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('sse',
-        py3_inst,
-        args: [files('sse.py'), files('sse.json'), autosar_singlecore_bcc1_task1_a[0], autosar_singlecore_bcc1_task1_a[1]],
-        env: [python_path],
-        depends: ara_py,
-        suite: 'steps'
-    )
+    foreach elem : autosar_targets_with_test
+      test('sse_' + elem[3],
+          py3_inst,
+          args: [files('sse.py'), elem[2], elem[0], elem[1]],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['steps', 'sse']
+      )
+    endforeach
 
     test('syscall',
         py3_inst,
