@@ -11,7 +11,7 @@
  * task H1 which terminated. Since the ISR was activated by an alarm,
  * the Task H2 is executed after H1 (priority!)
  */
-#include "os.h"
+#include "autosar/os.h"
 #include "test/test.h"
 #include "syscall.h"
 

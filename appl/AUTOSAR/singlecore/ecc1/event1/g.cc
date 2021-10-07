@@ -1,6 +1,6 @@
 /* This test case ensures that set events are not invalidated, when
  * SetEvent is called */
-#include "os.h"
+#include "autosar/os.h"
 #include "test/test.h"
 #include "machine.h"
 

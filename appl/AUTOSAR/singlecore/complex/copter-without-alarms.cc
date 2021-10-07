@@ -8,7 +8,7 @@
  * @ingroup apps
  * @brief Just a simple test application
  */
-#include "os.h"
+#include "autosar/os.h"
 #include "fail/trace.h"
 
 //extern "C" volatile uint32_t random_source =0 ;

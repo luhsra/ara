@@ -6,7 +6,7 @@
 
 #include "test/test.h"
 #include "util/encoded.h"
-#include "os.h"
+#include "autosar/os.h"
 
 DeclareTask(Task1);
 DeclareTask(Task2);
