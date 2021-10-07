@@ -1,0 +1,75 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "H1Group": {
+          "promises": [],
+          "tasks": {
+            "H1": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        },
+        "H2Group": {
+          "promises": [],
+          "tasks": {
+            "H2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 4,
+              "schedule": true
+            }
+          }
+        },
+        "H3Group": {
+          "promises": [],
+          "tasks": {
+            "H3": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 3,
+              "schedule": false
+            }
+          }
+        },
+        "H4Group": {
+          "promises": [],
+          "tasks": {
+            "H4": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 2,
+              "schedule": true
+            }
+          }
+        },
+        "H5Group": {
+          "promises": [],
+          "tasks": {
+            "H5": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 1,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {
+        "ISR1": {
+          "category": 2,
+          "device": 37,
+          "priority": 1337
+        }
+      }
+    }
+  ]
+}

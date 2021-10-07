@@ -355,7 +355,7 @@ class Task(OILObject):
     @property
     def taskgroup(self):
         if not self.TASKGROUP:
-            return self.name
+            return self.name + "Group"
         else:
             return self.TASKGROUP
 
@@ -403,7 +403,6 @@ class ISR(OILObject):
         self.is_isr = True
         self.__interarival_times = {'min': None, 'max': None}
 
-
     def get_device(self):
         assert self.DEVICE, "No device number set for ISR '" + self.name + "'"
         return self.DEVICE
@@ -411,7 +410,7 @@ class ISR(OILObject):
     @property
     def taskgroup(self):
         if not self.TASKGROUP:
-            return self.name
+            return self.name + "Group"
         else:
             return self.TASKGROUP
 
@@ -422,8 +421,6 @@ class ISR(OILObject):
     @property
     def interarival_times(self):
         return self.__interarival_times
-
-
 
     def evaluate(self, oil):
         super(ISR, self).evaluate(oil)
@@ -782,12 +779,24 @@ def convert_to_json(cpus):
                 "mincycle": counter.mincycle
             }
 
+        # ISRs
+        j_isrs = {}
+        for isr_name, isr in cpu.isrs.items():
+            j_isrs[isr_name] = {
+                "category": isr.CATEGORY,
+                "device": isr.isr_device
+            }
+            if isr.PRIORITY != -1:
+                j_isrs[isr_name]["priority"] = isr.PRIORITY
+
         j_cpus.append({"id": idx,
                        "task_groups": j_task_groups,
                        "resources": j_res,
                        "events": j_events,
                        "alarms": j_alarms,
-                       "counters": j_counters})
+                       "counters": j_counters,
+                       "isrs": j_isrs})
+
     return {"cpus": j_cpus}
 
 
