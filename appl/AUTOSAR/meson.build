@@ -47,7 +47,7 @@ autosar_apps = [
   ['singlecore' / 'bcc1' / 'sse1',      ['b', 'system.json']],
   ['singlecore' / 'bcc1' / 'sse1',      ['c', 'system.json']],
   ['singlecore' / 'bcc1' / 'task1',     ['a', 'system.json', 'a.trace.json']],
-  ['singlecore' / 'bcc1' / 'task1',     ['b', 'system.json']],
+  ['singlecore' / 'bcc1' / 'task1',     ['b', 'system.json', 'b.trace.json']],
   ['singlecore' / 'bcc1' / 'task1',     ['c', 'system.json']],
   ['singlecore' / 'bcc1' / 'task1',     ['d', 'system.json']],
   ['singlecore' / 'bcc1' / 'task1',     ['e', 'system.json']],
