@@ -312,8 +312,7 @@ class _SSERunner:
         counter = 0
         while stack:
             self._log.debug(f"Round {counter:3d}, "
-                            f"Stack with {len(stack)} state(s): "
-                            f"{stack}")
+                            f"Stack with {len(stack)} state(s)")
             state = stack.pop(0)
             for new_state in self._system_semantic(state):
                 is_new = self._visitor.add_state(new_state)
