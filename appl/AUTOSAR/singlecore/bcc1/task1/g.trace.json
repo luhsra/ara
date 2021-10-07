@@ -1,0 +1,11 @@
+{
+  "vertices": [
+    [0, ["AUTOSAR_ActivateTask", "Handler11", "Callpath([ABB15, AUTOSAR_TASK_FUNC_Handler11 -> bar])"]],
+    [1, ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"]],
+    [2, ["Init"]]
+  ],
+  "edges": [
+    [2, 0],
+    [0, 1]
+  ]
+}
