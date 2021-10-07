@@ -379,6 +379,17 @@ namespace ara::step {
 			const llvm::Value* val = stmt->getPAGEdge()->getValue();
 			auto hint = caretaker.get_hint();
 
+			if (llvm::isa<llvm::GlobalValue>(val)) {
+				// GlobalValues are call path independent so check for object assignment again
+				auto id = caretaker.get_obj_id(node->getId(), offset, graph::CallPath());
+				if (id) {
+					dbg() << "Found a previous assigned object." << std::endl;
+					dbg() << "CallPath: " << call_path << std::endl;
+					dbg() << "Asked for: " << node->getId() << " " << offset_print(offset) << std::endl;
+					return Finished{FoundValue{*id, node, {}, graph::CallPath()}};
+				}
+			}
+
 			if (const llvm::GetElementPtrInst* i = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
 				dbg() << "Found GetElementPtrInst: " << pretty_print(*i) << std::endl;
 				offset.emplace_back(i);
@@ -867,7 +878,7 @@ namespace ara::step {
 		if (offsets.size() != 0) {
 			logger.debug() << " with offset " << offset_print(offsets);
 		}
-		logger.debug() << "." << std::endl;
+		logger.debug() << " and callpath " << callpath << "." << std::endl;
 		auto num_offsets = convert_to_number_offsets(offsets);
 		if (num_offsets) {
 			obj_map.insert(
