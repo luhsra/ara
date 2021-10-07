@@ -422,12 +422,12 @@ class AUTOSAR(OSBase):
             if new_vertex == old_vertex:
                 continue
 
-            # write old values back to instance
+            # write old values back to instance only if it is running
             if old_vertex:
                 old_ctx = state.context[old_task]
-                old_ctx.abb = state.cfg.vertex(cpu.abb)
-                old_ctx.call_path = cpu.call_path
                 if old_ctx.status is TaskStatus.running:
+                    old_ctx.abb = state.cfg.vertex(cpu.abb)
+                    old_ctx.call_path = cpu.call_path
                     old_ctx.status = TaskStatus.ready
 
             # load new values
@@ -773,7 +773,10 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
-        state.context[cur_task].status = TaskStatus.suspended
+        state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
+                                              abb=state.cfg.get_entry_abb(cur_task.function),
+                                              call_path=CallPath(),
+                                              dyn_prio=2*cur_task.priority)
 
         logger.debug(f"Terminate Task {cur_task.name}.")
 
