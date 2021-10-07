@@ -176,8 +176,9 @@ if get_option('enable_toplevel_tests')
     autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
     test('multisse',
        py3_inst,
-       args: [ara_py, autosar_minexample[0],
-              '--oilfile', autosar_minexample[1],
+       args: [ara_py, autosar_multicore_minexample[0],
+              '--oilfile', autosar_multicore_minexample[1],
+              '--dump',
               '--log-level', 'info',
               '--dump',
               '--step-settings', autosar_minexample_settings],

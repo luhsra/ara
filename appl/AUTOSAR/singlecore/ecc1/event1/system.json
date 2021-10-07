@@ -1,0 +1,60 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "H1Group": {
+          "promises": [],
+          "tasks": {
+            "H1": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 4,
+              "schedule": true,
+              "events": [
+                "E1"
+              ]
+            }
+          }
+        },
+        "H2Group": {
+          "promises": [],
+          "tasks": {
+            "H2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 3,
+              "schedule": true,
+              "events": [
+                "E1"
+              ]
+            }
+          }
+        },
+        "H3Group": {
+          "promises": [],
+          "tasks": {
+            "H3": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true,
+              "events": [
+                "E1",
+                "E2"
+              ]
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {
+        "E1": {},
+        "E2": {}
+      },
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ]
+}

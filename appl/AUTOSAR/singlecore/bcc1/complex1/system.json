@@ -1,0 +1,69 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "H1Group": {
+          "promises": [],
+          "tasks": {
+            "H1": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        },
+        "H2Group": {
+          "promises": [],
+          "tasks": {
+            "H2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 4,
+              "schedule": true
+            }
+          }
+        },
+        "H3Group": {
+          "promises": [],
+          "tasks": {
+            "H3": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 3,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {
+        "A1": {
+          "counter": "C1",
+          "action": {
+            "action": "activatetask",
+            "task": "H2"
+          },
+          "autostart": true,
+          "cycletime": 100,
+          "alarmtime": 1
+        }
+      },
+      "counters": {
+        "C1": {
+          "maxallowedvalue": 1000,
+          "ticksperbase": 1,
+          "mincycle": 1
+        }
+      },
+      "isrs": {
+        "ISR1": {
+          "category": 2,
+          "device": 5
+        }
+      }
+    }
+  ]
+}

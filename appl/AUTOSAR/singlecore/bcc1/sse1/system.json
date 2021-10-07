@@ -1,0 +1,86 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "H1Group": {
+          "promises": [],
+          "tasks": {
+            "H1": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        },
+        "H2Group": {
+          "promises": [],
+          "tasks": {
+            "H2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 4,
+              "schedule": true,
+              "resources": [
+                "R234"
+              ]
+            }
+          }
+        },
+        "H3Group": {
+          "promises": [],
+          "tasks": {
+            "H3": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 3,
+              "schedule": true,
+              "resources": [
+                "R234",
+                "R345"
+              ]
+            }
+          }
+        },
+        "H4Group": {
+          "promises": [],
+          "tasks": {
+            "H4": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 2,
+              "schedule": true,
+              "resources": [
+                "R234",
+                "R345"
+              ]
+            }
+          }
+        },
+        "H5Group": {
+          "promises": [],
+          "tasks": {
+            "H5": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 1,
+              "schedule": true,
+              "resources": [
+                "R345"
+              ]
+            }
+          }
+        }
+      },
+      "resources": {
+        "R234": {},
+        "R345": {}
+      },
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ]
+}

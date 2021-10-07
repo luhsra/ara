@@ -1,0 +1,77 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "CoordGroup": {
+          "promises": [],
+          "tasks": {
+            "Coord": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 1,
+              "schedule": false
+            }
+          }
+        },
+        "ET1Group": {
+          "promises": [],
+          "tasks": {
+            "ET1": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 2,
+              "schedule": true,
+              "events": [
+                "E1"
+              ]
+            }
+          }
+        },
+        "ET2Group": {
+          "promises": [],
+          "tasks": {
+            "ET2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 10,
+              "schedule": true,
+              "events": [
+                "E1"
+              ]
+            }
+          }
+        },
+        "BT1Group": {
+          "promises": [],
+          "tasks": {
+            "BT1": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 3,
+              "schedule": true
+            }
+          }
+        },
+        "BT2Group": {
+          "promises": [],
+          "tasks": {
+            "BT2": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 11,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {
+        "E1": {}
+      },
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ]
+}
