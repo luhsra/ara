@@ -567,6 +567,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def ActivateTask(state, cpu_id, task):
+        assert(isinstance(task, Task))
         state = state.copy()
 
         logger.debug(f"Setting Task {task} ready.")
