@@ -1,0 +1,8 @@
+[
+  ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"],
+  ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"],
+  ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"],
+  ["AUTOSAR_TerminateTask", "Handler11", "CallPath()"],
+  ["AUTOSAR_TerminateTask", "Handler12", "CallPath()"],
+  "Idle"
+]
