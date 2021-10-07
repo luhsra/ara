@@ -290,11 +290,11 @@ class _SSERunner:
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.
-        # if state.cpus[0].irq_on:
-        #     for irq in self._available_irqs:
-        #         new_state = self._os.handle_irq(self._graph, state, 0, irq)
-        #         if new_state is not None:
-        #             new_states.append(new_state)
+        if state.cpus[0].irq_on:
+            for irq in self._available_irqs:
+                new_state = self._os.handle_irq(self._graph, state, 0, irq)
+                if new_state is not None:
+                    new_states.append(new_state)
         return new_states
 
     def _system_semantic(self, state: OSState):
