@@ -14,15 +14,16 @@ from graph_tool.topology import (dominator_tree, label_out_component,
 
 
 @dataclass
-class SSEContext:
-    recursive: bool  # is this state part of a recursive function
-    branch: bool  # is this state on a branch (behind an if)
-    loop: bool  # is this state part of a loop
-    usually_taken: bool  # is this state coming from a branch, where all other
-                         # branches end in an endless loop
+class CFGContext:
+    """capture CFG specific quirks"""
+    recursive: bool = False  # is this state part of a recursive function
+    branch: bool = False     # is this state on a branch (behind an if)
+    loop: bool = False       # is this state part of a loop
+    usually_taken: bool = False  # is this state coming from a branch, where
+                                 # all other branches end in an endless loop
 
     def copy(self):
-        return SSEContext(recursive=self.recursive,
+        return CFGContext(recursive=self.recursive,
                           branch=self.branch,
                           loop=self.loop,
                           usually_taken=self.usually_taken)
@@ -31,7 +32,7 @@ class SSEContext:
 class Visitor:
     PREVENT_MULTIPLE_VISITS = True
     SYSCALL_CATEGORIES = (SyscallCategory.every,)
-    CONTEXT = SSEContext
+    CFG_CONTEXT = CFGContext  # set to None if analysis should be deactivated
 
     def get_initial_state(self):
         raise NotImplementedError
@@ -130,6 +131,14 @@ class _SSERunner:
                                   patched_func_cfg.vertex(entry))
         return dom_tree, CFGView(func_cfg, vfilt=exit_map)
 
+    def _dominates(self, dom_tree, abb_x, abb_y):
+        """Does abb_x dominate abb_y?"""
+        while abb_y:
+            if abb_x == abb_y:
+                return True
+            abb_y = dom_tree[abb_y]
+        return False
+
     def _is_in_condition(self, abb, ignore_endless_loops=False):
         """Is abb part of a condition?"""
         func = self._graph.cfg.get_function(abb)
@@ -147,34 +156,37 @@ class _SSERunner:
         in_cond = self._is_in_condition(abb)
         local_ut = (in_cond and not
                     self._is_in_condition(abb, ignore_endless_loops=True))
-        extern_ut = self._ut_func.get(state.call_path, False)
+        extern_ut = self._ut_func.get(state.cpus[0].call_path, False)
         return local_ut or (extern_ut and not in_cond)
 
     def _assign_context(self, state, new_state, abb):
-        # check if in a recursive function and mark accordingly
-        context = self._visitor.CONTEXT()
+        context = self._visitor.CFG_CONTEXT
+        if context is not None:
+            context = context()
 
-        abb = new_state.cpus[0].abb
-        call_path = new_state.cpus[0].call_path
-        func = self._cfg.get_function(self._cfg.vertex(abb))
-        context.recursive = self._call_graph.vp.recursive[
-            self._call_graph.vertex(
-                self._cfg.vp.call_graph_link[func]
-            )
-        ]
+            abb = new_state.cpus[0].abb
+            call_path = new_state.cpus[0].call_path
 
-        new_state.branch = (self._cond_func.get(call_path, False) or
-                            self._is_in_condition(abb))
-        self._cond_func[new_state.call_path] = new_state.branch
+            # check if in a recursive function and mark accordingly
+            func = self._cfg.get_function(self._cfg.vertex(abb))
+            context.recursive = self._call_graph.vp.recursive[
+                self._call_graph.vertex(
+                    self._cfg.vp.call_graph_link[func]
+                )
+            ]
 
-        new_state.usually_taken = self._is_usually_taken(state, abb)
-        self._ut_func[new_state.call_path] = new_state.usually_taken
+            context.branch = (self._cond_func.get(call_path, False) or
+                              self._is_in_condition(abb))
+            self._cond_func[call_path] = context.branch
 
-        new_state.loop = (self._loop_func.get(call_path, False) or
-                          self._is_in_loop(abb))
-        self._loop_func[new_state.call_path] = new_state.loop
+            context.usually_taken = self._is_usually_taken(state, abb)
+            self._ut_func[call_path] = context.usually_taken
 
-        new_state.analysis_context = context
+            context.loop = (self._loop_func.get(call_path, False) or
+                            self._is_in_loop(abb))
+            self._loop_func[call_path] = context.loop
+
+            new_state.analysis_context = context
 
     def _execute(self, state):
         self._visitor.init_execution(state)
@@ -235,7 +247,7 @@ class _SSERunner:
                 if self._visitor.is_bad_call_target(n):
                     continue
 
-                new_call_path = self._extend_call_path(state.call_path, abb)
+                new_call_path = self._extend_call_path(call_path, abb)
 
                 # prevent recursion
                 if new_call_path.is_recursive():
@@ -263,15 +275,15 @@ class _SSERunner:
               self._icfg.vertex(abb).out_degree() > 0):
             self._log.debug(f"Handle exit: {self._icfg.vp.name[abb]}")
             new_state = state.copy()
-            callsite = new_state.call_path[-1]
-            call = new_state.callgraph.ep.callsite[callsite]
+            callsite = new_state.cpus[0].call_path[-1]
+            call = self._call_graph.ep.callsite[callsite]
             neighbors = self._lcfg.vertex(call).out_neighbors()
             next_node = next(neighbors)
             func = new_state.cfg.get_function(
                 new_state.cfg.vertex(next_node)
             )
-            new_state.recursive = new_state.callgraph.vp.recursive[
-                new_state.callgraph.vertex(
+            new_state.recursive = self._call_graph.vp.recursive[
+                self._call_graph.vertex(
                     new_state.cfg.vp.call_graph_link[func]
                 )
             ]
