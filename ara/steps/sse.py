@@ -96,6 +96,7 @@ class SSE(Step):
         self._log.info(f"Analyzing entry point: '{entry_label}'")
 
         sstg = graph_tool.Graph()
+        sstg.graph_properties["start"] = sstg.new_gp("long")
         sstg.vertex_properties["state"] = sstg.new_vp("object")
         sstg.edge_properties["syscall"] = sstg.new_ep("object")
 
@@ -103,9 +104,10 @@ class SSE(Step):
             self._graph.cfg, self._graph.instances
         )
 
-        s = sstg.add_vertex()
-        sstg.vp.state[s] = os_state
-        state_map = {hash(os_state): s}
+        first = sstg.add_vertex()
+        sstg.vp.state[first] = os_state
+        state_map = {hash(os_state): first}
+        sstg.gp.start = int(first)
 
         assert len(os_state.cpus) == 1, "SSE does not support more than one CPU."
 
@@ -153,6 +155,9 @@ class SSE(Step):
             visitor=SSEVisitor(),
             logger=self._log,
         )
+
+        # store result
+        self._graph.sstg = sstg
 
         if self.dump.get():
             self.dump_sstg(sstg)
