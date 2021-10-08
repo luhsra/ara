@@ -6,12 +6,13 @@
     [3, ["AUTOSAR_TerminateTask", "Handler12", "CallPath()"]],
     [4, ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"]],
     [5, ["Idle"]],
-    [6, ["Init"]]
+    [6, ["Start"]]
   ],
   "edges": [
-    [6, 1],
     [6, 0],
+    [6, 1],
     [0, 2],
+    [1, 2],
     [2, 4],
     [4, 3],
     [3, 5]

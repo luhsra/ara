@@ -1,7 +1,7 @@
 """Container for Printer."""
-from ara.graph import ABBType, CFType, Graph, NodeLevel, CFGView
+from ara.graph import ABBType, CFType, CFGView
 
-from .option import Option, String, Choice, Bool, Graph_Type
+from .option import Option, String, Choice, Bool
 from .step import Step
 
 import pydot
@@ -9,7 +9,64 @@ import html
 import os
 import os.path
 
-import graph_tool.draw
+
+def _sstg_state_as_dot(sstg, state_vert):
+    attrs = {"fontsize": 14}
+    size = 12
+
+    obj = sstg.vp.state[state_vert]
+    cfg = obj.cfg
+    label = f"State {obj.id}"
+    cpu = obj.cpus[0]
+    if cpu.control_instance:
+        instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
+    else:
+        instance = "Idle"
+    if cpu.abb:
+        syscall = cfg.get_syscall_name(cpu.abb)
+        if syscall != "":
+            syscall = f" ({syscall})"
+        abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
+    else:
+        abb = "None"
+    graph_attrs = "<br/>".join(
+        [
+            f"<i>{k}</i>: {html.escape(str(v))}"
+            for k, v in [
+                ("irq_on", cpu.irq_on),
+                (
+                    "instance",
+                    instance,
+                ),
+                ("abb", abb),
+                ("call_path", cpu.call_path),
+            ]
+        ]
+    )
+    graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
+    attrs["label"] = f"<{label}<br/>{graph_attrs}>"
+    return attrs
+
+
+def sstg_to_dot(sstg, label="SSTG"):
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+
+    for state_vert in sstg.vertices():
+        attrs = _sstg_state_as_dot(
+            sstg, state_vert
+        )
+        dot_state = pydot.Node(str(state_vert), **attrs)
+        dot_graph.add_node(dot_state)
+    for edge in sstg.edges():
+        dot_graph.add_edge(
+            pydot.Edge(
+                str(edge.source()),
+                str(edge.target()),
+                color="black",
+            )
+        )
+
+    return dot_graph
 
 
 class Printer(Step):
@@ -30,7 +87,7 @@ class Printer(Step):
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("bbs", "abbs", "instances", "callgraph",
-                                "multistates", "sstg_full", "sstg_simple"))
+                                "multistates", "sstg", "reduced_sstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
@@ -214,6 +271,17 @@ class Printer(Step):
                 str(hash(edge.source())),
                 str(hash(edge.target())),
                 label=self._graph.instances.ep.label[edge]))
+        self._write_dot(dot_graph)
+
+    def print_sstg(self, reduced=False):
+        name = self._print_init()
+
+        if reduced:
+            sstg = self._graph.reduced_sstg
+        else:
+            sstg = self._graph.sstg
+
+        dot_graph = sstg_to_dot(sstg, name)
         self._write_dot(dot_graph)
 
     def print_callgraph(self):
@@ -410,10 +478,10 @@ class Printer(Step):
             self.print_xbbs(bbs=False)
         if subgraph == 'instances':
             self.print_instances()
-        if subgraph == 'sstg_full':
-            self.print_sstg_full()
-        if subgraph == 'sstg_simple':
-            self.print_sstg_simple()
+        if subgraph == 'sstg':
+            self.print_sstg()
+        if subgraph == 'reduced_sstg':
+            self.print_sstg(reduced=True)
         if subgraph == 'multistates':
             self.print_multistates()
         if subgraph == 'callgraph':
