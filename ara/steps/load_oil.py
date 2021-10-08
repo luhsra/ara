@@ -164,7 +164,15 @@ class LoadOIL(Step):
 
             for a_name, alarm in cpu["alarms"].items():
                 a = instances.add_vertex()
-                instances.vp.obj[a] = _autosar.Alarm(name=a_name, cpu_id=cpu_id)
+
+                obj = _autosar.Alarm(name=a_name, cpu_id=cpu_id)
+                if "autostart" in alarm:
+                    obj.autostart = alarm["autostart"]
+                if "cycletime" in alarm:
+                    obj.cycletime = alarm["cycletime"]
+                if "alarmtime" in alarm:
+                    obj.alarmtime = alarm["alarmtime"]
+                instances.vp.obj[a] = obj
                 instances.vp.label[a] = a_name
 
                 # link to Counter
