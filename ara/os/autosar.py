@@ -168,26 +168,40 @@ class AUTOSAR(OSBase):
         # the (synchronized) StartOS call.
 
         # get cpu mapping
-        cpu_map = defaultdict(list)
+        cpu_map = {}
         for v in instances.get_controls().vertices():
             obj = instances.vp.obj[v]
+            if obj.cpu_id not in cpu_map:
+                cpu_map[obj.cpu_id] = []
             if obj.autostart:
                 cpu_map[obj.cpu_id].append((v, obj))
 
         # construct actual CPUs
         cpus = []
         running_tasks = []
+        irq_status = {}
         for cpu_id, tasks in cpu_map.items():
-            prio_vert, prio_task = max(tasks, key=lambda t: t[1].priority)
-            entry_abb = cfg.get_entry_abb(prio_task.function)
-            cpus.append(CPU(id=cpu_id,
-                            irq_on=True,
-                            control_instance=prio_vert,
-                            abb=entry_abb,
-                            call_path=CallPath(),
-                            analysis_context=None))
-            running_tasks.append(prio_task)
-            logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
+            if len(tasks) == 0:
+                # we have the CPU but not task that can be scheduled
+                cpus.append(CPU(id=cpu_id,
+                                irq_on=True,
+                                control_instance=None,
+                                abb=None,
+                                call_path=CallPath(),
+                                analysis_context=None))
+                logger.debug(f"Initial: CPU {cpu_id} idles.")
+            else:
+                prio_vert, prio_task = max(tasks, key=lambda t: t[1].priority)
+                entry_abb = cfg.get_entry_abb(prio_task.function)
+                cpus.append(CPU(id=cpu_id,
+                                irq_on=True,
+                                control_instance=prio_vert,
+                                abb=entry_abb,
+                                call_path=CallPath(),
+                                analysis_context=None))
+                running_tasks.append(prio_task)
+                logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
+            irq_status[cpu_id] = -1
 
         state = OSState(cpus=tuple(cpus), instances=instances, cfg=cfg)
 
