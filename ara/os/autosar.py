@@ -116,6 +116,14 @@ class AlarmContext:
     active: bool
 
 
+@dataclass
+class AUTOSARContext:
+    irq_status: dict
+
+    def __hash__(self):
+        return hash(("AUTOSARContext", tuple(self.irq_status.items())))
+
+
 class ISR:
     def __init__(self, name, cpu_id, category, priority, function, group):
         self.cpu_id = cpu_id
@@ -222,6 +230,9 @@ class AUTOSAR(OSBase):
                         cycle=alarm.cycletime,
                         increment=alarm.alarmtime
                 )
+
+        # special context object for os specific state
+        state.context["AUTOSAR"] = AUTOSARContext(irq_status=irq_status)
 
         return state
 
@@ -651,31 +662,19 @@ class AUTOSAR(OSBase):
 
         return state
 
-    @syscall
-    def AUTOSAR_DisableAllInterrupts(cfg, abb, state, cpu):
-        new_state = state.copy()
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def AUTOSAR_DisableAllInterrupts(cfg, state, cpu_id, args, va):
+        state = state.copy()
+        state.cpus[cpu_id].irq_on = False
+        return state
 
-        new_state.set_interrupts_enabled_flag(False)
-
-        scheduled_task = state.get_scheduled_instance()
-
-        # advance task or isr to next abb
-        new_state.set_abb(scheduled_task.name, next(cfg.vertex(abb).out_neighbors()))
-
-        return new_state
-
-    @syscall
-    def AUTOSAR_EnableAllInterrupts(cfg, abb, state, cpu):
-        new_state = state.copy()
-
-        new_state.set_interrupts_enabled_flag(True)
-
-        scheduled_task = state.get_scheduled_instance()
-
-        # advance task or isr to next abb
-        new_state.set_abb(scheduled_task.name, next(cfg.vertex(abb).out_neighbors()))
-
-        return new_state
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def AUTOSAR_EnableAllInterrupts(cfg, state, cpu_id, args, va):
+        state = state.copy()
+        state.cpus[cpu_id].irq_on = True
+        return state
 
     @syscall
     def AUTOSAR_GetAlarm(cfg, abb, state):
@@ -709,9 +708,14 @@ class AUTOSAR(OSBase):
 
         return state
 
-    @syscall
-    def AUTOSAR_ResumeAllInterrupts(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def AUTOSAR_ResumeAllInterrupts(cfg, state, cpu_id, args, va):
+        state = state.copy()
+        state.context["AUTOSAR"].irq_status[cpu_id] -= 1
+        if state.context["AUTOSAR"].irq_status[cpu_id] == -1:
+            state.cpus[cpu_id].irq_on = True
+        return state
 
     @syscall
     def AUTOSAR_ResumeOSInterrupts(cfg, abb, state):
@@ -780,9 +784,13 @@ class AUTOSAR(OSBase):
     def AUTOSAR_StartOS(cfg, abb, state):
         pass
 
-    @syscall
-    def AUTOSAR_SuspendAllInterrupts(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def AUTOSAR_SuspendAllInterrupts(cfg, state, cpu_id, args, va):
+        state = state.copy()
+        state.context["AUTOSAR"].irq_status[cpu_id] += 1
+        state.cpus[cpu_id].irq_on = False
+        return state
 
     @syscall
     def AUTOSAR_SuspendOSInterrupts(cfg, abb, state):
