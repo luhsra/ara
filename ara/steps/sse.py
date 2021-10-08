@@ -4,9 +4,9 @@ from .option import Option, String, Bool
 from .cfg_traversal import Visitor, run_sse
 
 import graph_tool
-import html
 import os
-import pydot
+
+from .printer import sstg_to_dot
 
 
 class SSE(Step):
@@ -25,68 +25,12 @@ class SSE(Step):
         deps = self._graph.os.get_special_steps()
         return deps
 
-    def _state_as_dot(self, sstg, state_vert):
-        attrs = {"fontsize": 14}
-        size = 12
-        cfg = self._graph.cfg
-
-        obj = sstg.vp.state[state_vert]
-        label = f"State {obj.id}"
-        cpu = obj.cpus[0]
-        if cpu.control_instance:
-            instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
-        else:
-            instance = "Idle"
-        if cpu.abb:
-            syscall = cfg.get_syscall_name(cpu.abb)
-            if syscall != "":
-                syscall = f" ({syscall})"
-            abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
-        else:
-            abb = "None"
-        graph_attrs = "<br/>".join(
-            [
-                f"<i>{k}</i>: {html.escape(str(v))}"
-                for k, v in [
-                    ("irq_on", cpu.irq_on),
-                    (
-                        "instance",
-                        instance,
-                    ),
-                    ("abb", abb),
-                    ("call_path", cpu.call_path),
-                ]
-            ]
-        )
-        graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
-        attrs["label"] = f"<{label}<br/>{graph_attrs}>"
-        return attrs
-
-    def dump_sstg(self, sstg, extra=''):
-        dot_graph = pydot.Dot(graph_type="digraph", label="SSTG")
-
-        for state_vert in sstg.vertices():
-            attrs = self._state_as_dot(
-                sstg, state_vert
-            )
-            dot_state = pydot.Node(str(state_vert), **attrs)
-            dot_graph.add_node(dot_state)
-        for edge in sstg.edges():
-            dot_graph.add_edge(
-                pydot.Edge(
-                    str(edge.source()),
-                    str(edge.target()),
-                    color="black",
-                )
-            )
-
-        if extra:
-            extra = f'.{extra}'
-        dot_file = self.dump_prefix.get() + f"sstg{extra}.dot"
+    def dump_sstg(self, sstg, extra):
+        dot_file = self.dump_prefix.get() + f"sstg.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
         os.makedirs(os.path.dirname(dot_path), exist_ok=True)
+        dot_graph = sstg_to_dot(sstg, f"SSTG {extra}")
         dot_graph.write(dot_path)
-
         self._log.info(f"Write SSTG to {dot_path}.")
 
     def run(self):
@@ -161,4 +105,11 @@ class SSE(Step):
         self._graph.sstg = sstg
 
         if self.dump.get():
-            self.dump_sstg(sstg)
+            self._step_manager.chain_step(
+                {
+                    "name": "Printer",
+                    "dot": self.dump_prefix.get() + "sstg.dot",
+                    "graph_name": "SSTG",
+                    "subgraph": "sstg",
+                }
+            )

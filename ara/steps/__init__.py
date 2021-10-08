@@ -14,6 +14,7 @@ def provide_steps():
     from .manual_corrections import ManualCorrections
     from .printer import Printer
     from .recursive_functions import RecursiveFunctions
+    from .reduce_sstg import ReduceSSTG
     from .register_task_entry import RegisterTaskEntry
     from .sia import SIA, InteractionAnalysis
     from .multisse import MultiSSE
@@ -41,6 +42,7 @@ def provide_steps():
     yield MultiSSE
     yield Printer
     yield RecursiveFunctions
+    yield ReduceSSTG
     yield RegisterTaskEntry
     yield SysFuncts
     yield Syscall
