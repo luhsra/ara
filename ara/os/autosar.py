@@ -104,7 +104,9 @@ class Counter(AUTOSARInstance):
 
 @dataclass(eq=False)
 class Alarm(AUTOSARInstance):
-    pass
+    autostart: bool = False
+    cycletime: int = 0
+    alarmtime: int = 0
 
 
 @dataclass(unsafe_hash=True)
@@ -198,6 +200,14 @@ class AUTOSAR(OSBase):
                                              dyn_prio=2*obj.priority)
         for task in running_tasks:
             state.context[task].status = TaskStatus.running
+
+        for v, alarm in instances.get(Alarm):
+            if alarm.autostart:
+                state.context[alarm] = AlarmContext(
+                        active=True,
+                        cycle=alarm.cycletime,
+                        increment=alarm.alarmtime
+                )
 
         return state
 
