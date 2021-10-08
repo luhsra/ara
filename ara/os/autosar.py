@@ -99,7 +99,7 @@ class Counter(AUTOSARInstance):
     mincycle: int
     maxallowedvalue: int
     ticksperbase: int
-    secondspertick: int
+    secondspertick: int = 1
 
 
 @dataclass(eq=False)

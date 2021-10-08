@@ -64,8 +64,9 @@ class LoadOIL(Step):
                     mincycle=counter["mincycle"],
                     maxallowedvalue=counter["maxallowedvalue"],
                     ticksperbase=counter["ticksperbase"],
-                    secondspertick=counter["secondspertick"],
                 )
+                if "secondspertick" in counter:
+                    instances.vp.obj[c].secondspertick = counter["secondspertick"]
                 instances.vp.label[c] = c_name
 
             # events
