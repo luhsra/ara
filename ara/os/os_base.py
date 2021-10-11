@@ -8,6 +8,9 @@ from typing import Tuple, Any
 
 from ara.graph import SyscallCategory, CallPath, CFG
 
+# from ara.util import get_logger
+# logger = get_logger("OS_BASE")
+
 
 class TaskStatus(enum.Enum):
     running = 1,

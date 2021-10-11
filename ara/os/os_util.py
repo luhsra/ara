@@ -8,6 +8,9 @@ from typing import Tuple
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
 
+# from ara.util import get_logger
+# logger = get_logger("OS_UTIL")
+
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
@@ -146,8 +149,6 @@ class SysCall:
 
         if _SyscallCategory.undefined in self.categories:
             raise NotImplementedError(f"{self._func.__name__} is only a stub.")
-
-        lcfg = graph.lcfg
 
         # avoid dependency conflicts, therefore import dynamically
         from ara.steps import get_native_component
