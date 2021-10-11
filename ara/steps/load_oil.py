@@ -7,6 +7,8 @@ import json
 import functools
 import pyllco
 
+from itertools import chain
+
 
 class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
@@ -31,7 +33,7 @@ class LoadOIL(Step):
         # load the json file
         oilfile = self.oilfile.get()
         if not oilfile:
-            self.fail("No oilfile provided")
+            self._fail("No oilfile provided")
         self._log.info(f"Reading oil file {oilfile}")
         with open(oilfile) as f:
             oil = json.load(f)
@@ -50,8 +52,9 @@ class LoadOIL(Step):
                 if isinstance(obj, _class):
                     if obj.name == name:
                         return v
-            self.fail("Couldn't find instance with name " + name)
+            self._fail("Couldn't find instance with name " + name)
 
+        res_scheduler = None
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
 
@@ -83,7 +86,14 @@ class LoadOIL(Step):
                 instances.vp.label[c] = e_name
 
             # resources
-            for r_name in cpu["resources"].keys():
+            res_sched_name = []
+            if cpu.get("os", {}).get("OsUseResScheduler", False):
+                if res_scheduler is not None:
+                    self._fail("RES_SCHEDULER must be activated on one core at maximum.")
+                res_scheduler = cpu_id
+                res_sched_name.append("RES_SCHEDULER")
+
+            for r_name in chain(cpu["resources"].keys(), res_sched_name):
                 r = instances.add_vertex()
                 instances.vp.obj[r] = _autosar.Resource(name=r_name, cpu_id=cpu_id)
                 instances.vp.label[r] = r_name
@@ -130,20 +140,22 @@ class LoadOIL(Step):
                     instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # link to events
-                    if "events" in task:
-                        for e_name in task["events"]:
-                            event = find_instance_by_name(e_name, _autosar.Event)
-                            e = instances.add_edge(t, event)
-                            instances.ep.label[e] = "has"
-                            instances.ep.type[e] = _autosar.InstanceEdge.have
+                    for e_name in task.get("events", []):
+                        event = find_instance_by_name(e_name, _autosar.Event)
+                        e = instances.add_edge(t, event)
+                        instances.ep.label[e] = "has"
+                        instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # link to resources
-                    if "resources" in task:
-                        for r_name in task["resources"]:
-                            resource = find_instance_by_name(r_name, _autosar.Resource)
-                            e = instances.add_edge(t, resource)
-                            instances.ep.label[e] = "use"
-                            instances.ep.type[e] = _autosar.InstanceEdge.have
+                    r_sched_name = []
+                    if res_scheduler == cpu_id:
+                        r_sched_name.append("RES_SCHEDULER")
+
+                    for r_name in chain(task.get("resources", []), r_sched_name):
+                        resource = find_instance_by_name(r_name, _autosar.Resource)
+                        e = instances.add_edge(t, resource)
+                        instances.ep.label[e] = "use"
+                        instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # assign object to the concrete code
                     code_instance = va.find_global(_autosar.TASK_PREFIX + t_name)
