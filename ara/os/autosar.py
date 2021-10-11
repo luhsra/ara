@@ -7,9 +7,10 @@ import graph_tool
 import html
 
 from collections import defaultdict
+from copy import copy
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any
+from typing import Any, List
 
 import pyllco
 
@@ -86,10 +87,24 @@ class Task(ControlInstance, AUTOSARInstance):
         }
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class TaskContext(ControlContext):
-    dyn_prio: int
+    dyn_prio: List[int]
     received_events: int = 0
+
+    def __hash__(self):
+        return hash(("TaskContext",
+                     self.status, self.abb, self.call_path,
+                     tuple(self.dyn_prio),
+                     self.received_events))
+
+    def __copy__(self):
+        """Make a deep copy."""
+        return TaskContext(status=self.status,
+                           abb=self.abb,
+                           call_path=copy(self.call_path),
+                           dyn_prio=[x for x in self.dyn_prio],
+                           received_events=self.received_events)
 
 
 @dataclass
@@ -229,7 +244,7 @@ class AUTOSAR(OSBase):
             state.context[obj] = TaskContext(status=TaskStatus.suspended,
                                              abb=cfg.get_entry_abb(obj.function),
                                              call_path=CallPath(),
-                                             dyn_prio=2*obj.priority)
+                                             dyn_prio=[2*obj.priority])
         for task in running_tasks:
             state.context[task].status = TaskStatus.running
 
@@ -448,7 +463,7 @@ class AUTOSAR(OSBase):
                 new_label = "Idle state"
             else:
                 new_vertex, new_ctx = max(cpu_map[cpu.id],
-                                          key=lambda t: t[1].dyn_prio)
+                                          key=lambda t: t[1].dyn_prio[-1])
                 new_vertex = state.instances.vertex(new_vertex)
                 new_label = state.instances.vp.label[new_vertex]
 
@@ -694,16 +709,16 @@ class AUTOSAR(OSBase):
         # get correct dyn_prio
         res_vertex = single_check(filter(lambda x: state.instances.vp.obj[x] == args.resource, state.instances.vertices()))
         dyn_prio = max([state.instances.vp.obj[x].priority for x in res_vertex.in_neighbors()]) * 2 + 1
+        state.cur_context(cpu_id).dyn_prio.append(dyn_prio)
 
-        state.cur_context(cpu_id).dyn_prio = dyn_prio
         logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} to the dynamic priority {dyn_prio}.")
         return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
     def AUTOSAR_ReleaseResource(cfg, state, cpu_id, args, va):
-        dyn_prio = state.cur_control_inst(cpu_id).priority * 2
-        state.cur_context(cpu_id).dyn_prio = dyn_prio
+        state.cur_context(cpu_id).dyn_prio.pop()
+        dyn_prio = state.cur_context(cpu_id).dyn_prio[-1]
         logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
 
         return state
@@ -805,7 +820,7 @@ class AUTOSAR(OSBase):
         state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
                                               abb=state.cfg.get_entry_abb(cur_task.function),
                                               call_path=CallPath(),
-                                              dyn_prio=2*cur_task.priority)
+                                              dyn_prio=[2*cur_task.priority])
 
         logger.debug(f"Terminate Task {cur_task.name}.")
 
@@ -823,8 +838,7 @@ class AUTOSAR(OSBase):
             # field is unused as long as the task is blocked
             cur_ctx.received_events = args.event_mask
             # release resource
-            dyn_prio = state.cur_control_inst(cpu_id).priority * 2
-            state.cur_context(cpu_id).dyn_prio = dyn_prio
+            state.cur_context(cpu_id).dyn_prio.pop()
 
         # the next ABB will be set _after_ this call. However, since this task
         # is blocked this isn't a problem.
