@@ -6,24 +6,22 @@
     [3, ["AUTOSAR_GetResource", "H5", "CallPath()"]],
     [4, ["AUTOSAR_ReleaseResource", "H5", "CallPath()"]],
     [5, ["AUTOSAR_ReleaseResource", "H5", "CallPath()"]],
-    [6, ["AUTOSAR_TerminateTask", "H1", "CallPath()"]],
-    [7, ["AUTOSAR_TerminateTask", "H5", "CallPath()"]],
+    [6, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
+    [7, ["AUTOSAR_TerminateTask", "H4", "CallPath()"]],
     [8, ["AUTOSAR_TerminateTask", "H5", "CallPath()"]],
     [9, ["Idle"]],
     [10, ["Start"]]
   ],
   "edges": [
     [10, 2],
-    [10, 7],
-    [2, 0],
-    [7, 9],
-    [0, 4],
-    [4, 6],
-    [6, 3],
-    [6, 8],
-    [3, 1],
-    [8, 9],
+    [2, 3],
+    [3, 4],
+    [4, 0],
+    [0, 6],
+    [6, 1],
     [1, 5],
-    [5, 6]
+    [5, 7],
+    [7, 8],
+    [8, 9]
   ]
 }
