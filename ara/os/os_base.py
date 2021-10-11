@@ -30,6 +30,12 @@ class ControlContext:
     abb: graph_tool.Vertex
     call_path: CallPath
 
+    def __copy__(self):
+        """Make a deep copy."""
+        return ControlContext(status=self.status,
+                              abb=self.abb,
+                              call_path=copy(self.call_path))
+
 
 @dataclass
 class ControlInstance:
