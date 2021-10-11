@@ -5,6 +5,7 @@
 #define test_finish(x) 0
 #define test_trace_assert(x) 0
 #define test_trace_dump(x) 0
+#define test_start_check() 0
 #define TEST_MAKE_OS_MAIN(body)                                                                                        \
 	int main(void) { body; }
 
