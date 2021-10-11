@@ -117,14 +117,19 @@ class AlarmContext:
 @dataclass
 class AUTOSARContext:
     irq_status: dict
+    os_irq_status: dict
 
     def __hash__(self):
-        return hash(("AUTOSARContext", tuple(self.irq_status.items())))
+        return hash(("AUTOSARContext",
+                     tuple(self.irq_status.items()),
+                     tuple(self.os_irq_status.items())))
 
     def __copy__(self):
         """Make a deep copy."""
-        irq_status = dict([(k, v) for k, v in self.irq_status.items()])
-        return AUTOSARContext(irq_status=irq_status)
+        def copy_dict(x):
+            return dict([(k, v) for k, v in x.items()])
+        return AUTOSARContext(irq_status=copy_dict(self.irq_status),
+                              os_irq_status=copy_dict(self.os_irq_status))
 
 
 class ISR:
@@ -191,6 +196,7 @@ class AUTOSAR(OSBase):
         cpus = []
         running_tasks = []
         irq_status = {}
+        os_irq_status = {}
         for cpu_id, tasks in cpu_map.items():
             if len(tasks) == 0:
                 # we have the CPU but not task that can be scheduled
@@ -212,7 +218,8 @@ class AUTOSAR(OSBase):
                                 analysis_context=None))
                 running_tasks.append(prio_task)
                 logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
-            irq_status[cpu_id] = -1
+            irq_status[cpu_id] = 0
+            os_irq_status[cpu_id] = 0
 
         state = OSState(cpus=tuple(cpus), instances=instances, cfg=cfg)
 
@@ -235,7 +242,8 @@ class AUTOSAR(OSBase):
                 )
 
         # special context object for os specific state
-        state.context["AUTOSAR"] = AUTOSARContext(irq_status=irq_status)
+        state.context["AUTOSAR"] = AUTOSARContext(irq_status=irq_status,
+                                                  os_irq_status=os_irq_status)
 
         return state
 
@@ -704,13 +712,15 @@ class AUTOSAR(OSBase):
              signature=tuple())
     def AUTOSAR_ResumeAllInterrupts(cfg, state, cpu_id, args, va):
         state.context["AUTOSAR"].irq_status[cpu_id] -= 1
-        if state.context["AUTOSAR"].irq_status[cpu_id] == -1:
+        if state.context["AUTOSAR"].irq_status[cpu_id] == 0:
             state.cpus[cpu_id].irq_on = True
         return state
 
-    @syscall
-    def AUTOSAR_ResumeOSInterrupts(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def AUTOSAR_ResumeOSInterrupts(cfg, state, cpu_id, args, va):
+        state.context["AUTOSAR"].os_irq_status[cpu_id] -= 1
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),
@@ -779,9 +789,11 @@ class AUTOSAR(OSBase):
         state.cpus[cpu_id].irq_on = False
         return state
 
-    @syscall
-    def AUTOSAR_SuspendOSInterrupts(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def AUTOSAR_SuspendOSInterrupts(cfg, state, cpu_id, args, va):
+        state.context["AUTOSAR"].os_irq_status[cpu_id] += 1
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=tuple(),
