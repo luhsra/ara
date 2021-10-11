@@ -6,12 +6,10 @@ from ara.graph import CallPath, SyscallCategory, SigType, single_check
 import graph_tool
 import html
 
-from typing import Any
-
-from dataclasses import dataclass
-
-from enum import IntEnum
 from collections import defaultdict
+from dataclasses import dataclass
+from enum import IntEnum
+from typing import Any
 
 import pyllco
 
@@ -122,6 +120,11 @@ class AUTOSARContext:
 
     def __hash__(self):
         return hash(("AUTOSARContext", tuple(self.irq_status.items())))
+
+    def __copy__(self):
+        """Make a deep copy."""
+        irq_status = dict([(k, v) for k, v in self.irq_status.items()])
+        return AUTOSARContext(irq_status=irq_status)
 
 
 class ISR:
@@ -787,7 +790,6 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_SuspendAllInterrupts(cfg, state, cpu_id, args, va):
-        state = state.copy()
         state.context["AUTOSAR"].irq_status[cpu_id] += 1
         state.cpus[cpu_id].irq_on = False
         return state
