@@ -158,13 +158,13 @@ class SysCall:
         va = ValueAnalyzer(graph)
 
         # copy the original state
-        state = state.copy()
+        new_state = state.copy()
 
         fields = []
         values = []
 
-        abb = state.cpus[cpu_id].abb
-        callpath = state.cpus[cpu_id].call_path
+        abb = new_state.cpus[cpu_id].abb
+        callpath = new_state.cpus[cpu_id].call_path
 
         # retrieve arguments
         for idx, arg in enumerate(self._signature):
@@ -189,7 +189,7 @@ class SysCall:
         args = Arguments(*values)
 
         # syscall specific handling
-        new_state = self._func(graph, state, cpu_id, args, va)
+        new_state = self._func(graph, new_state, cpu_id, args, va)
         assert new_state is not None, "The syscall does not return anything."
 
         # add standard control flow successors if wanted

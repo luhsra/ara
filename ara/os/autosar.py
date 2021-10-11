@@ -358,7 +358,8 @@ class AUTOSAR(OSBase):
             task = state.instances.vp.obj[task_vertex]
 
             logger.debug(f"Alarm {alarm.name} activates {task.name}.")
-            return AUTOSAR.ActivateTask(state, cpu_id, task)
+            new_state = state.copy()
+            return AUTOSAR.ActivateTask(new_state, cpu_id, task)
         return None
 
     @staticmethod
@@ -606,8 +607,6 @@ class AUTOSAR(OSBase):
     @staticmethod
     def ActivateTask(state, cpu_id, task):
         assert(isinstance(task, Task))
-        state = state.copy()
-
         logger.debug(f"Setting Task {task} ready.")
 
         AUTOSAR.check_cpu(state, task.cpu_id)
@@ -627,8 +626,6 @@ class AUTOSAR(OSBase):
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),))
     def AUTOSAR_CancelAlarm(cfg, state, cpu_id, args, va):
         assert(isinstance(args.alarm, Alarm))
-        state = state.copy()
-
         if args.alarm in state.context:
             state.context[args.alarm].active = False
 
@@ -637,7 +634,6 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ChainTask(cfg, state, cpu_id, args, va):
-        state = state.copy()
         AUTOSAR.check_cpu(state, args.task.cpu_id)
 
         logger.debug(f"Setting Task {args.task} ready.")
@@ -658,8 +654,6 @@ class AUTOSAR(OSBase):
              signature=(Arg("event_mask"),))
     def AUTOSAR_ClearEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.event_mask, int))
-        state = state.copy()
-
         cur_ctx = state.cur_context(cpu_id)
         cur_ctx.received_events &= ~args.event_mask
 
@@ -668,14 +662,12 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_DisableAllInterrupts(cfg, state, cpu_id, args, va):
-        state = state.copy()
         state.cpus[cpu_id].irq_on = False
         return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_EnableAllInterrupts(cfg, state, cpu_id, args, va):
-        state = state.copy()
         state.cpus[cpu_id].irq_on = True
         return state
 
@@ -691,8 +683,6 @@ class AUTOSAR(OSBase):
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
     def AUTOSAR_GetResource(cfg, state, cpu_id, args, va):
         assert(isinstance(args.resource, Resource))
-        state = state.copy()
-
         # get correct dyn_prio
         res_vertex = single_check(filter(lambda x: state.instances.vp.obj[x] == args.resource, state.instances.vertices()))
         dyn_prio = max([state.instances.vp.obj[x].priority for x in res_vertex.in_neighbors()]) * 2 + 1
@@ -704,7 +694,6 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
     def AUTOSAR_ReleaseResource(cfg, state, cpu_id, args, va):
-        state = state.copy()
         dyn_prio = state.cur_control_inst(cpu_id).priority * 2
         state.cur_context(cpu_id).dyn_prio = dyn_prio
         logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
@@ -714,7 +703,6 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_ResumeAllInterrupts(cfg, state, cpu_id, args, va):
-        state = state.copy()
         state.context["AUTOSAR"].irq_status[cpu_id] -= 1
         if state.context["AUTOSAR"].irq_status[cpu_id] == -1:
             state.cpus[cpu_id].irq_on = True
@@ -730,8 +718,6 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.task, Task))
         assert(isinstance(args.event_mask, int))
-
-        state = state.copy()
 
         task_ctx = state.context[args.task]
         if task_ctx.status == TaskStatus.blocked and \
@@ -773,7 +759,6 @@ class AUTOSAR(OSBase):
 
         AUTOSAR.check_cpu(state, args.alarm.cpu_id)
 
-        state = state.copy()
         state.context[args.alarm] = AlarmContext(increment=args.increment,
                                                  cycle=args.cycle,
                                                  active=True)
@@ -802,8 +787,6 @@ class AUTOSAR(OSBase):
              signature=tuple(),
              custom_control_flow=True)
     def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
-        state = state.copy()
-
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
@@ -820,8 +803,6 @@ class AUTOSAR(OSBase):
              signature=(Arg("event_mask"),))
     def AUTOSAR_WaitEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.event_mask, int))
-        state = state.copy()
-
         cur_ctx = state.cur_context(cpu_id)
 
         if args.event_mask & cur_ctx.received_events == 0:
