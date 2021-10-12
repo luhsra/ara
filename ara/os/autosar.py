@@ -481,6 +481,7 @@ class AUTOSAR(OSBase):
                          f"From {old_label} "
                          f"to {new_label}")
 
+            # handle non preemptible tasks
             if isinstance(old_task, Task) and not old_task.schedule:
                 if state.context[old_task].status == TaskStatus.running:
                     # do not schedule on this CPU
@@ -490,12 +491,13 @@ class AUTOSAR(OSBase):
             if new_vertex == old_vertex:
                 continue
 
-            # write old values back to instance only if it is running
+            # write old values back to instance only if running or blocked
             if old_vertex:
                 old_ctx = state.context[old_task]
-                if old_ctx.status is TaskStatus.running:
+                if old_ctx.status in [TaskStatus.running, TaskStatus.blocked]:
                     old_ctx.abb = state.cfg.vertex(cpu.abb)
                     old_ctx.call_path = cpu.call_path
+                if old_ctx.status == TaskStatus.running:
                     old_ctx.status = TaskStatus.ready
 
             # load new values
@@ -753,8 +755,9 @@ class AUTOSAR(OSBase):
         task_ctx = state.context[args.task]
         if task_ctx.status == TaskStatus.blocked and \
            args.event_mask & task_ctx.received_events != 0:
+            logger.debug(f"Unblock Task {args.task.name}")
             # this task already waits for this event
-            task_ctx.status == TaskStatus.ready
+            task_ctx.status = TaskStatus.ready
             # clear old events on which the task has waited, set all other
             task_ctx.received_events = ~task_ctx.received_events & args.event_mask
         else:
@@ -844,7 +847,8 @@ class AUTOSAR(OSBase):
             # field is unused as long as the task is blocked
             cur_ctx.received_events = args.event_mask
             # release resource
-            state.cur_context(cpu_id).dyn_prio.pop()
+            while len(state.cur_context(cpu_id).dyn_prio) > 1:
+                state.cur_context(cpu_id).dyn_prio.pop()
 
         # the next ABB will be set _after_ this call. However, since this task
         # is blocked this isn't a problem.
