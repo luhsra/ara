@@ -474,11 +474,17 @@ class AUTOSAR(OSBase):
                 old_label = state.instances.vp.label[old_vertex]
             else:
                 old_vertex = None
+                old_task = None
                 old_label = "Idle state"
 
             logger.debug(f"Schedule on CPU {cpu.id}: "
                          f"From {old_label} "
                          f"to {new_label}")
+
+            if isinstance(old_task, Task) and not old_task.schedule:
+                if state.context[old_task].status == TaskStatus.running:
+                    # do not schedule on this CPU
+                    continue
 
             # shortcut for same task
             if new_vertex == old_vertex:
