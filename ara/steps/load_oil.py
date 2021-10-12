@@ -75,9 +75,16 @@ class LoadOIL(Step):
             # events
             for e_name in cpu["events"].keys():
                 code_instance = va.find_global(e_name)
-                assert isinstance(code_instance, pyllco.GlobalVariable) and code_instance.is_constant()
-                constant = code_instance.get_initializer()
-                index = constant.get()
+                if code_instance is not None:
+                    assert isinstance(code_instance, pyllco.GlobalVariable) and code_instance.is_constant()
+                    constant = code_instance.get_initializer()
+                    index = constant.get()
+                else:
+                    self._log.warn(f"Could not found Event {e_name} in the "
+                                   "code. If the Event is used via symbol "
+                                   " within a syscall, this will fail in "
+                                   "later steps.")
+                    index = None
 
                 c = instances.add_vertex()
                 instances.vp.obj[c] = _autosar.Event(name=e_name,
