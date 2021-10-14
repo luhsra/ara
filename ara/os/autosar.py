@@ -268,7 +268,10 @@ class AUTOSAR(OSBase):
                                             dyn_prio=(max_prio + obj.priority,))
 
         for task in running_tasks:
-            state.context[task].status = TaskStatus.running
+            ctx = state.context[task]
+            ctx.status = TaskStatus.running
+            ctx.abb = None
+            ctx.call_path = CallPath()
 
         for v, alarm in instances.get(Alarm):
             if alarm.autostart:
@@ -557,6 +560,9 @@ class AUTOSAR(OSBase):
                 cpu.abb = state.cfg.vertex(new_ctx.abb)
                 cpu.call_path = new_ctx.call_path
                 new_ctx.status = TaskStatus.running
+                # "reset" context values, they are irrelevant now
+                new_ctx.abb = None
+                new_ctx.call_path = CallPath()
 
                 cpu.control_instance = state.instances.vertex(new_vertex)
             else:
