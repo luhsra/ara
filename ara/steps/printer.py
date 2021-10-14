@@ -99,7 +99,8 @@ class Printer(Step):
         entry_label = self.entry_point.get()
         if self.from_entry_point.get():
             entry_func = self._graph.cfg.get_function_by_name(entry_label)
-            functions = self._graph.cfg.reachable_functs(entry_func)
+            functions = self._graph.cfg.reachable_functs(entry_func,
+                                                         self._graph.callgraph)
         else:
             functs = self._graph.functs
             functions = functs.vertices()

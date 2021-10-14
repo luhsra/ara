@@ -45,12 +45,7 @@ class ICFG(Step):
             ICFG._ET.OUT: "outgoing",
         }
 
-        while funcs_queue:
-            cur_func = funcs_queue.popleft()
-            if cur_func in funcs_done:
-                continue
-            funcs_done.add(cur_func)
-
+        for cur_func in cfg.reachable_functs(entry_func, cg):
             self._log.debug(f"Analyzing function {cfg.vp.name[cur_func]}.")
 
             to_be_linked = []
