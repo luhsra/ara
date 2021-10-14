@@ -675,8 +675,8 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
 
-        state.context[cur_task].status = TaskStatus.suspended
-        state.context[args.task].status = TaskStatus.ready
+        AUTOSAR.TerminateTask(state, cpu_id)
+        AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
         return state
 
@@ -824,10 +824,8 @@ class AUTOSAR(OSBase):
         state.context["AUTOSAR"].os_irq_status[cpu_id] += 1
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=tuple(),
-             custom_control_flow=True)
-    def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
+    @staticmethod
+    def TerminateTask(state, cpu_id):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
@@ -839,6 +837,12 @@ class AUTOSAR(OSBase):
         logger.debug(f"Terminate Task {cur_task.name}.")
 
         return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple(),
+             custom_control_flow=True)
+    def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
+        return AUTOSAR.TerminateTask(state, cpu_id)
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("event_mask"),))
