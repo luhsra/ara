@@ -358,7 +358,6 @@ class MultiSSE(Step):
                               context_id=os_state.id)
 
         for cpu in os_state.cpus:
-            print("CPU:", cpu)
             # graph
             metastate.state_graph[cpu.id] = self._gen_sctg()
             metagraph = metastate.state_graph[cpu.id]
@@ -458,8 +457,6 @@ class MultiSSE(Step):
         state_vertex = self._new_vertex(sstg, self._get_initial_state())
 
         stack = [state_vertex]
-
-        return
 
         counter = 0
         while stack:
