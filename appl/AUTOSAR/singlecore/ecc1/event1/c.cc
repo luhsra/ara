@@ -16,7 +16,7 @@
 DeclareTask(H1);
 DeclareTask(H2);
 DeclareTask(H3);
-DeclareEvent(E1);
+DeclareEvent(E1, 1);
 
 
 TEST_MAKE_OS_MAIN( StartOS(0) );

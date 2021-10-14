@@ -16,8 +16,8 @@
 DeclareTask(H1);
 DeclareTask(H2);
 DeclareTask(H3);
-DeclareEvent(E1);
-DeclareEvent(E2);
+DeclareEvent(E1, 1);
+DeclareEvent(E2, 2);
 
 
 

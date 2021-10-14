@@ -20,13 +20,11 @@
     [17, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
     [18, ["AUTOSAR_TerminateTask", "H4", "CallPath()"]],
     [19, ["AUTOSAR_TerminateTask", "H4", "CallPath()"]],
-    [20, ["AUTOSAR_TerminateTask", "H4", "CallPath()"]],
-    [21, ["AUTOSAR_TerminateTask", "H4", "CallPath()"]],
-    [22, ["Idle"]],
-    [23, ["Start"]]
+    [20, ["Idle"]],
+    [21, ["Start"]]
   ],
   "edges": [
-    [23, 4],
+    [21, 4],
     [4, 0],
     [4, 10],
     [0, 5],
@@ -37,19 +35,17 @@
     [6, 12],
     [12, 15],
     [18, 9],
-    [15, 19],
+    [15, 18],
     [9, 2],
     [9, 11],
-    [19, 9],
     [2, 7],
     [11, 3],
     [7, 16],
     [3, 8],
-    [16, 20],
+    [16, 19],
     [8, 13],
     [13, 17],
-    [20, 22],
-    [17, 21],
-    [21, 22]
+    [19, 20],
+    [17, 19]
   ]
 }
