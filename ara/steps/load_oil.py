@@ -229,7 +229,7 @@ class LoadOIL(Step):
                     raise NotImplementedError
 
             # read all ISRs
-            for i_name, isr in cpu["isrs"].items():
+            for i_name, isr in cpu.get("isrs", {}).items():
                 i = instances.add_vertex()
 
                 i_function_name = "AUTOSAR_ISR_" + i_name
