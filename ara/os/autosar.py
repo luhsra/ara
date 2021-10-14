@@ -1,10 +1,17 @@
 from .os_util import syscall, get_argument
-from .os_base import OSBase
+from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus
 from ara.util import get_logger
 from ara.graph import CallPath
 
+import graph_tool
+import html
+
+from typing import List, Any
+
+from dataclasses import dataclass
 
 from enum import Enum
+from collections import defaultdict
 
 import pyllco
 
@@ -21,20 +28,33 @@ class SyscallInfo:
     def set_multi_ret(self):
         self.multi_ret = True
 
-class Task:
-    def __init__(self, cfg, name, function, priority, activation,
-                 autostart, schedule, cpu_id):
-        self.cfg = cfg
-        self.name = name
-        self.function = function
-        self.priority = priority
-        self.activation = activation
-        self.autostart = autostart
-        self.schedule = schedule
-        self.cpu_id = cpu_id
+
+@dataclass
+class Task(ControlInstance):
+    name: str
+    function: graph_tool.Vertex
+    priority: int
+    activation: Any
+    autostart: bool
+    schedule: Any
+    cpu_id: int
 
     def __repr__(self):
         return self.name
+
+    def as_dot(self):
+        wanted_attrs = ["name", "function", "priority", "cpu_id"]
+        attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
+                                 for k, v in attrs])
+
+        return {
+            "shape": "box",
+            "fillcolor": "#6fbf87",
+            "style": "filled",
+            "sublabel": sublabel
+        }
+
 
 class Counter:
     def __init__(self, name, cpu_id, mincycle, maxallowedvalue, ticksperbase, secondspertick):
@@ -48,10 +68,12 @@ class Counter:
     def __repr__(self):
         return self.name
 
+
 class AlarmAction(Enum):
     ACTIVATETASK = 1,
     SETEVENT = 2,
     INCREMENTCOUNTER = 3
+
 
 class Alarm:
     def __init__(self, name, cpu_id, counter, autostart, action, task=None, event=None, incrementcounter=None, alarmtime=None, cycletime=None):
@@ -69,6 +91,7 @@ class Alarm:
     def __repr__(self):
         return self.name
 
+
 class ISR:
     def __init__(self, name, cpu_id, category, priority, function, group):
         self.cpu_id = cpu_id
@@ -81,6 +104,7 @@ class ISR:
     def __repr__(self):
         return self.name
 
+
 class Event:
     def __init__(self, name, cpu_id):
         self.cpu_id = cpu_id
@@ -89,7 +113,13 @@ class Event:
     def __repr__(self):
         return self.name
 
+
 class AUTOSAR(OSBase):
+    """AUTOSAR model.
+
+    See https://www.autosar.org/fileadmin/user_upload/standards/classic/20-11/AUTOSAR_SWS_OS.pdf
+    """
+
     @staticmethod
     def get_special_steps():
         return ["LoadOIL"]
@@ -97,6 +127,41 @@ class AUTOSAR(OSBase):
     @staticmethod
     def has_dynamic_instances():
         return False
+
+    @staticmethod
+    def get_initial_state(cfg, instances):
+        # technically, AUTOSAR starts with a main function on every core
+        # The actual startup happens via StartCore or in HW directly
+        # After that, each core calls StartOS which syncs all cores and enables
+        # interrupts.
+        #
+        # Since we know that interrupts are disabled and no syscall execept
+        # StartCore is possible before StartOS, for our analysis we can savely
+        # skip the whole startup routines up to StartOS.
+        #
+        # Because of this, get_initial_state returns the state directly after
+        # the (synchronized) StartOS call.
+
+        # get cpu mapping
+        cpu_map = defaultdict(list)
+        for v in instances.vertices():
+            obj = instances.vp.obj[v]
+            if isinstance(obj, Task):
+                cpu_map[obj.cpu_id].append((v, obj))
+
+        # construct actual CPUs
+        cpus = []
+        for cpu_id, tasks in cpu_map.items():
+            prio_task = max(tasks, key=lambda t: t[1].priority)
+            entry_abb = cfg.get_entry_abb(prio_task[1].function)
+            cpus.append(CPU(id=cpu_id,
+                            irq_on=True,
+                            control_instance=prio_task[0],
+                            abb=entry_abb,
+                            call_path=CallPath(),
+                            analysis_context=None))
+
+        return OSState(cpus=cpus, instances=instances)
 
     @staticmethod
     def init(instances):
@@ -238,10 +303,38 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def schedule(state, cpu):
-        # sort actived tasks by priority
-        for _list in state.activated_tasks.values():
-            _list.sort(key=lambda task: task.priority, reverse=True)
+    def schedule(state, cpus=None):
+        if cpus is None:
+            cpus = [x.id for cpu in state.cpus]
+
+        # get cpu mapping
+        cpu_map = defaultdict(list)
+        for v in state.instances.vertices():
+            obj = state.instances.vp.obj[v]
+            if isinstance(obj, ControlInstance) and obj.status in [TaskStatus.running, TaskStatus.ready]:
+                cpu_map[obj.cpu_id].append((v, obj))
+
+        # update cpus
+        for cpu in state.cpus:
+            if cpu.id in cpus:
+                assert cpu.id in cpu_map and len(cpu_map[cpu.id]) != 0
+                prio_task = max(cpu_map[cpu.id], key=lambda t: t[1].priority)
+
+                # shortcut for same task
+                if prio_task[0] == cpu.control_instance:
+                    continue
+
+                # write old values back to instance
+                cur_task = state.instances.vp.obj[cpu.control_instance]
+                cur_task.abb = cpu.abb
+                cur_task.call_path = cpu.call_path
+                if cur_task.status is TaskStatus.running:
+                    cur_task.status = TaskStatus.ready
+
+                # load new values
+                cpu.abb = prio_task[0]
+                cpu.call_path = prio_task[1].call_path
+                prio_task[1].status = TaskStatus.ready
 
     @staticmethod
     def decompress_state(state):
