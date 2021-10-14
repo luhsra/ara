@@ -135,9 +135,9 @@ class AUTOSAR(OSBase):
         # After that, each core calls StartOS which syncs all cores and enables
         # interrupts.
         #
-        # Since we know that interrupts are disabled and no syscall execept
-        # StartCore is possible before StartOS, for our analysis we can savely
-        # skip the whole startup routines up to StartOS.
+        # Since we know that interrupts are disabled and no syscall except
+        # StartCore is possible before StartOS, we can safely skip the whole
+        # startup routines up to StartOS for our analyses.
         #
         # Because of this, get_initial_state returns the state directly after
         # the (synchronized) StartOS call.
