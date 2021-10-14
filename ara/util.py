@@ -107,6 +107,11 @@ def get_logger(name: str, level=None):
     return get_logger_manager().get_logger(name, level)
 
 
+def get_null_logger():
+    """Get a logger that does absolutely nothing."""
+    return logging.getLogger('null').addHandler(logging.NullHandler())
+
+
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):
     """Init logging with color and timestamps.
 
