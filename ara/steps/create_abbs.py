@@ -91,7 +91,7 @@ class CreateABBs(Step):
                     other_abb = cfg.get_abb(bb_edge.target())
                     if other_abb:
                         edge = cfg.add_edge(abb, other_abb)
-                        cfg.ep.type[edge] = CFType.lcf
+                        cfg.ep.type[edge] = CFType.icf
 
         # remap callgraph links to ABBs instead of BBs
         callgraph = self._graph.callgraph
