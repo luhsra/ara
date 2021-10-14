@@ -10,7 +10,8 @@ from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import Any, List
+from itertools import chain
+from typing import Any, List, Tuple
 
 import pyllco
 
@@ -150,17 +151,27 @@ class AUTOSARContext:
                               os_irq_status=copy_dict(self.os_irq_status))
 
 
-class ISR:
-    def __init__(self, name, cpu_id, category, priority, function, group):
-        self.cpu_id = cpu_id
-        self.name = name
-        self.category = category
-        self.priority = priority
-        self.function = function
-        self.group = group
+@dataclass(repr=False)
+class ISR(AUTOSARInstance, ControlInstance):
+    function: graph_tool.Vertex
+    priority: int
+    category: int
 
-    def __repr__(self):
-        return self.name
+    def __hash__(self):
+        return AUTOSARInstance.__hash__(self)
+
+
+
+@dataclass(unsafe_hash=True)
+class ISRContext(ControlContext):
+    dyn_prio: Tuple[int]
+
+    def __copy__(self):
+        """Make a deep copy."""
+        return TaskContext(status=self.status,
+                           abb=self.abb,
+                           call_path=copy(self.call_path),
+                           dyn_prio=(self.dyn_prio[0],))
 
 
 @dataclass
@@ -241,12 +252,20 @@ class AUTOSAR(OSBase):
         state = OSState(cpus=tuple(cpus), instances=instances, cfg=cfg)
 
         # give initial running context
+        max_prio = 0
         for v, obj in instances.get(Task):
             prio = 2 * obj.priority
+            max_prio = max(max_prio, prio)
             state.context[obj] = TaskContext(status=TaskStatus.suspended,
                                              abb=cfg.get_entry_abb(obj.function),
                                              call_path=CallPath(),
                                              dyn_prio=[prio])
+
+        for v, obj in instances.get(ISR):
+            state.context[obj] = ISRContext(status=TaskStatus.suspended,
+                                            abb=cfg.get_entry_abb(obj.function),
+                                            call_path=CallPath(),
+                                            dyn_prio=(max_prio + obj.priority,))
 
         for task in running_tasks:
             state.context[task].status = TaskStatus.running
@@ -369,28 +388,57 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
+        def filtered_instances(edge_type):
+            return graph_tool.GraphView(
+                state.instances,
+                efilt=state.instances.ep.type.fa == int(edge_type)
+            )
+
         # we handle alarms only
         instances = state.instances
-        alarm_vertex = instances.vertex(irq)
-        alarm = instances.vp.obj[alarm_vertex]
-        alarm_ctx = state.context.get(alarm, False)
-        # TODO interarrival times
-        if alarm_ctx and alarm_ctx.active:
-            activates = graph_tool.GraphView(
-                    state.instances,
-                    efilt=state.instances.ep.type.fa == int(InstanceEdge.activate)
-            )
-            task_vertex = single_check(activates.vertex(alarm_vertex).out_neighbors())
-            task = state.instances.vp.obj[task_vertex]
+        vertex = instances.vertex(irq)
+        obj = instances.vp.obj[vertex]
 
-            logger.debug(f"Alarm {alarm.name} activates {task.name}.")
+        if isinstance(obj, Alarm):
+            # do not trigger alarms, if an interrupt is handled
+            if isinstance(state.cur_control_inst(cpu_id), ISR):
+                return
+            alarm_ctx = state.context.get(obj, False)
+            # TODO interarrival times
+            if alarm_ctx and alarm_ctx.active:
+                activates = filtered_instances(InstanceEdge.activate)
+                acty_vertex = single_check(activates.vertex(vertex).out_neighbors())
+                acty = instances.vp.obj[acty_vertex]
+
+                if isinstance(acty, Task):
+                    logger.debug(f"Alarm {obj.name} activates {acty.name}.")
+                    new_state = state.copy()
+                    return AUTOSAR.ActivateTask(new_state, cpu_id, acty)
+                elif isinstance(acty, Event):
+                    logger.debug(f"Alarm {obj.name} sets {acty.name}.")
+                    event_tgt = filtered_instances(InstanceEdge.have)
+                    new_state = state.copy()
+                    for t in event_tgt.vertex(acty_vertex).in_neighbors():
+                        task = instances.vp.obj[instances.vertex(t)]
+                        new_state = AUTOSAR.SetEvent(new_state, task, acty.index)
+                    return new_state
+                else:
+                    assert False, f"Edge to false object {acty}"
+            return None
+        elif isinstance(obj, ISR):
+            # do not trigger same interrupt again
+            if state.cur_control_inst(cpu_id) == obj:
+                return
+            logger.debug(f"Interrupt: Activate {obj.name}")
             new_state = state.copy()
-            return AUTOSAR.ActivateTask(new_state, cpu_id, task)
-        return None
+            new_state.context[obj].status = TaskStatus.ready
+            return new_state
+
+        raise NotImplementedError
 
     @staticmethod
     def get_interrupts(instances):
-        return [v for v, _ in instances.get(Alarm)]
+        return [v for v, _ in chain(instances.get(Alarm), instances.get(ISR))]
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
@@ -485,10 +533,11 @@ class AUTOSAR(OSBase):
                          f"to {new_label}")
 
             # handle non preemptible tasks
-            if isinstance(old_task, Task) and not old_task.schedule:
-                if state.context[old_task].status == TaskStatus.running:
-                    # do not schedule on this CPU
-                    continue
+            if not isinstance(new_ctx, ISRContext) and \
+               isinstance(old_task, Task) and not old_task.schedule \
+               and state.context[old_task].status == TaskStatus.running:
+                # do not schedule on this CPU
+                continue
 
             # shortcut for same task
             if new_vertex == old_vertex:

@@ -125,8 +125,6 @@ class LoadOIL(Step):
                     t = instances.add_vertex()
                     t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
                     t_func = cfg.get_function_by_name(t_func_name)
-                    # Use a fake ABB, since we don't have real ones yet.
-                    # Leave this to the RegisterTaskEntry step
                     self._log.debug(f"Found Task {t_name}")
                     instances.vp.obj[t] = _autosar.Task(
                         cfg=cfg,
@@ -223,45 +221,36 @@ class LoadOIL(Step):
                     instances.ep.label[e] = "activate"
                     instances.ep.type[e] = _autosar.InstanceEdge.activate
                 elif action["action"].lower() == "setevent":
+                    event = find_instance_by_name(action["event"], _autosar.Event)
+                    e = instances.add_edge(a, event)
+                    instances.ep.label[e] = "set"
+                    instances.ep.type[e] = _autosar.InstanceEdge.activate
+                else:
                     raise NotImplementedError
-                    # task = find_instance_by_name(action["task"], Task)
-                    # event = find_instance_by_name(action["event"], Event)
-                    # instances.vp.obj[a] = Alarm(alarm["name"],
-                    #                             cpu_id,
-                    #                             counter,
-                    #                             alarm["autostart"],
-                    #                             AlarmAction.SETEVENT,
-                    #                             task=task,
-                    #                             event=event)
-
-                # set cycletime and alarmtime if autostart is true
-                # if instances.vp.obj[a].autostart:
-                #     instances.vp.obj[a].cycletime = alarm["cycletime"]
-                #     instances.vp.obj[a].alarmtime = alarm["alarmtime"]
 
             # read all ISRs
-            # for isr in cpu["isrs"]:
-            #     i = instances.add_vertex()
-            #     instances.vp.label[i] = isr["name"]
+            for i_name, isr in cpu["isrs"].items():
+                i = instances.add_vertex()
 
-            #     i_function_name = "AUTOSAR_ISR_" + isr["name"]
-            #     i_function = g.cfg.get_function_by_name(i_function_name)
+                i_function_name = "AUTOSAR_ISR_" + i_name
+                i_function = cfg.get_function_by_name(i_function_name)
 
-            #     group = []
-            #     for name in isr["group"]:
-            #         task = find_instance_by_name(name, Task)
-            #         group.append(task)
+                self._log.debug(f"Found ISR {i_name}")
 
-            #     instances.vp.obj[i] = ISR(i_function_name,
-            #                               cpu_id,
-            #                               isr["category"],
-            #                               isr["priority"],
-            #                               i_function,
-            #                               group)
+                instances.vp.obj[i] = _autosar.ISR(
+                        cfg=cfg,
+                        name=i_name,
+                        cpu_id=cpu_id,
+                        function=i_function,
+                        priority=isr["priority"],
+                        category=isr["category"]
+                )
+                instances.vp.is_control[i] = True
+                instances.vp.label[i] = i_name
 
-            #     # trigger other steps
-            #     self._step_manager.chain_step({"name": "Syscall",
-            #                                     "entry_point": i_function_name})
+                # trigger other steps
+                self._step_manager.chain_step({"name": "Syscall",
+                                               "entry_point": i_function_name})
 
         self._log.debug(
             "find_instance_by_name " f"{find_instance_by_name.cache_info()}"
