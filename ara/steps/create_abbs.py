@@ -18,11 +18,11 @@ class CreateABBs(Step):
         bb2abb = {}
 
         cfg = self._graph.cfg
-        bbs = self._graph.bbs
+        cg = self._graph.callgraph
 
         bb2abb = defaultdict(lambda: cfg.add_vertex())
 
-        for bb in bbs.vertices():
+        for bb in cfg.reachable_bbs(entry_func, cg):
             bb = cfg.vertex(bb)
             abb = bb2abb[bb]
 

@@ -5,6 +5,7 @@ import graph_tool.util
 import enum
 
 from collections import deque
+from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel
@@ -153,34 +154,31 @@ class CFG(graph_tool.Graph):
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
 
-    def _reachable_nodes(self, func, return_abbs):
-        funcs_queue = deque([func])
-        funcs_done = set()
+    def _reachable_nodes(self, func, callgraph, node_level):
+        cg_func = callgraph.vertex(self.vp.call_graph_link[func])
+        oc = label_out_component(callgraph, cg_func)
+        reachable_cg = graph_tool.GraphView(callgraph, vfilt=oc)
 
-        while funcs_queue:
-            cur_func = funcs_queue.popleft()
-            if cur_func in funcs_done:
-                continue
-            funcs_done.add(cur_func)
-            if not return_abbs:
-                yield cur_func
-            for abb in self.get_abbs(cur_func):
-                # find other functions
-                if self.vp.type[abb] in [ABBType.syscall, ABBType.call]:
-                    for edge in abb.out_edges():
-                        if self.ep.type[edge] == CFType.icf:
-                            new_func = self.get_function(edge.target())
-                            funcs_queue.append(new_func)
-                if return_abbs:
-                    yield abb
+        for sub_func in reachable_cg.vertices():
+            cfg_func = reachable_cg.vp.function[sub_func]
+            for entity in {
+                NodeLevel.function: [cfg_func],
+                NodeLevel.abb: self.get_abbs(cfg_func),
+                NodeLevel.bb: self.get_function_bbs(cfg_func)
+            }[node_level]:
+                yield entity
 
-    def reachable_functs(self, func):
+    def reachable_functs(self, func, callgraph):
         """Generator about all reachable Functions starting at func."""
-        return self._reachable_nodes(func, return_abbs=False)
+        return self._reachable_nodes(func, callgraph, NodeLevel.function)
 
-    def reachable_abbs(self, func):
+    def reachable_abbs(self, func, callgraph):
         """Generator about all reachable ABBs starting at func."""
-        return self._reachable_nodes(func, return_abbs=True)
+        return self._reachable_nodes(func, callgraph, NodeLevel.abb)
+
+    def reachable_bbs(self, func, callgraph):
+        """Generator about all reachable BBs starting at func."""
+        return self._reachable_nodes(func, callgraph, NodeLevel.bb)
 
     def get_call_targets(self, abb, func=True):
         """Generator about all call targets for a given call abb.
