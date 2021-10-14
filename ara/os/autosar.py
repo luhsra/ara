@@ -203,8 +203,7 @@ class AUTOSAR(OSBase):
 
         # get cpu mapping
         cpu_map = {}
-        for v in instances.get_controls().vertices():
-            obj = instances.vp.obj[v]
+        for v, obj in instances.get(Task):
             if obj.cpu_id not in cpu_map:
                 cpu_map[obj.cpu_id] = []
             if obj.autostart:
@@ -242,12 +241,13 @@ class AUTOSAR(OSBase):
         state = OSState(cpus=tuple(cpus), instances=instances, cfg=cfg)
 
         # give initial running context
-        for v in instances.get_controls().vertices():
-            obj = instances.vp.obj[v]
+        for v, obj in instances.get(Task):
+            prio = 2 * obj.priority
             state.context[obj] = TaskContext(status=TaskStatus.suspended,
                                              abb=cfg.get_entry_abb(obj.function),
                                              call_path=CallPath(),
-                                             dyn_prio=[2*obj.priority])
+                                             dyn_prio=[prio])
+
         for task in running_tasks:
             state.context[task].status = TaskStatus.running
 
