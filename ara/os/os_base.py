@@ -108,11 +108,17 @@ class OSState:
 
     def cur_control_inst(self, cpu_id):
         """Return the current running object for the given CPU."""
-        return self.instances.vp.obj[self.cpus[cpu_id].control_instance]
+        cur = self.cpus[cpu_id].control_instance
+        if cur:
+            return self.instances.vp.obj[self.cpus[cpu_id].control_instance]
+        return None
 
     def cur_context(self, cpu_id):
         """Return the context of current running object for the given CPU."""
-        return self.context[self.cur_control_inst(cpu_id)]
+        cur = self.cur_control_inst(cpu_id)
+        if cur:
+            return self.context[self.cur_control_inst(cpu_id)]
+        return None
 
 
 class OSBase:
