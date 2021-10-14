@@ -66,7 +66,7 @@ namespace ara::step {
 						if (unreachable != nullptr && exit != nullptr && unreachable != exit) {
 							// link unreachable block to exit block
 							// Technically, we create a branch instruction after an unreachable instruction
-							// This my break LLVM in some cases. The spec is unclear theryby.
+							// This may break LLVM in some cases. The spec is unclear theryby.
 							// The other fix is to make ARA aware of ignoring unreachable instructions.
 							BranchInst::Create(exit, unreachable);
 						} else {
