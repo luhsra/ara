@@ -4,22 +4,22 @@ import functools
 
 from ara.graph import ABBType, SyscallCategory, CFGView, CFType
 from ara.util import get_null_logger
-from ara.os.os_base import OSState, CPU, CrossCoreAction
+from ara.os.os_base import OSState, CrossCoreAction
 
 from collections import defaultdict
 from dataclasses import dataclass
 
 from graph_tool.topology import (dominator_tree, label_out_component,
-                                 all_paths, all_circuits)
+                                 all_paths)
 
 
 @dataclass
 class SSEContext:
-    recursive: bool # is this state part of a recursive function
-    branch: bool # is this state on a branch (behind an if)
-    loop: bool # is this state part of a loop
-    usually_taken: bool # is this state coming from a branch, where all other
-                        # branches end in an endless loop
+    recursive: bool  # is this state part of a recursive function
+    branch: bool  # is this state on a branch (behind an if)
+    loop: bool  # is this state part of a loop
+    usually_taken: bool  # is this state coming from a branch, where all other
+                         # branches end in an endless loop
 
     def copy(self):
         return SSEContext(recursive=self.recursive,
@@ -180,10 +180,11 @@ class _SSERunner:
         visit_count = self._visited[call_path][abb]
         if visit_count > 0:
             if self._visitor.PREVENT_MULTIPLE_VISITS:
+                print("EARLY RETURN")
                 return
             else:
                 raise NotImplementedError #TODO
-        self._visited[call_path][abb] +=1
+        self._visited[call_path][abb] += 1
 
         self._log.debug(f"Handle state {state}")
 
@@ -203,7 +204,7 @@ class _SSERunner:
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
                 return new_states
-            except CrossCoreAction as e:
+            except CrossCoreAction:
                 # end analysis on this path
                 return []
 
@@ -221,7 +222,8 @@ class _SSERunner:
 
                 # prevent recursion
                 if new_call_path.is_recursive():
-                    self._log.debug(f"Reentry of recursive function. Callpath {new_call_path}")
+                    self._log.debug("Reentry of recursive function. "
+                                    f"Callpath {new_call_path}")
                     continue
 
                 new_state = state.copy()
@@ -270,16 +272,15 @@ class _SSERunner:
             new_states.append(new_state)
         return new_states
 
-
     def _system_semantic(self, state: OSState):
         # we can only handle a single core execution here
         assert(len(state.cpus) == 1)
+        print("STATE", state)
 
         new_states = self._execute(state)
         for new_state in new_states:
             self._visitor.schedule(new_state)
         return new_states
-
 
     def run(self):
         stack = [self._visitor.get_initial_state()]
@@ -296,7 +297,9 @@ class _SSERunner:
 
                 if new_state not in stack:
                     stack.append(new_state)
+
             counter += 1
+            self._visitor.next_step(counter)
 
         self._log.info(f"Analysis needed {counter} iterations.")
 
