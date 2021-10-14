@@ -48,7 +48,7 @@ def get_config(i_file):
     """Return the default common config."""
     return {'log_level': 'debug',
             'dump_prefix': 'dumps/{step_name}.',
-            'dump': True,
+            'dump': False,
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
