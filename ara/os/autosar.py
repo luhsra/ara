@@ -168,10 +168,10 @@ class ISRContext(ControlContext):
 
     def __copy__(self):
         """Make a deep copy."""
-        return TaskContext(status=self.status,
-                           abb=self.abb,
-                           call_path=copy(self.call_path),
-                           dyn_prio=(self.dyn_prio[0],))
+        return ISRContext(status=self.status,
+                          abb=self.abb,
+                          call_path=copy(self.call_path),
+                          dyn_prio=(self.dyn_prio[0],))
 
 
 @dataclass
