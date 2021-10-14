@@ -51,6 +51,10 @@ class AUTOSARInstance:
         # the name of an arbitrary AUTOSAR instance must be unique
         return hash(self.__class__.__name__ + self.name)
 
+    def __repr__(self):
+        return self.name
+
+
 
 @dataclass
 class TaskGroup(AUTOSARInstance):
@@ -58,20 +62,16 @@ class TaskGroup(AUTOSARInstance):
     promises: dict
 
 
-@dataclass
-class Task(ControlInstance, AUTOSARInstance):
+@dataclass(repr=False)
+class Task(AUTOSARInstance, ControlInstance):
     function: graph_tool.Vertex
     priority: int
     activation: Any
     autostart: bool
     schedule: Any
 
-    def __repr__(self):
-        return self.name
-
     def __hash__(self):
-        # the name of a Task must be unique
-        return hash("TASK" + self.name)
+        return AUTOSARInstance.__hash__(self)
 
     def as_dot(self):
         wanted_attrs = ["name", "autostart", "priority", "cpu_id"]
