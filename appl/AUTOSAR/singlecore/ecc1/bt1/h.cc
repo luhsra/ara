@@ -7,7 +7,7 @@ DeclareTask(BT1);   // Prio: 3
 DeclareTask(BT2);   // Prio: 11
 DeclareTask(ET1);   // Prio: 2
 DeclareTask(ET2);   // Prio: 10
-DeclareEvent(E1);
+DeclareEvent(E1, 1);
 
 TEST_MAKE_OS_MAIN( StartOS(0) );
 

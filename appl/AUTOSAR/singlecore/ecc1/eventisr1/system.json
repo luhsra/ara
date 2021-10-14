@@ -55,6 +55,10 @@
       "alarms": {
         "A1": {
           "counter": "C1",
+          "action": {
+            "action": "setevent",
+            "event": "E1"
+          },
           "autostart": true,
           "cycletime": 100,
           "alarmtime": 100
