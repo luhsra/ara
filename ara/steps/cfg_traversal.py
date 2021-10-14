@@ -205,6 +205,7 @@ class _SSERunner:
                 )
                 return new_states
             except CrossCoreAction:
+                self._visitor.cross_core_action(state.id)
                 # end analysis on this path
                 return []
 

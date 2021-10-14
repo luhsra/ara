@@ -5,6 +5,8 @@ import pydot
 import os
 import html
 
+from collections import defaultdict
+
 from .option import Option, String
 from .step import Step
 from .cfg_traversal import Visitor, run_sse
@@ -46,7 +48,7 @@ class MetaState:
         self.context_id = context_id
         self.state_graph = {}  # graph of Multistates for each cpu
         # key: cpu id, value: graph of Multistates
-        self.sync_states = {}  # list of MultiStates for each cpu, which handle
+        self.sync_states = defaultdict(set)  # list of MultiStates for each cpu, which handle
         # a syscall that affects other cpus
         # key: cpu id, value: list of MultiStates
         self.entry_states = {}  # entry state for each cpu
@@ -177,6 +179,10 @@ class MultiSSE(Step):
                 @staticmethod
                 def is_bad_call_target(_):
                     return False
+
+                @staticmethod
+                def cross_core_action(state_id):
+                    metastate.sync_states[cpu_id].add(id_map[state_id])
 
                 @staticmethod
                 def schedule(new_states):
@@ -437,6 +443,23 @@ class MultiSSE(Step):
         self._run_sse(metastate)
 
         return metastate
+
+    def _meta_transition(self, state_vertex, sstg):
+        metastate = sstg.vp.state[state_vertex]
+        for cpu_id, state_id in metastate.sync_states.items():
+            for state in state_id:
+                # evaluate state
+                sctg = metastate.state_graph[cpu_id]
+                sctg.vp.
+
+                os_state = 
+
+                new_states = self.graph.os.interpret(self.graph, os_state, cpu_id, SyscallCategory.every)
+                for new_state in new_states:
+                    # cross product with every state on every other cpu
+
+        for state_vertex
+        return []
 
     def _new_vertex(self, sstg, state):
         vertex = sstg.add_vertex()
