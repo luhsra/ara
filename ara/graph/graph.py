@@ -84,6 +84,16 @@ class CFG(graph_tool.Graph):
             if self.ep.type[edge] == CFType.f2a:
                 yield edge.target()
 
+    def get_function_bbs(self, function):
+        """Get the BBs of the functions."""
+        self.save("cfg.dot")
+        print(self.vertex(function))
+        for edge in self.vertex(function).out_edges():
+            print(edge.__dict__)
+            print(edge)
+            if self.ep.type[edge] == CFType.f2b:
+                yield edge.target()
+
     def get_abb(self, bb):
         """Get the ABB node for a BB."""
         bb = self.vertex(bb)
@@ -117,16 +127,24 @@ class CFG(graph_tool.Graph):
             raise CFGError("No BB found.")
         return ret
 
-    def get_entry_abb(self, function):
-        """Return the entry_abb of the given function."""
-        function = self.vertex(function)
+    def _get_entry(self, function, edge_type=CFType.f2a):
+        """Return the entry block of the given function."""
+        def is_entry(block):
+            return self.ep.is_entry[block] and self.ep.type[block] == edge_type
 
-        def is_entry(abb):
-            return self.ep.is_entry[abb] and self.ep.type[abb] == CFType.f2a
+        function = self.vertex(function)
 
         entry = list(filter(is_entry, function.out_edges()))
         assert len(entry) == 1
         return entry[0].target()
+
+    def get_entry_abb(self, function):
+        """Return the entry abb of the given function."""
+        return self._get_entry(function, edge_type=CFType.f2a)
+
+    def get_entry_bb(self, function):
+        """Return the entry bb of the given function."""
+        return self._get_entry(function, edge_type=CFType.f2b)
 
     def get_exit_abb(self, function):
         function = self.vertex(function)
