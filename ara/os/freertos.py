@@ -6,7 +6,7 @@ import functools
 import html
 
 import ara.graph as _graph
-from ara.graph import CallPath, SyscallCategory, SigType
+from ara.graph import SyscallCategory, SigType
 from ara.util import get_logger
 from ara.steps.util import current_step
 
@@ -292,7 +292,7 @@ class FreeRTOS(OSBase):
                 state.next_abbs = []
                 FreeRTOS.add_normal_cfg(cfg, abb, state)
                 return state
-        return getattr(FreeRTOS, syscall)(graph, abb, state)
+        return syscall_function(graph, abb, state)
 
     @staticmethod
     def add_normal_cfg(cfg, abb, state):
