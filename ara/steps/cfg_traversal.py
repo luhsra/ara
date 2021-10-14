@@ -47,11 +47,12 @@ class Visitor:
 
 
 class _SSERunner:
-    def __init__(self, cfg, call_graph, os, logger, visitor):
-        self._cfg = cfg
-        self._icfg = CFGView(self._cfg, efilt=self._cfg.ep.type.fa == CFType.icf)
-        self._lcfg = CFGView(self._cfg, efilt=self._cfg.ep.type.fa == CFType.lcf)
-        self._call_graph = call_graph
+    def __init__(self, graph, os, logger, visitor):
+        self._graph = graph
+        self._cfg = graph.cfg
+        self._icfg = graph.icfg
+        self._lcfg = graph.lcfg
+        self._call_graph = graph.callgraph
         self._os = os
         self._log = logger
         self._visitor = visitor
@@ -200,7 +201,7 @@ class _SSERunner:
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             try:
                 new_states = self._os.interpret(
-                    self._graph, abb, state,
+                    self._graph, state, 0,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
                 return new_states
@@ -227,8 +228,8 @@ class _SSERunner:
                     continue
 
                 new_state = state.copy()
-                new_state.cpu[0].abb = n
-                new_state.cpu[0].call_path = new_call_path
+                new_state.cpus[0].abb = n
+                new_state.cpus[0].call_path = new_call_path
 
                 # SSE specific analysis context
                 self._assign_context(state, new_state, abb)
@@ -258,8 +259,8 @@ class _SSERunner:
                     new_state.cfg.vp.call_graph_link[func]
                 )
             ]
-            new_state.next_abbs = [next_node]
-            new_state.call_path.pop_back()
+            new_state.cpus[0].abb = next_node
+            new_state.cpus[0].call_path.pop_back()
             return [new_state]
 
         # computation block handling
@@ -267,19 +268,21 @@ class _SSERunner:
         self._log.debug(f"Handle computation: {self._icfg.vp.name[abb]}")
         new_states = []
         for n in self._icfg.vertex(abb).out_neighbors():
+            self._log.debug(f"Neighbor {self._icfg.vp.name[n]}")
             new_state = state.copy()
-            new_state.next_abbs = [n]
+            new_state.cpus[0].abb = n
             new_states.append(new_state)
         return new_states
 
     def _system_semantic(self, state: OSState):
         # we can only handle a single core execution here
         assert(len(state.cpus) == 1)
-        print("STATE", state)
 
         new_states = self._execute(state)
+        self._log.debug(f"NEW_STATES {new_states}")
         for new_state in new_states:
             self._visitor.schedule(new_state)
+        self._log.debug(f"NEW_STATES {new_states}")
         return new_states
 
     def run(self):
@@ -304,9 +307,9 @@ class _SSERunner:
         self._log.info(f"Analysis needed {counter} iterations.")
 
 
-def run_sse(cfg, call_graph, os, visitor=Visitor(), logger=get_null_logger()):
+def run_sse(graph, os, visitor=Visitor(), logger=get_null_logger()):
     # we new a lot of state during the analyiss, so pass the handling to an
     # object that can hold the data
-    runner = _SSERunner(cfg=cfg, call_graph=call_graph, os=os, logger=logger,
+    runner = _SSERunner(graph=graph, os=os, logger=logger,
                         visitor=visitor)
     return runner.run()

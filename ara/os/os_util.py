@@ -46,6 +46,8 @@ def get_argument(value, arg):
 
     if arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
         return check_ty(value.value, arg.ty)
+    if arg.ty != typing.Any and arg.hint == _SigType.instance:
+        return check_ty(value.value, arg.ty)
     if arg.raw_value:
         return value
     if value is None:
@@ -107,7 +109,7 @@ class SysCall:
         static method so just return itself here."""
         return self
 
-    def __call__(self, graph, abb, state):
+    def __call__(self, graph, state, cpu_id):
         """Interpret the system call.
 
         In principal, this function performs a value analysis, then calls
@@ -115,18 +117,18 @@ class SysCall:
         func_body and follows the normal control flow patterns if wanted.
 
         In particular func_body is called with this arguments:
-        graph -- the system graph
-        abb   -- the ABB of the system call
-        state -- the OS state
-        args  -- A special args object, that contains the retrieved arguments.
-                 It has as fields the attribute names that are given by the
-                 Argument tuple.
-        va    -- The value analyzer.
+        graph  -- the system graph
+        state  -- the OS state
+        cpu_id -- the cpu_id that should be interpreted
+        args   -- A special args object, that contains the retrieved arguments.
+                  It has as fields the attribute names that are given by the
+                  Argument tuple.
+        va     -- The value analyzer.
 
         Arguments:
-        graph -- the graph object
-        abb   -- the abb ob the system call
-        state -- the OS state
+        graph  -- the graph object
+        state  -- the OS state
+        cpu_id -- the cpu_id that should be interpreted
         """
 
         if _SyscallCategory.undefined in self.categories:
@@ -147,6 +149,9 @@ class SysCall:
         fields = []
         values = []
 
+        abb = state.cpus[cpu_id].abb
+        callpath = state.cpus[cpu_id].call_path
+
         # retrieve arguments
         for idx, arg in enumerate(self._signature):
             fields.append((arg.name, arg.ty))
@@ -155,7 +160,7 @@ class SysCall:
                 hint = _SigType.symbol
             try:
                 result = va.get_argument_value(abb, idx,
-                                               callpath=state.call_path,
+                                               callpath=callpath,
                                                hint=hint)
             except ValuesUnknown as e:
                 values.append(UnknownArgument(exception=e, value=None))
@@ -170,7 +175,7 @@ class SysCall:
         args = Arguments(*values)
 
         # syscall specific handling
-        new_state = self._func(graph, abb, state, args, va)
+        new_state = self._func(graph, state, cpu_id, args, va)
 
         # add standard control flow successors if wanted
         new_state.next_abbs = []

@@ -107,8 +107,8 @@ class MultiSSE(Step):
             for edge in state_graph.edges():
                 dot_graph.add_edge(
                     pydot.Edge(
-                        _get_nname(edge.source()),
-                        _get_nname(edge.target()),
+                        _get_nname(cpu, edge.source()),
+                        _get_nname(cpu, edge.target()),
                         color="black",
                     )
                 )
@@ -194,8 +194,7 @@ class MultiSSE(Step):
                     self.dump_metastate(metastate, extra=str(counter))
 
             run_sse(
-                self._graph.cfg,
-                self._graph.callgraph,
+                self._graph,
                 self._graph.os,
                 visitor=SSEVisitor(),
                 logger=self._log,
