@@ -1,6 +1,13 @@
 {
 	"steps": [
-		"MultiSSE"
+		"MultiSSE",
+		{
+			"name": "Printer",
+			"dot": "cfg.dot",
+			"from_entry_point": false,
+			"graph_name": "CFG",
+			"subgraph": "abbs"
+		}
 	],
 
 	"SysFuncts": {
