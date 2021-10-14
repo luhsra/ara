@@ -86,11 +86,7 @@ class CFG(graph_tool.Graph):
 
     def get_function_bbs(self, function):
         """Get the BBs of the functions."""
-        self.save("cfg.dot")
-        print(self.vertex(function))
         for edge in self.vertex(function).out_edges():
-            print(edge.__dict__)
-            print(edge)
             if self.ep.type[edge] == CFType.f2b:
                 yield edge.target()
 
