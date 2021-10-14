@@ -715,7 +715,9 @@ class AUTOSAR(OSBase):
         logger.debug(f"Setting Task {task} ready.")
 
         AUTOSAR.check_cpu(state, task.cpu_id)
-        state.context[task].status = TaskStatus.ready
+        ctx = state.context[task]
+        if ctx.status is not TaskStatus.running:
+            ctx.status = TaskStatus.ready
         return state
 
     @syscall(categories={SyscallCategory.comm},
