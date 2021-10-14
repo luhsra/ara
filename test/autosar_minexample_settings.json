@@ -7,8 +7,23 @@
 			"from_entry_point": false,
 			"graph_name": "CFG",
 			"subgraph": "abbs"
+		},
+		{
+			"name": "Printer",
+			"dot": "bbs.dot",
+			"from_entry_point": false,
+			"graph_name": "CFG (BBs)",
+			"subgraph": "bbs"
 		}
 	],
+
+	"ICFG": {
+		"log_level": "debug"
+	},
+
+	"CreateABBs": {
+		"log_level": "debug"
+	},
 
 	"SysFuncts": {
 		"dump": true
@@ -25,6 +40,7 @@
 	},
 
 	"logger": {
-		"StepManager": "debug"
+		"StepManager": "info",
+		"AUTOSAR": "debug"
 	}
 }
