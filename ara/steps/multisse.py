@@ -5,12 +5,13 @@ import pydot
 import os
 import html
 
-from .sse import FlowAnalysis
+from .option import Option, String
+from .step import Step
 from .cfg_traversal import Visitor, run_sse
 from ara.os.os_base import OSState, CPU
 
 # time counter for performance measures
-c_debugging = 0 # in milliseconds
+c_debugging = 0  # in milliseconds
 
 MAX_UPDATES = 2
 MAX_STATE_UPDATES = 20
@@ -18,12 +19,16 @@ MIN_EMULATION_TIME = 200
 
 sse_counter = 0
 
+
 def debug_time(t_start):
     t_delta = datetime.now() - t_start
     global c_debugging
     c_debugging += t_delta.seconds * 1000 + t_delta.microseconds / 1000
 
+
 _metastate_id = 0
+
+
 def get_id():
     global _metastate_id
     _metastate_id += 1
@@ -31,77 +36,95 @@ def get_id():
 
 
 class MetaState:
-    """State containing the summarized independend states for a single core
+    """State containing the summarized independent states for a single core
     execution"""
 
     def __init__(self, graph, instances):
         self.id = get_id()
         self.graph = graph
         self.instances = instances
-        self.state_graph = {} # graph of Multistates for each cpu
-                              # key: cpu id, value: graph of Multistates
-        self.sync_states = {} # list of MultiStates for each cpu, which handle
-                              # a syscall that affects other cpus
-                              # key: cpu id, value: list of MultiStates
+        self.state_graph = {}  # graph of Multistates for each cpu
+        # key: cpu id, value: graph of Multistates
+        self.sync_states = {}  # list of MultiStates for each cpu, which handle
+        # a syscall that affects other cpus
+        # key: cpu id, value: list of MultiStates
         self.entry_states = {}  # entry state for each cpu
-                                # key: cpu id, value: Multistate
-        self.updated = 0 # amount of times this metastate has been updated (timings)
+        # key: cpu id, value: Multistate
+        self.updated = 0  # amount of times this metastate has been updated (timings)
 
-class MultiSSE(FlowAnalysis):
+
+class MultiSSE(Step):
     """Run the MultiCore SSE."""
 
-    def get_single_dependencies(self):
-        return self._require_instances()
+    entry_point = Option(name="entry_point", help="system entry point", ty=String())
 
-    def _multistate_as_dot(self, state_graph, state_vert, instances):
+    def get_single_dependencies(self):
+        if self._graph.os is None:
+            return ["SysFuncts"]
+        deps = self._graph.os.get_special_steps()
+        if self._graph.os.has_dynamic_instances():
+            deps.append("SIA")
+        return deps
+
+    def _singlecore_state_as_dot(self, state_graph, state_vert, instances):
         attrs = {"fontsize": 14}
         size = 12
         label = f"State {state_vert}"
         cfg = self._graph.cfg
-        graph_attrs = '<br/>'.join([f"<i>{k}</i>: {html.escape(str(v))}"
-                                    for k, v in [
-                                        ("irq_on", bool(state_graph.vp.irq_on[state_vert])),
-                                        ("instance", instances.vp.label[state_graph.vp.instance[state_vert]]),
-                                        ("abb", cfg.vp.name[state_graph.vp.abb[state_vert]]),
-                                        ("call_path", state_graph.vp.call_path[state_vert])]])
+        graph_attrs = "<br/>".join(
+            [
+                f"<i>{k}</i>: {html.escape(str(v))}"
+                for k, v in [
+                    ("irq_on", bool(state_graph.vp.irq_on[state_vert])),
+                    (
+                        "instance",
+                        instances.vp.label[instances.vertex(state_graph.vp.instance[state_vert])],
+                    ),
+                    ("abb", cfg.vp.name[state_graph.vp.abb[state_vert]]),
+                    ("call_path", state_graph.vp.call_path[state_vert]),
+                ]
+            ]
+        )
         graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
         attrs["label"] = f"<{label}<br/>{graph_attrs}>"
         return attrs
 
-    def dump_metastate(self, metastate):
-        def _get_nname(id):
-            return "MS " + str(id)
-        dot_graph = pydot.Dot(graph_type='digraph',
-                              label=f"Metastate {metastate.id}")
+    def dump_metastate(self, metastate, extra=""):
+        def _get_nname(cpu, id):
+            return f"MS {id} ({cpu})"
+
+        dot_graph = pydot.Dot(graph_type="digraph", label=f"Metastate {metastate.id}")
 
         for cpu, state_graph in metastate.state_graph.items():
-            dot_cpu = pydot.Cluster(str(cpu), label=str(cpu))
+            dot_cpu = pydot.Cluster(str(cpu), label=f"CPU {cpu}")
             dot_graph.add_subgraph(dot_cpu)
             for state_vert in state_graph.vertices():
-                attrs = self._multistate_as_dot(state_graph, state_vert, metastate.instances)
-                dot_state = pydot.Node(_get_nname(state_vert), **attrs)
+                attrs = self._singlecore_state_as_dot(
+                    state_graph, state_vert, metastate.instances
+                )
+                dot_state = pydot.Node(_get_nname(cpu, state_vert), **attrs)
                 dot_cpu.add_node(dot_state)
             for edge in state_graph.edges():
-                dot_graph.add_edge(pydot.Edge(_get_nname(edge.source()),
-                                              _get_nname(edge.target()),
-                                              color="black"))
+                dot_graph.add_edge(
+                    pydot.Edge(
+                        _get_nname(edge.source()),
+                        _get_nname(edge.target()),
+                        color="black",
+                    )
+                )
 
-        dot_file = self.dump_prefix.get() + f"metastate.{metastate.id}.dot"
+        dot_file = self.dump_prefix.get() + f"metastate.{metastate.id}.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
         os.makedirs(os.path.dirname(dot_path), exist_ok=True)
         dot_graph.write(dot_path)
 
         self._log.info(f"Write metastate {metastate.id} to {dot_path}.")
-        pass
 
     def dump_sstg(self, sstg):
         pass
 
-    def _init_analysis(self):
-        pass
-
-    def _gen_multistate_graph(self):
-        """Generate the initial multistate graph for a single core."""
+    def _gen_sctg(self):
+        """Generate the initial single core transition graph."""
         graph = graph_tool.Graph()
         graph.vertex_properties["irq_on"] = graph.new_vp("bool")
         graph.vertex_properties["instance"] = graph.new_vp("int64_t")
@@ -121,12 +144,14 @@ class MultiSSE(FlowAnalysis):
 
             entry = graph.get_vertices()[0]
 
-            cpu = CPU(id = cpu_id,
-                      irq_on = graph.vp.irq_on[entry],
-                      control_instance = graph.vp.instance[entry],
-                      abb = graph.vp.abb[entry],
-                      call_path = graph.vp.call_path[entry],
-                      analysis_context=None)
+            cpu = CPU(
+                id=cpu_id,
+                irq_on=graph.vp.irq_on[entry],
+                control_instance=graph.vp.instance[entry],
+                abb=graph.vp.abb[entry],
+                call_path=graph.vp.call_path[entry],
+                analysis_context=None,
+            )
 
             init_state = OSState(cpus=[cpu], instances=metastate.instances)
 
@@ -164,11 +189,20 @@ class MultiSSE(FlowAnalysis):
                 def add_transition(source, target):
                     graph.add_edge(id_map[source.id], id_map[target.id])
 
-            run_sse(self._graph.cfg, self._graph.callgraph, self._graph.os,
-                    visitor=SSEVisitor(), logger=self._log)
+                @staticmethod
+                def next_step(counter):
+                    self.dump_metastate(metastate, extra=str(counter))
+
+            run_sse(
+                self._graph.cfg,
+                self._graph.callgraph,
+                self._graph.os,
+                visitor=SSEVisitor(),
+                logger=self._log,
+            )
 
             if self.dump.get():
-                self.dump_metastate(metastate)
+                self.dump_metastate(metastate, extra="final")
 
             # v_start = graph.get_vertices()[0]
             # stack = [v_start]
@@ -309,17 +343,18 @@ class MultiSSE(FlowAnalysis):
             #     else:
             #         isr_is_not_done = False
 
-
     def _get_initial_state(self):
-        os_state = self._graph.os.get_initial_state(self._graph.cfg,
-                                                    self._graph.instances)
+        os_state = self._graph.os.get_initial_state(
+            self._graph.cfg, self._graph.instances
+        )
 
         # building initial metastate
         metastate = MetaState(graph=self._graph, instances=os_state.instances)
 
         for cpu in os_state.cpus:
+            print("CPU:", cpu)
             # graph
-            metastate.state_graph[cpu.id] = self._gen_multistate_graph()
+            metastate.state_graph[cpu.id] = self._gen_sctg()
             metagraph = metastate.state_graph[cpu.id]
 
             # initial vertex
@@ -329,6 +364,8 @@ class MultiSSE(FlowAnalysis):
             metagraph.vp.abb[state_v] = cpu.abb
             metagraph.vp.instance[state_v] = cpu.control_instance
             metagraph.vp.call_path[state_v] = cpu.call_path
+
+        self.dump_metastate(metastate, extra="init")
 
         # # go through all instances and build all initial MultiStates accordingly
         # for v in instances.vertices():
@@ -395,3 +432,44 @@ class MultiSSE(FlowAnalysis):
         self._run_sse(metastate)
 
         return metastate
+
+    def _new_vertex(self, sstg, state):
+        vertex = sstg.add_vertex()
+        sstg.vp.state[vertex] = state
+        return vertex
+
+    def run(self):
+        entry_label = self.entry_point.get()
+        if not entry_label:
+            self._fail("Entry point must be given.")
+        self._log.info(f"Analyzing entry point: '{entry_label}'")
+
+        sstg = graph_tool.Graph()
+        sstg.vertex_properties["state"] = sstg.new_vp("object")
+        sstg.edge_properties["syscall"] = sstg.new_ep("object")
+        sstg.edge_properties["state_list"] = sstg.new_ep("object")
+
+        state_vertex = self._new_vertex(sstg, self._get_initial_state())
+
+        stack = [state_vertex]
+
+        return
+
+        counter = 0
+        while stack:
+            self._log.debug(
+                f"Round {counter:3d}, "
+                f"Stack with {len(stack)} state(s): "
+                f"{[sstg.vp.state[v] for v in stack]}"
+            )
+            state_vertex = stack.pop(0)
+            for n in self._meta_transition(state_vertex, sstg):
+                new_state = self.new_vertex(sstg, n)
+                sstg.add_edge(state_vertex, new_state)
+                stack.append(new_state)
+
+            counter += 1
+
+        self._log.info(f"Analysis needed {counter} iterations.")
+
+        self._graph.sstg = sstg
