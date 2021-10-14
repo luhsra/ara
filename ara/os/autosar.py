@@ -91,12 +91,14 @@ class Task(ControlInstance, AUTOSARInstance):
 class TaskContext(ControlContext):
     dyn_prio: List[int]
     received_events: int = 0
+    waited_events: int = 0
 
     def __hash__(self):
         return hash(("TaskContext",
                      self.status, self.abb, self.call_path,
                      tuple(self.dyn_prio),
-                     self.received_events))
+                     self.received_events,
+                     self.waited_events))
 
     def __copy__(self):
         """Make a deep copy."""
@@ -104,7 +106,8 @@ class TaskContext(ControlContext):
                            abb=self.abb,
                            call_path=copy(self.call_path),
                            dyn_prio=[x for x in self.dyn_prio],
-                           received_events=self.received_events)
+                           received_events=self.received_events,
+                           waited_events=self.waited_events)
 
 
 @dataclass
@@ -745,26 +748,28 @@ class AUTOSAR(OSBase):
         state.context["AUTOSAR"].os_irq_status[cpu_id] -= 1
         return state
 
+    @staticmethod
+    def SetEvent(state, task, event_mask):
+        task_ctx = state.context[task]
+        if task_ctx.status == TaskStatus.blocked and \
+           event_mask & task_ctx.waited_events != 0:
+            logger.debug(f"Unblock Task {task.name}")
+            # this task already waits for this event
+            task_ctx.status = TaskStatus.ready
+            task_ctx.waited_events = 0
+
+        if task_ctx.status != TaskStatus.suspended:
+            task_ctx.received_events |= event_mask
+
+        return state
+
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),
                         Arg("event_mask")))
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.task, Task))
         assert(isinstance(args.event_mask, int))
-
-        task_ctx = state.context[args.task]
-        if task_ctx.status == TaskStatus.blocked and \
-           args.event_mask & task_ctx.received_events != 0:
-            logger.debug(f"Unblock Task {args.task.name}")
-            # this task already waits for this event
-            task_ctx.status = TaskStatus.ready
-            # clear old events on which the task has waited, set all other
-            task_ctx.received_events = ~task_ctx.received_events & args.event_mask
-        else:
-            # just set the additional events
-            task_ctx.received_events |= args.event_mask
-
-        return state
+        return AUTOSAR.SetEvent(state, args.task, args.event_mask)
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
@@ -843,12 +848,11 @@ class AUTOSAR(OSBase):
 
         if args.event_mask & cur_ctx.received_events == 0:
             cur_ctx.status = TaskStatus.blocked
-            # store event that is waited for in received_events since this
-            # field is unused as long as the task is blocked
-            cur_ctx.received_events = args.event_mask
+            cur_ctx.waited_events = args.event_mask
             # release resource
             while len(state.cur_context(cpu_id).dyn_prio) > 1:
                 state.cur_context(cpu_id).dyn_prio.pop()
+        # else: just continue
 
         # the next ABB will be set _after_ this call. However, since this task
         # is blocked this isn't a problem.
