@@ -22,7 +22,12 @@ class LoadOIL(Step):
                      help="Path to JSON oil file.",
                      ty=String())
 
+    def get_single_dependencies(self):
+        return ["LLVMMap"]
+
     def run(self):
+        cfg = self._graph.cfg
+
         # load the json file
         oilfile = self.oilfile.get()
         if not oilfile:
@@ -40,13 +45,22 @@ class LoadOIL(Step):
                 t = instances.add_vertex()
                 t_name = task["name"]
                 t_func_name = "AUTOSAR_TASK_FUNC_" + t_name
-                t_func = self._graph.cfg.get_function_by_name(t_func_name)
-                instances.vp.obj[t] = Task(self._graph.cfg, t_name, t_func,
-                                           task["priority"],
-                                           task["activation"],
-                                           task["autostart"],
-                                           task["schedule"],
-                                           cpu_id)
+                t_func = cfg.get_function_by_name(t_func_name)
+                t_status = TaskStatus.ready if task["autostart"] else TaskStatus.suspended
+                # Use a fake ABB, since we don't have real ones yet.
+                # Leave this to the RegisterTaskEntry step
+                self._log.debug(f"Found Task {t_name}")
+                instances.vp.obj[t] = Task(abb=0,
+                                           cfg=cfg,
+                                           name=t_name,
+                                           function=t_func,
+                                           priority=task["priority"],
+                                           activation=task["activation"],
+                                           autostart=task["autostart"],
+                                           schedule=task["schedule"],
+                                           cpu_id=cpu_id,
+                                           status=t_status,
+                                           call_path=_graph.CallPath())
                 instances.vp.label[t] = t_name
 
                 # trigger other steps

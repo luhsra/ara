@@ -1,7 +1,7 @@
 """Container for CreateABBs."""
 from ara.graph import Graph, NodeLevel, CFType, ABBType
 from .step import Step
-from .option import Option, Integer
+from .option import Option, Integer, String
 
 from collections import defaultdict
 
@@ -9,10 +9,17 @@ from collections import defaultdict
 class CreateABBs(Step):
     """Create ABBs from BBs. Currently, this is an 1 to 1 mapping."""
 
+    entry_point = Option(name="entry_point",
+                         help="system entry point",
+                         ty=String())
+
     def get_single_dependencies(self):
-        return ["LLVMMap"]
+        return [{"name": "ICFG", "entry_point": self.entry_point.get()}]
 
     def run(self):
+        entry_label = self.entry_point.get()
+        entry_func = self._graph.cfg.get_function_by_name(entry_label)
+
         abb_counter = 0
 
         bb2abb = {}
@@ -52,9 +59,38 @@ class CreateABBs(Step):
                         src = bb2abb[bb_edge.source()]
                     edge = cfg.add_edge(src, abb)
                     cfg.ep.type[edge] = CFType.lcf
+                elif cfg.ep.type[bb_edge] == CFType.icf:
+                    src = cfg.get_abb(bb_edge.source())
+                    if src is None:
+                        src = bb2abb[bb_edge.source()]
+                    edge = cfg.add_edge(src, abb)
+                    cfg.ep.type[edge] = CFType.icf
                 else:
                     assert False, "Unexpected edge type. Something is wrong."
             edge = cfg.add_edge(abb, bb)
             cfg.ep.type[edge] = CFType.a2b
             # since this is an 1 to 1 mapping, the BB is always an entry.
             cfg.ep.is_entry[edge] = True
+
+        # remap callgraph links to ABBs instead of BBs
+        callgraph = self._graph.callgraph
+        for e in callgraph.edges():
+            bb = cfg.vertex(callgraph.ep.callsite[e])
+            abb = cfg.get_abb(bb)
+            callgraph.ep.callsite[e] = abb
+            callgraph.ep.callsite_name[e] = cfg.vp.name[abb]
+
+        if self.dump.get():
+            self._step_manager.chain_step(
+                {"name": "Printer",
+                 "dot": self.dump_prefix.get() + "cfg.dot",
+                 "graph_name": 'CFG with merged ABBs',
+                 "subgraph": 'abbs'}
+            )
+
+            self._step_manager.chain_step(
+                {"name": "Printer",
+                 "dot": self.dump_prefix.get() + "callgraph.dot",
+                 "graph_name": 'CallGraph with merged ABBs',
+                 "subgraph": 'callgraph'}
+            )

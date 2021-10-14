@@ -109,10 +109,9 @@ namespace ara::step {
 				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
 				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent();
 				CFVertex bb = cfg.back_map(cfg_obj, safe_deref(out_bb));
-				CFVertex abb = cfg.get_abb<CFGraph>(cfg_obj, bb);
 
-				callgraph.callsite[edge.first] = abb;
-				callgraph.callsite_name[edge.first] = cfg.name[abb];
+				callgraph.callsite[edge.first] = bb;
+				callgraph.callsite_name[edge.first] = cfg.name[bb];
 				callgraph.svf_elink[edge.first] = reinterpret_cast<uintptr_t>(&svf_edge);
 
 				return edge.first;
