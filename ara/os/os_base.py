@@ -6,7 +6,7 @@ import enum
 from dataclasses import dataclass, field
 from typing import List, Any
 
-from ara.graph import SyscallCategory, CallPath, CFG
+from ara.graph import SyscallCategory, CallPath, CFG, CFType
 
 
 class TaskStatus(enum.Enum):
@@ -124,3 +124,9 @@ class OSBase:
         """
         raise NotImplementedError()
 
+    @staticmethod
+    def _add_normal_cfg(state, cpu_id, icfg):
+        abb = state.cpus[cpu_id].abb
+        neighbors = list(icfg.vertex(abb).out_neighbors())
+        assert len(neighbors) == 1, "Multiple ABBs follow a syscall."
+        state.cpus[cpu_id].abb = neighbors[0]

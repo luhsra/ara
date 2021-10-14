@@ -1,7 +1,7 @@
-from .os_util import syscall, get_argument
+from .os_util import syscall, Arg
 from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus
 from ara.util import get_logger
-from ara.graph import CallPath
+from ara.graph import CallPath, SyscallCategory, SigType
 
 import graph_tool
 import html
@@ -151,7 +151,7 @@ class AUTOSAR(OSBase):
         cpu_map = defaultdict(list)
         for v in instances.vertices():
             obj = instances.vp.obj[v]
-            if isinstance(obj, Task):
+            if isinstance(obj, ControlInstance) and obj.status in [TaskStatus.running, TaskStatus.ready]:
                 cpu_map[obj.cpu_id].append((v, obj))
 
         # construct actual CPUs
@@ -165,6 +165,7 @@ class AUTOSAR(OSBase):
                             abb=entry_abb,
                             call_path=CallPath(),
                             analysis_context=None))
+            logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_task[0])]} for CPU {cpu_id}.")
 
         return OSState(cpus=cpus, instances=instances)
 
@@ -271,13 +272,27 @@ class AUTOSAR(OSBase):
             return [new_state]
 
     @staticmethod
-    def interpret(cfg, abb, state, cpu, is_global=False):
+    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+        cfg = graph.cfg
+        abb = state.cpus[cpu_id].abb
         syscall = cfg.get_syscall_name(abb)
-        logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
+        logger.debug(f"Get syscall: {syscall}, CPU {cpu_id}, "
+                     f"ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
-        if is_global:
-            syscall += "_global"
-        return getattr(AUTOSAR, syscall)(cfg, abb, state, cpu)
+
+        syscall_function = getattr(AUTOSAR, syscall)
+
+        if isinstance(categories, SyscallCategory):
+            categories = set((categories,))
+
+        if SyscallCategory.every not in categories:
+            sys_cat = syscall_function.categories
+            if sys_cat | categories != sys_cat:
+                # do not interpret this syscall
+                state = state.copy()
+                OSBase._add_normal_cfg(state, cpu_id, graph.icfg)
+                return state
+        return syscall_function(graph, state, cpu_id)
 
     @staticmethod
     def is_inter_cpu_syscall(cfg, abb, state, cpu):
@@ -310,7 +325,7 @@ class AUTOSAR(OSBase):
     @staticmethod
     def schedule(state, cpus=None):
         if cpus is None:
-            cpus = [x.id for cpu in state.cpus]
+            cpus = [cpu.id for cpu in state.cpus]
 
         # get cpu mapping
         cpu_map = defaultdict(list)
@@ -324,6 +339,9 @@ class AUTOSAR(OSBase):
             if cpu.id in cpus:
                 assert cpu.id in cpu_map and len(cpu_map[cpu.id]) != 0
                 prio_task = max(cpu_map[cpu.id], key=lambda t: t[1].priority)
+                logger.debug(f"Schedule on CPU {cpu.id}: "
+                             f"From {state.instances.vp.obj[state.instances.vertex(cpu.control_instance)]} "
+                             f"to {state.instances.vp.obj[state.instances.vertex(prio_task[0])]}")
 
                 # shortcut for same task
                 if prio_task[0] == cpu.control_instance:
@@ -340,6 +358,7 @@ class AUTOSAR(OSBase):
                 cpu.abb = prio_task[0]
                 cpu.call_path = prio_task[1].call_path
                 prio_task[1].status = TaskStatus.ready
+        logger.debug(f"Scheduling state {state}")
 
     @staticmethod
     def decompress_state(state):
@@ -501,52 +520,14 @@ class AUTOSAR(OSBase):
         return states
         # print("Activate Task globally: " + task.name)
 
-
-    @syscall
-    def AUTOSAR_ActivateTask(cfg, abb, state, cpu):
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("task", ty=Task, hint=SigType.instance),))
+    def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
         state = state.copy()
-        scheduled_task = state.get_scheduled_task()
-        current_isr = state.get_current_isr()
-        if current_isr is not None:
-            scheduled_task = current_isr
 
-        # get Task argument
-        cp = state.call_path
-        task_name = get_argument(cfg, abb, cp, 0, ty=pyllco.GlobalVariable).get_name()
+        logger.debug(f"Setting Task {args.task} ready.")
 
-        # find task with same name as 'task_name' in instance graph
-        task = None
-        for v in state.instances.vertices():
-            task = state.instances.vp.obj[v]
-            if isinstance(task, Task):
-                if task.name in task_name:
-                    break
-
-        # add found Task to list of activated tasks
-        state.activated_tasks.append_item(task)
-
-        # old_task = state.get_scheduled_task(task.cpu_id)
-
-        # advance current task to next abb
-        counter = 0
-        for n in cfg.vertex(abb).out_neighbors():
-            state.set_abb(scheduled_task.name, n)
-            counter += 1
-        assert(counter == 1)
-
-        # trigger scheduling
-        AUTOSAR.schedule(state, task.cpu_id)
-
-        # set multi ret for gcfg building if the new task was scheduled
-        # new_task = state.get_scheduled_task(task.cpu_id)
-        # if cpu != task.cpu_id:
-        #     if new_task.name == task.name:
-        #         state.gcfg_multi_ret[old_task.name] = True
-
-        # set this syscall for gcfg building
-        state.last_syscall = SyscallInfo("ActivateTask", abb, cpu)
-
-        # print("Activate Task: " + task.name)
+        args.task.status = TaskStatus.ready
 
         return [state]
 
