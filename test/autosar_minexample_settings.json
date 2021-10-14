@@ -3,6 +3,20 @@
 		"MultiSSE"
 	],
 
+	"SysFuncts": {
+		"dump": true
+	},
+
+	"LoadOIL": {
+		"log_level": "debug",
+		"dump": true
+	},
+
+	"MultiSSE": {
+		"dump": true,
+		"log_level": "debug"
+	},
+
 	"logger": {
 		"StepManager": "debug"
 	}
