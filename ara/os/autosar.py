@@ -550,14 +550,16 @@ class AUTOSAR(OSBase):
                          f"to {new_label}")
 
             # handle non preemptible tasks
-            if not isinstance(new_ctx, ISRContext) and \
-               isinstance(old_task, Task) and not old_task.schedule \
+            if (not isinstance(new_ctx, ISRContext)) and \
+               isinstance(old_task, Task) and (not old_task.schedule) \
                and state.context[old_task].status == TaskStatus.running:
                 # do not schedule on this CPU
+                logger.debug("Do not schedule: Non preemptible task")
                 continue
 
             # shortcut for same task
             if new_vertex == old_vertex:
+                logger.debug("Skip schedule, since the task is the same.")
                 continue
 
             # write old values back to instance only if running or blocked
