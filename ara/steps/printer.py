@@ -185,11 +185,14 @@ class Printer(Step):
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
+                    color = self.SHAPES[cfg.vp.type[block]][1]
+                    if cfg.vp.is_exit[block]:
+                        color = "violet"
                     dot_abb = pydot.Node(
                         str(hash(block)),
                         label=cfg.vp.name[block],
-                        shape=self.SHAPES[self._graph.cfg.vp.type[block]][0],
-                        color=self.SHAPES[self._graph.cfg.vp.type[block]][1]
+                        shape=self.SHAPES[cfg.vp.type[block]][0],
+                        color=color
                     )
                     if cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
