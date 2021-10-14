@@ -762,6 +762,11 @@ def convert_to_json(cpus):
                     "action": "activatetask",
                     "task": alarm.action_params.TASK.name
                 }
+            if isinstance(alarm.action_params, Alarm.SETEVENT):
+                j_alarms[alarm_name]["action"] = {
+                    "action": "setevent",
+                    "event": alarm.action_params.EVENT.name
+                }
 
             if alarm.armed:
                 j_alarms[alarm.name]["autostart"] = alarm.armed
