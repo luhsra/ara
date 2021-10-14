@@ -171,6 +171,23 @@ class OSBase:
         raise NotImplementedError
 
     @staticmethod
+    def handle_exit(graph, state, cpu_id):
+        """Handle an irregular exit.
+
+        Some exits cannot be followed within the ICFG (most notably ISR exits).
+        Only the OS model can handle this.
+
+        Arguments:
+        graph      -- the system graph
+        state      -- the current system state (see the State class)
+        cpu_id     -- the CPU where the system call occurs
+
+        Return:
+        A list of follow up states.
+        """
+        raise NotImplementedError
+
+    @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
         """Entry point for a synchronous os action (system call).
 

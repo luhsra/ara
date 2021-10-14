@@ -271,25 +271,28 @@ class _SSERunner:
                            "Handle as computation.")
 
         # exit handling
-        elif (self._icfg.vp.is_exit[abb] and
-              self._icfg.vertex(abb).out_degree() > 0):
+        elif self._icfg.vp.is_exit[abb]:
             self._log.debug(f"Handle exit: {self._icfg.vp.name[abb]}")
-            new_state = state.copy()
-            callsite = new_state.cpus[0].call_path[-1]
-            call = self._call_graph.ep.callsite[callsite]
-            neighbors = self._lcfg.vertex(call).out_neighbors()
-            next_node = next(neighbors)
-            func = new_state.cfg.get_function(
-                new_state.cfg.vertex(next_node)
-            )
-            new_state.recursive = self._call_graph.vp.recursive[
-                self._call_graph.vertex(
-                    new_state.cfg.vp.call_graph_link[func]
+            if self._icfg.vertex(abb).out_degree() > 0:
+                new_state = state.copy()
+                callsite = new_state.cpus[0].call_path[-1]
+                call = self._call_graph.ep.callsite[callsite]
+                neighbors = self._lcfg.vertex(call).out_neighbors()
+                next_node = next(neighbors)
+                func = new_state.cfg.get_function(
+                    new_state.cfg.vertex(next_node)
                 )
-            ]
-            new_state.cpus[0].abb = next_node
-            new_state.cpus[0].call_path.pop_back()
-            return [new_state]
+                new_state.recursive = self._call_graph.vp.recursive[
+                    self._call_graph.vertex(
+                        new_state.cfg.vp.call_graph_link[func]
+                    )
+                ]
+                new_state.cpus[0].abb = next_node
+                new_state.cpus[0].call_path.pop_back()
+                return [new_state]
+            else:
+                # ISRs are able to exit, all other CFG not
+                return self._os.handle_exit(self._graph, state, 0)
 
         # computation block handling
         # all other paths before should have returned if necessary

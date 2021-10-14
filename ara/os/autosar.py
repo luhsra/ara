@@ -440,6 +440,20 @@ class AUTOSAR(OSBase):
         raise NotImplementedError
 
     @staticmethod
+    def handle_exit(graph, state, cpu_id):
+        # handle only IRQs
+        isr = state.cur_control_inst(cpu_id)
+        if isinstance(isr, ISR):
+            # an ISR exit is like a TerminateTask
+            new_state = state.copy()
+            new_state.context[isr] = ISRContext(status=TaskStatus.suspended,
+                                                abb=state.cfg.get_entry_abb(isr.function),
+                                                call_path=CallPath(),
+                                                dyn_prio=tuple(state.context[isr].dyn_prio))
+            return [new_state]
+        return []
+
+    @staticmethod
     def get_interrupts(instances):
         return [v for v, _ in chain(instances.get(Alarm), instances.get(ISR))]
 
