@@ -5,12 +5,13 @@ import ara.graph as _graph
 from .option import Option, String
 from .step import Step
 from ara.os.autosar import Task, Counter, Alarm, AlarmAction, ISR, Event
+from ara.os.os_base import TaskStatus
 
-import graph_tool
 import functools
 
 DISABLE_ALARMS = True
 DISABLE_ISRS = True
+
 
 class LoadOIL(Step):
     """Reads an oil file and writes all information to the graph.
@@ -35,6 +36,11 @@ class LoadOIL(Step):
         self._log.info(f"Reading oil file {oilfile}")
         with open(oilfile) as f:
             oil = json.load(f)
+
+        # RegisterTaskEntry needs the ABBs of all Tasks (they will be created
+        # as dependency of the Syscall step), so put it at the end by
+        # requesting it first
+        self._step_manager.chain_step({"name": "RegisterTaskEntry"})
 
         instances = self._graph.instances
         for cpu in oil["cpus"]:
@@ -169,6 +175,6 @@ class LoadOIL(Step):
 
         if self.dump.get():
             self._step_manager.chain_step({"name": "Printer",
-                                           "dot": self.dump_prefix.get(),
+                                           "dot": self.dump_prefix.get() + "instances.dot",
                                            "graph_name": 'Instances',
                                            "subgraph": 'instances'})
