@@ -181,7 +181,6 @@ class _SSERunner:
         visit_count = self._visited[call_path][abb]
         if visit_count > 0:
             if self._visitor.PREVENT_MULTIPLE_VISITS:
-                print("EARLY RETURN")
                 return
             else:
                 raise NotImplementedError #TODO
@@ -279,10 +278,8 @@ class _SSERunner:
         assert(len(state.cpus) == 1)
 
         new_states = self._execute(state)
-        self._log.debug(f"NEW_STATES {new_states}")
         for new_state in new_states:
             self._visitor.schedule(new_state)
-        self._log.debug(f"NEW_STATES {new_states}")
         return new_states
 
     def run(self):
