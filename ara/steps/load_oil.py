@@ -22,6 +22,12 @@ class LoadOIL(Step):
     def get_single_dependencies(self):
         return ["LLVMMap", "SVFAnalyses"]
 
+    def _fake_task_groups(self, tasks):
+        for t_name, task in tasks.items():
+            yield (t_name + "Group",
+                   {"promises": [],
+                    "tasks": {t_name: task}})
+
     def run(self):
         cfg = self._graph.cfg
 
@@ -112,7 +118,7 @@ class LoadOIL(Step):
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
 
-            for tg_name, task_group in cpu["task_groups"].items():
+            for tg_name, task_group in chain(cpu.get("task_groups", {}).items(), self._fake_task_groups(cpu.get("tasks", {}))):
                 tg = instances.add_vertex()
                 self._log.debug(f"Found TaskGroup {tg_name}")
                 instances.vp.obj[tg] = _autosar.TaskGroup(

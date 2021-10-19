@@ -51,6 +51,7 @@ typedef uint32_t* TaskRefType;
 typedef uint32_t ResourceType;
 typedef uint32_t DeviceType;
 
+typedef uint32_t SpinlockType;
 
 typedef unsigned long EventMaskType;
 typedef unsigned long * EventMaskRefType;
