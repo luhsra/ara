@@ -65,6 +65,14 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('lock-elision',
+        py3_inst,
+        args: [files('lock_elision.py'), files('empty.json'), autosar_multicore_locks_a[0], autosar_multicore_locks_a[1]],
+        env: [python_path],
+        depends: ara_py,
+        suite: ['steps', 'sse']
+    )
+
     test('multiple-configured-steps',
         py3_inst,
         args: files('multiple_configured_steps.py'),
