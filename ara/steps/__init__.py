@@ -11,6 +11,7 @@ def provide_steps():
     from .generator import Generator
     from .icfg import ICFG
     from .load_oil import LoadOIL
+    from .lock_elision import LockElision
     from .manual_corrections import ManualCorrections
     from .printer import Printer
     from .recursive_functions import RecursiveFunctions
@@ -28,22 +29,23 @@ def provide_steps():
 
     yield CFGOptimize
     yield CFGStats
-    yield CreateABBs
     yield CallGraphStats
     yield ClassifySpecializationsFreeRTOS
+    yield CreateABBs
     yield Dummy
     yield Generator
     yield ICFG
-    yield SIA
-    yield SSE
     yield InteractionAnalysis
     yield LoadOIL
+    yield LockElision
     yield ManualCorrections
     yield MultiSSE
     yield Printer
     yield RecursiveFunctions
     yield ReduceSSTG
     yield RegisterTaskEntry
+    yield SIA
+    yield SSE
     yield SysFuncts
     yield Syscall
     yield SystemRelevantFunctions
