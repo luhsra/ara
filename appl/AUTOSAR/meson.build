@@ -81,6 +81,7 @@ autosar_apps = [
   ['singlecore' / 'ecc1' / 'eventisr1', ['e', 'system.json', 'e.trace.json']],
   ['singlecore' / 'ecc1' / 'eventisr1', ['f', 'system.json', 'f.trace.json']],
   ['multicore',                         ['minexample', 'minexample.json']],
+  ['multicore' / 'locks',               ['a', 'system.json']],
 ]
 
 autosar_targets = []
