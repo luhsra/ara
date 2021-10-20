@@ -60,6 +60,19 @@ class LoadOIL(Step):
                         return v
             self._fail("Couldn't find instance with name " + name)
 
+        for spinlocks in oil.get("spinlocks", []):
+            old_spinlock = None
+            for spinlock in spinlocks:
+                s = instances.add_vertex()
+                instances.vp.obj[s] = _autosar.Spinlock(
+                    name=spinlock
+                )
+                instances.vp.label[s] = spinlock
+                if old_spinlock:
+                    e = instances.add_edge(old_spinlock, s)
+                    instances.ep.label[e] = "nestable in order"
+                    instances.ep.type[e] = _autosar.InstanceEdge.nestable
+
         res_scheduler = None
         for cpu in oil["cpus"]:
             cpu_id = cpu["id"]
@@ -165,6 +178,13 @@ class LoadOIL(Step):
                     for r_name in chain(task.get("resources", []), r_sched_name):
                         resource = find_instance_by_name(r_name, _autosar.Resource)
                         e = instances.add_edge(t, resource)
+                        instances.ep.label[e] = "use"
+                        instances.ep.type[e] = _autosar.InstanceEdge.have
+
+                    # link to spinlock
+                    for s_name in task.get("spinlocks", []):
+                        spinlock = find_instance_by_name(s_name, _autosar.Spinlock)
+                        e = instances.add_edge(t, spinlock)
                         instances.ep.label[e] = "use"
                         instances.ep.type[e] = _autosar.InstanceEdge.have
 
