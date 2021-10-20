@@ -110,6 +110,44 @@ class SigType(enum.IntEnum): # */
     pass
 
 #undef MIX
+#define MIX 1 /*
+# StateType: describe the node type within the MSTG
+#
+# state = The node represents a single core system state
+# metastate = The node links to a set of system states.
+# sync = The node describes a synchronisation point.
+class StateType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class StateType {
+    pass
+
+    state = 1,
+    metastate = 2,
+    sync = 4,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(StateType)}
+    pass
+
+#undef MIX
+#define MIX 1 /*
+# MSTType: Multi state transition type
+#
+# m2s = metastate to state
+# st2sy = state to sync (or vice versa)
+class MSTType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class MSTType {
+    pass
+
+    m2s = 1,
+    st2sy = 2,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(MSTType)}
+    pass
+
+#undef MIX
 
 #undef EQUAL_OPERATOR
 #undef NOT_EQUAL_OPERATOR
