@@ -1,6 +1,5 @@
 """Container for SIA."""
-from ara.graph import (ABBType, CFGView, SyscallCategory, CallPath,
-                       InstanceGraph) # We can not import Callgraph, why?
+from ara.graph import ABBType, CFGView, SyscallCategory, CallPath
 from dataclasses import dataclass
 from .step import Step
 from .option import Option, String
@@ -14,21 +13,20 @@ from graph_tool.topology import all_paths, dominator_tree, label_out_component
 from graph_tool.util import find_vertex
 from itertools import chain
 
-import copy
 import functools
 
 
 @dataclass
 class SIAContext:
     """Analysis Context for SIA´s fake CPU in OSState"""
-    callg: any # of type Callgraph
-    branch: bool        # is this state coming from a branch
-    loop: bool          # is this state coming from a loop
-    recursive: bool     # is this state executing on a recursive path
-    usually_taken: bool # is this state coming from a branch where
-                        # all other branches ends in an endless loop
-    scheduler_on: bool  # Is the global scheduler on
-    
+    callg: any           # of type Callgraph
+    branch: bool         # is this state coming from a branch
+    loop: bool           # is this state coming from a loop
+    recursive: bool      # is this state executing on a recursive path
+    usually_taken: bool  # is this state coming from a branch where
+                         # all other branches ends in an endless loop
+    scheduler_on: bool   # Is the global scheduler on
+
     def copy(self):
         return SIAContext(
             callg=self.callg,
@@ -38,6 +36,7 @@ class SIAContext:
             usually_taken=self.usually_taken,
             scheduler_on=self.scheduler_on
         )
+
 
 class FlatAnalysis(Step):
     """Flat Analysis"""
@@ -148,8 +147,8 @@ class FlatAnalysis(Step):
         analysis_context.branch |= self._is_in_condition(abb)
         analysis_context.loop |= self._graph.cfg.vp.part_of_loop[abb]
         analysis_context.usually_taken = (self._is_usually_taken(abb) or
-                               (analysis_context.usually_taken and
-                                not self._is_in_condition(abb)))
+                                          (analysis_context.usually_taken and
+                                          not self._is_in_condition(abb)))
 
     def _iterate_task_entry_points(self):
         """Return a generator over all tasks in self._graph.instances.
@@ -209,24 +208,21 @@ class FlatAnalysis(Step):
                 path_to_self = [[]] if entry_point == function else []
                 for path in chain(all_paths(rev_cg, function, entry_point,
                                             edges=True), path_to_self):
-                    #state = State(cfg, callg, [])
                     state = OSState(cpus=((CPU(id=0,
-                                               irq_on=False, # SIA does not simulate Interrupts
+                                               irq_on=False,  # SIA does not simulate Interrupts
                                                control_instance=inst,
                                                abb=cfg.vertex(syscall),
                                                call_path=CallPath(),
                                                analysis_context=SIAContext(
                                                     callg=callg,
-                                                    branch = branch,
-                                                    loop = loop,
-                                                    recursive = False,
-                                                    usually_taken = False,
-                                                    scheduler_on = self._is_chained_analysis()
-                                               )
-                                    ),)),
+                                                    branch=branch,
+                                                    loop=loop,
+                                                    recursive=False,
+                                                    usually_taken=False,
+                                                    scheduler_on=self._is_chained_analysis()
+                                               )),)),
                                     instances=self._graph.instances,
-                                    cfg=cfg
-                                    )
+                                    cfg=cfg)
                     fake_cpu = state.cpus[0]
 
                     for edge in reversed(path):
