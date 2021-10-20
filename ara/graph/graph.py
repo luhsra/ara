@@ -296,6 +296,18 @@ class Callgraph(graph_tool.Graph):
         return node[0]
 
 
+class MSTGraph(graph_tool.Graph):
+    """The Multi state transision graph"""
+    def __init__(self):
+        super().__init__()
+        # vertex properties
+        self.vertex_properties["state"] = self.new_vp("object")
+        self.vertex_properties["type"] = self.new_vp("int") # StateType
+
+        self.edge_properties["type"] = self.new_ep("int") # MSTType
+        self.edge_properties["cpu_id"] = self.new_ep("int") # MSTType
+
+
 class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
     (edges).
