@@ -68,10 +68,6 @@ class SSE(Step):
                 return
 
             @staticmethod
-            def is_bad_call_target(_):
-                return False
-
-            @staticmethod
             def schedule(new_states):
                 return self._graph.os.schedule(new_states, [0])
 
