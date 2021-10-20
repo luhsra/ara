@@ -37,6 +37,7 @@ class InstanceEdge(IntEnum):
     have = 1
     trigger = 2
     activate = 3
+    nestable = 4
 
 
 @dataclass(eq=False)
@@ -59,7 +60,6 @@ class AUTOSARInstance:
 
 @dataclass
 class TaskGroup(AUTOSARInstance):
-    name: str
     promises: dict
 
 
@@ -109,6 +109,11 @@ class TaskContext(ControlContext):
                            dyn_prio=[x for x in self.dyn_prio],
                            received_events=self.received_events,
                            waited_events=self.waited_events)
+
+
+@dataclass
+class Spinlock:
+    name: str
 
 
 @dataclass
