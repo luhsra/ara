@@ -2,15 +2,14 @@ from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument
 from .os_base import OSBase
 
 import pyllco
-import functools
 import html
 
-import ara.graph as _graph
 from ara.graph import SyscallCategory, SigType
 from ara.util import get_logger
 from ara.steps.util import current_step
 
 logger = get_logger("FreeRTOS")
+
 
 # TODO make this a dataclass once we use Python 3.7
 class FreeRTOSInstance(object):
@@ -25,10 +24,10 @@ class FreeRTOSInstance(object):
     def __getattr__(self, name):
         try:
             return self.__dict__[name]
-        except KeyError as ke:
+        except KeyError:
             try:
                 return current_step._graph.instances.vp[name][self.vidx]
-            except KeyError as ke:
+            except KeyError:
                 raise AttributeError
 
     def __setattr__(self, name, value):
@@ -38,7 +37,7 @@ class FreeRTOSInstance(object):
             self.__dict__[name] = value
 
     def __repr__(self):
-        attrs = ', '.join([f"{k}={repr(v)}" for k,v in self.__dict__.items()])
+        attrs = ', '.join([f"{k}={repr(v)}" for k, v in self.__dict__.items()])
         return f"{type(self).__name__}({attrs})"
 
     def heap_decline(self):
@@ -56,16 +55,15 @@ class FreeRTOSInstance(object):
             return self.heap_need
         return 0
 
-
     @property
     def uid(self):
         return int(self.vidx)
 
 
-
 class Task(FreeRTOSInstance):
     uid_counter = 0
     never_deleted = True
+
     def __init__(self, cfg, name, function, stack_size, parameters,
                  vidx,
                  priority, handle_p, call_path, abb, is_regular=True,
@@ -97,14 +95,14 @@ class Task(FreeRTOSInstance):
         if clamp is not None:
             clamp = clamp.get()
             try:
-                prio = int(self.__priority)
+                _ = int(self.__priority)
             except ValueError:
                 logger.warning("Task %s priority is not statically assigned (was %s)",
-                                self.name, self.__priority)
+                               self.name, self.__priority)
                 return self.__priority
             if self.__priority >= clamp:
                 logger.warning("Task %s priority clamped to %s (was %s)",
-                                self.name, clamp -1, self.__priority)
+                               self.name, clamp-1, self.__priority)
                 return clamp-1
         else:
             logger.warning("No value for configMAX_PRIORITIES found")
@@ -142,6 +140,7 @@ class Task(FreeRTOSInstance):
 class Queue(FreeRTOSInstance):
     never_deleted = True
     uid_counter = 0
+
     def __init__(self, cfg, name, handler, length, size, abb, q_type,
                  call_path, vidx):
         super().__init__(cfg, abb, call_path, vidx, name)
@@ -153,13 +152,13 @@ class Queue(FreeRTOSInstance):
         self.call_path = call_path
         Queue.uid_counter += 1
         try:
-            self.heap_need +=  int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
+            self.heap_need += int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
             self.heap_need += int(length) * int(size)
         except TypeError:
             self.heap_need = None
 
     def __repr__(self):
-        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+        return '<' + '|'.join([str((k, v)) for k, v in self.__dict__.items()]) + '>'
 
     def as_dot(self):
         wanted_attrs = ["name", "handler", "length", "size"]
@@ -187,6 +186,7 @@ class Queue(FreeRTOSInstance):
 class Mutex(FreeRTOSInstance):
     never_deleted = True
     uid_counter = 0
+
     def __init__(self, cfg, name, handler, m_type, abb, call_path, vidx):
         super().__init__(cfg, abb, call_path, vidx, name)
         self.handler = handler
@@ -202,7 +202,7 @@ class Mutex(FreeRTOSInstance):
             self.heap_need = None
 
     def __repr__(self):
-        return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items()]) + '>'
+        return '<' + '|'.join([str((k, v)) for k, v in self.__dict__.items()]) + '>'
 
     def as_dot(self):
         wanted_attrs = ["name", "handler", "m_type"]
@@ -224,12 +224,15 @@ class Mutex(FreeRTOSInstance):
                                   self.handler,
                                   self.call_path.print(call_site=True)]))
 
+
 class StreamBuffer(FreeRTOSInstance):
     never_deleted = True
+
     def __init__(self, cfg, abb, call_path, vidx, handler, name, size):
         super().__init__(cfg, abb, call_path, vidx, name)
         self.size = size
         self.handler = handler
+
     def as_dot(self):
         wanted_attrs = ["name", "handler", "size"]
         attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
@@ -242,6 +245,7 @@ class StreamBuffer(FreeRTOSInstance):
             "style": "filled",
             "sublabel": sublabel
         }
+
     def get_maximal_id(self):
         return '.'.join(map(str, ["StreamBuffer",
                                   self.name,
@@ -342,9 +346,8 @@ class FreeRTOS(OSBase):
         v = state.instances.add_vertex()
         func_name = args.task_function.get_name()
         state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
-        print(state.instances.vp.label[v])
 
-        #check if task_parameters is call path independent
+        # check if task_parameter is call path independent
         if args.task_parameters.value and args.task_parameters.callpath is None:
             task_parameters = args.task_parameters.value
         else:
@@ -383,11 +386,11 @@ class FreeRTOS(OSBase):
         abb = cpu.abb
         cp = cpu.call_path
         cfg = graph.cfg
-        
+
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
 
-        #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
+        # TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
         state.instances.vp.obj[v] = Task(cfg,
                                          function='prvIdleTask',
@@ -439,8 +442,7 @@ class FreeRTOS(OSBase):
                                           size=args.queue_item_size,
                                           abb=abb,
                                           q_type=args.q_type,
-                                          call_path=cp,
-        )
+                                          call_path=cp)
 
         assign_id(state.instances, v)
 
@@ -486,7 +488,6 @@ class FreeRTOS(OSBase):
                                 ret_val.offset,
                                 ret_val.callpath)
 
-
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -523,7 +524,7 @@ class FreeRTOS(OSBase):
         else:
             queue_node = find_instance_node(state.instances, queue)
             e = state.instances.add_edge(cpu.control_instance, queue_node)
-            state.instances.ep.label[e] = f"xQueueGenericSend"
+            state.instances.ep.label[e] = "xQueueGenericSend"
 
         return state
 
@@ -546,7 +547,6 @@ class FreeRTOS(OSBase):
             state.instances.ep.label[e] = "xQueueSemaphoreTake"
 
         return state
-
 
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
@@ -571,7 +571,7 @@ class FreeRTOS(OSBase):
         func_name = args.task_function.get_name()
         state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
 
-        #check if task_parameters is call path independent
+        # check if task_parameters is call path independent
         if args.task_parameters.value and args.task_parameters.callpath is None:
             task_parameters = args.task_parameters.value
         else:
@@ -589,8 +589,7 @@ class FreeRTOS(OSBase):
                                          handle_p=task_handler,
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
-                                         static_stack=args.task_stack,
-        )
+                                         static_stack=args.task_stack)
 
         assign_id(state.instances, v)
         if args.task_handle_p:
@@ -631,8 +630,7 @@ class FreeRTOS(OSBase):
                                                  vidx=v,
                                                  handler=handler,
                                                  name=handler_name,
-                                                 size=args.size,
-        )
+                                                 size=args.size)
         assign_id(state.instances, v)
 
         va.assign_system_object(handler.value,
