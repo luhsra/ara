@@ -535,6 +535,7 @@ class FreeRTOS(OSBase):
         state = state.copy()
         cpu = state.cpus[cpu_id]
         abb = cpu.abb
+        cfg = graph.cfg
 
         queue = args.handler
         if not queue:
