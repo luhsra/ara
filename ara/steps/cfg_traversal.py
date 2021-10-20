@@ -38,7 +38,7 @@ class Visitor:
         raise NotImplementedError
 
     def init_execution(self, state):
-        raise NotImplementedError
+        pass
 
     def is_bad_call_target(self, abb):
         return False
