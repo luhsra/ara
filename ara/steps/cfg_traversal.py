@@ -41,12 +41,21 @@ class Visitor:
         raise NotImplementedError
 
     def is_bad_call_target(self, abb):
+        return False
+
+    def add_state(self, new_state):
+        raise NotImplementedError
+
+    def add_transition(self, source, target):
         raise NotImplementedError
 
     def schedule(self, new_states):
         raise NotImplementedError
 
-    def cross_core_action(state_id):
+    def cross_core_action(self, state_id):
+        pass
+
+    def next_step(self, state_id):
         pass
 
 
