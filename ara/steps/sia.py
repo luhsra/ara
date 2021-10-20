@@ -19,7 +19,7 @@ import functools
 
 
 @dataclass
-class SIA_OSState_Analysis_Context:
+class SIAContext:
     """Analysis Context for SIA´s fake CPU in OSState"""
     callg: any # of type Callgraph
     branch: bool        # is this state coming from a branch
@@ -30,7 +30,7 @@ class SIA_OSState_Analysis_Context:
     scheduler_on: bool  # Is the global scheduler on
     
     def copy(self):
-        return SIA_OSState_Analysis_Context(
+        return SIAContext(
             callg=self.callg,
             branch=self.branch,
             loop=self.loop,
@@ -144,7 +144,7 @@ class FlatAnalysis(Step):
         return self.get_name() in {x.name
                                    for x in self._step_manager.get_history()}
 
-    def _set_flags(self, analysis_context: SIA_OSState_Analysis_Context, abb):
+    def _set_flags(self, analysis_context: SIAContext, abb):
         analysis_context.branch |= self._is_in_condition(abb)
         analysis_context.loop |= self._graph.cfg.vp.part_of_loop[abb]
         analysis_context.usually_taken = (self._is_usually_taken(abb) or
@@ -215,7 +215,7 @@ class FlatAnalysis(Step):
                                                control_instance=inst,
                                                abb=cfg.vertex(syscall),
                                                call_path=CallPath(),
-                                               analysis_context=SIA_OSState_Analysis_Context(
+                                               analysis_context=SIAContext(
                                                     callg=callg,
                                                     branch = branch,
                                                     loop = loop,
