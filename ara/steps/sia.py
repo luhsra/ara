@@ -1,11 +1,13 @@
 """Container for SIA."""
 from ara.graph import (ABBType, CFGView, SyscallCategory, CallPath,
-                       InstanceGraph)
+                       InstanceGraph) # We can not import Callgraph, why?
+from dataclasses import dataclass
 from .step import Step
 from .option import Option, String
 
 # TODO no FreeRTOS specific code
 from ara.os.freertos import Task
+from ara.os.os_base import OSState, CPU
 
 from graph_tool import GraphView
 from graph_tool.topology import all_paths, dominator_tree, label_out_component
@@ -16,41 +18,26 @@ import copy
 import functools
 
 
-class State:
-    def __init__(self, cfg=None, callgraph=None, next_abbs=None):
-        self.cfg = cfg
-        self.callgraph = callgraph
-        if not next_abbs:
-            next_abbs = []
-        self.next_abbs = next_abbs
-
-        self.instances = InstanceGraph()
-        self.call_path = None  # call node within the call graph
-        self.branch = False  # is this state coming from a branch
-        self.usually_taken = False  # is this state coming from a branch where
-                                    # all other branches ends in an endless loop
-        self.loop = False  # is this state coming from a loop
-        self.recursive = False  # is this state executing on a recursive path
-        self.running = None  # what instance (Task or ISR) is currently running
-
-    def __repr__(self):
-        ret = f"State(B:{int(self.branch)},L:{int(self.loop)},"
-        ret += f"R:{int(self.recursive)},U:{int(self.usually_taken)}, "
-        abbs = [self.cfg.vp.name[abb] for abb in self.next_abbs]
-        ret += ', '.join(abbs)
-        ret += ", CallPath: " + self.call_path.print(call_site=True)
-        return ret + ')'
-
+@dataclass
+class SIA_OSState_Analysis_Context:
+    """Analysis Context for SIA´s fake CPU in OSState"""
+    callg: any # of type Callgraph
+    branch: bool        # is this state coming from a branch
+    loop: bool          # is this state coming from a loop
+    recursive: bool     # is this state executing on a recursive path
+    usually_taken: bool # is this state coming from a branch where
+                        # all other branches ends in an endless loop
+    scheduler_on: bool  # Is the global scheduler on
+    
     def copy(self):
-        scopy = State()
-        scopy.instances = self.instances.copy()
-        scopy.call_path = copy.copy(self.call_path)
-        for key, value in self.__dict__.items():
-            if key in ['instances', 'call_path']:
-                continue
-            setattr(scopy, key, value)
-        return scopy
-
+        return SIA_OSState_Analysis_Context(
+            callg=self.callg,
+            branch=self.branch,
+            loop=self.loop,
+            recursive=self.recursive,
+            usually_taken=self.usually_taken,
+            scheduler_on=self.scheduler_on
+        )
 
 class FlatAnalysis(Step):
     """Flat Analysis"""
@@ -157,11 +144,11 @@ class FlatAnalysis(Step):
         return self.get_name() in {x.name
                                    for x in self._step_manager.get_history()}
 
-    def _set_flags(self, state, abb):
-        state.branch |= self._is_in_condition(abb)
-        state.loop |= self._graph.cfg.vp.part_of_loop[abb]
-        state.usually_taken = (self._is_usually_taken(abb) or
-                               (state.usually_taken and
+    def _set_flags(self, analysis_context: SIA_OSState_Analysis_Context, abb):
+        analysis_context.branch |= self._is_in_condition(abb)
+        analysis_context.loop |= self._graph.cfg.vp.part_of_loop[abb]
+        analysis_context.usually_taken = (self._is_usually_taken(abb) or
+                               (analysis_context.usually_taken and
                                 not self._is_in_condition(abb)))
 
     def _iterate_task_entry_points(self):
@@ -175,8 +162,8 @@ class FlatAnalysis(Step):
         for v in self._graph.instances.vertices():
             task = self._graph.instances.vp.obj[v]
             if isinstance(task, Task) and task.is_regular:
-                assert task.entry_abb is not None, "Not a regular Task."
-                yield cfg.get_function(cfg.vertex(task.entry_abb)), v
+                assert task.function is not None, "Not a regular Task."
+                yield cfg.get_function_by_name(task.function), v
 
     def _dump_names(self):
         raise NotImplementedError
@@ -222,30 +209,38 @@ class FlatAnalysis(Step):
                 path_to_self = [[]] if entry_point == function else []
                 for path in chain(all_paths(rev_cg, function, entry_point,
                                             edges=True), path_to_self):
-                    state = State(cfg, callg, [])
-                    state.instances = self._graph.instances
-                    state.call_path = CallPath()
-                    state.branch = branch
-                    state.loop = loop
-                    state.recursive = False
-                    state.usually_taken = False
-                    state.scheduler_on = self._is_chained_analysis()
-                    state.running = inst
+                    #state = State(cfg, callg, [])
+                    state = OSState(cpus=((CPU(id=0,
+                                               irq_on=False, # SIA does not simulate Interrupts
+                                               control_instance=inst,
+                                               abb=cfg.vertex(syscall),
+                                               call_path=CallPath(),
+                                               analysis_context=SIA_OSState_Analysis_Context(
+                                                    callg=callg,
+                                                    branch = branch,
+                                                    loop = loop,
+                                                    recursive = False,
+                                                    usually_taken = False,
+                                                    scheduler_on = self._is_chained_analysis()
+                                               )
+                                    ),)),
+                                    instances=self._graph.instances,
+                                    cfg=cfg
+                                    )
+                    fake_cpu = state.cpus[0]
 
                     for edge in reversed(path):
                         abb = cfg.vertex(callg.ep.callsite[edge])
-                        state.call_path.add_call_site(callg, edge)
-                        self._set_flags(state, abb)
-                        state.recursive |= callg.vp.recursive[edge.target()]
+                        fake_cpu.call_path.add_call_site(callg, edge)
+                        self._set_flags(fake_cpu.analysis_context, abb)
+                        fake_cpu.analysis_context.recursive |= callg.vp.recursive[edge.target()]
 
-                    self._set_flags(state, syscall)
-                    state.recursive |= callg.vp.recursive[function]
+                    self._set_flags(fake_cpu.analysis_context, syscall)
+                    fake_cpu.analysis_context.recursive |= callg.vp.recursive[function]
 
                     new_state = os.interpret(
-                            self._graph,
-                            cfg.vertex(syscall),
-                            state,
-                            categories=self._search_category()
+                        self._graph, state, 0,
+                        categories=self._search_category()
                     )
                     self._graph.instances = new_state.instances
 
