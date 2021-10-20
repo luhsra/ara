@@ -66,12 +66,11 @@ class FreeRTOSInstance(object):
 class Task(FreeRTOSInstance):
     uid_counter = 0
     never_deleted = True
-    def __init__(self, cfg, entry_abb, name, function, stack_size, parameters,
+    def __init__(self, cfg, name, function, stack_size, parameters,
                  vidx,
                  priority, handle_p, call_path, abb, is_regular=True,
                  static_stack=None):
         super().__init__(cfg, abb, call_path, vidx, name)
-        self.entry_abb = entry_abb
         self.function = function
         self.stack_size = stack_size
         self.parameters = parameters
@@ -272,8 +271,9 @@ class FreeRTOS(OSBase):
         state.scheduler_on = False
 
     @staticmethod
-    def interpret(graph, abb, state, categories=SyscallCategory.every):
+    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
         cfg = graph.cfg
+        abb = state.cpus[cpu_id].abb
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
@@ -291,16 +291,15 @@ class FreeRTOS(OSBase):
                 state.next_abbs = []
                 set_next_abb(state, 0)
                 return state
-        return syscall_function(graph, abb, state)
+        return syscall_function(graph, state, cpu_id)
 
     @staticmethod
     def total_heap_size():
         return int(FreeRTOS.config.get('configTOTAL_HEAP_SIZE', None))
 
-    def handle_soc(state, v, cfg, abb,
+    def handle_soc(context, instances, v, cfg, abb,
                    branch=None, loop=None, recursive=None, scheduler_on=None,
                    usually_taken=None):
-        instances = state.instances
 
         def b(c1, c2):
             if c2 is None:
@@ -308,11 +307,11 @@ class FreeRTOS(OSBase):
             else:
                 return c2
 
-        in_branch = b(state.branch, branch)
-        in_loop = b(state.loop, loop)
-        is_recursive = b(state.recursive, recursive)
-        after_sched = b(state.scheduler_on, scheduler_on)
-        is_usually_taken = b(state.usually_taken, usually_taken)
+        in_branch = b(context.branch, branch)
+        in_loop = b(context.loop, loop)
+        is_recursive = b(context.recursive, recursive)
+        after_sched = b(context.scheduler_on, scheduler_on)
+        is_usually_taken = b(context.usually_taken, usually_taken)
 
         instances.vp.branch[v] = in_branch
         instances.vp.loop[v] = in_loop
@@ -324,6 +323,7 @@ class FreeRTOS(OSBase):
         instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
         instances.vp.file[v] = cfg.vp.file[abb]
         instances.vp.line[v] = cfg.vp.line[abb]
+        instances.vp.is_control[v] = False
 
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("task_function", hint=SigType.symbol, ty=pyllco.Function),
@@ -332,13 +332,17 @@ class FreeRTOS(OSBase):
                         Arg("task_parameters", hint=SigType.symbol),
                         Arg("task_priority"),
                         Arg("task_handle_p", hint=SigType.instance)))
-    def xTaskCreate(graph, abb, state, args, va):
+    def xTaskCreate(graph, state, cpu_id, args, va):
         state = state.copy()
-        cp = state.call_path
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cp = cpu.call_path
+        cfg = graph.cfg
 
         v = state.instances.add_vertex()
         func_name = args.task_function.get_name()
         state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
+        print(state.instances.vp.label[v])
 
         #check if task_parameters is call path independent
         if args.task_parameters.value and args.task_parameters.callpath is None:
@@ -346,11 +350,9 @@ class FreeRTOS(OSBase):
         else:
             task_parameters = args.task_parameters
 
-        entry = graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name))
-        assert entry is not None
         # TODO: when do we know that this is an unique instance?
-        FreeRTOS.handle_soc(state, v, graph.cfg, abb)
-        state.instances.vp.obj[v] = Task(graph.cfg, entry,
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
+        state.instances.vp.obj[v] = Task(cfg,
                                          vidx=v,
                                          function=func_name,
                                          name=args.task_name,
@@ -359,7 +361,7 @@ class FreeRTOS(OSBase):
                                          priority=args.task_priority,
                                          handle_p=args.task_handle_p,
                                          call_path=cp,
-                                         abb=graph.cfg.vertex(abb),
+                                         abb=cfg.vertex(abb),
         )
         if args.task_handle_p:
             va.assign_system_object(args.task_handle_p.value,
@@ -367,7 +369,7 @@ class FreeRTOS(OSBase):
                                     args.task_handle_p.offset,
                                     args.task_handle_p.callpath)
         else:
-            logger.warn(f"Task for ABB {graph.cfg.vp.name[abb]} not assigned,"
+            logger.warn(f"Task for ABB {cfg.vp.name[abb]} not assigned,"
                         f" since the task handle cannot be retrieved.")
 
         assign_id(state.instances, v)
@@ -376,13 +378,18 @@ class FreeRTOS(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.create}, custom_control_flow=True)
-    def vTaskStartScheduler(graph, abb, state, args, va):
+    def vTaskStartScheduler(graph, state, cpu_id, args, va):
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cp = cpu.call_path
+        cfg = graph.cfg
+        
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = '__idle_task'
 
         #TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
-        FreeRTOS.handle_soc(state, v, graph.cfg, abb, scheduler_on=False)
-        state.instances.vp.obj[v] = Task(graph.cfg, None,
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
+        state.instances.vp.obj[v] = Task(cfg,
                                          function='prvIdleTask',
                                          name='idle_task',
                                          vidx=v,
@@ -390,26 +397,29 @@ class FreeRTOS(OSBase):
                                          parameters=0,
                                          priority=0,
                                          handle_p=0,
-                                         call_path=state.call_path,
-                                         abb=graph.cfg.vertex(abb),
+                                         call_path=cp,
+                                         abb=cfg.vertex(abb),
                                          is_regular=False)
         graph.os.idle_task = state.instances.vp.obj[v]
 
         assign_id(state.instances, v)
 
         # this syscall is an exit node
-        state.scheduler_on = True
+        cpu.analysis_context.scheduler_on = True
         return state
 
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("queue_len"),
                         Arg("queue_item_size"),
                         Arg("q_type")))
-    def xQueueGenericCreate(graph, abb, state, args, va):
+    def xQueueGenericCreate(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cp = cpu.call_path
 
         # instance properties
-        cp = state.call_path
+        cp = cpu.call_path
         cfg = graph.cfg
 
         queue_handler = find_return_value(abb, cp, va)
@@ -418,7 +428,7 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Queue: {handler_name}"
-        FreeRTOS.handle_soc(state, v, cfg, abb)
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
         # TODO: when do we know that this is an unique instance?
         state.instances.vp.obj[v] = Queue(cfg,
@@ -443,10 +453,13 @@ class FreeRTOS(OSBase):
 
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("mutex_type"),))
-    def xQueueCreateMutex(graph, abb, state, args, va):
+    def xQueueCreateMutex(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+
         # instance properties
-        cp = state.call_path
+        cp = cpu.call_path
         cfg = graph.cfg
 
         ret_val = find_return_value(abb, cp, va)
@@ -454,7 +467,7 @@ class FreeRTOS(OSBase):
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
-        FreeRTOS.handle_soc(state, v, cfg, abb)
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
         state.instances.vp.obj[v] = Mutex(cfg,
                                           name=handler_name,
@@ -478,16 +491,15 @@ class FreeRTOS(OSBase):
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("ticks"),))
-    def vTaskDelay(graph, abb, state, args, va):
+    def vTaskDelay(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
 
-        cp = state.call_path
-
-        if state.running is None:
+        if cpu.running is None:
             # TODO proper error handling
             logger.error("ERROR: vTaskDelay called without running Task")
 
-        e = state.instances.add_edge(state.running, state.running)
+        e = state.instances.add_edge(cpu.control_instance, cpu.control_instance)
         state.instances.ep.label[e] = f"vTaskDelay({args.ticks})"
 
         return state
@@ -497,8 +509,11 @@ class FreeRTOS(OSBase):
                         Arg('item', raw_value=True),
                         Arg('ticks'),
                         Arg('action')))
-    def xQueueGenericSend(graph, abb, state, args, va):
+    def xQueueGenericSend(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cfg = graph.cfg
 
         queue = args.handler
         if not queue:
@@ -506,8 +521,8 @@ class FreeRTOS(OSBase):
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
-            queue_node = find_instance_node(state.instances, queue.value)
-            e = state.instances.add_edge(state.running, queue_node)
+            queue_node = find_instance_node(state.instances, queue)
+            e = state.instances.add_edge(cpu.control_instance, queue_node)
             state.instances.ep.label[e] = f"xQueueGenericSend"
 
         return state
@@ -515,8 +530,10 @@ class FreeRTOS(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('handler', ty=Mutex, hint=SigType.instance),
                         Arg('type')))
-    def xQueueSemaphoreTake(graph, abb, state, args, va):
+    def xQueueSemaphoreTake(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
 
         queue = args.handler
         if not queue:
@@ -524,8 +541,8 @@ class FreeRTOS(OSBase):
                          f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
-            queue_node = find_instance_node(state.instances, queue.value)
-            e = state.instances.add_edge(state.running, queue_node)
+            queue_node = find_instance_node(state.instances, queue)
+            e = state.instances.add_edge(cpu.control_instance, queue_node)
             state.instances.ep.label[e] = "xQueueSemaphoreTake"
 
         return state
@@ -539,12 +556,14 @@ class FreeRTOS(OSBase):
                         Arg("task_priority"),
                         Arg("task_stack", hint=SigType.symbol),
                         Arg("task_handle_p", hint=SigType.instance)))
-    def xTaskCreateStatic(graph, abb, state, args, va):
+    def xTaskCreateStatic(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
         cfg = graph.cfg
 
         # instance properties
-        cp = state.call_path
+        cp = cpu.call_path
 
         task_handler = find_return_value(abb, cp, va)
 
@@ -558,13 +577,9 @@ class FreeRTOS(OSBase):
         else:
             task_parameters = args.task_parameters
 
-        entry = cfg.get_entry_abb(
-            cfg.get_function_by_name(func_name)
-        )
-        assert entry is not None
         # TODO: when do we know that this is an unique instance?
-        FreeRTOS.handle_soc(state, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg, entry,
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
+        state.instances.vp.obj[v] = Task(cfg,
                                          vidx=v,
                                          function=func_name,
                                          name=args.task_name,
@@ -592,21 +607,23 @@ class FreeRTOS(OSBase):
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('handler'), Arg('type')))
-    def xQueueTakeMutexRecursive(graph, abb, state, args, va):
+    def xQueueTakeMutexRecursive(graph, state, cpu_id, args, va):
         pass
 
     @syscall(categories={SyscallCategory.create}, signature=(Arg("size"),))
-    def xStreamBufferGenericCreate(graph, abb, state, args, va):
+    def xStreamBufferGenericCreate(graph, state, cpu_id, args, va):
         state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
         cfg = graph.cfg
-        cp = state.call_path
+        cp = cpu.call_path
 
         handler = find_return_value(abb, cp, va)
         handler_name = handler.value.get_name()
 
         v = state.instances.add_vertex()
         state.instances.vp.label[v] = f"StreamBuffer: {handler_name}"
-        FreeRTOS.handle_soc(state, v, cfg, abb)
+        FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
         state.instances.vp.obj[v] = StreamBuffer(cfg,
                                                  abb=abb,
@@ -628,449 +645,449 @@ class FreeRTOS(OSBase):
     # HERE BEGINS THE TODO sections, all following syscalls are stubs
 
     @syscall
-    def eTaskGetState(graph, abb, state, args, va):
+    def eTaskGetState(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def pcQueueGetName(graph, abb, state, args, va):
+    def pcQueueGetName(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def pcTaskGetName(graph, abb, state, args, va):
+    def pcTaskGetName(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def pcTimerGetName(graph, abb, state, args, va):
+    def pcTimerGetName(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def portDISABLE_INTERRUPTS(graph, abb, state, args, va):
+    def portDISABLE_INTERRUPTS(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def portENABLE_INTERRUPTS(graph, abb, state, args, va):
+    def portENABLE_INTERRUPTS(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def portSET_INTERRUPT_MASK_FROM_ISR(graph, abb, state, args, va):
+    def portSET_INTERRUPT_MASK_FROM_ISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def portYIELD(graph, abb, state, args, va):
+    def portYIELD(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def pvTaskGetThreadLocalStoragePointer(graph, abb, state, args, va):
+    def pvTaskGetThreadLocalStoragePointer(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def pvTimerGetTimerID(graph, abb, state, args, va):
+    def pvTimerGetTimerID(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def ulTaskNotifyTake(graph, abb, state, args, va):
+    def ulTaskNotifyTake(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxQueueMessagesWaiting(graph, abb, state, args, va):
+    def uxQueueMessagesWaiting(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxQueueMessagesWaitingFromISR(graph, abb, state, args, va):
+    def uxQueueMessagesWaitingFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxQueueSpacesAvailable(graph, abb, state, args, va):
+    def uxQueueSpacesAvailable(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxTaskGetNumberOfTasks(graph, abb, state, args, va):
+    def uxTaskGetNumberOfTasks(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxTaskGetStackHighWaterMark(graph, abb, state, args, va):
+    def uxTaskGetStackHighWaterMark(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxTaskGetSystemState(graph, abb, state, args, va):
+    def uxTaskGetSystemState(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def uxTaskPriorityGet(graph, abb, state, args, va):
+    def uxTaskPriorityGet(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vCoRoutineSchedule(graph, abb, state, args, va):
+    def vCoRoutineSchedule(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vEventGroupDelete(graph, abb, state, args, va):
+    def vEventGroupDelete(graph, state, cpu_id, args, va):
         logger.warn("Got an vEventGroupDelete. Deleting a potientially static EventGroup.")
 
     @syscall
-    def vQueueAddToRegistry(graph, abb, state, args, va):
+    def vQueueAddToRegistry(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vQueueDelete(graph, abb, state, args, va):
+    def vQueueDelete(graph, state, cpu_id, args, va):
         Queue.never_deleted = False
         Mutex.never_deleted = False
         logger.warn("Got an vQueueDelete. Deleting a potientially static Queue.")
 
     @syscall
-    def vSemaphoreCreateBinary(graph, abb, state, args, va):
+    def vSemaphoreCreateBinary(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vStreamBufferDelete(graph, abb, state, args, va):
+    def vStreamBufferDelete(graph, state, cpu_id, args, va):
         StreamBuffer.never_deleted = False
         logger.warn("Got an vStreamBufferDelete. Deleting a potientially static StreamBuffer.")
 
     @syscall
-    def vTaskAllocateMPURegions(graph, abb, state, args, va):
+    def vTaskAllocateMPURegions(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskDelayUntil(graph, abb, state, args, va):
+    def vTaskDelayUntil(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskDelete(graph, abb, state, args, va):
+    def vTaskDelete(graph, state, cpu_id, args, va):
         Task.never_deleted = False
         logger.warn("Got an vTaskDelete. Deleting a potientially static Task.")
 
     @syscall
-    def vTaskEnterCritical(graph, abb, state, args, va):
+    def vTaskEnterCritical(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskExitCritical(graph, abb, state, args, va):
+    def vTaskExitCritical(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskGetRunTimeStats(graph, abb, state, args, va):
+    def vTaskGetRunTimeStats(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskList(graph, abb, state, args, va):
+    def vTaskList(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskNotifyGiveFromISR(graph, abb, state, args, va):
+    def vTaskNotifyGiveFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskPrioritySet(graph, abb, state, args, va):
+    def vTaskPrioritySet(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskResume(graph, abb, state, args, va):
+    def vTaskResume(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskSetApplicationTaskTag(graph, abb, state, args, va):
+    def vTaskSetApplicationTaskTag(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskSetThreadLocalStoragePointer(graph, abb, state, args, va):
+    def vTaskSetThreadLocalStoragePointer(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskSetTimeOutState(graph, abb, state, args, va):
+    def vTaskSetTimeOutState(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskStepTick(graph, abb, state, args, va):
+    def vTaskStepTick(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskSuspend(graph, abb, state, args, va):
+    def vTaskSuspend(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTaskSuspendAll(graph, abb, state, args, va):
+    def vTaskSuspendAll(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def vTimerSetTimerID(graph, abb, state, args, va):
+    def vTimerSetTimerID(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xCoRoutineCreate(graph, abb, state, args, va):
+    def xCoRoutineCreate(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupClearBits(graph, abb, state, args, va):
+    def xEventGroupClearBits(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupClearBitsFromISR(graph, abb, state, args, va):
+    def xEventGroupClearBitsFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupCreate(graph, abb, state, args, va):
+    def xEventGroupCreate(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupCreateStatic(graph, abb, state, args, va):
+    def xEventGroupCreateStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupGetBitsFromISR(graph, abb, state, args, va):
+    def xEventGroupGetBitsFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupSetBits(graph, abb, state, args, va):
+    def xEventGroupSetBits(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupSetBitsFromISR(graph, abb, state, args, va):
+    def xEventGroupSetBitsFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupSync(graph, abb, state, args, va):
+    def xEventGroupSync(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xEventGroupWaitBits(graph, abb, state, args, va):
+    def xEventGroupWaitBits(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xMessageBufferCreateStatic(graph, abb, state, args, va):
+    def xMessageBufferCreateStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueAddToSet(graph, abb, state, args, va):
+    def xQueueAddToSet(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueCreateCountingSemaphore(graph, abb, state, args, va):
+    def xQueueCreateCountingSemaphore(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueCreateSet(graph, abb, state, args, va):
+    def xQueueCreateSet(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueCreateStatic(graph, abb, state, args, va):
+    def xQueueCreateStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueGenericSendFromISR(graph, abb, state, args, va):
+    def xQueueGenericSendFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueGetMutexHolder(graph, abb, state, args, va):
+    def xQueueGetMutexHolder(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueGetMutexHolderFromISR(graph, abb, state, args, va):
+    def xQueueGetMutexHolderFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueGiveFromISR(graph, abb, state, args, va):
+    def xQueueGiveFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueGiveMutexRecursive(graph, abb, state, args, va):
+    def xQueueGiveMutexRecursive(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueIsQueueEmptyFromISR(graph, abb, state, args, va):
+    def xQueueIsQueueEmptyFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueIsQueueFullFromISR(graph, abb, state, args, va):
+    def xQueueIsQueueFullFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueuePeek(graph, abb, state, args, va):
+    def xQueuePeek(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueuePeekFromISR(graph, abb, state, args, va):
+    def xQueuePeekFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueReceive(graph, abb, state, args, va):
+    def xQueueReceive(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueReceiveFromISR(graph, abb, state, args, va):
+    def xQueueReceiveFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueRemoveFromSet(graph, abb, state, args, va):
+    def xQueueRemoveFromSet(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueReset(graph, abb, state, args, va):
+    def xQueueReset(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueSelectFromSet(graph, abb, state, args, va):
+    def xQueueSelectFromSet(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xQueueSelectFromSetFromISR(graph, abb, state, args, va):
+    def xQueueSelectFromSetFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateBinary(graph, abb, state, args, va):
+    def xSemaphoreCreateBinary(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateBinaryStatic(graph, abb, state, args, va):
+    def xSemaphoreCreateBinaryStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateCountingStatic(graph, abb, state, args, va):
+    def xSemaphoreCreateCountingStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateMutexStatic(graph, abb, state, args, va):
+    def xSemaphoreCreateMutexStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateRecursiveMutex(graph, abb, state, args, va):
+    def xSemaphoreCreateRecursiveMutex(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xSemaphoreCreateRecursiveMutexStatic(graph, abb, state, args, va):
+    def xSemaphoreCreateRecursiveMutexStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferBytesAvailable(graph, abb, state, args, va):
+    def xStreamBufferBytesAvailable(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferCreateStatic(graph, abb, state, args, va):
+    def xStreamBufferCreateStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferIsEmpty(graph, abb, state, args, va):
+    def xStreamBufferIsEmpty(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferIsFull(graph, abb, state, args, va):
+    def xStreamBufferIsFull(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferReceive(graph, abb, state, args, va):
+    def xStreamBufferReceive(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferReceiveFromISR(graph, abb, state, args, va):
+    def xStreamBufferReceiveFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferReset(graph, abb, state, args, va):
+    def xStreamBufferReset(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferResetFromISR(graph, abb, state, args, va):
+    def xStreamBufferResetFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferSend(graph, abb, state, args, va):
+    def xStreamBufferSend(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferSendFromISR(graph, abb, state, args, va):
+    def xStreamBufferSendFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferSetTriggerLevel(graph, abb, state, args, va):
+    def xStreamBufferSetTriggerLevel(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xStreamBufferSpacesAvailable(graph, abb, state, args, va):
+    def xStreamBufferSpacesAvailable(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskAbortDelay(graph, abb, state, args, va):
+    def xTaskAbortDelay(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskCallApplicationTaskHook(graph, abb, state, args, va):
+    def xTaskCallApplicationTaskHook(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskCheckForTimeOut(graph, abb, state, args, va):
+    def xTaskCheckForTimeOut(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskCreateRestricted(graph, abb, state, args, va):
+    def xTaskCreateRestricted(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskGetApplicationTaskTag(graph, abb, state, args, va):
+    def xTaskGetApplicationTaskTag(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskGetCurrentTaskHandle(graph, abb, state, args, va):
+    def xTaskGetCurrentTaskHandle(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskGetHandle(graph, abb, state, args, va):
+    def xTaskGetHandle(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskGetIdleTaskHandle(graph, abb, state, args, va):
+    def xTaskGetIdleTaskHandle(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskGetTickCount(graph, abb, state, args, va):
+    def xTaskGetTickCount(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskGetTickCountFromISR(graph, abb, state, args, va):
+    def xTaskGetTickCountFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskNotifyStateClear(graph, abb, state, args, va):
+    def xTaskNotifyStateClear(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskResumeAll(graph, abb, state, args, va):
+    def xTaskResumeAll(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTaskResumeFromISR(graph, abb, state, args, va):
+    def xTaskResumeFromISR(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerCreate(graph, abb, state, args, va):
+    def xTimerCreate(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerCreateStatic(graph, abb, state, args, va):
+    def xTimerCreateStatic(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerGenericCommand(graph, abb, state, args, va):
+    def xTimerGenericCommand(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerGetExpiryTime(graph, abb, state, args, va):
+    def xTimerGetExpiryTime(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerGetPeriod(graph, abb, state, args, va):
+    def xTimerGetPeriod(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerGetTimerDaemonTaskHandle(graph, abb, state, args, va):
+    def xTimerGetTimerDaemonTaskHandle(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerIsTimerActive(graph, abb, state, args, va):
+    def xTimerIsTimerActive(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerPendFunctionCall(graph, abb, state, args, va):
+    def xTimerPendFunctionCall(graph, state, cpu_id, args, va):
         pass
 
     @syscall
-    def xTimerPendFunctionCallFromISR(graph, abb, state, args, va):
+    def xTimerPendFunctionCallFromISR(graph, state, cpu_id, args, va):
         pass
