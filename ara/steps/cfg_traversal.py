@@ -52,7 +52,7 @@ class Visitor:
     def schedule(self, new_states):
         raise NotImplementedError
 
-    def cross_core_action(self, state_id):
+    def cross_core_action(self, state):
         pass
 
     def next_step(self, state_id):
@@ -242,7 +242,7 @@ class _SSERunner:
                 )
                 return [new_state]
             except CrossCoreAction:
-                self._visitor.cross_core_action(state.id)
+                self._visitor.cross_core_action(state)
                 # end analysis on this path
                 return []
 
