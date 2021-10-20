@@ -200,8 +200,8 @@ class _SSERunner:
     def _execute(self, state):
         self._visitor.init_execution(state)
 
-        abb = state.cpus[0].abb
-        call_path = state.cpus[0].call_path
+        abb = next(iter(state.cpus)).abb
+        call_path = next(iter(state.cpus)).call_path
 
         # check handling of already visited vertices
         if self._visitor.PREVENT_MULTIPLE_VISITS:
@@ -223,7 +223,7 @@ class _SSERunner:
             # times here. This should be done by the operation system model.
             self._log.debug("Handle idle. Trigger all interrupts.")
             new_states = []
-            if state.cpus[0].irq_on:
+            if next(iter(state.cpus)).irq_on:
                 for irq in self._available_irqs:
                     new_state = self._os.handle_irq(self._graph, state, 0, irq)
                     if new_state is not None:
