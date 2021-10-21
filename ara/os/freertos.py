@@ -68,7 +68,8 @@ class Task(FreeRTOSInstance):
     uid_counter = 0
     never_deleted = True
 
-    function: pyllco.Function # The Function vertex node
+    function: str                   # Name of function
+    function_node: pyllco.Function  # Functions vertex node
     stack_size: int
     parameters: any
     init_priority: int
@@ -372,6 +373,7 @@ class FreeRTOS(OSBase):
         state.instances.vp.obj[v] = Task(cfg,
                                          vidx=v,
                                          function=func_name,
+                                         function_node=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
@@ -408,6 +410,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
         state.instances.vp.obj[v] = Task(cfg,
                                          function='prvIdleTask',
+                                         function_node=None,
                                          name='idle_task',
                                          vidx=v,
                                          stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None)),
@@ -597,6 +600,7 @@ class FreeRTOS(OSBase):
         state.instances.vp.obj[v] = Task(cfg,
                                          vidx=v,
                                          function=func_name,
+                                         function_node=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
