@@ -5,7 +5,7 @@ import graph_tool.util
 from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData
-from .mix import ABBType, CFType, SyscallCategory, NodeLevel
+from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType
 
 
 class FailedGraphConstraint(Exception):
@@ -306,6 +306,12 @@ class MSTGraph(graph_tool.Graph):
 
         self.edge_properties["type"] = self.new_ep("int") # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int") # MSTType
+
+    def get_metastates(self):
+        return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)
+
+    def get_sync_points(self):
+        return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.sync)
 
 
 class InstanceGraph(graph_tool.Graph):
