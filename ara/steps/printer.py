@@ -1,8 +1,10 @@
 """Container for Printer."""
-from ara.graph import ABBType, CFType, CFGView
+from ara.graph import ABBType, CFType, CFGView, MSTType
 
 from .option import Option, String, Choice, Bool
 from .step import Step
+
+from graph_tool import GraphView
 
 import pydot
 import html
@@ -17,7 +19,7 @@ def _sstg_state_as_dot(sstg, state_vert):
     obj = sstg.vp.state[state_vert]
     cfg = obj.cfg
     label = f"State {obj.id}"
-    cpu = obj.cpus[0]
+    cpu = next(iter(obj.cpus))
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
     else:
@@ -69,6 +71,44 @@ def sstg_to_dot(sstg, label="SSTG"):
     return dot_graph
 
 
+def mstg_to_dot(mstg, label="MSTG"):
+    def _to_str(v):
+        return str(int(v))
+
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+
+    for metastate in mstg.get_metastates().vertices():
+        metastate = mstg.vertex(metastate)
+        filg = GraphView(mstg, efilt=mstg.ep.type.fa == MSTType.m2s)
+        cpu_id = mstg.ep.cpu_id[next(iter(filg.vertex(metastate).out_edges()))]
+
+        dot_m = pydot.Cluster(_to_str(metastate),
+                              label=f"M{int(metastate)} (CPU {cpu_id})")
+        dot_graph.add_subgraph(dot_m)
+
+        for state in filg.vertex(metastate).out_neighbors():
+            attrs = _sstg_state_as_dot(mstg, state)
+            dot_state = pydot.Node(_to_str(state), **attrs)
+            dot_m.add_node(dot_state)
+
+    for sync_point in mstg.get_sync_points().vertices():
+        sync_point = mstg.vertex(sync_point)
+        dot_graph.add_node(f"{int(sync_point)}")
+
+    flow = GraphView(mstg, efilt=mstg.ep.type.fa != MSTType.m2s)
+
+    for edge in flow.edges():
+        dot_graph.add_edge(
+            pydot.Edge(
+                _to_str(edge.source()),
+                _to_str(edge.target()),
+                color="black",
+            )
+        )
+
+    return dot_graph
+
+
 class Printer(Step):
     """Print graphs to dot."""
 
@@ -87,7 +127,7 @@ class Printer(Step):
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("bbs", "abbs", "instances", "callgraph",
-                                "multistates", "sstg", "reduced_sstg"))
+                                "multistates", "sstg", "reduced_sstg", "mstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
@@ -482,6 +522,8 @@ class Printer(Step):
         if subgraph == 'instances':
             self.print_instances()
         if subgraph == 'sstg':
+            self.print_sstg()
+        if subgraph == 'mstg':
             self.print_sstg()
         if subgraph == 'reduced_sstg':
             self.print_sstg(reduced=True)

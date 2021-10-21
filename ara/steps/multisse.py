@@ -2,8 +2,11 @@
 
 from .option import Option, String
 from .step import Step
+from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
 from ara.graph import MSTGraph, StateType, MSTType
+
+import os.path
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -46,6 +49,14 @@ class MultiSSE(Step):
             return ["SysFuncts"]
         deps = self._graph.os.get_special_steps()
         return deps
+
+    def dump_mstg(self, mstg, extra):
+        dot_file = self.dump_prefix.get() + f"mstg.{extra}.dot"
+        dot_path = os.path.abspath(dot_file)
+        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
+        dot_graph = mstg_to_dot(mstg, f"MSTG {extra}")
+        dot_graph.write(dot_path)
+        self._log.info(f"Write MSTG to {dot_path}.")
 
     def _run_sse(self, mstg, cross_core_map, state):
         """Run the single core SSE for the given state.
@@ -106,10 +117,10 @@ class MultiSSE(Step):
             logger=self._log,
         )
 
-        return m_state
+        if self.dump.get():
+            self.dump_mstg(mstg, extra=f"metastate.{int(m_state)}")
 
-        # if self.dump.get():
-        #     self.dump_metastate(metastate, extra="final")
+        return m_state
 
     def _get_initial_states(self, mstg, cross_core_map):
         os_state = self._graph.os.get_initial_state(
