@@ -16,7 +16,7 @@ class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class UnknownArgument:
     """A wrapper class to indicate that an argument cannot be found.
 

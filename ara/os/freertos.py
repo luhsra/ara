@@ -4,22 +4,23 @@ from .os_base import OSBase
 import pyllco
 import html
 
-from ara.graph import SyscallCategory, SigType
+from graph_tool import Vertex
+from ara.graph import SyscallCategory, SigType, CFG, CallPath
+from dataclasses import dataclass, field
 from ara.util import get_logger
 from ara.steps.util import current_step
 
 logger = get_logger("FreeRTOS")
 
 
-# TODO make this a dataclass once we use Python 3.7
+@dataclass(eq=False)
 class FreeRTOSInstance(object):
-    def __init__(self, cfg, abb, call_path, vidx, name):
-        self.cfg = cfg
-        self.abb = abb
-        self.call_path = call_path
-        self.vidx = vidx
-        self.name = name
-        self.heap_need = 0
+    cfg: CFG = field()
+    abb: any # of type ABB
+    call_path: CallPath
+    vidx: Vertex
+    name: str
+    heap_need: int = field(init=False, default=0)   # heap_need = 0
 
     def __getattr__(self, name):
         try:
@@ -59,28 +60,28 @@ class FreeRTOSInstance(object):
     def uid(self):
         return int(self.vidx)
 
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
+@dataclass
 class Task(FreeRTOSInstance):
     uid_counter = 0
     never_deleted = True
 
-    def __init__(self, cfg, name, function, stack_size, parameters,
-                 vidx,
-                 priority, handle_p, call_path, abb, is_regular=True,
-                 static_stack=None):
-        super().__init__(cfg, abb, call_path, vidx, name)
-        self.function = function
-        self.stack_size = stack_size
-        self.parameters = parameters
-        self.__priority = priority
-        self.handle_p = handle_p
-        self.is_regular = is_regular
+    function: pyllco.Function # The Function vertex node
+    stack_size: int
+    parameters: any
+    init_priority: int
+    handle_p: any
+    is_regular: bool = True
+    static_stack: any = None
+
+    def __post_init__(self):
         self.uid = Task.uid_counter
-        self.static_stack = static_stack
         Task.uid_counter += 1
-        if static_stack is None:
+        if self.static_stack is None:
             try:
-                self.heap_need += int(stack_size) * int(FreeRTOS.config.get('STACK_TYPE_SIZE', None))
+                self.heap_need += int(self.stack_size) * int(FreeRTOS.config.get('STACK_TYPE_SIZE', None))
                 self.heap_need += int(FreeRTOS.config.get('TCB_SIZE', None))
             except (TypeError, ValueError):
                 self.heap_need = None
@@ -89,24 +90,24 @@ class Task(FreeRTOSInstance):
 
     @property
     def priority(self):
-        if self.__priority is None or isinstance(self.__priority, UnknownArgument):
+        if self.init_priority is None or isinstance(self.init_priority, UnknownArgument):
             return None
         clamp = FreeRTOS.config.get('configMAX_PRIORITIES', None)
         if clamp is not None:
             clamp = clamp.get()
             try:
-                _ = int(self.__priority)
+                _ = int(self.init_priority)
             except ValueError:
                 logger.warning("Task %s priority is not statically assigned (was %s)",
-                               self.name, self.__priority)
-                return self.__priority
-            if self.__priority >= clamp:
+                               self.name, self.init_priority)
+                return self.init_priority
+            if self.init_priority >= clamp:
                 logger.warning("Task %s priority clamped to %s (was %s)",
-                               self.name, clamp-1, self.__priority)
+                               self.name, clamp-1, self.init_priority)
                 return clamp-1
         else:
             logger.warning("No value for configMAX_PRIORITIES found")
-        return self.__priority
+        return self.init_priority
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "stack_size", "parameters",
@@ -135,25 +136,27 @@ class Task(FreeRTOSInstance):
                                   self.parameters,
                                   self.call_path.print(call_site=True)]))
 
+    def __hash__(self):
+        return hash(("Task", self.abb, self.call_path, self.vidx, self.name,
+                     self.function, self.stack_size, self.parameters, self.init_priority, self.handle_p, self.is_regular, self.static_stack))
 
-# TODO make this a dataclass once we use Python 3.7
+
+@dataclass
 class Queue(FreeRTOSInstance):
     never_deleted = True
-    uid_counter = 0
+    uid_counter = 0        
+    
+    handler: any
+    length: int
+    size: int
+    q_type: any
 
-    def __init__(self, cfg, name, handler, length, size, abb, q_type,
-                 call_path, vidx):
-        super().__init__(cfg, abb, call_path, vidx, name)
-        self.handler = handler
-        self.length = length
-        self.size = size
+    def __post_init__(self):
         self.uid = Queue.uid_counter
-        self.q_type = q_type
-        self.call_path = call_path
         Queue.uid_counter += 1
         try:
             self.heap_need += int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
-            self.heap_need += int(length) * int(size)
+            self.heap_need += int(self.length) * int(self.size)
         except TypeError:
             self.heap_need = None
 
@@ -181,20 +184,24 @@ class Queue(FreeRTOSInstance):
                                   self.handler,
                                   self.call_path.print(call_site=True)]))
 
+    def __hash__(self):
+        return hash(("Queue", self.abb, self.call_path, self.vidx, self.name,
+                     self.handler, self.length, self.size, self.q_type))
 
-# TODO make this a dataclass once we use Python 3.7
+
+@dataclass
 class Mutex(FreeRTOSInstance):
     never_deleted = True
     uid_counter = 0
 
-    def __init__(self, cfg, name, handler, m_type, abb, call_path, vidx):
-        super().__init__(cfg, abb, call_path, vidx, name)
-        self.handler = handler
-        self.m_type = m_type
-        self.uid = Queue.uid_counter
+    handler: any
+    m_type: any
+    call_path: CallPath
+
+    def __post_init__(self):
+        self.uid = Mutex.uid_counter
         self.size = 0
         self.length = 1
-        self.call_path = call_path
         Mutex.uid_counter += 1
         try:
             self.heap_need += int(FreeRTOS.config.get('QUEUE_HEAD_SIZE', None))
@@ -224,14 +231,17 @@ class Mutex(FreeRTOSInstance):
                                   self.handler,
                                   self.call_path.print(call_site=True)]))
 
+    def __hash__(self):
+        return hash(("Mutex", self.abb, self.call_path, self.vidx, self.name,
+                     self.handler, self.m_type, self.call_path, self.uid))
 
+
+@dataclass
 class StreamBuffer(FreeRTOSInstance):
     never_deleted = True
 
-    def __init__(self, cfg, abb, call_path, vidx, handler, name, size):
-        super().__init__(cfg, abb, call_path, vidx, name)
-        self.size = size
-        self.handler = handler
+    size: int
+    handler: any
 
     def as_dot(self):
         wanted_attrs = ["name", "handler", "size"]
@@ -252,6 +262,10 @@ class StreamBuffer(FreeRTOSInstance):
                                   self.size,
                                   self.handler,
                                   self.call_path.print(call_site=True)]))
+
+    def __hash__(self):
+        return hash(("StreamBuffer", self.abb, self.call_path, self.vidx, self.name,
+                     self.size, self.handler))
 
 
 def find_instance_node(instances, obj):
@@ -361,7 +375,7 @@ class FreeRTOS(OSBase):
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
-                                         priority=args.task_priority,
+                                         init_priority=args.task_priority,
                                          handle_p=args.task_handle_p,
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
@@ -398,7 +412,7 @@ class FreeRTOS(OSBase):
                                          vidx=v,
                                          stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None)),
                                          parameters=0,
-                                         priority=0,
+                                         init_priority=0,
                                          handle_p=0,
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
@@ -586,7 +600,7 @@ class FreeRTOS(OSBase):
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
-                                         priority=args.task_priority,
+                                         init_priority=args.task_priority,
                                          handle_p=task_handler,
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
