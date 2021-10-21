@@ -158,11 +158,12 @@ class FlatAnalysis(Step):
         cfg = self._graph.cfg
         if self._graph.instances is None:
             return
-        for v in self._graph.instances.vertices():
-            task = self._graph.instances.vp.obj[v]
-            if isinstance(task, Task) and task.is_regular:
-                assert task.function is not None, "Not a regular Task."
-                yield cfg.get_function_by_name(task.function), v
+
+        def is_regular_task(task):
+            return task is not None and task.is_regular
+            
+        return [(task.function_node, v) for v, task in 
+            filter(lambda v_task: is_regular_task(v_task[1]), self._graph.instances.get(Task))]
 
     def _dump_names(self):
         raise NotImplementedError
