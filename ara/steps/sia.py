@@ -1,5 +1,5 @@
 """Container for SIA."""
-from ara.graph import ABBType, CFGView, SyscallCategory, CallPath
+from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph
 from dataclasses import dataclass
 from .step import Step
 from .option import Option, String
@@ -19,7 +19,7 @@ import functools
 @dataclass
 class SIAContext:
     """Analysis Context for SIA´s fake CPU in OSState"""
-    callg: any           # of type Callgraph
+    callg: Callgraph
     branch: bool         # is this state coming from a branch
     loop: bool           # is this state coming from a loop
     recursive: bool      # is this state executing on a recursive path
