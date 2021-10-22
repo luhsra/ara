@@ -71,6 +71,10 @@ class MultiSSE(Step):
         state_map = {}
 
         def _add_state(state):
+            h = hash(state)
+            if h in state_map:
+                return False
+
             v = mstg.add_vertex()
             mstg.vp.type[v] = StateType.state
             mstg.vp.state[v] = state
@@ -78,7 +82,9 @@ class MultiSSE(Step):
             e = mstg.add_edge(m_state, v)
             mstg.ep.type[e] = MSTType.m2s
             mstg.ep.cpu_id[e] = cpu_id
-            state_map[hash(state)] = v
+            state_map[h] = v
+
+            return True
 
         # add initial state
         _add_state(state)
@@ -98,7 +104,7 @@ class MultiSSE(Step):
 
             @staticmethod
             def add_state(new_state):
-                _add_state(new_state)
+                return _add_state(new_state)
 
             @staticmethod
             def add_transition(source, target):
