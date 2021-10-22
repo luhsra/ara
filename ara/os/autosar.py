@@ -728,6 +728,7 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
+        AUTOSAR.check_cpu(state, args.task.cpu_id)
         return AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
     @syscall
@@ -747,8 +748,6 @@ class AUTOSAR(OSBase):
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ChainTask(cfg, state, cpu_id, args, va):
         AUTOSAR.check_cpu(state, args.task.cpu_id)
-
-        logger.debug(f"Setting Task {args.task} ready.")
 
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
