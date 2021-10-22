@@ -52,7 +52,7 @@ class Visitor:
     def schedule(self, new_states):
         raise NotImplementedError
 
-    def cross_core_action(self, state):
+    def cross_core_action(self, state, cpu_ids):
         pass
 
     def next_step(self, state_id):
@@ -241,8 +241,9 @@ class _SSERunner:
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
                 return [new_state]
-            except CrossCoreAction:
-                self._visitor.cross_core_action(state)
+            except CrossCoreAction as cca:
+                self._log.debug(f"Got cross core action (CPUs: {cca.cpu_ids}).")
+                self._visitor.cross_core_action(state, cca.cpu_ids)
                 # end analysis on this path
                 return []
 
