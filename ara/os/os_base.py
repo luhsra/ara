@@ -20,7 +20,14 @@ class TaskStatus(enum.Enum):
 
 
 class CrossCoreAction(Exception):
-    """The OS has detected a cross core action that cannot be handled."""
+    """The OS has detected a cross core action that cannot be handled.
+
+    Attributes:
+        cpu_id -- CPU that is affected
+    """
+
+    def __init__(self, cpu_ids):
+        self.cpu_ids = cpu_ids
 
 
 @dataclass

@@ -95,8 +95,8 @@ class MultiSSE(Step):
                 return state
 
             @staticmethod
-            def cross_core_action(state):
-                cross_core_map[state_map[hash(state)]] = True
+            def cross_core_action(state, cpu_ids):
+                cross_core_map[state_map[hash(state)]] = cpu_ids
 
             @staticmethod
             def schedule(new_state):
@@ -168,7 +168,7 @@ class MultiSSE(Step):
         self._log.info(f"Analyzing entry point: '{entry_label}'")
 
         mstg = MSTGraph()
-        cross_core_map = mstg.new_vp("bool", val=False)
+        cross_core_map = mstg.new_vp("vector<int32_t>")
 
         states = self._get_initial_states(mstg, cross_core_map)
 
