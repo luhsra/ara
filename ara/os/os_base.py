@@ -12,7 +12,7 @@ from ara.graph import SyscallCategory, CallPath, CFG
 # logger = get_logger("OS_BASE")
 
 
-class TaskStatus(enum.Enum):
+class TaskStatus(enum.IntEnum):
     running = 1,
     blocked = 2,
     ready = 3,
@@ -56,11 +56,11 @@ class ControlInstance:
 @dataclass
 class CPU:
     id: int
-    irq_on: bool # in a more general form, this would be the hardware state
+    irq_on: bool  # in a more general form, this would be the hardware state
     control_instance: graph_tool.Vertex
     abb: graph_tool.Vertex
     call_path: CallPath
-    analysis_context: Any # analysis specific context information
+    analysis_context: Any  # analysis specific context information
 
     def copy(self):
         new_ac = None if not self.analysis_context else self.analysis_context.copy()
