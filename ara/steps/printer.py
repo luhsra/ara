@@ -71,9 +71,13 @@ def sstg_to_dot(sstg, label="SSTG"):
     return dot_graph
 
 
-def mstg_to_dot(mstg, label="MSTG"):
+def mstg_to_dot(mstg, type_map=None, label="MSTG"):
     def _to_str(v):
         return str(int(v))
+
+    if type_map:
+        t_map = type_map[0]
+        t_color = type_map[1]
 
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
@@ -88,6 +92,8 @@ def mstg_to_dot(mstg, label="MSTG"):
 
         for state in filg.vertex(metastate).out_neighbors():
             attrs = _sstg_state_as_dot(mstg, state)
+            if type_map:
+                attrs["color"] = t_color[t_map[state]]
             dot_state = pydot.Node(_to_str(state), **attrs)
             dot_m.add_node(dot_state)
 

@@ -4,9 +4,10 @@ from .option import Option, String
 from .step import Step
 from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from ara.graph import MSTGraph, StateType, MSTType
+from ara.graph import MSTGraph, StateType, MSTType, ABBType
 
 import os.path
+import enum
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -16,6 +17,11 @@ MAX_STATE_UPDATES = 20
 MIN_EMULATION_TIME = 200
 
 sse_counter = 0
+
+
+class ExecType(enum.IntEnum):
+    has_length = 1
+    cross_syscall = 2
 
 
 class CPUList:
@@ -50,15 +56,39 @@ class MultiSSE(Step):
         deps = self._graph.os.get_special_steps()
         return deps
 
-    def dump_mstg(self, mstg, extra):
+    def dump_mstg(self, mstg, type_map, extra):
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
         os.makedirs(os.path.dirname(dot_path), exist_ok=True)
-        dot_graph = mstg_to_dot(mstg, f"MSTG {extra}")
+        dot_graph = mstg_to_dot(mstg, type_map=type_map, label=f"MSTG {extra}")
         dot_graph.write(dot_path)
         self._log.info(f"Write MSTG to {dot_path}.")
 
-    def _run_sse(self, mstg, cross_core_map, state):
+    def _fill_type_map(self, type_map, v, cfg, abb):
+        """
+        Checks the current ABB and fills the type map accordingly
+
+        Arguments:
+        type_map -- the type map
+        v        -- the vertex of the current state
+        cfg      -- the CFG
+        abb      -- the current ABB
+        """
+        if abb is None:
+            # Idle
+            type_map[v] = ExecType.has_length
+            return
+        abb_type = cfg.vp.type[abb]
+        if abb_type == ABBType.computation:
+            type_map[v] = ExecType.has_length
+        elif abb_type == ABBType.syscall:
+            self._log.warn("syscall")
+            syscall = getattr(self._graph.os, cfg.get_syscall_name(abb))
+            self._log.warn(syscall)
+            if syscall.has_time:
+                type_map[v] = ExecType.has_length
+
+    def _run_sse(self, mstg, cross_core_map, type_map, state):
         """Run the single core SSE for the given state.
 
         Collects all states within a metastate and returns it.
@@ -84,6 +114,8 @@ class MultiSSE(Step):
             mstg.ep.cpu_id[e] = cpu_id
             state_map[h] = v
 
+            self._fill_type_map(type_map, v, state.cfg, state.cpus[cpu_id].abb)
+
             return True
 
         # add initial state
@@ -97,6 +129,7 @@ class MultiSSE(Step):
             @staticmethod
             def cross_core_action(state, cpu_ids):
                 cross_core_map[state_map[hash(state)]] = cpu_ids
+                type_map[state_map[hash(state)]] = ExecType.cross_syscall
 
             @staticmethod
             def schedule(new_state):
@@ -124,11 +157,15 @@ class MultiSSE(Step):
         )
 
         if self.dump.get():
-            self.dump_mstg(mstg, extra=f"metastate.{int(m_state)}")
+            color_code = {0: "black",
+                          ExecType.cross_syscall: "blue",
+                          ExecType.has_length: "red"}
+            self.dump_mstg(mstg, type_map=(type_map, color_code),
+                           extra=f"metastate.{int(m_state)}")
 
         return m_state
 
-    def _get_initial_states(self, mstg, cross_core_map):
+    def _get_initial_states(self, mstg, cross_core_map, type_map):
         os_state = self._graph.os.get_initial_state(
             self._graph.cfg, self._graph.instances
         )
@@ -140,7 +177,7 @@ class MultiSSE(Step):
             state.cpus = CPUList([cpu])
 
             # run single core SSE on this state
-            metastates.append(self._run_sse(mstg, cross_core_map, state))
+            metastates.append(self._run_sse(mstg, cross_core_map, type_map, state))
         return metastates
 
     def _meta_transition(self, state_vertex, sstg):
@@ -169,8 +206,9 @@ class MultiSSE(Step):
 
         mstg = MSTGraph()
         cross_core_map = mstg.new_vp("vector<int32_t>")
+        type_map = mstg.new_vp("int")
 
-        states = self._get_initial_states(mstg, cross_core_map)
+        states = self._get_initial_states(mstg, cross_core_map, type_map)
 
         stack = [states]
 
