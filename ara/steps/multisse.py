@@ -8,6 +8,8 @@ from ara.graph import MSTGraph, StateType, MSTType, ABBType
 
 import os.path
 import enum
+import graph_tool
+import dataclasses
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -88,15 +90,15 @@ class MultiSSE(Step):
             if syscall.has_time:
                 type_map[v] = ExecType.has_length
 
-    def _run_sse(self, mstg, cross_core_map, type_map, state):
+    def _run_sse(self, mstg, state):
         """Run the single core SSE for the given state.
 
         Collects all states within a metastate and returns it.
         """
         cpu_id = next(iter(state.cpus.ids()))
         # create the metastate
-        m_state = mstg.add_vertex()
-        mstg.vp.type[m_state] = StateType.metastate
+        m_state = mstg.g.add_vertex()
+        mstg.g.vp.type[m_state] = StateType.metastate
 
         state_map = {}
 
@@ -105,16 +107,17 @@ class MultiSSE(Step):
             if h in state_map:
                 return False
 
-            v = mstg.add_vertex()
-            mstg.vp.type[v] = StateType.state
-            mstg.vp.state[v] = state
+            v = mstg.g.add_vertex()
+            mstg.g.vp.type[v] = StateType.state
+            mstg.g.vp.state[v] = state
 
-            e = mstg.add_edge(m_state, v)
-            mstg.ep.type[e] = MSTType.m2s
-            mstg.ep.cpu_id[e] = cpu_id
+            e = mstg.g.add_edge(m_state, v)
+            mstg.g.ep.type[e] = MSTType.m2s
+            mstg.g.ep.cpu_id[e] = cpu_id
             state_map[h] = v
 
-            self._fill_type_map(type_map, v, state.cfg, state.cpus[cpu_id].abb)
+            self._fill_type_map(mstg.type_map, v, state.cfg,
+                                state.cpus[cpu_id].abb)
 
             return True
 
@@ -128,8 +131,8 @@ class MultiSSE(Step):
 
             @staticmethod
             def cross_core_action(state, cpu_ids):
-                cross_core_map[state_map[hash(state)]] = cpu_ids
-                type_map[state_map[hash(state)]] = ExecType.cross_syscall
+                mstg.cross_core_map[state_map[hash(state)]] = cpu_ids
+                mstg.type_map[state_map[hash(state)]] = ExecType.cross_syscall
 
             @staticmethod
             def schedule(new_state):
@@ -141,9 +144,9 @@ class MultiSSE(Step):
 
             @staticmethod
             def add_transition(source, target):
-                e = mstg.add_edge(state_map[hash(source)], state_map[hash(target)])
-                mstg.ep.type[e] = MSTType.st2sy
-                mstg.ep.cpu_id[e] = cpu_id
+                e = mstg.g.add_edge(state_map[hash(source)], state_map[hash(target)])
+                mstg.g.ep.type[e] = MSTType.st2sy
+                mstg.g.ep.cpu_id[e] = cpu_id
 
             @staticmethod
             def next_step(counter):
@@ -160,12 +163,12 @@ class MultiSSE(Step):
             color_code = {0: "black",
                           ExecType.cross_syscall: "blue",
                           ExecType.has_length: "red"}
-            self.dump_mstg(mstg, type_map=(type_map, color_code),
+            self.dump_mstg(mstg.g, type_map=(mstg.type_map, color_code),
                            extra=f"metastate.{int(m_state)}")
 
         return m_state
 
-    def _get_initial_states(self, mstg, cross_core_map, type_map):
+    def _get_initial_states(self, mstg):
         os_state = self._graph.os.get_initial_state(
             self._graph.cfg, self._graph.instances
         )
@@ -177,7 +180,7 @@ class MultiSSE(Step):
             state.cpus = CPUList([cpu])
 
             # run single core SSE on this state
-            metastates.append(self._run_sse(mstg, cross_core_map, type_map, state))
+            metastates.append(self._run_sse(mstg, state))
         return metastates
 
     def _meta_transition(self, state_vertex, sstg):
@@ -204,20 +207,29 @@ class MultiSSE(Step):
             self._fail("Entry point must be given.")
         self._log.info(f"Analyzing entry point: '{entry_label}'")
 
+        # create graph
+        @dataclasses.dataclass
+        class MSTG:
+            g: MSTGraph
+            cross_core_map: graph_tool.PropertyMap
+            type_map: graph_tool.PropertyMap
+
         mstg = MSTGraph()
         cross_core_map = mstg.new_vp("vector<int32_t>")
         type_map = mstg.new_vp("int")
 
-        states = self._get_initial_states(mstg, cross_core_map, type_map)
+        mstg = MSTG(g=mstg, cross_core_map=cross_core_map, type_map=type_map)
 
+        # initialize stack
+        states = self._get_initial_states(mstg)
         stack = [states]
 
+        # actual algorithm
         counter = 0
         while stack:
             self._log.debug(
                 f"Round {counter:3d}, "
-                f"Stack with {len(stack)} state(s): "
-                f"{[sstg.vp.state[v] for v in stack]}"
+                f"Stack with {len(stack)} state(s)"
             )
             state_vertex = stack.pop(0)
             for n in self._meta_transition(state_vertex, sstg):
@@ -229,4 +241,4 @@ class MultiSSE(Step):
 
         self._log.info(f"Analysis needed {counter} iterations.")
 
-        self._graph.sstg = sstg
+        self._graph.mstg = mstg
