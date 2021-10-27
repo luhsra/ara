@@ -99,6 +99,7 @@ class MultiSSE(Step):
         # create the metastate
         m_state = mstg.g.add_vertex()
         mstg.g.vp.type[m_state] = StateType.metastate
+        mstg.g.vp.cpu_id[m_state] = cpu_id
 
         state_map = {}
 
