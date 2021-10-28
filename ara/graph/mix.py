@@ -135,6 +135,7 @@ class StateType(enum.IntEnum): # */
 #
 # m2s = metastate to state
 # st2sy = state to sync (or vice versa)
+# s2s = state to state (normal SSE transition)
 class MSTType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class MSTType {
@@ -142,6 +143,7 @@ class MSTType(enum.IntEnum): # */
 
     m2s = 1,
     st2sy = 2,
+    s2s = 4,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(MSTType)}

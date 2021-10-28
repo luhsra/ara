@@ -123,7 +123,7 @@ class MultiSSE(Step):
             @staticmethod
             def add_transition(source, target):
                 e = mstg.g.add_edge(state_map[hash(source)], state_map[hash(target)])
-                mstg.g.ep.type[e] = MSTType.st2sy
+                mstg.g.ep.type[e] = MSTType.s2s
                 mstg.g.ep.cpu_id[e] = cpu_id
 
             @staticmethod
