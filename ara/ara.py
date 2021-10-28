@@ -7,6 +7,7 @@ import json
 import os
 import sys
 
+#from ara.visualization.gui_manager import ARAWorker
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
@@ -14,15 +15,15 @@ from .util import init_logging
 from .steplisting import print_avail_steps
 
 
-def main():
+def main(araWorker = None):
     """Entry point for ARA."""
+
     parser = argparse.ArgumentParser(
         prog=sys.argv[0],
         description=sys.modules[__name__].__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--list-steps', '-l', action="store_true",
                         default=False, help="list all available steps")
-    parser.add_argument('--visualization', )
     parser.add_argument('--verbose', '-v', help="alias for --log-level=info",
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
@@ -66,6 +67,8 @@ def main():
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
 
+    parser.add_argument('--visualization', help="started from the visualisation", action="store_true")
+
     args = parser.parse_args()
 
     if args.log_level != 'debug' and args.verbose:
@@ -76,6 +79,17 @@ def main():
     g = Graph()
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
+
+
+    if args.visualization:
+        from PySide6.QtCore import QThread
+
+        araWorker.sigInitGraph.emit(g)
+
+        while not araWorker.isReady():
+            print("Waiting")
+            QThread.sleep(5)
+
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
@@ -122,6 +136,8 @@ def main():
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
                                            for se in s_manager.get_history()]))
 
+    if args.visualization:
+        araWorker.sigDataUpdated.emit()
 
 if __name__ == '__main__':
     main()

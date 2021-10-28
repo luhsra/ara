@@ -111,7 +111,7 @@ class Layouter:
 
         cfg = self._graph.cfg
 
-        entry_label = self.entry_point.get()
+        entry_label = self.entry_point
         if self.from_entry_point:
             entry_func = self._graph.cfg.get_function_by_name(entry_label)
             functions = self._graph.cfg.reachable_functs(entry_func)
@@ -412,9 +412,9 @@ class Layouter:
         self._write_dot(dot_graph)
 
     def layout(self, subgraph, processParent: QtCore.QObject):
-        #if self.subgraphs.__contains__(subgraph):
-        #    print(f"The subgraph { subgraph } does not exist")
-        #    return
+        if not self.subgraphs.__contains__(subgraph):
+            print(f"The subgraph { subgraph } does not exist")
+            return
 
         if subgraph == 'abbs':
             self.print_abbs()
@@ -434,8 +434,6 @@ class Layouter:
         processTr = QtCore.QProcess(processParent)
 
         processDot.setStandardOutputProcess(processTr)
-
-        print(self.dot)
 
         commandDot = f"dot -y -Tjson0 {self.dot}"
         commandTr = f"tr -d \"\r\n\""
