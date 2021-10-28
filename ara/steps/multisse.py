@@ -4,7 +4,8 @@ from .option import Option, String
 from .step import Step
 from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from ara.graph import MSTGraph, StateType, MSTType, ABBType
+from ara.graph import MSTGraph, StateType, MSTType
+from ara.os.os_base import ExecState
 
 import os.path
 import enum
@@ -66,30 +67,6 @@ class MultiSSE(Step):
         dot_graph.write(dot_path)
         self._log.info(f"Write MSTG to {dot_path}.")
 
-    def _fill_type_map(self, type_map, v, cfg, abb):
-        """
-        Checks the current ABB and fills the type map accordingly
-
-        Arguments:
-        type_map -- the type map
-        v        -- the vertex of the current state
-        cfg      -- the CFG
-        abb      -- the current ABB
-        """
-        if abb is None:
-            # Idle
-            type_map[v] = ExecType.has_length
-            return
-        abb_type = cfg.vp.type[abb]
-        if abb_type == ABBType.computation:
-            type_map[v] = ExecType.has_length
-        elif abb_type == ABBType.syscall:
-            self._log.warn("syscall")
-            syscall = getattr(self._graph.os, cfg.get_syscall_name(abb))
-            self._log.warn(syscall)
-            if syscall.has_time:
-                type_map[v] = ExecType.has_length
-
     def _run_sse(self, mstg, state):
         """Run the single core SSE for the given state.
 
@@ -117,8 +94,8 @@ class MultiSSE(Step):
             mstg.g.ep.cpu_id[e] = cpu_id
             state_map[h] = v
 
-            self._fill_type_map(mstg.type_map, v, state.cfg,
-                                state.cpus[cpu_id].abb)
+            if state.cpus[cpu_id].exec_state & ExecState.with_time:
+                mstg.type_map[v] = ExecType.has_length
 
             return True
 

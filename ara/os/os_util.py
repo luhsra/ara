@@ -8,6 +8,8 @@ from typing import Tuple
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
 
+from .os_base import ExecState
+
 # from ara.util import get_logger
 # logger = get_logger("OS_UTIL")
 
@@ -99,6 +101,7 @@ def set_next_abb(state, cpu_id):
         if idx > 1:
             raise RuntimeError("A syscall must not have more than one successor.")
         cpu.abb = next_abb
+        cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
 
 
 class SysCall:

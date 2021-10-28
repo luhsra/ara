@@ -1,5 +1,5 @@
 from .os_util import syscall, Arg, set_next_abb
-from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction
+from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType, single_check
 
@@ -238,6 +238,7 @@ class AUTOSAR(OSBase):
                                 control_instance=None,
                                 abb=None,
                                 call_path=CallPath(),
+                                exec_state=ExecState.idle,
                                 analysis_context=None))
                 logger.debug(f"Initial: CPU {cpu_id} idles.")
             else:
@@ -248,6 +249,7 @@ class AUTOSAR(OSBase):
                                 control_instance=prio_vert,
                                 abb=entry_abb,
                                 call_path=CallPath(),
+                                exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                                 analysis_context=None))
                 running_tasks.append(prio_task)
                 logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
