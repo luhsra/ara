@@ -4,13 +4,15 @@ from .option import Option, String
 from .step import Step
 from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from ara.graph import MSTGraph, StateType, MSTType
+from ara.graph import MSTGraph, StateType, MSTType, single_check
 from ara.os.os_base import ExecState
 
 import os.path
 import enum
 import graph_tool
 import dataclasses
+
+from itertools import product, chain
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -158,23 +160,54 @@ class MultiSSE(Step):
             metastates.append(self._run_sse(mstg, state))
         return metastates
 
-    def _meta_transition(self, state_vertex, sstg):
-        metastate = sstg.vp.state[state_vertex]
-        for cpu_id, state_id in metastate.sync_states.items():
-            for state in state_id:
-                pass
-                # evaluate state
-                # sctg = metastate.state_graph[cpu_id]
-                # sctg.vp.
+    def _find_cross_state(self, mstg, states):
+        filt_mstg = graph_tool.GraphView(
+            mstg.g,
+            vfilt=((mstg.g.vp.type.fa == StateType.metastate) +
+                   (mstg.type_map.fa == ExecType.cross_syscall))
+        )
+        for state in states:
+            for cross_point in filt_mstg.vertex(state).out_neighbors():
+                yield mstg.g.vertex(cross_point)
 
-                # os_state = 
+    def _find_timed_states(self, mstg, cross_state, states):
+        affected_cores = mstg.cross_core_map[cross_state]
+        metastates = [s for s in states
+                      if mstg.g.vp.cpu_id[s] in affected_cores]
 
-                # new_states = self.graph.os.interpret(self.graph, os_state, cpu_id, SyscallCategory.every)
-                # for new_state in new_states:
-                #     # cross product with every state on every other cpu
+        filt_mstg = graph_tool.GraphView(
+            mstg.g,
+            vfilt=((mstg.g.vp.type.fa == StateType.metastate) +
+                   (mstg.type_map.fa == ExecType.has_length))
+        )
 
-        # for state_vertex
-        return []
+        def to_iter(metastate):
+            return filt_mstg.vertex(metastate).out_neighbors()
+
+        for states in product(*[to_iter(x) for x in metastates]):
+            yield states
+
+    def _create_cross_point(self, mstg, cross_state, timed_states):
+        cp = mstg.g.add_vertex()
+        mstg.g.vp.type[cp] = StateType.sync
+
+        filt_mstg = graph_tool.GraphView(
+            mstg.g,
+            efilt=(mstg.g.ep.type.fa == MSTType.m2s)
+        )
+
+        def _cpu_id(state):
+            return filt_mstg.vp.cpu_id[single_check(filt_mstg.vertex(state).in_neighbors())]
+
+        for src in chain([cross_state], timed_states):
+            e = mstg.g.add_edge(src, cp)
+            mstg.g.ep.type[e] = MSTType.st2sy
+            mstg.g.ep.cpu_id[e] = _cpu_id(src)
+
+        return cp
+
+    def _evaluate_crosspoint(self, mstg, cp):
+        self._fail("foo")
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -206,12 +239,15 @@ class MultiSSE(Step):
                 f"Round {counter:3d}, "
                 f"Stack with {len(stack)} state(s)"
             )
-            state_vertex = stack.pop(0)
-            for n in self._meta_transition(state_vertex, sstg):
-                new_state = self.new_vertex(sstg, n)
-                sstg.add_edge(state_vertex, new_state)
-                stack.append(new_state)
-
+            states = stack.pop(0)
+            for cross_state in self._find_cross_state(mstg, states):
+                for timed_states in self._find_timed_states(mstg, cross_state, states):
+                    # create new cross point
+                    cp = self._create_cross_point(mstg, cross_state, timed_states)
+                    if self.dump.get():
+                        self.dump_mstg(mstg.g, extra=f"cross.{int(cp)}")
+                    states = self._evaluate_crosspoint(mstg, cp)
+                    stack.append(states)
             counter += 1
 
         self._log.info(f"Analysis needed {counter} iterations.")
