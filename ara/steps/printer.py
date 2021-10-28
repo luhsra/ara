@@ -103,18 +103,39 @@ def mstg_to_dot(mstg, label="MSTG"):
 
     for sync_point in mstg.get_sync_points().vertices():
         sync_point = mstg.vertex(sync_point)
-        dot_graph.add_node(f"{int(sync_point)}")
+        cols = []
+        for e in sync_point.in_edges():
+            cpu_id = mstg.ep.cpu_id[e]
+            cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+        label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                '<TR>{}</TR>' \
+                '</TABLE>>'.format(''.join(cols))
+        dot_sync = pydot.Node(f"{int(sync_point)}", label=label,
+                              shape="plaintext")
+        dot_graph.add_node(dot_sync)
 
     flow = GraphView(mstg, efilt=mstg.ep.type.fa != MSTType.m2s)
 
+    def _sync_str(v, e):
+        return f"{_to_str(v)}:c{flow.ep.cpu_id[e]}"
+
     for edge in flow.edges():
-        dot_graph.add_edge(
-            pydot.Edge(
-                _to_str(edge.source()),
-                _to_str(edge.target()),
-                color="black",
-            )
-        )
+        src = edge.source()
+        tgt = edge.target()
+        if flow.ep.type[edge] == MSTType.st2sy:
+            if flow.vp.type[src] == StateType.sync:
+                src = _sync_str(src, edge)
+                tgt = _to_str(tgt)
+            elif flow.vp.type[tgt] == StateType.sync:
+                src = _to_str(src)
+                tgt = _sync_str(tgt, edge)
+            else:
+                assert False
+        else:
+            src = _to_str(src)
+            tgt = _to_str(tgt)
+
+        dot_graph.add_edge(pydot.Edge(src, tgt, color="black"))
 
     return dot_graph
 
