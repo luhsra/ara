@@ -1,28 +1,29 @@
 from PySide6.QtWidgets import QApplication
 from PySide6 import QtWidgets
+
 from PySide6.QtCore import QJsonDocument
 from PySide6.QtCore import QFile
 from PySide6.QtCore import QIODevice
 
-from graph_view import *
+from PySide6.QtGui import QColorConstants
 
-class GuiMain(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
-        self.graph_view = GraphScene(self)
-        self.resize(800,800)
-        self.graph_view.show()
+from .graphics_graph_view import *
+from .layouter import Layouter
 
-def update():
-    if graphScene == None:
+def update(jsonStr):
+    if graphScene is None:
         return
 
-    file = QFile("cfg.json0")
-    if not file.open(QIODevice.ReadOnly | QIODevice.Text):
-        print("Could not open File")
-        return
+    # Debug Purpose
+    if jsonStr is None:
+        path = "cfg.json0"
+        file = QFile(path)
+        if not file.open(QIODevice.ReadOnly | QIODevice.Text):
+            print("Could not open File")
+            return
 
-    jsonStr = file.readAll()
+        jsonStr = file.readAll()
+        file.close()
 
     jsonDocument = QJsonDocument.fromJson(jsonStr)
 
@@ -71,26 +72,33 @@ def update():
             )
             graphScene.add_node(node)
 
-    file.close()
+
+
+def init_gui_manager(g):
+    layouter.set_graph(g)
 
 
 
+layouter = Layouter()
+app = QtWidgets.QApplication([])
 
-graphScene = None
+graphScene = GraphScene()
+
+import os
+
+print(os.getcwd())
 
 
-xFit = 1
-yFit = 1
+out = layouter.layout("test", app)
 
-if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
+#print(out)
 
-    graphScene = GraphScene()
+graphView = QGraphicsView(graphScene)
+graphView.resize(1200, 800)
 
-    update()
-    graphScene.updateScene()
-    graphView = QGraphicsView(graphScene)
 
-    graphView.resize(1200, 800)
-    graphView.show()
-    app.exec()
+update(out)
+graphScene.updateScene()
+graphView.show()
+
+app.exec()

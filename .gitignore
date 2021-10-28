@@ -1,5 +1,6 @@
 .cache
 /build
+/buildProject
 __pycache__
 /native.txt
 /subprojects/*

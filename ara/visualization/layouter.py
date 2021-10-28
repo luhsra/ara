@@ -1,4 +1,8 @@
 """Container for Printer."""
+from re import sub
+
+import PySide6
+
 from ara.graph import ABBType, CFType, Graph, NodeLevel, CFGView
 
 import pydot
@@ -6,10 +10,12 @@ import html
 import os
 import os.path
 
-import graph_tool.draw
+import graphviz
+
+from PySide6 import QtCore
 
 
-class Printer:
+class Layouter:
     """Print graphs to dot."""
 
     SHAPES = {
@@ -36,13 +42,18 @@ class Printer:
    #                           ty=Bool(),
    #                           default_value=False)
 
-    def __init__(self, g,  subgraph, entry_point, dotPath="./temp.dot",graph_name="DotGraph", from_entry_point = "true"):
+    subgraphs = ("abbs", "instances", "callgraph", "multistates", "sstg_full", "sstg_simple")
+
+    def __init__(self, g = None, entry_point = None, dotPath="./temp.dot",graph_name="DotGraph", from_entry_point = "true"):
         self._graph = g
-        self.subgraph = subgraph
         self.entry_point = entry_point
         self.dot = dotPath
         self.graph_name = graph_name
         self.from_entry_point = from_entry_point
+
+    def set_graph(self, g):
+        self._graph = g
+
 
     def _fail(self, message):
         print(message)
@@ -400,7 +411,11 @@ class Printer:
                     subg.add_edge(dot_edge)
         self._write_dot(dot_graph)
 
-    def run(self, subgraph):
+    def layout(self, subgraph, processParent: QtCore.QObject):
+        #if self.subgraphs.__contains__(subgraph):
+        #    print(f"The subgraph { subgraph } does not exist")
+        #    return
+
         if subgraph == 'abbs':
             self.print_abbs()
         if subgraph == 'instances':
@@ -413,3 +428,24 @@ class Printer:
             self.print_multistates()
         if subgraph == 'callgraph':
             self.print_callgraph()
+
+
+        processDot = QtCore.QProcess(processParent)
+        processTr = QtCore.QProcess(processParent)
+
+        processDot.setStandardOutputProcess(processTr)
+
+        print(self.dot)
+
+        commandDot = f"dot -y -Tjson0 {self.dot}"
+        commandTr = f"tr -d \"\r\n\""
+
+        processDot.startCommand(commandDot)
+        processDot.waitForFinished()
+        print("Dot Finished")
+
+        processTr.startCommand(commandTr)
+        processTr.waitForFinished()
+        print("tr finished")
+
+        return processTr.readAllStandardOutput()

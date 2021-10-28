@@ -22,6 +22,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--list-steps', '-l', action="store_true",
                         default=False, help="list all available steps")
+    parser.add_argument('--visualization', )
     parser.add_argument('--verbose', '-v', help="alias for --log-level=info",
                         action="store_true", default=False)
     parser.add_argument('--log-level', help="choose the log level",
