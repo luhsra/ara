@@ -112,11 +112,10 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, has_time, signature, custom_control_flow):
+    def __init__(self, func_body, categories, signature, custom_control_flow):
         # visible attributes
         self.syscall = True
         self.categories = categories
-        self.has_time = has_time
         self._func = func_body
         self._signature = signature
         self._ccf = custom_control_flow
@@ -203,7 +202,6 @@ class SysCall:
 def syscall(*args,
             categories: Tuple[_SyscallCategory] = None,
             signature: Tuple[Argument] = None,
-            has_time: bool = False,
             custom_control_flow: bool = False):
     """System call decorator. Changes a function into a system call.
 
@@ -212,7 +210,6 @@ def syscall(*args,
     Arguments:
     categories          -- Categories of the system call
     signature           -- Specification of all system call arguments
-    has_time            -- The syscall handling needs time (e.g. taking a spinlock)
     custom_control_flow -- Does this system call alter the control flow?
     """
     if categories is None:
@@ -222,18 +219,17 @@ def syscall(*args,
 
     outer_categories = categories
     outer_signature = signature
-    outer_has_time = has_time
     outer_ccf = custom_control_flow
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
-             has_time=outer_has_time, custom_control_flow=outer_ccf):
-        wrapper = SysCall(func, categories, has_time, signature, custom_control_flow)
+             custom_control_flow=outer_ccf):
+        wrapper = SysCall(func, categories, signature, custom_control_flow)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, signature, has_time, custom_control_flow)
+        func = wrap(args[0], categories, signature, custom_control_flow)
         return func
 
     # decorator was called with keyword arguments, the returned function is
