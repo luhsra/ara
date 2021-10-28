@@ -6,17 +6,46 @@ import enum
 from dataclasses import dataclass, field
 from typing import Tuple, Any
 
-from ara.graph import SyscallCategory, CallPath, CFG
+from ara.graph import SyscallCategory, CallPath, CFG, ABBType
 
 # from ara.util import get_logger
 # logger = get_logger("OS_BASE")
 
 
 class TaskStatus(enum.IntEnum):
-    running = 1,
-    blocked = 2,
-    ready = 3,
+    running = 1
+    blocked = 2
+    ready = 3
     suspended = 4
+
+
+class ExecState(enum.IntEnum):
+    """Execution state of a CPU.
+
+    It can be divided in two categories:
+    1. state that has an execution time
+      compare with: `exec_state & ExecState.with_time`
+    2. state that has no execution time
+      compare with: `exec_state & ExecState.no_time`
+    """
+    # state that has an execution time
+    idle = 0b001  # do nothing
+    computation = 0b010  # calculating something in the app
+    waiting = 0b100  # waiting in the operating system
+
+    with_time = 0b111
+
+    # state that has no execution time
+    call = 0b01000
+    syscall = 0b10000
+
+    no_time = 0b11000
+
+    @staticmethod
+    def from_abbtype(abb_type):
+        return {ABBType.computation: ExecState.computation,
+                ABBType.call: ExecState.call,
+                ABBType.syscall: ExecState.syscall}[abb_type]
 
 
 class CrossCoreAction(Exception):
@@ -60,6 +89,7 @@ class CPU:
     control_instance: graph_tool.Vertex
     abb: graph_tool.Vertex
     call_path: CallPath
+    exec_state: ExecState
     analysis_context: Any  # analysis specific context information
 
     def copy(self):
@@ -69,7 +99,8 @@ class CPU:
                    control_instance=self.control_instance,
                    abb=self.abb,
                    call_path=copy.copy(self.call_path),
-                   analysis_context=new_ac)
+                   analysis_context=new_ac,
+                   exec_state=self.exec_state)
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -77,7 +108,7 @@ class CPU:
     def __hash__(self):
         ci = self.control_instance and int(self.control_instance)
         abb = self.abb and int(self.abb)
-        return hash((self.irq_on, ci, abb, self.call_path))
+        return hash((self.irq_on, ci, abb, self.call_path, self.exec_state))
 
 
 _state_id = 0

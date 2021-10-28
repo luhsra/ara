@@ -4,7 +4,7 @@ import functools
 
 from ara.graph import ABBType, SyscallCategory, CFGView, CFType
 from ara.util import get_null_logger
-from ara.os.os_base import OSState, CrossCoreAction
+from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
 from collections import defaultdict
 from dataclasses import dataclass
@@ -197,6 +197,9 @@ class _SSERunner:
 
             new_state.analysis_context = context
 
+    def _get_exec(self, v):
+        return ExecState.from_abbtype(self._cfg.vp.type[v])
+
     def _execute(self, state):
         self._visitor.init_execution(state)
 
@@ -268,6 +271,7 @@ class _SSERunner:
                 new_state = state.copy()
                 new_state.cpus[0].abb = n
                 new_state.cpus[0].call_path = new_call_path
+                new_state.cpus[0].exec_state = self._get_exec(n)
 
                 # SSE specific analysis context
                 self._assign_context(state, new_state, abb)
@@ -299,6 +303,7 @@ class _SSERunner:
                 ]
                 new_state.cpus[0].abb = next_node
                 new_state.cpus[0].call_path.pop_back()
+                new_state.cpus[0].exec_state = self._get_exec(next_node)
                 return [new_state]
             else:
                 # ISRs are able to exit, all other CFG not
@@ -312,6 +317,7 @@ class _SSERunner:
             self._log.debug(f"Neighbor {self._icfg.vp.name[n]}")
             new_state = state.copy()
             new_state.cpus[0].abb = n
+            new_state.cpus[0].exec_state = self._get_exec(n)
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.
