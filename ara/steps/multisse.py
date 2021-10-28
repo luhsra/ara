@@ -59,11 +59,11 @@ class MultiSSE(Step):
         deps = self._graph.os.get_special_steps()
         return deps
 
-    def dump_mstg(self, mstg, type_map, extra):
+    def dump_mstg(self, mstg, extra):
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
         os.makedirs(os.path.dirname(dot_path), exist_ok=True)
-        dot_graph = mstg_to_dot(mstg, type_map=type_map, label=f"MSTG {extra}")
+        dot_graph = mstg_to_dot(mstg, label=f"MSTG {extra}")
         dot_graph.write(dot_path)
         self._log.info(f"Write MSTG to {dot_path}.")
 
@@ -138,10 +138,7 @@ class MultiSSE(Step):
         )
 
         if self.dump.get():
-            color_code = {0: "black",
-                          ExecType.cross_syscall: "blue",
-                          ExecType.has_length: "red"}
-            self.dump_mstg(mstg.g, type_map=(mstg.type_map, color_code),
+            self.dump_mstg(mstg.g,
                            extra=f"metastate.{int(m_state)}")
 
         return m_state
