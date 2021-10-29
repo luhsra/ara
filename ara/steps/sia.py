@@ -6,7 +6,7 @@ from .option import Option, String
 
 # TODO no FreeRTOS specific code
 from ara.os.freertos import Task
-from ara.os.os_base import OSState, CPU
+from ara.os.os_base import OSState, CPU, ExecState
 
 from graph_tool import GraphView
 from graph_tool.topology import all_paths, dominator_tree, label_out_component
@@ -214,6 +214,7 @@ class FlatAnalysis(Step):
                                                control_instance=inst,
                                                abb=cfg.vertex(syscall),
                                                call_path=CallPath(),
+                                               exec_state=ExecState.computation, # This value has no meaning
                                                analysis_context=SIAContext(
                                                     callg=callg,
                                                     branch=branch,
