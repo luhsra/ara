@@ -27,11 +27,15 @@ TASK(T01) {
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
 	ActivateTask(T11);
+	GetSpinlock(S2);
+	ReleaseSpinlock(S2);
 	TerminateTask();
 }
 
 TASK(T11) {
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
+	GetSpinlock(S2);
+	ReleaseSpinlock(S2);
 	TerminateTask();
 }
