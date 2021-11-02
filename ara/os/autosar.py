@@ -731,7 +731,7 @@ class AUTOSAR(OSBase):
         cpu_ids = set([x.id for x in state.cpus])
 
         if cpu_id not in cpu_ids:
-            raise CrossCoreAction([cpu_id])
+            raise CrossCoreAction(set([cpu_id]))
 
     @staticmethod
     def ActivateTask(state, cpu_id, task):
