@@ -12,6 +12,43 @@ from ara.graph import SyscallCategory, CallPath, CFG, ABBType
 # logger = get_logger("OS_BASE")
 
 
+class CPUList:
+    """Container for storing CPUs."""
+
+    def __init__(self, cpus):
+        self._cpus = dict([(cpu.id, cpu) for cpu in cpus])
+
+    def ids(self):
+        """Return a generator of all CPU IDs."""
+        return self._cpus.keys()
+
+    def one(self):
+        """Return the one and only CPU."""
+        if len(self._cpus) != 1:
+            raise RuntimeError("CPU amount is not one")
+        return next(iter(self))
+
+    def __copy__(self):
+        return CPUList([x.copy() for x in self._cpus.values()])
+
+    def __hash__(self):
+        hush = hash(tuple(sorted(self._cpus.values(),
+                                 key=lambda x: x.id)))
+        return hush
+
+    def __repr__(self):
+        return f"CPUList({[x for x in self]})"
+
+    def __len__(self):
+        return len(self._cpus)
+
+    def __iter__(self):
+        return iter(self._cpus.values())
+
+    def __getitem__(self, idx):
+        return self._cpus[idx]
+
+
 class TaskStatus(enum.IntEnum):
     running = 1
     blocked = 2
@@ -121,7 +158,7 @@ def _get_id():
 @dataclass
 class OSState:
     id: int = field(init=False, default_factory=_get_id)
-    cpus: Tuple[CPU]
+    cpus: CPUList
     instances: graph_tool.Graph
     cfg: CFG
 
@@ -136,8 +173,8 @@ class OSState:
                                        for k, v in self.context.items()])))
 
     def copy(self):
-        new_cpus = tuple([cpu.copy() for cpu in self.cpus])
-        new_state = OSState(cpus=new_cpus, instances=self.instances,
+        new_state = OSState(cpus=copy.copy(self.cpus),
+                            instances=self.instances,
                             cfg=self.cfg)
         # new context for control instances
         for inst, ctx in self.context.items():

@@ -5,7 +5,7 @@ from .step import Step
 from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
 from ara.graph import MSTGraph, StateType, MSTType, single_check
-from ara.os.os_base import ExecState
+from ara.os.os_base import ExecState, CPUList
 
 import os.path
 import enum
@@ -27,26 +27,6 @@ sse_counter = 0
 class ExecType(enum.IntEnum):
     has_length = 1
     cross_syscall = 2
-
-
-class CPUList:
-    """Object that behaves like a list but can have holes."""
-
-    def __init__(self, cpus):
-        self._cpus = dict([(cpu.id, cpu) for cpu in cpus])
-
-    def ids(self):
-        """Return a generator of all CPU IDs."""
-        return self._cpus.keys()
-
-    def __len__(self):
-        return len(self._cpus)
-
-    def __iter__(self):
-        return iter(self._cpus.values())
-
-    def __getitem__(self, idx):
-        return self._cpus[idx]
 
 
 class MultiSSE(Step):
