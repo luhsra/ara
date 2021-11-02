@@ -80,13 +80,6 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
-    test('oil-parsing',
-        py3_inst,
-        args: [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
-        env: [python_path],
-        suite: 'steps'
-    )
-
     test('recursive',
         py3_inst,
         args: [files('recursive.py'), files('recursive.json'), freertos_icfg],
