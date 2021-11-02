@@ -359,6 +359,12 @@ class InstanceGraph(graph_tool.Graph):
             if isinstance(obj, instance_type):
                 yield inst, obj
 
+    def get_node(self, instance):
+        """Get the vertex belonging to a specific instance."""
+        for inst in self.vertices():
+            if instance == self.vp.obj[inst]:
+                return inst
+
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
