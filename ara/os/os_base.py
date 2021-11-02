@@ -4,7 +4,7 @@ import copy
 import enum
 
 from dataclasses import dataclass, field
-from typing import Tuple, Any
+from typing import Any
 
 from ara.graph import SyscallCategory, CallPath, CFG, ABBType
 

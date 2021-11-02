@@ -82,6 +82,8 @@ autosar_apps = [
   ['singlecore' / 'ecc1' / 'eventisr1', ['f', 'system.json', 'f.trace.json']],
   ['multicore',                         ['minexample', 'minexample.json']],
   ['multicore' / 'locks',               ['a', 'system.json']],
+  ['multicore' / 'locks',               ['b', 'system.json']],
+  ['multicore' / 'locks',               ['c', 'system.json']],
 ]
 
 autosar_targets = []
@@ -99,12 +101,12 @@ foreach app : autosar_apps
                                    ir_flags +
                                    clang_flags)
   if app[1].length() == 2
-    set_variable('autosar_' + sys.underscorify(), [app_ll, oil])
+    set_variable('autosar_' + sys.underscorify(), [app_ll, oil, sys.underscorify()])
     autosar_targets += [[app_ll, oil]]
   endif
   if app[1].length() == 3
     sys_test = files(app[0] / app[1][2])
-    set_variable('autosar_' + sys.underscorify(), [app_ll, oil, sys_test])
+    set_variable('autosar_' + sys.underscorify(), [app_ll, oil, sys.underscorify(), sys_test])
     autosar_targets_with_test += [[app_ll, oil, sys_test, sys.underscorify()]]
   endif
 endforeach
