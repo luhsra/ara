@@ -209,12 +209,13 @@ class FlatAnalysis(Step):
                 path_to_self = [[]] if entry_point == function else []
                 for path in chain(all_paths(rev_cg, function, entry_point,
                                             edges=True), path_to_self):
+                    abb = cfg.vertex(syscall)
                     state = OSState(cpus=((CPU(id=0,
                                                irq_on=False,  # SIA does not simulate Interrupts
                                                control_instance=inst,
-                                               abb=cfg.vertex(syscall),
+                                               abb=abb,
                                                call_path=CallPath(),
-                                               exec_state=ExecState.computation, # This value has no meaning
+                                               exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
                                                analysis_context=SIAContext(
                                                     callg=callg,
                                                     branch=branch,
