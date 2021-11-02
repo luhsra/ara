@@ -1,5 +1,5 @@
 from .os_util import syscall, Arg, set_next_abb
-from .os_base import OSBase, OSState, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState
+from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType, single_check
 
@@ -255,7 +255,7 @@ class AUTOSAR(OSBase):
             irq_status[cpu_id] = 0
             os_irq_status[cpu_id] = 0
 
-        state = OSState(cpus=tuple(cpus), instances=instances, cfg=cfg)
+        state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
 
         # give initial running context
         max_prio = 0

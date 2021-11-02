@@ -165,7 +165,7 @@ class _SSERunner:
         in_cond = self._is_in_condition(abb)
         local_ut = (in_cond and not
                     self._is_in_condition(abb, ignore_endless_loops=True))
-        extern_ut = self._ut_func.get(state.cpus[0].call_path, False)
+        extern_ut = self._ut_func.get(state.cpus.one().call_path, False)
         return local_ut or (extern_ut and not in_cond)
 
     def _assign_context(self, state, new_state, abb):
@@ -173,8 +173,8 @@ class _SSERunner:
         if context is not None:
             context = context()
 
-            abb = new_state.cpus[0].abb
-            call_path = new_state.cpus[0].call_path
+            abb = new_state.cpus.one().abb
+            call_path = new_state.cpus.one().call_path
 
             # check if in a recursive function and mark accordingly
             func = self._cfg.get_function(self._cfg.vertex(abb))
@@ -202,9 +202,10 @@ class _SSERunner:
 
     def _execute(self, state):
         self._visitor.init_execution(state)
+        cpu = state.cpus.one()
 
-        abb = next(iter(state.cpus)).abb
-        call_path = next(iter(state.cpus)).call_path
+        abb = cpu.abb
+        call_path = cpu.call_path
 
         # check handling of already visited vertices
         if self._visitor.PREVENT_MULTIPLE_VISITS:
@@ -226,7 +227,7 @@ class _SSERunner:
             # times here. This should be done by the operation system model.
             self._log.debug("Handle idle. Trigger all interrupts.")
             new_states = []
-            if next(iter(state.cpus)).irq_on:
+            if cpu.irq_on:
                 for irq in self._available_irqs:
                     new_state = self._os.handle_irq(self._graph, state, 0, irq)
                     if new_state is not None:
@@ -240,7 +241,7 @@ class _SSERunner:
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             try:
                 new_state = self._os.interpret(
-                    self._graph, state, 0,
+                    self._graph, state, cpu.id,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
                 return [new_state]
@@ -269,9 +270,9 @@ class _SSERunner:
                     continue
 
                 new_state = state.copy()
-                new_state.cpus[0].abb = n
-                new_state.cpus[0].call_path = new_call_path
-                new_state.cpus[0].exec_state = self._get_exec(n)
+                new_state.cpus.one().abb = n
+                new_state.cpus.one().call_path = new_call_path
+                new_state.cpus.one().exec_state = self._get_exec(n)
 
                 # SSE specific analysis context
                 self._assign_context(state, new_state, abb)
@@ -289,7 +290,7 @@ class _SSERunner:
             self._log.debug(f"Handle exit: {self._icfg.vp.name[abb]}")
             if self._icfg.vertex(abb).out_degree() > 0:
                 new_state = state.copy()
-                callsite = new_state.cpus[0].call_path[-1]
+                callsite = new_state.cpus.one().call_path[-1]
                 call = self._call_graph.ep.callsite[callsite]
                 neighbors = self._lcfg.vertex(call).out_neighbors()
                 next_node = next(neighbors)
@@ -301,9 +302,9 @@ class _SSERunner:
                         new_state.cfg.vp.call_graph_link[func]
                     )
                 ]
-                new_state.cpus[0].abb = next_node
-                new_state.cpus[0].call_path.pop_back()
-                new_state.cpus[0].exec_state = self._get_exec(next_node)
+                new_state.cpus.one().abb = next_node
+                new_state.cpus.one().call_path.pop_back()
+                new_state.cpus.one().exec_state = self._get_exec(next_node)
                 return [new_state]
             else:
                 # ISRs are able to exit, all other CFG not
@@ -316,12 +317,12 @@ class _SSERunner:
         for n in self._icfg.vertex(abb).out_neighbors():
             self._log.debug(f"Neighbor {self._icfg.vp.name[n]}")
             new_state = state.copy()
-            new_state.cpus[0].abb = n
-            new_state.cpus[0].exec_state = self._get_exec(n)
+            new_state.cpus.one().abb = n
+            new_state.cpus.one().exec_state = self._get_exec(n)
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.
-        if state.cpus[0].irq_on:
+        if cpu.irq_on:
             for irq in self._available_irqs:
                 new_state = self._os.handle_irq(self._graph, state, 0, irq)
                 if new_state is not None:
