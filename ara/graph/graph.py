@@ -7,6 +7,8 @@ from graph_tool.topology import label_out_component
 from .graph_data import PyGraphData
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType
 
+from collections.abc import Iterator
+
 
 class FailedGraphConstraint(Exception):
     """The graph has another structure than anticipated."""
@@ -18,6 +20,9 @@ def single_check(iterator):
     It returns the single element, if it exists and raises an
     FailedGraphConstraint otherwise.
     """
+    if not isinstance(iterator, Iterator):
+        iterator = iter(iterator)
+
     first = next(iterator, None)
     if first is None:
         raise FailedGraphConstraint("No element present.")
