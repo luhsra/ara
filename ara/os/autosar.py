@@ -587,10 +587,12 @@ class AUTOSAR(OSBase):
                 new_ctx.call_path = CallPath()
 
                 cpu.control_instance = state.instances.vertex(new_vertex)
+                cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
             else:
                 cpu.abb = None
                 cpu.call_path = None
                 cpu.control_instance = None
+                cpu.exec_state = ExecState.idle
 
     @staticmethod
     def decompress_state(state):
