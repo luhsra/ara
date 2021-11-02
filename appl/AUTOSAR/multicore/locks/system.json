@@ -8,7 +8,7 @@
           "autostart": true,
           "priority": 4,
           "schedule": true,
-          "spinlocks": ["S1"]
+          "spinlocks": ["S1", "S2"]
         }
       },
       "resources": {},
@@ -24,7 +24,7 @@
           "autostart": false,
           "priority": 1,
           "schedule": true,
-          "spinlocks": ["S1"]
+          "spinlocks": ["S1", "S2"]
         }
       },
       "resources": {},
@@ -34,5 +34,8 @@
       "isrs": {}
     }
   ],
-  "spinlocks": [["S1"]]
+  "spinlocks": [
+      ["S1"],
+      ["S2"]
+  ]
 }
