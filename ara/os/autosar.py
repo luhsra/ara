@@ -203,6 +203,22 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
+    def get_cpu_local_contexts(context, cpu_id):
+        local_contexts = []
+        for inst, ctx in context.items():
+            if getattr(inst, "cpu_id", None) == cpu_id:
+                local_contexts.append((inst, ctx))
+        return dict(local_contexts)
+
+    @staticmethod
+    def get_global_contexts(context):
+        local_contexts = []
+        for inst, ctx in context.items():
+            if not hasattr(inst, "cpu_id"):
+                local_contexts.append((inst, ctx))
+        return dict(local_contexts)
+
+    @staticmethod
     def get_initial_state(cfg, instances):
         # technically, AUTOSAR starts with a main function on every core
         # The actual startup happens via StartCore or in HW directly
