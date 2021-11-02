@@ -231,6 +231,16 @@ class OSBase:
         raise NotImplementedError
 
     @staticmethod
+    def get_cpu_local_contexts(contexts, cpu_id):
+        """Get all contexts that affect cpu_id."""
+        raise NotImplementedError
+
+    @staticmethod
+    def get_global_contexts(contexts):
+        """Get all contexts that affect multiple CPUs."""
+        raise NotImplementedError
+
+    @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
         """Handle an (asynchronous) IRQ.
 
