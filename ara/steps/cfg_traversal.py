@@ -342,7 +342,7 @@ class _SSERunner:
 
         counter = 0
         while stack:
-            self._log.debug(f"Round {counter:3d}, "
+            self._log.debug(f"Local SSE: Round {counter:3d}, "
                             f"Stack with {len(stack)} state(s)")
             state = stack.pop(0)
             for new_state in self._system_semantic(state):
@@ -355,7 +355,7 @@ class _SSERunner:
             counter += 1
             self._visitor.next_step(counter)
 
-        self._log.info(f"Analysis needed {counter} iterations.")
+        self._log.info(f"Local SSE: Analysis needed {counter} iterations.")
 
 
 def run_sse(graph, os, visitor=Visitor(), logger=get_null_logger()):
