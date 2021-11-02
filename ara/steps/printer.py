@@ -374,6 +374,11 @@ class Printer(Step):
         dot_graph = sstg_to_dot(sstg, name)
         self._write_dot(dot_graph)
 
+    def print_mstg(self):
+        name = self._print_init()
+        dot_graph = mstg_to_dot(self._graph.mstg, name)
+        self._write_dot(dot_graph)
+
     def print_callgraph(self):
         name = self._print_init()
 
@@ -571,7 +576,7 @@ class Printer(Step):
         if subgraph == 'sstg':
             self.print_sstg()
         if subgraph == 'mstg':
-            self.print_sstg()
+            self.print_mstg()
         if subgraph == 'reduced_sstg':
             self.print_sstg(reduced=True)
         if subgraph == 'multistates':
