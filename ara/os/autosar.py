@@ -166,7 +166,6 @@ class ISR(AUTOSARInstance, ControlInstance):
         return AUTOSARInstance.__hash__(self)
 
 
-
 @dataclass(unsafe_hash=True)
 class ISRContext(ControlContext):
     dyn_prio: Tuple[int]
@@ -260,7 +259,7 @@ class AUTOSAR(OSBase):
 
         # give initial running context
         max_prio = 0
-        for v, obj in instances.get(Task):
+        for _, obj in instances.get(Task):
             prio = 2 * obj.priority
             max_prio = max(max_prio, prio)
             state.context[obj] = TaskContext(status=TaskStatus.suspended,
@@ -268,7 +267,7 @@ class AUTOSAR(OSBase):
                                              call_path=CallPath(),
                                              dyn_prio=[prio])
 
-        for v, obj in instances.get(ISR):
+        for _, obj in instances.get(ISR):
             state.context[obj] = ISRContext(status=TaskStatus.suspended,
                                             abb=cfg.get_entry_abb(obj.function),
                                             call_path=CallPath(),
@@ -280,7 +279,7 @@ class AUTOSAR(OSBase):
             ctx.abb = None
             ctx.call_path = CallPath()
 
-        for v, alarm in instances.get(Alarm):
+        for _, alarm in instances.get(Alarm):
             if alarm.autostart:
                 state.context[alarm] = AlarmContext(
                         active=True,
@@ -730,7 +729,6 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
-        AUTOSAR.check_cpu(state, args.task.cpu_id)
         return AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
     @syscall
