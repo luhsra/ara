@@ -240,11 +240,11 @@ class _SSERunner:
             syscall_name = self._cfg.get_syscall_name(abb)
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
             try:
-                new_state = self._os.interpret(
+                new_states = self._os.interpret(
                     self._graph, state, cpu.id,
                     categories=self._visitor.SYSCALL_CATEGORIES
                 )
-                return [new_state]
+                return new_states
             except CrossCoreAction as cca:
                 self._log.debug(f"Got cross core action (CPUs: {cca.cpu_ids}).")
                 self._visitor.cross_core_action(state, cca.cpu_ids)
