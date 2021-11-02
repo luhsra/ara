@@ -192,14 +192,20 @@ class SysCall:
         args = Arguments(*values)
 
         # syscall specific handling
-        new_state = self._func(graph, new_state, cpu_id, args, va)
-        assert new_state is not None, "The syscall does not return anything."
+        new_states = self._func(graph, new_state, cpu_id, args, va)
+        assert new_states is not None, "The syscall does not return anything."
+
+        # few syscalls return multiple follow up states, so wrap everythin
+        # into a list, if not already done
+        if not isinstance(new_states, list):
+            new_states = [new_states]
 
         # add standard control flow successors if wanted
         if not self._ccf:
-            set_next_abb(new_state, cpu_id)
+            for new_state in new_states:
+                set_next_abb(new_state, cpu_id)
 
-        return new_state
+        return new_states
 
 
 def syscall(*args,

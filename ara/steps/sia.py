@@ -237,11 +237,14 @@ class FlatAnalysis(Step):
                     self._set_flags(fake_cpu.analysis_context, syscall)
                     fake_cpu.analysis_context.recursive |= callg.vp.recursive[function]
 
-                    new_state = os.interpret(
+                    new_states = os.interpret(
                         self._graph, state, 0,
                         categories=self._search_category()
                     )
-                    self._graph.instances = new_state.instances
+                    if len(new_states) != 1:
+                        raise RuntimeError("Creation syscalls with multiple "
+                                           "return states are not supported.")
+                    self._graph.instances = new_states[0].instances
 
         self._trigger_new_steps()
 
