@@ -115,7 +115,8 @@ class SigType(enum.IntEnum): # */
 #
 # state = The node represents a single core system state
 # metastate = The node links to a set of system states.
-# sync = The node describes a synchronisation point.
+# entry_sync = The node describes a synchronisation point entry.
+# exit_sync = The node describes a synchronisation point exit.
 class StateType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class StateType {
@@ -123,7 +124,8 @@ class StateType(enum.IntEnum): # */
 
     state = 1,
     metastate = 2,
-    sync = 4,
+    entry_sync = 4,
+    exit_sync = 8,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(StateType)}
@@ -136,6 +138,8 @@ class StateType(enum.IntEnum): # */
 # m2s = metastate to state
 # st2sy = state to sync (or vice versa)
 # s2s = state to state (normal SSE transition)
+# sy2sy = sync to sync
+# follow_up = edge between two follow up sync states
 class MSTType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class MSTType {
@@ -144,6 +148,8 @@ class MSTType(enum.IntEnum): # */
     m2s = 1,
     st2sy = 2,
     s2s = 4,
+    sy2sy = 8,
+    follow_up = 16,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(MSTType)}
