@@ -48,7 +48,10 @@ def main():
     inp = {"oilfile": lambda argv: argv[3]}
     m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
 
-    fail_if(data != 42)
+    locks = m_graph.step_data["LockElision"]
+
+    # log.warn(json.dumps(locks))
+    fail_if(data != locks)
 
 
 if __name__ == '__main__':
