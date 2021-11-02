@@ -72,6 +72,11 @@ class LoadOIL(Step):
                     e = instances.add_edge(old_spinlock, s)
                     instances.ep.label[e] = "nestable in order"
                     instances.ep.type[e] = _autosar.InstanceEdge.nestable
+                old_spinlock = s
+
+                code_instance = va.find_global(_autosar.SPINLOCK_PREFIX + spinlock)
+                if code_instance is not None:
+                    va.assign_system_object(code_instance, instances.vp.obj[s])
 
         res_scheduler = None
         for cpu in oil["cpus"]:

@@ -8,7 +8,7 @@ import html
 
 from collections import defaultdict
 from copy import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
 from typing import Any, List, Tuple
@@ -18,6 +18,7 @@ import pyllco
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
 RESOURCE_PREFIX = "AUTOSAR_RESOURCE_"
+SPINLOCK_PREFIX = "AUTOSAR_SPINLOCK_"
 
 logger = get_logger("AUTOSAR")
 
@@ -111,9 +112,25 @@ class TaskContext(ControlContext):
                            waited_events=self.waited_events)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Spinlock:
     name: str
+
+
+@dataclass
+class SpinlockContext:
+    is_spinning: bool = False
+    wait_for: List[int] = field(default_factory=list)  # list of cpu_ids
+
+    def __hash__(self):
+        return hash(("SpinlockContext",
+                     self.is_spinning,
+                     tuple(self.wait_for)))
+
+    def __copy__(self):
+        """Make a deep copy."""
+        return SpinlockContext(is_spinning=self.is_spinning,
+                               wait_for=[x for x in self.wait_for])
 
 
 @dataclass
@@ -302,6 +319,9 @@ class AUTOSAR(OSBase):
                         cycle=alarm.cycletime,
                         increment=alarm.alarmtime
                 )
+
+        for _, spinlock in instances.get(Spinlock):
+            state.context[spinlock] = SpinlockContext()
 
         # special context object for os specific state
         state.context["AUTOSAR"] = AUTOSARContext(irq_status=irq_status,
@@ -807,6 +827,65 @@ class AUTOSAR(OSBase):
     @syscall
     def AUTOSAR_GetEvent(cfg, abb, state):
         pass
+
+    @staticmethod
+    def check_spinlock_cpus(state, spinlock):
+        available_cpus = set([cpu.id for cpu in state.cpus])
+        needed_cpus = set()
+        lock = state.instances.get_node(spinlock)
+        filt = graph_tool.GraphView(
+            state.instances,
+            efilt=state.instances.ep.type.fa == int(InstanceEdge.have)
+        )
+        for task in filt.vertex(lock).in_neighbors():
+            needed_cpus.add(filt.vp.obj[task].cpu_id)
+
+        if needed_cpus > available_cpus:
+            raise CrossCoreAction(needed_cpus - available_cpus)
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),),
+             custom_control_flow=True)
+    def AUTOSAR_GetSpinlock(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.spinlock, Spinlock))
+        AUTOSAR.check_spinlock_cpus(state, args.spinlock)
+
+        lock_ctx = state.context[args.spinlock]
+        if lock_ctx.is_spinning:
+            # active wait in this state
+            lock_ctx.wait_for.append(cpu_id)
+            state.cpu[cpu_id].exec_state = ExecState.waiting
+        else:
+            # just go the the next block
+            set_next_abb(state, cpu_id)
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),),
+             custom_control_flow=True)
+    def AUTOSAR_ReleaseSpinlock(cfg, state, cpu_id, args, va):
+        assert(isinstance(args.spinlock, Spinlock))
+        AUTOSAR.check_spinlock_cpus(state, args.spinlock)
+
+        lock_ctx = state.context[args.spinlock]
+
+        # local backup
+        wait_for = lock_ctx.wait_for
+        lock_ctx.wait_for = []
+        lock_ctx.is_spinning = False
+
+        new_states = []
+        if len(wait_for) > 0:
+            # create a new state for every cpu to wakeup
+            for wait_cpu in wait_for:
+                new_state = state.copy()
+                set_next_abb(new_state, wait_cpu)
+                new_states.append(new_state)
+        else:
+            set_next_abb(state, cpu_id)
+            new_states.append(state)
+
+        return new_states
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
