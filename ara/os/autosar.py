@@ -525,7 +525,7 @@ class AUTOSAR(OSBase):
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            if state.context[obj].status in [TaskStatus.running, TaskStatus.ready]:
+            if obj.cpu_id in cpus and state.context[obj].status in [TaskStatus.running, TaskStatus.ready]:
                 cpu_map[obj.cpu_id].append((v, state.context[obj]))
 
         # update cpus
