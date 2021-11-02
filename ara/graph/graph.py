@@ -309,15 +309,16 @@ class MSTGraph(graph_tool.Graph):
         self.vertex_properties["state"] = self.new_vp("object")
         self.vertex_properties["type"] = self.new_vp("int")  # StateType
         self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
-
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
 
     def get_metastates(self):
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)
 
-    def get_sync_points(self):
-        return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.sync)
+    def get_sync_points(self, exit=False):
+        if exit:
+            return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.exit_sync)
+        return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.entry_sync)
 
 
 class InstanceGraph(graph_tool.Graph):

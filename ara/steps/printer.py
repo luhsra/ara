@@ -85,7 +85,25 @@ def mstg_to_dot(mstg, label="MSTG"):
     def _to_str(v):
         return str(int(v))
 
+    def _draw_sync(sync, edges):
+        cols = []
+        for e in edges:
+            if mstg.ep.type[e] == MSTType.st2sy:
+                cpu_id = mstg.ep.cpu_id[e]
+                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+        label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                '<TR>{}</TR>' \
+                '</TABLE>>'.format(''.join(sorted(cols)))
+        return pydot.Node(_to_str(sync), label=label,
+                          shape="plaintext")
+
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
+
+    # draw initial sync node
+    for init in mstg.get_sync_points(exit=True).vertices():
+        init = mstg.vertex(init)
+        if init.in_degree() == 0:
+            dot_graph.add_node(_draw_sync(init, init.out_edges()))
 
     for metastate in mstg.get_metastates().vertices():
         metastate = mstg.vertex(metastate)
@@ -101,20 +119,18 @@ def mstg_to_dot(mstg, label="MSTG"):
             dot_state = pydot.Node(_to_str(state), **attrs)
             dot_m.add_node(dot_state)
 
-    for sync_point in mstg.get_sync_points().vertices():
+    for sync_point in mstg.get_sync_points(exit=False).vertices():
         sync_point = mstg.vertex(sync_point)
-        cols = []
-        for e in sync_point.in_edges():
-            cpu_id = mstg.ep.cpu_id[e]
-            cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
-        label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
-                '<TR>{}</TR>' \
-                '</TABLE>>'.format(''.join(cols))
-        dot_sync = pydot.Node(f"{int(sync_point)}", label=label,
-                              shape="plaintext")
-        dot_graph.add_node(dot_sync)
+        sync_m = pydot.Cluster("Metasync" + _to_str(sync_point), label="")
+        dot_graph.add_subgraph(sync_m)
+        # draw entry_sync
+        sync_m.add_node(_draw_sync(sync_point, sync_point.in_edges()))
+        # draw exit_sync
+        for follow in sync_point.out_neighbors():
+            sync_m.add_node(_draw_sync(follow, follow.out_edges()))
 
     flow = GraphView(mstg, efilt=mstg.ep.type.fa != MSTType.m2s)
+    flow = GraphView(flow, efilt=mstg.ep.type.fa != MSTType.sy2sy)
 
     def _sync_str(v, e):
         return f"{_to_str(v)}:c{flow.ep.cpu_id[e]}"
@@ -123,10 +139,10 @@ def mstg_to_dot(mstg, label="MSTG"):
         src = edge.source()
         tgt = edge.target()
         if flow.ep.type[edge] == MSTType.st2sy:
-            if flow.vp.type[src] == StateType.sync:
+            if flow.vp.type[src] == StateType.exit_sync:
                 src = _sync_str(src, edge)
                 tgt = _to_str(tgt)
-            elif flow.vp.type[tgt] == StateType.sync:
+            elif flow.vp.type[tgt] == StateType.entry_sync:
                 src = _to_str(src)
                 tgt = _sync_str(tgt, edge)
             else:
