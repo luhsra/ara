@@ -68,7 +68,7 @@ class ExecState(enum.IntEnum):
     # state that has an execution time
     idle = 0b001  # do nothing
     computation = 0b010  # calculating something in the app
-    waiting = 0b100  # waiting in the operating system
+    waiting = 0b100  # active waiting in the operating system
 
     with_time = 0b111
 
