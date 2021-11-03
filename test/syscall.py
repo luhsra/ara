@@ -21,7 +21,11 @@ def abbs(cfg, function):
 def main():
     """Test for correct syscall mapping."""
 
-    m_graph, data, log, _ = init_test(['Syscall'])
+    # We need to execute the Syscall step for all entry points.
+    # Executing SIA will do this:
+    config = {"steps": ["SIA"]}
+
+    m_graph, data, log, _ = init_test(extra_config=config)
     cfg = m_graph.cfg
     functs = m_graph.functs
     stats = {}
