@@ -10,7 +10,6 @@ import html
 import os
 import os.path
 
-import graphviz
 
 from PySide6 import QtCore
 
