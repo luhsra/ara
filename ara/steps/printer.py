@@ -50,6 +50,7 @@ def _sstg_state_as_dot(sstg, state_vert):
     )
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
     attrs["label"] = f"<{label}<br/>{graph_attrs}>"
+    attrs["tooltip"] = str(state_vert)
 
     if cpu.exec_state & ExecState.with_time:
         attrs["color"] = "green"
@@ -95,7 +96,8 @@ def mstg_to_dot(mstg, label="MSTG"):
                 '<TR>{}</TR>' \
                 '</TABLE>>'.format(''.join(sorted(cols)))
         return pydot.Node(_to_str(sync), label=label,
-                          shape="plaintext")
+                          shape="plaintext",
+                          tooltip=_to_str(sync))
 
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
