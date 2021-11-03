@@ -130,7 +130,6 @@ def mstg_to_dot(mstg, label="MSTG"):
             sync_m.add_node(_draw_sync(follow, follow.out_edges()))
 
     flow = GraphView(mstg, efilt=mstg.ep.type.fa != MSTType.m2s)
-    flow = GraphView(flow, efilt=mstg.ep.type.fa != MSTType.sy2sy)
 
     def _sync_str(v, e):
         return f"{_to_str(v)}:c{flow.ep.cpu_id[e]}"
@@ -138,6 +137,7 @@ def mstg_to_dot(mstg, label="MSTG"):
     for edge in flow.edges():
         src = edge.source()
         tgt = edge.target()
+        attrs = {"color": "black"}
         if flow.ep.type[edge] == MSTType.st2sy:
             if flow.vp.type[src] == StateType.exit_sync:
                 src = _sync_str(src, edge)
@@ -148,10 +148,13 @@ def mstg_to_dot(mstg, label="MSTG"):
             else:
                 assert False
         else:
+            if flow.ep.type[edge] == MSTType.sy2sy:
+                attrs = {"color": "darkred",
+                         "style": "dotted"}
             src = _to_str(src)
             tgt = _to_str(tgt)
 
-        dot_graph.add_edge(pydot.Edge(src, tgt, color="black"))
+        dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
 
     return dot_graph
 
