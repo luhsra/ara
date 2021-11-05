@@ -332,6 +332,11 @@ class MSTGraph(graph_tool.Graph):
         m2s = self.edge_type(MSTType.m2s)
         return self.vertex(single_check(m2s.vertex(state).in_neighbors()))
 
+    def get_entry_cp(self, exit_cp):
+        """Return the entry_cp that belongs to an exit_cp."""
+        fu = self.edge_type(MSTType.follow_up)
+        return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
+
 
 class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
