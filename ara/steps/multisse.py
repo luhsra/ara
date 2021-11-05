@@ -141,7 +141,7 @@ class MultiSSE(Step):
 
         return Metastate(state=m_state, entry=self.state_map[init_h], is_new=True)
 
-    def _calculate_from_multistate(self, mstg, multi_state):
+    def _calculate_from_multistate(self, mstg, multi_state, cp):
         metastates = []
         for cpu in multi_state.cpus:
             # restrict state to this cpu
@@ -152,6 +152,12 @@ class MultiSSE(Step):
             # run single core SSE on this state
             metastate = self._run_sse(mstg, state)
             metastate.cpu_id = cpu.id
+
+            # add st2sy edge
+            e = mstg.g.add_edge(cp, metastate.entry)
+            mstg.g.ep.type[e] = MSTType.st2sy
+            mstg.g.ep.cpu_id[e] = metastate.cpu_id
+
             metastates.append(metastate)
         return metastates
 
@@ -165,13 +171,7 @@ class MultiSSE(Step):
         mstg.g.vp.type[cp] = StateType.exit_sync
         mstg.g.vp.state[cp] = self._graph.os.get_global_contexts(os_state.context)
 
-        metastates = self._calculate_from_multistate(mstg, os_state)
-
-        # link entries
-        for metastate in metastates:
-            e = mstg.g.add_edge(cp, metastate.entry)
-            mstg.g.ep.type[e] = MSTType.st2sy
-            mstg.g.ep.cpu_id[e] = metastate.cpu_id
+        metastates = self._calculate_from_multistate(mstg, os_state, cp)
 
         return cp, metastates
 
@@ -264,13 +264,7 @@ class MultiSSE(Step):
             # store global context in cross_point
             mstg.g.vp.state[fcp] = os.get_global_contexts(new_state.context)
 
-            metastates = self._calculate_from_multistate(mstg, new_state)
-
-            # link entries
-            for metastate in metastates:
-                e = mstg.g.add_edge(fcp, metastate.entry)
-                mstg.g.ep.type[e] = MSTType.st2sy
-                mstg.g.ep.cpu_id[e] = metastate.cpu_id
+            metastates = self._calculate_from_multistate(mstg, new_state, fcp)
 
             ret.append((fcp, metastates))
 
