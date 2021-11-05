@@ -78,6 +78,7 @@ class MultiSSE(Step):
         m_state = mstg.g.add_vertex()
         mstg.g.vp.type[m_state] = StateType.metastate
         mstg.g.vp.cpu_id[m_state] = cpu_id
+        self._log.debug(f"Add metastate {int(m_state)}")
 
         def _add_state(state):
             h = hash(state)
@@ -87,6 +88,7 @@ class MultiSSE(Step):
             v = mstg.g.add_vertex()
             mstg.g.vp.type[v] = StateType.state
             mstg.g.vp.state[v] = state
+            self._log.debug(f"Add state {int(v)}")
 
             e = mstg.g.add_edge(m_state, v)
             mstg.g.ep.type[e] = MSTType.m2s
@@ -176,6 +178,7 @@ class MultiSSE(Step):
         cp = mstg.g.add_vertex()
         mstg.g.vp.type[cp] = StateType.exit_sync
         mstg.g.vp.state[cp] = self._graph.os.get_global_contexts(os_state.context)
+        self._log.debug(f"Add initial cross point {int(cp)}")
 
         metastates = self._calculate_from_multistate(mstg, os_state, cp)
 
@@ -211,6 +214,7 @@ class MultiSSE(Step):
     def _create_cross_point(self, mstg, cross_state, timed_states, old_cp):
         cp = mstg.g.add_vertex()
         mstg.g.vp.type[cp] = StateType.entry_sync
+        self._log.debug(f"Add cross point {int(cp)}")
 
         syncs = mstg.g.edge_type(MSTType.sync_neighbor)
         for old_cross in chain([old_cp],
@@ -269,6 +273,7 @@ class MultiSSE(Step):
             # create follow up cross point
             fcp = mstg.g.add_vertex()
             mstg.g.vp.type[fcp] = StateType.exit_sync
+            self._log.debug(f"Add exit cross point {int(fcp)}")
 
             e = mstg.g.add_edge(cp, fcp)
             mstg.g.ep.type[e] = MSTType.follow_up
