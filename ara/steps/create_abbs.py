@@ -32,7 +32,7 @@ class CreateABBs(Step):
         bb2abb = defaultdict(lambda: cfg.add_vertex())
         new_abbs = set()
 
-        self._log.warn(f"Handle {entry_label}")
+        self._log.debug(f"Handle {entry_label}")
 
         # store all BBs in a list to prevent changing of the graph while
         # iterating it at the same time
