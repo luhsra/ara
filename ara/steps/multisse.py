@@ -13,6 +13,7 @@ import graph_tool
 import dataclasses
 
 from itertools import product, chain
+from functools import reduce
 from dataclasses import dataclass
 
 # time counter for performance measures
@@ -153,6 +154,11 @@ class MultiSSE(Step):
             metastate = self._run_sse(mstg, state)
             metastate.cpu_id = cpu.id
 
+            # add m2sy edge
+            e = mstg.g.add_edge(cp, metastate.state)
+            mstg.g.ep.type[e] = MSTType.m2sy
+            mstg.g.ep.cpu_id[e] = metastate.cpu_id
+
             # add st2sy edge
             e = mstg.g.add_edge(cp, metastate.entry)
             mstg.g.ep.type[e] = MSTType.st2sy
@@ -206,14 +212,19 @@ class MultiSSE(Step):
         cp = mstg.g.add_vertex()
         mstg.g.vp.type[cp] = StateType.entry_sync
 
-        e = mstg.g.add_edge(old_cp, cp)
-        mstg.g.ep.type[e] = MSTType.sy2sy
+        syncs = mstg.g.edge_type(MSTType.sync_neighbor)
+        for old_cross in chain([old_cp],
+                               list(syncs.vertex(old_cp).all_neighbors())):
+            e = mstg.g.add_edge(old_cross, cp)
+            mstg.g.ep.type[e] = MSTType.sy2sy
 
         for src in chain([cross_state], timed_states):
             e = mstg.g.add_edge(src, cp)
             mstg.g.ep.type[e] = MSTType.st2sy
             metastate = mstg.g.get_metastate(src)
             mstg.g.ep.cpu_id[e] = mstg.g.vp.cpu_id[metastate]
+            m2sy_edge = mstg.g.add_edge(metastate, cp)
+            mstg.g.ep.type[m2sy_edge] = MSTType.m2sy
 
         return cp
 
@@ -226,9 +237,10 @@ class MultiSSE(Step):
         old_ctx = None
         for v in cp.in_neighbors():
             obj = mstg.g.vp.state[v]
-            if mstg.g.vp.type[v] == StateType.exit_sync:
+            ty = mstg.g.vp.type[v]
+            if ty == StateType.exit_sync:
                 old_ctx = obj
-            else:
+            elif ty == StateType.state:
                 states.append(obj)
 
         def _get_cross_cpu_id():
@@ -270,6 +282,42 @@ class MultiSSE(Step):
 
         return ret
 
+    def _double_evaluated_state(self, mstg, old_cp, states):
+        """Check for already evaluated states and handles them.
+
+        Return true, if the state is already evaluated.
+        """
+        mstg_g = mstg.g
+        if any([x.is_new for x in states]):
+            # at least one node is new
+            return False
+
+        # check, if the states have another common crosspoint then the current
+        # one
+        m2sy = mstg_g.edge_type(MSTType.m2sy)
+        cps_lists = [set(m2sy.vertex(x.state).in_neighbors())
+                     for x in states]
+        cps = reduce(lambda a, b: a & b, cps_lists) - {old_cp}
+        if not cps:
+            # no other common cross point found
+            return False
+
+        # transfer sy2sy edges from already evaluated cross point and mark as
+        # neighbor
+        for cp in cps:
+            # mark as neighbor
+            e = mstg_g.add_edge(old_cp, mstg_g.vertex(cp))
+            mstg_g.ep.type[e] = MSTType.sync_neighbor
+
+            # sync edges
+            sy2sy = mstg_g.edge_type(MSTType.sy2sy)
+            for e in list(sy2sy.vertex(cp).out_neighbors()):
+                new_e = mstg_g.add_edge(mstg_g.vertex(old_cp),
+                                        mstg_g.vertex(e))
+                mstg_g.ep.type[new_e] = MSTType.sy2sy
+
+        return True
+
     def run(self):
         entry_label = self.entry_point.get()
         if not entry_label:
@@ -306,9 +354,10 @@ class MultiSSE(Step):
                 f"Stack with {len(stack)} state(s)"
             )
             old_cp, states = stack.pop(0)
-            self._log.warn([x.is_new for x in states])
-            if not any([x.is_new for x in states]):
+
+            if self._double_evaluated_state(mstg, old_cp, states):
                 continue
+
             for cross_state in self._find_cross_state(mstg, states):
                 for timed_states in self._find_timed_states(mstg, cross_state, states):
                     # create new cross point

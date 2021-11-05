@@ -140,16 +140,20 @@ class StateType(enum.IntEnum): # */
 # s2s = state to state (normal SSE transition)
 # sy2sy = sync to sync
 # follow_up = edge between two follow up sync states
+# m2sy = edge between a metastate and a sync states
+# sync_neighbor = mark two sync states that has an equal outcome
 class MSTType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class MSTType {
     pass
 
-    m2s = 1,
-    st2sy = 2,
-    s2s = 4,
-    sy2sy = 8,
-    follow_up = 16,
+    m2s = 1 << 0,
+    st2sy = 1 << 1,
+    s2s = 1 << 2,
+    sy2sy = 1 << 3,
+    follow_up = 1 << 4,
+    m2sy = 1 << 5,
+    sync_neighbor = 1 << 6,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(MSTType)}
