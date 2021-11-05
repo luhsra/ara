@@ -15,6 +15,7 @@ import dataclasses
 from itertools import product, chain
 from functools import reduce
 from dataclasses import dataclass
+from graph_tool.topology import label_out_component
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -184,32 +185,45 @@ class MultiSSE(Step):
 
         return cp, metastates
 
-    def _find_cross_state(self, mstg, states):
+    def _find_cross_state(self, mstg, states, src_cp):
+        """Return all syscalls that possibly affect other cores."""
         filt_mstg = graph_tool.GraphView(
             mstg.g,
             vfilt=((mstg.g.vp.type.fa == StateType.metastate) +
                    (mstg.type_map.fa == ExecType.cross_syscall))
         )
+        s2s = graph_tool.GraphView(mstg.g, mstg.g.vp.type.fa == StateType.state)
+
         for state in states:
-            for cross_point in filt_mstg.vertex(state.state).out_neighbors():
+            oc = label_out_component(s2s, s2s.vertex(state.entry))
+            oc[state.state] = True
+            filt = graph_tool.GraphView(filt_mstg, vfilt=oc)
+
+            for cross_point in list(filt.vertex(state.state).out_neighbors()):
                 yield mstg.g.vertex(cross_point)
 
     def _find_timed_states(self, mstg, cross_state, states):
+        """Return all states with a time that are possibly affected by other
+        cores.
+        """
         affected_cores = mstg.cross_core_map[cross_state]
-        metastates = [s.state for s in states
-                      if mstg.g.vp.cpu_id[s.state] in affected_cores]
+        affected_states = [s for s in states
+                           if mstg.g.vp.cpu_id[s.state] in affected_cores]
 
         filt_mstg = graph_tool.GraphView(
             mstg.g,
             vfilt=((mstg.g.vp.type.fa == StateType.metastate) +
                    (mstg.type_map.fa == ExecType.has_length))
         )
+        s2s = graph_tool.GraphView(mstg.g, mstg.g.vp.type.fa == StateType.state)
 
-        def to_iter(metastate):
-            return filt_mstg.vertex(metastate).out_neighbors()
+        def to_iter(state):
+            oc = label_out_component(s2s, s2s.vertex(state.entry))
+            oc[state.state] = True
+            filt = graph_tool.GraphView(filt_mstg, vfilt=oc)
+            return list(filt.vertex(state.state).out_neighbors())
 
-        for t_states in product(*[to_iter(x) for x in metastates]):
-            yield t_states
+        return product(*[to_iter(x) for x in affected_states])
 
     def _create_cross_point(self, mstg, cross_state, timed_states, old_cp):
         cp = mstg.g.add_vertex()
@@ -307,6 +321,14 @@ class MultiSSE(Step):
             # no other common cross point found
             return False
 
+        # check, if the states (not the metastates) are the same
+        st2sy = mstg_g.edge_type(MSTType.st2sy)
+        entries = set([x.entry for x in states])
+        for cp in cps:
+            for n in st2sy.vertex(cp).out_neighbors():
+                if n not in entries:
+                    return False
+
         # transfer sy2sy edges from already evaluated cross point and mark as
         # neighbor
         for cp in cps:
@@ -322,6 +344,21 @@ class MultiSSE(Step):
                 mstg_g.ep.type[new_e] = MSTType.sy2sy
 
         return True
+
+    def _is_existing_crosspoint(self, mstg, cross_state, timed_states, src_cp):
+        st2sy = mstg.g.edge_type(MSTType.st2sy)
+        for vertex in st2sy.vertex(cross_state).out_neighbors():
+            is_equal = True
+
+            for t_test in vertex.in_neighbors():
+                if t_test != cross_state and t_test not in timed_states:
+                    is_equal = False
+                    break
+            if is_equal:
+                e = mstg.g.add_edge(src_cp, vertex)
+                mstg.g.ep.type[e] = MSTType.sy2sy
+                return True
+        return False
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -363,8 +400,10 @@ class MultiSSE(Step):
             if self._double_evaluated_state(mstg, old_cp, states):
                 continue
 
-            for cross_state in self._find_cross_state(mstg, states):
+            for cross_state in self._find_cross_state(mstg, states, old_cp):
                 for timed_states in self._find_timed_states(mstg, cross_state, states):
+                    if self._is_existing_crosspoint(mstg, cross_state, timed_states, old_cp):
+                        continue
                     # create new cross point
                     cp = self._create_cross_point(mstg, cross_state, timed_states, old_cp)
                     follow_up_states = self._evaluate_crosspoint(mstg, cp)
