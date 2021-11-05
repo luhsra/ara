@@ -68,12 +68,9 @@ class MultiSSE(Step):
         init_h = hash(init_state)
         if init_h in self.state_map:
             init_v = self.state_map[init_h]
-            m2s = graph_tool.GraphView(
-                mstg.g,
-                efilt=(mstg.g.ep.type.fa == MSTType.m2s)
-            )
-            state_vert = single_check(m2s.vertex(init_v).in_neighbors())
-            return Metastate(state=state_vert, entry=init_v, is_new=False)
+            metastate = mstg.g.get_metastate(init_v)
+
+            return Metastate(state=metastate, entry=init_v, is_new=False)
 
         cpu_id = single_check(iter(init_state.cpus.ids()))
         # create the metastate
@@ -212,18 +209,11 @@ class MultiSSE(Step):
         e = mstg.g.add_edge(old_cp, cp)
         mstg.g.ep.type[e] = MSTType.sy2sy
 
-        filt_mstg = graph_tool.GraphView(
-            mstg.g,
-            efilt=(mstg.g.ep.type.fa == MSTType.m2s)
-        )
-
-        def _cpu_id(state):
-            return filt_mstg.vp.cpu_id[single_check(filt_mstg.vertex(state).in_neighbors())]
-
         for src in chain([cross_state], timed_states):
             e = mstg.g.add_edge(src, cp)
             mstg.g.ep.type[e] = MSTType.st2sy
-            mstg.g.ep.cpu_id[e] = _cpu_id(src)
+            metastate = mstg.g.get_metastate(src)
+            mstg.g.ep.cpu_id[e] = mstg.g.vp.cpu_id[metastate]
 
         return cp
 

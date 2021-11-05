@@ -109,7 +109,7 @@ def mstg_to_dot(mstg, label="MSTG"):
 
     for metastate in mstg.get_metastates().vertices():
         metastate = mstg.vertex(metastate)
-        filg = GraphView(mstg, efilt=mstg.ep.type.fa == MSTType.m2s)
+        filg = mstg.edge_type(MSTType.m2s)
         cpu_id = mstg.vp.cpu_id[metastate]
 
         dot_m = pydot.Cluster(_to_str(metastate),

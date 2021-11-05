@@ -5,7 +5,7 @@ import graph_tool.util
 from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData
-from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType
+from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 
 from collections.abc import Iterator
 
@@ -319,6 +319,18 @@ class MSTGraph(graph_tool.Graph):
         if exit:
             return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.exit_sync)
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.entry_sync)
+
+    def edge_type(self, msttype):
+        """Return a GraphView with this special edge type filter."""
+        return graph_tool.GraphView(
+            self,
+            efilt=(self.ep.type.fa == msttype)
+        )
+
+    def get_metastate(self, state):
+        """Return the metastate that belongs to a state."""
+        m2s = self.edge_type(MSTType.m2s)
+        return self.vertex(single_check(m2s.vertex(state).in_neighbors()))
 
 
 class InstanceGraph(graph_tool.Graph):
