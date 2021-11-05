@@ -1,5 +1,6 @@
 """Container for Dummy."""
 from ara.os.autosar import Spinlock
+from ara.graph import MSTType
 from .step import Step
 
 
@@ -20,7 +21,8 @@ class LockElision(Step):
         mstg = self._graph.mstg
         lock_count = {}
         for ms in mstg.get_metastates().vertices():
-            for state_vert in mstg.vertex(ms).out_neighbors():
+            m2s_g = mstg.edge_type(MSTType.m2s)
+            for state_vert in m2s_g.vertex(ms).out_neighbors():
                 state = mstg.vp.state[state_vert]
                 for lock_type, get_name, get_status in LockElision.LOCKS:
                     for inst, obj in state.instances.get(lock_type):
