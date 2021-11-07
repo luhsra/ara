@@ -224,10 +224,9 @@ class StepManager:
         self._execute_steps_with_deps(self._step_history)
         self.finish_execution(program_config)
 
+    # @Step
     def init_execution(self, program_config, extra_config, esteps: List[str]):
-        """Initialises the execution.
-
-        """
+        """Initialises the execution."""
         self._apply_logger_config(extra_config)
 
         # get a list of steps, either from extra_config or esteps
@@ -263,9 +262,9 @@ class StepManager:
         self._execute_chain = [self._make_step_entry(step, explicit=True)
                                for step in reversed(steps)]
         self._config = config
-        # ToDo Signal Finished init Execution
 
-    def finish_execution(self,program_config):
+    # @Slot
+    def finish_execution(self, program_config):
         """Finishes the execution.
 
         """
@@ -279,7 +278,6 @@ class StepManager:
         if self._runtime_stats:
             self._emit_runtime_stats(self._step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)
-        # ToDo Signal Finished finish Execution
 
     # @Slot
     def step(self):
@@ -337,4 +335,3 @@ class StepManager:
             self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
 
         self._execute_chain.pop()
-        # ToDo: Signal for step finished

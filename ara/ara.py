@@ -80,14 +80,12 @@ def main(araWorker = None):
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
 
-
     if args.visualization:
         from PySide6.QtCore import QThread
 
         araWorker.sigInitGraph.emit(g)
 
         while not araWorker.isReady():
-            print("Waiting")
             QThread.sleep(5)
 
 
@@ -136,8 +134,6 @@ def main(araWorker = None):
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
                                            for se in s_manager.get_history()]))
 
-    if args.visualization:
-        araWorker.sigDataUpdated.emit()
 
 if __name__ == '__main__':
     main()
