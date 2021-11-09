@@ -221,8 +221,7 @@ class _SSERunner:
         if self._max_call_depth < call_depth:
             self._max_call_depth = call_depth
 
-        # idle state
-        if abb is None:
+        if cpu.exec_state in [ExecState.waiting, ExecState.idle]:
             # Trigger all interrupts. We are _not_ deciding over interarrival
             # times here. This should be done by the operation system model.
             self._log.debug("Handle idle. Trigger all interrupts.")
@@ -234,8 +233,7 @@ class _SSERunner:
                         new_states.append(new_state)
             return new_states
 
-        # syscall handling
-        if self._cfg.vp.type[abb] == ABBType.syscall:
+        elif cpu.exec_state == ExecState.syscall:
             name = self._cfg.vp.name[abb]
             syscall_name = self._cfg.get_syscall_name(abb)
             self._log.debug(f"Handle syscall: {name} ({syscall_name})")
@@ -251,8 +249,7 @@ class _SSERunner:
                 # end analysis on this path
                 return []
 
-        # call handling
-        elif self._icfg.vp.type[abb] == ABBType.call:
+        elif cpu.exec_state == ExecState.call:
             func = self._cfg.vp.name[self._cfg.get_function(abb)]
             self._log.debug(f"Handle call: {self._icfg.vp.name[abb]} in {func}")
             handled = False
