@@ -1,5 +1,6 @@
 """Container for Dummy."""
 from ara.os.autosar import Spinlock
+from ara.os.os_base import ExecState
 from ara.graph import MSTType
 from .step import Step
 
@@ -29,8 +30,14 @@ class LockElision(Step):
                         name = get_name(obj)
                         if name not in lock_count:
                             lock_count[name] = 0
-                        if obj in state.context and get_status(state.context[obj]):
-                            lock_count[get_name(obj)] += 1
+                        if any([x.exec_state == ExecState.waiting for x in state.cpus]):
+                            # the state is somehow waiting, check the global context
+                            # why, find the predecessor cross point for that
+                            m2sy = mstg.edge_type(MSTType.m2sy)
+                            for sync_point in m2sy.vertex(ms).in_neighbors():
+                                ctx = m2sy.vp.state[sync_point]
+                                if ctx and obj in ctx and get_status(ctx[obj]):
+                                    lock_count[get_name(obj)] += 1
 
         for lock, amount in lock_count.items():
             self._log.warn(f"Lock {lock} spins {amount} times")
