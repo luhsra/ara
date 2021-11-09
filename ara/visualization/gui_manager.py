@@ -24,6 +24,7 @@ from .graph_scene import *
 from .gui_window import GuiWindow
 from .layouter import Layouter
 
+
 class Controller(QObject):
 
     sig_start_gui = Signal()

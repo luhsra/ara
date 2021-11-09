@@ -21,6 +21,8 @@ from matplotlib.cbook import contiguous_regions
 import ara.ara as _ara
 from .graph_scene import *
 from .layouter import Layouter
+from .util import GraphTypes
+from .widgets.buttons import SelectionButton
 
 
 def get_colour(colour):
@@ -36,6 +38,8 @@ def get_colour(colour):
         return QColorConstants.Green
     elif colour == "red":
         return QColorConstants.Red
+    elif colour == "black":
+        return QColorConstants.Black
     else:
         rs = "0x" + colour[1:3]
         gs = "0x" + colour[3:5]
@@ -44,6 +48,7 @@ def get_colour(colour):
         g = int(gs, base=16)
         b = int(bs, base=16)
         return QColor.fromRgb(r, g, b)
+
 
 
 class GuiWindow(QWidget):
@@ -78,23 +83,27 @@ class GuiWindow(QWidget):
         self.w_buttons = None
         self.w_center = None
         self.w_right = None
+        self.w_graph_selection = None
 
         self.l_buttons = None
         self.l_window = None
         self.l_center = None
         self.l_right = None
+        self.l_graph_selection = None
 
-    def parseJson(self, jsonStr):
+        self.v_graph_type = GraphTypes.ABB
+
+    def parse_json(self, jsonStr):
         # Debug Purpose
-        if jsonStr is None:
-            path = "cfg.json0"
-            file = QFile(path)
-            if not file.open(QIODevice.ReadOnly | QIODevice.Text):
-                print("Could not open File")
-                return
-
-            jsonStr = file.readAll()
-            file.close()
+        #if jsonStr is None:
+        #    path = "cfg.json0"
+        #    file = QFile(path)
+        #    if not file.open(QIODevice.ReadOnly | QIODevice.Text):
+        #        print("Could not open File")
+        #        return
+#
+        #    jsonStr = file.readAll()
+        #    file.close()
 
         jsonDocument = QJsonDocument.fromJson(jsonStr)
 
@@ -184,10 +193,14 @@ class GuiWindow(QWidget):
 
             pos.append({"x": edges[0], "y": edges[1]})
 
+            colour = QColorConstants.Black
+            if e.__contains__("color"):
+                colour = get_colour(e["color"])
+
             edge = DEdge(
                 pos,
                 label,
-                get_colour(e["color"]),
+                colour,
                 "solid",
                 e["_gvid"],
                 e["tail"],
@@ -227,11 +240,13 @@ class GuiWindow(QWidget):
         self.w_center = QWidget()
         self.w_buttons = QWidget()
         self.w_right = QWidget()
+        self.w_graph_selection = QWidget()
 
         # Layout Setup
         self.l_center = QVBoxLayout(self.w_center)
         self.l_buttons = QHBoxLayout(self.w_buttons)
         self.l_right = QVBoxLayout(self.w_right)
+        self.l_graph_selection = QHBoxLayout(self.w_graph_selection)
 
         # Graph View
         self.graph_scene = GraphScene()
@@ -250,8 +265,14 @@ class GuiWindow(QWidget):
         self.l_buttons.addWidget(self.b_step)
 
         # Center setup
+        self.l_center.addWidget(self.w_graph_selection)
         self.l_center.addWidget(self.graph_view)
         self.l_center.addWidget(self.w_buttons)
+
+        for e in GraphTypes:
+            button = SelectionButton(e.value, e)
+            button.sig_clicked.connect(self.set_graph_type)
+            self.l_graph_selection.addWidget(button)
 
         # Window Setup
         self.l_window.addWidget(self.w_right)
@@ -268,8 +289,8 @@ class GuiWindow(QWidget):
         if not steps_available:
             self.b_step.setDisabled(True)
 
-        jsonStr = self.layouter.layout("abbs", self.app)
-        self.parseJson(jsonStr)
+        jsonStr = self.layouter.layout(self.v_graph_type, self.app)
+        self.parse_json(jsonStr)
         self.graph_scene.updateScene()
         self.graph_scene.update()
         self.graph_view.update()
@@ -291,3 +312,8 @@ class GuiWindow(QWidget):
     @Slot(graph_tool.Graph, name="init_graph")
     def init_graph(self, g):
         self.layouter.set_graph(g)
+
+    @Slot(GraphTypes)
+    def set_graph_type(self, s):
+        self.v_graph_type = s
+        self.update(True)

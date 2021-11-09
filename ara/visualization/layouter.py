@@ -13,6 +13,8 @@ import os.path
 
 from PySide6 import QtCore
 
+from ara.visualization.util import GraphTypes
+
 
 class Layouter:
     """Print graphs to dot."""
@@ -411,21 +413,21 @@ class Layouter:
         self._write_dot(dot_graph)
 
     def layout(self, subgraph, processParent: QtCore.QObject):
-        if not self.subgraphs.__contains__(subgraph):
+        if not GraphTypes.__contains__(subgraph):
             print(f"The subgraph { subgraph } does not exist")
             return
 
-        if subgraph == 'abbs':
+        if subgraph == GraphTypes.ABB:
             self.print_abbs()
-        if subgraph == 'instances':
+        if subgraph == GraphTypes.INSTANCE:
             self.print_instances()
-        if subgraph == 'sstg_full':
+        if subgraph == GraphTypes.SSTG_FULL:
             self.print_sstg_full()
-        if subgraph == 'sstg_simple':
+        if subgraph == GraphTypes.SSTG_SIMPLE:
             self.print_sstg_simple()
-        if subgraph == 'multistates':
+        if subgraph == GraphTypes.MULTISTATES:
             self.print_multistates()
-        if subgraph == 'callgraph':
+        if subgraph == GraphTypes.CALLGRAPH:
             self.print_callgraph()
 
 
