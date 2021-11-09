@@ -40,13 +40,18 @@ class ARAManager(QObject):
         Should be run in its own thread.
     """
 
-    sigSetupDone = Signal(name="sigSetupDone")
+    sig_setup_done = Signal(name="sigSetupDone")
 
-    sigGraph = Signal(graph_tool.Graph, name="sigGraph")
+    sig_execute_chain = Signal(list)
+    sig_graph = Signal(graph_tool.Graph, name="sigGraph")
 
-    sigInitDone = Signal()
-    sigStepDone = Signal(bool) # the bool indicates if there are more steps
-    sigFinishDone = Signal()
+    sig_init_done = Signal()
+    sig_step_done = Signal(bool) # the bool indicates if there are more steps
+    sig_finish_done = Signal()
+
+    sig_step_dependencies_discovered = Signal()
+
+
 
     def __init__(self):
         super().__init__(None)
@@ -120,7 +125,7 @@ class ARAManager(QObject):
         logger = init_logging(level=self.args.log_level, root_name='ara', werr=self.args.Werr)
 
         g = Graph()
-        self.sigGraph.emit(g)
+        self.sig_graph.emit(g)
         self.s_manager = StepManager(g)
         avail_steps = self.s_manager.get_steps()
 
@@ -159,10 +164,9 @@ class ARAManager(QObject):
         if self.args.step is None and not self.extra_settings.get("steps", None):
             self.args.step = ['SIA']
 
-        print("Emit")
-        #self.init_execution(vars(self.args), self.extra_settings, self.args.step)
-
-        self.sigInitDone.emit()
+        self.init_execution(vars(self.args), self.extra_settings, self.args.step)
+        self.sig_init_done.emit()
+        self.sig_execute_chain.emit(self.s_manager.get_execution_chain())
 
     # @Slot()
     def init_execution(self, program_config, extra_config, esteps: List[str]):
@@ -171,19 +175,21 @@ class ARAManager(QObject):
     @Slot()
     def execute(self):
         self.s_manager.execute(vars(self.args), self.extra_settings, self.args.step)
-        self.sigStepDone.emit(False)
+        self.sig_step_done.emit(False)
+
 
     @Slot()
     def finish_execution(self, program_config):
         self.s_manager.finish_execution(program_config)
-        self.sigFinishDone.emit()
+        self.sig_finish_done.emit()
 
     @Slot()
     def step(self):
-        print("Step")
-        self.s_manager.step()
-        self.sigStepDone.emit(False)
-        self.sigStepDone.emit(len(self.s_manager.get_steps()) > 0)
+        if self.s_manager.step() == 0:
+            self.sig_step_done.emit(len(self.s_manager.get_steps()) > 0)
+        else:
+            self.sig_step_dependencies_discovered.emit()
+        self.sig_execute_chain.emit(self.s_manager.get_execution_chain())
 
     @Slot()
     def finish(self):

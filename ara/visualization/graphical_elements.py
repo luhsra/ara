@@ -25,3 +25,7 @@ class EdgeLayer(QGraphicsRectItem):
 
     def add_edge(self, edge):
         self._edges.append(edge)
+
+    def clear(self):
+        self._edges.clear()
+        self._paths.clear()

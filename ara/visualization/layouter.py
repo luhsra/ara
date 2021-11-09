@@ -439,10 +439,8 @@ class Layouter:
 
         processDot.startCommand(commandDot)
         processDot.waitForFinished()
-        print("Dot Finished")
 
         processTr.startCommand(commandTr)
         processTr.waitForFinished()
-        print("tr finished")
 
         return processTr.readAllStandardOutput()

@@ -82,8 +82,14 @@ class GraphScene(QGraphicsScene):
         self.addItem(self._edgeLayer)
         self._edgeLayer.show()
 
-
     def updateScene(self):
+        self._edgeLayer.clear()
+
+        for child in self.items():
+            if child == self._edgeLayer:
+                continue
+            self.removeItem(child)
+
         for f in self._func.values():
             item = QGraphicsRectItem(QRectF(f.pos["x"], f.pos["y"], f.width, f.height))
             self._graphicsObjects.append(item)
@@ -151,6 +157,10 @@ class GraphScene(QGraphicsScene):
 
             self._edgeLayer.add_edge(e)
             self._edgeLayer.add_path(path)
+
+        self._func.clear()
+        self._nodes.clear()
+        self._edges.clear()
 
 
 

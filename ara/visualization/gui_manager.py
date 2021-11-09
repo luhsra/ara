@@ -26,8 +26,8 @@ from .layouter import Layouter
 
 class Controller(QObject):
 
-    sigStartGui = Signal()
-    sigStartAra = Signal()
+    sig_start_gui = Signal()
+    sig_start_ara = Signal()
 
     def __init__(self, application:QApplication, *args, **kwargs):
         super().__init__(application, *args, **kwargs)
@@ -41,22 +41,27 @@ class Controller(QObject):
         self.gui_window = GuiWindow(None, application=application)
 
         # Start Signals
-        self.sigStartGui.connect(self.gui_window.init)
-        self.sigStartAra.connect(self.ara_manager.init)
+        self.sig_start_gui.connect(self.gui_window.init)
+        self.sig_start_ara.connect(self.ara_manager.init)
 
         # Gui Signals
         self.gui_window.b_start.clicked.connect(self.ara_manager.init)
-        self.gui_window.b_step.clicked.connect(self.ara_manager.execute)
+        self.gui_window.b_start.clicked.connect(self.gui_window.disable_start_button)
+        #self.gui_window.b_step.clicked.connect(self.ara_manager.execute)
+        self.gui_window.b_step.clicked.connect(self.ara_manager.step)
+        self.gui_window.b_step.clicked.connect(self.gui_window.disable_step_button)
 
         # Ara Signals
-        self.ara_manager.sigInitDone.connect(self.gui_window.enable_step_button)
-        self.ara_manager.sigInitDone.connect(self.gui_window.disable_start_button)
+        self.ara_manager.sig_init_done.connect(self.gui_window.enable_step_button)
+        #self.ara_manager.sig_init_done.connect(self.gui_window.disable_start_button)
 
-        self.ara_manager.sigGraph.connect(self.gui_window.init_graph)
+        self.ara_manager.sig_graph.connect(self.gui_window.init_graph)
+        self.ara_manager.sig_step_dependencies_discovered.connect(self.ara_manager.step)
 
-        self.ara_manager.sigStepDone.connect(self.gui_window.update)
-        self.ara_manager.sigStepDone.connect(self.gui_window.disable_step_button)
+        self.ara_manager.sig_step_done.connect(self.gui_window.update)
+        self.ara_manager.sig_step_done.connect(self.gui_window.switch_step_button)
 
+        self.ara_manager.sig_execute_chain.connect(self.gui_window.update_right)
         #self.guiWorker.sigFinshed.connect(self.araWorker.setReady)
 
         self.araThread.start()
@@ -72,6 +77,6 @@ application = QApplication([])
 
 controller = Controller(application)
 
-controller.sigStartGui.emit()
+controller.sig_start_gui.emit()
 
 application.exec()

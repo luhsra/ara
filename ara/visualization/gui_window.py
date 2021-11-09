@@ -69,15 +69,20 @@ class GuiWindow(QWidget):
         self._nodes = {}
         self._edges = {}
 
-        self.graphScene = None
-        self.graphView = None
+        self.graph_scene = None
+        self.graph_view = None
 
         self.b_start = QPushButton("Initialize Ara")
         self.b_step = QPushButton("Next Step")
-        self.l_window = None
 
         self.w_buttons = None
+        self.w_center = None
+        self.w_right = None
+
         self.l_buttons = None
+        self.l_window = None
+        self.l_center = None
+        self.l_right = None
 
     def parseJson(self, jsonStr):
         # Debug Purpose
@@ -123,7 +128,7 @@ class GuiWindow(QWidget):
                     "box",
                     Lpos
                 )
-                self.graphScene.add_func(func)
+                self.graph_scene.add_func(func)
             else:
                 pos = o["pos"].split(",")
                 x = float(pos[0]) - 0.5 * float(
@@ -153,7 +158,7 @@ class GuiWindow(QWidget):
                     o["shape"],
                     Lpos
                 )
-                self.graphScene.add_node(node)
+                self.graph_scene.add_node(node)
 
         for e in jsonDocument.object().get("edges"):
 
@@ -189,7 +194,7 @@ class GuiWindow(QWidget):
                 e["head"],
                 labelPos
             )
-            self.graphScene.add_edge(edge)
+            self.graph_scene.add_edge(edge)
 
     @Slot()
     def enable_start_button(self):
@@ -207,30 +212,57 @@ class GuiWindow(QWidget):
     def disable_step_button(self):
         self.b_step.setDisabled(True)
 
+    @Slot(bool)
+    def switch_step_button(self, b):
+        if b:
+            self.b_step.setEnabled(True)
+        else:
+            self.b_step.setDisabled(True)
 
     @Slot()
     def init(self):
-        self.l_window = QVBoxLayout(self)
-        self.w_buttons = QWidget()
-        self.l_buttons = QHBoxLayout(self.w_buttons)
+        self.l_window = QHBoxLayout(self)
 
-        self.graphScene = GraphScene()
-        self.graphView = QGraphicsView(self.graphScene)
-        self.graphView.setRenderHint(QPainter.Antialiasing)
+        # Widget Setup
+        self.w_center = QWidget()
+        self.w_buttons = QWidget()
+        self.w_right = QWidget()
+
+        # Layout Setup
+        self.l_center = QVBoxLayout(self.w_center)
+        self.l_buttons = QHBoxLayout(self.w_buttons)
+        self.l_right = QVBoxLayout(self.w_right)
+
+        # Graph View
+        self.graph_scene = GraphScene()
+        self.graph_view = QGraphicsView(self.graph_scene)
+        self.graph_view.setRenderHint(QPainter.Antialiasing)
 
         self.b_step.setDisabled(True)
 
-        self.l_window.addWidget(self.graphView)
-        self.l_window.addWidget(self.w_buttons)
+        # Right Setup
+        self.l_right.setAlignment(Qt.AlignTop)
+        self.w_right.setMinimumSize(200, 500)
+        self.w_right.setMaximumSize(200, 1000)
 
+        # Button Setup
         self.l_buttons.addWidget(self.b_start)
         self.l_buttons.addWidget(self.b_step)
+
+        # Center setup
+        self.l_center.addWidget(self.graph_view)
+        self.l_center.addWidget(self.w_buttons)
+
+        # Window Setup
+        self.l_window.addWidget(self.w_right)
+        self.l_window.addWidget(self.w_center)
 
         self.resize(1200, 800)
         self.show()
 
-    @Slot(bool, name="update")
+    @Slot(bool)
     def update(self, steps_available):
+        self.children().clear()
         print("update")
 
         if not steps_available:
@@ -238,10 +270,23 @@ class GuiWindow(QWidget):
 
         jsonStr = self.layouter.layout("abbs", self.app)
         self.parseJson(jsonStr)
-        self.graphScene.updateScene()
-        self.graphScene.update()
-        self.graphView.update()
+        self.graph_scene.updateScene()
+        self.graph_scene.update()
+        self.graph_view.update()
         self.sigFinshed.emit()
+
+    @Slot(list)
+    def update_right(self, l:list):
+
+        while self.l_right.count():
+            widget = self.l_right.itemAt(0).widget()
+            self.l_right.removeWidget(widget)
+            widget.deleteLater()
+
+        for item in l[::-1]:
+            label = QLabel()
+            label.setText(item.name)
+            self.l_right.addWidget(label)
 
     @Slot(graph_tool.Graph, name="init_graph")
     def init_graph(self, g):

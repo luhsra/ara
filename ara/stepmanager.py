@@ -210,6 +210,12 @@ class StepManager:
             return self._execute_chain[-1].uuid
         return None
 
+    def get_execution_chain(self):
+        """Returns the Execution Chain"""
+        if self._execute_chain:
+            return self._execute_chain
+        return []
+
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
 
@@ -307,7 +313,8 @@ class StepManager:
             self._log.debug(f"Step has dependencies: {dependencies}")
             dependency = dependencies[0]
             self._execute_chain.append(self._make_step_entry(dependency))
-            return # previously continue, ToDo: Signal for dependencies discovery
+            print("Return Dependencies")
+            return 1 # previously continue,
 
         d_hist = self._make_history_dict(self._step_history)
         if current.explicit or current.step.is_necessary_anymore(d_hist):
@@ -335,3 +342,5 @@ class StepManager:
             self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
 
         self._execute_chain.pop()
+        print("Return normal")
+        return 0
