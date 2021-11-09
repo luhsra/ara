@@ -854,9 +854,10 @@ class AUTOSAR(OSBase):
         if lock_ctx.is_spinning:
             # active wait in this state
             lock_ctx.wait_for.append(cpu_id)
-            state.cpu[cpu_id].exec_state = ExecState.waiting
+            state.cpus[cpu_id].exec_state = ExecState.waiting
         else:
-            # just go the the next block
+            # just go the the next block but set the lock
+            lock_ctx.is_spinning = True
             set_next_abb(state, cpu_id)
         return state
 
@@ -874,6 +875,10 @@ class AUTOSAR(OSBase):
         lock_ctx.wait_for = []
         lock_ctx.is_spinning = False
 
+        # the current CPU just follows the control flow
+        set_next_abb(state, cpu_id)
+
+        # wakeup one other CPUs, if they are waiting
         new_states = []
         if len(wait_for) > 0:
             # create a new state for every cpu to wakeup
@@ -882,8 +887,7 @@ class AUTOSAR(OSBase):
                 set_next_abb(new_state, wait_cpu)
                 new_states.append(new_state)
         else:
-            set_next_abb(state, cpu_id)
-            new_states.append(state)
+            return state
 
         return new_states
 
