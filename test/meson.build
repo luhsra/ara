@@ -67,7 +67,9 @@ if get_option('enable_step_tests')
 
     foreach elem : [[autosar_multicore_locks_a, files('locks_a.json')],
                     [autosar_multicore_locks_b, files('locks_b.json')],
-                    [autosar_multicore_locks_c, files('locks_c.json')]]
+                    [autosar_multicore_locks_c, files('locks_c.json')],
+                    [autosar_multicore_locks_d, files('locks_d.json')],
+                    [autosar_multicore_locks_e, files('locks_e.json')]]
         test('lock_elision_' + elem[0][2],
             py3_inst,
             args: [files('lock_elision.py'), elem[1], elem[0][0], elem[0][1]],

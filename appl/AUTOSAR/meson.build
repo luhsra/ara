@@ -84,6 +84,8 @@ autosar_apps = [
   ['multicore' / 'locks',               ['a', 'system.json']],
   ['multicore' / 'locks',               ['b', 'system.json']],
   ['multicore' / 'locks',               ['c', 'system.json']],
+  ['multicore' / 'locks',               ['d', 'system.json']],
+  ['multicore' / 'locks',               ['e', 'system.json']],
 ]
 
 autosar_targets = []
