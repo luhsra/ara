@@ -3,7 +3,7 @@ import typing
 import dataclasses
 import pyllco
 
-from typing import Tuple
+from typing import Tuple, Set
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
@@ -135,7 +135,7 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, has_time, signature, custom_control_flow):
+    def __init__(self, func_body, categories, has_time, signature, custom_control_flow, aliases):
         # visible attributes
         self.syscall = True
         self.categories = categories
@@ -143,6 +143,7 @@ class SysCall:
         self._func = func_body
         self._signature = signature
         self._ccf = custom_control_flow
+        self.aliases = aliases
 
     def __get__(self, obj, objtype=None):
         """Simulate bound descriptor access. However a systemcall acts like a
@@ -233,7 +234,8 @@ def syscall(*args,
             categories: Tuple[_SyscallCategory] = None,
             signature: Tuple[Argument] = None,
             has_time: bool = False,
-            custom_control_flow: bool = False):
+            custom_control_flow: bool = False,
+            aliases: Set[str] = None):
     """System call decorator. Changes a function into a system call.
 
     Returns a Syscall object. See it's documentation for more information.
@@ -243,26 +245,30 @@ def syscall(*args,
     signature           -- Specification of all system call arguments
     has_time            -- The syscall handling needs time (e.g. taking a spinlock)
     custom_control_flow -- Does this system call alter the control flow?
+    aliases             -- Alias names of the syscall
     """
     if categories is None:
         categories = {_SyscallCategory.undefined}
     if signature is None:
         signature = []
+    if aliases is None:
+        aliases = []
 
     outer_categories = categories
     outer_signature = signature
     outer_has_time = has_time
     outer_ccf = custom_control_flow
+    outer_aliases = aliases
 
     def wrap(func, categories=outer_categories, signature=outer_signature,
-             has_time=outer_has_time, custom_control_flow=outer_ccf):
-        wrapper = SysCall(func, categories, has_time, signature, custom_control_flow)
+             has_time=outer_has_time, custom_control_flow=outer_ccf, aliases=outer_aliases):
+        wrapper = SysCall(func, categories, has_time, signature, custom_control_flow, aliases)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, signature, has_time, custom_control_flow)
+        func = wrap(args[0], categories, signature, has_time, custom_control_flow, aliases)
         return func
 
     # decorator was called with keyword arguments, the returned function is
