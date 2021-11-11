@@ -3,12 +3,9 @@
 		{
 			"name": "Generator",
 			"arch": "arm",
-			"syscall_style": "vanilla",
+			"instantiation_style": "vanilla",
+			"interaction_style": "vanilla",
 			"os": "freertos"
 		}
-	],
-
-	"LLVMMap": {
-		"log_level": "info"
-	}
+	]
 }

@@ -29,4 +29,31 @@ namespace ara {
 		assert(t != nullptr && "t is not null");
 		return *t;
 	}
+
+	/**
+	 * Helper class for std::visit. See example for std::visit for explanation.
+	 * Drop this, once a std::overload exists.
+	 */
+	template <class... Ts>
+	struct overloaded : Ts... {
+		using Ts::operator()...;
+	};
+	// explicit deduction guide (not needed as of C++20)
+	template <class... Ts>
+	overloaded(Ts...) -> overloaded<Ts...>;
+
+	/**
+	 * Do a special action for the first round in the loop
+	 *
+	 * Credit: Joakim Thorén, https://stackoverflow.com/a/54833594
+	 */
+	template <typename BeginIt, typename EndIt, typename FirstFun, typename OthersFun>
+	void for_first_then_each(BeginIt begin, EndIt end, FirstFun firstFun, OthersFun othersFun) {
+		if (begin == end)
+			return;
+		firstFun(*begin);
+		for (auto it = std::next(begin); it != end; ++it) {
+			othersFun(*it);
+		};
+	}
 } // namespace ara

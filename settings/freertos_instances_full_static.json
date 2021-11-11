@@ -3,12 +3,15 @@
 		{
 			"name": "Generator",
 			"arch": "arm",
-			"syscall_style": "generic_static",
+			"instantiation_style": "static",
+			"interaction_style": "vanilla",
 			"os": "freertos"
 		}
 	],
-
-	"LLVMMap": {
-		"log_level": "info"
+	"ClassifySpecializationsFreeRTOS": {
+		"graceful_degrade": true,
+		"static_memory": true,
+		"initialized_memory": false,
+		"allow_runtime_init": true
 	}
 }

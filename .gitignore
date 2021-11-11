@@ -1,3 +1,4 @@
+.cache
 /build
 __pycache__
 /native.txt

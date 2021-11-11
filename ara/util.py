@@ -22,7 +22,6 @@ class DieOnErrorLogger(logging.getLoggerClass()):
     def error(self, *args, **kwargs):
         if self.werr:
             super().error(*args, **kwargs)
-            sys.exit(1)
         else:
             super().error(*args, **kwargs)
     def warning(self, *args, **kwargs):
@@ -107,6 +106,11 @@ def get_logger_manager():
 def get_logger(name: str, level=None):
     """Convenience method. See LoggerManager.get_logger."""
     return get_logger_manager().get_logger(name, level)
+
+
+def get_null_logger():
+    """Get a logger that does absolutely nothing."""
+    return logging.getLogger('null').addHandler(logging.NullHandler())
 
 
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):

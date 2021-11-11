@@ -15,9 +15,9 @@ class BaseCoder:
     def set_generator(self, generator):
         self.generator = generator
         self.ara_graph = generator.ara_graph
-        self.syscall_rules = generator.syscall_rules
         self.arch_rules = generator.arch_rules
         self.os_rules = generator.os_rules
+        self.syscall_rules = generator.syscall_rules
         self._log = generator._log.getChild(self.__class__.__name__)
 
 

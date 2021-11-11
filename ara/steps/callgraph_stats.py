@@ -19,17 +19,13 @@ class CallGraphStats(Step):
         callgraph = self._graph.callgraph
 
         num_functions = callgraph.num_vertices()
-        num_callsites = callgraph.num_edges()
+        num_callees = callgraph.num_edges()
 
         self._log.info(f"Number of function: {num_functions}")
-        self._log.info(f"Number of call sites: {num_callsites}")
+        self._log.info(f"Number of callees: {num_callees}")
 
         if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            stat_file = f'{uuid}.json'
-            stat_file = self.dump_prefix.get() + stat_file
-
-            with open(stat_file, 'w') as f:
+            with open(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_functions": num_functions,
-                          "num_callsites": num_callsites}
+                          "num_callees": num_callees}
                 json.dump(values, f, indent=4)

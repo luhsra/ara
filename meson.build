@@ -17,7 +17,7 @@ py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies
-llvm_version = ['>=9', '<11']
+llvm_version = ['>=10', '<13']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
@@ -26,7 +26,7 @@ llc = find_program(llvm_bindir / 'llc', version: llvm_version)
 llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
 llvm_opt = find_program(llvm_bindir / 'opt', version: llvm_version)
 
-boost_dep = dependency('boost', modules: ['graph', 'python3'])
+boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
 ## pyllco
@@ -43,18 +43,32 @@ endif
 
 ## svf
 cmake = import('cmake')
-svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'),
-                                                   '-DBUILD_SHARED_LIBS=on'])
+svf_opts = cmake.subproject_options()
+svf_opts.append_compile_args('cpp', '-Wno-unused-parameter')
+svf_opts.append_compile_args('cpp', '-Wno-unused-variable')
+svf_opts.append_compile_args('cpp', '-Wno-unused-function')
+svf_opts.append_compile_args('cpp', '-Wno-maybe-uninitialized')
+svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
+                            'BUILD_SHARED_LIBS': 'on'})
+svf_proj = cmake.subproject('svf', options: svf_opts)
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
+## sparsedata
 sparsedata = subproject('sparsedata')
-sparse_rle = sparsedata.get_variable('libsparserle')
 sparse_rle2 = sparsedata.get_variable('libsparserle2')
 
+## ara-link
+ara_link = find_program('ara-link', version: llvm_version, required: false)
+if not ara_link.found()
+    ara_link_proj = subproject('ara-link')
+    ara_link = ara_link_proj.get_variable('ara_link')
+    message('Using ara-link from subproject.')
+endif
 
 ## tools
 nop = find_program('true')
+st_flash = find_program('st-flash', required: false, disabler: true)
 
 ## arch specific build tools
 if get_option('arch') == 'i386'
@@ -133,8 +147,9 @@ if get_option('enable_toplevel_tests')
     test('ara_tester',
        py3_inst,
        args: [ara_py, gpslogger_application,
-              '--log-level', 'info', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--step-settings', extra_settings],
+              '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
+              '--step-settings', extra_settings,
+              '--manual-corrections', instance_corrections],
        suite: 'toplevel'
     )
 
@@ -158,45 +173,16 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel'
     )
 
-    test('gpslogger',
-       py3_inst,
-       args: [ara_py, gpslogger_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('smartplug',
-       py3_inst,
-       args: [ara_py, smartplug_application, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('copter-without-alarms',
-       py3_inst,
-       args: [ara_py, osek_copter_without_alarms[0], '--oilfile', osek_copter_without_alarms[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       env : [python_path],
-       suite: 'toplevel'
-    )
-
-    test('copter',
-       py3_inst,
-       args: [ara_py, osek_coptermok[0], '--oilfile', osek_coptermok[1], '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
-    test('ospert',
-       py3_inst,
-       args: [ara_py, freertos_ospert, '--log-level', 'debug', '--step', 'InstanceGraph'],
-       suite: 'toplevel'
-    )
-
     autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
     test('multisse',
        py3_inst,
-       args: [ara_py, autosar_minexample[0],
-              '--oilfile', autosar_minexample[1],
+       args: [ara_py, autosar_multicore_minexample[0],
+              '--oilfile', autosar_multicore_minexample[1],
+              '--dump',
               '--log-level', 'info',
               '--dump',
               '--step-settings', autosar_minexample_settings],
-       suite: 'toplevel'
+       suite: 'toplevel',
+       timeout: 30
     )
 endif

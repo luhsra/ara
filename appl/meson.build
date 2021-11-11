@@ -14,26 +14,26 @@ freertos_targets = []
 # these apps are not meant to ever run on real hardware, but are used for unit tests etc.
 # they are only compiled to IR
 ir_apps = [
-  'a',
   'abb_merge',
   'argument_load',
-  'c',
   'condition',
   'critical_region_detection',
   'deadlock',
   'dominator',
   'eventgroup',
-  'f',
-  'g',
+  'function_pointer',
   'icfg',
+  'instances',
   'invalid_isr_syscall',
   'invalid_mutex',
   'invalid_semaphore',
+  'interaction',
   'loop_detection',
   'multi_exit',
   'optimization',
   'ospert',
   'priority_inversion',
+  'rtas20_example',
   # 'simple_queue_send',
   'sse',
   'svf',
@@ -42,11 +42,11 @@ ir_apps = [
   'system_relevant_functions',
   'thesis_print',
   'topological_sort',
+  'value_analysis_struct',
 ]
 
 # these apps are meant to run on real hardware and are compiled into an elf
 hw_apps = [
-  'rtas20_example',
   'simple_print',
   'simple_delay',
   'simple_queue_send',
@@ -162,7 +162,7 @@ foreach app : ir_apps + hw_apps
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
-                                 depends: [sparse_rle, sparse_rle2],
+                                 depends: [sparse_rle2],
                                  output: lto_prefix + '-os_app.ll',
                                  command: get_variable('llvm_lto_cmd_' + lto_version))
 
@@ -190,14 +190,29 @@ foreach app : ir_apps + hw_apps
                                  input: [lto_elf],
                                  output: lto_prefix + '.bin',
                                  command: objcopy_cmd)
-    run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
-    run_target('size_' + lto_prefix, command: [size, lto_elf])
+    run_target('flash_' + lto_prefix, command: [st_flash, 'write', bin_target, '0x8000000'])
+    run_target('size_' + lto_prefix, command: [size, '-A', lto_elf])
     run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
     named_elf_targets += [target + '-' + lto_version, lto_elf]
     profiles_list += ['--profiles', target + '-' + lto_version]
+
+    if app not in ir_apps
+      test('validate_generator_' + lto_prefix,
+           py3_inst,
+           args: [validate_generator_runner,
+                  app,
+                  target,
+                  ara_target,
+                  os_target[0].full_path(),
+                  lto_elf,
+                 ],
+           workdir: freertos_src_dir,
+           suite: 'generator'
+          )
+      endif
 
     if get_option('enable_qemu_tests') and app not in ir_apps
         test('run_qemu_' + name_prefix,

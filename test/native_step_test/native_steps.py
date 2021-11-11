@@ -49,11 +49,11 @@ def main():
     extra_config = {}
     p_manager = StepManager(graph, provides=provide)
 
-    hist = p_manager.execute(config, extra_config, ['Test3Step'])
-    assert [step.name for step in hist] == ['Test0Step',
-                                            'Test1Step',
-                                            'Test2Step',
-                                            'Test3Step']
+    p_manager.execute(config, extra_config, ['Test3Step'])
+    assert [step.name for step in p_manager.get_history()] == ['Test0Step',
+                                                               'Test1Step',
+                                                               'Test2Step',
+                                                               'Test3Step']
 
 
 if __name__ == '__main__':

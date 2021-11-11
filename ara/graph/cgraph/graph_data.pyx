@@ -1,14 +1,13 @@
 # cython: language_level=3
 # vim: set et ts=4 sw=4:
 
-from .graph_data cimport PyGraphData
+from graph_data cimport PyGraphData, CallPath
 
-from .arguments cimport Argument as CArgument, Arguments as CArguments
-from .arguments cimport CallPath as CCallPath
-from .os cimport SysCall as CSysCall
+from carguments cimport Argument as CArgument, Arguments as CArguments, CallPath as CCallPath
+from os cimport SysCall as CSysCall
 from common.cy_helper cimport to_string
-from .cgraph cimport CallGraph, SigType as CSigType
-from .cy_helper cimport to_sigtype, safe_get_value, insert_in_map
+from cgraph cimport CallGraph, SigType as CSigType
+from cy_helper cimport to_sigtype, safe_get_value, insert_in_map
 
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.map cimport map as cppmap
@@ -26,8 +25,6 @@ cdef extern from 'pyllco.h':
 
 
 cdef class CallPath:
-    cdef CCallPath _c_callpath
-
     def __cinit__(self):
         pass
 
@@ -122,6 +119,18 @@ cdef class Argument:
         return deref(self._c_argument).has_value(key._c_callpath)
 
     def get_value(self, CallPath key=CallPath(), raw=False):
+        """Retrieve the value of the argument.
+
+        Keyword arguments:
+        key -- Retrieve value of a specific call path. Is set the the empty
+               call path per default.
+        raw -- Get raw LLVM value, if set. Tries to translate the LLVM value in
+               a Python value otherwise.
+
+        Can raise an IndexError, if no value at this key is found.
+        Can raise an pyllco.InvalidValue, if the LLVM value cannot be
+        interpreted.
+        """
         cdef AttributeSet a_set
         value = safe_get_value(self._c_argument, key._c_callpath)
         if value is None:
@@ -254,3 +263,8 @@ cdef public cppmap[const string, CSysCall] py_os_detected_syscalls(object os):
         insert_in_map(syscalls, syscall_name.encode('UTF-8'),
                       CSysCall(syscall, os))
     return syscalls
+
+cdef public object py_get_callpath(const CCallPath& callpath):
+    cp = CallPath()
+    cp._c_callpath = callpath
+    return cp

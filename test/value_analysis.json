@@ -1,1 +1,168 @@
-{"vTaskStepTick": [[], [[["Callpath([_ZN5GuardD2Ev -> _Z8do_stuffi], [main -> _ZN5GuardC2Ei])", 4465], ["Callpath([main -> _Z8do_stuffi])", 333], ["Callpath([main -> _Z8do_stuffi])", 1234]]]], "xQueueCreateMutex": [[["CallPath()", "GlobalVariable: _ZL6mutex3"]], [[["CallPath()", 4]]]], "xTaskCreateStatic": [[["CallPath()", "Alloca: t2"]], [[["CallPath()", "Function: _Z5task1Pv"]], [["CallPath()", "TaskStatic"]], [["CallPath()", 11114]], [["CallPath()", "null"]], [["CallPath()", 1]], [["CallPath()", "null"]], [["CallPath()", "null"]]]], "xTaskCreate": [[], [[["CallPath()", "Function: _Z5task1Pv"]], [["CallPath()", "Task 3"]], [["CallPath()", 9993]], [["CallPath()", "null"]], [["CallPath()", 6]], [["CallPath()", "Alloca: t2"]]]], "xQueueTakeMutexRecursive": [[], [[["CallPath()", "GlobalVariable: _ZL6mutex2"]], [["CallPath()", 5]]]]}
+{
+	"vTaskStepTick": {
+		"34": [
+			{
+				"callpath": [{"line": 86, "functs": ["main", "_ZN5Embed4callEv"]}],
+				"args": [["value", 34]]
+			}
+		],
+		"25": [
+			{
+				"callpath": [{"line": 107, "functs": ["main", "_Z8do_stuffi"]}],
+				"args": [["value", 1234]]
+			}, {
+				"callpath": [{"line": 108, "functs": ["main", "_Z8do_stuffi"]}],
+				"args": [["value", 333]]
+			}, {
+				"callpath": [{"line": 125, "functs": ["main", "_ZN5GuardD2Ev"]},{"line": 43, "functs": ["_ZN5GuardD2Ev", "_Z8do_stuffi"]}],
+				"args": [["value", 4465]]
+			}
+		],
+		"113": [
+			{
+				"callpath": [],
+				"args": [["value", 10101]]
+			}
+		]
+	},
+	"xQueueCreateMutex": {
+		"66": [
+			{
+				"callpath": [{"line": 120, "functs": ["main", "_ZN7WrapperC2Ev"]}],
+				"args": [["value", 1]],
+				"is_creation": {"name": "OBJ: mtx"}
+			}, {
+				"callpath": [{"line": 122, "functs": ["main", "_ZN7WrapperC2Ev"]}],
+				"args": [["value", 1]],
+				"is_creation": {"name": "OBJ: mtx2"}
+			}
+		],
+		"75": [
+			{
+				"callpath": [{"line": 99, "functs": ["main", "_Z10make_mutexPP15QueueDefinition"]}],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutex4"}
+			}, {
+				"callpath": [{"line": 100, "functs": ["main", "_Z10make_mutexPP15QueueDefinition"]}],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutex5"}
+			}
+		],
+		"92": [
+			{
+				"callpath": [],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutex"}
+			}
+		],
+		"97": [
+			{
+				"callpath": [],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutex3"}
+			}
+		],
+		"115": [
+			{
+				"callpath": [],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutexes.m1"}
+			}
+		],
+		"116": [
+			{
+				"callpath": [],
+				"args": [["value", 4]],
+				"is_creation": {"name": "OBJ: mutexes.m2"}
+			}
+		]
+	},
+	"xTaskCreateStatic": {
+		"89": [
+			{
+				"callpath": [],
+				"args": [["value", "Function: _Z5task1Pv"], ["value", "TaskStatic"], ["value", 11114], ["symbol", "null"], ["value", 1], ["symbol", "null"], ["symbol", "null"]]
+			}
+		],
+		"90": [
+			{
+				"callpath": [],
+				"args": [["value", "Function: _Z5task1Pv"], ["value", "TaskStatic1"], ["value", 12344], ["symbol", "GlobalVariable: task_data"], ["value", 5], ["symbol", "null"], ["symbol", "null"]]
+			}
+		]
+	},
+	"xTaskCreate": {
+		"101": [
+			{
+				"callpath": [],
+				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 1"], ["value", 6667], ["symbol", "null"], ["value", 6], ["symbol", "null"]]
+			}
+		],
+		"102": [
+			{
+				"callpath": [],
+				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 2"], ["value", 8889], ["symbol", "null"], ["value", 6], ["symbol", "GlobalVariable: _ZL1t"]]
+			}
+		],
+		"103": [
+			{
+				"callpath": [],
+				"args": [["value", "Function: _Z5task1Pv"], ["value", "Task 3"], ["value", 9993], ["symbol", "null"], ["value", 6], ["symbol", "Alloca: t2"]]
+			}
+		]
+	},
+	"xQueueTakeMutexRecursive": {
+		"109": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutex"], ["value", 5]]
+			}
+		],
+		"110": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutex4"], ["value", 80]]
+			}
+		],
+		"111": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutex5"], ["value", 14]]
+			}
+		]
+	},
+	"xQueueSemaphoreTake": {
+		"53": [
+			{
+				"callpath": [{"line": 121, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 69, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2C2EP15QueueDefinition"]}],
+				"args": [["value", "OBJ: mtx"], ["value", 10]]
+			}, {
+				"callpath": [{"line": 123, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 69, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2C2EP15QueueDefinition"]}],
+				"args": [["value", "OBJ: mtx2"], ["value", 10]]
+			}
+		],
+		"117": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutexes.m1"], ["value", 10]]
+			}
+		],
+		"118": [
+			{
+				"callpath": [],
+				"args": [["value", "OBJ: mutexes.m2"], ["value", 10]]
+			}
+		]
+	},
+	"xQueueGenericSend": {
+		"56": [
+			{
+				"callpath": [{"line": 121, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 71, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2D2Ev"]}],
+				"args": [["value", "OBJ: mtx"]]
+			}, {
+				"callpath": [{"line": 123, "functs": ["main", "_ZN7Wrapper8do_stuffEi"]}, {"line": 71, "functs": ["_ZN7Wrapper8do_stuffEi", "_ZN6Guard2D2Ev"]}],
+				"args": [["value", "OBJ: mtx2"]]
+			}
+		]
+	}
+}

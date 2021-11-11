@@ -275,6 +275,9 @@ class DataObjectManager:
             if obj.name == old_obj.name:
                 assert obj.typename == old_obj.typename, "Variable %s already defined with different type" % obj.name
                 # Do not add another instance for this object
+                if isinstance(obj, ExternalDataObject) and isinstance(old_obj, ExternalDataObject):
+                    self._log.debug("skipping duplicate extern declaration: %s", obj)
+                    continue
                 raise ValueError(f"duplicated element {obj.name} ({obj.typename})")
         obj.phase = phase
 

@@ -2,14 +2,17 @@
 # vim: set et ts=4 sw=4:
 
 cimport cgraph
-from .arguments cimport Argument, CallPath
-from .os cimport SysCall as CSysCall
+from carguments cimport Argument, CallPath
+from os cimport SysCall as CSysCall
 
 from libcpp cimport bool
 from libcpp.memory cimport shared_ptr
 from libcpp.utility cimport pair
 from libcpp.map cimport map as cppmap
 from libcpp.string cimport string
+
+from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 
 cdef extern from "cy_helper.h" namespace "ara::graph":
     cgraph.SigType to_sigtype(int i)

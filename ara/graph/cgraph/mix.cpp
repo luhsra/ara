@@ -1,4 +1,4 @@
-#include "../mix.py"
+#include "mix.h"
 
 #include <cassert>
 
@@ -30,6 +30,23 @@ namespace ara::graph {
 	EQUAL_OPERATOR(ABBType)
 	NOT_EQUAL_OPERATOR(ABBType)
 
+	// NodeLevel functions
+	std::ostream& operator<<(std::ostream& str, const NodeLevel& ty) {
+		switch (ty) {
+		case NodeLevel::function:
+			return (str << "function");
+		case NodeLevel::abb:
+			return (str << "abb");
+		case NodeLevel::bb:
+			return (str << "bb");
+		};
+		assert(false);
+		return str;
+	}
+
+	EQUAL_OPERATOR(NodeLevel)
+	NOT_EQUAL_OPERATOR(NodeLevel)
+
 	// CFType functions
 	std::ostream& operator<<(std::ostream& str, const CFType& ty) {
 		switch (ty) {
@@ -41,8 +58,10 @@ namespace ara::graph {
 			return (str << "global control flow");
 		case CFType::f2a:
 			return (str << "function to ABB");
-		case CFType::a2f:
-			return (str << "ABB to function");
+		case CFType::a2b:
+			return (str << "ABB to BB");
+		case CFType::f2b:
+			return (str << "function to BB");
 		};
 		assert(false);
 		return str;
@@ -79,6 +98,8 @@ namespace ara::graph {
 			return (str << "value");
 		case SigType::symbol:
 			return (str << "symbol");
+		case SigType::instance:
+			return (str << "instance");
 		};
 		assert(false);
 		return str;

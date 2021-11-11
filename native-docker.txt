@@ -1,7 +1,2 @@
 [binaries]
-llvm-config = '/usr/bin/llvm-config-9'
-llvm-link = '/usr/bin/llvm-link-9'
-clang = '/usr/bin/clang-9'
-llc = '/usr/bin/llc-9'
-opt = '/usr/bin/opt-9'
 cython = '/usr/bin/cython3'

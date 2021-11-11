@@ -28,11 +28,12 @@ def main():
     parser.add_argument('--log-level', help="choose the log level",
                         choices=['warn', 'info', 'debug'],
                         default=os.environ.get('ARA_LOGLEVEL', 'warn'))
-    parser.add_argument('--dump', action='store_true', default=False,
+    parser.add_argument('--dump', action='store_true', default=bool(os.environ.get('ARA_DUMP', '')),
                         help="emit a meaningful dot graph where possible")
-    parser.add_argument('--dump-prefix', default='dumps/{step_name}.',
+    parser.add_argument('--dump-prefix', default='dumps/{step_name}.{uuid}.',
                         help="path that prefixes all dot files. The string "
-                             "'{step_name}' is replaced with the step name.")
+                             "'{step_name}' is replaced with the step name. "
+                             "The string '{uuid}' is replace with the uuid.")
     parser.add_argument('--runtime-stats', action='store_true', default=False,
                         help="emit statistics about step runtimes.")
     parser.add_argument('--runtime-stats-file', choices=['logger', 'dump'],
@@ -119,13 +120,17 @@ def main():
             extra_settings["steps"].append("ManualCorrections")
 
     if args.step is None and not extra_settings.get("steps", None):
-        args.step = ['InstanceGraph']
+        args.step = ['SIA']
 
-    history = s_manager.execute(vars(args), extra_settings, args.step)
-    logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}" for se in history]))
+    s_manager.execute(vars(args), extra_settings, args.step)
 
     if args.ir_output:
-        s_manager.execute(vars(args), {'steps': [{'name':'IRWriter', 'ir_file': args.ir_output}]}, None)
+        s_manager.execute(vars(args),
+                          {'steps': [{'name':'IRWriter',
+                                      'ir_file': args.ir_output}]}, None)
+
+    logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
+                                           for se in s_manager.get_history()]))
 
 
 if __name__ == '__main__':

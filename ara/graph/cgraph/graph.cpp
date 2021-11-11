@@ -18,24 +18,19 @@ namespace ara::graph {
 	}
 
 	// ABB functions
-	const llvm::CallBase* CFG::get_call_base(const ABBType type, const llvm::BasicBlock& bb) const {
-		if (!(type == ABBType::call || type == ABBType::syscall)) {
-			return nullptr;
-		}
-		const llvm::CallBase* call = llvm::dyn_cast<llvm::CallBase>(&bb.front());
-		assert(call);
-		return call;
+	const llvm::CallBase* CFG::get_call_base(const llvm::BasicBlock& bb) const {
+		return llvm::dyn_cast<llvm::CallBase>(&bb.front());
 	}
 
-	const std::string CFG::bb_get_call(const ABBType type, const llvm::BasicBlock& bb) const {
-		auto call = get_call_base(type, bb);
+	const std::string CFG::llvm_bb_get_callname(const llvm::BasicBlock& bb) const {
+		auto call = get_call_base(bb);
 		if (!call) {
 			return "";
 		}
 		const llvm::Function* func = call->getCalledFunction();
 		// function are sometimes values with alias to a function
 		if (!func) {
-			const llvm::Value* value = call->getCalledValue();
+			const llvm::Value* value = call->getCalledOperand();
 			if (const llvm::Constant* alias = llvm::dyn_cast<llvm::Constant>(value)) {
 				if (llvm::Function* tmp_func = llvm::dyn_cast<llvm::Function>(alias->getOperand(0))) {
 					func = tmp_func;
@@ -45,11 +40,11 @@ namespace ara::graph {
 		if (!func) {
 			return "";
 		}
-		return func->getName();
+		return func->getName().str();
 	}
 
-	bool CFG::bb_is_indirect(const ABBType type, const llvm::BasicBlock& bb) const {
-		auto call = get_call_base(type, bb);
+	bool CFG::bb_is_indirect(const llvm::BasicBlock& bb) const {
+		auto call = get_call_base(bb);
 		if (!call) {
 			return false;
 		}
@@ -96,17 +91,15 @@ namespace ara::graph {
 
 		ARA_VMAP(name)
 		ARA_VMAP(type)
-		ARA_VMAP(is_function)
-		ARA_VMAP(entry_bb)
-		ARA_VMAP(exit_bb)
+		ARA_VMAP(level)
+		ARA_VMAP(llvm_link)
 		ARA_VMAP(is_exit)
 		ARA_VMAP(is_exit_loop_head)
 		ARA_VMAP(part_of_loop)
 		ARA_VMAP(file)
 		ARA_VMAP(line)
 		ARA_VMAP(implemented)
-		ARA_VMAP(syscall)
-		ARA_VMAP(function)
+		ARA_VMAP(sysfunc)
 		ARA_VMAP(arguments)
 		ARA_VMAP(call_graph_link)
 
@@ -169,6 +162,7 @@ namespace ara::graph {
 		ARA_VMAP(function)
 		ARA_VMAP(function_name)
 		ARA_VMAP(svf_vlink)
+		ARA_VMAP(recursive)
 
 		// syscall categories
 #define ARA_SYS_ACTION(Value) ARA_VMAP(syscall_category_##Value)

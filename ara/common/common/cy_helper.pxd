@@ -1,7 +1,6 @@
 # cython: language_level=3
 
 from libcpp.string cimport string
-from libcpp.utility cimport pair
 from libcpp.vector cimport vector
 from libcpp.memory cimport unique_ptr, shared_ptr
 

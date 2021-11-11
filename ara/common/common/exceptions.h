@@ -64,18 +64,14 @@ namespace ara {
 		}
 	};
 
-	class ValuesUnknown : public std::exception {
-	  private:
-		std::stringstream message;
-
+	class ValuesUnknown : public std::runtime_error {
 	  public:
-		explicit ValuesUnknown(const std::string& message) {
-			this->message << "The correct values could not be retrieved: ";
-			this->message << message;
-			this->message.flush();
-		}
+		explicit ValuesUnknown(const std::string& message) : std::runtime_error(message) {}
+	};
 
-		virtual const char* what() const throw() { return message.str().c_str(); }
+	class ConnectionStatusUnknown : public std::runtime_error {
+	  public:
+		explicit ConnectionStatusUnknown(const std::string& message) : std::runtime_error(message) {}
 	};
 
 	class StepError : public std::runtime_error {

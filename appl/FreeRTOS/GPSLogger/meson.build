@@ -122,8 +122,8 @@ gpslogger_runtarget = run_target('gpslogger-full',
 named_elf_targets = []
 elf_targets = []
 profiles_list = []
-foreach t : ara_gen_freertos_targets
-  name_prefix = 'gpslogger-' + t
+foreach target : ara_gen_freertos_targets
+  name_prefix = 'gpslogger-' + target
   ara_target = custom_target(name_prefix + '-os',
                              input: gpslogger_application,
                              depfile: name_prefix+ '-os.cc.dep',
@@ -132,7 +132,7 @@ foreach t : ara_gen_freertos_targets
                                       name_prefix + '-modifiedapp.ll',
                                       name_prefix + '-os.cc.freertos_overrides.h',
                                      ],
-                             command: get_variable('ara_gen_cmd_' + t)
+                             command: get_variable('ara_gen_cmd_' + target)
                             )
   os_target = [ara_target[0], ara_target[1]]
   app_aramodified_ll = ara_target[2]
@@ -175,7 +175,7 @@ foreach t : ara_gen_freertos_targets
     lto_prefix = name_prefix + '-' + lto_version
     lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                input: app_os,
-                               depends: [sparse_rle, sparse_rle2],
+                               depends: [sparse_rle2],
                                output: lto_prefix + '-os_app.ll',
                                command: get_variable('llvm_lto_cmd_' + lto_version))
 
@@ -206,15 +206,27 @@ foreach t : ara_gen_freertos_targets
                                command: objcopy_cmd)
 
 
-    run_target('flash_' + lto_prefix, command: ['st-flash', 'write', bin_target, '0x8000000'])
-    run_target('size_' + lto_prefix, command: [size, lto_elf])
+    run_target('flash_' + lto_prefix, command: [st_flash, 'write', bin_target, '0x8000000'])
+    run_target('size_' + lto_prefix, command: [size, '-A', lto_elf])
     run_target('run_gdb_hw_' + lto_prefix, command: [gdb_hw_script, lto_elf])
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [t + '-' + lto_version, lto_elf]
-    profiles_list += ['--profiles', t + '-' + lto_version]
+    named_elf_targets += [target + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', target + '-' + lto_version]
 
+    test('validate_generator_' + lto_prefix,
+         py3_inst,
+         args: [validate_generator_runner,
+                'gpslogger',
+                target,
+                ara_target,
+                os_target[0].full_path(),
+                lto_elf,
+               ],
+         workdir:  meson.current_source_dir(),
+         suite: 'generator'
+        )
 
     if get_option('enable_gpslogger_tests')
       test('run_qemu_' + name_prefix,

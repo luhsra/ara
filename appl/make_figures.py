@@ -80,7 +80,7 @@ class CreateGraphsExp(Experiment):
             if 'stdev' in marker:
                 continue
             if marker == 'n':
-                plt.annotate(f'n={rows["vanilla-none"]}', (.50, .90), xycoords='axes fraction')
+                plt.annotate(f'n={rows["vanilla-standard"]}', (.50, .90), xycoords='axes fraction')
                 continue
             if 'size' in marker:
                 continue
@@ -95,7 +95,7 @@ class CreateGraphsExp(Experiment):
             if 'stdev' in marker:
                 continue
             if marker == 'n':
-                plt.annotate(f'n={rows["vanilla-none"]}', (.50, .90), xycoords='axes fraction')
+                plt.annotate(f'n={rows["vanilla-standard"]}', (.50, .90), xycoords='axes fraction')
                 continue
             if 'size' not in marker:
                 continue

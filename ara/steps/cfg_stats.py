@@ -1,5 +1,5 @@
 """Container for CFGStats."""
-from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory
+from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory, NodeLevel
 from .step import Step
 from graph_tool.topology import label_components
 
@@ -13,19 +13,17 @@ class CFGStats(Step):
     """Gather statistics about the Control Flow Graph."""
 
     def get_single_dependencies(self):
-        return ["LLVMMap"]
+        return ["CreateABBs"]
 
     def run(self):
         cfg = self._graph.cfg
-        icfg = CFGView(cfg, efilt=cfg.ep.type.fa == CFType.icf)
-        lcfg = CFGView(cfg, efilt=cfg.ep.type.fa == CFType.lcf)
-        syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
-        calls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.call)
-        computation = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.computation)
-        functs = CFGView(cfg, vfilt=cfg.vp.is_function)
-        abbs = CFGView(cfg,
-                       vfilt=numpy.logical_and(cfg.vp.type.fa != ABBType.not_implemented,
-                                               numpy.logical_not(cfg.vp.is_function.fa)))
+        icfg = self._graph.icfg
+        lcfg = self._graph.lcfg
+        abbs = self._graph.abbs
+        syscalls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.syscall)
+        calls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.call)
+        computation = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.computation)
+        functs = self._graph.functs
 
         num_abbs = abbs.num_vertices()
         num_syscalls = syscalls.num_vertices()
@@ -58,8 +56,8 @@ class CFGStats(Step):
                 continue
             component = cfg.new_vertex_property("bool")
             for abb in cfg.vertex(func).out_neighbors():
-                assert not cfg.vp.is_function[abb]
-                component[abb] = True
+                if cfg.vp.level[abb] == NodeLevel.abb:
+                    component[abb] = True
             func_cfg = CFGView(lcfg, vfilt=component)
             lv = func_cfg.num_edges() - func_cfg.num_vertices() + 1
             lvs.append(lv)
@@ -86,11 +84,7 @@ class CFGStats(Step):
             self._log.info(f"Number of syscalls for category {cat.name}: {count}")
 
         if self.dump.get():
-            uuid = self._step_manager.get_execution_id()
-            stat_file = f'{uuid}.json'
-            stat_file = self.dump_prefix.get() + stat_file
-
-            with open(stat_file, 'w') as f:
+            with open(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_abbs": num_abbs,
                            "num_syscalls": num_syscalls,
                            "num_calls": num_calls,

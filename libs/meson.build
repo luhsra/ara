@@ -6,7 +6,7 @@ subdir('platform')
 subdir('include')
 subdir('sra')
 subdir('freertos')
-subdir('osek')
+# subdir('osek')
 subdir('autosar')
 
 libs_targets += libsra_ar

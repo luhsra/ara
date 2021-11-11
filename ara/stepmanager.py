@@ -83,6 +83,13 @@ class StepManager:
             self._steps[step.get_name()] = step
         self._execute_chain = None
         self._config = None
+        self._step_history = []
+
+    def clear_history(self):
+        self._step_history = []
+
+    def get_history(self):
+        return self._step_history
 
     def _make_step_entry(self, step, explicit=False):
         """Make a StepEntry of a step dict."""
@@ -126,6 +133,7 @@ class StepManager:
         # output
         if stats_file == 'dump':
             file_name = dump_prefix.replace('{step_name}', 'ARA')
+            file_name = file_name.replace('{uuid}', '-')
             ending = {'human': '.txt', 'json': '.json'}[stats_format]
             with open(file_name + 'runtime_stats' + ending, 'w') as f:
                 f.write(stats_string)
@@ -258,8 +266,6 @@ class StepManager:
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
 
-        Return the history of executed steps.
-
         Arguments:
         program_config -- global program configuration
         extra_config   -- extra step configuration
@@ -305,14 +311,11 @@ class StepManager:
                                for step in reversed(steps)]
         self._config = config
 
-        step_history = []
-
-        self._execute_steps_with_deps(step_history)
+        self._execute_steps_with_deps(self._step_history)
 
         self._config = None
         self._execute_chain = None
 
         if self._runtime_stats:
-            self._emit_runtime_stats(step_history, runtime_stats_format,
+            self._emit_runtime_stats(self._step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)
-        return step_history

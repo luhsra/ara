@@ -1,9 +1,9 @@
 import os
 from .coder.elements import SourceFile, Include
-from .coder.implementations import add_impl
 
 class Generator:
-    def __init__(self, ara_graph, ara_step, arch_rules, os_rules, syscall_rules, _log):
+    def __init__(self, ara_graph, ara_step, arch_rules, os_rules,
+                 syscall_rules, _log):
         self.ara_graph = ara_graph
         self.ara_step = ara_step
         self.ara_graph.generator = self
@@ -29,9 +29,6 @@ class Generator:
         self.source_file = SourceFile(self._log)
         self.source_files[''] = self.source_file
 
-        #include "freertos.h"
-        self.source_file.includes.add(Include('FreeRTOS.h'))
-
         if not passthrough:
             self.generate_code()
         self.generate_startup_code()
@@ -42,7 +39,7 @@ class Generator:
         # storage for generated source elements
         for v in self.ara_graph.instances.vertices():
             instance = self.ara_graph.instances.vp.obj[v]
-            add_impl(instance)
+            self.os_rules.add_impl(instance)
 
         # generate all system objects
         self.arch_rules.generate_data_objects()

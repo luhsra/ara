@@ -26,11 +26,28 @@ class ABBType(enum.IntEnum): # */
 
 #undef MIX
 #define MIX 1 /*
+import enum
+class NodeLevel(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class NodeLevel {
+    pass
+
+    function = 0b1,
+    abb = 0b10,
+    bb = 0b100,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(NodeLevel)}
+    pass
+
+
+#undef MIX
+#define MIX 1 /*
 # lcf = local control flow
 # icf = interprocedural control flow
 # gcf = global control flow
 # f2a = function to ABB
-# a2f = ABB to function
+# a2b = ABB to BB
 class CFType(enum.IntEnum): # */
     #undef pass
     #define pass namespace ara::graph { enum class CFType {
@@ -40,7 +57,8 @@ class CFType(enum.IntEnum): # */
     icf = 1,
     gcf = 2,
     f2a = 3,
-    a2f = 4
+    a2b = 4,
+    f2b = 5
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(CFType)}
@@ -73,9 +91,9 @@ class SyscallCategory(enum.IntEnum): # */
 # symbol
 #
 # undefined = as the name says
-# every = syscall belongs to every category
-# create = syscall creates an instance
-# comm = syscall is causes some kind of communication
+# value = syscall argument is a value (42, "hello world", nullptr, ...)
+# symbol = syscall argument is a symbol (Function, GlobalPointer, nullptr, ...)
+# instance = syscall argument is an instance handler
 # ATTENTION: This enum must kept in sync with syscall_category.inc
 class SigType(enum.IntEnum): # */
     #undef pass
@@ -85,9 +103,60 @@ class SigType(enum.IntEnum): # */
     undefined = 0,
     value = 1,
     symbol = 2,
+    instance = 3,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(SigType)}
+    pass
+
+#undef MIX
+#define MIX 1 /*
+# StateType: describe the node type within the MSTG
+#
+# state = The node represents a single core system state
+# metastate = The node links to a set of system states.
+# entry_sync = The node describes a synchronisation point entry.
+# exit_sync = The node describes a synchronisation point exit.
+class StateType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class StateType {
+    pass
+
+    state = 1,
+    metastate = 2,
+    entry_sync = 4,
+    exit_sync = 8,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(StateType)}
+    pass
+
+#undef MIX
+#define MIX 1 /*
+# MSTType: Multi state transition type
+#
+# m2s = metastate to state
+# st2sy = state to sync (or vice versa)
+# s2s = state to state (normal SSE transition)
+# sy2sy = sync to sync
+# follow_up = edge between two follow up sync states
+# m2sy = edge between a metastate and a sync states
+# sync_neighbor = mark two sync states that has an equal outcome
+class MSTType(enum.IntEnum): # */
+    #undef pass
+    #define pass namespace ara::graph { enum class MSTType {
+    pass
+
+    m2s = 1 << 0,
+    st2sy = 1 << 1,
+    s2s = 1 << 2,
+    sy2sy = 1 << 3,
+    follow_up = 1 << 4,
+    m2sy = 1 << 5,
+    sync_neighbor = 1 << 6,
+
+    #undef pass
+    #define pass }; STANDARD_OPERATORS(MSTType)}
     pass
 
 #undef MIX

@@ -23,8 +23,9 @@ namespace ara::step {
 		static std::string get_name() { return "CallGraph"; }
 		static std::string get_description();
 		virtual std::vector<std::string> get_single_dependencies() override {
-			return {"LLVMMap", "SVFAnalyses", "ResolveFunctionPointer"};
+			return {"LLVMMap", "ResolveFunctionPointer"};
 		}
+		virtual llvm::json::Array get_configured_dependencies() override;
 
 		virtual void run() override;
 	};

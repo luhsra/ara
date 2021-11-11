@@ -29,7 +29,7 @@ else
   test_pxd = []
   conf_data.set('step_tests', 'False')
 endif
-configure_file(input: 'project_config.pxi.in',
+conf_file = configure_file(input: 'project_config.pxi.in',
   output: 'project_config.pxi',
   configuration: conf_data)
 
@@ -39,10 +39,12 @@ step_pyx_gen = custom_target('step_pyx',
                  'option.pxd',
                  'cy_helper.pxd',
                  'cstep.pxd',
-                 'backported_utility.pxd',
                  'replace_syscalls_create.pxd',
-                 'replace_syscalls_create.pxi') + test_pxd + common_cython_files],
+                 'replace_syscalls_create.pxi',
+                 'value_analyzer.pxd',
+                 'value_analyzer.pxi') + test_pxd + common_cython_files],
   command : [cython, '-I', graph_cython_inc, '-I', common_cython_inc, '-I', pyllco_cython_inc, '-I', step_dir, '@INPUT0@', '-o', '@OUTPUT0@'] + cython_flags,
+  depend_files: [conf_file],
 )
 
 step_pyx_cpp = step_pyx_gen[0]
@@ -70,6 +72,7 @@ step_mod = py3_inst.extension_module('step',
         'fake_entry_point.cpp',
         'fn_single_exit.cpp',
         'callgraph.cpp',
+        'check_graph.cpp',
         'ir_reader.cpp',
         'ir_writer.cpp',
         'llvm_map.cpp',
@@ -79,7 +82,7 @@ step_mod = py3_inst.extension_module('step',
         'resolve_function_pointer.cpp',
         'svf_analyses.cpp',
         'svf_transformation.cpp',
-        'value_analysis.cpp',
+        'value_analyzer.cpp',
         'zephyr_static.cpp') + test_sources,
   cpp_pch: 'pch/steps_pch.h',
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep, cudd_dep]

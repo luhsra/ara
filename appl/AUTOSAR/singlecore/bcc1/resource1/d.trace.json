@@ -1,0 +1,38 @@
+{
+  "vertices": [
+    [0, ["AUTOSAR_ActivateTask", "H5", "CallPath()"]],
+    [1, ["AUTOSAR_ActivateTask", "H5", "CallPath()"]],
+    [2, ["AUTOSAR_ActivateTask", "H5", "Callpath([ABB10, AUTOSAR_TASK_FUNC_H5 -> bar])"]],
+    [3, ["AUTOSAR_ActivateTask", "H5", "Callpath([ABB10, AUTOSAR_TASK_FUNC_H5 -> bar])"]],
+    [4, ["AUTOSAR_GetResource", "H5", "CallPath()"]],
+    [5, ["AUTOSAR_GetResource", "H5", "Callpath([ABB10, AUTOSAR_TASK_FUNC_H5 -> bar])"]],
+    [6, ["AUTOSAR_ReleaseResource", "H5", "CallPath()"]],
+    [7, ["AUTOSAR_ReleaseResource", "H5", "CallPath()"]],
+    [8, ["AUTOSAR_ReleaseResource", "H5", "Callpath([ABB10, AUTOSAR_TASK_FUNC_H5 -> bar])"]],
+    [9, ["AUTOSAR_TerminateTask", "H1", "CallPath()"]],
+    [10, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
+    [11, ["AUTOSAR_TerminateTask", "H5", "CallPath()"]],
+    [12, ["Idle"]],
+    [13, ["Start"]]
+  ],
+  "edges": [
+    [13, 4],
+    [4, 0],
+    [4, 6],
+    [0, 1],
+    [0, 7],
+    [6, 5],
+    [1, 1],
+    [1, 7],
+    [7, 9],
+    [5, 2],
+    [9, 5],
+    [2, 3],
+    [2, 8],
+    [3, 3],
+    [3, 8],
+    [8, 10],
+    [10, 11],
+    [11, 12]
+  ]
+}

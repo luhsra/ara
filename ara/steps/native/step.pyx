@@ -15,7 +15,7 @@ IF STEP_TESTS:
 
 from cython.operator cimport dereference as deref
 from libcpp.memory cimport shared_ptr, unique_ptr
-from backported_utility cimport move
+from common.backported_utility cimport move
 from libcpp.memory cimport static_pointer_cast as spc
 from libcpp.string cimport string
 from libc.stdint cimport int64_t
@@ -23,6 +23,14 @@ from cy_helper cimport make_step_fac
 
 cimport cy_helper
 cimport option as coption
+
+# includes for value_analyzer.pxi
+from value_analyzer cimport ValueAnalyzer as CVA
+from graph_data cimport CallPath, PyGraphData
+from libcpp.vector cimport vector
+from ir cimport Value as CValue, GetElementPtrInst as CGep
+from pyllco cimport Value, GetElementPtrInst
+
 
 import json
 import logging
@@ -32,7 +40,6 @@ from collections import defaultdict
 
 from ara.steps import option
 from ara.util import LEVEL
-
 
 cdef class SuperStep:
     """Super class for Python and C++ steps. Do not use this class directly.
@@ -148,7 +155,7 @@ class Step(SuperStep):
     dump_prefix = option.Option("dump_prefix",
                                 "If a file is dumped, set this as "
                                 "prefix for the files"
-                                "(default: dumps/{step_name}).",
+                                "(default: dumps/{step_name}.{uuid}.).",
                                 option.String(),
                                 is_global=True)
     def __init__(self, graph, step_manager):
@@ -165,6 +172,9 @@ class Step(SuperStep):
             self._graph.step_data[self.get_name()] = data_class()
         return self._graph.step_data[self.get_name()]
 
+    def _set_step_data(self, value):
+        self._graph.step_data[self.get_name()] = value
+
     def _apply_config(self, config):
         for option in self._opts:
             option.check(config)
@@ -174,7 +184,11 @@ class Step(SuperStep):
             self._log.setLevel(LEVEL[level])
         dump_prefix = self.dump_prefix.get()
         if dump_prefix:
-            new_dp = dump_prefix.replace('{step_name}', self.get_name())
+            new_dp = dump_prefix.replace(r'{step_name}', self.get_name())
+            new_dp = new_dp.replace(
+                r'{uuid}',
+                str(self._step_manager.get_execution_id())
+            )
             self.dump_prefix.check({'dump_prefix': new_dp})
 
     def _fail(self, msg, error=RuntimeError):
@@ -330,13 +344,17 @@ cdef class NativeStep(SuperStep):
     def _apply_config(self, config: dict):
         # this is a lot easier on the Python side, so do it here
         if 'dump_prefix' in config:
-            config['dump_prefix'] = \
-                config['dump_prefix'].replace('{step_name}', self.get_name())
+            dp = config['dump_prefix']
+            dp = dp.replace('{step_name}', self.get_name())
+            dp = dp.replace('{uuid}',
+                            str(self._step_manager.get_execution_id()))
+            config['dump_prefix'] = dp
 
         deref(self._c_step).apply_config(config)
 
 
 include "replace_syscalls_create.pxi"
+include "value_analyzer.pxi"
 
 cdef _native_step_fac(unique_ptr[cstep.StepFactory] step_fac):
     """Construct a NativeStep. Expects an already constructed C++-Step pointer.
@@ -359,6 +377,7 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
             _native_step_fac(make_step_fac[cstep.CallGraph]()),
+            _native_step_fac(make_step_fac[cstep.CheckGraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),
@@ -368,7 +387,6 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
             _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
-            _native_step_fac(make_step_fac[cstep.ValueAnalysis]()),
             _native_step_fac(make_step_fac[cstep.ZephyrStatic]())]
 
 

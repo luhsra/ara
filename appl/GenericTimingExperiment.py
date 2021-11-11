@@ -15,6 +15,28 @@ from versuchung.files import Directory
 from versuchung.tex import DatarefDict
 
 
+section_map= {
+    '.text': ['flash text', 'flash sum'],
+    '.initcallmodule.init': ['flash text', 'flash sum'],
+    '.initcallsettings.init': ['flash text', 'flash sum'],
+    '.init_array': ['flash text', 'flash sum'],
+    '.ARM.exidx': ['flash text', 'flash sum'],
+    '.ARM': ['flash text', 'flash sum'],
+    '.irq_stack': ['ram bss', 'ram sum',],
+    '.data': ['ram data', 'flash data', 'flash sum', 'ram sum',],
+    '_uavo_handles': ['ram data', 'flash data', 'flash sum', 'ram sum',],
+    '.bss': ['ram bss', 'ram sum',],
+    '.heap': ['ram bss', 'ram sum',],
+    '.boardinfo': ['flash text', 'flash sum'],
+    '.isr_vector': ['flash text', 'flash sum'],
+    '.rodata': ['flash text', 'flash sum'],
+    '.sparse.spec': ['flash sparse', 'flash sum'],
+    '.sparse.data': ['ram sparse', 'ram sum',],
+    '.sparse.compressed.rle2': ['flash sparse', 'flash sum'],
+    '.sparse.plain.rle': ['ram sparse', 'ram sum',],
+    '._user_heap_stack': ['ram bss', 'ram sum',],
+}
+
 
 class GenericTimingExperiment(Experiment):
     inputs = {"result_dir": Directory(default_filename='gpslogger_results'),
@@ -47,9 +69,24 @@ class GenericTimingExperiment(Experiment):
                                     cwd=self.run_dir,
                                     stderr=subprocess.PIPE,
                                     stdout=subprocess.PIPE)
-            content = result.stdout.decode().strip('\n').split('\n')[-1]
-            ret = content.split()[:3]
-            return ret
+            content = result.stdout.decode()
+            result = defaultdict(lambda:0)
+            print("content: ", content)
+            for line in content.split('\n'):
+                # print(line)
+                if ':' in line:
+                    continue
+                if 'size' in line:
+                    continue
+                parts = line.split()
+                if len(parts) != 3:
+                    continue
+                name, size, addr = parts
+                if not addr or addr == '0':
+                    continue
+                for sec in section_map[name]:
+                    result[sec] += int(size)
+            return result
         except subprocess.CalledProcessError as e:
             print("cmd:", e.cmd)
             print("Ret:", e.returncode)
@@ -134,12 +171,8 @@ class GenericTimingExperiment(Experiment):
         print(self.inputs.profiles)
         for profile in self.inputs.profiles:
             print("starting profile ", profile)
-            text, data, bss = self.get_size(profile)
-            self.outputs.results[f"{profile}/code size"] = text
-            self.outputs.results[f"{profile}/data size"] = data
-            self.outputs.results[f"{profile}/bss size"] = bss
-            self.outputs.results[f"{profile}/ram sum size"] = int(bss) + int(data)
-            print(f"{profile} text: {text}, data: {data}, bss: {bss}")
+            for k,v in self.get_size(profile).items():
+                self.outputs.results[f"{profile}/size {k}"] = v
 
             self.flash(profile)
             try:

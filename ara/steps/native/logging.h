@@ -99,6 +99,13 @@ namespace ara {
 			}
 
 			/**
+			 * Enable operator<< for extended manipulators.
+			 */
+			LogStream& operator<<(LogStream& (*manip)(LogStream&)) { return manip(*this); }
+			LogStream& operator<<(std::function<LogStream&(LogStream&)>& manip) { return manip(*this); }
+			LogStream& operator<<(std::function<LogStream&(LogStream&)>&& manip) { return manip(*this); }
+
+			/**
 			 * Enable operator<< for boost::python objects.
 			 */
 			LogStream& operator<<(boost::python::object x) {

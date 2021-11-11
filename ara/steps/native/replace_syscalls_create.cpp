@@ -69,9 +69,29 @@ namespace ara::step {
 		return nullptr;
 	}
 
+	PyObject* ReplaceSyscallsCreate::change_linkage_to_global(GlobalVariable* gv) {
+		// GlobalVariable * gv = graph.get_module().getGlobalVariable(name, true);
+		logger.debug() << "change linkage of " << *gv << " from " << gv->getLinkage() << " to external" << std::endl;
+		if (gv == nullptr) {
+			logger.info() << "global is nullptr" << std::endl;
+			Py_RETURN_NONE;
+		}
+		gv->setLinkage(GlobalValue::ExternalLinkage);
+		Py_RETURN_NONE;
+	}
+
+	template <class Graph>
+	void create_bb_dispatched(Graph g, graph::CFG& cfg, int64_t abb, BasicBlock*& llvm_bb) {
+		llvm_bb = cfg.get_llvm_bb<Graph>(cfg.get_entry_bb(g, abb));
+	}
+
 	BasicBlock* ReplaceSyscallsCreate::create_bb(object task) {
 		graph::CFG cfg = graph.get_cfg();
-		return reinterpret_cast<BasicBlock*>(cfg.entry_bb[extract<int64_t>(task.attr("abb"))]);
+		BasicBlock* ret_bb = nullptr;
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) { create_bb_dispatched(g, cfg, extract<int64_t>(task.attr("abb")), ret_bb); },
+		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+		return ret_bb;
 	}
 
 	PyObject* ReplaceSyscallsCreate::replace_call_with_activate(CallBase* call, Value* tcb) {
@@ -101,10 +121,9 @@ namespace ara::step {
 
 	void ReplaceSyscallsCreate::run() { fail("This should never happen"); }
 
-	bool ReplaceSyscallsCreate::replace_queue_create_static(uintptr_t where, char* symbol_metadata,
-	                                                        char* symbol_storage) {
+	PyObject* ReplaceSyscallsCreate::replace_queue_create_static(object queue) {
 		Module& module = graph.get_module();
-		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
+		BasicBlock* bb = create_bb(queue);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
 
@@ -112,28 +131,30 @@ namespace ara::step {
 
 		if ("xQueueGenericCreate" != old_func->getName().str()) {
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
-			exit(1);
+			return PyErr_Format(PyExc_RuntimeError, "wrong function found. Expected xQueueGenericCreate.");
 		}
 		Function* create_static_fn = get_fn("xQueueGenericCreateStatic");
 		if (create_static_fn == nullptr) {
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "xQueueCenericStatic not found");
 		}
 
+		std::string name_str = extract<std::string>(queue.attr("impl").attr("head").attr("name"));
 		GlobalVariable* queue_meta_data_val = new GlobalVariable(
 		    module, // module
 		    dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(3))->getElementType(),
 		    // get_type(module, logger, freertos_types::queue_metadata), // type
 		    false, // isConstant
 		    GlobalValue::ExternalLinkage,
-		    nullptr,         // initializer
-		    symbol_metadata, // name
-		    nullptr,         // insertBefore
+		    nullptr, // initializer
+		    name_str,
+		    nullptr, // insertBefore
 		    GlobalVariable::NotThreadLocal,
 		    0,      // AddressSpace
 		    false); // isExternallyInitialized
 		queue_meta_data_val->setDSOLocal(true);
 		Value* queue_data_val;
 		auto queue_data_ty = dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(2));
+		std::string symbol_storage = extract<std::string>(queue.attr("impl").attr("data").attr("name"));
 		if (symbol_storage == std::string("nullptr")) {
 			queue_data_val = ConstantPointerNull::get(queue_data_ty);
 		} else {
@@ -166,12 +187,12 @@ namespace ara::step {
 		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter
 		// wit failing assert: "Use still stuck around after Def is destroyed"
 		old_create_call->eraseFromParent();
-		return true;
+		Py_RETURN_NONE;
 	}
 
-	bool ReplaceSyscallsCreate::replace_mutex_create_static(uintptr_t where, char* symbol_metadata) {
+	PyObject* ReplaceSyscallsCreate::replace_mutex_create_static(object mutex) {
 		Module& module = graph.get_module();
-		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
+		BasicBlock* bb = create_bb(mutex);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
 
@@ -179,22 +200,23 @@ namespace ara::step {
 
 		if ("xQueueCreateMutex" != old_func->getName().str()) {
 			logger.error() << "wrong function found: " << old_func->getName().str() << std::endl;
-			exit(1);
+			return PyErr_Format(PyExc_RuntimeError, "wrong function found. Expected xQueueGenericCreate.");
 		}
 		Function* create_static_fn = get_fn("xQueueCreateMutexStatic");
 		if (create_static_fn == nullptr) {
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "xQueueCreateMutexStatic not found");
 		}
 
+		std::string name_str = extract<std::string>(mutex.attr("impl").attr("head").attr("name"));
 		GlobalVariable* mutex_meta_data_val = new GlobalVariable(
 		    module, // module
 		    dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(1))->getElementType(),
 		    // get_type(module, logger, freertos_types::mutex_metadata), // type
 		    false, // isConstant
 		    GlobalValue::ExternalLinkage,
-		    nullptr,         // initializer
-		    symbol_metadata, // name
-		    nullptr,         // insertBefore
+		    nullptr, // initializer
+		    name_str,
+		    nullptr, // insertBefore
 		    GlobalVariable::NotThreadLocal,
 		    0,      // AddressSpace
 		    false); // isExternallyInitialized
@@ -213,12 +235,12 @@ namespace ara::step {
 		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter
 		// wit failing assert: "Use still stuck around after Def is destroyed"
 		old_create_call->eraseFromParent();
-		return true;
+		Py_RETURN_NONE;
 	}
 
-	bool ReplaceSyscallsCreate::replace_mutex_create_initialized(uintptr_t where, char* symbol_metadata) {
+	PyObject* ReplaceSyscallsCreate::replace_mutex_create_initialized(object mutex) {
 		Module& module = graph.get_module();
-		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
+		BasicBlock* bb = create_bb(mutex);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
 
@@ -227,25 +249,26 @@ namespace ara::step {
 		if ("xQueueCreateMutex" != old_func->getName().str()) {
 			logger.error() << "wrong function found: " << old_func->getName().str() << " expected: xQueueCreateMutex"
 			               << std::endl;
-			exit(1);
+			return PyErr_Format(PyExc_RuntimeError, "wrong function found. Expected xQueueGenericCreate.");
 		}
 		Function* create_static_fn = get_fn("xQueueCreateMutexStatic");
 		if (create_static_fn == nullptr) {
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "xQueueCreateMutexStatic not found");
 		}
 
 		llvm::IRBuilder<> Builder(module.getContext());
 		Builder.SetInsertPoint(old_create_call);
 
+		std::string name_str = extract<std::string>(mutex.attr("impl").attr("head").attr("name"));
 		GlobalVariable* mutex_meta_data_val = new GlobalVariable(
 		    module, // module
 		    dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(1))->getElementType(),
 		    // get_type(module, logger, freertos_types::mutex_metadata), // type
 		    false, // isConstant
 		    GlobalValue::ExternalLinkage,
-		    nullptr,         // initializer
-		    symbol_metadata, // name
-		    nullptr,         // insertBefore
+		    nullptr, // initializer
+		    name_str,
+		    nullptr, // insertBefore
 		    GlobalVariable::NotThreadLocal,
 		    0,      // AddressSpace
 		    false); // isExternallyInitialized
@@ -255,12 +278,12 @@ namespace ara::step {
 		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter
 		// wit failing assert: "Use still stuck around after Def is destroyed"
 		old_create_call->eraseFromParent();
-		return true;
+		Py_RETURN_NONE;
 	}
 
-	bool ReplaceSyscallsCreate::replace_queue_create_initialized(uintptr_t where, char* symbol_metadata) {
+	PyObject* ReplaceSyscallsCreate::replace_queue_create_initialized(object queue) {
 		Module& module = graph.get_module();
-		BasicBlock* bb = reinterpret_cast<BasicBlock*>(where);
+		BasicBlock* bb = create_bb(queue);
 		CallBase* old_create_call = dyn_cast<CallBase>(&bb->front());
 		Function* old_func = old_create_call->getCalledFunction();
 
@@ -269,25 +292,26 @@ namespace ara::step {
 		if ("xQueueGenericCreate" != old_func->getName().str()) {
 			logger.error() << "wrong function found: " << old_func->getName().str() << " expected: xQueueGenericCreate"
 			               << std::endl;
-			exit(1);
+			return PyErr_Format(PyExc_RuntimeError, "wrong function found. Expected xQueueGenericCreate.");
 		}
 		Function* create_static_fn = get_fn("xQueueGenericCreateStatic");
 		if (create_static_fn == nullptr) {
-			return false;
+			return PyErr_Format(PyExc_RuntimeError, "xQueueGenericCreateStatic not found");
 		}
 
 		llvm::IRBuilder<> Builder(module.getContext());
 		Builder.SetInsertPoint(old_create_call);
 
+		std::string name_str = extract<std::string>(queue.attr("impl").attr("head").attr("name"));
 		GlobalVariable* queue_meta_data_val = new GlobalVariable(
 		    module, // module
 		    dyn_cast<PointerType>(create_static_fn->getFunctionType()->getParamType(3))->getElementType(),
 		    // get_type(module, logger, freertos_types::queue_metadata), // type
 		    false, // isConstant
 		    GlobalValue::ExternalLinkage,
-		    nullptr,         // initializer
-		    symbol_metadata, // name
-		    nullptr,         // insertBefore
+		    nullptr, // initializer
+		    name_str,
+		    nullptr, // insertBefore
 		    GlobalVariable::NotThreadLocal,
 		    0,      // AddressSpace
 		    false); // isExternallyInitialized
@@ -297,7 +321,7 @@ namespace ara::step {
 		// NOTE: It is eraseFromParent() rather than removeFromParent() since remove doesn't delete --> dangling piniter
 		// wit failing assert: "Use still stuck around after Def is destroyed"
 		old_create_call->eraseFromParent();
-		return true;
+		Py_RETURN_NONE;
 	}
 
 	PyObject* ReplaceSyscallsCreate::replace_task_create_static(object task) {
@@ -409,6 +433,12 @@ namespace ara::step {
 				return nullptr;
 			}
 		}
+		object py_task_parameters = extract<object>(task.attr("parameters"));
+		if (! py_task_parameters.is_none()) {
+			if (GlobalVariable* gv = dyn_cast_or_null<GlobalVariable>(get_value_from_obj(py_task_parameters.ptr()))) {
+				change_linkage_to_global(gv);
+			}
+		}
 		Py_RETURN_NONE;
 		return PyErr_Format(PyExc_RuntimeError, "moin");
 		PyErr_SetString(PyExc_RuntimeError, "hello exception");
@@ -431,6 +461,53 @@ namespace ara::step {
 				logger.error() << "unknown init type"
 				               // << init_type
 				               << std::endl;
+			}
+			Py_RETURN_NONE;
+		} catch (const error_already_set&) {
+			PyObject *e, *v, *t;
+			PyErr_Fetch(&e, &v, &t);
+			PyErr_Restore(e, v, t);
+			return NULL;
+		}
+	}
+	PyObject* ReplaceSyscallsCreate::replace_queue_create(PyObject* pyo_queue) {
+		try {
+			boost::python::object queue(boost::python::borrowed<>(pyo_queue));
+			logger.debug() << "the queue: " << queue << std::endl;
+			object impl = queue.attr("impl");
+			str init_type = extract<str>(queue.attr("specialization_level"));
+			if (init_type == "static") {
+				return replace_queue_create_static(queue);
+			} else if (init_type == "initialized") {
+				return replace_queue_create_initialized(queue);
+			} else if (init_type == "unchanged") {
+				Py_RETURN_NONE;
+			} else {
+				logger.error() << "unknown init type" << std::endl;
+			}
+			Py_RETURN_NONE;
+		} catch (const error_already_set&) {
+			PyObject *e, *v, *t;
+			PyErr_Fetch(&e, &v, &t);
+			PyErr_Restore(e, v, t);
+			return NULL;
+		}
+	}
+
+	PyObject* ReplaceSyscallsCreate::replace_mutex_create(PyObject* pyo_mutex) {
+		try {
+			boost::python::object mutex(boost::python::borrowed<>(pyo_mutex));
+			logger.debug() << "the mutex: " << mutex << std::endl;
+			object impl = mutex.attr("impl");
+			str init_type = extract<str>(mutex.attr("specialization_level"));
+			if (init_type == "static") {
+				return replace_mutex_create_static(mutex);
+			} else if (init_type == "initialized") {
+				return replace_mutex_create_initialized(mutex);
+			} else if (init_type == "unchanged") {
+				Py_RETURN_NONE;
+			} else {
+				logger.error() << "unknown init type" << std::endl;
 			}
 			Py_RETURN_NONE;
 		} catch (const error_already_set&) {

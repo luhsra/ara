@@ -3,7 +3,7 @@
  */
 #pragma once
 
-#include "../mix.py" // graph.h is not possible due to circular dependencies
+#include "mix.h" // graph.h is not possible due to circular dependencies
 
 #include <Python.h>
 #include <boost/python.hpp>

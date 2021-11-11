@@ -108,17 +108,17 @@ namespace ara::step {
 				// properties
 				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
 				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent();
-				CFVertex abb = cfg.back_map(cfg_obj, safe_deref(out_bb));
+				CFVertex bb = cfg.back_map(cfg_obj, safe_deref(out_bb));
 
-				callgraph.callsite[edge.first] = abb;
-				callgraph.callsite_name[edge.first] = cfg.name[abb];
+				callgraph.callsite[edge.first] = bb;
+				callgraph.callsite_name[edge.first] = cfg.name[bb];
 				callgraph.svf_elink[edge.first] = reinterpret_cast<uintptr_t>(&svf_edge);
 
 				return edge.first;
 			}
 
 			void link_with_svf_callgraph(CFVertex function) {
-				const llvm::Function* l_func = cfg.get_function<CFGraph>(function);
+				const llvm::Function* l_func = cfg.get_llvm_function<CFGraph>(function);
 				assert(l_func != nullptr && "l_func is null.");
 				const SVF::SVFFunction* svf_func = SVF::LLVMModuleSet::getLLVMModuleSet()->getSVFFunction(l_func);
 				assert(svf_func != nullptr && "svf_func is null.");
@@ -170,6 +170,7 @@ namespace ara::step {
 				logger.info() << "Added " << node_counter << " vertices and " << edge_counter << " edges." << std::endl;
 				if (node_counter != 0 || edge_counter != 0) {
 					step_manager.chain_step("SystemRelevantFunctions");
+					step_manager.chain_step("RecursiveFunctions");
 				}
 			}
 		};
@@ -194,6 +195,13 @@ namespace ara::step {
 		return *ptacallgraph;
 	}
 
+	llvm::json::Array CallGraph::get_configured_dependencies() {
+		const auto& entry_point_name = entry_point.get();
+		assert(entry_point_name && "Entry point argument not given");
+		return llvm::json::Array{
+		    llvm::json::Object{{{"name", "ResolveFunctionPointer"}, {"entry_point", *entry_point_name}}}};
+	}
+
 	void CallGraph::run() {
 		llvm::Module& mod = graph.get_module();
 		graph::CFG cfg = graph.get_cfg();
@@ -212,11 +220,8 @@ namespace ara::step {
 		    graph_tool::always_directed())(cfg.graph.get_graph_view());
 
 		if (*dump.get()) {
-			std::string uuid = step_manager.get_execution_id();
-			std::string dot_file = *dump_prefix.get() + uuid + "." + *entry_point_name;
-
+			std::string dot_file = *dump_prefix.get() + *entry_point_name;
 			svf_callgraph.dump(dot_file + ".svf");
-
 			llvm::json::Value printer_conf(llvm::json::Object{{"name", "Printer"},
 			                                                  {"dot", dot_file + ".dot"},
 			                                                  {"graph_name", "CallGraph"},

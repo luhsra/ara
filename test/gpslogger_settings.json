@@ -1,0 +1,23 @@
+{
+	"steps": [
+		"SIA",
+		"CFGStats",
+		"CallGraphStats"
+	],
+
+	"CFGStats": {
+		"log_level": "info",
+		"dump": true
+	},
+
+	"CallGraphStats": {
+		"log_level": "info",
+		"dump": true
+	},
+
+	"logger": {
+		"StepManager": "info",
+		"FreeRTOS": "warn",
+		"ara": "info"
+	}
+}
