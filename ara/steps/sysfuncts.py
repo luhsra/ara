@@ -27,7 +27,7 @@ class SysFuncts(Step):
 
         for nod in self._graph.functs.vertices():
             call = self._graph.functs.vp.name[nod]
-            self._graph.functs.vp.syscall[nod] = self.is_syscall(call)
+            self._graph.functs.vp.sysfunc[nod] = self.is_syscall(call)
         if self._graph.os is None:
             self._log.warn("OS cannot be detected. Are there any syscalls?")
 
