@@ -92,7 +92,8 @@ foreach app : zephyr_apps
         '--nm=' + nm.full_path(),
         '--ar=' + ar.full_path(),
         '--board=' + board,
-        '--libgcc=' + l_gcc],
+        '--libgcc=' + l_gcc,
+        '--cc=' + clang.full_path()],
         output: app + '.ll',
         build_always_stale: true)
 endforeach

@@ -20,6 +20,7 @@ parser.add_argument('--build_dir', type=str)
 parser.add_argument('--zephyr_root', type=str)
 parser.add_argument('--board', type=str)
 parser.add_argument('--libgcc', type=str)
+parser.add_argument('--cc', type=str)
 parser.add_argument('name', metavar='N', type=str)
 
 args = parser.parse_args()
@@ -53,12 +54,14 @@ if not same_board:
     cmake_call += ' -D ZEPHYR_TOOLCHAIN_VARIANT=llvm'
     cmake_call += ' -D ZEPHYR_BASE=' + args.zephyr_root
     cmake_call += ' -D TOOLCHAIN_ROOT=' + args.zephyr_root
+    cmake_call += ' -D CMAKE_C_COMPILER=' + args.cc
+    cmake_call += ' -D CMAKE_CXX_COMPILER=' + args.cc
     # Normally cmake *should* find them by itself, but this seems to be the only way to make it work
     # reliably
     cmake_call += ' -D CMAKE_OBJCOPY=' + args.objcopy
     cmake_call += ' -D CMAKE_OBJDUMP=' + args.objdump
-    cmake_call += ' -D CMAKE_=NM' + args.nm
-    cmake_call += ' -D CMAKE_=AR' + args.ar
+    cmake_call += ' -D CMAKE_NM=' + args.nm
+    cmake_call += ' -D CMAKE_AR=' + args.ar
     # Override the linker that clang uses for the exe/elf. Clang defaults to lld which is incompatible
     # with the generated linker scripts. Note that setting CMAKE_LINKER will NOT work since clang
     # ignores that.
