@@ -62,7 +62,7 @@ There are some build options to deactivate parts of the project. Take a look at 
 
 Zephyr
 ------
-In order to build and analyze Zephyr-RTOS apps some additional steps are required:
+In order to build and analyze Zephyr-RTOS apps some additional steps are required: (you can use the init_zephyr.sh script to automate this process)
 To obtain Zephyr and its dependencies follow steps 1 to 3 (inclusive) from their [starter guide](https://docs.zephyrproject.org/2.4.0/getting_started/index.html).
 
 Delete the zephyrproject/zephyr repo and replace it with our [internal one](https://scm.sra.uni-hannover.de/diffusion/412/repository/ara/). 
