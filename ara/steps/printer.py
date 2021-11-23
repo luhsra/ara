@@ -336,8 +336,8 @@ class Printer(Step):
             attrs["fontsize"] = attrs.get("fontsize", 14)
 
             if self.gen_html_links.get():
-                src_file = instances.vp.files[instance][0]
-                src_line = instances.vp.lines[instance][0]
+                src_file = instances.vp.file[instance]
+                src_line = instances.vp.line[instance]
                 if (src_file != '' and src_line != 0):
                     hfile = self._gen_html_file(src_file)
                     if hfile is not None:
