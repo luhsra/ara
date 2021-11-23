@@ -39,4 +39,4 @@ west update
 
 # Allow Meson to find ${ZEPHYR_PROJECT}
 cd .. # back to: ${MESON_BUILD}
-meson configure -D zephyr_dir=$(pwd)/${ZEPHYR_PROJECT}
+meson configure -D zephyr_dir=$(pwd)/zephyrproject
