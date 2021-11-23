@@ -809,6 +809,13 @@ class AUTOSAR(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("task_id", ty=Task, hint=SigType.instance),
+                        Arg("event", hint=SigType.symbol)))
+    def AUTOSAR_GetEvent(cfg, state, cpu_id, args, va):
+        # the syscall does not affect the system state at all
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_DisableAllInterrupts(cfg, state, cpu_id, args, va):
         state.cpus[cpu_id].irq_on = False
@@ -822,10 +829,6 @@ class AUTOSAR(OSBase):
 
     @syscall
     def AUTOSAR_GetAlarm(cfg, abb, state):
-        pass
-
-    @syscall
-    def AUTOSAR_GetEvent(cfg, abb, state):
         pass
 
     @staticmethod
