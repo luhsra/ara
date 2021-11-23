@@ -340,8 +340,8 @@ class FreeRTOS(OSBase):
         instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
-        instances.vp.file[v] = cfg.vp.file[abb]
-        instances.vp.line[v] = cfg.vp.line[abb]
+        instances.vp.file[v] = cfg.vp.files[abb][0]
+        instances.vp.line[v] = cfg.vp.lines[abb][0]
         instances.vp.is_control[v] = False
 
     @syscall(categories={SyscallCategory.create},
@@ -535,8 +535,8 @@ class FreeRTOS(OSBase):
 
         queue = args.handler
         if not queue:
-            logger.error(f"xQueueGenericSend (file: {cfg.vp.file[abb]}, "
-                         f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
+            logger.error(f"xQueueGenericSend (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
@@ -556,8 +556,8 @@ class FreeRTOS(OSBase):
 
         queue = args.handler
         if not queue:
-            logger.error(f"xQueueSemaphoreTake (file: {cfg.vp.file[abb]}, "
-                         f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
+            logger.error(f"xQueueSemaphoreTake (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
