@@ -1,5 +1,6 @@
 import ara.steps.py_logging
 
+
 def provide_steps():
     from .step import provide_steps as _native_provide
     from .callgraph_stats import CallGraphStats
@@ -8,6 +9,7 @@ def provide_steps():
     from .cfg_optimize import CFGOptimize
     from .cfg_stats import CFGStats
     from .dummy import Dummy
+    from .dump_cfg import DumpCFG
     from .generator import Generator
     from .icfg import ICFG
     from .load_oil import LoadOIL
@@ -33,6 +35,7 @@ def provide_steps():
     yield ClassifySpecializationsFreeRTOS
     yield CreateABBs
     yield Dummy
+    yield DumpCFG
     yield Generator
     yield ICFG
     yield InteractionAnalysis
