@@ -1,4 +1,4 @@
-from .os_util import syscall, Arg, get_argument, find_return_value
+from .os_util import syscall, Arg, get_argument, find_return_value, set_next_abb
 from .os_base import OSBase
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType
@@ -399,19 +399,23 @@ class ZEPHYR(OSBase):
         return SyscallCategory.every in categories or (syscall_category | categories) == syscall_category
 
     @staticmethod
-    def interpret(cfg, abb, state, categories=SyscallCategory.every):
+    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+        cfg = graph.cfg
+        abb = state.cpus[cpu_id].abb
         syscall_name = cfg.get_syscall_name(abb)
         syscall_name = ZEPHYR.drop_llvm_suffix(syscall_name)
+        logger.debug(f"Get syscall: {syscall_name}, ABB: {cfg.vp.name[abb]}"
+                     f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
         syscall = getattr(ZEPHYR, syscall_name)
 
         if ZEPHYR.syscall_in_category(syscall, categories):
             logger.info(f"Interpreting syscall: {syscall_name}")
-            return syscall(cfg, abb, state)
+            return syscall(graph, state, cpu_id)
         else:
             state = state.copy()
             state.next_abbs = []
-            ZEPHYR.add_normal_cfg(cfg, abb, state)
+            set_next_abb(state, cpu_id)
             return state
 
     # k_tid_t k_thread_create(struct k_thread *new_thread, k_thread_stack_t *stack, size_t stack_size, 
