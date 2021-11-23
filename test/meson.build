@@ -93,6 +93,14 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('src-loc',
+        py3_inst,
+        args: [files('src_loc.py'), files('src_loc.json'), freertos_src_loc],
+        env: [python_path],
+        depends: ara_py,
+        suite: 'steps'
+    )
+
     foreach elem : autosar_targets_with_test
       test('sse_' + elem[3],
           py3_inst,
