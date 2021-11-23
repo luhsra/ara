@@ -308,7 +308,7 @@ class FreeRTOS(OSBase):
                 # do not interpret this syscall
                 state = state.copy()
                 state.next_abbs = []
-                set_next_abb(state, 0)
+                set_next_abb(state, cpu_id)
                 return state
         return syscall_function(graph, state, cpu_id)
 
