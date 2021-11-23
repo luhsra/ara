@@ -9,10 +9,12 @@ from common.cy_helper cimport to_string
 from cgraph cimport CallGraph, SigType as CSigType
 from cy_helper cimport to_sigtype, safe_get_value
 
+from libcpp.cast cimport reinterpret_cast
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
+from libc.stdint cimport intptr_t
 from cython.operator cimport dereference as deref, postincrement
 from ir cimport Value, AttributeSet
 from ara.os import get_syscalls, get_os_syscalls
@@ -236,6 +238,21 @@ cdef public object py_get_arguments(shared_ptr[CArguments] c_args):
     args = Arguments(create=False);
     args._c_arguments = c_args
     return args
+
+
+ctypedef Value* ValuePtr
+def _get_llvm_obj(cfg, vertex):
+    """Return the LLVM Object that belongs to a specific node.
+
+    Do _not_ call this directly. Use CFG::get_llvm_obj() instead.
+    """
+    llvm_link = cfg.vp.llvm_link[vertex]
+    if llvm_link == 0:
+        return None
+    cdef intptr_t val_int = llvm_link
+    cdef void* val_ptr = <void*>(val_int)
+    cdef Value* val = reinterpret_cast[ValuePtr](val_ptr)
+    return get_obj_from_value(deref(val))
 
 
 # functions for os.h

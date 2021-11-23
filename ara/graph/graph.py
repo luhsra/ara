@@ -4,7 +4,7 @@ import graph_tool.util
 
 from graph_tool.topology import label_out_component
 
-from .graph_data import PyGraphData
+from .graph_data import PyGraphData, _get_llvm_obj
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 
 from collections.abc import Iterator
@@ -87,6 +87,14 @@ class CFG(graph_tool.Graph):
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         assert len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
         return func[0]
+
+    def get_llvm_obj(self, vertex):
+        """Return the LLVM object that belongs to the specified vertex.
+
+        Returns only values for function and basic block vertices and None
+        otherwise.
+        """
+        return _get_llvm_obj(self, vertex)
 
     def get_function(self, abb):
         """Get the function node for an ABB."""
@@ -243,6 +251,9 @@ class CFGView(graph_tool.GraphView):
     """Class to get CFG functions for a filtered CFG."""
     def __init__(self, graph, **kwargs):
         graph_tool.GraphView.__init__(self, graph, **kwargs)
+
+    def get_llvm_obj(self, *args, **kwargs):
+        return self.base.get_llvm_obj(*args, **kwargs)
 
     def get_function_by_name(self, *args, **kwargs):
         return self.base.get_function_by_name(*args, **kwargs)
