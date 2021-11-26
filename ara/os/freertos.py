@@ -1,5 +1,5 @@
 from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb
-from .os_base import OSBase
+from .os_base import OSBase, ControlInstance
 
 import pyllco
 import html
@@ -63,18 +63,16 @@ class FreeRTOSInstance(object):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+
 @dataclass
-class Task(FreeRTOSInstance):
+class Task(FreeRTOSInstance, ControlInstance):
     uid_counter = 0
     never_deleted = True
 
-    function: str                   # Name of function
-    function_node: pyllco.Function  # Functions vertex node
     stack_size: int
     parameters: any
     init_priority: int
     handle_p: any
-    is_regular: bool = True
     static_stack: any = None
 
     def __post_init__(self):
@@ -112,8 +110,10 @@ class Task(FreeRTOSInstance):
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "stack_size", "parameters",
-                        "priority", "handle_p", "is_regular"]
+                        "priority", "handle_p", "artificial"]
         attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        f = "Undefined" if self.function is None else self.cfg.vp.name[self.cfg.vertex(self.function)]
+        attrs.append(("function", html.escape(f)))
         sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
                                  for k, v in attrs])
 
@@ -131,7 +131,7 @@ class Task(FreeRTOSInstance):
                                   self.function,
                                   self.priority,
                                   self.stack_size,
-                                  self.is_regular,
+                                  self.artificial,
                                   self.cfg.vp.name[self.abb],
                                   handler_name,
                                   self.parameters,
@@ -139,7 +139,7 @@ class Task(FreeRTOSInstance):
 
     def __hash__(self):
         return hash(("Task", self.abb, self.call_path, self.vidx, self.name,
-                     self.function, self.stack_size, self.parameters, self.init_priority, self.handle_p, self.is_regular, self.static_stack))
+                     self.function, self.stack_size, self.parameters, self.init_priority, self.handle_p, self.artificial, self.static_stack))
 
 
 @dataclass
@@ -370,9 +370,9 @@ class FreeRTOS(OSBase):
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg=cfg,
+                                         artificial=False,
                                          vidx=v,
-                                         function=func_name,
-                                         function_node=cfg.get_function_by_name(func_name),
+                                         function=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
@@ -409,8 +409,8 @@ class FreeRTOS(OSBase):
         # TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
         state.instances.vp.obj[v] = Task(cfg=cfg,
-                                         function='prvIdleTask',
-                                         function_node=None,
+                                         artificial=True,
+                                         function=None,
                                          name='idle_task',
                                          vidx=v,
                                          stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None)),
@@ -418,8 +418,7 @@ class FreeRTOS(OSBase):
                                          init_priority=0,
                                          handle_p=0,
                                          call_path=cp,
-                                         abb=cfg.vertex(abb),
-                                         is_regular=False)
+                                         abb=cfg.vertex(abb))
         state.instances.vp.is_control[v] = True
         graph.os.idle_task = state.instances.vp.obj[v]
 
@@ -598,9 +597,9 @@ class FreeRTOS(OSBase):
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg=cfg,
+                                         artificial=False,
                                          vidx=v,
-                                         function=func_name,
-                                         function_node=cfg.get_function_by_name(func_name),
+                                         function=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,

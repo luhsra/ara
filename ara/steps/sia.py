@@ -148,20 +148,21 @@ class FlatAnalysis(Step):
                                           (analysis_context.usually_taken and
                                           not self._is_in_condition(abb)))
 
-    def _iterate_task_entry_points(self):
+    def _iterate_control_entry_points(self):
         """Return a generator over all tasks in self._graph.instances.
 
         Return a tuple of the cfg function and the instance vertex.
         """
-        cfg = self._graph.cfg
-        if self._graph.instances is None:
+        instances = self._graph.instances
+        if instances is None:
             return
 
-        def is_regular_task(task):
-            return task is not None and task.is_regular
-            
-        return [(task.function_node, v) for v, task in 
-            filter(lambda v_task: is_regular_task(v_task[1]), self._graph.instances.get(Task))]
+        for inst in instances.get_controls().vertices():
+            inst = instances.vertex(inst)
+            obj = instances.vp.obj[inst]
+            if obj.artificial:
+                continue
+            yield obj.function, inst
 
     def _dump_names(self):
         raise NotImplementedError
@@ -270,7 +271,7 @@ class SIA(FlatAnalysis):
     def _trigger_new_steps(self):
         step_data = self._get_step_data(set)
 
-        for entry, _ in self._iterate_task_entry_points():
+        for entry, _ in self._iterate_control_entry_points():
             func_name = self._graph.cfg.vp.name[entry]
             if func_name not in step_data:
                 self._step_manager.chain_step(
@@ -292,7 +293,7 @@ class SIA(FlatAnalysis):
         # find instance that belongs to this point
         cfg_func = self._graph.cfg.vertex(callgraph.vp.function[entry_point])
 
-        instances = [v for func, v in self._iterate_task_entry_points()
+        instances = [v for func, v in self._iterate_control_entry_points()
                      if func == cfg_func]
 
         result = [(entry_point, x) for x in instances]
@@ -326,4 +327,4 @@ class InteractionAnalysis(FlatAnalysis):
         cfg = self._graph.cfg
         cg = self._graph.callgraph
         return [(cg.vertex(cfg.vp.call_graph_link[x]), v)
-                for x, v in self._iterate_task_entry_points()]
+                for x, v in self._iterate_control_entry_points()]

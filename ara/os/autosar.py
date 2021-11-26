@@ -65,7 +65,6 @@ class TaskGroup(AUTOSARInstance):
 
 @dataclass(repr=False)
 class Task(AUTOSARInstance, ControlInstance):
-    function: graph_tool.Vertex
     priority: int
     activation: Any
     autostart: bool
@@ -174,7 +173,6 @@ class AUTOSARContext:
 
 @dataclass(repr=False)
 class ISR(AUTOSARInstance, ControlInstance):
-    function: graph_tool.Vertex
     priority: int
     category: int
 

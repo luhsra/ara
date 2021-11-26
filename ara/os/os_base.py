@@ -117,6 +117,8 @@ class ControlInstance:
     ISRs.
     """
     cfg: CFG
+    artificial: bool
+    function: graph_tool.Vertex
 
 
 @dataclass
