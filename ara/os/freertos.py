@@ -1,5 +1,5 @@
 from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb, connect_from_here, find_instance_node
-from .os_base import OSBase, ControlInstance
+from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 
 import pyllco
 import html
@@ -280,6 +280,20 @@ class FreeRTOS(OSBase):
     @staticmethod
     def init(state):
         state.scheduler_on = False
+
+    @staticmethod
+    def get_initial_state(cfg, instances):
+        # We can't set a control instance, yet, since FreeRTOS does not start
+        # directly. Is has to be the responsibility of the outer analysis to
+        # set the correct starting abb.
+        return OSState(cpus=CPUList([CPU(id=0,
+                                         irq_on=True,
+                                         control_instance=None,
+                                         abb=None,
+                                         call_path=CallPath(),
+                                         exec_state=ExecState.idle,
+                                         analysis_context=None)]),
+                       instances=instances, cfg=cfg)
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
