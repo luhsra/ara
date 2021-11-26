@@ -10,6 +10,7 @@ def provide_steps():
     from .cfg_stats import CFGStats
     from .dummy import Dummy
     from .dump_cfg import DumpCFG
+    from .dump_instances import DumpInstances
     from .generator import Generator
     from .icfg import ICFG
     from .load_oil import LoadOIL
@@ -36,6 +37,7 @@ def provide_steps():
     yield CreateABBs
     yield Dummy
     yield DumpCFG
+    yield DumpInstances
     yield Generator
     yield ICFG
     yield InteractionAnalysis
