@@ -40,7 +40,7 @@ class InstanceEdge(IntEnum):
     activate = 3
     chain = 4
     nestable = 5
-    cancel = 6
+    terminate = 6
 
 
 @dataclass(eq=False)
@@ -784,7 +784,7 @@ class AUTOSAR(OSBase):
 
         a = find_instance_node(state.instances, args.alarm)
         connect_from_here(state, cpu_id, a, "CancelAlarm",
-                          ty=InstanceEdge.cancel)
+                          ty=InstanceEdge.terminate)
 
         return state
 
@@ -1034,7 +1034,11 @@ class AUTOSAR(OSBase):
              signature=tuple(),
              custom_control_flow=True)
     def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
-        return AUTOSAR.TerminateTask(state, cpu_id)
+        AUTOSAR.TerminateTask(state, cpu_id)
+        cur = state.cpus[cpu_id].control_instance
+        connect_from_here(state, cpu_id, cur, "TerminateTask",
+                          ty=InstanceEdge.terminate)
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("event_mask"),))
