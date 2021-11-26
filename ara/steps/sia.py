@@ -180,6 +180,7 @@ class FlatAnalysis(Step):
         cfg = self._graph.cfg
         callg = self._graph.callgraph
         os = self._graph.os
+        instances = self._graph.instances
 
         entry_points = self._get_entry_points()
 
@@ -194,14 +195,19 @@ class FlatAnalysis(Step):
             function = callg.vertex(cfg.vp.call_graph_link[cfg_function])
 
             rev_cg = GraphView(callg, reversed=True)
+            init_state = os.get_initial_state(cfg, instances)
             for entry_point, inst in entry_points:
                 if inst is not None:
-                    inst = self._graph.instances.vertex(inst)
-                    branch = self._graph.instances.vp.branch[inst]
-                    loop = self._graph.instances.vp.loop[inst]
+                    inst = instances.vertex(inst)
+                    branch = instances.vp.branch[inst]
+                    loop = instances.vp.loop[inst]
+                    cpu_id = instances.vp.obj[inst].cpu_id
+                    if cpu_id < 0:
+                        cpu_id = 0
                 else:
                     branch = False
                     loop = False
+                    cpu_id = 0
 
                 self._log.debug(f"Handle {sys_name} with entry_point "
                                 f"{callg.vp.function_name[entry_point]}")
@@ -209,23 +215,23 @@ class FlatAnalysis(Step):
                 for path in chain(all_paths(rev_cg, function, entry_point,
                                             edges=True), path_to_self):
                     abb = cfg.vertex(syscall)
-                    state = OSState(cpus=((CPU(id=0,
-                                               irq_on=False,  # SIA does not simulate Interrupts
-                                               control_instance=inst,
-                                               abb=abb,
-                                               call_path=CallPath(),
-                                               exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
-                                               analysis_context=SIAContext(
-                                                    callg=callg,
-                                                    branch=branch,
-                                                    loop=loop,
-                                                    recursive=False,
-                                                    usually_taken=False,
-                                                    scheduler_on=self._is_chained_analysis()
-                                               )),)),
-                                    instances=self._graph.instances,
-                                    cfg=cfg)
-                    fake_cpu = state.cpus[0]
+                    state = init_state.copy()
+
+                    state.cpus[cpu_id] = CPU(id=state.cpus[cpu_id].id,
+                                             irq_on=False,
+                                             control_instance=inst,
+                                             abb=abb,
+                                             call_path=CallPath(),
+                                             exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
+                                             analysis_context=SIAContext(
+                                                  callg=callg,
+                                                  branch=branch,
+                                                  loop=loop,
+                                                  recursive=False,
+                                                  usually_taken=False,
+                                                  scheduler_on=self._is_chained_analysis()
+                                             ))
+                    fake_cpu = state.cpus[cpu_id]
 
                     for edge in reversed(path):
                         abb = cfg.vertex(callg.ep.callsite[edge])
@@ -236,14 +242,10 @@ class FlatAnalysis(Step):
                     self._set_flags(fake_cpu.analysis_context, syscall)
                     fake_cpu.analysis_context.recursive |= callg.vp.recursive[function]
 
-                    new_states = os.interpret(
+                    os.interpret(
                         self._graph, state, 0,
                         categories=self._search_category()
                     )
-                    if len(new_states) != 1:
-                        raise RuntimeError("Creation syscalls with multiple "
-                                           "return states are not supported.")
-                    self._graph.instances = new_states[0].instances
 
         self._trigger_new_steps()
 
