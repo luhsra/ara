@@ -21,9 +21,3 @@
 	url = https://scm.sra.uni-hannover.de/source/ara-link.git
 	branch = master
 	vcs = git
-
-[external "zephyr"]
-	path = subprojects/zephyr
-	url = ssh://git@scm.sra.uni-hannover.de/diffusion/412/zephyrproject-rtos.git
-	branch = ara
-	vcs = git
