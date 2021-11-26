@@ -314,6 +314,26 @@ def find_return_value(abb, callpath, va):
         return ValueAnalyzerResult(ret_val, [], None, callpath)
 
 
+def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
+    src = instance_graph.vertex(src)
+    tgt = instance_graph.vertex(tgt)
+    existing = instance_graph.edge(src, tgt)
+    if existing and instance_graph.ep.syscall[existing] == abb:
+        return
+
+    e = instance_graph.add_edge(src, tgt)
+    instance_graph.ep.syscall[e] = abb
+    instance_graph.ep.label[e] = label
+    if ty:
+        instance_graph.ep.type[e] = ty
+
+
+def connect_from_here(state, cpu_id, tgt, label, ty=None):
+    cpu = state.cpus[cpu_id]
+    connect_instances(state.instances, cpu.control_instance, tgt,
+                      cpu.abb, label, ty=ty)
+
+
 def find_instance_node(instances, obj):
     for ins in instances.vertices():
         if instances.vp.obj[ins] is obj:

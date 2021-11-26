@@ -1,4 +1,4 @@
-from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb
+from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb, connect_from_here, find_instance_node
 from .os_base import OSBase, ControlInstance
 
 import pyllco
@@ -509,8 +509,8 @@ class FreeRTOS(OSBase):
             # TODO proper error handling
             logger.error("ERROR: vTaskDelay called without running Task")
 
-        e = state.instances.add_edge(cpu.control_instance, cpu.control_instance)
-        state.instances.ep.label[e] = f"vTaskDelay({args.ticks})"
+        connect_from_here(state, cpu_id, cpu.control_instance,
+                          f"vTaskDelay({args.ticks})")
 
         return state
 
@@ -532,9 +532,7 @@ class FreeRTOS(OSBase):
                          "found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
-            e = state.instances.add_edge(cpu.control_instance, queue_node)
-            state.instances.ep.label[e] = "xQueueGenericSend"
-
+            connect_from_here(state, cpu_id, queue_node, "xQueueGenericSend")
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -553,8 +551,7 @@ class FreeRTOS(OSBase):
                          "found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
-            e = state.instances.add_edge(cpu.control_instance, queue_node)
-            state.instances.ep.label[e] = "xQueueSemaphoreTake"
+            connect_from_here(state, cpu_id, queue_node, "xQueueSemaphoreTake")
 
         return state
 

@@ -1,4 +1,4 @@
-from .os_util import syscall, Arg, set_next_abb
+from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
 from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType, single_check
@@ -38,7 +38,9 @@ class InstanceEdge(IntEnum):
     have = 1
     trigger = 2
     activate = 3
-    nestable = 4
+    chain = 4
+    nestable = 5
+    cancel = 6
 
 
 @dataclass(eq=False)
@@ -764,7 +766,11 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
-        return AUTOSAR.ActivateTask(state, cpu_id, args.task)
+        AUTOSAR.ActivateTask(state, cpu_id, args.task)
+        t = find_instance_node(state.instances, args.task)
+        connect_from_here(state, cpu_id, t, "ActivateTask",
+                          ty=InstanceEdge.activate)
+        return state
 
     @syscall
     def AUTOSAR_AdvanceCounter(cfg, abb, state):
@@ -776,6 +782,10 @@ class AUTOSAR(OSBase):
         assert(isinstance(args.alarm, Alarm))
         if args.alarm in state.context:
             state.context[args.alarm].active = False
+
+        a = find_instance_node(state.instances, args.alarm)
+        connect_from_here(state, cpu_id, a, "CancelAlarm",
+                          ty=InstanceEdge.cancel)
 
         return state
 
@@ -789,6 +799,10 @@ class AUTOSAR(OSBase):
 
         AUTOSAR.TerminateTask(state, cpu_id)
         AUTOSAR.ActivateTask(state, cpu_id, args.task)
+
+        t = find_instance_node(state.instances, args.task)
+        connect_from_here(state, cpu_id, t, "ChainTask",
+                          ty=InstanceEdge.chain)
 
         return state
 

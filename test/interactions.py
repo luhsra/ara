@@ -40,6 +40,9 @@ def main():
             "target": instances.vp.id[edge.target()],
         }
         for name, prop in instances.ep.items():
+            if name == 'syscall':
+                # pointer to vertex index
+                continue
             val = prop[edge]
             i_dump[name] = val
         i_dump["type"] = "interaction"
