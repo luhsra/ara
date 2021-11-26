@@ -23,6 +23,7 @@ def provide_steps():
     from .sia import SIA, InteractionAnalysis
     from .multisse import MultiSSE
     from .sse import SSE
+    from .sstg_stats import SSTGStats
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
@@ -51,6 +52,7 @@ def provide_steps():
     yield RegisterTaskEntry
     yield SIA
     yield SSE
+    yield SSTGStats
     yield SysFuncts
     yield Syscall
     yield SystemRelevantFunctions
