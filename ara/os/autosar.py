@@ -907,8 +907,9 @@ class AUTOSAR(OSBase):
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
     def AUTOSAR_ReleaseResource(cfg, state, cpu_id, args, va):
         state.cur_context(cpu_id).dyn_prio.pop()
-        dyn_prio = state.cur_context(cpu_id).dyn_prio[-1]
-        logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
+        if state.cur_context(cpu_id).dyn_prio:
+            dyn_prio = state.cur_context(cpu_id).dyn_prio[-1]
+            logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
 
         return state
 
