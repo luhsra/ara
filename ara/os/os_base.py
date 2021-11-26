@@ -48,6 +48,12 @@ class CPUList:
     def __getitem__(self, idx):
         return self._cpus[idx]
 
+    def __setitem__(self, idx, cpu):
+        if cpu.id != idx:
+            raise RuntimeError(f"Trying to assign a CPU with id {cpu.id} to "
+                               f"index {idx}.")
+        self._cpus[idx] = cpu
+
 
 class TaskStatus(enum.IntEnum):
     running = 1
