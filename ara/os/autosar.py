@@ -58,7 +58,6 @@ class AUTOSARInstance:
         return self.name
 
 
-
 @dataclass
 class TaskGroup(AUTOSARInstance):
     promises: dict

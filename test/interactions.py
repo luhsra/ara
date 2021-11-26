@@ -25,6 +25,7 @@ def main():
                 # wild pointer, skip this
                 continue
             if name == 'soc':
+                # pointer to vertex index
                 continue
             if prop.value_type() == 'python::object':
                 # for now, just ignore
@@ -49,7 +50,7 @@ def main():
             return "0" + item['id']
         return "1"
 
-    # log.info(json.dumps(sorted(dump, key=sort_key), indent=2))
+    # log.warn(json.dumps(sorted(dump, key=sort_key), indent=2))
     fail_if(data != sorted(dump, key=sort_key), "Data not equal")
 
 

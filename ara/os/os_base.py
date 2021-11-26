@@ -217,10 +217,11 @@ class OSBase:
         raise NotImplementedError
 
     @staticmethod
-    def get_initial_state(instances):
+    def get_initial_state(cfg, instances):
         """Get the OS specific initial state.
 
         Arguments:
+        cfg       -- the control flow graph
         instances -- the already detected global instances
         """
         raise NotImplementedError

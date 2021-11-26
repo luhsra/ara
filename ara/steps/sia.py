@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from .step import Step
 from .option import Option, String
 
-# TODO no FreeRTOS specific code
-from ara.os.freertos import Task
 from ara.os.os_base import OSState, CPU, ExecState
 
 from graph_tool import GraphView

@@ -15,8 +15,8 @@ logger = get_logger("FreeRTOS")
 
 @dataclass(eq=False)
 class FreeRTOSInstance(object):
-    cfg: CFG = field()
-    abb: any # of type ABB
+    cfg: CFG
+    abb: Vertex  # of type ABB
     call_path: CallPath
     vidx: Vertex
     name: str
@@ -145,8 +145,7 @@ class Task(FreeRTOSInstance):
 @dataclass
 class Queue(FreeRTOSInstance):
     never_deleted = True
-    uid_counter = 0        
-    
+    uid_counter = 0
     handler: any
     length: int
     size: int
@@ -370,7 +369,7 @@ class FreeRTOS(OSBase):
 
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg,
+        state.instances.vp.obj[v] = Task(cfg=cfg,
                                          vidx=v,
                                          function=func_name,
                                          function_node=cfg.get_function_by_name(func_name),
@@ -408,7 +407,7 @@ class FreeRTOS(OSBase):
 
         # TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
-        state.instances.vp.obj[v] = Task(cfg,
+        state.instances.vp.obj[v] = Task(cfg=cfg,
                                          function='prvIdleTask',
                                          function_node=None,
                                          name='idle_task',
@@ -488,7 +487,7 @@ class FreeRTOS(OSBase):
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
-        state.instances.vp.obj[v] = Mutex(cfg,
+        state.instances.vp.obj[v] = Mutex(cfg=cfg,
                                           name=handler_name,
                                           handler=ret_val,
                                           m_type=args.mutex_type,
@@ -510,7 +509,6 @@ class FreeRTOS(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("ticks"),))
     def vTaskDelay(graph, state, cpu_id, args, va):
-        state = state.copy()
         cpu = state.cpus[cpu_id]
 
         if cpu.running is None:
@@ -597,7 +595,7 @@ class FreeRTOS(OSBase):
 
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg,
+        state.instances.vp.obj[v] = Task(cfg=cfg,
                                          vidx=v,
                                          function=func_name,
                                          function_node=cfg.get_function_by_name(func_name),
