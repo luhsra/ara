@@ -312,3 +312,10 @@ def find_return_value(abb, callpath, va):
         return va.get_memory_value(ret_val, callpath=callpath)
     except ValuesUnknown:
         return ValueAnalyzerResult(ret_val, [], None, callpath)
+
+
+def find_instance_node(instances, obj):
+    for ins in instances.vertices():
+        if instances.vp.obj[ins] is obj:
+            return ins
+    raise RuntimeError("Instance could not be found.")

@@ -268,13 +268,6 @@ class StreamBuffer(FreeRTOSInstance):
                      self.size, self.handler))
 
 
-def find_instance_node(instances, obj):
-    for ins in instances.vertices():
-        if instances.vp.obj[ins] is obj:
-            return ins
-    raise RuntimeError("Instance could not be found.")
-
-
 class FreeRTOS(OSBase):
     @staticmethod
     def get_special_steps():
