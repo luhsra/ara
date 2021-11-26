@@ -92,7 +92,7 @@
     "recursive": 1,
     "after_scheduler": 0,
     "unique": 0,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 44,
     "specialization_level": ""
@@ -106,7 +106,7 @@
     "recursive": 0,
     "after_scheduler": 0,
     "unique": 1,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 82,
     "specialization_level": ""
@@ -120,7 +120,7 @@
     "recursive": 0,
     "after_scheduler": 0,
     "unique": 1,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 74,
     "specialization_level": ""
@@ -134,7 +134,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 92,
     "specialization_level": ""
@@ -148,7 +148,7 @@
     "recursive": 0,
     "after_scheduler": 0,
     "unique": 0,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 76,
     "specialization_level": ""
@@ -162,7 +162,7 @@
     "recursive": 0,
     "after_scheduler": 0,
     "unique": 1,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 79,
     "specialization_level": ""
@@ -176,7 +176,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 104,
     "specialization_level": ""
@@ -190,7 +190,7 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 0,
-    "is_control": 0,
+    "is_control": 1,
     "file": "../appl/FreeRTOS/instances.cc",
     "line": 99,
     "specialization_level": ""

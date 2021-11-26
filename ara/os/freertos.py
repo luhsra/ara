@@ -381,6 +381,7 @@ class FreeRTOS(OSBase):
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
         )
+        state.instances.vp.is_control[v] = True
         if args.task_handle_p:
             va.assign_system_object(args.task_handle_p.value,
                                     state.instances.vp.obj[v],
@@ -419,6 +420,7 @@ class FreeRTOS(OSBase):
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
                                          is_regular=False)
+        state.instances.vp.is_control[v] = True
         graph.os.idle_task = state.instances.vp.obj[v]
 
         assign_id(state.instances, v)
@@ -607,6 +609,7 @@ class FreeRTOS(OSBase):
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
                                          static_stack=args.task_stack)
+        state.instances.vp.is_control[v] = True
 
         assign_id(state.instances, v)
         if args.task_handle_p:
