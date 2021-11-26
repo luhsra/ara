@@ -1,5 +1,5 @@
 from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
-from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState
+from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType, single_check
 
@@ -44,9 +44,8 @@ class InstanceEdge(IntEnum):
 
 
 @dataclass(eq=False)
-class AUTOSARInstance:
+class AUTOSARInstance(CPUBounded):
     name: str
-    cpu_id: int
 
     def __eq__(self, other):
         # the name of an arbitrary AUTOSAR instance must be unique

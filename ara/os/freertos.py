@@ -378,6 +378,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg=cfg,
                                          artificial=False,
+                                         cpu_id=-1,
                                          vidx=v,
                                          function=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
@@ -417,6 +418,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
         state.instances.vp.obj[v] = Task(cfg=cfg,
                                          artificial=True,
+                                         cpu_id=-1,
                                          function=None,
                                          name='idle_task',
                                          vidx=v,
@@ -602,6 +604,7 @@ class FreeRTOS(OSBase):
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
         state.instances.vp.obj[v] = Task(cfg=cfg,
                                          artificial=False,
+                                         cpu_id=-1,
                                          vidx=v,
                                          function=cfg.get_function_by_name(func_name),
                                          name=args.task_name,

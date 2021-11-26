@@ -117,7 +117,16 @@ class ControlContext:
 
 
 @dataclass
-class ControlInstance:
+class CPUBounded:
+    """An instance which is bounded to a specific CPU.
+
+    If the instance is not bounded set cpu_id to -1.
+    """
+    cpu_id: int
+
+
+@dataclass
+class ControlInstance(CPUBounded):
     """All operating system instances (system objects) that contain control
     flow should inherit from this class. Typically, these are threads, tasks,
     ISRs.
