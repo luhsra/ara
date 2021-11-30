@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "option.h"
 #include "step.h"
 
 #include <boost/python.hpp>
@@ -15,27 +14,33 @@ namespace ara::step {
 	class ReplaceSyscallsCreate : public ConfStep<ReplaceSyscallsCreate> {
 	  private:
 		using ConfStep<ReplaceSyscallsCreate>::ConfStep;
+		template <typename Graph>
+		friend void iterate(ReplaceSyscallsCreate*, Graph&, graph::InstanceGraph&);
+
 		PyObject* handle_tcb_ref_param(llvm::IRBuilder<>& Builder, llvm::Value* tcb_ref, llvm::Value* the_tcb);
 		PyObject* replace_call_with_true(llvm::CallBase* call);
 		llvm::Function* get_fn(const char* name);
 		llvm::BasicBlock* create_bb(boost::python::object task);
 		PyObject* replace_call_with_activate(llvm::CallBase* call, llvm::Value* tcb);
 		PyObject* replace_task_create_static(boost::python::object o);
-		PyObject* replace_task_create_initialized(boost::python::object o, uintptr_t function_ptr);
+		PyObject* replace_task_create_initialized(boost::python::object o);
 		PyObject* replace_queue_create_static(boost::python::object o);
 		PyObject* replace_queue_create_initialized(boost::python::object o);
 		PyObject* replace_mutex_create_static(boost::python::object o);
 		PyObject* replace_mutex_create_initialized(boost::python::object o);
 		PyObject* change_linkage_to_global(llvm::GlobalVariable* gv);
 
+		PyObject* replace_mutex_create(boost::python::object pyo_task);
+		PyObject* replace_queue_create(boost::python::object pyo_task);
+		PyObject* replace_task_create(boost::python::object pyo_task);
+
 	  public:
+		virtual ~ReplaceSyscallsCreate(){};
 		static std::string get_name() { return "ReplaceSyscallsCreate"; }
 		static std::string get_description();
 
-		virtual void run() override;
+		virtual std::vector<std::string> get_single_dependencies() override { return {}; }
 
-		PyObject* replace_mutex_create(PyObject* pyo_task);
-		PyObject* replace_queue_create(PyObject* pyo_task);
-		PyObject* replace_task_create(PyObject* pyo_task, uintptr_t function_ptr);
+		virtual void run() override;
 	};
 } // namespace ara::step
