@@ -25,6 +25,7 @@ namespace ara::step {
 		virtual void init_options() override;
 
 	  public:
+		virtual ~CDummy(){};
 		static std::string get_name() { return "CDummy"; }
 		static std::string get_description();
 		static Step::OptionVec get_local_options();
