@@ -33,7 +33,8 @@ cdef class ReplaceSyscallsCreate(NativeStep):
         deref(self._c_()).replace_queue_create(queue)
 
     def handle_task(self, task):
-        deref(self._c_()).replace_task_create(task)
+        func_ptr = task.cfg.vp.llvm_link[task.cfg.vertex(task.function)]
+        deref(self._c_()).replace_task_create(task, func_ptr)
 
 cdef _native_step_fac_ReplaceSyscallsCreate():
     cdef unique_ptr[cstep.StepFactory] step_fac = make_step_fac[CReplaceSyscallsCreate]()

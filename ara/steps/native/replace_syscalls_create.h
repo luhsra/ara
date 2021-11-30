@@ -21,7 +21,7 @@ namespace ara::step {
 		llvm::BasicBlock* create_bb(boost::python::object task);
 		PyObject* replace_call_with_activate(llvm::CallBase* call, llvm::Value* tcb);
 		PyObject* replace_task_create_static(boost::python::object o);
-		PyObject* replace_task_create_initialized(boost::python::object o);
+		PyObject* replace_task_create_initialized(boost::python::object o, uintptr_t function_ptr);
 		PyObject* replace_queue_create_static(boost::python::object o);
 		PyObject* replace_queue_create_initialized(boost::python::object o);
 		PyObject* replace_mutex_create_static(boost::python::object o);
@@ -36,6 +36,6 @@ namespace ara::step {
 
 		PyObject* replace_mutex_create(PyObject* pyo_task);
 		PyObject* replace_queue_create(PyObject* pyo_task);
-		PyObject* replace_task_create(PyObject* pyo_task);
+		PyObject* replace_task_create(PyObject* pyo_task, uintptr_t function_ptr);
 	};
 } // namespace ara::step

@@ -391,7 +391,7 @@ namespace ara::step {
 		Py_RETURN_NONE;
 	}
 
-	PyObject* ReplaceSyscallsCreate::replace_task_create_initialized(object task) {
+	PyObject* ReplaceSyscallsCreate::replace_task_create_initialized(object task, uintptr_t function_ptr) {
 		Module& module = graph.get_module();
 		BasicBlock* bb = create_bb(task);
 		std::string tcb_name = extract<std::string>(task.attr("impl").attr("tcb").attr("name"));
@@ -407,7 +407,7 @@ namespace ara::step {
 			return PyErr_Format(PyExc_RuntimeError, "wrong function found %s", old_func->getName().str().data());
 		}
 		// make task function linkable for the tcb and stack
-		Function* taskFN = get_fn(extract<char*>(task.attr("function")));
+		Function* taskFN = reinterpret_cast<Function*>(function_ptr);
 		if (!taskFN->hasExternalLinkage()) {
 			taskFN->setLinkage(GlobalValue::ExternalLinkage);
 		}
@@ -445,7 +445,7 @@ namespace ara::step {
 		return NULL;
 	}
 
-	PyObject* ReplaceSyscallsCreate::replace_task_create(PyObject* pyo_task) {
+	PyObject* ReplaceSyscallsCreate::replace_task_create(PyObject* pyo_task, uintptr_t function_ptr) {
 		try {
 			boost::python::object task(boost::python::borrowed<>(pyo_task));
 			logger.debug() << "the task: " << task << std::endl;
@@ -454,7 +454,7 @@ namespace ara::step {
 			if (init_type == "static") {
 				return replace_task_create_static(task);
 			} else if (init_type == "initialized") {
-				return replace_task_create_initialized(task);
+				return replace_task_create_initialized(task, function_ptr);
 			} else if (init_type == "unchanged") {
 				Py_RETURN_NONE;
 			} else {
