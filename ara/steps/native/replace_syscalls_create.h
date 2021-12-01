@@ -14,8 +14,6 @@ namespace ara::step {
 	class ReplaceSyscallsCreate : public ConfStep<ReplaceSyscallsCreate> {
 	  private:
 		using ConfStep<ReplaceSyscallsCreate>::ConfStep;
-		template <typename Graph>
-		friend void iterate(ReplaceSyscallsCreate*, Graph&, graph::InstanceGraph&);
 
 		PyObject* handle_tcb_ref_param(llvm::IRBuilder<>& Builder, llvm::Value* tcb_ref, llvm::Value* the_tcb);
 		PyObject* replace_call_with_true(llvm::CallBase* call);

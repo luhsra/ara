@@ -523,29 +523,27 @@ namespace ara::step {
 		return "Replace Create-syscalls with their static pendants.";
 	}
 
-	template <typename Graph>
-	void iterate(ReplaceSyscallsCreate* that, Graph& g, graph::InstanceGraph& instances) {
-		object freertos = import("ara.os.freertos");
-		object task_cls = freertos.attr("Task");
-		object queue_cls = freertos.attr("Queue");
-		object mutex_cls = freertos.attr("Mutex");
-		for (auto v : boost::make_iterator_range(boost::vertices(g))) {
-			boost::python::object inst = instances.obj[v];
-			if (PyObject_IsInstance(inst.ptr(), task_cls.ptr())) {
-				that->replace_task_create(inst);
-			} else if (PyObject_IsInstance(inst.ptr(), queue_cls.ptr())) {
-				that->replace_queue_create(inst);
-			} else if (PyObject_IsInstance(inst.ptr(), mutex_cls.ptr())) {
-				that->replace_mutex_create(inst);
-			} else {
-				that->logger.error() << "unknown instance: " << inst << std::endl;
-			}
-		}
-	}
-
 	void ReplaceSyscallsCreate::run() {
 		graph::InstanceGraph instances = graph.get_instances();
-		graph_tool::gt_dispatch<>()([&](auto& g) { iterate(this, g, instances); },
-		                            graph_tool::always_directed())(instances.graph.get_graph_view());
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) {
+			    object freertos = import("ara.os.freertos");
+			    object task_cls = freertos.attr("Task");
+			    object queue_cls = freertos.attr("Queue");
+			    object mutex_cls = freertos.attr("Mutex");
+			    for (auto v : boost::make_iterator_range(boost::vertices(g))) {
+				    boost::python::object inst = instances.obj[v];
+				    if (PyObject_IsInstance(inst.ptr(), task_cls.ptr())) {
+					    replace_task_create(inst);
+				    } else if (PyObject_IsInstance(inst.ptr(), queue_cls.ptr())) {
+					    replace_queue_create(inst);
+				    } else if (PyObject_IsInstance(inst.ptr(), mutex_cls.ptr())) {
+					    replace_mutex_create(inst);
+				    } else {
+					    logger.error() << "unknown instance: " << inst << std::endl;
+				    }
+			    }
+		    },
+		    graph_tool::always_directed())(instances.graph.get_graph_view());
 	}
 } // namespace ara::step
