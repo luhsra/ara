@@ -185,4 +185,18 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel',
        timeout: 30
     )
+
+    zephyr_settings = files('settings' / 'zephyr.json')
+    test('zephyr_test',
+       py3_inst,
+       args: [ara_py, zephyr_targets[20], # use zephyr_targets['static_threads']
+              #'--dump',
+              '--log-level', 'debug',
+              '--os', 'Zephyr',
+              '--step-settings', zephyr_settings,
+              #'--entry-point', '""'
+              ],
+       suite: 'toplevel',
+       timeout: 30
+    )
 endif
