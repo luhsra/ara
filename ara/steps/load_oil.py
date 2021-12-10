@@ -275,12 +275,8 @@ class LoadOIL(Step):
                         cpu_id=cpu_id,
                         function=i_function,
                         priority=isr["priority"],
-<<<<<<< HEAD
-                        category=isr["category"]
-=======
                         category=isr["category"],
                         artificial=False
->>>>>>> origin/soso
                 )
                 instances.vp.is_control[i] = True
                 instances.vp.label[i] = i_name
