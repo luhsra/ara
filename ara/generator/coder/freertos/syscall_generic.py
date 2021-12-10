@@ -40,7 +40,7 @@ class GenericSystemCalls(_GenericSystemCalls):
             if task == idle_task:
                 continue
             self._log.debug("declaring task function for %s", task)
-            start_func = FunctionDeclaration(task.function,
+            start_func = FunctionDeclaration(task.cfg.vp.name[task.cfg.vertex(task.function)],
                                              'void',
                                              ['void *'],
                                              extern_c=True)

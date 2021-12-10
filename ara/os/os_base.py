@@ -48,6 +48,12 @@ class CPUList:
     def __getitem__(self, idx):
         return self._cpus[idx]
 
+    def __setitem__(self, idx, cpu):
+        if cpu.id != idx:
+            raise RuntimeError(f"Trying to assign a CPU with id {cpu.id} to "
+                               f"index {idx}.")
+        self._cpus[idx] = cpu
+
 
 class TaskStatus(enum.IntEnum):
     running = 1
@@ -111,12 +117,23 @@ class ControlContext:
 
 
 @dataclass
-class ControlInstance:
+class CPUBounded:
+    """An instance which is bounded to a specific CPU.
+
+    If the instance is not bounded set cpu_id to -1.
+    """
+    cpu_id: int
+
+
+@dataclass
+class ControlInstance(CPUBounded):
     """All operating system instances (system objects) that contain control
     flow should inherit from this class. Typically, these are threads, tasks,
     ISRs.
     """
     cfg: CFG
+    artificial: bool
+    function: graph_tool.Vertex
 
 
 @dataclass
@@ -201,154 +218,6 @@ class OSBase:
 
     @classmethod
     def get_name(cls):
-        """Return the name of the Operating System."""
-        return cls.__name__
-
-    @classmethod
-    def is_syscall(cls, function_name):
-        """Return whether a function name is a system call of this OS."""
-        if hasattr(cls, function_name):
-            return hasattr(getattr(cls, function_name), 'syscall')
-        return False
-
-    @classmethod
-    def detected_syscalls(cls):
-        """Return a dict of detected system calls.
-
-        The key is the syscall name, the value the syscall interpretation
-        function.
-        """
-        names = [x for x in dir(cls) if hasattr(getattr(cls, x), 'syscall')]
-        syscalls = []
-        for name in names:
-            syscall = getattr(cls, name)
-            syscalls.append((name, syscall))
-            for alias in syscall.aliases:
-                syscalls.append((alias, syscall))
-        sys_dict = dict(syscalls)
-        assert len(sys_dict) == len(syscalls), "Ambigoues syscall name"
-        return sys_dict
-
-    @staticmethod
-    def get_special_steps():
-        """Return OS specific preprocessing steps."""
-        from ara.steps import get_native_component
-        ValueAnalyzer = get_native_component("ValueAnalyzer")
-        return ValueAnalyzer.get_dependencies()
-
-    @staticmethod
-    def has_dynamic_instances():
-        """Does this OS create instances at runtime?"""
-        raise NotImplementedError
-
-    @staticmethod
-    def get_initial_state(instances):
-        """Get the OS specific initial state.
-
-        Arguments:
-        instances -- the already detected global instances
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def get_interrupts(instances):
-        """Get all interrupts that lead to an OS action."""
-        raise NotImplementedError
-
-    @staticmethod
-    def get_cpu_local_contexts(contexts, cpu_id):
-        """Get all contexts that affect cpu_id."""
-        raise NotImplementedError
-
-    @staticmethod
-    def get_global_contexts(contexts):
-        """Get all contexts that affect multiple CPUs."""
-        raise NotImplementedError
-
-    @staticmethod
-    def handle_irq(graph, state, cpu_id, irq):
-        """Handle an (asynchronous) IRQ.
-
-        Arguments:
-        graph      -- the system graph
-        state      -- the current system state (see the State class)
-        cpu_id     -- the CPU where the system call occurs
-        irq        -- the IRQ number
-
-        Return:
-        The follow up state or None if the IRQ is invalid.
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def handle_exit(graph, state, cpu_id):
-        """Handle an irregular exit.
-
-        Some exits cannot be followed within the ICFG (most notably ISR exits).
-        Only the OS model can handle this.
-
-        Arguments:
-        graph      -- the system graph
-        state      -- the current system state (see the State class)
-        cpu_id     -- the CPU where the system call occurs
-
-        Return:
-        A list of follow up states.
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
-        """Entry point for a synchronous os action (system call).
-
-        Arguments:
-        graph      -- the system graph
-        state      -- the current system state (see the State class)
-        cpu_id     -- the CPU where the system call occurs
-        categories -- interpret only specific system calls (for performance)
-
-        Return:
-        The follow up state.
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    def schedule(state, cpus=None):
-        """Schedule the current state.
-
-        Arguments:
-        state -- the current system state
-        cpus  -- a list of cpu_ids, defaults to all CPUs
-        """
-        raise NotImplementedError()
-
-        """Return the name of the Operating System."""
-        return cls.__name__
-
-    @classmethod
-    def is_syscall(cls, function_name):
-        """Return whether a function name is a system call of this OS."""
-        if hasattr(cls, function_name):
-            return hasattr(getattr(cls, function_name), 'syscall')
-        return False
-
-    @classmethod
-    def detected_syscalls(cls):
-        """Return a dict of detected system calls.
-
-        The key is the syscall name, the value the syscall interpretation
-        function.
-        """
-        names = [x for x in dir(cls) if hasattr(getattr(cls, x), 'syscall')]
-        syscalls = []
-        for name in names:
-            syscall = getattr(cls, name)
-            syscalls.append((name, syscall))
-            for alias in syscall.aliases:
-                syscalls.append((alias, syscall))
-        sys_dict = dict(syscalls)
-        assert len(sys_dict) == len(syscalls), "Ambigoues syscall name"
-        return sys_dict
         """Get the name of the operating System."""
         return cls.__name__
 
@@ -365,10 +234,11 @@ class OSBase:
         raise NotImplementedError
 
     @staticmethod
-    def get_initial_state(instances):
+    def get_initial_state(cfg, instances):
         """Get the OS specific initial state.
 
         Arguments:
+        cfg       -- the control flow graph
         instances -- the already detected global instances
         """
         raise NotImplementedError

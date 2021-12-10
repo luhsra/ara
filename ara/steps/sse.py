@@ -1,17 +1,6 @@
 """Container for SSE."""
 from .step import Step
 from .option import Option, String, Bool
-from ara.os.freertos import Task
-from ara.os.zephyr import Thread, ISR
-from ara.util import VarianceDict
-
-from collections import defaultdict
-from itertools import chain
-from graph_tool.topology import (dominator_tree, label_out_component,
-                                 all_paths, all_circuits)
-
-
-
 from .cfg_traversal import Visitor, run_sse
 
 import graph_tool

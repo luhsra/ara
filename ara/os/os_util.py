@@ -13,26 +13,6 @@ from .os_base import ExecState
 # from ara.util import get_logger
 # logger = get_logger("OS_UTIL")
 
-def syscall(*args, categories=None, signature=None, aliases=None):
-    if categories is None:
-        categories = {_SyscallCategory.undefined}
-    if signature is None:
-        signature = tuple()
-    if aliases is None:
-        aliases = []
-    outer_categories = categories
-    outer_signature = signature
-    outer_aliases = aliases
-
-    def wrap(func, categories=outer_categories, signature=outer_signature,
-             aliases=outer_aliases):
-        func.syscall = True
-        func.categories = categories
-        func.signature = signature
-        func.aliases = aliases
-        func = staticmethod(func)
-        return func
-
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
@@ -342,3 +322,30 @@ def find_return_value(abb, callpath, va):
         return va.get_memory_value(ret_val, callpath=callpath)
     except ValuesUnknown:
         return ValueAnalyzerResult(ret_val, [], None, callpath)
+
+
+def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
+    src = instance_graph.vertex(src)
+    tgt = instance_graph.vertex(tgt)
+    existing = instance_graph.edge(src, tgt)
+    if existing and instance_graph.ep.syscall[existing] == abb:
+        return
+
+    e = instance_graph.add_edge(src, tgt)
+    instance_graph.ep.syscall[e] = abb
+    instance_graph.ep.label[e] = label
+    if ty:
+        instance_graph.ep.type[e] = ty
+
+
+def connect_from_here(state, cpu_id, tgt, label, ty=None):
+    cpu = state.cpus[cpu_id]
+    connect_instances(state.instances, cpu.control_instance, tgt,
+                      cpu.abb, label, ty=ty)
+
+
+def find_instance_node(instances, obj):
+    for ins in instances.vertices():
+        if instances.vp.obj[ins] is obj:
+            return ins
+    raise RuntimeError("Instance could not be found.")

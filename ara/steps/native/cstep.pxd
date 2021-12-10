@@ -68,6 +68,10 @@ cdef extern from "load_freertos_config.h" namespace "ara::step":
     cdef cppclass LoadFreeRTOSConfig:
         pass
 
+cdef extern from "replace_syscalls_create.h" namespace "ara::step":
+    cdef cppclass ReplaceSyscallsCreate:
+        pass
+
 cdef extern from "resolve_function_pointer.h" namespace "ara::step":
     cdef cppclass ResolveFunctionPointer:
         pass

@@ -4,7 +4,7 @@ import graph_tool.util
 
 from graph_tool.topology import label_out_component
 
-from .graph_data import PyGraphData
+from .graph_data import PyGraphData, _get_llvm_obj
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 
 from collections.abc import Iterator
@@ -70,8 +70,8 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB
-        self.vertex_properties["file"] = self.new_vp("string") # BB/call ABB
-        self.vertex_properties["line"] = self.new_vp("int") # BB/call ABB
+        self.vertex_properties["files"] = self.new_vp("vector<string>") # BB/call ABB
+        self.vertex_properties["lines"] = self.new_vp("vector<int32_t>") # BB/call ABB
         self.vertex_properties["implemented"] = self.new_vp("bool") # Function
         self.vertex_properties["sysfunc"] = self.new_vp("bool") # Function
         self.vertex_properties["arguments"] = self.new_vp("object") # Function
@@ -87,6 +87,14 @@ class CFG(graph_tool.Graph):
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         assert len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
         return func[0]
+
+    def get_llvm_obj(self, vertex):
+        """Return the LLVM object that belongs to the specified vertex.
+
+        Returns only values for function and basic block vertices and None
+        otherwise.
+        """
+        return _get_llvm_obj(self, vertex)
 
     def get_function(self, abb):
         """Get the function node for an ABB."""
@@ -244,6 +252,9 @@ class CFGView(graph_tool.GraphView):
     def __init__(self, graph, **kwargs):
         graph_tool.GraphView.__init__(self, graph, **kwargs)
 
+    def get_llvm_obj(self, *args, **kwargs):
+        return self.base.get_llvm_obj(*args, **kwargs)
+
     def get_function_by_name(self, *args, **kwargs):
         return self.base.get_function_by_name(*args, **kwargs)
 
@@ -345,6 +356,8 @@ class InstanceGraph(graph_tool.Graph):
     def __init__(self):
         super().__init__()
         # vertex properties
+        # ATTENTION: If you modify this values, you also have to update
+        # cgraph/graph.cpp and cgraph/graph.h.
         self.vertex_properties["label"] = self.new_vp("string")
         self.vertex_properties["obj"] = self.new_vp("object")
         self.vertex_properties["id"] = self.new_vp("string")
@@ -362,7 +375,8 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["specialization_level"] = self.new_vp("string")
 
         self.edge_properties["label"] = self.new_ep("string")
-        self.edge_properties["type"] = self.new_ep("int")
+        self.edge_properties["type"] = self.new_ep("int")  # OS specific type
+        self.edge_properties["syscall"] = self.new_ep("int")  # ABB vertex ID
 
     def get_controls(self):
         return graph_tool.GraphView(self, vfilt=self.vp.is_control)

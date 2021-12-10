@@ -34,6 +34,7 @@ ir_apps = [
   'ospert',
   'priority_inversion',
   'rtas20_example',
+  'src_loc',
   # 'simple_queue_send',
   'sse',
   'svf',

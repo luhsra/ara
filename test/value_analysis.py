@@ -46,12 +46,12 @@ def create_callpath(graph, cp_desc):
         call = None
         for e in cg.edges():
             # debug_print(part)
-            # debug_print(cfg.vp.line[cg.ep.callsite[e]])
+            # debug_print(cfg.vp.lines[cg.ep.callsite[e]])
             # debug_print(cg.vp.function_name[e.source()])
             # debug_print(cg.vp.function_name[e.target()])
             t = (part["functs"][0] == cg.vp.function_name[e.source()])
             t = t and (part["functs"][1] == cg.vp.function_name[e.target()])
-            t = t and (cfg.vp.line[cg.ep.callsite[e]] == part["line"])
+            t = t and (cfg.vp.lines[cg.ep.callsite[e]][0] == part["line"])
             if t:
                 # debug_print("found")
                 cp.add_call_site(graph.callgraph, e)
@@ -61,7 +61,7 @@ def create_callpath(graph, cp_desc):
     return cp
 
 def perform_va_for_syscall(va, m_graph, syscalls, data, name, syscall):
-    line = syscalls.vp.line[syscall]
+    line = syscalls.vp.lines[syscall][0]
     debug_print(20 * "-")
     debug_print(f"Handle syscall {name} (line {line}).")
     record = data[name][str(line)]

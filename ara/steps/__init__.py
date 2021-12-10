@@ -1,5 +1,6 @@
 import ara.steps.py_logging
 
+
 def provide_steps():
     from .step import provide_steps as _native_provide
     from .callgraph_stats import CallGraphStats
@@ -8,6 +9,8 @@ def provide_steps():
     from .cfg_optimize import CFGOptimize
     from .cfg_stats import CFGStats
     from .dummy import Dummy
+    from .dump_cfg import DumpCFG
+    from .dump_instances import DumpInstances
     from .generator import Generator
     from .icfg import ICFG
     from .load_oil import LoadOIL
@@ -20,6 +23,7 @@ def provide_steps():
     from .sia import SIA, InteractionAnalysis
     from .multisse import MultiSSE
     from .sse import SSE
+    from .sstg_stats import SSTGStats
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
@@ -34,6 +38,8 @@ def provide_steps():
     yield ClassifySpecializationsFreeRTOS
     yield CreateABBs
     yield Dummy
+    yield DumpCFG
+    yield DumpInstances
     yield Generator
     yield ICFG
     yield InteractionAnalysis
@@ -47,6 +53,7 @@ def provide_steps():
     yield RegisterTaskEntry
     yield SIA
     yield SSE
+    yield SSTGStats
     yield SysFuncts
     yield Syscall
     yield SystemRelevantFunctions

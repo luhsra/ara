@@ -159,6 +159,7 @@ class LoadOIL(Step):
                         autostart=task["autostart"],
                         schedule=task["schedule"],
                         cpu_id=cpu_id,
+                        artificial=False
                     )
                     instances.vp.is_control[t] = True
                     instances.vp.label[t] = t_name
@@ -274,7 +275,12 @@ class LoadOIL(Step):
                         cpu_id=cpu_id,
                         function=i_function,
                         priority=isr["priority"],
+<<<<<<< HEAD
                         category=isr["category"]
+=======
+                        category=isr["category"],
+                        artificial=False
+>>>>>>> origin/soso
                 )
                 instances.vp.is_control[i] = True
                 instances.vp.label[i] = i_name

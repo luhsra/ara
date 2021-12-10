@@ -53,8 +53,8 @@ class CreateABBs(Step):
             cfg.vp.part_of_loop[abb] = cfg.vp.part_of_loop[bb]
 
             if cfg.vp.type[abb] in [ABBType.call, ABBType.syscall]:
-                cfg.vp.file[abb] = cfg.vp.file[bb]
-                cfg.vp.line[abb] = cfg.vp.line[bb]
+                cfg.vp.files[abb] = cfg.vp.files[bb]
+                cfg.vp.lines[abb] = cfg.vp.lines[bb]
 
             # function and lcf edges
             for bb_edge in bb.in_edges():

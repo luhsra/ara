@@ -1,5 +1,5 @@
-from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb
-from .os_base import OSBase
+from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb, connect_from_here, find_instance_node
+from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 
 import pyllco
 import html
@@ -15,8 +15,8 @@ logger = get_logger("FreeRTOS")
 
 @dataclass(eq=False)
 class FreeRTOSInstance(object):
-    cfg: CFG = field()
-    abb: any # of type ABB
+    cfg: CFG
+    abb: Vertex  # of type ABB
     call_path: CallPath
     vidx: Vertex
     name: str
@@ -63,18 +63,16 @@ class FreeRTOSInstance(object):
     def __eq__(self, other):
         return hash(self) == hash(other)
 
+
 @dataclass
-class Task(FreeRTOSInstance):
+class Task(FreeRTOSInstance, ControlInstance):
     uid_counter = 0
     never_deleted = True
 
-    function: str                   # Name of function
-    function_node: pyllco.Function  # Functions vertex node
     stack_size: int
     parameters: any
     init_priority: int
     handle_p: any
-    is_regular: bool = True
     static_stack: any = None
 
     def __post_init__(self):
@@ -112,8 +110,10 @@ class Task(FreeRTOSInstance):
 
     def as_dot(self):
         wanted_attrs = ["name", "function", "stack_size", "parameters",
-                        "priority", "handle_p", "is_regular"]
+                        "priority", "handle_p", "artificial"]
         attrs = [(x, str(getattr(self, x))) for x in wanted_attrs]
+        f = "Undefined" if self.function is None else self.cfg.vp.name[self.cfg.vertex(self.function)]
+        attrs.append(("function", html.escape(f)))
         sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
                                  for k, v in attrs])
 
@@ -131,7 +131,7 @@ class Task(FreeRTOSInstance):
                                   self.function,
                                   self.priority,
                                   self.stack_size,
-                                  self.is_regular,
+                                  self.artificial,
                                   self.cfg.vp.name[self.abb],
                                   handler_name,
                                   self.parameters,
@@ -139,14 +139,13 @@ class Task(FreeRTOSInstance):
 
     def __hash__(self):
         return hash(("Task", self.abb, self.call_path, self.vidx, self.name,
-                     self.function, self.stack_size, self.parameters, self.init_priority, self.handle_p, self.is_regular, self.static_stack))
+                     self.function, self.stack_size, self.parameters, self.init_priority, self.handle_p, self.artificial, self.static_stack))
 
 
 @dataclass
 class Queue(FreeRTOSInstance):
     never_deleted = True
-    uid_counter = 0        
-    
+    uid_counter = 0
     handler: any
     length: int
     size: int
@@ -269,13 +268,6 @@ class StreamBuffer(FreeRTOSInstance):
                      self.size, self.handler))
 
 
-def find_instance_node(instances, obj):
-    for ins in instances.vertices():
-        if instances.vp.obj[ins] is obj:
-            return ins
-    raise RuntimeError("Instance could not be found.")
-
-
 class FreeRTOS(OSBase):
     @staticmethod
     def get_special_steps():
@@ -288,6 +280,20 @@ class FreeRTOS(OSBase):
     @staticmethod
     def init(state):
         state.scheduler_on = False
+
+    @staticmethod
+    def get_initial_state(cfg, instances):
+        # We can't set a control instance, yet, since FreeRTOS does not start
+        # directly. Is has to be the responsibility of the outer analysis to
+        # set the correct starting abb.
+        return OSState(cpus=CPUList([CPU(id=0,
+                                         irq_on=True,
+                                         control_instance=None,
+                                         abb=None,
+                                         call_path=CallPath(),
+                                         exec_state=ExecState.idle,
+                                         analysis_context=None)]),
+                       instances=instances, cfg=cfg)
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
@@ -308,7 +314,7 @@ class FreeRTOS(OSBase):
                 # do not interpret this syscall
                 state = state.copy()
                 state.next_abbs = []
-                set_next_abb(state, cpu_id)
+                set_next_abb(state, 0)
                 return state
         return syscall_function(graph, state, cpu_id)
 
@@ -340,8 +346,8 @@ class FreeRTOS(OSBase):
         instances.vp.unique[v] = not (is_recursive or in_branch or in_loop)
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
-        instances.vp.file[v] = cfg.vp.file[abb]
-        instances.vp.line[v] = cfg.vp.line[abb]
+        instances.vp.file[v] = cfg.vp.files[abb][0]
+        instances.vp.line[v] = cfg.vp.lines[abb][0]
         instances.vp.is_control[v] = False
 
     @syscall(categories={SyscallCategory.create},
@@ -370,10 +376,11 @@ class FreeRTOS(OSBase):
 
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg,
+        state.instances.vp.obj[v] = Task(cfg=cfg,
+                                         artificial=False,
+                                         cpu_id=-1,
                                          vidx=v,
-                                         function=func_name,
-                                         function_node=cfg.get_function_by_name(func_name),
+                                         function=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
@@ -382,6 +389,7 @@ class FreeRTOS(OSBase):
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
         )
+        state.instances.vp.is_control[v] = True
         if args.task_handle_p:
             va.assign_system_object(args.task_handle_p.value,
                                     state.instances.vp.obj[v],
@@ -408,9 +416,10 @@ class FreeRTOS(OSBase):
 
         # TODO: get idle task priority from config: ( tskIDLE_PRIORITY | portPRIVILEGE_BIT )
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb, scheduler_on=False)
-        state.instances.vp.obj[v] = Task(cfg,
-                                         function='prvIdleTask',
-                                         function_node=None,
+        state.instances.vp.obj[v] = Task(cfg=cfg,
+                                         artificial=True,
+                                         cpu_id=-1,
+                                         function=None,
                                          name='idle_task',
                                          vidx=v,
                                          stack_size=int(FreeRTOS.config.get('configMINIMAL_STACK_SIZE', None)),
@@ -418,8 +427,8 @@ class FreeRTOS(OSBase):
                                          init_priority=0,
                                          handle_p=0,
                                          call_path=cp,
-                                         abb=cfg.vertex(abb),
-                                         is_regular=False)
+                                         abb=cfg.vertex(abb))
+        state.instances.vp.is_control[v] = True
         graph.os.idle_task = state.instances.vp.obj[v]
 
         assign_id(state.instances, v)
@@ -488,7 +497,7 @@ class FreeRTOS(OSBase):
         state.instances.vp.label[v] = f"Mutex: {handler_name}"
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
 
-        state.instances.vp.obj[v] = Mutex(cfg,
+        state.instances.vp.obj[v] = Mutex(cfg=cfg,
                                           name=handler_name,
                                           handler=ret_val,
                                           m_type=args.mutex_type,
@@ -510,15 +519,14 @@ class FreeRTOS(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("ticks"),))
     def vTaskDelay(graph, state, cpu_id, args, va):
-        state = state.copy()
         cpu = state.cpus[cpu_id]
 
         if cpu.running is None:
             # TODO proper error handling
             logger.error("ERROR: vTaskDelay called without running Task")
 
-        e = state.instances.add_edge(cpu.control_instance, cpu.control_instance)
-        state.instances.ep.label[e] = f"vTaskDelay({args.ticks})"
+        connect_from_here(state, cpu_id, cpu.control_instance,
+                          f"vTaskDelay({args.ticks})")
 
         return state
 
@@ -535,14 +543,12 @@ class FreeRTOS(OSBase):
 
         queue = args.handler
         if not queue:
-            logger.error(f"xQueueGenericSend (file: {cfg.vp.file[abb]}, "
-                         f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
+            logger.error(f"xQueueGenericSend (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
-            e = state.instances.add_edge(cpu.control_instance, queue_node)
-            state.instances.ep.label[e] = "xQueueGenericSend"
-
+            connect_from_here(state, cpu_id, queue_node, "xQueueGenericSend")
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -556,13 +562,12 @@ class FreeRTOS(OSBase):
 
         queue = args.handler
         if not queue:
-            logger.error(f"xQueueSemaphoreTake (file: {cfg.vp.file[abb]}, "
-                         f"line: {cfg.vp.line[abb]}): Queue handler cannot be "
+            logger.error(f"xQueueSemaphoreTake (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
                          "found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
-            e = state.instances.add_edge(cpu.control_instance, queue_node)
-            state.instances.ep.label[e] = "xQueueSemaphoreTake"
+            connect_from_here(state, cpu_id, queue_node, "xQueueSemaphoreTake")
 
         return state
 
@@ -597,10 +602,11 @@ class FreeRTOS(OSBase):
 
         # TODO: when do we know that this is an unique instance?
         FreeRTOS.handle_soc(cpu.analysis_context, state.instances, v, cfg, abb)
-        state.instances.vp.obj[v] = Task(cfg,
+        state.instances.vp.obj[v] = Task(cfg=cfg,
+                                         artificial=False,
+                                         cpu_id=-1,
                                          vidx=v,
-                                         function=func_name,
-                                         function_node=cfg.get_function_by_name(func_name),
+                                         function=cfg.get_function_by_name(func_name),
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
@@ -609,6 +615,7 @@ class FreeRTOS(OSBase):
                                          call_path=cp,
                                          abb=cfg.vertex(abb),
                                          static_stack=args.task_stack)
+        state.instances.vp.is_control[v] = True
 
         assign_id(state.instances, v)
         if args.task_handle_p:

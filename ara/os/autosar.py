@@ -1,5 +1,5 @@
-from .os_util import syscall, Arg, set_next_abb
-from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState
+from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
+from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
 from ara.util import get_logger
 from ara.graph import CallPath, SyscallCategory, SigType, single_check
 
@@ -38,13 +38,14 @@ class InstanceEdge(IntEnum):
     have = 1
     trigger = 2
     activate = 3
-    nestable = 4
+    chain = 4
+    nestable = 5
+    terminate = 6
 
 
 @dataclass(eq=False)
-class AUTOSARInstance:
+class AUTOSARInstance(CPUBounded):
     name: str
-    cpu_id: int
 
     def __eq__(self, other):
         # the name of an arbitrary AUTOSAR instance must be unique
@@ -58,7 +59,6 @@ class AUTOSARInstance:
         return self.name
 
 
-
 @dataclass
 class TaskGroup(AUTOSARInstance):
     promises: dict
@@ -66,7 +66,6 @@ class TaskGroup(AUTOSARInstance):
 
 @dataclass(repr=False)
 class Task(AUTOSARInstance, ControlInstance):
-    function: graph_tool.Vertex
     priority: int
     activation: Any
     autostart: bool
@@ -175,7 +174,6 @@ class AUTOSARContext:
 
 @dataclass(repr=False)
 class ISR(AUTOSARInstance, ControlInstance):
-    function: graph_tool.Vertex
     priority: int
     category: int
 
@@ -767,7 +765,11 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
-        return AUTOSAR.ActivateTask(state, cpu_id, args.task)
+        AUTOSAR.ActivateTask(state, cpu_id, args.task)
+        t = find_instance_node(state.instances, args.task)
+        connect_from_here(state, cpu_id, t, "ActivateTask",
+                          ty=InstanceEdge.activate)
+        return state
 
     @syscall
     def AUTOSAR_AdvanceCounter(cfg, abb, state):
@@ -779,6 +781,10 @@ class AUTOSAR(OSBase):
         assert(isinstance(args.alarm, Alarm))
         if args.alarm in state.context:
             state.context[args.alarm].active = False
+
+        a = find_instance_node(state.instances, args.alarm)
+        connect_from_here(state, cpu_id, a, "CancelAlarm",
+                          ty=InstanceEdge.terminate)
 
         return state
 
@@ -792,6 +798,10 @@ class AUTOSAR(OSBase):
 
         AUTOSAR.TerminateTask(state, cpu_id)
         AUTOSAR.ActivateTask(state, cpu_id, args.task)
+
+        t = find_instance_node(state.instances, args.task)
+        connect_from_here(state, cpu_id, t, "ChainTask",
+                          ty=InstanceEdge.chain)
 
         return state
 
@@ -809,6 +819,13 @@ class AUTOSAR(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("task_id", ty=Task, hint=SigType.instance),
+                        Arg("event", hint=SigType.symbol)))
+    def AUTOSAR_GetEvent(cfg, state, cpu_id, args, va):
+        # the syscall does not affect the system state at all
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_DisableAllInterrupts(cfg, state, cpu_id, args, va):
         state.cpus[cpu_id].irq_on = False
@@ -822,10 +839,6 @@ class AUTOSAR(OSBase):
 
     @syscall
     def AUTOSAR_GetAlarm(cfg, abb, state):
-        pass
-
-    @syscall
-    def AUTOSAR_GetEvent(cfg, abb, state):
         pass
 
     @staticmethod
@@ -854,9 +867,10 @@ class AUTOSAR(OSBase):
         if lock_ctx.is_spinning:
             # active wait in this state
             lock_ctx.wait_for.append(cpu_id)
-            state.cpu[cpu_id].exec_state = ExecState.waiting
+            state.cpus[cpu_id].exec_state = ExecState.waiting
         else:
-            # just go the the next block
+            # just go the the next block but set the lock
+            lock_ctx.is_spinning = True
             set_next_abb(state, cpu_id)
         return state
 
@@ -874,6 +888,10 @@ class AUTOSAR(OSBase):
         lock_ctx.wait_for = []
         lock_ctx.is_spinning = False
 
+        # the current CPU just follows the control flow
+        set_next_abb(state, cpu_id)
+
+        # wakeup one other CPUs, if they are waiting
         new_states = []
         if len(wait_for) > 0:
             # create a new state for every cpu to wakeup
@@ -882,8 +900,7 @@ class AUTOSAR(OSBase):
                 set_next_abb(new_state, wait_cpu)
                 new_states.append(new_state)
         else:
-            set_next_abb(state, cpu_id)
-            new_states.append(state)
+            return state
 
         return new_states
 
@@ -903,8 +920,9 @@ class AUTOSAR(OSBase):
              signature=(Arg("resource", ty=Resource, hint=SigType.instance),))
     def AUTOSAR_ReleaseResource(cfg, state, cpu_id, args, va):
         state.cur_context(cpu_id).dyn_prio.pop()
-        dyn_prio = state.cur_context(cpu_id).dyn_prio[-1]
-        logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
+        if state.cur_context(cpu_id).dyn_prio:
+            dyn_prio = state.cur_context(cpu_id).dyn_prio[-1]
+            logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
 
         return state
 
@@ -1016,7 +1034,11 @@ class AUTOSAR(OSBase):
              signature=tuple(),
              custom_control_flow=True)
     def AUTOSAR_TerminateTask(cfg, state, cpu_id, args, va):
-        return AUTOSAR.TerminateTask(state, cpu_id)
+        AUTOSAR.TerminateTask(state, cpu_id)
+        cur = state.cpus[cpu_id].control_instance
+        connect_from_here(state, cpu_id, cur, "TerminateTask",
+                          ty=InstanceEdge.terminate)
+        return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("event_mask"),))

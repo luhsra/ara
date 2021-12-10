@@ -96,8 +96,8 @@ namespace ara::graph {
 		ARA_VMAP(is_exit)
 		ARA_VMAP(is_exit_loop_head)
 		ARA_VMAP(part_of_loop)
-		ARA_VMAP(file)
-		ARA_VMAP(line)
+		ARA_VMAP(files)
+		ARA_VMAP(lines)
 		ARA_VMAP(implemented)
 		ARA_VMAP(sysfunc)
 		ARA_VMAP(arguments)
@@ -227,18 +227,22 @@ namespace ara::graph {
 		ARA_VMAP(id)
 		ARA_VMAP(branch)
 		ARA_VMAP(loop)
+		ARA_VMAP(recursive)
 		ARA_VMAP(after_scheduler)
 		ARA_VMAP(unique)
 		ARA_VMAP(soc)
 		ARA_VMAP(llvm_soc)
+		ARA_VMAP(is_control)
 		ARA_VMAP(file)
 		ARA_VMAP(line)
 		ARA_VMAP(specialization_level)
 
 		PyObject* eprops = get_eprops(py_instancegraph);
-		
-		// FIXME: Mapping fails for some reason
-		// ARA_EMAP(elabel)
+
+		// ARA_EMAP does not work here since the C++ and Python name differ
+		instancegraph.elabel = get_property<decltype(instancegraph.elabel)>(eprops, "label");
+		ARA_EMAP(type)
+		ARA_EMAP(syscall)
 
 #undef ARA_VMAP
 #undef ARA_EMAP

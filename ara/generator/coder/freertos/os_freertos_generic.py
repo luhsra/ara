@@ -1,5 +1,6 @@
 from ..os_generic import GenericOS
 from ..elements.IncludeManager import Include
+from ..element.Datamanager import DataObject
 
 from .arch_arm import ArmArch
 
@@ -31,6 +32,12 @@ class FreeRTOSGenericOS(GenericOS):
     def generate_data_objects(self):
         #include "freertos.h"
         self.generator.source_file.includes.add(Include('FreeRTOS.h'))
+        if self.ara_graph.os.specialization_level == 'initialized':
+            self.generator.source_file.data_manager.add(
+                DataObject('PRIVILEGED_DATA TaskHandle_t',
+                           'xIdleTaskHandle',
+                           self.ara_graph.os.idle_task.impl.tcb.address))
+
 
     def generate_system_code(self):
         self.calculate_heap_declinement()
