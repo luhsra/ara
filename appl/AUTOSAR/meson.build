@@ -86,7 +86,6 @@ autosar_apps = [
   ['multicore' / 'locks',               ['c', 'system.json']],
   ['multicore' / 'locks',               ['d', 'system.json']],
   ['multicore' / 'locks',               ['e', 'system.json']],
-  ['multicore' / 'timing',              ['a', 'system.json']],
 ]
 
 autosar_targets = []
@@ -114,3 +113,24 @@ foreach app : autosar_apps
   endif
 endforeach
 
+autosar_apps_with_timing = [
+  ['multicore' / 'timing',              ['a', 'system.json', 'a_timing.json']],
+]
+
+autosar_targets_with_timings = []
+foreach app : autosar_apps_with_timing
+  sys = app[0] / app[1][0]
+  oil = files(app[0] / app[1][1])
+
+  app_ll = custom_target('autosar_' + sys.underscorify(),
+                         input : sys + '.cc',
+                         output : 'autosar_' + sys.underscorify() + '.ll',
+                         depfile : 'autosar_' + sys.underscorify() + '.ll.dep',
+                         command : clang_cpp +
+                                   libs_includes +
+                                   ir_flags +
+                                   clang_flags)
+  sys_timings = files(app[0] / app[1][2])
+  set_variable('autosar_' + sys.underscorify(), [app_ll, oil, sys.underscorify(), sys_timings])
+  autosar_targets_with_timings += [[app_ll, oil, sys_test, sys.underscorify()]]
+endforeach

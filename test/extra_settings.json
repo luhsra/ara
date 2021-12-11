@@ -11,12 +11,11 @@
 	},
 
 	"ApplyTimings": {
-		"create_timings": "timings.json",
 		"log_level": "debug"
 	},
 
 	"logger": {
-		"StepManager": "debug",
+		"StepManager": "info",
 		"FreeRTOS": "info",
 		"ara": "info"
 	}
