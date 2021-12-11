@@ -3,6 +3,7 @@ import ara.steps.py_logging
 
 def provide_steps():
     from .step import provide_steps as _native_provide
+    from .apply_timings import ApplyTimings
     from .callgraph_stats import CallGraphStats
     from .classify_specializations_freertos import ClassifySpecializationsFreeRTOS
     from .create_abbs import CreateABBs
@@ -31,6 +32,7 @@ def provide_steps():
     for step in _native_provide():
         yield step
 
+    yield ApplyTimings
     yield CFGOptimize
     yield CFGStats
     yield CallGraphStats
