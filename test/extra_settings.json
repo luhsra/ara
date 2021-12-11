@@ -1,50 +1,22 @@
 {
 	"steps": [
-		"SIA",
-		"CFGStats"
+		"ApplyTimings",
+		"LockElision",
+		"DumpCFG"
 	],
 
-	"SIA": {
+	"MultiSSE": {
 		"log_level": "debug",
 		"dump": true
 	},
 
-	"ICFG": {
-		"log_level": "error",
-		"dump": true
-	},
-
-	"CFGStats": {
-		"log_level": "info",
-		"dump": true
-	},
-
-	"CallGraphStats": {
-		"log_level": "info",
-		"dump": true
-	},
-
-	"RecursiveFunctions": {
-		"log_level": "info",
-		"dump": true
-	},
-
-	"ResolveFunctionPointer": {
-		"log_level": "debug",
-		"block_list": "[ \"main\" ]"
-	},
-
-	"Syscall": {
-		"dump": true
-	},
-
-	"ManualCorrections": {
-		"log_level": "debug",
-		"dump": true
+	"ApplyTimings": {
+		"create_timings": "timings.json",
+		"log_level": "debug"
 	},
 
 	"logger": {
-		"StepManager": "info",
+		"StepManager": "debug",
 		"FreeRTOS": "info",
 		"ara": "info"
 	}
