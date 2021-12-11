@@ -1,10 +1,9 @@
 from ..os_generic import GenericOS
 from ..elements.IncludeManager import Include
-from ..element.Datamanager import DataObject
+from ..elements.DataObjectManager import DataObject
 
 from .arch_arm import ArmArch
 
-from ..syscall_vanilla import VanillaSystemCalls
 from .syscall_generic import GenericSystemCalls
 from .implementations import add_impl as _add_impl
 
