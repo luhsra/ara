@@ -26,6 +26,8 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<int>::type type;
 		typename graph_tool::vprop_map_t<int>::type level;
 		typename graph_tool::vprop_map_t<int64_t>::type llvm_link;
+		typename graph_tool::vprop_map_t<int64_t>::type bcet;
+		typename graph_tool::vprop_map_t<int64_t>::type wcet;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit_loop_head;
 		typename graph_tool::vprop_map_t<unsigned char>::type part_of_loop;
