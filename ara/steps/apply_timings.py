@@ -22,6 +22,9 @@ class ApplyTimings(Step):
         create_timings = self.create_timings.get()
         timings = self.timings.get()
 
+        if timings is not None and create_timings is not None:
+            self._fail("Either timings or create_timings must not be set")
+
         # register self as successor of CreateABBs
         step_config = {"name": self.get_name()}
         if create_timings:
@@ -46,10 +49,30 @@ class ApplyTimings(Step):
                     if not first:
                         f.write(',\n')
                     func = cfg.get_function(cfg.vertex(abb))
-                    f.write(f'\t"{abbs.vp.name[abb]}": {{"function": "{cfg.vp.name[func]}", "time": 0}}')
+                    f.write(f'\t"{abbs.vp.name[abb]}": {{"function": "{cfg.vp.name[func]}", "bcet": 0, "wcet": 0}}')
                     first = False
                 f.write("\n}")
             return
 
         # assign times
-        pass
+        if timings:
+            # TODO avoid duplicate assignments if step is executed multiple
+            # times
+            self._log.debug("Assign times.")
+            abb_map = dict([(abbs.vp.name[x], x) for x in abbs.vertices()
+                            if abbs.vp.type[x] == ABBType.computation])
+            with open(timings, 'r') as f:
+                times = json.load(f)
+
+            for abb_name, attrs in times.items():
+                abb = abb_map.get(abb_name, None)
+                if abb is None:
+                    continue
+
+                func = cfg.vp.name[cfg.get_function(cfg.vertex(abb))]
+                if func != attrs["function"]:
+                    self._fail(f"Function {func} does not match {attrs['function']} for ABB {abb_name}")
+
+                self._log.debug(f"Assign BCET {attrs['bcet']} and WCET {attrs['wcet']} to ABB {abb_name}")
+                abbs.vp.bcet[abb] = attrs["bcet"]
+                abbs.vp.wcet[abb] = attrs["wcet"]
