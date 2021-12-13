@@ -148,22 +148,6 @@ class FlatAnalysis(Step):
                                           (analysis_context.usually_taken and
                                           not self._is_in_condition(abb)))
 
-    def _iterate_control_entry_points(self):
-        """Return a generator over all tasks in self._graph.instances.
-
-        Return a tuple of the cfg function and the instance vertex.
-        """
-        instances = self._graph.instances
-        if instances is None:
-            return
-
-        for inst in instances.get_controls().vertices():
-            inst = instances.vertex(inst)
-            obj = instances.vp.obj[inst]
-            if obj.artificial:
-                continue
-            yield obj.function, inst
-
     def _dump_names(self):
         raise NotImplementedError
 
@@ -273,7 +257,7 @@ class SIA(FlatAnalysis):
     def _trigger_new_steps(self):
         step_data = self._get_step_data(set)
 
-        for entry, _ in self._iterate_control_entry_points():
+        for entry, _ in self._graph.instances.iterate_control_entry_points():
             func_name = self._graph.cfg.vp.name[entry]
             if func_name not in step_data:
                 self._step_manager.chain_step(
@@ -295,7 +279,7 @@ class SIA(FlatAnalysis):
         # find instance that belongs to this point
         cfg_func = self._graph.cfg.vertex(callgraph.vp.function[entry_point])
 
-        instances = [v for func, v in self._iterate_control_entry_points()
+        instances = [v for func, v in self._graph.instances.iterate_control_entry_points()
                      if func == cfg_func]
 
         result = [(entry_point, x) for x in instances]
@@ -329,4 +313,4 @@ class InteractionAnalysis(FlatAnalysis):
         cfg = self._graph.cfg
         cg = self._graph.callgraph
         return [(cg.vertex(cfg.vp.call_graph_link[x]), v)
-                for x, v in self._iterate_control_entry_points()]
+                for x, v in self._graph.instances.iterate_control_entry_points()]

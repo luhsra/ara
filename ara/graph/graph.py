@@ -399,6 +399,17 @@ class InstanceGraph(graph_tool.Graph):
             if instance == self.vp.obj[inst]:
                 return inst
 
+    def iterate_control_entry_points(self):
+        """Return a generator over all tasks in the instance graph.
+
+        Return a tuple of the cfg function and the instance vertex.
+        """
+        for inst in self.get_controls().vertices():
+            inst = self.vertex(inst)
+            obj = self.vp.obj[inst]
+            if obj.artificial:
+                continue
+            yield obj.function, inst
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
