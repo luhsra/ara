@@ -1,25 +1,15 @@
-import sys
-import time
-from builtins import str
-from time import sleep
+from PySide6.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QGraphicsView, QLabel
 
-from PySide6.QtWidgets import QApplication
-from PySide6 import QtWidgets
-
-from PySide6.QtCore import QJsonDocument
-from PySide6.QtCore import QFile
-from PySide6.QtCore import QIODevice
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPainter, Qt
 from PySide6.QtGui import QColorConstants
 
 import graph_tool
-from matplotlib.cbook import contiguous_regions
 
-import ara.ara as _ara
 from .graph_scene import *
+from .graphical_elements import GraphicsObject, Subgraph, AbbNode
 from .layouter import Layouter
 from .util import GraphTypes
 from .widgets.buttons import SelectionButton
@@ -93,121 +83,7 @@ class GuiWindow(QWidget):
 
         self.v_graph_type = GraphTypes.ABB
 
-    def parse_json(self, jsonStr):
-        # Debug Purpose
-        #if jsonStr is None:
-        #    path = "cfg.json0"
-        #    file = QFile(path)
-        #    if not file.open(QIODevice.ReadOnly | QIODevice.Text):
-        #        print("Could not open File")
-        #        return
-#
-        #    jsonStr = file.readAll()
-        #    file.close()
-
-        jsonDocument = QJsonDocument.fromJson(jsonStr)
-
-        for o in jsonDocument.object().get("objects"):
-            o: dict
-            # Cluster
-            if o.__contains__("bb"):  # bb = boundingBox, this is exclusive to cluster
-                pos = o["bb"].split(",")
-                lp = o["lp"].split(",")
-                height = (float(pos[1]) - float(pos[3]))
-                width = (float(pos[2]) - float(pos[0]))
-                Dpos = {"x": float(pos[0]), "y": float(pos[3])}  # upper point of bounding box
-                Lpos = {"x": float(lp[0]), "y": float(lp[1])}
-                style = "solid"
-                if o.__contains__("style"):
-                    style = o["style"]
-
-                colour = QColorConstants.Black
-                if o.__contains__("color"):
-                    colour = get_colour(o["color"])
-
-                func = DFunc(
-                    Dpos,
-                    o["label"],
-                    colour,
-                    style,
-                    o["_gvid"],
-                    o["name"],
-                    height,
-                    width,
-                    "box",
-                    Lpos
-                )
-                self.graph_scene.add_func(func)
-            else:
-                pos = o["pos"].split(",")
-                x = float(pos[0]) - 0.5 * float(
-                    o["width"]) * 74  # 96 Width is in inches and has to be converted into pixel <.<
-                y = float(pos[1]) - 0.5 * float(o["height"]) * 74
-                Dpos = {"x": x, "y": y}
-                Lpos = {"x": float(pos[0]), "y": float(pos[1])}
-
-                style = "solid"
-                if o.__contains__("style"):
-                    style = o["style"]
-
-                colour = QColorConstants.Black
-
-                if o.__contains__("color"):
-                    colour = get_colour(o["color"])
-
-                node = DNode(
-                    Dpos,
-                    o["label"],
-                    colour,
-                    style,
-                    o["_gvid"],
-                    o["name"],
-                    float(o["height"]) * 74,  # Should be 96 but that is a bit to large
-                    float(o["width"]) * 74,
-                    o["shape"],
-                    Lpos
-                )
-                self.graph_scene.add_node(node)
-
-        for e in jsonDocument.object().get("edges"):
-
-            pos = []
-            label = ""
-            labelPos = {"x": 0, "y": 0}
-
-            if e.__contains__("label"):
-                label = e["label"]
-                labelPos["x"] = e["lp"].split(",")[0]
-                labelPos["y"] = e["lp"].split(",")[1]
-
-            rawEdges = e["pos"].split(",")
-            del rawEdges[0]  # The First Char inside the position string is an e, which has to be removed
-
-            edges = []
-            for re in rawEdges:
-                for s in re.split(" "):
-                    edges.append(float(s))
-
-            for i in range(2, len(edges) - 1, 2):
-                pos.append({"x": edges[i], "y": edges[i + 1]})
-
-            pos.append({"x": edges[0], "y": edges[1]})
-
-            colour = QColorConstants.Black
-            if e.__contains__("color"):
-                colour = get_colour(e["color"])
-
-            edge = DEdge(
-                pos,
-                label,
-                colour,
-                "solid",
-                e["_gvid"],
-                e["tail"],
-                e["head"],
-                labelPos
-            )
-            self.graph_scene.add_edge(edge)
+        self.proxies = []
 
     @Slot()
     def enable_start_button(self):
@@ -284,15 +160,28 @@ class GuiWindow(QWidget):
     @Slot(bool)
     def update(self, steps_available):
         self.children().clear()
-        print("update")
 
         if not steps_available:
             self.b_step.setDisabled(True)
 
-        jsonStr = self.layouter.layout(self.v_graph_type, self.app)
-        self.parse_json(jsonStr)
-        self.graph_scene.updateScene()
-        self.graph_scene.update()
+        self.graph_scene.clear_rec()
+
+        self.layouter.layout(self.v_graph_type)
+        gui_data = self.layouter.get_data(self.v_graph_type)
+
+        #print(self.layouter.cfg_view)
+
+        for e in gui_data:
+            if isinstance(e, GraphicsObject):
+                proxy = self.graph_scene.addWidget(e)
+                if isinstance(e, Subgraph):
+                    proxy.setZValue(0)
+                if isinstance(e, AbbNode):
+                    proxy.setZValue(2)
+            else:
+                self.graph_scene.addItem(e)
+                e.setZValue(3)
+
         self.graph_view.update()
         self.sigFinshed.emit()
 

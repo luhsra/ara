@@ -1,7 +1,5 @@
 import sys
-import time
 from builtins import str
-from time import sleep
 
 import argparse
 
@@ -10,25 +8,16 @@ import os
 import json
 from typing import List
 
-from PySide6.QtWidgets import QApplication
-from PySide6 import QtWidgets
+from PySide6.QtCore import QObject
 
-from PySide6.QtCore import QJsonDocument
-from PySide6.QtCore import QFile
-from PySide6.QtCore import QIODevice
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 
-from PySide6.QtGui import QColor
-from PySide6.QtGui import QColorConstants
+
 
 import graph_tool
-from matplotlib.cbook import contiguous_regions
 
-import ara.ara as _ara
-from .graph_scene import *
 from ..graph.graph import Graph
-from .layouter import Layouter
 from ..steplisting import print_avail_steps
 from ..stepmanager import StepManager
 from ..util import init_logging

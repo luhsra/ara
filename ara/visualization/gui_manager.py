@@ -1,28 +1,13 @@
-import sys
-import time
-from builtins import str
-from time import sleep
-
 from PySide6.QtWidgets import QApplication
-from PySide6 import QtWidgets
 
-from PySide6.QtCore import QJsonDocument
-from PySide6.QtCore import QFile
-from PySide6.QtCore import QIODevice
+from PySide6.QtCore import QObject, QThread
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 
-from PySide6.QtGui import QColor
-from PySide6.QtGui import QColorConstants
-
 import graph_tool
-from matplotlib.cbook import contiguous_regions
 
-import ara.ara as _ara
 from .ara_manager import ARAManager
-from .graph_scene import *
 from .gui_window import GuiWindow
-from .layouter import Layouter
 
 
 class Controller(QObject):
@@ -58,6 +43,7 @@ class Controller(QObject):
 
         self.ara_manager.sig_graph.connect(self.gui_window.init_graph)
         self.ara_manager.sig_step_dependencies_discovered.connect(self.ara_manager.step)
+        #self.ara_manager.sig_step_dependencies_discovered.connect(self.gui_window.enable_step_button)
 
         self.ara_manager.sig_step_done.connect(self.gui_window.update)
         self.ara_manager.sig_step_done.connect(self.gui_window.switch_step_button)

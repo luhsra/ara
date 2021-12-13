@@ -10,7 +10,10 @@ def load(what, where):
     sys.modules[where] = module
 
 
-sys.path = sys.path
+sys.path = ["/mnt/c/Users/Sebastian/Documents/Studium/Bachelor/BA/Git/ara",
+            "/mnt/c/Users/Sebastian/Documents/Studium/Bachelor/BA/Git/ara/buildProject/subprojects/pyllco",
+            "/mnt/c/Users/Sebastian/Documents/Studium/Bachelor/BA/Git/ara/buildProject/ara/steps/native",
+            "/mnt/c/Users/Sebastian/Documents/Studium/Bachelor/BA/Git/ara/buildProject/ara/graph/cgraph"] + sys.path
 
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")

@@ -313,7 +313,6 @@ class StepManager:
             self._log.debug(f"Step has dependencies: {dependencies}")
             dependency = dependencies[0]
             self._execute_chain.append(self._make_step_entry(dependency))
-            print("Return Dependencies")
             return 1 # previously continue,
 
         d_hist = self._make_history_dict(self._step_history)

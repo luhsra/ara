@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>444</width>
-    <height>443</height>
+    <width>1224</width>
+    <height>505</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,9 +17,14 @@
    <string notr="true">QWidget {
 	background: white; 
 }
-#subgraph, #subgraph_label { 
+
+#subgraph_label_text {
+	font-weight: bold;
+}
+
+#subgraph { 
 	border: 2px solid black;
-	border-radius: 0px;
+	border-radius: 5px;
 }
 </string>
   </property>
@@ -44,7 +49,7 @@
      <property name="maximumSize">
       <size>
        <width>16777215</width>
-       <height>50</height>
+       <height>30</height>
       </size>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -74,7 +79,7 @@
         <property name="maximumSize">
          <size>
           <width>16777215</width>
-          <height>16777215</height>
+          <height>20</height>
          </size>
         </property>
         <property name="text">
@@ -86,6 +91,19 @@
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="Line" name="line">
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="lineWidth">
+      <number>2</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
     </widget>
    </item>
    <item>
