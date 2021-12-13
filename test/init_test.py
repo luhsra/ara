@@ -46,7 +46,7 @@ def fail_if(condition, *arg, dry=False):
 
 def get_config(i_file):
     """Return the default common config."""
-    return {'log_level': 'warn',
+    return {'log_level': 'debug',
             'dump_prefix': 'dumps/{step_name}.',
             'dump': False,
             'runtime_stats': True,
@@ -78,7 +78,7 @@ def init_test(steps=None, extra_config=None, logger_name=None,
                   The str becomes to a normal ARA config string, the function
                   gets sys.argv as argument and should return a valid value.
     """
-    logger = init_logging(level=logging.WARN, root_name='ara.test')
+    logger = init_logging(level=logging.DEBUG, root_name='ara.test')
     if logger_name is not None:
         logger = get_logger(logger_name)
     if not extra_config:

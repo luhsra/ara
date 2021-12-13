@@ -44,8 +44,7 @@ def main():
                             "graph_name": "CFG",
                             "subgraph": "abbs"
                         },
-                        "LockElision"],
-              "MultiSSE": {"log_level": "debug"}}
+                        "LockElision"]}
     inp = {"oilfile": lambda argv: argv[3]}
     m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
 

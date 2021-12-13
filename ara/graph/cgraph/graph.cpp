@@ -93,6 +93,8 @@ namespace ara::graph {
 		ARA_VMAP(type)
 		ARA_VMAP(level)
 		ARA_VMAP(llvm_link)
+		ARA_VMAP(bcet)
+		ARA_VMAP(wcet)
 		ARA_VMAP(is_exit)
 		ARA_VMAP(is_exit_loop_head)
 		ARA_VMAP(part_of_loop)
