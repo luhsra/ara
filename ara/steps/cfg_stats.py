@@ -37,12 +37,14 @@ class CFGStats(Step):
         syscalls = {}
         if self._graph.os is not None:
             syscalls = self._graph.os.detected_syscalls()
-        model_calls = dict([(n, o.categories) for n, o in syscall.items()])
+        model_calls = dict([(n, o.categories) for n, o in syscalls.items()])
 
         cat_counter = dict([(c, 0) for c in SyscallCategory])
 
-        for syscall in syscalls.vertices():
-            categories = model_calls[syscalls.get_syscall_name(syscall)]
+        # TODO: should a syscall with a corresponding alias counted as two or one syscall ?
+        # Here it is counted as two:
+        for syscall_name, _ in syscalls.items():
+            categories = model_calls[syscall_name]
             for cat in categories:
                 cat_counter[cat] += 1
 
