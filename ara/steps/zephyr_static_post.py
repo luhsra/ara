@@ -1,8 +1,8 @@
 import graph_tool.util
-from ara.graph import Graph
 from .step import Step
 from pydoc import locate
 from ara.os.zephyr import ZephyrInstance, Thread, ISR, ZephyrKernel, ZEPHYR
+from ara.os.os_base import ControlInstance
 from .option import Option, String
 from ara.util import KConfigFile
 
@@ -27,6 +27,7 @@ class ZephyrStaticPost(Step):
         instances.vp.loop[v] = False
         instances.vp.after_scheduler[v] = sched_on
         instances.vp.unique[v] = True
+        instances.vp.is_control[v] = isinstance(obj, ControlInstance)
 
         # There are no sensible defaults for those yet.
         # TODO: Use something other than abb zero for static instances.
@@ -43,24 +44,25 @@ class ZephyrStaticPost(Step):
         # Currently, we just look for a config with the same name as the app.ll
         ZEPHYR.config = KConfigFile(self.input_file.get()[:-3] + '.config')
 
+        cfg = self._graph.cfg
+
+        # Iterate over all statically created instances and convert their dict datatype to the matching datatype.
+        # Also fill missing fields in control instances.
+        entry_functions = dict()
         duplicate_instances = []
         for instance in self._graph.instances.vertices():
-            vals = self._graph.instances.vp.obj[instance]
             instance_type = locate('ara.os.zephyr.' + self._graph.instances.vp.label[instance])
-            if instance_type is Thread or instance_type is ISR:
-                # Fill out the entry abb because it is easier in python than in c++.
-                # Skip instance creation if we already have an instance with the same entry point.
-                entry_abb = self._graph.cfg.get_entry_abb(self._graph.cfg.get_function_by_name(vals['entry_name']))
-                clone = ZEPHYR.explored_entry_points.get(entry_abb)
+            inst = instance_type(**self._graph.instances.vp.obj[instance])
+            if issubclass(instance_type, ControlInstance):
+                function = cfg.get_function_by_name(inst.entry_name)
+                clone = entry_functions.get(function)
                 if clone != None:
                     self._graph.instances.vp.unique[clone] = False
                     duplicate_instances.append(instance)
                     continue
-                vals['entry_abb'] = entry_abb
-
-            inst = instance_type(**vals)
-            if inst.has_entry():
-                ZEPHYR.explored_entry_points[inst.entry_abb] = instance
+                inst.cfg = cfg
+                inst.function = function
+                entry_functions[function] = instance
 
             # Mark the ids of all static instances as used. Since we use symbol names we know
             # them to be unique
@@ -74,12 +76,24 @@ class ZephyrStaticPost(Step):
         # Also, there is no matching abb to give to the vertex
         # NOTE: main() can not be the entry point of a second normal thread because the signature
         # does not match
-        main = graph_tool.util.find_vertex(self._graph.cfg, self._graph.cfg.vp['name'], 'main')
+        main = graph_tool.util.find_vertex(cfg, cfg.vp['name'], 'main')
         if len(main) == 1:
-            main_entry_abb = self._graph.cfg.get_entry_abb(main[0])
             prio = int(ZEPHYR.config['CONFIG_MAIN_THREAD_PRIORITY'])
             stack_size = int(ZEPHYR.config['CONFIG_MAIN_STACK_SIZE'])
-            main_thread = Thread(None, None, stack_size, None, "main", main_entry_abb, (None, None, None), prio, 0, 0)
+            main_thread = Thread(
+                cpu_id=-1,
+                cfg=cfg,
+                artificial=False, # TODO: set to true on error
+                function=cfg.get_function_by_name('main'),
+                symbol=None,
+                stack=None,
+                stack_size=stack_size,
+                entry_name="main",
+                entry_params=(None, None, None),
+                priority=prio,
+                options=0,
+                delay=0
+            )
             ZephyrStaticPost.create_static_instance(self._graph.instances, "Thread", main_thread, "__main", True)
 
         # Create a unique node for the Zephyr kernel.

@@ -93,6 +93,8 @@ namespace ara::step {
 
 			static PyObject* py_int(unsigned long long i) { return Py_BuildValue("K", i); }
 
+			static PyObject* py_int_signed(int i) { return Py_BuildValue("i", i); }
+
 			static PyObject* py_str(const char* str) { return PyUnicode_FromString(str); }
 
 			static PyObject* py_str(const llvm::StringRef& str) {
@@ -104,8 +106,7 @@ namespace ara::step {
 			static PyObject* py_none() { Py_RETURN_NONE; }
 
 			static Vertex add_instance(const ZephyrStaticImpl& context, std::string label, PyObject* obj,
-			                           std::string id) {
-				// assert(false);
+			                           std::string id, bool is_control = false) {						   
 				Vertex v = boost::add_vertex(context.g);
 				context.instances.label[v] = label;
 				context.instances.obj[v] = boost::python::object(boost::python::handle<>(boost::python::borrowed(obj)));
@@ -114,6 +115,7 @@ namespace ara::step {
 				context.instances.loop[v] = false;
 				context.instances.after_scheduler[v] = false;
 				context.instances.unique[v] = true;
+				context.instances.is_control[v] = is_control;
 
 				// These two are meaningless in the context of static instances,
 				// since they are globals and don't belong to any (a)bb.
@@ -169,22 +171,22 @@ namespace ara::step {
 				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));
 
 				PyObject* obj = py_dict({
+					{"cpu_id", py_int_signed(-1)},
+					{"cfg", py_none()}, // Create in Python side
+					{"artificial", Py_False},
+					{"function", py_none()}, // Create in Python side
 				    {"symbol", symbol ? get_obj_from_value(*symbol) : py_none()},
 				    {"stack", py_none()},
 				    {"stack_size", py_int(safe_deref(stack_size).getValue())},
-				    {"entry", get_obj_from_value(entry)},
 				    {"entry_name", py_str(entry.getName())},
-				    // The entry abb is stored as a graphtool.Vertex which seems to
-				    // be reachable only from the python site.
-				    // TODO: Find a way to do this in C++
-				    {"entry_abb", py_none()},
 				    {"entry_params", py_none()},
 				    {"priority", py_int(safe_deref(priority).getValue())},
 				    {"options", py_int(safe_deref(options).getValue())},
 				    {"delay", py_int(safe_deref(delay).getValue())},
 				});
+				Py_INCREF(Py_False);
 
-				return add_instance(context, "Thread", obj, thread_name.str());
+				return add_instance(context, "Thread", obj, thread_name.str(), true);
 			}
 
 			static Vertex parse_isr(const ZephyrStaticImpl& context) {
@@ -203,14 +205,20 @@ namespace ara::step {
 				llvm::Constant* param = llvm::dyn_cast<llvm::Constant>(
 				    get_element_checked(*context.initializer, 3, context.info_node, "param"));
 
-				PyObject* obj = py_dict({{"symbol", py_none()},
+				PyObject* obj = py_dict({
+										 {"cpu_id", py_int_signed(-1)},
+										 {"cfg", py_none()}, // Create in Python side
+										 {"artificial", Py_False},
+										 {"function", py_none()}, // Create in Python side
+										 {"symbol", py_none()},
 				                         {"irq_number", py_int(safe_deref(irq_number).getValue())},
 				                         {"priority", py_none()},
-				                         {"entry", get_obj_from_value(safe_deref(entry))},
 				                         {"entry_name", py_str(entry->getName())},
 				                         {"handler_param", get_obj_from_value(safe_deref(param))},
 				                         {"flags", py_int(safe_deref(flags).getValue())}});
-				return add_instance(context, "ISR", obj, safe_deref(context.global).getName().str());
+				Py_INCREF(Py_False);
+
+				return add_instance(context, "ISR", obj, safe_deref(context.global).getName().str(), true);
 			}
 
 			static PyObject* parse_k_sem(llvm::GlobalVariable& global, const llvm::Constant& sem,
