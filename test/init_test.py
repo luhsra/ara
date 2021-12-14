@@ -3,6 +3,7 @@ import importlib
 import json
 import logging
 import sys
+import os
 
 
 def fake_step_module():
@@ -46,9 +47,9 @@ def fail_if(condition, *arg, dry=False):
 
 def get_config(i_file):
     """Return the default common config."""
-    return {'log_level': 'debug',
+    return {'log_level': os.environ.get('ARA_LOGLEVEL', 'warn'),
             'dump_prefix': 'dumps/{step_name}.',
-            'dump': False,
+            'dump': bool(os.environ.get('ARA_DUMP', '')),
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
@@ -78,7 +79,8 @@ def init_test(steps=None, extra_config=None, logger_name=None,
                   The str becomes to a normal ARA config string, the function
                   gets sys.argv as argument and should return a valid value.
     """
-    logger = init_logging(level=logging.DEBUG, root_name='ara.test')
+    log_level = os.environ.get('ARA_LOGLEVEL', 'warn')
+    logger = init_logging(level=log_level, root_name='ara.test')
     if logger_name is not None:
         logger = get_logger(logger_name)
     if not extra_config:
