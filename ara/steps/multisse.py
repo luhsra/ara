@@ -149,6 +149,12 @@ class MultiSSE(Step):
 
         return single_core_states
 
+    def _calculate_timings(mstg, mstate, entry):
+        # get a filtered graph containing only the current metastate
+        m2s = mstg.g.edge_type(MSTType.m2s)
+        ms_map = label_out_component(m2s, mstate)
+        ms = graph_tool.GraphView(mstg, vfilt=ms_map)
+
     def _run_sse(self, cpu_id, entry):
         """Run the single core SSE for the given entry.
 
