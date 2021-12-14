@@ -139,7 +139,8 @@ def mstg_to_dot(mstg, label="MSTG"):
     for edge in flow.edges():
         src = edge.source()
         tgt = edge.target()
-        attrs = {"color": "black"}
+        attrs = {"color": "black",
+                 "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
         if flow.ep.type[edge] == MSTType.st2sy:
             if flow.vp.type[src] == StateType.exit_sync:
                 src = _sync_str(src, edge)

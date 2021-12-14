@@ -324,6 +324,8 @@ class MSTGraph(graph_tool.Graph):
         self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
+        self.edge_properties["bcet"] = self.new_ep("int64_t")
+        self.edge_properties["wcet"] = self.new_ep("int64_t")
 
     def get_metastates(self):
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)
