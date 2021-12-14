@@ -12,6 +12,13 @@ namespace ara::step {
 	  private:
 		using ConfStep<CDummy>::ConfStep;
 
+		template <typename Graph>
+		void do_cg_stuff(Graph& g, graph::CallGraph& cg) {
+			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
+				logger.debug() << "Function: " << cg.function_name[v] << std::endl;
+			}
+		}
+
 		const static inline option::TOption<option::Integer> dummy_option_template{
 		    "dummy_option", "This is the help for dummy_option."};
 		option::TOptEntity<option::Integer> dummy_option;
@@ -25,6 +32,7 @@ namespace ara::step {
 		virtual void init_options() override;
 
 	  public:
+		virtual ~CDummy(){};
 		static std::string get_name() { return "CDummy"; }
 		static std::string get_description();
 		static Step::OptionVec get_local_options();

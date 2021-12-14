@@ -28,6 +28,10 @@ cdef extern from "cdummy.h" namespace "ara::step":
     cdef cppclass CDummy:
         pass
 
+cdef extern from "check_graph.h" namespace "ara::step":
+    cdef cppclass CheckGraph:
+        pass
+
 cdef extern from "comp_insert.h" namespace "ara::step":
     cdef cppclass CompInsert:
         pass
@@ -62,6 +66,10 @@ cdef extern from "llvm_optimization.h" namespace "ara::step":
 
 cdef extern from "load_freertos_config.h" namespace "ara::step":
     cdef cppclass LoadFreeRTOSConfig:
+        pass
+
+cdef extern from "replace_syscalls_create.h" namespace "ara::step":
+    cdef cppclass ReplaceSyscallsCreate:
         pass
 
 cdef extern from "resolve_function_pointer.h" namespace "ara::step":

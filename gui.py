@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 
 """Automatic Real-time System Analyzer"""
 import importlib
 import sys

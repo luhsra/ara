@@ -172,6 +172,9 @@ class Step(SuperStep):
             self._graph.step_data[self.get_name()] = data_class()
         return self._graph.step_data[self.get_name()]
 
+    def _set_step_data(self, value):
+        self._graph.step_data[self.get_name()] = value
+
     def _apply_config(self, config):
         for option in self._opts:
             option.check(config)
@@ -349,8 +352,6 @@ cdef class NativeStep(SuperStep):
 
         deref(self._c_step).apply_config(config)
 
-
-include "replace_syscalls_create.pxi"
 include "value_analyzer.pxi"
 
 cdef _native_step_fac(unique_ptr[cstep.StepFactory] step_fac):
@@ -374,12 +375,13 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
             _native_step_fac(make_step_fac[cstep.CallGraph]()),
+            _native_step_fac(make_step_fac[cstep.CheckGraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),
             _native_step_fac(make_step_fac[cstep.LLVMOptimization]()),
             _native_step_fac(make_step_fac[cstep.LoadFreeRTOSConfig]()),
-            _native_step_fac_ReplaceSyscallsCreate(),
+            _native_step_fac(make_step_fac[cstep.ReplaceSyscallsCreate]()),
             _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
             _native_step_fac(make_step_fac[cstep.SVFTransformation]())]

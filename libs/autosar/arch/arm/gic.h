@@ -7,10 +7,10 @@
 #ifndef GIC_H_
 #define GIC_H_
 
-#include "stdint.h"
-#include "util/inline.h"
+#include "autosar/util/inline.h"
 #include "machine.h"
 #include "platform.h"
+#include "stdint.h"
 
 namespace arch {
 

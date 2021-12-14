@@ -123,10 +123,14 @@ class ArmArch(GenericArch):
                 self.generator.source_file.data_manager.add(param_decl)
         else:
             assert False, 'unexpected init stack fallback'
+        if task.artificial:
+            task_function = 'prvIdleTask'
+        else:
+            task_function = task.cfg.vp.name[task.cfg.vertex(task.function)]
         stack = InstanceDataObject("InitializedStack_t",
                                    f't{task.name}_{task.uid}_static_stack',
                                    [f'{task.stack_size}'],
-                                   [f'(void *){task.function}', f'(void *){task_parameters}'],
+                                   [f'(void *){task_function}', f'(void *){task_parameters}'],
                                    extern_c = False)
         self.generator.source_file.data_manager.add(stack)
         task.impl.stack = stack

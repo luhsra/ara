@@ -6,14 +6,19 @@ import pyllco
 from typing import Tuple
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
-from ara.graph import CFType as _CFType
+from ara.graph import CFType as _CFType, CFGView as _CFGView
+
+from .os_base import ExecState
+
+# from ara.util import get_logger
+# logger = get_logger("OS_UTIL")
 
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class UnknownArgument:
     """A wrapper class to indicate that an argument cannot be found.
 
@@ -45,6 +50,8 @@ def get_argument(value, arg):
             raise UnsuitableArgumentException(f"Value type {type(lvalue)} does not match wanted type {ty}.")
 
     if arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
+        return check_ty(value.value, arg.ty)
+    if arg.ty != typing.Any and arg.hint == _SigType.instance:
         return check_ty(value.value, arg.ty)
     if arg.raw_value:
         return value
@@ -83,6 +90,20 @@ Argument.hint = property(Argument.get_hint, Argument.set_hint)
 Arg = Argument
 
 
+def set_next_abb(state, cpu_id):
+    """Set the CPU specified with cpu_id to the next abb.
+
+    Note: Call this functions on syscalls only.
+    """
+    lcfg = _CFGView(state.cfg, efilt=state.cfg.ep.type.fa == _CFType.lcf)
+    cpu = state.cpus[cpu_id]
+    for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
+        if idx > 1:
+            raise RuntimeError("A syscall must not have more than one successor.")
+        cpu.abb = next_abb
+        cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
+
+
 class SysCall:
     """Defines a system call.
 
@@ -107,7 +128,7 @@ class SysCall:
         static method so just return itself here."""
         return self
 
-    def __call__(self, graph, abb, state):
+    def __call__(self, graph, state, cpu_id):
         """Interpret the system call.
 
         In principal, this function performs a value analysis, then calls
@@ -115,24 +136,22 @@ class SysCall:
         func_body and follows the normal control flow patterns if wanted.
 
         In particular func_body is called with this arguments:
-        graph -- the system graph
-        abb   -- the ABB of the system call
-        state -- the OS state
-        args  -- A special args object, that contains the retrieved arguments.
-                 It has as fields the attribute names that are given by the
-                 Argument tuple.
-        va    -- The value analyzer.
+        graph  -- the system graph
+        state  -- the OS state
+        cpu_id -- the cpu_id that should be interpreted
+        args   -- A special args object, that contains the retrieved arguments.
+                  It has as fields the attribute names that are given by the
+                  Argument tuple.
+        va     -- The value analyzer.
 
         Arguments:
-        graph -- the graph object
-        abb   -- the abb ob the system call
-        state -- the OS state
+        graph  -- the graph object
+        state  -- the OS state
+        cpu_id -- the cpu_id that should be interpreted
         """
 
         if _SyscallCategory.undefined in self.categories:
             raise NotImplementedError(f"{self._func.__name__} is only a stub.")
-
-        cfg = graph.cfg
 
         # avoid dependency conflicts, therefore import dynamically
         from ara.steps import get_native_component
@@ -142,10 +161,13 @@ class SysCall:
         va = ValueAnalyzer(graph)
 
         # copy the original state
-        state = state.copy()
+        new_state = state.copy()
 
         fields = []
         values = []
+
+        abb = new_state.cpus[cpu_id].abb
+        callpath = new_state.cpus[cpu_id].call_path
 
         # retrieve arguments
         for idx, arg in enumerate(self._signature):
@@ -155,7 +177,7 @@ class SysCall:
                 hint = _SigType.symbol
             try:
                 result = va.get_argument_value(abb, idx,
-                                               callpath=state.call_path,
+                                               callpath=callpath,
                                                hint=hint)
             except ValuesUnknown as e:
                 values.append(UnknownArgument(exception=e, value=None))
@@ -170,16 +192,20 @@ class SysCall:
         args = Arguments(*values)
 
         # syscall specific handling
-        new_state = self._func(graph, abb, state, args, va)
+        new_states = self._func(graph, new_state, cpu_id, args, va)
+        assert new_states is not None, "The syscall does not return anything."
+
+        # few syscalls return multiple follow up states, so wrap everythin
+        # into a list, if not already done
+        if not isinstance(new_states, list):
+            new_states = [new_states]
 
         # add standard control flow successors if wanted
-        new_state.next_abbs = []
         if not self._ccf:
-            for oedge in cfg.vertex(abb).out_edges():
-                if cfg.ep.type[oedge] == _CFType.lcf:
-                    new_state.next_abbs.append(oedge.target())
+            for new_state in new_states:
+                set_next_abb(new_state, cpu_id)
 
-        return new_state
+        return new_states
 
 
 def syscall(*args,
@@ -286,3 +312,30 @@ def find_return_value(abb, callpath, va):
         return va.get_memory_value(ret_val, callpath=callpath)
     except ValuesUnknown:
         return ValueAnalyzerResult(ret_val, [], None, callpath)
+
+
+def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
+    src = instance_graph.vertex(src)
+    tgt = instance_graph.vertex(tgt)
+    existing = instance_graph.edge(src, tgt)
+    if existing and instance_graph.ep.syscall[existing] == abb:
+        return
+
+    e = instance_graph.add_edge(src, tgt)
+    instance_graph.ep.syscall[e] = abb
+    instance_graph.ep.label[e] = label
+    if ty:
+        instance_graph.ep.type[e] = ty
+
+
+def connect_from_here(state, cpu_id, tgt, label, ty=None):
+    cpu = state.cpus[cpu_id]
+    connect_instances(state.instances, cpu.control_instance, tgt,
+                      cpu.abb, label, ty=ty)
+
+
+def find_instance_node(instances, obj):
+    for ins in instances.vertices():
+        if instances.vp.obj[ins] is obj:
+            return ins
+    raise RuntimeError("Instance could not be found.")

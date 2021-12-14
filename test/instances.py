@@ -34,7 +34,7 @@ def main():
             i_dump[name] = val
         dump.append(i_dump)
 
-    # log.info(json.dumps(sorted(dump, key=lambda x: x['id']), indent=2))
+    # log.warn(json.dumps(sorted(dump, key=lambda x: x['id']), indent=2))
     fail_if(data != sorted(dump, key=lambda x: x['id']), "Data not equal")
 
 

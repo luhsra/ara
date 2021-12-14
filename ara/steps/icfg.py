@@ -23,19 +23,16 @@ class ICFG(Step):
 
     def get_single_dependencies(self):
         return [{"name": "CallGraph", "entry_point": self.entry_point.get()},
-                "CreateABBs", "SystemRelevantFunctions"]
+                "SystemRelevantFunctions"]
 
     def run(self):
         entry_label = self.entry_point.get()
         entry_func = self._graph.cfg.get_function_by_name(entry_label)
 
         cfg = self._graph.cfg
-        lcfg = self._graph.lcfg
-        icfg = self._graph.icfg
+        icfg = CFGView(self._graph.bbs, efilt=cfg.ep.type.fa == CFType.icf)
+        lcfg = CFGView(self._graph.bbs, efilt=cfg.ep.type.fa == CFType.lcf)
         cg = self._graph.callgraph
-
-        funcs_queue = deque([entry_func])
-        funcs_done = set()
 
         link_counter = 0
         callsite_counter = 0
@@ -45,50 +42,46 @@ class ICFG(Step):
             ICFG._ET.OUT: "outgoing",
         }
 
-        while funcs_queue:
-            cur_func = funcs_queue.popleft()
-            if cur_func in funcs_done:
-                continue
-            funcs_done.add(cur_func)
-
+        for cur_func in cfg.reachable_functs(entry_func, cg):
             self._log.debug(f"Analyzing function {cfg.vp.name[cur_func]}.")
 
             to_be_linked = []
 
-            for abb in cfg.get_abbs(cur_func):
-                if (icfg.vertex(abb).out_degree() > 0):
+            for bb in cfg.get_function_bbs(cur_func):
+                if (icfg.vertex(bb).out_degree() > 0):
                     # function already handled in a previous ICFG run
                     continue
                 # find other functions
                 linked = False
-                if cfg.vp.type[abb] in [ABBType.syscall, ABBType.call]:
+                if cfg.vp.type[bb] in [ABBType.syscall, ABBType.call]:
                     cg_vtx = cg.vertex(cfg.vp.call_graph_link[cur_func])
                     callsite_counter += 1
                     for callsite in cg_vtx.out_edges():
-                        if cg.ep.callsite[callsite] == abb:
+                        if cg.ep.callsite[callsite] == bb:
+                            # for all callsites in the callgraph belonging to
+                            # this BB
                             cg_callee = callsite.target()
                             if cg.vp.syscall_category_every[cg_callee]:
                                 callee = cg.vp.function[callsite.target()]
                                 self._log.debug("Found system relevant call "
                                                 f"to {cfg.vp.name[callee]}.")
-                                funcs_queue.append(callee)
-                                entry = cfg.get_entry_abb(cfg.vertex(callee))
-                                to_be_linked.append((ICFG._ET.IN, abb, entry))
+                                entry = cfg.get_entry_bb(cfg.vertex(callee))
+                                to_be_linked.append((ICFG._ET.IN, bb, entry))
                                 link_counter += 1
                                 linked = True
-                                assert lcfg.vertex(abb).out_degree() == 1
-                                n_abb = next(lcfg.vertex(abb).out_neighbors())
-                                exit_abb = cfg.get_exit_abb(cfg.vertex(callee))
-                                if exit_abb:
+                                assert lcfg.vertex(bb).out_degree() == 1
+                                n_bb = next(lcfg.vertex(bb).out_neighbors())
+                                exit_bb = cfg.get_function_exit_bb(cfg.vertex(callee))
+                                if exit_bb:
                                     to_be_linked.append(
-                                        (ICFG._ET.OUT, exit_abb, n_abb)
+                                        (ICFG._ET.OUT, exit_bb, n_bb)
                                     )
                     if not linked:
-                        cfg.vp.type[abb] = ABBType.computation
+                        cfg.vp.type[bb] = ABBType.computation
                 if not linked:
                     # link local cfg
-                    for n_abb in lcfg.vertex(abb).out_neighbors():
-                        to_be_linked.append((ICFG._ET.STD, abb, n_abb))
+                    for n_bb in lcfg.vertex(bb).out_neighbors():
+                        to_be_linked.append((ICFG._ET.STD, bb, n_bb))
 
             # link abbs
             for ty, src, target in to_be_linked:
@@ -111,4 +104,4 @@ class ICFG(Step):
                                            "graph_name": name,
                                            "entry_point": entry_label,
                                            "from_entry_point": True,
-                                           "subgraph": 'abbs'})
+                                           "subgraph": 'bbs'})

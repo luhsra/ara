@@ -2,15 +2,39 @@
 import graph_tool
 import graph_tool.util
 
-import enum
+from graph_tool.topology import label_out_component
 
-from collections import deque
+from .graph_data import PyGraphData, _get_llvm_obj
+from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 
-from .graph_data import PyGraphData
-from .mix import ABBType, CFType, SyscallCategory, NodeLevel
+from collections.abc import Iterator
+
+
+class FailedGraphConstraint(Exception):
+    """The graph has another structure than anticipated."""
+
+
+def single_check(iterator):
+    """Check, if iterator is exhausted after exactly one iteration.
+
+    It returns the single element, if it exists and raises an
+    FailedGraphConstraint otherwise.
+    """
+    if not isinstance(iterator, Iterator):
+        iterator = iter(iterator)
+
+    first = next(iterator, None)
+    if first is None:
+        raise FailedGraphConstraint("No element present.")
+    second = next(iterator, None)
+    if second is not None:
+        raise FailedGraphConstraint("More than one element present.")
+    return first
+
 
 class CFGError(Exception):
     """Some error with a CFG function."""
+
 
 class CFG(graph_tool.Graph):
     """Describe the local, interprocedural and global control flow.
@@ -43,11 +67,13 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["level"] = self.new_vp("int") # NodeLevel
         # Level dependent vertex properties
         self.vertex_properties["llvm_link"] = self.new_vp("int64_t") # BB/Function
+        self.vertex_properties["bcet"] = self.new_vp("int64_t") # ABB
+        self.vertex_properties["wcet"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB
-        self.vertex_properties["file"] = self.new_vp("string") # BB/call ABB
-        self.vertex_properties["line"] = self.new_vp("int") # BB/call ABB
+        self.vertex_properties["files"] = self.new_vp("vector<string>") # BB/call ABB
+        self.vertex_properties["lines"] = self.new_vp("vector<int32_t>") # BB/call ABB
         self.vertex_properties["implemented"] = self.new_vp("bool") # Function
         self.vertex_properties["sysfunc"] = self.new_vp("bool") # Function
         self.vertex_properties["arguments"] = self.new_vp("object") # Function
@@ -63,6 +89,14 @@ class CFG(graph_tool.Graph):
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         assert len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
         return func[0]
+
+    def get_llvm_obj(self, vertex):
+        """Return the LLVM object that belongs to the specified vertex.
+
+        Returns only values for function and basic block vertices and None
+        otherwise.
+        """
+        return _get_llvm_obj(self, vertex)
 
     def get_function(self, abb):
         """Get the function node for an ABB."""
@@ -81,6 +115,12 @@ class CFG(graph_tool.Graph):
         """Get the ABBs of the functions."""
         for edge in self.vertex(function).out_edges():
             if self.ep.type[edge] == CFType.f2a:
+                yield edge.target()
+
+    def get_function_bbs(self, function):
+        """Get the BBs of the functions."""
+        for edge in self.vertex(function).out_edges():
+            if self.ep.type[edge] == CFType.f2b:
                 yield edge.target()
 
     def get_abb(self, bb):
@@ -116,22 +156,30 @@ class CFG(graph_tool.Graph):
             raise CFGError("No BB found.")
         return ret
 
-    def get_entry_abb(self, function):
-        """Return the entry_abb of the given function."""
-        function = self.vertex(function)
+    def _get_entry(self, function, edge_type=CFType.f2a):
+        """Return the entry block of the given function."""
+        def is_entry(block):
+            return self.ep.is_entry[block] and self.ep.type[block] == edge_type
 
-        def is_entry(abb):
-            return self.ep.is_entry[abb] and self.ep.type[abb] == CFType.f2a
+        function = self.vertex(function)
 
         entry = list(filter(is_entry, function.out_edges()))
         assert len(entry) == 1
         return entry[0].target()
 
-    def get_exit_abb(self, function):
+    def get_entry_abb(self, function):
+        """Return the entry abb of the given function."""
+        return self._get_entry(function, edge_type=CFType.f2a)
+
+    def get_entry_bb(self, function):
+        """Return the entry bb of the given function."""
+        return self._get_entry(function, edge_type=CFType.f2b)
+
+    def _get_exit(self, function, level):
         function = self.vertex(function)
 
-        def is_exit(abb):
-            return self.vp.is_exit[abb] and self.vp.level[abb] == NodeLevel.abb
+        def is_exit(block):
+            return self.vp.is_exit[block] and self.vp.level[block] == level
 
         entry = list(filter(is_exit, function.out_neighbors()))
         if entry:
@@ -139,11 +187,16 @@ class CFG(graph_tool.Graph):
             return entry[0]
         return None
 
+    def get_function_exit_bb(self, function):
+        return self._get_exit(function, level=NodeLevel.bb)
+
+    def get_exit_abb(self, function):
+        return self._get_exit(function, level=NodeLevel.abb)
+
     def get_syscall_name(self, abb):
         """Return the called syscall name for a given abb."""
         abb = self.vertex(abb)
         if not self.vp.type[abb] == ABBType.syscall:
-            print("no syscall", abb)
             return ''
         syscall = [x.target() for x in abb.out_edges()
                    if self.ep.type[x] == CFType.icf]
@@ -153,34 +206,31 @@ class CFG(graph_tool.Graph):
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
 
-    def _reachable_nodes(self, func, return_abbs):
-        funcs_queue = deque([func])
-        funcs_done = set()
+    def _reachable_nodes(self, func, callgraph, node_level):
+        cg_func = callgraph.vertex(self.vp.call_graph_link[func])
+        oc = label_out_component(callgraph, cg_func)
+        reachable_cg = graph_tool.GraphView(callgraph, vfilt=oc)
 
-        while funcs_queue:
-            cur_func = funcs_queue.popleft()
-            if cur_func in funcs_done:
-                continue
-            funcs_done.add(cur_func)
-            if not return_abbs:
-                yield cur_func
-            for abb in self.get_abbs(cur_func):
-                # find other functions
-                if self.vp.type[abb] in [ABBType.syscall, ABBType.call]:
-                    for edge in abb.out_edges():
-                        if self.ep.type[edge] == CFType.icf:
-                            new_func = self.get_function(edge.target())
-                            funcs_queue.append(new_func)
-                if return_abbs:
-                    yield abb
+        for sub_func in reachable_cg.vertices():
+            cfg_func = reachable_cg.vp.function[sub_func]
+            for entity in {
+                NodeLevel.function: [cfg_func],
+                NodeLevel.abb: self.get_abbs(cfg_func),
+                NodeLevel.bb: self.get_function_bbs(cfg_func)
+            }[node_level]:
+                yield entity
 
-    def reachable_functs(self, func):
+    def reachable_functs(self, func, callgraph):
         """Generator about all reachable Functions starting at func."""
-        return self._reachable_nodes(func, return_abbs=False)
+        return self._reachable_nodes(func, callgraph, NodeLevel.function)
 
-    def reachable_abbs(self, func):
+    def reachable_abbs(self, func, callgraph):
         """Generator about all reachable ABBs starting at func."""
-        return self._reachable_nodes(func, return_abbs=True)
+        return self._reachable_nodes(func, callgraph, NodeLevel.abb)
+
+    def reachable_bbs(self, func, callgraph):
+        """Generator about all reachable BBs starting at func."""
+        return self._reachable_nodes(func, callgraph, NodeLevel.bb)
 
     def get_call_targets(self, abb, func=True):
         """Generator about all call targets for a given call abb.
@@ -203,6 +253,9 @@ class CFGView(graph_tool.GraphView):
     """Class to get CFG functions for a filtered CFG."""
     def __init__(self, graph, **kwargs):
         graph_tool.GraphView.__init__(self, graph, **kwargs)
+
+    def get_llvm_obj(self, *args, **kwargs):
+        return self.base.get_llvm_obj(*args, **kwargs)
 
     def get_function_by_name(self, *args, **kwargs):
         return self.base.get_function_by_name(*args, **kwargs)
@@ -261,6 +314,43 @@ class Callgraph(graph_tool.Graph):
         return node[0]
 
 
+class MSTGraph(graph_tool.Graph):
+    """The Multi state transision graph"""
+    def __init__(self):
+        super().__init__()
+        # vertex properties
+        self.vertex_properties["state"] = self.new_vp("object")
+        self.vertex_properties["type"] = self.new_vp("int")  # StateType
+        self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
+        self.edge_properties["type"] = self.new_ep("int")  # MSTType
+        self.edge_properties["cpu_id"] = self.new_ep("int")
+
+    def get_metastates(self):
+        return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)
+
+    def get_sync_points(self, exit=False):
+        if exit:
+            return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.exit_sync)
+        return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.entry_sync)
+
+    def edge_type(self, msttype):
+        """Return a GraphView with this special edge type filter."""
+        return graph_tool.GraphView(
+            self,
+            efilt=(self.ep.type.fa == msttype)
+        )
+
+    def get_metastate(self, state):
+        """Return the metastate that belongs to a state."""
+        m2s = self.edge_type(MSTType.m2s)
+        return self.vertex(single_check(m2s.vertex(state).in_neighbors()))
+
+    def get_entry_cp(self, exit_cp):
+        """Return the entry_cp that belongs to an exit_cp."""
+        fu = self.edge_type(MSTType.follow_up)
+        return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
+
+
 class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
     (edges).
@@ -268,6 +358,8 @@ class InstanceGraph(graph_tool.Graph):
     def __init__(self):
         super().__init__()
         # vertex properties
+        # ATTENTION: If you modify this values, you also have to update
+        # cgraph/graph.cpp and cgraph/graph.h.
         self.vertex_properties["label"] = self.new_vp("string")
         self.vertex_properties["obj"] = self.new_vp("object")
         self.vertex_properties["id"] = self.new_vp("string")
@@ -279,11 +371,33 @@ class InstanceGraph(graph_tool.Graph):
         self.vertex_properties["unique"] = self.new_vp("bool")
         self.vertex_properties["soc"] = self.new_vp("long")
         self.vertex_properties["llvm_soc"] = self.new_vp("int64_t")
+        self.vertex_properties["is_control"] = self.new_vp("bool")
         self.vertex_properties["file"] = self.new_vp("string")
         self.vertex_properties["line"] = self.new_vp("int")
         self.vertex_properties["specialization_level"] = self.new_vp("string")
 
         self.edge_properties["label"] = self.new_ep("string")
+        self.edge_properties["type"] = self.new_ep("int")  # OS specific type
+        self.edge_properties["syscall"] = self.new_ep("int")  # ABB vertex ID
+
+    def get_controls(self):
+        return graph_tool.GraphView(self, vfilt=self.vp.is_control)
+
+    def get(self, instance_type):
+        """Generator over all instances with a specific type.
+
+        Returns a tuple containing the vertex and instance object.
+        """
+        for inst in self.vertices():
+            obj = self.vp.obj[inst]
+            if isinstance(obj, instance_type):
+                yield inst, obj
+
+    def get_node(self, instance):
+        """Get the vertex belonging to a specific instance."""
+        for inst in self.vertices():
+            if instance == self.vp.obj[inst]:
+                return inst
 
 
 class Graph:
@@ -322,7 +436,6 @@ class Graph:
     @property
     def lcfg(self):
         return CFGView(self.abbs, efilt=self.cfg.ep.type.fa == CFType.lcf)
-
 
     def __init__(self):
         # should be used only from C++, see graph.h

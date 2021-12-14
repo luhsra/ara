@@ -93,11 +93,13 @@ namespace ara::graph {
 		ARA_VMAP(type)
 		ARA_VMAP(level)
 		ARA_VMAP(llvm_link)
+		ARA_VMAP(bcet)
+		ARA_VMAP(wcet)
 		ARA_VMAP(is_exit)
 		ARA_VMAP(is_exit_loop_head)
 		ARA_VMAP(part_of_loop)
-		ARA_VMAP(file)
-		ARA_VMAP(line)
+		ARA_VMAP(files)
+		ARA_VMAP(lines)
 		ARA_VMAP(implemented)
 		ARA_VMAP(sysfunc)
 		ARA_VMAP(arguments)
@@ -177,7 +179,6 @@ namespace ara::graph {
 
 #undef ARA_VMAP
 #undef ARA_EMAP
-#undef ARA_MAP
 
 		// TODO: the cfg graph attribute is not mappable with the above method. Fix it, when necessary.
 	}
@@ -215,5 +216,74 @@ namespace ara::graph {
 		assert(pycallgraph != nullptr);
 
 		return CallGraph::get_ptr(pycallgraph);
+	}
+
+	inline void create_properties(InstanceGraph& instancegraph, PyObject* py_instancegraph) {
+		PyObject* vprops = get_vprops(py_instancegraph);
+
+#define ARA_VMAP(Value) ARA_MAP(instancegraph, Value, vprops)
+#define ARA_EMAP(Value) ARA_MAP(instancegraph, Value, eprops)
+
+		ARA_VMAP(label)
+		ARA_VMAP(obj)
+		ARA_VMAP(id)
+		ARA_VMAP(branch)
+		ARA_VMAP(loop)
+		ARA_VMAP(recursive)
+		ARA_VMAP(after_scheduler)
+		ARA_VMAP(unique)
+		ARA_VMAP(soc)
+		ARA_VMAP(llvm_soc)
+		ARA_VMAP(is_control)
+		ARA_VMAP(file)
+		ARA_VMAP(line)
+		ARA_VMAP(specialization_level)
+
+		PyObject* eprops = get_eprops(py_instancegraph);
+
+		// ARA_EMAP does not work here since the C++ and Python name differ
+		instancegraph.elabel = get_property<decltype(instancegraph.elabel)>(eprops, "label");
+		ARA_EMAP(type)
+		ARA_EMAP(syscall)
+
+#undef ARA_VMAP
+#undef ARA_EMAP
+#undef ARA_MAP
+	}
+
+	InstanceGraph InstanceGraph::get(PyObject* py_instancegraph) {
+		assert(py_instancegraph != nullptr);
+		InstanceGraph instancegraph(get_graph(py_instancegraph));
+		create_properties(instancegraph, py_instancegraph);
+		return instancegraph;
+	}
+
+	struct InstanceGraph::InstanceGraphUniqueEnabler : public InstanceGraph {
+		template <typename... Args>
+		InstanceGraphUniqueEnabler(Args&&... args) : InstanceGraph(std::forward<Args>(args)...) {}
+	};
+
+	std::unique_ptr<InstanceGraph> InstanceGraph::get_ptr(PyObject* py_instancegraph) {
+		assert(py_instancegraph != nullptr);
+		std::unique_ptr<InstanceGraph> instancegraph =
+		    std::make_unique<InstanceGraphUniqueEnabler>(get_graph(py_instancegraph));
+		create_properties(*instancegraph, py_instancegraph);
+		return instancegraph;
+	}
+
+	InstanceGraph Graph::get_instances() {
+		// extract self.instances from Python
+		PyObject* pyinstancegraph = PyObject_GetAttrString(graph, "instances");
+		assert(pyinstancegraph != nullptr);
+
+		return InstanceGraph::get(pyinstancegraph);
+	}
+
+	std::unique_ptr<InstanceGraph> Graph::get_instances_ptr() {
+		// extract self.instances from Python
+		PyObject* pyinstancegraph = PyObject_GetAttrString(graph, "instances");
+		assert(pyinstancegraph != nullptr);
+
+		return InstanceGraph::get_ptr(pyinstancegraph);
 	}
 } // namespace ara::graph

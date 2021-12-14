@@ -364,6 +364,15 @@ namespace ara::step {
 		                    OSObject obj_index);
 
 		/**
+		 * Find the global llvm::Value with the given name.
+		 *
+		 * \param name the name of the global value
+		 *
+		 * \return the found value or nullptr
+		 */
+		llvm::GlobalValue* find_global(const std::string& name);
+
+		/**
 		 * Converts a ARA (Python) callsite to an LLVM callsite.
 		 */
 		template <class Graph>
@@ -474,5 +483,10 @@ namespace ara::step {
 		 * Wrapper call for has_connection. See its documentation for details.
 		 */
 		bool py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, OSObject obj_index);
+
+		/**
+		 * Wrapper call for py_find_global. See its documention for details.
+		 */
+		PyObject* py_find_global(const std::string& name);
 	};
 } // namespace ara::step

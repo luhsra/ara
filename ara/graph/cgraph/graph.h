@@ -26,11 +26,13 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<int>::type type;
 		typename graph_tool::vprop_map_t<int>::type level;
 		typename graph_tool::vprop_map_t<int64_t>::type llvm_link;
+		typename graph_tool::vprop_map_t<int64_t>::type bcet;
+		typename graph_tool::vprop_map_t<int64_t>::type wcet;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit_loop_head;
 		typename graph_tool::vprop_map_t<unsigned char>::type part_of_loop;
-		typename graph_tool::vprop_map_t<std::string>::type file;
-		typename graph_tool::vprop_map_t<int>::type line;
+		typename graph_tool::vprop_map_t<std::vector<std::string>>::type files;
+		typename graph_tool::vprop_map_t<std::vector<int32_t>>::type lines;
 		typename graph_tool::vprop_map_t<unsigned char>::type implemented;
 		typename graph_tool::vprop_map_t<unsigned char>::type sysfunc;
 		typename graph_tool::vprop_map_t<boost::python::object>::type arguments;
@@ -489,6 +491,51 @@ namespace ara::graph {
 		}
 	};
 
+	struct InstanceGraph {
+	  private:
+		friend class Graph;
+		InstanceGraph(graph_tool::GraphInterface& graph) : graph(graph){};
+
+		struct InstanceGraphUniqueEnabler;
+
+	  public:
+		graph_tool::GraphInterface& graph;
+		/* vertex properties */
+		typename graph_tool::vprop_map_t<std::string>::type label;
+		typename graph_tool::vprop_map_t<boost::python::object>::type obj;
+		typename graph_tool::vprop_map_t<std::string>::type id;
+		typename graph_tool::vprop_map_t<unsigned char>::type branch;
+		typename graph_tool::vprop_map_t<unsigned char>::type loop;
+		typename graph_tool::vprop_map_t<unsigned char>::type recursive;
+		typename graph_tool::vprop_map_t<unsigned char>::type after_scheduler;
+		typename graph_tool::vprop_map_t<unsigned char>::type unique;
+		typename graph_tool::vprop_map_t<long>::type soc;
+		typename graph_tool::vprop_map_t<int64_t>::type llvm_soc;
+		typename graph_tool::vprop_map_t<unsigned char>::type is_control;
+		typename graph_tool::vprop_map_t<std::string>::type file;
+		typename graph_tool::vprop_map_t<int>::type line;
+		typename graph_tool::vprop_map_t<std::string>::type specialization_level;
+
+		/* edge properties */
+		typename graph_tool::eprop_map_t<std::string>::type elabel;
+		typename graph_tool::eprop_map_t<int>::type type;
+		typename graph_tool::eprop_map_t<int>::type syscall;
+
+		/**
+		 * Return a CallGraph from the corresponding Python graph.
+		 */
+		static InstanceGraph get(PyObject* py_instancegraph);
+		static std::unique_ptr<InstanceGraph> get_ptr(PyObject* py_instancegraph);
+
+		/**
+		 * Return the corresponding LLVM SOC to the given node.
+		 */
+		template <class Graph>
+		const llvm::Instruction* get_llvm_soc(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return reinterpret_cast<const llvm::Instruction*>(llvm_soc[v]);
+		}
+	};
+
 	/**
 	 * C++ representation of the graph.
 	 *
@@ -526,5 +573,8 @@ namespace ara::graph {
 
 		CallGraph get_callgraph();
 		std::unique_ptr<CallGraph> get_callgraph_ptr();
+
+		InstanceGraph get_instances();
+		std::unique_ptr<InstanceGraph> get_instances_ptr();
 	};
 } // namespace ara::graph

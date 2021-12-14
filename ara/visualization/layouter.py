@@ -58,7 +58,7 @@ class Layouter:
 
     def _update_cfg_view(self, entry_point="main"):
         entry_func = self._graph.cfg.get_function_by_name(entry_point)
-        functions = self._graph.cfg.reachable_functs(entry_func)
+        functions = self._graph.cfg.reachable_functs(entry_func, self._graph.callgraph)
 
         cfg = self._graph.cfg
         nodes = set()

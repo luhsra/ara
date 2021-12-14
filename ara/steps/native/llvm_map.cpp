@@ -34,11 +34,14 @@ namespace ara::step {
 				cfg.llvm_link[bb] = reinterpret_cast<intptr_t>(llvm_bb);
 				cfg.level[bb] = static_cast<int>(graph::NodeLevel::bb);
 
-				if (source_loc == "all" || (source_loc == "calls" && type == graph::ABBType::call)) {
+				if (llvm_bb != nullptr &&
+				    (source_loc == "all" || (source_loc == "calls" && type == graph::ABBType::call))) {
 					try {
-						auto [file, line] = get_source_location(llvm_bb->front());
-						cfg.file[bb] = file.string();
-						cfg.line[bb] = line;
+						for (const auto& inst : *llvm_bb) {
+							auto [file, line] = get_source_location(inst);
+							cfg.files[bb].emplace_back(file.string());
+							cfg.lines[bb].emplace_back(line);
+						}
 					} catch (const LLVMError&) {
 						logger.warn() << "Debug location unknown, while requested: " << llvm_bb->front() << std::endl;
 					}
