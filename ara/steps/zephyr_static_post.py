@@ -83,7 +83,7 @@ class ZephyrStaticPost(Step):
             main_thread = Thread(
                 cpu_id=-1,
                 cfg=cfg,
-                artificial=False, # TODO: set to true on error
+                artificial=False,
                 function=cfg.get_function_by_name('main'),
                 symbol=None,
                 stack=None,
