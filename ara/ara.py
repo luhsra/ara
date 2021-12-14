@@ -113,10 +113,11 @@ def main():
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
 
-    s_manager.execute(vars(args), extra_settings, args.step)
+    s_args = dict([(x, y) for x, y in vars(args).items() if y is not None])
+    s_manager.execute(s_args, extra_settings, args.step)
 
     if args.ir_output:
-        s_manager.execute(vars(args),
+        s_manager.execute(s_args,
                           {'steps': [{'name':'IRWriter',
                                       'ir_file': args.ir_output}]}, None)
 
