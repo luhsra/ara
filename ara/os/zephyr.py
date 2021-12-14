@@ -1,14 +1,18 @@
-from .os_util import syscall, Arg, find_return_value, set_next_abb
+from .os_util import syscall, Arg, find_return_value, set_next_abb, connect_from_here
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 from ara.util import get_logger
-from ara.graph import SyscallCategory, SigType, CallPath
+from ara.graph import SyscallCategory, SigType, CallPath, CFG
+from ara.steps import get_native_component
 from dataclasses import dataclass
 import ara.graph as _graph
+import graph_tool
 import pyllco
 import html
 import re
 
 logger = get_logger("ZEPHYR")
+ValueAnalyzer = get_native_component("ValueAnalyzer")
+ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
 
 @dataclass(eq=False)
 class ZephyrInstance:
@@ -37,9 +41,13 @@ class ZephyrKernel(ZephyrInstance):
     heap_size: int
     # Always none, but required
     symbol: object = None
+
     def as_dot(self):
         attribs = ["heap_size"]
         return self.instance_dot(attribs, "#e1d5e7", "#9673a6")
+
+    def __hash__(self):
+        return hash(("ZephyrKernel", self.heap_size, self.symbol))
 
 @dataclass
 class Thread(ZephyrInstance, ControlInstance):
@@ -114,14 +122,19 @@ class Semaphore(ZephyrInstance):
     def as_dot(self):
         attribs = ["count", "limit"]
         return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    
+    def __hash__(self):
+        return hash((self.__class__.__name__, self.symbol, self.count, self.limit))
 
 @dataclass
 class KernelSemaphore(Semaphore):
-    pass
+    def __hash__(self):
+        return super().__hash__()
 
 @dataclass
 class UserSemaphore(Semaphore):
-    pass
+    def __hash__(self):
+        return super().__hash__()
 
 @dataclass
 class Mutex(ZephyrInstance):
@@ -274,7 +287,7 @@ class ZEPHYR(OSBase):
         return ident
 
     @staticmethod
-    def create_instance(cfg, abb, state, label: str, obj: ZephyrInstance, ident: str, call: str):
+    def create_instance(cfg: CFG, state: OSState, cpu_id: int, va: ValueAnalyzer, label: str, obj: ZephyrInstance, symbol: ValueAnalyzerResult, call: str):
         """
         Adds a new instance and an edge for the create syscall to the instance graph.
         If there already exists an instance that is matched to the same symbol another one will be
@@ -312,21 +325,29 @@ class ZEPHYR(OSBase):
         v = instances.add_vertex()
         instances.vp.label[v] = label
         instances.vp.obj[v] = obj
-        instances.vp.id[v] = ZEPHYR.get_unique_id(ident)
-        instances.vp.branch[v] = state.branch
-        instances.vp.loop[v] = state.loop
-        instances.vp.after_scheduler[v] = state.scheduler_on
+        instances.vp.id[v] = ZEPHYR.get_unique_id(symbol.value.get_name())
+
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        ana_context = cpu.analysis_context
+
+        instances.vp.branch[v] = ana_context.branch
+        instances.vp.loop[v] = ana_context.loop
+        instances.vp.after_scheduler[v] = ana_context.scheduler_on
         # Creating an instance from a thread that is not unique will result in a non unique instance
-        instances.vp.unique[v] = not (state.branch or state.loop) and instances.vp.unique[state.running]
+        instances.vp.unique[v] = not (ana_context.branch or ana_context.loop) and instances.vp.unique[cpu.control_instance]
         instances.vp.soc[v] = abb
-        instances.vp.llvm_soc[v] = cfg.vp.entry_bb[abb]
-        instances.vp.file[v] = cfg.vp.file[abb]
-        instances.vp.line[v] = cfg.vp.line[abb]
+        instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
+        instances.vp.file[v] = cfg.vp.files[abb][0]
+        instances.vp.line[v] = cfg.vp.lines[abb][0]
         instances.vp.specialization_level[v] = ""
         instances.vp.is_control[v] = isinstance(obj, ControlInstance)
 
-        #if obj.has_entry():
-        #    ZEPHYR.explored_entry_points[obj.entry_abb] = v
+        if symbol:
+            va.assign_system_object(symbol.value,
+                                    state.instances.vp.obj[v],
+                                    symbol.offset,
+                                    symbol.callpath)
 
         # If we have some siblings, clone all edges
         to_add = []
@@ -342,25 +363,15 @@ class ZEPHYR(OSBase):
             for ((s, t), label) in to_add:
                 e = instances.add_edge(s, t)
                 instances.ep.label[e] = label
-        ZEPHYR.add_comm(state, v, call)
+        connect_from_here(state, cpu_id, v, call)
 
     @staticmethod
-    def find_instance_by_symbol(state, symbol):
+    def find_instance_by_symbol(state, symbol: pyllco.Value):
         """Returns an iterator over all instances with the given symbol"""
         if symbol is None:
             return []
         return filter(lambda v: state.instances.vp.obj[v].symbol == symbol,
                 state.instances.vertices())
-
-    @staticmethod
-    def add_comm(state, to, call: str):
-            """Adds an interaction (edge) from running to 'to' with the given callname"""
-            instance = state.running
-            if instance == None:
-                logger.error("syscall but no running instance. Maybe from main()?")
-                return
-            e = state.instances.add_edge(instance, to)
-            state.instances.ep.label[e] = call
 
     @staticmethod
     def add_instance_comm(state, symbol, call: str):
@@ -502,25 +513,20 @@ class ZEPHYR(OSBase):
 
     # int k_sem_init(struct k_sem *sem, unsigned int initial_count, unsigned int limit)
     @syscall(categories={SyscallCategory.create},
-             signature=(Arg("symbol", hint=SigType.symbol, ty=pyllco.Value),
+             signature=(Arg("symbol", hint=SigType.instance),
                         Arg("count", hint=SigType.value),
                         Arg("limit", hint=SigType.value)))
     def k_sem_init(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
         cfg = graph.cfg
 
         instance = KernelSemaphore(
-            args.symbol,
+            args.symbol.value,
             args.count,
             args.limit
         )
 
-        ZEPHYR.create_instance(cfg, abb, state, "KernelSemaphore", instance, args.symbol.get_name(), "k_sem_init")
-        state.next_abbs = []
-
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
+        ZEPHYR.create_instance(cfg, state, cpu_id, va, "KernelSemaphore", instance, args.symbol, "k_sem_init")
 
         return state
 
