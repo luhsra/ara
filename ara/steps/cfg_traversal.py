@@ -228,7 +228,7 @@ class _SSERunner:
             new_states = []
             if cpu.irq_on:
                 for irq in self._available_irqs:
-                    new_state = self._os.handle_irq(self._graph, state, 0, irq)
+                    new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
                     if new_state is not None:
                         new_states.append(new_state)
             return new_states
@@ -321,7 +321,7 @@ class _SSERunner:
         # here. This should be done by the operation system model.
         if cpu.irq_on:
             for irq in self._available_irqs:
-                new_state = self._os.handle_irq(self._graph, state, 0, irq)
+                new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
                 if new_state is not None:
                     new_states.append(new_state)
         return new_states
