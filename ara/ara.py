@@ -88,6 +88,8 @@ def main():
         g.os = freertos.FreeRTOS
     elif args.os == "Zephyr":
         g.os = zephyr.ZEPHYR
+        if args.entry_point == "main":
+            args.entry_point = "" # Let Zephyr model handle the entry point.
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
