@@ -5,6 +5,7 @@ from init_test import init_test, fail_if
 
 import json
 import sys
+import logging
 
 
 def _dump_trace(trace):
@@ -50,7 +51,8 @@ def main():
 
     locks = m_graph.step_data["LockElision"]
 
-    # log.warn(json.dumps(locks))
+    if log.level <= logging.INFO:
+        log.warning(json.dumps(locks))
     fail_if(data != locks)
 
 
