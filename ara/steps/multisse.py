@@ -105,6 +105,9 @@ class MultiSSE(Step):
         _add_state(init_state)
 
         class SSEVisitor(Visitor):
+            PREVENT_MULTIPLE_VISITS = False
+            CFG_CONTEXT = None
+
             @staticmethod
             def get_initial_state():
                 return init_state
