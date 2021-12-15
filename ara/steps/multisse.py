@@ -76,34 +76,34 @@ class MultiSSE(Step):
             return Metastate(state=metastate, entry=init_v, is_new=False)
 
         cpu_id = single_check(iter(init_state.cpus.ids()))
-        # create the metastate
-        m_state = mstg.g.add_vertex()
-        mstg.g.vp.type[m_state] = StateType.metastate
-        mstg.g.vp.cpu_id[m_state] = cpu_id
-        self._log.debug(f"Add metastate {int(m_state)}")
+        to_assign_states = set()
+        m_state = list()
 
         def _add_state(state):
             h = hash(state)
             if h in self.state_map:
-                return False
+                return False, self.state_map[h]
 
             v = mstg.g.add_vertex()
             mstg.g.vp.type[v] = StateType.state
             mstg.g.vp.state[v] = state
             self._log.debug(f"Add State {state.id} (node {int(v)})")
 
-            e = mstg.g.add_edge(m_state, v)
-            mstg.g.ep.type[e] = MSTType.m2s
-            mstg.g.ep.cpu_id[e] = cpu_id
             self.state_map[h] = v
 
             if state.cpus[cpu_id].exec_state & ExecState.with_time:
                 mstg.type_map[v] = ExecType.has_length
 
-            return True
+            return True, v
+
+        def _get_m_state(v):
+            m2s = mstg.g.edge_type(MSTType.m2s)
+            for n in m2s.vertex(v).in_neighbors():
+                return n
+            return None
 
         # add initial state
-        _add_state(init_state)
+        to_assign_states.add(_add_state(init_state)[1])
 
         class SSEVisitor(Visitor):
             PREVENT_MULTIPLE_VISITS = False
@@ -124,13 +124,29 @@ class MultiSSE(Step):
 
             @staticmethod
             def add_state(new_state):
-                return _add_state(new_state)
+                created, v = _add_state(new_state)
+                if created:
+                    to_assign_states.add(v)
+                return created
 
             @staticmethod
             def add_transition(source, target):
-                e = mstg.g.add_edge(self.state_map[hash(source)], self.state_map[hash(target)])
+                tgt = self.state_map[hash(target)]
+                src = self.state_map[hash(source)]
+                e = mstg.g.add_edge(src, tgt)
                 mstg.g.ep.type[e] = MSTType.s2s
                 mstg.g.ep.cpu_id[e] = cpu_id
+                m_state_cand = _get_m_state(tgt)
+                if m_state_cand is None:
+                    return
+                target = mstg.g.vp.state[tgt]
+                self._log.debug("Found a transition to an already existing metastate. "
+                                f"(State {source.id} (node {int(src)}) -> "
+                                f"State {target.id} (node {int(tgt)})")
+                if m_state and m_state[0] == m_state_cand:
+                    return
+                assert len(m_state) == 0, "Multiple Transition to multiple metastates found."
+                m_state.append(m_state_cand)
 
             @staticmethod
             def next_step(counter):
@@ -142,6 +158,20 @@ class MultiSSE(Step):
             visitor=SSEVisitor(),
             logger=self._log,
         )
+
+        # create the metastate
+        if len(m_state) == 0:
+            m_state = mstg.g.add_vertex()
+            mstg.g.vp.type[m_state] = StateType.metastate
+            mstg.g.vp.cpu_id[m_state] = cpu_id
+            self._log.debug(f"Add metastate {int(m_state)}")
+        else:
+            m_state = m_state[0]
+
+        for state in to_assign_states:
+            e = mstg.g.add_edge(m_state, state)
+            mstg.g.ep.type[e] = MSTType.m2s
+            mstg.g.ep.cpu_id[e] = cpu_id
 
         if self.dump.get():
             self.dump_mstg(mstg.g,
@@ -345,14 +375,15 @@ class MultiSSE(Step):
         # neighbor
         for cp in cps:
             # mark as neighbor
-            e = mstg_g.add_edge(old_cp, mstg_g.vertex(cp))
+            e = mstg_g.edge(old_cp, mstg_g.vertex(cp), add_missing=True)
             mstg_g.ep.type[e] = MSTType.sync_neighbor
 
             # sync edges
             sy2sy = mstg_g.edge_type(MSTType.sy2sy)
             for e in list(sy2sy.vertex(cp).out_neighbors()):
-                new_e = mstg_g.add_edge(mstg_g.vertex(old_cp),
-                                        mstg_g.vertex(e))
+                new_e = mstg_g.edge(mstg_g.vertex(old_cp),
+                                    mstg_g.vertex(e),
+                                    add_missing=True)
                 mstg_g.ep.type[new_e] = MSTType.sy2sy
 
         return True
