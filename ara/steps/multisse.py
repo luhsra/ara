@@ -16,6 +16,7 @@ from itertools import product, chain
 from functools import reduce
 from dataclasses import dataclass
 from graph_tool.topology import label_out_component
+from typing import List
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -89,7 +90,7 @@ class MultiSSE(Step):
             v = mstg.g.add_vertex()
             mstg.g.vp.type[v] = StateType.state
             mstg.g.vp.state[v] = state
-            self._log.debug(f"Add state {int(v)}")
+            self._log.debug(f"Add State {state.id} (node {int(v)})")
 
             e = mstg.g.add_edge(m_state, v)
             mstg.g.ep.type[e] = MSTType.m2s
@@ -148,13 +149,18 @@ class MultiSSE(Step):
 
         return Metastate(state=m_state, entry=self.state_map[init_h], is_new=True)
 
-    def _calculate_from_multistate(self, mstg, multi_state, cp):
+    def _create_metastates(self, mstg, multi_cpu_state, cp):
+        """Split a state with multiple CPUs and run a single core SSE on each
+        of them.
+
+        Return the list of new metastates
+        """
         metastates = []
-        for cpu in multi_state.cpus:
+        for cpu in multi_cpu_state.cpus:
             # restrict state to this cpu
-            state = multi_state.copy()
+            state = multi_cpu_state.copy()
             state.cpus = CPUList([cpu])
-            state.context = self._graph.os.get_cpu_local_contexts(multi_state.context, cpu.id)
+            state.context = self._graph.os.get_cpu_local_contexts(multi_cpu_state.context, cpu.id)
 
             # run single core SSE on this state
             metastate = self._run_sse(mstg, state)
@@ -184,7 +190,7 @@ class MultiSSE(Step):
         mstg.g.vp.state[cp] = self._graph.os.get_global_contexts(os_state.context)
         self._log.debug(f"Add initial cross point {int(cp)}")
 
-        metastates = self._calculate_from_multistate(mstg, os_state, cp)
+        metastates = self._create_metastates(mstg, os_state, cp)
 
         return cp, metastates
 
@@ -281,13 +287,14 @@ class MultiSSE(Step):
                               cfg=states[0].cfg)
         multi_state.context = {k: v for d in context for k, v in d.items()}
 
+        # let the model interpret the created multicore state
         new_states = os.interpret(self._graph, multi_state, cpu_id)
         for new_state in new_states:
             os.schedule(new_state)
 
+        # add follow up cross points for the outcome
         ret = []
         for new_state in new_states:
-            # create follow up cross point
             fcp = mstg.g.add_vertex()
             mstg.g.vp.type[fcp] = StateType.exit_sync
             self._log.debug(f"Add exit cross point {int(fcp)}")
@@ -298,14 +305,15 @@ class MultiSSE(Step):
             # store global context in cross_point
             mstg.g.vp.state[fcp] = os.get_global_contexts(new_state.context)
 
-            metastates = self._calculate_from_multistate(mstg, new_state, fcp)
+            # calculate follow up metastates
+            metastates = self._create_metastates(mstg, new_state, fcp)
 
             ret.append((fcp, metastates))
 
         return ret
 
-    def _double_evaluated_state(self, mstg, old_cp, states):
-        """Check for already evaluated states and handles them.
+    def _double_evaluated_state(self, mstg, old_cp, states: List[Metastate]):
+        """Check for already evaluated states and handle them.
 
         Return true, if the state is already evaluated.
         """
@@ -314,11 +322,12 @@ class MultiSSE(Step):
             # at least one node is new
             return False
 
-        # check, if the states have another common crosspoint then the current
-        # one
+        # check, if the states have another common crosspoint
+        # than the current one
         m2sy = mstg_g.edge_type(MSTType.m2sy)
         cps_lists = [set(m2sy.vertex(x.state).in_neighbors())
                      for x in states]
+        # list of crosspoint that are predecessors of all states
         cps = reduce(lambda a, b: a & b, cps_lists) - {old_cp}
         if not cps:
             # no other common cross point found
@@ -386,6 +395,9 @@ class MultiSSE(Step):
 
         # initialize stack
         cp, states = self._get_initial_states(mstg)
+
+        # stack consisting of pairs of a cross point + the metastate that
+        # follow this cross point
         stack = [(cp, states)]
 
         if self.dump.get():
