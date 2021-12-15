@@ -341,5 +341,5 @@ class StepManager:
             self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
 
         self._execute_chain.pop()
-        print("Return normal")
+
         return 0

@@ -1,3 +1,4 @@
+import graph_tool.inference.util
 from pygraphviz import AGraph
 
 from ara.graph import ABBType, CFType
@@ -57,6 +58,9 @@ class Layouter:
             )
 
     def _update_cfg_view(self, entry_point="main"):
+        if not self._graph.cfg.contains_function_by_name(entry_point) or self._graph.callgraph.num_vertices() <= 0:
+            return
+
         entry_func = self._graph.cfg.get_function_by_name(entry_point)
         functions = self._graph.cfg.reachable_functs(entry_func, self._graph.callgraph)
 

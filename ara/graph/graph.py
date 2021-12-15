@@ -84,6 +84,10 @@ class CFG(graph_tool.Graph):
         # f2a, a2b edges
         self.edge_properties["is_entry"] = self.new_ep("bool")
 
+    def contains_function_by_name(self, name: str):
+        func = graph_tool.util.find_vertex(self, self.vp["name"], name)
+        return len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
+
     def get_function_by_name(self, name: str):
         """Find a specific function."""
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)

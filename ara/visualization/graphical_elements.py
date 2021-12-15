@@ -1,3 +1,6 @@
+import math
+from math import sqrt, cos, sin
+
 from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QGraphicsRectItem, QLabel, QGraphicsPathItem, QWidget, QVBoxLayout
@@ -69,10 +72,11 @@ class Subgraph(GraphicsObject):
         super().__init__("../resources/subgraph.ui")
         self.data = subgraph
 
-        x_min = 9999999999999
+        x_min = 100000000
         x_max = 0
 
-        y_min = 9999999999999
+        y_min = 100000000
+
         y_max = 0
 
         for n in self.data.nodes():
@@ -125,10 +129,12 @@ class GraphEdge(QGraphicsPathItem):
         pos.append({"x": edges[0], "y": edges[1]})
 
         self.path.moveTo(pos[0]["x"], - pos[0]["y"])
+        i = 0
         for i in range(1, len(pos) - 1, 3):
             self.path.cubicTo(pos[i]["x"], - pos[i]["y"],
                          pos[i + 1]["x"], - pos[i + 1]["y"],
                          pos[i + 2]["x"], - pos[i + 2]["y"])
+
         self.setPath(self.path)
 
         pen_color = Qt.black
@@ -139,3 +145,36 @@ class GraphEdge(QGraphicsPathItem):
                 pen_color = Qt.red
 
         self.setPen(QPen(pen_color, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+
+
+    def draw_arrow_tip(self, x1, y1, x2, y2, theta):
+        L1 = sqrt(pow(x2-x1,2)+pow(y2-y1,2))
+        L2 = 1
+        old_x2 = x2
+        old_y2 = y2
+
+        #x2 = x2 + ((((x2-x1) / (y2-y1)) * 0.1) if not y2 == y1 else 1)
+        #y2 = y2 + ((((y2-y1) / (x2-x1)) * 0.1) if not x2 == x1 else 1)
+
+        x3 = x2 * (L2/L1) * ((x1-x2) * cos(theta) - (y1-y2) * sin(theta))
+        x4 = x2 * (L2/L1) * ((x1-x2) * cos(theta) + (y1-y2) * sin(theta))
+
+        y3 = y2 * (L2/L1) * ((y1-y2) * cos(theta) + (x1-x2) * sin(theta))
+        y4 = y2 * (L2/L1) * ((y1-y2) * cos(theta) - (x1-x2) * sin(theta))
+
+        #self.path.cubicTo(
+        #    x1, y1,
+        #    old_x2, old_y2,
+        #    x2, y2
+        #)
+
+        print(f"{x1} {y1}")
+        print(f"{old_x2} {old_y2}")
+        print(f"{x2} {y2}")
+        print(f"{x3} {y3}")
+        print(f"{x4} {y4}")
+        print(f"")
+
+        self.path.lineTo(x3, y3)
+        self.path.moveTo(x2, y2)
+        self.path.lineTo(x4, y4)
