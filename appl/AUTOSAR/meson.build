@@ -119,6 +119,7 @@ endforeach
 autosar_apps_with_timing = [
   ['multicore' / 'timing',              ['a', 'system_a.json', 'a_timing.json']],
   ['multicore' / 'timing',              ['b', 'system_b.json', 'b_timing.json']],
+  ['multicore' / 'timing',              ['c', 'system_c.json', 'c_timing.json']],
 ]
 
 autosar_targets_with_timings = []

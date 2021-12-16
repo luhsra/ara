@@ -1,0 +1,41 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "T01": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 4,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {
+        "ISR1": {
+          "category": 2,
+          "device": 37,
+          "priority": 10
+        }
+      }
+    }, {
+      "id": 1,
+      "tasks": {
+        "T11": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ]
+}
