@@ -8,8 +8,7 @@
     [5, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
     [6, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
     [7, ["AUTOSAR_TerminateTask", "H3", "CallPath()"]],
-    [8, ["Idle"]],
-    [9, ["Idle"]]
+    [8, ["Idle"]]
   ],
   "edges": [
     [8, 0],
@@ -19,9 +18,8 @@
     [4, 2],
     [4, 3],
     [1, 4],
-    [7, 9],
+    [7, 8],
     [2, 5],
-    [9, 0],
     [3, 6],
     [5, 7],
     [5, 2],

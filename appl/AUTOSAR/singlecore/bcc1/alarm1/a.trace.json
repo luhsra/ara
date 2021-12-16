@@ -1,12 +1,10 @@
 {
   "vertices": [
     [0, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
-    [1, ["Idle"]],
-    [2, ["Idle"]]
+    [1, ["Idle"]]
   ],
   "edges": [
     [1, 0],
-    [0, 2],
-    [2, 0]
+    [0, 1]
   ]
 }
