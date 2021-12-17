@@ -69,6 +69,7 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["llvm_link"] = self.new_vp("int64_t") # BB/Function
         self.vertex_properties["bcet"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["wcet"] = self.new_vp("int64_t") # ABB
+        self.vertex_properties["loop_bound"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB

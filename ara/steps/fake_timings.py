@@ -61,3 +61,8 @@ class FakeTimings(Step):
             self._log.debug(f"Assign BCET {bcet} and WCET {wcet} to ABB {abb_name}")
             abbs.vp.bcet[abb] = bcet
             abbs.vp.wcet[abb] = wcet
+
+            if abbs.vp.loop_head[abb]:
+                lb = next(unique_number) % 10
+                self._log.debug(f"Assign the loop bound {lb} to ABB {abb_name}")
+                abbs.vp.loop_bound[abb] = lb
