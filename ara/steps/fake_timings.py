@@ -19,16 +19,34 @@ class FakeTimings(Step):
             already_used.add(cand)
             yield cand
 
-    def get_single_dependencies(self):
-        return ['CreateABBs']
+    def get_dependencies(self, step_history):
+        name = self.get_name()
+        steps = set([x["name"] for x in step_history])
+        if name in steps:
+            self._first_execution = False
+            mlh = None
+            for step in reversed(step_history):
+                if step["name"] == "MarkLoopHead":
+                    mlh = step['config']['entry_point']
+                    continue
+                elif step["name"] == "CreateABBs":
+                    ep = step['config']['entry_point']
+                    if mlh is not None and mlh == ep:
+                        return []
+                    return [{"name": "MarkLoopHead", "entry_point": ep}]
+            self._fail("No CreateABBs step found. This must not happen.")
+        self._first_execution = True
+        return []
 
     def run(self):
-        # register self as successor of CreateABBs
-        step_config = {"name": self.get_name()}
-        self._step_manager.chain_step(step_config, after="CreateABBs")
+        if self._first_execution:
+            name = self.get_name()
+            self._log.debug(f"Register {name} as successor of CreateABBs.")
+            step_config = {"name": name}
+            self._step_manager.chain_step(step_config, after="CreateABBs")
+            return
 
         abbs = self._graph.abbs
-
         comps = CFGView(abbs, vfilt=abbs.vp.type.fa == ABBType.computation)
 
         for abb in comps.vertices():
