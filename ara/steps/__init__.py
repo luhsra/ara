@@ -23,6 +23,7 @@ def provide_steps():
     from .reduce_sstg import ReduceSSTG
     from .register_task_entry import RegisterTaskEntry
     from .sia import SIA, InteractionAnalysis
+    from .mark_loop_head import MarkLoopHead
     from .multisse import MultiSSE
     from .sse import SSE
     from .sstg_stats import SSTGStats
@@ -49,6 +50,7 @@ def provide_steps():
     yield LoadOIL
     yield LockElision
     yield ManualCorrections
+    yield MarkLoopHead
     yield MultiSSE
     yield Printer
     yield RecursiveFunctions
