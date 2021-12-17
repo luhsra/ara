@@ -71,11 +71,13 @@ def sstg_to_dot(sstg, label="SSTG"):
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
     for edge in sstg.edges():
+        label = f"{sstg.ep.bcet[edge]} - {sstg.ep.wcet[edge]}"
         dot_graph.add_edge(
             pydot.Edge(
                 str(edge.source()),
                 str(edge.target()),
                 color="black",
+                label=label,
             )
         )
 
