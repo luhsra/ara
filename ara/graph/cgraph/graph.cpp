@@ -98,6 +98,7 @@ namespace ara::graph {
 		ARA_VMAP(is_exit)
 		ARA_VMAP(is_exit_loop_head)
 		ARA_VMAP(part_of_loop)
+		ARA_VMAP(loop_head)
 		ARA_VMAP(files)
 		ARA_VMAP(lines)
 		ARA_VMAP(implemented)

@@ -289,7 +289,9 @@ class Printer(Step):
                         shape=self.SHAPES[cfg.vp.type[block]][0],
                         color=color
                     )
-                    if cfg.vp.part_of_loop[block]:
+                    if cfg.vp.loop_head[block]:
+                        dot_abb.set('style', 'dotted')
+                    elif cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
                     dot_nodes.add(str(hash(block)))
                 dot_func.add_node(dot_abb)
