@@ -146,9 +146,9 @@ if get_option('enable_toplevel_tests')
     extra_settings = files('test' / 'extra_settings.json')
     test('ara_tester',
        py3_inst,
-       args: [ara_py, autosar_multicore_timing_c[0],
+       args: [ara_py, autosar_singlecore_bcc1_task1_a[0],
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--oilfile', autosar_multicore_timing_c[1],
+              '--oilfile', autosar_singlecore_bcc1_task1_a[1],
               #'--timings', autosar_multicore_timing_b[3],
               '--step-settings', extra_settings],
        suite: 'toplevel'
