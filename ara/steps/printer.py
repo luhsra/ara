@@ -271,10 +271,12 @@ class Printer(Step):
                 nodes = cfg.get_abbs(function)
 
             for block in nodes:
+                tooltip = str(int(block))
                 if cfg.vp.type[block] == ABBType.not_implemented:
                     assert not cfg.vp.implemented[function]
                     dot_abb = pydot.Node(str(hash(block)),
                                          label="",
+                                         tooltip=tooltip,
                                          shape="box")
                     dot_nodes.add(str(hash(block)))
                     dot_func.set('style', 'filled')
@@ -286,6 +288,7 @@ class Printer(Step):
                     dot_abb = pydot.Node(
                         str(hash(block)),
                         label=cfg.vp.name[block],
+                        tooltip=tooltip,
                         shape=self.SHAPES[cfg.vp.type[block]][0],
                         color=color
                     )
