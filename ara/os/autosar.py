@@ -274,6 +274,7 @@ class AUTOSAR(OSBase):
         running_tasks = []
         irq_status = {}
         os_irq_status = {}
+        time_to = 0
         for cpu_id, tasks in cpu_map.items():
             if len(tasks) == 0:
                 # we have the CPU but not task that can be scheduled
@@ -296,11 +297,14 @@ class AUTOSAR(OSBase):
                                 exec_state=ExecState.from_abbtype(cfg.vp.type[entry_abb]),
                                 analysis_context=None))
                 running_tasks.append(prio_task)
+                time_to = max(time_to, cfg.vp.wcet[entry_abb])
                 logger.debug(f"Initial: Choose {instances.vp.obj[instances.vertex(prio_vert)]} for CPU {cpu_id}.")
             irq_status[cpu_id] = 0
             os_irq_status[cpu_id] = 0
 
         state = OSState(cpus=CPUList(cpus), instances=instances, cfg=cfg)
+        state.time_from = 0
+        state.time_to = time_to
 
         # give initial running context
         max_prio = 0
