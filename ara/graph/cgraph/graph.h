@@ -42,6 +42,7 @@ namespace ara::graph {
 
 		typename graph_tool::eprop_map_t<int>::type etype;
 		typename graph_tool::eprop_map_t<unsigned char>::type is_entry;
+		typename graph_tool::eprop_map_t<unsigned char>::type back_edge;
 
 		CFG(graph_tool::GraphInterface& graph) : graph(graph){};
 

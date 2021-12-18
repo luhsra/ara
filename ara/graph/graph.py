@@ -85,6 +85,8 @@ class CFG(graph_tool.Graph):
         self.edge_properties["type"] = self.new_ep("int") # CFType
         # f2a, a2b edges
         self.edge_properties["is_entry"] = self.new_ep("bool")
+        # icf, lcf edges
+        self.edge_properties["back_edge"] = self.new_ep("bool")
 
     def get_function_by_name(self, name: str):
         """Find a specific function."""

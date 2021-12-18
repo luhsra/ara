@@ -50,9 +50,10 @@ class MarkLoopHead(Step):
                 # back edge by search for an edge from a to b where b dominates
                 # a.
                 abb = llcfg.vertex(abb)
-                for other in abb.in_neighbors():
-                    if self._dominates(dom_tree, abb, other):
+                for e in abb.in_edges():
+                    if self._dominates(dom_tree, abb, e.source()):
                         cfg.vp.loop_head[cfg.vertex(abb)] = True
+                        cfg.ep.back_edge[e] = True
 
         if self.dump.get():
             self._step_manager.chain_step(
