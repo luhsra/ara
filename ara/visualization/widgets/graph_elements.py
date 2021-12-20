@@ -1,12 +1,8 @@
-import math
 from math import sqrt, cos, sin
 
 from PySide6.QtCore import Qt
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QGraphicsRectItem, QLabel, QGraphicsPathItem, QWidget, QVBoxLayout
-from PySide6.QtWidgets import QGraphicsWidget
-from PySide6.QtWidgets import QGraphicsProxyWidget
-from PySide6.QtWidgets import QGraphicsItem
+from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout
 from PySide6.QtGui import QPen, QPainterPath
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph

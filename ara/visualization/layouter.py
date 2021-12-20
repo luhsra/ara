@@ -1,10 +1,15 @@
-import graph_tool.inference.util
+from PySide6.QtCore import Slot
 from pygraphviz import AGraph
 
 from ara.graph import ABBType, CFType
+from ara.visualization import ara_manager
+from ara.visualization.signal import ara_signal
 
-from ara.visualization.graphical_elements import AbbNode, GraphEdge, Subgraph, CallGraphNode, InstanceNode
+from ara.visualization.widgets.graph_elements import AbbNode, GraphEdge, Subgraph, CallGraphNode, InstanceNode
 from ara.visualization.util import GraphTypes
+
+def set_graph_for_layouter(graph):
+    Layouter.graph = graph
 
 class Layouter:
     """ Layout the components for the Graphical Visualization """
@@ -17,21 +22,18 @@ class Layouter:
 
     subgraphs = ("abbs", "instances", "callgraph")
 
-    def __init__(self, g = None, entry_point = None, dotPath="./temp.dot",graph_name="DotGraph", from_entry_point = "true"):
+    def __init__(self, g=None, entry_point=None, dotPath="./temp.dot", graph_name="DotGraph", from_entry_point = "true"):
         self.call_graph_view = AGraph(strict=False, directed=True)
         self.cfg_view = AGraph(strict=False, directed=True)
         self.instance_graph_view = AGraph(strict=False, directed=True)
 
-        self._graph = g
+        self._graph = ara_manager.INSTANCE.graph
 
         # Old should be removed
-        self.entry_point = entry_point # Should be dynamically set not in init
+        self.entry_point = entry_point # ToDo Should be dynamically set not in init
         self.dot = dotPath
         self.graph_name = graph_name
         self.from_entry_point = from_entry_point
-
-    def set_graph(self, g):
-        self._graph = g
 
     def _fail(self, message):
         print(message)
@@ -49,6 +51,9 @@ class Layouter:
                 pass
             self.call_graph_view.add_node(
                 str(hash(node)),
+                height=0.75,
+                width=5,
+                shape="box",
                 label=cfg.vp.name[call_graph.vp.function[node]])
         for edge in call_graph.edges():
             self.call_graph_view.add_edge(
@@ -108,9 +113,9 @@ class Layouter:
             label = label_parts[0]
             sublabel = label_parts[1] if len(label_parts) > 1 else ""
 
-
             self.instance_graph_view.add_node(
                 str(hash(instance)),
+                shape="box",
                 label=label,
                 sublabel=sublabel,
                 width=1.5,
@@ -191,3 +196,4 @@ class Layouter:
             self.call_graph_view.layout("dot")
         if graph_type == GraphTypes.INSTANCE:
             self.instance_graph_view.layout("dot")
+

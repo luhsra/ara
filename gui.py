@@ -21,5 +21,5 @@ load("step", "ara.steps.step")
 #load("graphics_graph_view", "ara.visualization.graphics_graph_view")
 
 import ara.ara as _ara
-import ara.visualization.gui_manager
+import ara.visualization.main
 sys.exit()

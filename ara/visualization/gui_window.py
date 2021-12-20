@@ -1,64 +1,30 @@
-from PySide6.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QGraphicsView, QLabel
+from PySide6.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QGraphicsView, QLabel, QWidget, \
+    QMainWindow, QDockWidget, QToolBar
 
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 
-from PySide6.QtGui import QColor, QPainter, Qt
-from PySide6.QtGui import QColorConstants
+from PySide6.QtGui import QPainter, Qt
 
 import graph_tool
 
-from .graph_scene import *
-from .graphical_elements import GraphicsObject, Subgraph, AbbNode
+from . import ara_manager, layouter
 from .layouter import Layouter
+from .signal import ara_signal
 from .util import GraphTypes
-from .widgets.buttons import SelectionButton
+from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView
 
 
-def get_colour(colour):
-    """
-        Converts the Colour String given by graphviz to a usable
-        colour object.
-        The String could contain colour names as well as a rgb
-        string in the format of #FFFFFF.
-    """
-    if colour == "blue":
-        return QColorConstants.Blue
-    elif colour == "green":
-        return QColorConstants.Green
-    elif colour == "red":
-        return QColorConstants.Red
-    elif colour == "black":
-        return QColorConstants.Black
-    else:
-        rs = "0x" + colour[1:3]
-        gs = "0x" + colour[3:5]
-        bs = "0x" + colour[5:7]
-        r = int(rs, base=16)
-        g = int(gs, base=16)
-        b = int(bs, base=16)
-        return QColor.fromRgb(r, g, b)
-
-
-
-class GuiWindow(QWidget):
+class GuiWindow(QMainWindow):
     sigGuiWorkFinished = Signal()
     sigFinshed = Signal()
 
     sigUpdateDone = Signal()
 
-    # b_start_pressed
-    # b_step_pressed
-
-
-
-    def __init__(self, parent, application: QApplication = None, araWorker=None, *args, **kwargs, ):
-        super().__init__(parent, *args, **kwargs)
-        self.araWorker = araWorker
+    def __init__(self, parent):
+        super().__init__(parent)
 
         self.layouter = Layouter(entry_point="main")
-
-        self.app = application
 
         self._func = {}
         self._nodes = {}
@@ -85,6 +51,24 @@ class GuiWindow(QWidget):
 
         self.proxies = []
 
+        self.init()
+        self.setup_signals()
+
+    def setup_signals(self):
+        self.b_start.clicked.connect(ara_manager.INSTANCE.init)
+        self.b_start.clicked.connect(self.disable_start_button)
+
+        self.b_step.clicked.connect(ara_manager.INSTANCE.step)
+        self.b_step.clicked.connect(self.disable_step_button)
+
+        ara_signal.SIGNAL_MANAGER.sig_init_done.connect(self.enable_step_button)
+        ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.connect(ara_manager.INSTANCE.step)
+
+        ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.update)
+        ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.switch_step_button)
+
+        ara_signal.SIGNAL_MANAGER.sig_execute_chain.connect(self.update_right)
+
     @Slot()
     def enable_start_button(self):
         self.b_start.setEnabled(True)
@@ -108,7 +92,6 @@ class GuiWindow(QWidget):
         else:
             self.b_step.setDisabled(True)
 
-    @Slot()
     def init(self):
         self.l_window = QHBoxLayout(self)
 
@@ -124,66 +107,100 @@ class GuiWindow(QWidget):
         self.l_right = QVBoxLayout(self.w_right)
         self.l_graph_selection = QHBoxLayout(self.w_graph_selection)
 
-        # Graph View
-        self.graph_scene = GraphScene()
-        self.graph_view = QGraphicsView(self.graph_scene)
-        self.graph_view.setRenderHint(QPainter.Antialiasing)
+        # Graph Views
+        cfg_dock_widget = QDockWidget("CFG View", self)
+        callgraph_dock_widget = QDockWidget("CallGraph View", self)
+        instance_dock_widget = QDockWidget("Instance View", self)
+
+        cfg_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        callgraph_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        instance_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+
+        cfg_dock_widget.setWidget(CFGView())
+        callgraph_dock_widget.setWidget(CallGraphView())
+        instance_dock_widget.setWidget(InstanceGraphView())
+
+        cfg_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+        callgraph_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+        instance_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+
+        self.addDockWidget(Qt.TopDockWidgetArea, cfg_dock_widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, callgraph_dock_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, instance_dock_widget)
+
+        #self.graph_scene = GraphScene()
+        #self.graph_view = QGraphicsView(self.graph_scene)
+        #self.graph_view.setRenderHint(QPainter.Antialiasing)
 
         self.b_step.setDisabled(True)
 
-        # Right Setup
-        self.l_right.setAlignment(Qt.AlignTop)
-        self.w_right.setMinimumSize(200, 500)
-        self.w_right.setMaximumSize(200, 1000)
 
-        # Button Setup
-        self.l_buttons.addWidget(self.b_start)
-        self.l_buttons.addWidget(self.b_step)
+        # Toolbar Setup
+        toolbar = QToolBar()
 
-        # Center setup
-        self.l_center.addWidget(self.w_graph_selection)
-        self.l_center.addWidget(self.graph_view)
-        self.l_center.addWidget(self.w_buttons)
+        toolbar.addWidget(self.b_start)
+        toolbar.addWidget(self.b_step)
 
-        for e in GraphTypes:
-            button = SelectionButton(e.value, e)
-            button.sig_clicked.connect(self.set_graph_type)
-            self.l_graph_selection.addWidget(button)
+        self.addToolBar(Qt.BottomToolBarArea, toolbar)
+
+        toolbar2 = QToolBar()
+        toolbar2.addWidget(self.w_right)
+
+        self.addToolBar(Qt.LeftToolBarArea, toolbar2)
+
+        # # Right Setup
+        # self.l_right.setAlignment(Qt.AlignTop)
+        # self.w_right.setMinimumSize(200, 500)
+        # self.w_right.setMaximumSize(200, 1000)
+
+        # # Button Setup
+        # self.l_buttons.addWidget(self.b_start)
+        # self.l_buttons.addWidget(self.b_step)
+#
+        # # Center setup
+        # self.l_center.addWidget(self.w_graph_selection)
+        # self.l_center.addWidget(self.graph_view)
+        # self.l_center.addWidget(self.w_buttons)
+
+        # for e in GraphTypes:
+        #     button = SelectionButton(e.value, e)
+        #     button.sig_clicked.connect(self.set_graph_type)
+        #     self.l_graph_selection.addWidget(button)
 
         # Window Setup
-        self.l_window.addWidget(self.w_right)
-        self.l_window.addWidget(self.w_center)
+        # self.l_window.addWidget(self.w_right)
+        # self.l_window.addWidget(self.w_center)
 
         self.resize(1200, 800)
         self.show()
 
     @Slot(bool)
     def update(self, steps_available):
-        self.children().clear()
+        # self.children().clear()
 
         if not steps_available:
             self.b_step.setDisabled(True)
 
-        self.graph_scene.clear_rec()
-
-        self.layouter.layout(self.v_graph_type)
-        gui_data = self.layouter.get_data(self.v_graph_type)
+        #self.graph_scene.clear_rec()
+#
+        #self.layouter.layout(self.v_graph_type)
+        #gui_data = self.layouter.get_data(self.v_graph_type)
 
         #print(self.layouter.cfg_view)
 
-        for e in gui_data:
-            if isinstance(e, GraphicsObject):
-                proxy = self.graph_scene.addWidget(e)
-                if isinstance(e, Subgraph):
-                    proxy.setZValue(0)
-                if isinstance(e, AbbNode):
-                    proxy.setZValue(2)
-            else:
-                self.graph_scene.addItem(e)
-                e.setZValue(3)
+        #for e in gui_data:
+        #    if isinstance(e, GraphicsObject):
+        #        proxy = self.graph_scene.addWidget(e)
+        #        if isinstance(e, Subgraph):
+        #            proxy.setZValue(0)
+        #        if isinstance(e, AbbNode):
+        #            proxy.setZValue(2)
+        #    else:
+        #        self.graph_scene.addItem(e)
+        #        e.setZValue(3)
 
-        self.graph_view.update()
-        self.sigFinshed.emit()
+        #self.graph_view.update()
+        #self.sigFinshed.emit()
 
     @Slot(list)
     def update_right(self, l:list):

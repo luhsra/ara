@@ -10,13 +10,10 @@ from typing import List
 
 from PySide6.QtCore import QObject
 
-from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 
-
-
-import graph_tool
-
+from . import layouter
+from .signal import ara_signal
 from ..graph.graph import Graph
 from ..steplisting import print_avail_steps
 from ..stepmanager import StepManager
@@ -29,24 +26,23 @@ class ARAManager(QObject):
         Should be run in its own thread.
     """
 
-    sig_setup_done = Signal(name="sigSetupDone")
-
-    sig_execute_chain = Signal(list)
-    sig_graph = Signal(graph_tool.Graph, name="sigGraph")
-
-    sig_init_done = Signal()
-    sig_step_done = Signal(bool) # the bool indicates if there are more steps
-    sig_finish_done = Signal()
-
-    sig_step_dependencies_discovered = Signal()
-
-
+    # sig_setup_done = Signal(name="sigSetupDone")
+    #
+    # sig_execute_chain = Signal(list)
+    # sig_graph = Signal(graph_tool.Graph, name="sigGraph")
+    #
+    # sig_init_done = Signal()
+    # sig_step_done = Signal(bool) # the bool indicates if there are more steps
+    # sig_finish_done = Signal()
+    #
+    # sig_step_dependencies_discovered = Signal()
 
     def __init__(self):
         super().__init__(None)
         self.args = None
         self.s_manager = None
         self.extra_settings = {}
+        self.graph = Graph()
 
     @Slot()
     def init(self):
@@ -113,9 +109,7 @@ class ARAManager(QObject):
 
         logger = init_logging(level=self.args.log_level, root_name='ara', werr=self.args.Werr)
 
-        g = Graph()
-        self.sig_graph.emit(g)
-        self.s_manager = StepManager(g)
+        self.s_manager = StepManager(self.graph)
         avail_steps = self.s_manager.get_steps()
 
         if self.args.list_steps:
@@ -154,8 +148,8 @@ class ARAManager(QObject):
             self.args.step = ['SIA']
 
         self.init_execution(vars(self.args), self.extra_settings, self.args.step)
-        self.sig_init_done.emit()
-        self.sig_execute_chain.emit(self.s_manager.get_execution_chain())
+        ara_signal.SIGNAL_MANAGER.sig_init_done.emit()
+        ara_signal.SIGNAL_MANAGER.sig_execute_chain.emit(self.s_manager.get_execution_chain())
 
     # @Slot()
     def init_execution(self, program_config, extra_config, esteps: List[str]):
@@ -164,25 +158,27 @@ class ARAManager(QObject):
     @Slot()
     def execute(self):
         self.s_manager.execute(vars(self.args), self.extra_settings, self.args.step)
-        self.sig_step_done.emit(False)
-
+        ara_signal.SIGNAL_MANAGER.sig_step_done.emit(False)
 
     @Slot()
     def finish_execution(self, program_config):
         self.s_manager.finish_execution(program_config)
-        self.sig_finish_done.emit()
+        ara_signal.SIGNAL_MANAGER.sig_finish_done.emit()
 
     @Slot()
     def step(self):
         if self.s_manager.step() == 0:
-            self.sig_step_done.emit(len(self.s_manager.get_steps()) > 0)
+            ara_signal.SIGNAL_MANAGER.sig_step_done.emit(len(self.s_manager.get_steps()) > 0)
         else:
-            self.sig_step_dependencies_discovered.emit()
-        self.sig_execute_chain.emit(self.s_manager.get_execution_chain())
+            ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.emit()
+        ara_signal.SIGNAL_MANAGER.sig_execute_chain.emit(self.s_manager.get_execution_chain())
 
     @Slot()
     def finish(self):
         if self.args.ir_output:
             self.s_manager.execute(vars(self.args),
-                              {'steps': [{'name': 'IRWriter',
-                                          'ir_file': self.args.ir_output}]}, None)
+                                   {'steps': [{'name': 'IRWriter',
+                                               'ir_file': self.args.ir_output}]}, None)
+
+
+INSTANCE = ARAManager()
