@@ -16,6 +16,7 @@ from itertools import product, chain
 from functools import reduce
 from dataclasses import dataclass
 from graph_tool.topology import label_out_component
+from typing import List
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -75,36 +76,39 @@ class MultiSSE(Step):
             return Metastate(state=metastate, entry=init_v, is_new=False)
 
         cpu_id = single_check(iter(init_state.cpus.ids()))
-        # create the metastate
-        m_state = mstg.g.add_vertex()
-        mstg.g.vp.type[m_state] = StateType.metastate
-        mstg.g.vp.cpu_id[m_state] = cpu_id
-        self._log.debug(f"Add metastate {int(m_state)}")
+        to_assign_states = set()
+        m_state = list()
 
         def _add_state(state):
             h = hash(state)
             if h in self.state_map:
-                return False
+                return False, self.state_map[h]
 
             v = mstg.g.add_vertex()
             mstg.g.vp.type[v] = StateType.state
             mstg.g.vp.state[v] = state
-            self._log.debug(f"Add state {int(v)}")
+            self._log.debug(f"Add State {state.id} (node {int(v)})")
 
-            e = mstg.g.add_edge(m_state, v)
-            mstg.g.ep.type[e] = MSTType.m2s
-            mstg.g.ep.cpu_id[e] = cpu_id
             self.state_map[h] = v
 
             if state.cpus[cpu_id].exec_state & ExecState.with_time:
                 mstg.type_map[v] = ExecType.has_length
 
-            return True
+            return True, v
+
+        def _get_m_state(v):
+            m2s = mstg.g.edge_type(MSTType.m2s)
+            for n in m2s.vertex(v).in_neighbors():
+                return n
+            return None
 
         # add initial state
-        _add_state(init_state)
+        to_assign_states.add(_add_state(init_state)[1])
 
         class SSEVisitor(Visitor):
+            PREVENT_MULTIPLE_VISITS = False
+            CFG_CONTEXT = None
+
             @staticmethod
             def get_initial_state():
                 return init_state
@@ -120,13 +124,29 @@ class MultiSSE(Step):
 
             @staticmethod
             def add_state(new_state):
-                return _add_state(new_state)
+                created, v = _add_state(new_state)
+                if created:
+                    to_assign_states.add(v)
+                return created
 
             @staticmethod
             def add_transition(source, target):
-                e = mstg.g.add_edge(self.state_map[hash(source)], self.state_map[hash(target)])
+                tgt = self.state_map[hash(target)]
+                src = self.state_map[hash(source)]
+                e = mstg.g.add_edge(src, tgt)
                 mstg.g.ep.type[e] = MSTType.s2s
                 mstg.g.ep.cpu_id[e] = cpu_id
+                m_state_cand = _get_m_state(tgt)
+                if m_state_cand is None:
+                    return
+                target = mstg.g.vp.state[tgt]
+                self._log.debug("Found a transition to an already existing metastate. "
+                                f"(State {source.id} (node {int(src)}) -> "
+                                f"State {target.id} (node {int(tgt)})")
+                if m_state and m_state[0] == m_state_cand:
+                    return
+                assert len(m_state) == 0, "Multiple Transition to multiple metastates found."
+                m_state.append(m_state_cand)
 
             @staticmethod
             def next_step(counter):
@@ -139,19 +159,38 @@ class MultiSSE(Step):
             logger=self._log,
         )
 
+        # create the metastate
+        if len(m_state) == 0:
+            m_state = mstg.g.add_vertex()
+            mstg.g.vp.type[m_state] = StateType.metastate
+            mstg.g.vp.cpu_id[m_state] = cpu_id
+            self._log.debug(f"Add metastate {int(m_state)}")
+        else:
+            m_state = m_state[0]
+
+        for state in to_assign_states:
+            e = mstg.g.add_edge(m_state, state)
+            mstg.g.ep.type[e] = MSTType.m2s
+            mstg.g.ep.cpu_id[e] = cpu_id
+
         if self.dump.get():
             self.dump_mstg(mstg.g,
                            extra=f"metastate.{int(m_state)}")
 
         return Metastate(state=m_state, entry=self.state_map[init_h], is_new=True)
 
-    def _calculate_from_multistate(self, mstg, multi_state, cp):
+    def _create_metastates(self, mstg, multi_cpu_state, cp):
+        """Split a state with multiple CPUs and run a single core SSE on each
+        of them.
+
+        Return the list of new metastates
+        """
         metastates = []
-        for cpu in multi_state.cpus:
+        for cpu in multi_cpu_state.cpus:
             # restrict state to this cpu
-            state = multi_state.copy()
+            state = multi_cpu_state.copy()
             state.cpus = CPUList([cpu])
-            state.context = self._graph.os.get_cpu_local_contexts(multi_state.context, cpu.id)
+            state.context = self._graph.os.get_cpu_local_contexts(multi_cpu_state.context, cpu.id)
 
             # run single core SSE on this state
             metastate = self._run_sse(mstg, state)
@@ -181,7 +220,7 @@ class MultiSSE(Step):
         mstg.g.vp.state[cp] = self._graph.os.get_global_contexts(os_state.context)
         self._log.debug(f"Add initial cross point {int(cp)}")
 
-        metastates = self._calculate_from_multistate(mstg, os_state, cp)
+        metastates = self._create_metastates(mstg, os_state, cp)
 
         return cp, metastates
 
@@ -278,13 +317,14 @@ class MultiSSE(Step):
                               cfg=states[0].cfg)
         multi_state.context = {k: v for d in context for k, v in d.items()}
 
+        # let the model interpret the created multicore state
         new_states = os.interpret(self._graph, multi_state, cpu_id)
         for new_state in new_states:
             os.schedule(new_state)
 
+        # add follow up cross points for the outcome
         ret = []
         for new_state in new_states:
-            # create follow up cross point
             fcp = mstg.g.add_vertex()
             mstg.g.vp.type[fcp] = StateType.exit_sync
             self._log.debug(f"Add exit cross point {int(fcp)}")
@@ -295,14 +335,15 @@ class MultiSSE(Step):
             # store global context in cross_point
             mstg.g.vp.state[fcp] = os.get_global_contexts(new_state.context)
 
-            metastates = self._calculate_from_multistate(mstg, new_state, fcp)
+            # calculate follow up metastates
+            metastates = self._create_metastates(mstg, new_state, fcp)
 
             ret.append((fcp, metastates))
 
         return ret
 
-    def _double_evaluated_state(self, mstg, old_cp, states):
-        """Check for already evaluated states and handles them.
+    def _double_evaluated_state(self, mstg, old_cp, states: List[Metastate]):
+        """Check for already evaluated states and handle them.
 
         Return true, if the state is already evaluated.
         """
@@ -311,11 +352,12 @@ class MultiSSE(Step):
             # at least one node is new
             return False
 
-        # check, if the states have another common crosspoint then the current
-        # one
+        # check, if the states have another common crosspoint
+        # than the current one
         m2sy = mstg_g.edge_type(MSTType.m2sy)
         cps_lists = [set(m2sy.vertex(x.state).in_neighbors())
                      for x in states]
+        # list of crosspoint that are predecessors of all states
         cps = reduce(lambda a, b: a & b, cps_lists) - {old_cp}
         if not cps:
             # no other common cross point found
@@ -333,14 +375,15 @@ class MultiSSE(Step):
         # neighbor
         for cp in cps:
             # mark as neighbor
-            e = mstg_g.add_edge(old_cp, mstg_g.vertex(cp))
+            e = mstg_g.edge(old_cp, mstg_g.vertex(cp), add_missing=True)
             mstg_g.ep.type[e] = MSTType.sync_neighbor
 
             # sync edges
             sy2sy = mstg_g.edge_type(MSTType.sy2sy)
             for e in list(sy2sy.vertex(cp).out_neighbors()):
-                new_e = mstg_g.add_edge(mstg_g.vertex(old_cp),
-                                        mstg_g.vertex(e))
+                new_e = mstg_g.edge(mstg_g.vertex(old_cp),
+                                    mstg_g.vertex(e),
+                                    add_missing=True)
                 mstg_g.ep.type[new_e] = MSTType.sy2sy
 
         return True
@@ -383,6 +426,9 @@ class MultiSSE(Step):
 
         # initialize stack
         cp, states = self._get_initial_states(mstg)
+
+        # stack consisting of pairs of a cross point + the metastate that
+        # follow this cross point
         stack = [(cp, states)]
 
         if self.dump.get():

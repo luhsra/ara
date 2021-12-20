@@ -442,6 +442,10 @@ class AUTOSAR(OSBase):
         vertex = instances.vertex(irq)
         obj = instances.vp.obj[vertex]
 
+        if obj.cpu_id != cpu_id:
+            # false CPU
+            return
+
         if isinstance(obj, Alarm):
             # do not trigger alarms, if an interrupt is handled
             if isinstance(state.cur_control_inst(cpu_id), ISR):
@@ -624,7 +628,7 @@ class AUTOSAR(OSBase):
                 cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
             else:
                 cpu.abb = None
-                cpu.call_path = None
+                cpu.call_path = CallPath()
                 cpu.control_instance = None
                 cpu.exec_state = ExecState.idle
 

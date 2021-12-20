@@ -17,6 +17,7 @@ import uuid
 
 from typing import List
 from dataclasses import dataclass
+from collections import defaultdict
 
 from .util import get_logger, get_logger_manager, LEVEL
 from .steps import provide_steps
@@ -84,6 +85,7 @@ class StepManager:
         self._execute_chain = None
         self._config = None
         self._step_history = []
+        self._chained_steps = defaultdict(set)
 
     def clear_history(self):
         self._step_history = []
@@ -165,7 +167,63 @@ class StepManager:
         Stores the history within step_history.
         """
         while self._execute_chain:
-            self.step()
+            current = self._execute_chain[-1]
+
+            self._log.debug("Beginning execution of "
+                            f"{current.name} (UUID: {current.uuid}).")
+
+            # initialize step
+            if current.step is None:
+                if current.name not in self._steps:
+                    rae(self._log, f"Step {current.name} does not exist",
+                        exception=StepManagerException)
+                step_inst = self._steps[current.name](self._graph, self)
+                current.step = step_inst
+            current_step.set_wrappee(current.step)
+
+            # apply config
+            current.all_config = self._get_config(current)
+            self._log.debug(f"Apply config: {current.all_config}")
+            current.step.apply_config(current.all_config)
+
+            # dependency handling
+            d_hist = self._make_history_dict(step_history)
+            dependencies = current.step.get_dependencies(d_hist)
+            if dependencies:
+                self._log.debug(f"Step has dependencies: {dependencies}")
+                dependency = dependencies[0]
+                self._execute_chain.append(self._make_step_entry(dependency))
+                continue
+
+            d_hist = self._make_history_dict(step_history)
+            if current.explicit or current.step.is_necessary_anymore(d_hist):
+                # execution
+                self._log.info(
+                    f"Execute {current.name} (UUID: {current.uuid})."
+                )
+
+                if self._runtime_stats:
+                    time_before = time.time()
+
+                current.step.run()
+
+                if self._runtime_stats:
+                    time_after = time.time()
+
+                # runtime stats handling
+                if self._runtime_stats:
+                    current.runtime = time_after - time_before
+                    self._log.debug(f"{current.name} had a runtime of "
+                                    f"{current.runtime:0.2f}s.")
+                step_history.append(current)
+
+                for c_step in self._chained_steps[current_step.get_name()]:
+                    self.chain_step(dict(c_step))
+            else:
+                # skip step
+                self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
+
+            self._execute_chain.pop()
 
     def get_step(self, name):
         """Get the step with specified name or None."""
@@ -175,20 +233,30 @@ class StepManager:
         """Get all available steps as set."""
         return set(self._steps.values())
 
-    def chain_step(self, step_config):
-        """Insert step immediately after the current running step.
+    def chain_step(self, step_config, after: str = None):
+        """Insert step into the chain.
 
         Potential dependencies are queued before the new step. However, if the
         dependencies were already executed, they are skipped.
 
         step_config is a step dict exactly as the extra_config configuration.
+
+        If after is not set, the step will be chained exactly after the current
+        step. If after is set to a step name, the new step will be executed
+        after every execution of the specified step. It is not guaranteed that
+        it will be executed immediately after the specified step.
         """
         if self._execute_chain is None:
             raise StepManagerException(
                 "chain_step cannot be called when no step is running."
             )
-        self._log.debug(f"A new step was requested {step_config}")
 
+        if after:
+            self._log.debug(f"Step {step_config} was requested after {after}.")
+            self._chained_steps[after].add(frozenset(step_config.items()))
+            return
+
+        self._log.debug(f"A new step was requested {step_config}")
         self._execute_chain.insert(-1, self._make_step_entry(step_config,
                                                              explicit=True))
 

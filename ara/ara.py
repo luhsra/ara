@@ -7,7 +7,6 @@ import json
 import os
 import sys
 
-#from ara.visualization.gui_manager import ARAWorker
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
@@ -15,9 +14,8 @@ from .util import init_logging
 from .steplisting import print_avail_steps
 
 
-def main(araWorker = None):
+def main():
     """Entry point for ARA."""
-
     parser = argparse.ArgumentParser(
         prog=sys.argv[0],
         description=sys.modules[__name__].__doc__,
@@ -53,6 +51,8 @@ def main(araWorker = None):
                         help="choose steps that will be executed")
     parser.add_argument('input_file', help="the LLVM-IR input file", nargs='?')
     parser.add_argument('--oilfile', help="name of oilfile")
+    parser.add_argument('--timings', help="file for ABB timings. "
+                                          "See ApplyTimings for more info.")
     parser.add_argument('--generator_output', metavar="FILE",
                         help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE", action='append',
@@ -67,8 +67,6 @@ def main(araWorker = None):
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
 
-    parser.add_argument('--visualization', help="started from the visualisation", action="store_true")
-
     args = parser.parse_args()
 
     if args.log_level != 'debug' and args.verbose:
@@ -79,15 +77,6 @@ def main(araWorker = None):
     g = Graph()
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
-
-    if args.visualization:
-        from PySide6.QtCore import QThread
-
-        araWorker.sigInitGraph.emit(g)
-
-        while not araWorker.isReady():
-            QThread.sleep(5)
-
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
@@ -124,10 +113,11 @@ def main(araWorker = None):
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
 
-    s_manager.execute(vars(args), extra_settings, args.step)
+    s_args = dict([(x, y) for x, y in vars(args).items() if y is not None])
+    s_manager.execute(s_args, extra_settings, args.step)
 
     if args.ir_output:
-        s_manager.execute(vars(args),
+        s_manager.execute(s_args,
                           {'steps': [{'name':'IRWriter',
                                       'ir_file': args.ir_output}]}, None)
 

@@ -69,9 +69,11 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["llvm_link"] = self.new_vp("int64_t") # BB/Function
         self.vertex_properties["bcet"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["wcet"] = self.new_vp("int64_t") # ABB
+        self.vertex_properties["loop_bound"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB
+        self.vertex_properties["loop_head"] = self.new_vp("bool") # ABB
         self.vertex_properties["files"] = self.new_vp("vector<string>") # BB/call ABB
         self.vertex_properties["lines"] = self.new_vp("vector<int32_t>") # BB/call ABB
         self.vertex_properties["implemented"] = self.new_vp("bool") # Function
@@ -328,6 +330,8 @@ class MSTGraph(graph_tool.Graph):
         self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
+        self.edge_properties["bcet"] = self.new_ep("int64_t", val=-1)
+        self.edge_properties["wcet"] = self.new_ep("int64_t", val=-1)
 
     def get_metastates(self):
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)

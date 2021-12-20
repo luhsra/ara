@@ -86,6 +86,9 @@ autosar_apps = [
   ['multicore' / 'locks',               ['c', 'system.json']],
   ['multicore' / 'locks',               ['d', 'system.json']],
   ['multicore' / 'locks',               ['e', 'system.json']],
+  ['multicore' / 'loops',               ['a', 'system_a.json']],
+  ['multicore' / 'loops',               ['b', 'system_b.json']],
+  ['multicore' / 'loops',               ['c', 'system_b.json']],
 ]
 
 autosar_targets = []
@@ -114,7 +117,9 @@ foreach app : autosar_apps
 endforeach
 
 autosar_apps_with_timing = [
-  ['multicore' / 'timing',              ['a', 'system.json', 'a_timing.json']],
+  ['multicore' / 'timing',              ['a', 'system_a.json', 'a_timing.json']],
+  ['multicore' / 'timing',              ['b', 'system_b.json', 'b_timing.json']],
+  ['multicore' / 'timing',              ['c', 'system_c.json', 'c_timing.json']],
 ]
 
 autosar_targets_with_timings = []
