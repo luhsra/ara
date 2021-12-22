@@ -102,7 +102,7 @@ c  2
 #endif //TRACE_JSON
 
 #if LOCKS_JSON
-{"S1": 0, "S2": 0}
+{"S1": 2, "S2": 0}
 #endif //LOCKS_JSON
 
 
@@ -120,9 +120,9 @@ DeclareSpinlock(S2);
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T01) {
+	ActivateTask(T11);
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
-	ActivateTask(T11);
 	TerminateTask();
 }
 
@@ -136,6 +136,8 @@ TASK(T11) {
 TASK(T21) {
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
+
+	GetSpinlock(S2);
+	ReleaseSpinlock(S2);
 	TerminateTask();
 }
-

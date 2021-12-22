@@ -120,16 +120,16 @@ DeclareSpinlock(S2);
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T01) {
+	ActivateTask(T11);
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
-	ActivateTask(T11);
 	TerminateTask();
 }
 
 TASK(T11) {
+	ActivateTask(T21);
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
-	ActivateTask(T21);
 	TerminateTask();
 }
 
