@@ -208,10 +208,26 @@ class CFG(graph_tool.Graph):
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
 
-    def _reachable_nodes(self, func, callgraph, node_level):
+    def _reachable_nodes(self, func, callgraph, node_level,
+                         only_system_relevant=True):
+        """Return the reachable nodes starting from func.
+
+        It uses the callgraph for searching. The node_level specifies what
+        level should be returned. only_system_relevant restricts the returned
+        nodes to system relevant _and_ the entry function.
+        """
         cg_func = callgraph.vertex(self.vp.call_graph_link[func])
         oc = label_out_component(callgraph, cg_func)
         reachable_cg = graph_tool.GraphView(callgraph, vfilt=oc)
+        if only_system_relevant:
+            e = reachable_cg.copy_property(
+                reachable_cg.vp.syscall_category_every
+            )
+            e[cg_func] = True
+            reachable_cg = graph_tool.GraphView(
+                reachable_cg,
+                vfilt=e
+            )
 
         for sub_func in reachable_cg.vertices():
             cfg_func = reachable_cg.vp.function[sub_func]
@@ -222,17 +238,20 @@ class CFG(graph_tool.Graph):
             }[node_level]:
                 yield entity
 
-    def reachable_functs(self, func, callgraph):
+    def reachable_functs(self, func, callgraph, only_system_relevant=True):
         """Generator about all reachable Functions starting at func."""
-        return self._reachable_nodes(func, callgraph, NodeLevel.function)
+        return self._reachable_nodes(func, callgraph, NodeLevel.function,
+                                     only_system_relevant=only_system_relevant)
 
-    def reachable_abbs(self, func, callgraph):
+    def reachable_abbs(self, func, callgraph, only_system_relevant=True):
         """Generator about all reachable ABBs starting at func."""
-        return self._reachable_nodes(func, callgraph, NodeLevel.abb)
+        return self._reachable_nodes(func, callgraph, NodeLevel.abb,
+                                     only_system_relevant=only_system_relevant)
 
-    def reachable_bbs(self, func, callgraph):
+    def reachable_bbs(self, func, callgraph, only_system_relevant=True):
         """Generator about all reachable BBs starting at func."""
-        return self._reachable_nodes(func, callgraph, NodeLevel.bb)
+        return self._reachable_nodes(func, callgraph, NodeLevel.bb,
+                                     only_system_relevant=only_system_relevant)
 
     def get_call_targets(self, abb, func=True):
         """Generator about all call targets for a given call abb.
@@ -276,6 +295,7 @@ class CFGView(graph_tool.GraphView):
 
     def get_syscall_name(self, *args, **kwargs):
         return self.base.get_syscall_name(*args, **kwargs)
+
 
 class Callgraph(graph_tool.Graph):
     """ TODO comment on functionality
