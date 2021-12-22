@@ -133,6 +133,10 @@ foreach app : autosar_apps
                                    clang_flags)
   app += {'ll': app_ll}
 
+  run_target('run_lock_elision_no_timings_' + full_name,
+             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '-s', 'LockElision'])
+
+
   # trace file for sse testing
   if not app.has_key('trace')
     sys_test =  disabler()
@@ -160,6 +164,16 @@ foreach app : autosar_apps
     sys_timings = files(app['core'] / app['path'] / app['timing'])
   endif
   app += {'sys_timings': sys_timings}
+
+  generate_timing_settings = custom_target(
+    output: full_name  + '.generate_timing_settings.json',
+    capture: true,
+    command: ['echo', '{"steps": [{"name":"ApplyTimings", "create_timings": "' +  app['full_name'] +'.empty_timing.json"}]}'],
+  )
+  run_target('run_lock_elision_generate_timings_' + full_name,
+             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
+  run_target('run_lock_elision_with_timings_' + full_name,
+             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '-s', 'ApplyTimings', '-s', 'LockElision', '--timings', app['sys_timings']])
 
   # lock elision test data
   if app.has_key('locks')
