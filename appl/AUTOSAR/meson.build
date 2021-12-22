@@ -86,6 +86,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks',              'name': 'c',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks',              'name': 'd',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks',              'name': 'e',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'locks',              'name': 'f',                     'oil': 'EXTRACT', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'loops',              'name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'b',                     'oil': 'system_b.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'c',                     'oil': 'system_b.json'},
@@ -153,6 +154,20 @@ foreach app : autosar_apps
     sys_timings = files(app['core'] / app['path'] / app['timing'])
   endif
   app += {'sys_timings': sys_timings}
+
+  # lock elision test data
+  if app.has_key('locks')
+    if app['locks'] == 'EXTRACT'
+      locks = custom_target(full_name + '.locks.json',
+                            input: sys + '.cc',
+                            output : full_name + '.locks.json',
+                            capture: true,
+                            command : [sed, '-n', '/if LOCKS_JSON/,/LOCKS_JSON/{/LOCKS_JSON/d;p}', '@INPUT@'])
+    elif app.has_key('locks')
+      locks = files(app['core'] / app['path'] / app['locks'])
+    endif
+    app += {'locks': locks}
+  endif
   set_variable(full_name, app)
   autosar_targets += [app]
 endforeach

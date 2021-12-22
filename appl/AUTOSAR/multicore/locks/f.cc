@@ -1,0 +1,153 @@
+/**
+ * @defgroup apps Applications
+ * @brief The applications...
+ */
+
+/**
+ * @file
+ * @ingroup apps
+ * @brief Just a simple test application
+ */
+#include "autosar/os.h"
+#include "test/test.h"
+#include "machine.h"
+
+/**
+Cores A,B, C
+Tasks 1, 2, 3
+
+A  B  C
+1
+a
+r
+c  2
+-  a
+-  r
+-  c
+-  -  3
+-  -  a
+-  -  r
+-  -  t
+*/
+
+
+#if SYSTEM_JSON
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "T01": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 4,
+          "schedule": true,
+          "spinlocks": ["S1", "S2"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 1,
+      "tasks": {
+        "T11": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true,
+          "spinlocks": ["S1", "S2"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 2,
+      "tasks": {
+        "T21": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true,
+          "spinlocks": ["S1", "S2"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ],
+  "spinlocks": [
+      ["S1"],
+      ["S2"]
+  ]
+}
+#endif //SYSTEM_JSON
+
+#if TRACE_JSON
+{
+  "vertices": [
+    [0, ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"]],
+    [1, ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"]],
+    [2, ["AUTOSAR_TerminateTask", "Handler11", "CallPath()"]],
+    [3, ["AUTOSAR_TerminateTask", "Handler12", "CallPath()"]],
+    [4, ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"]],
+    [5, ["Idle"]],
+    [6, ["Start"]]
+  ],
+  "edges": [
+    [6, 0],
+    [0, 1],
+    [1, 4],
+    [4, 2],
+    [2, 3],
+    [3, 5]
+  ]
+}
+#endif //TRACE_JSON
+
+#if LOCKS_JSON
+{"S1": 0, "S2": 0}
+#endif //LOCKS_JSON
+
+
+
+
+// Test memory protection (spanning over more than one 4k page in x86)
+//volatile int testme[1024*4*10] __attribute__ ((section (".data.Handler12")));
+
+DeclareTask(T01);
+DeclareTask(T11);
+DeclareTask(T21);
+DeclareSpinlock(S1);
+DeclareSpinlock(S2);
+
+TEST_MAKE_OS_MAIN( StartOS(0) )
+
+TASK(T01) {
+	GetSpinlock(S1);
+	ReleaseSpinlock(S1);
+	ActivateTask(T11);
+	TerminateTask();
+}
+
+TASK(T11) {
+	GetSpinlock(S1);
+	ReleaseSpinlock(S1);
+	ActivateTask(T21);
+	TerminateTask();
+}
+
+TASK(T21) {
+	GetSpinlock(S1);
+	ReleaseSpinlock(S1);
+	TerminateTask();
+}
+
