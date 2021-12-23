@@ -11,6 +11,7 @@ import graph_tool
 from . import ara_manager, layouter
 from .layouter import Layouter
 from .signal import ara_signal
+from .signal.signal_combiner import SignalCombiner
 from .util import GraphTypes
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView
 
@@ -24,35 +25,23 @@ class GuiWindow(QMainWindow):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.layouter = Layouter(entry_point="main")
-
-        self._func = {}
-        self._nodes = {}
-        self._edges = {}
-
-        self.graph_scene = None
-        self.graph_view = None
-
         self.b_start = QPushButton("Initialize Ara")
         self.b_step = QPushButton("Next Step")
 
-        self.w_buttons = None
-        self.w_center = None
-        self.w_right = None
-        self.w_graph_selection = None
-
-        self.l_buttons = None
-        self.l_window = None
-        self.l_center = None
-        self.l_right = None
-        self.l_graph_selection = None
+        self.w_right = QWidget()
+        self.l_right = QVBoxLayout(self.w_right)
 
         self.v_graph_type = GraphTypes.ABB
+
+        self.cfg_dock_widget = QDockWidget("CFG View", self)
+        self.callgraph_dock_widget = QDockWidget("CallGraph View", self)
+        self.instance_dock_widget = QDockWidget("Instance View", self)
 
         self.proxies = []
 
         self.init()
         self.setup_signals()
+
 
     def setup_signals(self):
         self.b_start.clicked.connect(ara_manager.INSTANCE.init)
@@ -64,10 +53,52 @@ class GuiWindow(QMainWindow):
         ara_signal.SIGNAL_MANAGER.sig_init_done.connect(self.enable_step_button)
         ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.connect(ara_manager.INSTANCE.step)
 
-        ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.update)
-        ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.switch_step_button)
+        #ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.update)
+        #ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.switch_step_button)
+
+        #self.cfg_dock_widget.widget().sig_work_done.connect(self.enable_step_button)
+        #self.callgraph_dock_widget.widget().sig_work_done.connect(self.enable_step_button)
+        #self.instance_dock_widget.widget().sig_work_done.connect(self.enable_step_button)
 
         ara_signal.SIGNAL_MANAGER.sig_execute_chain.connect(self.update_right)
+
+    def init(self):
+        # Graph Views
+        self.cfg_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.callgraph_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.instance_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+
+        signal_combiner = SignalCombiner(self.enable_step_button)
+
+        self.cfg_dock_widget.setWidget(CFGView(signal_combiner))
+        self.callgraph_dock_widget.setWidget(CallGraphView(signal_combiner))
+        self.instance_dock_widget.setWidget(InstanceGraphView(signal_combiner))
+
+        self.cfg_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+        self.callgraph_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+        self.instance_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+
+        self.addDockWidget(Qt.TopDockWidgetArea, self.cfg_dock_widget)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.callgraph_dock_widget)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.instance_dock_widget)
+
+        self.b_step.setDisabled(True)
+
+        # Toolbar Setup
+        toolbar = QToolBar()
+
+        toolbar.addWidget(self.b_start)
+        toolbar.addWidget(self.b_step)
+
+        self.addToolBar(Qt.BottomToolBarArea, toolbar)
+
+        toolbar2 = QToolBar()
+        toolbar2.addWidget(self.w_right)
+
+        self.addToolBar(Qt.LeftToolBarArea, toolbar2)
+
+        self.resize(1200, 800)
+        self.show()
 
     @Slot()
     def enable_start_button(self):
@@ -92,115 +123,11 @@ class GuiWindow(QMainWindow):
         else:
             self.b_step.setDisabled(True)
 
-    def init(self):
-        self.l_window = QHBoxLayout(self)
-
-        # Widget Setup
-        self.w_center = QWidget()
-        self.w_buttons = QWidget()
-        self.w_right = QWidget()
-        self.w_graph_selection = QWidget()
-
-        # Layout Setup
-        self.l_center = QVBoxLayout(self.w_center)
-        self.l_buttons = QHBoxLayout(self.w_buttons)
-        self.l_right = QVBoxLayout(self.w_right)
-        self.l_graph_selection = QHBoxLayout(self.w_graph_selection)
-
-        # Graph Views
-        cfg_dock_widget = QDockWidget("CFG View", self)
-        callgraph_dock_widget = QDockWidget("CallGraph View", self)
-        instance_dock_widget = QDockWidget("Instance View", self)
-
-        cfg_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
-        callgraph_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
-        instance_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
-
-        cfg_dock_widget.setWidget(CFGView())
-        callgraph_dock_widget.setWidget(CallGraphView())
-        instance_dock_widget.setWidget(InstanceGraphView())
-
-        cfg_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
-        callgraph_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
-        instance_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
-
-        self.addDockWidget(Qt.TopDockWidgetArea, cfg_dock_widget)
-        self.addDockWidget(Qt.BottomDockWidgetArea, callgraph_dock_widget)
-        self.addDockWidget(Qt.TopDockWidgetArea, instance_dock_widget)
-
-        #self.graph_scene = GraphScene()
-        #self.graph_view = QGraphicsView(self.graph_scene)
-        #self.graph_view.setRenderHint(QPainter.Antialiasing)
-
-        self.b_step.setDisabled(True)
-
-
-        # Toolbar Setup
-        toolbar = QToolBar()
-
-        toolbar.addWidget(self.b_start)
-        toolbar.addWidget(self.b_step)
-
-        self.addToolBar(Qt.BottomToolBarArea, toolbar)
-
-        toolbar2 = QToolBar()
-        toolbar2.addWidget(self.w_right)
-
-        self.addToolBar(Qt.LeftToolBarArea, toolbar2)
-
-        # # Right Setup
-        # self.l_right.setAlignment(Qt.AlignTop)
-        # self.w_right.setMinimumSize(200, 500)
-        # self.w_right.setMaximumSize(200, 1000)
-
-        # # Button Setup
-        # self.l_buttons.addWidget(self.b_start)
-        # self.l_buttons.addWidget(self.b_step)
-#
-        # # Center setup
-        # self.l_center.addWidget(self.w_graph_selection)
-        # self.l_center.addWidget(self.graph_view)
-        # self.l_center.addWidget(self.w_buttons)
-
-        # for e in GraphTypes:
-        #     button = SelectionButton(e.value, e)
-        #     button.sig_clicked.connect(self.set_graph_type)
-        #     self.l_graph_selection.addWidget(button)
-
-        # Window Setup
-        # self.l_window.addWidget(self.w_right)
-        # self.l_window.addWidget(self.w_center)
-
-        self.resize(1200, 800)
-        self.show()
-
     @Slot(bool)
     def update(self, steps_available):
-        # self.children().clear()
 
         if not steps_available:
             self.b_step.setDisabled(True)
-
-        #self.graph_scene.clear_rec()
-#
-        #self.layouter.layout(self.v_graph_type)
-        #gui_data = self.layouter.get_data(self.v_graph_type)
-
-        #print(self.layouter.cfg_view)
-
-        #for e in gui_data:
-        #    if isinstance(e, GraphicsObject):
-        #        proxy = self.graph_scene.addWidget(e)
-        #        if isinstance(e, Subgraph):
-        #            proxy.setZValue(0)
-        #        if isinstance(e, AbbNode):
-        #            proxy.setZValue(2)
-        #    else:
-        #        self.graph_scene.addItem(e)
-        #        e.setZValue(3)
-
-        #self.graph_view.update()
-        #self.sigFinshed.emit()
 
     @Slot(list)
     def update_right(self, l:list):

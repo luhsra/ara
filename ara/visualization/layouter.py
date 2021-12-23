@@ -1,4 +1,4 @@
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, QObject, Signal
 from pygraphviz import AGraph
 
 from ara.graph import ABBType, CFType
@@ -11,7 +11,7 @@ from ara.visualization.util import GraphTypes
 def set_graph_for_layouter(graph):
     Layouter.graph = graph
 
-class Layouter:
+class Layouter(QObject):
     """ Layout the components for the Graphical Visualization """
 
     SHAPES = {
@@ -22,12 +22,17 @@ class Layouter:
 
     subgraphs = ("abbs", "instances", "callgraph")
 
-    def __init__(self, g=None, entry_point=None, dotPath="./temp.dot", graph_name="DotGraph", from_entry_point = "true"):
+    sig_layout_done = Signal()
+
+    def __init__(self, g=None, entry_point=None, dotPath="./temp.dot", graph_name="DotGraph", from_entry_point="true"):
+        super().__init__()
         self.call_graph_view = AGraph(strict=False, directed=True)
         self.cfg_view = AGraph(strict=False, directed=True)
         self.instance_graph_view = AGraph(strict=False, directed=True)
 
         self._graph = ara_manager.INSTANCE.graph
+
+
 
         # Old should be removed
         self.entry_point = entry_point # ToDo Should be dynamically set not in init
@@ -39,8 +44,6 @@ class Layouter:
         print(message)
 
     def _update_call_graph_view(self, entry_point="main"):
-        self.call_graph_view.clear()
-
         call_graph = self._graph.callgraph
 
         cfg = call_graph.gp.cfg
@@ -126,6 +129,7 @@ class Layouter:
                 str(hash(edge.target())),
                 label=instance_graph.ep.label[edge])
 
+
     def _create_return_data(self, graph:AGraph, return_list, graph_type:GraphTypes=GraphTypes.ABB):
         for n in graph.nodes():
             if graph_type == GraphTypes.ABB:
@@ -171,13 +175,18 @@ class Layouter:
 
         return return_data
 
+    @Slot(GraphTypes, bool)
     def layout(self, graph_type, layout_only = False):
         """
             Build the internal graph views.
         """
+
+        print(f"Layouting {graph_type}")
+
         if not GraphTypes.__contains__(graph_type):
             print(f"The subgraph { graph_type } does not exist")
             return
+
         if not layout_only:
             if graph_type == GraphTypes.ABB:
                 self.cfg_view.clear()
@@ -191,9 +200,10 @@ class Layouter:
 
         if graph_type == GraphTypes.ABB:
             self.cfg_view.layout("dot")
-            self.cfg_view.write("./debug.dot")
+            # self.cfg_view.write("./debug.dot")
         if graph_type == GraphTypes.CALLGRAPH:
             self.call_graph_view.layout("dot")
         if graph_type == GraphTypes.INSTANCE:
             self.instance_graph_view.layout("dot")
 
+        self.sig_layout_done.emit()
