@@ -1,6 +1,7 @@
 
 import graph_tool
 import graph_tool.util
+from graph_tool.search import bfs_iterator
 
 from graph_tool.topology import label_out_component
 
@@ -318,6 +319,34 @@ class Callgraph(graph_tool.Graph):
             return None
         assert len(node) == 1
         return node[0]
+
+    def get_vertices_bfs(self, entry_name, depth=2):
+        """Return the breath first reachable nodes from entry_name"""
+        dist = {}
+
+        entry = self.get_node_with_name(entry_name)
+        it_bf = bfs_iterator(self, entry)
+
+        if entry is None:
+            return
+
+        dist[entry] = 0
+        yield entry
+        for v in it_bf:
+            dist[v.target()] = dist[v.source()] + 1
+
+            if dist[v.target()] > depth:
+                return
+            yield v.target()
+
+    def get_vertices_for_entries_bfs(self, entry_names:list, depth):
+        """Returns the breath first reachable nodes from entries"""
+        ret = []
+        for entry in entry_names:
+            for vertex in self.get_vertices_bfs(entry, depth):
+                ret.append(vertex)
+
+        return ret
 
 
 class MSTGraph(graph_tool.Graph):

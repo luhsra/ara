@@ -1,3 +1,5 @@
+import traceback
+
 from PySide6.QtCore import Slot, QObject, Signal
 from pygraphviz import AGraph
 
@@ -10,6 +12,7 @@ from ara.visualization.util import GraphTypes
 
 def set_graph_for_layouter(graph):
     Layouter.graph = graph
+
 
 class Layouter(QObject):
     """ Layout the components for the Graphical Visualization """
@@ -24,7 +27,7 @@ class Layouter(QObject):
 
     sig_layout_done = Signal()
 
-    def __init__(self, g=None, entry_point=None, dotPath="./temp.dot", graph_name="DotGraph", from_entry_point="true"):
+    def __init__(self):
         super().__init__()
         self.call_graph_view = AGraph(strict=False, directed=True)
         self.cfg_view = AGraph(strict=False, directed=True)
@@ -32,38 +35,65 @@ class Layouter(QObject):
 
         self._graph = ara_manager.INSTANCE.graph
 
-
-
-        # Old should be removed
-        self.entry_point = entry_point # ToDo Should be dynamically set not in init
-        self.dot = dotPath
-        self.graph_name = graph_name
-        self.from_entry_point = from_entry_point
-
     def _fail(self, message):
         print(message)
 
-    def _update_call_graph_view(self, entry_point="main"):
-        call_graph = self._graph.callgraph
+    def _update_call_graph_view(self, entry_points=None):
+        try:
+            call_graph = self._graph.callgraph
 
-        cfg = call_graph.gp.cfg
-        for node in call_graph.vertices():
-            # Create Node
-            if call_graph.vp.recursive[node]:
-                # Set Information about recursive
-                pass
-            self.call_graph_view.add_node(
-                str(hash(node)),
-                height=0.75,
-                width=5,
-                shape="box",
-                label=cfg.vp.name[call_graph.vp.function[node]])
-        for edge in call_graph.edges():
-            self.call_graph_view.add_edge(
-                str(hash(edge.source())),
-                str(hash(edge.target())),
-                label=cfg.vp.name[call_graph.ep.callsite[edge]]
-            )
+            cfg = call_graph.gp.cfg
+
+            nodes = []
+            edges = []
+
+            for node in call_graph.get_vertices_for_entries_bfs(entry_points, 1):
+                # Create Node
+                if call_graph.vp.recursive[node]:
+                    # Set Information about recursive
+                    pass
+                self.call_graph_view.add_node(
+                    str(hash(node)),
+                    height=0.75,
+                    width=5,
+                    shape="box",
+                    label=cfg.vp.name[call_graph.vp.function[node]])
+
+                nodes.append(node)
+
+            for node in nodes:
+                for edge in node.all_edges():
+                    if edges.__contains__(edge):
+                        continue
+                    edges.append(edge)
+
+                    # Discover adjacency nodes
+                    if not nodes.__contains__(edge.source()):
+                        self.call_graph_view.add_node(
+                            str(hash(edge.source())),
+                            height=0.75,
+                            width=4,
+                            shape="box",
+                            adjacency="true",
+                            label=cfg.vp.name[call_graph.vp.function[edge.source()]])
+                    elif not nodes.__contains__(edge.target()):
+                        self.call_graph_view.add_node(
+                            str(hash(edge.target())),
+                            height=0.75,
+                            width=4,
+                            shape="box",
+                            adjacency="true",
+                            label=cfg.vp.name[call_graph.vp.function[edge.target()]])
+
+                    self.call_graph_view.add_edge(
+                        str(hash(edge.source())),
+                        str(hash(edge.target())),
+                        label=cfg.vp.name[call_graph.ep.callsite[edge]]
+                    )
+
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
 
     def _update_cfg_view(self, entry_point="main"):
         if not self._graph.cfg.contains_function_by_name(entry_point) or self._graph.callgraph.num_vertices() <= 0:
@@ -129,7 +159,6 @@ class Layouter(QObject):
                 str(hash(edge.target())),
                 label=instance_graph.ep.label[edge])
 
-
     def _create_return_data(self, graph:AGraph, return_list, graph_type:GraphTypes=GraphTypes.ABB):
         for n in graph.nodes():
             if graph_type == GraphTypes.ABB:
@@ -175,8 +204,8 @@ class Layouter(QObject):
 
         return return_data
 
-    @Slot(GraphTypes, bool)
-    def layout(self, graph_type, layout_only = False):
+    @Slot(GraphTypes, list, bool)
+    def layout(self, graph_type, entry_points, layout_only = False):
         """
             Build the internal graph views.
         """
@@ -193,7 +222,7 @@ class Layouter(QObject):
                 self._update_cfg_view()
             if graph_type == GraphTypes.CALLGRAPH:
                 self.call_graph_view.clear()
-                self._update_call_graph_view()
+                self._update_call_graph_view(entry_points)
             if graph_type == GraphTypes.INSTANCE:
                 self.instance_graph_view.clear()
                 self._update_instance_graph_view()

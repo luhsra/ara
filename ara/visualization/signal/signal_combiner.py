@@ -22,10 +22,9 @@ class SignalCombiner(QObject):
         self.senders[id] = False
 
     @Slot(str)
-    def receive(self, name):
-        self.senders[name] = True
+    def receive(self, id):
+        self.senders[id] = True
         if not (False in self.senders.values()):
             self.sig_emit.emit()
-            print(" ")
             for key in self.senders.keys():
                 self.senders[key] = False

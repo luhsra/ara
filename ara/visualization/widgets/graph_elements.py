@@ -1,15 +1,16 @@
 from math import sqrt, cos, sin
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout
-from PySide6.QtGui import QPen, QPainterPath
+from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsDropShadowEffect
+from PySide6.QtGui import QPen, QPainterPath, QMouseEvent
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph
 
 from ara.graph import CFType
 
 DPI_LEVEL = 72 # Todo move to a more fitting file
+
 
 class GraphicsObject(QWidget):
 
@@ -38,6 +39,7 @@ class AbstractNode(GraphicsObject):
 
         self.setGeometry(int(x), int(y), int(width), int(height))
 
+
 class AbbNode(AbstractNode):
 
     subtypes = {"1" : "syscall", "2" : "call", "4" : "comp" }
@@ -49,11 +51,64 @@ class AbbNode(AbstractNode):
         self.widget.subtype_text.setText(str(self.subtypes[self.data.attr["subtype"]]))
         self.widget.type_text.setText(str(self.data.attr["type"]))
 
+    def mousePressEvent(self, event:QMouseEvent) -> None:
+        print("ToDo: Do Something with the clicks")
+
 
 class CallGraphNode(AbstractNode):
+
+    sig_adjacency_selected = Signal(str)
+
+    sig_expansion_unselected = Signal(str)
+
+    sig_selected = Signal(str)
+
+    sig_unselected = Signal(str)
+
     def __init__(self, node:Node):
         super().__init__(node, "../resources/callgraph_node.ui")
         self.widget.label_text.setText(str(self.data.attr["label"]))
+
+        self.adjacency = False
+        self.selected = False
+        self.expansion = False
+
+        if self.data.attr["adjacency"] == "true":
+            self.adjacency = True
+            self.widget.setProperty("adjacency", "true")
+
+        self.reload_stylesheet()
+
+    def mousePressEvent(self, event:QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            if self.adjacency is True:
+                self.sig_adjacency_selected.emit(self.data.attr["label"])
+                return
+
+            self.selected = not self.selected
+
+            if self.selected:
+                self.sig_selected.emit(self.data.attr["label"])
+                self.widget.setProperty("selected", "true")
+            else:
+                self.sig_unselected.emit(self.data.attr["label"])
+                self.widget.setProperty("selected", "false")
+
+            self.reload_stylesheet()
+
+            return
+
+        if event.button() == Qt.RightButton and self.expansion and not self.selected:
+            self.expansion = False
+            self.sig_expansion_unselected.emit(self.data.attr["label"])
+            return
+
+    def reload_stylesheet(self):
+        """
+            Reloads the stylesheet of the widget, this needs to be done, if a property is changed after its creation,
+            otherwise the design doesn't change.
+        """
+        self.widget.setStyleSheet(self.widget.styleSheet())
 
 
 class InstanceNode(AbstractNode):

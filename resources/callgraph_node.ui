@@ -6,12 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>371</width>
+    <height>197</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget{
@@ -21,6 +24,18 @@
 #callgraph_node {
 	border: 2px solid black;
 	border-radius: 5px;
+}
+
+#callgraph_node[selected=&quot;true&quot;] {
+	border-color: red;
+}
+
+#callgraph_node[expansion=&quot;true&quot;] {
+	border-style: dashed;
+}
+
+#callgraph_node[adjacency=&quot;true&quot;]{
+	border-color: lightgrey;
 }
 
 #label_text {
