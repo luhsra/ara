@@ -94,11 +94,16 @@ def mstg_to_dot(mstg, label="MSTG"):
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
                 cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
-        label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
-                '<TR>{}</TR>' \
-                '</TABLE>>'.format(''.join(sorted(cols)))
+        if cols:
+            label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                    '<TR>{}</TR>' \
+                    '</TABLE>>'.format(''.join(sorted(cols)))
+            shape = "plaintext"
+        else:
+            label = "undiscovered"
+            shape = "box"
         return pydot.Node(_to_str(sync), label=label,
-                          shape="plaintext",
+                          shape=shape,
                           tooltip=_to_str(sync))
 
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
