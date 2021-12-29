@@ -140,7 +140,7 @@ class StateType(enum.IntEnum): # */
 # s2s = state to state (normal SSE transition)
 # sy2sy = sync to sync
 # follow_up = edge between two follow up sync states
-# m2sy = edge between a metastate and a sync states
+# m2sy = edge between a metastate and a sync state
 # sync_neighbor = mark two sync states that has an equal outcome
 class MSTType(enum.IntEnum): # */
     #undef pass
