@@ -1,0 +1,4 @@
+[style]
+based_on_style = pep8
+ARITHMETIC_PRECEDENCE_INDICATION = true
+COALESCE_BRACKETS = true
