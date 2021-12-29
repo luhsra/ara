@@ -134,7 +134,7 @@ foreach app : autosar_apps
   app += {'ll': app_ll}
 
   run_target('run_lock_elision_no_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '-s', 'LockElision'])
+             command: [py3_inst, ara_py, app_ll, '--oilfile', oil, '-s', 'LockElision'])
 
 
   # trace file for sse testing
