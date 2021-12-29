@@ -35,8 +35,8 @@ class LockElision(Step):
                             # why, find the predecessor cross point for that
                             m2sy = mstg.edge_type(MSTType.m2sy)
                             for sync_point in m2sy.vertex(ms).in_neighbors():
-                                ctx = m2sy.vp.state[sync_point]
-                                if ctx and obj in ctx and get_status(ctx[obj]):
+                                state = m2sy.vp.state[sync_point]
+                                if state and obj in state.context and get_status(state.context[obj]):
                                     lock_count[get_name(obj)] += 1
 
         for lock, amount in lock_count.items():
