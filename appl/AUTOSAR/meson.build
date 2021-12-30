@@ -93,6 +93,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks',              'name': 'j',                     'oil': 'EXTRACT', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks',              'name': 'k',                     'oil': 'EXTRACT', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks',              'name': 'l',                     'oil': 'EXTRACT', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks',              'name': 'm',                     'oil': 'system_m.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'b',                     'oil': 'system_b.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'c',                     'oil': 'system_b.json'},
