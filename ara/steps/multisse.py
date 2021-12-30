@@ -277,11 +277,11 @@ class MultiSSE(Step):
         affected_cores = self._mstg.cross_core_map[cross_state]
         needed_cores = set([mstg.vp.cpu_id[cross_state]]) | set(affected_cores)
 
-        # graph only with sy2sy and follow_up edges
+        # graph only with sy2sy and en2ex edges
         sync_graph = graph_tool.GraphView(
             mstg,
             efilt=((mstg.ep.type.fa &
-                    (MSTType.sy2sy | MSTType.follow_up) > 0)))
+                    (MSTType.sy2sy | MSTType.en2ex) > 0)))
 
         # find last sync state that contains all needed cores
         init_cps = []
@@ -413,7 +413,7 @@ class MultiSSE(Step):
             self._log.debug(f"Add exit cross point {int(fcp)}")
 
             e = mstg.add_edge(cp, fcp)
-            mstg.ep.type[e] = MSTType.follow_up
+            mstg.ep.type[e] = MSTType.en2ex
             self._mstg.cross_point_map[fcp] = self._mstg.cross_point_map[cp]
 
             # store state in cross_point

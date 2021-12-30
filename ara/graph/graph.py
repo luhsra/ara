@@ -371,7 +371,7 @@ class MSTGraph(graph_tool.Graph):
 
     def get_entry_cp(self, exit_cp):
         """Return the entry_cp that belongs to an exit_cp."""
-        fu = self.edge_type(MSTType.follow_up)
+        fu = self.edge_type(MSTType.en2ex)
         return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
 
 
