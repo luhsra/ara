@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from functools import reduce
 from graph_tool.topology import label_out_component
 from itertools import product, chain
+from typing import List
 
 # time counter for performance measures
 c_debugging = 0  # in milliseconds
@@ -39,7 +40,7 @@ class Metastate:
     entry: graph_tool.Vertex  # vertex of the entry ABB
     new_entry: bool  # is the entry point new
     is_new: bool  # is this Metastate already evaluated
-    cross_points: []  # does this Metastate has a new cross_point
+    cross_points: List[int]  # does this Metastate has a new cross_point
     cpu_id: int  # cpu_id of this state
 
     def __repr__(self):
@@ -90,6 +91,7 @@ class MultiSSE(Step):
         cp = mstg.add_vertex()
         mstg.vp.type[cp] = StateType.exit_sync
         mstg.vp.state[cp] = os_state
+        self._mstg.cross_point_map[cp] = [x.id for x in os_state.cpus]
         self._log.debug(f"Add initial cross point {int(cp)}")
 
         return cp
@@ -340,8 +342,7 @@ class MultiSSE(Step):
         mstg.vp.type[new_cp] = StateType.entry_sync
         self._log.debug(
             f"Add new entry cross point {int(new_cp)} between "
-            f"{int(cross_state)} and {[int(x) for x in timed_states]}"
-        )
+            f"{int(cross_state)} and {[int(x) for x in timed_states]}")
         cpu_ids = set()
 
         syncs = mstg.edge_type(MSTType.sync_neighbor)
@@ -468,19 +469,38 @@ class MultiSSE(Step):
             for timed_candidates in self._find_timed_states(cross_state, cp):
                 other_cp = self._get_existing_cross_point(
                     cross_state, timed_candidates)
+                modified = False
                 if other_cp:
                     mstg = self._mstg.g
-                    # just link the new cp to it
+                    # just link the new cp to it, if it is new
                     self._log.debug(
                         f"Link from {int(cp)} to existing cross point "
                         f"{int(other_cp)} ({int(cross_state)} with "
                         f"{[int(x) for x in timed_candidates]}).")
-                    m2sy_edge = mstg.edge(cp, other_cp, add_missing=True)
-                    mstg.ep.type[m2sy_edge] = MSTType.sy2sy
+                    exists = mstg.edge(cp, other_cp)
+                    if not exists:
+                        m2sy_edge = mstg.add_edge(cp, other_cp)
+                        mstg.ep.type[m2sy_edge] = MSTType.sy2sy
+                        modified = True
                 else:
-                    new_entry_cp = self._create_cross_point(
+                    other_cp = self._create_cross_point(
                         cross_state, timed_candidates, cp)
-                    exits += self._evaluate_crosspoint(new_entry_cp)
+                    exits += [(x, None)
+                              for x in self._evaluate_crosspoint(other_cp)]
+                    modified = True
+
+                if modified:
+                    current_cpus = set(self._mstg.cross_point_map[cp])
+                    other_cpus = set(self._mstg.cross_point_map[other_cp])
+
+                    unready = current_cpus - other_cpus
+                    if unready:
+                        self._log.debug(
+                            f"Current cross point {int(other_cp)} may add more pairing possibilities to the cross syscall of CPU {unready} (starting from {int(cp)})"
+                        )
+                        # put cp again onto the stack, it needs to be reevaluated
+                        exits.append((cp, unready))
+
         return exits
 
     def run(self):
@@ -511,18 +531,38 @@ class MultiSSE(Step):
         cross_point = self._get_initial_state()
 
         # stack consisting of the current exit cross point
-        stack = [cross_point]
+        stack = [(cross_point, None)]
 
         # actual algorithm
         counter = 0
         while stack:
-            cp = stack.pop(0)
+            cp, reevaluate_ids = stack.pop(0)
             self._log.debug(
                 f"Round {counter:3d}, handle cross point {int(cp)}. "
                 f"Stack with {len(stack)} state(s)")
+            counter += 1
+
             # if handled[cp]:
             #     continue
             # handled[cp] = True
+            if reevaluate_ids:
+                self._log.debug(
+                    f"{int(cp)} is already evaluated but some new knowledge is present"
+                )
+                st2sy = mstg.edge_type(MSTType.st2sy)
+                for cpu_id in reevaluate_ids:
+                    sts = graph_tool.GraphView(
+                        st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
+                    entry = single_check(sts.vertex(cp).out_neighbors())
+                    stack += self._do_full_pairing(
+                        cp,
+                        Metastate(state=mstg.get_metastate(entry),
+                                  entry=entry,
+                                  new_entry=False,
+                                  is_new=False,
+                                  cross_points=[],
+                                  cpu_id=cpu_id))
+                continue
 
             # handle current cross point
             states = self._get_single_core_states(self._mstg.g.vp.state[cp])
@@ -588,8 +628,6 @@ class MultiSSE(Step):
                     "Found already existing but unconnected metastates. Do a full pairing."
                 )
                 stack += self._do_full_pairing(cp, metastate)
-
-            counter += 1
 
         self._log.info(f"Analysis needed {counter} iterations.")
 
