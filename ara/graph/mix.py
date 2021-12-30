@@ -138,7 +138,8 @@ class StateType(enum.IntEnum): # */
 # m2s = metastate to state
 # st2sy = state to sync (or vice versa)
 # s2s = state to state (normal SSE transition)
-# sy2sy = sync to sync
+# sy2sy = sync to sync (with full context)
+# follow_sync = sync to sync (which follows in the time domain)
 # en2ex = edge between an entry and exit sync state
 # m2sy = edge between a metastate and a sync state
 # sync_neighbor = mark two sync states that has an equal outcome
@@ -151,9 +152,10 @@ class MSTType(enum.IntEnum): # */
     st2sy = 1 << 1,
     s2s = 1 << 2,
     sy2sy = 1 << 3,
-    en2ex = 1 << 4,
-    m2sy = 1 << 5,
-    sync_neighbor = 1 << 6,
+    follow_sync = 1 << 4,
+    en2ex = 1 << 5,
+    m2sy = 1 << 6,
+    sync_neighbor = 1 << 7,
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(MSTType)}
