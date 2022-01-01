@@ -10,6 +10,7 @@ from ara.visualization.signal import ara_signal
 from ara.visualization.widgets.graph_elements import AbbNode, GraphEdge, Subgraph, CallGraphNode, InstanceNode
 from ara.visualization.util import GraphTypes
 
+
 def set_graph_for_layouter(graph):
     Layouter.graph = graph
 
@@ -95,22 +96,27 @@ class Layouter(QObject):
             print(e)
             print(traceback.format_exc())
 
-    def _update_cfg_view(self, entry_point="main"):
-        if not self._graph.cfg.contains_function_by_name(entry_point) or self._graph.callgraph.num_vertices() <= 0:
-            return
+    def _update_cfg_view(self, entry_points=None):
+        try:
 
-        entry_func = self._graph.cfg.get_function_by_name(entry_point)
-        functions = self._graph.cfg.reachable_functs(entry_func, self._graph.callgraph)
+            if self._graph.callgraph.num_vertices() <= 0:
+                return
 
-        cfg = self._graph.cfg
-        nodes = set()
-        for function in functions:
-            function = cfg.vertex(function)
-            subgraph = self.cfg_view.add_subgraph(
-                name= "cluster_" + cfg.vp.name[function],
-                label=cfg.vp.name[function])
+            functions = set()
 
-            for abb in cfg.get_abbs(function):
+            for entry in entry_points:
+                functions.add(self._graph.cfg.get_function_by_name(entry))
+
+            cfg = self._graph.cfg
+            nodes = set()
+            edges = set()
+            for function in functions:
+                function = cfg.vertex(function)
+                subgraph = self.cfg_view.add_subgraph(
+                    name="cluster_" + cfg.vp.name[function],
+                    label=cfg.vp.name[function])
+
+                for abb in cfg.get_abbs(function):
                     subgraph.add_node(
                         str(hash(abb)),
                         label=cfg.vp.name[abb],
@@ -120,18 +126,37 @@ class Layouter(QObject):
                         width=1.5,
                         height=0.75
                     )
-                    nodes.add(str(hash(abb)))
-        for edge in cfg.edges():
-            if cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
-                continue
+                    nodes.add(abb)
 
-            if not all([str(hash(x)) in nodes
-                        for x in [edge.source(), edge.target()]]):
-                continue
+            for node in nodes:
+                for edge in node.all_edges():
+                    if edges.__contains__(edge):
+                        continue
+                    edges.add(edge)
 
-            self.cfg_view.add_edge(str(hash(edge.source())),
-                                   str(hash(edge.target())),
-                                   edge_type=cfg.ep.type[edge])
+                    if not nodes.__contains__(edge.source()) or not nodes.__contains__(edge.target()):
+                        continue
+
+                    self.cfg_view.add_edge(str(hash(edge.source())),
+                                           str(hash(edge.target())),
+                                           edge_type=cfg.ep.type[edge])
+
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+
+        # for edge in cfg.edges():
+        #    if cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
+        #        continue
+
+    #
+    #    if not all([str(hash(x)) in nodes
+    #                for x in [edge.source(), edge.target()]]):
+    #        continue
+    #
+    #    self.cfg_view.add_edge(str(hash(edge.source())),
+    #                           str(hash(edge.target())),
+    #                           edge_type=cfg.ep.type[edge])
 
     def _update_instance_graph_view(self):
         instance_graph = self._graph.instances
@@ -159,7 +184,7 @@ class Layouter(QObject):
                 str(hash(edge.target())),
                 label=instance_graph.ep.label[edge])
 
-    def _create_return_data(self, graph:AGraph, return_list, graph_type:GraphTypes=GraphTypes.ABB):
+    def _create_return_data(self, graph: AGraph, return_list, graph_type: GraphTypes = GraphTypes.ABB):
         for n in graph.nodes():
             if graph_type == GraphTypes.ABB:
                 if n.attr["subtype"] == "0":
@@ -179,9 +204,9 @@ class Layouter(QObject):
             return_list.append(Subgraph(g))
             self._create_return_data(g, return_list)
 
-    def get_data(self, graph_type:GraphTypes):
+    def get_data(self, graph_type: GraphTypes):
         if not GraphTypes.__contains__(graph_type):
-            print(f"The subgraph { graph_type } does not exist")
+            print(f"The subgraph {graph_type} does not exist")
             return
         return_data = []
 
@@ -205,7 +230,7 @@ class Layouter(QObject):
         return return_data
 
     @Slot(GraphTypes, list, bool)
-    def layout(self, graph_type, entry_points, layout_only = False):
+    def layout(self, graph_type, entry_points, layout_only=False):
         """
             Build the internal graph views.
         """
@@ -213,13 +238,13 @@ class Layouter(QObject):
         print(f"Layouting {graph_type}")
 
         if not GraphTypes.__contains__(graph_type):
-            print(f"The subgraph { graph_type } does not exist")
+            print(f"The subgraph {graph_type} does not exist")
             return
 
         if not layout_only:
             if graph_type == GraphTypes.ABB:
                 self.cfg_view.clear()
-                self._update_cfg_view()
+                self._update_cfg_view(entry_points)
             if graph_type == GraphTypes.CALLGRAPH:
                 self.call_graph_view.clear()
                 self._update_call_graph_view(entry_points)
@@ -229,7 +254,7 @@ class Layouter(QObject):
 
         if graph_type == GraphTypes.ABB:
             self.cfg_view.layout("dot")
-            # self.cfg_view.write("./debug.dot")
+            self.cfg_view.write("./debug.dot")
         if graph_type == GraphTypes.CALLGRAPH:
             self.call_graph_view.layout("dot")
         if graph_type == GraphTypes.INSTANCE:
