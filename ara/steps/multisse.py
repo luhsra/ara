@@ -345,48 +345,57 @@ class MultiSSE(Step):
         start = core_graph.vertex(cps[core].start)
         stack = [(start, [FakeEdge(src=None, tgt=start)])]
         visited = core_graph.new_vp("bool")
+        visited_entries = defaultdict(list)
         while stack:
             cur, path = stack.pop(0)
             self._log.debug(
-                f"iterate_search_tree: Stack element {int(cur)} with path {path}"
+                f"i_s_t: Stack element {int(cur)} with path {path}"
             )
 
-            if visited[cur]:
+            if visited[cur] and path[-1] in visited_entries[cur]:
+                self._log.debug("i_s_t: Already visited, skipping...")
                 continue
             visited[cur] = True
+            visited_entries[cur].append(path[-1])
 
             # for nodes without out edges
             if cur.out_degree(
             ) == 0 and core_graph.vp.type[cur] == StateType.metastate:
-                self._log.debug(f"iterate_search_tree: Yielding {int(cur)}")
+                self._log.debug(f"i_s_t: Yielding {int(cur)}")
                 yield FakeEdge(src=cur, tgt=None), path
 
             # iterate
             for e in cur.out_edges():
+                # self._log.debug(f"i_s_t: Look at {e} (Type {str(MSTType(self._mstg.g.ep.type[e]))}).")
                 tgt = e.target()
                 # skip false paths
                 if tgt == cps[core].end:
+                    self._log.debug(f"i_s_t: Skip {e}. We are not branching to ourself.")
                     continue
                 if core_graph.vp.type[tgt] == StateType.entry_sync:
                     cores = set(self._mstg.cross_point_map[tgt])
                     if orig_core in cores:
+                        self._log.debug(f"i_s_t: Skip {e}. It contains core {orig_core}.")
                         continue
                     if cores & used_cores[core]:
                         if not self._is_successor_of(cp, tgt):
+                            self._log.debug(f"i_s_t: Skip {e}. No successor.")
                             continue
 
                 if core_graph.vp.type[cur] == StateType.metastate:
                     self._log.debug(
-                        f"iterate_search_tree: Yielding {int(cur)} (2)")
+                        f"i_s_t: Yielding {int(cur)} (2)")
                     yield e, path
 
                 # skip false edges of common paths of previous traversals
                 if cur in other_paths and other_paths[cur] != e:
+                    self._log.debug(f"i_s_t: Skip {e}. Other graph.")
                     continue
 
                 if core_graph.vp.type[cur] == StateType.entry_sync:
                     stack.append((tgt, path + [e]))
-                stack.append((tgt, path))
+                else:
+                    stack.append((tgt, path))
 
     def _get_used(self, graph, starts, paths):
         cp_map = self._mstg.cross_point_map
@@ -693,7 +702,7 @@ class MultiSSE(Step):
                 metastate.state, metastate.entry)
 
         self._log.debug(
-            "Search for candidates for the cross syscall "
+            "Search for candidates for the cross syscalls: "
             f"{[int(x) for x in metastate.cross_points]}."
         )
         for cross_state in metastate.cross_points:
@@ -737,14 +746,19 @@ class MultiSSE(Step):
 
                     unready = current_cpus - other_cpus
                     if unready:
-                        self._log.debug(
-                            f"Current cross point {int(other_cp)} may add "
-                            "more pairing possibilities to the cross syscall "
-                            f"of CPU {unready} (starting from {int(cp)})"
-                        )
-                        # put cp again onto the stack, it needs to be
-                        # reevaluated
-                        exits.append((cp, unready))
+                        new_cps, _ = self._get_constrained_cps(
+                            unready,
+                            Range(start=other_cp, end=None))
+                        on_stack = defaultdict(list)
+                        for core, ran in new_cps.items():
+                            on_stack[ran.start].append(core)
+                        for i_cp, cores in on_stack.items():
+                            self._log.debug(
+                                f"Current cross point {int(other_cp)} may add "
+                                "more pairing possibilities to the cross syscall "
+                                f"for CPUs {cores} (starting from {int(i_cp)})"
+                            )
+                            exits.append((i_cp, cores))
 
         return exits
 
