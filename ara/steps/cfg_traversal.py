@@ -356,9 +356,11 @@ class _SSERunner:
         self._log.info(f"Local SSE: Analysis needed {counter} iterations.")
 
 
-def run_sse(graph, os, visitor=Visitor(), logger=get_null_logger()):
+def run_sse(graph, os, visitor=Visitor(), logger=None):
     # we new a lot of state during the analyiss, so pass the handling to an
     # object that can hold the data
+    if logger is None:
+        logger = get_null_logger()
     runner = _SSERunner(graph=graph, os=os, logger=logger,
                         visitor=visitor)
     return runner.run()

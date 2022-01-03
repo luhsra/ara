@@ -109,7 +109,9 @@ def get_logger(name: str, level=None):
 
 def get_null_logger():
     """Get a logger that does absolutely nothing."""
-    return logging.getLogger('null').addHandler(logging.NullHandler())
+    null = logging.getLogger('null')
+    null.disabled = True
+    return null
 
 
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):
