@@ -13,8 +13,6 @@
 #include "machine.h"
 
 
-// Test memory protection (spanning over more than one 4k page in x86)
-//volatile int testme[1024*4*10] __attribute__ ((section (".data.Handler12")));
 
 DeclareTask(T01);
 DeclareTask(T11);
@@ -37,5 +35,9 @@ TASK(T11) {
 	ReleaseSpinlock(S1);
 	GetSpinlock(S2);
 	ReleaseSpinlock(S2);
+	TerminateTask();
+}
+
+TASK(T21) {
 	TerminateTask();
 }

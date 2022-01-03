@@ -13,11 +13,27 @@
 #include "machine.h"
 
 
-// Test memory protection (spanning over more than one 4k page in x86)
-//volatile int testme[1024*4*10] __attribute__ ((section (".data.Handler12")));
+// TODO: wie geht das für multicore?
+#if TRACE_JSON
+{
+  "vertices": [
+  ],
+  "edges": [
+  ]
+}
+#endif //TRACE_JSON
+
+#if LOCKS_JSON
+{"S1": 2, "S2": 0}
+#endif //LOCKS_JSON
+
+
+
+
 
 DeclareTask(T01);
 DeclareTask(T11);
+DeclareTask(T21);
 DeclareSpinlock(S1);
 DeclareSpinlock(S2);
 
@@ -25,16 +41,19 @@ TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T01) {
 	ActivateTask(T11);
-	while(true) {
-		GetSpinlock(S1);
-		ReleaseSpinlock(S1);
-	}
+	GetSpinlock(S1);
+	ReleaseSpinlock(S1);
 	TerminateTask();
 }
 
 TASK(T11) {
-	while(true) {
-		GetSpinlock(S1);
-		ReleaseSpinlock(S1);
-	}
+	ActivateTask(T21);
+	GetSpinlock(S1);
+	ReleaseSpinlock(S1);
+	TerminateTask();
 }
+
+TASK(T21) {
+	TerminateTask();
+}
+
