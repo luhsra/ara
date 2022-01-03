@@ -161,6 +161,9 @@ def mstg_to_dot(mstg, label="MSTG"):
             if flow.ep.type[edge] == MSTType.sy2sy:
                 attrs = {"color": "darkred",
                          "style": "dotted"}
+            if flow.ep.type[edge] == MSTType.follow_sync:
+                attrs = {"color": "darkgreen",
+                         "style": "dotted"}
             if flow.ep.type[edge] in [MSTType.sync_neighbor, MSTType.m2sy]:
                 continue
             src = _to_str(src)
