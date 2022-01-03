@@ -16,7 +16,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from functools import reduce
 from graph_tool.topology import label_out_component, dominator_tree, shortest_path
-from graph_tool.search import dfs_search, DFSVisitor, StopSearch
+from graph_tool.search import bfs_search, BFSVisitor, StopSearch
 from graph_tool import GraphView
 from itertools import product, chain
 from typing import List
@@ -317,19 +317,6 @@ class MultiSSE(Step):
                 stack.append(n)
         return root_cps
 
-    def _find_nearest_dominator(self, dom_map, other_core, start):
-        result = start
-        cores = set()
-        while result != -1:
-            current_cores = set(self._mstg.cross_point_map[result])
-            if other_core in current_cores:
-                # we have found our core
-                return result, cores
-            result = dom_map[result]
-            cores |= current_cores
-        assert False, ("At least the initial state should have all cores. "
-                       "Something is wrong with the graph.")
-
     def _is_successor_of(self, orig_cp, new_cp):
         sync_graph = GraphView(
             self._mstg.g,
@@ -401,7 +388,20 @@ class MultiSSE(Step):
                     stack.append((tgt, path + [e]))
                 stack.append((tgt, path))
 
-    def _get_constrained_cps(self, cores, new_range, cps):
+    def _get_used(self, graph, starts, paths):
+        cp_map = self._mstg.cross_point_map
+        all_used = {}
+        for core, start in starts.items():
+            # skip first node
+            cur_cp = paths[start]
+            used = set()
+            while cur_cp != -1:
+                used |= set(cp_map[cur_cp])
+                cur_cp = paths[cur_cp]
+            all_used[core] = used
+        return all_used
+
+    def _get_constrained_cps(self, cores, new_range):
         sync_graph = GraphView(
             self._mstg.g,
             efilt=((self._mstg.g.ep.type.fa &
@@ -411,10 +411,11 @@ class MultiSSE(Step):
         new_starts = {}
         new_ends = defaultdict(lambda: None)
 
-        class Constraints(DFSVisitor):
-            def __init__(self, cp_map, cp_list):
+        class Constraints(BFSVisitor):
+            def __init__(self, cp_map, cp_list, paths=None):
                 self.cp_map = cp_map
                 self.cp_list = cp_list
+                self.paths = paths
 
             def discover_vertex(self, u):
                 if len(unbound) == 0:
@@ -424,16 +425,26 @@ class MultiSSE(Step):
                     self.cp_list[core] = u
                     unbound.remove(core)
 
+            def tree_edge(self, e):
+                if self.paths is not None:
+                    self.paths[e.target()] = int(e.source())
+
         cp_map = self._mstg.cross_point_map
-        dfs_search(GraphView(sync_graph, reversed=True),
+
+        rsync = GraphView(sync_graph, reversed=True)
+        paths = rsync.new_vertex_property('int64_t', val=-1)
+        bfs_search(rsync,
                    source=new_range.start,
-                   visitor=Constraints(cp_map, new_starts))
+                   visitor=Constraints(cp_map, new_starts, paths=paths))
+        used = self._get_used(sync_graph, new_starts, paths)
+
         if new_range.end:
-            dfs_search(sync_graph,
+            bfs_search(sync_graph,
                        source=new_range.end,
                        visitor=Constraints(cp_map, new_ends))
+
         return dict([(x, Range(start=new_starts[x], end=new_ends[x]))
-                     for x in cores])
+                     for x in cores]), used
 
     def _get_timed_states(self, metastate, entry_cp, exit_cp):
         mstg = self._mstg.g
@@ -480,10 +491,9 @@ class MultiSSE(Step):
             self._log.debug(f"Examine edge {exit_edge} with path {path}.")
             if len(cores) > 1:
                 new_cores = cores[1:]
-                new_cps = self._get_constrained_cps(
+                new_cps, _ = self._get_constrained_cps(
                     new_cores,
-                    Range(start=path[-1].source(), end=exit_edge.target()),
-                    cps)
+                    Range(start=path[-1].source(), end=exit_edge.target()))
                 others = self._build_product(cp, current_core, new_cores,
                                              new_cps, used_cores,
                                              paths + [path])
@@ -492,16 +502,31 @@ class MultiSSE(Step):
             states = self._get_timed_states(exit_edge.source(),
                                             path[-1].target(),
                                             exit_edge.target())
+            self._log.debug(f"Leads to timed states: {[int(x[0]) for x in states]}.")
             result += [(x[0], *x[1]) for x in product(states, others)]
         return result
 
-    def _find_timed_predecessor(self, states, dom_map):
-        blacklist = set()
-        for state in states:
-            dom = dom_map[state]
-            if dom in states:
-                blacklist.add(dom)
-        return states - blacklist
+    def _find_timed_predecessor(self, graph, cps, root):
+        def maybe_remove(s, k):
+            if k in s:
+                s.remove(k)
+
+        predecessors = set()
+        while cps:
+            cp = cps.pop()
+            remaining = set([*cps])
+            is_part_of_path = False
+            while remaining:
+                remain = remaining.pop()
+                vlist, _ = shortest_path(graph, cp, remain)
+                if vlist:
+                    is_part_of_path = True
+                    for elem in vlist[:-1]:
+                        maybe_remove(remaining, elem)
+                        maybe_remove(cps, elem)
+            if not is_part_of_path:
+                predecessors.add(cp)
+        return predecessors
 
     def _find_timed_states(self, cross_state, cp):
         mstg = self._mstg.g
@@ -519,24 +544,18 @@ class MultiSSE(Step):
 
         self._log.debug(
             f"Find pairing candidates for node {int(cross_state)} starting "
-            f"from {[int(x) for x in root_cps]}."
+            f"from cross points {[int(x) for x in root_cps]}."
         )
         for root in root_cps:
             self._log.debug(f"Evaluating first root cross point {int(root)}.")
             # find initial cross points for all needed cores
-            dom_map = dominator_tree(sync_graph, sync_graph.vertex(root))
-            cps = {}
-            used_cores = {}
-            for core in affected_cores:
-                start_cp, used = self._find_nearest_dominator(
-                    dom_map, core, cp)
-                cps[core] = Range(start=start_cp, end=None)
-                used_cores[core] = used | {core}
-
+            cps, used_cores = self._get_constrained_cps(affected_cores, Range(start=root, end=None))
             for states in self._build_product(cp, current_core, affected_cores,
                                               cps, used_cores, []):
                 timely_cps = self._find_timed_predecessor(
-                    set([cp] + [x[1] for x in states]), dom_map)
+                    sync_graph,
+                    set([cp] + [x[1] for x in states]), root)
+                self._log.debug(f"Found time predecessors {[int(x) for x in timely_cps]}.")
                 yield [x[0] for x in states], timely_cps
 
     def _create_cross_point(self, cross_state, timed_states, cp, timely_cps):
@@ -775,7 +794,8 @@ class MultiSSE(Step):
             # handled[cp] = True
             if reevaluate_ids:
                 self._log.debug(
-                    f"Node {int(cp)} is already evaluated but some new knowledge exists."
+                    f"Node {int(cp)} is already evaluated but some new "
+                    f"knowledge exists. Reevaluating CPUs {reevaluate_ids}."
                 )
                 st2sy = mstg.edge_type(MSTType.st2sy)
                 for cpu_id in reevaluate_ids:
