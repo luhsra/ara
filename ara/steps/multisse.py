@@ -247,7 +247,7 @@ class MultiSSE(Step):
             self._graph,
             self._graph.os,
             visitor=SSEVisitor(),
-            logger=self._log,
+            # logger=self._log,
         )
 
         mstg = self._mstg.g
@@ -358,16 +358,12 @@ class MultiSSE(Step):
             visited[cur] = True
             visited_entries[cur].append(path[-1])
 
-            # for nodes without out edges
-            if cur.out_degree(
-            ) == 0 and core_graph.vp.type[cur] == StateType.metastate:
-                self._log.debug(f"i_s_t: Yielding {int(cur)}")
-                yield FakeEdge(src=cur, tgt=None), path
-
             # iterate
+            edges = []
             for e in cur.out_edges():
                 # self._log.debug(f"i_s_t: Look at {e} (Type {str(MSTType(self._mstg.g.ep.type[e]))}).")
                 tgt = e.target()
+
                 # skip false paths
                 if tgt == cps[core].end:
                     self._log.debug(f"i_s_t: Skip {e}. We are not branching to ourself.")
@@ -382,20 +378,26 @@ class MultiSSE(Step):
                             self._log.debug(f"i_s_t: Skip {e}. No successor.")
                             continue
 
-                if core_graph.vp.type[cur] == StateType.metastate:
-                    self._log.debug(
-                        f"i_s_t: Yielding {int(cur)} (2)")
-                    yield e, path
-
                 # skip false edges of common paths of previous traversals
                 if cur in other_paths and other_paths[cur] != e:
                     self._log.debug(f"i_s_t: Skip {e}. Other graph.")
                     continue
 
+                if core_graph.vp.type[cur] == StateType.metastate:
+                    edges.append(e)
+
                 if core_graph.vp.type[cur] == StateType.entry_sync:
                     stack.append((tgt, path + [e]))
                 else:
                     stack.append((tgt, path))
+
+            if len(edges) == 0 and core_graph.vp.type[cur] == StateType.metastate:
+                edges.append(FakeEdge(src=cur, tgt=None))
+
+            # propagate back
+            for edge in edges:
+                self._log.debug(f"i_s_t: Yielding {e}.")
+                yield edge, path
 
     def _get_used(self, graph, starts, paths):
         cp_map = self._mstg.cross_point_map
@@ -537,7 +539,7 @@ class MultiSSE(Step):
                 predecessors.add(cp)
         return predecessors
 
-    def _find_timed_states(self, cross_state, cp):
+    def _find_timed_states(self, cross_state, cp, start_from=None):
         mstg = self._mstg.g
         affected_cores = self._mstg.cross_core_map[cross_state]
         current_core = mstg.vp.cpu_id[cross_state]
@@ -558,7 +560,10 @@ class MultiSSE(Step):
         for root in root_cps:
             self._log.debug(f"Evaluating first root cross point {int(root)}.")
             # find initial cross points for all needed cores
-            cps, used_cores = self._get_constrained_cps(affected_cores, Range(start=root, end=None))
+            cps, used_cores = self._get_constrained_cps(affected_cores, Range(start=cp, end=None))
+            if start_from is not None:
+                cps, _ = self._get_constrained_cps(affected_cores, Range(start=start_from, end=None))
+            self._log.debug(f"Starting from cross points {cps}.")
             for states in self._build_product(cp, current_core, affected_cores,
                                               cps, used_cores, []):
                 timely_cps = self._find_timed_predecessor(
@@ -694,7 +699,7 @@ class MultiSSE(Step):
         else:
             return single_check(cps)
 
-    def _do_full_pairing(self, cp, metastate):
+    def _do_full_pairing(self, cp, metastate, start_from=None):
         exits = []
 
         if not metastate.is_new:
@@ -706,8 +711,10 @@ class MultiSSE(Step):
             f"{[int(x) for x in metastate.cross_points]}."
         )
         for cross_state in metastate.cross_points:
+            if len(self._mstg.cross_core_map[cross_state]) > 1:
+                self._log.error("Bigger call")
             for timed_candidates, timely_cps in self._find_timed_states(
-                    cross_state, cp):
+                    cross_state, cp, start_from=start_from):
                 self._log.debug(
                     f"Evaluating cross point between {int(cross_state)} and "
                     f"{[int(x) for x in timed_candidates]}"
@@ -758,8 +765,7 @@ class MultiSSE(Step):
                                 "more pairing possibilities to the cross syscall "
                                 f"for CPUs {cores} (starting from {int(i_cp)})"
                             )
-                            exits.append((i_cp, cores))
-
+                            exits.append((i_cp, (other_cp, cores)))
         return exits
 
     def run(self):
@@ -803,10 +809,14 @@ class MultiSSE(Step):
             if self.dump.get():
                 self._dump_mstg(extra=f"round.{counter:03d}")
 
+            #if counter == 5:
+            #    self._fail("foo")
+
             # if handled[cp]:
             #     continue
             # handled[cp] = True
             if reevaluate_ids:
+                new_cp, reevaluate_ids = reevaluate_ids
                 self._log.debug(
                     f"Node {int(cp)} is already evaluated but some new "
                     f"knowledge exists. Reevaluating CPUs {reevaluate_ids}."
@@ -822,7 +832,8 @@ class MultiSSE(Step):
                                   new_entry=False,
                                   is_new=False,
                                   cross_points=[],
-                                  cpu_id=cpu_id))
+                                  cpu_id=cpu_id),
+                        start_from=new_cp)
                 continue
 
             # handle current cross point
@@ -873,15 +884,19 @@ class MultiSSE(Step):
                     stack += self._do_full_pairing(cp, metastate)
 
                 common_cps = self._find_common_crosspoints(metastates) - {cp}
+                good_cps = (len(common_cps) == 0)
                 for common_cp in common_cps:
                     if set(self._mstg.cross_point_map[common_cp]) == set(
                             metastates.keys()):
+                        good_common_cp = common_cp
                         self._log.debug(
-                            f"Metastate is not new. Find an equal common cp {int(common_cp)}."
+                            f"Metastate is not new. Find an equal common cp {int(good_common_cp)}."
                         )
                         self._link_neighbor_crosspoint(common_cp, cp)
-                    else:
-                        self._fail("Unequal common cp")
+                        good_cps = True
+
+                if not good_cps:
+                    self._fail("No equal common cp.")
 
                 if common_cps:
                     continue
