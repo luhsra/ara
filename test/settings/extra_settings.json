@@ -1,7 +1,6 @@
 {
 	"steps": [
-		"FakeTimings",
-		"SSE",
+		"LockElision",
 		"DumpCFG"
 	],
 
@@ -13,10 +12,6 @@
 	"SSE": {
 		"log_level": "debug",
 		"dump": true
-	},
-
-	"MarkLoopHead": {
-		"log_level": "debug"
 	},
 
 	"FakeTimings": {
