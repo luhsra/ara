@@ -360,11 +360,18 @@ class MSTGraph(graph_tool.Graph):
             return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.exit_sync)
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.entry_sync)
 
-    def edge_type(self, msttype):
-        """Return a GraphView with this special edge type filter."""
+    def edge_type(self, *msttypes):
+        """Return a GraphView so only the given edge types are allowed."""
         return graph_tool.GraphView(
             self,
-            efilt=(self.ep.type.fa == msttype)
+            efilt=(self.ep.type.fa & sum(msttypes))
+        )
+
+    def vertex_type(self, *statetypes):
+        """Return a GraphView so only the given vertex types are allowed."""
+        return graph_tool.GraphView(
+            self,
+            vfilt=(self.vp.type.fa & sum(statetypes))
         )
 
     def get_metastate(self, state):
@@ -376,6 +383,19 @@ class MSTGraph(graph_tool.Graph):
         """Return the entry_cp that belongs to an exit_cp."""
         fu = self.edge_type(MSTType.en2ex)
         return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
+
+    def get_syscall_name(self, state):
+        """Return the syscall name, if state belongs to one.
+
+        It return an empty string otherwise.
+        """
+        if self.vp.type[state] != StateType.state:
+            return ''
+        obj = self.vp.state[state]
+        abb = obj.cpus.one().abb
+        if abb is None:
+            return ''
+        return obj.cfg.get_syscall_name(obj.cpus.one().abb)
 
 
 class InstanceGraph(graph_tool.Graph):
