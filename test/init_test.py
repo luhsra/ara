@@ -5,6 +5,7 @@ import logging
 import sys
 import os
 
+from ara.os import get_os_model_by_name
 
 def fake_step_module():
     """Fake the step module into the correct package."""
@@ -58,7 +59,7 @@ def get_config(i_file):
 
 
 def init_test(steps=None, extra_config=None, logger_name=None,
-              extra_input=None):
+              extra_input=None, os_name: str = None):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
 
@@ -78,6 +79,9 @@ def init_test(steps=None, extra_config=None, logger_name=None,
                   arguments.  Expected is a [str: function]
                   The str becomes to a normal ARA config string, the function
                   gets sys.argv as argument and should return a valid value.
+    os_name:      name of the os model to run the test with. If your test is
+                  not sensitive to a specific os model just ignore this
+                  argument.
     """
     log_level = os.environ.get('ARA_LOGLEVEL', 'warn')
     logger = init_logging(level=log_level, root_name='ara.test')
@@ -86,6 +90,8 @@ def init_test(steps=None, extra_config=None, logger_name=None,
     if not extra_config:
         extra_config = {}
     g = Graph()
+    if os_name != None:
+        g.os = get_os_model_by_name(os_name)
 
     json_file = sys.argv[1]
     i_file = sys.argv[2]
