@@ -729,7 +729,7 @@ class MultiSSE(Step):
 
     def _do_full_pairing(self, cp, metastate, start_from=None):
         exits = []
-        reeval = []
+        reeval = set()
 
         if not metastate.is_new:
             metastate.cross_points = self._find_cross_states(
@@ -794,7 +794,7 @@ class MultiSSE(Step):
                                 "more pairing possibilities to the cross syscall "
                                 f"for CPUs {cores} (starting from {int(i_cp)})"
                             )
-                            reeval.append((i_cp, (other_cp, frozenset(cores))))
+                            reeval.add((i_cp, (other_cp, frozenset(cores))))
         return exits, reeval
 
     def run(self):
@@ -826,12 +826,16 @@ class MultiSSE(Step):
 
         # stack consisting of the current exit cross point
         stack = [(cross_point, None)]
-        reevaluates = []
+        reevaluates = set()
 
         # actual algorithm
         counter = 0
         while stack:
             cp, reevaluate_ids = stack.pop(0)
+            if (cp, reevaluate_ids) in reevaluates:
+                self._log.debug(f"Skip {int(cp)}. Is in reevaluates.")
+                continue
+
             self._log.debug(
                 f"Round {counter:3d}, handle cross point {int(cp)}. "
                 f"Stack with {len(stack)} state(s)")
@@ -848,8 +852,8 @@ class MultiSSE(Step):
             if reevaluate_ids:
                 new_cp, reevaluate_ids = reevaluate_ids
                 self._log.debug(
-                    f"Node {int(cp)} is already evaluated but some new "
-                    f"knowledge exists. Reevaluating CPUs {reevaluate_ids}.")
+                    f"Node {int(cp)} is already evaluated but some new know"
+                    f"ledge exists. Reevaluating CPUs {list(reevaluate_ids)}.")
                 st2sy = mstg.edge_type(MSTType.st2sy)
                 for cpu_id in reevaluate_ids:
                     sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
@@ -864,7 +868,7 @@ class MultiSSE(Step):
                                   cpu_id=cpu_id),
                         start_from=new_cp)
                     stack += to_stack
-                    reevaluates += reeval
+                    reevaluates |= reeval
                 continue
 
             # handle current cross point
@@ -899,7 +903,7 @@ class MultiSSE(Step):
                         "Metastate has a new entry. Do a full pairing.")
                     to_stack, reeval = self._do_full_pairing(cp, metastate)
                     stack += to_stack
-                    reevaluates += reeval
+                    reevaluates |= reeval
                     continue
 
                 others = set(metastates.keys()) - {cpu_id}
@@ -909,7 +913,7 @@ class MultiSSE(Step):
                     )
                     to_stack, reeval = self._do_full_pairing(cp, metastate)
                     stack += to_stack
-                    reevaluates += reeval
+                    reevaluates |= reeval
                     continue
 
                 if any([metastates[x].new_entry for x in others]):
@@ -918,7 +922,7 @@ class MultiSSE(Step):
                     )
                     to_stack, reeval = self._do_full_pairing(cp, metastate)
                     stack += to_stack
-                    reevaluates += reeval
+                    reevaluates |= reeval
 
                 common_cps = self._find_common_crosspoints(metastates) - {cp}
                 good_cps = False
@@ -942,12 +946,12 @@ class MultiSSE(Step):
                 )
                 to_stack, reeval = self._do_full_pairing(cp, metastate)
                 stack += to_stack
-                reevaluates += reeval
+                reevaluates |= reeval
 
             if not stack:
                 self._log.debug("Stack empty. Beginning with reevaluations")
                 stack = list(set(reevaluates))
-                reevaluates = []
+                reevaluates = set()
 
         self._log.info(f"Analysis needed {counter} iterations.")
 
