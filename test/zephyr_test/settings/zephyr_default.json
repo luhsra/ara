@@ -1,0 +1,25 @@
+{
+	"steps": [
+		"InteractionAnalysis",
+        "Printer"
+	],
+
+	"LLVMMap": {
+		"log_level": "info",
+		"dump": false
+	},
+    "CallGraph": {
+        "dump": false
+    },
+    "SysFuncts": {
+        "dump": false
+    },
+	"InteractionAnalysis": {
+		"dump": false
+	},
+    "Printer": {
+        "dot": "./dumps/instances.dot",
+        "name": "Instances",
+        "subgraph": "instances"
+    }
+}

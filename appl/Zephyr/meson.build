@@ -79,7 +79,7 @@ zephyr_root = join_paths(get_option('zephyr_dir'), 'zephyr')
 # run_command(): This does not create a top level target.
 # run_target(): Meson expects this to have no output.
 foreach app : zephyr_apps
-    zephyr_targets += custom_target(app,
+    target = custom_target(app,
         command: [py3_inst,
         join_paths(meson.current_source_dir(), 'compile_zephyr.py'), 
         app,
@@ -98,5 +98,7 @@ foreach app : zephyr_apps
         '--llvm_link=' + llvm_link.full_path()],
         output: app + '.ll',
         build_always_stale: true)
+    zephyr_targets += target
+    set_variable('zephyr_' + app, target)
 endforeach
 
