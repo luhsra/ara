@@ -402,6 +402,11 @@ class ZEPHYR(OSBase):
         connect_from_here(state, cpu_id, find_instance_node(state.instances, instance), call)
 
     @staticmethod
+    def add_kernel_comm(state: OSState, cpu_id: int, call: str):
+        """Adds an interaction (edge) with the given callname to the ZephyrKernel instance"""
+        connect_from_here(state, cpu_id, ZEPHYR.kernel, call)
+
+    @staticmethod
     def init(state):
         pass
 
@@ -816,42 +821,24 @@ class ZEPHYR(OSBase):
                         Arg("prio", hint=SigType.value)))
     def k_sched_time_slice_set(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
-        cfg = graph.cfg
 
-        ZEPHYR.add_comm(state, ZEPHYR.kernel, "k_sched_time_slice_set")
-        state.next_abbs = []
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
+        ZEPHYR.add_kernel_comm(state, cpu_id, "k_sched_time_slice_set")
         return state
 
     # void k_sched_lock(void)
     @syscall(categories={SyscallCategory.comm})
     def k_sched_lock(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
-        cfg = graph.cfg
 
-        ZEPHYR.add_comm(state, ZEPHYR.kernel, "k_sched_lock")
-        state.next_abbs = []
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
+        ZEPHYR.add_kernel_comm(state, cpu_id, "k_sched_lock")
         return state
 
     # void k_sched_unlock(void)
     @syscall(categories={SyscallCategory.comm})
     def k_sched_unlock(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
-        cfg = graph.cfg
 
-        ZEPHYR.add_comm(state, ZEPHYR.kernel, "k_sched_unlock")
-        state.next_abbs = []
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
+        ZEPHYR.add_kernel_comm(state, cpu_id, "k_sched_unlock")
         return state
 
     # void k_thread_custom_data_set(void *value)
@@ -1281,14 +1268,8 @@ class ZEPHYR(OSBase):
              signature=(Arg("size", hint=SigType.value),))
     def k_malloc(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
-        cfg = graph.cfg
 
-        ZEPHYR.add_comm(state, ZEPHYR.kernel, "k_malloc")
-        state.next_abbs = []
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
+        ZEPHYR.add_kernel_comm(state, cpu_id, "k_malloc")
         return state
 
     # void k_free(void *ptr)
@@ -1296,14 +1277,8 @@ class ZEPHYR(OSBase):
              signature=(Arg("mem", hint=SigType.symbol),))
     def k_free(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
-        cfg = graph.cfg
 
-        ZEPHYR.add_comm(state, ZEPHYR.kernel, "k_free")
-        state.next_abbs = []
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
+        ZEPHYR.add_kernel_comm(state, cpu_id, "k_free")
         return state
 
     # void *k_calloc(size_t nmemb, size_t size)
@@ -1312,14 +1287,8 @@ class ZEPHYR(OSBase):
                         Arg("element_size", hint=SigType.value)))
     def k_calloc(graph, state, cpu_id, args, va):
         state = state.copy()
-        cpu = state.cpus[cpu_id]
-        abb = cpu.abb
-        cfg = graph.cfg
 
-        ZEPHYR.add_comm(state, ZEPHYR.kernel, "k_calloc")
-        state.next_abbs = []
-        ZEPHYR.add_normal_cfg(cfg, abb, state)
-
+        ZEPHYR.add_kernel_comm(state, cpu_id, "k_calloc")
         return state
 
     # int k_msgq_cleanup(struct k_msgq *msgq)
