@@ -26,18 +26,15 @@ TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T00) {
 	ActivateTask(T10);
-	while(1);
 	TerminateTask();
 }
 
 TASK(T20) {
 	ActivateTask(T11);
-	while(1);
 	TerminateTask();
 }
 
 TASK(T10) {
-	while(1);
 	TerminateTask();
 }
 
