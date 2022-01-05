@@ -628,7 +628,7 @@ class AUTOSAR(OSBase):
                 cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[cpu.abb])
             else:
                 cpu.abb = None
-                cpu.call_path = None
+                cpu.call_path = CallPath()
                 cpu.control_instance = None
                 cpu.exec_state = ExecState.idle
 

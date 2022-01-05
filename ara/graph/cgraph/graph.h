@@ -28,9 +28,11 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<int64_t>::type llvm_link;
 		typename graph_tool::vprop_map_t<int64_t>::type bcet;
 		typename graph_tool::vprop_map_t<int64_t>::type wcet;
+		typename graph_tool::vprop_map_t<int64_t>::type loop_bound;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit;
 		typename graph_tool::vprop_map_t<unsigned char>::type is_exit_loop_head;
 		typename graph_tool::vprop_map_t<unsigned char>::type part_of_loop;
+		typename graph_tool::vprop_map_t<unsigned char>::type loop_head;
 		typename graph_tool::vprop_map_t<std::vector<std::string>>::type files;
 		typename graph_tool::vprop_map_t<std::vector<int32_t>>::type lines;
 		typename graph_tool::vprop_map_t<unsigned char>::type implemented;

@@ -69,9 +69,11 @@ class CFG(graph_tool.Graph):
         self.vertex_properties["llvm_link"] = self.new_vp("int64_t") # BB/Function
         self.vertex_properties["bcet"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["wcet"] = self.new_vp("int64_t") # ABB
+        self.vertex_properties["loop_bound"] = self.new_vp("int64_t") # ABB
         self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
         self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB
+        self.vertex_properties["loop_head"] = self.new_vp("bool") # ABB
         self.vertex_properties["files"] = self.new_vp("vector<string>") # BB/call ABB
         self.vertex_properties["lines"] = self.new_vp("vector<int32_t>") # BB/call ABB
         self.vertex_properties["implemented"] = self.new_vp("bool") # Function
@@ -206,10 +208,26 @@ class CFG(graph_tool.Graph):
         assert len(syscall_func) == 1
         return self.vp.name[syscall_func[0]]
 
-    def _reachable_nodes(self, func, callgraph, node_level):
+    def _reachable_nodes(self, func, callgraph, node_level,
+                         only_system_relevant=True):
+        """Return the reachable nodes starting from func.
+
+        It uses the callgraph for searching. The node_level specifies what
+        level should be returned. only_system_relevant restricts the returned
+        nodes to system relevant _and_ the entry function.
+        """
         cg_func = callgraph.vertex(self.vp.call_graph_link[func])
         oc = label_out_component(callgraph, cg_func)
         reachable_cg = graph_tool.GraphView(callgraph, vfilt=oc)
+        if only_system_relevant:
+            e = reachable_cg.copy_property(
+                reachable_cg.vp.syscall_category_every
+            )
+            e[cg_func] = True
+            reachable_cg = graph_tool.GraphView(
+                reachable_cg,
+                vfilt=e
+            )
 
         for sub_func in reachable_cg.vertices():
             cfg_func = reachable_cg.vp.function[sub_func]
@@ -220,17 +238,20 @@ class CFG(graph_tool.Graph):
             }[node_level]:
                 yield entity
 
-    def reachable_functs(self, func, callgraph):
+    def reachable_functs(self, func, callgraph, only_system_relevant=True):
         """Generator about all reachable Functions starting at func."""
-        return self._reachable_nodes(func, callgraph, NodeLevel.function)
+        return self._reachable_nodes(func, callgraph, NodeLevel.function,
+                                     only_system_relevant=only_system_relevant)
 
-    def reachable_abbs(self, func, callgraph):
+    def reachable_abbs(self, func, callgraph, only_system_relevant=True):
         """Generator about all reachable ABBs starting at func."""
-        return self._reachable_nodes(func, callgraph, NodeLevel.abb)
+        return self._reachable_nodes(func, callgraph, NodeLevel.abb,
+                                     only_system_relevant=only_system_relevant)
 
-    def reachable_bbs(self, func, callgraph):
+    def reachable_bbs(self, func, callgraph, only_system_relevant=True):
         """Generator about all reachable BBs starting at func."""
-        return self._reachable_nodes(func, callgraph, NodeLevel.bb)
+        return self._reachable_nodes(func, callgraph, NodeLevel.bb,
+                                     only_system_relevant=only_system_relevant)
 
     def get_call_targets(self, abb, func=True):
         """Generator about all call targets for a given call abb.
@@ -274,6 +295,7 @@ class CFGView(graph_tool.GraphView):
 
     def get_syscall_name(self, *args, **kwargs):
         return self.base.get_syscall_name(*args, **kwargs)
+
 
 class Callgraph(graph_tool.Graph):
     """ TODO comment on functionality
@@ -324,8 +346,8 @@ class MSTGraph(graph_tool.Graph):
         self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
-        self.edge_properties["bcet"] = self.new_ep("int64_t")
-        self.edge_properties["wcet"] = self.new_ep("int64_t")
+        self.edge_properties["bcet"] = self.new_ep("int64_t", val=-1)
+        self.edge_properties["wcet"] = self.new_ep("int64_t", val=-1)
 
     def get_metastates(self):
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)

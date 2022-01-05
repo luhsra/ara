@@ -12,6 +12,7 @@ def provide_steps():
     from .dummy import Dummy
     from .dump_cfg import DumpCFG
     from .dump_instances import DumpInstances
+    from .fake_timings import FakeTimings
     from .generator import Generator
     from .icfg import ICFG
     from .load_oil import LoadOIL
@@ -22,6 +23,7 @@ def provide_steps():
     from .reduce_sstg import ReduceSSTG
     from .register_task_entry import RegisterTaskEntry
     from .sia import SIA, InteractionAnalysis
+    from .mark_loop_head import MarkLoopHead
     from .multisse import MultiSSE
     from .sse import SSE
     from .sstg_stats import SSTGStats
@@ -42,12 +44,14 @@ def provide_steps():
     yield Dummy
     yield DumpCFG
     yield DumpInstances
+    yield FakeTimings
     yield Generator
     yield ICFG
     yield InteractionAnalysis
     yield LoadOIL
     yield LockElision
     yield ManualCorrections
+    yield MarkLoopHead
     yield MultiSSE
     yield Printer
     yield RecursiveFunctions

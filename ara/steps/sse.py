@@ -43,6 +43,8 @@ class SSE(Step):
         sstg.graph_properties["start"] = sstg.new_gp("long")
         sstg.vertex_properties["state"] = sstg.new_vp("object")
         sstg.edge_properties["syscall"] = sstg.new_ep("object")
+        sstg.edge_properties["bcet"] = sstg.new_ep("int64_t", val=-1)
+        sstg.edge_properties["wcet"] = sstg.new_ep("int64_t", val=-1)
 
         os_state = self._graph.os.get_initial_state(
             self._graph.cfg, self._graph.instances

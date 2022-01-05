@@ -71,11 +71,13 @@ def sstg_to_dot(sstg, label="SSTG"):
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
     for edge in sstg.edges():
+        label = f"{sstg.ep.bcet[edge]} - {sstg.ep.wcet[edge]}"
         dot_graph.add_edge(
             pydot.Edge(
                 str(edge.source()),
                 str(edge.target()),
                 color="black",
+                label=label,
             )
         )
 
@@ -271,10 +273,12 @@ class Printer(Step):
                 nodes = cfg.get_abbs(function)
 
             for block in nodes:
+                tooltip = str(int(block))
                 if cfg.vp.type[block] == ABBType.not_implemented:
                     assert not cfg.vp.implemented[function]
                     dot_abb = pydot.Node(str(hash(block)),
                                          label="",
+                                         tooltip=tooltip,
                                          shape="box")
                     dot_nodes.add(str(hash(block)))
                     dot_func.set('style', 'filled')
@@ -286,10 +290,13 @@ class Printer(Step):
                     dot_abb = pydot.Node(
                         str(hash(block)),
                         label=cfg.vp.name[block],
+                        tooltip=tooltip,
                         shape=self.SHAPES[cfg.vp.type[block]][0],
                         color=color
                     )
-                    if cfg.vp.part_of_loop[block]:
+                    if cfg.vp.loop_head[block]:
+                        dot_abb.set('style', 'dotted')
+                    elif cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
                     dot_nodes.add(str(hash(block)))
                 dot_func.add_node(dot_abb)
