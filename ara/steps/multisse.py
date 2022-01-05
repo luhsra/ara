@@ -367,7 +367,8 @@ class MultiSSE(Step):
             # iterate
             edges = []
             for e in cur.out_edges():
-                log(f"i_s_t: Look at {e} (Type {str(MSTType(self._mstg.g.ep.type[e]))}).", skip=True)
+                log(f"i_s_t: Look at {e} (Type {str(MSTType(self._mstg.g.ep.type[e]))}).",
+                    skip=True)
                 tgt = e.target()
 
                 # skip false paths
@@ -397,7 +398,8 @@ class MultiSSE(Step):
                 else:
                     stack.append((tgt, path))
 
-            if len(edges) == 0 and core_graph.vp.type[cur] == StateType.metastate:
+            if (len(edges) == 0
+                    and core_graph.vp.type[cur] == StateType.metastate):
                 edges.append(FakeEdge(src=cur, tgt=None))
 
             # propagate back
@@ -567,21 +569,21 @@ class MultiSSE(Step):
 
         self._log.debug(
             f"Find pairing candidates for node {int(cross_state)} starting "
-            f"from cross points {[int(x) for x in root_cps]}."
-        )
+            f"from cross points {[int(x) for x in root_cps]}.")
         combinations = set()
         for root in root_cps:
             self._log.debug(f"Evaluating first root cross point {int(root)}.")
             # find initial cross points for all needed cores
-            cps, used_cores = self._get_constrained_cps(affected_cores, Range(start=cp, end=None))
+            cps, used_cores = self._get_constrained_cps(
+                affected_cores, Range(start=cp, end=None))
             if start_from is not None:
-                cps, _ = self._get_constrained_cps(affected_cores, Range(start=start_from, end=None))
+                cps, _ = self._get_constrained_cps(
+                    affected_cores, Range(start=start_from, end=None))
             self._log.debug(f"Starting from cross points {cps}.")
             for states in self._build_product(cp, current_core, affected_cores,
                                               cps, used_cores, []):
                 timely_cps = self._find_timed_predecessor(
-                    sync_graph,
-                    frozenset([cp] + [x[1] for x in states]))
+                    sync_graph, frozenset([cp] + [x[1] for x in states]))
                 # self._log.debug(f"Found time predecessors {[int(x) for x in timely_cps]}.")
                 combinations.add((tuple([x[0] for x in states]), timely_cps))
         # for a, b in combinations:
@@ -599,10 +601,14 @@ class MultiSSE(Step):
 
         syncs = mstg.edge_type(MSTType.sync_neighbor)
         for old_cross in chain([cp], list(syncs.vertex(cp).all_neighbors())):
+            self._log.debug(
+                f"Add sy2sy edge between {int(old_cross)} and {int(new_cp)}.")
             e = mstg.add_edge(old_cross, new_cp)
             mstg.ep.type[e] = MSTType.sy2sy
 
         for timely_cp in timely_cps:
+            self._log.debug(
+                f"Add time edge between {int(timely_cp)} and {int(new_cp)}.")
             e = mstg.add_edge(timely_cp, new_cp)
             mstg.ep.type[e] = MSTType.follow_sync
 
@@ -698,10 +704,16 @@ class MultiSSE(Step):
         # sync edges
         sy2sy = mstg.edge_type(MSTType.sy2sy)
         for v in list(sy2sy.vertex(common_cp).out_neighbors()):
-            new_e = mstg.edge(mstg.vertex(cp),
-                              mstg.vertex(v),
-                              add_missing=True)
+            new_e = sy2sy.edge(mstg.vertex(cp),
+                               mstg.vertex(v),
+                               add_missing=True)
             mstg.ep.type[new_e] = MSTType.sy2sy
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
+        for v in list(follow_sync.vertex(common_cp).out_neighbors()):
+            new_e = follow_sync.edge(mstg.vertex(cp),
+                                     mstg.vertex(v),
+                                     add_missing=True)
+            mstg.ep.type[new_e] = MSTType.follow_sync
 
     def _get_existing_cross_point(self, cross_state, timed_candidates):
         st2sy = self._mstg.g.edge_type(MSTType.st2sy)
@@ -723,17 +735,14 @@ class MultiSSE(Step):
             metastate.cross_points = self._find_cross_states(
                 metastate.state, metastate.entry)
 
-        self._log.debug(
-            "Search for candidates for the cross syscalls: "
-            f"{[int(x) for x in metastate.cross_points]}."
-        )
+        self._log.debug("Search for candidates for the cross syscalls: "
+                        f"{[int(x) for x in metastate.cross_points]}.")
         for cross_state in metastate.cross_points:
             for timed_candidates, timely_cps in self._find_timed_states(
                     cross_state, cp, start_from=start_from):
                 self._log.debug(
                     f"Evaluating cross point between {int(cross_state)} and "
-                    f"{[int(x) for x in timed_candidates]}"
-                )
+                    f"{[int(x) for x in timed_candidates]}")
                 other_cp = self._get_existing_cross_point(
                     cross_state, timed_candidates)
                 modified = False
@@ -775,8 +784,7 @@ class MultiSSE(Step):
                     unready = current_cpus - other_cpus
                     if unready:
                         new_cps, _ = self._get_constrained_cps(
-                            unready,
-                            Range(start=other_cp, end=None))
+                            unready, Range(start=other_cp, end=None))
                         on_stack = defaultdict(list)
                         for core, ran in new_cps.items():
                             on_stack[ran.start].append(core)
@@ -841,8 +849,7 @@ class MultiSSE(Step):
                 new_cp, reevaluate_ids = reevaluate_ids
                 self._log.debug(
                     f"Node {int(cp)} is already evaluated but some new "
-                    f"knowledge exists. Reevaluating CPUs {reevaluate_ids}."
-                )
+                    f"knowledge exists. Reevaluating CPUs {reevaluate_ids}.")
                 st2sy = mstg.edge_type(MSTType.st2sy)
                 for cpu_id in reevaluate_ids:
                     sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
@@ -946,7 +953,9 @@ class MultiSSE(Step):
 
         self._graph.mstg = mstg
 
-        self._log.debug(f"Cache of find_timed_predecessor: {self._find_timed_predecessor.cache_info()}")
+        self._log.debug(
+            f"Cache of find_timed_predecessor: {self._find_timed_predecessor.cache_info()}"
+        )
 
         if self.dump.get():
             self._step_manager.chain_step({
