@@ -1,7 +1,9 @@
 import os.path
 import typing
 import dataclasses
+import html
 import pyllco
+from abc import ABC, abstractmethod
 
 from typing import Tuple, Set
 
@@ -13,6 +15,41 @@ from .os_base import ExecState
 # from ara.util import get_logger
 # logger = get_logger("OS_UTIL")
 
+class AutoDotInstance(ABC):
+    """This class auto implements as_dot() and get_maximal_id().
+    
+    Instances that inherit from this class must implement wanted_attrs() and dot_appearance() to describe the dot printing."""
+    @property
+    @abstractmethod
+    def wanted_attrs(self) -> list:     # list[str]
+        """Return all attributes as strings that are relevent to be printed as dot.
+
+        This attribute will influence as_dot() and get_maximal_id().
+        """
+
+    @property
+    @abstractmethod
+    def dot_appearance(self) -> dict:   # dict[str, str]
+        """Return dot rendering properties.
+
+        Make sure to provide the following properties:
+            "shape": e.g. "box"
+            "fillcolor": e.g. "#6fbf87"
+            "style": e.g. "filled"
+        """
+
+    def as_dot(self):
+        attrs = [(x, str(getattr(self, x))) for x in self.wanted_attrs]
+        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
+                                    for k, v in attrs])
+
+        self.dot_appearance["sublabel"] = sublabel
+        return self.dot_appearance
+
+    def get_maximal_id(self):
+        max_id_components = list(map(lambda obj_name: getattr(self, obj_name), self.wanted_attrs))
+        max_id_components.append(self.__class__.__name__)
+        return '.'.join(map(str, max_id_components))
 
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
