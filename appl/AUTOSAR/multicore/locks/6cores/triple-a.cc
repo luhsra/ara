@@ -24,7 +24,7 @@
 #endif //TRACE_JSON
 
 #if LOCKS_JSON
-{"S1": 0, "S2": 0}
+{"S1": 0, "S2": 0, "S3": 0}
 #endif //LOCKS_JSON
 
 

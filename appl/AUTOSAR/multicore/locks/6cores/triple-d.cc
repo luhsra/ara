@@ -99,7 +99,7 @@ TASK(T51) {
 
 
 TASK(T02) {
-	ActivateTask(T12)
+	ActivateTask(T12);
 	GetSpinlock(S2);
 	ReleaseSpinlock(S2);
 	TerminateTask();

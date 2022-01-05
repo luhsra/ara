@@ -126,6 +126,10 @@ if get_option('enable_step_tests')
     )
 
     foreach elem : autosar_targets
+      if elem['core'] != 'singlecore'
+        continue
+      endif
+
       test('sse_' + elem['full_name'],
           py3_inst,
           args: [files('sse.py'), elem['sys_test'], elem['ll'], elem['oil']],
