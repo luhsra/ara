@@ -397,6 +397,16 @@ class MSTGraph(graph_tool.Graph):
             return ''
         return obj.cfg.get_syscall_name(obj.cpus.one().abb)
 
+    def get_exec_state(self, state):
+        """Return the execution state of the given state.
+
+        Return None, if false type of input state.
+        """
+        if self.vp.type[state] != StateType.state:
+            return None
+        obj = self.vp.state[state]
+        return obj.cpus.one().exec_state
+
 
 class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions

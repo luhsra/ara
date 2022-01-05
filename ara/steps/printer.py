@@ -157,7 +157,9 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         sync_srcs = filt_g.vertex(ms).in_neighbors()
 
         attrs = {"color": "black"}
-        if syscall_name:
+        if mstg.get_exec_state(src) == ExecState.waiting:
+            attrs["color"] = "darkblue"
+        elif syscall_name:
             attrs["label"] = syscall_name
             attrs["color"] = "darkred"
 
