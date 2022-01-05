@@ -196,7 +196,7 @@ if get_option('enable_toplevel_tests')
        args: [ara_py, zephyr_targets[20], # use zephyr_targets['static_threads']
               #'--dump',
               '--log-level', 'debug',
-              '--os', 'Zephyr',
+              '--os', 'ZEPHYR',
               '--step-settings', zephyr_settings,
               #'--entry-point', '""'
               ],

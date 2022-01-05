@@ -10,7 +10,7 @@ import sys
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
-from .os import autosar, freertos, zephyr
+from .os import get_os_model_names, get_os_model_by_name, zephyr
 
 from .steplisting import print_avail_steps
 
@@ -67,11 +67,15 @@ def main():
                         action='store_true')
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
+
+    os_model_names = get_os_model_names()
+    os_model_names.append("auto")
     parser.add_argument('--os', help="the os of the given application",
-                        choices=['auto', 'Autosar', 'FreeRTOS', 'Zephyr'],
-                        default='auto')
+                        choices=os_model_names, default="auto")
 
     args = parser.parse_args()
+
+    del os_model_names
 
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
@@ -82,12 +86,9 @@ def main():
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
 
-    if args.os == "Autosar":
-        g.os = autosar.AUTOSAR
-    elif args.os == "FreeRTOS":
-        g.os = freertos.FreeRTOS
-    elif args.os == "Zephyr":
-        g.os = zephyr.ZEPHYR
+    if args.os and args.os != "auto":
+        g.os = get_os_model_by_name(args.os)
+    if g.os == zephyr.ZEPHYR:
         if args.entry_point == "main":
             args.entry_point = "" # Let Zephyr model handle the entry point.
 
