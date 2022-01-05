@@ -1,9 +1,10 @@
 """Container for Printer."""
-from ara.graph import ABBType, CFType, CFGView, MSTType, StateType
+from ara.graph import ABBType, CFType, CFGView, MSTType, StateType, single_check
 from ara.os.os_base import ExecState
 
 from .option import Option, String, Choice, Bool
 from .step import Step
+from ara.util import get_logger
 
 from graph_tool import GraphView
 
@@ -80,6 +81,105 @@ def sstg_to_dot(sstg, label="SSTG"):
                 label=label,
             )
         )
+
+    return dot_graph
+
+
+logger = get_logger("Printer (extern)")
+
+
+def reduced_mstg_to_dot(mstg, label="MSTG"):
+    def _to_str(v):
+        return str(int(v))
+
+    def _draw_sync(sync, edges):
+        cols = []
+        for e in edges:
+            if mstg.ep.type[e] == MSTType.st2sy:
+                cpu_id = mstg.ep.cpu_id[e]
+                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+        if cols:
+            label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                    '<TR>{}</TR>' \
+                    '</TABLE>>'.format(''.join(sorted(cols)))
+            shape = "plaintext"
+        else:
+            label = "undiscovered"
+            shape = "box"
+        return pydot.Node(_to_str(sync), label=label,
+                          shape=shape,
+                          tooltip=_to_str(sync))
+
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+    # draw initial sync node
+    for init in mstg.get_sync_points(exit=True).vertices():
+        init = mstg.vertex(init)
+        if init.in_degree() == 0:
+            dot_graph.add_node(_draw_sync(init, init.out_edges()))
+
+    en2ex = mstg.edge_type(MSTType.en2ex)
+
+    for sync_point in mstg.get_sync_points(exit=False).vertices():
+        sync_point = mstg.vertex(sync_point)
+        if en2ex.vertex(sync_point).out_degree() > 1:
+            sync_m = pydot.Cluster("Metasync" + _to_str(sync_point), label="")
+            dot_graph.add_subgraph(sync_m)
+            # draw entry_sync
+            sync_m.add_node(_draw_sync(sync_point, sync_point.in_edges()))
+            # draw exit_sync
+            for follow in sync_point.out_neighbors():
+                sync_m.add_node(_draw_sync(follow, follow.out_edges()))
+        else:
+            # draw only the exit_sync
+            exit_s = single_check(sync_point.out_neighbors())
+            dot_graph.add_node(_draw_sync(exit_s, exit_s.out_edges()))
+
+    flow = mstg.vertex_type(StateType.state, StateType.entry_sync)
+    flow = GraphView(flow, efilt=(flow.ep.type.fa == MSTType.st2sy))
+    m2sy = mstg.edge_type(MSTType.m2sy)
+    follow_sync = mstg.edge_type(MSTType.follow_sync)
+
+    def _sync_str(v, cpu_id):
+        return f"{_to_str(v)}:c{cpu_id}"
+
+    for edge in flow.edges():
+        src = edge.source()
+        tgt = edge.target()
+        assert flow.ep.type[edge] == MSTType.st2sy, "wrong edge"
+        assert flow.vp.type[tgt] == StateType.entry_sync, "tgt not sync"
+        assert flow.vp.type[src] == StateType.state, "src not state"
+
+        syscall_name = mstg.get_syscall_name(src)
+        cpu_id = flow.ep.cpu_id[edge]
+
+        ms = mstg.get_metastate(src)
+        filt_g = GraphView(m2sy, efilt=m2sy.ep.cpu_id.fa == cpu_id)
+        sync_srcs = filt_g.vertex(ms).in_neighbors()
+
+        attrs = {"color": "black"}
+        if syscall_name:
+            attrs["label"] = syscall_name
+            attrs["color"] = "darkred"
+
+        f_tgt = en2ex.vertex(tgt)
+        if f_tgt.out_degree() == 1:
+            n_tgt = single_check(f_tgt.out_neighbors())
+        else:
+            n_tgt = tgt
+
+        dot_tgt = _sync_str(n_tgt, cpu_id)
+
+        for sync_src in sync_srcs:
+            if sync_src not in set(follow_sync.vertex(tgt).in_neighbors()):
+                continue
+            dot_src = _sync_str(sync_src, cpu_id)
+            dot_graph.add_edge(pydot.Edge(dot_src, dot_tgt, **attrs))
+
+    for edge in en2ex.edges():
+        src = edge.source()
+        if (src.out_degree() > 1):
+            dot_graph.add_edge(pydot.Edge(_to_str(src),
+                                          _to_str(edge.target())))
 
     return dot_graph
 
@@ -192,7 +292,8 @@ class Printer(Step):
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("bbs", "abbs", "instances", "callgraph",
-                                "multistates", "sstg", "reduced_sstg", "mstg"))
+                                "multistates", "sstg", "reduced_sstg", "mstg",
+                                "reduced_mstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
@@ -402,6 +503,11 @@ class Printer(Step):
         dot_graph = mstg_to_dot(self._graph.mstg, name)
         self._write_dot(dot_graph)
 
+    def print_reduced_mstg(self):
+        name = self._print_init()
+        dot_graph = reduced_mstg_to_dot(self._graph.mstg, name)
+        self._write_dot(dot_graph)
+
     def print_callgraph(self):
         name = self._print_init()
 
@@ -602,6 +708,8 @@ class Printer(Step):
             self.print_mstg()
         if subgraph == 'reduced_sstg':
             self.print_sstg(reduced=True)
+        if subgraph == 'reduced_mstg':
+            self.print_reduced_mstg()
         if subgraph == 'multistates':
             self.print_multistates()
         if subgraph == 'callgraph':

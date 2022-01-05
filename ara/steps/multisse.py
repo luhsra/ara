@@ -955,3 +955,9 @@ class MultiSSE(Step):
                 "graph_name": "MSTG",
                 "subgraph": "mstg",
             })
+            self._step_manager.chain_step({
+                "name": "Printer",
+                "dot": self.dump_prefix.get() + "mstg.reduced.dot",
+                "graph_name": "Reduced MSTG",
+                "subgraph": "reduced_mstg",
+            })
