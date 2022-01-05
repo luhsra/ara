@@ -1,4 +1,4 @@
-from .os_util import find_instance_node, syscall, Arg, find_return_value, set_next_abb, connect_from_here, add_self_edge
+from .os_util import find_instance_node, syscall, Arg, set_next_abb, connect_from_here, add_self_edge, AutoDotInstance
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG
@@ -13,7 +13,7 @@ ValueAnalyzer = get_native_component("ValueAnalyzer")
 ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
 
 @dataclass(eq=False)
-class ZephyrInstance:
+class ZephyrInstance(AutoDotInstance):
     def attribs_to_dot(self, attribs: [str]):
         return "<br/>".join([f"<i>{a}</i>: {html.escape(str(getattr(self, a)))}" for a in attribs])
 
@@ -40,9 +40,13 @@ class ZephyrKernel(ZephyrInstance):
     # Always none, but required
     symbol: object = None
 
-    def as_dot(self):
-        attribs = ["heap_size"]
-        return self.instance_dot(attribs, "#e1d5e7", "#9673a6")
+    wanted_attrs = ["heap_size"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#e1d5e7",
+        "color": "#9673a6",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("ZephyrKernel", self.heap_size, self.symbol))
@@ -67,13 +71,13 @@ class Thread(ZephyrInstance, ControlInstance):
     # Scheduling delay, or K_NO_WAIT (for no delay).
     delay: int
 
-    def as_dot(self):
-        attribs = ["entry_name", "stack_size", "priority", "options", "delay"]
-        return self.instance_dot(attribs, "#dae8fc", "#6c8ebf")
-
-    def __hash__(self):
-        return hash(("Thread", self.function, self.artificial, self.symbol, self.stack,
-                     self.stack_size, self.entry_name, self.entry_params, self.priority, self.options, self.delay))
+    wanted_attrs = ["entry_name", "stack_size", "priority", "options", "delay"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#dae8fc",
+        "color": "#6c8ebf",
+        "style": "filled"
+    }
 
 # Interrupt service routine. Like every other kernel resource, these can be created
 # dynamically via irq_connect_dynamic() (which is not a syscall) or statically by 
@@ -97,9 +101,13 @@ class ISR(ZephyrInstance, ControlInstance):
     # Always none but required for all zephyr instances
     symbol: object = None
 
-    def as_dot(self):
-        attribs = ["irq_number", "priority", "entry_name", "flags"]
-        return self.instance_dot(attribs, "#dae8fc", "#6c8ebf")
+    wanted_attrs = ["irq_number", "priority", "entry_name", "flags"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#dae8fc",
+        "color": "#6c8ebf",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("ISR", self.function, self.artificial, self.irq_number, self.priority,
@@ -117,10 +125,14 @@ class Semaphore(ZephyrInstance):
     # The maximum permitted count
     limit: int
 
-    def as_dot(self):
-        attribs = ["count", "limit"]
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
-    
+    wanted_attrs = ["count", "limit"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
+
     def __hash__(self):
         return hash((self.__class__.__name__, self.symbol, self.count, self.limit))
 
@@ -139,9 +151,13 @@ class Mutex(ZephyrInstance):
     #The k_mutex object
     symbol: object
 
-    def as_dot(self):
-        attribs = []
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    wanted_attrs = []
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("Mutex", self.symbol))
@@ -158,9 +174,13 @@ class Queue(ZephyrInstance):
     # The k_queue object
     symbol: object
 
-    def as_dot(self):
-        attribs = []
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    wanted_attrs = []
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("Queue", self.symbol))
@@ -178,9 +198,13 @@ class Stack(ZephyrInstance):
     # The max number of entries that this stack can hold
     max_entries: int
 
-    def as_dot(self):
-        attribs = ["max_entries"]
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    wanted_attrs = ["max_entries"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("Stack", self.symbol, self.buf, self.max_entries))
@@ -194,9 +218,13 @@ class Pipe(ZephyrInstance):
     # The size of the backing ring buffer in bytes
     size: int
 
-    def as_dot(self):
-        attribs = ["size"]
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    wanted_attrs = ["size"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("Pipe", self.symbol, self.size))
@@ -210,9 +238,13 @@ class Heap(ZephyrInstance):
     # The max size
     limit: int
 
-    def as_dot(self):
-        attribs = ["limit"]
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    wanted_attrs = ["limit"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("Heap", self.symbol, self.limit))
@@ -226,9 +258,13 @@ class MSGQ(ZephyrInstance):
     # This max number of messages that fit into the buffer
     max_msgs: int
 
-    def as_dot(self):
-        attribs = ["msg_size", "max_msgs"]
-        return self.instance_dot(attribs, "#f8cecc", "#b85450")
+    wanted_attrs = ["msg_size", "max_msgs"]
+    dot_appearance = {
+        "shape": "box",
+        "fillcolor": "#f8cecc",
+        "color": "#b85450",
+        "style": "filled"
+    }
 
     def __hash__(self):
         return hash(("MSGQ", self.symbol, self.msg_size, self.max_msgs))
