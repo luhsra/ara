@@ -896,9 +896,8 @@ class MultiSSE(Step):
                         good_cps = True
 
                 if not good_cps:
-                    self._fail("No equal common cp.")
-
-                if common_cps:
+                    self._log.warn("No equal common cp.")
+                else:
                     continue
 
                 self._log.debug(
