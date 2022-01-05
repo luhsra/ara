@@ -262,7 +262,7 @@ def mstg_to_dot(mstg, label="MSTG"):
         else:
             if flow.ep.type[edge] == MSTType.sy2sy:
                 attrs = {"color": "darkred",
-                         "style": "dotted"}
+                         "style": "dashed"}
             if flow.ep.type[edge] == MSTType.follow_sync:
                 attrs = {"color": "darkgreen",
                          "style": "dotted"}
