@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
-if __name__ == '__main__':
-    __package__ = 'test.posix_test'
-
-from ..init_test import init_test, fail_if
-from ara.os.posix.posix import POSIX
-from ara.os.posix.posix_utils import Unknown, NotSet, Likely
+from init_test import init_test, fail_if
+from ara.os.os_util import UnknownArgument, DefaultArgument, LikelyArgument
 import json
 import os
 import sys
@@ -13,17 +9,18 @@ import sys
 def json_instance_graph(instances):
     """Instance Graph -> JSON Instance Graph
     
-    This graph creation only works with POSIX instances.
+    Make sure that all instances have wanted_attrs (arguments of interest) field.
+    It is recommended to use instances of type AutoDotInstance (see os/os_util.py).
     """
     dump = []
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
 
     # Instances
-    for instance in instances.vertices():
+    for instance_v in instances.vertices():
         i_dump = {}
         for name, prop in instances.vp.items():
-            val = prop[instance]
+            val = prop[instance_v]
             if name == 'file':
                 if not val == 'N/A' and not val == '' and not val == ' ': 
                     val = os.path.relpath(val, start=script_dir)
@@ -39,17 +36,18 @@ def json_instance_graph(instances):
                 val = "<python_object>"
             i_dump[name] = val
         i_dump["type"] = "instance"
-        posix_instance = instances.vp.obj[instance]
+        instance = instances.vp.obj[instance_v]
         # Add all other instance specific attributes.
-        for attr in sorted(posix_instance.wanted_attrs):
-            val = getattr(posix_instance, attr)
+        assert hasattr(instance, "wanted_attrs"), f"instance {instance.__class__.__name__} does not have a wanted_attrs field!"
+        for attr in sorted(instance.wanted_attrs):
+            val = getattr(instance, attr)
             if val == None or type(val) in (bool, str, int, float):
                 i_dump[attr] = val
             elif type(val) in (list, tuple, range, set, frozenset):
                 i_dump[attr] = sorted(val)
             elif type(val) == dict:
                 i_dump[attr] = dict(sorted(val.items()))
-            elif type(val) in (Unknown, NotSet, Likely):
+            elif type(val) in (UnknownArgument, DefaultArgument, LikelyArgument):
                 i_dump[attr] = str(val)
             else:
                 i_dump[attr] = f"<Object: {val.__class__.__name__}>"
@@ -83,8 +81,13 @@ def path_next_to_self_file(file):
 def main():
     """Backend to test the Instance Graph of the implementation with a LLVM IR file.
     
+    arguments: instance_graph.py <expected json graph> <LLVM IR file> <OS>(optional) <step setting file>(optional)
+
+    <OS> := Set this argument to the name of the used os model (e.g. FreeRTOS, ZEPHYR, POSIX).
+    Write '-' if you do not want to set this argument.
+
     This script accepts an extra shell argument to set the ARA step settings. 
-    If no extra argument is set, it will default to settings/posix_default.json
+    If this argument is not set, it will default to the default of the used OS model.
 
     If the JSON file (sys.argv[1]) is not existing, this script will auto generate it with the provided LLVM IR.
     In this case, this test is no test case anymore but a useful script to generate a JSON Instance Graph.
@@ -93,17 +96,22 @@ def main():
     json_file = sys.argv[1]
     if not os.path.isfile(json_file):
         print(f"JSON file {json_file} does not exists. This testcase is now no testcase anymore.")
-        print("This script will now autogenerate the JSON file.")
+        print("This script will autogenerate the JSON file.")
         self_is_testcase = False
         with open(json_file, "w") as f:
             f.write("[]") # Just a placeholder
 
     # Load Settings
-    setting_file = sys.argv[3] if len(sys.argv) > 3 else path_next_to_self_file("settings/posix_default.json")
+    DEFAULT_SETTING_FILE = "default_instance_graph_config.json"
+    DEFAULT_SETTING_FILE_OS = {
+        "POSIX": "posix_test/settings/posix_default.json",
+        "ZEPHYR": "zephyr_test/settings/zephyr_default.json",
+    }
+    setting_file = sys.argv[4] if len(sys.argv) > 4 else path_next_to_self_file(DEFAULT_SETTING_FILE_OS.get(sys.argv[3]) if len(sys.argv) > 3 and (sys.argv[3] in DEFAULT_SETTING_FILE_OS) else DEFAULT_SETTING_FILE)
     with open(setting_file, "r") as f:
         config = json.load(f)
     
-    m_graph, data, log, _ = init_test(extra_config=config, os=POSIX)
+    m_graph, data, log, _ = init_test(extra_config=config, os_name=sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else None)
     dump = json_instance_graph(m_graph.instances)
     
     if self_is_testcase:
