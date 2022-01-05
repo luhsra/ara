@@ -751,8 +751,10 @@ class MultiSSE(Step):
                         modified = True
                     else:
                         self._log.warn("Already exists.")
+
+                    follow_sync = mstg.edge_type(MSTType.follow_sync)
                     for timely_cp in timely_cps:
-                        exists = mstg.edge(timely_cp, other_cp)
+                        exists = follow_sync.edge(timely_cp, other_cp)
                         if not exists:
                             m2sy_edge = mstg.add_edge(timely_cp, other_cp)
                             mstg.ep.type[m2sy_edge] = MSTType.follow_sync
@@ -912,7 +914,7 @@ class MultiSSE(Step):
                     reevaluates += reeval
 
                 common_cps = self._find_common_crosspoints(metastates) - {cp}
-                good_cps = (len(common_cps) == 0)
+                good_cps = False
                 for common_cp in common_cps:
                     if set(self._mstg.cross_point_map[common_cp]) == set(
                             metastates.keys()):
@@ -923,10 +925,10 @@ class MultiSSE(Step):
                         self._link_neighbor_crosspoint(common_cp, cp)
                         good_cps = True
 
-                if not good_cps:
-                    self._log.warn("No equal common cp.")
-                else:
+                if good_cps:
                     continue
+                else:
+                    self._log.debug("No equal common cp.")
 
                 self._log.debug(
                     "Found already existing but unconnected metastates. Do a full pairing."
@@ -936,6 +938,7 @@ class MultiSSE(Step):
                 reevaluates += reeval
 
             if not stack:
+                self._log.debug("Stack empty. Beginning with reevaluations")
                 stack = list(set(reevaluates))
                 reevaluates = []
 
