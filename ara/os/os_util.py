@@ -31,6 +31,34 @@ class UnknownArgument:
         """Allow `if self:`"""
         return False
 
+    def __str__(self):
+        return "<unknown>"
+
+@dataclasses.dataclass(frozen=True)
+class DefaultArgument:
+    """A wrapper class to indicate that an argument for an instance is not set.
+    
+    If value is not modified the encapsulated value is holding simply <default>.
+    You can modify the default value as you wish.
+    """
+    def __init__(self, default_value="<default>"):
+        self.value = default_value
+
+    def __str__(self):
+        return str(self.value)
+
+@dataclasses.dataclass(frozen=True)
+class LikelyArgument:
+    """Represents the likely attribute.
+    
+    The likely attribute means:
+    It is not sure that the variable has this value but it is likely.
+    """
+    def __init__(self, likely_value):
+        self.value = likely_value
+
+    def __str__(self):
+        return f"<likely: {self.value}>"
 
 def is_llvm_type(ty):
     return getattr(ty, '__module__', None) == pyllco.__name__
