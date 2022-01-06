@@ -4,7 +4,6 @@ from ara.os.os_base import ExecState
 
 from .option import Option, String, Choice, Bool
 from .step import Step
-from ara.util import get_logger
 
 from graph_tool import GraphView
 
@@ -85,9 +84,6 @@ def sstg_to_dot(sstg, label="SSTG"):
     return dot_graph
 
 
-logger = get_logger("Printer (extern)")
-
-
 def reduced_mstg_to_dot(mstg, label="MSTG"):
     def _to_str(v):
         return str(int(v))
@@ -137,7 +133,7 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
     flow = mstg.vertex_type(StateType.state, StateType.entry_sync)
     flow = GraphView(flow, efilt=(flow.ep.type.fa == MSTType.st2sy))
     m2sy = mstg.edge_type(MSTType.m2sy)
-    follow_sync = mstg.edge_type(MSTType.follow_sync)
+    sync_roots = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
 
     def _sync_str(v, cpu_id):
         return f"{_to_str(v)}:c{cpu_id}"
@@ -152,10 +148,6 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         syscall_name = mstg.get_syscall_name(src)
         cpu_id = flow.ep.cpu_id[edge]
 
-        ms = mstg.get_metastate(src)
-        filt_g = GraphView(m2sy, efilt=m2sy.ep.cpu_id.fa == cpu_id)
-        sync_srcs = filt_g.vertex(ms).in_neighbors()
-
         attrs = {"color": "black"}
         if mstg.get_exec_state(src) == ExecState.waiting:
             attrs["color"] = "darkblue"
@@ -163,16 +155,21 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
             attrs["label"] = syscall_name
             attrs["color"] = "darkred"
 
+        # merge entry and exit sync states
         f_tgt = en2ex.vertex(tgt)
         if f_tgt.out_degree() == 1:
             n_tgt = single_check(f_tgt.out_neighbors())
         else:
             n_tgt = tgt
 
+        # examine start and end for the dot edge
         dot_tgt = _sync_str(n_tgt, cpu_id)
 
+        ms = mstg.get_metastate(src)
+        filt_g = GraphView(m2sy, efilt=m2sy.ep.cpu_id.fa == cpu_id)
+        sync_srcs = filt_g.vertex(ms).in_neighbors()
         for sync_src in sync_srcs:
-            if sync_src not in set(follow_sync.vertex(tgt).in_neighbors()):
+            if sync_src not in set(sync_roots.vertex(tgt).in_neighbors()):
                 continue
             dot_src = _sync_str(sync_src, cpu_id)
             dot_graph.add_edge(pydot.Edge(dot_src, dot_tgt, **attrs))
