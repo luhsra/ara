@@ -594,7 +594,7 @@ class MultiSSE(Step):
                     sync_graph, frozenset([cp] + [x[1] for x in states]))
                 # self._log.debug(
                 #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
-                combinations.add((tuple([x[0] for x in states]), timely_cps))
+                combinations.add((tuple([x[0] for x in states]), timely_cps, root))
         # for a, b in combinations:
         #     self._log.warn(f"{[int(x) for x in a]} {[int(x) for x in b]}")
         return combinations
@@ -751,9 +751,10 @@ class MultiSSE(Step):
                 metastate.state, metastate.entry)
 
         self._log.debug("Search for candidates for the cross syscalls: "
-                        f"{[int(x) for x in metastate.cross_points]}.")
+                        f"{[int(x) for x in metastate.cross_points]} "
+                        f"(starting cross point {int(cp)}).")
         for cross_state in metastate.cross_points:
-            for timed_candidates, timely_cps in self._find_timed_states(
+            for timed_candidates, timely_cps, root in self._find_timed_states(
                     cross_state, cp, start_from=start_from):
                 self._log.debug(
                     f"Evaluating cross point between {int(cross_state)} and "
@@ -765,12 +766,12 @@ class MultiSSE(Step):
                     mstg = self._mstg.g
                     # just link the new cp to it, if it is new
                     self._log.debug(
-                        f"Link from {int(cp)} to existing cross point "
+                        f"Link from {int(root)} to existing cross point "
                         f"{int(other_cp)} ({int(cross_state)} with "
                         f"{[int(x) for x in timed_candidates]}).")
-                    exists = mstg.edge(cp, other_cp)
+                    exists = mstg.edge(root, other_cp)
                     if not exists:
-                        m2sy_edge = mstg.add_edge(cp, other_cp)
+                        m2sy_edge = mstg.add_edge(root, other_cp)
                         mstg.ep.type[m2sy_edge] = MSTType.sy2sy
                         modified = True
                     else:
@@ -789,7 +790,7 @@ class MultiSSE(Step):
                             self._log.warn("Time link already exists.")
                 else:
                     other_cp = self._create_cross_point(
-                        cross_state, timed_candidates, cp, timely_cps)
+                        cross_state, timed_candidates, root, timely_cps)
                     exits += [(x, None)
                               for x in self._evaluate_crosspoint(other_cp)]
                     modified = True
@@ -860,8 +861,8 @@ class MultiSSE(Step):
                 self._dump_mstg(extra=f"round.{counter:03d}")
             counter += 1
 
-            #if counter == 8:
-            #    self._fail("foo")
+            # if counter == 5:
+            #     self._fail("foo")
 
             # if handled[cp]:
             #     continue
