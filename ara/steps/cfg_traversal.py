@@ -305,7 +305,7 @@ class _SSERunner:
                 return [new_state]
             else:
                 # ISRs are able to exit, all other CFG not
-                return self._os.handle_exit(self._graph, state, 0)
+                return self._os.handle_exit(self._graph, state, cpu.id)
 
         # computation block handling
         # all other paths before should have returned if necessary
