@@ -18,7 +18,7 @@ from functools import reduce, lru_cache
 from graph_tool.topology import label_out_component, dominator_tree, shortest_path
 from graph_tool.search import bfs_search, BFSVisitor, StopSearch
 from graph_tool import GraphView
-from itertools import product, chain
+from itertools import product, chain, permutations
 from typing import List
 
 # time counter for performance measures
@@ -547,26 +547,25 @@ class MultiSSE(Step):
 
     @lru_cache(maxsize=8)
     def _find_timed_predecessor(self, graph, cps):
-        def maybe_remove(s, k):
-            if k in s:
-                s.remove(k)
+        # Iterate all pairs and look if there is a path between the pair
+        # elements. If so, remove all nodes except of the last one.
+        predecessors = set(cps)
+        src_blacklist = set()
+        pair_blacklist = set()
+        for src, tgt in permutations(reversed(list(cps)), 2):
+            if src in src_blacklist:
+                continue
+            if (src, tgt) in pair_blacklist:
+                continue
 
-        predecessors = set()
-        wcps = set(cps)
-        while wcps:
-            cp = wcps.pop()
-            remaining = set([*wcps])
-            is_part_of_path = False
-            while remaining:
-                remain = remaining.pop()
-                vlist, _ = shortest_path(graph, cp, remain)
-                if vlist:
-                    is_part_of_path = True
-                    for elem in vlist[:-1]:
-                        maybe_remove(remaining, elem)
-                        maybe_remove(wcps, elem)
-            if not is_part_of_path:
-                predecessors.add(cp)
+            vlist, _ = shortest_path(graph, src, tgt)
+            for elem in vlist[:-1]:
+                src_blacklist.add(elem)
+                pair_blacklist.add((tgt, src))
+                if elem in predecessors:
+                    predecessors.remove(elem)
+
+        assert len(predecessors) > 0
         return frozenset(predecessors)
 
     def _find_timed_states(self, cross_state, cp, start_from=None):
