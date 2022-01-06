@@ -85,6 +85,12 @@ def sstg_to_dot(sstg, label="SSTG"):
 
 
 def reduced_mstg_to_dot(mstg, label="MSTG"):
+    shorten = {
+            "AUTOSAR_GetSpinlock": "GL",
+            "AUTOSAR_ReleaseSpinlock": "RL",
+            "AUTOSAR_ActivateTask": "AT",
+    }
+
     def _to_str(v):
         return str(int(v))
 
@@ -152,7 +158,7 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         if mstg.get_exec_state(src) == ExecState.waiting:
             attrs["color"] = "darkblue"
         elif syscall_name:
-            attrs["label"] = syscall_name
+            attrs["label"] = shorten[syscall_name]
             attrs["color"] = "darkred"
 
         # merge entry and exit sync states
