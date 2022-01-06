@@ -420,7 +420,7 @@ class MultiSSE(Step):
 
             # propagate back
             for edge in edges:
-                log(f"Yielding {e}.")
+                log(f"Yielding {edge}.")
                 yield edge, path
 
     def _get_used(self, graph, starts, paths):
