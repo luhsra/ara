@@ -222,17 +222,27 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def get_cpu_local_contexts(context, cpu_id):
+    def get_cpu_local_contexts(context, cpu_id, instances):
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
                 local_contexts.append((inst, ctx))
+            # weird case of locks for one core
+            if isinstance(inst, Spinlock):
+                cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
+                if len(cpus) == 1:
+                    local_contexts.append((inst, ctx))
         return dict(local_contexts)
 
     @staticmethod
-    def get_global_contexts(context):
+    def get_global_contexts(context, instances):
         local_contexts = []
         for inst, ctx in context.items():
+            # weird case of locks for one core
+            if isinstance(inst, Spinlock):
+                cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
+                if len(cpus) == 1:
+                    continue
             if not hasattr(inst, "cpu_id"):
                 local_contexts.append((inst, ctx))
         return dict(local_contexts)
@@ -851,16 +861,21 @@ class AUTOSAR(OSBase):
         pass
 
     @staticmethod
-    def check_spinlock_cpus(state, spinlock):
-        available_cpus = set([cpu.id for cpu in state.cpus])
+    def get_cpus_of_spinlock(spinlock, instances):
         needed_cpus = set()
-        lock = state.instances.get_node(spinlock)
+        lock = instances.get_node(spinlock)
         filt = graph_tool.GraphView(
-            state.instances,
-            efilt=state.instances.ep.type.fa == int(InstanceEdge.have)
+            instances,
+            efilt=instances.ep.type.fa == int(InstanceEdge.have)
         )
         for task in filt.vertex(lock).in_neighbors():
             needed_cpus.add(filt.vp.obj[task].cpu_id)
+        return needed_cpus
+
+    @staticmethod
+    def check_spinlock_cpus(state, spinlock):
+        available_cpus = set([cpu.id for cpu in state.cpus])
+        needed_cpus = AUTOSAR.get_cpus_of_spinlock(spinlock, state.instances)
 
         if needed_cpus > available_cpus:
             raise CrossCoreAction(needed_cpus - available_cpus)

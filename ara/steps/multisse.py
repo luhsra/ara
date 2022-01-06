@@ -136,7 +136,7 @@ class MultiSSE(Step):
             state = multi_core_state.copy()
             state.cpus = CPUList([cpu])
             state.context = self._graph.os.get_cpu_local_contexts(
-                multi_core_state.context, cpu.id)
+                multi_core_state.context, cpu.id, state.instances)
             single_core_states[cpu.id] = state
 
         return single_core_states
@@ -663,9 +663,11 @@ class MultiSSE(Step):
 
         context = [
             os.get_cpu_local_contexts(x.context,
-                                      x.cpus.one().id) for x in states
+                                      x.cpus.one().id,
+                                      x.instances) for x in states
         ]
-        context.append(os.get_global_contexts(old_multi_core_state.context))
+        context.append(os.get_global_contexts(old_multi_core_state.context,
+                                              old_multi_core_state.instances))
 
         multi_state = OSState(cpus=cpus,
                               instances=states[0].instances,
