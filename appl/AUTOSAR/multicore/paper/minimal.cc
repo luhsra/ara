@@ -20,11 +20,13 @@ result* do_computation() {return nullptr;}
 {"S1": 4, "S2": 0}
 #endif //LOCKS_JSON
 
+// CPU 0
 DeclareTask(T1);
+DeclareTask(T3); // autostart
+// CPU 1
 DeclareTask(T2);
-DeclareTask(T3);
 DeclareTask(T4);
-DeclareTask(T5);
+
 DeclareSpinlock(S1);
 DeclareSpinlock(S2);
 
