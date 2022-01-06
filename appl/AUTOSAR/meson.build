@@ -86,7 +86,6 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'c',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'd',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'e',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'c',                     'oil': 'system.json'},

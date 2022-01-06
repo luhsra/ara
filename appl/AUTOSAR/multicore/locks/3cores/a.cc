@@ -16,6 +16,7 @@
 
 DeclareTask(T01);
 DeclareTask(T11);
+DeclareTask(T21);
 DeclareSpinlock(S1);
 DeclareSpinlock(S2);
 
