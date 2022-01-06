@@ -334,12 +334,11 @@ class MultiSSE(Step):
         def log(msg, skip=True):
             if skip:
                 return
-            self._log.debug(msg)
+            self._log.debug("i_s_t: " + msg)
 
         mstg = self._mstg.g
-        sync_graph = GraphView(mstg,
-                               efilt=((mstg.ep.type.fa &
-                                       (MSTType.m2sy | MSTType.en2ex) > 0)))
+        sync_graph = mstg.edge_type(MSTType.m2sy, MSTType.en2ex)
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
 
         def good_edge(e):
             if mstg.ep.type[e] == MSTType.m2sy:
@@ -354,12 +353,13 @@ class MultiSSE(Step):
         stack = [(start, [FakeEdge(src=None, tgt=start)])]
         visited = core_graph.new_vp("bool")
         visited_entries = defaultdict(list)
+        log(f"Looking at CPU {int(core)} (orig CPU {int(orig_core)})")
         while stack:
             cur, path = stack.pop(0)
-            log(f"i_s_t: Stack element {int(cur)} with path {path}")
+            log(f"Stack element {int(cur)} with path {path}")
 
             if visited[cur] and path[-1] in visited_entries[cur]:
-                log("i_s_t: Already visited, skipping...")
+                log("Already visited, skipping...")
                 continue
             visited[cur] = True
             visited_entries[cur].append(path[-1])
@@ -367,33 +367,41 @@ class MultiSSE(Step):
             # iterate
             edges = []
             for e in cur.out_edges():
-                log(f"i_s_t: Look at {e} (Type {str(MSTType(self._mstg.g.ep.type[e]))}).",
-                    skip=True)
+                log(f"Look at {e} (Type "
+                    f"{str(MSTType(self._mstg.g.ep.type[e]))}).")
                 tgt = e.target()
+
+                # skip paths where the sync points do not follow each other
+                if core_graph.vp.type[cur] == StateType.metastate:
+                    last_exit_cp = path[-1].target()
+                    nes = set(follow_sync.vertex(last_exit_cp).out_neighbors())
+                    if e.target() not in nes:
+                        log(f"Skip {e}. CPs do not follow each other.")
+                        continue
 
                 # skip false paths
                 if tgt == cps[core].end:
-                    log(f"i_s_t: Skip {e}. We are not branching to ourself.")
+                    log(f"Skip {e}. We are not branching to ourself.")
                     continue
                 if core_graph.vp.type[tgt] == StateType.entry_sync:
                     cores = set(self._mstg.cross_point_map[tgt])
                     if orig_core in cores:
-                        log(f"i_s_t: Skip {e}. It contains core {orig_core}.")
+                        log(f"Skip {e}. It contains core {orig_core}.")
                         continue
                     if cores & used_cores[core]:
                         if not self._is_successor_of(cp, tgt):
-                            log(f"i_s_t: Skip {e}. No successor.")
+                            log(f"Skip {e}. No successor.")
                             continue
 
                 # skip false edges of common paths of previous traversals
                 if cur in other_paths and other_paths[cur] != e:
-                    log(f"i_s_t: Skip {e}. Other graph.")
+                    log(f"Skip {e}. Other graph.")
                     continue
 
                 if core_graph.vp.type[cur] == StateType.metastate:
                     edges.append(e)
 
-                if core_graph.vp.type[cur] == StateType.entry_sync:
+                if core_graph.ep.type[e] == MSTType.en2ex:
                     stack.append((tgt, path + [e]))
                 else:
                     stack.append((tgt, path))
@@ -404,7 +412,7 @@ class MultiSSE(Step):
 
             # propagate back
             for edge in edges:
-                log(f"i_s_t: Yielding {e}.")
+                log(f"Yielding {e}.")
                 yield edge, path
 
     def _get_used(self, graph, starts, paths):
@@ -584,7 +592,8 @@ class MultiSSE(Step):
                                               cps, used_cores, []):
                 timely_cps = self._find_timed_predecessor(
                     sync_graph, frozenset([cp] + [x[1] for x in states]))
-                # self._log.debug(f"Found time predecessors {[int(x) for x in timely_cps]}.")
+                # self._log.debug(
+                #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
                 combinations.add((tuple([x[0] for x in states]), timely_cps))
         # for a, b in combinations:
         #     self._log.warn(f"{[int(x) for x in a]} {[int(x) for x in b]}")
@@ -704,12 +713,16 @@ class MultiSSE(Step):
         # sync edges
         sy2sy = mstg.edge_type(MSTType.sy2sy)
         for v in list(sy2sy.vertex(common_cp).out_neighbors()):
+            self._log.debug(
+                f"Neighbor: Link sy2sy edge: {int(cp)} -> {int(v)}")
             new_e = sy2sy.edge(mstg.vertex(cp),
                                mstg.vertex(v),
                                add_missing=True)
             mstg.ep.type[new_e] = MSTType.sy2sy
         follow_sync = mstg.edge_type(MSTType.follow_sync)
         for v in list(follow_sync.vertex(common_cp).out_neighbors()):
+            self._log.debug(
+                f"Neighbor: Link follow_sync edge: {int(cp)} -> {int(v)}")
             new_e = follow_sync.edge(mstg.vertex(cp),
                                      mstg.vertex(v),
                                      add_missing=True)
@@ -763,11 +776,13 @@ class MultiSSE(Step):
 
                     follow_sync = mstg.edge_type(MSTType.follow_sync)
                     for timely_cp in timely_cps:
+                        self._log.debug(
+                            f"Time link from {int(timely_cp)} to existing "
+                            f"cross point {int(other_cp)}")
                         exists = follow_sync.edge(timely_cp, other_cp)
                         if not exists:
                             m2sy_edge = mstg.add_edge(timely_cp, other_cp)
                             mstg.ep.type[m2sy_edge] = MSTType.follow_sync
-                            modified = True
                         else:
                             self._log.warn("Time link already exists.")
                 else:
@@ -923,6 +938,7 @@ class MultiSSE(Step):
                     to_stack, reeval = self._do_full_pairing(cp, metastate)
                     stack += to_stack
                     reevaluates |= reeval
+                    continue
 
                 common_cps = self._find_common_crosspoints(metastates) - {cp}
                 good_cps = False
