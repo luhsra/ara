@@ -103,6 +103,19 @@ if get_option('enable_step_tests')
       )
     endforeach
 
+    foreach app: autosar_targets
+      if not app.has_key('trace')
+        continue
+      endif
+      test('multisse_' + app['full_name'],
+          py3_inst,
+          args: [files('multisse.py'), app['sys_test'], app['ll'], app['oil']],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['steps', 'multisse']
+      )
+    endforeach
+
     test('multiple-configured-steps',
         py3_inst,
         args: files('multiple_configured_steps.py'),
