@@ -82,6 +82,14 @@ class FakeEdge:
     def target(self):
         return self.tgt
 
+    def __repr__(self):
+        def none_or_int(v):
+            if v:
+                return int(v)
+            return None
+
+        return f"FakeEdge({none_or_int(self.src)}, {none_or_int(self.tgt)})"
+
 
 @dataclasses.dataclass
 class MSTG:
