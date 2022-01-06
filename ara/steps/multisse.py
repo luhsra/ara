@@ -361,6 +361,7 @@ class MultiSSE(Step):
         stack = [(start, [FakeEdge(src=None, tgt=start)])]
         visited = core_graph.new_vp("bool")
         visited_entries = defaultdict(list)
+        log(f"CPs: {cps}")
         log(f"Looking at CPU {int(core)} (orig CPU {int(orig_core)})")
         while stack:
             cur, path = stack.pop(0)
@@ -436,11 +437,22 @@ class MultiSSE(Step):
             all_used[core] = used
         return all_used
 
-    def _get_constrained_cps(self, cores, new_range):
-        sync_graph = GraphView(
-            self._mstg.g,
-            efilt=((self._mstg.g.ep.type.fa &
-                    (MSTType.follow_sync | MSTType.en2ex) > 0)))
+    def _has_path(self, graph, start, end):
+        _, elist = shortest_path(graph, start, end)
+        return len(elist) > 0
+
+    def _check_barriers(self, graph, new_barriers, old_barriers):
+        for cpu, new in new_barriers.items():
+            old = old_barriers[cpu]
+            if old is not None:
+                if self._has_path(graph, old, new):
+                    new_barriers[cpu] = old
+
+    def _get_constrained_cps(self, cores, new_range, old_cps=None):
+        sync_graph = self._mstg.g.edge_type(MSTType.follow_sync, MSTType.en2ex)
+
+        if old_cps is None:
+            old_cps = defaultdict(lambda: Range(start=None, end=None))
 
         unbound = {*cores}
         new_starts = {}
@@ -473,10 +485,14 @@ class MultiSSE(Step):
                    visitor=Constraints(cp_map, new_starts, paths=paths))
         used = self._get_used(sync_graph, new_starts, paths)
 
+        self._check_barriers(rsync, new_starts, dict([(x, old_cps[x].start) for x in cores]))
+
         if new_range.end:
             bfs_search(sync_graph,
                        source=new_range.end,
                        visitor=Constraints(cp_map, new_ends))
+
+            self._check_barriers(sync_graph, new_ends, dict([(x, old_cps[x].end) for x in cores]))
 
         return dict([(x, Range(start=new_starts[x], end=new_ends[x]))
                      for x in cores]), used
@@ -521,6 +537,8 @@ class MultiSSE(Step):
 
         result = set()
 
+        # self._log.debug(f"b_p: Cores: {cores}, CPs: {cps}")
+
         for exit_edge, path in self._iterate_search_tree(
                 cp, current_core, core, cps, paths, used_cores):
             # self._log.debug(f"Examine edge {exit_edge} with path {path}.")
@@ -528,7 +546,8 @@ class MultiSSE(Step):
                 new_cores = cores[1:]
                 new_cps, _ = self._get_constrained_cps(
                     new_cores,
-                    Range(start=path[-1].source(), end=exit_edge.target()))
+                    Range(start=path[-1].source(), end=exit_edge.target()),
+                    cps)
                 others = self._build_product(cp, current_core, new_cores,
                                              new_cps, used_cores,
                                              paths + [path])
