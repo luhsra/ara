@@ -307,7 +307,10 @@ class AUTOSAR(OSBase):
         for _, obj in instances.get(Task):
             prio = 2 * obj.priority
             max_prio = max(max_prio, prio)
-            state.context[obj] = TaskContext(status=TaskStatus.suspended,
+            status = TaskStatus.suspended
+            if obj.autostart:
+                status = TaskStatus.ready
+            state.context[obj] = TaskContext(status=status,
                                              abb=cfg.get_entry_abb(obj.function),
                                              call_path=CallPath(),
                                              dyn_prio=[prio])
