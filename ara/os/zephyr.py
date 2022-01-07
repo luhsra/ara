@@ -4,6 +4,7 @@ from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG
 from ara.steps import get_native_component
 from dataclasses import dataclass
+from graph_tool import Vertex
 import pyllco
 import html
 import re
@@ -328,6 +329,11 @@ class ZEPHYR(OSBase):
         return ident
 
     @staticmethod
+    def get_symbol(value: ValueAnalyzerResult) -> pyllco.Value:
+        """Get symbol of ValueAnalyzerResult"""
+        return value.value.symbol if isinstance(value.value, ZephyrInstance) else value.value
+
+    @staticmethod
     def create_instance(cfg: CFG, state: OSState, cpu_id: int, va: ValueAnalyzer, label: str, obj: ZephyrInstance, symbol: ValueAnalyzerResult, call: str, ident: str = None):
         """
         Adds a new instance and an edge for the create syscall to the instance graph.
@@ -339,7 +345,7 @@ class ZEPHYR(OSBase):
         add new info to the instance graph."""
         if ident is None:
             if symbol is not None:
-                ident = symbol.value.get_name()
+                ident = ZEPHYR.get_symbol(symbol).get_name()
             else:
                 assert False, "ident and symbol are both None!"
 
@@ -390,16 +396,17 @@ class ZEPHYR(OSBase):
         instances.vp.specialization_level[v] = ""
         instances.vp.is_control[v] = isinstance(obj, ControlInstance)
 
-        if symbol:
+        if isinstance(symbol.value, pyllco.Value):
+            assert len(siblings) == 0, "found siblings of new instance although the symbol is new!"
             va.assign_system_object(symbol.value,
                                     state.instances.vp.obj[v],
                                     symbol.offset,
                                     symbol.callpath)
-
-        # If we have some siblings, clone all edges
-        to_add = []
-        if len(siblings) > 0:
+        else:
+            # If we have some siblings, clone all edges
             logger.warning(f"Multiple init calls to same symbol: {obj.symbol}")
+            assert len(siblings) > 0, "no siblings found of new instance with an already existing symbol!"
+            to_add = []
             for c in siblings[0].out_edges():
                 to_add.append(((v, c.target()), instances.ep.label[c]))
             for c in siblings[0].in_edges():
@@ -413,29 +420,25 @@ class ZEPHYR(OSBase):
         connect_from_here(state, cpu_id, v, call)
 
     @staticmethod
-    def find_instance_by_symbol(state: OSState, symbol: pyllco.Value):
-        """Returns an iterator over all instances with the given symbol"""
+    def find_instance_by_symbol(state: OSState, symbol: pyllco.Value) -> Vertex:
+        """Returns an iterator over all instance vertices with the given symbol"""
         if symbol is None:
             return []
         return filter(lambda v: state.instances.vp.obj[v].symbol == symbol,
                 state.instances.vertices())
 
     @staticmethod
-    def add_instance_comm(state: OSState, cpu_id: int, instance, call: str):
+    def add_instance_comm(state: OSState, cpu_id: int, instance: ZephyrInstance, call: str):
         """Adds an interaction (edge) with the given callname to all instances with the given symbol"""
         
-        # TODO: Rewrite this code to allow connection of multiple instances 
-            #matches = list(ZEPHYR.find_instance_by_symbol(state, symbol))
-            #if len(matches) == 0:
-            #    logger.error(f"No matching instance found. Skipping.\n{type(symbol)}\n{symbol}")
-            #else:
-            #    if len(matches) > 1:
-            #        logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
-            #    for match in matches:
-            #        connect_from_here(state, cpu_id, match, call)
-
-        # For now this should work:
-        connect_from_here(state, cpu_id, find_instance_node(state.instances, instance), call)
+        matches = list(ZEPHYR.find_instance_by_symbol(state, instance.symbol))
+        if len(matches) == 0:
+            logger.error(f"No matching instance found. Skipping.\n{type(instance.symbol)}\n{instance.symbol}")
+        else:
+            if len(matches) > 1:
+                logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
+            for match in matches:
+                connect_from_here(state, cpu_id, match, call)
 
     @staticmethod
     def add_kernel_comm(state: OSState, cpu_id: int, call: str):
@@ -510,7 +513,7 @@ class ZEPHYR(OSBase):
             cfg=cfg,
             artificial=False,
             function=cfg.get_function_by_name(entry_name),
-            symbol=args.symbol.value,
+            symbol=ZEPHYR.get_symbol(args.symbol),
             stack=args.stack,
             stack_size=args.stack_size,
             entry_name=entry_name,
@@ -562,7 +565,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = KernelSemaphore(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.count,
             args.limit
         )
@@ -580,7 +583,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = UserSemaphore(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.count,
             args.limit
         )
@@ -596,7 +599,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Mutex(
-            args.symbol.value
+            ZEPHYR.get_symbol(args.symbol)
         )
 
         ZEPHYR.create_instance(cfg, state, cpu_id, va, "Mutex", instance, args.symbol, "k_mutex_init")
@@ -612,7 +615,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Queue(
-            args.symbol.value
+            ZEPHYR.get_symbol(args.symbol)
         )
 
         ZEPHYR.create_instance(cfg, state, cpu_id, va, "Queue", instance, args.symbol, "k_queue_init")
@@ -628,7 +631,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Stack(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.buf,
             args.max_entries
         )
@@ -651,7 +654,7 @@ class ZEPHYR(OSBase):
         #max_entries = get_argument(cfg, abb, state.call_path, 1)
 
         instance = Stack(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             # When creating a stack with k_stack_alloc_init() the buffer is created in kernel
             # address space
             None,
@@ -671,7 +674,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Pipe(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.size
         )
 
@@ -687,7 +690,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Pipe(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.size
         )
 
@@ -704,7 +707,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Heap(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.limit
         )
 
@@ -722,7 +725,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = MSGQ(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.msg_size,
             args.max_msgs
         )
@@ -740,7 +743,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = MSGQ(
-            args.symbol.value,
+            ZEPHYR.get_symbol(args.symbol),
             args.msg_size,
             args.max_msgs
         )
