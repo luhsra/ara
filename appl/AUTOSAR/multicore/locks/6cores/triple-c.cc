@@ -114,7 +114,7 @@ TASK(T32) {}
 TASK(T42) {}
 TASK(T52) {}
 
-TASK(T03) { int i; while (1) {++i;};}
+TASK(T03) {}
 TASK(T13) {}
 TASK(T23) {}
 TASK(T33) {}
