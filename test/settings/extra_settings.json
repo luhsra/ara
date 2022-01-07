@@ -1,6 +1,7 @@
 {
 	"steps": [
-		"LockElision",
+		"FakeTimings",
+		"SSE",
 		"DumpCFG"
 	],
 
@@ -21,6 +22,7 @@
 	"logger": {
 		"StepManager": "info",
 		"FreeRTOS": "info",
+		"AUTOSAR": "debug",
 		"ara": "info"
 	}
 }
