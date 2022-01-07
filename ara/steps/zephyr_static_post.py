@@ -48,29 +48,18 @@ class ZephyrStaticPost(Step):
 
         # Iterate over all statically created instances and convert their dict datatype to the matching datatype.
         # Also fill missing fields in control instances.
-        entry_functions = dict()
-        duplicate_instances = []
         for instance in self._graph.instances.vertices():
             instance_type = locate('ara.os.zephyr.' + self._graph.instances.vp.label[instance])
             inst = instance_type(**self._graph.instances.vp.obj[instance])
             if issubclass(instance_type, ControlInstance):
                 function = cfg.get_function_by_name(inst.entry_name)
-                clone = entry_functions.get(function)
-                if clone != None:
-                    self._graph.instances.vp.unique[clone] = False
-                    duplicate_instances.append(instance)
-                    continue
                 inst.cfg = cfg
                 inst.function = function
-                entry_functions[function] = instance
 
             # Mark the ids of all static instances as used. Since we use symbol names we know
             # them to be unique
             ZEPHYR.id_count[self._graph.instances.vp.id[instance]] = 1
             self._graph.instances.vp.obj[instance] = inst
-
-        for v in duplicate_instances:
-            self._graph.instances.remove_vertex(v)
 
         # If there is a main, also add a thread for that.
         # Also, there is no matching abb to give to the vertex

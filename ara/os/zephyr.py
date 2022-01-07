@@ -338,39 +338,14 @@ class ZEPHYR(OSBase):
         """
         Adds a new instance and an edge for the create syscall to the instance graph.
         If there already exists an instance that is matched to the same symbol another one will be
-        created and will inherit all interactions from his sibling. All future comm syscalls will
+        created and will inherit all interactions from his siblings. All future comm syscalls will
         add edges to all instances that share the same symbol. There is currently no way to
-        distinguish between them. Those rules also apply to instances that add entry points (Thread, ISR).
-        An exception is made for instances that share entry points. Adding one of those will mark
-        add new info to the instance graph."""
+        distinguish between them. Those rules also apply to instances that add entry points (Thread, ISR)."""
         if ident is None:
             if symbol is not None:
                 ident = ZEPHYR.get_symbol(symbol).get_name()
             else:
                 assert False, "ident and symbol are both None!"
-
-        if isinstance(obj, ControlInstance):
-            # For now assume that no entry points are shared between different instance types
-            entry_point = [cfg_v for cfg_v, inst_v in state.instances.iterate_control_entry_points() if cfg_v == obj.function]
-            if len(entry_point) > 1:
-                assert len(entry_point) == 1
-                original = entry_point[0]
-                logger.warning(f"Creation of instance with already known entry point, marking as non unique. {obj}")
-                clones = [original]
-                # Mark the clone and all his created instances as non unique.
-                while len(clones) > 0:
-                    clone = clones.pop(0)
-                    state.instances.vp.unique[clone] = False
-                    for e, n in zip(clone.out_edges(), clone.out_neighbors()):
-                        syscall = getattr(ZEPHYR, state.instances.ep.label[e])
-                        if ZEPHYR.syscall_in_category(syscall, SyscallCategory.create):
-                            state.instances.vp.unique[n] = False
-                            # If we find an instance which is now non-unique and adds an entry point we
-                            # need to repeat the process for its node.
-                            if clone.has_entry():
-                                clones.append(n)
-
-                return
 
         siblings = list(ZEPHYR.find_instance_by_symbol(state, obj.symbol))
 
