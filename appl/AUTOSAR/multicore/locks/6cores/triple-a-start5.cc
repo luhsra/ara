@@ -98,19 +98,19 @@ TASK(T51) {
 }
 
 
-TASK(T02) {}
-TASK(T12) {}
-TASK(T22) {}
-TASK(T32) {}
-TASK(T42) {}
-TASK(T52) {}
+TASK(T02) {TerminateTask();}
+TASK(T12) {TerminateTask();}
+TASK(T22) {TerminateTask();}
+TASK(T32) {TerminateTask();}
+TASK(T42) {TerminateTask();}
+TASK(T52) {TerminateTask();}
 
-TASK(T03) { int i; while (1) {++i;};}
-TASK(T13) {}
-TASK(T23) {}
-TASK(T33) {}
-TASK(T43) {}
-TASK(T53) {}
+TASK(T03) {TerminateTask();}
+TASK(T13) {TerminateTask();}
+TASK(T23) {TerminateTask();}
+TASK(T33) {TerminateTask();}
+TASK(T43) {TerminateTask();}
+TASK(T53) {TerminateTask();}
 
 
 #if SYSTEM_JSON

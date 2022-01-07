@@ -28,4 +28,4 @@ TASK(T01) {
 	TerminateTask();
 }
 
-TASK(T11) {}
+TASK(T11) {TerminateTask();}
