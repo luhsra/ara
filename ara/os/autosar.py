@@ -982,6 +982,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def SetEvent(state, cpu_id, task, event_mask):
+        AUTOSAR.check_cpu(state, task.cpu_id)
         task_ctx = state.context[task]
         if task_ctx.status == TaskStatus.blocked and \
            event_mask & task_ctx.waited_events != 0:
