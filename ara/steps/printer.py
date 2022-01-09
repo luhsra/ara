@@ -20,7 +20,7 @@ def _sstg_state_as_dot(sstg, state_vert):
     obj = sstg.vp.state[state_vert]
     cfg = obj.cfg
     label = f"State {obj.id}"
-    cpu = next(iter(obj.cpus))
+    cpu = obj.cpus.one()
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
     else:
