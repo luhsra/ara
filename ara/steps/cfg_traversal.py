@@ -316,8 +316,6 @@ class _SSERunner:
             new_state = state.copy()
             new_state.cpus.one().abb = n
             new_state.cpus.one().exec_state = self._get_exec(n)
-            new_state.time_from = state.time_from + self._cfg.vp.bcet[abb]
-            new_state.time_to = state.time_to + self._cfg.vp.wcet[n]
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.

@@ -179,10 +179,6 @@ class OSState:
     instances: graph_tool.Graph
     cfg: CFG
 
-    # attention: not hashed intentionally
-    time_from: int = 0
-    time_to: int = 0
-
     # key: some instance, value: mutable context
     context: dict = field(default_factory=dict, init=False)
 
@@ -196,9 +192,7 @@ class OSState:
     def copy(self):
         new_state = OSState(cpus=copy.copy(self.cpus),
                             instances=self.instances,
-                            cfg=self.cfg,
-                            time_from=self.time_from,
-                            time_to=self.time_to)
+                            cfg=self.cfg)
         # new context for control instances
         for inst, ctx in self.context.items():
             new_state.context[inst] = copy.copy(ctx)
