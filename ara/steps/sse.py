@@ -85,9 +85,7 @@ class SSE(Step):
 
             @staticmethod
             def add_transition(source, target):
-                e = sstg.add_edge(state_map[hash(source)], state_map[hash(target)])
-                sstg.ep.bcet[e] = source.time_from + source.cfg.vp.bcet[source.cpus.one().abb]
-                sstg.ep.wcet[e] = source.time_to
+                sstg.add_edge(state_map[hash(source)], state_map[hash(target)])
 
             @staticmethod
             def next_step(counter):
