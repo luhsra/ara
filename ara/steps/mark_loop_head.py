@@ -1,5 +1,6 @@
 """Container for MarkLoopHead."""
 from ara.graph import CFType, CFGView
+from ara.util import dominates
 from .step import Step
 from .option import Option, String
 
@@ -15,14 +16,6 @@ class MarkLoopHead(Step):
 
     def get_single_dependencies(self):
         return [{"name": "CreateABBs", "entry_point": self.entry_point.get()}]
-
-    def _dominates(self, dom_tree, abb_x, abb_y):
-        """Does abb_x dominate abb_y?"""
-        while abb_y:
-            if abb_x == abb_y:
-                return True
-            abb_y = dom_tree[abb_y]
-        return False
 
     def run(self):
         cfg = self._graph.cfg
@@ -51,7 +44,7 @@ class MarkLoopHead(Step):
                 # a.
                 abb = llcfg.vertex(abb)
                 for e in abb.in_edges():
-                    if self._dominates(dom_tree, abb, e.source()):
+                    if dominates(dom_tree, abb, e.source()):
                         cfg.vp.loop_head[cfg.vertex(abb)] = True
                         cfg.ep.back_edge[e] = True
 

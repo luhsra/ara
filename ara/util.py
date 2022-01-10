@@ -143,6 +143,15 @@ def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=Fa
     return logger_manager.get_logger(root_name, level)
 
 
+def dominates(dom_tree, x, y):
+    """Does node x dominate node y?"""
+    while y:
+        if x == y:
+            return True
+        y = dom_tree[y]
+    return False
+
+
 class VarianceDict(dict):
     """Dict that store the values that are requested per `get`."""
     def get(self, key, default_value):

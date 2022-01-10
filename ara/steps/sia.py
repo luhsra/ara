@@ -1,15 +1,16 @@
 """Container for SIA."""
 from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph
-from dataclasses import dataclass
+from ara.util import dominates
 from .step import Step
 from .option import Option, String
 
-from ara.os.os_base import OSState, CPU, ExecState
+from ara.os.os_base import CPU, ExecState
 
 from graph_tool import GraphView
 from graph_tool.topology import all_paths, dominator_tree, label_out_component
 from graph_tool.util import find_vertex
 from itertools import chain
+from dataclasses import dataclass
 
 import functools
 
@@ -45,14 +46,6 @@ class FlatAnalysis(Step):
         if self._graph.os is None:
             return ['SysFuncts']
         return self._graph.os.get_special_steps()
-
-    def _dominates(self, dom_tree, abb_x, abb_y):
-        """Does abb_x dominate abb_y?"""
-        while abb_y:
-            if abb_x == abb_y:
-                return True
-            abb_y = dom_tree[abb_y]
-        return False
 
     def _has_path(self, graph, source, target):
         """Is there a path from source to target?"""
@@ -115,7 +108,7 @@ class FlatAnalysis(Step):
                 func,
                 respect_endless_loops=respect_endless_loops
         )
-        return not all([self._dominates(dom_tree, abb, x)
+        return not all([dominates(dom_tree, abb, x)
                        for x in exit_abbs.vertices()])
 
     def _is_usually_taken(self, abb):
