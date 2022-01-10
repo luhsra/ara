@@ -409,6 +409,18 @@ class MSTGraph(graph_tool.Graph):
         obj = self.vp.state[state]
         return obj.cpus.one().exec_state
 
+    def get_entry_state(self, entry_cp, cpu_id):
+        st2sy = self.edge_type(MSTType.st2sy)
+        return single_check([e.target()
+                             for e in st2sy.vertex(entry_cp).out_edges()
+                             if st2sy.ep.cpu_id[e] == cpu_id])
+
+    def get_exit_state(self, exit_cp, cpu_id):
+        st2sy = self.edge_type(MSTType.st2sy)
+        return single_check([e.source()
+                             for e in st2sy.vertex(exit_cp).in_edges()
+                             if st2sy.ep.cpu_id[e] == cpu_id])
+
 
 class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
