@@ -19,12 +19,14 @@ class CFGStats(Step):
         cfg = self._graph.cfg
         icfg = self._graph.icfg
         lcfg = self._graph.lcfg
+        bbs = self._graph.bbs
         abbs = self._graph.abbs
         syscalls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.syscall)
         calls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.call)
         computation = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.computation)
         functs = self._graph.functs
 
+        num_bbs = bbs.num_vertices()
         num_abbs = abbs.num_vertices()
         num_syscalls = syscalls.num_vertices()
         num_calls = calls.num_vertices()
@@ -72,6 +74,7 @@ class CFGStats(Step):
         num_icomp = len(ihist)
         iv = num_iedges - num_abbs + 2 * num_icomp
 
+        self._log.info(f"Number of BBs: {num_bbs}")
         self._log.info(f"Number of ABBs: {num_abbs}")
         self._log.info(f"Number of syscalls: {num_syscalls}")
         self._log.info(f"Number of calls: {num_calls}")
@@ -87,7 +90,8 @@ class CFGStats(Step):
 
         if self.dump.get():
             with open(self.dump_prefix.get() + '.json', 'w') as f:
-                values = {"num_abbs": num_abbs,
+                values = {"num_bbs": num_bbs,
+                           "num_abbs": num_abbs,
                            "num_syscalls": num_syscalls,
                            "num_calls": num_calls,
                            "num_computation": num_computation,
