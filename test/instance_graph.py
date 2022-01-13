@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 
+from enum import IntEnum
 from init_test import init_test, fail_if_json_not_equal
 from ara.os.os_util import UnknownArgument, DefaultArgument, LikelyArgument
 import json
 import os
 import sys
 
-def json_instance_graph(instances):
+def json_instance_graph(instances, edge_type_class: IntEnum):
     """Instance Graph -> JSON Instance Graph
     
+    Arguments:
+    instances:          instance graph
+    edge_type_class:    Enum that contains all edge types.
+                        This Enum is used to convert the edge type to a printable string.
+                        To provide this object create it in your main os model object.
+                        This enum is optional. Set it to None if you do not want to use it.
+
     Make sure that all instances have wanted_attrs (arguments of interest) field.
     It is recommended to use instances of type AutoDotInstance (see os/os_util.py).
     """
@@ -60,9 +68,12 @@ def json_instance_graph(instances):
             "target": instances.vp.id[edge.target()],
         }
         for name, prop in instances.ep.items():
-            val = prop[edge]
-            i_dump[name] = val
-        i_dump["type"] = "interaction"
+            i_dump[name] = prop[edge]
+        if edge_type_class is not None:
+            i_dump["type"] = edge_type_class(i_dump["type"]).name
+        # 0 := no type is set
+        elif i_dump["type"] == 0:
+            i_dump["type"] = "interaction"
         dump.append(i_dump)
 
     def sort_key(item):
@@ -112,7 +123,7 @@ def main():
         config = json.load(f)
     
     m_graph, data, log, _ = init_test(extra_config=config, os_name=sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else None)
-    dump = json_instance_graph(m_graph.instances)
+    dump = json_instance_graph(m_graph.instances, m_graph.os.EdgeType if hasattr(m_graph.os, "EdgeType") else None)
     
     if self_is_testcase:
         fail_if_json_not_equal(data, dump)
