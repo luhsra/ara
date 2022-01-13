@@ -1,10 +1,11 @@
-from .os_util import find_instance_node, syscall, Arg, set_next_abb, connect_from_here, add_self_edge, AutoDotInstance
+from .os_util import syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG
 from ara.steps import get_native_component
 from dataclasses import dataclass
 from graph_tool import Vertex
+from enum import IntEnum
 import pyllco
 import html
 import re
@@ -272,11 +273,28 @@ class MSGQ(ZephyrInstance):
 
 llvm_suffix = re.compile(".+\.\d+")
 
+class ZephyrEdgeType(IntEnum):
+    interaction = 0
+    create = 1
+    
+    """Special edge type to show that an instance has the same symbol than the instance this edge is pointing to."""
+    same_symbol_than = 2
+
 class ZEPHYR(OSBase):
-    vertex_properties = [('label', 'string', 'instance name'),
-                         ('obj', 'object', 'instance object (e.g. Task)'),
-                         ]
-    edge_properties = [('label', 'string', 'syscall name')]
+
+    '''
+        Vertex and edge properties:
+        vertex_properties = [('label', 'string', 'instance name'),
+                            ('obj', 'object', 'instance object (e.g. Task)'),
+                            ]
+        edge_properties = [('label', 'string', 'syscall name')]
+    '''
+
+    """type class of interactions.
+    
+    This object is accessed by instance_graph.py test script to translate the integer value to a string.
+    """
+    EdgeType = ZephyrEdgeType
 
     """The kernel node"""
     kernel = None
@@ -347,8 +365,6 @@ class ZEPHYR(OSBase):
             else:
                 assert False, "ident and symbol are both None!"
 
-        siblings = list(ZEPHYR.find_instance_by_symbol(state, obj.symbol))
-
         instances = state.instances
         v = instances.add_vertex()
         instances.vp.label[v] = label
@@ -372,7 +388,6 @@ class ZEPHYR(OSBase):
         instances.vp.is_control[v] = isinstance(obj, ControlInstance)
 
         if isinstance(symbol.value, pyllco.Value):
-            assert len(siblings) == 0, "found siblings of new instance although the symbol is new!"
             va.assign_system_object(symbol.value,
                                     state.instances.vp.obj[v],
                                     symbol.offset,
@@ -380,19 +395,25 @@ class ZEPHYR(OSBase):
         else:
             # If we have some siblings, clone all edges
             logger.warning(f"Multiple init calls to same symbol: {obj.symbol}")
-            assert len(siblings) > 0, "no siblings found of new instance with an already existing symbol!"
+            assert isinstance(symbol.value, ZephyrInstance), "symbol.value does not hold a ZephyrInstance!"
+            assert obj.symbol == symbol.value.symbol
+            predecessor_v = find_instance_node(state.instances, symbol.value)
             to_add = []
-            for c in siblings[0].out_edges():
-                to_add.append(((v, c.target()), instances.ep.label[c]))
-            for c in siblings[0].in_edges():
-                # Ignore the syscall that created the siblings
-                syscall = getattr(ZEPHYR, state.instances.ep.label[c])
-                if not ZEPHYR.syscall_in_category(syscall, SyscallCategory.create):
-                    to_add.append(((c.source(), v), instances.ep.label[c]))
-            for ((s, t), label) in to_add:
-                e = instances.add_edge(s, t)
-                instances.ep.label[e] = label
-        connect_from_here(state, cpu_id, v, call)
+            for c in predecessor_v.out_edges():
+                edge_type = state.instances.ep.type[c]
+                if not edge_type == ZephyrEdgeType.same_symbol_than:
+                    to_add.append(((v, c.target()), instances.ep.label[c], edge_type))
+            for c in predecessor_v.in_edges():
+                # Ignore syscalls that created the predecessor
+                edge_type = state.instances.ep.type[c]
+                if edge_type == ZephyrEdgeType.interaction:
+                    to_add.append(((c.source(), v), instances.ep.label[c], edge_type))
+            for ((s, t), label, edge_type) in to_add:
+                connect_instances(instances, v, s, abb, label, ty=edge_type)
+            # Same symbol edge
+            connect_instances(instances, v, predecessor_v, abb, "same symbol than", ty=ZephyrEdgeType.same_symbol_than)
+
+        connect_from_here(state, cpu_id, v, call, ty=ZephyrEdgeType.create)
 
     @staticmethod
     def find_instance_by_symbol(state: OSState, symbol: pyllco.Value) -> Vertex:
@@ -413,12 +434,12 @@ class ZEPHYR(OSBase):
             if len(matches) > 1:
                 logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
             for match in matches:
-                connect_from_here(state, cpu_id, match, call)
+                connect_from_here(state, cpu_id, match, call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
     def add_kernel_comm(state: OSState, cpu_id: int, call: str):
         """Adds an interaction (edge) with the given callname to the ZephyrKernel instance"""
-        connect_from_here(state, cpu_id, ZEPHYR.kernel, call)
+        connect_from_here(state, cpu_id, ZEPHYR.kernel, call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
     def init(state):
@@ -750,7 +771,7 @@ class ZEPHYR(OSBase):
     def k_sleep(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_sleep")
+        add_self_edge(state, cpu_id, "k_sleep", ty=ZephyrEdgeType.interaction)
         return state
 
     # int32_t k_msleep(int32_t ms)
@@ -759,7 +780,7 @@ class ZEPHYR(OSBase):
     def k_msleep(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_msleep")
+        add_self_edge(state, cpu_id, "k_msleep", ty=ZephyrEdgeType.interaction)
         return state
 
     # int32_t k_usleep(int32_t us)
@@ -768,7 +789,7 @@ class ZEPHYR(OSBase):
     def k_usleep(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_usleep")
+        add_self_edge(state, cpu_id, "k_usleep", ty=ZephyrEdgeType.interaction)
         return state
 
     # void k_busy_wait(uint32_t usec_to_wait)
@@ -777,7 +798,7 @@ class ZEPHYR(OSBase):
     def k_busy_wait(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_busy_wait")
+        add_self_edge(state, cpu_id, "k_busy_wait", ty=ZephyrEdgeType.interaction)
         return state
 
     # void k_yield(void)
@@ -785,7 +806,7 @@ class ZEPHYR(OSBase):
     def k_yield(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_yield")
+        add_self_edge(state, cpu_id, "k_yield", ty=ZephyrEdgeType.interaction)
         return state
 
     # void k_wakeup(k_tid_t thread)
@@ -794,7 +815,7 @@ class ZEPHYR(OSBase):
     def k_wakeup(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_wakeup")
+        add_self_edge(state, cpu_id, "k_wakeup", ty=ZephyrEdgeType.interaction)
         return state
 
     # k_tid_t k_current_get(void)
@@ -807,7 +828,7 @@ class ZEPHYR(OSBase):
         # TODO: find out why we try to find a return value here and repair this: 
         #tid = find_return_value(cfg, abb, state.call_path)
 
-        add_self_edge(state, cpu_id, "k_current_get")
+        add_self_edge(state, cpu_id, "k_current_get", ty=ZephyrEdgeType.interaction)
         return state
 
 
@@ -861,7 +882,7 @@ class ZEPHYR(OSBase):
     def k_thread_custom_data_set(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id,  "k_thread_custom_data_set")
+        add_self_edge(state, cpu_id,  "k_thread_custom_data_set", ty=ZephyrEdgeType.interaction)
         return state
 
     # void *k_thread_custom_data_get(void)
@@ -869,7 +890,7 @@ class ZEPHYR(OSBase):
     def k_thread_custom_data_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_thread_custom_data_get")
+        add_self_edge(state, cpu_id, "k_thread_custom_data_get", ty=ZephyrEdgeType.interaction)
         return state
 
     #
@@ -881,7 +902,7 @@ class ZEPHYR(OSBase):
     def k_is_in_isr(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_is_in_isr")
+        add_self_edge(state, cpu_id, "k_is_in_isr", ty=ZephyrEdgeType.interaction)
         return state
 
     # int k_is_preempt_thread(void)
@@ -889,7 +910,7 @@ class ZEPHYR(OSBase):
     def k_is_preempt_thread(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_is_preempt_thread")
+        add_self_edge(state, cpu_id, "k_is_preempt_thread", ty=ZephyrEdgeType.interaction)
         return state
 
     # bool k_is_pre_kernel(void)
@@ -897,7 +918,7 @@ class ZEPHYR(OSBase):
     def k_is_pre_kernel(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        add_self_edge(state, cpu_id, "k_is_pre_kernel")
+        add_self_edge(state, cpu_id, "k_is_pre_kernel", ty=ZephyrEdgeType.interaction)
         return state
 
     #
