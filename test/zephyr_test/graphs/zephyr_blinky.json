@@ -1,0 +1,45 @@
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "source": "__main",
+    "target": "__main",
+    "label": "k_msleep",
+    "type": "interaction",
+    "syscall": 89
+  }
+]
