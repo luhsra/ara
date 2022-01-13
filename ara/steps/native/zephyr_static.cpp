@@ -42,7 +42,7 @@ namespace ara::step {
 			const llvm::DIVariable* info_node;
 			Vertex v;
 
-            // Tries to figure out the position of a named member field within a struct
+			// Tries to figure out the position of a named member field within a struct
 			static unsigned index_of(const llvm::DIVariable* info, const llvm::StringRef& name) {
 				const llvm::DICompositeType* type = llvm::dyn_cast<llvm::DICompositeType>(info->getType());
 				assert(type != nullptr);
@@ -62,8 +62,8 @@ namespace ara::step {
 				return 0;
 			}
 
-            // Returns the element at position 'index' of a struct. If a meta-node is given, it checks wether
-            // 'index' and 'name' match.
+			// Returns the element at position 'index' of a struct. If a meta-node is given, it checks wether
+			// 'index' and 'name' match.
 			static llvm::Constant* get_element_checked(const llvm::Constant& c, unsigned index,
 			                                           const llvm::DIVariable* meta, const llvm::StringRef& name) {
 				assert(meta == nullptr || (meta != nullptr && index == index_of(meta, name)));
@@ -106,7 +106,7 @@ namespace ara::step {
 			static PyObject* py_none() { Py_RETURN_NONE; }
 
 			static Vertex add_instance(const ZephyrStaticImpl& context, std::string label, PyObject* obj,
-			                           std::string id, bool is_control = false) {						   
+			                           std::string id, bool is_control = false) {
 				Vertex v = boost::add_vertex(context.g);
 				context.instances.label[v] = label;
 				context.instances.obj[v] = boost::python::object(boost::python::handle<>(boost::python::borrowed(obj)));
@@ -171,10 +171,10 @@ namespace ara::step {
 				    get_element_checked(*context.initializer, 9, context.info_node, "init_delay"));
 
 				PyObject* obj = py_dict({
-					{"cpu_id", py_int_signed(-1)},
-					{"cfg", py_none()}, // Create in Python side
-					{"artificial", Py_False},
-					{"function", py_none()}, // Create in Python side
+				    {"cpu_id", py_int_signed(-1)},
+				    {"cfg", py_none()}, // Create in Python side
+				    {"artificial", Py_False},
+				    {"function", py_none()}, // Create in Python side
 				    {"symbol", symbol ? get_obj_from_value(*symbol) : py_none()},
 				    {"stack", py_none()},
 				    {"stack_size", py_int(safe_deref(stack_size).getValue())},
@@ -205,12 +205,11 @@ namespace ara::step {
 				llvm::Constant* param = llvm::dyn_cast<llvm::Constant>(
 				    get_element_checked(*context.initializer, 3, context.info_node, "param"));
 
-				PyObject* obj = py_dict({
-										 {"cpu_id", py_int_signed(-1)},
-										 {"cfg", py_none()}, // Create in Python side
-										 {"artificial", Py_False},
-										 {"function", py_none()}, // Create in Python side
-										 {"symbol", py_none()},
+				PyObject* obj = py_dict({{"cpu_id", py_int_signed(-1)},
+				                         {"cfg", py_none()}, // Create in Python side
+				                         {"artificial", Py_False},
+				                         {"function", py_none()}, // Create in Python side
+				                         {"symbol", py_none()},
 				                         {"irq_number", py_int(safe_deref(irq_number).getValue())},
 				                         {"priority", py_none()},
 				                         {"entry_name", py_str(entry->getName())},
