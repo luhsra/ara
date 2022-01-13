@@ -82,7 +82,8 @@ step_mod = py3_inst.extension_module('step',
         'svf_analyses.cpp',
         'svf_transformation.cpp',
         'value_analyzer.cpp',
-        'zephyr_static.cpp') + test_sources,
+        'zephyr_static.cpp',
+        'remove_sysfunc_body.cpp') + test_sources,
   cpp_pch: 'pch/steps_pch.h',
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep, cudd_dep]
 )

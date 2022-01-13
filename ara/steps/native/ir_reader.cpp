@@ -18,7 +18,9 @@ namespace ara::step {
 
 	void IRReader::init_options() {
 		input_file = input_file_template.instantiate(get_name());
+		no_sysfunc_body = no_sysfunc_body_template.instantiate(get_name());
 		opts.emplace_back(input_file);
+		opts.emplace_back(no_sysfunc_body);
 	}
 
 	void IRReader::run() {
@@ -52,5 +54,11 @@ namespace ara::step {
 
 		// convert unique_ptr to shared_ptr
 		graph.get_graph_data().initialize_module(std::move(module));
+
+		// Call RemoveSysfuncBody Step if --no-sysfunc-body
+		if (no_sysfunc_body.get().value_or(false)) {
+			llvm::json::Value call_remove_sysfunc_body(llvm::json::Object{{"name", "RemoveSysfuncBody"}});
+			step_manager.chain_step(call_remove_sysfunc_body);
+		}
 	}
 } // namespace ara::step

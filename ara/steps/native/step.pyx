@@ -385,7 +385,8 @@ def provide_steps():
             _native_step_fac(make_step_fac[cstep.ResolveFunctionPointer]()),
             _native_step_fac(make_step_fac[cstep.SVFAnalyses]()),
             _native_step_fac(make_step_fac[cstep.SVFTransformation]()),
-            _native_step_fac(make_step_fac[cstep.ZephyrStatic]())]
+            _native_step_fac(make_step_fac[cstep.ZephyrStatic]()),
+            _native_step_fac(make_step_fac[cstep.RemoveSysfuncBody]())]
 
 
 def provide_test_steps():

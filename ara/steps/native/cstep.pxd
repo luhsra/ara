@@ -87,3 +87,7 @@ cdef extern from "svf_transformation.h" namespace "ara::step":
 cdef extern from "zephyr_static.h" namespace "ara::step":
     cdef cppclass ZephyrStatic:
         pass
+
+cdef extern from "remove_sysfunc_body.h" namespace "ara::step":
+    cdef cppclass RemoveSysfuncBody:
+        pass
