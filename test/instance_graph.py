@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from init_test import init_test, fail_if
+from init_test import init_test, fail_if_json_not_equal
 from ara.os.os_util import UnknownArgument, DefaultArgument, LikelyArgument
 import json
 import os
@@ -115,7 +115,7 @@ def main():
     dump = json_instance_graph(m_graph.instances)
     
     if self_is_testcase:
-        fail_if(data != dump, "Data not equal")
+        fail_if_json_not_equal(data, dump)
     else:
         with open(json_file, "w") as f:
             f.write(json.dumps(dump, indent=2))

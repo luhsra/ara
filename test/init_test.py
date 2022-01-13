@@ -45,6 +45,13 @@ def fail_if(condition, *arg, dry=False):
         if condition and not dry:
             sys.exit(1)
 
+def fail_if_json_not_equal(expected, actual):
+    if expected != actual:
+        # run automatically diff to show difference in a convenient way 
+        os.system(f"echo \"diff <expected> <actual>:\"; diff <(echo \"{json.dumps(expected, indent=2)}\") <(echo \"{json.dumps(actual, indent=2)}\")")
+        print("ERROR: Data not equal")
+        sys.exit(1)
+
 
 def get_config(i_file):
     """Return the default common config."""
