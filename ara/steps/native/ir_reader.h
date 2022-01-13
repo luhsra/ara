@@ -18,7 +18,7 @@ namespace ara::step {
 		option::TOptEntity<option::String> input_file;
 
 		static const inline option::TOption<option::Bool> no_sysfunc_body_template{
-		    "no_sysfunc_body", "Chains the step RemoveSysfuncBody if true."
+		    "no_sysfunc_body", "Chain the step RemoveSysfuncBody if true."
 		                       "See the description of RemoveSysfuncBody."};
 		option::TOptEntity<option::Bool> no_sysfunc_body;
 

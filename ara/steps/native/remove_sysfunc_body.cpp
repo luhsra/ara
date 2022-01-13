@@ -14,7 +14,7 @@ namespace ara::step {
 	using namespace llvm;
 
 	std::string RemoveSysfuncBody::get_description() {
-		return "Removes function bodies of system functions that the OS model interprets.\n"
+		return "Remove function bodies of system functions that the OS model interprets.\n"
 		       "This cleans unnecessary information in different graphs.\n";
 	}
 
