@@ -4,6 +4,9 @@
         "Printer"
 	],
 
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
 	"LLVMMap": {
 		"log_level": "info",
 		"dump": false

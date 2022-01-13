@@ -94,20 +94,20 @@
     "target": "my_sem",
     "label": "k_sem_init",
     "type": "create",
-    "syscall": 45
+    "syscall": 35
   },
   {
     "source": "thread_b",
     "target": "my_sem.1",
     "label": "k_sem_init",
     "type": "create",
-    "syscall": 45
+    "syscall": 35
   },
   {
     "source": "my_sem.1",
     "target": "my_sem",
     "label": "same symbol than",
     "type": "same_symbol_than",
-    "syscall": 45
+    "syscall": 35
   }
 ]
