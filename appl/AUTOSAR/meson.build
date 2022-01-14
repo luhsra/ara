@@ -119,6 +119,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'paper',              'name': 'event',                 'oil': 'system_event.json', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'timing',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'timing_timing.json'},
 ]
 
 autosar_targets = []
