@@ -4,7 +4,7 @@ from .option import Option, String, Bool
 from .step import Step
 from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from ara.graph import MSTGraph, StateType, MSTType, single_check
+from ara.graph import MSTGraph, StateType, MSTType, single_check, vertex_types
 from ara.util import dominates, pairwise
 from ara.os.os_base import ExecState, OSState, CPUList
 
@@ -34,8 +34,9 @@ sse_counter = 0
 
 
 class ExecType(enum.IntEnum):
-    has_length = 1
-    cross_syscall = 2
+    has_length = 1 << 0
+    idle = 1 << 1
+    cross_syscall = 1 << 2
 
 
 @dataclass
@@ -206,14 +207,21 @@ class Equations:
 
     def get_interval_for(self, edge):
         """Return the solution interval for a specific edge."""
-        min_res = self._solve_for_var(self._get_variable(edge,
-                                                         must_exist=True))
-        assert min_res.success
-        max_res = self._solve_for_var(self._get_variable(edge,
-                                                         must_exist=True),
-                                      minimize=False)
-        assert max_res.success
-        return TimeRange(up=int(min_res.fun + 0.5), to=int(max_res.fun))
+        var = self._get_variable(edge, must_exist=True)
+        has_equation = False
+        for equation in self._equalities:
+            if equation[var] != 0:
+                has_equation = True
+                break
+
+        if has_equation:
+            min_res = self._solve_for_var(var)
+            assert min_res.success
+            max_res = self._solve_for_var(var, minimize=False)
+            assert max_res.success
+            return TimeRange(up=int(min_res.fun + 0.5), to=int(max_res.fun))
+        else:
+            return self._bounds[var]
 
     def add_range(self, edge, time):
         var = self._get_variable(edge)
@@ -358,7 +366,9 @@ class MultiSSE(Step):
 
             self._state_map[h] = v
 
-            if cpu.exec_state & ExecState.with_time:
+            if cpu.exec_state == ExecState.idle:
+                self._mstg.type_map[v] = ExecType.idle
+            elif cpu.exec_state & ExecState.with_time:
                 self._mstg.type_map[v] = ExecType.has_length
 
             if cpu.abb is not None:
@@ -730,13 +740,16 @@ class MultiSSE(Step):
 
         reachable = self._get_reachable_states(entry, exit_state=exit_s)
 
-        r1 = GraphView(reachable,
-                       vfilt=(self._mstg.type_map.fa == ExecType.has_length))
+        r1 = vertex_types(reachable, self._mstg.type_map, ExecType.has_length,
+                          ExecType.idle)
 
         good_v = []
         for v in r1.vertices():
-            state_time = self._get_relative_time(entry_cp, cpu_id, v)
             new_eqs = eqs.copy()
+            if self._mstg.type_map[v] == ExecType.idle:
+                good_v.append((v, new_eqs))
+                continue
+            state_time = self._get_relative_time(entry_cp, cpu_id, v)
             e = FakeEdge(src=entry_cp, tgt=v)
             new_eqs.add_range(e, state_time)
             root_edges = ctx.get_edges_to(root)
@@ -818,19 +831,24 @@ class MultiSSE(Step):
         assert len(predecessors) > 0
         return frozenset(predecessors)
 
-    def _get_pred_times(self, cps, state_list):
+    def _get_pred_times(self, cps, state_list, cp, cross_state):
         """Assign a new follow up time for all node in cp_list."""
-        state_map = dict([(ery, sta) for sta, ery in state_list.states])
+        loose_ends = {cp: cross_state}
+        for state, entry in state_list.states:
+            if self._mstg.type_map[state] == ExecType.idle:
+                continue
+            loose_ends[entry] = state
+        self._log.error(loose_ends)
+        self._log.error(state_list.states)
         timed_cps = []
         for cp in cps:
+            self._log.error(state_list.eqs)
             time = state_list.eqs.get_interval_for(
-                FakeEdge(src=cp, tgt=state_map[cp]))
+                FakeEdge(src=cp, tgt=loose_ends[cp]))
             timed_cps.append((cp, time))
         return frozenset(timed_cps)
 
     def _gen_context(self, graph, cross_syscall, cpu_id, cp, root):
-        self._log.error(cp)
-        self._log.error(root)
         vlist, _ = shortest_path(GraphView(graph, reversed=True), cp, root)
         if not vlist:
             vlist.append(cp)
@@ -895,7 +913,8 @@ class MultiSSE(Step):
                     frozenset([cp] + [x[1] for x in state_list.states]))
                 # self._log.debug(
                 #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
-                timed_pred_cps = self._get_pred_times(timely_cps, state_list)
+                timed_pred_cps = self._get_pred_times(timely_cps, state_list,
+                                                      cp, cross_state)
                 combinations.add((tuple([x[0] for x in state_list.states]),
                                   timed_pred_cps, root))
         # for a, b in combinations:
