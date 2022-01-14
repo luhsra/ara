@@ -172,7 +172,7 @@ class FlatAnalysis(Step):
         syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
         for syscall in syscalls.vertices():
             sys_name = cfg.get_syscall_name(syscall)
-            if self._search_category() not in getattr(os, sys_name).categories:
+            if self._search_category() not in os.detected_syscalls()[sys_name].categories:
                 continue
 
             cfg_function = cfg.get_function(syscall)
