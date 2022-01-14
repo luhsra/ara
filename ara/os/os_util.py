@@ -410,11 +410,7 @@ def connect_from_here(state, cpu_id, tgt, label, ty=None):
 
 def add_self_edge(state, cpu_id, label, ty=None):
     cpu = state.cpus[cpu_id]
-    e = state.instances.add_edge(cpu.control_instance, cpu.control_instance)
-    state.instances.ep.syscall[e] = cpu.abb
-    state.instances.ep.label[e] = label
-    if ty:
-        state.instances.ep.type[e] = ty
+    connect_from_here(state, cpu_id, cpu.control_instance, label, ty)
 
 def find_instance_node(instances, obj):
     for ins in instances.vertices():
