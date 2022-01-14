@@ -1,13 +1,14 @@
 {
 	"steps": [
-		"FakeTimings",
-		"SSE",
+		"ApplyTimings",
+		"LockElision",
 		"DumpCFG"
 	],
 
 	"MultiSSE": {
 		"log_level": "debug",
-		"dump": true
+		"dump": true,
+		"with_time": true
 	},
 
 	"SSE": {
