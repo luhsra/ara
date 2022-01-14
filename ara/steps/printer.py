@@ -390,6 +390,14 @@ class Printer(Step):
 
             for block in nodes:
                 tooltip = str(int(block))
+                if bbs == False:
+                    current_bbs = cfg.get_bbs(block)
+                    code = "\r".join([str(cfg.get_llvm_obj(bb))
+                                      for bb in current_bbs])
+                    code = code.replace('\n', '\r')
+                    tooltip += code
+                tooltip = f'<{tooltip}>' # seems to be added automagically
+
                 if cfg.vp.type[block] == ABBType.not_implemented:
                     assert not cfg.vp.implemented[function]
                     dot_abb = pydot.Node(str(hash(block)),
