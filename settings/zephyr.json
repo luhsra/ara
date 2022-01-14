@@ -7,6 +7,9 @@
     "IRReader": {
         "no_sysfunc_body": true
     },
+    "RemoveSysfuncBody": {
+        "drop_llvm_suffix": true
+    },
 	"LLVMMap": {
 		"log_level": "info",
 		"dump": false
