@@ -5,7 +5,7 @@
       "tasks": {
         "T1": {
           "activation": 1,
-          "autostart": false,
+          "autostart": true,
           "priority": 1,
           "schedule": true,
           "spinlocks": [],
