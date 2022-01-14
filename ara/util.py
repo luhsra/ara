@@ -4,6 +4,8 @@
 import sys
 import logging
 
+from itertools import tee
+
 
 LEVEL = {"critical": logging.CRITICAL,
          "error": logging.ERROR,
@@ -150,6 +152,22 @@ def dominates(dom_tree, x, y):
             return True
         y = dom_tree[y]
     return False
+
+
+def pairwise(iterable):
+    """Backport of Python pairwise. See itertools.pairwise."""
+    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+    version = sys.version_info
+    if version.major >= 3 and version.minor >= 10:
+        log = get_logger("util")
+        log.warn("You are using Python 3.10. Consider switching to native "
+                 "pairwise.")
+        from itertools import pairwise as pw
+        return pw(iterable)
+
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 
 class VarianceDict(dict):
