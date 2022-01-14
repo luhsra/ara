@@ -1,6 +1,6 @@
 from .os_util import syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
-from ara.util import get_logger
+from ara.util import get_logger, drop_llvm_suffix
 from ara.graph import SyscallCategory, SigType, CallPath, CFG
 from ara.steps import get_native_component
 from dataclasses import dataclass
@@ -271,8 +271,6 @@ class MSGQ(ZephyrInstance):
     def __hash__(self):
         return hash(("MSGQ", self.symbol, self.msg_size, self.max_msgs))
 
-llvm_suffix = re.compile(".+\.\d+")
-
 class ZephyrEdgeType(IntEnum):
     interaction = 0
     create = 1
@@ -310,13 +308,6 @@ class ZEPHYR(OSBase):
     def has_dynamic_instances():
         return True
 
-    @staticmethod
-    def drop_llvm_suffix(name: str) -> str:
-        """Removes the llvm suffix from a name"""
-        if llvm_suffix.match(name) is not None:
-            return name.rsplit('.', 1)[0]
-        return name
-
     @classmethod
     def is_syscall(cls, function_name: str) -> bool:
         """
@@ -326,7 +317,7 @@ class ZEPHYR(OSBase):
         # Drop the llvm suffix for all functions. Should not pose a problem since they can't occur
         # in regular C identifiers
         alias_name = function_name
-        function_name = ZEPHYR.drop_llvm_suffix(function_name)
+        function_name = drop_llvm_suffix(function_name)
 
         if hasattr(cls, function_name) and hasattr(getattr(cls, function_name), 'syscall'):
             if alias_name != function_name:
@@ -468,7 +459,7 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
         abb = state.cpus[cpu_id].abb
         syscall_name = cfg.get_syscall_name(abb)
-        syscall_name = ZEPHYR.drop_llvm_suffix(syscall_name)
+        syscall_name = drop_llvm_suffix(syscall_name)
         logger.debug(f"Get syscall: {syscall_name}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 
