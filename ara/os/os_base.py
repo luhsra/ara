@@ -224,9 +224,8 @@ class OSBase:
     @classmethod
     def is_syscall(cls, function_name):
         """Return whether a function name is a system call of this OS."""
-        if hasattr(cls, function_name):
-            return hasattr(getattr(cls, function_name), 'syscall')
-        return False
+        sys_dict = cls.detected_syscalls()
+        return sys_dict.get(function_name, None) != None
 
     @classmethod
     def detected_syscalls(cls):
