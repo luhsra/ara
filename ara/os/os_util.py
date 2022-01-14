@@ -392,8 +392,8 @@ def find_return_value(abb, callpath, va):
 def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
     src = instance_graph.vertex(src)
     tgt = instance_graph.vertex(tgt)
-    existing = instance_graph.edge(src, tgt)
-    if existing and instance_graph.ep.syscall[existing] == abb:
+    existing = instance_graph.edge(src, tgt, all_edges=True)
+    if len(existing) >= 1 and len([edge for edge in existing if instance_graph.ep.syscall[edge] == abb]) >= 1:
         return
 
     e = instance_graph.add_edge(src, tgt)
