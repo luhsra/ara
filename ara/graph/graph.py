@@ -32,6 +32,38 @@ def single_check(iterator):
     return first
 
 
+def vertex_types(graph, prop, *types):
+    """Return a GraphView where all vertices are filtered by types.
+
+    The filter leads to a new graph where only vertices are allowed that are
+    of any of the given types.
+
+    All types must be integers which are concatenable with a binary or.
+
+    Arguments:
+    graph -- the graph that should be filtered
+    prop  -- the property that shore the types
+    types -- the types that are allowed
+    """
+    return graph_tool.GraphView(graph, vfilt=(prop.fa & sum(types)))
+
+
+def edge_types(graph, prop, *types):
+    """Return a GraphView where all edges are filtered by types.
+
+    The filter leads to a new graph where only edges are allowed that are
+    of any of the given types.
+
+    All types must be integers which are concatenable with a binary or.
+
+    Arguments:
+    graph -- the graph that should be filtered
+    prop  -- the property that shore the types
+    types -- the types that are allowed
+    """
+    return graph_tool.GraphView(graph, efilt=(prop.fa & sum(types)))
+
+
 class CFGError(Exception):
     """Some error with a CFG function."""
 
@@ -366,17 +398,11 @@ class MSTGraph(graph_tool.Graph):
 
     def edge_type(self, *msttypes):
         """Return a GraphView so only the given edge types are allowed."""
-        return graph_tool.GraphView(
-            self,
-            efilt=(self.ep.type.fa & sum(msttypes))
-        )
+        return edge_types(self, self.ep.type, *msttypes)
 
     def vertex_type(self, *statetypes):
         """Return a GraphView so only the given vertex types are allowed."""
-        return graph_tool.GraphView(
-            self,
-            vfilt=(self.vp.type.fa & sum(statetypes))
-        )
+        return vertex_types(self, self.vp.type, *statetypes)
 
     def get_metastate(self, state):
         """Return the metastate that belongs to a state."""
