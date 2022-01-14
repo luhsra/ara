@@ -23,10 +23,13 @@ class ApplyTimings(Step):
         timings = self.timings.get()
 
         if timings is not None and create_timings is not None:
-            self._fail("Either timings or create_timings must not be set")
+            self._fail("specify either timings or create_timings")
 
         # register self as successor of CreateABBs
         step_config = {"name": self.get_name()}
+        # TODO specifying only the config of this execution does not work,
+        # check why
+        # {"steps": ["LoadOIL", {"name":"ApplyTimings", "create_timings": "' +  app['full_name'] +'.empty_timing.json"}]}
         if create_timings:
             step_config["create_timings"] = create_timings
         if timings:

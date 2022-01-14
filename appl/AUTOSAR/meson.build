@@ -189,7 +189,7 @@ foreach app : autosar_apps
   generate_timing_settings = custom_target(
     output: full_name  + '.generate_timing_settings.json',
     capture: true,
-    command: ['echo', '{"steps": ["LoadOIL", {"name":"ApplyTimings", "create_timings": "' +  app['full_name'] +'.empty_timing.json"}]}'],
+    command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
   )
   run_target('run_lock_elision_generate_timings_' + full_name,
              command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
