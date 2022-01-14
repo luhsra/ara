@@ -52,7 +52,14 @@ def _sstg_state_as_dot(sstg, state_vert):
     )
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
     attrs["label"] = f"<{label}<br/>{graph_attrs}>"
-    attrs["tooltip"] = str(state_vert)
+    tooltip = str(state_vert)
+    if cpu.abb:
+        code = "\r".join([str(cfg.get_llvm_obj(bb))
+                          for bb in cfg.get_bbs(cpu.abb)])
+        code = code.replace('\n', '\r')
+        tooltip = f'<{tooltip + code}>'
+
+    attrs["tooltip"] = tooltip
 
     if cpu.exec_state & ExecState.with_time:
         attrs["color"] = "green"
