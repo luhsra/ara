@@ -19,7 +19,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'scipy'])
 
 ## llvm dependencies
 llvm_version = ['>=10', '<13']

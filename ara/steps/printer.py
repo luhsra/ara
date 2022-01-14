@@ -30,8 +30,10 @@ def _sstg_state_as_dot(sstg, state_vert):
         if syscall != "":
             syscall = f" ({syscall})"
         abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
+        xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
     else:
         abb = "None"
+        xcet = []
 
     graph_attrs = "<br/>".join(
         [
@@ -42,10 +44,10 @@ def _sstg_state_as_dot(sstg, state_vert):
                     "instance",
                     instance,
                 ),
-                ("abb", abb),
                 ("call_path", cpu.call_path),
                 ("type", str(cpu.exec_state)),
-            ]
+                ("abb", abb),
+            ] + xcet
         ]
     )
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
