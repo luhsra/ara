@@ -532,11 +532,7 @@ class MultiSSE(Step):
         return root_cps
 
     def _is_successor_of(self, orig_cp, new_cp):
-        sync_graph = GraphView(
-            self._mstg.g,
-            efilt=((self._mstg.g.ep.type.fa &
-                    (MSTType.follow_sync | MSTType.en2ex) > 0)))
-
+        sync_graph = self._mstg.g.edge_type(MSTType.follow_sync, MSTType.en2ex)
         _, elist = shortest_path(sync_graph, orig_cp, new_cp)
         return len(elist) > 0
 
@@ -840,11 +836,8 @@ class MultiSSE(Step):
             if self._mstg.type_map[state] == ExecType.idle:
                 continue
             loose_ends[entry] = state
-        self._log.error(loose_ends)
-        self._log.error(state_list.states)
         timed_cps = []
         for cp in cps:
-            self._log.error(state_list.eqs)
             time = state_list.eqs.get_interval_for(
                 FakeEdge(src=cp, tgt=loose_ends[cp]))
             timed_cps.append((cp, time))
