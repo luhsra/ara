@@ -219,7 +219,9 @@ class Equations:
             assert min_res.success
             max_res = self._solve_for_var(var, minimize=False)
             assert max_res.success
-            return TimeRange(up=int(min_res.fun + 0.5), to=int(max_res.fun))
+            # add 0.000001 because of floating point imprecision
+            return TimeRange(up=int(min_res.fun + 0.5),
+                             to=int(max_res.fun * -1 + 0.000001))
         else:
             return self._bounds[var]
 
