@@ -1062,32 +1062,100 @@ class MultiSSE(Step):
         else:
             return single_check(cps)
 
+    def _get_previous_execution_time(self, cp, cpu_id, entry):
+        """Calculate the previous execution time of an entry node."""
+        mstg = self._mstg.g
+        g1 = mstg.edge_type(MSTType.st2sy, MSTType.s2s, MSTType.en2ex)
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
+
+        def good_edge(e):
+            if mstg.ep.type[e] == MSTType.st2sy:
+                return mstg.ep.cpu_id[e] == cpu_id
+            return True
+
+        core_graph = GraphView(g1, efilt=good_edge)
+
+        exec_time = TimeRange(up=0, to=0)
+        exit_cp = cp
+        entry_state = entry
+
+        default = TimeRange(up=0, to=mstg.vp.wcet[entry])
+
+        v_filter = core_graph.new_vp("bool", val=True)
+
+        while True:
+            g = GraphView(core_graph, vfilt=v_filter)
+            _, elist = shortest_path(g, entry_state, exit_cp)
+            v_filter[entry_state] = True
+
+            if len(elist) < 2:
+                # the state was not executed before
+                break
+            if len(elist) > 2:
+                # the state was somewhere blocked and is now resumed
+                # currently not supported
+                self._log.warn("Found an previously resumed state that is "
+                               "continued. This is not supported.")
+                return default
+
+            entry_cp = mstg.get_entry_cp(exit_cp)
+            common_cps = set(entry_state.in_neighbors()) & set(follow_sync.vertex(entry_cp).in_neighbors())
+
+            if len(common_cps) != 1:
+                self._log.warn("Found a state with none or multiple common "
+                               "CPs. This is not supported.")
+                return default
+
+            common_cp = single_check(common_cps)
+            follow_edge = follow_sync.edge(common_cp, entry_cp)
+            exec_time += TimeRange(up=mstg.ep.bcet[follow_edge], to=mstg.ep.wcet[follow_edge])
+            exit_cp = common_cp
+
+        return exec_time
+
     def _get_relative_time(self, cp, cpu_id, state):
         """Return the execution time of state relative to cp."""
         mstg = self._mstg.g
         entry = mstg.get_entry_state(cp, cpu_id)
         g = self._get_reachable_states(entry, state)
+        p_ins = mstg.vertex_type(StateType.exit_sync, StateType.state)
+
         dom_tree = dominator_tree(g, g.vertex(entry))
 
         t_from = g.new_vp("int64_t", val=-1)
         t_to = g.new_vp("int64_t", val=-1)
 
-        stack = [g.vertex(entry)]
+        entry_bcet = 0
+
+        # entry time
+        t_from[entry] = 0
+        if p_ins.vertex(entry).in_degree() == 1:
+            entry_bcet = mstg.vp.bcet[entry]
+            t_to[entry] = mstg.vp.wcet[entry]
+        else:
+            # the state was maybe already executed previously
+            # find out how long
+            time = self._get_previous_execution_time(cp, cpu_id, entry)
+            entry_bcet = mstg.vp.bcet[entry] - time.up
+            t_to[entry] = mstg.vp.wcet[entry] - time.to
+
+        def get_bcet(node):
+            if node == entry:
+                return entry_bcet
+            return g.vp.bcet[node]
+
+        stack = list(g.vertex(entry).out_neighbors())
 
         while stack:
             cur = stack.pop(0)
             degree = cur.in_degree()
-            if degree == 0:
-                # entry
-                t_from[cur] = 0
-                t_to[cur] = g.vp.wcet[cur]
-            elif degree == 1:
+            if degree == 1:
                 pred = single_check(cur.in_neighbors())
-                t_from[cur] = t_from[pred] + g.vp.bcet[pred]
+                t_from[cur] = t_from[pred] + get_bcet(pred)
                 t_to[cur] = t_to[pred] + g.vp.wcet[cur]
             elif degree >= 2:
-                if any(
-                    [dominates(dom_tree, cur, x) for x in cur.in_neighbors()]):
+                if any([dominates(dom_tree, cur, x)
+                        for x in cur.in_neighbors()]):
                     # we have a loop, find out_neighbor which belongs to loop
                     self._fail(
                         "Loops are unsupported currently. Please roll them out."
@@ -1099,7 +1167,7 @@ class MultiSSE(Step):
                         # skip cur, it will be added anyway
                         continue
                     froms = [
-                        t_from(x) + g.vp.bcet[x] for x in cur.in_neighbors()
+                        t_from(x) + get_bcet(x) for x in cur.in_neighbors()
                     ]
                     t_from[cur] = min(froms)
                     t_to[cur] = max(tos) + g.vp.wcet[cur]
