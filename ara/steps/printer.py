@@ -260,8 +260,7 @@ def mstg_to_dot(mstg, label="MSTG"):
     for edge in flow.edges():
         src = edge.source()
         tgt = edge.target()
-        attrs = {"color": "black",
-                 "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
+        attrs = {"color": "black"}
         if flow.ep.type[edge] == MSTType.st2sy:
             if flow.vp.type[src] == StateType.exit_sync:
                 src = _sync_str(src, edge)
@@ -277,7 +276,8 @@ def mstg_to_dot(mstg, label="MSTG"):
                          "style": "dashed"}
             if flow.ep.type[edge] == MSTType.follow_sync:
                 attrs = {"color": "darkgreen",
-                         "style": "dotted"}
+                         "style": "dotted",
+                         "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
             if flow.ep.type[edge] in [MSTType.sync_neighbor, MSTType.m2sy]:
                 continue
             src = _to_str(src)
