@@ -744,7 +744,7 @@ class MultiSSE(Step):
         good_v = []
         for v in r1.vertices():
             new_eqs = eqs.copy()
-            if self._mstg.type_map[v] == ExecType.idle:
+            if self._mstg.type_map[v] == ExecType.idle or not self.with_times.get():
                 good_v.append((v, new_eqs))
                 continue
             state_time = self._get_relative_time(entry_cp, cpu_id, v)
@@ -788,7 +788,8 @@ class MultiSSE(Step):
             for state, new_eqs in states:
                 if len(cores) > 1:
                     new_cores = cores[1:]
-                    new_cps, _ = self._get_constrained_cps(new_cores,
+                    new_cps, _ = self._get_constrained_cps(ctx.graph,
+                                                           new_cores,
                                                            Range(start=cp_from,
                                                                  end=cp_to),
                                                            old_cps=cps)
@@ -898,7 +899,8 @@ class MultiSSE(Step):
             ctx = self._gen_context(r_graph, cross_state, current_core, cp,
                                     root)
             eqs = Equations()
-            eqs.add_range(FakeEdge(src=cp, tgt=cross_state), time.range)
+            if self.with_times.get():
+                eqs.add_range(FakeEdge(src=cp, tgt=cross_state), time.range)
 
             for state_list in self._build_product(ctx, cps, eqs,
                                                   affected_cores, []):
@@ -908,8 +910,13 @@ class MultiSSE(Step):
                     frozenset([cp] + [x[1] for x in state_list.states]))
                 # self._log.debug(
                 #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
-                timed_pred_cps = self._get_pred_times(timely_cps, state_list,
-                                                      cp, cross_state)
+                if self.with_times.get():
+                    timed_pred_cps = self._get_pred_times(timely_cps, state_list,
+                                                          cp, cross_state)
+                else:
+                    timed_pred_cps = frozenset([(x, TimeRange(up=0, to=0))
+                                                for x in timely_cps])
+
                 combinations.add((tuple([x[0] for x in state_list.states]),
                                   timed_pred_cps, root))
         # for a, b in combinations:
@@ -1189,7 +1196,10 @@ class MultiSSE(Step):
                         f"{[int(x) for x in metastate.cross_points]} "
                         f"(starting cross point {int(cp)}).")
         for cross_state in metastate.cross_points:
-            time = self._get_relative_time(cp, metastate.cpu_id, cross_state)
+            if self.with_times.get():
+                time = self._get_relative_time(cp, metastate.cpu_id, cross_state)
+            else:
+                time = TimeRange(up=0, to=0)
             for timed_candidates, pred_cps, root in self._find_timed_states(
                     cross_state, cp, time, start_from=start_from):
                 self._log.debug(
@@ -1239,11 +1249,14 @@ class MultiSSE(Step):
 
                     unready = current_cpus - other_cpus
                     if unready:
+                        g = GraphView(self._mstg.g.vertex_type(
+                            StateType.entry_sync, StateType.exit_sync),
+                                               efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
                         new_cps, _ = self._get_constrained_cps(
-                            unready, Range(start=other_cp, end=None))
+                            g, unready, Range(start=other_cp, end=None))
                         on_stack = defaultdict(list)
                         for core, ran in new_cps.items():
-                            on_stack[ran.start].append(core)
+                            on_stack[ran.range.start].append(core)
                         for i_cp, cores in on_stack.items():
                             self._log.debug(
                                 f"Current cross point {int(other_cp)} may add "
