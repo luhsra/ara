@@ -1,7 +1,7 @@
 from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
 from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
 from ara.util import get_logger
-from ara.graph import CallPath, SyscallCategory, SigType, single_check
+from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
 
 import graph_tool
 import html
@@ -35,16 +35,16 @@ class SyscallInfo:
 
 
 class InstanceEdge(IntEnum):
-    have = 1
-    trigger = 2
-    activate = 3
-    chain = 4
-    nestable = 5
-    terminate = 6
-    get = 7
-    release = 8
-    sete = 9
-    wait = 10
+    have = 1 << 1
+    trigger = 1 << 2
+    activate = 1 << 3
+    chain = 1 << 4
+    nestable = 1 << 5
+    terminate = 1 << 6
+    get = 1 << 7
+    release = 1 << 8
+    sete = 1 << 9
+    wait = 1 << 10
 
 
 @dataclass(eq=False)
@@ -345,17 +345,25 @@ class AUTOSAR(OSBase):
         return state
 
     @staticmethod
+    def _get_taskgroup_for_task(instances, task_v):
+        have = edge_types(instances, instances.ep.type, InstanceEdge.have)
+        return instances.vertex(single_check(have.vertex(task_v).in_neighbors()))
+
+    @staticmethod
+    def _get_all_tasks_of_taskgroup(instances, task_group):
+        have = edge_types(instances, instances.ep.type, InstanceEdge.have)
+        return frozenset([instances.vertex(x) for x in have.vertex(task_group).out_neighbors()])
+
+    @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
-        def filtered_instances(edge_type):
-            return graph_tool.GraphView(
-                state.instances,
-                efilt=state.instances.ep.type.fa == int(edge_type)
-            )
 
         # we handle alarms only
         instances = state.instances
         vertex = instances.vertex(irq)
         obj = instances.vp.obj[vertex]
+
+        activates = edge_types(instances, instances.ep.type, InstanceEdge.activate)
+        event_tgt = edge_types(instances, instances.ep.type, InstanceEdge.have)
 
         if obj.cpu_id != cpu_id:
             # false CPU
@@ -365,20 +373,25 @@ class AUTOSAR(OSBase):
             # do not trigger alarms, if an interrupt is handled
             if isinstance(state.cur_control_inst(cpu_id), ISR):
                 return
+            # the current control instance must be a task
+
             alarm_ctx = state.context.get(obj, False)
             # TODO interarrival times
             if alarm_ctx and alarm_ctx.active:
-                activates = filtered_instances(InstanceEdge.activate)
                 acty_vertex = single_check(activates.vertex(vertex).out_neighbors())
                 acty = instances.vp.obj[acty_vertex]
-
                 if isinstance(acty, Task):
+                    # do not trigger alarms, if in handling task or taskgroup
+                    ctl_inst = state.cpus[cpu_id].control_instance
+                    if ctl_inst is not None:
+                        all_tasks = AUTOSAR._get_all_tasks_of_taskgroup(instances, AUTOSAR._get_taskgroup_for_task(instances, ctl_inst))
+                        if acty_vertex in all_tasks:
+                            return
                     logger.debug(f"Alarm {obj.name} activates {acty.name}.")
                     new_state = state.copy()
                     return AUTOSAR.ActivateTask(new_state, cpu_id, acty)
                 elif isinstance(acty, Event):
                     logger.debug(f"Alarm {obj.name} sets {acty.name}.")
-                    event_tgt = filtered_instances(InstanceEdge.have)
                     new_state = state.copy()
                     for t in event_tgt.vertex(acty_vertex).in_neighbors():
                         task = instances.vp.obj[instances.vertex(t)]
