@@ -345,10 +345,6 @@ class AUTOSAR(OSBase):
         return state
 
     @staticmethod
-    def init(instances):
-        pass
-
-    @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
         def filtered_instances(edge_type):
             return graph_tool.GraphView(

@@ -278,10 +278,6 @@ class FreeRTOS(OSBase):
         return True
 
     @staticmethod
-    def init(state):
-        state.scheduler_on = False
-
-    @staticmethod
     def get_initial_state(cfg, instances):
         # We can't set a control instance, yet, since FreeRTOS does not start
         # directly. Is has to be the responsibility of the outer analysis to
