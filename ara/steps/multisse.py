@@ -10,6 +10,7 @@ from ara.os.os_base import ExecState, OSState, CPUList
 
 import os.path
 import enum
+import math
 import graph_tool
 
 from collections import defaultdict
@@ -29,6 +30,7 @@ c_debugging = 0  # in milliseconds
 MAX_UPDATES = 2
 MAX_STATE_UPDATES = 20
 MIN_EMULATION_TIME = 200
+MAX_INT64 = 2**63 - 1
 
 sse_counter = 0
 
@@ -744,7 +746,7 @@ class MultiSSE(Step):
         good_v = []
         for v in r1.vertices():
             new_eqs = eqs.copy()
-            if self._mstg.type_map[v] == ExecType.idle or not self.with_times.get():
+            if not self.with_times.get():
                 good_v.append((v, new_eqs))
                 continue
             state_time = self._get_relative_time(entry_cp, cpu_id, v)
@@ -911,8 +913,8 @@ class MultiSSE(Step):
                 # self._log.debug(
                 #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
                 if self.with_times.get():
-                    timed_pred_cps = self._get_pred_times(timely_cps, state_list,
-                                                          cp, cross_state)
+                    timed_pred_cps = self._get_pred_times(
+                        timely_cps, state_list, cp, cross_state)
                 else:
                     timed_pred_cps = frozenset([(x, TimeRange(up=0, to=0))
                                                 for x in timely_cps])
@@ -1106,7 +1108,8 @@ class MultiSSE(Step):
                 return default
 
             entry_cp = mstg.get_entry_cp(exit_cp)
-            common_cps = set(entry_state.in_neighbors()) & set(follow_sync.vertex(entry_cp).in_neighbors())
+            common_cps = set(entry_state.in_neighbors()) & set(
+                follow_sync.vertex(entry_cp).in_neighbors())
 
             if len(common_cps) != 1:
                 self._log.warn("Found a state with none or multiple common "
@@ -1115,7 +1118,8 @@ class MultiSSE(Step):
 
             common_cp = single_check(common_cps)
             follow_edge = follow_sync.edge(common_cp, entry_cp)
-            exec_time += TimeRange(up=mstg.ep.bcet[follow_edge], to=mstg.ep.wcet[follow_edge])
+            exec_time += TimeRange(up=mstg.ep.bcet[follow_edge],
+                                   to=mstg.ep.wcet[follow_edge])
             exit_cp = common_cp
 
         return exec_time
@@ -1126,6 +1130,7 @@ class MultiSSE(Step):
         entry = mstg.get_entry_state(cp, cpu_id)
         g = self._get_reachable_states(entry, state)
         p_ins = mstg.vertex_type(StateType.exit_sync, StateType.state)
+        type_map = self._mstg.type_map
 
         dom_tree = dominator_tree(g, g.vertex(entry))
 
@@ -1134,22 +1139,42 @@ class MultiSSE(Step):
 
         entry_bcet = 0
 
+        def sett(prop, idx, number):
+            if number == math.inf:
+                number = MAX_INT64
+            prop[idx] = number
+
+        def get(prop, idx):
+            number = prop[idx]
+            if number == MAX_INT64:
+                return math.inf
+            return number
+
         # entry time
         t_from[entry] = 0
-        if p_ins.vertex(entry).in_degree() == 1:
+        if type_map[entry] == ExecType.idle:
+            sett(t_to, entry, math.inf)
+        elif p_ins.vertex(entry).in_degree() == 1:
             entry_bcet = mstg.vp.bcet[entry]
-            t_to[entry] = mstg.vp.wcet[entry]
+            sett(t_to, entry, mstg.vp.wcet[entry])
         else:
             # the state was maybe already executed previously
             # find out how long
             time = self._get_previous_execution_time(cp, cpu_id, entry)
             entry_bcet = mstg.vp.bcet[entry] - time.up
-            t_to[entry] = mstg.vp.wcet[entry] - time.to
+            sett(t_to, entry, mstg.vp.wcet[entry] - time.to)
 
         def get_bcet(node):
+            if type_map[node] == ExecType.idle:
+                return 0
             if node == entry:
                 return entry_bcet
             return g.vp.bcet[node]
+
+        def get_wcet(node):
+            if type_map[node] == ExecType.idle:
+                return math.inf
+            return g.vp.wcet[node]
 
         stack = list(g.vertex(entry).out_neighbors())
 
@@ -1158,31 +1183,32 @@ class MultiSSE(Step):
             degree = cur.in_degree()
             if degree == 1:
                 pred = single_check(cur.in_neighbors())
-                t_from[cur] = t_from[pred] + get_bcet(pred)
-                t_to[cur] = t_to[pred] + g.vp.wcet[cur]
+                sett(t_from, cur, get(t_from, pred) + get_bcet(pred))
+                sett(t_to, cur, get(t_to, pred) + get_wcet(cur))
             elif degree >= 2:
-                if any([dominates(dom_tree, cur, x)
-                        for x in cur.in_neighbors()]):
+                if any(
+                    [dominates(dom_tree, cur, x) for x in cur.in_neighbors()]):
                     # we have a loop, find out_neighbor which belongs to loop
                     self._fail(
                         "Loops are unsupported currently. Please roll them out."
                     )
                 else:
                     # we need to wait, until all predecessors have a time
-                    tos = [t_to(x) for x in cur.in_neighbors()]
+                    tos = [get(t_to, x) for x in cur.in_neighbors()]
                     if any([x == -1 for x in tos]):
                         # skip cur, it will be added anyway
                         continue
                     froms = [
-                        t_from(x) + get_bcet(x) for x in cur.in_neighbors()
+                        get(t_from, x) + get_bcet(x)
+                        for x in cur.in_neighbors()
                     ]
-                    t_from[cur] = min(froms)
-                    t_to[cur] = max(tos) + g.vp.wcet[cur]
+                    sett(t_from, cur, min(froms))
+                    sett(t_to, cur, max(tos) + get_wcet(cur))
 
             for nex in cur.out_neighbors():
                 stack.append(nex)
 
-        return TimeRange(up=t_from[state], to=t_to[state])
+        return TimeRange(up=get(t_from, state), to=get(t_to, state))
 
     def _do_full_pairing(self, cp, metastate, start_from=None):
         exits = []
@@ -1197,7 +1223,8 @@ class MultiSSE(Step):
                         f"(starting cross point {int(cp)}).")
         for cross_state in metastate.cross_points:
             if self.with_times.get():
-                time = self._get_relative_time(cp, metastate.cpu_id, cross_state)
+                time = self._get_relative_time(cp, metastate.cpu_id,
+                                               cross_state)
             else:
                 time = TimeRange(up=0, to=0)
             for timed_candidates, pred_cps, root in self._find_timed_states(
@@ -1249,9 +1276,10 @@ class MultiSSE(Step):
 
                     unready = current_cpus - other_cpus
                     if unready:
-                        g = GraphView(self._mstg.g.vertex_type(
-                            StateType.entry_sync, StateType.exit_sync),
-                                               efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
+                        g = GraphView(
+                            self._mstg.g.vertex_type(StateType.entry_sync,
+                                                     StateType.exit_sync),
+                            efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
                         new_cps, _ = self._get_constrained_cps(
                             g, unready, Range(start=other_cp, end=None))
                         on_stack = defaultdict(list)
