@@ -8,7 +8,7 @@
 	"MultiSSE": {
 		"log_level": "debug",
 		"dump": true,
-		"with_time": true
+		"with_times": true
 	},
 
 	"SSE": {
@@ -23,7 +23,7 @@
 	"logger": {
 		"StepManager": "info",
 		"FreeRTOS": "info",
-		"AUTOSAR": "debug",
+		"AUTOSAR": "info",
 		"ara": "info"
 	}
 }
