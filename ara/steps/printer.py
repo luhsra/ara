@@ -475,6 +475,7 @@ class Printer(Step):
             if "label" in attrs:
                 del attrs["label"]
             attrs["fontsize"] = attrs.get("fontsize", 14)
+            attrs["tooltip"] = str(int(instance))
 
             if self.gen_html_links.get():
                 src_file = instances.vp.file[instance]
