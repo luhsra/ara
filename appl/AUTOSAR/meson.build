@@ -81,6 +81,7 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'e',                     'oil': 'system.json', 'trace': 'e.trace.json'},
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'f',                     'oil': 'system.json', 'trace': 'f.trace.json'},
   {'core': 'multicore',  'path': '',                   'name': 'minexample',            'oil': 'minexample.json'},
+  {'core': 'multicore',  'path': 'interrupts',        'name': 'a',                     'oil': 'a_system.json', 'timing': 'a_timings.json'},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a',                     'oil': 'system.json', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a_start1',              'oil': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'b',                     'oil': 'system.json'},

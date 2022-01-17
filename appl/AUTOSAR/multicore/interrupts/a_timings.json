@@ -1,0 +1,13 @@
+{
+	"ABB0": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
+	"ABB2": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
+	"ABB3": {"function": "main", "bcet": 0, "wcet": 0},
+	"ABB5": {"function": "main", "bcet": 0, "wcet": 0},
+	"ABB7": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 2, "wcet": 8},
+	"ABB9": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 0, "wcet": 0},
+	"ABB11": {"function": "AUTOSAR_TASK_FUNC_T02", "bcet": 1, "wcet": 5},
+	"ABB13": {"function": "AUTOSAR_TASK_FUNC_T02", "bcet": 10, "wcet": 12},
+	"ABB15": {"function": "AUTOSAR_TASK_FUNC_T02", "bcet": 0, "wcet": 0},
+	"ABB17": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 100},
+	"ABB19": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 0, "wcet": 0}
+}
