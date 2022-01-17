@@ -7,8 +7,12 @@
 
 	"MultiSSE": {
 		"log_level": "debug",
-		"dump": true,
-		"with_times": true
+		"with_times": true,
+		"dump": true
+	},
+
+	"LoadOIL": {
+		"dump": true
 	},
 
 	"SSE": {
