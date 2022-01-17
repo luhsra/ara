@@ -192,10 +192,18 @@ foreach app : autosar_apps
     capture: true,
     command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
   )
+
+  with_timing_settings = custom_target(
+    output: full_name  + '.with_timing_settings.json',
+    capture: true,
+    command: ['echo', '{"steps": ["ApplyTimings", "LockElision", "DumpCFG"], "MultiSSE": {"with_times": true, "dump": true}}'],
+  )
+
+
   run_target('run_lock_elision_generate_timings_' + full_name,
              command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
   run_target('run_lock_elision_with_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '-s', 'ApplyTimings', '-s', 'LockElision', '--timings', app['sys_timings']])
+             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', with_timing_settings, '--timings', app['sys_timings']])
 
   # lock elision test data
   if app.has_key('locks')
