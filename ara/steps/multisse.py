@@ -191,6 +191,8 @@ class Equations:
         return self._v_map[edge]
 
     def _solve_for_var(self, var, minimize=True):
+        def inf(num):
+            return None if num == math.inf else num
         c = (self._highest) * [0]
         c[var] = int(minimize) * 2 - 1
         b_eq = len(self._equalities) * [0]
@@ -198,7 +200,7 @@ class Equations:
         for i in range(self._highest):
             assert i in self._bounds
             time = self._bounds[i]
-            bounds.append((time.up, time.to))
+            bounds.append((inf(time.up), inf(time.to)))
         return linprog(c, A_eq=self._equalities, b_eq=b_eq, bounds=bounds)
 
     def solvable(self):
@@ -218,12 +220,19 @@ class Equations:
 
         if has_equation:
             min_res = self._solve_for_var(var)
-            assert min_res.success
+            assert min_res.success or min_res.status == 3
             max_res = self._solve_for_var(var, minimize=False)
-            assert max_res.success
+            assert max_res.success or max_res.status == 3
+            if min_res.status == 3:
+                new_up = math.inf
+            else:
+                new_up = int(min_res.fun + 0.5)
             # add 0.000001 because of floating point imprecision
-            return TimeRange(up=int(min_res.fun + 0.5),
-                             to=int(max_res.fun * -1 + 0.000001))
+            if max_res.status == 3:
+                new_to = math.inf
+            else:
+                new_to = int(max_res.fun * -1 + 0.0001)
+            return TimeRange(up=new_up, to=new_to)
         else:
             return self._bounds[var]
 
@@ -246,6 +255,19 @@ class Equations:
         cp._v_map = dict([(e, idx) for e, idx in self._v_map.items()])
         cp._highest = self._highest
         return cp
+
+
+def set_time(prop, idx, number):
+    if number == math.inf:
+        number = MAX_INT64
+    prop[idx] = number
+
+
+def get_time(prop, idx):
+    number = prop[idx]
+    if number == MAX_INT64:
+        return math.inf
+    return number
 
 
 @dataclass(frozen=True)
@@ -874,7 +896,8 @@ class MultiSSE(Step):
         root_cps = self._find_root_cross_points(cp, needed_cores, sync_graph)
 
         self._log.debug(
-            f"Find pairing candidates for node {int(cross_state)} starting "
+            f"Find pairing candidates for node {int(cross_state)} "
+            f"(time: {time}) starting "
             f"from cross points {[int(x) for x in root_cps]}.")
         combinations = set()
         for root in root_cps:
@@ -946,8 +969,8 @@ class MultiSSE(Step):
                 f"Add time edge between {int(pred_cp)} and {int(new_cp)}.")
             e = mstg.add_edge(pred_cp, new_cp)
             mstg.ep.type[e] = MSTType.follow_sync
-            mstg.ep.bcet[e] = time.up
-            mstg.ep.wcet[e] = time.to
+            set_time(mstg.ep.bcet, e, time.up)
+            set_time(mstg.ep.wcet, e, time.to)
 
         for src in chain([cross_state], timed_states):
             e = mstg.add_edge(src, new_cp)
@@ -1118,8 +1141,8 @@ class MultiSSE(Step):
 
             common_cp = single_check(common_cps)
             follow_edge = follow_sync.edge(common_cp, entry_cp)
-            exec_time += TimeRange(up=mstg.ep.bcet[follow_edge],
-                                   to=mstg.ep.wcet[follow_edge])
+            exec_time += TimeRange(up=get_time(mstg.ep.bcet, follow_edge),
+                                   to=get_time(mstg.ep.wcet, follow_edge))
             exit_cp = common_cp
 
         return exec_time
@@ -1139,30 +1162,19 @@ class MultiSSE(Step):
 
         entry_bcet = 0
 
-        def sett(prop, idx, number):
-            if number == math.inf:
-                number = MAX_INT64
-            prop[idx] = number
-
-        def get(prop, idx):
-            number = prop[idx]
-            if number == MAX_INT64:
-                return math.inf
-            return number
-
         # entry time
         t_from[entry] = 0
         if type_map[entry] == ExecType.idle:
-            sett(t_to, entry, math.inf)
+            set_time(t_to, entry, math.inf)
         elif p_ins.vertex(entry).in_degree() == 1:
             entry_bcet = mstg.vp.bcet[entry]
-            sett(t_to, entry, mstg.vp.wcet[entry])
+            set_time(t_to, entry, mstg.vp.wcet[entry])
         else:
             # the state was maybe already executed previously
             # find out how long
             time = self._get_previous_execution_time(cp, cpu_id, entry)
             entry_bcet = mstg.vp.bcet[entry] - time.up
-            sett(t_to, entry, mstg.vp.wcet[entry] - time.to)
+            set_time(t_to, entry, mstg.vp.wcet[entry] - time.to)
 
         def get_bcet(node):
             if type_map[node] == ExecType.idle:
@@ -1183,8 +1195,8 @@ class MultiSSE(Step):
             degree = cur.in_degree()
             if degree == 1:
                 pred = single_check(cur.in_neighbors())
-                sett(t_from, cur, get(t_from, pred) + get_bcet(pred))
-                sett(t_to, cur, get(t_to, pred) + get_wcet(cur))
+                set_time(t_from, cur, get_time(t_from, pred) + get_bcet(pred))
+                set_time(t_to, cur, get_time(t_to, pred) + get_wcet(cur))
             elif degree >= 2:
                 if any(
                     [dominates(dom_tree, cur, x) for x in cur.in_neighbors()]):
@@ -1194,21 +1206,21 @@ class MultiSSE(Step):
                     )
                 else:
                     # we need to wait, until all predecessors have a time
-                    tos = [get(t_to, x) for x in cur.in_neighbors()]
+                    tos = [get_time(t_to, x) for x in cur.in_neighbors()]
                     if any([x == -1 for x in tos]):
                         # skip cur, it will be added anyway
                         continue
                     froms = [
-                        get(t_from, x) + get_bcet(x)
+                        get_time(t_from, x) + get_bcet(x)
                         for x in cur.in_neighbors()
                     ]
-                    sett(t_from, cur, min(froms))
-                    sett(t_to, cur, max(tos) + get_wcet(cur))
+                    set_time(t_from, cur, min(froms))
+                    set_time(t_to, cur, max(tos) + get_wcet(cur))
 
             for nex in cur.out_neighbors():
                 stack.append(nex)
 
-        return TimeRange(up=get(t_from, state), to=get(t_to, state))
+        return TimeRange(up=get_time(t_from, state), to=get_time(t_to, state))
 
     def _do_full_pairing(self, cp, metastate, start_from=None):
         exits = []
@@ -1259,8 +1271,8 @@ class MultiSSE(Step):
                         if not exists:
                             m2sy_edge = mstg.add_edge(pred_cp, other_cp)
                             mstg.ep.type[m2sy_edge] = MSTType.follow_sync
-                            mstg.ep.bcet[m2sy_edge] = time.up
-                            mstg.ep.wcet[m2sy_edge] = time.to
+                            set_time(mstg.ep.bcet, m2sy_edge, time.up)
+                            set_time(mstg.ep.wcet, m2sy_edge, time.to)
                         else:
                             self._log.warn("Time link already exists.")
                 else:
