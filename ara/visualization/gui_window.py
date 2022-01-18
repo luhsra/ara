@@ -1,152 +1,211 @@
+import enum
+
+from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QGraphicsView, QLabel, QWidget, \
-    QMainWindow, QDockWidget, QToolBar
+    QMainWindow, QDockWidget, QToolBar, QListWidgetItem, QListWidget
 
 from PySide6.QtCore import Signal
 from PySide6.QtCore import Slot
 
 from PySide6.QtGui import QPainter, Qt
 
-import graph_tool
-
-from . import ara_manager, layouter
-from .layouter import Layouter
+from . import ara_manager
 from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
-from .util import GraphTypes
+from .trace import trace_handler
+from .util import GraphTypes, StepMode
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView
+
+loader = QUiLoader()
 
 
 class GuiWindow(QMainWindow):
-    sigGuiWorkFinished = Signal()
-    sigFinshed = Signal()
+    sig_exec_step = Signal()
 
-    sigUpdateDone = Signal()
+    sig_init_trace_handler = Signal()
+
+    sig_exec_trace_step = Signal()
+
+    sig_change_mode = Signal(StepMode)
+
+    sig_reset_trace_handler = Signal()
 
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.mode = StepMode.DEFAULT
+
+        self.current_trace = None
+
         self.b_start = QPushButton("Initialize Ara")
         self.b_step = QPushButton("Next Step")
+        self.b_step_trace = QPushButton("Next Trace Step")
 
         self.w_right = QWidget()
         self.l_right = QVBoxLayout(self.w_right)
 
         self.v_graph_type = GraphTypes.ABB
 
-        self.cfg_dock_widget = QDockWidget("CFG View", self)
-        self.callgraph_dock_widget = QDockWidget("CallGraph View", self)
-        self.instance_dock_widget = QDockWidget("Instance View", self)
+        self.dw_cfg = QDockWidget("CFG View", self)
+        self.dw_callgraph = QDockWidget("CallGraph View", self)
+        self.dw_instance_graph = QDockWidget("Instance View", self)
+
+        self.dw_step_queue = loader.load("../resources/step_queue.ui")
+        self.dw_function_search = loader.load("../resources/function_list_search.ui")
 
         self.proxies = []
 
         self.init()
         self.setup_signals()
 
-
     def setup_signals(self):
         self.b_start.clicked.connect(ara_manager.INSTANCE.init)
         self.b_start.clicked.connect(self.disable_start_button)
 
-        self.b_step.clicked.connect(ara_manager.INSTANCE.step)
+        self.b_step.clicked.connect(self.handle_step_clicked)
         self.b_step.clicked.connect(self.disable_step_button)
+        self.b_step.clicked.connect(self.disable_step_trace_button)
 
-        ara_signal.SIGNAL_MANAGER.sig_init_done.connect(self.enable_step_button)
+        self.b_step_trace.clicked.connect(self.handle_step_trace_clicked)
+        self.b_step_trace.clicked.connect(self.disable_step_trace_button)
+        self.b_step_trace.clicked.connect(self.disable_step_button)
+
+        self.sig_exec_step.connect(ara_manager.INSTANCE.step)
+
+        self.sig_init_trace_handler.connect(trace_handler.INSTANCE.init)
+
+        self.sig_exec_trace_step.connect(trace_handler.INSTANCE.step)
+
+        ara_signal.SIGNAL_MANAGER.sig_init_done.connect(self.handle_button_activation)
         ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.connect(ara_manager.INSTANCE.step)
 
-        #ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.update)
-        #ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.switch_step_button)
+        ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.handle_step_done)
 
-        #self.cfg_dock_widget.widget().sig_work_done.connect(self.enable_step_button)
-        #self.callgraph_dock_widget.widget().sig_work_done.connect(self.enable_step_button)
-        #self.instance_dock_widget.widget().sig_work_done.connect(self.enable_step_button)
+        ara_signal.SIGNAL_MANAGER.sig_execute_chain.connect(self.update_step_list)
 
-        ara_signal.SIGNAL_MANAGER.sig_execute_chain.connect(self.update_right)
+        self.sig_change_mode.connect(self.dw_cfg.widget().set_mode)
+        self.sig_change_mode.connect(self.dw_callgraph.widget().set_mode)
+        self.sig_change_mode.connect(self.dw_instance_graph.widget().set_mode)
+
+        self.sig_reset_trace_handler.connect(trace_handler.INSTANCE.reset)
+        self.sig_reset_trace_handler.connect(self.dw_callgraph.widget().expansion_points_reset)
 
     def init(self):
         # Graph Views
-        self.cfg_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.callgraph_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
-        self.instance_dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dw_cfg.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dw_callgraph.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dw_instance_graph.setAllowedAreas(Qt.AllDockWidgetAreas)
 
-        signal_combiner = SignalCombiner(self.enable_step_button)
+        self.dw_step_queue.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dw_function_search.setAllowedAreas(Qt.AllDockWidgetAreas)
 
-        self.cfg_dock_widget.setWidget(CFGView(signal_combiner))
-        self.callgraph_dock_widget.setWidget(CallGraphView(signal_combiner))
-        self.instance_dock_widget.setWidget(InstanceGraphView(signal_combiner))
+        signal_combiner = SignalCombiner(self.handle_button_activation)
 
-        self.cfg_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
-        self.callgraph_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
-        self.instance_dock_widget.widget().setRenderHint(QPainter.Antialiasing)
+        self.dw_cfg.setWidget(CFGView(signal_combiner))
+        self.dw_callgraph.setWidget(CallGraphView(signal_combiner))
+        self.dw_instance_graph.setWidget(InstanceGraphView(signal_combiner))
 
-        self.addDockWidget(Qt.TopDockWidgetArea, self.cfg_dock_widget)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.callgraph_dock_widget)
-        self.addDockWidget(Qt.TopDockWidgetArea, self.instance_dock_widget)
+        self.dw_cfg.widget().setRenderHint(QPainter.Antialiasing)
+        self.dw_callgraph.widget().setRenderHint(QPainter.Antialiasing)
+        self.dw_instance_graph.widget().setRenderHint(QPainter.Antialiasing)
+
+        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_cfg)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_callgraph)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_instance_graph)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_step_queue)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_function_search)
 
         self.b_step.setDisabled(True)
+        self.b_step_trace.setDisabled(True)
 
         # Toolbar Setup
         toolbar = QToolBar()
 
         toolbar.addWidget(self.b_start)
         toolbar.addWidget(self.b_step)
+        toolbar.addWidget(self.b_step_trace)
 
         self.addToolBar(Qt.BottomToolBarArea, toolbar)
 
-        toolbar2 = QToolBar()
-        toolbar2.addWidget(self.w_right)
-
-        self.addToolBar(Qt.LeftToolBarArea, toolbar2)
-
         self.resize(1200, 800)
         self.show()
+
+    @Slot()
+    def handle_step_clicked(self):
+        if self.mode == StepMode.TRACE:
+            self.mode = StepMode.DEFAULT
+            self.sig_change_mode.emit(self.mode)
+            self.sig_reset_trace_handler.emit()
+
+        self.sig_exec_step.emit()
+
+    @Slot()
+    def handle_step_trace_clicked(self):
+        if self.mode == StepMode.DEFAULT:
+            self.mode = StepMode.TRACE
+            self.sig_change_mode.emit(self.mode)
+            self.sig_init_trace_handler.emit()
+
+        self.sig_exec_trace_step.emit()
+
+    @Slot(bool, bool)
+    def handle_step_done(self, steps_available, trace_available):
+        if self.mode == StepMode.TRACE and not steps_available:
+            self.mode = StepMode.DEFAULT
+            self.sig_change_mode.emit(self.mode)
+            self.b_step_trace.setDisabled(True)
+
+        self.update_function_list()
+
+        if not steps_available:
+            self.b_step.setDisabled(True)
+
+        if trace_available:
+            self.b_step_trace.setEnabled(True)
+
+    @Slot()
+    def update_function_list(self):
+        source_graph = ara_manager.INSTANCE.graph.callgraph
+        if self.mode == StepMode.TRACE:
+            source_graph = trace_handler.INSTANCE.context.callgraph
+
+        function_list:QListWidget = self.dw_function_search.listSearch
+
+        function_list.clear()
+
+        for vertex in source_graph.vertices():
+            QListWidgetItem(source_graph.vp.function_name[vertex], function_list)
+
+        function_list.sortItems()
+
 
     @Slot()
     def enable_start_button(self):
         self.b_start.setEnabled(True)
 
     @Slot()
-    def enable_step_button(self):
-        self.b_step.setEnabled(True)
+    def disable_step_button(self):
+        self.b_step.setDisabled(True)
+
+    @Slot()
+    def disable_step_trace_button(self):
+        self.b_step_trace.setDisabled(True)
 
     @Slot()
     def disable_start_button(self):
         self.b_start.setDisabled(True)
 
     @Slot()
-    def disable_step_button(self):
-        self.b_step.setDisabled(True)
-
-    @Slot(bool)
-    def switch_step_button(self, b):
-        if b:
-            self.b_step.setEnabled(True)
-        else:
-            self.b_step.setDisabled(True)
-
-    @Slot(bool)
-    def update(self, steps_available):
-
-        if not steps_available:
-            self.b_step.setDisabled(True)
+    def handle_button_activation(self):
+        self.b_step.setEnabled(True)
+        if self.mode == StepMode.TRACE:
+            self.b_step_trace.setEnabled(True)
 
     @Slot(list)
-    def update_right(self, l:list):
+    def update_step_list(self, step_list: list):
+        item_list_widget = self.dw_step_queue.listWidget
 
-        while self.l_right.count():
-            widget = self.l_right.itemAt(0).widget()
-            self.l_right.removeWidget(widget)
-            widget.deleteLater()
+        item_list_widget.clear()
 
-        for item in l[::-1]:
-            label = QLabel()
-            label.setText(item.name)
-            self.l_right.addWidget(label)
-
-    @Slot(graph_tool.Graph, name="init_graph")
-    def init_graph(self, g):
-        self.layouter.set_graph(g)
-
-    @Slot(GraphTypes)
-    def set_graph_type(self, s):
-        self.v_graph_type = s
-        self.update(True)
+        for item in step_list[::-1]:
+            QListWidgetItem(item.name, item_list_widget)

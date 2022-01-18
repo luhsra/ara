@@ -56,12 +56,19 @@ class CFG(graph_tool.Graph):
 
     The pointer to the respective LLVM datastructure is stored via llvm_link.
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, graph=None):
+        super().__init__(graph)
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
+
         # properties
         # ATTENTION: If you modify this values, you also have to update
         # cgraph/graph.cpp and cgraph/graph.h.
-
         # vertex properties
         self.vertex_properties["name"] = self.new_vp("string")
         self.vertex_properties["type"] = self.new_vp("int") # ABBType
@@ -285,8 +292,15 @@ class CFGView(graph_tool.GraphView):
 class Callgraph(graph_tool.Graph):
     """ TODO comment on functionality
     """
-    def __init__(self, cfg):
-        super().__init__()
+    def __init__(self, cfg, graph=None):
+        super().__init__(graph)
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
 
         #vertex properties
         self.vertex_properties["function"] = self.new_vp("long")
@@ -306,6 +320,12 @@ class Callgraph(graph_tool.Graph):
             property_name = "syscall_category_" + syscat.name
             self.vertex_properties[property_name] = self.new_vp("bool")
 
+    def get_edge_for_callsite_name(self, callsite_name):
+        for edge in self.edges():
+            if self.ep.callsite_name[edge] == callsite_name:
+                return edge
+        return None
+
     def get_edge_for_callsite(self, callsite):
         for edge in self.edges():
             if self.ep.callsite[edge] == callsite:
@@ -320,7 +340,7 @@ class Callgraph(graph_tool.Graph):
         assert len(node) == 1
         return node[0]
 
-    def get_vertices_bfs(self, entry_name, depth=2):
+    def get_vertices_bfs(self, entry_name, depth=1):
         """Return the breath first reachable nodes from entry_name"""
         dist = {}
 
@@ -341,13 +361,17 @@ class Callgraph(graph_tool.Graph):
 
     def get_vertices_for_entries_bfs(self, entry_names:list, depth):
         """Returns the breath first reachable nodes from entries"""
-        ret = []
+        # Todo: Port to more graph_tool friendly solution
+        ret = set()
         for entry in entry_names:
             for vertex in self.get_vertices_bfs(entry, depth):
-                ret.append(vertex)
+                ret.add(vertex)
 
         return ret
 
+    def copy_callgraph(self, cfg):
+        new = Callgraph(cfg, self)
+        return new
 
 class MSTGraph(graph_tool.Graph):
     """The Multi state transision graph"""
@@ -392,9 +416,17 @@ class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
     (edges).
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, graph=None):
+        super().__init__(graph)
         # vertex properties
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
+
         # ATTENTION: If you modify this values, you also have to update
         # cgraph/graph.cpp and cgraph/graph.h.
         self.vertex_properties["label"] = self.new_vp("string")

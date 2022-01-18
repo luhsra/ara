@@ -158,6 +158,13 @@ class Step(SuperStep):
                                 "(default: dumps/{step_name}.{uuid}.).",
                                 option.String(),
                                 is_global=True)
+    trace_algorithm = option.Option(
+        "trace_algorithm",
+        "Create a trace of supported algorithms for the gui to visualize",
+        option.Bool(),
+        is_global=True
+    )
+
     def __init__(self, graph, step_manager):
         super().__init__(graph, step_manager)
         self._opts = []

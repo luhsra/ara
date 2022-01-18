@@ -3,11 +3,13 @@ from math import sqrt, cos, sin
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsDropShadowEffect
-from PySide6.QtGui import QPen, QPainterPath, QMouseEvent
+from PySide6.QtGui import QPen, QPainterPath, QMouseEvent, QFont, QFontDatabase, QBrush
+from pygments import highlight
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph
 
 from ara.graph import CFType
+from ara.visualization.trace import trace_lib, trace_util
 
 DPI_LEVEL = 72 # Todo move to a more fitting file
 
@@ -42,7 +44,7 @@ class AbstractNode(GraphicsObject):
 
 class AbbNode(AbstractNode):
 
-    subtypes = {"1" : "syscall", "2" : "call", "4" : "comp" }
+    subtypes = {"": "UNK","1" : "syscall", "2" : "call", "4" : "comp" }
 
     def __init__(self, node:Node):
         super().__init__(node, "../resources/node.ui")
@@ -67,16 +69,25 @@ class CallGraphNode(AbstractNode):
 
     def __init__(self, node:Node):
         super().__init__(node, "../resources/callgraph_node.ui")
+
+        self.id = self.data.attr["id"]
+
         self.widget.label_text.setText(str(self.data.attr["label"]))
 
         self.adjacency = False
         self.selected = False
         self.expansion = False
+        self.highlighting = False
 
         if self.data.attr["adjacency"] == "true":
             self.adjacency = True
             self.widget.setProperty("adjacency", "true")
 
+        self.reload_stylesheet()
+
+    def set_highlighted(self, color=trace_lib.Color.RED):
+        self.highlighting = True
+        self.widget.setProperty("highlighted", color.value)
         self.reload_stylesheet()
 
     def mousePressEvent(self, event:QMouseEvent) -> None:
@@ -105,8 +116,8 @@ class CallGraphNode(AbstractNode):
 
     def reload_stylesheet(self):
         """
-            Reloads the stylesheet of the widget, this needs to be done, if a property is changed after its creation,
-            otherwise the design doesn't change.
+            Reloads the stylesheet of the widget. This needs to be done, if a property is changed after the creation
+            of the object, otherwise the design doesn't update.
         """
         self.widget.setStyleSheet(self.widget.styleSheet())
 
@@ -162,6 +173,8 @@ class GraphEdge(QGraphicsPathItem):
         self.data = edge
         self.path = QPainterPath()
 
+        self.id = self.data.attr["id"]
+
         pos = []
         edges = []
 
@@ -172,7 +185,7 @@ class GraphEdge(QGraphicsPathItem):
             for s in re.split(" "):
                 edges.append(float(s))
 
-        # This ignores the first edge, because this is the end point of the edge
+        # This ignores the first edge, as this is the end point of the edge
         for i in range(2, len(edges) - 1, 2):
             pos.append({"x": edges[i], "y": edges[i + 1]})
 
@@ -186,6 +199,13 @@ class GraphEdge(QGraphicsPathItem):
                          pos[i + 1]["x"], - pos[i + 1]["y"],
                          pos[i + 2]["x"], - pos[i + 2]["y"])
 
+        self.draw_arrow_tip(edges[0], - edges[1], 20, 30)
+
+        if self.data.attr.__contains__("label") and not (self.data.attr["label"] is None):
+            pos = self.data.attr["lp"].split(",")
+            label = self.data.attr["label"]
+            self.path.addText(float(pos[0]) - len(label) * 15, - float(pos[1]), QFont(), label)
+
         self.setPath(self.path)
 
         pen_color = Qt.black
@@ -195,37 +215,48 @@ class GraphEdge(QGraphicsPathItem):
             elif self.data.attr["edge_type"] == str(CFType.icf.value):
                 pen_color = Qt.red
 
-        self.setPen(QPen(pen_color, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        self.path.setFillRule(Qt.WindingFill)
+        self.setPen(QPen(pen_color, 1.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+
+    def draw_arrow_tip(self, x, y, size, theta):
+        # Bounding Box Parameter
+        box_x = x - size / 2
+        box_y = y - size / 2
+
+        # Finish the line
+        self.path.lineTo(x, y)
+
+        current_degree = self.path.angleAtPercent(1)
+
+        self.path.arcTo(box_x, box_y, size, size, current_degree - 180 + theta, 0)
+        edge_point = self.path.pointAtPercent(1)
+
+        self.path.moveTo(x, y)
+
+        self.path.arcTo(box_x, box_y, size, size, current_degree - 180 - theta, 0)
+        self.path.lineTo(edge_point)
 
 
-    def draw_arrow_tip(self, x1, y1, x2, y2, theta):
-        L1 = sqrt(pow(x2-x1,2)+pow(y2-y1,2))
-        L2 = 1
-        old_x2 = x2
-        old_y2 = y2
 
-        #x2 = x2 + ((((x2-x1) / (y2-y1)) * 0.1) if not y2 == y1 else 1)
-        #y2 = y2 + ((((y2-y1) / (x2-x1)) * 0.1) if not x2 == x1 else 1)
+class CallgraphNodeSetting:
 
-        x3 = x2 * (L2/L1) * ((x1-x2) * cos(theta) - (y1-y2) * sin(theta))
-        x4 = x2 * (L2/L1) * ((x1-x2) * cos(theta) + (y1-y2) * sin(theta))
+    def __init__(self, node_id, highlighting: bool, highlight_color=trace_lib.Color.RED):
+        self.node_id = node_id
+        self.highlighting = highlighting
+        self.highlight_color = highlight_color
 
-        y3 = y2 * (L2/L1) * ((y1-y2) * cos(theta) + (x1-x2) * sin(theta))
-        y4 = y2 * (L2/L1) * ((y1-y2) * cos(theta) - (x1-x2) * sin(theta))
+    def apply(self, node: CallGraphNode):
+        if self.highlighting:
+            node.set_highlighted(self.highlight_color)
 
-        #self.path.cubicTo(
-        #    x1, y1,
-        #    old_x2, old_y2,
-        #    x2, y2
-        #)
 
-        print(f"{x1} {y1}")
-        print(f"{old_x2} {old_y2}")
-        print(f"{x2} {y2}")
-        print(f"{x3} {y3}")
-        print(f"{x4} {y4}")
-        print(f"")
+class CallgraphEdgeSetting:
 
-        self.path.lineTo(x3, y3)
-        self.path.moveTo(x2, y2)
-        self.path.lineTo(x4, y4)
+    def __init__(self, edge_id, highlighting: bool, highlighting_color=trace_lib.Color.RED):
+        self.edge_id = edge_id
+        self.highlighting = highlighting
+        self.highlight_color = highlighting_color
+
+    def apply(self, edge:GraphEdge):
+        if self.highlighting:
+            edge.setPen(QPen(trace_util.trace_color_to_qt_color[self.highlight_color], 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))

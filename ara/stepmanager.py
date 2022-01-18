@@ -19,6 +19,8 @@ from typing import List
 from dataclasses import dataclass
 from collections import defaultdict
 
+import traceback
+
 from .util import get_logger, get_logger_manager, LEVEL
 from .steps import provide_steps
 from .steps.step import Step
@@ -86,6 +88,7 @@ class StepManager:
         self._config = None
         self._step_history = []
         self._chained_steps = defaultdict(set)
+        self._last_step_trace = None
 
     def clear_history(self):
         self._step_history = []
@@ -353,61 +356,87 @@ class StepManager:
             self._emit_runtime_stats(self._step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)
 
-    # @Slot
+    def is_next_step_traceable(self):
+        """ Returns true if the next step in the execution chain supports tracing of its algorithm."""
+        next_step_entry = self._execute_chain[-1]
+        if next_step_entry.step is None or not hasattr(next_step_entry.step, "is_traceable"):
+            return False
+
+        return self._execute_chain[-1].step.is_traceable()
+
+    def get_trace(self):
+        """ Returns the trace of the last step ran."""
+        return self._last_step_trace
+
     def step(self):
-        current = self._execute_chain[-1]
 
-        self._log.debug("Beginning execution of "
-                        f"{current.name} (UUID: {current.uuid}).")
+        try:
 
-        # initialize step
-        if current.step is None:
-            if current.name not in self._steps:
-                rae(self._log, f"Step {current.name} does not exist",
-                    exception=StepManagerException)
-            step_inst = self._steps[current.name](self._graph, self)
-            current.step = step_inst
-        current_step.set_wrappee(current.step)
+            current = self._execute_chain[-1]
 
-        # apply config
-        current.all_config = self._get_config(current)
-        self._log.debug(f"Apply config: {current.all_config}")
-        current.step.apply_config(current.all_config)
+            current_traceable = self.is_next_step_traceable()
 
-        # dependency handling
-        d_hist = self._make_history_dict(self._step_history)
-        dependencies = current.step.get_dependencies(d_hist)
-        if dependencies:
-            self._log.debug(f"Step has dependencies: {dependencies}")
-            dependency = dependencies[0]
-            self._execute_chain.append(self._make_step_entry(dependency))
-            return 1 # previously continue,
+            self._last_step_trace = None
 
-        d_hist = self._make_history_dict(self._step_history)
-        if current.explicit or current.step.is_necessary_anymore(d_hist):
-            # execution
-            self._log.info(
-                f"Execute {current.name} (UUID: {current.uuid})."
-            )
+            self._log.debug("Beginning execution of "
+                            f"{current.name} (UUID: {current.uuid}).")
 
-            if self._runtime_stats:
-                time_before = time.time()
+            # initialize step
+            if current.step is None:
+                if current.name not in self._steps:
+                    rae(self._log, f"Step {current.name} does not exist",
+                        exception=StepManagerException)
+                step_inst = self._steps[current.name](self._graph, self)
+                current.step = step_inst
+            current_step.set_wrappee(current.step)
 
-            current.step.run()
+            # apply config
+            current.all_config = self._get_config(current)
+            self._log.debug(f"Apply config: {current.all_config}")
+            current.step.apply_config(current.all_config)
 
-            if self._runtime_stats:
-                time_after = time.time()
+            # dependency handling
+            d_hist = self._make_history_dict(self._step_history)
+            dependencies = current.step.get_dependencies(d_hist)
+            if dependencies:
+                self._log.debug(f"Step has dependencies: {dependencies}")
+                dependency = dependencies[0]
+                self._execute_chain.append(self._make_step_entry(dependency))
+                return 1 # previously continue,
 
-            # runtime stats handling
-            if self._runtime_stats:
-                current.runtime = time_after - time_before
-                self._log.debug(f"{current.name} had a runtime of "
-                                f"{current.runtime:0.2f}s.")
-            self._step_history.append(current)
-        else:
-            # skip step
-            self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
+            d_hist = self._make_history_dict(self._step_history)
+            if current.explicit or current.step.is_necessary_anymore(d_hist):
+                # execution
+                self._log.info(
+                    f"Execute {current.name} (UUID: {current.uuid})."
+                )
 
-        self._execute_chain.pop()
+                if self._runtime_stats:
+                    time_before = time.time()
+
+                current.step.run()
+
+                if self._runtime_stats:
+                    time_after = time.time()
+
+                if current_traceable:
+                    self._last_step_trace = current.step.trace
+
+                # runtime stats handling
+                if self._runtime_stats:
+                    current.runtime = time_after - time_before
+                    self._log.debug(f"{current.name} had a runtime of "
+                                    f"{current.runtime:0.2f}s.")
+                self._step_history.append(current)
+
+            else:
+                # skip step
+                self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
+
+            self._execute_chain.pop()
+
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
 
         return 0

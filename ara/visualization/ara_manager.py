@@ -12,8 +12,8 @@ from PySide6.QtCore import QObject
 
 from PySide6.QtCore import Slot
 
-from . import layouter
 from .signal import ara_signal
+from .trace.trace_type import AlgorithmTrace
 from ..graph.graph import Graph
 from ..steplisting import print_avail_steps
 from ..stepmanager import StepManager
@@ -40,15 +40,15 @@ class ARAManager(QObject):
     def __init__(self):
         super().__init__(None)
         self.args = None
-        self.s_manager = None
         self.extra_settings = {}
         self.graph = Graph()
+        self.s_manager = StepManager(self.graph)
 
     @Slot()
     def init(self):
         """
             Entry Point for ARA.
-            Currently only a copy of the main in ./ara.py, but it should as time goes on.
+            It's mostly a copy of the main in ./ara.py, with slight changes to allow interaction with the gui.
         """
 
         print("Start")
@@ -101,6 +101,8 @@ class ARAManager(QObject):
                             action='store_true')
         parser.add_argument('--manual-corrections', metavar="FILE",
                             help="File with manual corrections")
+        parser.add_argument('--trace_algorithm', action='store_true', default=False,
+                            help="Create a trace of supported algorithms for the gui to visualize")
 
         self.args = parser.parse_args()
 
@@ -109,7 +111,6 @@ class ARAManager(QObject):
 
         logger = init_logging(level=self.args.log_level, root_name='ara', werr=self.args.Werr)
 
-        self.s_manager = StepManager(self.graph)
         avail_steps = self.s_manager.get_steps()
 
         if self.args.list_steps:
@@ -155,10 +156,13 @@ class ARAManager(QObject):
     def init_execution(self, program_config, extra_config, esteps: List[str]):
         self.s_manager.init_execution(program_config, extra_config, esteps)
 
+    def get_trace(self):
+        return self.s_manager.get_trace()
+
     @Slot()
     def execute(self):
         self.s_manager.execute(vars(self.args), self.extra_settings, self.args.step)
-        ara_signal.SIGNAL_MANAGER.sig_step_done.emit(False)
+        ara_signal.SIGNAL_MANAGER.sig_step_done.emit(False, False)
 
     @Slot()
     def finish_execution(self, program_config):
@@ -167,8 +171,11 @@ class ARAManager(QObject):
 
     @Slot()
     def step(self):
+        trace_exist = self.s_manager.is_next_step_traceable()
+
         if self.s_manager.step() == 0:
-            ara_signal.SIGNAL_MANAGER.sig_step_done.emit(len(self.s_manager.get_steps()) > 0)
+            ara_signal.SIGNAL_MANAGER.sig_step_done.emit(len(self.s_manager.get_steps()) > 0,
+                                                         not(self.s_manager.get_trace() is None))
         else:
             ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.emit()
         ara_signal.SIGNAL_MANAGER.sig_execute_chain.emit(self.s_manager.get_execution_chain())

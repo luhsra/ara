@@ -1,5 +1,7 @@
 """Container for SIA."""
-from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph
+import graph_tool
+
+from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFG, InstanceGraph
 from dataclasses import dataclass
 from .step import Step
 from .option import Option, String
@@ -12,6 +14,11 @@ from graph_tool.util import find_vertex
 from itertools import chain
 
 import functools
+
+from ..visualization.trace import trace_lib
+from ..visualization.trace.trace_components import CallgraphNodeHighlightTraceElement, \
+    CallgraphPathHighlightTraceElement, ResetChangesTraceElement
+from ..visualization.trace.trace_type import AlgorithmTrace
 
 
 @dataclass
@@ -176,6 +183,9 @@ class FlatAnalysis(Step):
     def _trigger_new_steps(self):
         pass
 
+    def is_traceable(self):
+        return True and self.trace_algorithm.get()
+
     def run(self):
         cfg = self._graph.cfg
         callg = self._graph.callgraph
@@ -183,6 +193,13 @@ class FlatAnalysis(Step):
         instances = self._graph.instances
 
         entry_points = self._get_entry_points()
+
+        # Todo Make Optional
+        print(cfg)
+        print(callg)
+        temp_cfg = CFG(cfg)
+        if self.trace_algorithm.get():
+            self.trace = AlgorithmTrace(Callgraph(temp_cfg, graph=callg), temp_cfg, InstanceGraph(instances))
 
         # actual algorithm
         syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
@@ -193,6 +210,9 @@ class FlatAnalysis(Step):
 
             cfg_function = cfg.get_function(syscall)
             function = callg.vertex(cfg.vp.call_graph_link[cfg_function])
+
+            if self.trace_algorithm.get():
+                self.trace.add_element(CallgraphNodeHighlightTraceElement(function, callg, color=trace_lib.Color.GREEN))
 
             rev_cg = GraphView(callg, reversed=True)
             init_state = os.get_initial_state(cfg, instances)
@@ -211,9 +231,15 @@ class FlatAnalysis(Step):
 
                 self._log.debug(f"Handle {sys_name} with entry_point "
                                 f"{callg.vp.function_name[entry_point]}")
+
+                if self.trace_algorithm.get():
+                    self.trace.add_element(CallgraphNodeHighlightTraceElement(entry_point, callg,
+                                                                              color=trace_lib.Color.ORANGE))
+
                 path_to_self = [[]] if entry_point == function else []
                 for path in chain(all_paths(rev_cg, function, entry_point,
                                             edges=True), path_to_self):
+
                     abb = cfg.vertex(syscall)
                     state = init_state.copy()
 
@@ -232,12 +258,16 @@ class FlatAnalysis(Step):
                                                   scheduler_on=self._is_chained_analysis()
                                              ))
                     fake_cpu = state.cpus[cpu_id]
-
+                    path_highlight = CallgraphPathHighlightTraceElement()
                     for edge in reversed(path):
+                        path_highlight.add_edge(edge, callg)
                         abb = cfg.vertex(callg.ep.callsite[edge])
                         fake_cpu.call_path.add_call_site(callg, edge)
                         self._set_flags(fake_cpu.analysis_context, abb)
                         fake_cpu.analysis_context.recursive |= callg.vp.recursive[edge.target()]
+
+                    if self.trace_algorithm.get():
+                        self.trace.add_element(path_highlight)
 
                     self._set_flags(fake_cpu.analysis_context, syscall)
                     fake_cpu.analysis_context.recursive |= callg.vp.recursive[function]
@@ -246,6 +276,9 @@ class FlatAnalysis(Step):
                         self._graph, state, 0,
                         categories=self._search_category()
                     )
+
+            if self.trace_algorithm.get():
+                self.trace.add_element(ResetChangesTraceElement())
 
         self._trigger_new_steps()
 

@@ -66,6 +66,8 @@ def main():
                         action='store_true')
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
+    parser.add_argument('--trace_algorithm', action='store_true', default=False,
+                        help="Create a trace of supported algorithms for the gui to visualize")
 
     args = parser.parse_args()
 

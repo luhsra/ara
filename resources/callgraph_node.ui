@@ -26,8 +26,9 @@
 	border-radius: 5px;
 }
 
-#callgraph_node[selected=&quot;true&quot;] {
-	border-color: red;
+#callgraph_node[selected=&quot;true&quot;], #callgraph_node[selected=&quot;true&quot;] QLabel  {
+	border-color: blue;
+	background-color: lightgray;
 }
 
 #callgraph_node[expansion=&quot;true&quot;] {
@@ -37,6 +38,24 @@
 #callgraph_node[adjacency=&quot;true&quot;]{
 	border-color: lightgrey;
 }
+
+#callgraph_node[highlighted=&quot;1&quot;] {
+	border-color: red;
+}
+
+#callgraph_node[highlighted=&quot;2&quot;] {
+	border-color: aqua;
+}
+
+
+#callgraph_node[highlighted=&quot;3&quot;] {
+	border-color: rgb(0,255,0);
+}
+
+#callgraph_node[highlighted=&quot;4&quot;] {
+	border-color: orange;
+}
+
 
 #label_text {
 	font-weight: bold;
