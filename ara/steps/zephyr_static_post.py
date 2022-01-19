@@ -14,7 +14,7 @@ class ZephyrStaticPost(Step):
                          ty=String())
 
     def get_single_dependencies(self):
-        return ["ZephyrStatic", "LLVMMap"]
+        return ["ZephyrStatic", "LLVMMap", "SVFAnalyses"]
 
     @staticmethod
     def create_static_instance(instances, label: str, obj: ZephyrInstance, ident: str, sched_on: bool):
@@ -41,6 +41,11 @@ class ZephyrStaticPost(Step):
     def run(self):
         assert self._graph.instances is not None
 
+        # avoid dependency conflicts, therefore import dynamically
+        from ara.steps import get_native_component
+        ValueAnalyzer = get_native_component("ValueAnalyzer")
+        va = ValueAnalyzer(self._graph)
+
         # Currently, we just look for a config with the same name as the app.ll
         ZEPHYR.config = KConfigFile(self.input_file.get()[:-3] + '.config')
 
@@ -51,6 +56,8 @@ class ZephyrStaticPost(Step):
         for instance in self._graph.instances.vertices():
             instance_type = locate('ara.os.zephyr.' + self._graph.instances.vp.label[instance])
             inst = instance_type(**self._graph.instances.vp.obj[instance])
+            if hasattr(inst, "symbol"):
+                va.assign_system_object(inst.symbol, inst)
             if issubclass(instance_type, ControlInstance):
                 function = cfg.get_function_by_name(inst.entry_name)
                 inst.cfg = cfg
