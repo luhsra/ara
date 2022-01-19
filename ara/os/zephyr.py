@@ -353,7 +353,8 @@ class ZEPHYR(OSBase):
         If there already exists an instance that is matched to the same symbol another one will be
         created and will inherit all interactions from his siblings. All future comm syscalls will
         add edges to all instances that share the same symbol. There is currently no way to
-        distinguish between them. Those rules also apply to instances that add entry points (Thread, ISR)."""
+        distinguish between them. Those rules also apply to instances that add entry points (Thread, ISR).
+        If you have an instance that has no symbol field (e.g. ISR), set symbol to None and provide an identifier string via ident instead."""
         if ident is None:
             if symbol is not None:
                 ident = ZEPHYR.get_symbol(symbol).get_name()
@@ -381,6 +382,10 @@ class ZEPHYR(OSBase):
         instances.vp.line[v] = cfg.vp.lines[abb][0]
         instances.vp.specialization_level[v] = ""
         instances.vp.is_control[v] = isinstance(obj, ControlInstance)
+
+        # Ignore the steps below for instances that have no symbol (e.g. ISR)
+        if symbol is None:
+            return
 
         if isinstance(symbol.value, pyllco.Value):
             va.assign_system_object(symbol.value,
