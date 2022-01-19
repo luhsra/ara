@@ -1,0 +1,116 @@
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 4096
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "label": "Heap",
+    "id": "shared_heap",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/dyn_heap/src/main.c",
+    "line": 31,
+    "specialization_level": "",
+    "type": "instance",
+    "limit": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_a",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/dyn_heap/src/main.c",
+    "line": 24,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "do_stuff",
+    "options": 0,
+    "priority": 7,
+    "stack_size": 1024
+  },
+  {
+    "source": "thread_a",
+    "target": "__kernel",
+    "label": "k_calloc",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_a",
+    "target": "shared_heap",
+    "label": "k_heap_free",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_a",
+    "target": "__kernel",
+    "label": "k_free",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "shared_heap",
+    "label": "k_heap_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "__kernel",
+    "label": "k_malloc",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "shared_heap",
+    "label": "k_heap_alloc",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "__kernel",
+    "label": "k_free",
+    "type": "interaction"
+  }
+]
