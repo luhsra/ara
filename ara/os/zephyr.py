@@ -81,6 +81,10 @@ class Thread(ZephyrInstance, ControlInstance):
         "style": "filled"
     }
 
+    def __hash__(self):
+        return hash(("Thread", self.function, self.artificial, self.symbol, self.stack, self.stack_size,
+        self.entry_name, self.entry_params, self.priority, self.options, self.delay))
+
 # Interrupt service routine. Like every other kernel resource, these can be created
 # dynamically via irq_connect_dynamic() (which is not a syscall) or statically by 
 # using the IRQ_CONNECT macro. The latter might be harder to detect since the actual 
@@ -370,7 +374,7 @@ class ZEPHYR(OSBase):
         instances.vp.loop[v] = ana_context.loop
         instances.vp.after_scheduler[v] = ana_context.scheduler_on
         # Creating an instance from a thread that is not unique will result in a non unique instance
-        instances.vp.unique[v] = not (ana_context.branch or ana_context.loop) and instances.vp.unique[cpu.control_instance]
+        instances.vp.unique[v] = (not (ana_context.branch or ana_context.loop)) and instances.vp.unique[cpu.control_instance]
         instances.vp.soc[v] = abb
         instances.vp.llvm_soc[v] = cfg.vp.llvm_link[cfg.get_single_bb(abb)]
         instances.vp.file[v] = cfg.vp.files[abb][0]
@@ -648,7 +652,7 @@ class ZEPHYR(OSBase):
             args.max_entries
         )
 
-        ZEPHYR.create_instance(cfg, state, cpu_id, "Stack", instance, args.symbol, "k_stack_alloc_init")
+        ZEPHYR.create_instance(cfg, state, cpu_id, va, "Stack", instance, args.symbol, "k_stack_alloc_init")
         return state
 
     # void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
