@@ -119,11 +119,13 @@ def main():
         "POSIX": "posix_test/settings/posix_default.json",
         "ZEPHYR": "zephyr_test/settings/zephyr_default.json",
     }
-    setting_file = sys.argv[4] if len(sys.argv) > 4 else path_next_to_self_file(DEFAULT_SETTING_FILE_OS.get(sys.argv[3]) if len(sys.argv) > 3 and (sys.argv[3] in DEFAULT_SETTING_FILE_OS) else DEFAULT_SETTING_FILE)
+    os_name = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else None
+    setting_file = sys.argv[4] if len(sys.argv) > 4 else path_next_to_self_file(DEFAULT_SETTING_FILE_OS.get(os_name) if os_name in DEFAULT_SETTING_FILE_OS else DEFAULT_SETTING_FILE)
     with open(setting_file, "r") as f:
         config = json.load(f)
     
-    m_graph, data, log, _ = init_test(extra_config=config, os_name=sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else None)
+    zephyr_input = {"entry_point": lambda sys_argv : ""}
+    m_graph, data, log, _ = init_test(extra_config=config, extra_input=zephyr_input if os_name == "ZEPHYR" else None, os_name=os_name)
     dump = json_instance_graph(m_graph.instances, m_graph.os.EdgeType if hasattr(m_graph.os, "EdgeType") else None)
     
     if self_is_testcase:
