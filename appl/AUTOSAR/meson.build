@@ -191,7 +191,7 @@ foreach app : autosar_apps
   generate_timing_settings = custom_target(
     output: full_name  + '.generate_timing_settings.json',
     capture: true,
-    command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
+    command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL", "DumpCFG"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
   )
 
   with_timing_settings = custom_target(
