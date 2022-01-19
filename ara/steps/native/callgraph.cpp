@@ -55,13 +55,13 @@ namespace ara::step {
 				return cfg.back_map(cfg_obj, safe_deref(func));
 			}
 
-			CallVertex map_svf_call_node(const SVF::PTACallGraphNode& svf_node,
-			                             std::optional<CFVertex> func = std::nullopt) {
+			std::pair<CallVertex, bool> map_svf_call_node(const SVF::PTACallGraphNode& svf_node,
+			                                              std::optional<CFVertex> func = std::nullopt) {
 				CallVertex call_node;
 				auto cand = svf_to_ara_nodes.find(&svf_node);
 				if (cand != svf_to_ara_nodes.end()) {
 					logger.debug() << "Call node already handled: " << svf_node << std::endl;
-					call_node = cand->second;
+					return std::make_pair(cand->second, true);
 				} else {
 					CFVertex func_v = (func) ? *func : get_function(svf_node);
 					if (boost::vertex(callgraph.function[boost::vertex(cfg.call_graph_link[func_v], callg_obj)],
@@ -69,7 +69,7 @@ namespace ara::step {
 						// already handled in a previous callgraph step
 						logger.debug() << "Call node already handled in a previous run: " << cfg.name[func_v]
 						               << std::endl;
-						call_node = boost::vertex(cfg.call_graph_link[func_v], callg_obj);
+						return std::make_pair(boost::vertex(cfg.call_graph_link[func_v], callg_obj), false);
 					} else {
 
 						logger.debug() << "Add new node: " << svf_node << std::endl;
@@ -89,20 +89,27 @@ namespace ara::step {
 						cfg.call_graph_link[func_v] = call_node;
 						cfg.call_graph_link[func_v] = call_node;
 						callgraph.svf_vlink[call_node] = reinterpret_cast<uintptr_t>(&svf_node);
+						return std::make_pair(call_node, true);
 					}
 				}
-				return call_node;
 			}
 
-			CallEdge map_svf_call_edge(const SVF::PTACallGraphEdge& svf_edge) {
+			void map_svf_call_edge(const SVF::PTACallGraphEdge& svf_edge) {
 				const SVF::PTACallGraphNode& source = safe_deref(svf_edge.getSrcNode());
 				const SVF::PTACallGraphNode& dst = safe_deref(svf_edge.getDstNode());
 
-				CallVertex s_vert = map_svf_call_node(source);
-				CallVertex d_vert = map_svf_call_node(dst);
+				// this function may add the vertices
+				auto [s_vert, s_new] = map_svf_call_node(source);
+				auto [d_vert, d_new] = map_svf_call_node(dst);
+
+				if (!s_new && !d_new) {
+					logger.debug() << "Skip edge. It already exists." << std::endl;
+					return;
+				}
+
+				logger.debug() << "Edge: " << s_vert << " " << d_vert << std::endl;
 
 				auto edge = boost::add_edge(s_vert, d_vert, callg_obj);
-				assert(edge.second && "Edge already present");
 				edge_counter++;
 
 				// properties
@@ -114,7 +121,9 @@ namespace ara::step {
 				callgraph.callsite_name[edge.first] = cfg.name[bb];
 				callgraph.svf_elink[edge.first] = reinterpret_cast<uintptr_t>(&svf_edge);
 
-				return edge.first;
+				logger.debug() << "Add a new edge: " << callgraph.function_name[s_vert] << " -> "
+				               << callgraph.function_name[d_vert]
+				               << " (Callsite: " << callgraph.callsite_name[edge.first] << std::endl;
 			}
 
 			void link_with_svf_callgraph(CFVertex function) {
@@ -124,8 +133,6 @@ namespace ara::step {
 				assert(svf_func != nullptr && "svf_func is null.");
 				SVF::PTACallGraphNode* cg_node = svf_callgraph.getCallGraphNode(svf_func);
 				assert(cg_node != nullptr && "cg_node is null.");
-
-				map_svf_call_node(*cg_node, function);
 
 				// add edges
 				for (SVF::PTACallGraphNode::iterator out_it = cg_node->OutEdgeBegin(); out_it != cg_node->OutEdgeEnd();
