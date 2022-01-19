@@ -15,6 +15,7 @@ def provide_steps():
     from .fake_timings import FakeTimings
     from .generator import Generator
     from .icfg import ICFG
+    from .ipi_avoidance import IPIAvoidance
     from .load_oil import LoadOIL
     from .lock_elision import LockElision
     from .manual_corrections import ManualCorrections
@@ -48,6 +49,7 @@ def provide_steps():
     yield Generator
     yield ICFG
     yield InteractionAnalysis
+    yield IPIAvoidance
     yield LoadOIL
     yield LockElision
     yield ManualCorrections
