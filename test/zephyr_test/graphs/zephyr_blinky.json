@@ -39,7 +39,6 @@
     "source": "__main",
     "target": "__main",
     "label": "k_msleep",
-    "type": "interaction",
-    "syscall": 89
+    "type": "interaction"
   }
 ]

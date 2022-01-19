@@ -39,14 +39,12 @@
     "source": "__main",
     "target": "__main",
     "label": "k_msleep",
-    "type": "interaction",
-    "syscall": 34
+    "type": "interaction"
   },
   {
     "source": "__main",
     "target": "__main",
     "label": "k_msleep",
-    "type": "interaction",
-    "syscall": 37
+    "type": "interaction"
   }
 ]

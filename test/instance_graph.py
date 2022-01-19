@@ -68,7 +68,8 @@ def json_instance_graph(instances, edge_type_class: IntEnum):
             "target": instances.vp.id[edge.target()],
         }
         for name, prop in instances.ep.items():
-            i_dump[name] = prop[edge]
+            if name != "syscall": # ignore "syscall" field. This field is too dependent of ABB graph.
+                i_dump[name] = prop[edge]
         if edge_type_class is not None:
             i_dump["type"] = edge_type_class(i_dump["type"]).name
         # 0 := no type is set
