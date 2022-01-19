@@ -135,7 +135,7 @@ class CFG(graph_tool.Graph):
         return _get_llvm_obj(self, vertex)
 
     def get_function(self, abb):
-        """Get the function node for an ABB."""
+        """Get the function node for an ABB or BB."""
         abb = self.vertex(abb)
 
         def is_func(abb):
@@ -320,6 +320,9 @@ class CFGView(graph_tool.GraphView):
 
     def get_abbs(self, *args, **kwargs):
         return self.base.get_abbs(*args, **kwargs)
+
+    def get_abb(self, *args, **kwargs):
+        return self.base.get_abb(*args, **kwargs)
 
     def get_entry_abb(self, *args, **kwargs):
         return self.base.get_entry_abb(*args, **kwargs)
