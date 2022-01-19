@@ -6,6 +6,8 @@ from .option import Option, String
 from enum import IntEnum
 from graph_tool import GraphView
 
+import logging
+
 
 class ICFG(Step):
     """Map interprocedural edges.
@@ -89,7 +91,8 @@ class ICFG(Step):
 
             # link abbs
             for ty, src, target in to_be_linked:
-                if ty in [ICFG._ET.IN, ICFG._ET.OUT]:
+                # some logging output
+                if self._log.getEffectiveLevel() <= logging.DEBUG and ty in [ICFG._ET.IN, ICFG._ET.OUT]:
                     s = cfg.vp.name[src]
                     t = cfg.vp.name[target]
                     self._log.debug(f"Add {to_s[ty]} edge from {s} to {t}.")
