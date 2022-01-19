@@ -1,0 +1,1932 @@
+{
+  "vertices": [
+    {
+      "bbs": [
+        {
+          "name": "BB18",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": [
+            109
+          ]
+        },
+        {
+          "name": "BB19",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "BB20",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": [
+            110,
+            110
+          ]
+        },
+        {
+          "name": "BB21",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "BB17",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "065b1a92"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "BB14",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": [
+            107
+          ]
+        },
+        {
+          "name": "BB15",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "089ba58f"
+    },
+    {
+      "bbs": [
+        {
+          "name": "while.cond",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "0bf8743a"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB8",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            84,
+            85
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "173664e2"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB30",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            121
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "1c991554"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB25",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "BB26",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": [
+            117,
+            0
+          ]
+        },
+        {
+          "name": "BB27",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "23369ff3"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB32",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            123,
+            126
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "2415cd18"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB34",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": [
+            132,
+            0
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "246342fc"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB0",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            57,
+            57
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "28c3e921"
+    },
+    {
+      "bbs": [
+        {
+          "name": "if.end",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "322b65d8"
+    },
+    {
+      "bbs": [
+        {
+          "name": "if.end",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "322b65d8"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB12",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            103,
+            104
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "3726c3d1"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB33",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "45ad2ef1"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB29",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "483f7202"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.end",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "BB37",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "for.cond1",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "for.inc",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "50bac1f2"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB2",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            64,
+            65
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "5453a1b9"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.body",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "6797a433"
+    },
+    {
+      "bbs": [
+        {
+          "name": "sw.bb2",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "6c25340c"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB16",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            108
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "74d33847"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB11",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "if.then",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "for.cond6",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "for.body8",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "if.else",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "if.end",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "7e5b0501"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB31",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "84cc165d"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.end",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "entry",
+          "is_exit": 0,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "for.cond",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        },
+        {
+          "name": "for.inc",
+          "is_exit": 0,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "86b676f1"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.cond",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "87439335"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.cond",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "87439335"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.cond",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "87439335"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB35",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "87d7e4d0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB5",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "8b05cc6b"
+    },
+    {
+      "bbs": [
+        {
+          "name": "while.body",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "8c990166"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB7",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "901cb393"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.cond1",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "9be30c1c"
+    },
+    {
+      "bbs": [
+        {
+          "name": "sw.bb6",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "a344078c"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB10",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            94,
+            95
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "a3fbfc15"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB24",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            115
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "a66d3ed1"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB23",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "ab328bbc"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB28",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            119
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "accabc72"
+    },
+    {
+      "bbs": [
+        {
+          "name": "sw.bb1",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "af9cf058"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB38",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            148,
+            142
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "c37e69b6"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB39",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c510e14a"
+    },
+    {
+      "bbs": [
+        {
+          "name": "return",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c531f999"
+    },
+    {
+      "bbs": [
+        {
+          "name": "end",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c86fcd3b"
+    },
+    {
+      "bbs": [
+        {
+          "name": "if.then",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c9825a25"
+    },
+    {
+      "bbs": [
+        {
+          "name": "if.then",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c9825a25"
+    },
+    {
+      "bbs": [
+        {
+          "name": "if.then",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c9825a25"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.inc",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c9982d36"
+    },
+    {
+      "bbs": [
+        {
+          "name": "for.inc",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "c9982d36"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB36",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            143,
+            0
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "cbf5bc8b"
+    },
+    {
+      "bbs": [
+        {
+          "name": "empty",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.not_implemented",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.not_implemented",
+      "id": "ccafd4fd"
+    },
+    {
+      "bbs": [
+        {
+          "name": "empty",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.not_implemented",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.not_implemented",
+      "id": "ccafd4fd"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB6",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            78,
+            79
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "d3270338"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB13",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 1,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "d68e1855"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "dc477ba0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "dc477ba0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "dc477ba0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "dc477ba0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "dc477ba0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "entry",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "dc477ba0"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB4",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            77
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "eabb9ad3"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB1",
+          "is_exit": 1,
+          "part_of_loop": 1,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 1,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "ef43ccf3"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB3",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "f53bb3a8"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB22",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.call",
+          "lines": [
+            114
+          ]
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.call",
+      "id": "f9c55c10"
+    },
+    {
+      "bbs": [
+        {
+          "name": "BB9",
+          "is_exit": 1,
+          "part_of_loop": 0,
+          "implemented": 0,
+          "type": "ABBType.computation",
+          "lines": []
+        }
+      ],
+      "is_exit": 0,
+      "part_of_loop": 0,
+      "implemented": 0,
+      "type": "ABBType.computation",
+      "id": "fe5c9bcb"
+    }
+  ],
+  "edges": [
+    {
+      "source": "065b1a92",
+      "target": "50bac1f2",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "089ba58f",
+      "target": "74d33847",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "089ba58f",
+      "target": "74d33847",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "0bf8743a",
+      "target": "8c990166",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "0bf8743a",
+      "target": "8c990166",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "0bf8743a",
+      "target": "c86fcd3b",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "0bf8743a",
+      "target": "c86fcd3b",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "173664e2",
+      "target": "dc477ba0",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "173664e2",
+      "target": "fe5c9bcb",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "1c991554",
+      "target": "84cc165d",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "1c991554",
+      "target": "86b676f1",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "23369ff3",
+      "target": "accabc72",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "23369ff3",
+      "target": "accabc72",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "2415cd18",
+      "target": "45ad2ef1",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "2415cd18",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "246342fc",
+      "target": "87d7e4d0",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "246342fc",
+      "target": "87d7e4d0",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "28c3e921",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "28c3e921",
+      "target": "ef43ccf3",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "322b65d8",
+      "target": "8b05cc6b",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "322b65d8",
+      "target": "c510e14a",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "322b65d8",
+      "target": "fe5c9bcb",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "3726c3d1",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "3726c3d1",
+      "target": "d68e1855",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "483f7202",
+      "target": "1c991554",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "483f7202",
+      "target": "1c991554",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "50bac1f2",
+      "target": "c37e69b6",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "50bac1f2",
+      "target": "c37e69b6",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "5453a1b9",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "5453a1b9",
+      "target": "f53bb3a8",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "6c25340c",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "6c25340c",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "6797a433",
+      "target": "a344078c",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "a344078c",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "6797a433",
+      "target": "af9cf058",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "af9cf058",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "6797a433",
+      "target": "c531f999",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "c531f999",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "6797a433",
+      "target": "c86fcd3b",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "c86fcd3b",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "6797a433",
+      "target": "c9982d36",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6797a433",
+      "target": "c9982d36",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "6c25340c",
+      "target": "c9982d36",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "6c25340c",
+      "target": "c9982d36",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "74d33847",
+      "target": "065b1a92",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "74d33847",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "7e5b0501",
+      "target": "3726c3d1",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "7e5b0501",
+      "target": "3726c3d1",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "84cc165d",
+      "target": "2415cd18",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "84cc165d",
+      "target": "2415cd18",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "86b676f1",
+      "target": "a3fbfc15",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "86b676f1",
+      "target": "a3fbfc15",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "87439335",
+      "target": "0bf8743a",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "87439335",
+      "target": "0bf8743a",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "87439335",
+      "target": "246342fc",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "87439335",
+      "target": "246342fc",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "87439335",
+      "target": "6797a433",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "87439335",
+      "target": "6797a433",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "87439335",
+      "target": "cbf5bc8b",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "87439335",
+      "target": "cbf5bc8b",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "87d7e4d0",
+      "target": "9be30c1c",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "87d7e4d0",
+      "target": "9be30c1c",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "8b05cc6b",
+      "target": "d3270338",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "8b05cc6b",
+      "target": "d3270338",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "8c990166",
+      "target": "0bf8743a",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "8c990166",
+      "target": "0bf8743a",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "8c990166",
+      "target": "c9825a25",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "8c990166",
+      "target": "c9825a25",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "901cb393",
+      "target": "322b65d8",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "901cb393",
+      "target": "322b65d8",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "9be30c1c",
+      "target": "87439335",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "9be30c1c",
+      "target": "87439335",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "9be30c1c",
+      "target": "c9982d36",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "9be30c1c",
+      "target": "c9982d36",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "a344078c",
+      "target": "28c3e921",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "a344078c",
+      "target": "28c3e921",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "a3fbfc15",
+      "target": "7e5b0501",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "a3fbfc15",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "a66d3ed1",
+      "target": "23369ff3",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "a66d3ed1",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "ab328bbc",
+      "target": "a66d3ed1",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "ab328bbc",
+      "target": "a66d3ed1",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "accabc72",
+      "target": "483f7202",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "accabc72",
+      "target": "dc477ba0",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "af9cf058",
+      "target": "c9982d36",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "af9cf058",
+      "target": "c9982d36",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c37e69b6",
+      "target": "c510e14a",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c37e69b6",
+      "target": "dc477ba0",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c510e14a",
+      "target": "87439335",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c510e14a",
+      "target": "87439335",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c531f999",
+      "target": "483f7202",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c86fcd3b",
+      "target": "c531f999",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c86fcd3b",
+      "target": "c531f999",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c9825a25",
+      "target": "173664e2",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c9825a25",
+      "target": "173664e2",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c9825a25",
+      "target": "5453a1b9",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c9825a25",
+      "target": "5453a1b9",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c9825a25",
+      "target": "eabb9ad3",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c9825a25",
+      "target": "eabb9ad3",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c9982d36",
+      "target": "87439335",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c9982d36",
+      "target": "87439335",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "c9982d36",
+      "target": "9be30c1c",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "c9982d36",
+      "target": "9be30c1c",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "cbf5bc8b",
+      "target": "089ba58f",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "cbf5bc8b",
+      "target": "50bac1f2",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "ccafd4fd",
+      "target": "065b1a92",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "ccafd4fd",
+      "target": "45ad2ef1",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "ccafd4fd",
+      "target": "901cb393",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "d3270338",
+      "target": "901cb393",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "d3270338",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "d68e1855",
+      "target": "84cc165d",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "322b65d8",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "322b65d8",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "322b65d8",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "322b65d8",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "87439335",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "87439335",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "87439335",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "87439335",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "87439335",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "87439335",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "c9825a25",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "c9825a25",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "c9825a25",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "c9825a25",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "f9c55c10",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "dc477ba0",
+      "target": "f9c55c10",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "eabb9ad3",
+      "target": "8b05cc6b",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "eabb9ad3",
+      "target": "dc477ba0",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "ef43ccf3",
+      "target": "c9982d36",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "ef43ccf3",
+      "target": "c9982d36",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "f53bb3a8",
+      "target": "c531f999",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "f53bb3a8",
+      "target": "c531f999",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "f9c55c10",
+      "target": "ab328bbc",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "f9c55c10",
+      "target": "ccafd4fd",
+      "type": "CFType.icf"
+    },
+    {
+      "source": "fe5c9bcb",
+      "target": "322b65d8",
+      "type": "CFType.lcf"
+    },
+    {
+      "source": "fe5c9bcb",
+      "target": "322b65d8",
+      "type": "CFType.icf"
+    }
+  ]
+}

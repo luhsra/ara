@@ -1,4 +1,12 @@
 if get_option('enable_step_tests')
+    test('create-abbs',
+        py3_inst,
+        args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
+        env: [python_path],
+        depends: ara_py,
+        suite: 'steps'
+    )
+
     test('dependency-resolving',
         py3_inst,
         args: files('dependency_resolving.py'),

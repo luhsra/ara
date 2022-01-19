@@ -75,6 +75,7 @@ void recur1(int a);
 void recur2(int a) {
 	if (a != 3) {
 		recur1(a-1);
+		xTaskCreate(vTask4, "Task 4", 1000, NULL, 1, NULL);
 	}
 }
 
@@ -84,6 +85,23 @@ void recur1(int a) {
 	}
 }
 
+void some_loops(int param) {
+	int a = 0;
+	int b = 0;
+	for(int i = 0; i < param; ++i) {
+		a += i * a;
+	}
+	xTaskCreate(vTask4, "Task 5", 1000, NULL, a, NULL);
+	if (a > param) {
+		b += 10 + a + param;
+		for(int i = 0; i < b; ++i) {
+			b += b;
+		}
+	} else {
+		b += 2 + param;
+	}
+	xTaskCreate(vTask4, "Task 6", 1000, NULL, b, NULL);
+}
 
 int other_function(int a) {
 	endless_loop();
@@ -99,6 +117,8 @@ int main(void) {
 	int e = do_stuff(23, 90);
 
 	complicated(14, 90);
+
+	some_loops(e);
 
 	vTaskStartScheduler();
 
