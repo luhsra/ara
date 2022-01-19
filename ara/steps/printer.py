@@ -375,9 +375,8 @@ class Printer(Step):
 
         entry_label = self.entry_point.get()
         if self.from_entry_point.get():
-            entry_func = self._graph.cfg.get_function_by_name(entry_label)
-            functions = self._graph.cfg.reachable_functs(entry_func,
-                                                         self._graph.callgraph)
+            entry_func = cfg.get_function_by_name(entry_label)
+            functions = cfg.reachable_functs(entry_func, self._graph.callgraph)
         else:
             functs = self._graph.functs
             functions = functs.vertices()
@@ -401,11 +400,12 @@ class Printer(Step):
                     current_bbs = [block]
                 else:
                     current_bbs = cfg.get_bbs(block)
+                    tooltip += f" ({','.join([cfg.vp.name[b] for b in current_bbs])})"
                 code = "\r".join([str(cfg.get_llvm_obj(bb))
                                   for bb in current_bbs])
                 code = code.replace('\n', '\r')
                 tooltip += code
-                tooltip = f'<{tooltip}>'  # seems to be added automagically
+                tooltip = f'<{html.escape(tooltip)}>'  # seems to be added automagically
 
                 if cfg.vp.type[block] == ABBType.not_implemented:
                     assert not cfg.vp.implemented[function]
@@ -413,7 +413,7 @@ class Printer(Step):
                                          label="",
                                          tooltip=tooltip,
                                          shape="box")
-                    dot_nodes.add(str(hash(block)))
+                    dot_nodes.add(int(block))
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
@@ -431,12 +431,12 @@ class Printer(Step):
                         dot_abb.set('style', 'dotted')
                     elif cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
-                    dot_nodes.add(str(hash(block)))
+                    dot_nodes.add(int(block))
                 dot_func.add_node(dot_abb)
         for edge in cfg.edges():
             if cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
                 continue
-            if not all([str(hash(x)) in dot_nodes
+            if not all([int(x) in dot_nodes
                        for x in [edge.source(), edge.target()]]):
                 continue
             color = "black"
