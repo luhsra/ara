@@ -53,12 +53,12 @@ class CFType(enum.IntEnum): # */
     #define pass namespace ara::graph { enum class CFType {
     pass
 
-    lcf = 0,
-    icf = 1,
-    gcf = 2,
-    f2a = 3,
-    a2b = 4,
-    f2b = 5
+    lcf = 1 << 0,
+    icf = 1 << 1,
+    gcf = 1 << 2,
+    f2a = 1 << 3,
+    a2b = 1 << 4,
+    f2b = 1 << 5
 
     #undef pass
     #define pass }; STANDARD_OPERATORS(CFType)}
