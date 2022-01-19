@@ -1,0 +1,148 @@
+{
+  "spinlocks": [["SPIBusLock"]],
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "SignalGatherGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "SignalGatherInitiateTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 24,
+              "schedule": true,
+              "spinlocks": ["SPIBusLock"],
+              "resources": [
+                "SPIBus"
+              ]
+            },
+            "SignalGatherFinishedTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 25,
+              "schedule": true
+            },
+            "SignalGatherTimeoutTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 23,
+              "schedule": true,
+              "spinlocks": ["SPIBusLock"],
+              "resources": [
+                "SPIBus"
+              ]
+            },
+            "SignalProcessingActuateTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 22,
+              "schedule": true
+            },
+            "SignalProcessingAttitudeTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 21,
+              "schedule": true
+            }
+          }
+        }
+
+      },
+      "resources": {
+        "SPIBus": {}
+      },
+      "events": {},
+      "alarms": {},
+      "counters": {}
+    },
+    {
+      "id": 1,
+      "resources": {
+        "SPIBus1": {}
+      },
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "task_groups": {
+        "FlightControlGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "FlightControlTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 11,
+              "schedule": false
+            },
+            "FlightControlAttitudeTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 12,
+              "schedule": true
+            },
+            "FlightControlActuateTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 13,
+              "schedule": true
+            },
+            "MavlinkSendTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 10,
+              "schedule": true,
+              "spinlocks": ["SPIBusLock"],
+              "resources": [
+                "SPIBus1"
+              ]
+            }
+          }
+        },
+        "WatchdogGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "CopterControlWatchdogTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 1,
+              "schedule": false
+            }
+          }
+        },
+        "MavlinkReceiveGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "CopterControlTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        },
+          "ScheduleGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "ScheduleTask": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 1,
+              "schedule": true,
+              "resources": []
+            }
+          }
+        }
+      }
+    }
+  ]
+}

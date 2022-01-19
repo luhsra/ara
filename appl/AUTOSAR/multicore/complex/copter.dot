@@ -1,0 +1,64 @@
+digraph G{
+SignalGatherInitiateTask
+SignalGatherFinishedTask
+SignalGatherTimeoutTask
+SignalProcessingActuateTask
+SignalProcessingAttitudeTask
+ActuateTask
+FlightControlAttitudeTask
+FlightControlActuateTask
+FlightControlTask
+MavlinkSendTask
+CopterControlTask
+CopterControlWatchdogTask
+MavlinkRecvHandler
+SPIBus
+
+SignalGatherInitiateTask -> SPIBus [label="GetRessource"]
+SignalGatherInitiateTask -> SPIBus [label="ReleaseRessource"]
+SignalGatherInitiateTask -> SignalGatherTimeoutTask [label="AT"]
+SignalGatherInitiateTask -> SignalGatherFinishedTask [label="AT"]
+
+
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask [label="AT"]
+SignalGatherFinishedTask -> SignalProcessingActuateTask [label="AT"]
+
+SignalGatherTimeoutTask -> SPIBus [label="GetRessource"]
+SignalGatherTimeoutTask -> SPIBus [label="ReleaseRessource"]
+
+SignalGatherTimeoutTask -> SignalGatherFinishedTask [label="CT"]
+
+SignalProcessingActuateTask -> SignalProcessingActuateTask [label="TT"]
+
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask [label="TT"]
+
+FlightControlTask -> FlightControlAttitudeTask [label="AT"]
+FlightControlTask -> FlightControlActuateTask [label="AT"]
+FlightControlTask -> MavlinkSendTask [label="AT"]
+
+FlightControlAttitudeTask -> FlightControlAttitudeTask [label="TT"]
+
+FlightControlActuateTask -> FlightControlActuateTask [label="TT"]
+
+MavlinkSendTask -> SPIBus [label="GetRessource"]
+MavlinkSendTask -> SPIBus [label="ReleaseRessource"]
+MavlinkSendTask -> Interrupt37 [label="trigger"]
+
+CopterControlTask -> INTERRUPTS [label="SUSPEND_ALL"]
+CopterControlTask -> INTERRUPTS [label="RESUME_ALL"]
+
+MavlinkRecvHandler -> CopterControlTask [label="AT"]
+
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask [label="AT"]
+
+AlarmFlightControlTask -> FlightControlTask [label="AT"]
+
+AlarmCopterControlWatchdogTask -> CopterControlWatchdogTask [label="AT"]
+
+}
+
+
+
+
+
+
