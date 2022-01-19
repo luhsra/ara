@@ -427,9 +427,17 @@ class ZEPHYR(OSBase):
     def add_instance_comm(state: OSState, cpu_id: int, instance: ZephyrInstance, call: str):
         """Adds an interaction (edge) with the given callname to all instances with the given symbol"""
         
+        if not isinstance(instance, ZephyrInstance):
+            logger.error(f"No matching instance for {call}() found. Skipping.")
+            return
+        if not hasattr(instance, "symbol"):
+            logger.error(f"Instance of type {type(instance)} from {call}() has no \"symbol\" field. "
+            "add_instance_comm() can not work with this instance. Skipping.")
+            return
+
         matches = list(ZEPHYR.find_instance_by_symbol(state, instance.symbol))
         if len(matches) == 0:
-            logger.error(f"No matching instance found. Skipping.\n{type(instance.symbol)}\n{instance.symbol}")
+            logger.error(f"No matching instance for {call}() found. Skipping.\n{type(instance.symbol)}\n{instance.symbol}")
         else:
             if len(matches) > 1:
                 logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
