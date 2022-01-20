@@ -76,7 +76,7 @@ Configure meson so that it finds the zephyr install.
 ```
 meson configure -D zephyr_dir=<...>/zephyrproject/
 ```
-Because they significantly impact compile time, the included apps are not build with the rest of ara. Instead use:
+To test zephyr apps without a test case use this target:
 ```
 ninja zephyr_examples
 ninja z_clean
