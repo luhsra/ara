@@ -8,8 +8,9 @@
  * @ingroup apps
  * @brief Just a simple test application
  */
-#include "os.h"
-#include "fail/trace.h"
+#include "autosar/os.h"
+#include "test/test.h"
+#include "machine.h"
 
 //extern "C" volatile uint32_t random_source =0 ;
 DeclareTask(SignalGatherInitiateTask);
@@ -70,8 +71,8 @@ TASK(SignalGatherFinishedTask) {
 
 TASK(SignalGatherTimeoutTask) {
 	test_trace(0x21);
-	Releasespinlock(SPIBusLock);
 	GetResource(SPIBus);
+	GetSpinlock(SPIBusLock);
 	test_trace(0x22);
 	ReleaseSpinlock(SPIBusLock);
 	ReleaseResource(SPIBus);
@@ -144,7 +145,7 @@ TASK(CopterControlTask) {
 	TerminateTask();
 }
 
-ISR2(MavlinkRecvHandler) {
+ISR2(MavLinkRecvHandler) {
 #ifndef CONFIG_ARCH_OSEK_V
 	test_trace(0xA1);
 #endif

@@ -50,6 +50,7 @@
               "activation": 1,
               "autostart": false,
               "priority": 11,
+              "resources": ["SPIBus"],
               "schedule": true
             }
           }
@@ -69,7 +70,7 @@
         }
       },
       "resources": {
-        "SPIBusResource": {}
+        "SPIBus": {}
       },
       "events": {
       },
@@ -89,7 +90,7 @@
           "action": {
             "action": "activatetask",
             "task": "FlightControlTask"
-          }
+          },
           "autostart": true,
           "alarmtime": 10,
           "cycletime": 90
@@ -143,39 +144,15 @@
               "priority": 6,
               "schedule": true
             },
-            "MavlinkRecvTask": {
-              "activation": 1,
-              "autostart": false,
-              "priority": 4,
-              "schedule": true,
-              "events": [
-                "MavMsgReceiveEvent"
-              ]
-            }
-          }
-        },
-        "ActuateGroup": {
-          "promises": {
-            "serialized": true
-          },
-          "tasks": {
-            "ActuateTask": {
-              "activation": 1,
-              "autostart": false,
-              "priority": 16,
-              "schedule": true,
-              "resources": [
-                "SPIBus1"
-              ]
-            },
             "MavlinkSendTask": {
               "activation": 1,
               "autostart": false,
               "priority": 0,
+              "resources": ["SPIBus1"],
               "schedule": true
             }
           }
-        },
+        }
       },
       "resources": {
         "SPIBus1": {}
@@ -183,7 +160,14 @@
       "events": { },
       "alarms": { },
       "counters": {},
-    },
+      "isrs": {
+        "MavLinkRecvHandler": {
+          "category": 2,
+          "device": 37,
+          "priority": 100
+        }
+      }
+    }
   ],
   "spinlocks": [
     ["SPIBusLock"]
