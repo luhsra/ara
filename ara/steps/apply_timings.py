@@ -52,9 +52,9 @@ class ApplyTimings(Step):
                     if not first:
                         f.write(',\n')
                     func = cfg.get_function(cfg.vertex(abb))
-                    f.write(f'\t"{abbs.vp.name[abb]}": {{"function": "{cfg.vp.name[func]}", "bcet": 0, "wcet": 0}}')
+                    f.write(f'  "{abbs.vp.name[abb]}": {{"function": "{cfg.vp.name[func]}", "bcet": 0, "wcet": 0}}')
                     first = False
-                f.write("\n}")
+                f.write("\n}\n")
             return
 
         # assign times
