@@ -184,9 +184,10 @@ class CreateABBs(Step):
             exit_v = cfg.get_function_exit_bb(func)
 
             d_graph = GraphView(local, efilt=lambda e: not is_call(e.target()))
+            rd_graph = GraphView(local, efilt=lambda e: not is_call(e.source()))
 
             dom_tree = self._gen_dom_tree(d_graph)
-            post_dom_tree = self._gen_dom_tree(d_graph, reverse_graph=True)
+            post_dom_tree = self._gen_dom_tree(rd_graph, reverse_graph=True)
 
             f_sets = self._assign_sets(dom_tree, bbs)
             r_sets = self._assign_sets(post_dom_tree, bbs)
@@ -196,7 +197,7 @@ class CreateABBs(Step):
             abb_cands = {}  # key = (entry, exit), value = BBs in between
             absorbed = set()
             for a, b in product(bbs, repeat=2):
-                if a in absorbed or b in absorbed:
+                if a in absorbed:
                     continue
                 if b in f_sets[a] and a in r_sets[b]:
                     if a in abb_cands and b in abb_cands[a].body | {a}:
