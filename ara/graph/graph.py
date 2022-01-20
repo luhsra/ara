@@ -123,7 +123,8 @@ class CFG(graph_tool.Graph):
     def get_function_by_name(self, name: str):
         """Find a specific function."""
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
-        assert len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
+        assert len(func) == 1, f'function {name} not unambiguous: {func}'
+        assert self.vp.level[func[0]] == NodeLevel.function
         return func[0]
 
     def get_llvm_obj(self, vertex):
