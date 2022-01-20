@@ -120,6 +120,7 @@ class CrossContext:
     graph  -- the local graph from a specific root of the cross syscall
     cpu_id -- the cpu_id of the cross syscall
     path   -- path from the cross syscall cp up to the root
+    cores  -- the affected cores for every element of the path
     """
     graph: graph_tool.Graph
     cpu_id: int
@@ -557,6 +558,7 @@ class MultiSSE(Step):
         return root_cps
 
     def _is_successor_of(self, orig_cp, new_cp):
+        """Is new_cp a successor of orig_cp?"""
         sync_graph = self._mstg.g.edge_type(MSTType.follow_sync, MSTType.en2ex)
         _, elist = shortest_path(sync_graph, orig_cp, new_cp)
         return len(elist) > 0
@@ -622,9 +624,11 @@ class MultiSSE(Step):
                         log(f"Skip {e}. It contains core {ctx.cpu_id}.")
                         continue
                     if cores & set(ctx.cores[cp.root]):
+                        # if new cross point (tgt) share some cores with the
+                        # root cross point for this path
                         if not all([
                                 self._is_successor_of(cps[c].root, tgt)
-                                for c in cores
+                                for c in cores if c in cps
                         ]):
                             log(f"Skip {e}. No successor.")
                             continue
