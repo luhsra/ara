@@ -11,7 +11,7 @@ z_easy_apps = [
     'dyn_stack',
     'dyn_sys_sems',
     'dyn_sems',
-    #'latency_measure', # Is not running with LLVM-12
+    'latency_measure',
     'minimal',
     'multi_init',
     'static_heap',

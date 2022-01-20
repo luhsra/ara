@@ -86,13 +86,12 @@ test('zephyr_dyn_sys_sems',
         suite: 'zephyr'
 )
 
-# Is not running with LLVM-12
-#test('zephyr_latency_measure',
-#        py3_inst,
-#        args: [files('../instance_graph.py'), graphs / 'latency_measure.json', zephyr_latency_measure, 'ZEPHYR'],
-#        env: [python_path],
-#        suite: 'zephyr'
-#)
+test('zephyr_latency_measure',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'latency_measure.json', zephyr_latency_measure, 'ZEPHYR'],
+        env: [python_path],
+        suite: 'zephyr'
+)
 
 test('zephyr_minimal',
         py3_inst,
