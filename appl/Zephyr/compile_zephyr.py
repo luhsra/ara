@@ -1,11 +1,6 @@
 from argparse import ArgumentParser
 import os
 import shutil
-import string
-
-import sys
-sys.path.insert(0,'../../ara')
-from ara.util import KConfigFile
 
 parser = ArgumentParser()
 parser.add_argument('--objcopy', type=str)
@@ -26,6 +21,11 @@ parser.add_argument('--llvm_link', type=str)
 parser.add_argument('name', metavar='N', type=str)
 
 args = parser.parse_args()
+
+# import independent of meson build directory
+import sys
+sys.path.insert(0,args.source_dir + '/../../../../ara')
+from ara.util import KConfigFile
 
 # Clear the build dir if it exits and we can't prove that the existing build is for the same board.
 # This is required by the zephyr build system. Otherwise cmake runs into caching issues.
