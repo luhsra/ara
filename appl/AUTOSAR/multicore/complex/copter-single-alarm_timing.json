@@ -1,0 +1,74 @@
+{
+  "ABB0": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
+  "ABB1": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
+  "ABB3": {"function": "main", "bcet": 0, "wcet": 0},
+  "ABB4": {"function": "main", "bcet": 0, "wcet": 0},
+
+  "ABB7": {"function": "AUTOSAR_ISR_MavLinkRecvHandler", "bcet": 1, "wcet": 2},
+  "ABB8": {"function": "AUTOSAR_ISR_MavLinkRecvHandler", "bcet": 0, "wcet": 0},
+
+  "ABB11": {"function": "AUTOSAR_TASK_FUNC_MavlinkSendTask", "bcet": 5, "wcet": 7},
+  "ABB12": {"function": "AUTOSAR_TASK_FUNC_MavlinkSendTask", "bcet": 1, "wcet": 2},
+  "ABB13": {"function": "AUTOSAR_TASK_FUNC_MavlinkSendTask", "bcet": 12, "wcet": 19},
+  "ABB14": {"function": "AUTOSAR_TASK_FUNC_MavlinkSendTask", "bcet": 1, "wcet": 2},
+  "ABB15": {"function": "AUTOSAR_TASK_FUNC_MavlinkSendTask", "bcet": 2, "wcet": 3},
+  "ABB16": {"function": "AUTOSAR_TASK_FUNC_MavlinkSendTask", "bcet": 0, "wcet": 0},
+
+  "ABB27": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 3, "wcet": 7},
+  "ABB28": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 2, "wcet": 6},
+  "ABB29": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 2, "wcet": 3},
+  "ABB30": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 1, "wcet": 3},
+  "ABB31": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 1, "wcet": 3},
+  "ABB32": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 1, "wcet": 2},
+  "ABB33": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 2, "wcet": 5},
+  "ABB34": {"function": "AUTOSAR_TASK_FUNC_CopterControlTask", "bcet": 0, "wcet": 0},
+
+  "ABB44": {"function": "AUTOSAR_TASK_FUNC_FlightControlActuateTask", "bcet": 6, "wcet": 14},
+  "ABB45": {"function": "AUTOSAR_TASK_FUNC_FlightControlActuateTask", "bcet": 0, "wcet": 0},
+  "ABB47": {"function": "AUTOSAR_TASK_FUNC_FlightControlAttitudeTask", "bcet": 9, "wcet": 12},
+  "ABB48": {"function": "AUTOSAR_TASK_FUNC_FlightControlAttitudeTask", "bcet": 0, "wcet": 0},
+
+  "ABB50": {"function": "AUTOSAR_TASK_FUNC_FlightControlTask", "bcet": 7, "wcet": 12},
+  "ABB51": {"function": "AUTOSAR_TASK_FUNC_FlightControlTask", "bcet": 1, "wcet": 2},
+  "ABB52": {"function": "AUTOSAR_TASK_FUNC_FlightControlTask", "bcet": 9, "wcet": 13},
+  "ABB53": {"function": "AUTOSAR_TASK_FUNC_FlightControlTask", "bcet": 1, "wcet": 3},
+  "ABB54": {"function": "AUTOSAR_TASK_FUNC_FlightControlTask", "bcet": 0, "wcet": 0},
+
+  "ABB59": {"function": "AUTOSAR_TASK_FUNC_CopterControlWatchdogTask", "bcet": 3, "wcet": 8},
+  "ABB60": {"function": "AUTOSAR_TASK_FUNC_CopterControlWatchdogTask", "bcet": 0, "wcet": 0},
+
+  "ABB62": {"function": "AUTOSAR_TASK_FUNC_SignalGatherTimeoutTask", "bcet": 1, "wcet": 3},
+  "ABB63": {"function": "AUTOSAR_TASK_FUNC_SignalGatherTimeoutTask", "bcet": 1, "wcet": 1},
+  "ABB64": {"function": "AUTOSAR_TASK_FUNC_SignalGatherTimeoutTask", "bcet": 1, "wcet": 8},
+  "ABB65": {"function": "AUTOSAR_TASK_FUNC_SignalGatherTimeoutTask", "bcet": 1, "wcet": 1},
+  "ABB66": {"function": "AUTOSAR_TASK_FUNC_SignalGatherTimeoutTask", "bcet": 1, "wcet": 5},
+  "ABB67": {"function": "AUTOSAR_TASK_FUNC_SignalGatherTimeoutTask", "bcet": 0, "wcet": 0},
+
+  "ABB74": {"function": "AUTOSAR_TASK_FUNC_SignalProcessingAttitudeTask", "bcet": 3, "wcet": 8},
+  "ABB75": {"function": "AUTOSAR_TASK_FUNC_SignalProcessingAttitudeTask", "bcet": 0, "wcet": 0},
+
+  "ABB77": {"function": "AUTOSAR_TASK_FUNC_SignalProcessingActuateTask", "bcet": 5, "wcet": 12},
+  "ABB78": {"function": "AUTOSAR_TASK_FUNC_SignalProcessingActuateTask", "bcet": 0, "wcet": 0},
+
+  "ABB80": {"function": "AUTOSAR_TASK_FUNC_SignalGatherFinishedTask", "bcet": 1, "wcet": 5},
+  "ABB81": {"function": "AUTOSAR_TASK_FUNC_SignalGatherFinishedTask", "bcet": 1, "wcet": 1},
+  "ABB82": {"function": "AUTOSAR_TASK_FUNC_SignalGatherFinishedTask", "bcet": 1, "wcet": 1},
+  "ABB83": {"function": "AUTOSAR_TASK_FUNC_SignalGatherFinishedTask", "bcet": 0, "wcet": 0},
+
+  "ABB87": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB88": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB89": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB90": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB91": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 1},
+  "ABB92": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 1},
+  "ABB93": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB94": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB95": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 1},
+  "ABB96": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 2},
+  "ABB97": {"function": "AUTOSAR_TASK_FUNC_SignalGatherInitiateTask", "bcet": 1, "wcet": 1},
+
+  "ABB105": {"function": "AUTOSAR_TASK_FUNC_ControlTask", "bcet": 1, "wcet": 2},
+  "ABB106": {"function": "AUTOSAR_TASK_FUNC_ControlTask", "bcet": 1, "wcet": 2},
+  "ABB107": {"function": "AUTOSAR_TASK_FUNC_ControlTask", "bcet": 1, "wcet": 2},
+  "ABB108": {"function": "AUTOSAR_TASK_FUNC_ControlTask", "bcet": 0, "wcet": 0}
+}

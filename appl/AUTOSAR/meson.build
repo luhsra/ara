@@ -123,6 +123,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'paper',              'name': 'timing',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'timing_timing.json'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-without-alarms', 'oil': 'copter-without-alarms_system.json', 'timing': 'copter-without-alarms_timing.json'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms', 'oil': 'copter-with-alarms_system.json', 'timing': 'copter-with-alarms_timing.json'},
+  {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm', 'oil': 'copter-single-alarm_system.json', 'timing': 'copter-single-alarm_timing.json'},
 ]
 
 autosar_targets = []
