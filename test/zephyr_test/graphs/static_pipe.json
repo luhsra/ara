@@ -1,1 +1,86 @@
-[]
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "label": "Thread",
+    "id": "thread_a",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/static_pipe/src/main.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "do_stuff",
+    "options": 0,
+    "priority": 7,
+    "stack_size": 1024
+  },
+  {
+    "label": "Pipe",
+    "id": "work",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/static_pipe/src/main.c",
+    "line": 10,
+    "specialization_level": "",
+    "type": "instance",
+    "size": 256
+  },
+  {
+    "source": "thread_a",
+    "target": "work",
+    "label": "k_pipe_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "work",
+    "label": "k_pipe_put",
+    "type": "interaction"
+  }
+]

@@ -1,1 +1,434 @@
-[]
+[
+  {
+    "label": "KernelSemaphore",
+    "id": "INTSEMA",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/latency_measure/src/int_to_thread_evt.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "WORKSEMA",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/latency_measure/src/int_to_thread_evt.c",
+    "line": 28,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "label": "Thread",
+    "id": "int_thread_id",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/int_to_thread_evt.c",
+    "line": 71,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "int_thread",
+    "options": 0,
+    "priority": 11,
+    "stack_size": 512
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "lock_unlock_sema",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/latency_measure/src/sema_test_signal_release.c",
+    "line": 28,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1000
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem_bench",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/latency_measure/src/sema_test_signal_release.c",
+    "line": 30,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sync_sema",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/latency_measure/src/coop_ctx_switch.c",
+    "line": 44,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "Thread",
+    "id": "t1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/thread.c",
+    "line": 46,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "thread_suspend_resume",
+    "options": 0,
+    "priority": 6,
+    "stack_size": 512
+  },
+  {
+    "label": "Mutex",
+    "id": "test_mutex",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/latency_measure/src/mutex_lock_unlock.c",
+    "line": 15,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Thread",
+    "id": "test_thread_id",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/main.c",
+    "line": 63,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "test_thread",
+    "options": 0,
+    "priority": 10,
+    "stack_size": 1024
+  },
+  {
+    "label": "Thread",
+    "id": "thread_one_data",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/coop_ctx_switch.c",
+    "line": 103,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "thread_one",
+    "options": 0,
+    "priority": -10,
+    "stack_size": 512
+  },
+  {
+    "label": "Thread",
+    "id": "thread_one_data.40",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/sema_test_signal_release.c",
+    "line": 49,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "thread_sema_test1",
+    "options": 0,
+    "priority": 3,
+    "stack_size": 512
+  },
+  {
+    "label": "Thread",
+    "id": "thread_two_data",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/coop_ctx_switch.c",
+    "line": 106,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "thread_two",
+    "options": 0,
+    "priority": -10,
+    "stack_size": 512
+  },
+  {
+    "label": "Thread",
+    "id": "y_thread",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/latency_measure/src/thread_switch_yield.c",
+    "line": 63,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "yielding_thread",
+    "options": 0,
+    "priority": 10,
+    "stack_size": 512
+  },
+  {
+    "source": "int_thread_id",
+    "target": "INTSEMA",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "int_thread_id",
+    "target": "int_thread_id",
+    "label": "k_current_get",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "y_thread",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "thread_one_data",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "thread_two_data",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "t1",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "thread_one_data.40",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_thread_id",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_thread_id",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_thread_id",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "INTSEMA",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "WORKSEMA",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "lock_unlock_sema",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "lock_unlock_sema",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "sem_bench",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_mutex",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_mutex",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_thread_id",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_thread_id",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "test_thread_id",
+    "target": "test_thread_id",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "y_thread",
+    "target": "y_thread",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_one_data",
+    "target": "sync_sema",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_one_data",
+    "target": "thread_one_data",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_two_data",
+    "target": "sync_sema",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_two_data",
+    "target": "thread_two_data",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_one_data.40",
+    "target": "sem_bench",
+    "label": "k_sem_take",
+    "type": "interaction"
+  }
+]

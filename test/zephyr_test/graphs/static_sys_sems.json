@@ -36,7 +36,7 @@
     "stack_size": 1024
   },
   {
-    "label": "KernelSemaphore",
+    "label": "UserSemaphore",
     "id": "threadA_sem",
     "branch": 0,
     "usually_taken": 0,
@@ -45,8 +45,8 @@
     "after_scheduler": 0,
     "unique": 1,
     "is_control": 0,
-    "file": "../appl/Zephyr/static_sems/src/main.c",
-    "line": 38,
+    "file": "../appl/Zephyr/static_sys_sems/src/main.c",
+    "line": 39,
     "specialization_level": "",
     "type": "instance",
     "count": 1,
@@ -62,8 +62,8 @@
     "after_scheduler": 1,
     "unique": 1,
     "is_control": 1,
-    "file": "../appl/Zephyr/static_sems/src/main.c",
-    "line": 60,
+    "file": "../appl/Zephyr/static_sys_sems/src/main.c",
+    "line": 61,
     "specialization_level": "",
     "type": "instance",
     "delay": "<unknown>",
@@ -73,7 +73,7 @@
     "stack_size": 1024
   },
   {
-    "label": "KernelSemaphore",
+    "label": "UserSemaphore",
     "id": "threadB_sem",
     "branch": 0,
     "usually_taken": 0,
@@ -82,8 +82,8 @@
     "after_scheduler": 0,
     "unique": 1,
     "is_control": 0,
-    "file": "../appl/Zephyr/static_sems/src/main.c",
-    "line": 39,
+    "file": "../appl/Zephyr/static_sys_sems/src/main.c",
+    "line": 40,
     "specialization_level": "",
     "type": "instance",
     "count": 0,
@@ -99,8 +99,8 @@
     "after_scheduler": 0,
     "unique": 1,
     "is_control": 1,
-    "file": "../appl/Zephyr/static_sems/src/main.c",
-    "line": 69,
+    "file": "../appl/Zephyr/static_sys_sems/src/main.c",
+    "line": 70,
     "specialization_level": "",
     "type": "instance",
     "delay": 0,
@@ -118,7 +118,7 @@
   {
     "source": "thread_a",
     "target": "threadA_sem",
-    "label": "k_sem_take",
+    "label": "sys_sem_take",
     "type": "interaction"
   },
   {
@@ -136,7 +136,7 @@
   {
     "source": "thread_a",
     "target": "threadB_sem",
-    "label": "k_sem_give",
+    "label": "sys_sem_give",
     "type": "interaction"
   },
   {
@@ -154,7 +154,7 @@
   {
     "source": "threadB_data",
     "target": "threadB_sem",
-    "label": "k_sem_take",
+    "label": "sys_sem_take",
     "type": "interaction"
   },
   {
@@ -172,7 +172,7 @@
   {
     "source": "threadB_data",
     "target": "threadA_sem",
-    "label": "k_sem_give",
+    "label": "sys_sem_give",
     "type": "interaction"
   }
 ]

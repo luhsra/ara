@@ -1,1 +1,211 @@
-[]
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "label": "Mutex",
+    "id": "guard",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/static_isr/src/main.c",
+    "line": 15,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "ISR",
+    "id": "main.__isr_produce_more_work_isr_irq_3",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/static_isr/src/main.c",
+    "line": 55,
+    "specialization_level": "",
+    "type": "instance",
+    "entry_name": "produce_more_work_isr",
+    "flags": 1,
+    "irq_number": 1,
+    "priority": null
+  },
+  {
+    "label": "ISR",
+    "id": "main.__isr_produce_work_isr_irq_2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/static_isr/src/main.c",
+    "line": 54,
+    "specialization_level": "",
+    "type": "instance",
+    "entry_name": "produce_work_isr",
+    "flags": 0,
+    "irq_number": 0,
+    "priority": null
+  },
+  {
+    "label": "Stack",
+    "id": "work",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/static_isr/src/main.c",
+    "line": 13,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 256
+  },
+  {
+    "label": "Thread",
+    "id": "worker",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/static_isr/src/main.c",
+    "line": 45,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "do_work",
+    "options": 0,
+    "priority": 1,
+    "stack_size": 1024
+  },
+  {
+    "source": "main.__isr_produce_work_isr_irq_2",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_work_isr_irq_2",
+    "target": "work",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_work_isr_irq_2",
+    "target": "guard",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_more_work_isr_irq_3",
+    "target": "main.__isr_produce_more_work_isr_irq_3",
+    "label": "k_is_in_isr",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_more_work_isr_irq_3",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_more_work_isr_irq_3",
+    "target": "work",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_more_work_isr_irq_3",
+    "target": "guard",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "worker",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "work",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "guard",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "work",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  }
+]

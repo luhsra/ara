@@ -1,1 +1,180 @@
-[]
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/multi_init/src/main.c",
+    "line": 20,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem0.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/multi_init/src/main.c",
+    "line": 12,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 1,
+    "limit": 2
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/multi_init/src/main.c",
+    "line": 9,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem1.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/multi_init/src/main.c",
+    "line": 13,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 5
+  },
+  {
+    "label": "Thread",
+    "id": "threadA",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/multi_init/src/main.c",
+    "line": 16,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "thread_a",
+    "options": 0,
+    "priority": 1,
+    "stack_size": 1024
+  },
+  {
+    "source": "threadA",
+    "target": "sem0.1",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "threadA",
+    "target": "sem1.1",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem0",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem0",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem0.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem1.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "sem0.1",
+    "target": "sem0",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "sem1.1",
+    "target": "sem1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  }
+]
