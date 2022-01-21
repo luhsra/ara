@@ -1,4 +1,5 @@
 import graph_tool.util
+import pyllco
 from .step import Step
 from pydoc import locate
 from ara.os.zephyr import ZephyrInstance, Thread, ISR, ZephyrKernel, ZEPHYR
@@ -56,7 +57,7 @@ class ZephyrStaticPost(Step):
         for instance in self._graph.instances.vertices():
             instance_type = locate('ara.os.zephyr.' + self._graph.instances.vp.label[instance])
             inst = instance_type(**self._graph.instances.vp.obj[instance])
-            if hasattr(inst, "symbol"):
+            if hasattr(inst, "symbol") and isinstance(inst.symbol, pyllco.Value):
                 va.assign_system_object(inst.symbol, inst)
             if issubclass(instance_type, ControlInstance):
                 function = cfg.get_function_by_name(inst.entry_name)
