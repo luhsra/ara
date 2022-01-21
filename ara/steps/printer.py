@@ -98,6 +98,7 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
             "AUTOSAR_GetSpinlock": "GL",
             "AUTOSAR_ReleaseSpinlock": "RL",
             "AUTOSAR_ActivateTask": "AT",
+            "AUTOSAR_ChainTask": "CT",
     }
 
     def _to_str(v):
