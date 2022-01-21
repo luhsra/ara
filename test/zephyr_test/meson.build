@@ -86,13 +86,6 @@ test('zephyr_dyn_sys_sems',
         suite: 'zephyr'
 )
 
-test('zephyr_latency_measure',
-        py3_inst,
-        args: [files('../instance_graph.py'), graphs / 'latency_measure.json', zephyr_latency_measure, 'ZEPHYR'],
-        env: [python_path],
-        suite: 'zephyr'
-)
-
 test('zephyr_minimal',
         py3_inst,
         args: [files('../instance_graph.py'), graphs / 'minimal.json', zephyr_minimal, 'ZEPHYR'],
@@ -172,7 +165,7 @@ test('zephyr_static_stack',
 
 test('zephyr_static_sys_sems',
         py3_inst,
-        args: [files('../instance_graph.py'), graphs / 'static_stack.json', zephyr_static_sys_sems, 'ZEPHYR'],
+        args: [files('../instance_graph.py'), graphs / 'static_sys_sems.json', zephyr_static_sys_sems, 'ZEPHYR'],
         env: [python_path],
         suite: 'zephyr'
 )
@@ -189,11 +182,20 @@ test('zephyr_app_kernel',
         py3_inst,
         args: [files('../instance_graph.py'), graphs / 'app_kernel.json', zephyr_app_kernel, 'ZEPHYR'],
         env: [python_path],
-        suite: 'zephyr'
+        suite: 'zephyr',
+        timeout: 200
 )
 test('zephyr_sys_kernel',
         py3_inst,
         args: [files('../instance_graph.py'), graphs / 'sys_kernel.json', zephyr_sys_kernel, 'ZEPHYR'],
         env: [python_path],
-        suite: 'zephyr'
+        suite: 'zephyr',
+        timeout: 200
+)
+test('zephyr_latency_measure',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'latency_measure.json', zephyr_latency_measure, 'ZEPHYR'],
+        env: [python_path],
+        suite: 'zephyr',
+        timeout: 200
 )
