@@ -441,19 +441,32 @@ class MSTGraph(graph_tool.Graph):
         obj = self.vp.state[state]
         return obj.cpus.one().exec_state
 
+    def _get_cpu_bound_state(self, graph_v, in_v, cpu_id):
+        return self.vertex(single_check([e.target()
+                                         for e in graph_v.vertex(in_v).out_edges()
+                                         if graph_v.ep.cpu_id[e] == cpu_id]))
+
     def get_entry_state(self, entry_cp, cpu_id):
+        """Return the entry state that belongs to an entry SP for a cpu_id."""
         st2sy = self.edge_type(MSTType.st2sy)
-        entry = single_check([e.target()
-                              for e in st2sy.vertex(entry_cp).out_edges()
-                              if st2sy.ep.cpu_id[e] == cpu_id])
-        return self.vertex(entry)
+        return self._get_cpu_bound_state(st2sy, entry_cp, cpu_id)
 
     def get_exit_state(self, exit_cp, cpu_id):
-        st2sy = self.edge_type(MSTType.st2sy)
-        exit_v = single_check([e.source()
-                               for e in st2sy.vertex(exit_cp).in_edges()
-                               if st2sy.ep.cpu_id[e] == cpu_id])
-        return self.vertex(exit_v)
+        """Return the exit state that belongs to an exit SP for a cpu_id."""
+        st2sy = graph_tool.GraphView(self.edge_type(MSTType.st2sy),
+                                     reversed=True)
+        return self._get_cpu_bound_state(st2sy, exit_cp, cpu_id)
+
+    def get_out_metastate(self, entry_cp, cpu_id):
+        """Return the metastate that belongs to an entry SP for a cpu_id."""
+        m2sy = self.edge_type(MSTType.m2sy)
+        return self._get_cpu_bound_state(m2sy, entry_cp, cpu_id)
+
+    def get_in_metastate(self, exit_cp, cpu_id):
+        """Return the metastate that belongs to an exit SP for a cpu_id."""
+        m2sy = graph_tool.GraphView(self.edge_type(MSTType.m2sy),
+                                    reversed=True)
+        return self._get_cpu_bound_state(m2sy, exit_cp, cpu_id)
 
 
 class InstanceGraph(graph_tool.Graph):
