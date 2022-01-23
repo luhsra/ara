@@ -196,6 +196,7 @@ class Equations:
     def _solve_for_var(self, var, minimize=True):
         def inf(num):
             return None if num == math.inf else num
+
         c = (self._highest) * [0]
         c[var] = int(minimize) * 2 - 1
         b_eq = len(self._equalities) * [0]
@@ -761,7 +762,10 @@ class MultiSSE(Step):
         return shortest_path(graph, from_cp, to_cp)
 
     def _f_f_sync(self, iterable):
-        return list(filter(lambda e: isinstance(e, FakeEdge) or self._mstg.g.ep.type[e] == MSTType.follow_sync, iterable))
+        return list(
+            filter(
+                lambda e: isinstance(e, FakeEdge) or self._mstg.g.ep.type[e] ==
+                MSTType.follow_sync, iterable))
 
     def _get_timed_states(self, ctx, cpu_id, root, entry_cp, exit_cp, eqs):
         mstg = self._mstg.g
@@ -788,7 +792,8 @@ class MultiSSE(Step):
             e = FakeEdge(src=entry_cp, tgt=v)
             new_eqs.add_range(e, state_time)
             root_edges = self._f_f_sync(ctx.get_edges_to(root))
-            cur_edges = self._f_f_sync(self._get_path(ctx.graph, root, entry_cp)[1]) + [e]
+            cur_edges = self._f_f_sync(
+                self._get_path(ctx.graph, root, entry_cp)[1]) + [e]
             new_eqs.add_equality(root_edges, cur_edges)
             self._log.error(f"Solvable {new_eqs}")
             if new_eqs.solvable():
@@ -902,9 +907,10 @@ class MultiSSE(Step):
         for p in reversed(ctx.path):
             nc = dict([(c, p) for c in ctx.cores[p]])
             core_map.update(nc)
-        return all([self._has_path(ctx.graph, core_map[core], cp)
-                    and core is not ctx.cpu_id
-                    for core in cores])
+        return all([
+            self._has_path(ctx.graph, core_map[core], cp)
+            and core is not ctx.cpu_id for core in cores
+        ])
 
     def _is_evaluated(self, state):
         """Check, if a state is already evaluated."""
@@ -939,7 +945,7 @@ class MultiSSE(Step):
                         continue
                     if not self._is_follow_cp(ctx, e.target()):
                         continue
-                    stack.append((e.target(), path + (e,)))
+                    stack.append((e.target(), path + (e, )))
 
         for cp, path, root in to_handle_cps:
             self._log.debug(f"Search cross syscalls of SP {int(cp)} for prior "
@@ -949,7 +955,8 @@ class MultiSSE(Step):
                 metastate = mstg.get_out_metastate(cp, cpu_id)
                 entry = mstg.get_entry_state(cp, cpu_id)
                 cross_states = self._find_cross_states(metastate, entry)
-                for cross_state in filter(lambda x: not self._is_evaluated(x), cross_states):
+                for cross_state in filter(lambda x: not self._is_evaluated(x),
+                                          cross_states):
                     self._log.debug(f"Check if {int(cross_state)} is prior to "
                                     f"{int(ctx.cross_syscall)}")
                     wcet = 0
@@ -980,10 +987,9 @@ class MultiSSE(Step):
 
         root_cps = self._find_root_cross_points(cp, needed_cores, sync_graph)
 
-        self._log.debug(
-            f"Find pairing candidates for node {int(cross_state)} "
-            f"(time: {time}) starting "
-            f"from cross points {[int(x) for x in root_cps]}.")
+        self._log.debug(f"Find pairing candidates for node {int(cross_state)} "
+                        f"(time: {time}) starting "
+                        f"from cross points {[int(x) for x in root_cps]}.")
         combinations = set()
         for root in root_cps:
             reach = label_out_component(sync_graph, sync_graph.vertex(root))
@@ -1013,8 +1019,11 @@ class MultiSSE(Step):
                 # add path the root
                 edges = self._get_path(r_graph, root, cp)[1]
                 for edge in edges:
-                    if r_graph.ep.type[edge] == MSTType.follow_sync :
-                        eqs.add_range(edge, TimeRange(up=get_time(r_graph.ep.bcet, edge), to=get_time(r_graph.ep.wcet, edge)))
+                    if r_graph.ep.type[edge] == MSTType.follow_sync:
+                        eqs.add_range(
+                            edge,
+                            TimeRange(up=get_time(r_graph.ep.bcet, edge),
+                                      to=get_time(r_graph.ep.wcet, edge)))
                 eqs.add_range(FakeEdge(src=cp, tgt=cross_state), rtime.range)
 
                 if self._has_prior_syscalls(ctx, rtime.range.up):
