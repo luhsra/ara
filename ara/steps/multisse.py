@@ -572,7 +572,7 @@ class MultiSSE(Step):
         _, elist = shortest_path(sync_graph, orig_cp, new_cp)
         return len(elist) > 0
 
-    def _iterate_search_tree(self, ctx, core, cps, paths):
+    def _iterate_search_tree(self, ctx, core, cps, eqs, paths):
         def log(msg, skip=True):
             if skip:
                 return
@@ -649,6 +649,12 @@ class MultiSSE(Step):
 
                 if core_graph.vp.type[cur] == StateType.metastate:
                     edges.append(e)
+                    if self.with_times.get():
+                        # e must have a follow_sync edge path to the last SP
+                        ff_edges = self._get_fs_path(ctx.graph,
+                                                     path[-1].target(),
+                                                     e.target())
+                        self._add_ranges(eqs, ff_edges)
 
                 if core_graph.ep.type[e] == MSTType.en2ex:
                     stack.append((tgt, path + [e]))
@@ -767,6 +773,10 @@ class MultiSSE(Step):
                 lambda e: isinstance(e, FakeEdge) or self._mstg.g.ep.type[e] ==
                 MSTType.follow_sync, iterable))
 
+    def _get_fs_path(self, graph, from_cp, to_cp):
+        """Return the path of follow_sync edges from from_cp to to_cp."""
+        return self._f_f_sync(self._get_path(graph, from_cp, to_cp)[1])
+
     def _get_timed_states(self, ctx, cpu_id, root, entry_cp, exit_cp, eqs):
         mstg = self._mstg.g
 
@@ -792,8 +802,9 @@ class MultiSSE(Step):
             e = FakeEdge(src=entry_cp, tgt=v)
             new_eqs.add_range(e, state_time)
             root_edges = self._f_f_sync(ctx.get_edges_to(root))
-            cur_edges = self._f_f_sync(
-                self._get_path(ctx.graph, root, entry_cp)[1]) + [e]
+            cur_edges = self._get_fs_path(ctx.graph, root, entry_cp) + [e]
+            self._log.error(f"News EQs {new_eqs}")
+            self._log.error(f"Add EQ {root_edges} {cur_edges}")
             new_eqs.add_equality(root_edges, cur_edges)
             self._log.error(f"Solvable {new_eqs}")
             if new_eqs.solvable():
@@ -821,7 +832,7 @@ class MultiSSE(Step):
         # self._log.debug(f"b_p: Cores: {cores}, CPs: {cps}")
 
         for exit_edge, path in self._iterate_search_tree(
-                ctx, core, cps, paths):
+                ctx, core, cps, eqs, paths):
             # self._log.debug(f"Examine edge {exit_edge} with path {path}.")
             cp_from = path[-1].target()
             cp_to = exit_edge.target()
@@ -972,6 +983,14 @@ class MultiSSE(Step):
                         return True
         return False
 
+    def _add_ranges(self, eqs, edges):
+        """Add a range to eqs for every edge in edges."""
+        bcet = self._mstg.g.ep.bcet
+        wcet = self._mstg.g.ep.wcet
+        for e in edges:
+            eqs.add_range(
+                e, TimeRange(up=get_time(bcet, e), to=get_time(wcet, e)))
+
     def _find_timed_states(self, cross_state, cp, time, start_from=None):
         """Find all possible combinations of computation blocks that fit to
         the cross_state.
@@ -1016,22 +1035,23 @@ class MultiSSE(Step):
                                     root)
             eqs = Equations()
             if self.with_times.get():
-                # add path the root
-                edges = self._get_path(r_graph, root, cp)[1]
-                for edge in edges:
-                    if r_graph.ep.type[edge] == MSTType.follow_sync:
-                        eqs.add_range(
-                            edge,
-                            TimeRange(up=get_time(r_graph.ep.bcet, edge),
-                                      to=get_time(r_graph.ep.wcet, edge)))
-                eqs.add_range(FakeEdge(src=cp, tgt=cross_state), rtime.range)
-
+                self._log.debug("Check for prior syscalls.")
                 if self._has_prior_syscalls(ctx, rtime.range.up):
                     self._log.debug("Skip evaluations of {int(cross_state)} "
                                     "from root {int(root)}. There are prior "
                                     "not evaluated syscalls that may affect "
                                     "this one.")
                     return set()
+
+                # add path the root
+                edges = self._get_fs_path(r_graph, root, cp)
+                self._add_ranges(eqs, edges)
+
+                eqs.add_range(FakeEdge(src=cp, tgt=cross_state), rtime.range)
+
+                if start_from is not None:
+                    edges = self._get_fs_path(r_graph, root, start_from)
+                    self._add_ranges(eqs, edges)
 
             for state_list in self._build_product(ctx, cps, eqs,
                                                   affected_cores, []):
