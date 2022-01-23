@@ -156,8 +156,8 @@ class Equations:
         self._equalities = []
         self._v_map = {}
         self._highest = 0
-        from ara.util import get_logger
-        self._log = get_logger("Equations")
+        # from ara.util import get_logger
+        # self._log = get_logger("Equations")
 
     def __repr__(self):
         return ("Equations("
@@ -212,32 +212,38 @@ class Equations:
         res = self._solve_for_var(0)
         return res.success
 
+    def _has_equation(self, var):
+        for equation in self._equalities:
+            if equation[var] != 0:
+                return True
+        return False
+
+    def _get_minimum(self, var):
+        """Return the minimum time for a specific var."""
+        min_res = self._solve_for_var(var)
+        assert min_res.success or min_res.status == 3
+        if min_res.status == 3:
+            return math.inf
+        else:
+            return int(min_res.fun + 0.5)
+
+    def _get_maximum(self, var):
+        """Return the minimum time for a specific var."""
+        max_res = self._solve_for_var(var, minimize=False)
+        assert max_res.success or max_res.status == 3
+        # add 0.000001 because of floating point imprecision
+        if max_res.status == 3:
+            return math.inf
+        else:
+            return int(max_res.fun * -1 + 0.0001)
+
     def get_interval_for(self, edge):
         """Return the solution interval for a specific edge."""
         var = self._get_variable(edge, must_exist=True)
-        has_equation = False
-        for equation in self._equalities:
-            if equation[var] != 0:
-                has_equation = True
-                break
-
-        if has_equation:
-            min_res = self._solve_for_var(var)
-            assert min_res.success or min_res.status == 3
-            max_res = self._solve_for_var(var, minimize=False)
-            assert max_res.success or max_res.status == 3
-            if min_res.status == 3:
-                new_up = math.inf
-            else:
-                new_up = int(min_res.fun + 0.5)
-            # add 0.000001 because of floating point imprecision
-            if max_res.status == 3:
-                new_to = math.inf
-            else:
-                new_to = int(max_res.fun * -1 + 0.0001)
-            return TimeRange(up=new_up, to=new_to)
-        else:
-            return self._bounds[var]
+        if self._has_equation(var):
+            return TimeRange(up=self._get_minimum(var),
+                             to=self._get_maximum(var))
+        return self._bounds[var]
 
     def add_range(self, edge, time):
         assert isinstance(time, TimeRange)
@@ -754,10 +760,10 @@ class MultiSSE(Step):
     def _get_path(self, graph, from_cp, to_cp):
         return shortest_path(graph, from_cp, to_cp)
 
-    def _get_timed_states(self, ctx, cpu_id, root, entry_cp, exit_cp, eqs):
-        def follow_sync(iterable):
-            return list(filter(lambda e: ctx.graph.ep.type[e] == MSTType.follow_sync, filter(lambda e: not isinstance(e, FakeEdge), iterable)))
+    def _f_f_sync(self, iterable):
+        return list(filter(lambda e: isinstance(e, FakeEdge) or self._mstg.g.ep.type[e] == MSTType.follow_sync, iterable))
 
+    def _get_timed_states(self, ctx, cpu_id, root, entry_cp, exit_cp, eqs):
         mstg = self._mstg.g
 
         entry = mstg.get_entry_state(entry_cp, cpu_id)
@@ -781,9 +787,10 @@ class MultiSSE(Step):
             state_time = self._get_relative_time(entry_cp, cpu_id, v)
             e = FakeEdge(src=entry_cp, tgt=v)
             new_eqs.add_range(e, state_time)
-            root_edges = follow_sync(ctx.get_edges_to(root))
-            cur_edges = follow_sync(self._get_path(ctx.graph, root, entry_cp)[1]) + [e]
+            root_edges = self._f_f_sync(ctx.get_edges_to(root))
+            cur_edges = self._f_f_sync(self._get_path(ctx.graph, root, entry_cp)[1]) + [e]
             new_eqs.add_equality(root_edges, cur_edges)
+            self._log.error(f"Solvable {new_eqs}")
             if new_eqs.solvable():
                 good_v.append((v, new_eqs))
         return good_v
@@ -872,6 +879,7 @@ class MultiSSE(Step):
         for cp in cps:
             time = state_list.eqs.get_interval_for(
                 FakeEdge(src=cp, tgt=loose_ends[cp]))
+            self._log.error(f"Interval {time} {state_list.eqs}")
             timed_cps.append((cp, time))
         return frozenset(timed_cps)
 
@@ -886,6 +894,78 @@ class MultiSSE(Step):
         for v in vlist:
             ctx.append_path_elem(v, core_map[v])
         return ctx
+
+    def _is_follow_cp(self, ctx, cp):
+        """Check, if cp is a valid follow up cp of the cps specified by ctx."""
+        cores = self._mstg.cross_point_map[cp]
+        core_map = {}
+        for p in reversed(ctx.path):
+            nc = dict([(c, p) for c in ctx.cores[p]])
+            core_map.update(nc)
+        return all([self._has_path(ctx.graph, core_map[core], cp)
+                    for core in cores])
+
+    def _is_evaluated(self, state):
+        """Check, if a state is already evaluated."""
+        st2sy = self._mstg.g.edge_type(MSTType.st2sy)
+        return st2sy.vertex(state).out_degree() > 0
+
+    def _has_prior_syscalls(self, ctx, cross_bcet):
+        self._log.error(ctx)
+
+        cpm = self._mstg.cross_point_map
+        mstg = self._mstg.g
+        cp_type = mstg.vp.type
+
+        handled_cores = set()
+        to_handle_cps = set()
+        for cp in ctx.path:
+            cores = set(cpm[cp])
+            if cores in handled_cores:
+                continue
+
+            stack = [(cp, ())]
+
+            while stack:
+                cur_cp, path = stack.pop()
+                is_entry_sync = (cp_type[cur_cp] == StateType.entry_sync)
+                if is_entry_sync:
+                    handled_cores |= set(cpm[cur_cp])
+                elif mstg.vertex(cur_cp).out_degree() > 0:
+                    to_handle_cps.add((cur_cp, path, cp))
+
+                for e in ctx.graph.vertex(cur_cp).out_edges():
+                    if is_entry_sync:
+                        stack.append((e.target(), path))
+                        continue
+                    if not self._is_follow_cp(ctx, e.target()):
+                        continue
+                    stack.append((e.target(), path + (e,)))
+
+        for cp, path, root in to_handle_cps:
+            cores = set(cpm[cp])
+            for cpu_id in (cores - {ctx.cpu_id}):
+                self._log.error(int(cp))
+                self._log.error(cpu_id)
+                metastate = mstg.get_out_metastate(cp, cpu_id)
+                entry = mstg.get_entry_state(cp, cpu_id)
+                cross_states = self._find_cross_states(metastate, entry)
+                for cross_state in filter(lambda x: not self._is_evaluated(x), cross_states):
+                    # check if state is prior
+                    wcet = 0
+                    for e in path:
+                        wcet += get_time(mstg.ep.wcet, e)
+                    wcet += self._get_relative_time(cp, cpu_id, cross_state).to
+                    bcet = cross_bcet
+                    for e in self._f_f_sync(ctx.get_edges_to(root)):
+                        if isinstance(e, FakeEdge):
+                            continue
+                        bcet += get_time(mstg.ep.bcet, e)
+                    self._log.error(wcet)
+                    self._log.error(bcet)
+                    if wcet < bcet:
+                        return True
+        return False
 
     def _find_timed_states(self, cross_state, cp, time, start_from=None):
         """Find all possible combinations of computation blocks that fit to
@@ -938,6 +1018,13 @@ class MultiSSE(Step):
                     if r_graph.ep.type[edge] == MSTType.follow_sync :
                         eqs.add_range(edge, TimeRange(up=get_time(r_graph.ep.bcet, edge), to=get_time(r_graph.ep.wcet, edge)))
                 eqs.add_range(FakeEdge(src=cp, tgt=cross_state), rtime.range)
+
+                if self._has_prior_syscalls(ctx, rtime.range.up):
+                    self._log.debug("Skip evaluations of {int(cross_state)} "
+                                    "from root {int(root)}. There are prior "
+                                    "not evaluated syscalls that may affect "
+                                    "this one.")
+                    return set()
 
             for state_list in self._build_product(ctx, cps, eqs,
                                                   affected_cores, []):
@@ -1357,15 +1444,15 @@ class MultiSSE(Step):
                 self._log.debug(f"Skip {int(cp)}. Is in reevaluates.")
                 continue
 
+            # if counter == 4:
+            #     self._fail("foo")
+
             self._log.debug(
                 f"Round {counter:3d}, handle cross point {int(cp)}. "
                 f"Stack with {len(stack)} state(s)")
             if self.dump.get():
                 self._dump_mstg(extra=f"round.{counter:03d}")
             counter += 1
-
-            # if counter == 5:
-            #     self._fail("foo")
 
             # if handled[cp]:
             #     continue
