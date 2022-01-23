@@ -803,10 +803,9 @@ class MultiSSE(Step):
             new_eqs.add_range(e, state_time)
             root_edges = self._f_f_sync(ctx.get_edges_to(root))
             cur_edges = self._get_fs_path(ctx.graph, root, entry_cp) + [e]
-            self._log.error(f"News EQs {new_eqs}")
-            self._log.error(f"Add EQ {root_edges} {cur_edges}")
+            # self._log.debug(f"GTS: V: {int(v)} Edges: {root_edges} {cur_edges}")
             new_eqs.add_equality(root_edges, cur_edges)
-            self._log.error(f"Solvable {new_eqs}")
+            # self._log.debug(f"GTS: EQs: {new_eqs}")
             if new_eqs.solvable():
                 good_v.append((v, new_eqs))
         return good_v
@@ -833,9 +832,9 @@ class MultiSSE(Step):
 
         for exit_edge, path in self._iterate_search_tree(
                 ctx, core, cps, eqs, paths):
-            # self._log.debug(f"Examine edge {exit_edge} with path {path}.")
             cp_from = path[-1].target()
             cp_to = exit_edge.target()
+            # self._log.debug(f"Examine metastate from SP {cp_from} to SP {cp_to} (CPU {core}).")
             states = self._get_timed_states(ctx, core, root, cp_from, cp_to,
                                             eqs)
             # self._log.debug(f"Leads to timed states: {[int(x[0]) for x in states]}.")
@@ -857,7 +856,7 @@ class MultiSSE(Step):
                     for x in product([(state, cp_from)], others)
                 ])
         # for res in result:
-        #     self._log.warn([(int(x), int(y)) for x,y in res])
+        #     self._log.warn([(int(x), int(y)) for x, y in res.states])
         # list of lists of pairs of computation state + entry_cp
         return result
 
@@ -895,7 +894,6 @@ class MultiSSE(Step):
         for cp in cps:
             time = state_list.eqs.get_interval_for(
                 FakeEdge(src=cp, tgt=loose_ends[cp]))
-            self._log.error(f"Interval {time} {state_list.eqs}")
             timed_cps.append((cp, time))
         return frozenset(timed_cps)
 
@@ -1037,8 +1035,8 @@ class MultiSSE(Step):
             if self.with_times.get():
                 self._log.debug("Check for prior syscalls.")
                 if self._has_prior_syscalls(ctx, rtime.range.up):
-                    self._log.debug("Skip evaluations of {int(cross_state)} "
-                                    "from root {int(root)}. There are prior "
+                    self._log.debug(f"Skip evaluations of {int(cross_state)} "
+                                    f"from root {int(root)}. There are prior "
                                     "not evaluated syscalls that may affect "
                                     "this one.")
                     return set()
@@ -1299,8 +1297,8 @@ class MultiSSE(Step):
             # the state was maybe already executed previously
             # find out how long
             time = self._get_previous_execution_time(cp, cpu_id, entry)
-            entry_bcet = mstg.vp.bcet[entry] - time.up
-            set_time(t_to, entry, mstg.vp.wcet[entry] - time.to)
+            entry_bcet = mstg.vp.bcet[entry] - time.to
+            set_time(t_to, entry, mstg.vp.wcet[entry] - time.up)
 
         def get_bcet(node):
             if type_map[node] == ExecType.idle:
@@ -1471,7 +1469,7 @@ class MultiSSE(Step):
                 self._log.debug(f"Skip {int(cp)}. Is in reevaluates.")
                 continue
 
-            # if counter == 4:
+            # if counter == 8:
             #     self._fail("foo")
 
             self._log.debug(
