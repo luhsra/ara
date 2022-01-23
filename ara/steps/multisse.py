@@ -903,6 +903,7 @@ class MultiSSE(Step):
             nc = dict([(c, p) for c in ctx.cores[p]])
             core_map.update(nc)
         return all([self._has_path(ctx.graph, core_map[core], cp)
+                    and core is not ctx.cpu_id
                     for core in cores])
 
     def _is_evaluated(self, state):
@@ -911,8 +912,6 @@ class MultiSSE(Step):
         return st2sy.vertex(state).out_degree() > 0
 
     def _has_prior_syscalls(self, ctx, cross_bcet):
-        self._log.error(ctx)
-
         cpm = self._mstg.cross_point_map
         mstg = self._mstg.g
         cp_type = mstg.vp.type
@@ -943,15 +942,16 @@ class MultiSSE(Step):
                     stack.append((e.target(), path + (e,)))
 
         for cp, path, root in to_handle_cps:
+            self._log.debug(f"Search cross syscalls of SP {int(cp)} for prior "
+                            f"syscalls than {int(ctx.cross_syscall)}")
             cores = set(cpm[cp])
             for cpu_id in (cores - {ctx.cpu_id}):
-                self._log.error(int(cp))
-                self._log.error(cpu_id)
                 metastate = mstg.get_out_metastate(cp, cpu_id)
                 entry = mstg.get_entry_state(cp, cpu_id)
                 cross_states = self._find_cross_states(metastate, entry)
                 for cross_state in filter(lambda x: not self._is_evaluated(x), cross_states):
-                    # check if state is prior
+                    self._log.debug(f"Check if {int(cross_state)} is prior to "
+                                    f"{int(ctx.cross_syscall)}")
                     wcet = 0
                     for e in path:
                         wcet += get_time(mstg.ep.wcet, e)
@@ -961,8 +961,6 @@ class MultiSSE(Step):
                         if isinstance(e, FakeEdge):
                             continue
                         bcet += get_time(mstg.ep.bcet, e)
-                    self._log.error(wcet)
-                    self._log.error(bcet)
                     if wcet < bcet:
                         return True
         return False
