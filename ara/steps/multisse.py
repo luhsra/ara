@@ -138,6 +138,8 @@ class CrossContext:
         "Return all edges from the cross core to the cp laying on the path." ""
         edge_path = [FakeEdge(src=self.path[0], tgt=self.cross_syscall)]
         for tgt, src in pairwise(self.path):
+            if tgt == cp:
+                break
             edge_path.append(self.graph.edge(src, tgt))
         return edge_path
 
