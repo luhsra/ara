@@ -16,7 +16,7 @@ class ApplyTimings(Step):
                             ty=String())
 
     def get_single_dependencies(self):
-        if self.timings == 'BB':
+        if self.timings.get() == 'BB':
             return ['CreateABBs', 'BBTimings']
         return ['CreateABBs']
 
