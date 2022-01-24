@@ -22,6 +22,7 @@ namespace ara::step {
 	namespace {
 		template <typename Graph>
 		void do_stuff(Graph& g, graph::CFG& cfg, Logger& logger) {
+			bool found_any = false;
 			for (auto v: boost::make_iterator_range(boost::vertices(g))) {
 				if (cfg.level[v] != static_cast<int>(graph::NodeLevel::bb)) {
 					continue;
@@ -49,10 +50,14 @@ namespace ara::step {
 								logger.debug() << cfg.name[v] <<" found timing: " << bcet << " / " << wcet << std::endl;
 								cfg.bcet[v] = bcet;
 								cfg.wcet[v] = wcet;  // <-- stirbt hier
+								found_any = true;
 							}
 						}
 					}
 				}
+			}
+			if (! found_any) {
+				logger.crit() << "BBTimings requested but did not find any timing info" << std::endl;;
 			}
 		}
 	}
