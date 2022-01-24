@@ -118,14 +118,15 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'a',                     'oil': 'system_a.json', 'timing': 'a_timing.json'},
   {'core': 'multicore',  'path': 'timing',             'name': 'b',                     'oil': 'system_b.json', 'timing': 'b_timing.json'},
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json'},
+  {'core': 'multicore',  'path': 'timing',             'name': 'd',                     'oil': 'system_a.json', 'timing': 'c_timing.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'paper',              'name': 'event',                 'oil': 'system_event.json', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'paper',              'name': 'timing',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'timing_timing.json'},
-  {'core': 'multicore',  'path': 'paper',              'name': 'timing-semiordered',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'timing_timing.json'},
-  {'core': 'multicore',  'path': 'paper',              'name': 'timing-ordered',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'timing_timing.json'},
-  {'core': 'multicore',  'path': 'complex',            'name': 'copter-without-alarms', 'oil': 'copter-without-alarms_system.json', 'timing': 'copter-without-alarms_timing.json'},
-  {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms', 'oil': 'copter-with-alarms_system.json', 'timing': 'copter-with-alarms_timing.json'},
-  {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm', 'oil': 'copter-single-alarm_system.json', 'timing': 'copter-single-alarm_timing.json'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'timing',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'timing-semiordered',    'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'timing-ordered',        'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'complex',            'name': 'copter-without-alarms', 'oil': 'copter-without-alarms_system.json', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
 ]
 
 autosar_targets = []
@@ -187,6 +188,8 @@ foreach app : autosar_apps
                                 output : full_name + '.timing.json',
                                 capture: true,
                                 command : [sed, '-n', '/if TIMING_JSON/,/TIMING_JSON/{/TIMING_JSON/d;p}', '@INPUT@'])
+  elif app['timing'] == 'BB'
+    sys_timings = 'BB'
   else
     sys_timings = files(app['core'] / app['path'] / app['timing'])
   endif

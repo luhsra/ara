@@ -19,6 +19,7 @@ void fetch_sensor_b();
 void compute_with_a();
 void compute_with_b();
 void update_status(int);
+extern "C" void ara_timing_info(int, int);
 
 
 #if LOCKS_JSON
@@ -39,34 +40,46 @@ DeclareSpinlock(S1);
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T1) {
+	ara_timing_info(2, 7);
 	GetSpinlock(S1);
+	ara_timing_info(30, 50);
 	update_status(1);
 	ReleaseSpinlock(S1);
+	ara_timing_info(2, 3);
 	fetch_sensor_a();
 	ActivateTask(T3);
+	ara_timing_info(5, 8);
 	fetch_sensor_b();
 	TerminateTask();
 }
 
 TASK(T3) {
+	ara_timing_info(20, 300);
 	compute_with_a();
 	ActivateTask(T4);
 	TerminateTask();
 }
 
 TASK(T2) {
+	ara_timing_info(50, 100);
 	compute_with_b();
 	GetSpinlock(S1);
+	ara_timing_info(40, 50);
 	update_status(2);
 	ReleaseSpinlock(S1);
+	ara_timing_info(10, 20);
 	ActivateTask(T2);
+	ara_timing_info(1, 2);
 	TerminateTask();
 }
 
 
 TASK(T4) {
+	ara_timing_info(2, 7);
 	GetSpinlock(S1);
+	ara_timing_info(10, 17);
 	update_status(4);
 	ReleaseSpinlock(S1);
+	ara_timing_info(2, 19);
 	TerminateTask();
 }
