@@ -405,6 +405,7 @@ class Printer(Step):
                 code = "\r".join([str(cfg.get_llvm_obj(bb))
                                   for bb in current_bbs])
                 code = code.replace('\n', '\r')
+                tooltip += f'\rbcet/wcet: {cfg.vp.bcet[block]} / {cfg.vp.wcet[block]}\r'
                 tooltip += code
                 tooltip = f'<{html.escape(tooltip)}>'  # seems to be added automagically
 
