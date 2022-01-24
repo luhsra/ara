@@ -16,6 +16,8 @@ class ApplyTimings(Step):
                             ty=String())
 
     def get_single_dependencies(self):
+        if self.timings == 'BB':
+            return ['CreateABBs', 'BBTimings']
         return ['CreateABBs']
 
     def run(self):
@@ -62,11 +64,18 @@ class ApplyTimings(Step):
             # TODO avoid duplicate assignments if step is executed multiple
             # times
             self._log.debug("Assign times.")
+            if timings == 'BB':
+                self.timings_from_bbs(cfg, abbs)
+            else:
+                self.timings_from_json(cfg, abbs, timings)
+
+
+    def timings_from_json(self, cfg, abbs, timings):
+        with open(timings, 'r') as f:
+            times = json.load(f)
+
             abb_map = dict([(abbs.vp.name[x], x) for x in abbs.vertices()
                             if abbs.vp.type[x] == ABBType.computation])
-            with open(timings, 'r') as f:
-                times = json.load(f)
-
             for abb_name, attrs in times.items():
                 abb = abb_map.get(abb_name, None)
                 if abb is None:
@@ -79,3 +88,21 @@ class ApplyTimings(Step):
                 self._log.debug(f"Assign BCET {attrs['bcet']} and WCET {attrs['wcet']} to ABB {abb_name}")
                 abbs.vp.bcet[abb] = attrs["bcet"]
                 abbs.vp.wcet[abb] = attrs["wcet"]
+
+
+    def timings_from_bbs(self, cfg, abbs):
+        for abb in abbs.vertices():
+            if abbs.vp.type[abb] != ABBType.computation:
+                continue
+            self._log.debug("abb: %s", cfg.vp.name[abb])
+            wcet, bcet = 0, 0
+            for bb in cfg.get_bbs(abb):
+                bb_wcet = cfg.vp.wcet[bb]
+                bb_bcet = cfg.vp.bcet[bb]
+                self._log.debug(" bb: %s   %s / %s", cfg.vp.name[bb], bb_bcet, bb_wcet)
+                if bb_wcet and bb_bcet:
+                    wcet += bb_wcet
+                    bcet += bb_bcet
+            cfg.vp.bcet[abb] = bcet
+            cfg.vp.wcet[abb] = wcet
+            self._log.info("result: %s   %s / %s", cfg.vp.name[abb], bcet, wcet)
