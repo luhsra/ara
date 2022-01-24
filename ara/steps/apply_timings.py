@@ -9,10 +9,14 @@ import json
 class ApplyTimings(Step):
     """Apply timing behavior to atomic basic blocks."""
     timings = Option(name="timings",
-                     help="JSON file with timing information (use create_timings for initial creation)",
+                     help="JSON file with timing information (use "
+                          "the option create_timings for the creation "
+                          'of such a file). If you specify "BB", the '
+                          "BBSplit step will be used for timings.",
                      ty=String())
     create_timings = Option(name="create_timings",
-                            help="This step can create an example timing file. Set create_timings to its path.",
+                            help="This step can create an example timing file."
+                                 " Set create_timings to its path.",
                             ty=String())
 
     def get_single_dependencies(self):
