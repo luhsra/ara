@@ -252,10 +252,13 @@ class Equations:
         self._bounds[var] = time
 
     def add_equality(self, left_edges, right_edges):
+        le = set(left_edges)
+        re = set(right_edges)
+        common = le & re
         formula = (self._highest) * [0]
-        for left in left_edges:
+        for left in (le - common):
             formula[self._get_variable(left, must_exist=True)] = 1
-        for right in right_edges:
+        for right in (re - common):
             formula[self._get_variable(right, must_exist=True)] = -1
         self._equalities.append(formula)
 
