@@ -16,7 +16,7 @@ import graph_tool
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import reduce, lru_cache
-from graph_tool.topology import label_out_component, dominator_tree, shortest_path, all_paths
+from graph_tool.topology import label_out_component, dominator_tree, shortest_path
 from graph_tool.search import bfs_search, BFSVisitor, StopSearch
 from graph_tool import GraphView
 from itertools import product, chain, permutations
@@ -806,7 +806,9 @@ class MultiSSE(Step):
             new_eqs.add_range(e, state_time)
             root_edges = self._f_f_sync(ctx.get_edges_to(root))
             cur_edges = self._get_fs_path(ctx.graph, root, entry_cp) + [e]
-            # self._log.debug(f"GTS: V: {int(v)} Edges: {root_edges} {cur_edges}")
+            # self._log.debug(f"GTS: V: {int(v)} Edges: "
+            #                 f"{[str(e) for e in root_edges]}"
+            #                 f"{[str(e) for e in cur_edges]}")
             new_eqs.add_equality(root_edges, cur_edges)
             # self._log.debug(f"GTS: EQs: {new_eqs}")
             if new_eqs.solvable():
@@ -887,17 +889,25 @@ class MultiSSE(Step):
         return frozenset(predecessors)
 
     def _get_pred_times(self, cps, state_list, cp, cross_state):
-        """Assign a new follow up time for all node in cp_list."""
-        loose_ends = {cp: cross_state}
+        """Assign a new follow up time for all nodes in cp_list.
+
+        Arguments:
+        cps         -- predecessors in time of the to be create cps
+        state_list  -- a StateList of all pairing candidates
+        cp          -- the predecessor cp of cross_state
+        cross_state -- the cross_state
+
+        """
+        loose_ends = {int(cp): int(cross_state)}
+        # Assign the last state that belongs to each SP
         for state, entry in state_list.states:
-            if self._mstg.type_map[state] == ExecType.idle:
-                continue
-            loose_ends[entry] = state
+            loose_ends[int(entry)] = int(state)
         timed_cps = []
-        for cp in cps:
+        # find a new time for all cps
+        for ocp in cps:
             time = state_list.eqs.get_interval_for(
-                FakeEdge(src=cp, tgt=loose_ends[cp]))
-            timed_cps.append((cp, time))
+                FakeEdge(src=ocp, tgt=loose_ends[int(ocp)]))
+            timed_cps.append((ocp, time))
         return frozenset(timed_cps)
 
     def _gen_context(self, graph, cross_syscall, cpu_id, cp, root):
