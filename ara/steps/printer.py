@@ -223,25 +223,33 @@ def mstg_to_dot(mstg, label="MSTG"):
 
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
+    m2s = mstg.edge_type(MSTType.m2s)
+    m2sy = mstg.edge_type(MSTType.m2sy)
+
+    ms_done = set()
     # draw initial sync node
     for init in mstg.get_sync_points(exit=True).vertices():
         init = mstg.vertex(init)
         if init.in_degree() == 0:
             dot_graph.add_node(_draw_sync(init, init.out_edges()))
+        # draw metastates
+        for metastate in sorted(m2sy.vertex(init).out_neighbors(),
+                                key=lambda x: mstg.vp.cpu_id[x]):
+            metastate = mstg.vertex(metastate)
+            if metastate in ms_done:
+                continue
+            ms_done.add(metastate)
+            m2s = mstg.edge_type(MSTType.m2s)
+            cpu_id = mstg.vp.cpu_id[metastate]
 
-    for metastate in mstg.get_metastates().vertices():
-        metastate = mstg.vertex(metastate)
-        filg = mstg.edge_type(MSTType.m2s)
-        cpu_id = mstg.vp.cpu_id[metastate]
+            dot_m = pydot.Cluster(_to_str(metastate),
+                                  label=f"M{int(metastate)} (CPU {cpu_id})")
+            dot_graph.add_subgraph(dot_m)
 
-        dot_m = pydot.Cluster(_to_str(metastate),
-                              label=f"M{int(metastate)} (CPU {cpu_id})")
-        dot_graph.add_subgraph(dot_m)
-
-        for state in filg.vertex(metastate).out_neighbors():
-            attrs = _sstg_state_as_dot(mstg, state)
-            dot_state = pydot.Node(_to_str(state), **attrs)
-            dot_m.add_node(dot_state)
+            for state in m2s.vertex(metastate).out_neighbors():
+                attrs = _sstg_state_as_dot(mstg, state)
+                dot_state = pydot.Node(_to_str(state), **attrs)
+                dot_m.add_node(dot_state)
 
     for sync_point in mstg.get_sync_points(exit=False).vertices():
         sync_point = mstg.vertex(sync_point)
