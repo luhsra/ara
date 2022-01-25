@@ -6,6 +6,7 @@ from .option import Option, String, Choice, Bool
 from .step import Step
 
 from graph_tool import GraphView
+from graph_tool.topology import all_paths
 
 import pydot
 import html
@@ -104,11 +105,15 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
     def _to_str(v):
         return str(int(v))
 
-    def _draw_sync(sync, edges):
+    core_map = {}
+
+    def _draw_sync(sync, edges, entry=None):
         cols = []
+        cores = set()
         for e in edges:
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
+                cores.add(cpu_id)
                 cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
         if cols:
             label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
@@ -118,6 +123,9 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         else:
             label = "undiscovered"
             shape = "box"
+        if entry:
+            core_map[int(entry)] = cores
+        core_map[int(sync)] = cores
         return pydot.Node(_to_str(sync), label=label,
                           shape=shape,
                           tooltip=_to_str(sync))
@@ -144,51 +152,51 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         else:
             # draw only the exit_sync
             exit_s = single_check(sync_point.out_neighbors())
-            dot_graph.add_node(_draw_sync(exit_s, exit_s.out_edges()))
+            dot_graph.add_node(_draw_sync(exit_s, exit_s.out_edges(),
+                                          entry=sync_point))
 
-    flow = mstg.vertex_type(StateType.state, StateType.entry_sync)
-    flow = GraphView(flow, efilt=(flow.ep.type.fa == MSTType.st2sy))
-    m2sy = mstg.edge_type(MSTType.m2sy)
-    sync_roots = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
+    time_sync = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
+    time_sync.set_reversed(True)
+    sy2sy = mstg.edge_type(MSTType.sy2sy)
 
     def _sync_str(v, cpu_id):
         return f"{_to_str(v)}:c{cpu_id}"
 
-    for edge in flow.edges():
-        src = edge.source()
-        tgt = edge.target()
-        assert flow.ep.type[edge] == MSTType.st2sy, "wrong edge"
-        assert flow.vp.type[tgt] == StateType.entry_sync, "tgt not sync"
-        assert flow.vp.type[src] == StateType.state, "src not state"
-
-        syscall_name = mstg.get_syscall_name(src)
-        cpu_id = flow.ep.cpu_id[edge]
+    def _add_edge(from_sp, to_sp, core):
+        exit_state = mstg.get_exit_state(to_sp, core)
+        syscall_name = mstg.get_syscall_name(exit_state)
 
         attrs = {"color": "black"}
-        if mstg.get_exec_state(src) == ExecState.waiting:
+        if mstg.get_exec_state(exit_state) == ExecState.waiting:
             attrs["color"] = "darkblue"
         elif syscall_name:
             attrs["label"] = shorten[syscall_name]
             attrs["color"] = "darkred"
 
         # merge entry and exit sync states
-        f_tgt = en2ex.vertex(tgt)
-        if f_tgt.out_degree() == 1:
-            n_tgt = single_check(f_tgt.out_neighbors())
+        f_to_sp = en2ex.vertex(to_sp)
+        if f_to_sp.out_degree() == 1:
+            n_tgt = single_check(f_to_sp.out_neighbors())
         else:
-            n_tgt = tgt
+            n_tgt = to_sp
 
         # examine start and end for the dot edge
-        dot_tgt = _sync_str(n_tgt, cpu_id)
+        dot_tgt = _sync_str(n_tgt, core)
+        dot_src = _sync_str(from_sp, core)
+        return pydot.Edge(dot_src, dot_tgt, **attrs)
 
-        ms = mstg.get_metastate(src)
-        filt_g = GraphView(m2sy, efilt=m2sy.ep.cpu_id.fa == cpu_id)
-        sync_srcs = filt_g.vertex(ms).in_neighbors()
-        for sync_src in sync_srcs:
-            if sync_src not in set(sync_roots.vertex(tgt).in_neighbors()):
-                continue
-            dot_src = _sync_str(sync_src, cpu_id)
-            dot_graph.add_edge(pydot.Edge(dot_src, dot_tgt, **attrs))
+    for entry_sp in mstg.get_sync_points(exit=False).vertices():
+        parent_sp = single_check(sy2sy.vertex(entry_sp).in_neighbors())
+        cores = core_map[int(entry_sp)]
+        handled_cores = set()
+        for path in all_paths(time_sync, entry_sp, parent_sp):
+            for x in path[1:]:
+                if mstg.vp.type[x] == StateType.entry_sync:
+                    continue
+                x_cores = core_map[int(x)] & cores
+                for core in x_cores - handled_cores:
+                    dot_graph.add_edge(_add_edge(x, entry_sp, core))
+                handled_cores |= x_cores
 
     for edge in en2ex.edges():
         src = edge.source()
