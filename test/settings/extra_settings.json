@@ -5,6 +5,10 @@
 		"DumpCFG"
 	],
 
+	"ApplyTimings": {
+		"timings": "BB"
+	},
+
 	"MultiSSE": {
 		"log_level": "debug",
 		"with_times": true,
