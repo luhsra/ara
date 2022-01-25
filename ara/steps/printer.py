@@ -158,6 +158,7 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
     time_sync = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
     time_sync.set_reversed(True)
     sy2sy = mstg.edge_type(MSTType.sy2sy)
+    added_edges = set()
 
     def _sync_str(v, cpu_id):
         return f"{_to_str(v)}:c{cpu_id}"
@@ -183,20 +184,27 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         # examine start and end for the dot edge
         dot_tgt = _sync_str(n_tgt, core)
         dot_src = _sync_str(from_sp, core)
+        if (dot_src, dot_tgt) in added_edges:
+            return None
+        added_edges.add((dot_src, dot_tgt))
         return pydot.Edge(dot_src, dot_tgt, **attrs)
 
     for entry_sp in mstg.get_sync_points(exit=False).vertices():
-        parent_sp = single_check(sy2sy.vertex(entry_sp).in_neighbors())
-        cores = core_map[int(entry_sp)]
-        handled_cores = set()
-        for path in all_paths(time_sync, entry_sp, parent_sp):
-            for x in path[1:]:
-                if mstg.vp.type[x] == StateType.entry_sync:
-                    continue
-                x_cores = core_map[int(x)] & cores
-                for core in x_cores - handled_cores:
-                    dot_graph.add_edge(_add_edge(x, entry_sp, core))
-                handled_cores |= x_cores
+        for parent_sp in sy2sy.vertex(entry_sp).in_neighbors():
+            cores = core_map[int(entry_sp)]
+            for path in all_paths(time_sync, entry_sp, parent_sp):
+                handled_cores = set()
+                for x in path[1:]:
+                    if mstg.vp.type[x] == StateType.entry_sync:
+                        continue
+                    x_cores = core_map[int(x)] & cores
+                    for core in x_cores - handled_cores:
+                        edge = _add_edge(x, entry_sp, core)
+                        if edge:
+                            dot_graph.add_edge(edge)
+                    handled_cores |= x_cores
+                    if len(cores - handled_cores) == 0:
+                        break
 
     for edge in en2ex.edges():
         src = edge.source()
