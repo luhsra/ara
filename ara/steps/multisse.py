@@ -1232,7 +1232,8 @@ class MultiSSE(Step):
                 return mstg.ep.cpu_id[e] == cpu_id
             return True
 
-        core_graph = GraphView(g1, efilt=good_edge)
+        core_graph = GraphView(g1, efilt=good_edge,
+                               vfilt=self._mstg.type_map.fa != ExecType.idle)
 
         exec_time = TimeRange(up=0, to=0)
         exit_cp = cp
@@ -1245,11 +1246,7 @@ class MultiSSE(Step):
         while True:
             g = GraphView(core_graph, vfilt=v_filter)
             _, elist = shortest_path(g, entry_state, exit_cp)
-            v_filter[entry_state] = True
 
-            if len(elist) < 2:
-                # the state was not executed before
-                break
             if len(elist) > 2:
                 # the state was somewhere blocked and is now resumed
                 # currently not supported
@@ -1257,8 +1254,32 @@ class MultiSSE(Step):
                                "continued. This is not supported.")
                 return default
 
+            if mstg.vertex(exit_cp).in_degree() == 0:
+                # starting point, there were no previous executions
+                break
             entry_cp = mstg.get_entry_cp(exit_cp)
-            common_cps = set(entry_state.in_neighbors()) & set(
+            if len(elist) < 2:
+                # the state was not executed before
+                # maybe the ABB was executed before
+                ecp = core_graph.vertex(entry_cp)
+                if ecp.in_degree() == 0:
+                    # probably coming from idle this state is new
+                    break
+                last_state = single_check(ecp.in_neighbors())
+                assert mstg.vp.type[last_state] == StateType.state
+                current_abb = mstg.vp.state[entry_state].cpus.one().abb
+                old_abb = mstg.vp.state[last_state].cpus.one().abb
+
+                if current_abb != old_abb:
+                    break
+
+                # we have the same executing ABBs
+                # just handle the state as interrupted one
+                interrupted_state = last_state
+            else:
+                interrupted_state = entry_state
+
+            common_cps = set(interrupted_state.in_neighbors()) & set(
                 follow_sync.vertex(entry_cp).in_neighbors())
 
             if len(common_cps) != 1:
@@ -1268,8 +1289,12 @@ class MultiSSE(Step):
 
             common_cp = single_check(common_cps)
             follow_edge = follow_sync.edge(common_cp, entry_cp)
+            self._log.debug("State was executed before. Subtracting "
+                            f"{follow_edge}")
             exec_time += TimeRange(up=get_time(mstg.ep.bcet, follow_edge),
                                    to=get_time(mstg.ep.wcet, follow_edge))
+
+            v_filter[exit_cp] = False
             exit_cp = common_cp
 
         return exec_time
@@ -1294,9 +1319,6 @@ class MultiSSE(Step):
         if type_map[entry] == ExecType.idle:
             set_time(t_to, entry, math.inf)
         elif p_ins.vertex(entry).in_degree() == 1:
-            entry_bcet = mstg.vp.bcet[entry]
-            set_time(t_to, entry, mstg.vp.wcet[entry])
-        else:
             # the state was maybe already executed previously
             # find out how long
             time = self._get_previous_execution_time(cp, cpu_id, entry)
