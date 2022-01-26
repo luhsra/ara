@@ -1,9 +1,9 @@
 """Common init function for tests."""
 import importlib
 import json
-import logging
 import sys
 import os
+import tempfile
 
 from ara.os import get_os_model_by_name
 
@@ -47,9 +47,20 @@ def fail_if(condition, *arg, dry=False):
 
 def fail_if_json_not_equal(expected, actual):
     if expected != actual:
-        # run automatically diff to show difference in a convenient way 
-        os.system(f"echo \"diff <expected> <actual>:\"; diff <(echo \"{json.dumps(expected, indent=2)}\") <(echo \"{json.dumps(actual, indent=2)}\")")
+        def write_json_to_tmp(json_obj):
+            path = ""
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+                path = f.name
+                f.write(json.dumps(json_obj, indent=2))
+            return path
+
+        expected_path = write_json_to_tmp(expected)
+        actual_path = write_json_to_tmp(actual)
+        # run automatically diff to show difference in a convenient way
+        os.system(f"echo \"diff <expected> <actual>:\"; diff {expected_path} {actual_path}")
         print("ERROR: Data not equal")
+        os.unlink(expected_path)
+        os.unlink(actual_path)
         sys.exit(1)
 
 
