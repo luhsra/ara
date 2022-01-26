@@ -109,6 +109,16 @@ if get_option('enable_step_tests')
           depends: ara_py,
           suite: ['steps', 'lock_elision']
       )
+      if app.has_key('sys_timings')
+        test('lock_elision_with_timings_' + app['full_name'],
+             py3_inst,
+             args: [files('timed_lock_elision.py'), locks, app['ll'], app['oil'], app['sys_timings']],
+             env: [python_path],
+             depends: ara_py,
+             suite: ['steps', 'lock_elision', 'timed_lock_elision']
+            )
+      endif
+
     endforeach
 
     foreach app: autosar_targets

@@ -18,7 +18,7 @@ result* do_computation() {return nullptr;}
 void ara_timing_info(int, int);
 
 #if LOCKS_JSON
-{"S1": 4, "S2": 0}
+{"S1": 4, "timed_locks": {"S1": 0}}
 #endif //LOCKS_JSON
 
 // CPU 0
