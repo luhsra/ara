@@ -67,7 +67,7 @@ def main():
         src = edge_map[e.source()]
         tgt = edge_map[e.target()]
         edges.append((src, tgt))
-    trace["edges"] = tuple(edges)
+    trace["edges"] = tuple(sorted(edges))
 
     # _dump_trace(trace)
 
