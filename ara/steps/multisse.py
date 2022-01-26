@@ -35,11 +35,19 @@ MAX_INT64 = 2**63 - 1
 sse_counter = 0
 
 
-class ExecType(enum.IntEnum):
-    has_length = 1 << 0
-    idle = 1 << 1
-    cross_syscall = 1 << 2
+class CrossExecState(enum.IntEnum):
+    idle = ExecState.idle
+    computation = ExecState.computation
+    waiting = ExecState.waiting
 
+    with_time = ExecState.with_time
+
+    call = ExecState.call
+    syscall = ExecState.syscall
+
+    cross_syscall = 1 << max(int(x) for x in ExecState).bit_length()
+
+    no_time = ExecState.no_time | cross_syscall
 
 @dataclass
 class Metastate:
@@ -248,6 +256,7 @@ class Equations:
 
     def add_range(self, edge, time):
         assert isinstance(time, TimeRange)
+        assert time.to >= time.up and time.up >= 0
         var = self._get_variable(edge)
         self._bounds[var] = time
 
@@ -406,10 +415,7 @@ class MultiSSE(Step):
 
             self._state_map[h] = v
 
-            if cpu.exec_state == ExecState.idle:
-                self._mstg.type_map[v] = ExecType.idle
-            elif cpu.exec_state & ExecState.with_time:
-                self._mstg.type_map[v] = ExecType.has_length
+            self._mstg.type_map[v] = cpu.exec_state
 
             if cpu.abb is not None:
                 mstg.vp.bcet[v] = state.cfg.vp.bcet[cpu.abb]
@@ -438,7 +444,7 @@ class MultiSSE(Step):
             def cross_core_action(state, cpu_ids):
                 v = self._state_map[hash(state)]
                 self._mstg.cross_core_map[v] = cpu_ids
-                self._mstg.type_map[v] = ExecType.cross_syscall
+                self._mstg.type_map[v] = CrossExecState.cross_syscall
                 cross_points.append(v)
 
             @staticmethod
@@ -539,7 +545,7 @@ class MultiSSE(Step):
         filt_mstg = GraphView(
             mstg,
             vfilt=((mstg.vp.type.fa == StateType.metastate) +
-                   (self._mstg.type_map.fa == ExecType.cross_syscall)),
+                   (self._mstg.type_map.fa == CrossExecState.cross_syscall)),
         )
         s2s = GraphView(mstg, mstg.vp.type.fa == StateType.state)
 
@@ -792,8 +798,7 @@ class MultiSSE(Step):
 
         reachable = self._get_reachable_states(entry, exit_state=exit_s)
 
-        r1 = vertex_types(reachable, self._mstg.type_map, ExecType.has_length,
-                          ExecType.idle)
+        r1 = vertex_types(reachable, self._mstg.type_map, CrossExecState.with_time)
 
         good_v = []
         for v in r1.vertices():
@@ -1142,7 +1147,7 @@ class MultiSSE(Step):
 
         def _get_cross_cpu_id():
             for e in cp.in_edges():
-                if self._mstg.type_map[e.source()] == ExecType.cross_syscall:
+                if self._mstg.type_map[e.source()] == CrossExecState.cross_syscall:
                     yield mstg.ep.cpu_id[e]
 
         cpu_id = single_check(_get_cross_cpu_id())
@@ -1243,7 +1248,7 @@ class MultiSSE(Step):
             return True
 
         core_graph = GraphView(g1, efilt=good_edge,
-                               vfilt=self._mstg.type_map.fa != ExecType.idle)
+                               vfilt=self._mstg.type_map.fa != CrossExecState.idle)
 
         exec_time = TimeRange(up=0, to=0)
         exit_cp = cp
@@ -1324,26 +1329,32 @@ class MultiSSE(Step):
 
         entry_bcet = 0
 
+        inf_time = [CrossExecState.idle, CrossExecState.waiting]
+
         # entry time
         t_from[entry] = 0
-        if type_map[entry] == ExecType.idle:
+        if type_map[entry] in inf_time:
             set_time(t_to, entry, math.inf)
-        elif p_ins.vertex(entry).in_degree() == 1:
+        else:
             # the state was maybe already executed previously
             # find out how long
             time = self._get_previous_execution_time(cp, cpu_id, entry)
-            entry_bcet = mstg.vp.bcet[entry] - time.to
+            entry_bcet = max(mstg.vp.bcet[entry] - time.to, 0)
             set_time(t_to, entry, mstg.vp.wcet[entry] - time.up)
+            # self._log.debug("GRT: Got a previous execution time of entry "
+            #                 f"{int(entry)} of {time}. The new execution time "
+            #                 f"is {entry_bcet} to {get_time(t_to, entry)}.")
+
 
         def get_bcet(node):
-            if type_map[node] == ExecType.idle:
+            if type_map[node] in inf_time:
                 return 0
             if node == entry:
                 return entry_bcet
             return g.vp.bcet[node]
 
         def get_wcet(node):
-            if type_map[node] == ExecType.idle:
+            if type_map[node] in inf_time:
                 return math.inf
             return g.vp.wcet[node]
 
@@ -1351,11 +1362,14 @@ class MultiSSE(Step):
 
         while stack:
             cur = stack.pop(0)
+            # self._log.debug(f"GRT: Looking at {int(cur)}")
             degree = cur.in_degree()
             if degree == 1:
                 pred = single_check(cur.in_neighbors())
                 set_time(t_from, cur, get_time(t_from, pred) + get_bcet(pred))
                 set_time(t_to, cur, get_time(t_to, pred) + get_wcet(cur))
+                # self._log.debug(f"GRT: iter t_to = {get_time(t_to, pred)} + {get_wcet(cur)}, "
+                #                 f"t_from = {get_time(t_from, pred)} + {get_bcet(pred)}")
             elif degree >= 2:
                 if any(
                     [dominates(dom_tree, cur, x) for x in cur.in_neighbors()]):
@@ -1379,7 +1393,9 @@ class MultiSSE(Step):
             for nex in cur.out_neighbors():
                 stack.append(nex)
 
-        return TimeRange(up=get_time(t_from, state), to=get_time(t_to, state))
+        t =  TimeRange(up=get_time(t_from, state), to=get_time(t_to, state))
+        assert t.up >= 0 and t.to >= t.up
+        return t
 
     def _do_full_pairing(self, cp, metastate, start_from=None):
         exits = []
