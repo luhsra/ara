@@ -133,6 +133,7 @@ namespace ara::step {
 				assert(svf_func != nullptr && "svf_func is null.");
 				SVF::PTACallGraphNode* cg_node = svf_callgraph.getCallGraphNode(svf_func);
 				assert(cg_node != nullptr && "cg_node is null.");
+				map_svf_call_node(*cg_node, function);
 
 				// add edges
 				for (SVF::PTACallGraphNode::iterator out_it = cg_node->OutEdgeBegin(); out_it != cg_node->OutEdgeEnd();
