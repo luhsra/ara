@@ -10,7 +10,7 @@
           "tasks": {
             "ControlTask": {
               "activation": 1,
-              "autostart": false,
+              "autostart": true,
               "priority": 20,
               "schedule": true,
               "resources": []
@@ -84,23 +84,6 @@
       "events": {
       },
       "alarms": {
-        "SamplingAlarm": {
-          "counter": "one_ms_counter",
-          "action": {
-            "action": "activatetask",
-            "task": "ControlTask"
-          },
-          "autostart": true,
-          "alarmtime": 10,
-          "cycletime": 90
-        },
-        "CopterControlWatchdogAlarm": {
-          "counter": "one_ms_counter",
-          "action": {
-            "action": "activatetask",
-            "task": "CopterControlWatchdogTask"
-          }
-        }
       },
       "counters": {
         "one_ms_counter": {
