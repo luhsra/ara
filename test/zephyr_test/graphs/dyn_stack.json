@@ -64,7 +64,7 @@
     "line": 30,
     "specialization_level": "",
     "type": "instance",
-    "max_entries": "<unknown>"
+    "max_entries": 256
   },
   {
     "label": "Thread",
