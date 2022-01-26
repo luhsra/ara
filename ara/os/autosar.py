@@ -532,8 +532,11 @@ class AUTOSAR(OSBase):
 
             # shortcut for same task
             if new_vertex == old_vertex:
-                logger.debug("Skip schedule, since the task is the same.")
-                continue
+                old_abb = cpu.abb
+                new_abb = None if new_ctx is None else new_ctx.abb
+                if old_abb == new_abb:
+                    logger.debug("Skip schedule, since the task is the same.")
+                    continue
 
             # write old values back to instance only if running or blocked
             if old_vertex:
@@ -693,6 +696,7 @@ class AUTOSAR(OSBase):
         ctx = state.context[task]
         if ctx.status is not TaskStatus.running:
             ctx.status = TaskStatus.ready
+            ctx.abb = state.cfg.get_entry_abb(task.function)
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -729,8 +733,8 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
 
-        AUTOSAR.TerminateTask(state, cpu_id)
-        AUTOSAR.ActivateTask(state, cpu_id, args.task)
+        state = AUTOSAR.TerminateTask(state, cpu_id)
+        state = AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
         t = find_instance_node(state.instances, args.task)
         connect_from_here(state, cpu_id, t, "ChainTask",
