@@ -929,11 +929,11 @@ class MultiSSE(Step):
 
     def _is_follow_cp(self, ctx, cp):
         """Check, if cp is a valid follow up cp of the cps specified by ctx."""
-        cores = self._mstg.cross_point_map[cp]
         core_map = {}
         for p in reversed(ctx.path):
             nc = dict([(c, p) for c in ctx.cores[p]])
             core_map.update(nc)
+        cores = set(self._mstg.cross_point_map[cp]) & set(core_map.keys())
         return all([
             self._has_path(ctx.graph, core_map[core], cp)
             and core is not ctx.cpu_id for core in cores
