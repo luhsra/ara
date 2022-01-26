@@ -499,6 +499,10 @@ class AUTOSAR(OSBase):
 
         # update cpus
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
+            # the busy waiting state does never change
+            if cpu.exec_state == ExecState.waiting:
+                continue
+
             if not (cpu.id in cpu_map and len(cpu_map[cpu.id]) != 0):
                 # idle state
                 new_vertex = None
