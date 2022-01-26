@@ -697,8 +697,9 @@ class AUTOSAR(OSBase):
         AUTOSAR.check_cpu(state, task.cpu_id)
         ctx = state.context[task]
         if ctx.status is not TaskStatus.running:
+            if ctx.status is TaskStatus.suspended:
+                ctx.abb = state.cfg.get_entry_abb(task.function)
             ctx.status = TaskStatus.ready
-            ctx.abb = state.cfg.get_entry_abb(task.function)
         return state
 
     @syscall(categories={SyscallCategory.comm},
