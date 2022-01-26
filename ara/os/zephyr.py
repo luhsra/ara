@@ -643,19 +643,13 @@ class ZEPHYR(OSBase):
         ZEPHYR.create_instance(cfg, state, cpu_id, va, "Stack", instance, args.symbol, "k_stack_init")
         return state
 
-    # void k_stack_init(struct k_stack *stack, stack_data_t *buffer, uint32_t num_entries)
+    # int32_t k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("buf", ty=pyllco.Value),
                         Arg("max_entries", hint=SigType.value))) # TODO: Check why we do not use the buffer. And override it with max_entries ?
     def k_stack_alloc_init(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
-
-        #symbol = get_argument(cfg, abb, state.call_path, 0, ty=pyllco.Value)
-        # TODO: Check why we do not use the buffer. And override it with max_entries ?
-        #buf = get_argument(cfg, abb, state.call_path, 1, ty=pyllco.Value)
-        #max_entries = get_argument(cfg, abb, state.call_path, 1)
 
         instance = Stack(
             ZEPHYR.get_symbol(args.symbol),
