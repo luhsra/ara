@@ -15,6 +15,7 @@
 typedef struct {int a;} result;
 
 result* do_computation() {return nullptr;}
+void prepare();
 void ara_timing_info(int, int);
 
 #if LOCKS_JSON
@@ -65,13 +66,13 @@ TASK(T11) {
 	ara_timing_info(8, 16);		// 
 	/* ... */
 	ReleaseSpinlock(S1);
-	ara_timing_info(1, 2);		// 
+	ara_timing_info(10, 20);		// 
 	ActivateTask(T02);
 	ara_timing_info(10, 20);	// 
 	ActivateTask(T01);
 	ara_timing_info(20, 30);	// 
 	ActivateTask(T21);
-	ara_timing_info(3, 4);
+	ara_timing_info(40, 40);
 	TerminateTask();
 }
 
@@ -79,12 +80,12 @@ TASK(T11) {
  * CPU 2
  */
 TASK(T21) {
-	ara_timing_info(5, 9);
-	/* ... some computation ... */
-	GetSpinlock(S1);
-	ara_timing_info(8, 16);
-	/* ... */
-	ReleaseSpinlock(S1);
+	// ara_timing_info(1, 2);
+	// /* ... some computation ... */
+	// GetSpinlock(S1);
+	// ara_timing_info(8, 16);
+	// /* ... */
+	// ReleaseSpinlock(S1);
 	ara_timing_info(1, 2);
 	TerminateTask();
 }
