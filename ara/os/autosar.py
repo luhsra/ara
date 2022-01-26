@@ -68,6 +68,14 @@ class TaskGroup(AUTOSARInstance):
     promises: dict
 
 
+class IRQStatus(AUTOSARInstance):
+    pass
+
+
+class OSIRQStatus(AUTOSARInstance):
+    pass
+
+
 @dataclass(repr=False)
 class Task(AUTOSARInstance, ControlInstance):
     priority: int
@@ -158,24 +166,6 @@ class AlarmContext:
     active: bool
 
 
-@dataclass
-class AUTOSARContext:
-    irq_status: dict
-    os_irq_status: dict
-
-    def __hash__(self):
-        return hash(("AUTOSARContext",
-                     tuple(self.irq_status.items()),
-                     tuple(self.os_irq_status.items())))
-
-    def __copy__(self):
-        """Make a deep copy."""
-        def copy_dict(x):
-            return dict([(k, v) for k, v in x.items()])
-        return AUTOSARContext(irq_status=copy_dict(self.irq_status),
-                              os_irq_status=copy_dict(self.os_irq_status))
-
-
 @dataclass(repr=False)
 class ISR(AUTOSARInstance, ControlInstance):
     priority: int
@@ -246,6 +236,16 @@ class AUTOSAR(OSBase):
             if not hasattr(inst, "cpu_id"):
                 local_contexts.append((inst, ctx))
         return dict(local_contexts)
+
+    @staticmethod
+    def _irq_status_key(cpu_id):
+        return IRQStatus(name="AUTOSAR_IRQ_STATUS_" + str(cpu_id),
+                         cpu_id=cpu_id)
+
+    @staticmethod
+    def _os_irq_status_key(cpu_id):
+        return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id),
+                           cpu_id=cpu_id)
 
     @staticmethod
     def get_initial_state(cfg, instances):
@@ -338,9 +338,11 @@ class AUTOSAR(OSBase):
         for _, spinlock in instances.get(Spinlock):
             state.context[spinlock] = SpinlockContext()
 
-        # special context object for os specific state
-        state.context["AUTOSAR"] = AUTOSARContext(irq_status=irq_status,
-                                                  os_irq_status=os_irq_status)
+        # special context objects for os specific state
+        for cpu_id, value in irq_status.items():
+            state.context[AUTOSAR._irq_status_key(cpu_id)] = value
+        for cpu_id, value in os_irq_status.items():
+            state.context[AUTOSAR._os_irq_status_key(cpu_id)] = value
 
         return state
 
@@ -878,15 +880,15 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_ResumeAllInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].irq_status[cpu_id] -= 1
-        if state.context["AUTOSAR"].irq_status[cpu_id] == 0:
+        state.context[AUTOSAR._irq_status_key(cpu_id)] -= 1
+        if state.context[AUTOSAR._irq_status_key(cpu_id)] == 0:
             state.cpus[cpu_id].irq_on = True
         return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_ResumeOSInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].os_irq_status[cpu_id] -= 1
+        state.context[AUTOSAR._os_irq_status_key(cpu_id)] -= 1
         return state
 
     @staticmethod
@@ -965,14 +967,14 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_SuspendAllInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].irq_status[cpu_id] += 1
+        state.context[AUTOSAR._irq_status_key(cpu_id)] += 1
         state.cpus[cpu_id].irq_on = False
         return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_SuspendOSInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].os_irq_status[cpu_id] += 1
+        state.context[AUTOSAR._os_irq_status_key(cpu_id)] += 1
         return state
 
     @staticmethod
