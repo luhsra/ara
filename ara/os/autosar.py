@@ -131,6 +131,7 @@ class Spinlock:
 @dataclass
 class SpinlockContext:
     is_spinning: bool = False
+    held_by: Any = None
     wait_for: List[int] = field(default_factory=list)  # list of cpu_ids
 
     def __hash__(self):
@@ -141,6 +142,7 @@ class SpinlockContext:
     def __copy__(self):
         """Make a deep copy."""
         return SpinlockContext(is_spinning=self.is_spinning,
+                               held_by=self.held_by,
                                wait_for=[x for x in self.wait_for])
 
 
@@ -702,12 +704,15 @@ class AUTOSAR(OSBase):
 
         lock_ctx = state.context[args.spinlock]
         if lock_ctx.is_spinning:
+            logger.info("GL by %s, but lock is on hold: %s",
+                         state.cur_control_inst(cpu_id),lock_ctx)
             # active wait in this state
             lock_ctx.wait_for.append(cpu_id)
             state.cpus[cpu_id].exec_state = ExecState.waiting
         else:
             # just go the the next block but set the lock
             lock_ctx.is_spinning = True
+            lock_ctx.held_by = state.cur_control_inst(cpu_id)
             set_next_abb(state, cpu_id)
         return state
 
@@ -724,6 +729,7 @@ class AUTOSAR(OSBase):
         wait_for = lock_ctx.wait_for
         lock_ctx.wait_for = []
         lock_ctx.is_spinning = False
+        lock_ctx.held_by = None
 
         # the current CPU just follows the control flow
         set_next_abb(state, cpu_id)
