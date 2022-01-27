@@ -82,36 +82,36 @@ autosar_apps = [
   {'core': 'singlecore', 'path': 'ecc1' / 'eventisr1', 'name': 'f',                     'oil': 'system.json', 'trace': 'f.trace.json'},
   {'core': 'multicore',  'path': '',                   'name': 'minexample',            'oil': 'minexample.json'},
   {'core': 'multicore',  'path': 'interrupts',        'name': 'a',                     'oil': 'a_system.json', 'timing': 'a_timings.json'},
-  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a',                     'oil': 'system.json', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a_start1',              'oil': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'b',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'c',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'd',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'a',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'b',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'c',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'd',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'e',                     'oil': 'system.json'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'f',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'g',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'h',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'i',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'j',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'k',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'l',                     'oil': 'system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'a_start1',              'oil': 'EXTRACT', 'mtrace': 'a_start1.trace.json', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'c',                     'oil': 'system.json', 'mtrace': 'c.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '2cores',  'name': 'd',                     'oil': 'system.json', 'mtrace': 'd.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'a',                     'oil': 'a.system.json', 'mtrace': 'a.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'b',                     'oil': 'b.system.json', 'mtrace': 'b.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'c',                     'oil': 'c.system.json', 'mtrace': 'c.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'd',                     'oil': 'd.system.json', 'mtrace': 'd.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'e',                     'oil': 'e.system.json', 'mtrace': 'e.trace.json'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'f',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'g',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'h',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'i',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'j',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'k',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'l',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'm',                     'oil': 'system_m.json'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'n',                     'oil': 'system_m.json'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-b',         'oil': 'identity-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-c',         'oil': 'identity-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-d',         'oil': 'identity-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-e',         'oil': 'identity-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-a',           'oil': 'triple-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-a-start5',    'oil': 'EXTRACT',            'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-b',           'oil': 'triple-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-c',           'oil': 'triple-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-d',           'oil': 'triple-system.json', 'trace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-b',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-c',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-d',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-e',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-a',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-a-start5',    'oil': 'EXTRACT',            'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-b',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-c',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'triple-d',           'oil': 'triple-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'loops',              'name': 'a',                     'oil': 'system_a.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'b',                     'oil': 'system_b.json'},
   {'core': 'multicore',  'path': 'loops',              'name': 'c',                     'oil': 'system_b.json'},
@@ -171,16 +171,16 @@ foreach app : autosar_apps
 
 
   # trace file for sse testing
-  if not app.has_key('trace')
+  if not app.has_key('mtrace')
     sys_test =  disabler()
-  elif app['trace'] == 'EXTRACT'
+  elif app['mtrace'] == 'EXTRACT'
     sys_test = custom_target(full_name + '.trace.json',
                              input: sys + '.cc',
                              output : full_name + '.trace.json',
                              capture: true,
                              command : [sed, '-n', '/if TRACE_JSON/,/TRACE_JSON/{/TRACE_JSON/d;p}', '@INPUT@'])
   else
-    sys_test = files(app['core'] / app['path'] / app['trace'])
+    sys_test = files(app['core'] / app['path'] / app['mtrace'])
   endif
   app += {'sys_test': sys_test}
 

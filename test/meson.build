@@ -122,7 +122,7 @@ if get_option('enable_step_tests')
     endforeach
 
     foreach app: autosar_targets
-      if not app.has_key('trace')
+      if not app.has_key('mtrace')
         continue
       endif
       test('multisse_' + app['full_name'],

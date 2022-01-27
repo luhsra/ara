@@ -16,25 +16,20 @@
 
 DeclareTask(T01);
 DeclareTask(T11);
+DeclareTask(T21);
 DeclareSpinlock(S1);
-DeclareSpinlock(S2);
 
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T01) {
-	GetSpinlock(S1);
-	ReleaseSpinlock(S1);
-	ActivateTask(T11);
-	GetSpinlock(S2);
-	ReleaseSpinlock(S2);
 	TerminateTask();
 }
 
 TASK(T11) {
+	ActivateTask(T01);
+	ActivateTask(T21);
 	GetSpinlock(S1);
 	ReleaseSpinlock(S1);
-	GetSpinlock(S2);
-	ReleaseSpinlock(S2);
 	TerminateTask();
 }
 
