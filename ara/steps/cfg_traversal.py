@@ -46,13 +46,26 @@ class Visitor:
     def add_state(self, new_state):
         raise NotImplementedError
 
+    def add_irq_state(self, new_state):
+        """Handle IRQ state.
+
+        Return True, if the analysis should handle the state by itself.
+        """
+        return True
+
     def add_transition(self, source, target):
         raise NotImplementedError
 
     def schedule(self, new_states):
         raise NotImplementedError
 
-    def cross_core_action(self, state, cpu_ids):
+    def cross_core_action(self, state, cpu_ids, irq=None):
+        """Handle a cross core action.
+
+        state   -- the state, which triggers the action
+        cpu_ids -- the affected CPUs
+        irq     -- the number of the irq that triggers the action.
+        """
         pass
 
     def next_step(self, state_id):
@@ -202,12 +215,21 @@ class _SSERunner:
 
     def _trigger_irqs(self, state):
         cpu = state.cpus.one()
+        if not cpu.irq_on:
+            return []
+
         irq_states = []
-        if cpu.irq_on:
-            for irq in self._available_irqs:
-                new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                if new_state is not None:
-                    irq_states.append(new_state)
+        for irq in self._available_irqs:
+            try:
+                i_st = self._os.handle_irq(self._graph, state, cpu.id, irq)
+                if i_st is not None and self._visitor.add_irq_state(i_st):
+                    irq_states.append(i_st)
+            except CrossCoreAction as cca:
+                self._log.debug(f"Cross core action for IRQ {irq} (CPUs: "
+                                f"{cca.cpu_ids}).")
+                self._visitor.cross_core_action(state, cca.cpu_ids, irq=irq)
+                # end analysis on this path
+                return []
         return irq_states
 
     def _execute(self, state):

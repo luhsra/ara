@@ -441,7 +441,7 @@ class MultiSSE(Step):
                 return entry
 
             @staticmethod
-            def cross_core_action(state, cpu_ids):
+            def cross_core_action(state, cpu_ids, irq=None):
                 v = self._state_map[hash(state)]
                 self._mstg.cross_core_map[v] = cpu_ids
                 self._mstg.type_map[v] = CrossExecState.cross_syscall
@@ -457,6 +457,10 @@ class MultiSSE(Step):
                 if created:
                     to_assign_states.add(v)
                 return created
+
+            @staticmethod
+            def add_irq_state(new_state):
+                return True
 
             @staticmethod
             def add_transition(source, target):
