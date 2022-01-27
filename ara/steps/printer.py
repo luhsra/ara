@@ -156,6 +156,7 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
                                           entry=sync_point))
 
     time_sync = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
+    ms_sync = mstg.edge_type(MSTType.m2sy, MSTType.en2ex)
     time_sync.set_reversed(True)
     sy2sy = mstg.edge_type(MSTType.sy2sy)
     added_edges = set()
@@ -189,19 +190,43 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
         added_edges.add((dot_src, dot_tgt))
         return pydot.Edge(dot_src, dot_tgt, **attrs)
 
+    # edge printing
+    # we want to find the edges to the last core-local root SP
+    # we therefore first retrieve the root
     for entry_sp in mstg.get_sync_points(exit=False).vertices():
         for parent_sp in sy2sy.vertex(entry_sp).in_neighbors():
+            # now we can iterate all pathes from the SP to the root
             cores = core_map[int(entry_sp)]
             for path in all_paths(time_sync, entry_sp, parent_sp):
+                # every path of follow_sync edges between the SP and its
+                # root SP must also have a path for each core. Otherwise the
+                # path is not valid.
+                # We therefore also check the metastates for each core.
                 handled_cores = set()
                 for x in path[1:]:
                     if mstg.vp.type[x] == StateType.entry_sync:
                         continue
                     x_cores = core_map[int(x)] & cores
+                    invalid = False
                     for core in x_cores - handled_cores:
+                        # there must be a connection via metastates, otherwise
+                        # the path is not valid
+                        def good_edge(e):
+                            if mstg.ep.type[e] == MSTType.m2sy:
+                                return mstg.ep.cpu_id[e] == core
+                            return True
+                        cg = GraphView(ms_sync, efilt=good_edge)
+                        ms1 = set(cg.vertex(entry_sp).in_neighbors())
+                        ms2 = set(cg.vertex(x).out_neighbors())
+                        if len(ms2) > 0 and ms1 != ms2:
+                            # this is an invalid path
+                            invalid = True
+                            break
                         edge = _add_edge(x, entry_sp, core)
                         if edge:
                             dot_graph.add_edge(edge)
+                    if invalid:
+                        break
                     handled_cores |= x_cores
                     if len(cores - handled_cores) == 0:
                         break
