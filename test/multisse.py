@@ -6,6 +6,7 @@ from init_test import init_test, fail_if
 import json
 import logging
 import graph_tool
+import sys
 
 from graph_tool.topology import isomorphism
 from ara.graph import MSTType, StateType
@@ -63,8 +64,7 @@ def main():
     # do a graph copy, isomorphism will fail otherwise
     reduced = graph_tool.Graph(reduced, prune=True)
 
-    if log.level <= logging.INFO:
-        log.warning(_dump(mstg, reduced, reduced.vp["cores"]))
+    # print(_dump(mstg, reduced, reduced.vp["cores"]), file=sys.stderr)
 
     golden, correct_cores = _build_graph(data)
 
