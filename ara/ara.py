@@ -43,6 +43,9 @@ def main():
                         help="Choose whether emit the data in a human readable"
                         " format or in machine readable JSON.",
                         default='human')
+    parser.add_argument('--step-data', default=False, const='dump', nargs='?',
+                        help="Emit step data into dumps folder or optionally"
+                        " given file", metavar="FILE")
     parser.add_argument('--entry-point', '-e', help="system entry point",
                         default='main')
     parser.add_argument('--isr', '-i', action='append',

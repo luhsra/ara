@@ -218,6 +218,29 @@ foreach app : autosar_apps
   run_target('run_lock_elision_with_timings_' + full_name,
              command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', with_timing_settings, '--timings', app['sys_timings']])
 
+  step_data = custom_target(full_name + '.multisse.no_timing.stepdata.json',
+                            input: [ara_py, app['ll'], app['oil']],
+                            output: full_name + '.multisse.no_timing.stepdata.json',
+                            depfile: full_name + '.dep',
+                            command: [py3_inst, ara_py, app['ll'],
+                                      '--dependency_file', '@DEPFILE@',
+                                      '--oilfile', app['oil'],
+                                      '-s', 'LockElision', '-s', 'IPIAvoidance',
+                                      '--step-data', '@OUTPUT@'],
+                           )
+
+  step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
+                            input: [ara_py, app['ll'], app['oil']],
+                            output: full_name + '.multisse.with_timing.stepdata.json',
+                            depfile: full_name + '.dep',
+                            command: [py3_inst, ara_py, app['ll'],
+                                      '--dependency_file', '@DEPFILE@',
+                                      '--oilfile', app['oil'],
+                                      '--step-settings', with_timing_settings,
+                                      '--timings', app['sys_timings'],
+                                      '--step-data', '@OUTPUT@'],
+                           )
+
   # lock elision test data
   if app.has_key('locks')
     if app['locks'] == 'EXTRACT'

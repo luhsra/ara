@@ -1659,3 +1659,8 @@ class MultiSSE(Step):
                 "graph_name": "Reduced MSTG",
                 "subgraph": "reduced_mstg",
             })
+        step_data = {"rounds": counter,
+                     "vertices": len(list(mstg.vertices())),
+                     "edges": len(list(mstg.edges())),
+                     }
+        self._set_step_data(step_data)
