@@ -200,6 +200,16 @@ class _SSERunner:
     def _get_exec(self, v):
         return ExecState.from_abbtype(self._cfg.vp.type[v])
 
+    def _trigger_irqs(self, state):
+        cpu = state.cpus.one()
+        irq_states = []
+        if cpu.irq_on:
+            for irq in self._available_irqs:
+                new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
+                if new_state is not None:
+                    irq_states.append(new_state)
+        return irq_states
+
     def _execute(self, state):
         self._visitor.init_execution(state)
         cpu = state.cpus.one()
@@ -225,13 +235,7 @@ class _SSERunner:
             # Trigger all interrupts. We are _not_ deciding over interarrival
             # times here. This should be done by the operation system model.
             self._log.debug("Handle idle. Trigger all interrupts.")
-            new_states = []
-            if cpu.irq_on:
-                for irq in self._available_irqs:
-                    new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                    if new_state is not None:
-                        new_states.append(new_state)
-            return new_states
+            return self._trigger_irqs(state)
 
         elif cpu.exec_state == ExecState.syscall:
             name = self._cfg.vp.name[abb]
@@ -319,12 +323,7 @@ class _SSERunner:
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.
-        if cpu.irq_on:
-            for irq in self._available_irqs:
-                new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                if new_state is not None:
-                    new_states.append(new_state)
-        return new_states
+        return new_states + self._trigger_irqs(state)
 
     def _system_semantic(self, state: OSState):
         # we can only handle a single core execution here
