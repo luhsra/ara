@@ -16,7 +16,7 @@
 
 
 void helloLoop(const char *my_name,
-	       struct k_sem *my_sem, struct k_sem *other_sem)
+	       struct sys_sem *my_sem, struct sys_sem *other_sem)
 {
     const char *tname;
 
