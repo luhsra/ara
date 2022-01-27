@@ -504,7 +504,7 @@ class ZEPHYR(OSBase):
                         Arg("p3", hint=SigType.value),
                         Arg("priority", hint=SigType.value),
                         Arg("options", hint=SigType.value),
-                        Arg("delay", hint=SigType.value)))
+                        Arg("delay", hint=SigType.value))) # TODO: Allow interpretation of delay type (This is a macro controlled struct type)
     def k_thread_create(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
@@ -1407,3 +1407,7 @@ class ZEPHYR(OSBase):
         ZEPHYR.add_instance_comm(state, cpu_id, args.symbol.value, "k_msgq_num_used_get")
         return state
 
+    # ...
+    # TODO: Add more syscalls
+
+    # TODO: create handling  k_thread_name_set
