@@ -134,7 +134,7 @@ TASK(FlightControlTask) {
 	ara_timing_info(7, 12);
 	test_trace(0x51);
 	ActivateTask(FlightControlAttitudeTask);
-	ara_timing_info(1, 2);
+	ara_timing_info(3, 9);
 	test_trace(0x52);
 	ActivateTask(FlightControlActuateTask);
 	ara_timing_info(9, 13);
@@ -146,19 +146,19 @@ TASK(FlightControlTask) {
 }
 
 TASK(FlightControlAttitudeTask) {
-	ara_timing_info(9, 12);
+	ara_timing_info(45, 67);
 	test_trace(0x61);
 	TerminateTask();
 }
 
 TASK(FlightControlActuateTask) {
-	ara_timing_info(6, 14);
+	ara_timing_info(41, 87);
 	test_trace(0x71);
 	TerminateTask();
 }
 
 TASK(MavlinkSendTask) {
-	ara_timing_info(5, 7);
+	ara_timing_info(15, 27);
 	test_trace(0x81);
 	GetResource(SPIBus1);
 	ara_timing_info(1, 2);
@@ -219,3 +219,7 @@ TASK(CopterControlWatchdogTask) {
 void PreIdleHook() {
 	kout << "I" << round << endl;
 }
+
+#if LOCKS_JSON
+{"SPIBusLock": 10, "timed_locks": {"SPIBusLock": 0}}
+#endif // LOCKS_JSON

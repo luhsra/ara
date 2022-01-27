@@ -142,14 +142,7 @@
       },
       "events": { },
       "alarms": { },
-      "counters": {},
-      "isrs": {
-        "MavLinkRecvHandler": {
-          "category": 2,
-          "device": 37,
-          "priority": 100
-        }
-      }
+      "counters": {}
     }
   ],
   "spinlocks": [
