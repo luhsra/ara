@@ -41,6 +41,7 @@ def fail_if(condition, *arg, dry=False):
     """
     if condition or dry:
         print("ERROR:", *arg, file=sys.stderr)
+        print("Tracefile:", sys.argv[1], file=sys.stderr)
         if condition and not dry:
             sys.exit(1)
 
