@@ -38,7 +38,7 @@ TEST_MAKE_OS_MAIN( StartOS(0) )
  * CPU0
  */
 TASK(T01) {
-	ara_timing_info(1, 2);
+	ara_timing_info(20, 25);
 	GetSpinlock(S1);
 	ara_timing_info(5, 10);
 	/* ... some computation */

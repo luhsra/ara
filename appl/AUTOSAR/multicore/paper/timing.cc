@@ -23,7 +23,7 @@ extern "C" void ara_timing_info(int, int);
 
 
 #if LOCKS_JSON
-{"S1": 4, "S2": 0, "timed_locks": {"S1": 0, "S2": 0}}
+{"S1": 4, "timed_locks": {"S1": 0}}
 #endif //LOCKS_JSON
 
 // CPU 0
@@ -59,7 +59,7 @@ TASK(T1) {
 }
 
 TASK(T3) {
-	ara_timing_info(20, 300);
+	ara_timing_info(80, 300);
 	compute_with_a();
 	TerminateTask();
 }
