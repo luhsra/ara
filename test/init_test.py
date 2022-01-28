@@ -55,6 +55,7 @@ def get_config(i_file):
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
             'entry_point': 'main',
+            'step_data': False,
             'input_file': i_file}
 
 
