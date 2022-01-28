@@ -324,9 +324,9 @@ namespace ara::step {
 
 			static inline Parser queue_parser(QueueType queue_type) {
 				return [queue_type](const ZephyrStaticImpl& context) {
-					llvm::ConstantInt* offset = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context.module.getContext());
-					llvm::PointerType* global_ptr = reinterpret_cast<llvm::PointerType*>(context.global->getType()->getScalarType())->getElementType();
-					llvm::GetElementPtrInst* fake_gep = llvm::GetElementPtrInst::Create(global_ptr, context.global, offset, 0));
+					llvm::ConstantInt* offset = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context.module.getContext()), 0);
+					llvm::Type* global_ptr = reinterpret_cast<llvm::PointerType*>(context.global->getType()->getScalarType())->getElementType();
+					llvm::GetElementPtrInst* fake_gep = llvm::GetElementPtrInst::Create(global_ptr, context.global, offset);
 					PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
 											 {"queue_type", py_int(queue_type)},
 											 {"fake_gep", get_obj_from_value(safe_deref(fake_gep))}});
