@@ -1,8 +1,9 @@
+from pickletools import pybytes
 import graph_tool.util
 import pyllco
 from .step import Step
 from pydoc import locate
-from ara.os.zephyr import ZephyrInstance, Thread, ISR, ZephyrKernel, ZEPHYR
+from ara.os.zephyr import Queue, QueueType, ZephyrInstance, Thread, ZephyrKernel, ZEPHYR
 from ara.os.os_base import ControlInstance
 from .option import Option, String
 from ara.util import KConfigFile
@@ -58,7 +59,12 @@ class ZephyrStaticPost(Step):
             instance_type = locate('ara.os.zephyr.' + self._graph.instances.vp.label[instance])
             inst = instance_type(**self._graph.instances.vp.obj[instance])
             if hasattr(inst, "symbol") and isinstance(inst.symbol, pyllco.Value):
-                va.assign_system_object(inst.symbol, inst)
+                offset = None
+                # Queue handling:
+                if isinstance(inst, Queue) and inst.queue_type != QueueType.normal.value:
+                    assert isinstance(inst.fake_gep, pyllco.GetElementPtrInst)
+                    offset = [inst.fake_gep]
+                va.assign_system_object(inst.symbol, inst, offset)
             if issubclass(instance_type, ControlInstance):
                 function = cfg.get_function_by_name(inst.entry_name)
                 inst.cfg = cfg

@@ -316,15 +316,33 @@ namespace ara::step {
 				return add_instance(context, "Heap", obj, safe_deref(context.global).getName().str());
 			}
 
+			enum QueueType {
+				normal = 0,
+				lifo = 1,
+				fifo = 2
+			};
+
+			static inline Parser queue_parser(QueueType queue_type) {
+				return [queue_type](const ZephyrStaticImpl& context) {
+					llvm::ConstantInt* offset = llvm::ConstantInt::get(llvm::Type::getInt32Ty(context.module.getContext());
+					llvm::PointerType* global_ptr = reinterpret_cast<llvm::PointerType*>(context.global->getType()->getScalarType())->getElementType();
+					llvm::GetElementPtrInst* fake_gep = llvm::GetElementPtrInst::Create(global_ptr, context.global, offset, 0));
+					PyObject* obj = py_dict({{"symbol", get_obj_from_value(safe_deref(context.global))},
+											 {"queue_type", py_int(queue_type)},
+											 {"fake_gep", get_obj_from_value(safe_deref(fake_gep))}});
+					return add_instance(context, "Queue", obj, context.global->getName().str());
+				};
+			}
+
 			std::unordered_map<std::string, ParserInfo> parsers{
 			    {"_static_thread_data", {true, parse_thread}},
 			    {"_isr_list", {true, parse_isr}},
 			    {"k_sem", {true, parse_kernel_semaphore}},
 			    {"sys_sem", {false, parse_user_semaphore}},
 			    {"k_mutex", {true, default_parser("Mutex")}},
-			    {"k_queue", {true, default_parser("Queue")}},
-			    {"k_lifo", {true, default_parser("Queue")}},
-			    {"k_fifo", {true, default_parser("Queue")}},
+			    {"k_queue", {true, queue_parser(QueueType::normal)}},
+			    {"k_lifo", {true, queue_parser(QueueType::lifo)}},
+			    {"k_fifo", {true, queue_parser(QueueType::fifo)}},
 			    {"k_stack", {true, parse_stack}},
 			    {"k_pipe", {true, parse_pipe}},
 			    {"k_heap", {true, parse_heap}},

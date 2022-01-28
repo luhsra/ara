@@ -168,10 +168,15 @@ class Mutex(ZephyrInstance):
     def __hash__(self):
         return hash(("Mutex", self.symbol))
 
+class QueueType(IntEnum):
+    normal = 0
+    lifo = 1
+    fifo = 2
+
 # The zephyr kernel offers two kinds of queues: FIFO and LIFO which both use queues internally
 # They are created via separate "functions" k_{lifo,fifo}_init
 # Both of those are just macros wrapping the actual k_queue_init syscall which makes them
-# hard to detect. For now, we do not diffrentiate between types of queues.
+# hard to detect. For now, we do not differentiate between types of queues in dynamic detection. Static detection will work.
 # On a positive note, since these are macros no action is needed to make ARA detect the
 # underlying k_queue_init sycalls. Were they functions, they might not be contained in libapp
 # TODO: Think about detection of lifo and fifo queues.
@@ -179,6 +184,12 @@ class Mutex(ZephyrInstance):
 class Queue(ZephyrInstance):
     # The k_queue object
     symbol: object
+    # Queue type. Attention: Currently this field is only set for static initialized Queues.
+    queue_type: QueueType
+    # A fake getElementPtr (this one is not available in LLVM IR) with offset 0 from this Queue.
+    # This field is only set for static Queues.
+    # We need this field to assign static lifo/fifo-Queues directly to k_queue LLVM value instead of k_lifo/k_fifo in ZephyrStaticPost.
+    fake_gep: pyllco.GetElementPtrInst
 
     wanted_attrs = []
     dot_appearance = {
@@ -189,7 +200,7 @@ class Queue(ZephyrInstance):
     }
 
     def __hash__(self):
-        return hash(("Queue", self.symbol))
+        return hash(("Queue", self.symbol, self.queue_type, self.fake_gep))
 
 # Stacks are created via the k_stack_alloc_init syscall which allocates an internal buffer.
 # However, it is also possible to initialize a stack with a given buffer with k_stack_init 
@@ -538,7 +549,7 @@ class ZEPHYR(OSBase):
                         Arg("entry", hint=SigType.symbol, ty=pyllco.Function),
                         Arg("handler_param", hint=SigType.value),
                         Arg("flags", hint=SigType.value)))
-    def irq_connect_dynamic(graph, state, cpu_id, args, va): # TODO: Test this syscall
+    def irq_connect_dynamic(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
 
@@ -619,7 +630,9 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
 
         instance = Queue(
-            ZEPHYR.get_symbol(args.symbol)
+            ZEPHYR.get_symbol(args.symbol),
+            QueueType.normal.value,
+            None
         )
 
         ZEPHYR.create_instance(cfg, state, cpu_id, va, "Queue", instance, args.symbol, "k_queue_init")
@@ -646,7 +659,7 @@ class ZEPHYR(OSBase):
     # int32_t k_stack_alloc_init(struct k_stack *stack, uint32_t num_entries)
     @syscall(categories={SyscallCategory.create},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("max_entries", hint=SigType.value))) # TODO: Check why we do not use the buffer. And override it with max_entries ?
+                        Arg("max_entries", hint=SigType.value)))
     def k_stack_alloc_init(graph, state, cpu_id, args, va):
         state = state.copy()
         cfg = graph.cfg
@@ -822,12 +835,9 @@ class ZEPHYR(OSBase):
 
     # k_tid_t k_current_get(void)
     @syscall(categories={SyscallCategory.comm})
-             # TODO: find out why this have a signature ?
-             #signature=(SigType.value, ))
     def k_current_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
-        # TODO: find out why we try to find a return value here and repair this: 
         #tid = find_return_value(cfg, abb, state.call_path)
 
         add_self_edge(state, cpu_id, "k_current_get", ty=ZephyrEdgeType.interaction)
@@ -1227,12 +1237,11 @@ class ZEPHYR(OSBase):
     # size_t min_xfer, k_timeout_t timeout)
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("item", hint=SigType.symbol), # X
+                        Arg("item", hint=SigType.symbol),
                         Arg("item_size", hint=SigType.value),
-                        Arg("bytes_read", hint=SigType.symbol), # X
-                        Arg("min_bytes_to_read", hint=SigType.value), # X
+                        Arg("bytes_read", hint=SigType.symbol),
+                        Arg("min_bytes_to_read", hint=SigType.value),
                         Arg("timeout", hint=SigType.value)))
-    # TODO: Figure out why those (marked with X) destroy the value analysis
     def k_pipe_get(graph, state, cpu_id, args, va):
         state = state.copy()
 
@@ -1252,7 +1261,7 @@ class ZEPHYR(OSBase):
         state = state.copy()
 
         ZEPHYR.add_instance_comm(state, cpu_id, args.symbol.value, "k_pipe_block_put")
-        # For now just add a k_sem_give from the tread to the given semaphore, if present.
+        # For now just add a k_sem_give from the thread to the given semaphore, if present.
         # This should work, because sem has to be created externally
         
         # TODO: check if None is valid here!
@@ -1293,7 +1302,7 @@ class ZEPHYR(OSBase):
     # void k_heap_free(struct k_heap *h, void *mem)
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("symbol", hint=SigType.instance),
-                        Arg("mem", hint=SigType.symbol))) # TODO: why was mem commented out?
+                        Arg("mem", hint=SigType.symbol)))
     def k_heap_free(graph, state, cpu_id, args, va):
         state = state.copy()
 

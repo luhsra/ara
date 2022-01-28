@@ -55,9 +55,9 @@ namespace ara::step {
 		 *
 		 * Return an offset, std::nullopt otherwise.
 		 */
-		std::optional<int64_t> get_offset(const llvm::GetElementPtrInst* gep) {
+		std::optional<int64_t> get_offset(const llvm::GetElementPtrInst* gep, const llvm::Module& llvm_module) {
 			assert(gep != nullptr && "GEP is null");
-			const auto layout = gep->getModule()->getDataLayout();
+			const auto layout = llvm_module.getDataLayout();
 			llvm::APInt ap_offset(layout.getIndexSizeInBits(gep->getPointerAddressSpace()), 0, true);
 			bool success = gep->accumulateConstantOffset(layout, ap_offset);
 			if (!success) {
@@ -67,10 +67,10 @@ namespace ara::step {
 		}
 
 		std::optional<std::vector<int64_t>>
-		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets) {
+		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets, const llvm::Module& llvm_module) {
 			std::vector<int64_t> number_offsets;
 			for (const auto& gep : offsets) {
-				auto number = get_offset(gep);
+				auto number = get_offset(gep, llvm_module);
 				if (!number) {
 					return std::nullopt;
 				}
@@ -678,7 +678,7 @@ namespace ara::step {
 	std::optional<OSObject> Bookkeeping::get_obj_id(const SVF::NodeID id,
 	                                                const std::vector<const llvm::GetElementPtrInst*>& offset,
 	                                                const graph::CallPath& callpath) const {
-		auto num_offsets = convert_to_number_offsets(offset);
+		auto num_offsets = convert_to_number_offsets(offset, this->get_module());
 		if (!num_offsets) {
 			return std::nullopt;
 		}
@@ -878,7 +878,7 @@ namespace ara::step {
 			logger.debug() << " with offset " << offset_print(offsets);
 		}
 		logger.debug() << " and callpath " << callpath << "." << std::endl;
-		auto num_offsets = convert_to_number_offsets(offsets);
+		auto num_offsets = convert_to_number_offsets(offsets, graph.get_module());
 		if (num_offsets) {
 			obj_map.insert(
 			    graph::GraphData::ObjMap::value_type(std::make_tuple(id, *num_offsets, callpath.hash()), obj_index));
@@ -1055,7 +1055,7 @@ namespace ara::step {
 			if (auto gep_node = llvm::dyn_cast<SVF::GepVFGNode>(node)) {
 				const llvm::GetElementPtrInst* gep_inst =
 				    llvm::cast<llvm::GetElementPtrInst>(gep_node->getPAGEdge()->getValue());
-				if (get_offset(gep_inst) != get_offset(*(gep_iter++))) {
+				if (get_offset(gep_inst, graph.get_module()) != get_offset(*(gep_iter++), graph.get_module())) {
 					// not fitting, quit this path
 					continue;
 				}
