@@ -45,7 +45,7 @@ def vertex_types(graph, prop, *types):
     prop  -- the property that shore the types
     types -- the types that are allowed
     """
-    return graph_tool.GraphView(graph, vfilt=(prop.fa & sum(types)))
+    return graph_tool.GraphView(graph, vfilt=(prop.fa & sum(types) != 0))
 
 
 def edge_types(graph, prop, *types):
@@ -61,7 +61,7 @@ def edge_types(graph, prop, *types):
     prop  -- the property that shore the types
     types -- the types that are allowed
     """
-    return graph_tool.GraphView(graph, efilt=(prop.fa & sum(types)))
+    return graph_tool.GraphView(graph, efilt=(prop.fa & sum(types) != 0))
 
 
 class CFGError(Exception):
