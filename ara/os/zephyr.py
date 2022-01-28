@@ -1264,8 +1264,7 @@ class ZEPHYR(OSBase):
         # For now just add a k_sem_give from the thread to the given semaphore, if present.
         # This should work, because sem has to be created externally
         
-        # TODO: check if None is valid here!
-        if args.sem != None:
+        if isinstance(args.sem.value, ZephyrInstance):
             ZEPHYR.add_instance_comm(state, cpu_id, args.sem.value, "k_sem_give")
 
         return state
