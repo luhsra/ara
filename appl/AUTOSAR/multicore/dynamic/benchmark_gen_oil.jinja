@@ -1,0 +1,51 @@
+CPU BenchmarkSystem {
+
+    OS TestSystem {
+        STATUS = STANDARD;
+        ERRORHOOK = FALSE;
+        STARTUPHOOK = FALSE;
+        SHUTDOWNHOOK = FALSE;
+        PRETASKHOOK = FALSE;
+        POSTTASKHOOK = FALSE;
+    };
+
+{% for task in system.tasks %}
+  TASKGROUP {{task.name}} {
+      PROMISE = SERIALIZED;
+  };
+{% endfor %}
+
+{% for subtask in system.subtasks %}
+ TASK {{subtask.name}} {
+  {%- if subtask.preemptable %}
+    SCHEDULE = FULL;
+  {%- else %}
+    SCHEDULE = NON;
+  {%- endif %}
+    PRIORITY = {{subtask.static_priority}};
+    ACTIVATION = 1;
+    AUTOSTART = FALSE;
+    TASKGROUP = {{subtask.task.name}};
+  {%- for event in subtask.events %}
+    EVENT = {{event}};
+  {%- endfor %}
+  {%- for res in subtask.resources %}
+    RESOURCE = {{res}};
+  {%- endfor %}
+ };
+{% endfor %}
+
+{%- for event in system.events %}
+  EVENT {{event}} { MASK = AUTO; };
+{%- endfor %}
+{%- for res in system.resources %}
+  RESOURCE {{res}} { RESOURCEPROPERTY = STANDARD; };
+{%- endfor %}
+{%- for task in system.tasks %}
+  ISR Activate{{task.name}} {
+        CATEGORY = 2;
+        PRIORITY = 10;
+        DEVICE = {{system.min_irq_id + task.id}};
+  };
+{%- endfor %}
+};

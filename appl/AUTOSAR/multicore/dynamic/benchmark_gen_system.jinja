@@ -1,0 +1,37 @@
+#include "autosar/os.h"
+#include "test/test.h"
+#include "machine.h"
+
+//#include "fail/trace.h"
+
+void ara_timing_info(int, int);
+
+{% for res in system.resources %}
+  DeclareResource({{res}});
+{% endfor %}
+
+{% for lock in system.spinlocks -%}
+  DeclareSpinlock({{lock}});
+{% endfor %}
+
+{% for event in system.events -%}
+  DeclareEvent({{event}}, {{loop.index}});
+{% endfor %}
+
+{% for subtask in system.subtasks -%}
+  DeclareTask({{subtask.name}});
+{% endfor %}
+
+TEST_MAKE_OS_MAIN( StartOS(0) )
+
+// Prototypes
+{% for func in system.functions %}
+noinline EXTERN_C_DECL void {{func.name}} (void);
+{% endfor %}
+
+{% for func in system.functions %}
+void {{func.name}} (void) {
+  // kout << "{{func.name}}" << endl;
+{{func.body.dump(2)}}
+}
+{% endfor %}

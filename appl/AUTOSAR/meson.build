@@ -258,3 +258,6 @@ foreach app : autosar_apps
   set_variable(full_name, app)
   autosar_targets += [app]
 endforeach
+
+
+subdir('multicore/dynamic')
