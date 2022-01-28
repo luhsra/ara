@@ -46,7 +46,7 @@ class Visitor:
     def add_state(self, new_state):
         raise NotImplementedError
 
-    def add_irq_state(self, new_state):
+    def add_irq_state(self, old_state, new_state, irq):
         """Handle IRQ state.
 
         Return True, if the analysis should handle the state by itself.
@@ -222,7 +222,7 @@ class _SSERunner:
         for irq in self._available_irqs:
             try:
                 i_st = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                if i_st is not None and self._visitor.add_irq_state(i_st):
+                if i_st is not None and self._visitor.add_irq_state(state, i_st, irq):
                     irq_states.append(i_st)
             except CrossCoreAction as cca:
                 self._log.debug(f"Cross core action for IRQ {irq} (CPUs: "

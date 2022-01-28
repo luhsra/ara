@@ -270,6 +270,9 @@ class AUTOSAR(OSBase):
                 cpu_map[obj.cpu_id] = []
             if obj.autostart:
                 cpu_map[obj.cpu_id].append((v, obj))
+        for v, obj in chain(instances.get(Alarm), instances.get(ISR)):
+            if obj.cpu_id not in cpu_map:
+                cpu_map[obj.cpu_id] = []
 
         # construct actual CPUs
         cpus = []
@@ -278,7 +281,7 @@ class AUTOSAR(OSBase):
         os_irq_status = {}
         for cpu_id, tasks in cpu_map.items():
             if len(tasks) == 0:
-                # we have the CPU but not task that can be scheduled
+                # we have the CPU but no task that can be scheduled
                 cpus.append(CPU(id=cpu_id,
                                 irq_on=True,
                                 control_instance=None,
@@ -360,7 +363,6 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
-
         # we handle alarms only
         instances = state.instances
         vertex = instances.vertex(irq)
@@ -386,11 +388,12 @@ class AUTOSAR(OSBase):
                 acty = instances.vp.obj[acty_vertex]
                 if isinstance(acty, Task):
                     # do not trigger alarms, if in handling task or taskgroup
-                    ctl_inst = state.cpus[cpu_id].control_instance
-                    if ctl_inst is not None:
-                        all_tasks = AUTOSAR._get_all_tasks_of_taskgroup(instances, AUTOSAR._get_taskgroup_for_task(instances, ctl_inst))
-                        if acty_vertex in all_tasks:
-                            return
+                    if acty.cpu_id == cpu_id:
+                        ctl_inst = state.cpus[cpu_id].control_instance
+                        if ctl_inst is not None:
+                            all_tasks = AUTOSAR._get_all_tasks_of_taskgroup(instances, AUTOSAR._get_taskgroup_for_task(instances, ctl_inst))
+                            if acty_vertex in all_tasks:
+                                return
                     logger.debug(f"Alarm {obj.name} activates {acty.name}.")
                     new_state = state.copy()
                     return AUTOSAR.ActivateTask(new_state, cpu_id, acty)

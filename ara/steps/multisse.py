@@ -45,9 +45,13 @@ class CrossExecState(enum.IntEnum):
     call = ExecState.call
     syscall = ExecState.syscall
 
-    cross_syscall = 1 << max(int(x) for x in ExecState).bit_length()
+    __max = max(int(x) for x in ExecState).bit_length()
+    cross_syscall = 1 << __max
+    cross_irq = 1 << __max + 1
+    irq = 1 << __max + 2
 
     no_time = ExecState.no_time | cross_syscall
+
 
 @dataclass
 class Metastate:
@@ -55,7 +59,8 @@ class Metastate:
     entry: graph_tool.Vertex  # vertex of the entry ABB
     new_entry: bool  # is the entry point new
     is_new: bool  # is this Metastate already evaluated
-    cross_points: List[int]  # does this Metastate has a new cross_point
+    cross_points: List[graph_tool.Vertex]  # new cross points of Metastate
+    irqs: List[Tuple[graph_tool.Vertex, int]]  # new (cross) irqs of MS
     cpu_id: int  # cpu_id of this state
 
     def __repr__(self):
@@ -65,6 +70,7 @@ class Metastate:
                 f"new_entry: {self.new_entry}, "
                 f"is_new: {self.is_new}, "
                 f"cross_points: {[int(x) for x in self.cross_points]}, "
+                f"irqs: {[(int(x), y) for x, y in self.irqs]}, "
                 f"cpu_id: {self.cpu_id})")
 
 
@@ -397,6 +403,7 @@ class MultiSSE(Step):
         to_assign_states = set()
         m_state = list()
         cross_points = list()
+        irqs = list()
 
         def _add_state(state):
             h = hash(state)
@@ -444,8 +451,12 @@ class MultiSSE(Step):
             def cross_core_action(state, cpu_ids, irq=None):
                 v = self._state_map[hash(state)]
                 self._mstg.cross_core_map[v] = cpu_ids
-                self._mstg.type_map[v] = CrossExecState.cross_syscall
-                cross_points.append(v)
+                if irq is None:
+                    self._mstg.type_map[v] = CrossExecState.cross_syscall
+                    cross_points.append(v)
+                else:
+                    self._mstg.type_map[v] |= CrossExecState.cross_irq
+                    irqs.append((v, irq))
 
             @staticmethod
             def schedule(new_state):
@@ -459,13 +470,18 @@ class MultiSSE(Step):
                 return created
 
             @staticmethod
-            def add_irq_state(new_state):
-                return True
+            def add_irq_state(old_state, new_state, irq):
+                v = self._state_map[hash(old_state)]
+                self._mstg.cross_core_map[v] = []
+                self._mstg.type_map[v] |= CrossExecState.irq
+                irqs.append((v, irq))
+
+                return False
 
             @staticmethod
             def add_transition(source, target):
-                tgt = self._state_map[hash(target)]
                 src = self._state_map[hash(source)]
+                tgt = self._state_map[hash(target)]
                 mstg = self._mstg.g
                 e = mstg.add_edge(src, tgt)
                 mstg.ep.type[e] = MSTType.s2s
@@ -498,6 +514,7 @@ class MultiSSE(Step):
                 state=metastate,
                 cpu_id=cpu_id,
                 cross_points=cross_points,
+                irqs=irqs,
                 entry=init_v,
                 new_entry=False,
                 is_new=False,
@@ -537,19 +554,19 @@ class MultiSSE(Step):
         return Metastate(
             state=m_state,
             cross_points=cross_points,
+            irqs=irqs,
             cpu_id=cpu_id,
             entry=init_v,
             new_entry=True,
             is_new=is_new,
         )
 
-    def _find_cross_states(self, state, entry):
-        """Return all syscalls that possibly affect other cores."""
+    def _find_cross(self, state, entry, cross_type):
         mstg = self._mstg.g
         filt_mstg = GraphView(
             mstg,
             vfilt=((mstg.vp.type.fa == StateType.metastate) +
-                   (self._mstg.type_map.fa == CrossExecState.cross_syscall)),
+                   (self._mstg.type_map.fa & cross_type)),
         )
         s2s = GraphView(mstg, mstg.vp.type.fa == StateType.state)
 
@@ -558,6 +575,27 @@ class MultiSSE(Step):
         filt = GraphView(filt_mstg, vfilt=oc)
 
         return list(filt.vertex(state).out_neighbors())
+
+    def _find_cross_states(self, state, entry):
+        """Return all syscalls that possibly affect other cores."""
+        return self._find_cross(state, entry, CrossExecState.cross_syscall)
+
+    def _find_irqs(self, state, entry):
+        """Return all syscalls that possibly affect other cores."""
+        sts = self._find_cross(state, entry,
+                               CrossExecState.cross_irq | CrossExecState.irq)
+        mstg = self._mstg.g
+        st2sy = mstg.edge_type(MSTType.st2sy)
+        out = []
+        for st in sts:
+            self._log.error(int(st))
+            # every state must have be evaluated before
+            # so check their irqs iterating the out edges
+            irq = set([mstg.ep.irq[e]
+                       for e in st2sy.vertex(st).out_edges()
+                       if mstg.ep.irq[e] != -1])
+            out += list(product([st], irq))
+        return out
 
     def _find_root_cross_points(self, cp, needed_cores, sync_graph):
         # find last sync state that contains all needed cores
@@ -1094,7 +1132,7 @@ class MultiSSE(Step):
         #     self._log.warn(f"{[int(x) for x in a]} {[int(x) for x in b]}")
         return combinations
 
-    def _create_cross_point(self, cross_state, timed_states, cp, pred_cps):
+    def _create_cross_point(self, cross_state, timed_states, cp, pred_cps, irq=None):
         mstg = self._mstg.g
         new_cp = mstg.add_vertex()
         mstg.vp.type[new_cp] = StateType.entry_sync
@@ -1120,6 +1158,8 @@ class MultiSSE(Step):
 
         for src in chain([cross_state], timed_states):
             e = mstg.add_edge(src, new_cp)
+            if irq and src == cross_state:
+                mstg.ep.irq[e] = irq
             mstg.ep.type[e] = MSTType.st2sy
             metastate = mstg.get_metastate(src)
             cpu_id = mstg.vp.cpu_id[metastate]
@@ -1150,11 +1190,17 @@ class MultiSSE(Step):
                 states.append(obj)
 
         def _get_cross_cpu_id():
+            # if we find an irq, we have an irq cross point
+            for e in cp.in_edges():
+                irq = mstg.ep.irq[e]
+                if irq != -1:
+                    return (mstg.ep.cpu_id[e], irq)
+            # if not, it is a normal cross point
             for e in cp.in_edges():
                 if self._mstg.type_map[e.source()] == CrossExecState.cross_syscall:
-                    yield mstg.ep.cpu_id[e]
+                    return mstg.ep.cpu_id[e], None
 
-        cpu_id = single_check(_get_cross_cpu_id())
+        cpu_id, irq = _get_cross_cpu_id()
 
         cpus = CPUList([single_check(x.cpus) for x in states])
 
@@ -1173,7 +1219,10 @@ class MultiSSE(Step):
         multi_state.context = {k: v for d in context for k, v in d.items()}
 
         # let the model interpret the created multicore state
-        new_states = os.interpret(self._graph, multi_state, cpu_id)
+        if irq is None:
+            new_states = os.interpret(self._graph, multi_state, cpu_id)
+        else:
+            new_states = [os.handle_irq(self._graph, multi_state, cpu_id, irq)]
         for new_state in new_states:
             os.schedule(new_state)
 
@@ -1405,33 +1454,50 @@ class MultiSSE(Step):
         exits = []
         reeval = set()
 
+        cross_list = []
         if not metastate.is_new:
             metastate.cross_points = self._find_cross_states(
                 metastate.state, metastate.entry)
+            cross_list += [{"type": "irq", "state": x, "irq": y}
+                           for x, y in self._find_irqs(metastate.state,
+                                                       metastate.entry)]
+        else:
+            cross_list += [{"type": "irq", "state": x, "irq": y}
+                           for x, y in metastate.irqs]
+
+        cross_list += [{"type": "cross_point", "state": x}
+                       for x in metastate.cross_points]
 
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_points]} "
                         f"(starting cross point {int(cp)}).")
-        for cross_state in metastate.cross_points:
+        for cross_state in cross_list:
+            c_state = cross_state["state"]
             if self.with_times.get():
                 time = self._get_relative_time(cp, metastate.cpu_id,
-                                               cross_state)
+                                               c_state)
             else:
                 time = TimeRange(up=0, to=0)
-            for timed_candidates, pred_cps, root in self._find_timed_states(
-                    cross_state, cp, time, start_from=start_from):
+
+            if self._mstg.type_map[c_state] & CrossExecState.irq:
+                it = [([], [(cp, time)], cp)]
+            else:
+                it = self._find_timed_states(c_state, cp, time,
+                                             start_from=start_from)
+
+            for timed_candidates, pred_cps, root in it:
                 self._log.debug(
-                    f"Evaluating cross point between {int(cross_state)} and "
+                    f"Evaluating cross point between {int(c_state)} and "
                     f"{[int(x) for x in timed_candidates]}")
                 other_cp = self._get_existing_cross_point(
-                    cross_state, timed_candidates)
+                    c_state, timed_candidates)
                 modified = False
                 if other_cp:
                     mstg = self._mstg.g
                     # just link the new cp to it, if it is new
                     self._log.debug(
                         f"Link from {int(root)} to existing cross point "
-                        f"{int(other_cp)} ({int(cross_state)} with "
+                        f"{int(other_cp)} ({int(c_state)} with "
                         f"{[int(x) for x in timed_candidates]}).")
                     exists = mstg.edge(root, other_cp)
                     if not exists:
@@ -1455,8 +1521,11 @@ class MultiSSE(Step):
                         else:
                             self._log.warn("Time link already exists.")
                 else:
+                    if cross_state["type"] == "irq":
+                        assert "irq" in cross_state
+                    irq = cross_state.get("irq", None)
                     other_cp = self._create_cross_point(
-                        cross_state, timed_candidates, root, pred_cps)
+                        c_state, timed_candidates, root, pred_cps, irq=irq)
                     exits += [(x, None)
                               for x in self._evaluate_crosspoint(other_cp)]
                     modified = True
@@ -1553,6 +1622,7 @@ class MultiSSE(Step):
                                   new_entry=False,
                                   is_new=False,
                                   cross_points=[],
+                                  irqs=[],
                                   cpu_id=cpu_id),
                         start_from=new_cp)
                     stack += to_stack

@@ -386,11 +386,17 @@ class MSTGraph(graph_tool.Graph):
         self.vertex_properties["wcet"] = self.new_vp("int64_t", val=-1)
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
+        self.edge_properties["irq"] = self.new_ep("int", val=-1)
         self.edge_properties["bcet"] = self.new_ep("int64_t", val=-1)
         self.edge_properties["wcet"] = self.new_ep("int64_t", val=-1)
         # dominator_tree has 0 as default value. We are creating a fake node 0
         # here that captures this value.
         self.add_vertex()
+
+    def add_edge(self, *args, **kwargs):
+        e = super().add_edge(*args, **kwargs)
+        self.ep.irq[e] = -1
+        return e
 
     def get_metastates(self):
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)
