@@ -4,7 +4,7 @@ from .option import Option, String, Bool
 from .step import Step
 from .printer import mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from ara.graph import MSTGraph, StateType, MSTType, single_check, vertex_types
+from ara.graph import MSTGraph, StateType, MSTType, single_check, vertex_types, edge_types
 from ara.util import dominates, pairwise
 from ara.os.os_base import ExecState, OSState, CPUList
 
@@ -565,10 +565,10 @@ class MultiSSE(Step):
         mstg = self._mstg.g
         filt_mstg = GraphView(
             mstg,
-            vfilt=((mstg.vp.type.fa == StateType.metastate) +
-                   (self._mstg.type_map.fa & cross_type)),
+            vfilt=(((mstg.vp.type.fa == StateType.metastate) +
+                    (self._mstg.type_map.fa & cross_type) > 0)),
         )
-        s2s = GraphView(mstg, mstg.vp.type.fa == StateType.state)
+        s2s = mstg.vertex_type(StateType.state)
 
         oc = label_out_component(s2s, s2s.vertex(entry))
         oc[state] = True
@@ -597,25 +597,60 @@ class MultiSSE(Step):
             out += list(product([st], irq))
         return out
 
-    def _find_root_cross_points(self, cp, needed_cores, sync_graph):
-        # find last sync state that contains all needed cores
+    def _find_root_cross_points(self, sp, current_core, affected_cores):
+        """Find the last SP that contains all needed cores."""
+        # Idea: We search the chain of metastates + SPs for the current core
+        # as long as we find an SP that also affects affected_cores.
+        mstg = self._mstg.g
+        g1 = mstg.vertex_type(StateType.entry_sync, StateType.exit_sync, StateType.metastate)
+        g2 = edge_types(g1, mstg.ep.type, MSTType.m2sy, MSTType.en2ex)
+        g = GraphView(g2, vfilt=lambda v: g1.vp.cpu_id[v] == current_core if g1.vp.type[v] == StateType.metastate else True)
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
+
+        # calculate roots and the successors for each node
         root_cps = []
-        stack = [sync_graph.vertex(cp)]
-        visited = sync_graph.new_vp("bool")
+        stack = [g.vertex(sp)]
+        succs = defaultdict(set)
+        visited = g.new_vp("bool")
         while stack:
-            cur_cp = stack.pop()
+            cur_cp = stack.pop(0)
+            assert mstg.vp.type[cur_cp] == StateType.exit_sync
             if visited[cur_cp]:
                 continue
             visited[cur_cp] = True
 
             cores = set(self._mstg.cross_point_map[cur_cp])
-            if cores >= needed_cores:
+            if cores >= ({current_core} | set(affected_cores)):
                 root_cps.append(cur_cp)
                 continue
 
-            for n in cur_cp.in_neighbors():
-                stack.append(n)
-        return root_cps
+            entry_sp = g.vertex(mstg.get_entry_cp(cur_cp))
+            for n in chain.from_iterable(map(lambda x: x.in_neighbors(), entry_sp.in_neighbors())):
+                assert mstg.vp.type[n] == StateType.exit_sync
+                if follow_sync.edge(n, entry_sp):
+                    succs[n].add(cur_cp)
+                    stack.append(n)
+
+        # calculate all paths to the roots
+        ret = []
+        for root in root_cps:
+            paths = [[root]]
+            i = 0
+            while i < len(paths):
+                path = paths[i]
+                last = path[-1]
+                if last == sp:
+                    # the path is ready
+                    i += 1
+                    continue
+                nexts = list(succs[last])
+                # put first element to the current path
+                path.extend(nexts[:1])
+                # put all other elements to new paths
+                for n in nexts[1:]:
+                    paths.append(path + [n])
+            ret.extend(product([root], paths))
+        return ret, g
 
     def _is_successor_of(self, orig_cp, new_cp):
         """Is new_cp a successor of orig_cp?"""
@@ -721,19 +756,6 @@ class MultiSSE(Step):
                 log(f"Yielding {edge}.")
                 yield edge, path
 
-    def _get_used(self, graph, starts, paths):
-        cp_map = self._mstg.cross_point_map
-        all_used = {}
-        for core, start in starts.items():
-            # skip first node
-            cur_cp = paths[start]
-            used = set()
-            while cur_cp != -1:
-                used |= set(cp_map[cur_cp])
-                cur_cp = paths[cur_cp]
-            all_used[core] = used
-        return all_used
-
     def _has_path(self, graph, start, end):
         _, elist = shortest_path(graph, start, end)
         return len(elist) > 0
@@ -745,8 +767,27 @@ class MultiSSE(Step):
                 if self._has_path(graph, old, new):
                     new_barriers[cpu] = old
 
-    def _get_constrained_cps(self, g, cores, new_range, old_cps=None):
+    def _get_initial_cps(self, cores, path):
+        mstg = self._mstg.g
+        core_map = self._mstg.cross_point_map
+        cores = set(cores)
+        handled_cores = set()
+        cps = {}
+        used = {}
+        for x in reversed(path):
+            self._log.error(x)
+            assert mstg.vp.type[x] == StateType.exit_sync
+            x_cores = set(core_map[int(x)]) & cores
+            for core in x_cores - handled_cores:
+                cps[core] = CPRange(root=path[0],
+                                    range=Range(start=x, end=None))
+                used[core] = set(handled_cores)
+            handled_cores |= x_cores
+            if len(cores - handled_cores) == 0:
+                break
+        return cps, used
 
+    def _get_constrained_cps(self, g, cores, new_range, old_cps=None):
         if old_cps is None:
             old_cps = defaultdict(
                 lambda: CPRange(root=None, range=Range(start=None, end=None)))
@@ -756,10 +797,9 @@ class MultiSSE(Step):
         new_ends = defaultdict(lambda: None)
 
         class Constraints(BFSVisitor):
-            def __init__(self, cp_map, cp_list, paths=None):
+            def __init__(self, cp_map, cp_list):
                 self.cp_map = cp_map
                 self.cp_list = cp_list
-                self.paths = paths
 
             def discover_vertex(self, u):
                 if len(unbound) == 0:
@@ -769,18 +809,12 @@ class MultiSSE(Step):
                     self.cp_list[core] = u
                     unbound.remove(core)
 
-            def tree_edge(self, e):
-                if self.paths is not None:
-                    self.paths[e.target()] = int(e.source())
-
         cp_map = self._mstg.cross_point_map
 
         rsync = GraphView(g, reversed=True)
-        paths = rsync.new_vertex_property('int64_t', val=-1)
         bfs_search(rsync,
                    source=new_range.start,
-                   visitor=Constraints(cp_map, new_starts, paths=paths))
-        used = self._get_used(g, new_starts, paths)
+                   visitor=Constraints(cp_map, new_starts))
 
         self._check_barriers(
             rsync, new_starts,
@@ -798,7 +832,7 @@ class MultiSSE(Step):
                       CPRange(root=old_cps[x].root,
                               range=Range(start=new_starts[x],
                                           end=new_ends[x])))
-                     for x in cores]), used
+                     for x in cores])
 
     def _get_reachable_states(self, entry_state, exit_state=None):
         mstg = self._mstg.g
@@ -893,11 +927,11 @@ class MultiSSE(Step):
             for state, new_eqs in states:
                 if len(cores) > 1:
                     new_cores = cores[1:]
-                    new_cps, _ = self._get_constrained_cps(ctx.graph,
-                                                           new_cores,
-                                                           Range(start=cp_from,
-                                                                 end=cp_to),
-                                                           old_cps=cps)
+                    new_cps = self._get_constrained_cps(ctx.graph,
+                                                        new_cores,
+                                                        Range(start=cp_from,
+                                                              end=cp_to),
+                                                        old_cps=cps)
                     others = self._build_product(ctx, new_cps, new_eqs,
                                                  new_cores, paths + [path])
                 else:
@@ -1056,36 +1090,34 @@ class MultiSSE(Step):
         mstg = self._mstg.g
         affected_cores = self._mstg.cross_core_map[cross_state]
         current_core = mstg.vp.cpu_id[cross_state]
-        needed_cores = {current_core} | set(affected_cores)
 
         sync_graph = GraphView(self._mstg.g.vertex_type(
             StateType.entry_sync, StateType.exit_sync),
                                efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
 
-        root_cps = self._find_root_cross_points(cp, needed_cores, sync_graph)
+        root_cps, core_graph = self._find_root_cross_points(cp, current_core,
+                                                            affected_cores)
 
         self._log.debug(f"Find pairing candidates for node {int(cross_state)} "
                         f"(time: {time}) starting "
-                        f"from cross points {[int(x) for x in root_cps]}.")
+                        f"from cross points {[int(x[0]) for x in root_cps]}.")
         combinations = set()
-        for root in root_cps:
+        for root, path in root_cps:
             reach = label_out_component(sync_graph, sync_graph.vertex(root))
             reach[root] = True
             r_graph = GraphView(sync_graph, vfilt=reach)
-            self._log.debug(f"Evaluating first root cross point {int(root)}.")
-            # find initial cross points for all needed cores
-            # TODO is this a unique point per core?
-            cps, used_cores = self._get_constrained_cps(
-                r_graph, affected_cores, Range(start=cp, end=None))
-            for cpu, cp_range in cps.items():
-                cps[cpu] = CPRange(root=cp_range.range.start,
-                                   range=cp_range.range)
+            self._log.debug(f"Evaluating first root cross point {int(root)} "
+                            f"with path {[int(x) for x in path]}.")
+
+            cps, used_cores = self._get_initial_cps(affected_cores, path)
+            cps[current_core] = CPRange(root=root,
+                                        range=Range(start=cp, end=None))
             if start_from is not None:
-                cps, _ = self._get_constrained_cps(r_graph,
-                                                   affected_cores,
-                                                   Range(start=start_from,
-                                                         end=None),
-                                                   old_cps=cps)
+                cps = self._get_constrained_cps(r_graph,
+                                                affected_cores,
+                                                Range(start=start_from,
+                                                      end=None),
+                                                old_cps=cps)
             self._log.debug(f"Starting from cross points {cps}.")
             rtime = RelativeTime(root=cp, range=time)
 
@@ -1540,7 +1572,7 @@ class MultiSSE(Step):
                             self._mstg.g.vertex_type(StateType.entry_sync,
                                                      StateType.exit_sync),
                             efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
-                        new_cps, _ = self._get_constrained_cps(
+                        new_cps = self._get_constrained_cps(
                             g, unready, Range(start=other_cp, end=None))
                         on_stack = defaultdict(list)
                         for core, ran in new_cps.items():
