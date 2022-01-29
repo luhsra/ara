@@ -37,7 +37,7 @@
       "tasks": {
         "T21": {
           "activation": 1,
-          "autostart": true,
+          "autostart": false,
           "priority": 1,
           "schedule": true,
           "spinlocks": ["S1", "S2"]
