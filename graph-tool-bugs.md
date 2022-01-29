@@ -2,3 +2,4 @@
 - Dominator Tree mit -1 vorinitialisieren
 - `GraphView.add_vertex()` sollte einen sichtbaren Knoten erzeugen
 - GraphView mit temporären Knoten erzeugen
+- GraphView filter gehen so halb mit nicht boolean properties
