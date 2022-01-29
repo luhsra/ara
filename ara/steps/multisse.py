@@ -588,7 +588,6 @@ class MultiSSE(Step):
         st2sy = mstg.edge_type(MSTType.st2sy)
         out = []
         for st in sts:
-            self._log.error(int(st))
             # every state must have be evaluated before
             # so check their irqs iterating the out edges
             irq = set([mstg.ep.irq[e]
@@ -775,7 +774,6 @@ class MultiSSE(Step):
         cps = {}
         used = {}
         for x in reversed(path):
-            self._log.error(x)
             assert mstg.vp.type[x] == StateType.exit_sync
             x_cores = set(core_map[int(x)]) & cores
             for core in x_cores - handled_cores:
@@ -1205,21 +1203,19 @@ class MultiSSE(Step):
 
         return new_cp
 
-    def _evaluate_crosspoint(self, cp):
+    def _evaluate_crosspoint(self, cp, root):
         os = self._graph.os
         mstg = self._mstg.g
         cp = mstg.vertex(cp)
+        st2sy = mstg.edge_type(MSTType.st2sy)
 
         # create multicore state
         states = []
-        old_multi_core_state = None
-        for v in cp.in_neighbors():
+        for v in st2sy.vertex(cp).in_neighbors():
             obj = mstg.vp.state[v]
-            ty = mstg.vp.type[v]
-            if ty == StateType.exit_sync:
-                old_multi_core_state = obj
-            elif ty == StateType.state:
-                states.append(obj)
+            states.append(obj)
+
+        old_multi_core_state = mstg.vp.state[root]
 
         def _get_cross_cpu_id():
             # if we find an irq, we have an irq cross point
@@ -1559,7 +1555,7 @@ class MultiSSE(Step):
                     other_cp = self._create_cross_point(
                         c_state, timed_candidates, root, pred_cps, irq=irq)
                     exits += [(x, None)
-                              for x in self._evaluate_crosspoint(other_cp)]
+                              for x in self._evaluate_crosspoint(other_cp, root)]
                     modified = True
 
                 if modified:
