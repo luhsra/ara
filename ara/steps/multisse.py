@@ -16,10 +16,10 @@ import graph_tool
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import reduce, lru_cache
-from graph_tool.topology import label_out_component, dominator_tree, shortest_path
+from graph_tool.topology import label_out_component, dominator_tree, shortest_path, all_paths
 from graph_tool.search import bfs_search, BFSVisitor, StopSearch
 from graph_tool import GraphView
-from itertools import product, chain, permutations
+from itertools import product, chain, permutations, islice
 from typing import List, Dict, Set, Tuple
 from copy import deepcopy
 from scipy.optimize import linprog
@@ -491,9 +491,9 @@ class MultiSSE(Step):
                     return
                 target = mstg.vp.state[tgt]
                 self._log.debug(
-                    "Found a transition to an already existing metastate. "
+                    "Found a transition to an already existing metastate "
                     f"(State {source.id} (node {int(src)}) -> "
-                    f"State {target.id} (node {int(tgt)})")
+                    f"State {target.id} (node {int(tgt)})).")
                 if m_state and m_state[0] == m_state_cand:
                     return
                 assert (len(m_state) == 0
@@ -604,7 +604,17 @@ class MultiSSE(Step):
         g1 = mstg.vertex_type(StateType.entry_sync, StateType.exit_sync, StateType.metastate)
         g2 = edge_types(g1, mstg.ep.type, MSTType.m2sy, MSTType.en2ex)
         g = GraphView(g2, vfilt=lambda v: g1.vp.cpu_id[v] == current_core if g1.vp.type[v] == StateType.metastate else True)
+
+        g3 = mstg.vertex_type(StateType.entry_sync, StateType.exit_sync)
+        sp_graph = edge_types(g3, mstg.ep.type, MSTType.follow_sync, MSTType.en2ex)
+        not_core = sp_graph.new_vp("bool", val=False)
+        for v in sp_graph.vertices():
+            if current_core not in self._mstg.cross_point_map[v]:
+                not_core[v] = True
+
+        sp_follow = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
         follow_sync = mstg.edge_type(MSTType.follow_sync)
+        # self._log.debug(f"FR: {int(sp)}, {current_core}, {affected_cores}")
 
         # calculate roots and the successors for each node
         root_cps = []
@@ -626,9 +636,12 @@ class MultiSSE(Step):
             entry_sp = g.vertex(mstg.get_entry_cp(cur_cp))
             for n in chain.from_iterable(map(lambda x: x.in_neighbors(), entry_sp.in_neighbors())):
                 assert mstg.vp.type[n] == StateType.exit_sync
-                if follow_sync.edge(n, entry_sp):
+                if sp_follow.edge(n, entry_sp):
                     succs[n].add(cur_cp)
                     stack.append(n)
+
+        # self._log.debug(f"FR: roots {[int(x) for x in root_cps]}")
+        # self._log.debug(f"FR: succs {succs}")
 
         # calculate all paths to the roots
         ret = []
@@ -642,12 +655,37 @@ class MultiSSE(Step):
                     # the path is ready
                     i += 1
                     continue
-                nexts = list(succs[last])
+                nexts = succs[last]
+                # check for loops in the path
+                if last in path[:-1]:
+                    nexts -= set(path[:-1])
+
+                next_paths = []
+                for nex in nexts:
+                    # It is possible that the current path and nex are not
+                    # connected via follow_sync edges because they are sharing
+                    # a sy2sy edge only. However, in this case, there must be
+                    # at least one path of follow_sync edges between them. We
+                    # need to find the pathes in this case.
+                    entry_sp = mstg.get_entry_cp(nex)
+                    if follow_sync.edge(last, entry_sp):
+                        # direct edge, just append
+                        next_paths.append([nex])
+                        continue
+                    # restrict graph to contain not sps of the current_core
+                    # the follow_sync edges must only contain other cores
+                    lc = not_core.copy()
+                    lc[last] = True
+                    lc[entry_sp] = True
+                    lc[nex] = True
+                    nc = GraphView(sp_graph, vfilt=lc)
+                    next_paths.extend(map(lambda p: islice(filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p), 1, None), all_paths(nc, last, nex)))
                 # put first element to the current path
-                path.extend(nexts[:1])
+                if next_paths:
+                    path.extend(next_paths[0])
                 # put all other elements to new paths
-                for n in nexts[1:]:
-                    paths.append(path + [n])
+                for n in next_paths[1:]:
+                    paths.append(path + n)
             ret.extend(product([root], paths))
         return ret, g
 
@@ -1097,8 +1135,8 @@ class MultiSSE(Step):
                                                             affected_cores)
 
         self._log.debug(f"Find pairing candidates for node {int(cross_state)} "
-                        f"(time: {time}) starting "
-                        f"from cross points {[int(x[0]) for x in root_cps]}.")
+                        f"(time: {time}) starting from "
+                        f"root cross points {[int(x[0]) for x in root_cps]}.")
         combinations = set()
         for root, path in root_cps:
             reach = label_out_component(sync_graph, sync_graph.vertex(root))
@@ -1143,7 +1181,6 @@ class MultiSSE(Step):
 
             for state_list in self._build_product(ctx, cps, eqs,
                                                   affected_cores, []):
-                # TODO apply times
                 timely_cps = self._find_timed_predecessor(
                     r_graph,
                     frozenset([cp] + [x[1] for x in state_list.states]))
@@ -1496,9 +1533,10 @@ class MultiSSE(Step):
         cross_list += [{"type": "cross_point", "state": x}
                        for x in metastate.cross_points]
 
+        sf = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_points]} "
-                        f"(starting cross point {int(cp)}).")
+                        f"(last sync point {int(cp)}{sf})")
         for cross_state in cross_list:
             c_state = cross_state["state"]
             if self.with_times.get():
@@ -1638,7 +1676,8 @@ class MultiSSE(Step):
                 new_cp, reevaluate_ids = reevaluate_ids
                 self._log.debug(
                     f"Node {int(cp)} is already evaluated but some new know"
-                    f"ledge exists. Reevaluating CPUs {list(reevaluate_ids)}.")
+                    f"ledge exists. Reevaluating CPUs {list(reevaluate_ids)} "
+                    f"starting from {int(new_cp)}.")
                 st2sy = mstg.edge_type(MSTType.st2sy)
                 for cpu_id in reevaluate_ids:
                     sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
