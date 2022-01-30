@@ -596,7 +596,7 @@ class MultiSSE(Step):
             out += list(product([st], irq))
         return out
 
-    def _find_root_cross_points(self, sp, current_core, affected_cores):
+    def _find_root_cross_points(self, sp, current_core, affected_cores, only_root=None):
         """Find the last SP that contains all needed cores."""
         # Idea: We search the chain of metastates + SPs for the current core
         # as long as we find an SP that also affects affected_cores.
@@ -642,6 +642,10 @@ class MultiSSE(Step):
 
         # self._log.debug(f"FR: roots {[int(x) for x in root_cps]}")
         # self._log.debug(f"FR: succs {succs}")
+        if only_root:
+            root_cps = {only_root} & set(root_cps)
+            self._log.debug(f"Evaluation only {[int(x) for x in root_cps]} as "
+                            f"root SP. We only inspect {int(only_root)}.")
 
         # calculate all paths to the roots
         ret = []
@@ -1119,7 +1123,8 @@ class MultiSSE(Step):
             eqs.add_range(
                 e, TimeRange(up=get_time(bcet, e), to=get_time(wcet, e)))
 
-    def _find_timed_states(self, cross_state, cp, time, start_from=None):
+    def _find_timed_states(self, cross_state, cp, time,
+                           start_from=None, only_root=None):
         """Find all possible combinations of computation blocks that fit to
         the cross_state.
         """
@@ -1132,7 +1137,8 @@ class MultiSSE(Step):
                                efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
 
         root_cps, core_graph = self._find_root_cross_points(cp, current_core,
-                                                            affected_cores)
+                                                            affected_cores,
+                                                            only_root=only_root)
 
         self._log.debug(f"Find pairing candidates for node {int(cross_state)} "
                         f"(time: {time}) starting from "
@@ -1515,7 +1521,7 @@ class MultiSSE(Step):
         assert t.up >= 0 and t.to >= t.up
         return t
 
-    def _do_full_pairing(self, cp, metastate, start_from=None):
+    def _do_full_pairing(self, cp, metastate, start_from=None, only_root=None):
         exits = []
         reeval = set()
 
@@ -1549,7 +1555,8 @@ class MultiSSE(Step):
                 it = [([], [(cp, time)], cp)]
             else:
                 it = self._find_timed_states(c_state, cp, time,
-                                             start_from=start_from)
+                                             start_from=start_from,
+                                             only_root=only_root)
 
             for timed_candidates, pred_cps, root in it:
                 self._log.debug(
@@ -1578,7 +1585,8 @@ class MultiSSE(Step):
                         cores = frozenset(self._mstg.cross_point_map[other_cp])
                         en2ex = mstg.edge_type(MSTType.en2ex)
                         for exit_sp in en2ex.vertex(other_cp).out_neighbors():
-                            reeval.add((exit_sp, (exit_sp, cores)))
+                            reeval.add((exit_sp, (("type", "new edge"),
+                                                  ("root", root))))
                     else:
                         self._log.warn("Already exists.")
 
@@ -1625,7 +1633,9 @@ class MultiSSE(Step):
                                 "more pairing possibilities to the cross syscall "
                                 f"for CPUs {cores} (starting from {int(i_cp)})"
                             )
-                            reeval.add((i_cp, (other_cp, frozenset(cores))))
+                            reeval.add((i_cp, (("type", "new node"),
+                                               ("from", other_cp),
+                                               ("cores", frozenset(cores)))))
         return exits, reeval
 
     def run(self):
@@ -1662,8 +1672,8 @@ class MultiSSE(Step):
         # actual algorithm
         counter = 0
         while stack:
-            cp, reevaluate_ids = stack.pop(0)
-            if (cp, reevaluate_ids) in reevaluates:
+            cp, reeval_info = stack.pop(0)
+            if (cp, reeval_info) in reevaluates:
                 self._log.debug(f"Skip {int(cp)}. Is in reevaluates.")
                 continue
 
@@ -1680,14 +1690,26 @@ class MultiSSE(Step):
             # if handled[cp]:
             #     continue
             # handled[cp] = True
-            if reevaluate_ids:
-                new_cp, reevaluate_ids = reevaluate_ids
+            if reeval_info:
+                reeval_info = dict(reeval_info)
+                if reeval_info["type"] == "new node":
+                    start_from = reeval_info["from"]
+                    cores = reeval_info["cores"]
+                    kwargs = {"start_from": start_from}
+                    debug = f" starting from {int(start_from)}"
+                else:
+                    root = reeval_info["root"]
+                    cores = self._mstg.cross_point_map[cp]
+                    kwargs = {"only_root": root}
+                    debug = f" evaluating only {int(root)}"
+
                 self._log.debug(
-                    f"Node {int(cp)} is already evaluated but some new know"
-                    f"ledge exists. Reevaluating CPUs {list(reevaluate_ids)} "
-                    f"starting from {int(new_cp)}.")
+                    f"Node {int(cp)} is already evaluated but some new "
+                    f"knowledge exists. Reevaluating CPUs {list(cores)} "
+                    f"{debug}.")
+
                 st2sy = mstg.edge_type(MSTType.st2sy)
-                for cpu_id in reevaluate_ids:
+                for cpu_id in cores:
                     sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
                     entry = single_check(sts.vertex(cp).out_neighbors())
                     to_stack, reeval = self._do_full_pairing(
@@ -1699,7 +1721,7 @@ class MultiSSE(Step):
                                   cross_points=[],
                                   irqs=[],
                                   cpu_id=cpu_id),
-                        start_from=new_cp)
+                        **kwargs)
                     stack += to_stack
                     reevaluates |= reeval
                 continue
