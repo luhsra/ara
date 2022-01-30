@@ -1557,7 +1557,6 @@ class MultiSSE(Step):
                     f"{[int(x) for x in timed_candidates]}")
                 other_cp = self._get_existing_cross_point(
                     c_state, timed_candidates)
-                modified = False
                 if other_cp:
                     mstg = self._mstg.g
                     # just link the new cp to it, if it is new
@@ -1569,7 +1568,17 @@ class MultiSSE(Step):
                     if not exists:
                         m2sy_edge = mstg.add_edge(root, other_cp)
                         mstg.ep.type[m2sy_edge] = MSTType.sy2sy
-                        modified = True
+
+                        # trigger a reevaluation
+                        self._log.debug(
+                            f"New edge between {int(root)} and {int(other_cp)}"
+                            " can lead to new syscall execution orders. "
+                            f"Trigger a reevaluation for {int(other_cp)}"
+                        )
+                        cores = frozenset(self._mstg.cross_point_map[other_cp])
+                        en2ex = mstg.edge_type(MSTType.en2ex)
+                        for exit_sp in en2ex.vertex(other_cp).out_neighbors():
+                            reeval.add((exit_sp, (exit_sp, cores)))
                     else:
                         self._log.warn("Already exists.")
 
@@ -1594,9 +1603,8 @@ class MultiSSE(Step):
                         c_state, timed_candidates, root, pred_cps, irq=irq)
                     exits += [(x, None)
                               for x in self._evaluate_crosspoint(other_cp, root)]
-                    modified = True
 
-                if modified:
+                    # trigger a reevaluation if necessary
                     current_cpus = set(self._mstg.cross_point_map[cp])
                     other_cpus = set(self._mstg.cross_point_map[other_cp])
 
