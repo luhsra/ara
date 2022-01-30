@@ -437,6 +437,24 @@ class MSTGraph(graph_tool.Graph):
             return ''
         return obj.cfg.get_syscall_name(obj.cpus.one().abb)
 
+    def get_syscall_state(self, entry_sp):
+        """Get the syscall state that triggers this SP.
+
+        Return a tuple:
+        The first element contains the state.
+        The second element contains the core.
+        The third element contains the IRQ number or -1, if the SP is not IRQ
+        triggered.
+        """
+        st2sy = self.edge_type(MSTType.st2sy)
+        for e in st2sy.vertex(entry_sp).in_edges():
+            irq = self.ep.irq[e]
+            core = self.ep.cpu_id[e]
+            if irq >= 0:
+                return self.vertex(e.source()), core, irq
+            if self.get_syscall_name(e.source()):
+                return self.vertex(e.source()), core, -1
+
     def get_exec_state(self, state):
         """Return the execution state of the given state.
 
