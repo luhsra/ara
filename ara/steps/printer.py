@@ -173,7 +173,7 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
 
         attrs = {"color": "black"}
         if mstg.get_exec_state(exit_state) == ExecState.waiting:
-            attrs["color"] = "darkblue"
+            attrs["color"] = "limegreen"
         elif syscall_name:
             attrs["label"] = shorten[syscall_name]
             attrs["color"] = "darkred"
