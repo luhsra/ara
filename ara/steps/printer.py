@@ -649,14 +649,22 @@ class Printer(Step):
             tgt = e.target()
             if en2ex.vertex(tgt).out_degree() == 1:
                 tgt = single_check(en2ex.vertex(tgt).out_neighbors())
-            attrs = {MSTType.sy2sy: {"color": "darkred",
-                                     "style": "dashed"},
-                     MSTType.follow_sync: {"color": "darkgreen",
-                                           "style": "dotted"}}
+            if mstg.ep.type[e] == MSTType.sy2sy:
+                attrs = {"color": "darkred",
+                         "style": "dashed"}
+            elif mstg.ep.type[e] == MSTType.follow_sync:
+                attrs = {"color": "darkgreen",
+                         "style": "dotted"}
+                bcet = mstg.ep.bcet[e]
+                wcet = mstg.ep.wcet[e]
+                if bcet > 0 or wcet > 0:
+                    attrs['xlabel'] = f"{bcet}-{wcet}"
+            else:
+                assert False
             dot_graph.add_edge(pydot.Edge(
                 str(int(src)),
                 str(int(tgt)),
-                **attrs[mstg.ep.type[e]]))
+                **attrs))
 
         self._write_dot(dot_graph)
 
