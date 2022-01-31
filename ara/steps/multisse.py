@@ -132,11 +132,13 @@ class CrossContext:
     """Gives a context for a specific cross syscall.
 
     graph  -- the local graph from a specific root of the cross syscall
+    mstg   -- the MSTG
     cpu_id -- the cpu_id of the cross syscall
     path   -- path from the cross syscall cp up to the root
     cores  -- the affected cores for every element of the path
     """
     graph: graph_tool.Graph
+    mstg: graph_tool.Graph
     cpu_id: int
     cross_syscall: graph_tool.Vertex
     path: List[graph_tool.Vertex] = field(default_factory=list, init=False)
@@ -154,7 +156,11 @@ class CrossContext:
         for tgt, src in pairwise(self.path):
             if tgt == cp:
                 break
-            edge_path.append(self.graph.edge(src, tgt))
+            edge_path.append(
+                single_check(
+                    filter(lambda e: self.mstg.ep.type[e] == MSTType.follow_sync,
+                           self.mstg.edge(src, self.mstg.get_entry_cp(tgt),
+                                          all_edges=True))))
         return edge_path
 
     def __repr__(self):
@@ -684,12 +690,12 @@ class MultiSSE(Step):
                     lc[nex] = True
                     nc = GraphView(sp_graph, vfilt=lc)
                     next_paths.extend(map(lambda p: islice(filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p), 1, None), all_paths(nc, last, nex)))
+                # put all other elements to new paths
+                for n in next_paths[1:]:
+                    paths.append(list(chain(path, n)))
                 # put first element to the current path
                 if next_paths:
                     path.extend(next_paths[0])
-                # put all other elements to new paths
-                for n in next_paths[1:]:
-                    paths.append(path + n)
             ret.extend(product([root], paths))
         return ret, g
 
@@ -734,6 +740,7 @@ class MultiSSE(Step):
                 continue
             visited[cur] = True
             visited_entries[cur].append(path[-1])
+            last_exit_cp = path[-1].target()
 
             # iterate
             edges = []
@@ -744,7 +751,6 @@ class MultiSSE(Step):
 
                 # skip paths where the sync points do not follow each other
                 if core_graph.vp.type[cur] == StateType.metastate:
-                    last_exit_cp = path[-1].target()
                     nes = set(follow_sync.vertex(last_exit_cp).out_neighbors())
                     if e.target() not in nes:
                         log(f"Skip {e}. CPs do not follow each other.")
@@ -778,9 +784,8 @@ class MultiSSE(Step):
                     edges.append(e)
                     if self.with_times.get():
                         # e must have a follow_sync edge path to the last SP
-                        ff_edges = self._get_fs_path(ctx.graph,
-                                                     path[-1].target(),
-                                                     e.target())
+                        ff_edges = self._get_fs_path(ctx, e.target(),
+                                                     from_cp=last_exit_cp)
                         self._add_ranges(eqs, ff_edges)
 
                 if core_graph.ep.type[e] == MSTType.en2ex:
@@ -890,7 +895,7 @@ class MultiSSE(Step):
         return GraphView(s2s, vfilt=outs)
 
     def _get_path(self, graph, from_cp, to_cp):
-        return shortest_path(graph, from_cp, to_cp)
+        return shortest_path(graph, from_cp, to_cp)[1]
 
     def _f_f_sync(self, iterable):
         return list(
@@ -898,9 +903,20 @@ class MultiSSE(Step):
                 lambda e: isinstance(e, FakeEdge) or self._mstg.g.ep.type[e] ==
                 MSTType.follow_sync, iterable))
 
-    def _get_fs_path(self, graph, from_cp, to_cp):
-        """Return the path of follow_sync edges from from_cp to to_cp."""
-        return self._f_f_sync(self._get_path(graph, from_cp, to_cp)[1])
+    def _get_fs_path(self, ctx, to_cp, from_cp=None):
+        """Return the path of follow_sync edges from from_cp to to_cp.
+
+        If from_cp is None it is assumed to be root.
+        """
+        # the chain from the cross syscall sp to root is given
+        # so try to find a path from the last possible point in this chain
+        if from_cp:
+            return self._f_f_sync(self._get_path(ctx.graph, from_cp, to_cp))
+        for exit_sp in ctx.path:
+            p = self._get_path(ctx.graph, exit_sp, to_cp)
+            if p:
+                return self._f_f_sync(p)
+        return []
 
     def _get_timed_states(self, ctx, cpu_id, root, entry_cp, exit_cp, eqs):
         mstg = self._mstg.g
@@ -925,8 +941,8 @@ class MultiSSE(Step):
             state_time = self._get_relative_time(entry_cp, cpu_id, v)
             e = FakeEdge(src=entry_cp, tgt=v)
             new_eqs.add_range(e, state_time)
-            root_edges = self._f_f_sync(ctx.get_edges_to(root))
-            cur_edges = self._get_fs_path(ctx.graph, root, entry_cp) + [e]
+            root_edges = ctx.get_edges_to(root)
+            cur_edges = self._get_fs_path(ctx, entry_cp) + [e]
             # self._log.debug(f"GTS: V: {int(v)} Edges: "
             #                 f"{[str(e) for e in root_edges]}"
             #                 f"{[str(e) for e in cur_edges]}")
@@ -1031,15 +1047,13 @@ class MultiSSE(Step):
             timed_cps.append((ocp, time))
         return frozenset(timed_cps)
 
-    def _gen_context(self, graph, cross_syscall, cpu_id, cp, root):
-        vlist, _ = shortest_path(GraphView(graph, reversed=True), cp, root)
-        if not vlist:
-            vlist.append(cp)
+    def _gen_context(self, graph, cross_syscall, cpu_id, cp, root, path):
         ctx = CrossContext(graph=graph,
+                           mstg=self._mstg.g,
                            cpu_id=cpu_id,
                            cross_syscall=cross_syscall)
         core_map = self._mstg.cross_point_map
-        for v in vlist:
+        for v in reversed(path):
             ctx.append_path_elem(v, core_map[v])
         return ctx
 
@@ -1107,7 +1121,7 @@ class MultiSSE(Step):
                         wcet += get_time(mstg.ep.wcet, e)
                     wcet += self._get_relative_time(cp, cpu_id, cross_state).to
                     bcet = cross_bcet
-                    for e in self._f_f_sync(ctx.get_edges_to(root)):
+                    for e in ctx.get_edges_to(root):
                         if isinstance(e, FakeEdge):
                             continue
                         bcet += get_time(mstg.ep.bcet, e)
@@ -1135,6 +1149,7 @@ class MultiSSE(Step):
         sync_graph = GraphView(self._mstg.g.vertex_type(
             StateType.entry_sync, StateType.exit_sync),
                                efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
+        follow_sync = mstg.edge_type(MSTType.follow_sync)
 
         root_cps, core_graph = self._find_root_cross_points(cp, current_core,
                                                             affected_cores,
@@ -1148,7 +1163,7 @@ class MultiSSE(Step):
             reach = label_out_component(sync_graph, sync_graph.vertex(root))
             reach[root] = True
             r_graph = GraphView(sync_graph, vfilt=reach)
-            self._log.debug(f"Evaluating first root cross point {int(root)} "
+            self._log.debug(f"Evaluating root cross point {int(root)} "
                             f"with path {[int(x) for x in path]}.")
 
             cps, used_cores = self._get_initial_cps(affected_cores, path)
@@ -1164,7 +1179,7 @@ class MultiSSE(Step):
             rtime = RelativeTime(root=cp, range=time)
 
             ctx = self._gen_context(r_graph, cross_state, current_core, cp,
-                                    root)
+                                    root, path)
             eqs = Equations()
             if self.with_times.get():
                 self._log.debug("Check for prior syscalls.")
@@ -1176,13 +1191,14 @@ class MultiSSE(Step):
                     return set()
 
                 # add path the root
-                edges = self._get_fs_path(r_graph, root, cp)
+                edges = [follow_sync.edge(src, mstg.get_entry_cp(tgt))
+                         for src, tgt in pairwise(path)]
                 self._add_ranges(eqs, edges)
 
                 eqs.add_range(FakeEdge(src=cp, tgt=cross_state), rtime.range)
 
                 if start_from is not None:
-                    edges = self._get_fs_path(r_graph, root, start_from)
+                    edges = self._get_fs_path(ctx, start_from)
                     self._add_ranges(eqs, edges)
 
             for state_list in self._build_product(ctx, cps, eqs,
