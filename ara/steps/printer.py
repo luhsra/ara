@@ -341,6 +341,88 @@ def mstg_to_dot(mstg, label="MSTG"):
     return dot_graph
 
 
+def sp_mstg_to_dot(mstg, label="SP MSTG"):
+    shorten = {
+            "AUTOSAR_GetSpinlock": "GL",
+            "AUTOSAR_ReleaseSpinlock": "RL",
+            "AUTOSAR_ActivateTask": "AT",
+            "AUTOSAR_ChainTask": "CT",
+            "AUTOSAR_SetEvent": "SE",
+            "AUTOSAR_WaitEvent": "WE",
+
+    }
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+
+    def _dsp(vertex, label=None):
+        if label is None:
+            label = [str(int(vertex))]
+        return pydot.Node(str(int(vertex)), shape="box",
+                          label="<{}>".format('<br/>'.join([html.escape(str(x)) for x in label])))
+
+    # draw initial sync node
+    for init in mstg.get_sync_points(exit=True).vertices():
+        init = mstg.vertex(init)
+        if init.in_degree() == 0:
+            dot_graph.add_node(_dsp(init))
+
+    en2ex = mstg.edge_type(MSTType.en2ex)
+
+    for sync_point in mstg.get_sync_points(exit=False).vertices():
+        sync_point = mstg.vertex(sync_point)
+        sys_state, core, irq = mstg.get_syscall_state(sync_point)
+        label = f"c{core}, s{int(sys_state)}"
+        if irq > 0:
+            label += u" (\u26A1" + f"{irq})"
+        else:
+            sys_name = mstg.get_syscall_name(sys_state)
+            label += f" ({shorten[sys_name]})"
+        if en2ex.vertex(sync_point).out_degree() > 1:
+            sync_m = pydot.Cluster("Metasync" + str(int(sync_point)),
+                                   label="")
+            dot_graph.add_subgraph(sync_m)
+            # draw entry_sync
+            sync_m.add_node(_dsp(sync_point, label=[str(int(sync_point)),
+                                                    label]))
+            # draw exit_sync
+            for follow in sync_point.out_neighbors():
+                sync_m.add_node(_dsp(sync_point))
+        else:
+            # draw only the exit_sync
+            exit_s = single_check(sync_point.out_neighbors())
+            title = f"{str(int(sync_point))}->{str(int(exit_s))}"
+            dot_graph.add_node(_dsp(
+                exit_s,
+                label=[title, label]
+            ))
+
+    sp_e = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
+    for e in sp_e.edges():
+        src = e.source()
+        tgt = e.target()
+        if en2ex.vertex(tgt).out_degree() == 1:
+            tgt = single_check(en2ex.vertex(tgt).out_neighbors())
+        if mstg.ep.type[e] == MSTType.sy2sy:
+            attrs = {"color": "darkred",
+                     "style": "dashed"}
+        elif mstg.ep.type[e] == MSTType.follow_sync:
+            attrs = {"color": "darkgreen",
+                     "style": "dotted"}
+            bcet = mstg.ep.bcet[e]
+            wcet = mstg.ep.wcet[e]
+            if bcet > 0 or wcet > 0:
+                attrs['xlabel'] = f"{bcet}-{wcet}"
+        else:
+            assert False
+        dot_graph.add_edge(pydot.Edge(
+            str(int(src)),
+            str(int(tgt)),
+            **attrs))
+
+    return dot_graph
+
+
+
+
 class Printer(Step):
     """Print graphs to dot."""
 
@@ -588,85 +670,12 @@ class Printer(Step):
         self._write_dot(dot_graph)
 
     def print_sp_mstg(self):
-        shorten = {
-                "AUTOSAR_GetSpinlock": "GL",
-                "AUTOSAR_ReleaseSpinlock": "RL",
-                "AUTOSAR_ActivateTask": "AT",
-                "AUTOSAR_ChainTask": "CT",
-                "AUTOSAR_SetEvent": "SE",
-                "AUTOSAR_WaitEvent": "WE",
-
-        }
         name = self._print_init()
-        dot_graph = pydot.Dot(graph_type="digraph", label=name)
         mstg = self._graph.mstg
-
-        def _dsp(vertex, label=None):
-            if label is None:
-                label = [str(int(vertex))]
-            return pydot.Node(str(int(vertex)), shape="box",
-                              label="<{}>".format('<br/>'.join([html.escape(str(x)) for x in label])))
-
-        # draw initial sync node
-        for init in mstg.get_sync_points(exit=True).vertices():
-            init = mstg.vertex(init)
-            if init.in_degree() == 0:
-                dot_graph.add_node(_dsp(init))
-
-        en2ex = mstg.edge_type(MSTType.en2ex)
-
-        for sync_point in mstg.get_sync_points(exit=False).vertices():
-            sync_point = mstg.vertex(sync_point)
-            sys_state, core, irq = mstg.get_syscall_state(sync_point)
-            label = f"c{core}, s{int(sys_state)}"
-            if irq > 0:
-                label += u" (\u26A1" + f"{irq})"
-            else:
-                sys_name = mstg.get_syscall_name(sys_state)
-                label += f" ({shorten[sys_name]})"
-            if en2ex.vertex(sync_point).out_degree() > 1:
-                sync_m = pydot.Cluster("Metasync" + str(int(sync_point)),
-                                       label="")
-                dot_graph.add_subgraph(sync_m)
-                # draw entry_sync
-                sync_m.add_node(_dsp(sync_point, label=[str(int(sync_point)),
-                                                        label]))
-                # draw exit_sync
-                for follow in sync_point.out_neighbors():
-                    sync_m.add_node(_dsp(sync_point))
-            else:
-                # draw only the exit_sync
-                exit_s = single_check(sync_point.out_neighbors())
-                title = f"{str(int(sync_point))}->{str(int(exit_s))}"
-                dot_graph.add_node(_dsp(
-                    exit_s,
-                    label=[title, label]
-                ))
-
-        sp_e = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
-        for e in sp_e.edges():
-            src = e.source()
-            tgt = e.target()
-            if en2ex.vertex(tgt).out_degree() == 1:
-                tgt = single_check(en2ex.vertex(tgt).out_neighbors())
-            if mstg.ep.type[e] == MSTType.sy2sy:
-                attrs = {"color": "darkred",
-                         "style": "dashed"}
-            elif mstg.ep.type[e] == MSTType.follow_sync:
-                attrs = {"color": "darkgreen",
-                         "style": "dotted"}
-                bcet = mstg.ep.bcet[e]
-                wcet = mstg.ep.wcet[e]
-                if bcet > 0 or wcet > 0:
-                    attrs['xlabel'] = f"{bcet}-{wcet}"
-            else:
-                assert False
-            dot_graph.add_edge(pydot.Edge(
-                str(int(src)),
-                str(int(tgt)),
-                **attrs))
-
+        dot_graph = sp_mstg_to_dot(mstg, name)
         self._write_dot(dot_graph)
+
+
 
     def print_callgraph(self):
         name = self._print_init()
