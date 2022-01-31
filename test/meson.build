@@ -140,7 +140,7 @@ if get_option('enable_step_tests')
       endif
       test('multisse_with_timings_' + app['full_name'],
           py3_inst,
-          args: [files('multisse.py'), app['time_test'], app['ll'], app['oil'], 'with_timings'],
+          args: [files('multisse.py'), app['time_test'], app['ll'], app['oil'], app['sys_timings']],
           env: [python_path],
           depends: ara_py,
           suite: ['steps', 'multisse', 'multisse-timings']

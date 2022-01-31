@@ -8,6 +8,7 @@ import logging
 import graph_tool
 import sys
 
+from graph_tool import GraphView
 from graph_tool.topology import isomorphism
 from ara.graph import MSTType, StateType
 
@@ -26,18 +27,27 @@ def _get_core(mstg, reduced):
     return core_map
 
 
-def _dump(mstg, reduced, core_map):
+def _dump(reduced, core_map, timings=False):
     dump = {"vertices": {}, "edges": []}
     for v in reduced.vertices():
         dump["vertices"][str(int(v))] = core_map[v]
     for e in reduced.edges():
-        dump["edges"].append((str(int(e.source())), str(int(e.target()))))
+        if timings:
+            dump["edges"].append({"src": str(int(e.source())),
+                                  "tgt": str(int(e.target())),
+                                  "bcet": reduced.ep.bcet[e],
+                                  "wcet": reduced.ep.wcet[e]})
+        else:
+            dump["edges"].append((str(int(e.source())), str(int(e.target()))))
     return json.dumps(dump, indent=2)
 
 
-def _build_graph(data):
+def _build_graph(data, timings=False):
     g = graph_tool.Graph()
     core_map = g.new_vp("int32_t")
+    if timings:
+        g.ep["bcet"] = g.new_ep("int64_t")
+        g.ep["wcet"] = g.new_ep("int64_t")
     v_map = {}
 
     for v_id, core_count in data["vertices"].items():
@@ -45,21 +55,28 @@ def _build_graph(data):
         core_map[v] = core_count
         v_map[v_id] = v
 
-    for src, tgt in data["edges"]:
-        g.add_edge(v_map[src], v_map[tgt])
+    for edge in data["edges"]:
+        if timings:
+            e = g.add_edge(v_map[edge["src"]], v_map[edge["tgt"]])
+        else:
+            e = g.add_edge(v_map[edge[0]], v_map[edge[1]])
+        if timings:
+            g.ep.bcet[e] = edge["bcet"]
+            g.ep.wcet[e] = edge["wcet"]
 
     return g, core_map
 
 
 def main():
     """Test for correct MultiSSE execution."""
-    with_timings = len(sys.argv) > 4 and sys.argv[4] == "with_timings"
+    with_timings = len(sys.argv) > 4
+    inp = {"oilfile": lambda argv: argv[3]}
     if with_timings:
         config = {"steps": ["ApplyTimings", "LockElision"],
                   "MultiSSE": {"with_times": True}}
+        inp["timings"] = lambda argv: argv[4]
     else:
         config = {"steps": ["LockElision"]}
-    inp = {"oilfile": lambda argv: argv[3]}
     m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
 
     mstg = m_graph.mstg
@@ -69,12 +86,27 @@ def main():
     # do a graph copy, isomorphism will fail otherwise
     reduced = graph_tool.Graph(reduced, prune=True)
 
-    print(_dump(mstg, reduced, reduced.vp["cores"]), file=sys.stderr)
+    print(_dump(reduced, reduced.vp["cores"], timings=with_timings),
+          file=sys.stderr)
 
-    golden, correct_cores = _build_graph(data)
+    golden, correct_cores = _build_graph(data, timings=with_timings)
 
-    fail_if(len(data["vertices"]) == 0 or
-            not isomorphism(reduced, golden, reduced.vp["cores"], correct_cores))
+    fail_if(len(data["vertices"]) == 0)
+    is_isomorph, iso_map = isomorphism(reduced, golden, reduced.vp["cores"],
+                                       correct_cores, isomap=True)
+    fail_if(not is_isomorph)
+    if with_timings:
+        fs = GraphView(reduced,
+                       efilt=reduced.ep.type.fa == MSTType.follow_sync)
+        for e in fs.edges():
+            other = golden.edge(iso_map[e.source()], iso_map[e.target()],
+                                all_edges=True)
+            if fs.ep.bcet[e] > 0:
+                fail_if(all([fs.ep.bcet[e] != golden.ep.bcet[o]
+                        for o in other]))
+            if fs.ep.wcet[e] > 0:
+                fail_if(all([fs.ep.wcet[e] != golden.ep.wcet[o]
+                        for o in other]))
 
 
 if __name__ == '__main__':
