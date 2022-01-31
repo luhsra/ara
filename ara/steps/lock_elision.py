@@ -38,6 +38,10 @@ class LockElision(Step):
                                 state = m2sy.vp.state[sync_point]
                                 if state and obj in state.context and get_status(state.context[obj]):
                                     lock_count[get_name(obj)] += 1
+                            if len(list(m2sy.vertex(ms).out_neighbors())) == 0:
+                                if 'DEADLOCK' not in lock_count:
+                                    lock_count['DEADLOCK'] = {}
+                                lock_count['DEADLOCK'][name] = lock_count['DEADLOCK'].get(name, 0) + 1
 
         for lock, amount in lock_count.items():
             self._log.warn(f"Lock {lock} spins {amount} times")
