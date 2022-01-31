@@ -53,7 +53,12 @@ def _build_graph(data):
 
 def main():
     """Test for correct MultiSSE execution."""
-    config = {"steps": ["LockElision"]}
+    with_timings = len(sys.argv) > 4 and sys.argv[4] == "with_timings"
+    if with_timings:
+        config = {"steps": ["ApplyTimings", "LockElision"],
+                  "MultiSSE": {"with_times": True}}
+    else:
+        config = {"steps": ["LockElision"]}
     inp = {"oilfile": lambda argv: argv[3]}
     m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
 
@@ -64,7 +69,7 @@ def main():
     # do a graph copy, isomorphism will fail otherwise
     reduced = graph_tool.Graph(reduced, prune=True)
 
-    # print(_dump(mstg, reduced, reduced.vp["cores"]), file=sys.stderr)
+    print(_dump(mstg, reduced, reduced.vp["cores"]), file=sys.stderr)
 
     golden, correct_cores = _build_graph(data)
 

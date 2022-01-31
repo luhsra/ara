@@ -134,6 +134,20 @@ if get_option('enable_step_tests')
       )
     endforeach
 
+    foreach app: autosar_targets
+      if not app.has_key('ttrace')
+        continue
+      endif
+      test('multisse_with_timings_' + app['full_name'],
+          py3_inst,
+          args: [files('multisse.py'), app['time_test'], app['ll'], app['oil'], 'with_timings'],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['steps', 'multisse', 'multisse-timings']
+      )
+    endforeach
+
+
     test('multiple-configured-steps',
         py3_inst,
         args: files('multiple_configured_steps.py'),
