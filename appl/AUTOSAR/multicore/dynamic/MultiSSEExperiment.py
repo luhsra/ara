@@ -115,7 +115,7 @@ class GenericTimingExperiment(Experiment):
 
 
     def run(self):
-        RUNS = 5
+        RUNS = 100
 
         result = {"with_timing": [],
                   "no_timing": [],
@@ -149,7 +149,7 @@ class GenericTimingExperiment(Experiment):
             shell(f"cd {self.run_dir}; ninja {DEPENDER_GENERATOR}")
         logger.info("Executing MultiSSE")
         if not self.collect_only:
-            cmd = f"cd %s; ninja %s"
+            cmd = f"cd %s; ninja -k 0 %s"
             shell(cmd, self.run_dir, DEPENDER_NAME)
         res_details = self.collect_results(result)
         details_file = self.dicts.new_file("sum.details.json")
@@ -159,10 +159,9 @@ class GenericTimingExperiment(Experiment):
         summary_file.value = json.dumps(res_summary)
 
     def summarize_results(self, details):
-        res = {}
+        res = {'no': {}, 'with': {}, 'count': {}, 'better': {}}
 
         for metric, data in details.items():
-            res[metric] = {}
             with_timing = 0
             no_timing = 0
             count = 0
@@ -173,10 +172,10 @@ class GenericTimingExperiment(Experiment):
                 no_timing += entry['no']
                 count += 1
             better = no_timing - with_timing
-            res[metric]['with'] = with_timing
-            res[metric]['no'] = no_timing
-            res[metric]['better'] = better
-            res[metric]['count'] = count
+            res['with'][metric] = with_timing
+            res['no'][metric] = no_timing
+            res['better'][metric] = better
+            res['count'][metric] = count
         return res
 
     def collect_results(self, result):
