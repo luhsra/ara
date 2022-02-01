@@ -57,7 +57,7 @@
 #endif //SYSTEM_JSON
 
 #if LOCKS_JSON
-{"S1": 0, "S2": 0}
+{"no_timing": {"spin_states": {"S1": 0, "S2": 0}}}
 #endif //LOCKS_JSON
 
 DeclareTask(T01);

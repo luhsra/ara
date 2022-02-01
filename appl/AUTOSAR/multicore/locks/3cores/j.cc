@@ -24,7 +24,7 @@
 #endif //TRACE_JSON
 
 #if LOCKS_JSON
-{"S1": 4, "S2": 0}
+{"no_timing": {"spin_states": {"S1": 4, "S2": 0}}}
 #endif //LOCKS_JSON
 
 

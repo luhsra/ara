@@ -23,7 +23,7 @@ extern "C" void ara_timing_info(int, int);
 
 
 #if LOCKS_JSON
-{"S1": 0, "timed_locks": {"S1": 0}}
+{"no_timing": {"spin_states": {"S1": 0}}, "with_timing": {"spin_states": {"S1": 0}}}
 #endif //LOCKS_JSON
 
 // CPU 0

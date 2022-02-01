@@ -221,5 +221,5 @@ void PreIdleHook() {
 }
 
 #if LOCKS_JSON
-{"SPIBusLock": 10, "timed_locks": {"SPIBusLock": 0}}
+{"no_timing": {"spin_states": {"SPIBusLock": 10}}, "with_timing": {"spin_states": {"SPIBusLock": 0}}}
 #endif // LOCKS_JSON

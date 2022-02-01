@@ -59,10 +59,12 @@ def main():
     m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
 
     locks = m_graph.step_data["LockElision"]
+    del locks['details']
+    data = data['with_timing']
 
     if log.level <= logging.INFO:
         log.warning(json.dumps(locks))
-    fail_if(data['timed_locks'] != locks)
+    fail_if(data != locks)
 
 
 if __name__ == '__main__':

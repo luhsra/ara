@@ -17,7 +17,7 @@ typedef struct {int a;} result;
 result* do_computation() {return nullptr;}
 
 #if LOCKS_JSON
-{"E1": 0}
+{"no_timing": {"spin_states": {"E1": 0}}}
 #endif //LOCKS_JSON
 
 DeclareTask(T1);

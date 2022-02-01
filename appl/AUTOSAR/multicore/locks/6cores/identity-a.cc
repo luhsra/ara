@@ -12,6 +12,7 @@
 #include "test/test.h"
 #include "machine.h"
 
+void ara_timing_info(int, int);
 
 // TODO: wie geht das für multicore?
 #if TRACE_JSON
@@ -589,7 +590,7 @@
 #endif //TRACE_JSON
 
 #if LOCKS_JSON
-{"S1": 0, "S2": 0}
+{"no_timing": {"spin_stats": {"S1": 0, "S2": 0}}}
 #endif //LOCKS_JSON
 
 
@@ -608,44 +609,68 @@ DeclareSpinlock(S2);
 TEST_MAKE_OS_MAIN( StartOS(0) )
 
 TASK(T01) {
+	ara_timing_info(3, 6);
 	GetSpinlock(S1);
+	ara_timing_info(1, 3);
 	ReleaseSpinlock(S1);
+	ara_timing_info(1, 3);
 	ActivateTask(T11);
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 
 TASK(T11) {
+	ara_timing_info(3, 6);
 	GetSpinlock(S1);
+	ara_timing_info(1, 3);
 	ReleaseSpinlock(S1);
+	ara_timing_info(1, 3);
 	ActivateTask(T21);
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 
 TASK(T21) {
+	ara_timing_info(3, 6);
 	GetSpinlock(S1);
+	ara_timing_info(1, 3);
 	ReleaseSpinlock(S1);
+	ara_timing_info(1, 3);
 	ActivateTask(T31);
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 
 TASK(T31) {
+	ara_timing_info(3, 6);
 	GetSpinlock(S1);
+	ara_timing_info(1, 3);
 	ReleaseSpinlock(S1);
+	ara_timing_info(1, 3);
 	ActivateTask(T41);
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 
 TASK(T41) {
+	ara_timing_info(3, 6);
 	GetSpinlock(S1);
+	ara_timing_info(1, 3);
 	ReleaseSpinlock(S1);
+	ara_timing_info(1, 3);
 	ActivateTask(T51);
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 
 TASK(T51) {
+	ara_timing_info(3, 6);
 	GetSpinlock(S1);
+	ara_timing_info(1, 3);
 	ReleaseSpinlock(S1);
+	ara_timing_info(1, 3);
 	ActivateTask(T01);
+	ara_timing_info(1, 1);
 	TerminateTask();
 }
 

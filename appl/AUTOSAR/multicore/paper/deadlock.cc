@@ -18,7 +18,7 @@ result* do_computation() {return nullptr;}
 void ara_timing_info(int, int);
 
 #if LOCKS_JSON
-{"S1": 1, "DEADLOCK": {"S1": 1},"timed_locks": {"S1": 1, "DEADLOCK": {"S1": 1}}}
+{"no_timing": {"spin_states": {"S1": 1}, "DEADLOCK": {"S1": 1}},"with_timing": {"spin_states": {"S1": 1}, "DEADLOCK": {"S1": 1}}}
 #endif //LOCKS_JSON
 
 // CPU 0
