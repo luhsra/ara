@@ -1,4 +1,4 @@
-generator = files('benchmark_gen.py')
+benchmark_gen = files('benchmark_gen.py')
 
 full_name = 'synthetic'
 # sys, oil = custom_target('autosar_multicore_dynamic_' + seed,
@@ -42,3 +42,5 @@ step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
                                     '--step-data', '@OUTPUT@'],
                           build_always_stale: true,
                          )
+
+subdir('gen')

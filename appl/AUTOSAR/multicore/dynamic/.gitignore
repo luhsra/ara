@@ -2,3 +2,4 @@
 *.cc
 *.oil
 *.dot
+gen/

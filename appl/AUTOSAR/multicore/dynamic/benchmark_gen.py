@@ -358,7 +358,7 @@ def generate_system(config):
     logging.info("------------ generating %s locks --------", config.nLocks)
     for lock in range(0, config.nLocks):
         lock = f"LOCK{lock}"
-        member_count = int(2+rng.expovariate(1))
+        member_count = rng.randint(2, min(config.nCpus, int(config.nLockUsers)))
         def allowed(members, new):
             for member in members:
                 if member.cpu == new.cpu:
@@ -643,7 +643,7 @@ def generate_callgraph(config, system):
         call_graph[entry] = []
 
         # Add all of our systemcalls
-        entry_inserts = entry.body.expand(config.maxFunctionInserts)
+        entry_inserts = entry.body.expand(len(subtask.operations)+1)
         subtask_inserts = entry_inserts
 
         for op in subtask.operations:
@@ -677,33 +677,18 @@ def dump_source(system, fn):
 
 config = SimpleNamespace("Config", {
     "R_AT_local": 0.9,
-    "nCpus": 3,
-    "nEvents": 3,
-    "nWaitingSubtasks": 3,
+    "nCpus": 2,
+    "nEvents": 0,
     "R_SE_local": 0.9,
     "nTasks": 6,
-    "nLocks": 3,
-    "nUsers": 3,
+    "nLocks": 1,
+    "nLockUsers": 2,
     "nSubtasks": 15,
     "depsMaxChildren": 3,
     "bcet_normal": 20,
     "wcet_normal": 200,
     "bcet_critical": 10,
     "wcet_critical": 30,
-    # "R_waiting": 0.25,
-    # Extra System Configuration
-    # "R_nonPreempt": 0.10,
-    # Directed Dependecies
-    # Mutual Exclusions
-    # "R_resourceGroups": 0.1,
-    # "R_IRQDisable": 0.1,
-    # Callgraph
-    # "nFunctions": 200,
-    # "nPrivateFunctions": 3,
-    # "funcStackUsage": (100, -10, +20),
-    # "maxStackUsage": 4096,
-    "maxFunctionInserts": 3,
-    # "R_extraCallEdges": 0.1,
 
     "seed": 4711,
 })
@@ -718,20 +703,21 @@ if __name__ == "__main__":
                         help='where to store the source code')
 
     # System configuration
-    parser.add_argument('--irqs', metavar='N', type=int, default = 1,
-                        help='Number of IRQs')
-    parser.add_argument('--subtasks', metavar='N', type=int, default = 10,
+    parser.add_argument('--subtasks', metavar='N', type=int, default = 15,
                         help='Number of Subtasks')
-    parser.add_argument('--waiting', metavar='N', type=int, default = 0,
-                        help='Number of waiting subtasks')
-    parser.add_argument('--resources', metavar='N', type=int, default = 1,
-                        help='Number of resource groups')
+    parser.add_argument('--cores', metavar='N', type=int, default = 2,
+                        help='Number of cores')
+    parser.add_argument('--locks', metavar='N', type=int, default = 1,
+                        help='Number of spinlocks')
+    parser.add_argument('--lock-users', metavar='N', type=int, default = 2,
+                        help='Number of users per lock')
+    parser.add_argument('--at-local', metavar='P', type=int, default = 90,
+                        help='Percentage of AT-calls which are core local')
+    parser.add_argument('--se-local', metavar='P', type=int, default = 90,
+                        help='Percentage of SE-calls which are core local')
+    parser.add_argument('--events', metavar='N', type=int, default = 0,
+                        help='Number of events')
 
-    # Callgraph configuration
-    parser.add_argument('--functions', metavar='N', type=int, default = 50,
-                        help='Number of Functions')
-    parser.add_argument('--extra-edges', metavar='N', type=int, default = 20,
-                        help='Number of Extra Function Call Edges')
 
 
     parser.add_argument('--seed', metavar='N', default=1,
@@ -744,24 +730,21 @@ if __name__ == "__main__":
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
-    # config.seed = args.seed
+    config.seed = args.seed
 
-    # config.nTasks = args.irqs
-    # config.nSubtasks = args.subtasks
-    # config.nWaitingSubtasks = args.waiting
-    # config.nNonPreemptTasks = int(round((args.subtasks) * config.R_nonPreempt))
-    # config.nResourceGroups  = args.resources
-    # config.nIRQBlockTasks   = int(round((args.subtasks) * config.R_IRQDisable))
+    config.R_AT_local = args.at_local/100
+    config.nCpus = args.cores
+    config.nEvents = args.events
+    config.R_SE_local = args.se_local/100
+    config.nLocks = args.locks
+    config.nLockUsers = args.lock_users
+    config.nSubtasks = args.subtasks
 
-    # config.nFunctions  = args.functions
-    # config.extraCallEdges = args.extra_edges # int(round((args.functions * config.R_extraCallEdges)))
-
-    # assert (args.subtasks * (1 + config.nPrivateFunctions)) <= args.functions
-    # assert args.irqs <= args.subtasks
 
 
     system = generate_system(config)
     dump_oil(system, args.oil)
+    logging.error("oilfile: %s, %s", os.getcwd(), args.oil)
 
     generate_callgraph(config, system)
     dump_source(system, args.system)
