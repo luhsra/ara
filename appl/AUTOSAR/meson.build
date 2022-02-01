@@ -102,8 +102,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'l',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'm',                     'oil': 'system_m.json'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'n',                     'oil': 'system_m.json'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-chain',   'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-b',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-c',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-d',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
@@ -121,7 +122,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'timing',             'name': 'c',                     'oil': 'system_c.json', 'timing': 'c_timing.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'running',               'oil': 'system_running.json', 'mtrace': 'running.trace.json', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'running.timing.trace.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB'},
-  {'core': 'multicore',  'path': 'paper',              'name': 'deadlock',              'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'deadlock',              'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'deadlock.trace.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'paper',              'name': 'event',                 'oil': 'system_event.json', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'paper',              'name': 'timing',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
@@ -135,6 +136,17 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
 ]
+no_timing_settings = custom_target(
+  output: 'no_timing_settings.json',
+  capture: true,
+  command: ['echo', '{"steps": ["LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": false}}'],
+)
+with_timing_settings = custom_target(
+  output: 'with_timing_settings.json',
+  capture: true,
+  command: ['echo', '{"steps": ["ApplyTimings", "LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": true}}'],
+)
+
 
 autosar_targets = []
 autosar_targets_with_test = []
@@ -215,11 +227,6 @@ foreach app : autosar_apps
     command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL", "DumpCFG"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
   )
 
-  with_timing_settings = custom_target(
-    output: full_name  + '.with_timing_settings.json',
-    capture: true,
-    command: ['echo', '{"steps": ["ApplyTimings", "LockElision", "IPIAvoidance"], "MultiSSE": {"with_times": true}}'],
-  )
 
 
   run_target('run_lock_elision_generate_timings_' + full_name,
