@@ -249,8 +249,96 @@ class OSBase:
             cls._detected_syscalls = sys_dict
         return cls._detected_syscalls
 
-    @classmethod
-    def is_syscall(cls, function_name):
-        """Return whether a function name is a system call of this OS."""
-        sys_dict = cls.detected_syscalls()
-        return sys_dict.get(function_name, None) != None
+    @staticmethod
+    def get_special_steps():
+        """Return OS specific preprocessing steps."""
+        from ara.steps import get_native_component
+        ValueAnalyzer = get_native_component("ValueAnalyzer")
+        return ValueAnalyzer.get_dependencies()
+    
+    @staticmethod
+    def has_dynamic_instances():
+        """Does this OS create instances at runtime?"""
+        raise NotImplementedError
+
+    @staticmethod
+    def get_initial_state(cfg, instances):
+        """Get the OS specific initial state.
+
+        Arguments:
+        cfg       -- the control flow graph
+        instances -- the already detected global instances
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def get_interrupts(instances):
+        """Get all interrupts that lead to an OS action."""
+        raise NotImplementedError
+
+    @staticmethod
+    def get_cpu_local_contexts(contexts, cpu_id):
+        """Get all contexts that affect cpu_id."""
+        raise NotImplementedError
+
+    @staticmethod
+    def get_global_contexts(contexts):
+        """Get all contexts that affect multiple CPUs."""
+        raise NotImplementedError
+
+    @staticmethod
+    def handle_irq(graph, state, cpu_id, irq):
+        """Handle an (asynchronous) IRQ.
+
+        Arguments:
+        graph      -- the system graph
+        state      -- the current system state (see the State class)
+        cpu_id     -- the CPU where the system call occurs
+        irq        -- the IRQ number
+
+        Return:
+        The follow up state or None if the IRQ is invalid.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def handle_exit(graph, state, cpu_id):
+        """Handle an irregular exit.
+
+        Some exits cannot be followed within the ICFG (most notably ISR exits).
+        Only the OS model can handle this.
+
+        Arguments:
+        graph      -- the system graph
+        state      -- the current system state (see the State class)
+        cpu_id     -- the CPU where the system call occurs
+
+        Return:
+        A list of follow up states.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+        """Entry point for a synchronous os action (system call).
+
+        Arguments:
+        graph      -- the system graph
+        state      -- the current system state (see the State class)
+        cpu_id     -- the CPU where the system call occurs
+        categories -- interpret only specific system calls (for performance)
+
+        Return:
+        The follow up state.
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def schedule(state, cpus=None):
+        """Schedule the current state.
+
+        Arguments:
+        state -- the current system state
+        cpus  -- a list of cpu_ids, defaults to all CPUs
+        """
+        raise NotImplementedError()
