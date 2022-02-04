@@ -24,13 +24,18 @@ class SysFuncts(Step):
 
         This method also auto detects the OS if self._graph.os is not set.
         """
-        for os in self.oses:
-            if os.is_syscall(syscall_name):
-                if self._graph.os in [None, os]:
+        def return_if_no_stub(os, syscall_name):
+            return not os.detected_syscalls()[syscall_name].is_stub if self.no_stubs.get() else True
+        
+        if self._graph.os is not None:
+            if self._graph.os.is_syscall(syscall_name):
+                return return_if_no_stub(self._graph.os, syscall_name)
+        else:
+            # TODO: improve auto os detection to run with syscalls in multiple oses (like memcpy) 
+            for os in self.oses:
+                if os.is_syscall(syscall_name):
                     self._graph.os = os
-                else:
-                    self._fail(f"Call {syscall_name} does not fit to OS {self._graph.os}.")
-                return not os.detected_syscalls()[syscall_name].is_stub if self.no_stubs.get() else True
+                    return return_if_no_stub(os, syscall_name)
         return False
 
     def run(self):
