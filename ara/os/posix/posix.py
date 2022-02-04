@@ -4,8 +4,8 @@ Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 """
 
 import ara.graph as _graph
-from ara.graph import SyscallCategory
-from ..os_base import OSBase
+from ara.graph import SyscallCategory, CallPath
+from ..os_base import OSBase, CPUList, CPU, OSState, ExecState
 from ..os_util import SysCall, syscall
 from .posix_utils import PosixOptions, logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories, get_running_thread
 from .file import FileSyscalls
@@ -100,6 +100,17 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
     @staticmethod
     def init(state):
         state.scheduler_on = True  # The Scheduler is always on in POSIX.
+
+    @staticmethod
+    def get_initial_state(cfg, instances):
+        return OSState(cpus=CPUList([CPU(id=0,
+                                         irq_on=True,
+                                         control_instance=None,
+                                         abb=None,
+                                         call_path=CallPath(),
+                                         exec_state=ExecState.idle,
+                                         analysis_context=None)]),
+                       instances=instances, cfg=cfg)
 
     @staticmethod
     def _add_normal_cfg(cfg, abb, state):
