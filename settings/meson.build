@@ -133,7 +133,7 @@ ara_gen_freertos_targets = ['passthrough',
 
 foreach target : ara_gen_freertos_targets
   set_variable('ara_gen_cmd_'+target, ara_gen_cmd +
-                             [ '--step-settings',
+                             [ '--os', 'FreeRTOS', '--step-settings',
                                files(join_paths(settings_dir, 'freertos_'+target+'.json')),
                              ]
               )
