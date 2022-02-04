@@ -35,6 +35,7 @@ ir_apps = [
   'ospert',
   'priority_inversion',
   'rtas20_example',
+  'src_loc',
   # 'simple_queue_send',
   'sse',
   'svf',
@@ -163,7 +164,7 @@ foreach app : ir_apps + hw_apps
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
-                                 depends: [sparse_rle, sparse_rle2],
+                                 depends: [sparse_rle2],
                                  output: lto_prefix + '-os_app.ll',
                                  command: get_variable('llvm_lto_cmd_' + lto_version))
 
@@ -199,6 +200,21 @@ foreach app : ir_apps + hw_apps
     elf_targets += lto_elf
     named_elf_targets += [target + '-' + lto_version, lto_elf]
     profiles_list += ['--profiles', target + '-' + lto_version]
+
+    if app not in ir_apps
+      test('validate_generator_' + lto_prefix,
+           py3_inst,
+           args: [validate_generator_runner,
+                  app,
+                  target,
+                  ara_target,
+                  os_target[0].full_path(),
+                  lto_elf,
+                 ],
+           workdir: freertos_src_dir,
+           suite: 'generator'
+          )
+      endif
 
     if get_option('enable_qemu_tests') and app not in ir_apps
         test('run_qemu_' + name_prefix,
@@ -295,8 +311,16 @@ osek_examples = run_target('osek-examples',
 subdir('AUTOSAR')
 
 
+# Zephyr samples
+subdir('Zephyr')
+
+zephyr_examples = alias_target('zephyr_examples', zephyr_targets)
+
+run_target('z_clean', 
+    command: ['rm', '-rf', join_paths(meson.current_build_dir(), 'Zephyr')])
+
 examples = run_target('examples',
                       command: nop,
-                      depends: [osek_targets, freertos_targets])
+                      depends: [osek_targets, freertos_targets, zephyr_targets])
 
 subdir('POSIX')

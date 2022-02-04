@@ -8,6 +8,7 @@
 
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/python.hpp>
+#include <boost/range/iterator_range_core.hpp>
 
 using namespace ara::graph;
 using namespace boost::python;
@@ -69,6 +70,17 @@ namespace ara::step {
 		return nullptr;
 	}
 
+	PyObject* ReplaceSyscallsCreate::change_linkage_to_global(GlobalVariable* gv) {
+		// GlobalVariable * gv = graph.get_module().getGlobalVariable(name, true);
+		logger.debug() << "change linkage of " << *gv << " from " << gv->getLinkage() << " to external" << std::endl;
+		if (gv == nullptr) {
+			logger.info() << "global is nullptr" << std::endl;
+			Py_RETURN_NONE;
+		}
+		gv->setLinkage(GlobalValue::ExternalLinkage);
+		Py_RETURN_NONE;
+	}
+
 	template <class Graph>
 	void create_bb_dispatched(Graph g, graph::CFG& cfg, int64_t abb, BasicBlock*& llvm_bb) {
 		llvm_bb = cfg.get_llvm_bb<Graph>(cfg.get_entry_bb(g, abb));
@@ -103,12 +115,6 @@ namespace ara::step {
 		replace_call_with_true(call);
 		Py_RETURN_NONE;
 	}
-
-	std::string ReplaceSyscallsCreate::get_description() {
-		return "Replace Create-syscalls with their static pendants.";
-	}
-
-	void ReplaceSyscallsCreate::run() { fail("This should never happen"); }
 
 	PyObject* ReplaceSyscallsCreate::replace_queue_create_static(object queue) {
 		Module& module = graph.get_module();
@@ -396,7 +402,16 @@ namespace ara::step {
 			return PyErr_Format(PyExc_RuntimeError, "wrong function found %s", old_func->getName().str().data());
 		}
 		// make task function linkable for the tcb and stack
-		Function* taskFN = get_fn(extract<char*>(task.attr("function")));
+		graph::CFG cfg = graph.get_cfg();
+		Function* taskFN;
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) {
+			    using Graph = typename std::remove_reference<decltype(g)>::type;
+			    auto f = extract<typename boost::graph_traits<Graph>::vertex_descriptor>(task.attr("function"));
+			    taskFN = cfg.get_llvm_function<Graph>(f);
+		    },
+		    graph_tool::always_directed())(cfg.graph.get_graph_view());
+
 		if (!taskFN->hasExternalLinkage()) {
 			taskFN->setLinkage(GlobalValue::ExternalLinkage);
 		}
@@ -422,15 +437,20 @@ namespace ara::step {
 				return nullptr;
 			}
 		}
+		object py_task_parameters = extract<object>(task.attr("parameters"));
+		if (! py_task_parameters.is_none()) {
+			if (GlobalVariable* gv = dyn_cast_or_null<GlobalVariable>(get_value_from_obj(py_task_parameters.ptr()))) {
+				change_linkage_to_global(gv);
+			}
+		}
 		Py_RETURN_NONE;
 		return PyErr_Format(PyExc_RuntimeError, "moin");
 		PyErr_SetString(PyExc_RuntimeError, "hello exception");
 		return NULL;
 	}
 
-	PyObject* ReplaceSyscallsCreate::replace_task_create(PyObject* pyo_task) {
+	PyObject* ReplaceSyscallsCreate::replace_task_create(object task) {
 		try {
-			boost::python::object task(boost::python::borrowed<>(pyo_task));
 			logger.debug() << "the task: " << task << std::endl;
 			object impl = task.attr("impl");
 			str init_type = extract<str>(task.attr("specialization_level"));
@@ -453,9 +473,8 @@ namespace ara::step {
 			return NULL;
 		}
 	}
-	PyObject* ReplaceSyscallsCreate::replace_queue_create(PyObject* pyo_queue) {
+	PyObject* ReplaceSyscallsCreate::replace_queue_create(object queue) {
 		try {
-			boost::python::object queue(boost::python::borrowed<>(pyo_queue));
 			logger.debug() << "the queue: " << queue << std::endl;
 			object impl = queue.attr("impl");
 			str init_type = extract<str>(queue.attr("specialization_level"));
@@ -477,9 +496,8 @@ namespace ara::step {
 		}
 	}
 
-	PyObject* ReplaceSyscallsCreate::replace_mutex_create(PyObject* pyo_mutex) {
+	PyObject* ReplaceSyscallsCreate::replace_mutex_create(object mutex) {
 		try {
-			boost::python::object mutex(boost::python::borrowed<>(pyo_mutex));
 			logger.debug() << "the mutex: " << mutex << std::endl;
 			object impl = mutex.attr("impl");
 			str init_type = extract<str>(mutex.attr("specialization_level"));
@@ -501,4 +519,31 @@ namespace ara::step {
 		}
 	}
 
+	std::string ReplaceSyscallsCreate::get_description() {
+		return "Replace Create-syscalls with their static pendants.";
+	}
+
+	void ReplaceSyscallsCreate::run() {
+		graph::InstanceGraph instances = graph.get_instances();
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) {
+			    object freertos = import("ara.os.freertos");
+			    object task_cls = freertos.attr("Task");
+			    object queue_cls = freertos.attr("Queue");
+			    object mutex_cls = freertos.attr("Mutex");
+			    for (auto v : boost::make_iterator_range(boost::vertices(g))) {
+				    boost::python::object inst = instances.obj[v];
+				    if (PyObject_IsInstance(inst.ptr(), task_cls.ptr())) {
+					    replace_task_create(inst);
+				    } else if (PyObject_IsInstance(inst.ptr(), queue_cls.ptr())) {
+					    replace_queue_create(inst);
+				    } else if (PyObject_IsInstance(inst.ptr(), mutex_cls.ptr())) {
+					    replace_mutex_create(inst);
+				    } else {
+					    logger.error() << "unknown instance: " << inst << std::endl;
+				    }
+			    }
+		    },
+		    graph_tool::always_directed())(instances.graph.get_graph_view());
+	}
 } // namespace ara::step

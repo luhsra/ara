@@ -1,5 +1,8 @@
 """Container for Sysfuncts."""
+
+from ara.graph import Graph
 from ara.os import get_oses
+
 from .step import Step
 from .option import Option, Bool
 
@@ -33,10 +36,9 @@ class SysFuncts(Step):
     def run(self):
         self.oses = get_oses()
 
-        functs = self._graph.functs
-        for nod in functs.vertices():
-            call = functs.vp.name[nod]
-            functs.vp.sysfunc[nod] = self.is_syscall(call)
+        for nod in self._graph.functs.vertices():
+            call = self._graph.functs.vp.name[nod]
+            self._graph.functs.vp.sysfunc[nod] = self.is_syscall(call)
         if self._graph.os is None:
             self._log.warn("OS cannot be detected. Are there any syscalls?")
 

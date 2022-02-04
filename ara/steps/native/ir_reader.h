@@ -18,8 +18,8 @@ namespace ara::step {
 		option::TOptEntity<option::String> input_file;
 
 		static const inline option::TOption<option::Bool> no_sysfunc_body_template{
-		    "no_sysfunc_body", "Chains the step RemoveSysfuncBody if true. This step has some advantages if the program is linked with libc. "
-		                       "See the description of RemoveSysfuncBody. WARNING: Do not use this option for the synthesis!"};
+		    "no_sysfunc_body", "Chain the step RemoveSysfuncBody if true."
+		                       "See the description of RemoveSysfuncBody."};
 		option::TOptEntity<option::Bool> no_sysfunc_body;
 
 		virtual void init_options();

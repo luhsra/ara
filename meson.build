@@ -17,7 +17,7 @@ py3_mod = import('python')
 py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
 
 ## llvm dependencies
-llvm_version = ['>=10', '<11']
+llvm_version = ['>=10', '<13']
 llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
@@ -27,7 +27,7 @@ llvm_dis = find_program(llvm_bindir / 'llvm-dis', version: llvm_version)
 llvm_link = find_program(llvm_bindir / 'llvm-link', version: llvm_version)
 llvm_opt = find_program(llvm_bindir / 'opt', version: llvm_version)
 
-boost_dep = dependency('boost', modules: ['graph', 'python3'])
+boost_dep = dependency('boost', modules: ['graph', 'python' + py3_inst.language_version().replace('.', '')])
 graph_tool_dep = dependency('graph-tool-py' + py3_inst.language_version(), include_type: 'system')
 
 ## pyllco
@@ -44,14 +44,19 @@ endif
 
 ## svf
 cmake = import('cmake')
-svf_proj = cmake.subproject('svf', cmake_options: ['-DLLVM_DIR=' + llvm_dep.get_variable(configtool: 'prefix'),
-                                                   '-DBUILD_SHARED_LIBS=on'])
+svf_opts = cmake.subproject_options()
+svf_opts.append_compile_args('cpp', '-Wno-unused-parameter')
+svf_opts.append_compile_args('cpp', '-Wno-unused-variable')
+svf_opts.append_compile_args('cpp', '-Wno-unused-function')
+svf_opts.append_compile_args('cpp', '-Wno-maybe-uninitialized')
+svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefix'),
+                            'BUILD_SHARED_LIBS': 'on'})
+svf_proj = cmake.subproject('svf', options: svf_opts)
 svf_dep = svf_proj.dependency('Svf')
 cudd_dep = svf_proj.dependency('Cudd')
 
 ## sparsedata
 sparsedata = subproject('sparsedata')
-sparse_rle = sparsedata.get_variable('libsparserle')
 sparse_rle2 = sparsedata.get_variable('libsparserle2')
 
 ## ara-link
@@ -65,6 +70,7 @@ endif
 ## tools
 nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
+sed = find_program('sed')
 
 ## POSIX
 wllvm = find_program('wllvm')
@@ -86,7 +92,7 @@ endif
 
 arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
 
-foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld']
+foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld', 'objdump']
     full_prog_name = target_triple + '-' + prog_name
     prog = find_program(full_prog_name, required: false)
     if not prog.found()
@@ -149,12 +155,15 @@ subdir('test')
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 if get_option('enable_toplevel_tests')
     extra_settings = files('test' / 'extra_settings.json')
+    app = autosar_singlecore_bcc1_task1_a
     test('ara_tester',
        py3_inst,
-       args: [ara_py, gpslogger_application,
+       args: [ara_py, app['ll'],
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--step-settings', extra_settings,
-              '--manual-corrections', instance_corrections],
+              '--oilfile', app['oil'],
+              #'--timings', app['sys_timings'],
+              '--step-settings', extra_settings],
+              # '--manual-corrections', instance_corrections],
        suite: 'toplevel'
     )
 
@@ -181,8 +190,9 @@ if get_option('enable_toplevel_tests')
     autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
     test('multisse',
        py3_inst,
-       args: [ara_py, autosar_minexample[0],
-              '--oilfile', autosar_minexample[1],
+       args: [ara_py, autosar_multicore_minexample['ll'],
+              '--oilfile', autosar_multicore_minexample['oil'],
+              '--dump',
               '--log-level', 'info',
               '--dump',
               '--step-settings', autosar_minexample_settings],
@@ -211,4 +221,18 @@ if get_option('enable_toplevel_tests')
             timeout: 7200
         )
     endif
+
+    zephyr_settings = files('settings' / 'zephyr.json')
+    test('zephyr_test',
+       py3_inst,
+       args: [ara_py, zephyr_targets[20], # use zephyr_targets['static_threads']
+              #'--dump',
+              '--log-level', 'debug',
+              '--os', 'ZEPHYR',
+              '--step-settings', zephyr_settings,
+              #'--entry-point', '""'
+              ],
+       suite: 'toplevel',
+       timeout: 30
+    )
 endif

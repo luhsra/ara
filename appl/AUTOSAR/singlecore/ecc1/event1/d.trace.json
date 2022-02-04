@@ -1,0 +1,19 @@
+{
+  "vertices": [
+    [0, ["AUTOSAR_ActivateTask", "H1", "CallPath()"]],
+    [1, ["AUTOSAR_SetEvent", "H1", "CallPath()"]],
+    [2, ["AUTOSAR_TerminateTask", "H1", "CallPath()"]],
+    [3, ["AUTOSAR_TerminateTask", "H2", "CallPath()"]],
+    [4, ["AUTOSAR_WaitEvent", "H2", "CallPath()"]],
+    [5, ["Idle"]],
+    [6, ["Start"]]
+  ],
+  "edges": [
+    [6, 0],
+    [0, 1],
+    [1, 2],
+    [2, 4],
+    [4, 3],
+    [3, 5]
+  ]
+}

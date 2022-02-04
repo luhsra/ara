@@ -2,10 +2,8 @@ from ..os_generic import GenericOS
 from ..elements.IncludeManager import Include
 
 from .arch_arm import ArmArch
-from .syscall_instantiation_initialized import SystemCallsInstantiationInitialized
-from .syscall_instantiation_static import SystemCallsInstantiationStatic
 
-from ..syscall_vanilla import VanillaSystemCalls
+from .syscall_generic import GenericSystemCalls
 from .implementations import add_impl as _add_impl
 
 
@@ -14,20 +12,21 @@ class FreeRTOSGenericOS(GenericOS):
 
     arch_choices = {'arm':ArmArch}
 
-    instantiation_choices= {'passthrough': VanillaSystemCalls,
-                            'vanilla': VanillaSystemCalls,
-                            'static': SystemCallsInstantiationStatic,
-                            'initialized': SystemCallsInstantiationInitialized,
-                            }
-
-    interaction_choices = {'vanilla':VanillaSystemCalls,
-                           'passthrough': VanillaSystemCalls,
-                           }
-
 
     def set_generator(self, generator):
         super().set_generator(generator)
         self.generator.add_source_file('.freertos_overrides.h')
+
+    @staticmethod
+    def get_dependencies():
+        return ['ClassifySpecializationsFreeRTOS']
+
+    def get_syscall_rules(self):
+        return GenericSystemCalls
+
+    def get_arch_rules(self, arch):
+        return self.arch_choices[arch]
+
     def generate_data_objects(self):
         #include "freertos.h"
         self.generator.source_file.includes.add(Include('FreeRTOS.h'))

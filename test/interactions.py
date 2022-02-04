@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 import json
-import io
 import os.path
 
 # Note: init_test must be imported first
 from init_test import init_test, fail_if
-from ara.graph import CFType
+
 
 def main():
     """Test for correct interaction detection."""
@@ -21,11 +20,12 @@ def main():
         for name, prop in instances.vp.items():
             val = prop[instance]
             if name == 'file':
-                val = os.path.relpath(val, start=script_dir)
+                val = os.path.relpath(os.path.realpath(val), start=script_dir)
             if name == 'llvm_soc':
                 # wild pointer, skip this
                 continue
             if name == 'soc':
+                # pointer to vertex index
                 continue
             if prop.value_type() == 'python::object':
                 # for now, just ignore
@@ -40,6 +40,9 @@ def main():
             "target": instances.vp.id[edge.target()],
         }
         for name, prop in instances.ep.items():
+            if name == 'syscall':
+                # pointer to vertex index
+                continue
             val = prop[edge]
             i_dump[name] = val
         i_dump["type"] = "interaction"
@@ -50,7 +53,7 @@ def main():
             return "0" + item['id']
         return "1"
 
-    # log.info(json.dumps(sorted(dump, key=sort_key), indent=2))
+    # log.warn(json.dumps(sorted(dump, key=sort_key), indent=2))
     fail_if(data != sorted(dump, key=sort_key), "Data not equal")
 
 

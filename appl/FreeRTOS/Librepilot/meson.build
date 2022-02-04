@@ -171,9 +171,9 @@ foreach application_prefix: ['librepilot_mock']
   named_plain_elf_targets = []
   named_lto_elf_targets = []
   profiles_list = []
-  foreach t : ara_gen_freertos_targets
+  foreach target : ara_gen_freertos_targets
     application_ll = get_variable(application_prefix + '_ll')
-    name_prefix = application_prefix + '-' + t
+    name_prefix = application_prefix + '-' + target
     ara_target = custom_target(name_prefix + '-os',
                                input: application_ll,
                                depfile: name_prefix+ '-os.cc.dep',
@@ -183,7 +183,7 @@ foreach application_prefix: ['librepilot_mock']
                                         name_prefix + '-os.cc.freertos_overrides.h',
                                        ],
                                depend_files: [extra_settings, manual_corrections],
-                               command: get_variable('ara_gen_cmd_' + t) +
+                               command: get_variable('ara_gen_cmd_' + target) +
                                         ['--step-settings', extra_settings,] +
                                         ['--manual-corrections', manual_corrections]
                               )
@@ -229,7 +229,7 @@ foreach application_prefix: ['librepilot_mock']
       lto_prefix = name_prefix + '-' + lto_version
       lto_app_os = custom_target(lto_prefix + '-app_os.ll',
                                  input: app_os,
-                                 depends: [sparse_rle, sparse_rle2],
+                                 depends: [sparse_rle2],
                                  output: lto_prefix + '-os_app.ll',
                                  command: get_variable('llvm_lto_cmd_' + lto_version))
       # -Os ? könnte platzprobleme geben
@@ -270,13 +270,26 @@ foreach application_prefix: ['librepilot_mock']
     run_target('run_qemu_' + lto_prefix, command: [qemu_cmd, lto_elf])
     run_target('run_gdb_qemu_' + lto_prefix, command: [gdb_qemu_cmd, lto_elf])
     elf_targets += lto_elf
-    named_elf_targets += [t + '-' + lto_version, lto_elf]
-    profiles_list += ['--profiles', t + '-' + lto_version]
+    named_elf_targets += [target + '-' + lto_version, lto_elf]
+    profiles_list += ['--profiles', target + '-' + lto_version]
 
+
+    test('validate_generator_' + lto_prefix,
+         py3_inst,
+         args: [validate_generator_runner,
+                application_prefix,
+                target,
+                ara_target,
+                os_target[0].full_path(),
+                lto_elf,
+               ],
+         workdir:  meson.current_source_dir(),
+         suite: 'generator'
+        )
 
 
     if get_option('enable_librepilot_tests')
-      if t in ['instances_full_static', 'instances_full_initialized', 'vanilla']
+      if target in ['instances_full_static', 'instances_full_initialized', 'vanilla']
         test_elf = 'nop'
       else
         test_elf = lto_elf

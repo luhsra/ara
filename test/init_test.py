@@ -1,9 +1,11 @@
 """Common init function for tests."""
 import importlib
 import json
-import logging
 import sys
+import os
+import tempfile
 
+from ara.os import get_os_model_by_name
 
 def fake_step_module():
     """Fake the step module into the correct package."""
@@ -43,12 +45,30 @@ def fail_if(condition, *arg, dry=False):
         if condition and not dry:
             sys.exit(1)
 
+def fail_if_json_not_equal(expected, actual):
+    if expected != actual:
+        def write_json_to_tmp(json_obj):
+            path = ""
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+                path = f.name
+                f.write(json.dumps(json_obj, indent=2))
+            return path
+
+        expected_path = write_json_to_tmp(expected)
+        actual_path = write_json_to_tmp(actual)
+        # run automatically diff to show difference in a convenient way
+        os.system(f"echo \"diff <expected> <actual>:\"; diff {expected_path} {actual_path}")
+        print("ERROR: Data not equal")
+        os.unlink(expected_path)
+        os.unlink(actual_path)
+        sys.exit(1)
+
 
 def get_config(i_file):
     """Return the default common config."""
-    return {'log_level': 'debug',
+    return {'log_level': os.environ.get('ARA_LOGLEVEL', 'warn'),
             'dump_prefix': 'dumps/{step_name}.',
-            'dump': False, # dump = True can be really really slow. Especially with bigger programs or with musl libc.
+            'dump': bool(os.environ.get('ARA_DUMP', '')),
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
@@ -56,7 +76,8 @@ def get_config(i_file):
             'input_file': i_file}
 
 
-def init_test(steps=None, extra_config=None, logger_name=None, os=None):
+def init_test(steps=None, extra_config=None, logger_name=None,
+              extra_input=None, os_name: str = None):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
 
@@ -72,31 +93,47 @@ def init_test(steps=None, extra_config=None, logger_name=None, os=None):
                   argument of Stepmanager.execute.
     logger_name:  Create a logger with this name. Otherwise the root logger is
                   returned.
+    extra_input:  Special dict which can be used to do extra stuff with input
+                  arguments.  Expected is a [str: function]
+                  The str becomes to a normal ARA config string, the function
+                  gets sys.argv as argument and should return a valid value.
+    os_name:      name of the os model to run the test with. If your test is
+                  not sensitive to a specific os model just ignore this
+                  argument.
     """
-    logger = init_logging(level=logging.DEBUG, root_name='ara.test')
+    log_level = os.environ.get('ARA_LOGLEVEL', 'warn')
+    logger = init_logging(level=log_level, root_name='ara.test')
     if logger_name is not None:
         logger = get_logger(logger_name)
     if not extra_config:
         extra_config = {}
     g = Graph()
-    if os != None:
-        g.os = os
-    assert len(sys.argv) >= 3
+    if os_name != None:
+        g.os = get_os_model_by_name(os_name)
+
     json_file = sys.argv[1]
     i_file = sys.argv[2]
-    print(f"Testing with JSON: '{json_file}'"
-          f", and file: {i_file}")
+
+    if not extra_input:
+        extra_input = {}
+    for key in extra_input:
+        extra_input[key] = extra_input[key](sys.argv)
+
+    logger.info(f"Testing with JSON: '{json_file}'"
+                f", and file: {i_file}")
     if steps:
-        print(f"Executing steps: {steps}")
+        logger.info(f"Executing steps: {steps}")
     elif extra_config:
-        print(f"Executing with config: {extra_config}")
+        logger.info(f"Executing with config: {extra_config}")
     else:
         assert False
+    conf = {**get_config(i_file), **extra_input}
+    logger.debug(f"Full config: {conf}")
     with open(json_file) as f:
         data = json.load(f)
 
     s_manager = StepManager(g)
 
-    s_manager.execute(get_config(i_file), extra_config, steps)
+    s_manager.execute(conf, extra_config, steps)
 
     return g, data, logger, s_manager

@@ -67,6 +67,7 @@ volatile int j = 0;
 void vTask1(void * param) {
     STORE_TIME_MARKER(task1_go);
     print_a();
+    mutex = xSemaphoreCreateMutex();
     xTaskCreate(vTask2, "xxx", 100, NULL, 2, &handle_xxx);
     print_c();
     print_handles();
@@ -84,7 +85,6 @@ int main() {
     kout << "hello from main" << endl;
     STORE_TIME_MARKER(done_hello_print);
 
-    mutex = xSemaphoreCreateMutex();
 
     if ((int)main != 0xabcd) {
       xTaskCreate(vTask1, "zzz", 1000, NULL, 1, &wrapper.handle_zzz);

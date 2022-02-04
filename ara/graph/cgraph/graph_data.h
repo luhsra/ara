@@ -11,6 +11,8 @@
 
 namespace ara::graph {
 
+	class CallPath;
+
 	namespace llvmext {
 		struct Function {
 			llvm::BasicBlock* exit_block = nullptr;
@@ -43,8 +45,12 @@ namespace ara::graph {
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
 		/**
 		 * Workaround for SVF classes where we need additional attributes.
+		 * The tuple conists of the
+		 * 1. the SVF Node (SVF::NodeID)
+		 * 2. a list of offset into a compound type (std::vector<int64_t>)
+		 * 3. a context/CallPath (represented as hash due to include loops, std::size_t)
 		 */
-		using ObjMap = boost::bimap<std::pair<SVF::NodeID, std::vector<int64_t>>, uint64_t>;
+		using ObjMap = boost::bimap<std::tuple<SVF::NodeID, std::vector<int64_t>, std::size_t>, uint64_t>;
 		ObjMap obj_map;
 
 		GraphData() : module(nullptr), svfg(nullptr) {}

@@ -32,6 +32,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('instances.py'), files('instances.json'), freertos_instances],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
@@ -39,6 +40,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
@@ -63,16 +65,34 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+
+    lock_files = {
+                   'autosar_multicore_locks_a': files('locks_a.json'),
+                   'autosar_multicore_locks_b': files('locks_b.json'),
+                   'autosar_multicore_locks_c': files('locks_c.json'),
+                   'autosar_multicore_locks_d': files('locks_d.json'),
+                   'autosar_multicore_locks_e': files('locks_e.json'),
+                 }
+    foreach app: autosar_targets
+      if app['full_name'] in lock_files
+           locks = lock_files[app['full_name']]
+      elif app.has_key('locks')
+             locks = app['locks']
+      else
+        continue
+      endif
+      test('lock_elision_' + app['full_name'],
+          py3_inst,
+          args: [files('lock_elision.py'), locks, app['ll'], app['oil']],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['steps', 'lock_elision']
+      )
+    endforeach
+
     test('multiple-configured-steps',
         py3_inst,
         args: files('multiple_configured_steps.py'),
-        env: [python_path],
-        suite: 'steps'
-    )
-
-    test('oil-parsing',
-        py3_inst,
-        args: [files('oil.py'), osek_oiltest[0], osek_oiltest[1]],
         env: [python_path],
         suite: 'steps'
     )
@@ -83,6 +103,24 @@ if get_option('enable_step_tests')
         env: [python_path],
         suite: 'steps'
     )
+
+    test('src-loc',
+        py3_inst,
+        args: [files('src_loc.py'), files('src_loc.json'), freertos_src_loc],
+        env: [python_path],
+        depends: ara_py,
+        suite: 'steps'
+    )
+
+    foreach elem : autosar_targets
+      test('sse_' + elem['full_name'],
+          py3_inst,
+          args: [files('sse.py'), elem['sys_test'], elem['ll'], elem['oil']],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['steps', 'sse']
+      )
+    endforeach
 
     test('syscall',
         py3_inst,
@@ -108,6 +146,10 @@ if get_option('enable_step_tests')
     )
 
     subdir('native_step_test')
+endif
+
+if get_option('enable_zephyr_tests')
+    subdir('zephyr_test')
 endif
 
 if get_option('enable_posix_tests')

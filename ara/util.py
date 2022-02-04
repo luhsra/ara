@@ -3,6 +3,7 @@
 
 import sys
 import logging
+import re
 
 
 LEVEL = {"critical": logging.CRITICAL,
@@ -107,6 +108,11 @@ def get_logger(name: str, level=None):
     return get_logger_manager().get_logger(name, level)
 
 
+def get_null_logger():
+    """Get a logger that does absolutely nothing."""
+    return logging.getLogger('null').addHandler(logging.NullHandler())
+
+
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):
     """Init logging with color and timestamps.
 
@@ -143,3 +149,31 @@ class VarianceDict(dict):
             return self[key]
         self[key] = default_value
         return self[key]
+
+class KConfigFile(dict):
+    """A collection of KConfig settings. Stores them as key, value pairs."""
+    def __init__(self, conf: str):
+        dict.__init__(self)
+
+        with open(conf, 'r') as f:
+            # Regex used to delete all whitespace, comments and quotes from the key=value entry.
+            strip = re.compile(r'\s+|"|#.*')
+            for line in f.readlines():
+                line = re.sub(strip, '', line)
+                tokens = line.split('=')
+
+                if len(tokens) != 2:
+                    continue
+
+                self[tokens[0]] = tokens[1]
+
+llvm_suffix = re.compile(".+\.\d+")
+
+def drop_llvm_suffix(name: str) -> str:
+    """Remove the llvm suffix from a name
+    
+    E.g. sleep.5 -> sleep
+    """
+    if llvm_suffix.match(name) is not None:
+        return name.rsplit('.', 1)[0]
+    return name

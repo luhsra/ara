@@ -1,0 +1,2720 @@
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 16384
+  },
+  {
+    "label": "Queue",
+    "id": "fifo1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "fifo1.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "fifo1.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "fifo2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "fifo2.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "fifo2.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "lifo1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 24,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "lifo1.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 24,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "lifo1.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 24,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "lifo2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 25,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "lifo2.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 25,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "lifo2.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 25,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 22,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem1.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 22,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem1.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 22,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 23,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem2.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 23,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "KernelSemaphore",
+    "id": "sem2.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 23,
+    "specialization_level": "",
+    "type": "instance",
+    "count": 0,
+    "limit": 1
+  },
+  {
+    "label": "Stack",
+    "id": "stack_1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 2
+  },
+  {
+    "label": "Stack",
+    "id": "stack_1.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 2
+  },
+  {
+    "label": "Stack",
+    "id": "stack_1.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 26,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 2
+  },
+  {
+    "label": "Stack",
+    "id": "stack_2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 2
+  },
+  {
+    "label": "Stack",
+    "id": "stack_2.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 2
+  },
+  {
+    "label": "Stack",
+    "id": "stack_2.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 27,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 2
+  },
+  {
+    "label": "Queue",
+    "id": "sync_fifo",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 146,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Queue",
+    "id": "sync_fifo.3",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 147,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 129,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "sema_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 154,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "sema_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.10",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 190,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "stack_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.11",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 218,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "stack_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 179,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "sema_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.3",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 161,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "lifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.4",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 195,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "lifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.5",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 227,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "lifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.6",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 162,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "fifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.7",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 194,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "fifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.8",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 225,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "fifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data1.9",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 163,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "stack_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 132,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "sema_thread2",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.1",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/sema.c",
+    "line": 157,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "sema_thread3",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 165,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "lifo_thread2",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.3",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/lifo.c",
+    "line": 199,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "lifo_thread3",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.4",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 165,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "fifo_thread2",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.5",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 197,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "fifo_thread3",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.6",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/mwfifo.c",
+    "line": 228,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "fifo_thread1",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.7",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 166,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "stack_thread2",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "label": "Thread",
+    "id": "thread_data2.8",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/sys_kernel/src/stack.c",
+    "line": 193,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "stack_thread3",
+    "options": 0,
+    "priority": -13,
+    "stack_size": 2048
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.1",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.1",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.2",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.3",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.2",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.4",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.3",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.5",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo.3",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.6",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.4",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.7",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.5",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.8",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.6",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.9",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.7",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.10",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data2.8",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "thread_data1.11",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem1",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem1.1",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem1.2",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem2",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem2.1",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "sem2.2",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1.1",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1.2",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2.1",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2.2",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1.1",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1.2",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2.1",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2.2",
+    "label": "k_queue_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1",
+    "label": "k_stack_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1.1",
+    "label": "k_stack_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1.2",
+    "label": "k_stack_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2",
+    "label": "k_stack_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2.1",
+    "label": "k_stack_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2.2",
+    "label": "k_stack_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "__main",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem1.1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem1.2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem2.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sem2.2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo1.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "lifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo.3",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo.3",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo1.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "fifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "sync_fifo.3",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_1.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "stack_2.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "__main",
+    "label": "k_sleep",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1",
+    "target": "sem1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1",
+    "target": "sem1.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1",
+    "target": "sem1.2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1",
+    "target": "sem2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1",
+    "target": "sem2.1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1",
+    "target": "sem2.2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2",
+    "target": "sem1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2",
+    "target": "sem1.1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2",
+    "target": "sem1.2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2",
+    "target": "sem2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2",
+    "target": "sem2.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2",
+    "target": "sem2.2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "sem1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "sem1.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "sem1.2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "sem2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "sem2.1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.1",
+    "target": "sem2.2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "sem1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "sem1.1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "sem1.2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "sem2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "sem2.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "sem2.2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.1",
+    "target": "thread_data2.1",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "sem1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "sem1.1",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "sem1.2",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "sem2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "sem2.1",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.2",
+    "target": "sem2.2",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo2.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo2.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo2.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "lifo2.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.3",
+    "target": "sync_fifo",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "lifo1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "lifo1.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "lifo1.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "lifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "lifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "lifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.2",
+    "target": "sync_fifo",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo2.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo2.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo2.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "lifo2.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.4",
+    "target": "sync_fifo",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "lifo1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "lifo1.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "lifo1.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "lifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "lifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "lifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "thread_data2.3",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.3",
+    "target": "sync_fifo",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo2.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo2.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo2.1",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "lifo2.2",
+    "label": "k_queue_prepend",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.5",
+    "target": "sync_fifo",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "fifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "fifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "fifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "fifo2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "fifo2.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "fifo2.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.6",
+    "target": "sync_fifo.3",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "fifo1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "fifo1.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "fifo1.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "fifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "fifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "fifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.4",
+    "target": "sync_fifo.3",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "fifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "fifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "fifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "fifo2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "fifo2.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "fifo2.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.7",
+    "target": "sync_fifo.3",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "fifo1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "fifo1.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "fifo1.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "fifo2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "fifo2.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "fifo2.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "thread_data2.5",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.5",
+    "target": "sync_fifo.3",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "fifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "fifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "fifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "fifo2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "fifo2.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "fifo2.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.8",
+    "target": "sync_fifo.3",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "fifo1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "fifo1.1",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "fifo1.2",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "fifo2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "fifo2.1",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "fifo2.2",
+    "label": "k_queue_append",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.6",
+    "target": "sync_fifo.3",
+    "label": "k_queue_get",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_1.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_1.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_2.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_2.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_1.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_1.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_2.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.9",
+    "target": "stack_2.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "stack_1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "stack_1.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "stack_1.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "stack_2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "stack_2.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.7",
+    "target": "stack_2.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_1.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_1.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_2.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_2.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_1.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_1.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_2.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.10",
+    "target": "stack_2.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "thread_data2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "stack_1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "stack_1.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "stack_1.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "stack_2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "stack_2.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "stack_2.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data2.8",
+    "target": "thread_data2.8",
+    "label": "k_yield",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "thread_data1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_1.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_1.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_2.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_2.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_1.1",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_1.2",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_2.1",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_data1.11",
+    "target": "stack_2.2",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "sem1.1",
+    "target": "sem1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "sem1.2",
+    "target": "sem1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "sem2.1",
+    "target": "sem2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "sem2.2",
+    "target": "sem2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "lifo1.1",
+    "target": "lifo1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "lifo1.2",
+    "target": "lifo1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "lifo2.1",
+    "target": "lifo2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "lifo2.2",
+    "target": "lifo2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "fifo1.1",
+    "target": "fifo1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "fifo1.2",
+    "target": "fifo1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "fifo2.1",
+    "target": "fifo2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "fifo2.2",
+    "target": "fifo2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "stack_1.1",
+    "target": "stack_1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "stack_1.2",
+    "target": "stack_1",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "stack_2.1",
+    "target": "stack_2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  },
+  {
+    "source": "stack_2.2",
+    "target": "stack_2",
+    "label": "same symbol than",
+    "type": "same_symbol_than"
+  }
+]

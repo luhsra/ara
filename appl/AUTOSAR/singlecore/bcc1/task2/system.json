@@ -1,0 +1,47 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "Handler11Group": {
+          "promises": [],
+          "tasks": {
+            "Handler11": {
+              "activation": 1,
+              "autostart": true,
+              "priority": 4,
+              "schedule": false
+            }
+          }
+        },
+        "Handler12Group": {
+          "promises": [],
+          "tasks": {
+            "Handler12": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 3,
+              "schedule": true
+            }
+          }
+        },
+        "Handler13Group": {
+          "promises": [],
+          "tasks": {
+            "Handler13": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 5,
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ]
+}

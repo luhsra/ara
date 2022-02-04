@@ -2,6 +2,7 @@ settings_dir = meson.current_source_dir()
 
 # common flags for clang
 clang_flags = ['-g',  # generate debug information
+               '-O0',
                '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA)
                '-ffunction-sections',
                '-fdata-sections',
@@ -139,5 +140,4 @@ foreach target : ara_gen_freertos_targets
 endforeach
 llvm_lto_cmd_none = ['cp', '@INPUT@', '@OUTPUT@']
 llvm_lto_cmd_standard = llvm_opt_cmd
-llvm_lto_cmd_rle = llvm_opt_cmd + ['-load', sparse_rle.full_path(), '-SparseRLE']
 llvm_lto_cmd_rle2 = llvm_opt_cmd + ['-load', sparse_rle2.full_path(), '-SparseRLE2']

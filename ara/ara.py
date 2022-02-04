@@ -10,7 +10,7 @@ import sys
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
-from .os import get_os_model_names, get_os_model_by_name
+from .os import get_os_model_names, get_os_model_by_name, zephyr
 from .steps.syscall_count import SyscallCount
 
 from .steplisting import print_avail_steps
@@ -53,6 +53,8 @@ def main():
                         help="choose steps that will be executed")
     parser.add_argument('input_file', help="the LLVM-IR input file", nargs='?')
     parser.add_argument('--oilfile', help="name of oilfile")
+    parser.add_argument('--timings', help="file for ABB timings. "
+                                          "See ApplyTimings for more info.")
     parser.add_argument('--generator_output', metavar="FILE",
                         help="file to store generated OS code")
     parser.add_argument('--step-settings', metavar="FILE", action='append',
@@ -69,7 +71,7 @@ def main():
 
     os_model_names = get_os_model_names()
     os_model_names.append("auto")
-    parser.add_argument('--os', help="Use the specified OS Model.",
+    parser.add_argument('--os', help="the os of the given application",
                         choices=os_model_names, default="auto")
 
     # The following arguments set an option for a specific/multiple step(s).
@@ -109,6 +111,12 @@ def main():
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
 
+    if args.os and args.os != "auto":
+        g.os = get_os_model_by_name(args.os)
+    if g.os == zephyr.ZEPHYR:
+        if args.entry_point == "main":
+            args.entry_point = "" # Let Zephyr model handle the entry point.
+
     if args.list_steps:
         print(print_avail_steps(avail_steps))
         sys.exit(0)
@@ -147,10 +155,11 @@ def main():
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
 
-    s_manager.execute(vars(args), extra_settings, args.step)
+    s_args = dict([(x, y) for x, y in vars(args).items() if y is not None])
+    s_manager.execute(s_args, extra_settings, args.step)
 
     if args.ir_output:
-        s_manager.execute(vars(args),
+        s_manager.execute(s_args,
                           {'steps': [{'name':'IRWriter',
                                       'ir_file': args.ir_output}]}, None)
 

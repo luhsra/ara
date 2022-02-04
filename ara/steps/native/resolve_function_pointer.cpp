@@ -2,9 +2,13 @@
 
 #include "resolve_function_pointer.h"
 
+#include "common/llvm_common.h"
+
 #include <Util/SVFUtil.h>
 #include <WPA/Andersen.h>
 #include <boost/range/adaptor/indexed.hpp>
+#include <fstream>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/TypeFinder.h>
 
 namespace ara::step {
@@ -219,7 +223,11 @@ namespace ara::step {
 				// classes.
 				if (ty->hasName() && ty->getName().endswith(".base")) {
 					auto n_ty_name = ty->getName().drop_back(5); // drop ".base"
+#if LLVM_VERSION_MAJOR <= 11
 					StructType* n_ty = graph.get_module().getTypeByName(n_ty_name);
+#else
+					StructType* n_ty = llvm::StructType::getTypeByName(graph.get_module().getContext(), n_ty_name);
+#endif
 					if (n_ty) {
 						auto& compat_1 = compatible_types[ty];
 						auto& compat_2 = compatible_types[n_ty];
@@ -423,7 +431,7 @@ namespace ara::step {
 				auto source_file = entry_d->getString("source_file");
 				fail_if_empty(source_file, opt_name, "Invalid JSON. Expecting a source_file entry.");
 				std::filesystem::path source_path = std::filesystem::canonical(
-				    std::filesystem::path(*opt).parent_path() / std::filesystem::path(*source_file));
+				    std::filesystem::path(*opt).parent_path() / std::filesystem::path(source_file->str()));
 				auto line_number = entry_d->getInteger("line_number");
 				fail_if_empty(line_number, opt_name, "Invalid JSON. Expecting a line_number entry.");
 				auto call_targets = entry_d->getArray("call_targets");

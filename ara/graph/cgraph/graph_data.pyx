@@ -9,11 +9,13 @@ from common.cy_helper cimport to_string
 from cgraph cimport CallGraph, SigType as CSigType
 from cy_helper cimport to_sigtype, safe_get_value, insert_in_map
 
+from libcpp.cast cimport reinterpret_cast
 from libcpp.memory cimport unique_ptr, shared_ptr
 from libcpp.map cimport map as cppmap
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
+from libc.stdint cimport intptr_t
 from cython.operator cimport dereference as deref, postincrement
 from ir cimport Value, AttributeSet
 
@@ -238,6 +240,21 @@ cdef public object py_get_arguments(shared_ptr[CArguments] c_args):
     return args
 
 
+ctypedef Value* ValuePtr
+def _get_llvm_obj(cfg, vertex):
+    """Return the LLVM Object that belongs to a specific node.
+
+    Do _not_ call this directly. Use CFG::get_llvm_obj() instead.
+    """
+    llvm_link = cfg.vp.llvm_link[vertex]
+    if llvm_link == 0:
+        return None
+    cdef intptr_t val_int = llvm_link
+    cdef void* val_ptr = <void*>(val_int)
+    cdef Value* val = reinterpret_cast[ValuePtr](val_ptr)
+    return get_obj_from_value(deref(val))
+
+
 # functions for os.h
 cdef public string py_syscall_get_name(object syscall):
     return syscall.get_name().encode('UTF-8')
@@ -263,3 +280,8 @@ cdef public cppmap[const string, CSysCall] py_os_detected_syscalls(object os):
         insert_in_map(syscalls, syscall_name.encode('UTF-8'),
                       CSysCall(syscall, os))
     return syscalls
+
+cdef public object py_get_callpath(const CCallPath& callpath):
+    cp = CallPath()
+    cp._c_callpath = callpath
+    return cp

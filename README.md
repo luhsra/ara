@@ -9,7 +9,7 @@ Building
 
 The following dependencies are needed:
 
-- [meson](https://mesonbuild.com/) (>=0.55.0)
+- [meson](https://mesonbuild.com/) (>=0.60.0)
 - [llvm](http://llvm.org/) (>=9, <=10)
 - [cython](https://cython.org/) (>=0.29.14)
 - [python](https://www.python.org/) (>=3.7)
@@ -20,12 +20,24 @@ Optional dependencies:
 
 - [pygments](https://pygments.org/) (Runtime depedency to get dot files linked to the source code)
 
+Dependencies that are built as subproject:
+
+- [SVF](http://svf-tools.github.io/SVF/)
+  - SVF needs [Z3](https://github.com/Z3Prover/z3) additionally
+
 Getting packages in SRA lab:
 ```
 echo addpackage llvm-9.0 >> ~/.bashrc
 pip3 install --user meson
 . ~/.profile
 ```
+
+Outside of the SRA lab some extra dependencies might be needed:
+```
+sudo apt install cmake pkgconf libboost-all-dev libsparsehash-dev gcc-arm-none-eabi libcairo2-dev python3-dev
+pip3 install -U pycairo matplotlib
+```
+
 
 To initialize the external modules, run the init script:
 ```
@@ -47,6 +59,33 @@ ninja ara.py
 ```
 
 There are some build options to deactivate parts of the project. Take a look at `meson configure` for that.
+
+Zephyr
+------
+In order to build and analyze Zephyr-RTOS apps some additional steps are required: (you can use the init_zephyr.sh script to automate this process)
+To obtain Zephyr and its dependencies follow steps 1 to 3 (inclusive) from their [starter guide](https://docs.zephyrproject.org/2.4.0/getting_started/index.html).
+
+Delete the zephyrproject/zephyr repo and replace it with our [internal one](https://scm.sra.uni-hannover.de/diffusion/412/repository/ara/). 
+Switch to branch `ara` and update the dependencies with west.
+```
+rm -rf ./zephyr
+git clone -b ara ssh://git@scm.sra.uni-hannover.de/diffusion/412/zephyrproject-rtos.git zephyr
+west update
+```
+Configure meson so that it finds the zephyr install.
+```
+meson configure -D zephyr_dir=<...>/zephyrproject/
+```
+To test zephyr apps without a test case use this target:
+```
+ninja zephyr_examples
+ninja z_clean
+```
+
+To analyze them with ARA:
+```
+./ara.py --os Zephyr --step-settings ../settings/zephyr.json --entry-point="" ./appl/Zephyr/static_threads.ll
+```
 
 Usage
 -----

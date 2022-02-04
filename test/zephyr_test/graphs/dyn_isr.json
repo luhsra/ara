@@ -1,0 +1,183 @@
+[
+  {
+    "label": "Zephyr",
+    "id": "__kernel",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 0,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "heap_size": 0
+  },
+  {
+    "label": "Thread",
+    "id": "__main",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "",
+    "line": 0,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": 0,
+    "entry_name": "main",
+    "options": 0,
+    "priority": 0,
+    "stack_size": 1024
+  },
+  {
+    "label": "Mutex",
+    "id": "guard",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/dyn_isr/src/main.c",
+    "line": 43,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "ISR",
+    "id": "produce_work_isr",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/dyn_isr/src/main.c",
+    "line": 45,
+    "specialization_level": "",
+    "type": "instance",
+    "entry_name": "produce_work_isr",
+    "flags": 0,
+    "irq_number": 0,
+    "priority": 1
+  },
+  {
+    "label": "Mutex",
+    "id": "some_instance",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/dyn_isr/src/main.c",
+    "line": 32,
+    "specialization_level": "",
+    "type": "instance"
+  },
+  {
+    "label": "Stack",
+    "id": "work",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/Zephyr/dyn_isr/src/main.c",
+    "line": 42,
+    "specialization_level": "",
+    "type": "instance",
+    "max_entries": 256
+  },
+  {
+    "label": "Thread",
+    "id": "worker",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/Zephyr/dyn_isr/src/main.c",
+    "line": 39,
+    "specialization_level": "",
+    "type": "instance",
+    "delay": "<unknown>",
+    "entry_name": "do_work",
+    "options": 0,
+    "priority": 1,
+    "stack_size": 1024
+  },
+  {
+    "source": "__main",
+    "target": "worker",
+    "label": "k_thread_create",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "work",
+    "label": "k_stack_alloc_init",
+    "type": "create"
+  },
+  {
+    "source": "__main",
+    "target": "guard",
+    "label": "k_mutex_init",
+    "type": "create"
+  },
+  {
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "work",
+    "label": "k_stack_pop",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  },
+  {
+    "source": "produce_work_isr",
+    "target": "some_instance",
+    "label": "k_mutex_init",
+    "type": "create"
+  },
+  {
+    "source": "produce_work_isr",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "produce_work_isr",
+    "target": "work",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "produce_work_isr",
+    "target": "guard",
+    "label": "k_mutex_unlock",
+    "type": "interaction"
+  }
+]

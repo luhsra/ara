@@ -66,10 +66,15 @@
 #define ReleaseResource(x)				\
   AUTOSAR_ReleaseResource(AUTOSAR_RESOURCE_##x)
 
-#define DeclareEvent(x)							\
-	extern const EventMaskType AUTOSAR_EVENT_ ## x;			\
-    static dosek_unused const EventMaskType &x = AUTOSAR_EVENT_ ## x
+#define GetSpinlock(x) AUTOSAR_GetSpinlock(AUTOSAR_SPINLOCK_##x)
 
+#define ReleaseSpinlock(x) AUTOSAR_ReleaseSpinlock(AUTOSAR_SPINLOCK_##x)
+
+#define DeclareSpinlock(x)                                                                                             \
+	extern const SpinlockType AUTOSAR_SPINLOCK_##x;                                                                    \
+	static dosek_unused const SpinlockType& x = AUTOSAR_SPINLOCK_##x;
+
+#define DeclareEvent(x, c) extern const EventMaskType x = (c);
 
 #define SetEvent(task,event)						\
   AUTOSAR_SetEvent(AUTOSAR_TASK_##task,event)
@@ -230,6 +235,18 @@ extern StatusType AUTOSAR_GetResource(ResourceType r);
  * \param r The RESOURCE to be released
  **/
 extern StatusType AUTOSAR_ReleaseResource(ResourceType r);
+
+/**
+ * \brief Acquire a SPINLOCK
+ * \param r The SPINLOCK to be locked
+ **/
+extern StatusType AUTOSAR_GetSpinlock(SpinlockType r);
+
+/**
+ * \brief Release the given SPINLOCK again
+ * \param r The SPINLOCK to be released
+ **/
+extern StatusType AUTOSAR_ReleaseSpinlock(SpinlockType r);
 
 /**
  * \brief Set an EVENT

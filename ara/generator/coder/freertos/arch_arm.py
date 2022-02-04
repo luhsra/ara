@@ -3,10 +3,13 @@ from ..elements import (
     CodeTemplate,
     DataObject,
     DataObjectArray,
+    ExternalDataObject,
     Include,
     InstanceDataObject,
     StructDataObject,
 )
+
+import pyllco
 
 default_traps = [
     'NMI_Handler',
@@ -97,7 +100,7 @@ class ArmArch(GenericArch):
         cts = self.ara_graph.cfg.get_call_targets(task.abb)
         funcs = [self.ara_graph.cfg.vp.name[f] for f in cts]
         if 'xTaskCreateStatic' in funcs:
-            task.specialization_level = 'unchanged'
+            assert False, "Not implemented"
         if task.specialization_level == 'initialized':
             return self.initialized_stack(task)
         elif task.specialization_level == 'static':
@@ -109,15 +112,25 @@ class ArmArch(GenericArch):
 
     def initialized_stack(self, task):
         self._log.debug("Generating initialized stack for %s", task.name)
-        try:
-            task_parameters = int(task.parameters)
-        except TypeError:
-            task.specialization_level = 'static'
-            return self.static_stack(task)
+        if isinstance(task.parameters, str) or isinstance(task.parameters, int):
+            task_parameters = task.parameters
+        elif isinstance(task.parameters, pyllco.Constant):
+            try:
+                task_parameters = task.parameters.get()
+            except:
+                task_parameters = "&" + task.parameters.get_name()
+                param_decl = ExternalDataObject('unsigned', task.parameters.get_name())
+                self.generator.source_file.data_manager.add(param_decl)
+        else:
+            assert False, 'unexpected init stack fallback'
+        if task.artificial:
+            task_function = 'prvIdleTask'
+        else:
+            task_function = task.cfg.vp.name[task.cfg.vertex(task.function)]
         stack = InstanceDataObject("InitializedStack_t",
                                    f't{task.name}_{task.uid}_static_stack',
                                    [f'{task.stack_size}'],
-                                   [f'(void *){task.function}', f'(void *){task_parameters}'],
+                                   [f'(void *){task_function}', f'(void *){task_parameters}'],
                                    extern_c = False)
         self.generator.source_file.data_manager.add(stack)
         task.impl.stack = stack
@@ -126,8 +139,9 @@ class ArmArch(GenericArch):
 
     def static_unchanged_queue(self, queue):
         self._log.debug("Generating Queue: %s", queue.name)
-        if queue.size is None or queue.length is None:
-            queue.specialization_level = 'unchanged'
+        if queue.size is None or queue.length is None or not queue.unique:
+            assert queue.specialization_level == 'unchanged', queue.specialization_level
+            return
         if int(queue.size) == 0 or int(queue.length) == 0:
             self._log.debug("queue size/length = 0: %s", queue)
             queue.impl.data = self.generator.source_file.data_manager.get_nullptr()
@@ -136,7 +150,7 @@ class ArmArch(GenericArch):
                 size = queue.size * queue.length
                 name = f'queue_data_{queue.name}_{queue.uid}'
             except:
-                queue.specialization_level = 'unchanged'
+                assert queue.specialization_level == 'unchanged'
                 return
             data = DataObjectArray('uint8_t', name, size)
             self.generator.source_file.data_manager.add(data)

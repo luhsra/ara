@@ -16,6 +16,7 @@ graph_data_mod = py3_inst.extension_module('graph_data',
   graph_data_pyx_cpp,
   'graph.cpp',
   'arguments.cpp',
+  'callpath.cpp',
   'mix.cpp',
   'os.cpp',
   dependencies: [py3_inst.dependency(), llvm_dep, boost_dep, graph_tool_dep, common_dep, pyllco_dep, svf_dep]

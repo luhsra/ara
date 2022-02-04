@@ -1,8 +1,9 @@
 from .SourceElement import Block, Statement
 from collections import namedtuple
 
+
 class Function:
-    def __init__(self, name, rettype, argstype, extern_c = False, attributes = None):
+    def __init__(self, name, rettype, argstype, extern_c=False, attributes=None):
         self.name = name
         self.function_name = name
         self.rettype = rettype
@@ -10,8 +11,16 @@ class Function:
         self.statements = []
         self.extern_c = extern_c
         self.attributes = attributes
-        if self.attributes == None:
+        if self.attributes is None:
             self.attributes = []
+
+    def __repr__(self):
+        def attr(attr):
+            return f"{attr}={getattr(self, attr)}"
+        attrs = [attr(x) for x in ["name", "function_name", "rettype",
+                                   "argstype", "statements", "extern_c",
+                                   "attributes"]]
+        return f"Function({', '.join(attrs)})"
 
     def unused_parameter(self, parameter):
         if type(parameter) == int:
@@ -19,7 +28,7 @@ class Function:
         else:
             name = parameter
 
-        self.statements.append (Statement("(void) %s" % name))
+        self.statements.append(Statement("(void) %s" % name))
 
     def add(self, statement):
         self.statements.append(statement)
@@ -29,21 +38,20 @@ class Function:
         self.statements = [statement] + self.statements
         return statement
 
-
     def source_element_declarations(self):
         attributes = " ".join(self.attributes)
-        decl = "%s %s %s(%s)" %(self.rettype,
-                                  attributes,
-                                  self.name,
-                                  ", ".join(self.argstype))
+        decl = "%s %s %s(%s)" % (self.rettype,
+                                 attributes,
+                                 self.name,
+                                 ", ".join(self.argstype))
         if self.extern_c:
             decl = 'extern "C" %s' % decl
         return Statement(decl)
 
     def source_element_definitions(self):
-        args = ["%s %s" %(x[1], x[0])
+        args = ["%s %s" % (x[1], x[0])
                 for x in self.arguments()]
-        guard = "%s %s(%s)" %( self.rettype,
+        guard = "%s %s(%s)" % (self.rettype,
                                self.name,
                                ", ".join(args))
         if self.extern_c:
@@ -60,11 +68,10 @@ class Function:
     def arguments_types(self):
         return [arg[1] for arg in self.arguments()]
 
-
     def arguments(self):
         ret = []
         for i in range(0, len(self.argstype)):
-            ret.append(("arg%d" %(i), self.argstype[i]))
+            ret.append(("arg%d" % (i), self.argstype[i]))
         return ret
 
     def return_statement(self, expression):
@@ -75,7 +82,7 @@ class Function:
 
 
 class FunctionDeclaration(Function):
-    def __init__(self, name, rettype="void", argstype=[], extern_c = False, attributes = None):
+    def __init__(self, name, rettype="void", argstype=[], extern_c=False, attributes=None):
         Function.__init__(self, name, rettype, argstype, extern_c, attributes)
 
     def add(self, statement):

@@ -1,9 +1,46 @@
 {
 	"steps": [
-		"MultiSSE"
+		"MultiSSE",
+		{
+			"name": "Printer",
+			"dot": "cfg.dot",
+			"from_entry_point": false,
+			"graph_name": "CFG",
+			"subgraph": "abbs"
+		},
+		{
+			"name": "Printer",
+			"dot": "bbs.dot",
+			"from_entry_point": false,
+			"graph_name": "CFG (BBs)",
+			"subgraph": "bbs"
+		}
 	],
 
+	"ICFG": {
+		"log_level": "debug"
+	},
+
+	"CreateABBs": {
+		"log_level": "debug"
+	},
+
+	"SysFuncts": {
+		"dump": true
+	},
+
+	"LoadOIL": {
+		"log_level": "debug",
+		"dump": true
+	},
+
+	"MultiSSE": {
+		"dump": true,
+		"log_level": "debug"
+	},
+
 	"logger": {
-		"StepManager": "debug"
+		"StepManager": "info",
+		"AUTOSAR": "debug"
 	}
 }

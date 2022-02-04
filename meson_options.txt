@@ -10,6 +10,8 @@ option('enable_posix_toplevel_tests', type: 'boolean', value: false,
     description: 'Allowed the execution of time intensive posix toplevel tests [toplevel tests are a way to store common commandlines (Not actual tests)]')
 option('enable_gpslogger_tests', type: 'boolean', value: true)
 option('enable_librepilot_tests', type: 'boolean', value: true)
+option('enable_zephyr_tests', type: 'boolean', value: false,
+    description: 'All Zephyr tests are located in test/zephyr_test. The enable_step_tests option will be ignored for Zephyr tests. Only activate these tests if you have a zephyr_project directory in build dir. This directory will be generated via init_zephyr.sh script')
 option('enable_posix_tests', type: 'boolean', value: true,
     description: 'All POSIX tests are located in test/posix_test. The enable_step_tests option will be ignored for POSIX tests.')
 
@@ -21,3 +23,5 @@ option('arm_gcc_version', type: 'string', value: 'default',
     description: 'The version of the GCC cross compiler for ARM. The special value of "default" assumes the same version like the system GCC. Only relevant, if arch==arm.')
 option('arm_gcc_dir', type: 'string', value: '/usr/lib/gcc/arm-none-eabi/@0@/thumb/v7-m/nofp/',
     description: 'The path to the GCC ARM toolchain. Note that @0@ is replaced with the arm_gcc_version. Only relevant, if arch==arm. (Sometimes need to remove trailing nofp/)')
+option('zephyr_dir', type: 'string', value: '',
+    description: 'The path where the zephyr source is located, so the zephyrproject folder. More information on the zephyr setup can be found in the README')

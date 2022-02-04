@@ -17,10 +17,12 @@ def init_os_package():
         from .freertos import FreeRTOS
         from .osek import OSEK
         from .autosar import AUTOSAR
+        from .zephyr import ZEPHYR
         from .posix.posix import POSIX
+        # TODO: Add POSIX here
 
         _os_models = {model.__name__: model for model 
-                            in [FreeRTOS, OSEK, AUTOSAR, POSIX]} # And here
+                            in [FreeRTOS, OSEK, AUTOSAR, ZEPHYR, POSIX]} # And here
 
 
 def get_os_model_names() -> List[str]:

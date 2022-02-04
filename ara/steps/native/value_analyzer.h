@@ -4,8 +4,10 @@
 #include "graph.h"
 #include "logging.h"
 
+#include <WPA/Andersen.h>
 #include <boost/bimap.hpp>
 #include <graph_tool.hh>
+#include <memory>
 
 namespace ara::cython {
 	void raise_py_valueerror();
@@ -17,9 +19,10 @@ namespace ara::step {
 	using OSObject = uint64_t;
 	using RawValue = std::variant<const llvm::Value*, OSObject>;
 	struct FoundValue {
-		RawValue value;                        /* found LLVM value or previously assigned object */
-		const SVF::VFGNode* source;            /* SVF node of the found value */
+		RawValue value;                                     /* found LLVM value or previously assigned object */
+		const SVF::VFGNode* source;                         /* SVF node of the found value */
 		std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
+		std::optional<graph::CallPath> callpath;            /* call context of this value */
 	};
 	using Report = std::variant<EndOfFunction, FoundValue>;
 
@@ -34,7 +37,7 @@ namespace ara::step {
 	};
 	struct KeepGoing {};
 	struct Die {};
-	using Result = std::variant<Finished, Wait, KeepGoing, Die>;
+	using TraversalResult = std::variant<Finished, Wait, KeepGoing, Die>;
 
 	enum class Status { active, sleeping, dead };
 	std::ostream& operator<<(std::ostream&, const Status&);
@@ -133,30 +136,29 @@ namespace ara::step {
 		 */
 		void handle_reports();
 
-		bool eval_result(Result&& result);
+		bool eval_result(TraversalResult&& result);
 		void hire(std::shared_ptr<Traverser> worker);
 
 		/**
 		 * Handle a single Edge.
 		 */
-		Result handle_edge(const SVF::VFGEdge*);
+		TraversalResult handle_edge(const SVF::VFGEdge*);
 		/**
 		 * Handle a single Node.
 		 */
-		Result handle_node(const SVF::VFGNode*);
+		TraversalResult handle_node(const SVF::VFGNode*);
 
 		/**
 		 * Advance one edge further. May spawn other traversers (colleagues).
 		 */
-		Result advance(const SVF::VFGNode* node, bool only_delegate = false);
+		TraversalResult advance(const SVF::VFGNode* node, bool only_delegate = false);
 
 		void sleep_and_send(Report&& report);
 		void die_and_notify();
 		void cleanup_workers();
 		virtual void act_if_necessary();
 
-		std::optional<SVF::CallSiteID> get_call_site_id(const SVF::VFGEdge* edge) const;
-		const SVF::PTACallGraphEdge* get_call_site(const SVF::VFGEdge* edge) const;
+		const SVF::PTACallGraphEdge* t_get_callsite(const SVF::VFGEdge* edge) const;
 
 		/**
 		 * Check if an CallEdge fits to the current context (denoted by the call_path).
@@ -171,7 +173,7 @@ namespace ara::step {
 		 *
 		 * The function assumes that all subtraverses sleeping at CallEdges.
 		 */
-		std::vector<shared_ptr<Traverser>> choose_best_next_traversers();
+		std::vector<std::shared_ptr<Traverser>> choose_best_next_traversers();
 		Logger::LogStream& dbg() const;
 		void remove(size_t traverser_id);
 
@@ -241,7 +243,8 @@ namespace ara::step {
 		llvm::Module& get_module() const;
 		Logger& get_logger() const;
 		std::optional<OSObject> get_obj_id(const SVF::NodeID id,
-		                                   const std::vector<const llvm::GetElementPtrInst*>& offset) const;
+		                                   const std::vector<const llvm::GetElementPtrInst*>& offset,
+		                                   const graph::CallPath& callpath) const;
 	};
 
 	/**
@@ -263,7 +266,7 @@ namespace ara::step {
 			reason = WaitingReason::i_am_manager;
 		}
 
-		bool eval_node_result(Result&& result);
+		bool eval_node_result(TraversalResult&& result);
 		void do_step() override;
 		const FoundValue get_value();
 	};
@@ -282,6 +285,14 @@ namespace ara::step {
 	 * (assign a system object to a return target or pointer).
 	 */
 	class ValueAnalyzer {
+	  public:
+		struct Result {
+			RawValue value;                                     /* found LLVM value or previously assigned object */
+			std::vector<const llvm::GetElementPtrInst*> offset; /* offset within a struct */
+			std::optional<llvm::AttributeSet> attrs;            /* attributes specific to this callsite */
+			std::optional<graph::CallPath> callpath;            /* call context of this value */
+		};
+
 	  private:
 		friend class Bookkeeping;
 		graph::Graph graph;
@@ -289,6 +300,13 @@ namespace ara::step {
 		Logger logger;
 		/* Map between: Key = VFGNode, Value = Python system object */
 		graph::GraphData::ObjMap& obj_map;
+
+		/* SVF datastructures */
+		SVF::PAG* pag = SVF::PAG::getPAG();
+		SVF::Andersen* ander = SVF::AndersenWaveDiff::createAndersenWaveDiff(pag);
+		SVF::PTACallGraph* s_callgraph = ander->getPTACallGraph();
+
+		std::shared_ptr<graph::CallGraph> callgraph;
 
 		/**
 		 * Output an error to the log and raise an ValuesUnknown exception.
@@ -300,7 +318,7 @@ namespace ara::step {
 		/**
 		 * Get the SVF::VFGNode to a specific llvm::Value.
 		 */
-		const SVF::VFGNode* get_vfg_node(const SVF::SVFG& vfg, const llvm::Value& start) const;
+		const SVF::VFGNode* get_vfg_node(const SVF::SVFG& vfg, const llvm::Value& start, int argument_nr = -1);
 
 		/**
 		 * Perform an actual search. It traverses backwards in the Value Flow Graph to retrieve the origin of a specific
@@ -328,9 +346,108 @@ namespace ara::step {
 		 * \param hint        what type of analysis should be done
 		 * \param type        the expected object type, currently unused
 		 */
-		std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>
-		get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
-		                   graph::SigType hint, PyObject* type);
+		ValueAnalyzer::Result get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath,
+		                                         unsigned argument_nr, graph::SigType hint, PyObject* type);
+
+		/**
+		 * Check if there is a connection within the SVFG between the SVFG node specified by (callsite, callpath,
+		 * argument_nr) and the given obj_index.
+		 *
+		 * \param callsite    the callsite whose argument should be checked
+		 * \param callpath    the callpath (currect context) which applies for this call. TODO: not used
+		 * \param argument_nr the argument which should be checked
+		 * \param obj_index   the unique ID of the object (the actual object is stored in Python)
+		 *
+		 * \return whether a connection is found
+		 */
+		bool has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
+		                    OSObject obj_index);
+
+		/**
+		 * Find the global llvm::Value with the given name.
+		 *
+		 * \param name the name of the global value
+		 *
+		 * \return the found value or nullptr
+		 */
+		llvm::GlobalValue* find_global(const std::string& name);
+
+		/**
+		 * Converts a ARA (Python) callsite to an LLVM callsite.
+		 */
+		template <class Graph>
+		inline void get_llvm_callsite(Graph, llvm::CallBase** ll_callsite, PyObject* callsite) {
+			const typename graph_tool::PythonVertex<Graph>& gt_cs =
+			    boost::python::extract<typename graph_tool::PythonVertex<Graph>>(callsite);
+			typename boost::graph_traits<Graph>::vertex_descriptor v_cs = gt_cs.get_descriptor();
+			auto bb = cfg.get_llvm_bb<Graph>(v_cs);
+			*ll_callsite = llvm::cast<llvm::CallBase>(&safe_deref(bb).front());
+		}
+
+		PyObject* py_repack_raw_value(const RawValue& value) const;
+		PyObject* py_repack_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets) const;
+
+		/**
+		 * Get the nth argument (llvm::Value) for a specific callsite.
+		 */
+		const llvm::Value& get_nth_arg(const llvm::CallBase& callsite, const unsigned argument_nr) const;
+
+		/**
+		 * Get the next store VFGNode (the node in which a register value flows) for a specific start node.
+		 *
+		 * Uses do_backward_value_search internally to perform the actual analysis.
+		 */
+		const SVF::StoreVFGNode* find_next_store(const SVF::VFGNode* start);
+
+		/**
+		 * Get the llvm::Value to which a call (at a specific callsite) stores its result.
+		 */
+		const llvm::Value* get_llvm_return(const llvm::CallBase& callsite) const;
+
+		/**
+		 * Try to find the callpath specific return value for a specific callsite.
+		 *
+		 * Uses do_backward_value_search internally to perform the actual analysis.
+		 */
+		const llvm::Value* get_return_value(const llvm::CallBase& callsite, graph::CallPath callpath);
+
+		ValueAnalyzer::Result get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath);
+
+		std::vector<std::pair<const llvm::Value*, graph::CallPath>>
+		get_assignments(const llvm::Value* value, const std::vector<const llvm::GetElementPtrInst*>& gep,
+		                graph::CallPath callpath);
+
+		PyObject* py_repack(ValueAnalyzer::Result&& result) const;
+
+	  public:
+		// WARNING: do not use this class alone, always use the Python ValueAnalyzer.
+		// If Cython would support this, this constructor would be private.
+		ValueAnalyzer(graph::Graph&& graph, PyObject* logger)
+		    : graph(std::move(graph)), cfg(graph.get_cfg()), logger(Logger(logger)),
+		      obj_map(graph.get_graph_data().obj_map), callgraph(graph.get_callgraph_ptr()) {}
+
+		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* logger) {
+			return std::make_unique<ValueAnalyzer>(std::move(graph), logger);
+		}
+
+		/**
+		 * Wrapper call for get_argument_value. See its documentation for details.
+		 */
+		PyObject* py_get_argument_value(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, int hint,
+		                                PyObject* type);
+
+		/**
+		 * Wrapper call for get_return_value. See its documentation for details.
+		 */
+		PyObject* py_get_return_value(PyObject* callsite, graph::CallPath callpath);
+
+		PyObject* py_get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callgraph);
+
+		/**
+		 * Wrapper call for has_connection. See its documentation for details.
+		 */
+		PyObject* py_get_assignments(const llvm::Value* value, const std::vector<const llvm::GetElementPtrInst*>& gep,
+		                             graph::CallPath callpath);
 
 		/**
 		 * Assign an (artificial) system object to an callsite return value or the nth argument pointer origin.
@@ -347,123 +464,29 @@ namespace ara::step {
 		 * assigned to the return value of this call, otherwise to nth argument which is assumed to be a pointer or
 		 * reference.
 		 */
-		void assign_system_object(llvm::CallBase& callsite, OSObject obj_index, graph::CallPath callpath,
-		                          int argument_nr);
+		void assign_system_object(const llvm::Value* value, OSObject obj_index,
+		                          const std::vector<const llvm::GetElementPtrInst*>&, const graph::CallPath& callpath);
 
-		/**
-		 * Check if there is a connection within the SVFG between the SVFG node specified by (callsite, callpath,
-		 * argument_nr) and the given obj_index.
-		 *
-		 * \param callsite    the callsite whose argument should be checked
-		 * \param callpath    the callpath (currect context) which applies for this call
-		 * \param argument_nr the argument which should be checked
-		 * \param obj_index   the unique ID of the object (the actual object is stored in Python)
-		 *
-		 * \return whether a connection is found
-		 */
-		bool has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
-		                    OSObject obj_index);
+		// /**
+		//  * Wrapper call for assign_system_object. See its documentation for details.
+		//  */
+		// void py_assign_system_object(PyObject* callsite, OSObject obj_index, graph::CallPath callpath,
+		//                              int argument_nr) {
+		// 	llvm::CallBase* ll_callsite;
+		// 	graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
+		// 	                            graph_tool::always_directed())(cfg.graph.get_graph_view());
 
-		/**
-		 * Converts a ARA (Python) callsite to an LLVM callsite.
-		 */
-		template <class Graph>
-		inline void get_callsite(Graph, llvm::CallBase** ll_callsite, PyObject* callsite) {
-			const typename graph_tool::PythonVertex<Graph>& gt_cs =
-			    boost::python::extract<typename graph_tool::PythonVertex<Graph>>(callsite);
-			typename boost::graph_traits<Graph>::vertex_descriptor v_cs = gt_cs.get_descriptor();
-			auto bb = cfg.get_llvm_bb<Graph>(v_cs);
-			*ll_callsite = llvm::cast<llvm::CallBase>(&safe_deref(bb).front());
-		}
-
-		/**
-		 * Repack the C++ result of the value analysis to a Python tuple for further usage in Python.
-		 */
-		PyObject* py_repack(
-		    std::tuple<RawValue, llvm::AttributeSet, const std::vector<const llvm::GetElementPtrInst*>>& result) const;
-
-		/**
-		 * Get the nth argument (llvm::Value) for a specific callsite.
-		 */
-		const llvm::Value& get_nth_arg(const llvm::CallBase& callsite, const unsigned argument_nr) const;
-
-		/**
-		 * Get the next store VFGNode (the node in which a register value flows) for a specific start node.
-		 *
-		 * Uses do_backward_value_search internally to perform the actual analysis.
-		 */
-		const SVF::VFGNode* find_next_store(const SVF::VFGNode* start);
-
-		/**
-		 * Get the llvm::Value to which a call (at a specific callsite) stores its result.
-		 */
-		const llvm::Value* get_llvm_return(const llvm::CallBase& callsite) const;
-
-		/**
-		 * Try to find the callpath specific return value for a specific callsite.
-		 *
-		 * Uses do_backward_value_search internally to perform the actual analysis.
-		 */
-		const llvm::Value* get_return_value(const llvm::CallBase& callsite, graph::CallPath callpath);
-
-	  public:
-		// WARNING: do not use this class alone, always use the Python ValueAnalyzer.
-		// If Cython would support this, this constructor would be private.
-		ValueAnalyzer(graph::Graph&& graph, PyObject* logger)
-		    : graph(std::move(graph)), cfg(graph.get_cfg()), logger(Logger(logger)),
-		      obj_map(graph.get_graph_data().obj_map) {}
-
-		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* logger) {
-			return std::make_unique<ValueAnalyzer>(std::move(graph), logger);
-		}
-
-		/**
-		 * Wrapper call for get_argument_value. See its documentation for details.
-		 */
-		PyObject* py_get_argument_value(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, int hint,
-		                                PyObject* type) {
-			llvm::CallBase* ll_callsite;
-			graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
-			                            graph_tool::always_directed())(cfg.graph.get_graph_view());
-
-			auto ret_value = get_argument_value(safe_deref(ll_callsite), callpath, argument_nr,
-			                                    static_cast<graph::SigType>(hint), type);
-			return py_repack(ret_value);
-		}
-
-		/**
-		 * Wrapper call for assign_system_object. See its documentation for details.
-		 */
-		void py_assign_system_object(PyObject* callsite, OSObject obj_index, graph::CallPath callpath,
-		                             int argument_nr) {
-			llvm::CallBase* ll_callsite;
-			graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
-			                            graph_tool::always_directed())(cfg.graph.get_graph_view());
-
-			assign_system_object(safe_deref(ll_callsite), obj_index, callpath, argument_nr);
-		}
-
-		/**
-		 * Wrapper call for get_return_value. See its documentation for details.
-		 */
-		PyObject* py_get_return_value(PyObject* callsite, graph::CallPath callpath) {
-			llvm::CallBase* ll_callsite;
-			graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
-			                            graph_tool::always_directed())(cfg.graph.get_graph_view());
-
-			return get_obj_from_value(
-			    safe_deref(const_cast<llvm::Value*>(get_return_value(safe_deref(ll_callsite), callpath))));
-		}
+		// 	assign_system_object(safe_deref(ll_callsite), obj_index, callpath, argument_nr);
+		// }
 
 		/**
 		 * Wrapper call for has_connection. See its documentation for details.
 		 */
-		bool py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, OSObject obj_index) {
-			llvm::CallBase* ll_callsite;
-			graph_tool::gt_dispatch<>()([&](auto& g) { get_callsite(g, &ll_callsite, callsite); },
-			                            graph_tool::always_directed())(cfg.graph.get_graph_view());
+		bool py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr, OSObject obj_index);
 
-			return has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
-		}
+		/**
+		 * Wrapper call for py_find_global. See its documention for details.
+		 */
+		PyObject* py_find_global(const std::string& name);
 	};
 } // namespace ara::step

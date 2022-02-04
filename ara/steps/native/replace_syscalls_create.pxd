@@ -8,6 +8,6 @@ from ir cimport Value
 
 cdef extern from "replace_syscalls_create.h" namespace "ara::step":
     cdef cppclass ReplaceSyscallsCreate:
-        object replace_task_create(object pyo_task)
+        object replace_task_create(object pyo_task, uintptr_t function_ptr)
         object replace_queue_create(object pyo_task)
         object replace_mutex_create(object pyo_task)
