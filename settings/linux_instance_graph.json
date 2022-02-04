@@ -16,7 +16,8 @@
 	},
 
 	"RemoveSysfuncBody": {
-		"log_level": "debug"
+		"log_level": "debug",
+		"drop_llvm_suffix": false
 	},
 
 	"SysFuncts": {

@@ -19,5 +19,9 @@
 
     "IRReader": {
         "no_sysfunc_body": true
+    },
+
+	"RemoveSysfuncBody": {
+        "drop_llvm_suffix": false
     }
 }
