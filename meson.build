@@ -69,6 +69,7 @@ endif
 ## tools
 nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
+sed = find_program('sed')
 
 ## arch specific build tools
 if get_option('arch') == 'i386'
@@ -144,13 +145,15 @@ subdir('test')
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 if get_option('enable_toplevel_tests')
     extra_settings = files('test' / 'extra_settings.json')
+    app = autosar_singlecore_bcc1_task1_a
     test('ara_tester',
        py3_inst,
-       args: [ara_py, autosar_singlecore_bcc1_task1_a[0],
+       args: [ara_py, app['ll'],
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
-              '--oilfile', autosar_singlecore_bcc1_task1_a[1],
-              #'--timings', autosar_multicore_timing_b[3],
+              '--oilfile', app['oil'],
+              #'--timings', app['sys_timings'],
               '--step-settings', extra_settings],
+              # '--manual-corrections', instance_corrections],
        suite: 'toplevel'
     )
 
@@ -177,8 +180,8 @@ if get_option('enable_toplevel_tests')
     autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
     test('multisse',
        py3_inst,
-       args: [ara_py, autosar_multicore_minexample[0],
-              '--oilfile', autosar_multicore_minexample[1],
+       args: [ara_py, autosar_multicore_minexample['ll'],
+              '--oilfile', autosar_multicore_minexample['oil'],
               '--dump',
               '--log-level', 'info',
               '--dump',

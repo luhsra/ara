@@ -1,10 +1,10 @@
 """Container for Syscall."""
-from ara.graph import ABBType, CFType, Graph, CFGView
+from ara.graph import ABBType, CFType, CFGView
 from .step import Step
 from .option import Option, String
 
-from collections import deque
 from enum import IntEnum
+from graph_tool import GraphView
 
 
 class ICFG(Step):
@@ -33,6 +33,7 @@ class ICFG(Step):
         icfg = CFGView(self._graph.bbs, efilt=cfg.ep.type.fa == CFType.icf)
         lcfg = CFGView(self._graph.bbs, efilt=cfg.ep.type.fa == CFType.lcf)
         cg = self._graph.callgraph
+        sys_rel_cg = GraphView(cg, vfilt=cg.vp.syscall_category_every)
 
         link_counter = 0
         callsite_counter = 0
@@ -54,28 +55,31 @@ class ICFG(Step):
                 # find other functions
                 linked = False
                 if cfg.vp.type[bb] in [ABBType.syscall, ABBType.call]:
-                    cg_vtx = cg.vertex(cfg.vp.call_graph_link[cur_func])
+                    try:
+                        cg_vtx = sys_rel_cg.vertex(cfg.vp.call_graph_link[cur_func])
+                        callsites = cg_vtx.out_edges()
+                    except ValueError:
+                        callsites = iter(list())
+
                     callsite_counter += 1
-                    for callsite in cg_vtx.out_edges():
-                        if cg.ep.callsite[callsite] == bb:
+                    for callsite in callsites:
+                        if sys_rel_cg.ep.callsite[callsite] == bb:
                             # for all callsites in the callgraph belonging to
                             # this BB
-                            cg_callee = callsite.target()
-                            if cg.vp.syscall_category_every[cg_callee]:
-                                callee = cg.vp.function[callsite.target()]
-                                self._log.debug("Found system relevant call "
-                                                f"to {cfg.vp.name[callee]}.")
-                                entry = cfg.get_entry_bb(cfg.vertex(callee))
-                                to_be_linked.append((ICFG._ET.IN, bb, entry))
-                                link_counter += 1
-                                linked = True
-                                assert lcfg.vertex(bb).out_degree() == 1
-                                n_bb = next(lcfg.vertex(bb).out_neighbors())
-                                exit_bb = cfg.get_function_exit_bb(cfg.vertex(callee))
-                                if exit_bb:
-                                    to_be_linked.append(
-                                        (ICFG._ET.OUT, exit_bb, n_bb)
-                                    )
+                            callee = sys_rel_cg.vp.function[callsite.target()]
+                            self._log.debug("Found system relevant call "
+                                            f"to {cfg.vp.name[callee]}.")
+                            entry = cfg.get_entry_bb(cfg.vertex(callee))
+                            to_be_linked.append((ICFG._ET.IN, bb, entry))
+                            link_counter += 1
+                            linked = True
+                            assert lcfg.vertex(bb).out_degree() == 1
+                            n_bb = next(lcfg.vertex(bb).out_neighbors())
+                            exit_bb = cfg.get_function_exit_bb(cfg.vertex(callee))
+                            if exit_bb:
+                                to_be_linked.append(
+                                    (ICFG._ET.OUT, exit_bb, n_bb)
+                                )
                     if not linked:
                         cfg.vp.type[bb] = ABBType.computation
                 if not linked:
