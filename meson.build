@@ -186,4 +186,14 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel',
        timeout: 30
     )
+
+    test('cfg_pic',
+       py3_inst,
+       args: [ara_py, freertos_cfg_pic,
+              '--dump',
+              '--log-level', 'info',
+              '--step', 'SIA'],
+       suite: 'toplevel',
+       timeout: 30
+    )
 endif
