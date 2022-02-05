@@ -1,8 +1,5 @@
-from queue import Queue, PriorityQueue
+from queue import PriorityQueue
 
-import graph_tool
-
-from ara.graph import Callgraph
 from ara.visualization.trace.trace_components import BaseTraceElement, ResetPartialChangesTraceElement
 
 

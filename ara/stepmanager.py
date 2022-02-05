@@ -301,7 +301,6 @@ class StepManager:
         self._execute_steps_with_deps(self._step_history)
         self.finish_execution(program_config)
 
-    # @Step
     def init_execution(self, program_config, extra_config, esteps: List[str]):
         """Initialises the execution."""
         self._apply_logger_config(extra_config)
@@ -340,7 +339,6 @@ class StepManager:
                                for step in reversed(steps)]
         self._config = config
 
-    # @Slot
     def finish_execution(self, program_config):
         """Finishes the execution.
 

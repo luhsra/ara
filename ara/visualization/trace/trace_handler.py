@@ -1,11 +1,10 @@
 import traceback
-from itertools import chain
 
 from PySide6.QtCore import QObject, Slot, Signal
 
 from ara.visualization import ara_manager
 from ara.visualization.signal import ara_signal
-from ara.visualization.trace.trace_components import BaseTraceElement, TraceContext, ResetChangesTraceElement
+from ara.visualization.trace.trace_components import TraceContext, ResetChangesTraceElement
 from ara.visualization.trace.trace_type import AlgorithmTrace
 
 

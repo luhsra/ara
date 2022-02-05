@@ -2,9 +2,9 @@ from PySide6.QtCore import QObject, Signal
 from graph_tool import graph_tool
 
 
-class ARASignalManager(QObject):
+class ProcessingSignalManager(QObject):
     """
-        This Objects holds all the signals send from ara
+        This Objects manages all the signals for ara manager and trace manager
     """
 
     sig_graph = Signal(graph_tool.Graph)
@@ -23,4 +23,4 @@ class ARASignalManager(QObject):
         super().__init__()
 
 
-SIGNAL_MANAGER = ARASignalManager()
+SIGNAL_MANAGER = ProcessingSignalManager()

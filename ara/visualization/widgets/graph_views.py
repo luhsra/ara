@@ -41,6 +41,10 @@ class GraphViewContext(QObject):
 
     sig_update_graphview = Signal(GraphTypes)
 
+    sig_expansion_point_updated = Signal(str)
+
+    sig_entry_points_update = Signal(str)
+
     def __init__(self):
         self.entry_points.add("main")
         self.callgraph_expansion_points.add("main")
@@ -50,24 +54,61 @@ class GraphViewContext(QObject):
         trace_handler.INSTANCE.sig_extension_points_discovered.connect(self.register_expansion_points)
         trace_handler.INSTANCE.sig_extension_points_reset.connect(self.reset_soft_expansion_points)
 
-    @Slot(set)
-    def register_expansion_points(self, points:set):
+    @Slot(set, str)
+    def register_expansion_points(self, points:set, source):
         self.callgraph_soft_expansion_points.update(points)
+        self.sig_expansion_point_updated.emit( source)
+
+    @Slot(set, str)
+    def set_expansion_points(self, points, source):
+        self.callgraph_expansion_points = points
+        self.sig_expansion_point_updated.emit( source)
+
+    @Slot(str, str)
+    def register_expansion_point(self, point, source):
+        self.callgraph_expansion_points.add(point)
+        self.sig_expansion_point_updated.emit( source)
+
+    @Slot(str, str)
+    def remove_expansion_point(self, point, source):
+        self.callgraph_expansion_points.remove(point)
+        self.sig_expansion_point_updated.emit( source)
+
+    @Slot(str, str)
+    def register_entry_point(self, point, source):
+        self.entry_points.add(point)
+        self.sig_entry_points_update.emit(source)
+
+    @Slot(str, str)
+    def remove_entry_point(self, point, source):
+        self.entry_points.remove(point)
+        self.sig_entry_points_update.emit(source)
+
+    @Slot(str, str)
+    def switch_entry_point(self, point, source):
+        if self.entry_points.__contains__(point):
+            self.entry_points.remove(point)
+        else:
+            self.entry_points.add(point)
+        self.sig_update_graphview.emit(GraphTypes.CALLGRAPH)
+        self.sig_update_graphview.emit(GraphTypes.ABB)
 
     @Slot()
     def reset_soft_expansion_points(self):
         self.callgraph_soft_expansion_points.clear()
+        self.sig_expansion_point_updated.emit("")
 
     def get_expansion_points(self):
         return self.callgraph_expansion_points | self.callgraph_soft_expansion_points
+
+
+CONTEXT = GraphViewContext()
 
 
 class BaseGraphView(QGraphicsView):
     sig_layout_start = Signal(GraphTypes, set, bool, StepMode)
 
     sig_work_done = Signal(str)
-
-    _CONTEXT = GraphViewContext()
 
     def __init__(self, graph_type: GraphTypes, signal_combiner: SignalCombiner):
         super().__init__()
@@ -105,7 +146,7 @@ class BaseGraphView(QGraphicsView):
         ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.start_update)
         self.sig_layout_start.connect(self.layouter.layout)
         self.layouter.sig_layout_done.connect(self.update_view)
-        self._CONTEXT.sig_update_graphview.connect(self._internal_update)
+        CONTEXT.sig_update_graphview.connect(self._internal_update)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if event.angleDelta().y() > 0:
@@ -125,9 +166,9 @@ class BaseGraphView(QGraphicsView):
             return
 
         if self.graph_type == GraphTypes.CALLGRAPH:
-            self.sig_layout_start.emit(self.graph_type, self._CONTEXT.get_expansion_points(), False, self.mode)
+            self.sig_layout_start.emit(self.graph_type, CONTEXT.get_expansion_points(), False, self.mode)
         else:
-            self.sig_layout_start.emit(self.graph_type, self._CONTEXT.entry_points, False, self.mode)
+            self.sig_layout_start.emit(self.graph_type, CONTEXT.entry_points, False, self.mode)
 
     @Slot()
     def update_view(self):
@@ -178,6 +219,14 @@ class BaseGraphView(QGraphicsView):
 
 class CallGraphView(BaseGraphView):
 
+    sig_entry_point_selected = Signal(set, str)
+
+    sig_entry_point_deselected = Signal(set, str)
+
+    sig_expansion_point_selected = Signal(str, str)
+
+    sig_expansion_points_deselected = Signal(str, str)
+
     def __init__(self, signal_combiner):
         super().__init__(GraphTypes.CALLGRAPH, signal_combiner)
 
@@ -193,12 +242,12 @@ class CallGraphView(BaseGraphView):
                 print(f"{trace_handler.INSTANCE.gui_element_settings}")
                 trace_handler.INSTANCE.gui_element_settings[node.id].apply(node)
 
-            if self._CONTEXT.get_expansion_points().__contains__(node.data.attr["label"]):
+            if CONTEXT.get_expansion_points().__contains__(node.data.attr["label"]):
                 node.widget.setProperty("expansion", "true")
                 node.expansion = True
                 node.reload_stylesheet()
 
-            if self._CONTEXT.entry_points.__contains__(node.data.attr["label"]):
+            if CONTEXT.entry_points.__contains__(node.data.attr["label"]):
                 node.widget.setProperty("selected", "true")
                 node.selected = True
                 node.reload_stylesheet()
@@ -213,40 +262,56 @@ class CallGraphView(BaseGraphView):
         trace_handler.INSTANCE.sig_extension_points_discovered.connect(self.expansion_points_discovered)
         trace_handler.INSTANCE.sig_extension_points_reset.connect(self.expansion_points_reset)
 
+        self.sig_entry_point_selected.connect(CONTEXT.register_entry_point)
+        self.sig_entry_point_deselected.connect(CONTEXT.remove_entry_point)
+
+        self.sig_expansion_point_selected.connect(CONTEXT.register_expansion_point)
+        self.sig_expansion_points_deselected.connect(CONTEXT.remove_expansion_point)
+
+        CONTEXT.sig_expansion_point_updated.connect(self.handle_expansion_points_update)
+
+    @Slot(str)
+    def handle_expansion_points_update(self, source):
+        print(f"\t Start Updating Callgraph with source: {source}")
+        if source == "CallGraph":
+            return
+        print(f"\t Updating Callgraph - {source}")
+        self.start_update(False, False)
+
     @Slot()
     def update_view(self):
         super().update_view()
 
     @Slot(str)
     def adjacency_expansion(self, name):
-        self._CONTEXT.callgraph_expansion_points.add(name)
+        self.sig_expansion_point_selected.emit(name, "CallGraph")
         self.start_update(False, False)
 
     @Slot(str)
     def expansion_retraction(self, name):
-        if len(self._CONTEXT.callgraph_expansion_points) == 1:
+        if len(CONTEXT.callgraph_expansion_points) == 1:
             return
-        self._CONTEXT.callgraph_expansion_points.remove(name)
+        self.sig_expansion_points_deselected.emit(name, "CallGraph")
         self.start_update(False, False)
 
     @Slot(set)
     def expansion_points_discovered(self, points):
-        self._CONTEXT.callgraph_soft_expansion_points.update(points)
+        CONTEXT.callgraph_soft_expansion_points.update(points)
         #self._CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
 
     @Slot()
     def expansion_points_reset(self):
-        self._CONTEXT.callgraph_soft_expansion_points.clear()
+        CONTEXT.callgraph_soft_expansion_points.clear()
 
     @Slot(str)
     def selection_added(self, name):
-        self._CONTEXT.entry_points.add(name)
-        self._CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
+        self.sig_entry_point_selected.emit(name, "CallGraph")
+        CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
 
     @Slot(str)
     def selection_removed(self, name):
-        self._CONTEXT.entry_points.remove(name)
-        self._CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
+        self.sig_entry_point_deselected.emit(name, "CallGraph")
+        CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
 
 
 class CFGView(BaseGraphView):

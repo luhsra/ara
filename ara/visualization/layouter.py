@@ -20,6 +20,7 @@ def set_graph_for_layouter(graph):
 
 
 def text_to_len(txt):
+    """ Helper function to determine the size of call graph nodes"""
     txt_len = len(txt)
     if txt_len < 5:
         return txt_len * 0.25
@@ -53,6 +54,8 @@ class Layouter(QObject):
         self.call_graph_view.graph_attr["overlap"] = "false"
 
         self._graph = ara_manager.INSTANCE.graph
+
+        self._running = False
 
     def _fail(self, message):
         print(message)
@@ -247,6 +250,9 @@ class Layouter(QObject):
 
     def _create_return_data(self, graph: AGraph, return_list, graph_type: GraphTypes = GraphTypes.ABB):
         for n in graph.nodes():
+            if not n.attr.__contains__("pos") or n.attr["pos"] is None:
+                continue
+
             if graph_type == GraphTypes.ABB:
                 if n.attr["subtype"] == "0":
                     # The CallGraphNode is used here, to save making a second generic node
@@ -259,6 +265,8 @@ class Layouter(QObject):
                 return_list.append(InstanceNode(n))
 
         for e in graph.edges():
+            if not e.attr.__contains__("pos") or e.attr["pos"] is None:
+                continue
             return_list.append(GraphEdge(e))
 
         for g in graph.subgraphs():
@@ -298,6 +306,11 @@ class Layouter(QObject):
 
         try:
 
+            if self._running:
+              return
+
+            self._running = True
+
             print(f"Layouting {graph_type} - {entry_points}")
 
             if not GraphTypes.__contains__(graph_type):
@@ -329,6 +342,8 @@ class Layouter(QObject):
         except Exception as e:
             print(e)
             print(traceback.format_exc())
+
+        self._running = False
 
         self.sig_layout_done.emit()
 

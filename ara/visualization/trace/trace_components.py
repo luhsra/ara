@@ -1,10 +1,8 @@
 from queue import PriorityQueue
 
-import graph_tool
 import traceback
 
 from ara.visualization.trace import trace_lib
-from ara.visualization.util import GraphTypes
 from ara.visualization.widgets.graph_elements import CallgraphNodeSetting, CallgraphEdgeSetting
 
 

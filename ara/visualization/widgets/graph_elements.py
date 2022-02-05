@@ -1,10 +1,9 @@
 from math import sqrt, cos, sin
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsDropShadowEffect
 from PySide6.QtGui import QPen, QPainterPath, QMouseEvent, QFont, QFontDatabase, QBrush
-from pygments import highlight
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph
 
@@ -224,7 +223,7 @@ class GraphEdge(QGraphicsPathItem):
         box_y = y - size / 2
 
         # Finish the line
-        self.path.lineTo(x, y)
+        self.path.moveTo(x, y)
 
         current_degree = self.path.angleAtPercent(1)
 
@@ -237,7 +236,6 @@ class GraphEdge(QGraphicsPathItem):
         self.path.lineTo(edge_point)
 
 
-
 class CallgraphNodeSetting:
 
     def __init__(self, node_id, highlighting: bool, highlight_color=trace_lib.Color.RED):
@@ -245,7 +243,7 @@ class CallgraphNodeSetting:
         self.highlighting = highlighting
         self.highlight_color = highlight_color
 
-    def apply(self, node: CallGraphNode):
+    def apply(self, node):
         if self.highlighting:
             node.set_highlighted(self.highlight_color)
 
@@ -257,6 +255,10 @@ class CallgraphEdgeSetting:
         self.highlighting = highlighting
         self.highlight_color = highlighting_color
 
-    def apply(self, edge:GraphEdge):
+    def apply(self, edge):
         if self.highlighting:
-            edge.setPen(QPen(trace_util.trace_color_to_qt_color[self.highlight_color], 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            edge.setPen(QPen(trace_util.trace_color_to_qt_color[self.highlight_color],
+                             4,
+                             Qt.SolidLine,
+                             Qt.RoundCap,
+                             Qt.RoundJoin))

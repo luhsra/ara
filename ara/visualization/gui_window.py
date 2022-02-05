@@ -4,7 +4,7 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QApplication, QPushButton, QHBoxLayout, QVBoxLayout, QGraphicsView, QLabel, QWidget, \
     QMainWindow, QDockWidget, QToolBar, QListWidgetItem, QListWidget
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QItemSelectionModel
 from PySide6.QtCore import Slot
 
 from PySide6.QtGui import QPainter, Qt
@@ -14,6 +14,7 @@ from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
 from .util import GraphTypes, StepMode
+from .widgets import graph_views
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView
 
 loader = QUiLoader()
@@ -30,12 +31,18 @@ class GuiWindow(QMainWindow):
 
     sig_reset_trace_handler = Signal()
 
+    sig_expansion_point_selected = Signal(set, str)
+
+    sig_entry_point_selected = Signal(str, str)
+
     def __init__(self, parent):
         super().__init__(parent)
 
         self.mode = StepMode.DEFAULT
 
         self.current_trace = None
+
+        self._send_updates = True
 
         self.b_start = QPushButton("Initialize Ara")
         self.b_step = QPushButton("Next Step")
@@ -55,6 +62,9 @@ class GuiWindow(QMainWindow):
 
         self.proxies = []
 
+        center_widget = QWidget()
+        center_widget.setMaximumSize(1,1)
+        self.setCentralWidget(center_widget)
         self.init()
         self.setup_signals()
 
@@ -89,6 +99,22 @@ class GuiWindow(QMainWindow):
 
         self.sig_reset_trace_handler.connect(trace_handler.INSTANCE.reset)
         self.sig_reset_trace_handler.connect(self.dw_callgraph.widget().expansion_points_reset)
+
+        ##
+
+        self.dw_function_search.listSearchBar.textChanged.connect(self.update_function_list)
+        self.dw_function_search.listSearch.itemSelectionChanged.connect(self.update_callgraph_selection)
+
+        self.sig_expansion_point_selected.connect(graph_views.CONTEXT.set_expansion_points)
+
+        graph_views.CONTEXT.sig_expansion_point_updated.connect(self.refresh_function_list_selection)
+
+        #self.dw_function_search.listSearch.itemActivated.connect(self.print_text)
+        #self.dw_function_search.listSearch.itemChanged.connect(self.print_text)
+        self.dw_function_search.listSearch.itemDoubleClicked.connect(self.add_entry_point)
+        self.dw_function_search.listSearch.itemPressed.connect(self.print_text)
+
+        self.sig_entry_point_selected.connect(graph_views.CONTEXT.switch_entry_point)
 
     def init(self):
         # Graph Views
@@ -130,6 +156,47 @@ class GuiWindow(QMainWindow):
         self.resize(1200, 800)
         self.show()
 
+    @Slot(QListWidgetItem)
+    def print_text(self, item):
+        print(item.text())
+
+    @Slot(QListWidgetItem)
+    def add_entry_point(self, item):
+        self.sig_entry_point_selected.emit(item.text(), "List")
+
+    @Slot()
+    def update_callgraph_selection(self):
+        items = set()
+
+        if self._send_updates:
+
+            current_extension_points = graph_views.CONTEXT.get_expansion_points()
+
+            for point in current_extension_points:
+                if len(self.dw_function_search.listSearch.findItems(point, Qt.MatchFlag.MatchExactly)) == 0:
+                    items.add(point)
+
+            for item in self.dw_function_search.listSearch.selectedItems():
+                items.add(item.text())
+
+            self.sig_expansion_point_selected.emit(items, "List")
+
+
+    @Slot(str)
+    def refresh_function_list_selection(self, source):
+        if source == "List":
+            return
+
+        self._send_updates = False
+
+        for item in self.dw_function_search.listSearch.findItems("", Qt.MatchFlag.MatchContains):
+            if item.text() in graph_views.CONTEXT.get_expansion_points():
+                self.dw_function_search.listSearch.setCurrentItem(item, QItemSelectionModel.Select)
+            else:
+                self.dw_function_search.listSearch.setCurrentItem(item, QItemSelectionModel.Deselect)
+
+        self._send_updates = True
+
     @Slot()
     def handle_step_clicked(self):
         if self.mode == StepMode.TRACE:
@@ -163,8 +230,11 @@ class GuiWindow(QMainWindow):
         if trace_available:
             self.b_step_trace.setEnabled(True)
 
-    @Slot()
-    def update_function_list(self):
+    @Slot(str)
+    def update_function_list(self, txt=""):
+
+        self._send_updates = False
+
         source_graph = ara_manager.INSTANCE.graph.callgraph
         if self.mode == StepMode.TRACE:
             source_graph = trace_handler.INSTANCE.context.callgraph
@@ -173,10 +243,21 @@ class GuiWindow(QMainWindow):
 
         function_list.clear()
 
+        selection_list = graph_views.CONTEXT.get_expansion_points()
+
         for vertex in source_graph.vertices():
-            QListWidgetItem(source_graph.vp.function_name[vertex], function_list)
+            name = source_graph.vp.function_name[vertex]
+            if txt not in name:
+                continue
+            item = QListWidgetItem(name, function_list)
+            if name in selection_list:
+                function_list.setCurrentItem(item)
 
         function_list.sortItems()
+
+        self.refresh_function_list_selection("")
+
+        self._send_updates = True
 
 
     @Slot()
