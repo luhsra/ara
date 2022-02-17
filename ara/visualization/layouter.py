@@ -1,12 +1,10 @@
 import traceback
 
 from PySide6.QtCore import Slot, QObject, Signal
-from pydot import call_graphviz
 from pygraphviz import AGraph
 
 from ara.graph import ABBType, CFType, Graph
 from ara.visualization import ara_manager
-from ara.visualization.signal import ara_signal
 from ara.visualization.trace import trace_handler
 
 from ara.visualization.widgets.graph_elements import AbbNode, GraphEdge, Subgraph, CallGraphNode, InstanceNode
@@ -146,7 +144,7 @@ class Layouter(QObject):
                 subgraph = self.cfg_view.add_subgraph(
                     name="cluster_" + cfg.vp.name[function],
                     height=1.75,
-                    widht=text_to_len(cfg.vp.name[function]),
+                    width=text_to_len(cfg.vp.name[function]),
                     label=cfg.vp.name[function])
 
                 cfg_nodes = cfg.get_abbs(function)
@@ -155,6 +153,8 @@ class Layouter(QObject):
                     cfg_nodes = cfg.get_function_bbs(function)
                     node_type = "BB"
                 else:
+                    # Because get_abbs returns a generator we need to set it again because determining the length
+                    # used the generator up
                     cfg_nodes = cfg.get_abbs(function)
 
                 for node in cfg_nodes:
@@ -182,6 +182,8 @@ class Layouter(QObject):
 
                     discovered_node = None
 
+                    # We only want to discover nodes which the selection points
+                    # to
                     if not nodes.__contains__(edge.target()):
                         discovered_node = edge.target()
 
@@ -191,7 +193,7 @@ class Layouter(QObject):
                             subgraph = self.cfg_view.add_subgraph(
                                 name="cluster_" + cfg.vp.name[function],
                                 height=1.75,
-                                widht=text_to_len(cfg.vp.name[function]),
+                                width=text_to_len(cfg.vp.name[function]),
                                 label=cfg.vp.name[function])
 
                             subgraph.add_node(
@@ -206,6 +208,10 @@ class Layouter(QObject):
                             )
                             extended_nodes.add(discovered_node)
 
+                    # Filter edges to adjacent nodes for the BB representation because there
+                    # is no way to get the function for a BB.
+                    # Also filters edges for nodes which appear through an incoming edge in the ABB
+                    # representation
                     if not (nodes|extended_nodes).__contains__(edge.source()) or \
                             not (nodes|extended_nodes).__contains__(edge.target()):
                         continue
@@ -235,12 +241,14 @@ class Layouter(QObject):
             label = label_parts[0]
             sublabel = label_parts[1] if len(label_parts) > 1 else ""
 
+            longest_label_text = label if len(label) > len(sublabel) else sublabel
+
             self.instance_graph_view.add_node(
                 str(hash(instance)),
                 shape="box",
                 label=label,
                 sublabel=sublabel,
-                width=1.5,
+                width=text_to_len(longest_label_text),
                 height=0.75)
         for edge in self._graph.instances.edges():
             self.instance_graph_view.add_edge(

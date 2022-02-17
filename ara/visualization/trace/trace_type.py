@@ -6,6 +6,8 @@ from ara.visualization.trace.trace_components import BaseTraceElement, ResetPart
 class AlgorithmTrace:
 
     def __init__(self, callgraph, cfg, instances):
+        # A priority queue is used to allow a peek at the next object which is not natively support by
+        # the normal queue. It does this by taking the element out and adding it back with the same priority
         self.trace_elements = PriorityQueue()
         self.callgraph = callgraph
         self.cfg = cfg

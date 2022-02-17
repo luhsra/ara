@@ -2,7 +2,8 @@ from math import sqrt, cos, sin
 
 from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsDropShadowEffect
+from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsDropShadowEffect, QGraphicsTextItem, \
+    QLabel
 from PySide6.QtGui import QPen, QPainterPath, QMouseEvent, QFont, QFontDatabase, QBrush
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph
@@ -159,8 +160,10 @@ class Subgraph(GraphicsObject):
         x = x_min - 10
         y = - (y_max + 40 )
 
-        self.widget.subgraph_label_text.setText(
-            self.data.graph_attr["label"])  # Todo Export children Names into a lib class
+        self.widget.subgraph_label_text.setText(self.data.graph_attr["label"])
+
+        self.widget.subgraph_label_text.setMaximumWidth(int(width))
+        self.widget.subgraph_label_text.setToolTip(self.data.graph_attr["label"])
 
         self.setGeometry(x, y, width, height)
 
@@ -173,6 +176,8 @@ class GraphEdge(QGraphicsPathItem):
         self.path = QPainterPath()
 
         self.id = self.data.attr["id"]
+
+        self.text = list()
 
         pos = []
         edges = []
@@ -201,18 +206,22 @@ class GraphEdge(QGraphicsPathItem):
         self.draw_arrow_tip(edges[0], - edges[1], 20, 30)
 
         if self.data.attr.__contains__("label") and not (self.data.attr["label"] is None):
+            text_item = QGraphicsTextItem()
             pos = self.data.attr["lp"].split(",")
             label = self.data.attr["label"]
-            self.path.addText(float(pos[0]) - len(label) * 15, - float(pos[1]), QFont(), label)
+            text_item.setPos(float(pos[0]) - len(label)*6, - float(pos[1]) - 12)
+            text_item.setPlainText(label)
+            self.text.append(text_item)
+            #self.path.addText(, - float(pos[1]), QFont(), label)
 
         self.setPath(self.path)
 
         pen_color = Qt.black
         if self.data.attr.__contains__("edge_type"):
             if self.data.attr["edge_type"] == str(CFType.lcf.value):
-                pen_color = Qt.blue
-            elif self.data.attr["edge_type"] == str(CFType.icf.value):
                 pen_color = Qt.red
+            elif self.data.attr["edge_type"] == str(CFType.icf.value):
+                pen_color = Qt.blue
 
         self.path.setFillRule(Qt.WindingFill)
         self.setPen(QPen(pen_color, 1.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))

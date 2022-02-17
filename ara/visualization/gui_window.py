@@ -57,6 +57,10 @@ class GuiWindow(QMainWindow):
         self.dw_callgraph = QDockWidget("CallGraph View", self)
         self.dw_instance_graph = QDockWidget("Instance View", self)
 
+        self.dw_cfg.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
+        self.dw_callgraph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
+        self.dw_instance_graph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
+
         self.dw_step_queue = loader.load("../resources/step_queue.ui")
         self.dw_function_search = loader.load("../resources/function_list_search.ui")
 
@@ -139,7 +143,7 @@ class GuiWindow(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_callgraph)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_instance_graph)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_step_queue)
-        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_function_search)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_function_search)
 
         self.b_step.setDisabled(True)
         self.b_step_trace.setDisabled(True)

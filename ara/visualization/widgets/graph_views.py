@@ -197,6 +197,8 @@ class BaseGraphView(QGraphicsView):
             else:
                 # Should only be edges
                 self.scene().addItem(obj)
+                for text in obj.text:
+                    self.scene().addItem(text)
                 obj.setZValue(3)
                 self.handle_edge_add(obj)
 

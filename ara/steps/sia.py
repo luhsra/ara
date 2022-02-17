@@ -15,10 +15,7 @@ from itertools import chain
 
 import functools
 
-from ..visualization.trace import trace_lib
-from ..visualization.trace.trace_components import CallgraphNodeHighlightTraceElement, \
-    CallgraphPathHighlightTraceElement, ResetChangesTraceElement
-from ..visualization.trace.trace_type import AlgorithmTrace
+
 
 
 @dataclass
@@ -195,6 +192,11 @@ class FlatAnalysis(Step):
         entry_points = self._get_entry_points()
 
         if self.trace_algorithm.get():
+            from ..visualization.trace import trace_lib
+            from ..visualization.trace.trace_components import CallgraphNodeHighlightTraceElement, \
+                CallgraphPathHighlightTraceElement, ResetChangesTraceElement
+            from ..visualization.trace.trace_type import AlgorithmTrace
+
             temp_cfg = CFG(cfg)
             self.trace = AlgorithmTrace(Callgraph(temp_cfg, graph=callg), temp_cfg, InstanceGraph(instances))
 
