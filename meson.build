@@ -14,7 +14,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'PySide6'])
 
 ## llvm dependencies
 llvm_version = ['>=10', '<13']
@@ -186,6 +186,16 @@ if get_option('enable_toplevel_tests')
               '--log-level', 'info',
               '--dump',
               '--step-settings', autosar_minexample_settings],
+       suite: 'toplevel',
+       timeout: 30
+    )
+
+    test('cfg_pic',
+       py3_inst,
+       args: [ara_py, freertos_cfg_pic,
+              '--dump',
+              '--log-level', 'info',
+              '--step', 'SIA'],
        suite: 'toplevel',
        timeout: 30
     )

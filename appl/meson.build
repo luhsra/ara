@@ -16,6 +16,7 @@ freertos_targets = []
 ir_apps = [
   'abb_merge',
   'argument_load',
+  'cfg_pic',
   'condition',
   'critical_region_detection',
   'deadlock',
