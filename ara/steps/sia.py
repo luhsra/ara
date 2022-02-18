@@ -220,8 +220,6 @@ class FlatAnalysis(Step):
 
                 syscall_func = callg.vertex(cfg.vp.call_graph_link[syscall_cfg_func])
 
-                print(syscall_func)
-
                 self.trace.add_element(CallgraphNodeHighlightTraceElement(syscall_func,
                                                                           callg, color=trace_lib.Color.RED))
 
