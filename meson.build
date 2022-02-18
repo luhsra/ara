@@ -122,6 +122,26 @@ load("step", "ara.steps.step")
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
+gui_py_content = '''#!@0@
+"""Automatic Real-time System Analyzer GUI"""
+import importlib
+import sys
+import graph_tool
+
+def load(what, where):
+    module = importlib.import_module(what)
+    sys.modules[where] = module
+
+sys.path = [@1@] + sys.path
+
+load("graph_data", "ara.graph.graph_data")
+load("py_logging", "ara.steps.py_logging")
+load("step", "ara.steps.step")
+
+import ara.ara as _ara
+import ara.visualization.main
+sys.exit()'''
+
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 
@@ -130,6 +150,14 @@ ara_py = custom_target('ara-py',
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
+    build_by_default: true
+)
+
+gui_py = custom_target('gui-py',
+    input: [],
+    output: 'gui.py',
+    depends: [step_mod, graph_data_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
     build_by_default: true
 )
 
@@ -199,4 +227,15 @@ if get_option('enable_toplevel_tests')
        suite: 'toplevel',
        timeout: 30
     )
+
+    test('cfg_pic',
+       py3_inst,
+       args: [ara_py, freertos_visualization_thesis_example,
+              '--dump',
+              '--log-level', 'info',
+              '--step', 'SIA'],
+       suite: 'toplevel',
+       timeout: 30
+    )
+
 endif

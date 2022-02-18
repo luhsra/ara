@@ -1,5 +1,3 @@
-import time
-
 from PySide6.QtCore import Slot, Qt, QThread, Signal, QObject
 from PySide6.QtGui import QWheelEvent, QPainter
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidget, QWidget
@@ -13,6 +11,9 @@ from ara.visualization.widgets.graph_elements import GraphicsObject, Subgraph, A
 
 
 class GraphScene(QGraphicsScene):
+    """
+        Base class for a graph scene. It will be inside the graph view.
+    """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -32,6 +33,9 @@ class GraphScene(QGraphicsScene):
 
 
 class GraphViewContext(QObject):
+    """
+        The graph view context is used for the communication between the graph views. Is used as a singleton.
+    """
 
     entry_points = set()
 
@@ -106,6 +110,11 @@ CONTEXT = GraphViewContext()
 
 
 class BaseGraphView(QGraphicsView):
+    """
+        Base class for graph views.
+    """
+    # set = expansion points
+    # bool = layout only - deprecated
     sig_layout_start = Signal(GraphTypes, set, bool, StepMode)
 
     sig_work_done = Signal(str)
@@ -149,6 +158,9 @@ class BaseGraphView(QGraphicsView):
         CONTEXT.sig_update_graphview.connect(self._internal_update)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
+        """
+        Sets up zoom
+        """
         if event.angleDelta().y() > 0:
             self.scale(1.1, 1.1)
         else:
@@ -161,7 +173,6 @@ class BaseGraphView(QGraphicsView):
 
     @Slot(bool, bool)
     def start_update(self, steps_available, trace_available):
-        print("Start Update")
         if not self.isVisible():
             return
 
@@ -172,7 +183,6 @@ class BaseGraphView(QGraphicsView):
 
     @Slot()
     def update_view(self):
-        print(f"Starting {self.graph_type}")
         self.scene().clear_rec()
 
         gui_data = self.layouter.get_data(self.graph_type)
@@ -181,7 +191,6 @@ class BaseGraphView(QGraphicsView):
             return
 
         if len(gui_data) == 0:
-            print(f"sending {self.graph_type}")
             self.sig_work_done.emit(self.graph_type.value)
             return
 
@@ -202,7 +211,6 @@ class BaseGraphView(QGraphicsView):
                 obj.setZValue(3)
                 self.handle_edge_add(obj)
 
-        print(f"Updating {self.graph_type}")
         self.sig_work_done.emit(self.graph_type.value)
         #self.centerOn(0,0)
         self.update()
@@ -220,6 +228,9 @@ class BaseGraphView(QGraphicsView):
 
 
 class CallGraphView(BaseGraphView):
+    """
+        View for the Callgraph. Handles the selection system.
+    """
 
     sig_entry_point_selected = Signal(set, str)
 
@@ -233,6 +244,9 @@ class CallGraphView(BaseGraphView):
         super().__init__(GraphTypes.CALLGRAPH, signal_combiner)
 
     def handle_node_add(self, node):
+        """
+            Applies node settings if they exist.
+        """
         if isinstance(node, CallGraphNode):
             node.sig_selected.connect(self.selection_added)
             node.sig_unselected.connect(self.selection_removed)
@@ -240,8 +254,6 @@ class CallGraphView(BaseGraphView):
             node.sig_expansion_unselected.connect(self.expansion_retraction)
 
             if trace_handler.INSTANCE.gui_element_settings.__contains__(node.id):
-                print(f"Applying settings for {node.id}")
-                print(f"{trace_handler.INSTANCE.gui_element_settings}")
                 trace_handler.INSTANCE.gui_element_settings[node.id].apply(node)
 
             if CONTEXT.get_expansion_points().__contains__(node.data.attr["label"]):
@@ -255,8 +267,10 @@ class CallGraphView(BaseGraphView):
                 node.reload_stylesheet()
 
     def handle_edge_add(self, edge):
+        """
+            Applies edge settings if they exist.
+        """
         if trace_handler.INSTANCE.gui_element_settings.__contains__(edge.id):
-            print(f"Edge {edge} -- {edge.id}")
             trace_handler.INSTANCE.gui_element_settings[edge.id].apply(edge)
 
     def setup_signals(self):
@@ -274,10 +288,8 @@ class CallGraphView(BaseGraphView):
 
     @Slot(str)
     def handle_expansion_points_update(self, source):
-        print(f"\t Start Updating Callgraph with source: {source}")
         if source == "CallGraph":
             return
-        print(f"\t Updating Callgraph - {source}")
         self.start_update(False, False)
 
     @Slot()
@@ -299,7 +311,6 @@ class CallGraphView(BaseGraphView):
     @Slot(set)
     def expansion_points_discovered(self, points):
         CONTEXT.callgraph_soft_expansion_points.update(points)
-        #self._CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
 
     @Slot()
     def expansion_points_reset(self):
@@ -317,10 +328,16 @@ class CallGraphView(BaseGraphView):
 
 
 class CFGView(BaseGraphView):
+    """
+        CFG view.
+    """
     def __init__(self, signal_combiner):
         super().__init__(GraphTypes.ABB, signal_combiner)
 
 
 class InstanceGraphView(BaseGraphView):
+    """
+        Instance graph view.
+    """
     def __init__(self, signal_combiner):
         super().__init__(GraphTypes.INSTANCE, signal_combiner)

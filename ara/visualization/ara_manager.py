@@ -26,17 +26,6 @@ class ARAManager(QObject):
         Should be run in its own thread.
     """
 
-    # sig_setup_done = Signal(name="sigSetupDone")
-    #
-    # sig_execute_chain = Signal(list)
-    # sig_graph = Signal(graph_tool.Graph, name="sigGraph")
-    #
-    # sig_init_done = Signal()
-    # sig_step_done = Signal(bool) # the bool indicates if there are more steps
-    # sig_finish_done = Signal()
-    #
-    # sig_step_dependencies_discovered = Signal()
-
     def __init__(self):
         super().__init__(None)
         self.args = None
@@ -50,8 +39,6 @@ class ARAManager(QObject):
             Entry Point for ARA.
             It's mostly a copy of the main in ./ara.py, with slight changes to allow interaction with the gui.
         """
-
-        print("Start")
 
         parser = argparse.ArgumentParser(
             prog=sys.argv[0],

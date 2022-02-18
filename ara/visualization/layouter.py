@@ -31,7 +31,9 @@ def text_to_len(txt):
 
 
 class Layouter(QObject):
-    """ Layout the components for the Graphical Visualization """
+    """
+        This class handles the layout creation. Multiple instance are used. One for each graph view.
+    """
 
     SHAPES = {
         ABBType.computation: ("oval", "blue"),
@@ -59,6 +61,7 @@ class Layouter(QObject):
         print(message)
 
     def _update_call_graph_view(self, entry_points=None, mode=StepMode.DEFAULT):
+        """ Create call graph view. """
         try:
             if mode is StepMode.TRACE:
                 call_graph = trace_handler.INSTANCE.context.callgraph
@@ -121,6 +124,7 @@ class Layouter(QObject):
             print(traceback.format_exc())
 
     def _update_cfg_view(self, entry_points=None, mode=StepMode.DEFAULT):
+        """ Create CFG view """
         try:
 
             if mode is StepMode.TRACE:
@@ -225,7 +229,7 @@ class Layouter(QObject):
             print(traceback.format_exc())
 
     def _update_instance_graph_view(self, mode=StepMode.DEFAULT):
-
+        """ Create instance graph view. """
         if mode is StepMode.TRACE:
             instance_graph = trace_handler.INSTANCE.context.instances
         else:
@@ -257,6 +261,7 @@ class Layouter(QObject):
                 label=instance_graph.ep.label[edge])
 
     def _create_return_data(self, graph: AGraph, return_list, graph_type: GraphTypes = GraphTypes.ABB):
+        """ Prepares the data so its easier to process by the gui. """
         for n in graph.nodes():
             if not n.attr.__contains__("pos") or n.attr["pos"] is None:
                 continue
@@ -313,13 +318,12 @@ class Layouter(QObject):
         """
 
         try:
-
+            # Prevent multiple layout calls.
             if self._running:
               return
 
             self._running = True
 
-            print(f"Layouting {graph_type} - {entry_points}")
 
             if not GraphTypes.__contains__(graph_type):
                 print(f"The subgraph {graph_type} does not exist")
@@ -340,12 +344,10 @@ class Layouter(QObject):
 
             if graph_type == GraphTypes.ABB:
                 self.cfg_view.layout("dot")
-                #self.cfg_view.write("./debug.dot")
             if graph_type == GraphTypes.CALLGRAPH:
                 self.call_graph_view.layout("dot")
             if graph_type == GraphTypes.INSTANCE:
                 self.instance_graph_view.layout("dot")
-
 
         except Exception as e:
             print(e)

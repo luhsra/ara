@@ -18,11 +18,18 @@ class SignalCombiner(QObject):
         self.sig_emit.connect(consumer)
 
     def register_sender(self, id):
+        """
+        Adds an object identified by id to this signal combiner.
+        """
         assert not self.senders.__contains__(id)
         self.senders[id] = False
 
     @Slot(str)
     def receive(self, id):
+        """
+            Receives a signal from a registered sender.
+            Further signals send are ignored until every sender has send one.
+        """
         self.senders[id] = True
         if not (False in self.senders.values()):
             self.sig_emit.emit()

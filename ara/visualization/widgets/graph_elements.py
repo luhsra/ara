@@ -1,20 +1,20 @@
-from math import sqrt, cos, sin
-
-from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsDropShadowEffect, QGraphicsTextItem, \
-    QLabel
-from PySide6.QtGui import QPen, QPainterPath, QMouseEvent, QFont, QFontDatabase, QBrush
+from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsTextItem
+from PySide6.QtGui import QPen, QPainterPath, QMouseEvent
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph
 
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
 
-DPI_LEVEL = 72 # Todo move to a more fitting file
+DPI_LEVEL = 72
 
 
 class GraphicsObject(QWidget):
+    """
+        Base class for graph elements.
+    """
 
     loader = QUiLoader()
 
@@ -27,6 +27,10 @@ class GraphicsObject(QWidget):
 
 
 class AbstractNode(GraphicsObject):
+    """
+        Base class for graph nodes. Loads a ui file for the design.
+    """
+
     def __init__(self, node:Node, ui_path="../resources/node.ui"):
         super().__init__(ui_path)
 
@@ -43,6 +47,9 @@ class AbstractNode(GraphicsObject):
 
 
 class AbbNode(AbstractNode):
+    """
+        Node of a cfg.
+    """
 
     subtypes = {"": "UNK","1" : "syscall", "2" : "call", "4" : "comp" }
 
@@ -54,10 +61,13 @@ class AbbNode(AbstractNode):
         self.widget.type_text.setText(str(self.data.attr["type"]))
 
     def mousePressEvent(self, event:QMouseEvent) -> None:
-        print("ToDo: Do Something with the clicks")
+        print("Do Something with the clicks")
 
 
 class CallGraphNode(AbstractNode):
+    """
+        Node of a call graph. Contains all signals to make a graph selection and handle the expansion of the graph.
+    """
 
     sig_adjacency_selected = Signal(str)
 
@@ -123,6 +133,10 @@ class CallGraphNode(AbstractNode):
 
 
 class InstanceNode(AbstractNode):
+    """
+        Node of the instance graph.
+    """
+
     def __init__(self, node:Node):
         super().__init__(node, "../resources/instance_node.ui")
         self.widget.label_text.setText(str(self.data.attr["label"]))
@@ -130,6 +144,9 @@ class InstanceNode(AbstractNode):
 
 
 class Subgraph(GraphicsObject):
+    """
+        A subgraph of the cfg which surrounds ABB nodes.
+    """
     def __init__(self, subgraph:AGraph):
         super().__init__("../resources/subgraph.ui")
         self.data = subgraph
@@ -169,6 +186,9 @@ class Subgraph(GraphicsObject):
 
 
 class GraphEdge(QGraphicsPathItem):
+    """
+        A edge of a graph.
+    """
     def __init__(self, edge: Edge):
         super().__init__()
 
@@ -203,8 +223,9 @@ class GraphEdge(QGraphicsPathItem):
                          pos[i + 1]["x"], - pos[i + 1]["y"],
                          pos[i + 2]["x"], - pos[i + 2]["y"])
 
-        self.draw_arrow_tip(edges[0], - edges[1], 20, 30)
+        self._draw_arrow_tip(edges[0], - edges[1], 20, 30)
 
+        # Generate the labels
         if self.data.attr.__contains__("label") and not (self.data.attr["label"] is None):
             text_item = QGraphicsTextItem()
             pos = self.data.attr["lp"].split(",")
@@ -212,7 +233,6 @@ class GraphEdge(QGraphicsPathItem):
             text_item.setPos(float(pos[0]) - len(label)*6, - float(pos[1]) - 12)
             text_item.setPlainText(label)
             self.text.append(text_item)
-            #self.path.addText(, - float(pos[1]), QFont(), label)
 
         self.setPath(self.path)
 
@@ -226,7 +246,7 @@ class GraphEdge(QGraphicsPathItem):
         self.path.setFillRule(Qt.WindingFill)
         self.setPen(QPen(pen_color, 1.5, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
 
-    def draw_arrow_tip(self, x, y, size, theta):
+    def _draw_arrow_tip(self, x, y, size, theta):
         # Bounding Box Parameter
         box_x = x - size / 2
         box_y = y - size / 2
@@ -246,6 +266,9 @@ class GraphEdge(QGraphicsPathItem):
 
 
 class CallgraphNodeSetting:
+    """
+        This is used by the trace system to set the visual design of a call graph node.
+    """
 
     def __init__(self, node_id, highlighting: bool, highlight_color=trace_lib.Color.RED):
         self.node_id = node_id
@@ -258,6 +281,9 @@ class CallgraphNodeSetting:
 
 
 class CallgraphEdgeSetting:
+    """
+        This is used by the trace system to set the visual design of a call graph edge.
+    """
 
     def __init__(self, edge_id, highlighting: bool, highlighting_color=trace_lib.Color.RED):
         self.edge_id = edge_id

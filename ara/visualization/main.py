@@ -1,8 +1,6 @@
 from PySide6.QtWidgets import QApplication
 
-from PySide6.QtCore import QObject, QThread
-from PySide6.QtCore import Signal
-from PySide6.QtCore import Slot
+from PySide6.QtCore import QThread
 
 from . import ara_manager
 from .trace import trace_handler
@@ -10,10 +8,6 @@ from .gui_window import GuiWindow
 
 
 application = QApplication([])
-
-#controller = Controller(application)
-
-#controller.sig_start_gui.emit()
 
 gui_window = GuiWindow(None)
 

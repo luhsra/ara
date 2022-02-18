@@ -1,5 +1,5 @@
-from PySide2.QtCore import Qt, Slot, Signal
-from PySide2.QtWidgets import QMainWindow, QApplication, QDockWidget, QWidget, QVBoxLayout, QTextEdit, QPushButton, \
+from PySide6.QtCore import Qt, Slot, Signal
+from PySide6.QtWidgets import QMainWindow, QApplication, QDockWidget, QWidget, QVBoxLayout, QTextEdit, QPushButton, \
     QLineEdit, QLabel
 
 
@@ -61,4 +61,4 @@ application = QApplication([])
 
 gui_window = GuiWindow()
 
-application.exec_()
+application.exec()

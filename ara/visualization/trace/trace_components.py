@@ -7,29 +7,21 @@ from ara.visualization.widgets.graph_elements import CallgraphNodeSetting, Callg
 
 
 class TraceContext:
+    """
+        This objects holds the data which is needed for the processing of the trace.
+    """
 
     def __init__(self, callgraph, cfg, instances):
-        self._current_node = None
-        self._current_edge = None
-
         self.cfg = cfg
         self.callgraph = callgraph
         self.instances = instances
 
-    def set_current_node(self, node):
-        self._current_node = node
-
-    def get_current_node(self):
-        return self._current_node
-
-    def set_current_edge(self, edge):
-        self._current_edge = edge
-
-    def get_current_edge(self):
-        return self._current_edge
-
 
 class IndexFactory:
+    """
+        Factory to easily create an index.
+        Might be overkill.
+    """
 
     def __init__(self):
         self.value = 0
@@ -41,6 +33,9 @@ class IndexFactory:
 
 
 class BaseTraceElement:
+    """
+        Base class which every trace element should extend to be able to be processed.
+    """
 
     global_index  = IndexFactory()
 
@@ -75,6 +70,9 @@ class BaseTraceElement:
 
 
 class CallgraphNodeHighlightTraceElement(BaseTraceElement):
+    """
+        Trace element which highlights a call graph node.
+    """
 
     def __init__(self, node, callgraph, color=trace_lib.Color.RED):
         super().__init__()
@@ -96,6 +94,9 @@ class CallgraphNodeHighlightTraceElement(BaseTraceElement):
 
 
 class CallgraphPathHighlightTraceElement(BaseTraceElement):
+    """
+        Trace element which highlights a path out of edges.
+    """
 
     def __init__(self):
         super().__init__()
@@ -138,6 +139,11 @@ class CallgraphPathHighlightTraceElement(BaseTraceElement):
 
 
 class ResetPartialChangesTraceElement(BaseTraceElement):
+    """
+        Element to reset partial changes.
+        Not implemented.
+        Needs to be handled similar to the ResetChangesTraceElement in the trace handler.
+    """
 
     def __init__(self, element):
         super().__init__()
@@ -145,6 +151,9 @@ class ResetPartialChangesTraceElement(BaseTraceElement):
 
 
 class ResetChangesTraceElement(BaseTraceElement):
+    """
+        Trace element which is used to tell the trace handle to reset the current changes.
+    """
 
     def __init__(self):
         super().__init__()

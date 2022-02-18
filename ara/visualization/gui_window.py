@@ -21,6 +21,10 @@ loader = QUiLoader()
 
 
 class GuiWindow(QMainWindow):
+    """
+        Main class for the Applications window.
+        Contains all the logic for controlling the flow of the processing.
+    """
     sig_exec_step = Signal()
 
     sig_init_trace_handler = Signal()
@@ -31,6 +35,8 @@ class GuiWindow(QMainWindow):
 
     sig_reset_trace_handler = Signal()
 
+    # Selected call graph nodes
+    # Source of the changes - used for synchronization with the function list and call graph view
     sig_expansion_point_selected = Signal(set, str)
 
     sig_entry_point_selected = Signal(str, str)
@@ -113,10 +119,7 @@ class GuiWindow(QMainWindow):
 
         graph_views.CONTEXT.sig_expansion_point_updated.connect(self.refresh_function_list_selection)
 
-        #self.dw_function_search.listSearch.itemActivated.connect(self.print_text)
-        #self.dw_function_search.listSearch.itemChanged.connect(self.print_text)
         self.dw_function_search.listSearch.itemDoubleClicked.connect(self.add_entry_point)
-        self.dw_function_search.listSearch.itemPressed.connect(self.print_text)
 
         self.sig_entry_point_selected.connect(graph_views.CONTEXT.switch_entry_point)
 
@@ -161,10 +164,6 @@ class GuiWindow(QMainWindow):
         self.show()
 
     @Slot(QListWidgetItem)
-    def print_text(self, item):
-        print(item.text())
-
-    @Slot(QListWidgetItem)
     def add_entry_point(self, item):
         self.sig_entry_point_selected.emit(item.text(), "List")
 
@@ -184,7 +183,6 @@ class GuiWindow(QMainWindow):
                 items.add(item.text())
 
             self.sig_expansion_point_selected.emit(items, "List")
-
 
     @Slot(str)
     def refresh_function_list_selection(self, source):

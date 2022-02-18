@@ -9,6 +9,7 @@ class ProcessingSignalManager(QObject):
 
     sig_graph = Signal(graph_tool.Graph)
 
+    # list should only contain strings
     sig_execute_chain = Signal(list)
 
     sig_init_done = Signal()
@@ -23,4 +24,5 @@ class ProcessingSignalManager(QObject):
         super().__init__()
 
 
+# Singleton
 SIGNAL_MANAGER = ProcessingSignalManager()
