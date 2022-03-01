@@ -135,10 +135,11 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return (sys_cat | categories) == sys_cat
 
     @staticmethod
-    def interpret(graph, abb, state, categories=SyscallCategory.every):
+    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
         """Interprets a detected syscall."""
 
         cfg = graph.cfg
+        abb = state.cpus[cpu_id].abb
 
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
