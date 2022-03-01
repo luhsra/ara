@@ -27,6 +27,6 @@ int main() {
         return -2;
     }
     // The following should not be detected:
-    int (*sigaction_ptr)(int, const struct sigaction *, struct sigaction *) = _orig_musl_sigaction;
+    int (*sigaction_ptr)(int, const struct sigaction *, struct sigaction *) = sigaction;
     sigaction_ptr(SIGSEGV, &act, NULL);
 }
