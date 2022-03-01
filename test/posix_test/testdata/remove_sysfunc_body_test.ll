@@ -44,6 +44,11 @@ define dso_local i8 @pthread_cond_timedwait() #0 {
 	ret i8 48
 }
 
+define dso_local i32 @pthread_create.3() #0 {
+	call i8 @sleep()
+	ret i32 32
+}
+
 define dso_local i32 @main() #0 {
 	call i32 @_printf()
 	call i32 @pthread_join()
@@ -52,8 +57,9 @@ define dso_local i32 @main() #0 {
 	call i32 @__pthread_create()
 	call i32 @_open64()
 	call i8 @pthread_cond_timedwait()
-	%8 = add i32 2, 1
-	ret i32 %8
+	call i32 @pthread_create.3()
+	%9 = add i32 2, 1
+	ret i32 %9
 }
 
 attributes #0 = { noinline nounwind optnone sspstrong uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "frame-pointer"="all" "less-precise-fpmad"="false" "min-legal-vector-width"="0" "no-builtins" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }

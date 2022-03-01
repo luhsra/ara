@@ -9,7 +9,6 @@
     ["main", "_printf"],
     ["main", "pause"], 
     ["main", "pthread_cond_timedwait"],
-    ["main", "pthread_create.3"], 
-    ["main", "pthread_join"],
-    ["pthread_create.3", "sleep"]
+    ["main", "pthread_create.3"],
+    ["main", "pthread_join"]
 ]
