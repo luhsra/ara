@@ -3,7 +3,7 @@
 if __name__ == '__main__':
     __package__ = 'test.posix_test'
 
-from ..init_test import init_test, fail_if
+from ..init_test import fail_if_json_not_equal, init_test, fail_if
 from ara.os.posix.posix import POSIX
 from ara.os.posix.posix_utils import Unknown, NotSet, Likely
 import json
@@ -107,7 +107,7 @@ def main():
     dump = json_instance_graph(m_graph.instances)
     
     if self_is_testcase:
-        fail_if(data != dump, "Data not equal")
+        fail_if_json_not_equal(data, dump)
     else:
         with open(json_file, "w") as f:
             f.write(json.dumps(dump, indent=2))
