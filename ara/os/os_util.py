@@ -1,3 +1,4 @@
+import collections
 import os.path
 import typing
 import dataclasses
@@ -71,7 +72,7 @@ class UnknownArgument:
     def __str__(self):
         return "<unknown>"
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(unsafe_hash=True)
 class DefaultArgument:
     """A wrapper class to indicate that an argument for an instance is not set.
     
@@ -84,7 +85,7 @@ class DefaultArgument:
     def __str__(self):
         return str(self.value)
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(unsafe_hash=True)
 class LikelyArgument:
     """Represents the likely attribute.
     
@@ -109,12 +110,21 @@ def get_argument(value, arg):
     arg   -- Argument for this value
     """
     def check_ty(lvalue, ty):
-        if ty == typing.Any or type(lvalue) == ty:
-            return lvalue
+        if isinstance(ty, collections.abc.Container):
+            if type(lvalue) in ty:
+                return lvalue
+            else:
+                raise UnsuitableArgumentException(f"Value type {type(lvalue)} does not match wanted types {ty}.")
         else:
-            raise UnsuitableArgumentException(f"Value type {type(lvalue)} does not match wanted type {ty}.")
+            if ty == typing.Any or type(lvalue) == ty:
+                return lvalue
+            else:
+                raise UnsuitableArgumentException(f"Value type {type(lvalue)} does not match wanted type {ty}.")
 
-    if arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
+    if isinstance(arg.ty, type) and arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
+        return check_ty(value.value, arg.ty)
+    # if all types in arg.ty are subclass of pyllco.Value:
+    if isinstance(arg.ty, collections.abc.Container) and len([ty for ty in arg.ty if issubclass(ty, pyllco.Value)]) == len(arg.ty):
         return check_ty(value.value, arg.ty)
     if arg.ty != typing.Any and arg.hint == _SigType.instance:
         return check_ty(value.value, arg.ty)
