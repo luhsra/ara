@@ -1,3 +1,4 @@
+from ara.os.os_base import ControlInstance
 import pyllco
 from dataclasses import dataclass
 from typing import Any
@@ -50,13 +51,11 @@ SIGNAL_TYPES = dict({
 })
 
 @dataclass(eq = False)
-class SignalCatchingFunc(IDInstance):
-    entry_abb: Any              # The entry point as abb type
-    function: pyllco.Function   # The entry point as function type
+class SignalCatchingFunc(IDInstance, ControlInstance):
+    function_name: str          # Name of entry function
     catching_signals: set       # all signals that the handler is catching (of type: set[str])
-    is_regular: bool = True     # True if the entry function is available
 
-    wanted_attrs = ["name", "function", "catching_signals"]
+    wanted_attrs = ["name", "function_name", "catching_signals"]
     dot_appearance = {
         "shape": "box",
         "fillcolor": "#ffa500",
@@ -87,8 +86,10 @@ class SignalSyscalls:
                         Arg('sa_flags', hint=SigType.value, ty=[pyllco.ConstantInt, pyllco.ConstantAggregateZero, pyllco.GlobalVariable, pyllco.AllocaInst]),
                         Arg('sa_sigaction', hint=SigType.symbol, ty=[pyllco.Function, pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]),
                         Arg('oact', hint=SigType.symbol)))   
-    def ARA_sigaction_syscall_(graph, abb, state, args, va): # sigaction()
+    def ARA_sigaction_syscall_(graph, state, cpu_id, args, va): # sigaction()
         
+        cfg = graph.cfg
+
         # suppress some "argument is of wrong type" warnings
         sa_handler = args.sa_handler
         sa_sigaction = args.sa_sigaction
@@ -150,10 +151,13 @@ class SignalSyscalls:
             return state
 
         # Create new signal catching function.
-        new_scf = SignalCatchingFunc(entry_abb=graph.cfg.get_entry_abb(graph.cfg.get_function_by_name(func_name)),
-                                     function=func_name,
+        new_scf = SignalCatchingFunc(cpu_id=-1,
+                                     cfg=cfg,
+                                     artificial=False,
+                                     function=cfg.get_function_by_name(func_name),
+                                     function_name=func_name,
                                      catching_signals=set({catching_signal}) if catching_signal != None else set(),
                                      name=f"{func_name}()"
         )
         SignalSyscalls.signal_catching_functions[func_name] = new_scf
-        return register_instance(new_scf, new_scf.name, graph, abb, state)
+        return register_instance(new_scf, new_scf.name, graph, cpu_id, state)

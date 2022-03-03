@@ -139,12 +139,13 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         """Interprets a detected syscall."""
 
         cfg = graph.cfg
-        abb = state.cpus[cpu_id].abb
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
 
         syscall = cfg.get_syscall_name(abb)
         logger.debug(f"Get syscall: {syscall}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
-        logger.debug(f"found syscall in Callpath: {state.call_path}")
+        logger.debug(f"found syscall in Callpath: {cpu.call_path}")
 
         # Get syscall function. (Handles Musl/Linux syscalls)
         syscall_function = None
@@ -165,11 +166,11 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return POSIX._do_not_interpret(cfg, abb, state)
 
         # Throw error if a non-async-signal-safe syscalls is called in signal handler
-        thread = get_running_thread(state)
+        thread = cpu.control_instance
         if type(thread) == SignalCatchingFunc and not syscall_function.signal_safe:
             logger.error(f"signal catching function {thread.name} has called not async-signal-safe syscall {syscall_function.name}(). Ignoring ...")
             return POSIX._do_not_interpret(cfg, abb, state)
 
         # Call the syscall function.
         CurrentSyscallCategories.set(categories)
-        return syscall_function(graph, abb, state, sig_offest)
+        return syscall_function(graph, state, cpu_id, sig_offest)

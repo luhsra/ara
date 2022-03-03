@@ -1,6 +1,6 @@
 """This module contains all system profiles."""
 
-from .posix_utils import NotSet
+from ..os_util import DefaultArgument
 
 
 LINUX_PROFILE = dict({
@@ -10,9 +10,9 @@ LINUX_PROFILE = dict({
 })
 
 POSIX_STD_PROFILE = dict({
-    ("default_sched_priority", NotSet()),
-    ("default_sched_policy", NotSet()),
-    ("default_inheritsched", NotSet())
+    ("default_sched_priority", DefaultArgument()),
+    ("default_sched_policy", DefaultArgument()),
+    ("default_inheritsched", DefaultArgument())
 })
 
 

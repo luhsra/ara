@@ -1,8 +1,9 @@
+from ara.os.os_base import ControlInstance
 from .step import Step
 from .option import Option, Bool, Choice
 from ara.os.os_util import assign_id
 from ara.graph import SyscallCategory
-from ara.os.posix.posix_utils import MainThread, PosixOptions, StaticInitSyscalls, handle_static_soc
+from ara.os.posix.posix_utils import MainThread, POSIXInstance, PosixOptions, StaticInitSyscalls, handle_static_soc
 from ara.os.posix.thread import Thread
 from ara.os.posix.system_profiles import SYSTEM_PROFILES, Profile
 from ara.os.posix.posix import POSIX
@@ -43,9 +44,9 @@ class POSIXInit(Step):
     
 
     def get_single_dependencies(self):
-        return []
+        return ["LLVMMap"]
 
-    def register_default_instance(self, inst, label: str):
+    def register_default_instance(self, inst: POSIXInstance, label: str):
         """Writes a new default instance to the InstanceGraph.
         
         E.g. the Main Thread is available in all programs.
@@ -55,10 +56,8 @@ class POSIXInit(Step):
         inst.vertex = v
         instances.vp.obj[v] = inst
         instances.vp.label[v] = label
-
+        instances.vp.is_control[v] = isinstance(inst, ControlInstance)
         handle_static_soc(instances, v)
-        instances.vp.specialization_level[v] = "N/A"
-
         assign_id(instances, v)
 
     def run(self):
@@ -69,13 +68,16 @@ class POSIXInit(Step):
         # Generate POSIX Main Thread
         assert self._graph.instances != None, "Missing instance graph!"
         assert self._graph.cfg != None, "Missing control flow graph!"
-        main_thread = Thread(entry_abb = None,
-                             function = "main",
+        cfg = self._graph.cfg
+        main_thread = Thread(cpu_id=-1,
+                             cfg=cfg,
+                             artificial=False,
+                             function=cfg.get_function_by_name("main"),
+                             function_name="main",
                              sched_priority=Profile.get_value("default_sched_priority"),
                              sched_policy=Profile.get_value("default_sched_policy"),
                              inherited_sched_attr=None,
-                             name="Main Thread",
-                             is_regular=False
+                             name="Main Thread"
         )
         self.register_default_instance(main_thread, "Main Thread")
         MainThread.set(main_thread)
