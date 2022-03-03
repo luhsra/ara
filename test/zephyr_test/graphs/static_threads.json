@@ -3,7 +3,7 @@
     "label": "Zephyr",
     "id": "__kernel",
     "branch": 0,
-    "usually_taken": 0,
+    "usually_taken": 1,
     "loop": 0,
     "recursive": 0,
     "after_scheduler": 0,

@@ -27,7 +27,9 @@ class ZephyrStaticPost(Step):
         # Static instances are always unique since they are properly initialized globals
         instances.vp.branch[v] = False
         instances.vp.loop[v] = False
+        instances.vp.recursive[v] = False
         instances.vp.after_scheduler[v] = sched_on
+        instances.vp.usually_taken[v] = True
         instances.vp.unique[v] = True
         instances.vp.is_control[v] = isinstance(obj, ControlInstance)
 
