@@ -43,14 +43,14 @@ posix_test_settings = meson.current_source_dir() / 'settings'
 test('pthread_create',
         py3_inst,
         # The json object is not a files() object to allow paths to non existing json files.
-        # See test/posix_test/posix_instance_graph.py for more information.
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_create.json', posix_pthread_create],
+        # See test/instance_graph.py for more information.
+        args: [files('../instance_graph.py'), graphs / 'pthread_create.json', posix_pthread_create, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('pthread_create_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_create.json', posix_pthread_create_musl],
+        args: [files('../instance_graph.py'), graphs / 'pthread_create.json', posix_pthread_create_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
