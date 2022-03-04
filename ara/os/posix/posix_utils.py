@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from graph_tool import Vertex
 from ara.graph import SyscallCategory, CFG
 from ara.util import get_logger, LEVEL
-from ..os_util import assign_id, connect_from_here, find_return_value
+from ..os_util import AutoDotInstance, assign_id, connect_from_here, find_return_value
 
 logger = get_logger("POSIX")
 
@@ -45,41 +45,9 @@ def get_musl_weak_alias(syscall: str) -> str:
 # We do not want this. We want both, hashable and mutable instances.
 # Therefore we provide a custom hash based on the id. This id is always unique for an instance.
 @dataclass(eq = False)
-class POSIXInstance(ABC):
+class POSIXInstance(AutoDotInstance):
     name: str                           # The name of the instance. This is not an id for the instance.
     vertex: Vertex = field(init=False)  # vertex for this instance in the instance graph.
-
-    @property
-    @abstractmethod
-    def wanted_attrs(self) -> list:     # list[str]
-        """Return all attributes as strings that are relevent to be printed as dot.
-
-        This attribute will influence as_dot() and get_maximal_id().
-        """
-
-    @property
-    @abstractmethod
-    def dot_appearance(self) -> dict:   # dict[str, str]
-        """Return dot rendering properties.
-
-        Make sure to provide the following properties:
-            "shape": e.g. "box"
-            "fillcolor": e.g. "#6fbf87"
-            "style": e.g. "filled"
-        """
-
-    def as_dot(self):
-        attrs = [(x, str(getattr(self, x))) for x in self.wanted_attrs]
-        sublabel = '<br/>'.join([f"<i>{k}</i>: {html.escape(v)}"
-                                    for k, v in attrs])
-
-        self.dot_appearance["sublabel"] = sublabel
-        return self.dot_appearance
-
-    def get_maximal_id(self):
-        max_id_components = list(map(lambda obj_name: getattr(self, obj_name), self.wanted_attrs))
-        max_id_components.append(self.__class__.__name__)
-        return '.'.join(map(str, max_id_components))
 
     def __hash__(self):
         return id(self)
