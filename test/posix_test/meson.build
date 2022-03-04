@@ -58,13 +58,13 @@ test('pthread_create_musl',
 
 test('pthread_setname_np',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_setname_np.json', posix_pthread_setname_np],
+        args: [files('../instance_graph.py'), graphs / 'pthread_setname_np.json', posix_pthread_setname_np, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('pthread_setname_np_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_setname_np.json', posix_pthread_setname_np_musl],
+        args: [files('../instance_graph.py'), graphs / 'pthread_setname_np.json', posix_pthread_setname_np_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -72,13 +72,13 @@ test('pthread_setname_np_musl',
 
 test('mutex',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'mutex.json', posix_mutex],
+        args: [files('../instance_graph.py'), graphs / 'mutex.json', posix_mutex, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('mutex_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'mutex.json', posix_mutex_musl],
+        args: [files('../instance_graph.py'), graphs / 'mutex.json', posix_mutex_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -86,13 +86,13 @@ test('mutex_musl',
 
 test('mutex_counter',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'mutex_counter.json', posix_mutex_counter],
+        args: [files('../instance_graph.py'), graphs / 'mutex_counter.json', posix_mutex_counter, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('mutex_counter_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'mutex_counter.json', posix_mutex_counter_musl],
+        args: [files('../instance_graph.py'), graphs / 'mutex_counter.json', posix_mutex_counter_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -100,13 +100,13 @@ test('mutex_counter_musl',
 
 test('pipe',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pipe.json', posix_pipe],
+        args: [files('../instance_graph.py'), graphs / 'pipe.json', posix_pipe, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('pipe_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pipe.json', posix_pipe_musl],
+        args: [files('../instance_graph.py'), graphs / 'pipe.json', posix_pipe_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -114,13 +114,13 @@ test('pipe_musl',
 
 test('wrong_pipe_access',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'wrong_pipe_access.json', posix_wrong_pipe_access],
+        args: [files('../instance_graph.py'), graphs / 'wrong_pipe_access.json', posix_wrong_pipe_access, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('wrong_pipe_access_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'wrong_pipe_access.json', posix_wrong_pipe_access_musl],
+        args: [files('../instance_graph.py'), graphs / 'wrong_pipe_access.json', posix_wrong_pipe_access_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -128,13 +128,13 @@ test('wrong_pipe_access_musl',
 
 test('file_read',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_read.json', posix_file_read],
+        args: [files('../instance_graph.py'), graphs / 'file_read.json', posix_file_read, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('file_read_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_read.json', posix_file_read_musl],
+        args: [files('../instance_graph.py'), graphs / 'file_read.json', posix_file_read_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -142,13 +142,13 @@ test('file_read_musl',
 
 test('file_write',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_write.json', posix_file_write],
+        args: [files('../instance_graph.py'), graphs / 'file_write.json', posix_file_write, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('file_write_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_write.json', posix_file_write_musl],
+        args: [files('../instance_graph.py'), graphs / 'file_write.json', posix_file_write_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -156,13 +156,13 @@ test('file_write_musl',
 
 test('open_twice',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'open_twice.json', posix_open_twice],
+        args: [files('../instance_graph.py'), graphs / 'open_twice.json', posix_open_twice, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('open_twice_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'open_twice.json', posix_open_twice_musl],
+        args: [files('../instance_graph.py'), graphs / 'open_twice.json', posix_open_twice_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -170,13 +170,13 @@ test('open_twice_musl',
 
 test('open_two_files',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'open_two_files.json', posix_open_two_files],
+        args: [files('../instance_graph.py'), graphs / 'open_two_files.json', posix_open_two_files, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('open_two_files_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'open_two_files.json', posix_open_two_files_musl],
+        args: [files('../instance_graph.py'), graphs / 'open_two_files.json', posix_open_two_files_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -184,13 +184,13 @@ test('open_two_files_musl',
 
 test('semaphore',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'semaphore.json', posix_semaphore],
+        args: [files('../instance_graph.py'), graphs / 'semaphore.json', posix_semaphore, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('semaphore_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'semaphore.json', posix_semaphore_musl],
+        args: [files('../instance_graph.py'), graphs / 'semaphore.json', posix_semaphore_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -198,13 +198,13 @@ test('semaphore_musl',
 
 test('mutex_initializer',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'mutex_initializer.json', posix_mutex_initializer],
+        args: [files('../instance_graph.py'), graphs / 'mutex_initializer.json', posix_mutex_initializer, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('mutex_initializer_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'mutex_initializer.json', posix_mutex_initializer_musl],
+        args: [files('../instance_graph.py'), graphs / 'mutex_initializer.json', posix_mutex_initializer_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -212,13 +212,13 @@ test('mutex_initializer_musl',
 
 test('signal_handler',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'signal_handler.json', posix_signal_handler],
+        args: [files('../instance_graph.py'), graphs / 'signal_handler.json', posix_signal_handler, 'POSIX'],
         env: [python_path],
         suite: 'posix',
 )
 test('signal_handler_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'signal_handler.json', posix_signal_handler_musl],
+        args: [files('../instance_graph.py'), graphs / 'signal_handler.json', posix_signal_handler_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -226,13 +226,13 @@ test('signal_handler_musl',
 
 test('signal_handler_siginfo',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'signal_handler_siginfo.json', posix_signal_handler_siginfo],
+        args: [files('../instance_graph.py'), graphs / 'signal_handler_siginfo.json', posix_signal_handler_siginfo, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('signal_handler_siginfo_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'signal_handler_siginfo.json', posix_signal_handler_siginfo_musl],
+        args: [files('../instance_graph.py'), graphs / 'signal_handler_siginfo.json', posix_signal_handler_siginfo_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -240,13 +240,13 @@ test('signal_handler_siginfo_musl',
 
 test('wrong_call_in_sighandler',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'wrong_call_in_sighandler.json', posix_wrong_call_in_sighandler],
+        args: [files('../instance_graph.py'), graphs / 'wrong_call_in_sighandler.json', posix_wrong_call_in_sighandler, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('wrong_call_sighandler_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'wrong_call_in_sighandler.json', posix_wrong_call_in_sighandler_musl],
+        args: [files('../instance_graph.py'), graphs / 'wrong_call_in_sighandler.json', posix_wrong_call_in_sighandler_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -254,13 +254,13 @@ test('wrong_call_sighandler_musl',
 
 test('ignore_signal',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'ignore_signal.json', posix_ignore_signal],
+        args: [files('../instance_graph.py'), graphs / 'ignore_signal.json', posix_ignore_signal, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('ignore_signal_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'ignore_signal.json', posix_ignore_signal_musl],
+        args: [files('../instance_graph.py'), graphs / 'ignore_signal.json', posix_ignore_signal_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -268,13 +268,13 @@ test('ignore_signal_musl',
 
 test('multiple_sigactions',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'multiple_sigactions.json', posix_multiple_sigactions],
+        args: [files('../instance_graph.py'), graphs / 'multiple_sigactions.json', posix_multiple_sigactions, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('multiple_sigactions_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'multiple_sigactions.json', posix_multiple_sigactions_musl],
+        args: [files('../instance_graph.py'), graphs / 'multiple_sigactions.json', posix_multiple_sigactions_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -282,13 +282,13 @@ test('multiple_sigactions_musl',
 
 test('sigaction_macro_test',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'sigaction_macro_test.json', posix_sigaction_macro_test],
+        args: [files('../instance_graph.py'), graphs / 'sigaction_macro_test.json', posix_sigaction_macro_test, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('sigaction_macro_test_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'sigaction_macro_test.json', posix_sigaction_macro_test_musl],
+        args: [files('../instance_graph.py'), graphs / 'sigaction_macro_test.json', posix_sigaction_macro_test_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -296,13 +296,13 @@ test('sigaction_macro_test_musl',
 
 test('file_readv',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_readv.json', posix_file_readv],
+        args: [files('../instance_graph.py'), graphs / 'file_readv.json', posix_file_readv, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('file_readv_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_readv.json', posix_file_readv_musl],
+        args: [files('../instance_graph.py'), graphs / 'file_readv.json', posix_file_readv_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -310,13 +310,13 @@ test('file_readv_musl',
 
 test('file_writev',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_writev.json', posix_file_writev],
+        args: [files('../instance_graph.py'), graphs / 'file_writev.json', posix_file_writev, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('file_writev_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'file_writev.json', posix_file_writev_musl],
+        args: [files('../instance_graph.py'), graphs / 'file_writev.json', posix_file_writev_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -324,13 +324,13 @@ test('file_writev_musl',
 
 test('wrong_file_access',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'wrong_file_access.json', posix_wrong_file_access],
+        args: [files('../instance_graph.py'), graphs / 'wrong_file_access.json', posix_wrong_file_access, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('wrong_file_access_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'wrong_file_access.json', posix_wrong_file_access_musl],
+        args: [files('../instance_graph.py'), graphs / 'wrong_file_access.json', posix_wrong_file_access_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -339,7 +339,7 @@ test('wrong_file_access_musl',
 # Linux syscall detection is only possible with musl libc.
 test('filestream_open_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'filestream_open_musl.json', posix_filestream_open_musl],
+        args: [files('../instance_graph.py'), graphs / 'filestream_open_musl.json', posix_filestream_open_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 400
@@ -347,13 +347,13 @@ test('filestream_open_musl',
 
 test('nanosleep',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'nanosleep.json', posix_nanosleep],
+        args: [files('../instance_graph.py'), graphs / 'nanosleep.json', posix_nanosleep, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('nanosleep_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'nanosleep.json', posix_nanosleep_musl],
+        args: [files('../instance_graph.py'), graphs / 'nanosleep.json', posix_nanosleep_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -363,7 +363,7 @@ test('nanosleep_musl',
 # because we do sleep() -> nanosleep()
 test('sleep',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'sleep.json', posix_sleep_musl],
+        args: [files('../instance_graph.py'), graphs / 'sleep.json', posix_sleep_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -371,13 +371,13 @@ test('sleep',
 
 test('set_thread_attr',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'set_thread_attr.json', posix_set_thread_attr],
+        args: [files('../instance_graph.py'), graphs / 'set_thread_attr.json', posix_set_thread_attr, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('set_thread_attr_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'set_thread_attr.json', posix_set_thread_attr_musl],
+        args: [files('../instance_graph.py'), graphs / 'set_thread_attr.json', posix_set_thread_attr_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -385,13 +385,13 @@ test('set_thread_attr_musl',
 
 test('thread_attr_inheritence',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_inheritance.json', posix_thread_attr_inheritance],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_inheritance.json', posix_thread_attr_inheritance, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('thread_attr_inherit_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_inheritance.json', posix_thread_attr_inheritance_musl],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_inheritance.json', posix_thread_attr_inheritance_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -399,13 +399,13 @@ test('thread_attr_inherit_musl',
 
 test('thread_attr_not_unique',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_not_unique.json', posix_thread_attr_not_unique],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_not_unique.json', posix_thread_attr_not_unique, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('thread_attr_not_unique_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_not_unique.json', posix_thread_attr_not_unique_musl],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_not_unique.json', posix_thread_attr_not_unique_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -413,13 +413,13 @@ test('thread_attr_not_unique_musl',
 
 test('thread_attr_double_call',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_double_call.json', posix_thread_attr_double_call],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_double_call.json', posix_thread_attr_double_call, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('thread_attr_double_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_double_call.json', posix_thread_attr_double_call_musl],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_double_call.json', posix_thread_attr_double_call_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -427,13 +427,13 @@ test('thread_attr_double_musl',
 
 test('thread_attr_cond_calls',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_cond_calls.json', posix_thread_attr_cond_calls],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_cond_calls.json', posix_thread_attr_cond_calls, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('thread_attr_cond_calls_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_attr_cond_calls.json', posix_thread_attr_cond_calls_musl],
+        args: [files('../instance_graph.py'), graphs / 'thread_attr_cond_calls.json', posix_thread_attr_cond_calls_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -441,13 +441,13 @@ test('thread_attr_cond_calls_musl',
 
 test('thread_setname_cond_calls',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_setname_cond_calls.json', posix_thread_setname_cond_calls],
+        args: [files('../instance_graph.py'), graphs / 'thread_setname_cond_calls.json', posix_thread_setname_cond_calls, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('thread_setname_cond_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'thread_setname_cond_calls.json', posix_thread_setname_cond_calls_musl],
+        args: [files('../instance_graph.py'), graphs / 'thread_setname_cond_calls.json', posix_thread_setname_cond_calls_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -455,7 +455,7 @@ test('thread_setname_cond_musl',
 
 test('system_profile_inheritance',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'system_profile_inheritance.json', posix_system_profile_inheritance],
+        args: [files('../instance_graph.py'), graphs / 'system_profile_inheritance.json', posix_system_profile_inheritance, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
@@ -463,13 +463,13 @@ test('system_profile_inheritance',
 # Thread attribute tests with Linux profile
 test('linux_pthread_create',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_pthread_create.json', posix_pthread_create, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_pthread_create.json', posix_pthread_create, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 test('linux_pthread_create_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_pthread_create.json', posix_pthread_create_musl, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_pthread_create.json', posix_pthread_create_musl, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -477,62 +477,62 @@ test('linux_pthread_create_musl',
 
 test('linux_set_thread_attr',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_set_thread_attr.json', posix_set_thread_attr, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_set_thread_attr.json', posix_set_thread_attr, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_thread_attr_inherit',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_inheritance.json', posix_thread_attr_inheritance, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_thread_attr_inheritance.json', posix_thread_attr_inheritance, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_thread_attr_not_uniq',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_not_unique.json', posix_thread_attr_not_unique, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_thread_attr_not_unique.json', posix_thread_attr_not_unique, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_thread_attr_double',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_double_call.json', posix_thread_attr_double_call, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_thread_attr_double_call.json', posix_thread_attr_double_call, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_thread_attr_cond',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_attr_cond_calls.json', posix_thread_attr_cond_calls, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_thread_attr_cond_calls.json', posix_thread_attr_cond_calls, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_pthread_setname_np',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_pthread_setname_np.json', posix_pthread_setname_np, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_pthread_setname_np.json', posix_pthread_setname_np, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_thread_setname_cond',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_thread_setname_cond_calls.json', posix_thread_setname_cond_calls, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_thread_setname_cond_calls.json', posix_thread_setname_cond_calls, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 
 test('linux_profile_inherit',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_profile_inherit.json', posix_system_profile_inheritance, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_profile_inherit.json', posix_system_profile_inheritance, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix'
 )
 test('linux_profile_inherit_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_profile_inherit.json', posix_system_profile_inheritance_musl, files('settings/system_profile_linux.json')],
+        args: [files('../instance_graph.py'), graphs / 'linux_profile_inherit.json', posix_system_profile_inheritance_musl, 'POSIX', files('settings/system_profile_linux.json')],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -541,13 +541,13 @@ test('linux_profile_inherit_musl',
 
 test('pthread_detach',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_detach.json', posix_pthread_detach],
+        args: [files('../instance_graph.py'), graphs / 'pthread_detach.json', posix_pthread_detach, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('pthread_detach_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_detach.json', posix_pthread_detach_musl],
+        args: [files('../instance_graph.py'), graphs / 'pthread_detach.json', posix_pthread_detach_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -555,13 +555,13 @@ test('pthread_detach_musl',
 
 test('pthread_cancel',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_cancel.json', posix_pthread_cancel],
+        args: [files('../instance_graph.py'), graphs / 'pthread_cancel.json', posix_pthread_cancel, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('pthread_cancel_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'pthread_cancel.json', posix_pthread_cancel_musl],
+        args: [files('../instance_graph.py'), graphs / 'pthread_cancel.json', posix_pthread_cancel_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -569,13 +569,13 @@ test('pthread_cancel_musl',
 
 test('condition_variable',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'condition_variable.json', posix_condition_variable],
+        args: [files('../instance_graph.py'), graphs / 'condition_variable.json', posix_condition_variable, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('condition_variable_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'condition_variable.json', posix_condition_variable_musl],
+        args: [files('../instance_graph.py'), graphs / 'condition_variable.json', posix_condition_variable_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -583,13 +583,13 @@ test('condition_variable_musl',
 
 test('condition_var_initializer',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'condition_var_initializer.json', posix_condition_var_initializer],
+        args: [files('../instance_graph.py'), graphs / 'condition_var_initializer.json', posix_condition_var_initializer, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('condition_var_init_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'condition_var_initializer.json', posix_condition_var_initializer_musl],
+        args: [files('../instance_graph.py'), graphs / 'condition_var_initializer.json', posix_condition_var_initializer_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -597,13 +597,13 @@ test('condition_var_init_musl',
 
 test('condition_var_broadcast',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast],
+        args: [files('../instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('condition_var_broad_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast_musl],
+        args: [files('../instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -611,13 +611,13 @@ test('condition_var_broad_musl',
 
 test('create_everything',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'create_everything.json', posix_create_everything],
+        args: [files('../instance_graph.py'), graphs / 'create_everything.json', posix_create_everything, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('create_everything_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'create_everything.json', posix_create_everything_musl],
+        args: [files('../instance_graph.py'), graphs / 'create_everything.json', posix_create_everything_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
@@ -626,7 +626,7 @@ test('create_everything_musl',
 # In this test we issue the Linux syscalls directly without the musl libc.
 test('linux_syscalls',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'linux_syscalls.json', posix_linux_syscalls],
+        args: [files('../instance_graph.py'), graphs / 'linux_syscalls.json', posix_linux_syscalls, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
@@ -634,13 +634,13 @@ test('linux_syscalls',
 # Complex application test
 test('semaphore_ring_buffer',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'semaphore_ring_buffer.json', posix_semaphore_ring_buffer],
+        args: [files('../instance_graph.py'), graphs / 'semaphore_ring_buffer.json', posix_semaphore_ring_buffer, 'POSIX'],
         env: [python_path],
         suite: 'posix'
 )
 test('semaphore_ring_buffer_musl',
         py3_inst,
-        args: [files('posix_instance_graph.py'), graphs / 'semaphore_ring_buffer.json', posix_semaphore_ring_buffer_musl],
+        args: [files('../instance_graph.py'), graphs / 'semaphore_ring_buffer.json', posix_semaphore_ring_buffer_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300
