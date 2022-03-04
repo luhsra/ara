@@ -113,9 +113,10 @@ class ThreadSyscalls:
                                 inherited_sched_attr=inherited_sched_attr,
                                 name=thread_name if not type(thread_name) in (UnknownArgument, DefaultArgument) else None
             )
-            args.thread = new_thread
             logger.warning(f"pthread_create(): Could not get entry point for the new Thread {new_thread.name}.")
-            return register_instance(new_thread, f"{ThreadSyscalls._get_value(new_thread.name)}", graph, cpu_id, state)
+            state = register_instance(new_thread, f"{ThreadSyscalls._get_value(new_thread.name)}", graph, cpu_id, state)
+            assign_instance_to_argument(va, args.thread, new_thread)
+            return state
         
         func_name = args.start_routine.get_name()
 

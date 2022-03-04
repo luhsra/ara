@@ -1,4 +1,6 @@
 from typing import Any
+from ara.graph.graph import Graph
+from ara.os.os_base import OSState
 import pyllco
 from ara.graph import SyscallCategory, SigType
 from enum import IntFlag
@@ -33,7 +35,7 @@ def create_file_desc_of(instance: POSIXInstance, type: FDType = FDType.BOTH):
 
 class FileDescriptorSyscalls:
 
-    def _fd_syscall_impl(graph, state, args, label: str, expected_type: FDType):
+    def _fd_syscall_impl(graph: Graph, state: OSState, args, cpu_id: int, label: str, expected_type: FDType):
         """Implementation for all file descriptor interaction systemcalls.
 
         Arguments:
@@ -50,36 +52,36 @@ class FileDescriptorSyscalls:
         if args.fildes.type & expected_type != expected_type:
             logger.error(f"{label}: file descriptor type {args.fildes.type.name} is not matching {expected_type.name}.")
             label = f"used {label} with {args.fildes.type.name} fd"
-        return add_edge_from_self_to(state, args.fildes.points_to, label)
+        return add_edge_from_self_to(state, args.fildes.points_to, label, cpu_id)
 
     # ssize_t read(int fildes, void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm}, signal_safe=True,
              signature=(Arg('fildes', ty=[FileDescriptor, pyllco.ConstantInt]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
-    def read(graph, abb, state, args, va):
-        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "read()", FDType.READ)
+    def read(graph, state, cpu_id, args, va):
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, cpu_id, "read()", FDType.READ)
 
     # ssize_t write(int fildes, const void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm}, signal_safe=True,
              signature=(Arg('fildes', ty=[FileDescriptor, pyllco.ConstantInt]),
                         Arg('buf', hint=SigType.symbol),
                         Arg('nbyte', hint=SigType.value)))
-    def write(graph, abb, state, args, va):
-        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "write()", FDType.WRITE)
+    def write(graph, state, cpu_id, args, va):
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, cpu_id, "write()", FDType.WRITE)
 
     # ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('fildes', ty=[FileDescriptor, pyllco.ConstantInt]),
                         Arg('iov', hint=SigType.symbol),
                         Arg('iovcnt', hint=SigType.value)))
-    def writev(graph, abb, state, args, va):
-        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "writev()", FDType.WRITE)
+    def writev(graph, state, cpu_id, args, va):
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, cpu_id, "writev()", FDType.WRITE)
 
     # ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('fildes', ty=[FileDescriptor, pyllco.ConstantInt]),
                         Arg('iov', hint=SigType.symbol),
                         Arg('iovcnt', hint=SigType.value)))
-    def readv(graph, abb, state, args, va):
-        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, "readv()", FDType.READ)
+    def readv(graph, state, cpu_id, args, va):
+        return FileDescriptorSyscalls._fd_syscall_impl(graph, state, args, cpu_id, "readv()", FDType.READ)

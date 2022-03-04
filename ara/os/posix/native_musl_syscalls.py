@@ -4,7 +4,7 @@ from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
 from ara.steps.syscall_count import SyscallCount
-from .posix_utils import logger, do_not_interpret_syscall
+from .posix_utils import logger
 
 # All the Linux syscalls we want to detect with there ids.
 # We are not analysing syscalls with 1, 2, 4, 5 or 6 arguments.
@@ -81,13 +81,13 @@ class MuslSyscalls:
     @syscall(aliases={"__syscall0"},
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),))
-    def musl_syscall0_(graph, abb, state, args, va):
+    def musl_syscall0_(graph, state, cpu_id, args, va):
         """A musl syscall without arguments.
         
         The real name of this function is __syscall0.
         We need to write musl_syscall0_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     # We are not analysing syscalls with one argument.
     # Setting this function to a stub saves performance.
@@ -96,13 +96,13 @@ class MuslSyscalls:
              categories={SyscallCategory.create, SyscallCategory.comm},
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('a1')))
-    def musl_syscall1_(graph, abb, state, args, va):
+    def musl_syscall1_(graph, state, cpu_id, args, va):
         """A musl syscall with one argument.
         
         The real name of this function is __syscall1.
         We need to write musl_syscall1_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     # We are not analysing syscalls with 2 arguments.
     # Setting this function to a stub saves performance.
@@ -112,13 +112,13 @@ class MuslSyscalls:
              signature=(Arg('n', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('a1'),
                         Arg('a2')))
-    def musl_syscall2_(graph, abb, state, args, va):
+    def musl_syscall2_(graph, state, cpu_id, args, va):
         """A musl syscall with 2 arguments.
         
         The real name of this function is __syscall2.
         We need to write musl_syscall2_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(aliases={"__syscall3"},
              categories={SyscallCategory.create, SyscallCategory.comm},
@@ -126,13 +126,13 @@ class MuslSyscalls:
                         Arg('a1'),
                         Arg('a2'),
                         Arg('a3')))
-    def musl_syscall3_(graph, abb, state, args, va):
+    def musl_syscall3_(graph, state, cpu_id, args, va):
         """A musl syscall with 3 arguments.
         
         The real name of this function is __syscall3.
         We need to write musl_syscall3_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     # Currently we are not analysing syscalls with more than 3 arguments. 
     # So let us save a bit of performance by deactivating the analysis for syscalls with more arguments.
@@ -144,13 +144,13 @@ class MuslSyscalls:
                         Arg('a2'),
                         Arg('a3'),
                         Arg('a4')))
-    def musl_syscall4_(graph, abb, state, args, va):
+    def musl_syscall4_(graph, state, cpu_id, args, va):
         """A musl syscall with 4 arguments.
         
         The real name of this function is __syscall4.
         We need to write musl_syscall4_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(aliases={"__syscall5"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
@@ -160,13 +160,13 @@ class MuslSyscalls:
                         Arg('a3'),
                         Arg('a4'),
                         Arg('a5')))
-    def musl_syscall5_(graph, abb, state, args, va):
+    def musl_syscall5_(graph, state, cpu_id, args, va):
         """A musl syscall with 5 arguments.
         
         The real name of this function is __syscall5.
         We need to write musl_syscall5_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(aliases={"__syscall6"}, is_stub=True,
              categories={SyscallCategory.create, SyscallCategory.comm},
@@ -177,10 +177,10 @@ class MuslSyscalls:
                         Arg('a4'),
                         Arg('a5'),
                         Arg('a6')))
-    def musl_syscall6_(graph, abb, state, args, va):
+    def musl_syscall6_(graph, state, cpu_id, args, va):
         """A musl syscall with 6 arguments.
         
         The real name of this function is __syscall6.
         We need to write musl_syscall6_ to make the function public in Python.
         """
-        return do_not_interpret_syscall(graph, abb, state)
+        return state

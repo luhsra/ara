@@ -48,9 +48,9 @@ class FileSyscalls:
              signature=(Arg('path', hint=SigType.value),
                         Arg('oflag', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('mode', hint=SigType.value, optional=True)))
-    def open(graph, abb, state, args, va):
+    def open(graph, state, cpu_id, args, va):
 
-        cp = state.call_path
+        cpu = state.cpus[cpu_id]
         file = None
 
         # Detect file access mode.
@@ -79,11 +79,11 @@ class FileSyscalls:
                             name=(os.path.basename(args.path) if args.path != None else None)
                 )
                 
-                state = register_instance(file, f"{file.name}", graph, abb, state)
+                state = register_instance(file, f"{file.name}", graph, cpu_id, state)
                 if args.path != None:
                     FileSyscalls.files[args.path] = file
             # Set the return value to the new filedescriptor (This file)
-            assign_instance_to_return_value(va, abb, cp, create_file_desc_of(file, fam if fam != None else FDType.BOTH))
+            assign_instance_to_return_value(va, cpu, create_file_desc_of(file, fam if fam != None else FDType.BOTH))
 
         # If Category "comm": Create edge to the addressed File object
         if SyscallCategory.comm in CurrentSyscallCategories.get():

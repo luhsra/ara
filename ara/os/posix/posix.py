@@ -5,9 +5,10 @@ Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 
 import ara.graph as _graph
 from ara.graph import SyscallCategory, CallPath
+from ara.graph.graph import Graph
 from ..os_base import OSBase, CPUList, CPU, OSState, ExecState
-from ..os_util import SysCall, syscall
-from .posix_utils import PosixOptions, logger, get_musl_weak_alias, do_not_interpret_syscall, CurrentSyscallCategories, get_running_thread
+from ..os_util import SysCall, set_next_abb, syscall
+from .posix_utils import PosixOptions, logger, get_musl_weak_alias, CurrentSyscallCategories
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
@@ -42,9 +43,9 @@ from .native_musl_syscalls import MuslSyscalls, is_musl_syscall_wrapper, get_mus
     that _POSIXSyscalls inherits from the new syscall class that contains the new syscall methods.
 '''
 
-def syscall_stub(graph, abb, state, args, va):
+def syscall_stub(graph, state, cpu_id, args, va):
     """An empty stub for all not implemented syscalls in the syscall_set."""
-    return do_not_interpret_syscall(graph, abb, state)
+    return state
 
 
 class _POSIXSyscalls(MutexSyscalls, SemaphoreSyscalls, CondSyscalls,
@@ -113,18 +114,11 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
                        instances=instances, cfg=cfg)
 
     @staticmethod
-    def _add_normal_cfg(cfg, abb, state):
-        """Default control flow handling if the current syscall should not be interpreted."""
-        for oedge in cfg.vertex(abb).out_edges():
-            if cfg.ep.type[oedge] == _graph.CFType.lcf:
-                state.next_abbs.append(oedge.target())
-
-    @staticmethod
-    def _do_not_interpret(cfg, abb, state):
+    def _do_not_interpret(state: OSState, cpu_id: int):
         """Handling for the case that the current syscall should not be interpreted."""
         state = state.copy()
         state.next_abbs = []
-        POSIX._add_normal_cfg(cfg, abb, state)
+        set_next_abb(state, cpu_id)
         return state
 
     @staticmethod
@@ -135,7 +129,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return (sys_cat | categories) == sys_cat
 
     @staticmethod
-    def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
+    def interpret(graph: Graph, state: OSState, cpu_id: int, categories=SyscallCategory.every):
         """Interprets a detected syscall."""
 
         cfg = graph.cfg
@@ -153,7 +147,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         if PosixOptions.enable_musl_syscalls and is_musl_syscall_wrapper(syscall):
             musl_syscall = get_musl_syscall(syscall, graph, abb, state)
             if musl_syscall == None:
-                return POSIX._do_not_interpret(cfg, abb, state)
+                return POSIX._do_not_interpret(state, cpu_id)
             syscall_function = getattr(POSIX, musl_syscall)
             sig_offest = 1 # Ignore first argument
         else:
@@ -163,13 +157,13 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             categories = set((categories,))
 
         if not POSIX._syscall_category_matching(syscall_function, categories):
-            return POSIX._do_not_interpret(cfg, abb, state)
+            return POSIX._do_not_interpret(state, cpu_id)
 
         # Throw error if a non-async-signal-safe syscalls is called in signal handler
         thread = cpu.control_instance
         if type(thread) == SignalCatchingFunc and not syscall_function.signal_safe:
             logger.error(f"signal catching function {thread.name} has called not async-signal-safe syscall {syscall_function.name}(). Ignoring ...")
-            return POSIX._do_not_interpret(cfg, abb, state)
+            return POSIX._do_not_interpret(state, cpu_id)
 
         # Call the syscall function.
         CurrentSyscallCategories.set(categories)

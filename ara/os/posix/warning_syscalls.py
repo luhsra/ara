@@ -2,37 +2,37 @@
 
 from ara.graph import SyscallCategory
 from ..os_util import syscall
-from .posix_utils import no_double_warning, do_not_interpret_syscall
+from .posix_utils import no_double_warning
 
 class WarningSyscalls:
     """Implement a warning for problematic syscalls."""
 
     @syscall(categories={SyscallCategory.create})
-    def setjmp(graph, abb, state, args, va):
+    def setjmp(graph, state, cpu_id, args, va):
         no_double_warning("Detected setjmp/longjmp !")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(categories={SyscallCategory.create})
-    def longjmp(graph, abb, state, args, va):
+    def longjmp(graph, state, cpu_id, args, va):
         no_double_warning("Detected setjmp/longjmp !")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(categories={SyscallCategory.create})
-    def _setjmp(graph, abb, state, args, va):
+    def _setjmp(graph, state, cpu_id, args, va):
         no_double_warning("Detected _setjmp/_longjmp !")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(categories={SyscallCategory.create})
-    def _longjmp(graph, abb, state, args, va):
+    def _longjmp(graph, state, cpu_id, args, va):
         no_double_warning("Detected _setjmp/_longjmp !")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(categories={SyscallCategory.create})
-    def sigsetjmp(graph, abb, state, args, va):
+    def sigsetjmp(graph, state, cpu_id, args, va):
         no_double_warning("Detected sigsetjmp/siglongjmp !")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state
 
     @syscall(categories={SyscallCategory.create})
-    def siglongjmp(graph, abb, state, args, va):
+    def siglongjmp(graph, state, cpu_id, args, va):
         no_double_warning("Detected sigsetjmp/siglongjmp !")
-        return do_not_interpret_syscall(graph, abb, state)
+        return state

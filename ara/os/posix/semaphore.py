@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, register_instance, add_edge_from_self_to
+from .posix_utils import IDInstance, assign_instance_to_argument, register_instance, add_edge_from_self_to
 
 @dataclass(eq = False)
 class Semaphore(IDInstance):
@@ -26,7 +26,7 @@ class SemaphoreSyscalls:
              signature=(Arg('sem', hint=SigType.instance),
                         Arg('pshared', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('value', hint=SigType.value, ty=pyllco.ConstantInt)))
-    def sem_init(graph, abb, state, args, va):
+    def sem_init(graph, state, cpu_id, args, va):
         
         proc_shared = None
         if args.pshared != None:
@@ -37,17 +37,18 @@ class SemaphoreSyscalls:
                                   name=None
         )
         
-        args.sem = new_semaphore
-        return register_instance(new_semaphore, f"{new_semaphore.name}", graph, abb, state)
+        state = register_instance(new_semaphore, f"{new_semaphore.name}", graph, cpu_id, state)
+        assign_instance_to_argument(va, args.sem, new_semaphore)
+        return state
 
     # int sem_wait(sem_t *sem);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
-    def sem_wait(graph, abb, state, args, va):
-        return add_edge_from_self_to(state, args.sem, "sem_wait()")
+    def sem_wait(graph, state, cpu_id, args, va):
+        return add_edge_from_self_to(state, args.sem, "sem_wait()", cpu_id)
 
     # int sem_post(sem_t *sem);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
-    def sem_post(graph, abb, state, args, va):
-        return add_edge_from_self_to(state, args.sem, "sem_post()")
+    def sem_post(graph, state, cpu_id, args, va):
+        return add_edge_from_self_to(state, args.sem, "sem_post()", cpu_id)
