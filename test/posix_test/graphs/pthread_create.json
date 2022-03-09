@@ -13,7 +13,7 @@
     "line": 0,
     "specialization_level": "N/A",
     "type": "instance",
-    "function_name": "main",
+    "function_name": "ARA_ENTRY_POINT",
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,

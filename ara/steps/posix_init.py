@@ -1,3 +1,4 @@
+from ara.graph.mix import ARA_ENTRY_POINT
 from ara.os.os_base import ControlInstance
 from .step import Step
 from .option import Option, Bool, Choice
@@ -72,8 +73,8 @@ class POSIXInit(Step):
         main_thread = Thread(cpu_id=-1,
                              cfg=cfg,
                              artificial=False,
-                             function=cfg.get_function_by_name("main"),
-                             function_name="main",
+                             function=cfg.get_function_by_name(ARA_ENTRY_POINT),
+                             function_name="ARA_ENTRY_POINT",
                              sched_priority=Profile.get_value("default_sched_priority"),
                              sched_policy=Profile.get_value("default_sched_policy"),
                              inherited_sched_attr=None,
