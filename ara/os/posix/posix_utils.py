@@ -1,18 +1,18 @@
 """This module contains useful functions and classes for all POSIX modules in this package."""
 
-import html
+import pyllco
 from ara.graph.graph import InstanceGraph
 from ara.os.os_base import CPU, ControlInstance, OSState
-from ara.os.zephyr import ValueAnalyzer, ValueAnalyzerResult
-import pyllco
+from ara.steps import get_native_component
 from dataclasses import dataclass, field
 from typing import Callable
-from abc import ABC, abstractmethod
 from graph_tool import Vertex
 from ara.graph import SyscallCategory, CFG
 from ara.util import get_logger, LEVEL
 from ..os_util import AutoDotInstance, assign_id, connect_from_here, find_return_value
 
+ValueAnalyzer = get_native_component("ValueAnalyzer")
+ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
 logger = get_logger("POSIX")
 
 # A set of all messages created via no_double_output().
@@ -66,6 +66,10 @@ class IDInstance(POSIXInstance):
         self.__class__._id_counter += 1
         if not self.name:
             self.name = f"{self.__class__.__name__} {self.num_id}"
+
+class StaticInitInstance:
+    """An instance that has a static initializer like PTHREAD_MUTEX_INITIALIZER"""
+    pass
 
 
 class PosixOptions:
@@ -274,19 +278,19 @@ def assign_instance_to_argument(va: ValueAnalyzer, argument: ValueAnalyzerResult
         logger.warning(f"ValueAnalyzer could not assign Instance {instance} to argument {argument}. Exception: \"{va_unknown_exc}\"")
         return False
 
-def static_init_detection(create_static_inst: Callable, comm_func: Callable, inst_obj, graph, abb, state, args, va):
+def static_init_detection(create_static_inst: Callable, comm_func: Callable, inst_obj, graph, state, cpu_id, args, va):
     """Handles the static init detection (e.g. detection of PTHREAD_MUTEX_INITIALIZER).
     
     Call this function in all comm syscalls related to an instance that can be created statically.
     Make sure the calling syscall is of both categories {create, comm}.
-    Make sure the calling syscall also accepts the type pyllco.GlobalVariable as instance argument.
+    Make sure the calling syscall does not have the type field (ty) set for the instance argument in args.
 
     Arguments:
-    create_static_inst              -- A function that creates a new instance. Signature: create_static_inst(graph, abb, state, args, va, register_instance).
-                                       Use the delivered register_instance() function to register the new instance.
-    comm_func                       -- A function that handles the communication (e.g. create a new edge). Signature: comm_func(graph, abb, state, args, va).
-    inst_obj                        -- The instance object in args.
-    (graph, abb, state, args, va)   -- The signature for syscalls. Just put your local values for this variables into this function.
+    create_static_inst                  -- A function that creates a new instance. Signature: create_static_inst(graph, state, cpu_id, args, va, register_instance).
+                                           Use the delivered register_instance() function to register the new instance.
+    comm_func                           -- A function that handles the communication (e.g. create a new edge). Signature: comm_func(graph, state, cpu_id, args, va).
+    inst_obj                            -- The instance object in args.
+    (graph, state, cpu_id, args, va)    -- The signature for syscalls. Just put your local values for this variables into this function.
 
     Returns the new state object so that you can do: return static_init_detection(...).
     Make sure to provide the calling syscall also globally to the function StaticInitSyscalls.add_comms().
@@ -294,18 +298,18 @@ def static_init_detection(create_static_inst: Callable, comm_func: Callable, ins
     Note that only comm syscalls can be static initializer syscalls.
     """
 
-    # If Category "create": Create a new object if inst_obj is a pyllco.GlobalVariable (e.g. args.mutex == PTHREAD_MUTEX_INITIALIZER)
+    # If Category "create": Create a new object if inst_obj.value is not a StaticInitInstance (e.g. args.mutex == PTHREAD_MUTEX_INITIALIZER)
     if SyscallCategory.create in CurrentSyscallCategories.get():
-        if PosixOptions.enable_static_init_detection and type(inst_obj) == pyllco.GlobalVariable:
-            state = create_static_inst(graph, abb, state, args, va,
-                                            lambda new_instance, label, graph, abb, state:
-                                                register_instance(new_instance, label, graph, abb, state, is_static=True))
+        if PosixOptions.enable_static_init_detection and not isinstance(inst_obj.value, StaticInitInstance):
+            state = create_static_inst(graph, state, cpu_id, args, va,
+                                            lambda new_instance, label, graph, cpu_id, state:
+                                                register_instance(new_instance, label, graph, cpu_id, state, is_static=True))
 
     # If Category "comm": Handle the normal edge creation by calling comm_part.
     if SyscallCategory.comm in CurrentSyscallCategories.get():
-        if type(inst_obj) != pyllco.GlobalVariable or not PosixOptions.enable_static_init_detection:
-            state = comm_func(graph, abb, state, args, va)
+        if isinstance(inst_obj.value, StaticInitInstance) or not PosixOptions.enable_static_init_detection:
+            state = comm_func(graph, state, cpu_id, args, va)
         else:
-            logger.warning("static_init_detection(): inst_obj is of type pyllco.GlobalVariable. Probably there was an error in the PTHREAD_*_INITIALIZER detection.")
+            logger.warning(f"static_init_detection(): inst_obj is of type {type(inst_obj)}. Probably there was an error in the PTHREAD_*_INITIALIZER detection.")
 
     return state
