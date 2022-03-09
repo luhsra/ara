@@ -4,10 +4,10 @@ from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
+from .posix_utils import IDInstance, StaticInitInstance, assign_instance_to_argument, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
 
 @dataclass(eq = False)
-class Mutex(IDInstance):
+class Mutex(IDInstance, StaticInitInstance):
     wanted_attrs = ["name", "num_id"]
     dot_appearance = {
         "shape": "box",
@@ -18,11 +18,12 @@ class Mutex(IDInstance):
     def __post_init__(self):
         super().__init__()
 
-def create_mutex(graph, abb, state, args, va, register_instance=register_instance):
+def create_mutex(graph, state, cpu_id, args, va, register_instance=register_instance):
     """Creates a new Mutex instance."""
     new_mutex = Mutex(name=None)
-    args.mutex = new_mutex
-    return register_instance(new_mutex, f"{new_mutex.name}", graph, abb, state)
+    state = register_instance(new_mutex, f"{new_mutex.name}", graph, cpu_id, state)
+    assign_instance_to_argument(va, args.mutex, new_mutex)
+    return state
 
 class MutexSyscalls:
 
@@ -32,27 +33,27 @@ class MutexSyscalls:
              categories={SyscallCategory.create},
              signature=(Arg('mutex', hint=SigType.instance),
                         Arg('attr', hint=SigType.symbol)))
-    def pthread_mutex_init(graph, abb, state, args, va):
-        return create_mutex(graph, abb, state, args, va)
+    def pthread_mutex_init(graph, state, cpu_id, args, va):
+        return create_mutex(graph, state, cpu_id, args, va)
 
     # int pthread_mutex_lock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_lock"},
              categories={SyscallCategory.create, SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance, ty=[Mutex, pyllco.GlobalVariable]),))
-    def pthread_mutex_lock(graph, abb, state, args, va):
+             signature=(Arg('mutex', hint=SigType.instance),))
+    def pthread_mutex_lock(graph, state, cpu_id, args, va):
         return static_init_detection(create_mutex, 
-                    lambda graph, abb, state, args, va:
-                        add_edge_from_self_to(state, args.mutex, "pthread_mutex_lock()"), 
-                    args.mutex, graph, abb, state, args, va)
+                    lambda graph, state, cpu_id, args, va:
+                        add_edge_from_self_to(state, args.mutex.value, "pthread_mutex_lock()", cpu_id), 
+                    args.mutex, graph, state, cpu_id, args, va)
 
     # int pthread_mutex_unlock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_unlock"},
              categories={SyscallCategory.create, SyscallCategory.comm},
-             signature=(Arg('mutex', hint=SigType.instance, ty=[Mutex, pyllco.GlobalVariable]),))
-    def pthread_mutex_unlock(graph, abb, state, args, va):
+             signature=(Arg('mutex', hint=SigType.instance),))
+    def pthread_mutex_unlock(graph, state, cpu_id, args, va):
         return static_init_detection(create_mutex, 
-                    lambda graph, abb, state, args, va: 
-                        add_edge_from_self_to(state, args.mutex, "pthread_mutex_unlock()"), 
-                    args.mutex, graph, abb, state, args, va)
+                    lambda graph, state, cpu_id, args, va: 
+                        add_edge_from_self_to(state, args.mutex.value, "pthread_mutex_unlock()", cpu_id), 
+                    args.mutex, graph, state, cpu_id, args, va)
 
 StaticInitSyscalls.add_comms([MutexSyscalls.pthread_mutex_lock, MutexSyscalls.pthread_mutex_unlock])
