@@ -1,6 +1,8 @@
 """Container for SIA."""
 from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph
 from dataclasses import dataclass
+
+from ara.graph.mix import ARA_ENTRY_POINT
 from .step import Step
 from .option import Option, String
 
@@ -259,7 +261,7 @@ class SIA(FlatAnalysis):
 
         for entry, _ in self._graph.instances.iterate_control_entry_points():
             func_name = self._graph.cfg.vp.name[entry]
-            if func_name not in step_data:
+            if func_name not in step_data and func_name != ARA_ENTRY_POINT:
                 self._step_manager.chain_step(
                         {"name": self.get_name(),
                          "entry_point": func_name}
