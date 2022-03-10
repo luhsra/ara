@@ -1,6 +1,7 @@
 // vim: set noet ts=4 sw=4:
 
 #include "zephyr_static.h"
+#include "python_util.h"
 
 #include "llvm/IR/Module.h"
 
@@ -69,41 +70,6 @@ namespace ara::step {
 				assert(meta == nullptr || (meta != nullptr && index == index_of(meta, name)));
 				return c.getAggregateElement(index);
 			}
-
-			// Create a py dict from the given elements, this is a ref stealing
-			// operation
-			static PyObject* py_dict(std::initializer_list<std::pair<const char*, PyObject*>> elements) {
-				PyObject* dict = PyDict_New();
-
-				for (auto& element : elements) {
-					PyDict_SetItemString(dict, element.first, element.second);
-					Py_DecRef(element.second);
-				}
-
-				return dict;
-			}
-
-			static PyObject* py_int(const llvm::APInt& i) {
-				if (i.isNegative()) {
-					return Py_BuildValue("L", i.getSExtValue());
-				} else {
-					return Py_BuildValue("K", i.getZExtValue());
-				}
-			}
-
-			static PyObject* py_int(unsigned long long i) { return Py_BuildValue("K", i); }
-
-			static PyObject* py_int_signed(int i) { return Py_BuildValue("i", i); }
-
-			static PyObject* py_str(const char* str) { return PyUnicode_FromString(str); }
-
-			static PyObject* py_str(const llvm::StringRef& str) {
-				// Since stringrefs allow slicing, their raw strings may not be null
-				// terminated.
-				return PyUnicode_FromStringAndSize(str.data(), str.size());
-			}
-
-			static PyObject* py_none() { Py_RETURN_NONE; }
 
 			static Vertex add_instance(const ZephyrStaticImpl& context, std::string label, PyObject* obj,
 			                           std::string id, bool is_control = false) {
