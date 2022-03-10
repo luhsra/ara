@@ -36,8 +36,6 @@ void* new_thread_routine_receiver(void* arg) {
 int main() {
     pthread_t new_thread_send;
     pthread_t new_thread_recv;
-    pthread_mutex_init(&mutex, NULL);
-    pthread_cond_init(&one_second_cond, NULL);
     pthread_create(&new_thread_send, NULL, new_thread_routine_sender, "test argument");
     pthread_create(&new_thread_recv, NULL, new_thread_routine_receiver, "test argument");
     pthread_detach(new_thread_send);
