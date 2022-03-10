@@ -5,7 +5,7 @@
 
 	"POSIXInit": {
 		"system_profile": "POSIX",
-		"enable_static_init_detection": true,
+		"enable_static_init_detection": false,
 		"enable_musl_syscalls": true
 	},
 
