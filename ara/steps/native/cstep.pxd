@@ -91,3 +91,7 @@ cdef extern from "zephyr_static.h" namespace "ara::step":
 cdef extern from "remove_sysfunc_body.h" namespace "ara::step":
     cdef cppclass RemoveSysfuncBody:
         pass
+
+cdef extern from "posix_static.h" namespace "ara::step":
+    cdef cppclass POSIXStatic:
+        pass

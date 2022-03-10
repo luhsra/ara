@@ -177,7 +177,7 @@ def handle_soc(state: OSState, v: Vertex, cfg: CFG, cpu: CPU):
     instances.vp.line[v] = cfg.vp.lines[abb][0]
     instances.vp.specialization_level[v] = ""
 
-def handle_static_soc(instances: InstanceGraph, v: Vertex):
+def handle_static_soc(instances: InstanceGraph, v: Vertex, reset_file_and_line=True):
     """Set ARA attributes for the new static instance v"""
     instances.vp.branch[v] = False
     instances.vp.loop[v] = False
@@ -189,8 +189,9 @@ def handle_static_soc(instances: InstanceGraph, v: Vertex):
     # The following values are not applicable
     instances.vp.soc[v] = 0
     instances.vp.llvm_soc[v] = 0
-    instances.vp.file[v] = "N/A"
-    instances.vp.line[v] = 0
+    if reset_file_and_line:
+        instances.vp.file[v] = "N/A"
+        instances.vp.line[v] = 0
     instances.vp.specialization_level[v] = "N/A"
 
 def register_instance(new_instance: POSIXInstance, label: str, graph, cpu_id: int, state: OSState, is_static=False):

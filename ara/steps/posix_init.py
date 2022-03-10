@@ -1,3 +1,4 @@
+from pydoc import locate
 from ara.graph.mix import ARA_ENTRY_POINT
 from ara.os.os_base import ControlInstance
 from .step import Step
@@ -30,7 +31,7 @@ class POSIXInit(Step):
              "E.g. if the value analyzer can not retrieve the Mutex handle. "
              "In this case every Mutex interaction call creates a new useless Mutex in the Instance Graph.",
         ty=Bool(),
-        default_value=True
+        default_value=False
     )
 
     enable_musl_syscalls = Option(
@@ -45,7 +46,7 @@ class POSIXInit(Step):
     
 
     def get_single_dependencies(self):
-        return ["LLVMMap"]
+        return ["POSIXStatic", "LLVMMap", "SVFAnalyses"]
 
     def register_default_instance(self, inst: POSIXInstance, label: str):
         """Writes a new default instance to the InstanceGraph.
@@ -62,13 +63,32 @@ class POSIXInit(Step):
         assign_id(instances, v)
 
     def run(self):
-        
+
         # Activate system profile
         Profile.set(self.system_profile.get())
 
-        # Generate POSIX Main Thread
         assert self._graph.instances != None, "Missing instance graph!"
         assert self._graph.cfg != None, "Missing control flow graph!"
+
+        # avoid dependency conflicts, therefore import dynamically
+        from ara.steps import get_native_component
+        ValueAnalyzer = get_native_component("ValueAnalyzer")
+        va = ValueAnalyzer(self._graph)
+
+        # Create static instances that are detected by POSIXStatic
+        instances = self._graph.instances
+        for v in self._graph.instances.vertices():
+            static_inst_info = instances.vp.obj[v]
+            instance_type = locate('ara.os.posix.' + static_inst_info["module"] + "." + static_inst_info["type"])
+            instance = instance_type(name=None)
+            instance.vertex = v
+            instances.vp.obj[v] = instance
+            instances.vp.label[v] = instance.name
+            handle_static_soc(instances, v, reset_file_and_line=False)
+            assign_id(instances, v)
+            va.assign_system_object(static_inst_info["symbol"], instance)
+
+        # Generate POSIX Main Thread
         cfg = self._graph.cfg
         main_thread = Thread(cpu_id=-1,
                              cfg=cfg,
