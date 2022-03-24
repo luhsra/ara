@@ -69,7 +69,7 @@ Delete the zephyrproject/zephyr repo and replace it with our [internal one](http
 Switch to branch `ara` and update the dependencies with west.
 ```
 rm -rf ./zephyr
-git clone -b ara ssh://git@scm.sra.uni-hannover.de/diffusion/412/zephyrproject-rtos.git zephyr
+git clone -b ara git@scm.sra.uni-hannover.de:research/zephyrproject-rtos.git zephyr
 west update
 ```
 Configure meson so that it finds the zephyr install.

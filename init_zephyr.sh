@@ -34,7 +34,7 @@ pip3 install --user -r zephyr/scripts/requirements.txt
 
 # Replace Zephyr directory by our Zephyr ARA Repo
 rm -rf zephyr
-git clone -b ara ssh://git@scm.sra.uni-hannover.de/diffusion/412/zephyrproject-rtos.git zephyr
+git clone -b ara git@scm.sra.uni-hannover.de:research/zephyrproject-rtos.git zephyr
 west update
 
 # Allow Meson to find ${ZEPHYR_PROJECT}
