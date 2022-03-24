@@ -221,18 +221,4 @@ if get_option('enable_toplevel_tests')
             timeout: 7200
         )
     endif
-
-    zephyr_settings = files('settings' / 'zephyr.json')
-    test('zephyr_test',
-       py3_inst,
-       args: [ara_py, zephyr_targets[20], # use zephyr_targets['static_threads']
-              #'--dump',
-              '--log-level', 'debug',
-              '--os', 'ZEPHYR',
-              '--step-settings', zephyr_settings,
-              #'--entry-point', '""'
-              ],
-       suite: 'toplevel',
-       timeout: 30
-    )
 endif
