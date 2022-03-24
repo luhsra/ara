@@ -83,7 +83,7 @@ namespace ara::step {
                         continue;
                     }
                     const std::string type_info = info_node->getType()->getName().str();
-                    logger.warning() << "type info: " << type_info << std::endl;
+                    logger.debug() << "found global with type: " << type_info << std::endl;
 
                     // only proceed if we detected a type that can be a static instance
                     auto parser = parsers.find(type_info);
