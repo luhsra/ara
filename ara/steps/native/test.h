@@ -93,6 +93,25 @@ namespace ara::step {
 
 		virtual void run() override;
 	};
+
+	class PosixClangGlobalTest : public ConfStep<PosixClangGlobalTest> {
+	  private:
+		using ConfStep<PosixClangGlobalTest>::ConfStep;
+
+	  private:
+		const static inline option::TOption<option::String> input_file_template{"input_file", "Input file."};
+		option::TOptEntity<option::String> input_file;
+		virtual void init_options() override;
+		void fail(std::string msg);
+
+	  public:
+		static std::string get_name();
+		static std::string get_description();
+		static Step::OptionVec get_local_options() { return {input_file_template}; };
+
+		virtual std::vector<std::string> get_single_dependencies() override;
+		virtual void run() override;
+	};
 } // namespace ara::step
 
 #endif // TEST_STEP_H

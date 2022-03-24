@@ -24,3 +24,6 @@ cdef extern from "test.h" namespace "ara::step":
 
     cdef cppclass LLVMMapTest:
         pass
+
+    cdef cppclass PosixClangGlobalTest:
+        pass

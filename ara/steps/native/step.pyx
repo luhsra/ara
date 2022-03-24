@@ -398,6 +398,7 @@ def provide_test_steps():
                 _native_step_fac(make_step_fac[test.CompInsertTest]()),
                 _native_step_fac(make_step_fac[test.FnSingleExitTest]()),
                 _native_step_fac(make_step_fac[test.LLVMMapTest]()),
+                _native_step_fac(make_step_fac[test.PosixClangGlobalTest]()),
                 _native_step_fac(make_step_fac[test.Test0Step]()),
                 _native_step_fac(make_step_fac[test.Test2Step]())]
     ELSE:

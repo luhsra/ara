@@ -34,6 +34,22 @@ test('remove_sysfunc_body_posix_drop',
     suite: 'posix'
 )
 
+# Detect Clang/LLVM strange behaviour for POSIX static instance detection
+if get_option('enable_step_tests')
+    test('clang_global_static',
+        py3_inst,
+        args: [files('../native_step_test/run_test_step.py'), 'PosixClangGlobalTest', posix_clang_global_var_static],
+        env: [python_path],
+        suite: 'posix'
+    )
+    test('clang_global_dynamic',
+        py3_inst,
+        args: [files('../native_step_test/run_test_step.py'), 'PosixClangGlobalTest', posix_clang_global_var_dynamic],
+        env: [python_path],
+        suite: 'posix'
+    )
+endif
+
 # Instance-Graph Test cases
 # Make sure to provide a test with musl and without musl when this is possible.
 

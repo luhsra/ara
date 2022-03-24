@@ -55,6 +55,7 @@ if get_option('enable_step_tests')
                        'test/cfg_optimize_test.cpp',
                        'test/fn_single_exit_test.cpp',
                        'test/llvm_map_test.cpp',
+                       'test/posix_clang_global_test.cpp',
                        'test/test.cpp')
 else
   test_sources = []
