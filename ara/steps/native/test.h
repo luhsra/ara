@@ -102,7 +102,7 @@ namespace ara::step {
 		const static inline option::TOption<option::String> input_file_template{"input_file", "Input file."};
 		option::TOptEntity<option::String> input_file;
 		virtual void init_options() override;
-		void fail(std::string msg);
+		[[noreturn]] void fail(std::string msg);
 
 	  public:
 		static std::string get_name();
