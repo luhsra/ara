@@ -3,7 +3,7 @@ import pyllco
 from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, Arg
+from ..os_util import UnknownArgument, syscall, Arg
 from .file_descriptor import create_file_desc_of, FDType
 from .posix_utils import IDInstance, register_instance, logger, CurrentSyscallCategories, add_edge_from_self_to, assign_instance_to_return_value
 
@@ -55,7 +55,7 @@ class FileSyscalls:
 
         # Detect file access mode.
         fam: FDType = None
-        if args.oflag != None:
+        if type(args.oflag) == pyllco.ConstantInt:
             fam = [FILE_ACCESS_MODES.get(mode, None) for mode in FILE_ACCESS_MODES.keys()
                     if (args.oflag.get() & 0b11) == mode]
             if len(fam) < 1 or fam[0] == None:
@@ -69,18 +69,18 @@ class FileSyscalls:
 
         # If Category "create": Create File Object
         if SyscallCategory.create in CurrentSyscallCategories.get():
-            if args.path == None:
+            if type(args.path) == UnknownArgument:
                 logger.warning("open(): Could not get path argument. The File object is now untrackable for interaction open() calls.")
             if args.path in FileSyscalls.files:
                 file = FileSyscalls.files[args.path]
                 logger.debug(f"open() call to already created File object: {file}")
             else:
                 file = File(path=args.path,
-                            name=(os.path.basename(args.path) if args.path != None else None)
+                            name=(os.path.basename(args.path) if type(args.path) != UnknownArgument else None)
                 )
                 
                 state = register_instance(file, f"{file.name}", graph, cpu_id, state)
-                if args.path != None:
+                if type(args.path) != UnknownArgument:
                     FileSyscalls.files[args.path] = file
             # Set the return value to the new filedescriptor (This file)
             assign_instance_to_return_value(va, cpu, create_file_desc_of(file, fam if fam != None else FDType.BOTH))
@@ -89,7 +89,7 @@ class FileSyscalls:
         if SyscallCategory.comm in CurrentSyscallCategories.get():
             file = FileSyscalls.files.get(args.path, None)
             if file != None:
-                state = add_edge_from_self_to(state, file, f"open({FAM_IDENTIFIER[fam] if fam != None else ''})")
+                state = add_edge_from_self_to(state, file, f"open({FAM_IDENTIFIER[fam] if fam != None else ''})", cpu_id)
             else:
                 logger.warning(f"open(): File with path {args.path} not found!")
 
