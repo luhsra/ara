@@ -121,10 +121,9 @@ def get_argument(value, arg):
             else:
                 raise UnsuitableArgumentException(f"Value type {type(lvalue)} does not match wanted type {ty}.")
 
-    if isinstance(arg.ty, type) and arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
+    if isinstance(arg.ty, collections.abc.Container):
         return check_ty(value.value, arg.ty)
-    # if all types in arg.ty are subclass of pyllco.Value:
-    if isinstance(arg.ty, collections.abc.Container) and len([ty for ty in arg.ty if issubclass(ty, pyllco.Value)]) == len(arg.ty):
+    if isinstance(arg.ty, type) and arg.ty != typing.Any and issubclass(arg.ty, pyllco.Value):
         return check_ty(value.value, arg.ty)
     if arg.ty != typing.Any and arg.hint == _SigType.instance:
         return check_ty(value.value, arg.ty)
