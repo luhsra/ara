@@ -145,7 +145,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         syscall_function = None
         sig_offest = 0
         if PosixOptions.enable_musl_syscalls and is_musl_syscall_wrapper(syscall):
-            musl_syscall = get_musl_syscall(syscall, graph, abb, state)
+            musl_syscall = get_musl_syscall(syscall, graph, state, cpu_id)
             if musl_syscall == None:
                 return POSIX._do_not_interpret(state, cpu_id)
             syscall_function = getattr(POSIX, musl_syscall)

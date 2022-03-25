@@ -1,4 +1,6 @@
 import re
+from ara.graph.graph import Graph
+from ara.os.os_base import OSState
 import pyllco
 from ara.graph import SyscallCategory, SigType
 
@@ -29,12 +31,12 @@ def is_musl_syscall_wrapper(syscall_name: str) -> bool:
     """Returns True if syscall_name is a name of a musl syscall wrapper."""
     return musl_syscall_pattern.match(syscall_name)
 
-def get_musl_syscall(syscall_wrapper_name: str, graph, abb, state) -> str:
+def get_musl_syscall(syscall_wrapper_name: str, graph: Graph, state: OSState, cpu_id: int) -> str:
     """Returns the name of the native musl syscall (Linux Syscall) that syscall wrapper calls.
     
     Arguments:
     syscall_wrapper_name    -- the name of the musl syscall wrapper that is currently handled.
-    (graph, abb and state)  -- the normal arguments for the interpret() function.
+    (graph, state, cpu_id)  -- the normal arguments for the interpret() function.
     
     Only call this function if syscall wrapper is the current syscall that the OS Model handles.
     This function performs a value analysis for the first argument in syscall wrapper.
@@ -45,15 +47,18 @@ def get_musl_syscall(syscall_wrapper_name: str, graph, abb, state) -> str:
     ValueAnalyzer = get_native_component("ValueAnalyzer")
     va = ValueAnalyzer(graph)
     ValuesUnknown = get_native_component("ValuesUnknown")
-    value = None
+    new_state = state.copy()
+    abb = new_state.cpus[cpu_id].abb
+    callpath = new_state.cpus[cpu_id].call_path
     try:
-        value, attrs, offset = va.get_argument_value(abb, 0,
-                                        callpath=state.call_path,
-                                        hint=SigType.value)
+        result = va.get_argument_value(abb, 0,
+                                       callpath=callpath,
+                                       hint=SigType.value)
     except ValuesUnknown as va_unknown_exc:
         logger.warning(f"{syscall_wrapper_name}(): ValueAnalyzer could not get the first argument that describes the syscall. Exception: \"{va_unknown_exc}\"")
         return None
-    assert value != None
+    assert result != None and result.value != None
+    value = result.value
     if type(value) != pyllco.ConstantInt:
         logger.warning(f"{syscall_wrapper_name}(): The first argument is not a number, it is of type {type(value)}")
         return None
