@@ -266,10 +266,10 @@ class ThreadSyscalls:
             signature=(Arg('thread', hint=SigType.instance, ty=Thread),
                        Arg('name')))
     def pthread_setname_np(graph, state, cpu_id, args, va):
-        if args.thread == None or args.name == None:
+        if type(args.thread) != Thread or type(args.name) == UnknownArgument:
             logger.warning(f"pthread_setname_np(): Could not set thread name because argument "
-                           f"\"{'thread' if args.thread == None else 'name'}\" is UnknownArgument.")
-            if args.thread != None:
+                           f"\"{'thread' if type(args.thread) != Thread else 'name'}\" is UnknownArgument.")
+            if type(args.thread) == Thread:
                 args.thread.name = UnknownArgument()
                 assign_id(state.instances, args.thread.vertex)
             return state
@@ -284,7 +284,8 @@ class ThreadSyscalls:
         
         # Set thread name
         name = args.name
-        if not is_soc_unique(state):
+        cpu = state.cpus[cpu_id]
+        if not is_soc_unique(cpu.analysis_context):
             name = LikelyArgument(name)
         args.thread.name = name
         state.instances.vp.label[args.thread.vertex] = ThreadSyscalls._get_value(name)
