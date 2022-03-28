@@ -8,11 +8,12 @@
     "recursive": 0,
     "after_scheduler": 0,
     "unique": 1,
+    "is_control": 1,
     "file": "N/A",
     "line": 0,
     "specialization_level": "N/A",
     "type": "instance",
-    "function": "main",
+    "function_name": "ARA_ENTRY_POINT",
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,
@@ -28,7 +29,8 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/test_appl/multiple_sigactions.c",
+    "is_control": 1,
+    "file": "../appl/POSIX/test_appl/multiple_sigactions.c",
     "line": 30,
     "specialization_level": "",
     "type": "instance",
@@ -36,7 +38,7 @@
       "SIGUSR1",
       "SIGUSR2"
     ],
-    "function": "signal_catching_func_1",
+    "function_name": "signal_catching_func_1",
     "name": "signal_catching_func_1()"
   },
   {
@@ -48,14 +50,15 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/test_appl/multiple_sigactions.c",
+    "is_control": 1,
+    "file": "../appl/POSIX/test_appl/multiple_sigactions.c",
     "line": 33,
     "specialization_level": "",
     "type": "instance",
     "catching_signals": [
       "SIGSYS"
     ],
-    "function": "signal_catching_func_2",
+    "function_name": "signal_catching_func_2",
     "name": "signal_catching_func_2()"
   },
   {

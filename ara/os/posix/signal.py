@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, Arg
+from ..os_util import UnknownArgument, syscall, Arg
 from .posix_utils import IDInstance, register_instance, logger
 
 SIGNAL_TYPES = dict({ 
@@ -94,11 +94,11 @@ class SignalSyscalls:
         sa_handler = args.sa_handler
         sa_sigaction = args.sa_sigaction
         sa_flags = args.sa_flags
-        if type(sa_handler) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]:
+        if type(sa_handler) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst, UnknownArgument]:
             sa_handler = None
-        if type(sa_sigaction) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst]:
+        if type(sa_sigaction) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst, UnknownArgument]:
             sa_sigaction = None
-        if type(sa_flags) in [pyllco.ConstantAggregateZero, pyllco.GlobalVariable, pyllco.AllocaInst]:
+        if type(sa_flags) in [pyllco.ConstantAggregateZero, pyllco.GlobalVariable, pyllco.AllocaInst, UnknownArgument]:
             sa_flags = None
 
         # Search for a valid function pointer
@@ -137,7 +137,7 @@ class SignalSyscalls:
 
         # Translate the args.sig argument to a meaningful string.
         catching_signal = None
-        if args.sig != None:
+        if type(args.sig) == pyllco.ConstantInt:
             catching_signal = SIGNAL_TYPES.get(args.sig.get(), None)
             if catching_signal == None:
                 logger.error(f"Unknown signal type with id {args.sig.get()}")

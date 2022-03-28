@@ -160,7 +160,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return POSIX._do_not_interpret(state, cpu_id)
 
         # Throw error if a non-async-signal-safe syscalls is called in signal handler
-        thread = cpu.control_instance
+        thread = state.instances.vp.obj[cpu.control_instance]
         if type(thread) == SignalCatchingFunc and not syscall_function.signal_safe:
             logger.error(f"signal catching function {thread.name} has called not async-signal-safe syscall {syscall_function.name}(). Ignoring ...")
             return POSIX._do_not_interpret(state, cpu_id)

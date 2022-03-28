@@ -8,11 +8,12 @@
     "recursive": 0,
     "after_scheduler": 0,
     "unique": 1,
+    "is_control": 1,
     "file": "N/A",
     "line": 0,
     "specialization_level": "N/A",
     "type": "instance",
-    "function": "main",
+    "function_name": "ARA_ENTRY_POINT",
     "inherited_sched_attr": null,
     "name": "Main Thread",
     "num_id": 0,
@@ -28,14 +29,15 @@
     "recursive": 0,
     "after_scheduler": 1,
     "unique": 1,
-    "file": "../../appl/POSIX/test_appl/wrong_call_in_sighandler.c",
+    "is_control": 1,
+    "file": "../appl/POSIX/test_appl/wrong_call_in_sighandler.c",
     "line": 19,
     "specialization_level": "",
     "type": "instance",
     "catching_signals": [
       "SIGCHLD"
     ],
-    "function": "signal_catching_func",
+    "function_name": "signal_catching_func",
     "name": "signal_catching_func()"
   },
   {
