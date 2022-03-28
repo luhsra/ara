@@ -11,7 +11,6 @@ from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
 from .os import get_os_model_names, get_os_model_by_name, zephyr
-from .steps.syscall_count import SyscallCount
 
 from .steplisting import print_avail_steps
 
@@ -81,11 +80,6 @@ def main():
     parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader. "
                                             "This will increase the performance of the analysis and reduces the false-positive syscall detection rate. "
                                             "Warning: Do not use this argument for the synthesis!",
-                        action='store_true', default=False)
-
-    # Option for InteractionAnalysis
-    parser.add_argument('--count-syscalls', help="Counts all effective syscalls of the analysis (in INA step) and writes them to stdout. "
-                                                 "Requires the InteractionAnalysis step. Make sure to execute this step.",
                         action='store_true', default=False)
 
     # Option for [SysFuncts, SystemRelevantFunctions]. Always set this option for both steps otherwise this leads to undefined behaviour.
@@ -161,9 +155,6 @@ def main():
 
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
                                            for se in s_manager.get_history()]))
-
-    # Print syscall count stats if at least one syscall was counted.
-    SyscallCount.print_stats()
 
 if __name__ == '__main__':
     main()

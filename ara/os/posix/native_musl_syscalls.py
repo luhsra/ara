@@ -5,7 +5,6 @@ import pyllco
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from ara.steps.syscall_count import SyscallCount
 from .posix_utils import logger
 
 # All the Linux syscalls we want to detect with there ids.
@@ -66,7 +65,6 @@ def get_musl_syscall(syscall_wrapper_name: str, graph: Graph, state: OSState, cp
     if linux_syscall == None:
         return None # We do not want to analyse this syscall if not in LINUX_SYSCALL_IDS.
     logger.debug(f"Detected Linux Syscall: {linux_syscall}")
-    SyscallCount.direct_add_syscall(linux_syscall)
     return linux_syscall
 
 class MuslSyscalls:
