@@ -1,11 +1,9 @@
-import pyllco
 from dataclasses import dataclass
-from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
 from .posix_utils import IDInstance, StaticInitInstance, assign_instance_to_argument, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
-from .mutex import Mutex, create_mutex
+from .mutex import create_mutex
 
 @dataclass(eq = False)
 class ConditionVariable(IDInstance, StaticInitInstance):

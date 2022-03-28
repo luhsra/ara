@@ -1,7 +1,6 @@
 from ara.os.os_base import ControlInstance
 import pyllco
 from dataclasses import dataclass
-from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import UnknownArgument, syscall, Arg

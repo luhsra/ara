@@ -3,12 +3,11 @@
 Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 """
 
-import ara.graph as _graph
 from ara.graph import SyscallCategory, CallPath
 from ara.graph.graph import Graph
 from ..os_base import OSBase, CPUList, CPU, OSState, ExecState
 from ..os_util import SysCall, set_next_abb, syscall
-from .posix_utils import PosixOptions, logger, get_musl_weak_alias, CurrentSyscallCategories
+from .posix_utils import PosixOptions, get_running_thread, logger, get_musl_weak_alias, CurrentSyscallCategories
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
@@ -160,7 +159,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return POSIX._do_not_interpret(state, cpu_id)
 
         # Throw error if a non-async-signal-safe syscalls is called in signal handler
-        thread = state.instances.vp.obj[cpu.control_instance]
+        thread = get_running_thread(state, cpu_id)
         if type(thread) == SignalCatchingFunc and not syscall_function.signal_safe:
             logger.error(f"signal catching function {thread.name} has called not async-signal-safe syscall {syscall_function.name}(). Ignoring ...")
             return POSIX._do_not_interpret(state, cpu_id)

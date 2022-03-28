@@ -1,8 +1,6 @@
-from os import stat
 from ara.os.os_base import ControlInstance
 import pyllco
 from dataclasses import dataclass
-from typing import Any
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg, assign_id, UnknownArgument, DefaultArgument, LikelyArgument
@@ -82,13 +80,13 @@ class ThreadSyscalls:
         sched_policy=Profile.get_value("default_sched_policy")
         inherited_sched_attr=Profile.get_value("default_inheritsched")
         thread_name = DefaultArgument()
-        if args.attr != None and type(args.attr) == ThreadAttr:
+        if type(args.attr) == ThreadAttr:
             threadattr = args.attr
             thread_name = threadattr.name
             inherited_sched_attr = threadattr.inheritsched
             if type(inherited_sched_attr) == bool or type(inherited_sched_attr) == LikelyArgument: 
                 if ThreadSyscalls._get_value(inherited_sched_attr):
-                    threadattr = get_running_thread(state) # Duck typing -> Use sched_prio and policy from current thread instead.
+                    threadattr = get_running_thread(state, cpu_id) # Duck typing -> Use sched_prio and policy from current thread instead.
                 sched_priority = threadattr.sched_priority
                 sched_policy = threadattr.sched_policy
                 # Set scheduling parameter to LikelyArgument if Thread attributes inheritsched is also only LikelyArgument.
@@ -102,7 +100,7 @@ class ThreadSyscalls:
             logger.warning(f"pthread_create(): The name of the thread {thread_name.value} is not ensured. pthread_attr_setname_np() call is not unique.")
 
         # Handling for the case that we can not get the start_routine argument.
-        if args.start_routine == None:
+        if type(args.start_routine) != pyllco.Function:
             new_thread = Thread(cpu_id=-1,
                                 cfg=cfg,
                                 artificial=True,
