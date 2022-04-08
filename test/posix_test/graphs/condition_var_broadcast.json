@@ -98,18 +98,6 @@
   },
   {
     "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_lock()",
-    "type": "interaction"
-  },
-  {
-    "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_unlock()",
-    "type": "interaction"
-  },
-  {
-    "source": "Main Thread",
     "target": "Thread 1",
     "label": "pthread_detach()",
     "type": "interaction"
@@ -122,6 +110,12 @@
   },
   {
     "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_lock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
     "target": "ConditionVariable 0",
     "label": "pthread_cond_wait()",
     "type": "interaction"
@@ -130,6 +124,12 @@
     "source": "Main Thread",
     "target": "Mutex 0",
     "label": "pthread_cond_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
     "type": "interaction"
   },
   {
@@ -152,12 +152,6 @@
   },
   {
     "source": "Thread 2",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_unlock()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 2",
     "target": "ConditionVariable 0",
     "label": "pthread_cond_wait()",
     "type": "interaction"
@@ -166,6 +160,12 @@
     "source": "Thread 2",
     "target": "Mutex 0",
     "label": "pthread_cond_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
     "type": "interaction"
   }
 ]
