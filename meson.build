@@ -200,14 +200,25 @@ if get_option('enable_toplevel_tests')
        timeout: 30
     )
 
+    # OSPERT tests
+    posix_settings = files('settings' / 'posix_instance_graph.json')
+    test('posix_ospert',
+        py3_inst,
+        args: [ara_py, posix_ospert_2022_example,
+                '--os', 'POSIX',
+                '-v',
+                '--step-settings', posix_settings],
+        suite: 'toplevel',
+        timeout: 90
+    )
+
     if get_option('enable_posix_toplevel_tests')
-        libmicrohttpd_settings = files('settings' / 'posix_instance_graph.json')
         test('microhttpd_demo',
             py3_inst,
             args: [ara_py, posix_microhttpd_demo_musl,
                     '--os', 'POSIX',
                     '-v',
-                    '--step-settings', libmicrohttpd_settings],
+                    '--step-settings', posix_settings],
             suite: 'toplevel',
             timeout: 7200 # The execution can take some time depending on your hardware. 
         )
@@ -216,7 +227,7 @@ if get_option('enable_toplevel_tests')
             args: [ara_py, posix_microhttpd_fileserver_dirs_musl,
                     '--os', 'POSIX',
                     '-v',
-                    '--step-settings', libmicrohttpd_settings],
+                    '--step-settings', posix_settings],
             suite: 'toplevel',
             timeout: 7200
         )
