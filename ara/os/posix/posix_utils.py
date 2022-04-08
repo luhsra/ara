@@ -80,21 +80,6 @@ class PosixOptions:
     enable_static_init_detection: bool = None
     enable_musl_syscalls: bool = None
 
-class MainThread:
-    """This static class wraps the MainThread instance.
-    
-    Call MainThread.get() to get the MainThread.
-    """
-    main_thread = None
-
-    @classmethod
-    def get(cls) -> POSIXInstance:
-        return cls.main_thread
-
-    @classmethod
-    def set(cls, main_thread: POSIXInstance):
-        cls.main_thread = main_thread
-
 class CurrentSyscallCategories:
     """This static class wraps the current syscall categories that are analyzed in the current step.
     

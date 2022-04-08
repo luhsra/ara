@@ -5,7 +5,7 @@ from .step import Step
 from .option import Option, Bool, Choice
 from ara.os.os_util import assign_id
 from ara.graph import SyscallCategory
-from ara.os.posix.posix_utils import MainThread, POSIXInstance, PosixOptions, StaticInitSyscalls, handle_static_soc
+from ara.os.posix.posix_utils import POSIXInstance, PosixOptions, StaticInitSyscalls, handle_static_soc
 from ara.os.posix.thread import Thread
 from ara.os.posix.system_profiles import SYSTEM_PROFILES, Profile
 from ara.os.posix.posix import POSIX
@@ -101,7 +101,6 @@ class POSIXInit(Step):
                              name="Main Thread"
         )
         self.register_default_instance(main_thread, "Main Thread")
-        MainThread.set(main_thread)
 
         # Set OS Model options
         PosixOptions.enable_static_init_detection = self.enable_static_init_detection.get()
