@@ -18,10 +18,10 @@ class Mutex(IDInstance, StaticInitInstance):
 
 class MutexSyscalls:
 
-    def _create_mutex(graph, state, cpu_id, args, va):
+    def _create_mutex(graph, state, cpu_id, args, va, edge_label):
         """Creates a new Mutex instance."""
         new_mutex = Mutex(name=None)
-        state = register_instance(new_mutex, f"{new_mutex.name}", graph, cpu_id, state)
+        state = register_instance(new_mutex, new_mutex.name, edge_label, graph, cpu_id, state)
         assign_instance_to_argument(va, args.mutex, new_mutex)
         return state
 
@@ -32,7 +32,7 @@ class MutexSyscalls:
              signature=(Arg('mutex', hint=SigType.instance),
                         Arg('attr', hint=SigType.symbol)))
     def pthread_mutex_init(graph, state, cpu_id, args, va):
-        return MutexSyscalls._create_mutex(graph, state, cpu_id, args, va)
+        return MutexSyscalls._create_mutex(graph, state, cpu_id, args, va, "pthread_mutex_init()")
 
     # int pthread_mutex_lock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_lock"},

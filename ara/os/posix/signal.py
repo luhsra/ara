@@ -159,4 +159,4 @@ class SignalSyscalls:
                                      name=f"{func_name}()"
         )
         SignalSyscalls.signal_catching_functions[func_name] = new_scf
-        return register_instance(new_scf, new_scf.name, graph, cpu_id, state)
+        return register_instance(new_scf, new_scf.name, "sigaction()", graph, cpu_id, state)

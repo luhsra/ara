@@ -18,10 +18,10 @@ class ConditionVariable(IDInstance, StaticInitInstance):
         
 class CondSyscalls:
 
-    def _create_cond(graph, state, cpu_id, args, va):
+    def _create_cond(graph, state, cpu_id, args, va, edge_label):
         """Creates a new ConditionVariable instance."""
         new_cond = ConditionVariable(name=None)
-        state = register_instance(new_cond, f"{new_cond.name}", graph, cpu_id, state)
+        state = register_instance(new_cond, new_cond.name, edge_label, graph, cpu_id, state)
         assign_instance_to_argument(va, args.cond, new_cond)
         return state
 
@@ -31,7 +31,7 @@ class CondSyscalls:
              signature=(Arg('cond', hint=SigType.instance),
                         Arg('attr', hint=SigType.symbol)))
     def pthread_cond_init(graph, state, cpu_id, args, va):
-        return CondSyscalls._create_cond(graph, state, cpu_id, args, va)
+        return CondSyscalls._create_cond(graph, state, cpu_id, args, va, "pthread_cond_init()")
 
     # int pthread_cond_broadcast(pthread_cond_t *cond);
     @syscall(categories={SyscallCategory.comm},

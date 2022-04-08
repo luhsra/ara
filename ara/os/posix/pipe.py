@@ -29,7 +29,7 @@ class PipeSyscalls:
         
         fildes_read = create_file_desc_of(new_pipe, FDType.READ)
         fildes_write = create_file_desc_of(new_pipe, FDType.WRITE)
-        state = register_instance(new_pipe, f"{new_pipe.name}", graph, cpu_id, state)
+        state = register_instance(new_pipe, new_pipe.name, "pipe()", graph, cpu_id, state)
         assign_instance_to_argument(va, args.fildes_read, fildes_read)
         assign_instance_to_argument(va, args.fildes_write, fildes_write)
         return state

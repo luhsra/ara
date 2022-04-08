@@ -29,15 +29,15 @@ class SemaphoreSyscalls:
     def sem_init(graph, state, cpu_id, args, va):
         
         proc_shared = None
-        if args.pshared != None:
+        if type(args.pshared) == pyllco.ConstantInt:
             proc_shared = True if args.pshared.get() > 0 else False
 
         new_semaphore = Semaphore(process_shared=proc_shared,
-                                  init_counter=args.value.get() if args.value != None else None,
+                                  init_counter=args.value.get() if type(args.value) == pyllco.ConstantInt else None,
                                   name=None
         )
         
-        state = register_instance(new_semaphore, f"{new_semaphore.name}", graph, cpu_id, state)
+        state = register_instance(new_semaphore, new_semaphore.name, "sem_init()", graph, cpu_id, state)
         assign_instance_to_argument(va, args.sem, new_semaphore)
         return state
 

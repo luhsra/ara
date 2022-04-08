@@ -3,8 +3,8 @@ import pyllco
 from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
-from ..os_util import syscall, Arg, assign_id, UnknownArgument, DefaultArgument, LikelyArgument
-from .posix_utils import IDInstance, assign_instance_to_argument, logger, register_instance, add_edge_from_self_to, get_running_thread, add_interaction_edge, is_soc_unique 
+from ..os_util import connect_instances, syscall, Arg, UnknownArgument, DefaultArgument, LikelyArgument
+from .posix_utils import IDInstance, PosixEdgeType, assign_instance_to_argument, logger, register_instance, add_edge_from_self_to
 from .system_profiles import Profile
 
 @dataclass(eq = False)
@@ -65,6 +65,7 @@ class ThreadSyscalls:
     def pthread_create(graph, state, cpu_id, args, va):
 
         cfg = graph.cfg
+        cpu = state.cpus[cpu_id]
 
         # Detect Thread Attribute fields
         sched_priority=Profile.get_value("default_sched_priority")
@@ -89,7 +90,7 @@ class ThreadSyscalls:
                                 name=None
             )
             logger.warning(f"pthread_create(): Could not get entry point for the new Thread {new_thread.name}.")
-            state = register_instance(new_thread, f"{ThreadSyscalls._get_value(new_thread.name)}", graph, cpu_id, state)
+            state = register_instance(new_thread, f"{ThreadSyscalls._get_value(new_thread.name)}", "pthread_create()", graph, cpu_id, state)
             assign_instance_to_argument(va, args.thread, new_thread)
             return state
         
@@ -106,7 +107,7 @@ class ThreadSyscalls:
                             inherited_sched_attr=inherited_sched_attr,
                             name=None
         )
-        state = register_instance(new_thread, f"{new_thread.name} ({func_name})", graph, cpu_id, state)
+        state = register_instance(new_thread, f"{new_thread.name} ({func_name})", "pthread_create()", graph, cpu_id, state)
         assign_instance_to_argument(va, args.thread, new_thread)
 
         # Handle the creation of multiple threads with the same entry point.
@@ -114,7 +115,7 @@ class ThreadSyscalls:
         if func_name in ThreadSyscalls.entry_points.keys():
             logger.warning(f"pthread_create(): There is already an thread with the entry point {func_name}. I do not analyse the entry point again.")
             # Add info edge:
-            add_interaction_edge(state.instances, new_thread, ThreadSyscalls.entry_points[func_name], "Info: Same entry point as")
+            connect_instances(state.instances, new_thread.vertex, ThreadSyscalls.entry_points[func_name].vertex, cpu.abb, "Info: Same entry point as", ty=PosixEdgeType.same_entry_point)
             new_thread.artificial = True
         else:
             ThreadSyscalls.entry_points[func_name] = new_thread

@@ -7,7 +7,7 @@ from ara.graph import SyscallCategory, CallPath
 from ara.graph.graph import Graph
 from ..os_base import OSBase, CPUList, CPU, OSState, ExecState
 from ..os_util import SysCall, set_next_abb, syscall
-from .posix_utils import PosixOptions, get_running_thread, logger, get_musl_weak_alias, CurrentSyscallCategories
+from .posix_utils import PosixEdgeType, PosixOptions, get_running_thread, logger, get_musl_weak_alias
 from .file import FileSyscalls
 from .file_descriptor import FileDescriptorSyscalls
 from .pipe import PipeSyscalls
@@ -88,6 +88,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
     """The POSIX OS Model class."""
 
     __metaclass__ = _POSIXMetaClass
+    EdgeType = PosixEdgeType
 
     @staticmethod
     def get_special_steps():
@@ -165,5 +166,4 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             return POSIX._do_not_interpret(state, cpu_id)
 
         # Call the syscall function.
-        CurrentSyscallCategories.set(categories)
         return syscall_function(graph, state, cpu_id, sig_offest)
