@@ -177,6 +177,13 @@ test('zephyr_static_threads',
         suite: 'zephyr'
 )
 
+test('zephyr_ospert_2022',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'ospert_2022.json', zephyr_OSPERT_2022, 'ZEPHYR'],
+        env: [python_path],
+        suite: 'zephyr'
+)
+
 # Complex applications
 test('zephyr_app_kernel',
         py3_inst,

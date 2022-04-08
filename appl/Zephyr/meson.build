@@ -22,7 +22,8 @@ z_easy_apps = [
     'static_stack',
     'static_sys_sems',
     'static_threads',
-    'sys_kernel'
+    'sys_kernel',
+    'OSPERT_2022'
 ]
 
 # Apps that require boards that support userspace applications
