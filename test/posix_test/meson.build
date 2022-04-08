@@ -639,6 +639,21 @@ test('create_everything_musl',
         timeout: 300
 )
 
+test('posix_ospert_2022',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'posix_ospert_2022.json', posix_ospert_2022_example, 'POSIX'],
+        env: [python_path],
+        suite: 'posix'
+)
+
+test('posix_ospert_2022_musl',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'posix_ospert_2022.json', posix_ospert_2022_example_musl, 'POSIX'],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 # In this test we issue the Linux syscalls directly without the musl libc.
 test('linux_syscalls',
         py3_inst,
