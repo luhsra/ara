@@ -5,7 +5,6 @@
 
 	"POSIXInit": {
 		"system_profile": "Linux",
-		"enable_static_init_detection": true,
 		"enable_musl_syscalls": true
 	},
 

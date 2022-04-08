@@ -4,8 +4,7 @@ from ara.os.os_base import ControlInstance
 from .step import Step
 from .option import Option, Bool, Choice
 from ara.os.os_util import assign_id
-from ara.graph import SyscallCategory
-from ara.os.posix.posix_utils import POSIXInstance, PosixOptions, StaticInitSyscalls, handle_static_soc
+from ara.os.posix.posix_utils import POSIXInstance, PosixOptions, handle_static_soc
 from ara.os.posix.thread import Thread
 from ara.os.posix.system_profiles import SYSTEM_PROFILES, Profile
 from ara.os.posix.posix import POSIX
@@ -22,16 +21,6 @@ class POSIXInit(Step):
              "Currently the system profile describes default scheduling parameters of new threads.",
         ty=Choice(*SYSTEM_PROFILES.keys()),
         default_value="POSIX"
-    )
-
-    enable_static_init_detection = Option(
-        name="enable_static_init_detection",
-        help="Toggle detection of PTHREAD_MUTEX_INITIALIZER. "
-             "Sometimes it is useful to disable this feature. "
-             "E.g. if the value analyzer can not retrieve the Mutex handle. "
-             "In this case every Mutex interaction call creates a new useless Mutex in the Instance Graph.",
-        ty=Bool(),
-        default_value=False
     )
 
     enable_musl_syscalls = Option(
@@ -103,14 +92,7 @@ class POSIXInit(Step):
         self.register_default_instance(main_thread, "Main Thread")
 
         # Set OS Model options
-        PosixOptions.enable_static_init_detection = self.enable_static_init_detection.get()
         PosixOptions.enable_musl_syscalls = self.enable_musl_syscalls.get()
-
-        # Disable SyscallCategory.create in StaticInitSyscalls
-        # if static init detection is disabled.
-        if not PosixOptions.enable_static_init_detection:
-            for comm_func in StaticInitSyscalls.get_comms():
-                comm_func.categories = {SyscallCategory.comm}
 
         # Set musl syscall detection functions to stubs
         # if musl syscalls are disabled.

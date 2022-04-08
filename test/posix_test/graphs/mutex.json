@@ -60,14 +60,14 @@
   },
   {
     "source": "Main Thread",
-    "target": "Thread 1",
-    "label": "pthread_join()",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_lock()",
     "type": "interaction"
   },
   {
     "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_lock()",
+    "target": "Thread 1",
+    "label": "pthread_join()",
     "type": "interaction"
   },
   {

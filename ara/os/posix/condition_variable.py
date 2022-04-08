@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from ara.graph import SyscallCategory, SigType
 
 from ..os_util import syscall, Arg
-from .posix_utils import IDInstance, StaticInitInstance, assign_instance_to_argument, register_instance, add_edge_from_self_to, static_init_detection, StaticInitSyscalls
-from .mutex import create_mutex
+from .posix_utils import IDInstance, StaticInitInstance, assign_instance_to_argument, register_instance, add_edge_from_self_to
 
 @dataclass(eq = False)
 class ConditionVariable(IDInstance, StaticInitInstance):
@@ -19,7 +18,7 @@ class ConditionVariable(IDInstance, StaticInitInstance):
         
 class CondSyscalls:
 
-    def _create_cond(graph, state, cpu_id, args, va, register_instance=register_instance):
+    def _create_cond(graph, state, cpu_id, args, va):
         """Creates a new ConditionVariable instance."""
         new_cond = ConditionVariable(name=None)
         state = register_instance(new_cond, f"{new_cond.name}", graph, cpu_id, state)
@@ -35,39 +34,23 @@ class CondSyscalls:
         return CondSyscalls._create_cond(graph, state, cpu_id, args, va)
 
     # int pthread_cond_broadcast(pthread_cond_t *cond);
-    @syscall(categories={SyscallCategory.create, SyscallCategory.comm},
+    @syscall(categories={SyscallCategory.comm},
              signature=(Arg('cond', hint=SigType.instance),))
     def pthread_cond_broadcast(graph, state, cpu_id, args, va):
-        return static_init_detection(CondSyscalls._create_cond,
-                    lambda graph, state, cpu_id, args, va:
-                        add_edge_from_self_to(state, args.cond.value, "pthread_cond_broadcast()", cpu_id),
-                    args.cond, graph, state, cpu_id, args, va)
+        return add_edge_from_self_to(state, args.cond.value, "pthread_cond_broadcast()", cpu_id)
 
     # int pthread_cond_signal(pthread_cond_t *cond);
-    @syscall(categories={SyscallCategory.create, SyscallCategory.comm},
+    @syscall(categories={SyscallCategory.comm},
              signature=(Arg('cond', hint=SigType.instance),))
     def pthread_cond_signal(graph, state, cpu_id, args, va):
-        return static_init_detection(CondSyscalls._create_cond,
-                    lambda graph, state, cpu_id, args, va:
-                        add_edge_from_self_to(state, args.cond.value, "pthread_cond_signal()", cpu_id),
-                    args.cond, graph, state, cpu_id, args, va)
+        return add_edge_from_self_to(state, args.cond.value, "pthread_cond_signal()", cpu_id)
 
     # int pthread_cond_wait(pthread_cond_t *restrict cond,
     #   pthread_mutex_t *restrict mutex);
-    @syscall(categories={SyscallCategory.create, SyscallCategory.comm},
+    @syscall(categories={SyscallCategory.comm},
              signature=(Arg('cond', hint=SigType.instance),
                         Arg('mutex', hint=SigType.instance)))
     def pthread_cond_wait(graph, state, cpu_id, args, va):
-
-        state = static_init_detection(CondSyscalls._create_cond,
-                    lambda graph, state, cpu_id, args, va:
-                        add_edge_from_self_to(state, args.cond.value, "pthread_cond_wait()", cpu_id),
-                    args.cond, graph, state, cpu_id, args, va)
-
+        state = add_edge_from_self_to(state, args.cond.value, "pthread_cond_wait()", cpu_id)
         # Create also edge to Mutex:
-        return static_init_detection(create_mutex,
-                    lambda graph, state, cpu_id, args, va:
-                        add_edge_from_self_to(state, args.mutex.value, "pthread_cond_wait()", cpu_id),
-                    args.mutex, graph, state, cpu_id, args, va)
-
-StaticInitSyscalls.add_comms([CondSyscalls.pthread_cond_broadcast, CondSyscalls.pthread_cond_signal, CondSyscalls.pthread_cond_wait])
+        return add_edge_from_self_to(state, args.mutex.value, "pthread_cond_wait()", cpu_id)
