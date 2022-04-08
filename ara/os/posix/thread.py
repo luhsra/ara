@@ -27,17 +27,6 @@ class Thread(IDInstance, ControlInstance):
     def __post_init__(self):
         super().__init__()
 
-@dataclass(eq = False)
-class ThreadAttr:
-    sched_priority: int # Scheduling priority
-    sched_policy: str   # Scheduling policy
-    inheritsched: bool  # Are scheduling parameters inherited from the creating thread?
-    name: str           # Thread name
-    unique: bool        # Was the pthread_attr_init() call unique?
-
-    def __hash__(self):
-        return id(self)
-
 # Scheduling policies supported by musl libc.
 SCHEDULING_POLICIES = dict({
     (0, 'SCHED_OTHER'),
@@ -47,6 +36,8 @@ SCHEDULING_POLICIES = dict({
     (5, 'SCHED_IDLE'),
     (6, 'SCHED_DEADLINE'),
 })
+
+UNKNOWN = UnknownArgument(exception=None, value=None)
 
 class ThreadSyscalls:
 
@@ -68,7 +59,7 @@ class ThreadSyscalls:
     @syscall(aliases={"__pthread_create"},
              categories={SyscallCategory.create},
              signature=(Arg('thread', hint=SigType.instance),
-                        Arg('attr', hint=SigType.instance, ty=[ThreadAttr, pyllco.ConstantPointerNull]),
+                        Arg('attr', hint=SigType.instance, ty=pyllco.ConstantPointerNull),
                         Arg('start_routine', hint=SigType.symbol, ty=pyllco.Function),
                         Arg('arg')))
     def pthread_create(graph, state, cpu_id, args, va):
@@ -79,25 +70,11 @@ class ThreadSyscalls:
         sched_priority=Profile.get_value("default_sched_priority")
         sched_policy=Profile.get_value("default_sched_policy")
         inherited_sched_attr=Profile.get_value("default_inheritsched")
-        thread_name = DefaultArgument()
-        if type(args.attr) == ThreadAttr:
-            threadattr = args.attr
-            thread_name = threadattr.name
-            inherited_sched_attr = threadattr.inheritsched
-            if type(inherited_sched_attr) == bool or type(inherited_sched_attr) == LikelyArgument: 
-                if ThreadSyscalls._get_value(inherited_sched_attr):
-                    threadattr = get_running_thread(state, cpu_id) # Duck typing -> Use sched_prio and policy from current thread instead.
-                sched_priority = threadattr.sched_priority
-                sched_policy = threadattr.sched_policy
-                # Set scheduling parameter to LikelyArgument if Thread attributes inheritsched is also only LikelyArgument.
-                if type(inherited_sched_attr) == LikelyArgument:
-                    sched_priority = LikelyArgument(sched_priority) if type(sched_priority) == bool else sched_priority
-                    sched_policy = LikelyArgument(sched_policy) if type(sched_policy) == bool else sched_policy
-            else:
-                sched_priority = UnknownArgument()
-                sched_policy = UnknownArgument()
-        if type(thread_name) == LikelyArgument:
-            logger.warning(f"pthread_create(): The name of the thread {thread_name.value} is not ensured. pthread_attr_setname_np() call is not unique.")
+        if type(args.attr) != pyllco.ConstantPointerNull:
+            logger.warning("pthread_create(): ThreadAttr used. We can not detect this object so all fields related to it are now <unknown>")
+            sched_priority=UNKNOWN
+            sched_policy=UNKNOWN
+            inherited_sched_attr=UNKNOWN
 
         # Handling for the case that we can not get the start_routine argument.
         if type(args.start_routine) != pyllco.Function:
@@ -109,7 +86,7 @@ class ThreadSyscalls:
                                 sched_priority=sched_priority,
                                 sched_policy=sched_policy,
                                 inherited_sched_attr=inherited_sched_attr,
-                                name=thread_name if not type(thread_name) in (UnknownArgument, DefaultArgument) else None
+                                name=None
             )
             logger.warning(f"pthread_create(): Could not get entry point for the new Thread {new_thread.name}.")
             state = register_instance(new_thread, f"{ThreadSyscalls._get_value(new_thread.name)}", graph, cpu_id, state)
@@ -127,12 +104,13 @@ class ThreadSyscalls:
                             sched_priority=sched_priority,
                             sched_policy=sched_policy,
                             inherited_sched_attr=inherited_sched_attr,
-                            name=thread_name if not type(thread_name) in (UnknownArgument, DefaultArgument) else None
+                            name=None
         )
-        state = register_instance(new_thread, ThreadSyscalls._get_value(new_thread.name) if not type(thread_name) in (UnknownArgument, DefaultArgument) else f"{new_thread.name} ({func_name})", graph, cpu_id, state)
+        state = register_instance(new_thread, f"{new_thread.name} ({func_name})", graph, cpu_id, state)
         assign_instance_to_argument(va, args.thread, new_thread)
 
         # Handle the creation of multiple threads with the same entry point.
+        # TODO: make this better:
         if func_name in ThreadSyscalls.entry_points.keys():
             logger.warning(f"pthread_create(): There is already an thread with the entry point {func_name}. I do not analyse the entry point again.")
             # Add info edge:
@@ -165,127 +143,3 @@ class ThreadSyscalls:
              signature=(Arg('thread', hint=SigType.instance, ty=Thread),))
     def pthread_cancel(graph, state, cpu_id, args, va):
         return add_edge_from_self_to(state, args.thread, "pthread_cancel()", cpu_id)
-
-    # int pthread_attr_init(pthread_attr_t *attr);
-    @syscall(categories={SyscallCategory.create},
-             signature=(Arg('attr', hint=SigType.instance),))
-    def pthread_attr_init(graph, state, cpu_id, args, va):
-        thread_attr = ThreadAttr(sched_priority=Profile.get_value("default_sched_priority"),
-                                 sched_policy=Profile.get_value("default_sched_policy"),
-                                 inheritsched=Profile.get_value("default_inheritsched"),
-                                 name=DefaultArgument(),
-                                 unique=is_soc_unique(state)
-        )
-        args.attr = thread_attr
-        return state
-
-    def _set_attr_option(attr: ThreadAttr, option: str, value, state):
-        """Set an option into a thread attribute object."""
-
-        # Set to LikelyArgument if soc is not unique
-        unique = attr.unique and is_soc_unique(state)
-        if not unique and not type(value) in (UnknownArgument, DefaultArgument):
-            value = LikelyArgument(value)
-
-        setattr(attr, option, value)
-
-    # int pthread_attr_setschedparam(pthread_attr_t *restrict attr,
-    #   const struct sched_param *restrict param);
-    @syscall(categories={SyscallCategory.create},
-             signature=(Arg('attr', hint=SigType.instance, ty=ThreadAttr),
-                        Arg('sched_priority', hint=SigType.value, ty=pyllco.ConstantInt)))
-    def ARA_pthread_attr_setschedparam_syscall_(graph, state, cpu_id, args, va): # pthread_attr_setschedparam()
-        if args.attr == None or args.sched_priority == None:
-            logger.warning(f"pthread_attr_setschedparam(): Could not set thread priority because argument "
-                           f"\"{'attr' if args.attr == None else 'sched_priority'}\" is UnknownArgument.")
-            if args.attr != None:
-                args.attr.sched_priority = UnknownArgument()
-            return state
-        ThreadSyscalls._set_attr_option(args.attr, "sched_priority", args.sched_priority.get(), state)
-        return state
-
-    # int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
-    @syscall(categories={SyscallCategory.create},
-             signature=(Arg('attr', hint=SigType.instance, ty=ThreadAttr),
-                        Arg('policy', hint=SigType.value, ty=pyllco.ConstantInt)))
-    def pthread_attr_setschedpolicy(graph, state, cpu_id, args, va):
-        if args.attr == None or args.policy == None:
-            logger.warning(f"pthread_attr_setschedpolicy(): Could not set scheduling policy because argument "
-                           f"\"{'attr' if args.attr == None else 'policy'}\" is UnknownArgument.")
-            if args.attr != None:
-                args.attr.sched_policy = UnknownArgument()
-            return state
-        sched_policy = SCHEDULING_POLICIES.get(args.policy.get(), None)
-        if sched_policy == None:
-            logger.warning(f"pthread_attr_setschedpolicy(): Scheduling policy with id {args.attr.sched_policy} is UnknownArgument.")
-            args.attr.sched_policy = UnknownArgument()
-            return state
-        ThreadSyscalls._set_attr_option(args.attr, "sched_policy", sched_policy, state)
-        return state
-
-    # int pthread_attr_setinheritsched(pthread_attr_t *attr,
-    #   int inheritsched);
-    @syscall(categories={SyscallCategory.create},
-             signature=(Arg('attr', hint=SigType.instance, ty=ThreadAttr),
-                        Arg('inheritsched', hint=SigType.value, ty=pyllco.ConstantInt)))
-    def pthread_attr_setinheritsched(graph, state, cpu_id, args, va):
-        if args.attr == None or args.inheritsched == None:
-            logger.warning(f"pthread_attr_setschedpolicy(): Could not set scheduling policy because argument "
-                           f"\"{'attr' if args.attr == None else 'inheritsched'}\" is UnknownArgument.")
-            if args.attr != None:
-                args.attr.inheritsched = UnknownArgument()
-            return state
-        inheritsched_int = args.inheritsched.get()
-        if inheritsched_int == 0: # PTHREAD_INHERIT_SCHED
-            ThreadSyscalls._set_attr_option(args.attr, "inheritsched", True, state)
-        elif inheritsched_int == 1: # PTHREAD_EXPLICIT_SCHED
-            ThreadSyscalls._set_attr_option(args.attr, "inheritsched", False, state)
-        else:
-            logger.warning(f"pthread_attr_setinheritsched(): UnknownArgument inheritsched attribute with value {inheritsched_int}")
-            args.attr.inheritsched = UnknownArgument()
-        return state
-
-    # int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
-    @syscall(categories={SyscallCategory.create},
-             signature=(Arg('attr', hint=SigType.instance, ty=ThreadAttr),
-                        Arg('name')))
-    def pthread_attr_setname_np(graph, state, cpu_id, args, va):
-        if args.attr == None or args.name == None:
-            logger.warning(f"pthread_attr_setname_np(): Could not set thread name because argument "
-                           f"\"{'attr' if args.attr == None else 'name'}\" is UnknownArgument.")
-            if args.attr != None:
-                args.attr.name = UnknownArgument()
-            return state
-        ThreadSyscalls._set_attr_option(args.attr, "name", args.name, state)
-        return state
-
-    # int pthread_setname_np(pthread_t thread, const char *name);
-    @syscall(categories={SyscallCategory.create},
-            signature=(Arg('thread', hint=SigType.instance, ty=Thread),
-                       Arg('name')))
-    def pthread_setname_np(graph, state, cpu_id, args, va):
-        if type(args.thread) != Thread or type(args.name) == UnknownArgument:
-            logger.warning(f"pthread_setname_np(): Could not set thread name because argument "
-                           f"\"{'thread' if type(args.thread) != Thread else 'name'}\" is UnknownArgument.")
-            if type(args.thread) == Thread:
-                args.thread.name = UnknownArgument()
-                assign_id(state.instances, args.thread.vertex)
-            return state
-
-        # Was pthread_setname_np() already called and the current value is different than the value before -> Set name to UnknownArgument because we can not distinguish.
-        if args.thread.last_setname_np_value != None and args.name != args.thread.last_setname_np_value:
-            logger.warning("pthread_setname_np(): ambiguous thread name. pthread_setname_np() is double called.")
-            args.thread.name = UnknownArgument()
-            assign_id(state.instances, args.thread.vertex)
-            return state
-        args.thread.last_setname_np_value = args.name
-        
-        # Set thread name
-        name = args.name
-        cpu = state.cpus[cpu_id]
-        if not is_soc_unique(cpu.analysis_context):
-            name = LikelyArgument(name)
-        args.thread.name = name
-        state.instances.vp.label[args.thread.vertex] = ThreadSyscalls._get_value(name)
-        assign_id(state.instances, args.thread.vertex)
-        return state
