@@ -1,0 +1,9 @@
+{
+    "steps": [
+        "InteractionAnalysis"
+    ],
+
+    "InteractionAnalysis": {
+        "dump": true
+    }
+}
