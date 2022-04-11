@@ -5,7 +5,7 @@ from ara.graph import SyscallCategory, SigType
 
 from ..os_util import UnknownArgument, syscall, Arg
 from .file_descriptor import create_file_desc_of, FDType
-from .posix_utils import IDInstance, register_instance, logger, assign_instance_to_return_value
+from .posix_utils import IDInstance, PosixEdgeType, add_edge_from_self_to, register_instance, logger, assign_instance_to_return_value
 
 @dataclass(eq = False)
 class File(IDInstance):
@@ -42,6 +42,9 @@ class FileSyscalls:
     # Note: chdir() is not supported and we can not detect multiple open() calls to the same file from different directories.
     files = dict()
 
+    def _get_label(fam: FDType) -> str:
+        return f"open({FAM_IDENTIFIER[fam] if fam != None else ''})"
+
     # int open(const char *path, int oflag, ...);
     @syscall(aliases={"open64"}, signal_safe=True,
              categories={SyscallCategory.create},
@@ -73,12 +76,13 @@ class FileSyscalls:
         if args.path in FileSyscalls.files:
             file = FileSyscalls.files[args.path]
             logger.debug(f"open() call to already created File object: {file}")
+            add_edge_from_self_to(state, file, FileSyscalls._get_label(fam), cpu_id)
         else:
             file = File(path=args.path,
                         name=(os.path.basename(args.path) if type(args.path) != UnknownArgument else None)
             )
             
-            state = register_instance(file, file.name, f"open({FAM_IDENTIFIER[fam] if fam != None else ''})", graph, cpu_id, state)
+            state = register_instance(file, file.name, FileSyscalls._get_label(fam), graph, cpu_id, state, PosixEdgeType.interaction)
             if type(args.path) != UnknownArgument:
                 FileSyscalls.files[args.path] = file
         # Set the return value to the new filedescriptor (This file)

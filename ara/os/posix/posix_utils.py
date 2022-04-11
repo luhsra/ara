@@ -133,7 +133,7 @@ def add_edge_from_self_to(state, to: POSIXInstance, label: str, cpu_id: int, ty=
     connect_from_here(state, cpu_id, to.vertex, label, ty)
     return state
 
-def register_instance(new_instance: POSIXInstance, obj_label: str, edge_label: str, graph, cpu_id: int, state: OSState):
+def register_instance(new_instance: POSIXInstance, obj_label: str, edge_label: str, graph, cpu_id: int, state: OSState, edge_type=PosixEdgeType.create):
     """Register the POSIX Instance <new_instance> in the Instance Graph."""
     logger.debug(f"Create new instance with label: {obj_label}")
     cpu = state.cpus[cpu_id]
@@ -146,7 +146,7 @@ def register_instance(new_instance: POSIXInstance, obj_label: str, edge_label: s
     assert hasattr(new_instance, "name"), f"New instance of type {type(new_instance)} has no name."
     state.instances.vp.obj[v] = new_instance
     assign_id(state.instances, v)
-    return add_edge_from_self_to(state, new_instance, edge_label, cpu_id, PosixEdgeType.create)
+    return add_edge_from_self_to(state, new_instance, edge_label, cpu_id, edge_type)
 
 def get_running_thread(state, cpu_id) -> POSIXInstance:
     """Get the currently running thread as Instance object."""
