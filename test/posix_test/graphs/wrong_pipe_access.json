@@ -61,8 +61,20 @@
   {
     "source": "Main Thread",
     "target": "Pipe 0",
+    "label": "pipe()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_create()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
     "label": "used read() with WRITE fd",
-    "type": "interaction"
+    "type": "interaction_error"
   },
   {
     "source": "Main Thread",
@@ -74,6 +86,6 @@
     "source": "Thread 1",
     "target": "Pipe 0",
     "label": "used write() with READ fd",
-    "type": "interaction"
+    "type": "interaction_error"
   }
 ]

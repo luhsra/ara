@@ -47,6 +47,6 @@
     "source": "Main Thread",
     "target": "testfile",
     "label": "used read() with WRITE fd",
-    "type": "interaction"
+    "type": "interaction_error"
   }
 ]
