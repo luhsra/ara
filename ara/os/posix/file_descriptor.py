@@ -6,7 +6,7 @@ from ara.graph import SyscallCategory, SigType
 from enum import IntFlag
 from dataclasses import dataclass
 from ..os_util import syscall, Arg
-from .posix_utils import POSIXInstance, add_edge_from_self_to, logger
+from .posix_utils import POSIXInstance, PosixEdgeType, add_edge_from_self_to, logger
 
 class FDType(IntFlag):
     """The type of a file descriptor.
@@ -49,10 +49,12 @@ class FileDescriptorSyscalls:
             logger.warning(f"{label}: Could not get file descriptor argument.")
             return state
         assert args.fildes.points_to != None and args.fildes.type != None
+        edge_type = PosixEdgeType.interaction
         if args.fildes.type & expected_type != expected_type:
             logger.error(f"{label}: file descriptor type {args.fildes.type.name} is not matching {expected_type.name}.")
             label = f"used {label} with {args.fildes.type.name} fd"
-        return add_edge_from_self_to(state, args.fildes.points_to, label, cpu_id)
+            edge_type = PosixEdgeType.interaction_error
+        return add_edge_from_self_to(state, args.fildes.points_to, label, cpu_id, edge_type)
 
     # ssize_t read(int fildes, void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm}, signal_safe=True,
