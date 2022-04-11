@@ -521,7 +521,7 @@ class FreeRTOS(OSBase):
     def vTaskDelay(graph, state, cpu_id, args, va):
         cpu = state.cpus[cpu_id]
 
-        if cpu.running is None:
+        if cpu.control_instance is None:
             # TODO proper error handling
             logger.error("ERROR: vTaskDelay called without running Task")
 
