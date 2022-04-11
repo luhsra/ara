@@ -62,6 +62,18 @@
     "name": "signal_catching_func_2()"
   },
   {
+    "source": "Main Thread",
+    "target": "signal_catching_func_1()",
+    "label": "sigaction()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "signal_catching_func_2()",
+    "label": "sigaction()",
+    "type": "create"
+  },
+  {
     "source": "signal_catching_func_1()",
     "target": "signal_catching_func_1()",
     "label": "pause()",

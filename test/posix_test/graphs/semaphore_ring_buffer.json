@@ -143,6 +143,42 @@
   {
     "source": "Main Thread",
     "target": "Thread 1",
+    "label": "pthread_create()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 2",
+    "label": "pthread_create()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 3",
+    "label": "pthread_create()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Semaphore 0",
+    "label": "sem_init()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Semaphore 1",
+    "label": "sem_init()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Semaphore 2",
+    "label": "sem_init()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
     "label": "pthread_join()",
     "type": "interaction"
   },
@@ -210,6 +246,6 @@
     "source": "Thread 3",
     "target": "Thread 2",
     "label": "Info: Same entry point as",
-    "type": "interaction"
+    "type": "same_entry_point"
   }
 ]

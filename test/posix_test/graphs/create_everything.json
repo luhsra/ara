@@ -151,13 +151,49 @@
   {
     "source": "Main Thread",
     "target": "Thread 1",
-    "label": "pthread_join()",
-    "type": "interaction"
+    "label": "pthread_create()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_init()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "ConditionVariable 0",
+    "label": "pthread_cond_init()",
+    "type": "create"
   },
   {
     "source": "Main Thread",
     "target": "testfile",
     "label": "open(O_WRONLY)",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
+    "label": "pipe()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Semaphore 0",
+    "label": "sem_init()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "signal_catching_func()",
+    "label": "sigaction()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_join()",
     "type": "interaction"
   },
   {
