@@ -10,7 +10,6 @@
 
 	"InteractionAnalysis": {
 		"dump": true,
-		"count_syscalls": true,
 		"log_level": "info"
 	},
 
