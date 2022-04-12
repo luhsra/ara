@@ -200,6 +200,19 @@ if get_option('enable_toplevel_tests')
        timeout: 30
     )
 
+    librepilot_instance_graph_settings = files('settings' / 'librepilot_instance_graph.json')
+    librepilot_manual_corrections = files('appl' / 'FreeRTOS' / 'Librepilot' / 'instance_corrections.json')
+    test('librepilot_instance_graph',
+       py3_inst,
+       args: [ara_py, librepilot_application,
+              '--os', 'FreeRTOS',
+              '-v',
+              '--step-settings', librepilot_instance_graph_settings,
+              '--manual-corrections', librepilot_manual_corrections],
+       suite: 'toplevel',
+       timeout: 14400
+    )
+
     # OSPERT tests
     posix_settings = files('settings' / 'posix_instance_graph.json')
     test('posix_ospert',
@@ -220,7 +233,7 @@ if get_option('enable_toplevel_tests')
                     '-v',
                     '--step-settings', posix_settings],
             suite: 'toplevel',
-            timeout: 7200
+            timeout: 14400
         )
     endif
 endif

@@ -1,0 +1,15 @@
+{
+	"steps": [
+        "InteractionAnalysis"
+    ],
+
+    "InteractionAnalysis": {
+        "dump": true
+    },
+
+	"ResolveFunctionPointer": {
+		"block_list": "[ \"main\" ]",
+		"translation_map": "../appl/FreeRTOS/Librepilot/function_pointer_translation_map.json",
+		"use_only_translation_map": true
+	}
+}
