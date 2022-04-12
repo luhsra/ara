@@ -1,0 +1,213 @@
+[
+    {
+      "label": "Mutex: _ZN12GPSDataModel13_the_instanceE",
+      "id": "Mutex",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 0,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPS/GPSDataModel.cpp",
+      "line": 16,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Queue: ",
+      "id": "Queue.",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 0,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/SdFatSPIDriver.cpp",
+      "line": 25,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Queue: buttonsQueue",
+      "id": "Queue.buttonsQueue",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 0,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/ButtonsThread.cpp",
+      "line": 37,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Queue: sdQueue",
+      "id": "Queue.sdQueue",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 1,
+      "unique": 1,
+      "is_control": 0,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/SDThread.cpp",
+      "line": 187,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Task: Buttons Thread (_Z14vButtonsThreadPv)",
+      "id": "Task.Buttons Thread",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 1,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPSLogger.cpp",
+      "line": 108,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Task: Display Task (_Z12vDisplayTaskPv)",
+      "id": "Task.Display Task",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 1,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPSLogger.cpp",
+      "line": 107,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Task: GPS Task (_Z8vGPSTaskPv)",
+      "id": "Task.GPS Task",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 1,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPSLogger.cpp",
+      "line": 111,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Task: LED Thread (_Z10vLEDThreadPv)",
+      "id": "Task.LED Thread",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 1,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPSLogger.cpp",
+      "line": 105,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "Task: SD Thread (_Z9vSDThreadPv)",
+      "id": "Task.SD Thread",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 1,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPSLogger.cpp",
+      "line": 104,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "label": "__idle_task",
+      "id": "Task.idle_task",
+      "branch": 0,
+      "usually_taken": 0,
+      "loop": 0,
+      "recursive": 0,
+      "after_scheduler": 0,
+      "unique": 1,
+      "is_control": 1,
+      "file": "../appl/FreeRTOS/GPSLogger/Src/GPSLogger.cpp",
+      "line": 118,
+      "specialization_level": "",
+      "type": "instance"
+    },
+    {
+      "source": "Task.SD Thread",
+      "target": "Task.SD Thread",
+      "label": "vTaskDelay(3001)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.LED Thread",
+      "target": "Task.LED Thread",
+      "label": "vTaskDelay(2000)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.LED Thread",
+      "target": "Task.LED Thread",
+      "label": "vTaskDelay(100)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.Display Task",
+      "target": "Mutex",
+      "label": "xQueueSemaphoreTake",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.Display Task",
+      "target": "Task.Display Task",
+      "label": "vTaskDelay(1000)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.Buttons Thread",
+      "target": "Task.Buttons Thread",
+      "label": "vTaskDelay(10)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.Buttons Thread",
+      "target": "Task.Buttons Thread",
+      "label": "vTaskDelay(10)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.Buttons Thread",
+      "target": "Task.Buttons Thread",
+      "label": "vTaskDelay(1)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.GPS Task",
+      "target": "Task.GPS Task",
+      "label": "vTaskDelay(10)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.GPS Task",
+      "target": "Mutex",
+      "label": "xQueueSemaphoreTake",
+      "type": "interaction"
+    }
+]
+    
