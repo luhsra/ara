@@ -630,11 +630,6 @@ class FreeRTOS(OSBase):
         logger.info(f"Create new Task {args.task_name} (function: {func_name}) (parameters: {args.task_parameters})")
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler'), Arg('type')))
-    def xQueueTakeMutexRecursive(graph, state, cpu_id, args, va):
-        pass
-
     @syscall(categories={SyscallCategory.create}, signature=(Arg("size"),))
     def xStreamBufferGenericCreate(graph, state, cpu_id, args, va):
         state = state.copy()
@@ -667,6 +662,10 @@ class FreeRTOS(OSBase):
         return state
 
     # HERE BEGINS THE TODO sections, all following syscalls are stubs
+
+    @syscall
+    def xQueueTakeMutexRecursive(graph, state, cpu_id, args, va):
+        pass
 
     @syscall
     def eTaskGetState(graph, state, cpu_id, args, va):
