@@ -50,7 +50,8 @@ def main():
     m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
 
     locks = m_graph.step_data["LockElision"]
-    del locks['details']
+    del locks['callsites']
+    del locks['DEADLOCK']
     data = data['no_timing']
 
     if log.level <= logging.INFO:
