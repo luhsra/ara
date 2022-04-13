@@ -180,7 +180,7 @@ class CreateABBs(Step):
                 else:
                     bbs.add(v)
             local = CFGView(lcfg, vfilt=reachable_bbs)
-            entry = cfg.get_entry_bb(func)
+            entry = cfg.get_function_entry_bb(func)
             exit_v = cfg.get_function_exit_bb(func)
 
             d_graph = GraphView(local, efilt=lambda e: not is_call(e.target()))

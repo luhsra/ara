@@ -10,6 +10,12 @@ from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 from collections.abc import Iterator
 
 
+def _log(obj):
+    """Return a logger. Meant for debugging."""
+    from ara.util import get_logger
+    return get_logger(obj.__class__.__name__)
+
+
 class FailedGraphConstraint(Exception):
     """The graph has another structure than anticipated."""
 
@@ -154,6 +160,14 @@ class CFG(graph_tool.Graph):
             if self.ep.type[edge] == CFType.f2a:
                 yield edge.target()
 
+    def has_abbs(self, function):
+        """Has this function ABBs?"""
+        try:
+            next(self.get_abbs(function))
+            return True
+        except StopIteration:
+            return False
+
     def get_function_bbs(self, function):
         """Get the BBs of the functions."""
         for edge in self.vertex(function).out_edges():
@@ -193,14 +207,14 @@ class CFG(graph_tool.Graph):
             raise CFGError("No BB found.")
         return ret
 
-    def _get_entry(self, function, edge_type=CFType.f2a):
-        """Return the entry block of the given function."""
+    def _get_entry(self, block, edge_type=CFType.f2a):
+        """Return the entry block of the given function or block."""
         def is_entry(block):
             return self.ep.is_entry[block] and self.ep.type[block] == edge_type
 
-        function = self.vertex(function)
+        block = self.vertex(block)
 
-        entry = list(filter(is_entry, function.out_edges()))
+        entry = list(filter(is_entry, block.out_edges()))
         assert len(entry) == 1
         return entry[0].target()
 
@@ -208,27 +222,40 @@ class CFG(graph_tool.Graph):
         """Return the entry abb of the given function."""
         return self._get_entry(function, edge_type=CFType.f2a)
 
-    def get_entry_bb(self, function):
+    def get_function_entry_bb(self, function):
         """Return the entry bb of the given function."""
         return self._get_entry(function, edge_type=CFType.f2b)
 
-    def _get_exit(self, function, level):
-        function = self.vertex(function)
+    def get_entry_bb(self, abb):
+        """Return the entry BB of the given ABB."""
+        return self._get_entry(function, edge_type=CFType.a2b)
+
+    def _get_exit(self, block, level):
+        block = self.vertex(block)
 
         def is_exit(block):
             return self.vp.is_exit[block] and self.vp.level[block] == level
 
-        entry = list(filter(is_exit, function.out_neighbors()))
+        entry = list(filter(is_exit, block.out_neighbors()))
         if entry:
             assert len(entry) == 1, f"Multiple exits in function {self.vp.name[function]}"
             return entry[0]
         return None
 
     def get_function_exit_bb(self, function):
-        return self._get_exit(function, level=NodeLevel.bb)
+        """Return the exit BB of a function."""
+        if self.has_abbs(function):
+            return self.get_exit_bb(self.get_exit_abb(function))
+        else:
+            return self._get_exit(function, level=NodeLevel.bb)
 
     def get_exit_abb(self, function):
+        """Return the exit ABB of a function."""
         return self._get_exit(function, level=NodeLevel.abb)
+
+    def get_exit_bb(self, abb):
+        """Return the exit BB of an ABB."""
+        return self._get_exit(abb, level=NodeLevel.bb)
 
     def get_syscall_name(self, abb):
         """Return the called syscall name for a given abb."""

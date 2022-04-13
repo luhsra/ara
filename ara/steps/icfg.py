@@ -70,16 +70,16 @@ class ICFG(Step):
                         if sys_rel_cg.ep.callsite[callsite] == bb:
                             # for all callsites in the callgraph belonging to
                             # this BB
-                            callee = sys_rel_cg.vp.function[callsite.target()]
+                            callee = cfg.vertex(sys_rel_cg.vp.function[callsite.target()])
                             self._log.debug("Found system relevant call "
                                             f"to {cfg.vp.name[callee]}.")
-                            entry = cfg.get_entry_bb(cfg.vertex(callee))
+                            entry = cfg.get_function_entry_bb(callee)
                             to_be_linked.append((ICFG._ET.IN, bb, entry))
                             link_counter += 1
                             linked = True
                             assert lcfg.vertex(bb).out_degree() == 1
                             n_bb = next(lcfg.vertex(bb).out_neighbors())
-                            exit_bb = cfg.get_function_exit_bb(cfg.vertex(callee))
+                            exit_bb = cfg.get_function_exit_bb(callee)
                             if exit_bb:
                                 to_be_linked.append(
                                     (ICFG._ET.OUT, exit_bb, n_bb)
