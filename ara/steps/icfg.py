@@ -49,11 +49,13 @@ class ICFG(Step):
             self._log.debug(f"Analyzing function {cfg.vp.name[cur_func]}.")
 
             to_be_linked = []
+            skip_func = False
 
             for bb in cfg.get_function_bbs(cur_func):
-                if (icfg.vertex(bb).out_degree() > 0):
+                if (icfg.vertex(bb).out_degree() + icfg.vertex(bb).in_degree() > 0):
                     # function already handled in a previous ICFG run
-                    continue
+                    skip_func = True
+                    break
                 # find other functions
                 linked = False
                 if cfg.vp.type[bb] in [ABBType.syscall, ABBType.call]:
@@ -88,6 +90,9 @@ class ICFG(Step):
                     # link local cfg
                     for n_bb in lcfg.vertex(bb).out_neighbors():
                         to_be_linked.append((ICFG._ET.STD, bb, n_bb))
+
+            if skip_func:
+                continue
 
             # link abbs
             for ty, src, target in to_be_linked:
