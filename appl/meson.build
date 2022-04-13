@@ -106,16 +106,20 @@ foreach app : ir_apps + hw_apps
     #                            +----------------+           +----------------+
 
     name_prefix = 'freertos-' + app + '-' + target
-    ara_target = custom_target(name_prefix + '-os',
-                               input: app_vanilla_ll,
-                               depfile: name_prefix+ '-os.cc.dep',
-                               output: [name_prefix + '-os.cc',
-                                        name_prefix + '-os.cc.startup.s',
-                                        name_prefix + '-modifiedapp.ll',
-                                        name_prefix + '-os.cc.freertos_overrides.h',
-                                       ],
-                               command: get_variable('ara_gen_cmd_' + target)
-                              )
+    if get_option('execute_ara')
+      ara_target = custom_target(name_prefix + '-os',
+                                 input: app_vanilla_ll,
+                                 depfile: name_prefix+ '-os.cc.dep',
+                                 output: [name_prefix + '-os.cc',
+                                          name_prefix + '-os.cc.startup.s',
+                                          name_prefix + '-modifiedapp.ll',
+                                          name_prefix + '-os.cc.freertos_overrides.h',
+                                         ],
+                                 command: get_variable('ara_gen_cmd_' + target)
+                                )
+    else
+      ara_target = disabler()
+    endif
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
     freertos_overrides = ara_target[3]

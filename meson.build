@@ -80,6 +80,10 @@ else
     error('unknown arch ' + get_option('arch'))
 endif
 
+if not get_option('execute_ara') and get_option('enable_generator_tests')
+  error('execute_ara has to be true to set enable_generator_tests')
+endif
+
 arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
 
 foreach prog_name : ['ar', 'objcopy', 'size', 'nm', 'ld']
