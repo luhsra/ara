@@ -15,8 +15,7 @@ class Syscall(Step):
                          ty=String())
 
     def get_single_dependencies(self):
-        return [{"name": "ICFG", "entry_point": self.entry_point.get()},
-                {"name": "CreateABBs", "entry_point": self.entry_point.get()},
+        return [{"name": "CreateABBs", "entry_point": self.entry_point.get()},
                 "FakeEntryPoint",
                 "SysFuncts"]
 
