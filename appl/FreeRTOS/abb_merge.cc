@@ -31,6 +31,13 @@ int endless_loop() {
 	}
 }
 
+int fake_assert(bool a) {
+	if (a) {
+		while (true);
+	}
+	xTaskCreate(vTask4, "Task 7", 1000, NULL, 5, NULL);
+}
+
 int endless_loop2(bool a) {
 	if (a) {
 		return 5;
@@ -119,6 +126,8 @@ int main(void) {
 	complicated(14, 90);
 
 	some_loops(e);
+
+	fake_assert(true);
 
 	vTaskStartScheduler();
 
