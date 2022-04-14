@@ -116,11 +116,10 @@ class CreateABBs(Step):
         for e in lcfg.vertex(exit_v).out_edges():
             # find neighbor abb
             tgt_abb = cfg.get_abb(e.target())
-            if abb != tgt_abb:
-                self._log.debug(f"LCFG edge from {name[abb]} "
-                                f"to {name[tgt_abb]} (outgoing)")
-                edge = cfg.add_edge(abb, tgt_abb)
-                cfg.ep.type[edge] = CFType.lcf
+            self._log.debug(f"LCFG edge from {name[abb]} "
+                            f"to {name[tgt_abb]} (outgoing)")
+            edge = cfg.add_edge(abb, tgt_abb)
+            cfg.ep.type[edge] = CFType.lcf
 
         self._add_icf_edges(abb, exit_v)
 
