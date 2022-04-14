@@ -66,7 +66,7 @@ class CreateABBs(Step):
         cfg.vp.part_of_loop[abb] = cfg.vp.part_of_loop[entry]
         if cfg.vp.part_of_loop[entry]:
             # does the ABB consume the loop?
-            if all(set(path).issubset(all_bbs) for path in all_paths(graph, entry, entry)):
+            if all([set(path).issubset(all_bbs) for path in all_paths(graph, entry, entry)]):
                 cfg.vp.part_of_loop[abb] = False
 
         if cfg.vp.type[abb] in [ABBType.call, ABBType.syscall]:
