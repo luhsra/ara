@@ -60,7 +60,7 @@ void func_create_mutex() {
 
 void after_assert() {
   if (unknown_condition()) {
-    // fail
+    // fail, simulate an assertion
     while(1) {}
   }
   func_create_mutex();
