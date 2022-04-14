@@ -11,7 +11,8 @@ def main():
     """Test for correct icfg mapping."""
     config = {"steps": [{"name": "CreateABBs", "entry_point": "_Z6vTask1Pv"},
                         {"name": "CreateABBs", "entry_point": "_Z6vTask2Pv"},
-                        {"name": "CreateABBs", "entry_point": "main"}]}
+                        {"name": "CreateABBs", "entry_point": "main"},
+                        'DumpCFG']}
     m_graph, data, log, _ = init_test(extra_config=config)
     abbs = m_graph.abbs
     cfg = m_graph.cfg
