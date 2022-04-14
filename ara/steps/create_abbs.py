@@ -91,10 +91,23 @@ class CreateABBs(Step):
 
         return abb
 
+    def _add_icf_edges(self, abb, exit_v):
+        # link icf edges
+        cfg = self._graph.cfg
+        icfg = edge_types(cfg, cfg.ep.type, CFType.icf)
+        name = cfg.vp.name
+
+        for e in icfg.vertex(exit_v).out_edges():
+            tgt_abb = cfg.get_abb(e.target())
+            if tgt_abb:
+                self._log.debug(f"ICFG edge from {name[abb]} "
+                                f"to {name[tgt_abb]} (outgoing)")
+                edge = icfg.edge(abb, tgt_abb, add_missing=True)
+                cfg.ep.type[edge] = CFType.icf
+
     def _add_edges(self, abb, exit_v):
         cfg = self._graph.cfg
         lcfg = edge_types(cfg, cfg.ep.type, CFType.lcf)
-        icfg = edge_types(cfg, cfg.ep.type, CFType.icf)
 
         name = cfg.vp.name
         # self._log.error(f"Create edges for {name[abb]}")
@@ -109,14 +122,8 @@ class CreateABBs(Step):
                 edge = cfg.add_edge(abb, tgt_abb)
                 cfg.ep.type[edge] = CFType.lcf
 
-        # link icf edges
-        for e in icfg.vertex(exit_v).out_edges():
-            tgt_abb = cfg.get_abb(e.target())
-            if tgt_abb and (abb, tgt_abb):
-                self._log.debug(f"ICFG edge from {name[abb]} "
-                                f"to {name[tgt_abb]} (outgoing)")
-                edge = cfg.add_edge(abb, tgt_abb)
-                cfg.ep.type[edge] = CFType.icf
+        self._add_icf_edges(abb, exit_v)
+
 
     def _gen_dom_tree(self, graph, reverse_graph=False):
         # We need to introduce a temporary fake entry vertex. This is not
@@ -167,6 +174,11 @@ class CreateABBs(Step):
         abbs = []
         for func in list(cfg.reachable_functs(entry_func, cg)):
             if f2a.vertex(func).out_degree() > 0:
+                # function is already handled
+                # It may, however possible that its exit ABB has new outgoing
+                # ICF edges
+                exit_abb = cfg.get_exit_abb(func)
+                self._add_icf_edges(exit_abb, cfg.get_exit_bb(exit_abb))
                 continue
             self._log.warn(f"Handle {name[func]}")
 
