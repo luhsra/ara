@@ -3,14 +3,13 @@ import copy
 import functools
 
 from ara.graph import ABBType, SyscallCategory, CFGView, CFType
-from ara.util import get_null_logger
+from ara.util import get_null_logger, has_path
 from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
 from collections import defaultdict
 from dataclasses import dataclass
 
-from graph_tool.topology import (dominator_tree, label_out_component,
-                                 all_paths)
+from graph_tool.topology import dominator_tree, label_out_component
 
 
 @dataclass
@@ -110,14 +109,6 @@ class _SSERunner:
         new_call_path.add_call_site(self._call_graph, edge)
         return new_call_path
 
-    def _has_path(self, graph, source, target):
-        ap = all_paths(graph, graph.vertex(source), graph.vertex(target))
-        try:
-            next(ap)
-            return True
-        except StopIteration:
-            return False
-
     @functools.lru_cache(maxsize=32)
     def _get_func_cfg(self, func):
         """Get LCFG of function"""
@@ -142,7 +133,7 @@ class _SSERunner:
             for v in loops.vertices():
                 v = func_cfg.vertex(v)
                 for e in v.in_edges():
-                    if self._has_path(func_cfg, v, e.source()):
+                    if has_path(func_cfg, v, e.source()):
                         keep_edge_map[e] = False
                         exit_map[e.source()] = True
 

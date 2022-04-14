@@ -5,6 +5,7 @@ import sys
 import logging
 
 from itertools import tee
+from graph_tool.topology import shortest_path
 
 
 LEVEL = {"critical": logging.CRITICAL,
@@ -152,6 +153,12 @@ def dominates(dom_tree, x, y):
             return True
         y = dom_tree[y]
     return False
+
+
+def has_path( graph, source, target):
+    """Is there a path from source to target?"""
+    _, elist = shortest_path(graph, source, target)
+    return len(elist) > 0
 
 
 def pairwise(iterable):

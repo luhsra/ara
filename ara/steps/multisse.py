@@ -5,7 +5,7 @@ from .step import Step
 from .printer import mstg_to_dot, sp_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
 from ara.graph import MSTGraph, StateType, MSTType, single_check, vertex_types, edge_types
-from ara.util import dominates, pairwise
+from ara.util import dominates, pairwise, has_path
 from ara.os.os_base import ExecState, OSState, CPUList
 
 import os.path
@@ -809,15 +809,11 @@ class MultiSSE(Step):
                 log(f"Yielding {edge}.")
                 yield edge, path
 
-    def _has_path(self, graph, start, end):
-        _, elist = shortest_path(graph, start, end)
-        return len(elist) > 0
-
     def _check_barriers(self, graph, new_barriers, old_barriers):
         for cpu, new in new_barriers.items():
             old = old_barriers[cpu]
             if old is not None:
-                if self._has_path(graph, old, new):
+                if has_path(graph, old, new):
                     new_barriers[cpu] = old
 
     def _get_initial_cps(self, cores, path):
@@ -1072,7 +1068,7 @@ class MultiSSE(Step):
             core_map.update(nc)
         cores = set(self._mstg.cross_point_map[cp]) & set(core_map.keys())
         return all([
-            self._has_path(ctx.graph, core_map[core], cp)
+            has_path(ctx.graph, core_map[core], cp)
             and core is not ctx.cpu_id for core in cores
         ])
 
