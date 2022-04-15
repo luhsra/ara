@@ -94,6 +94,8 @@ int ptr_func1(int a, float b, int c) { return a + c; }
 
 int ptr_func2(int a, float b, int c) { vTaskDelay(5); return a - c; }
 
+int ptr_func3(int a, float b, int c) { return a * c; }
+
 typedef int (*PtrFunc)(int, float, int);
 PtrFunc get_ptr_func();
 

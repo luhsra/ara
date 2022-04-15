@@ -16,7 +16,8 @@ namespace ara::step {
 	 * Resolve function pointer. The algorithm works with multiple steps:
 	 * Do for every function pointer:
 	 *   1. If a translation_map is given, use always this.
-	 *   2. Match the signature with respect to C++ inheritance.
+	 *   2. Retrieve all potential call targets in the source (every function from which a pointer is taken).
+	 *   3. Match the signature with respect to C++ inheritance against the potential call targets.
 	 *      C++ realizes inheritance with vTables and compound types that simple include their base classes as data
 	 * member. There an indirect call with a base class pointer can call a function that takes a subclass pointer.
 	 * Therefore the algorithm has some substeps: 2.1 calculate a map between "function signature" (key) and "list of
@@ -111,7 +112,8 @@ namespace ara::step {
 
 		std::optional<llvm::DataLayout> dl;
 		// FunctionType pointers are guaranteed to be unique, see llvm-sources/lib/IR/Types.cpp
-		std::unordered_map<llvm::FunctionType*, std::vector<std::reference_wrapper<llvm::Function>>> signature_to_func;
+		std::unordered_map<llvm::FunctionType*, std::vector<std::reference_wrapper<const llvm::Function>>>
+		    signature_to_func;
 		TypeMap compatible_types;
 		std::set<std::string> block_names;
 		std::set<std::string> accept_names;
@@ -131,6 +133,13 @@ namespace ara::step {
 		void link_indirect_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);
 		bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) const;
+
+		void get_atf_from_value(const llvm::Value& value,
+		                        std::vector<std::reference_wrapper<const llvm::Function>>& functions);
+		void get_atf_from_user(const llvm::User& user,
+		                       std::vector<std::reference_wrapper<const llvm::Function>>& functions);
+		std::vector<std::reference_wrapper<const llvm::Function>> get_address_taken_functions();
+
 		void resolve_function_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
 		                              const SVF::LLVMModuleSet& svfModule);
 		void resolve_indirect_function_pointers(SVF::ICFG& icfg, SVF::PTACallGraph& callgraph,
