@@ -10,8 +10,14 @@ option('enable_posix_toplevel_tests', type: 'boolean', value: false,
     description: 'Allowed the execution of time intensive posix toplevel tests [toplevel tests are a way to store common commandlines (Not actual tests)]')
 option('enable_gpslogger_tests', type: 'boolean', value: true)
 option('enable_librepilot_tests', type: 'boolean', value: true)
+option('enable_generator_tests', type: 'boolean', value: true,
+    description: 'Test for the generator part of ARA (execute ARA and test the output')
+
+option('execute_ara', type: 'boolean', value: true,
+    description: 'Build targets which executes ARA')
 option('enable_appl_graph_tests', type: 'boolean', value: true,
     description: 'instance graph tests for common applications.')
+    
 option('enable_zephyr_tests', type: 'boolean', value: false,
     description: 'All Zephyr tests are located in test/zephyr_test. The enable_step_tests option will be ignored for Zephyr tests. Only activate these tests if you have a zephyr_project directory in build dir. This directory will be generated via init_zephyr.sh script')
 option('enable_posix_tests', type: 'boolean', value: true,

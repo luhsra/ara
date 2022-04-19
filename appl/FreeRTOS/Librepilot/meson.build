@@ -174,19 +174,24 @@ foreach application_prefix: ['librepilot_mock']
   foreach target : ara_gen_freertos_targets
     application_ll = get_variable(application_prefix + '_ll')
     name_prefix = application_prefix + '-' + target
-    ara_target = custom_target(name_prefix + '-os',
-                               input: application_ll,
-                               depfile: name_prefix+ '-os.cc.dep',
-                               output: [name_prefix + '-os.cc',
-                                        name_prefix + '-os.cc.startup.s',
-                                        name_prefix + '-modifiedapp.ll',
-                                        name_prefix + '-os.cc.freertos_overrides.h',
-                                       ],
-                               depend_files: [extra_settings, manual_corrections],
-                               command: get_variable('ara_gen_cmd_' + target) +
-                                        ['--step-settings', extra_settings,] +
-                                        ['--manual-corrections', manual_corrections]
-                              )
+
+    if get_option('execute_ara')
+      ara_target = custom_target(name_prefix + '-os',
+                                 input: application_ll,
+                                 depfile: name_prefix+ '-os.cc.dep',
+                                 output: [name_prefix + '-os.cc',
+                                          name_prefix + '-os.cc.startup.s',
+                                          name_prefix + '-modifiedapp.ll',
+                                          name_prefix + '-os.cc.freertos_overrides.h',
+                                         ],
+                                 depend_files: [extra_settings, manual_corrections],
+                                 command: get_variable('ara_gen_cmd_' + target) +
+                                          ['--step-settings', extra_settings,] +
+                                          ['--manual-corrections', manual_corrections]
+                                )
+    else
+      ara_target = disabler()
+    endif
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
     freertos_overrides = ara_target[3]
@@ -274,19 +279,21 @@ foreach application_prefix: ['librepilot_mock']
     profiles_list += ['--profiles', target + '-' + lto_version]
 
 
-    test('validate_generator_' + lto_prefix,
-         py3_inst,
-         args: [validate_generator_runner,
-                application_prefix,
-                target,
-                ara_target,
-                os_target[0].full_path(),
-                lto_elf,
-               ],
-         workdir:  meson.current_source_dir(),
-         suite: 'generator'
-        )
 
+    if get_option('enable_generator_tests')
+      test('validate_generator_' + lto_prefix,
+           py3_inst,
+           args: [validate_generator_runner,
+                  application_prefix,
+                  target,
+                  ara_target,
+                  os_target[0].full_path(),
+                  lto_elf,
+                 ],
+           workdir:  meson.current_source_dir(),
+           suite: 'generator'
+          )
+    endif
 
     if get_option('enable_librepilot_tests')
       if target in ['instances_full_static', 'instances_full_initialized', 'vanilla']

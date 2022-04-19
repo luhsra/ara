@@ -18,6 +18,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
@@ -25,6 +26,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
@@ -48,6 +50,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
     test('ir-reader-false-syntax',
@@ -55,6 +58,7 @@ if get_option('enable_step_tests')
         args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.false_syntax.ll')],
         should_fail: true,
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
     test('ir-reader-multiple-symbols',
@@ -62,6 +66,7 @@ if get_option('enable_step_tests')
         args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.multiple_symbols.ll')],
         should_fail: true,
         env: [python_path],
+        depends: ara_py,
         suite: 'steps'
     )
 
