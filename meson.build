@@ -257,4 +257,12 @@ if get_option('enable_toplevel_tests')
        timeout: 0
     )
 
+    test('ina-gpslogger',
+       py3_inst,
+       args: [ara_py, gpslogger_application,
+              '--log-level', 'info',
+              '--step-settings', files(settings /'ina_gpslogger.json')],
+       suite: 'toplevel',
+       timeout: 0
+    )
 endif
