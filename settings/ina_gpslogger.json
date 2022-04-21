@@ -9,7 +9,7 @@
 
 	"logger": {
 		"StepManager": "info",
-		"FreeRTOS": "info",
+		"FreeRTOS": "debug",
 		"ara": "info"
 	}
 }
