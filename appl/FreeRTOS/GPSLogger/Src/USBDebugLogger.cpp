@@ -98,46 +98,46 @@ struct USBTarget: public PrintTarget
 {
 	virtual void operator()(char c)
 	{
-		USBTarget::operator()(&c, 1);
+		// USBTarget::operator()(&c, 1);
 	}
 
 	virtual void operator()(const char *buffer, size_t size, bool reverse = false)
 	{
-		// Ignore sending the message if USB is not connected
-		if(hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)
-			return;
+		// // Ignore sending the message if USB is not connected
+		// if(hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED)
+		// 	return;
 
-		// Transmit the message but no longer than timeout
-		uint32_t timeout = HAL_GetTick() + 5;
+		// // Transmit the message but no longer than timeout
+		// uint32_t timeout = HAL_GetTick() + 5;
 
-		// Protect this function from multiple entrance
-		MutexLocker locker(usbMutex);
+		// // Protect this function from multiple entrance
+		// MutexLocker locker(usbMutex);
 
-		// Copy data to the buffer
-		for(size_t i=0; i < size; i++)
-		{
-			if(reverse)
-				--buffer;
+		// // Copy data to the buffer
+		// for(size_t i=0; i < size; i++)
+		// {
+		// 	if(reverse)
+		// 		--buffer;
 
-			if(*buffer) // Skip zeroes (including terminating zeroes)
-			{
-				usbTxBuffer[usbTxHead] = *buffer;
-				usbTxHead = (usbTxHead + 1) % sizeof(usbTxBuffer);
-			}
+		// 	if(*buffer) // Skip zeroes (including terminating zeroes)
+		// 	{
+		// 		usbTxBuffer[usbTxHead] = *buffer;
+		// 		usbTxHead = (usbTxHead + 1) % sizeof(usbTxBuffer);
+		// 	}
 
-			if(!reverse)
-				buffer++;
+		// 	if(!reverse)
+		// 		buffer++;
 
-			// Wait until there is a room in the buffer, or drop on timeout
-			while(usbTxHead == usbTxTail && HAL_GetTick() < timeout);
-			if (usbTxHead == usbTxTail) break;
-		}
+		// 	// Wait until there is a room in the buffer, or drop on timeout
+		// 	while(usbTxHead == usbTxTail && HAL_GetTick() < timeout);
+		// 	if (usbTxHead == usbTxTail) break;
+		// }
 
-		// If there is no transmittion happening
-		if (usbTransmitting == 0)
-		{
-			usbTransmitting = transmitContiguousBuffer();
-		}
+		// // If there is no transmittion happening
+		// if (usbTransmitting == 0)
+		// {
+		// 	usbTransmitting = transmitContiguousBuffer();
+		// }
 	}
 };
 
