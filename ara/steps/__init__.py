@@ -30,6 +30,7 @@ def provide_steps():
     from .syscall import Syscall
     from .sysfuncts import SysFuncts
     from .system_relevant_functions import SystemRelevantFunctions
+    from .instance_graph_stats import InstanceGraphStats
 
     for step in _native_provide():
         yield step
@@ -62,6 +63,7 @@ def provide_steps():
     yield SysFuncts
     yield Syscall
     yield SystemRelevantFunctions
+    yield InstanceGraphStats
 
 
 def get_native_component(name: str):
