@@ -543,9 +543,10 @@ class FreeRTOS(OSBase):
 
         queue = args.handler
         if not queue:
+            logger.debug(f"Callpath: {cpu.call_path}")
             logger.error(f"xQueueGenericSend (files: {cfg.vp.files[abb]}, "
-                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
-                         "found. Ignoring syscall.")
+                         f"lines: {cfg.vp.lines[abb]}, value: {queue.value}): "
+                         "Queue handler cannot be found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
             connect_from_here(state, cpu_id, queue_node, "xQueueGenericSend")
@@ -562,9 +563,10 @@ class FreeRTOS(OSBase):
 
         queue = args.handler
         if not queue:
+            logger.debug(f"Callpath: {cpu.call_path}")
             logger.error(f"xQueueSemaphoreTake (files: {cfg.vp.files[abb]}, "
-                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
-                         "found. Ignoring syscall.")
+                         f"lines: {cfg.vp.lines[abb]}, value: {queue.value}): "
+                         "Queue handler cannot be found. Ignoring syscall.")
         else:
             queue_node = find_instance_node(state.instances, queue)
             connect_from_here(state, cpu_id, queue_node, "xQueueSemaphoreTake")
