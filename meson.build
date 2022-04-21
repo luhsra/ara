@@ -158,7 +158,7 @@ subdir('test')
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 if get_option('enable_toplevel_tests')
-    extra_settings = files('test' / 'extra_settings.json')
+    settings = 'test' / 'settings'
     app = autosar_singlecore_bcc1_task1_a
     test('ara_tester',
        py3_inst,
@@ -166,45 +166,41 @@ if get_option('enable_toplevel_tests')
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
               '--oilfile', app['oil'],
               #'--timings', app['sys_timings'],
-              '--step-settings', extra_settings],
+              '--step-settings', files(settings / 'extra_settings.json')],
               # '--manual-corrections', instance_corrections],
        suite: 'toplevel'
     )
 
-    rtas_settings = files('test' / 'rtas_settings.json')
     test('rtas20',
        py3_inst,
        args: [ara_py, freertos_rtas20_example,
               '--log-level', 'debug', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
               '--dump',
-              '--step-settings', rtas_settings],
+              '--step-settings', files(settings / 'rtas_settings.json')],
        suite: 'toplevel'
     )
 
-    generator_settings = files('test/generator_settings.json')
     test('generator_tester',
        py3_inst,
        args: [ara_py, freertos_simple_print,
               '--log-level', 'debug', '--dump',
               '--generator_output', 'generator_tester-os.cc',
-              '--step-settings', generator_settings],
+              '--step-settings', files(settings / 'generator_settings.json')],
        suite: 'toplevel'
     )
 
-    autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
     test('multisse',
-       py3_inst,
-       args: [ara_py, autosar_multicore_minexample['ll'],
-              '--oilfile', autosar_multicore_minexample['oil'],
-              '--dump',
-              '--log-level', 'info',
-              '--dump',
-              '--step-settings', autosar_minexample_settings],
-       suite: 'toplevel',
-       timeout: 30
+      py3_inst,
+      args: [ara_py, autosar_multicore_minexample['ll'],
+             '--oilfile', autosar_multicore_minexample['oil'],
+             '--dump',
+             '--log-level', 'info',
+             '--step-settings', files(settings / 'autosar_minexample_settings.json')],
+      suite: 'toplevel',
+      timeout: 30
     )
 
-    librepilot_instance_graph_settings = files('settings' / 'librepilot_instance_graph.json')
+    librepilot_instance_graph_settings = files(settings / 'librepilot_instance_graph.json')
     librepilot_manual_corrections = files('appl' / 'FreeRTOS' / 'Librepilot' / 'instance_corrections.json')
     test('librepilot_instance_graph',
        py3_inst,
@@ -240,4 +236,24 @@ if get_option('enable_toplevel_tests')
             timeout: 14400
         )
     endif
+
+    test('sse-i4copter',
+      py3_inst,
+      args: [ara_py, autosar_singlecore_complex_isorc['ll'],
+             '--oilfile', autosar_singlecore_complex_isorc['oil'],
+             '--log-level', 'info',
+             '--step-settings', files(settings / 'sse_i4copter.json')],
+      suite: 'toplevel',
+      timeout: 0,
+    )
+
+    test('ina-i4copter',
+      py3_inst,
+      args: [ara_py, autosar_singlecore_complex_isorc['ll'],
+             '--oilfile', autosar_singlecore_complex_isorc['oil'],
+             '--log-level', 'info',
+             '--step-settings', files(settings / 'ina_i4copter.json')],
+      suite: 'toplevel',
+      timeout: 30
+    )
 endif

@@ -1,0 +1,12 @@
+{
+	"steps": [
+		"InteractionAnalysis",
+		"DumpInstances"
+	],
+
+	"logger": {
+		"StepManager": "info",
+		"FreeRTOS": "info",
+		"ara": "info"
+	}
+}

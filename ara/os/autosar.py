@@ -41,6 +41,10 @@ class InstanceEdge(IntEnum):
     chain = 4
     nestable = 5
     terminate = 6
+    get = 7
+    release = 8
+    sete = 9
+    wait = 10
 
 
 @dataclass(eq=False)
@@ -467,7 +471,8 @@ class AUTOSAR(OSBase):
                     new_state = state.copy()
                     for t in event_tgt.vertex(acty_vertex).in_neighbors():
                         task = instances.vp.obj[instances.vertex(t)]
-                        new_state = AUTOSAR.SetEvent(new_state, task, acty.index)
+                        new_state = AUTOSAR.SetEvent(new_state, cpu_id, task,
+                                                     acty.index)
                     return new_state
                 else:
                     assert False, f"Edge to false object {acty}"
@@ -913,9 +918,12 @@ class AUTOSAR(OSBase):
     def AUTOSAR_GetResource(cfg, state, cpu_id, args, va):
         assert(isinstance(args.resource, Resource))
         # get correct dyn_prio
-        res_vertex = single_check(filter(lambda x: state.instances.vp.obj[x] == args.resource, state.instances.vertices()))
+        res_vertex = state.instances.get_node(args.resource)
         dyn_prio = max([state.instances.vp.obj[x].priority for x in res_vertex.in_neighbors()]) * 2 + 1
         state.cur_context(cpu_id).dyn_prio.append(dyn_prio)
+
+        connect_from_here(state, cpu_id, res_vertex, "GetResource",
+                          ty=InstanceEdge.get)
 
         logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} to the dynamic priority {dyn_prio}.")
         return state
@@ -927,6 +935,10 @@ class AUTOSAR(OSBase):
         if state.cur_context(cpu_id).dyn_prio:
             dyn_prio = state.cur_context(cpu_id).dyn_prio[-1]
             logger.debug(f"Set {state.instances.vp.label[state.cpus[cpu_id].control_instance]} back to priority {dyn_prio}.")
+
+        res_vertex = state.instances.get_node(args.resource)
+        connect_from_here(state, cpu_id, res_vertex, "ReleaseResource",
+                          ty=InstanceEdge.get)
 
         return state
 
@@ -945,7 +957,13 @@ class AUTOSAR(OSBase):
         return state
 
     @staticmethod
-    def SetEvent(state, task, event_mask):
+    def connect_events(state, cpu_id, event_mask, label, ty):
+        for v, event in state.instances.get(Event):
+            if (event.index & event_mask) == event.index:
+                connect_from_here(state, cpu_id, v, label, ty=ty)
+
+    @staticmethod
+    def SetEvent(state, cpu_id, task, event_mask):
         task_ctx = state.context[task]
         if task_ctx.status == TaskStatus.blocked and \
            event_mask & task_ctx.waited_events != 0:
@@ -957,6 +975,9 @@ class AUTOSAR(OSBase):
         if task_ctx.status != TaskStatus.suspended:
             task_ctx.received_events |= event_mask
 
+        AUTOSAR.connect_events(state, cpu_id, event_mask, "SetEvent",
+                               InstanceEdge.sete)
+
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -965,7 +986,7 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.task, Task))
         assert(isinstance(args.event_mask, int))
-        return AUTOSAR.SetEvent(state, args.task, args.event_mask)
+        return AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
@@ -1060,5 +1081,8 @@ class AUTOSAR(OSBase):
 
         # the next ABB will be set _after_ this call. However, since this task
         # is blocked this isn't a problem.
+
+        AUTOSAR.connect_events(state, cpu_id, args.event_mask, "WaitEvent",
+                               InstanceEdge.wait)
 
         return state
