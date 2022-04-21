@@ -158,7 +158,7 @@ subdir('test')
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 if get_option('enable_toplevel_tests')
-    settings = 'test' / 'settings'
+    settings = 'settings'
     app = autosar_singlecore_bcc1_task1_a
     test('ara_tester',
        py3_inst,
