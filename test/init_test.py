@@ -48,7 +48,7 @@ def fail_if(condition, *arg, dry=False):
 def get_config(i_file):
     """Return the default common config."""
     return {'log_level': os.environ.get('ARA_LOGLEVEL', 'warn'),
-            'dump_prefix': 'dumps/{step_name}.',
+            'dump_prefix': 'dumps/{step_name}',
             'dump': bool(os.environ.get('ARA_DUMP', '')),
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
