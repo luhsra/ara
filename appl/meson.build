@@ -4,6 +4,7 @@ app_flags = ['-DconfigINCLUDE_ALL_DECLS=1',
 # experiment scripts
 GenericTimingExperiment = files('GenericTimingExperiment.py')
 ShowGenericTimingExperiment = files('make_figures.py')
+InstanceGraphExperiment = files('instance_graph_experiment.py')
 
 
 # FreeRTOS examples
@@ -326,5 +327,20 @@ run_target('z_clean',
 examples = run_target('examples',
                       command: nop,
                       depends: [osek_targets, freertos_targets, zephyr_targets])
+
+
+# versuchung experiments
+run_target('gpslogger_instance_experiment',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '--llvm_ir=../appl/FreeRTOS/GPSLogger/gpslogger_app.ll'],
+    env: [python_path],
+    depends: ara_py
+)
+
+run_target('librepilot_instance_experiment',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '--llvm_ir=../appl/FreeRTOS/Librepilot/librepilot_mock.ll',
+              '--custom_step_settings=../../appl/librepilot_experiment_settings.json'],
+    env: [python_path],
+    depends: ara_py
+)
 
 subdir('POSIX')

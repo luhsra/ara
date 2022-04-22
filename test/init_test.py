@@ -67,7 +67,7 @@ def fail_if_json_not_equal(expected, actual):
 def get_config(i_file):
     """Return the default common config."""
     return {'log_level': os.environ.get('ARA_LOGLEVEL', 'warn'),
-            'dump_prefix': 'dumps/{step_name}.',
+            'dump_prefix': 'dumps/{step_name}',
             'dump': bool(os.environ.get('ARA_DUMP', '')),
             'runtime_stats': True,
             'runtime_stats_file': 'logger',

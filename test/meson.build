@@ -46,6 +46,14 @@ if get_option('enable_step_tests')
         suite: 'steps'
     )
 
+    test('instance_graph_stats',
+        py3_inst,
+        args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction],
+        env: [python_path],
+        depends: ara_py,
+        suite: 'steps'
+    )
+
     test('ir-reader',
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],

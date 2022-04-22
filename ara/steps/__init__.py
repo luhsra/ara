@@ -32,6 +32,7 @@ def provide_steps():
     from .system_relevant_functions import SystemRelevantFunctions
     from .zephyr_static_post import ZephyrStaticPost
     from .posix_init import POSIXInit
+    from .instance_graph_stats import InstanceGraphStats
 
     for step in _native_provide():
         yield step
@@ -66,6 +67,7 @@ def provide_steps():
     yield SystemRelevantFunctions
     yield ZephyrStaticPost
     yield POSIXInit
+    yield InstanceGraphStats
 
 
 def get_native_component(name: str):
