@@ -100,7 +100,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
 
     @staticmethod
     def init(state):
-        state.scheduler_on = True  # The Scheduler is always on in POSIX.
+        pass
 
     @staticmethod
     def get_initial_state(cfg, instances):
