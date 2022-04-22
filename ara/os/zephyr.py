@@ -422,15 +422,17 @@ class ZEPHYR(OSBase):
             to_add = []
             for c in predecessor_v.out_edges():
                 edge_type = state.instances.ep.type[c]
+                edge_abb = state.instances.ep.syscall[c]
                 if not edge_type == ZephyrEdgeType.same_symbol_than:
-                    to_add.append(((v, c.target()), instances.ep.label[c], edge_type))
+                    to_add.append(((v, c.target()), instances.ep.label[c], edge_type, edge_abb))
             for c in predecessor_v.in_edges():
                 # Ignore syscalls that created the predecessor
                 edge_type = state.instances.ep.type[c]
+                edge_abb = state.instances.ep.syscall[c]
                 if edge_type == ZephyrEdgeType.interaction:
-                    to_add.append(((c.source(), v), instances.ep.label[c], edge_type))
-            for ((s, t), label, edge_type) in to_add:
-                connect_instances(instances, v, s, abb, label, ty=edge_type)
+                    to_add.append(((c.source(), v), instances.ep.label[c], edge_type, edge_abb))
+            for ((s, t), label, edge_type, edge_abb) in to_add:
+                connect_instances(instances, v, s, edge_abb, label, ty=edge_type)
             # Same symbol edge
             connect_instances(instances, v, predecessor_v, abb, "same symbol than", ty=ZephyrEdgeType.same_symbol_than)
 
