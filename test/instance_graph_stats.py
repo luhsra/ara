@@ -3,7 +3,7 @@ import json
 import os.path
 
 # Note: init_test must be imported first
-from init_test import init_test, fail_if
+from init_test import fail_if_json_not_equal, init_test
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
     with open("dumps/InstanceGraphStats.json", "r") as f:
         actual = json.load(f)
 
-    fail_if(expected != actual, "Data not equal")
+    fail_if_json_not_equal(expected, actual)
 
 
 if __name__ == '__main__':
