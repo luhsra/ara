@@ -385,7 +385,7 @@ class ZEPHYR(OSBase):
         instances.vp.branch[v] = ana_context.branch
         instances.vp.loop[v] = ana_context.loop
         instances.vp.recursive[v] = ana_context.recursive
-        instances.vp.after_scheduler[v] = ana_context.scheduler_on
+        instances.vp.after_scheduler[v] = True # In ZEPHYR the scheduler is always on for dynamic instances
         instances.vp.usually_taken[v] = ana_context.usually_taken
         # Creating an instance from a thread that is not unique will result in a non unique instance
         instances.vp.unique[v] = (not (ana_context.branch or ana_context.loop or ana_context.recursive)) and instances.vp.unique[cpu.control_instance]

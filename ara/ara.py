@@ -10,7 +10,7 @@ import sys
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
-from .os import get_os_model_names, get_os_model_by_name, zephyr
+from .os import get_os_model_names, get_os_model_by_name
 
 from .steplisting import print_avail_steps
 
@@ -103,9 +103,6 @@ def main():
 
     if args.os and args.os != "auto":
         g.os = get_os_model_by_name(args.os)
-    if g.os == zephyr.ZEPHYR:
-        if args.entry_point == "main":
-            args.entry_point = "" # Let Zephyr model handle the entry point.
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))

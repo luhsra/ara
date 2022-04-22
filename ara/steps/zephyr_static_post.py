@@ -1,5 +1,6 @@
 from pickletools import pybytes
 import graph_tool.util
+from ara.graph.mix import ARA_ENTRY_POINT
 import pyllco
 from .step import Step
 from pydoc import locate
@@ -89,7 +90,7 @@ class ZephyrStaticPost(Step):
                 cpu_id=-1,
                 cfg=cfg,
                 artificial=False,
-                function=cfg.get_function_by_name('main'),
+                function=cfg.get_function_by_name(ARA_ENTRY_POINT),
                 symbol=None,
                 stack=None,
                 stack_size=stack_size,

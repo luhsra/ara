@@ -125,8 +125,7 @@ def main():
     with open(setting_file, "r") as f:
         config = json.load(f)
     
-    zephyr_input = {"entry_point": lambda sys_argv : ""}
-    m_graph, data, log, _ = init_test(extra_config=config, extra_input=zephyr_input if os_name == "ZEPHYR" else None, os_name=os_name)
+    m_graph, data, log, _ = init_test(extra_config=config, extra_input=None, os_name=os_name)
     dump = json_instance_graph(m_graph.instances, m_graph.os.EdgeType if hasattr(m_graph.os, "EdgeType") else None)
     
     if self_is_testcase:
