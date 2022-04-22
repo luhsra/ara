@@ -10,7 +10,7 @@ from typing import Callable
 from graph_tool import Vertex
 from ara.graph import SyscallCategory, CFG
 from ara.util import get_logger, LEVEL
-from ..os_util import AutoDotInstance, assign_id, connect_from_here, find_return_value
+from ..os_util import AutoDotInstance, UnknownArgument, assign_id, connect_from_here, find_return_value
 
 ValueAnalyzer = get_native_component("ValueAnalyzer")
 ValueAnalyzerResult = get_native_component("ValueAnalyzerResult")
@@ -130,7 +130,10 @@ def handle_static_soc(instances: InstanceGraph, v: Vertex, reset_file_and_line=T
 def add_edge_from_self_to(state, to: POSIXInstance, label: str, cpu_id: int, ty=PosixEdgeType.interaction):
     """Add an edge from the current thread to <to>."""
     if not isinstance(to, POSIXInstance):
-        logger.warning(f"Could not create edge from self to \"{to}\" with label: \"{label}\"! This is mostly an issue with the ValueAnalyzer.")
+        if type(to) == UnknownArgument:
+            logger.warning(f"Could not retrieve instance required for edge with label \"{label}\"! ValueAnalyzer failed with \"{to.exception}\"")
+        else:
+            logger.warning(f"Could not create edge from self to \"{to}\" with label \"{label}\"!")
         return state
     logger.debug(f"Create new edge from self to \"{to.name}\" with label: \"{label}\"")
     connect_from_here(state, cpu_id, to.vertex, label, ty)
@@ -163,7 +166,7 @@ def assign_instance_to_return_value(va: ValueAnalyzer, cpu: CPU, instance: POSIX
     """
     ret_value = find_return_value(cpu.abb, cpu.call_path, va)
     if ret_value is None or not isinstance(ret_value.value, pyllco.Value):
-        logger.warning(f"ValueAnalyzer could not assign Instance {instance} to return value. Type of ret_value.value is {type(ret_value.value) if ret_value is not None else 'None'}")
+        logger.warning(f"Could not assign Instance {instance} to return value. Type of ret_value.value is {type(ret_value.value) if ret_value is not None else 'None'}")
         return False
     from ara.steps import get_native_component # avoid dependency conflicts, therefore import dynamically
     ValuesUnknown = get_native_component("ValuesUnknown")
@@ -183,7 +186,9 @@ def assign_instance_to_argument(va: ValueAnalyzer, argument: ValueAnalyzerResult
     Returns True on success. False if an error occurred in ValueAnalyzer.
     """
     if argument is None or not isinstance(argument.value, pyllco.Value):
-        logger.warning(f"ValueAnalyzer could not assign Instance {instance} to argument. Type of argument.value is {type(argument.value) if argument is not None else 'None'}")
+        logger.warning(f"Could not assign Instance {instance} to argument. "
+                       f"Type of argument.value is {type(argument.value) if argument is not None else 'None'}. "
+                       "{0}".format(f'ValueAnalyzer Exception: \"{argument.exception}\"' if type(argument) == UnknownArgument else ''))
         return False
     from ara.steps import get_native_component # avoid dependency conflicts, therefore import dynamically
     ValuesUnknown = get_native_component("ValuesUnknown")
