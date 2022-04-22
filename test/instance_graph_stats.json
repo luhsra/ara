@@ -14,6 +14,13 @@
             "Mutex": {
                 "num": 4
             }
+        },
+        "accumulate_number_field": {
+            "to_instance_type": {
+                "Mutex": {
+                    "num": 4
+                }
+            }
         }
     }
 }

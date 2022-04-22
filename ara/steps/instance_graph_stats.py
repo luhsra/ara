@@ -9,7 +9,8 @@ class InstanceGraphStats(Step):
 
     def run(self):
         output_dict = {"instances": {"type": {}},
-                       "interactions": {"to_instance_type": {}}
+                       "interactions": {"to_instance_type": {},
+                                        "accumulate_number_field": {"to_instance_type": {}}}, # handle number field for this data
                       }
 
         # Instances
@@ -27,12 +28,18 @@ class InstanceGraphStats(Step):
             # Filter special edge types like "same_symbol_than" in Zephyr
             if instances.ep.type[edge] not in [0, "interaction", "create"]:
                 continue
+            number_prop = instances.ep.number[edge]
+            assert number_prop >= 1
             target = instances.vp.obj[edge.target()]
             target_type_str = type(target).__name__
             if target_type_str in output_dict["interactions"]["to_instance_type"]:
                 output_dict["interactions"]["to_instance_type"][target_type_str]["num"] += 1
+                assert target_type_str in output_dict["interactions"]["accumulate_number_field"]["to_instance_type"]
+                output_dict["interactions"]["accumulate_number_field"]["to_instance_type"][target_type_str]["num"] += number_prop
             else:
                 output_dict["interactions"]["to_instance_type"][target_type_str] = {"num": 1}
+                assert target_type_str not in output_dict["interactions"]["accumulate_number_field"]["to_instance_type"]
+                output_dict["interactions"]["accumulate_number_field"]["to_instance_type"][target_type_str] = {"num": number_prop}
 
         self._log.info(f"Collected data: {output_dict}")
 
