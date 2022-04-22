@@ -40,7 +40,7 @@ def main():
             "target": instances.vp.id[edge.target()],
         }
         for name, prop in instances.ep.items():
-            if name == 'syscall':
+            if name == 'syscall' or name == 'number':
                 # pointer to vertex index
                 continue
             val = prop[edge]
