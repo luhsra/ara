@@ -466,7 +466,7 @@ class ZEPHYR(OSBase):
             logger.error(f"No matching instance for {call}() found. Skipping.\n{type(instance.symbol)}\n{instance.symbol}")
         else:
             if len(matches) > 1:
-                logger.warning(f"Multiple matching instances found.\n{[state.instances.vp.id[v] for v in matches][0]}")
+                logger.warning(f"Multiple matching instances found: {[state.instances.vp.id[v] for v in matches]}")
             for match in matches:
                 connect_from_here(state, cpu_id, match, call, ty=ZephyrEdgeType.interaction)
 
