@@ -424,12 +424,16 @@ def find_return_value(abb, callpath, va):
 def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
     src = instance_graph.vertex(src)
     tgt = instance_graph.vertex(tgt)
+    # filter same interactions
     existing = instance_graph.edge(src, tgt, all_edges=True)
-    if len(existing) >= 1 and len([edge for edge in existing if instance_graph.ep.syscall[edge] == abb]) >= 1:
-        for edge in existing:
-            if instance_graph.ep.syscall[edge] == abb:
-                instance_graph.ep.number[edge] += 1
-        return
+    if len(existing) >= 1:
+        same_interactions = [edge for edge in existing if (instance_graph.ep.syscall[edge] == abb 
+                                                          and instance_graph.ep.label[edge] == label 
+                                                          and (instance_graph.ep.type[edge] == (ty if ty else 0)))]
+        if len(same_interactions) >= 1:
+            assert len(same_interactions) == 1
+            instance_graph.ep.number[existing[0]] += 1
+            return
 
     e = instance_graph.add_edge(src, tgt)
     instance_graph.ep.syscall[e] = abb
