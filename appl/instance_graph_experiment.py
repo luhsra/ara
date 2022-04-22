@@ -23,10 +23,13 @@ fake_step_module()
 
 from ara.stepmanager import StepManager
 from ara.graph.graph import Graph
+from ara.os import get_os_model_by_name, get_os_model_names
 
 class InstanceGraphExperiment(Experiment):
     inputs = {"llvm_ir" : String(), # path to llvm_ir
-              "custom_step_settings": String()} # path to custom step settings file (optional)
+              "custom_step_settings": String(), # path to custom step settings file (optional)
+              "os": String(), # using os model (optional. Default is auto)
+              }
               # TODO: Add support for --oilfile
               # No --manual-corrections support
     outputs = {"results": DatarefDict(filename=f"output.dref")}
@@ -75,6 +78,11 @@ class InstanceGraphExperiment(Experiment):
         logging.debug(f"Apply step_settings: {step_settings}")
 
         g = Graph()
+        if self._is_arg_set(self.inputs.os):
+            if self.inputs.os.value not in get_os_model_names():
+                logging.error(f"Unknown os model {self.inputs.os.value}!")
+                raise RuntimeError("Unknown os model {self.inputs.os.value}!")
+            g.os = get_os_model_by_name(self.inputs.os.value)
         s_manager = StepManager(g)    
         s_manager.execute(conf, step_settings, {"CFGStats", "InstanceGraphStats"} if not self._is_arg_set(self.inputs.custom_step_settings) else None)
         self._json_to_dref("../dumps/CFGStats.json", masterkey="CFGStats")
