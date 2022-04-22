@@ -426,11 +426,15 @@ def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
     tgt = instance_graph.vertex(tgt)
     existing = instance_graph.edge(src, tgt, all_edges=True)
     if len(existing) >= 1 and len([edge for edge in existing if instance_graph.ep.syscall[edge] == abb]) >= 1:
+        for edge in existing:
+            if instance_graph.ep.syscall[edge] == abb:
+                instance_graph.ep.number[edge] += 1
         return
 
     e = instance_graph.add_edge(src, tgt)
     instance_graph.ep.syscall[e] = abb
     instance_graph.ep.label[e] = label
+    instance_graph.ep.number[e] = 1
     if ty:
         instance_graph.ep.type[e] = ty
 
