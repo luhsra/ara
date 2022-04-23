@@ -6,6 +6,7 @@ import sys
 from versuchung.types import String
 from versuchung.experiment import Experiment
 from versuchung.tex import DatarefDict
+from versuchung.files import File
 
 def fake_step_module():
     """Fake the step module into the correct package."""
@@ -48,7 +49,8 @@ class InstanceGraphExperiment(Experiment):
               }
               # TODO: Add support for --oilfile
               # No --manual-corrections support
-    outputs = {"results": DatarefDict(filename=f"results.dref")}
+    outputs = {"results": DatarefDict(filename=f"results.dref"),
+               "graph": File("graph.dot")} # path to the instance graph to be generated
 
     def _init_logging(self):
         """Redefines root logger to output in ARA fashion and write log output to log_file"""
@@ -119,6 +121,7 @@ class InstanceGraphExperiment(Experiment):
         s_manager.execute(conf, step_settings, {"CFGStats", "InstanceGraphStats"} if not self._is_arg_set(self.inputs.custom_step_settings) else None)
         self._json_to_dref("../dumps/CFGStats.json", masterkey="CFGStats")
         self._json_to_dref("../dumps/InstanceGraphStats.json")
+        self.outputs.graph.copy_contents("../dumps/InteractionAnalysis..dot")
         print(f"collected data is in {self.path}")
 
 if __name__ == "__main__":
