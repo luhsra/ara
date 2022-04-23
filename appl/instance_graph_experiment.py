@@ -25,14 +25,45 @@ from ara.stepmanager import StepManager
 from ara.graph.graph import Graph
 from ara.os import get_os_model_by_name, get_os_model_names
 
+class ColoredFormatter(logging.Formatter):
+    """Formatter that can be used to log with ARAs loglevel colors"""
+    LOGLEVEL_COLOR = {
+        "WARNING": "\033[1;33mWARNING\033[1;0m",
+        "ERROR": "\033[1;41mERROR\033[1;0m",
+        "DEBUG": "\033[1;32mDEBUG\033[1;0m",
+        "INFO": "\033[1;34mINFO\033[1;0m"
+    }
+    def format(self, record):
+        old_levelname = record.levelname
+        record.levelname = self.LOGLEVEL_COLOR[old_levelname]
+        output = logging.Formatter.format(self, record)
+        record.levelname = old_levelname
+        return output
+
 class InstanceGraphExperiment(Experiment):
     inputs = {"llvm_ir" : String(), # path to llvm_ir
               "custom_step_settings": String(), # path to custom step settings file (optional)
               "os": String(), # using os model (optional. Default is auto)
+              "log_file": String("output.log"), # path to the log file in which log output is to be redirected
               }
               # TODO: Add support for --oilfile
               # No --manual-corrections support
-    outputs = {"results": DatarefDict(filename=f"output.dref")}
+    outputs = {"results": DatarefDict(filename=f"results.dref")}
+
+    def _init_logging(self):
+        """Redefines root logger to output in ARA fashion and write log output to log_file"""
+        file_handler = logging.FileHandler(self.inputs.log_file.value)
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        max_l = max([len(logging.getLevelName(l)) for l in range(logging.CRITICAL)])
+        format_str = f'%(asctime)s %(levelname)-{max_l}s %(name)-{20+1}s %(message)s'
+        formatter = logging.Formatter(format_str)
+        color_formatter = ColoredFormatter(format_str)
+        file_handler.setFormatter(formatter)
+        stdout_handler.setFormatter(color_formatter)
+        logging.root.handlers.clear()
+        logging.root.addHandler(stdout_handler)
+        logging.root.addHandler(file_handler)
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def _get_config(self, i_file):
         """Return the default common config."""
@@ -52,7 +83,7 @@ class InstanceGraphExperiment(Experiment):
             if type(value) == dict:
                 self._json_to_dref_rec(value, f"{masterkey}{key}")
             else:
-                logging.info(f"\drefset{{{masterkey}{key}}}{{{value}}}")
+                self.logger.info(f"\drefset{{{masterkey}{key}}}{{{value}}}")
                 self.outputs.results[f"{masterkey}{key}"] = value
 
     def _json_to_dref(self, path: str, masterkey: str=""):
@@ -65,8 +96,9 @@ class InstanceGraphExperiment(Experiment):
         return type(arg.value) == str and arg.value != ""
 
     def run(self):
+        self._init_logging()
         if not self._is_arg_set(self.inputs.llvm_ir):
-            logging.error("No LLVM IR file provided! Please set --llvm_ir")
+            self.logger.error("No LLVM IR file provided! Please set --llvm_ir")
             raise RuntimeError("No LLVM IR file provided!")
         conf = self._get_config(self.inputs.llvm_ir.value)
         if self._is_arg_set(self.inputs.custom_step_settings):
@@ -74,19 +106,20 @@ class InstanceGraphExperiment(Experiment):
                 step_settings = json.load(json_file)
         else:
             step_settings = {"CFGStats": {"dump": True}, "InteractionAnalysis": {"dump": True}, "InstanceGraphStats": {"dump": True}}
-        logging.debug(f"Apply conf: {conf}")
-        logging.debug(f"Apply step_settings: {step_settings}")
+        self.logger.debug(f"Apply conf: {conf}")
+        self.logger.debug(f"Apply step_settings: {step_settings}")
 
         g = Graph()
         if self._is_arg_set(self.inputs.os):
             if self.inputs.os.value not in get_os_model_names():
-                logging.error(f"Unknown os model {self.inputs.os.value}!")
+                self.logger.error(f"Unknown os model {self.inputs.os.value}!")
                 raise RuntimeError("Unknown os model {self.inputs.os.value}!")
             g.os = get_os_model_by_name(self.inputs.os.value)
         s_manager = StepManager(g)    
         s_manager.execute(conf, step_settings, {"CFGStats", "InstanceGraphStats"} if not self._is_arg_set(self.inputs.custom_step_settings) else None)
         self._json_to_dref("../dumps/CFGStats.json", masterkey="CFGStats")
         self._json_to_dref("../dumps/InstanceGraphStats.json")
+        print(f"collected data is in {self.path}")
 
 if __name__ == "__main__":
     experiment = InstanceGraphExperiment()
