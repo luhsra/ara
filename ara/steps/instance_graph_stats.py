@@ -20,8 +20,12 @@ class InstanceGraphStats(Step):
             inst_type_str = type(inst_obj).__name__
             if inst_type_str in output_dict["instances"]["type"]:
                 output_dict["instances"]["type"][inst_type_str]["num"] += 1
+                assert inst_type_str in output_dict["interactions"]["to_instance_type"]
+                assert inst_type_str in output_dict["interactions"]["accumulate_number_field"]["to_instance_type"]
             else:
                 output_dict["instances"]["type"][inst_type_str] = {"num": 1}
+                output_dict["interactions"]["to_instance_type"][inst_type_str] = {"num": 0}
+                output_dict["interactions"]["accumulate_number_field"]["to_instance_type"][inst_type_str] = {"num": 0}
 
         # Interactions
         for edge in instances.edges():
@@ -32,14 +36,11 @@ class InstanceGraphStats(Step):
             assert number_prop >= 1
             target = instances.vp.obj[edge.target()]
             target_type_str = type(target).__name__
-            if target_type_str in output_dict["interactions"]["to_instance_type"]:
-                output_dict["interactions"]["to_instance_type"][target_type_str]["num"] += 1
-                assert target_type_str in output_dict["interactions"]["accumulate_number_field"]["to_instance_type"]
-                output_dict["interactions"]["accumulate_number_field"]["to_instance_type"][target_type_str]["num"] += number_prop
-            else:
-                output_dict["interactions"]["to_instance_type"][target_type_str] = {"num": 1}
-                assert target_type_str not in output_dict["interactions"]["accumulate_number_field"]["to_instance_type"]
-                output_dict["interactions"]["accumulate_number_field"]["to_instance_type"][target_type_str] = {"num": number_prop}
+            assert target_type_str in output_dict["instances"]["type"]
+            assert target_type_str in output_dict["interactions"]["to_instance_type"]
+            assert target_type_str in output_dict["interactions"]["accumulate_number_field"]["to_instance_type"]
+            output_dict["interactions"]["to_instance_type"][target_type_str]["num"] += 1
+            output_dict["interactions"]["accumulate_number_field"]["to_instance_type"][target_type_str]["num"] += number_prop
 
         self._log.info(f"Collected data: {output_dict}")
 
