@@ -67,10 +67,10 @@ class InstanceGraphExperiment(Experiment):
         logging.root.addHandler(file_handler)
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def _get_config(self, i_file):
+    def _get_config(self, i_file: str):
         """Return the default common config."""
         return {'log_level': logging.getLevelName(logging.root.level).lower(), # Loglevel is set by versuchung (you can control it with: -v)
-                'dump_prefix': '../dumps/{step_name}',
+                'dump_prefix': self.dump_prefix,
                 'dump': False,
                 'runtime_stats': True,
                 'runtime_stats_file': 'logger',
@@ -97,11 +97,15 @@ class InstanceGraphExperiment(Experiment):
     def _is_arg_set(self, arg):
         return type(arg.value) == str and arg.value != ""
 
+    def _get_dump_path(self, step: str, suffix: str):
+        return self.dump_prefix.replace('{step_name}', step) + suffix
+
     def run(self):
         self._init_logging()
         if not self._is_arg_set(self.inputs.llvm_ir):
             self.logger.error("No LLVM IR file provided! Please set --llvm_ir")
             raise RuntimeError("No LLVM IR file provided!")
+        self.dump_prefix = '../dumps/Experiment.' + self.metadata["experiment-hash"] + '.{step_name}'
         conf = self._get_config(self.inputs.llvm_ir.value)
         if self._is_arg_set(self.inputs.custom_step_settings):
             with open(self.inputs.custom_step_settings.value, 'r') as json_file:
@@ -119,9 +123,9 @@ class InstanceGraphExperiment(Experiment):
             g.os = get_os_model_by_name(self.inputs.os.value)
         s_manager = StepManager(g)    
         s_manager.execute(conf, step_settings, {"CFGStats", "InstanceGraphStats"} if not self._is_arg_set(self.inputs.custom_step_settings) else None)
-        self._json_to_dref("../dumps/CFGStats.json", masterkey="CFGStats")
-        self._json_to_dref("../dumps/InstanceGraphStats.json")
-        self.outputs.graph.copy_contents("../dumps/InteractionAnalysis..dot")
+        self._json_to_dref(self._get_dump_path("CFGStats", ".json"), masterkey="CFGStats")
+        self._json_to_dref(self._get_dump_path("InstanceGraphStats", ".json"))
+        self.outputs.graph.copy_contents(self._get_dump_path("InteractionAnalysis", "..dot"))
         print(f"collected data is in {self.path}")
 
 if __name__ == "__main__":
