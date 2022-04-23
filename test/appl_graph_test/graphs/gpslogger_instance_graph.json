@@ -187,6 +187,12 @@
     },
     {
       "source": "Task.Buttons Thread",
+      "target": "Queue.buttonsQueue",
+      "label": "xQueueGenericSend",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.Buttons Thread",
       "target": "Task.Buttons Thread",
       "label": "vTaskDelay(10)",
       "type": "interaction"
@@ -201,6 +207,12 @@
       "source": "Task.GPS Task",
       "target": "Task.GPS Task",
       "label": "vTaskDelay(10)",
+      "type": "interaction"
+    },
+    {
+      "source": "Task.GPS Task",
+      "target": "Queue.sdQueue",
+      "label": "xQueueGenericSend",
       "type": "interaction"
     },
     {
