@@ -1,0 +1,24 @@
+{
+    "steps": [
+        "CFGStats",
+        "InstanceGraphStats"
+    ],
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+    "RemoveSysfuncBody": {
+        "drop_llvm_suffix": true
+    },
+
+    "InteractionAnalysis": {
+        "dump": true
+    },
+    "CFGStats": {
+        "dump": true
+    },
+    "InstanceGraphStats": {
+        "dump": true
+    }
+}
+

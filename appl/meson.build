@@ -331,14 +331,32 @@ examples = run_target('examples',
 
 # versuchung experiments
 run_target('gpslogger_instance_experiment',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '--llvm_ir=../appl/FreeRTOS/GPSLogger/gpslogger_app.ll'],
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', 
+              '--llvm_ir=../appl/FreeRTOS/GPSLogger/gpslogger_app.ll', '--os=FreeRTOS'],
     env: [python_path],
     depends: ara_py
 )
 
 run_target('librepilot_instance_experiment',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '--llvm_ir=../appl/FreeRTOS/Librepilot/librepilot_mock.ll',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', 
+              '--llvm_ir=../appl/FreeRTOS/Librepilot/librepilot_mock.ll', '--os=FreeRTOS',
               '--custom_step_settings=../../appl/librepilot_experiment_settings.json'],
+    env: [python_path],
+    depends: ara_py
+)
+
+run_target('zephyr_app_kernel_instance_exp',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
+              '--llvm_ir=../appl/Zephyr/app_kernel.ll', '--os=ZEPHYR',
+              '--custom_step_settings=../../appl/zephyr_experiment_settings.json'],
+    env: [python_path],
+    depends: ara_py
+)
+
+run_target('zephyr_sys_kernel_instance_exp',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
+              '--llvm_ir=../appl/Zephyr/sys_kernel.ll', '--os=ZEPHYR',
+              '--custom_step_settings=../../appl/zephyr_experiment_settings.json'],
     env: [python_path],
     depends: ara_py
 )
