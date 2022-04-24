@@ -2,23 +2,29 @@
     "instances": {
         "type": {
             "Task": {
-                "num": 4
+                "found": 4
             },
             "Mutex": {
-                "num": 1
+                "found": 1
             }
         }
     },
     "interactions": {
         "to_instance_type": {
             "Mutex": {
-                "num": 4
+                "found": 4
+            },
+            "Task": {
+                "found": 0
             }
         },
         "accumulate_number_field": {
             "to_instance_type": {
                 "Mutex": {
-                    "num": 4
+                    "found": 4
+                },
+                "Task": {
+                    "found": 0
                 }
             }
         }
