@@ -47,6 +47,7 @@ wrong_file_access
 wrong_pipe_access
 simple_project
 microhttpd_fileserver_dirs
+microhttpd_fileserver_dirs_orig
 clang_global_var_dynamic
 clang_global_var_static
 linux_syscalls

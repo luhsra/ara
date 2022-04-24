@@ -369,6 +369,14 @@ run_target('libmicrohttpd_mod_instance_exp',
     depends: ara_py
 )
 
+run_target('libmicrohttpd_orig_instance_exp',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
+              '--llvm_ir=../appl/POSIX/microhttpd_fileserver_dirs_orig.ll', '--os=POSIX',
+              '--custom_step_settings=../../appl/posix_experiment_settings.json'],
+    env: [python_path],
+    depends: ara_py
+)
+
 # simply for testing purpose
 run_target('posix_instance_exp_test',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
