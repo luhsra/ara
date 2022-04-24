@@ -29,10 +29,10 @@ from ara.os import get_os_model_by_name, get_os_model_names
 class ColoredFormatter(logging.Formatter):
     """Formatter that can be used to log with ARAs loglevel colors"""
     LOGLEVEL_COLOR = {
-        "WARNING": "\033[1;33mWARNING\033[1;0m",
-        "ERROR": "\033[1;41mERROR\033[1;0m",
-        "DEBUG": "\033[1;32mDEBUG\033[1;0m",
-        "INFO": "\033[1;34mINFO\033[1;0m"
+        "WARNING": "\033[1;33mWARNING \033[1;0m",
+        "ERROR":   "\033[1;41mERROR   \033[1;0m",
+        "DEBUG":   "\033[1;32mDEBUG   \033[1;0m",
+        "INFO":    "\033[1;34mINFO    \033[1;0m"
     }
     def format(self, record):
         old_levelname = record.levelname
