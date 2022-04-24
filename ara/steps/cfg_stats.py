@@ -20,6 +20,7 @@ class CFGStats(Step):
         icfg = self._graph.icfg
         lcfg = self._graph.lcfg
         bbs = self._graph.bbs
+        bb_calls = CFGView(bbs, vfilt=cfg.vp.type.fa == ABBType.call)
         abbs = self._graph.abbs
         syscalls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.syscall)
         calls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.call)
@@ -27,6 +28,7 @@ class CFGStats(Step):
         functs = self._graph.functs
 
         num_bbs = bbs.num_vertices()
+        num_bb_calls = bb_calls.num_vertices()
         num_abbs = abbs.num_vertices()
         num_syscalls = syscalls.num_vertices()
         num_calls = calls.num_vertices()
@@ -78,6 +80,7 @@ class CFGStats(Step):
         self._log.info(f"Number of ABBs: {num_abbs}")
         self._log.info(f"Number of syscalls: {num_syscalls}")
         self._log.info(f"Number of calls: {num_calls}")
+        self._log.info(f"Number of BB calls: {num_bb_calls}")
         self._log.info(f"Number of computation: {num_computation}")
         self._log.info(f"Number of functions: {num_functions}")
         self._log.info(f"Number of local edges: {num_ledges}")
@@ -94,6 +97,7 @@ class CFGStats(Step):
                            "num_abbs": num_abbs,
                            "num_syscalls": num_syscalls,
                            "num_calls": num_calls,
+                           "num_bb_calls": num_bb_calls,
                            "num_computation": num_computation,
                            "num_functions": num_functions,
                            "num_local_edges": num_ledges,
