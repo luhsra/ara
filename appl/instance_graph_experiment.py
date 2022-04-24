@@ -111,7 +111,10 @@ class InstanceGraphExperiment(Experiment):
             with open(self.inputs.custom_step_settings.value, 'r') as json_file:
                 step_settings = json.load(json_file)
         else:
-            step_settings = {"CFGStats": {"dump": True}, "InteractionAnalysis": {"dump": True}, "InstanceGraphStats": {"dump": True}}
+            step_settings = dict([(x, {"dump": True}) for x in ["CFGStats",
+                                                                "CallGraphStats",
+                                                                "InteractionAnalysis",
+                                                                "InstanceGraphStats"]])
         self.logger.debug(f"Apply conf: {conf}")
         self.logger.debug(f"Apply step_settings: {step_settings}")
 
@@ -122,8 +125,10 @@ class InstanceGraphExperiment(Experiment):
                 raise RuntimeError("Unknown os model {self.inputs.os.value}!")
             g.os = get_os_model_by_name(self.inputs.os.value)
         s_manager = StepManager(g)    
-        s_manager.execute(conf, step_settings, {"CFGStats", "InstanceGraphStats"} if not self._is_arg_set(self.inputs.custom_step_settings) else None)
+        # explicitly run the InteractionAnalysis to trigger it before the statistic steps
+        s_manager.execute(conf, step_settings, ["InteractionAnalysis", "CFGStats", "CallGraphStats", "InstanceGraphStats"] if not self._is_arg_set(self.inputs.custom_step_settings) else None)
         self._json_to_dref(self._get_dump_path("CFGStats", ".json"), masterkey="CFGStats")
+        self._json_to_dref(self._get_dump_path("CallGraphStats", ".json"), masterkey="CallGraphStats")
         self._json_to_dref(self._get_dump_path("InstanceGraphStats", ".json"))
         self.outputs.graph.copy_contents(self._get_dump_path("InteractionAnalysis", "..dot"))
         print(f"collected data is in {self.path}")
@@ -131,4 +136,3 @@ class InstanceGraphExperiment(Experiment):
 if __name__ == "__main__":
     experiment = InstanceGraphExperiment()
     experiment(sys.argv)
-    
