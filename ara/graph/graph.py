@@ -298,7 +298,7 @@ class CFGView(graph_tool.GraphView):
 
 
 class Callgraph(graph_tool.Graph):
-    """ TODO comment on functionality
+    """ Callgraph on which nodes represents functions and edges function calls.
     """
     def __init__(self, cfg):
         super().__init__()
@@ -335,9 +335,14 @@ class Callgraph(graph_tool.Graph):
         assert len(node) == 1
         return node[0]
 
+    def get_syscalls(self):
+        """Return a filter Callgraph that contains only syscall nodes."""
+        # TODO convert this the vertex_type once multios is merged
+        return graph_tool.GraphView(self, vfilt=self.vp.syscall_category_every)
+
 
 class MSTGraph(graph_tool.Graph):
-    """The Multi state transision graph"""
+    """The Multi state transition graph"""
     def __init__(self):
         super().__init__()
         # vertex properties
