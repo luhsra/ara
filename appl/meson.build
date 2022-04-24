@@ -364,7 +364,7 @@ run_target('zephyr_sys_kernel_instance_exp',
 run_target('libmicrohttpd_mod_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir=../appl/POSIX/microhttpd_fileserver_dirs.ll', '--os=POSIX',
-              '--custom_step_settings=../../appl/libmicrohttpd_experiment_settings.json'],
+              '--custom_step_settings=../../appl/posix_experiment_settings.json'],
     env: [python_path],
     depends: ara_py
 )
