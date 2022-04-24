@@ -1,0 +1,50 @@
+{
+	"steps": [
+		"CFGStats",
+        "InstanceGraphStats"
+	],
+
+	"POSIXInit": {
+		"system_profile": "POSIX",
+		"enable_musl_syscalls": true,
+        "enable_missing_interaction_count": true
+	},
+
+	"RemoveSysfuncBody": {
+		"drop_llvm_suffix": false
+	},
+
+	"SysFuncts": {
+		"no_stubs": true
+	},
+
+	"SystemRelevantFunctions": {
+		"no_stubs": true
+	},
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+
+    "RecursiveFunctions": {
+        "no_recursive_funcs": false
+    },
+
+	"ICFG": {
+		"dump": true
+	},
+
+	"logger": {
+		"POSIX": "debug"
+	},
+
+    "InteractionAnalysis": {
+		"dump": true
+	},
+    "CFGStats": {
+        "dump": true
+    },
+    "InstanceGraphStats": {
+        "dump": true
+    }
+}
