@@ -39,11 +39,11 @@ class MutexSyscalls:
              categories={SyscallCategory.comm},
              signature=(Arg('mutex', hint=SigType.instance, ty=Mutex),))
     def pthread_mutex_lock(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.mutex, "pthread_mutex_lock()", cpu_id)
+        return add_edge_from_self_to(state, args.mutex, "pthread_mutex_lock()", cpu_id, expected_instance='Mutex')
 
     # int pthread_mutex_unlock(pthread_mutex_t *mutex);
     @syscall(aliases={"__pthread_mutex_unlock"},
              categories={SyscallCategory.comm},
              signature=(Arg('mutex', hint=SigType.instance, ty=Mutex),))
     def pthread_mutex_unlock(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.mutex, "pthread_mutex_unlock()", cpu_id)
+        return add_edge_from_self_to(state, args.mutex, "pthread_mutex_unlock()", cpu_id, expected_instance='Mutex')

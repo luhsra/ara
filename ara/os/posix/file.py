@@ -76,7 +76,7 @@ class FileSyscalls:
         if args.path in FileSyscalls.files:
             file = FileSyscalls.files[args.path]
             logger.debug(f"open() call to already created File object: {file}")
-            add_edge_from_self_to(state, file, FileSyscalls._get_label(fam), cpu_id)
+            add_edge_from_self_to(state, file, FileSyscalls._get_label(fam), cpu_id, expected_instance='File')
         else:
             file = File(path=args.path,
                         name=(os.path.basename(args.path) if type(args.path) != UnknownArgument else None)

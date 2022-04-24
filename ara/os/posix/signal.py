@@ -91,9 +91,12 @@ class SignalSyscalls:
 
         # suppress some "argument is of wrong type" warnings
         sa_handler = args.sa_handler
+        sa_handler_error = None
         sa_sigaction = args.sa_sigaction
         sa_flags = args.sa_flags
         if type(sa_handler) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst, UnknownArgument]:
+            if type(sa_handler) == UnknownArgument:
+                sa_handler_error = sa_handler.exception
             sa_handler = None
         if type(sa_sigaction) in [pyllco.ConstantPointerNull, pyllco.GlobalVariable, pyllco.AllocaInst, UnknownArgument]:
             sa_sigaction = None
@@ -106,6 +109,9 @@ class SignalSyscalls:
         # If: no function pointer is avaliable
         if sa_handler == None and sa_sigaction == None:
             logger.info("No function pointer found in sigaction() call. Ignore ...")
+            if sa_handler_error != None:
+                logger.error(f"ValueAnalyzer for sigaction() does not find function pointer. Exception: {sa_handler_error}")
+                # TODO: add instance error to a statistic
             return state
 
         # Get the expected function pointer field (SA_SIGINFO in args.sa_flags)

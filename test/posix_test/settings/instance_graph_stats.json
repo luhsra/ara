@@ -1,0 +1,35 @@
+{
+	"steps": [
+		"InstanceGraphStats"
+	],
+
+	"POSIXInit": {
+		"system_profile": "POSIX",
+		"enable_musl_syscalls": true,
+        "enable_missing_interaction_count": true
+	},
+
+    "InstanceGraphStats": {
+        "dump": true
+    },
+
+    "InteractionAnalysis": {
+        "dump": true
+    },
+
+	"SysFuncts": {
+		"no_stubs": true
+	},
+
+	"SystemRelevantFunctions": {
+		"no_stubs": true
+	},
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+
+	"RemoveSysfuncBody": {
+        "drop_llvm_suffix": false
+    }
+}

@@ -16,6 +16,7 @@ filestream_open
 file_write
 file_writev
 ignore_signal
+instance_graph_stats
 multiple_sigactions
 mutex
 mutex_counter

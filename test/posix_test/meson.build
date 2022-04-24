@@ -486,6 +486,33 @@ test('posix_ospert_2022_musl',
         timeout: 300
 )
 
+test('posix_stats_graph',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'stats_graph.json', posix_instance_graph_stats, 'POSIX', files('settings/instance_graph_stats.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+test('posix_stats_graph_musl',
+        py3_inst,
+        args: [files('../instance_graph.py'), graphs / 'stats_graph.json', posix_instance_graph_stats_musl, 'POSIX', files('settings/instance_graph_stats.json')],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+test('posix_stats',
+        py3_inst,
+        args: [files('../instance_graph_stats.py'), graphs / 'instance_graph_stats.json', posix_instance_graph_stats, 'POSIX', files('settings/instance_graph_stats.json')],
+        env: [python_path],
+        suite: 'posix'
+)
+test('posix_stats_musl',
+        py3_inst,
+        args: [files('../instance_graph_stats.py'), graphs / 'instance_graph_stats.json', posix_instance_graph_stats_musl, 'POSIX', files('settings/instance_graph_stats.json')],
+        env: [python_path],
+        suite: 'posix',
+        timeout: 300
+)
+
 # In this test we issue the Linux syscalls directly without the musl libc.
 test('linux_syscalls',
         py3_inst,

@@ -1,0 +1,93 @@
+[
+  {
+    "label": "Main Thread",
+    "id": "Main Thread",
+    "branch": 0,
+    "usually_taken": 1,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 0,
+    "unique": 1,
+    "is_control": 1,
+    "file": "N/A",
+    "line": 0,
+    "specialization_level": "N/A",
+    "type": "instance",
+    "function_name": "ARA_ENTRY_POINT",
+    "inherited_sched_attr": null,
+    "name": "Main Thread",
+    "num_id": 0,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
+  },
+  {
+    "label": "Mutex 0",
+    "id": "Mutex 0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/POSIX/test_appl/instance_graph_stats.c",
+    "line": 50,
+    "specialization_level": "",
+    "type": "instance",
+    "name": "Mutex 0",
+    "num_id": 0
+  },
+  {
+    "label": "Pipe 0",
+    "id": "Pipe 0",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 0,
+    "file": "../appl/POSIX/test_appl/instance_graph_stats.c",
+    "line": 37,
+    "specialization_level": "",
+    "type": "instance",
+    "name": "Pipe 0",
+    "num_id": 0
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
+    "label": "pipe()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_init()",
+    "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
+    "label": "write()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_lock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Pipe 0",
+    "label": "write()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
+    "type": "interaction"
+  }
+]

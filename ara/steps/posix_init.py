@@ -1,6 +1,7 @@
 from pydoc import locate
 from ara.graph.mix import ARA_ENTRY_POINT
 from ara.os.os_base import ControlInstance
+from ara.steps.instance_graph_stats import MissingInteractions
 from .step import Step
 from .option import Option, Bool, Choice
 from ara.os.os_util import assign_id
@@ -33,6 +34,12 @@ class POSIXInit(Step):
         default_value=True
     )
     
+    enable_missing_interaction_count = Option(
+        name="enable_missing_interaction_count",
+        help="Use this option in conjunction with InstanceGraphStats step to gather data about missing interactions",
+        ty=Bool(),
+        default_value=True
+    )
 
     def get_single_dependencies(self):
         return ["POSIXStatic", "LLVMMap", "SVFAnalyses"]
@@ -93,6 +100,9 @@ class POSIXInit(Step):
 
         # Set OS Model options
         PosixOptions.enable_musl_syscalls = self.enable_musl_syscalls.get()
+        PosixOptions.enable_missing_interaction_count = self.enable_missing_interaction_count.get()
+        if PosixOptions.enable_missing_interaction_count:
+            MissingInteractions.activate()
 
         # Set musl syscall detection functions to stubs
         # if musl syscalls are disabled.

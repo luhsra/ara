@@ -1,6 +1,7 @@
 from typing import Any
 from ara.graph.graph import Graph
 from ara.os.os_base import OSState
+from ara.steps.instance_graph_stats import MissingInteractions
 import pyllco
 from ara.graph import SyscallCategory, SigType
 from enum import IntFlag
@@ -43,10 +44,12 @@ class FileDescriptorSyscalls:
         expected_type   -- The file descriptor type that the systemcall requires.
                            (e.g. for read() it is FDType.READ)
         """
+        cpu = state.cpus[cpu_id]
         if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
             return state
         if type(args.fildes) != FileDescriptor:
             logger.warning(f"{label}: Could not get file descriptor argument.")
+            MissingInteractions.add_imprecise(['File', 'Pipe'], cpu.abb)
             return state
         assert args.fildes.points_to != None and args.fildes.type != None
         edge_type = PosixEdgeType.interaction
@@ -54,7 +57,7 @@ class FileDescriptorSyscalls:
             logger.error(f"{label}: file descriptor type {args.fildes.type.name} is not matching {expected_type.name}.")
             label = f"used {label} with {args.fildes.type.name} fd"
             edge_type = PosixEdgeType.interaction_error
-        return add_edge_from_self_to(state, args.fildes.points_to, label, cpu_id, edge_type)
+        return add_edge_from_self_to(state, args.fildes.points_to, label, cpu_id, edge_type, expected_instance=['File', 'Pipe'])
 
     # ssize_t read(int fildes, void *buf, size_t nbyte);
     @syscall(categories={SyscallCategory.comm}, signal_safe=True,

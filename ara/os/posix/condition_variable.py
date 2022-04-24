@@ -38,13 +38,13 @@ class CondSyscalls:
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('cond', hint=SigType.instance, ty=ConditionVariable),))
     def pthread_cond_broadcast(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.cond, "pthread_cond_broadcast()", cpu_id)
+        return add_edge_from_self_to(state, args.cond, "pthread_cond_broadcast()", cpu_id, expected_instance='ConditionVariable')
 
     # int pthread_cond_signal(pthread_cond_t *cond);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('cond', hint=SigType.instance, ty=ConditionVariable),))
     def pthread_cond_signal(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.cond, "pthread_cond_signal()", cpu_id)
+        return add_edge_from_self_to(state, args.cond, "pthread_cond_signal()", cpu_id, expected_instance='ConditionVariable')
 
     # int pthread_cond_wait(pthread_cond_t *restrict cond,
     #   pthread_mutex_t *restrict mutex);
@@ -52,6 +52,6 @@ class CondSyscalls:
              signature=(Arg('cond', hint=SigType.instance, ty=ConditionVariable),
                         Arg('mutex', hint=SigType.instance, ty=Mutex)))
     def pthread_cond_wait(graph, state, cpu_id, args, va):
-        state = add_edge_from_self_to(state, args.cond, "pthread_cond_wait()", cpu_id)
+        state = add_edge_from_self_to(state, args.cond, "pthread_cond_wait()", cpu_id, expected_instance='ConditionVariable')
         # Create also edge to Mutex:
-        return add_edge_from_self_to(state, args.mutex, "pthread_cond_wait()", cpu_id)
+        return add_edge_from_self_to(state, args.mutex, "pthread_cond_wait()", cpu_id, expected_instance='Mutex')

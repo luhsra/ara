@@ -129,18 +129,18 @@ class ThreadSyscalls:
              signature=(Arg('thread', hint=SigType.instance, ty=Thread),
                         Arg('value_ptr', hint=SigType.symbol)))
     def pthread_join(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.thread, "pthread_join()", cpu_id)
+        return add_edge_from_self_to(state, args.thread, "pthread_join()", cpu_id, expected_instance='Thread')
 
     # int pthread_detach(pthread_t thread);
     @syscall(aliases={"__pthread_detach"},
              categories={SyscallCategory.comm},
              signature=(Arg('thread', hint=SigType.instance, ty=Thread),))
     def pthread_detach(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.thread, "pthread_detach()", cpu_id)
+        return add_edge_from_self_to(state, args.thread, "pthread_detach()", cpu_id, expected_instance='Thread')
 
     # int pthread_cancel(pthread_t thread);
     @syscall(aliases={"__pthread_cancel"},
              categories={SyscallCategory.comm},
              signature=(Arg('thread', hint=SigType.instance, ty=Thread),))
     def pthread_cancel(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.thread, "pthread_cancel()", cpu_id)
+        return add_edge_from_self_to(state, args.thread, "pthread_cancel()", cpu_id, expected_instance='Thread')

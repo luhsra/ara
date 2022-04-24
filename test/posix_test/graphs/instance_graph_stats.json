@@ -1,0 +1,64 @@
+{
+  "instances": {
+    "type": {
+      "Thread": {
+        "found": 1
+      },
+      "Pipe": {
+        "found": 1
+      },
+      "Mutex": {
+        "found": 1
+      }
+    }
+  },
+  "interactions": {
+    "to_instance_type": {
+      "Thread": {
+        "found": 0,
+        "missing": 0,
+        "missing_imprecise": 0
+      },
+      "Pipe": {
+        "found": 3,
+        "missing": 0,
+        "missing_imprecise": 2
+      },
+      "Mutex": {
+        "found": 3,
+        "missing": 2,
+        "missing_imprecise": 0
+      },
+      "File": {
+        "found": 0,
+        "missing": 0,
+        "missing_imprecise": 2
+      }
+    },
+    "accumulate_number_field": {
+      "to_instance_type": {
+        "Thread": {
+          "found": 0,
+          "missing": 0,
+          "missing_imprecise": 0
+        },
+        "Pipe": {
+          "found": 4,
+          "missing": 0,
+          "missing_imprecise": 3
+        },
+        "Mutex": {
+          "found": 4,
+          "missing": 3,
+          "missing_imprecise": 0
+        },
+        "File": {
+          "found": 0,
+          "missing": 0,
+          "missing_imprecise": 3
+        }
+      }
+    },
+    "undetected": 0
+  }
+}

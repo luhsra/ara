@@ -1,6 +1,7 @@
 """This module contains useful functions and classes for all POSIX modules in this package."""
 
 from enum import IntEnum
+from ara.steps.instance_graph_stats import MissingInteractions
 import pyllco
 from ara.graph.graph import InstanceGraph
 from ara.os.os_base import CPU, ControlInstance, OSState
@@ -78,6 +79,7 @@ class PosixOptions:
     All options can be set as step options for POSIXInit.
     """
     enable_musl_syscalls: bool = None
+    enable_missing_interaction_count: bool = None
 
 class PosixEdgeType(IntEnum):
     interaction = 0
@@ -127,14 +129,26 @@ def handle_static_soc(instances: InstanceGraph, v: Vertex, reset_file_and_line=T
         instances.vp.line[v] = 0
     instances.vp.specialization_level[v] = "N/A"
 
-def add_edge_from_self_to(state, to: POSIXInstance, label: str, cpu_id: int, ty=PosixEdgeType.interaction):
+def add_edge_from_self_to(state, to: POSIXInstance, label: str, cpu_id: int, ty=PosixEdgeType.interaction, expected_instance: str=None):
     """Add an edge from the current thread to <to>."""
+    cpu = state.cpus[cpu_id]
     if not isinstance(to, POSIXInstance):
         if type(to) == UnknownArgument:
             logger.warning(f"Could not retrieve instance required for edge with label \"{label}\"! ValueAnalyzer failed with \"{to.exception}\"")
         else:
             logger.warning(f"Could not create edge from self to \"{to}\" with label \"{label}\"!")
-        return state
+        # Missing interaction detected:
+        if ty != PosixEdgeType.same_entry_point:
+            if expected_instance == None:
+                logger.error("Fatal error: missing interaction and no expected_instance set in add_edge_from_self_to(). Now we have undetected missing interactions!")
+                MissingInteractions.add_undetected()
+                return state
+            if PosixOptions.enable_missing_interaction_count:
+                if type(expected_instance) == list:
+                    MissingInteractions.add_imprecise(expected_instance, cpu.abb)
+                else:
+                    MissingInteractions.add(expected_instance, cpu.abb)
+            return state
     logger.debug(f"Create new edge from self to \"{to.name}\" with label: \"{label}\"")
     connect_from_here(state, cpu_id, to.vertex, label, ty)
     return state

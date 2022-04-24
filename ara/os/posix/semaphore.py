@@ -45,10 +45,10 @@ class SemaphoreSyscalls:
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
     def sem_wait(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.sem, "sem_wait()", cpu_id)
+        return add_edge_from_self_to(state, args.sem, "sem_wait()", cpu_id, expected_instance='Semaphore')
 
     # int sem_post(sem_t *sem);
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg('sem', hint=SigType.instance, ty=Semaphore),))
     def sem_post(graph, state, cpu_id, args, va):
-        return add_edge_from_self_to(state, args.sem, "sem_post()", cpu_id)
+        return add_edge_from_self_to(state, args.sem, "sem_post()", cpu_id, expected_instance='Semaphore')

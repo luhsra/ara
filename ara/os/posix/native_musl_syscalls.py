@@ -1,6 +1,7 @@
 import re
 from ara.graph.graph import Graph
 from ara.os.os_base import OSState
+from ara.steps.instance_graph_stats import MissingInteractions
 import pyllco
 from ara.graph import SyscallCategory, SigType
 
@@ -55,11 +56,13 @@ def get_musl_syscall(syscall_wrapper_name: str, graph: Graph, state: OSState, cp
                                        hint=SigType.value)
     except ValuesUnknown as va_unknown_exc:
         logger.warning(f"{syscall_wrapper_name}(): ValueAnalyzer could not get the first argument that describes the syscall. Exception: \"{va_unknown_exc}\"")
+        MissingInteractions.add_undetected()
         return None
     assert result != None and result.value != None
     value = result.value
     if type(value) != pyllco.ConstantInt:
         logger.warning(f"{syscall_wrapper_name}(): The first argument is not a number, it is of type {type(value)}")
+        MissingInteractions.add_undetected()
         return None
     linux_syscall = LINUX_SYSCALL_IDS.get(value.get(), None)
     if linux_syscall == None:
