@@ -43,7 +43,7 @@ class ColoredFormatter(logging.Formatter):
 
 class InstanceGraphExperiment(Experiment):
     inputs = {"llvm_ir" : String(), # path to llvm_ir
-              "custom_step_settings": String(), # path to custom step settings file (optional)
+              "custom_step_settings": String(), # path to custom step settings file (This file must not contain a steps field) (optional)
               "os": String(), # using os model (optional. Default is auto)
               "log_file": String("output.log"), # path to the log file in which log output is to be redirected
               }
@@ -107,14 +107,16 @@ class InstanceGraphExperiment(Experiment):
             raise RuntimeError("No LLVM IR file provided!")
         self.dump_prefix = '../dumps/Experiment.' + self.metadata["experiment-hash"] + '.{step_name}'
         conf = self._get_config(self.inputs.llvm_ir.value)
+        step_settings = dict()
         if self._is_arg_set(self.inputs.custom_step_settings):
             with open(self.inputs.custom_step_settings.value, 'r') as json_file:
                 step_settings = json.load(json_file)
-        else:
-            step_settings = dict([(x, {"dump": True}) for x in ["CFGStats",
-                                                                "CallGraphStats",
-                                                                "InteractionAnalysis",
-                                                                "InstanceGraphStats"]])
+        assert "steps" not in step_settings, "Do not provide steps field in custom step settings"
+        # explicitly run the InteractionAnalysis to trigger it before the statistic steps
+        step_settings["steps"] = list([dict({"name": x, "dump": True}) for x in ["InteractionAnalysis",
+                                                                                 "CFGStats",
+                                                                                 "CallGraphStats",
+                                                                                 "InstanceGraphStats"]])
         self.logger.debug(f"Apply conf: {conf}")
         self.logger.debug(f"Apply step_settings: {step_settings}")
 
@@ -125,8 +127,7 @@ class InstanceGraphExperiment(Experiment):
                 raise RuntimeError("Unknown os model {self.inputs.os.value}!")
             g.os = get_os_model_by_name(self.inputs.os.value)
         s_manager = StepManager(g)    
-        # explicitly run the InteractionAnalysis to trigger it before the statistic steps
-        s_manager.execute(conf, step_settings, ["InteractionAnalysis", "CFGStats", "CallGraphStats", "InstanceGraphStats"] if not self._is_arg_set(self.inputs.custom_step_settings) else None)
+        s_manager.execute(conf, step_settings, None)
         self._json_to_dref(self._get_dump_path("CFGStats", ".json"), masterkey="CFGStats")
         self._json_to_dref(self._get_dump_path("CallGraphStats", ".json"), masterkey="CallGraphStats")
         self._json_to_dref(self._get_dump_path("InstanceGraphStats", ".json"))

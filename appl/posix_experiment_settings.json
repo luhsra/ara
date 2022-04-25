@@ -1,11 +1,4 @@
 {
-	"steps": [
-        "InteractionAnalysis",
-        "CFGStats",
-        "CallGraphStats",
-        "InstanceGraphStats"
-	],
-
 	"POSIXInit": {
 		"system_profile": "POSIX",
 		"enable_musl_syscalls": true,
@@ -38,18 +31,5 @@
 
 	"logger": {
 		"POSIX": "debug"
-	},
-
-    "InteractionAnalysis": {
-        "dump": true
-    },
-    "CFGStats": {
-        "dump": true
-    },
-    "CallGraphStats": {
-        "dump": true
-    },
-    "InstanceGraphStats": {
-        "dump": true
-    }
+	}
 }

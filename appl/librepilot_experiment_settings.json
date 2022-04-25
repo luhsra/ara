@@ -1,24 +1,4 @@
 {
-    "steps": [
-        "InteractionAnalysis",
-        "CFGStats",
-        "CallGraphStats",
-        "InstanceGraphStats"
-    ],
-
-    "InteractionAnalysis": {
-        "dump": true
-    },
-    "CFGStats": {
-        "dump": true
-    },
-    "CallGraphStats": {
-        "dump": true
-    },
-    "InstanceGraphStats": {
-        "dump": true
-    },
-
     "ResolveFunctionPointer": {
         "block_list": "[ \"main\" ]",
         "translation_map": "../../appl/FreeRTOS/Librepilot/function_pointer_translation_map.json",
