@@ -1,17 +1,20 @@
 {
     "steps": [
+        "InteractionAnalysis",
         "CFGStats",
+        "CallGraphStats",
         "InstanceGraphStats"
     ],
 
     "InteractionAnalysis": {
         "dump": true
     },
-
     "CFGStats": {
         "dump": true
     },
-    
+    "CallGraphStats": {
+        "dump": true
+    },
     "InstanceGraphStats": {
         "dump": true
     },
