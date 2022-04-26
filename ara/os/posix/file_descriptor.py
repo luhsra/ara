@@ -6,7 +6,7 @@ import pyllco
 from ara.graph import SyscallCategory, SigType
 from enum import IntFlag
 from dataclasses import dataclass
-from ..os_util import syscall, Arg
+from ..os_util import syscall, Arg, UnknownArgument
 from .posix_utils import POSIXInstance, PosixEdgeType, add_edge_from_self_to, logger
 
 class FDType(IntFlag):
@@ -48,7 +48,7 @@ class FileDescriptorSyscalls:
         if type(args.fildes) == pyllco.ConstantInt: # Do not throw warning
             return state
         if type(args.fildes) != FileDescriptor:
-            logger.warning(f"{label}: Could not get file descriptor argument.")
+            logger.warning(f"{label}: Could not get file descriptor argument. {('ValueAnalyzer failed with: ' + str(args.fildes.exception)) if type(args.fildes) == UnknownArgument else ''}")
             MissingInteractions.add_imprecise(['File', 'Pipe'], cpu.abb)
             return state
         assert args.fildes.points_to != None and args.fildes.type != None
