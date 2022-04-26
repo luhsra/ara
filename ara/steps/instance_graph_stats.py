@@ -83,6 +83,16 @@ class InstanceGraphStats(Step):
             return "interaction"
         return self._graph.os.EdgeType(edge_type).name
 
+    def _write_failing_interaction_syscalls_to_file(self):
+        """Write file and line of all failing interaction syscalls grouped by instance type to file"""
+        cfg = self._graph.cfg
+        with open(self.dump_prefix.get() + '_failing_interaction_syscalls.txt', 'w') as f:
+            for inst, interactionData in MissingInteractions.missing.items():
+                f.write(f"{inst}:\n")
+                for abb in interactionData.abb_list:
+                    f.write(f"\t{cfg.vp.files[abb][0]}:{cfg.vp.lines[abb][0]}\n")
+                f.write("\n")
+
     def run(self):
         output_dict = {"instances": {"type": {}},
                        "interactions": {"to_instance_type": {},
@@ -150,3 +160,5 @@ class InstanceGraphStats(Step):
         if self.dump.get():
             with open(self.dump_prefix.get() + '.json', 'w') as f:
                 json.dump(output_dict, f, indent=4)
+            if MissingInteractions.in_use:
+                self._write_failing_interaction_syscalls_to_file()

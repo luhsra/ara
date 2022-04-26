@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import importlib
 import json
 import logging
@@ -50,7 +51,8 @@ class InstanceGraphExperiment(Experiment):
               # TODO: Add support for --oilfile
               # No --manual-corrections support
     outputs = {"results": DatarefDict(filename=f"results.dref"),
-               "graph": File("graph.dot")} # path to the instance graph to be generated
+               "graph": File("graph.dot"), # path to the instance graph to be generated
+               "failing_interaction_syscalls_log": File("failing_interaction_syscalls.txt")} # Write failing interactions in this file if os model supports MissingInteraction count.
 
     def _init_logging(self):
         """Redefines root logger to output in ARA fashion and write log output to log_file"""
@@ -97,7 +99,7 @@ class InstanceGraphExperiment(Experiment):
     def _is_arg_set(self, arg):
         return type(arg.value) == str and arg.value != ""
 
-    def _get_dump_path(self, step: str, suffix: str):
+    def _get_dump_path(self, step: str, suffix: str) -> str:
         return self.dump_prefix.replace('{step_name}', step) + suffix
 
     def run(self):
@@ -132,6 +134,9 @@ class InstanceGraphExperiment(Experiment):
         self._json_to_dref(self._get_dump_path("CallGraphStats", ".json"), masterkey="CallGraphStats")
         self._json_to_dref(self._get_dump_path("InstanceGraphStats", ".json"))
         self.outputs.graph.copy_contents(self._get_dump_path("InteractionAnalysis", "..dot"))
+        failing_log_file = self._get_dump_path("InstanceGraphStats", "_failing_interaction_syscalls.txt")
+        if os.path.exists(failing_log_file):
+            self.outputs.failing_interaction_syscalls_log.copy_contents(failing_log_file)
         print(f"collected data is in {self.path}")
 
 if __name__ == "__main__":
