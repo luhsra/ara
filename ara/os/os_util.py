@@ -427,19 +427,19 @@ def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
     # filter same interactions
     existing = instance_graph.edge(src, tgt, all_edges=True)
     if len(existing) >= 1:
-        same_interactions = [edge for edge in existing if (instance_graph.ep.syscall[edge] == abb 
-                                                          and instance_graph.ep.label[edge] == label 
-                                                          and (instance_graph.ep.type[edge] == (ty if (ty != None) else 0)))]
-        if len(same_interactions) >= 1:
-            assert len(same_interactions) == 1
-            instance_graph.ep.number[existing[0]] += 1
-            return
+        for edge in existing:
+            if all([instance_graph.ep[x][edge] == y for x, y in
+                    [("syscall", abb),
+                     ("label", label),
+                     ("type", (0 if ty is None else ty))]]):
+                instance_graph.ep.number[existing[0]] += 1
+                return
 
     e = instance_graph.add_edge(src, tgt)
     instance_graph.ep.syscall[e] = abb
     instance_graph.ep.label[e] = label
     instance_graph.ep.number[e] = 1
-    if ty != None:
+    if ty is not None:
         instance_graph.ep.type[e] = ty
 
 
