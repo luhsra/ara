@@ -378,6 +378,24 @@ run_target('libmicrohttpd_orig_instance_exp',
     depends: ara_py
 )
 
+i4copter = autosar_singlecore_complex_isorc
+run_target('i4copter_instance_exp',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
+              '--llvm_ir', i4copter['ll'],
+              '--oil', i4copter['oil']],
+    env: [python_path],
+    depends: ara_py
+)
+
+run_target('i4copter_sse_exp',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_SSE_Experiment', '-v',
+              '--llvm_ir', i4copter['ll'],
+              '--oil', i4copter['oil'],
+              '--is_ina=False'],
+    env: [python_path],
+    depends: ara_py
+)
+
 # simply for testing purpose
 run_target('posix_instance_exp_test',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
