@@ -28,6 +28,11 @@ class LoadOIL(Step):
                    {"promises": [],
                     "tasks": {t_name: task}})
 
+    def _add_edge(self, instances, src, tgt):
+        e = instances.add_edge(src, tgt)
+        instances.ep.number[e] = 1
+        return e
+
     def run(self):
         cfg = self._graph.cfg
 
@@ -69,7 +74,7 @@ class LoadOIL(Step):
                 )
                 instances.vp.label[s] = spinlock
                 if old_spinlock:
-                    e = instances.add_edge(old_spinlock, s)
+                    e = self._add_edge(instances, old_spinlock, s)
                     instances.ep.label[e] = "nestable in order"
                     instances.ep.type[e] = _autosar.InstanceEdge.nestable
                 old_spinlock = s
@@ -165,14 +170,14 @@ class LoadOIL(Step):
                     instances.vp.label[t] = t_name
 
                     # link to TaskGroup
-                    e = instances.add_edge(tg, t)
+                    e = self._add_edge(instances, tg, t)
                     instances.ep.label[e] = "contains"
                     instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # link to events
                     for e_name in task.get("events", []):
                         event = find_instance_by_name(e_name, _autosar.Event)
-                        e = instances.add_edge(t, event)
+                        e = self._add_edge(instances, t, event)
                         instances.ep.label[e] = "has"
                         instances.ep.type[e] = _autosar.InstanceEdge.have
 
@@ -183,14 +188,14 @@ class LoadOIL(Step):
 
                     for r_name in chain(task.get("resources", []), r_sched_name):
                         resource = find_instance_by_name(r_name, _autosar.Resource)
-                        e = instances.add_edge(t, resource)
+                        e = self._add_edge(instances, t, resource)
                         instances.ep.label[e] = "use"
                         instances.ep.type[e] = _autosar.InstanceEdge.have
 
                     # link to spinlock
                     for s_name in task.get("spinlocks", []):
                         spinlock = find_instance_by_name(s_name, _autosar.Spinlock)
-                        e = instances.add_edge(t, spinlock)
+                        e = self._add_edge(instances, t, spinlock)
                         instances.ep.label[e] = "use"
                         instances.ep.type[e] = _autosar.InstanceEdge.have
 
@@ -226,7 +231,7 @@ class LoadOIL(Step):
 
                 # link to Counter
                 c_v = find_instance_by_name(alarm["counter"], _autosar.Counter)
-                e = instances.add_edge(c_v, a)
+                e = self._add_edge(instances, c_v, a)
                 instances.ep.label[e] = "trigger"
                 instances.ep.type[e] = _autosar.InstanceEdge.trigger
 
@@ -249,12 +254,12 @@ class LoadOIL(Step):
                     #                             incrementcounter=incrcounter)
                 elif action["action"].lower() == "activatetask":
                     task = find_instance_by_name(action["task"], _autosar.Task)
-                    e = instances.add_edge(a, task)
+                    e = self._add_edge(instances, a, task)
                     instances.ep.label[e] = "activate"
                     instances.ep.type[e] = _autosar.InstanceEdge.activate
                 elif action["action"].lower() == "setevent":
                     event = find_instance_by_name(action["event"], _autosar.Event)
-                    e = instances.add_edge(a, event)
+                    e = self._add_edge(instances, a, event)
                     instances.ep.label[e] = "set"
                     instances.ep.type[e] = _autosar.InstanceEdge.activate
                 else:
