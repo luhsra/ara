@@ -331,16 +331,17 @@ examples = run_target('examples',
 
 # versuchung experiments
 run_target('gpslogger_instance_experiment',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', 
-              '--llvm_ir=../appl/FreeRTOS/GPSLogger/gpslogger_app.ll', '--os=FreeRTOS'],
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
+              '--llvm_ir', gpslogger_application, '--os=FreeRTOS'],
     env: [python_path],
     depends: ara_py
 )
 
+librepilot_settings = files('librepilot_experiment_settings.json')
 run_target('librepilot_instance_experiment',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', 
-              '--llvm_ir=../appl/FreeRTOS/Librepilot/librepilot_mock.ll', '--os=FreeRTOS',
-              '--custom_step_settings=../../appl/librepilot_experiment_settings.json'],
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
+              '--llvm_ir', librepilot_application, '--os=FreeRTOS',
+              '--custom_step_settings', librepilot_settings],
     env: [python_path],
     depends: ara_py
 )
