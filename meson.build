@@ -1,4 +1,4 @@
-project('ara', 'cpp',
+project('ara', 'c', 'cpp',
     default_options : ['warning_level=3',
                        'cpp_std=c++17',
                        'buildtype=debugoptimized'])
@@ -18,7 +18,7 @@ py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool',
 
 ## llvm dependencies
 llvm_version = ['>=10', '<13']
-llvm_dep = dependency('llvm', version: llvm_version, include_type: 'system')
+llvm_dep = dependency('llvm', method: 'config-tool', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
 clang = find_program(llvm_bindir / 'clang', version: llvm_version)
