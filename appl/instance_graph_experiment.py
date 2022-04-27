@@ -9,9 +9,11 @@ from versuchung.experiment import Experiment
 from versuchung.tex import DatarefDict
 from versuchung.files import File
 
+
 def fake_step_module():
     """Fake the step module into the correct package."""
     import graph_tool
+
     def load(what, where):
         module = importlib.import_module(what)
         sys.modules[where] = module
@@ -27,6 +29,9 @@ from ara.stepmanager import StepManager
 from ara.graph.graph import Graph
 from ara.os import get_os_model_by_name, get_os_model_names
 
+MISSING = '/empty'
+
+
 class ColoredFormatter(logging.Formatter):
     """Formatter that can be used to log with ARAs loglevel colors"""
     LOGLEVEL_COLOR = {
@@ -35,6 +40,7 @@ class ColoredFormatter(logging.Formatter):
         "DEBUG":   "\033[1;32mDEBUG   \033[1;0m",
         "INFO":    "\033[1;34mINFO    \033[1;0m"
     }
+
     def format(self, record):
         old_levelname = record.levelname
         record.levelname = self.LOGLEVEL_COLOR[old_levelname]
@@ -42,11 +48,14 @@ class ColoredFormatter(logging.Formatter):
         record.levelname = old_levelname
         return output
 
+
 class InstanceGraphExperiment(Experiment):
-    inputs = {"llvm_ir" : String(), # path to llvm_ir
-              "custom_step_settings": String(), # path to custom step settings file (This file must not contain a steps field) (optional)
-              "os": String(), # using os model (optional. Default is auto)
-              "log_file": String("output.log"), # path to the log file in which log output is to be redirected
+    inputs = {"llvm_ir": File(default_filename=None),  # path to llvm_ir
+              # path to custom step settings file (This file must not contain
+              # a steps field) (optional)
+              "custom_step_settings": File(default_filename=MISSING),
+              "os": String(),  # using os model (optional. Default is auto)
+              "log_file": File(default_filename="output.log"),  # path to the log file in which log output is to be redirected
               }
               # TODO: Add support for --oilfile
               # No --manual-corrections support
@@ -56,7 +65,7 @@ class InstanceGraphExperiment(Experiment):
 
     def _init_logging(self):
         """Redefines root logger to output in ARA fashion and write log output to log_file"""
-        file_handler = logging.FileHandler(self.inputs.log_file.value)
+        file_handler = logging.FileHandler(self.inputs.log_file.path)
         stdout_handler = logging.StreamHandler(sys.stdout)
         max_l = max([len(logging.getLevelName(l)) for l in range(logging.CRITICAL)])
         format_str = f'%(asctime)s %(levelname)-{max_l}s %(name)-{20+1}s %(message)s'
@@ -104,15 +113,11 @@ class InstanceGraphExperiment(Experiment):
 
     def run(self):
         self._init_logging()
-        if not self._is_arg_set(self.inputs.llvm_ir):
-            self.logger.error("No LLVM IR file provided! Please set --llvm_ir")
-            raise RuntimeError("No LLVM IR file provided!")
         self.dump_prefix = '../dumps/Experiment.' + self.metadata["experiment-hash"] + '.{step_name}'
-        conf = self._get_config(self.inputs.llvm_ir.value)
+        conf = self._get_config(self.inputs.llvm_ir.path)
         step_settings = dict()
-        if self._is_arg_set(self.inputs.custom_step_settings):
-            with open(self.inputs.custom_step_settings.value, 'r') as json_file:
-                step_settings = json.load(json_file)
+        if self.inputs.custom_step_settings.path != MISSING:
+            step_settings = json.loads(self.inputs.custom_step_settings.value)
         assert "steps" not in step_settings, "Do not provide steps field in custom step settings"
         # explicitly run the InteractionAnalysis to trigger it before the statistic steps
         step_settings["steps"] = list([dict({"name": x, "dump": True}) for x in ["InteractionAnalysis",
@@ -128,7 +133,7 @@ class InstanceGraphExperiment(Experiment):
                 self.logger.error(f"Unknown os model {self.inputs.os.value}!")
                 raise RuntimeError("Unknown os model {self.inputs.os.value}!")
             g.os = get_os_model_by_name(self.inputs.os.value)
-        s_manager = StepManager(g)    
+        s_manager = StepManager(g)
         s_manager.execute(conf, step_settings, None)
         self._json_to_dref(self._get_dump_path("CFGStats", ".json"), masterkey="CFGStats")
         self._json_to_dref(self._get_dump_path("CallGraphStats", ".json"), masterkey="CallGraphStats")
