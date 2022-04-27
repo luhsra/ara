@@ -4,7 +4,7 @@ import importlib
 import json
 import logging
 import sys
-from versuchung.types import String
+from versuchung.types import String, Bool
 from versuchung.experiment import Experiment
 from versuchung.tex import DatarefDict
 from versuchung.files import File
@@ -53,11 +53,11 @@ class InstanceGraphExperiment(Experiment):
     inputs = {"llvm_ir": File(default_filename=None),  # path to llvm_ir
               # path to custom step settings file (This file must not contain
               # a steps field) (optional)
-              "custom_step_settings": File(default_filename=MISSING),
+              "step_settings": File(default_filename=MISSING),
               "os": String(),  # using os model (optional. Default is auto)
               "log_file": File(default_filename="output.log"),  # path to the log file in which log output is to be redirected
-              }
-              # TODO: Add support for --oilfile
+              "oil": File(default_filename=MISSING),
+              "is_ina": Bool(default_value=True)}
               # No --manual-corrections support
     outputs = {"results": DatarefDict(filename=f"results.dref"),
                "graph": File("graph.dot"), # path to the instance graph to be generated
@@ -116,14 +116,23 @@ class InstanceGraphExperiment(Experiment):
         self.dump_prefix = '../dumps/Experiment.' + self.metadata["experiment-hash"] + '.{step_name}'
         conf = self._get_config(self.inputs.llvm_ir.path)
         step_settings = dict()
-        if self.inputs.custom_step_settings.path != MISSING:
-            step_settings = json.loads(self.inputs.custom_step_settings.value)
-        assert "steps" not in step_settings, "Do not provide steps field in custom step settings"
-        # explicitly run the InteractionAnalysis to trigger it before the statistic steps
-        step_settings["steps"] = list([dict({"name": x, "dump": True}) for x in ["InteractionAnalysis",
-                                                                                 "CFGStats",
-                                                                                 "CallGraphStats",
-                                                                                 "InstanceGraphStats"]])
+        if self.inputs.step_settings.path != MISSING:
+            step_settings = json.loads(self.inputs.step_settings.value)
+        if self.inputs.oil.path != MISSING:
+            conf["oilfile"] = self.inputs.oil.path
+        assert 'steps' not in step_settings, "steps must not be in step_settings"
+        if self.inputs.is_ina.value:
+            # explicitly run the InteractionAnalysis to trigger it before the
+            # statistic steps
+            step_settings["steps"] = list([dict({"name": x, "dump": True})
+                                          for x in ["InteractionAnalysis",
+                                                    "CFGStats",
+                                                    "CallGraphStats",
+                                                    "InstanceGraphStats"]])
+        else:
+            step_settings["steps"] = ["SSE",
+                                      {"name": "SSTGStats", "dump": True}]
+
         self.logger.debug(f"Apply conf: {conf}")
         self.logger.debug(f"Apply step_settings: {step_settings}")
 
@@ -135,14 +144,19 @@ class InstanceGraphExperiment(Experiment):
             g.os = get_os_model_by_name(self.inputs.os.value)
         s_manager = StepManager(g)
         s_manager.execute(conf, step_settings, None)
-        self._json_to_dref(self._get_dump_path("CFGStats", ".json"), masterkey="CFGStats")
-        self._json_to_dref(self._get_dump_path("CallGraphStats", ".json"), masterkey="CallGraphStats")
-        self._json_to_dref(self._get_dump_path("InstanceGraphStats", ".json"))
-        self.outputs.graph.copy_contents(self._get_dump_path("InteractionAnalysis", "..dot"))
-        failing_log_file = self._get_dump_path("InstanceGraphStats", "_failing_interaction_syscalls.txt")
-        if os.path.exists(failing_log_file):
-            self.outputs.failing_interaction_syscalls_log.copy_contents(failing_log_file)
-        print(f"collected data is in {self.path}")
+        if self.inputs.is_ina.value:
+            self._json_to_dref(self._get_dump_path("CFGStats", ".json"), masterkey="CFGStats")
+            self._json_to_dref(self._get_dump_path("CallGraphStats", ".json"), masterkey="CallGraphStats")
+            self._json_to_dref(self._get_dump_path("InstanceGraphStats", ".json"))
+            self.outputs.graph.copy_contents(self._get_dump_path("InteractionAnalysis", "..dot"))
+            failing_log_file = self._get_dump_path("InstanceGraphStats", "_failing_interaction_syscalls.txt")
+            if os.path.exists(failing_log_file):
+                self.outputs.failing_interaction_syscalls_log.copy_contents(failing_log_file)
+        else:
+            self._json_to_dref(self._get_dump_path("SSTGStats", ".json"),
+                               masterkey="SSTG")
+
+        self.logger.info(f"collected data is in {self.path}")
 
 if __name__ == "__main__":
     experiment = InstanceGraphExperiment()
