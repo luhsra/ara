@@ -55,17 +55,17 @@ class InstanceGraphExperiment(Experiment):
               # a steps field) (optional)
               "step_settings": File(default_filename=MISSING),
               "os": String(),  # using os model (optional. Default is auto)
-              "log_file": File(default_filename="output.log"),  # path to the log file in which log output is to be redirected
               "oil": File(default_filename=MISSING),
               "is_ina": Bool(default_value=True)}
               # No --manual-corrections support
     outputs = {"results": DatarefDict(filename=f"results.dref"),
+               "log_file": File(default_filename=("output.log")), # path to the log file in which log output is to be redirected
                "graph": File("graph.dot"), # path to the instance graph to be generated
                "failing_interaction_syscalls_log": File("failing_interaction_syscalls.txt")} # Write failing interactions in this file if os model supports MissingInteraction count.
 
     def _init_logging(self):
         """Redefines root logger to output in ARA fashion and write log output to log_file"""
-        file_handler = logging.FileHandler(self.inputs.log_file.path)
+        file_handler = logging.FileHandler(self.outputs.log_file.path)
         stdout_handler = logging.StreamHandler(sys.stdout)
         max_l = max([len(logging.getLevelName(l)) for l in range(logging.CRITICAL)])
         format_str = f'%(asctime)s %(levelname)-{max_l}s %(name)-{20+1}s %(message)s'
