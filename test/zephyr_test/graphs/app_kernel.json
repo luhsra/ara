@@ -289,22 +289,6 @@
     "stack_size": 1024
   },
   {
-    "label": "Heap",
-    "id": "poolheap_DEMOPOOL",
-    "branch": 0,
-    "usually_taken": 0,
-    "loop": 0,
-    "recursive": 0,
-    "after_scheduler": 0,
-    "unique": 1,
-    "is_control": 0,
-    "file": "../appl/Zephyr/app_kernel/src/master.c",
-    "line": 64,
-    "specialization_level": "",
-    "type": "instance",
-    "limit": 84
-  },
-  {
     "source": "RECVTASK",
     "target": "STARTRCV",
     "label": "k_sem_take",
