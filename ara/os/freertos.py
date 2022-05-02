@@ -9,6 +9,7 @@ from ara.graph import SyscallCategory, SigType, CFG, CallPath
 from dataclasses import dataclass, field
 from ara.util import get_logger
 from ara.steps.util import current_step
+from ara.steps.instance_graph_stats import MissingInteractions
 
 logger = get_logger("FreeRTOS")
 
@@ -316,6 +317,8 @@ class FreeRTOS(OSBase):
                 state.next_abbs = []
                 set_next_abb(state, 0)
                 return state
+        # TODO: place MissingInteractions.activate() in working initializer function
+        MissingInteractions.activate()
         return syscall_function(graph, state, cpu_id)
 
     @staticmethod
@@ -547,6 +550,7 @@ class FreeRTOS(OSBase):
             logger.error(f"xQueueGenericSend (files: {cfg.vp.files[abb]}, "
                          f"lines: {cfg.vp.lines[abb]}, value: {queue.value}): "
                          "Queue handler cannot be found. Ignoring syscall.")
+            MissingInteractions.add_imprecise(['Queue', 'Mutex'], abb)
         else:
             queue_node = find_instance_node(state.instances, queue)
             connect_from_here(state, cpu_id, queue_node, "xQueueGenericSend")
@@ -567,6 +571,7 @@ class FreeRTOS(OSBase):
             logger.error(f"xQueueSemaphoreTake (files: {cfg.vp.files[abb]}, "
                          f"lines: {cfg.vp.lines[abb]}, value: {queue.value}): "
                          "Queue handler cannot be found. Ignoring syscall.")
+            MissingInteractions.add('Mutex', abb)
         else:
             queue_node = find_instance_node(state.instances, queue)
             connect_from_here(state, cpu_id, queue_node, "xQueueSemaphoreTake")
