@@ -229,6 +229,11 @@ class OSBase:
         return sys_dict.get(function_name, None) != None
 
     @classmethod
+    def is_interaction(cls, ty) -> bool:
+        """Return whether an edge type is an interaction in this OS."""
+        return True
+
+    @classmethod
     def detected_syscalls(cls):
         """Return a dict of detected system calls.
 

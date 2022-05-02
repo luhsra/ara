@@ -114,6 +114,10 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
                        instances=instances, cfg=cfg)
 
     @staticmethod
+    def is_interaction(ty) -> bool:
+        return ty in [PosixEdgeType.interaction, PosixEdgeType.create, PosixEdgeType.interaction_error, 0]
+
+    @staticmethod
     def _do_not_interpret(state: OSState, cpu_id: int):
         """Handling for the case that the current syscall should not be interpreted."""
         state = state.copy()

@@ -514,6 +514,10 @@ class ZEPHYR(OSBase):
                        instances=instances, cfg=cfg)
 
     @staticmethod
+    def is_interaction(ty) -> bool:
+        return ty in [ZephyrEdgeType.interaction, ZephyrEdgeType.create, 0]
+
+    @staticmethod
     def syscall_in_category(syscall, category):
         """Checks wether a syscall interpreter belongs to the given category"""
         syscall_category = syscall.categories

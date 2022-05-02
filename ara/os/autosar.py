@@ -212,6 +212,8 @@ class AUTOSAR(OSBase):
 
     See https://www.autosar.org/fileadmin/user_upload/standards/classic/20-11/AUTOSAR_SWS_OS.pdf
     """
+    
+    EdgeType = InstanceEdge # required for instance_graph test script
 
     @staticmethod
     def get_special_steps():
@@ -330,6 +332,10 @@ class AUTOSAR(OSBase):
                                                   os_irq_status=os_irq_status)
 
         return state
+
+    @staticmethod
+    def is_interaction(ty):
+        return ty != InstanceEdge.have
 
     @staticmethod
     def init(instances):
