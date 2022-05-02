@@ -1,5 +1,6 @@
 {
   "instances": {
+    "num": 3,
     "type": {
       "Thread": {
         "found": 1
@@ -13,6 +14,7 @@
     }
   },
   "interactions": {
+    "num": 6,
     "to_instance_type": {
       "Thread": {
         "found": 0,

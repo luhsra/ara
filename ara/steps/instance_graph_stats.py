@@ -78,12 +78,6 @@ class InstanceGraphStats(Step):
     def get_single_dependencies(self):
         return ["InteractionAnalysis"]
 
-    def _get_edge_type_str(self, edge_type: int):
-        """Convert edge type property field to a meaningful string"""
-        if not hasattr(self._graph.os, "EdgeType"):
-            return "interaction"
-        return self._graph.os.EdgeType(edge_type).name
-
     def _write_failing_interaction_syscalls_to_file(self):
         """Write file and line of all failing interaction syscalls grouped by instance type to file"""
         cfg = self._graph.cfg
@@ -95,10 +89,13 @@ class InstanceGraphStats(Step):
                 f.write("\n")
 
     def run(self):
-        output_dict = {"instances": {"type": {}},
-                       "interactions": {"to_instance_type": {},
+        output_dict = {"instances": {"type": {}, "num": 0},
+                       "interactions": {"num": 0,
+                                        "to_instance_type": {},
                                         "accumulate_number_field": {"to_instance_type": {}}}, # handle number edge property for this data
                       }
+
+        os = self._graph.os
 
         def create_interaction_key(interaction: str):
             interaction_value = {"found": 0}
@@ -132,8 +129,7 @@ class InstanceGraphStats(Step):
 
         # found Interactions
         for edge in instances.edges():
-            # Filter special edge types like "same_symbol_than" in Zephyr
-            if self._get_edge_type_str(instances.ep.type[edge]) not in ["interaction", "create", "interaction_error"]:
+            if not os.is_interaction(instances.ep.type[edge]):
                 continue
             number_prop = instances.ep.number[edge]
             assert number_prop >= 1
@@ -155,9 +151,11 @@ class InstanceGraphStats(Step):
             # undetected missing interactions:
             output_dict["interactions"]["undetected"] = MissingInteractions.undetected
 
-        # complete data
+        # complete number of instances and interactions
         output_dict["instances"]["num"] = instances.num_vertices()
-        output_dict["interactions"]["num"] = instances.num_edges()
+        for edge in instances.edges():
+            if os.is_interaction(instances.ep.type[edge]):
+                output_dict["interactions"]["num"] += 1
 
         self._log.info(f"Collected data: {output_dict}")
 
