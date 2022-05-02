@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 import json
 import graph_tool
-from typing import  Any, List
+from typing import Any, List
 from .step import Step
+
 
 class MissingInteractions:
     """An os model may register missing interactions in this static class.
@@ -154,6 +155,9 @@ class InstanceGraphStats(Step):
             # undetected missing interactions:
             output_dict["interactions"]["undetected"] = MissingInteractions.undetected
 
+        # complete data
+        output_dict["instances"]["num"] = instances.num_vertices()
+        output_dict["interactions"]["num"] = instances.num_edges()
 
         self._log.info(f"Collected data: {output_dict}")
 
