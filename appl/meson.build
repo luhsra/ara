@@ -330,6 +330,10 @@ examples = run_target('examples',
 
 
 # versuchung experiments
+librepilot_settings = files('librepilot_experiment_settings.json')
+zephyr_settings = files('zephyr_experiment_settings.json')
+posix_settings = files('posix_experiment_settings.json')
+
 run_target('gpslogger_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir', gpslogger_application, '--os=FreeRTOS'],
@@ -337,7 +341,6 @@ run_target('gpslogger_instance_exp',
     depends: ara_py
 )
 
-librepilot_settings = files('librepilot_experiment_settings.json')
 run_target('librepilot_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir', librepilot_application, '--os=FreeRTOS',
@@ -348,24 +351,25 @@ run_target('librepilot_instance_exp',
 
 run_target('zephyr_app_kernel_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '-v',
-              '--llvm_ir=appl/Zephyr/app_kernel.ll', '--os=ZEPHYR',
-              '--step_settings=../appl/zephyr_experiment_settings.json'],
+              '--llvm_ir', zephyr_app_kernel, '--os=ZEPHYR',
+              '--step_settings', zephyr_settings],
     env: [python_path],
     depends: ara_py
 )
 
 run_target('zephyr_sys_kernel_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir=appl/Zephyr/sys_kernel.ll', '--os=ZEPHYR',
-              '--step_settings=../appl/zephyr_experiment_settings.json'],
+              '--llvm_ir', zephyr_sys_kernel, '--os=ZEPHYR',
+              '--step_settings', zephyr_settings],
     env: [python_path],
     depends: ara_py
 )
 
+# TODO: create target for libmicrohttpd and instance graph stats llvm ir files
 run_target('libmicrohttpd_mod_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir=appl/POSIX/microhttpd_fileserver_dirs.ll', '--os=POSIX',
-              '--step_settings=../appl/posix_experiment_settings.json'],
+              '--step_settings', posix_settings],
     env: [python_path],
     depends: ara_py
 )
@@ -373,7 +377,7 @@ run_target('libmicrohttpd_mod_instance_exp',
 run_target('libmicrohttpd_orig_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir=appl/POSIX/microhttpd_fileserver_dirs_orig.ll', '--os=POSIX',
-              '--step_settings=../appl/posix_experiment_settings.json'],
+              '--step_settings', posix_settings],
     env: [python_path],
     depends: ara_py
 )
@@ -400,7 +404,7 @@ run_target('i4copter_sse_exp',
 run_target('posix_instance_exp_test',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir=appl/POSIX/instance_graph_stats.ll', '--os=POSIX',
-              '--step_settings=../appl/posix_experiment_settings.json'],
+              '--step_settings', posix_settings],
     env: [python_path],
     depends: ara_py
 )
