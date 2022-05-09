@@ -1,2 +1,3 @@
 [binaries]
 cython = '/usr/bin/cython3'
+llvm-config = '/usr/bin/llvm-config-12'
