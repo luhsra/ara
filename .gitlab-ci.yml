@@ -1,10 +1,60 @@
-build-sra:
-  stage: build
-  tags:
-    - sra.labor
-  only:
-    - soso
+stages:
+  - prepare
+  - build
+  - test
+
+prepare:
+  stage: prepare
+  tags: ["sra.labor"]
+  only: [soso]
   script:
-    - echo "Build ARA"
+    - echo "prepare source code"
+    - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "git@${CI_SERVER_HOST}:"
     - ./init
-    - meson build-gcc --native-file native-lab.txt
+  artifacts:
+    paths:
+      - subprojects
+
+build-gcc-no-pch:
+  stage: build
+  needs: ["prepare"]
+  tags: ["sra.labor"]
+  only: [soso]
+  interruptible: true
+  script:
+    - echo "configure gcc pch"
+    - CC=gcc CXX=g++ meson build-gcc --native-file native-lab.txt -Db_pch=false
+    - cd build-gcc; ninja ara.py; cd -
+
+build-clang-no-pch:
+  stage: build
+  needs: ["prepare"]
+  tags: ["sra.labor"]
+  only: [soso]
+  interruptible: true
+  script:
+    - echo "configure gcc pch"
+    - CC=clang CXX=clang++ meson build-gcc --native-file native-lab.txt -Db_pch=false
+    - cd build-gcc; ninja ara.py; cd -
+
+build-gcc:
+  stage: build
+  needs: ["prepare"]
+  tags: ["sra.labor"]
+  only: [soso]
+  interruptible: true
+  script:
+    - echo "Building with gcc"
+    - CC=gcc CXX=g++ meson build-gcc --native-file native-lab.txt -Db_pch=true
+    - cd build-gcc; ninja ara.py; cd -
+
+build-clang:
+  stage: build
+  needs: ["prepare"]
+  tags: ["sra.labor"]
+  only: [soso]
+  interruptible: true
+  script:
+    - echo "Building with clang"
+    - CC=clang CXX=clang++ meson build-clang --native-file native-lab.txt -Db_pch=true
+    - cd build-clang; ninja ara.py; cd -
