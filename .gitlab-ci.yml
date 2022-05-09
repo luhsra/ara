@@ -6,4 +6,5 @@ build-sra:
     - soso
   script:
     - echo "Build ARA"
+    - ./init
     - meson build-gcc --native-file native-lab.txt
