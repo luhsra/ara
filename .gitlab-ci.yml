@@ -1,0 +1,9 @@
+build-sra:
+  stage: build
+  tags:
+    - sra.labor
+  only:
+    - soso
+  script:
+    - echo "Build ARA"
+    - meson build-gcc --native-file native.txt
