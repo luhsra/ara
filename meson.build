@@ -4,6 +4,11 @@ project('ara', 'cpp',
                        'buildtype=debugoptimized'])
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
+# c-linkage is not correct, see https://github.com/cython/cython/issues/1839
+compiler = meson.get_compiler('cpp')
+if compiler.has_argument('-Wno-error=return-type-c-linkage')
+    add_project_arguments('-Wno-error=return-type-c-linkage', language: ['c', 'cpp'])
+endif
 
 fs = import('fs')
 
