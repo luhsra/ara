@@ -28,6 +28,7 @@
 #include <boost/python.hpp>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/range/adaptor/map.hpp>
+#include <boost/range/iterator_range_core.hpp>
 #include <boost/type_traits.hpp>
 #include <cassert>
 #include <common/llvm_common.h>
@@ -44,6 +45,7 @@
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/CFG.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Instructions.h>
