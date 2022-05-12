@@ -9,6 +9,7 @@
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/python.hpp>
 #include <boost/range/iterator_range_core.hpp>
+#include <pyllco.h>
 
 using namespace ara::graph;
 using namespace boost::python;
