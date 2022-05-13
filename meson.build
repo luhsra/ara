@@ -139,8 +139,12 @@ load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
 
 import ara.ara as _ara
+from ara.visualization.util import RESOURCE_PATH
+RESOURCE_PATH.set('@2@')
 import ara.visualization.main
 sys.exit()'''
+
+subdir('resources')
 
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
@@ -157,7 +161,7 @@ gui_py = custom_target('gui-py',
     input: [],
     output: 'gui.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
     build_by_default: true
 )
 

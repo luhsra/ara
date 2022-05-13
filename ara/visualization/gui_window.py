@@ -13,7 +13,7 @@ from . import ara_manager
 from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
-from .util import GraphTypes, StepMode
+from .util import RESOURCE_PATH, GraphTypes, StepMode
 from .widgets import graph_views
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView
 
@@ -67,8 +67,8 @@ class GuiWindow(QMainWindow):
         self.dw_callgraph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
         self.dw_instance_graph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
 
-        self.dw_step_queue = loader.load("../resources/step_queue.ui")
-        self.dw_function_search = loader.load("../resources/function_list_search.ui")
+        self.dw_step_queue = loader.load(RESOURCE_PATH.get() + "step_queue.ui")
+        self.dw_function_search = loader.load(RESOURCE_PATH.get() + "function_list_search.ui")
 
         self.proxies = []
 

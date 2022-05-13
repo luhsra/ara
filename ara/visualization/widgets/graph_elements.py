@@ -7,6 +7,7 @@ from pygraphviz import AGraph
 
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
+from ara.visualization.util import RESOURCE_PATH
 
 DPI_LEVEL = 72
 
@@ -31,7 +32,7 @@ class AbstractNode(GraphicsObject):
         Base class for graph nodes. Loads a ui file for the design.
     """
 
-    def __init__(self, node:Node, ui_path="../resources/node.ui"):
+    def __init__(self, node:Node, ui_path=RESOURCE_PATH.get() + "node.ui"):
         super().__init__(ui_path)
 
         self.data = node
@@ -54,7 +55,7 @@ class AbbNode(AbstractNode):
     subtypes = {"": "UNK","1" : "syscall", "2" : "call", "4" : "comp" }
 
     def __init__(self, node:Node):
-        super().__init__(node, "../resources/node.ui")
+        super().__init__(node, RESOURCE_PATH.get() + "node.ui")
 
         self.widget.label_text.setText(self.data.attr["label"])
         self.widget.subtype_text.setText(str(self.subtypes[self.data.attr["subtype"]]))
@@ -78,7 +79,7 @@ class CallGraphNode(AbstractNode):
     sig_unselected = Signal(str)
 
     def __init__(self, node:Node):
-        super().__init__(node, "../resources/callgraph_node.ui")
+        super().__init__(node, RESOURCE_PATH.get() + "callgraph_node.ui")
 
         self.id = self.data.attr["id"]
 
@@ -138,7 +139,7 @@ class InstanceNode(AbstractNode):
     """
 
     def __init__(self, node:Node):
-        super().__init__(node, "../resources/instance_node.ui")
+        super().__init__(node, RESOURCE_PATH.get() + "instance_node.ui")
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.sublabel_text.setText(str(self.data.attr["sublabel"]))
 
@@ -148,7 +149,7 @@ class Subgraph(GraphicsObject):
         A subgraph of the cfg which surrounds ABB nodes.
     """
     def __init__(self, subgraph:AGraph):
-        super().__init__("../resources/subgraph.ui")
+        super().__init__(RESOURCE_PATH.get() + "subgraph.ui")
         self.data = subgraph
 
         x_min = 100000000
