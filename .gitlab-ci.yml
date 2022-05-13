@@ -2,59 +2,99 @@ stages:
   - prepare
   - build
   - test
+  - cleanup
+
+variables:
+  PERSISTENT_DIR: '/home/gitlab-runner/ara-build$CI_PIPELINE_ID'
+  WRAP_BUILD: '$PERSISTENT_DIR/build'
+  WRAP_SUBPROJECTS: '$PERSISTENT_DIR/subprojects'
+  C_SOURCE: '/tmp/ara'
+  C_BUILD: '/tmp/ara-build'
+  BWRAP: 'bwrap --bind / / --dev-bind /dev /dev --bind . $C_SOURCE --bind $WRAP_SUBPROJECTS $C_SOURCE/subprojects --chdir $C_SOURCE'
 
 prepare:
   stage: prepare
   tags: ["sra.labor"]
-  only: [soso]
+  only: [soso, citest]
   script:
-    - echo "prepare source code"
+    - echo "persistent dir = $PERSISTENT_DIR"
+    - mkdir -p "$WRAP_SUBPROJECTS"
+    - mkdir -p "$WRAP_BUILD"
     - git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/".insteadOf "git@${CI_SERVER_HOST}:"
-    - ./init
-  artifacts:
-    paths:
-      - subprojects
+    - eval $BWRAP -- ./init
+    - sync
 
 build-gcc-no-pch:
   stage: build
   needs: ["prepare"]
   tags: ["sra.labor"]
-  only: [soso]
+  only: [soso, citest]
   interruptible: true
+  variables:
+    BUILD_DIR: '$PERSISTENT_DIR/build-gcc-no-pch'
   script:
-    - echo "configure gcc pch"
-    - CC=gcc CXX=g++ meson build-gcc --native-file native-lab.txt -Db_pch=false
-    - cd build-gcc; ninja ara.py; cd -
+    - CC=gcc CXX=g++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=false $BUILD_DIR $C_SOURCE
+    - eval $BWRAP meson compile -C $BUILD_DIR ara-py
 
 build-clang-no-pch:
   stage: build
   needs: ["prepare"]
   tags: ["sra.labor"]
-  only: [soso]
+  only: [soso, citest]
   interruptible: true
+  variables:
+    BUILD_DIR: '$PERSISTENT_DIR/build-clang-no-pch'
   script:
-    - echo "configure gcc pch"
-    - CC=clang CXX=clang++ meson build-gcc --native-file native-lab.txt -Db_pch=false
-    - cd build-gcc; ninja ara.py; cd -
+    - CC=clang CXX=clang++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=false $BUILD_DIR $C_SOURCE
+    - eval $BWRAP -- meson compile -C $BUILD_DIR ara-py
 
 build-gcc:
   stage: build
   needs: ["prepare"]
   tags: ["sra.labor"]
-  only: [soso]
+  only: [soso, citest]
   interruptible: true
   script:
     - echo "Building with gcc"
-    - CC=gcc CXX=g++ meson build-gcc --native-file native-lab.txt -Db_pch=true
-    - cd build-gcc; ninja ara.py; cd -
+    - CC=gcc CXX=g++ eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $C_BUILD $C_SOURCE
+    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson compile -C $C_BUILD ara-py
+    - sync
 
 build-clang:
   stage: build
   needs: ["prepare"]
   tags: ["sra.labor"]
-  only: [soso]
+  only: [soso, citest]
   interruptible: true
+  variables:
+    BUILD_DIR: '$PERSISTENT_DIR/build-clang'
   script:
-    - echo "Building with clang"
-    - CC=clang CXX=clang++ meson build-clang --native-file native-lab.txt -Db_pch=true
-    - cd build-clang; ninja ara.py; cd -
+    - CC=clang CXX=clang++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $BUILD_DIR $C_SOURCE
+    - eval $BWRAP -- meson compile -C $BUILD_DIR ara-py
+
+test-steps:
+  stage: test
+  needs: ["build-gcc"]
+  tags: ["sra.labor"]
+  only: [soso, citest]
+  interruptible: true
+  variables:
+    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+  script:
+    - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
+    - cp -a $WRAP_BUILD $TEST_BUILD
+    - echo "Run tests"
+    - touch "$TEST_BUILD"/foobar
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- ls -lh $C_BUILD
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite steps
+
+cleanup:
+  stage: cleanup
+  needs: ["prepare", "build-gcc", "build-clang", "build-clang-no-pch", "build-gcc-no-pch", "test-steps"]
+  tags: ["sra.labor"]
+  only: [soso, citest]
+  when: always
+  script:
+    - echo "Cleanup Files in $PERSISTENT_DIR"
+    - rm -rf "$PERSISTENT_DIR"
+    - sync
