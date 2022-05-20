@@ -14,6 +14,12 @@ using namespace SVF;
 namespace ara::step {
 	std::string SVFAnalyses::get_description() { return "Run SVF analyses."; }
 
+	// map SVF SVFG to graph_tool SVFG
+	template <typename SVFGGraphtool>
+	void map_svfg(SVFGGraphtool svfg_graphtool, SVF::SVFG& svfg_svf) {
+
+	}
+
 	void SVFAnalyses::run() {
 		logger.info() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());
@@ -37,6 +43,13 @@ namespace ara::step {
 		icfg->updateCallGraph(callgraph);
 
 		// we don't need to store anything here, since all SVF datastructures are stored in singletons
+
+		graph::SVFG svfg_graphtool = graph.get_svfg_graphtool();
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) {
+			    map_svfg(g, graph.get_svfg());
+		    },
+		    graph_tool::always_directed())(svfg_graphtool.graph.get_graph_view());
 
 		if (*dump.get()) {
 			icfg->dump(*dump_prefix.get() + "svf-icfg");
