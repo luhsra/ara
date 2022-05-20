@@ -250,7 +250,6 @@ namespace ara::graph {
 
 #undef ARA_VMAP
 #undef ARA_EMAP
-#undef ARA_MAP
 	}
 
 	InstanceGraph InstanceGraph::get(PyObject* py_instancegraph) {
@@ -287,5 +286,60 @@ namespace ara::graph {
 		assert(pyinstancegraph != nullptr);
 
 		return InstanceGraph::get_ptr(pyinstancegraph);
+	}
+
+	inline void create_properties(SVFG& svfg, PyObject* py_svfg) {
+		PyObject* vprops = get_vprops(py_svfg);
+
+#define ARA_VMAP(Value) ARA_MAP(svfg, Value, vprops)
+#define ARA_EMAP(Value) ARA_MAP(svfg, Value, eprops)
+
+		ARA_VMAP(vLabel)
+		ARA_VMAP(vObj)
+
+		PyObject* eprops = get_eprops(py_svfg);
+
+		ARA_EMAP(eLabel)
+		ARA_EMAP(eObj)
+
+#undef ARA_VMAP
+#undef ARA_EMAP
+#undef ARA_MAP
+	}
+
+	SVFG SVFG::get(PyObject* py_svfg) {
+		assert(py_svfg != nullptr);
+		SVFG svfg(get_graph(py_svfg));
+		create_properties(svfg, py_svfg);
+		return svfg;
+	}
+
+	struct SVFG::SVFGUniqueEnabler : public SVFG {
+		template <typename... Args>
+		SVFGUniqueEnabler(Args&&... args) : SVFG(std::forward<Args>(args)...) {}
+	};
+
+	std::unique_ptr<SVFG> SVFG::get_ptr(PyObject* py_svfg) {
+		assert(py_svfg != nullptr);
+		std::unique_ptr<SVFG> svfg =
+		    std::make_unique<SVFGUniqueEnabler>(get_graph(py_svfg));
+		create_properties(*svfg, py_svfg);
+		return svfg;
+	}
+
+	SVFG Graph::get_svfg_graphtool() {
+		// extract self.callgraph from Python
+		PyObject* pysvfg = PyObject_GetAttrString(graph, "svfg");
+		assert(pysvfg != nullptr);
+
+		return SVFG::get(pysvfg);
+	}
+
+	std::unique_ptr<SVFG> Graph::get_svfg_graphtool_ptr() {
+		// extract self.instances from Python
+		PyObject* pysvfg = PyObject_GetAttrString(graph, "svfg");
+		assert(pysvfg != nullptr);
+
+		return SVFG::get_ptr(pysvfg);
 	}
 } // namespace ara::graph

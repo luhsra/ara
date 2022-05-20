@@ -13,6 +13,8 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <memory>
+#include <Graphs/VFGNode.h>
+#include <Graphs/VFGEdge.h>
 
 namespace ara::graph {
 
@@ -524,7 +526,7 @@ namespace ara::graph {
 		typename graph_tool::eprop_map_t<int>::type syscall;
 
 		/**
-		 * Return a CallGraph from the corresponding Python graph.
+		 * Return a InstanceGraph from the corresponding Python graph.
 		 */
 		static InstanceGraph get(PyObject* py_instancegraph);
 		static std::unique_ptr<InstanceGraph> get_ptr(PyObject* py_instancegraph);
@@ -536,6 +538,30 @@ namespace ara::graph {
 		const llvm::Instruction* get_llvm_soc(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
 			return reinterpret_cast<const llvm::Instruction*>(llvm_soc[v]);
 		}
+	};
+
+	struct SVFG {
+	  private:
+		friend class Graph;
+		SVFG(graph_tool::GraphInterface& graph) : graph(graph){};
+
+		struct SVFGUniqueEnabler;
+
+	  public:
+		graph_tool::GraphInterface& graph;
+		/* vertex properties */
+		typename graph_tool::vprop_map_t<std::string>::type vLabel;
+		typename graph_tool::vprop_map_t<SVF::VFGNode*>::type vObj;
+
+		/* edge properties */
+		typename graph_tool::eprop_map_t<std::string>::type eLabel;
+		typename graph_tool::eprop_map_t<SVF::VFGEdge*>::type eObj;
+
+		/**
+		 * Return a graph tool SVFG from the corresponding Python graph.
+		 */
+		static SVFG get(PyObject* py_instancegraph);
+		static std::unique_ptr<SVFG> get_ptr(PyObject* py_instancegraph);
 	};
 
 	/**
@@ -578,5 +604,8 @@ namespace ara::graph {
 
 		InstanceGraph get_instances();
 		std::unique_ptr<InstanceGraph> get_instances_ptr();
+
+		SVFG get_svfg_graphtool();
+		std::unique_ptr<SVFG> get_svfg_graphtool_ptr();
 	};
 } // namespace ara::graph
