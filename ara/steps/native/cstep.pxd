@@ -28,10 +28,6 @@ cdef extern from "cdummy.h" namespace "ara::step":
     cdef cppclass CDummy:
         pass
 
-cdef extern from "check_graph.h" namespace "ara::step":
-    cdef cppclass CheckGraph:
-        pass
-
 cdef extern from "comp_insert.h" namespace "ara::step":
     cdef cppclass CompInsert:
         pass

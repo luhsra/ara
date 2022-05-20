@@ -210,7 +210,7 @@ namespace ara::graph {
 		template <class Graph>
 		bool bb_is_indirect(typename boost::graph_traits<Graph>::vertex_descriptor v) {
 			if (!(get_type(v) == ABBType::call || get_type(v) == ABBType::syscall)) {
-				return nullptr;
+				return false;
 			}
 			return bb_is_indirect(safe_deref(get_llvm_bb(v)));
 		}

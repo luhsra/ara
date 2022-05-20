@@ -805,7 +805,7 @@ namespace ara::step {
 	}
 
 	ValueAnalyzer::Result ValueAnalyzer::get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath,
-	                                                        unsigned argument_nr, graph::SigType hint, PyObject* type) {
+	                                                        unsigned argument_nr, graph::SigType hint, PyObject*) {
 		if (is_call_to_intrinsic(callsite)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -887,7 +887,7 @@ namespace ara::step {
 		}
 	}
 
-	bool ValueAnalyzer::has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
+	bool ValueAnalyzer::has_connection(llvm::CallBase& callsite, graph::CallPath, unsigned argument_nr,
 	                                   OSObject obj_index) {
 		if (is_call_to_intrinsic(callsite)) {
 			throw ConnectionStatusUnknown("Called function is an intrinsic.");
@@ -1011,7 +1011,7 @@ namespace ara::step {
 		return &callsite;
 	}
 
-	const llvm::Value* ValueAnalyzer::get_return_value(const llvm::CallBase& callsite, graph::CallPath callpath) {
+	const llvm::Value* ValueAnalyzer::get_return_value(const llvm::CallBase& callsite, graph::CallPath) {
 		if (callsite.getFunctionType()->getReturnType()->isVoidTy()) {
 			fail("Cannot get return value of void function.");
 		}
