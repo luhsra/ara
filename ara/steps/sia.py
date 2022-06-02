@@ -78,7 +78,8 @@ class FlatAnalysis(Step):
                 loop_head = func_cfg.vertex(loop_head)
                 for e in loop_head.in_edges():
                     loop_end = e.source()
-                    if has_path(func_cfg, loop_head, loop_end):
+                    if loop_head == loop_end or \
+                       has_path(func_cfg, loop_head, loop_end):
                         # if edge that is a part of the loop
                         # drop it
                         keep_edge_map[e] = False
@@ -106,7 +107,7 @@ class FlatAnalysis(Step):
         """Is this abb usually taken?
 
         Usually taken means that the abb is part of a branch, where all sibling
-        branches end is an endless loop.
+        branches end in an endless loop.
 
         Consider this example:
          1o
