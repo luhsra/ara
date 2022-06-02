@@ -8,9 +8,9 @@ from init_test import init_test, fail_if
 
 def main():
     """Test for correct instance detection."""
-    config = {"steps": ["SIA"]}
-    m_graph, data, log, _ = init_test(extra_config=config)
-    instances = m_graph.instances
+    config = {"steps": ["SIA", "DumpCFG"]}
+    data = init_test(extra_config=config)
+    instances = data.graph.instances
     dump = []
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -34,8 +34,8 @@ def main():
             i_dump[name] = val
         dump.append(i_dump)
 
-    # log.warn(json.dumps(sorted(dump, key=lambda x: x['id']), indent=2))
-    fail_if(data != sorted(dump, key=lambda x: x['id']), "Data not equal")
+    # data.log.warn(json.dumps(sorted(dump, key=lambda x: x['id']), indent=2))
+    fail_if(data.data != sorted(dump, key=lambda x: x['id']), "Data not equal")
 
 
 if __name__ == '__main__':

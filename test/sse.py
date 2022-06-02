@@ -40,9 +40,9 @@ def main():
                         "DumpCFG",
                         "ReduceSSTG"]}
     inp = {"oilfile": lambda argv: argv[3]}
-    m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp)
 
-    sstg = m_graph.reduced_sstg
+    sstg = data.graph.reduced_sstg
 
     trace = {}
     verts = []
@@ -69,8 +69,8 @@ def main():
         golden_trace = f.readlines()
     sys.stderr.writelines(difflib.unified_diff(golden_trace, dt.splitlines(True)))
 
-    fail_if(_to_tuple(data["vertices"]) != trace["vertices"])
-    fail_if(_to_tuple(data["edges"]) != trace["edges"])
+    fail_if(_to_tuple(data.data["vertices"]) != trace["vertices"])
+    fail_if(_to_tuple(data.data["edges"]) != trace["edges"])
 
 
 if __name__ == '__main__':

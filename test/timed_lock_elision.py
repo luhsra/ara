@@ -56,15 +56,15 @@ def main():
                   },
               }
     inp = {"oilfile": lambda argv: argv[3]}
-    m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp)
 
-    locks = m_graph.step_data["LockElision"]
+    locks = data.graph.step_data["LockElision"]
     del locks['details']
-    data = data['with_timing']
+    t_data = data.data['with_timing']
 
-    if log.level <= logging.INFO:
-        log.warning(json.dumps(locks))
-    fail_if(data != locks)
+    if data.log.level <= logging.INFO:
+        data.log.warning(json.dumps(locks))
+    fail_if(t_data != locks)
 
 
 if __name__ == '__main__':

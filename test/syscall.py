@@ -25,9 +25,9 @@ def main():
     # Executing SIA will do this:
     config = {"steps": ["SIA"]}
 
-    m_graph, data, log, _ = init_test(extra_config=config)
-    cfg = m_graph.cfg
-    functs = m_graph.functs
+    data = init_test(extra_config=config)
+    cfg = data.graph.cfg
+    functs = data.graph.functs
     stats = {}
     for function in functs.vertices():
         function = cfg.vertex(function)
@@ -40,8 +40,8 @@ def main():
                     (filter(f_exp(cfg, ABBType.call),
                             cfg.get_abbs(function))))
         stats[cfg.vp.name[function]] = {"syscalls": syscalls, "calls": calls}
-    # log.info(json.dumps(stats, indent=2))
-    fail_if(data != stats, "Data not equal")
+    # data.log.info(json.dumps(stats, indent=2))
+    fail_if(data.data != stats, "Data not equal")
 
 
 if __name__ == '__main__':

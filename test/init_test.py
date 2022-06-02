@@ -5,6 +5,8 @@ import logging
 import sys
 import os
 
+from dataclasses import dataclass
+
 
 def fake_step_module():
     """Fake the step module into the correct package."""
@@ -57,6 +59,15 @@ def get_config(i_file):
             'entry_point': 'main',
             'step_data': False,
             'input_file': i_file}
+
+
+@dataclass
+class TestData:
+    graph: Graph
+    data: dict
+    data_file: str
+    log: object
+    step_manager: StepManager
 
 
 def init_test(steps=None, extra_config=None, logger_name=None,
@@ -114,4 +125,8 @@ def init_test(steps=None, extra_config=None, logger_name=None,
 
     s_manager.execute(conf, extra_config, steps)
 
-    return g, data, logger, s_manager
+    return TestData(graph=g,
+                    data=data,
+                    data_file=json_file,
+                    log=logger,
+                    step_manager=s_manager)

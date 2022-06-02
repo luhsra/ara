@@ -4,7 +4,6 @@
 from init_test import init_test, fail_if
 
 import json
-import logging
 import graph_tool
 import sys
 
@@ -77,9 +76,9 @@ def main():
         inp["timings"] = lambda argv: argv[4]
     else:
         config = {"steps": ["LockElision"]}
-    m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp)
 
-    mstg = m_graph.mstg
+    mstg = data.graph.mstg
     reduced = mstg.vertex_type(StateType.entry_sync, StateType.exit_sync)
     reduced.vp["cores"] = _get_core(mstg, reduced)
 
@@ -89,9 +88,9 @@ def main():
     print(_dump(reduced, reduced.vp["cores"], timings=with_timings),
           file=sys.stderr)
 
-    golden, correct_cores = _build_graph(data, timings=with_timings)
+    golden, correct_cores = _build_graph(data.data, timings=with_timings)
 
-    fail_if(len(data["vertices"]) == 0)
+    fail_if(len(data.data["vertices"]) == 0)
     is_isomorph, iso_map = isomorphism(reduced, golden, reduced.vp["cores"],
                                        correct_cores, isomap=True)
     fail_if(not is_isomorph)

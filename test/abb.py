@@ -13,9 +13,9 @@ def main():
                         {"name": "CreateABBs", "entry_point": "_Z6vTask2Pv"},
                         {"name": "CreateABBs", "entry_point": "main"},
                         'DumpCFG']}
-    m_graph, data, log, _ = init_test(extra_config=config)
-    abbs = m_graph.abbs
-    cfg = m_graph.cfg
+    data = init_test(extra_config=config)
+    abbs = data.graph.abbs
+    cfg = data.graph.cfg
     out_v = []
     out_e = []
     mapping = {}
@@ -50,8 +50,9 @@ def main():
     out = {"vertices": sorted(out_v, key=lambda v: v['id']),
            "edges": sorted(out_e, key=lambda e: (e['source'], e['target']))}
 
-    # log.info(json.dumps(out, indent=2))
-    fail_if(data != out, "Data not equal")
+    # with open(data.data_file, "w") as f:
+    #     json.dump(out, f, indent=2)
+    fail_if(data.data != out, "Data not equal")
 
 
 if __name__ == '__main__':
