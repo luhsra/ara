@@ -563,7 +563,9 @@ class Printer(Step):
                         shape=self.SHAPES[cfg.vp.type[block]][0],
                         color=color
                     )
-                    if cfg.vp.loop_head[block]:
+                    if cfg.vp.is_exit_loop_head[block]:
+                        dot_abb.set('style', 'bold')
+                    elif cfg.vp.loop_head[block]:
                         dot_abb.set('style', 'dotted')
                     elif cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
