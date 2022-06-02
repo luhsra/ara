@@ -155,7 +155,6 @@ subdir('test')
 if get_option('enable_toplevel_tests')
     settings = 'test' / 'settings'
     app = autosar_singlecore_bcc1_task1_a
-    extra_settings = files('test' / 'extra_settings.json')
     app = autosar_multicore_paper_running
     test('ara_tester',
        py3_inst,
