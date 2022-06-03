@@ -108,7 +108,7 @@ test-sia:
 
 cleanup:
   stage: cleanup
-  needs: ["prepare", "build-gcc", "build-clang", "build-clang-no-pch", "build-gcc-no-pch", "test-steps"]
+  needs: ["prepare", "build-gcc", "build-clang", "build-clang-no-pch", "build-gcc-no-pch", "test-sia", 'test-preproc']
   tags: ["sra.labor"]
   only: [soso, citest]
   when: always
