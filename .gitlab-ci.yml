@@ -59,8 +59,7 @@ build-gcc:
     - CC=gcc CXX=g++ eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $C_BUILD $C_SOURCE
     - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson compile -C $C_BUILD ara-py
     - echo "Emptying files for further processing."
-    - PCH="$C_BUILD/$(eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- ninja -C $C_BUILD -t targets all | grep steps_pch | cut -d : -f1)"
-    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- $C_SOURCE/tool/empty_file.py "$PCH"
+    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- $C_SOURCE/tool/clean_build_directory.py $C_BUILD
     - sync
 
 build-clang:
