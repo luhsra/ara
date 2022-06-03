@@ -59,7 +59,7 @@ build-gcc:
     - CC=gcc CXX=g++ eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $C_BUILD $C_SOURCE
     - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson compile -C $C_BUILD ara-py
     - echo "Emptying files for further processing."
-    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- $C_SOURCE/tool/clean_build_directory.py $C_BUILD
+    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- $C_SOURCE/tools/clean_build_directory.py $C_BUILD
     - sync
 
 build-clang:
@@ -86,8 +86,7 @@ test-preproc:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
     - cp -a $WRAP_BUILD $TEST_BUILD
     - echo "Run tests"
-    - touch "$TEST_BUILD"/foobar
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- ls -lh $C_BUILD
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite ara-link
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite preproc
 
 test-sia:
@@ -102,13 +101,25 @@ test-sia:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
     - cp -a $WRAP_BUILD $TEST_BUILD
     - echo "Run tests"
-    - touch "$TEST_BUILD"/foobar
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- ls -lh $C_BUILD
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sia
+
+test-sse:
+  stage: test
+  needs: ["build-gcc"]
+  tags: ["sra.labor"]
+  only: [soso, citest]
+  interruptible: true
+  variables:
+    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+  script:
+    - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
+    - cp -a $WRAP_BUILD $TEST_BUILD
+    - echo "Run tests"
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sse
 
 cleanup:
   stage: cleanup
-  needs: ["prepare", "build-gcc", "build-clang", "build-clang-no-pch", "build-gcc-no-pch", "test-sia", 'test-preproc']
+  needs: ["prepare", "build-gcc", "build-clang", "build-clang-no-pch", "build-gcc-no-pch", "test-preproc", 'test-sia', 'test-sse']
   tags: ["sra.labor"]
   only: [soso, citest]
   when: always
