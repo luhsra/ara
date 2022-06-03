@@ -169,14 +169,13 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
-    foreach elem : autosar_targets
-      if elem['core'] != 'singlecore'
+    foreach app : autosar_targets
+      if app['core'] != 'singlecore'
         continue
       endif
-
-      test('sse_' + elem['full_name'],
+      test('sse_' + app['full_name'],
           py3_inst,
-          args: [files('sse.py'), elem['sys_test'], elem['ll'], elem['oil']],
+          args: [files('sse.py'), app['sys_test'], app['ll'], app['oil']],
           env: [python_path],
           depends: ara_py,
           suite: ['analysis', 'sse']
