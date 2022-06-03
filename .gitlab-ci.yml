@@ -58,6 +58,9 @@ build-gcc:
     - echo "Building with gcc"
     - CC=gcc CXX=g++ eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $C_BUILD $C_SOURCE
     - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson compile -C $C_BUILD ara-py
+    - echo "Emptying files for further processing."
+    - PCH="$C_BUILD/$(eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- ninja -C $C_BUILD -t targets all | grep steps_pch | cut -d : -f1)"
+    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- $C_SOURCE/tool/empty_file.py "$PCH"
     - sync
 
 build-clang:
@@ -72,7 +75,7 @@ build-clang:
     - CC=clang CXX=clang++ eval $BWRAP -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $BUILD_DIR $C_SOURCE
     - eval $BWRAP -- meson compile -C $BUILD_DIR ara-py
 
-test-steps:
+test-preproc:
   stage: test
   needs: ["build-gcc"]
   tags: ["sra.labor"]
@@ -86,7 +89,23 @@ test-steps:
     - echo "Run tests"
     - touch "$TEST_BUILD"/foobar
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- ls -lh $C_BUILD
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite steps
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite preproc
+
+test-sia:
+  stage: test
+  needs: ["build-gcc"]
+  tags: ["sra.labor"]
+  only: [soso, citest]
+  interruptible: true
+  variables:
+    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+  script:
+    - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
+    - cp -a $WRAP_BUILD $TEST_BUILD
+    - echo "Run tests"
+    - touch "$TEST_BUILD"/foobar
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- ls -lh $C_BUILD
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sia
 
 cleanup:
   stage: cleanup
