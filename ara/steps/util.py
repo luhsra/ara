@@ -6,6 +6,7 @@ def raise_and_error(logger, message, exception=RuntimeError):
     logger.error(message)
     raise exception(message)
 
+
 class Wrapper:
     def set_wrappee(self, wrappee):
         self.__wrappee = wrappee

@@ -4,6 +4,11 @@ project('ara', 'cpp',
                        'buildtype=debugoptimized'])
 
 add_project_arguments('-Werror=return-type', language: ['c', 'cpp'])
+# c-linkage is not correct, see https://github.com/cython/cython/issues/1839
+compiler = meson.get_compiler('cpp')
+if compiler.has_argument('-Wno-error=return-type-c-linkage')
+    add_project_arguments('-Wno-error=return-type-c-linkage', language: ['c', 'cpp'])
+endif
 
 fs = import('fs')
 
@@ -14,7 +19,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'PySide6'])
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'PySide6', 'scipy'])
 
 ## llvm dependencies
 llvm_version = ['>=10', '<13']
@@ -78,6 +83,10 @@ elif get_option('arch') == 'arm'
     target_triple = 'arm-none-eabi'
 else
     error('unknown arch ' + get_option('arch'))
+endif
+
+if not get_option('execute_ara') and get_option('enable_generator_tests')
+  error('execute_ara has to be true to set enable_generator_tests')
 endif
 
 arch_error = 'Do you have an @0@ toolchain? Otherwise consider to switch to another architecture. See the "arch" config option for that.'
@@ -176,50 +185,47 @@ subdir('test')
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
 if get_option('enable_toplevel_tests')
-    extra_settings = files('test' / 'extra_settings.json')
+    settings = 'test' / 'settings'
     app = autosar_singlecore_bcc1_task1_a
+    app = autosar_multicore_paper_running
     test('ara_tester',
        py3_inst,
        args: [ara_py, app['ll'],
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
               '--oilfile', app['oil'],
-              #'--timings', app['sys_timings'],
-              '--step-settings', extra_settings],
+              '--timings', app['sys_timings'],
+              '--step-settings', files(settings / 'extra_settings.json')],
               # '--manual-corrections', instance_corrections],
        suite: 'toplevel'
     )
 
-    rtas_settings = files('test' / 'rtas_settings.json')
     test('rtas20',
        py3_inst,
        args: [ara_py, freertos_rtas20_example,
               '--log-level', 'debug', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
               '--dump',
-              '--step-settings', rtas_settings],
+              '--step-settings', files(settings / 'rtas_settings.json')],
        suite: 'toplevel'
     )
 
-    generator_settings = files('test/generator_settings.json')
     test('generator_tester',
        py3_inst,
        args: [ara_py, freertos_simple_print,
               '--log-level', 'debug', '--dump',
               '--generator_output', 'generator_tester-os.cc',
-              '--step-settings', generator_settings],
+              '--step-settings', files(settings / 'generator_settings.json')],
        suite: 'toplevel'
     )
 
-    autosar_minexample_settings = files('test' / 'autosar_minexample_settings.json')
     test('multisse',
-       py3_inst,
-       args: [ara_py, autosar_multicore_minexample['ll'],
-              '--oilfile', autosar_multicore_minexample['oil'],
-              '--dump',
-              '--log-level', 'info',
-              '--dump',
-              '--step-settings', autosar_minexample_settings],
-       suite: 'toplevel',
-       timeout: 30
+      py3_inst,
+      args: [ara_py, autosar_multicore_minexample['ll'],
+             '--oilfile', autosar_multicore_minexample['oil'],
+             '--dump',
+             '--log-level', 'info',
+             '--step-settings', files(settings / 'autosar_minexample_settings.json')],
+      suite: 'toplevel',
+      timeout: 30
     )
 
     test('cfg_pic',
@@ -240,6 +246,26 @@ if get_option('enable_toplevel_tests')
               '--step', 'SIA'],
        suite: 'toplevel',
        timeout: 30
+    )
+
+    test('sse-i4copter',
+      py3_inst,
+      args: [ara_py, autosar_singlecore_complex_isorc['ll'],
+             '--oilfile', autosar_singlecore_complex_isorc['oil'],
+             '--log-level', 'info',
+             '--step-settings', files(settings / 'sse_i4copter.json')],
+      suite: 'toplevel',
+      timeout: 0,
+    )
+
+    test('ina-i4copter',
+      py3_inst,
+      args: [ara_py, autosar_singlecore_complex_isorc['ll'],
+             '--oilfile', autosar_singlecore_complex_isorc['oil'],
+             '--log-level', 'info',
+             '--step-settings', files(settings / 'ina_i4copter.json')],
+      suite: 'toplevel',
+      timeout: 30
     )
 
 endif

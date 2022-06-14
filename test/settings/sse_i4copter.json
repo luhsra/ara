@@ -1,0 +1,12 @@
+{
+	"steps": [
+		"SSE",
+		"SSTGStats"
+	],
+
+	"logger": {
+		"StepManager": "info",
+		"FreeRTOS": "info",
+		"ara": "info"
+	}
+}

@@ -1,6 +1,6 @@
 [external "pyllco"]
 	path = subprojects/pyllco
-	url = https://scm.sra.uni-hannover.de/source/pyllco.git
+	url = https://scm.sra.uni-hannover.de/published/pyllco.git
 	branch = master
 	vcs = git
 
@@ -12,12 +12,12 @@
 
 [external "sparsedata"]
 	path = subprojects/sparsedata
-	url = ssh://git@scm.sra.uni-hannover.de/diffusion/397/sparsedata.git
+	url = git@scm.sra.uni-hannover.de:research/SparseData.git
 	branch = master
 	vcs = git
 
 [external "ara-link"]
 	path = subprojects/ara-link
-	url = https://scm.sra.uni-hannover.de/source/ara-link.git
+	url = https://scm.sra.uni-hannover.de/published/ara-link.git
 	branch = master
 	vcs = git

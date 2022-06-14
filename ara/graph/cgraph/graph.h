@@ -44,6 +44,7 @@ namespace ara::graph {
 
 		typename graph_tool::eprop_map_t<int>::type etype;
 		typename graph_tool::eprop_map_t<unsigned char>::type is_entry;
+		typename graph_tool::eprop_map_t<unsigned char>::type back_edge;
 
 		CFG(graph_tool::GraphInterface& graph) : graph(graph){};
 
@@ -212,7 +213,7 @@ namespace ara::graph {
 		template <class Graph>
 		bool bb_is_indirect(typename boost::graph_traits<Graph>::vertex_descriptor v) {
 			if (!(get_type(v) == ABBType::call || get_type(v) == ABBType::syscall)) {
-				return nullptr;
+				return false;
 			}
 			return bb_is_indirect(safe_deref(get_llvm_bb(v)));
 		}
@@ -223,7 +224,7 @@ namespace ara::graph {
 		 * Throws exception, if func cannot be mapped.
 		 */
 		template <class Graph>
-		typename boost::graph_traits<Graph>::vertex_descriptor back_map(const Graph g,
+		typename boost::graph_traits<Graph>::vertex_descriptor back_map(const Graph& g,
 		                                                                const llvm::Function& func) const {
 			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
 				if (get_level<Graph>(v) == NodeLevel::function && get_llvm_function<Graph>(v) == &func) {
@@ -239,7 +240,7 @@ namespace ara::graph {
 		 * Throws exception, if bb cannot be mapped.
 		 */
 		template <class Graph>
-		typename boost::graph_traits<Graph>::vertex_descriptor back_map(const Graph g,
+		typename boost::graph_traits<Graph>::vertex_descriptor back_map(const Graph& g,
 		                                                                const llvm::BasicBlock& bb) const {
 			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
 				if (get_level<Graph>(v) == NodeLevel::bb && get_llvm_bb<Graph>(v) == &bb) {
@@ -255,7 +256,7 @@ namespace ara::graph {
 		 * Throws exception, if func cannot be found.
 		 */
 		template <class Graph>
-		typename boost::graph_traits<Graph>::vertex_descriptor get_function_by_name(const Graph g,
+		typename boost::graph_traits<Graph>::vertex_descriptor get_function_by_name(const Graph& g,
 		                                                                            const std::string func_name) const {
 			for (auto v : boost::make_iterator_range(boost::vertices(g))) {
 				if (func_name == name[v]) {

@@ -9,8 +9,8 @@ from init_test import init_test, fail_if
 def main():
     """Test for correct interaction detection."""
     config = {"steps": ["InteractionAnalysis"]}
-    m_graph, data, log, _ = init_test(extra_config=config)
-    instances = m_graph.instances
+    data = init_test(extra_config=config)
+    instances = data.graph.instances
     dump = []
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -53,8 +53,8 @@ def main():
             return "0" + item['id']
         return "1"
 
-    # log.warn(json.dumps(sorted(dump, key=sort_key), indent=2))
-    fail_if(data != sorted(dump, key=sort_key), "Data not equal")
+    # data.log.warn(json.dumps(sorted(dump, key=sort_key), indent=2))
+    fail_if(data.data != sorted(dump, key=sort_key), "Data not equal")
 
 
 if __name__ == '__main__':

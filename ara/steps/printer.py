@@ -1,11 +1,12 @@
 """Container for Printer."""
-from ara.graph import ABBType, CFType, CFGView, MSTType, StateType
+from ara.graph import ABBType, CFType, CFGView, MSTType, StateType, single_check
 from ara.os.os_base import ExecState
 
 from .option import Option, String, Choice, Bool
 from .step import Step
 
 from graph_tool import GraphView
+from graph_tool.topology import all_paths
 
 import pydot
 import html
@@ -20,7 +21,7 @@ def _sstg_state_as_dot(sstg, state_vert):
     obj = sstg.vp.state[state_vert]
     cfg = obj.cfg
     label = f"State {obj.id}"
-    cpu = next(iter(obj.cpus))
+    cpu = obj.cpus.one()
     if cpu.control_instance:
         instance = obj.instances.vp.label[obj.instances.vertex(cpu.control_instance)]
     else:
@@ -30,8 +31,10 @@ def _sstg_state_as_dot(sstg, state_vert):
         if syscall != "":
             syscall = f" ({syscall})"
         abb = f"{cfg.vp.name[cpu.abb]} {syscall}"
+        xcet = [("bcet/wcet", f"{cfg.vp.bcet[cpu.abb]}/{cfg.vp.wcet[cpu.abb]}")]
     else:
         abb = "None"
+        xcet = []
 
     graph_attrs = "<br/>".join(
         [
@@ -42,15 +45,22 @@ def _sstg_state_as_dot(sstg, state_vert):
                     "instance",
                     instance,
                 ),
-                ("abb", abb),
                 ("call_path", cpu.call_path),
                 ("type", str(cpu.exec_state)),
-            ]
+                ("abb", abb),
+            ] + xcet
         ]
     )
     graph_attrs = f"<font point-size='{size}'>{graph_attrs}</font>"
     attrs["label"] = f"<{label}<br/>{graph_attrs}>"
-    attrs["tooltip"] = str(state_vert)
+    tooltip = str(state_vert)
+    if cpu.abb:
+        code = "\r".join([str(cfg.get_llvm_obj(bb))
+                          for bb in cfg.get_bbs(cpu.abb)])
+        code = code.replace('\n', '\r')
+        tooltip = f'<{tooltip + code}>'
+
+    attrs["tooltip"] = tooltip
 
     if cpu.exec_state & ExecState.with_time:
         attrs["color"] = "green"
@@ -84,6 +94,155 @@ def sstg_to_dot(sstg, label="SSTG"):
     return dot_graph
 
 
+def reduced_mstg_to_dot(mstg, label="MSTG"):
+    shorten = {
+            "AUTOSAR_GetSpinlock": "GL",
+            "AUTOSAR_ReleaseSpinlock": "RL",
+            "AUTOSAR_ActivateTask": "AT",
+            "AUTOSAR_ChainTask": "CT",
+            "AUTOSAR_SetEvent": "SE",
+            "AUTOSAR_WaitEvent": "WE",
+
+    }
+
+    def _to_str(v):
+        return str(int(v))
+
+    core_map = {}
+
+    def _draw_sync(sync, edges, entry=None):
+        cols = []
+        cores = set()
+        for e in edges:
+            if mstg.ep.type[e] == MSTType.st2sy:
+                cpu_id = mstg.ep.cpu_id[e]
+                cores.add(cpu_id)
+                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+        if cols:
+            label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                    '<TR>{}</TR>' \
+                    '</TABLE>>'.format(''.join(sorted(cols)))
+            shape = "plaintext"
+        else:
+            label = "undiscovered"
+            shape = "box"
+        if entry:
+            core_map[int(entry)] = cores
+        core_map[int(sync)] = cores
+        return pydot.Node(_to_str(sync), label=label,
+                          shape=shape,
+                          tooltip=_to_str(sync))
+
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+    # draw initial sync node
+    for init in mstg.get_sync_points(exit=True).vertices():
+        init = mstg.vertex(init)
+        if init.in_degree() == 0:
+            dot_graph.add_node(_draw_sync(init, init.out_edges()))
+
+    en2ex = mstg.edge_type(MSTType.en2ex)
+
+    for sync_point in mstg.get_sync_points(exit=False).vertices():
+        sync_point = mstg.vertex(sync_point)
+        if en2ex.vertex(sync_point).out_degree() > 1:
+            sync_m = pydot.Cluster("Metasync" + _to_str(sync_point), label="")
+            dot_graph.add_subgraph(sync_m)
+            # draw entry_sync
+            sync_m.add_node(_draw_sync(sync_point, sync_point.in_edges()))
+            # draw exit_sync
+            for follow in sync_point.out_neighbors():
+                sync_m.add_node(_draw_sync(follow, follow.out_edges()))
+        else:
+            # draw only the exit_sync
+            exit_s = single_check(sync_point.out_neighbors())
+            dot_graph.add_node(_draw_sync(exit_s, exit_s.out_edges(),
+                                          entry=sync_point))
+
+    time_sync = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
+    ms_sync = mstg.edge_type(MSTType.m2sy, MSTType.en2ex)
+    time_sync.set_reversed(True)
+    sy2sy = mstg.edge_type(MSTType.sy2sy)
+    added_edges = set()
+
+    def _sync_str(v, cpu_id):
+        return f"{_to_str(v)}:c{cpu_id}"
+
+    def _add_edge(from_sp, to_sp, core):
+        exit_state = mstg.get_exit_state(to_sp, core)
+        syscall_name = mstg.get_syscall_name(exit_state)
+
+        attrs = {"color": "black"}
+        if mstg.get_exec_state(exit_state) == ExecState.waiting:
+            attrs["color"] = "limegreen"
+        elif syscall_name:
+            attrs["label"] = shorten[syscall_name]
+            attrs["color"] = "darkred"
+
+        # merge entry and exit sync states
+        f_to_sp = en2ex.vertex(to_sp)
+        if f_to_sp.out_degree() == 1:
+            n_tgt = single_check(f_to_sp.out_neighbors())
+        else:
+            n_tgt = to_sp
+
+        # examine start and end for the dot edge
+        dot_tgt = _sync_str(n_tgt, core)
+        dot_src = _sync_str(from_sp, core)
+        if (dot_src, dot_tgt) in added_edges:
+            return None
+        added_edges.add((dot_src, dot_tgt))
+        return pydot.Edge(dot_src, dot_tgt, **attrs)
+
+    # edge printing
+    # we want to find the edges to the last core-local root SP
+    # we therefore first retrieve the root
+    for entry_sp in mstg.get_sync_points(exit=False).vertices():
+        for parent_sp in sy2sy.vertex(entry_sp).in_neighbors():
+            # now we can iterate all pathes from the SP to the root
+            cores = core_map[int(entry_sp)]
+            for path in all_paths(time_sync, entry_sp, parent_sp):
+                # every path of follow_sync edges between the SP and its
+                # root SP must also have a path for each core. Otherwise the
+                # path is not valid.
+                # We therefore also check the metastates for each core.
+                handled_cores = set()
+                for x in path[1:]:
+                    if mstg.vp.type[x] == StateType.entry_sync:
+                        continue
+                    x_cores = core_map[int(x)] & cores
+                    invalid = False
+                    for core in x_cores - handled_cores:
+                        # there must be a connection via metastates, otherwise
+                        # the path is not valid
+                        def good_edge(e):
+                            if mstg.ep.type[e] == MSTType.m2sy:
+                                return mstg.ep.cpu_id[e] == core
+                            return True
+                        cg = GraphView(ms_sync, efilt=good_edge)
+                        ms1 = set(cg.vertex(entry_sp).in_neighbors())
+                        ms2 = set(cg.vertex(x).out_neighbors())
+                        if len(ms2) > 0 and ms1 != ms2:
+                            # this is an invalid path
+                            invalid = True
+                            break
+                        edge = _add_edge(x, entry_sp, core)
+                        if edge:
+                            dot_graph.add_edge(edge)
+                    if invalid:
+                        break
+                    handled_cores |= x_cores
+                    if len(cores - handled_cores) == 0:
+                        break
+
+    for edge in en2ex.edges():
+        src = edge.source()
+        if (src.out_degree() > 1):
+            dot_graph.add_edge(pydot.Edge(_to_str(src),
+                                          _to_str(edge.target())))
+
+    return dot_graph
+
+
 def mstg_to_dot(mstg, label="MSTG"):
     def _to_str(v):
         return str(int(v))
@@ -94,34 +253,47 @@ def mstg_to_dot(mstg, label="MSTG"):
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
                 cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
-        label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
-                '<TR>{}</TR>' \
-                '</TABLE>>'.format(''.join(sorted(cols)))
+        if cols:
+            label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
+                    '<TR>{}</TR>' \
+                    '</TABLE>>'.format(''.join(sorted(cols)))
+            shape = "plaintext"
+        else:
+            label = "undiscovered"
+            shape = "box"
         return pydot.Node(_to_str(sync), label=label,
-                          shape="plaintext",
+                          shape=shape,
                           tooltip=_to_str(sync))
 
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
+    m2s = mstg.edge_type(MSTType.m2s)
+    m2sy = mstg.edge_type(MSTType.m2sy)
+
+    ms_done = set()
     # draw initial sync node
     for init in mstg.get_sync_points(exit=True).vertices():
         init = mstg.vertex(init)
         if init.in_degree() == 0:
             dot_graph.add_node(_draw_sync(init, init.out_edges()))
+        # draw metastates
+        for metastate in sorted(m2sy.vertex(init).out_neighbors(),
+                                key=lambda x: mstg.vp.cpu_id[x]):
+            metastate = mstg.vertex(metastate)
+            if metastate in ms_done:
+                continue
+            ms_done.add(metastate)
+            m2s = mstg.edge_type(MSTType.m2s)
+            cpu_id = mstg.vp.cpu_id[metastate]
 
-    for metastate in mstg.get_metastates().vertices():
-        metastate = mstg.vertex(metastate)
-        filg = mstg.edge_type(MSTType.m2s)
-        cpu_id = mstg.vp.cpu_id[metastate]
+            dot_m = pydot.Cluster(_to_str(metastate),
+                                  label=f"M{int(metastate)} (CPU {cpu_id})")
+            dot_graph.add_subgraph(dot_m)
 
-        dot_m = pydot.Cluster(_to_str(metastate),
-                              label=f"M{int(metastate)} (CPU {cpu_id})")
-        dot_graph.add_subgraph(dot_m)
-
-        for state in filg.vertex(metastate).out_neighbors():
-            attrs = _sstg_state_as_dot(mstg, state)
-            dot_state = pydot.Node(_to_str(state), **attrs)
-            dot_m.add_node(dot_state)
+            for state in m2s.vertex(metastate).out_neighbors():
+                attrs = _sstg_state_as_dot(mstg, state)
+                dot_state = pydot.Node(_to_str(state), **attrs)
+                dot_m.add_node(dot_state)
 
     for sync_point in mstg.get_sync_points(exit=False).vertices():
         sync_point = mstg.vertex(sync_point)
@@ -141,8 +313,7 @@ def mstg_to_dot(mstg, label="MSTG"):
     for edge in flow.edges():
         src = edge.source()
         tgt = edge.target()
-        attrs = {"color": "black",
-                 "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
+        attrs = {"color": "black"}
         if flow.ep.type[edge] == MSTType.st2sy:
             if flow.vp.type[src] == StateType.exit_sync:
                 src = _sync_str(src, edge)
@@ -155,7 +326,11 @@ def mstg_to_dot(mstg, label="MSTG"):
         else:
             if flow.ep.type[edge] == MSTType.sy2sy:
                 attrs = {"color": "darkred",
-                         "style": "dotted"}
+                         "style": "dashed"}
+            if flow.ep.type[edge] == MSTType.follow_sync:
+                attrs = {"color": "darkgreen",
+                         "style": "dotted",
+                         "label": f"{flow.ep.bcet[edge]} - {flow.ep.wcet[edge]}"}
             if flow.ep.type[edge] in [MSTType.sync_neighbor, MSTType.m2sy]:
                 continue
             src = _to_str(src)
@@ -164,6 +339,88 @@ def mstg_to_dot(mstg, label="MSTG"):
         dot_graph.add_edge(pydot.Edge(src, tgt, **attrs))
 
     return dot_graph
+
+
+def sp_mstg_to_dot(mstg, label="SP MSTG"):
+    shorten = {
+            "AUTOSAR_GetSpinlock": "GL",
+            "AUTOSAR_ReleaseSpinlock": "RL",
+            "AUTOSAR_ActivateTask": "AT",
+            "AUTOSAR_ChainTask": "CT",
+            "AUTOSAR_SetEvent": "SE",
+            "AUTOSAR_WaitEvent": "WE",
+
+    }
+    dot_graph = pydot.Dot(graph_type="digraph", label=label)
+
+    def _dsp(vertex, label=None):
+        if label is None:
+            label = [str(int(vertex))]
+        return pydot.Node(str(int(vertex)), shape="box",
+                          label="<{}>".format('<br/>'.join([html.escape(str(x)) for x in label])))
+
+    # draw initial sync node
+    for init in mstg.get_sync_points(exit=True).vertices():
+        init = mstg.vertex(init)
+        if init.in_degree() == 0:
+            dot_graph.add_node(_dsp(init))
+
+    en2ex = mstg.edge_type(MSTType.en2ex)
+
+    for sync_point in mstg.get_sync_points(exit=False).vertices():
+        sync_point = mstg.vertex(sync_point)
+        sys_state, core, irq = mstg.get_syscall_state(sync_point)
+        label = f"c{core}, s{int(sys_state)}"
+        if irq > 0:
+            label += u" (\u26A1" + f"{irq})"
+        else:
+            sys_name = mstg.get_syscall_name(sys_state)
+            label += f" ({shorten[sys_name]})"
+        if en2ex.vertex(sync_point).out_degree() > 1:
+            sync_m = pydot.Cluster("Metasync" + str(int(sync_point)),
+                                   label="")
+            dot_graph.add_subgraph(sync_m)
+            # draw entry_sync
+            sync_m.add_node(_dsp(sync_point, label=[str(int(sync_point)),
+                                                    label]))
+            # draw exit_sync
+            for follow in sync_point.out_neighbors():
+                sync_m.add_node(_dsp(sync_point))
+        else:
+            # draw only the exit_sync
+            exit_s = single_check(sync_point.out_neighbors())
+            title = f"{str(int(sync_point))}->{str(int(exit_s))}"
+            dot_graph.add_node(_dsp(
+                exit_s,
+                label=[title, label]
+            ))
+
+    sp_e = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
+    for e in sp_e.edges():
+        src = e.source()
+        tgt = e.target()
+        if en2ex.vertex(tgt).out_degree() == 1:
+            tgt = single_check(en2ex.vertex(tgt).out_neighbors())
+        if mstg.ep.type[e] == MSTType.sy2sy:
+            attrs = {"color": "darkred",
+                     "style": "dashed"}
+        elif mstg.ep.type[e] == MSTType.follow_sync:
+            attrs = {"color": "darkgreen",
+                     "style": "dotted"}
+            bcet = mstg.ep.bcet[e]
+            wcet = mstg.ep.wcet[e]
+            if bcet > 0 or wcet > 0:
+                attrs['xlabel'] = f"{bcet}-{wcet}"
+        else:
+            assert False
+        dot_graph.add_edge(pydot.Edge(
+            str(int(src)),
+            str(int(tgt)),
+            **attrs))
+
+    return dot_graph
+
+
 
 
 class Printer(Step):
@@ -184,7 +441,8 @@ class Printer(Step):
     subgraph = Option(name="subgraph",
                       help="Choose, what subgraph should be printed.",
                       ty=Choice("bbs", "abbs", "instances", "callgraph",
-                                "multistates", "sstg", "reduced_sstg", "mstg"))
+                                "multistates", "sstg", "reduced_sstg", "mstg",
+                                "reduced_mstg", "sp_mstg"))
     entry_point = Option(name="entry_point",
                          help="system entry point",
                          ty=String())
@@ -252,9 +510,8 @@ class Printer(Step):
 
         entry_label = self.entry_point.get()
         if self.from_entry_point.get():
-            entry_func = self._graph.cfg.get_function_by_name(entry_label)
-            functions = self._graph.cfg.reachable_functs(entry_func,
-                                                         self._graph.callgraph)
+            entry_func = cfg.get_function_by_name(entry_label)
+            functions = cfg.reachable_functs(entry_func, self._graph.callgraph)
         else:
             functs = self._graph.functs
             functions = functs.vertices()
@@ -274,13 +531,25 @@ class Printer(Step):
 
             for block in nodes:
                 tooltip = str(int(block))
+                if bbs:
+                    current_bbs = [block]
+                else:
+                    current_bbs = cfg.get_bbs(block)
+                    tooltip += f" ({','.join([cfg.vp.name[b] for b in current_bbs])})"
+                code = "\r".join([str(cfg.get_llvm_obj(bb))
+                                  for bb in current_bbs])
+                code = code.replace('\n', '\r')
+                tooltip += f'\rbcet/wcet: {cfg.vp.bcet[block]} / {cfg.vp.wcet[block]}\r'
+                # tooltip += code
+                tooltip = f'<{html.escape(tooltip)}>'  # seems to be added automagically
+
                 if cfg.vp.type[block] == ABBType.not_implemented:
                     assert not cfg.vp.implemented[function]
                     dot_abb = pydot.Node(str(hash(block)),
                                          label="",
                                          tooltip=tooltip,
                                          shape="box")
-                    dot_nodes.add(str(hash(block)))
+                    dot_nodes.add(int(block))
                     dot_func.set('style', 'filled')
                     dot_func.set('color', '#eeeeee')
                 else:
@@ -294,16 +563,18 @@ class Printer(Step):
                         shape=self.SHAPES[cfg.vp.type[block]][0],
                         color=color
                     )
-                    if cfg.vp.loop_head[block]:
+                    if cfg.vp.is_exit_loop_head[block]:
+                        dot_abb.set('style', 'bold')
+                    elif cfg.vp.loop_head[block]:
                         dot_abb.set('style', 'dotted')
                     elif cfg.vp.part_of_loop[block]:
                         dot_abb.set('style', 'dashed')
-                    dot_nodes.add(str(hash(block)))
+                    dot_nodes.add(int(block))
                 dot_func.add_node(dot_abb)
         for edge in cfg.edges():
             if cfg.ep.type[edge] not in [CFType.lcf, CFType.icf]:
                 continue
-            if not all([str(hash(x)) in dot_nodes
+            if not all([int(x) in dot_nodes
                        for x in [edge.source(), edge.target()]]):
                 continue
             color = "black"
@@ -342,6 +613,7 @@ class Printer(Step):
             if "label" in attrs:
                 del attrs["label"]
             attrs["fontsize"] = attrs.get("fontsize", 14)
+            attrs["tooltip"] = str(int(instance))
 
             if self.gen_html_links.get():
                 src_file = instances.vp.file[instance]
@@ -393,6 +665,19 @@ class Printer(Step):
         name = self._print_init()
         dot_graph = mstg_to_dot(self._graph.mstg, name)
         self._write_dot(dot_graph)
+
+    def print_reduced_mstg(self):
+        name = self._print_init()
+        dot_graph = reduced_mstg_to_dot(self._graph.mstg, name)
+        self._write_dot(dot_graph)
+
+    def print_sp_mstg(self):
+        name = self._print_init()
+        mstg = self._graph.mstg
+        dot_graph = sp_mstg_to_dot(mstg, name)
+        self._write_dot(dot_graph)
+
+
 
     def print_callgraph(self):
         name = self._print_init()
@@ -594,6 +879,10 @@ class Printer(Step):
             self.print_mstg()
         if subgraph == 'reduced_sstg':
             self.print_sstg(reduced=True)
+        if subgraph == 'reduced_mstg':
+            self.print_reduced_mstg()
+        if subgraph == 'sp_mstg':
+            self.print_sp_mstg()
         if subgraph == 'multistates':
             self.print_multistates()
         if subgraph == 'callgraph':

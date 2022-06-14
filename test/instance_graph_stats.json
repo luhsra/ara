@@ -1,0 +1,19 @@
+{
+    "instances": {
+        "type": {
+            "Task": {
+                "num": 4
+            },
+            "Mutex": {
+                "num": 1
+            }
+        }
+    },
+    "interactions": {
+        "to_instance_type": {
+            "Mutex": {
+                "num": 4
+            }
+        }
+    }
+}

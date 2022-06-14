@@ -243,6 +243,48 @@ namespace ara::step {
 		} while (changed);
 	}
 
+	void
+	ResolveFunctionPointer::get_atf_from_value(const llvm::Value& value,
+	                                           std::vector<std::reference_wrapper<const llvm::Function>>& functions) {
+		if (const llvm::Function* fv = llvm::dyn_cast<llvm::Function>(&value)) {
+			functions.emplace_back(*fv);
+			logger.debug() << "Found address taken function: " << fv->getName().str() << std::endl;
+		} else if (const auto* ca = llvm::dyn_cast<llvm::ConstantAggregate>(&value)) {
+			get_atf_from_user(*ca, functions);
+		} else if (const auto* bc = llvm::dyn_cast<llvm::BitCastOperator>(&value)) {
+			get_atf_from_user(*bc, functions);
+		}
+	}
+
+	void
+	ResolveFunctionPointer::get_atf_from_user(const llvm::User& user,
+	                                          std::vector<std::reference_wrapper<const llvm::Function>>& functions) {
+		for (const llvm::Value* value : user.operand_values()) {
+			get_atf_from_value(safe_deref(value), functions);
+		}
+	}
+
+	std::vector<std::reference_wrapper<const llvm::Function>> ResolveFunctionPointer::get_address_taken_functions() {
+		auto& l_module = graph.get_module();
+		std::vector<std::reference_wrapper<const llvm::Function>> ret;
+		// iterate every instruction
+		for (const auto& func : l_module) {
+			for (const auto& bb : func) {
+				for (const auto& i : bb) {
+					if (llvm::isa<llvm::CallInst>(i)) {
+						continue;
+					}
+					get_atf_from_user(i, ret);
+				}
+			}
+		}
+		// iterate initialized global variables (like vTables)
+		for (const llvm::GlobalVariable& global : l_module.globals()) {
+			get_atf_from_user(global, ret);
+		}
+		return ret;
+	}
+
 	void ResolveFunctionPointer::resolve_function_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
 	                                                      const LLVMModuleSet& module) {
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
@@ -281,7 +323,7 @@ namespace ara::step {
 
 		// create a map between FunctionType and the list of corresponding functions
 		if (signature_to_func.size() == 0) {
-			for (llvm::Function& func : graph.get_module()) {
+			for (const llvm::Function& func : get_address_taken_functions()) {
 				const auto& func_name = func.getName().str();
 				if (block_names.find(func_name) != block_names.end()) {
 					continue;
@@ -321,7 +363,7 @@ namespace ara::step {
 			const auto& match = signature_to_func.find(func_type);
 			if (match != signature_to_func.end()) {
 				found_candidate = true;
-				for (llvm::Function& func : match->second) {
+				for (const llvm::Function& func : match->second) {
 					link_indirect_pointer(cbn, callgraph, func, module);
 					++i;
 				}
@@ -345,6 +387,10 @@ namespace ara::step {
 	                                                                std::string entry_point) {
 		int handled_blocks = 0;
 		llvm::Function* entry = graph.get_module().getFunction(entry_point);
+
+		if (entry == nullptr) {
+			fail("entry_point is not a valid LLVM function.");
+		}
 
 		std::set<const llvm::Function*> handled_functions;
 		unhandled_functions.push(entry);

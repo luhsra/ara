@@ -1,0 +1,37 @@
+{
+	"steps": [
+		"ApplyTimings",
+		"IPIAvoidance",
+		"DumpCFG"
+	],
+
+	"ApplyTimings": {
+		"timings": "BB"
+	},
+
+	"MultiSSE": {
+		"log_level": "debug",
+		"with_times": true,
+		"dump": true
+	},
+
+	"LoadOIL": {
+		"dump": true
+	},
+
+	"SSE": {
+		"log_level": "debug",
+		"dump": true
+	},
+
+	"FakeTimings": {
+		"log_level": "debug"
+	},
+
+	"logger": {
+		"StepManager": "info",
+		"FreeRTOS": "info",
+		"AUTOSAR": "info",
+		"ara": "info"
+	}
+}

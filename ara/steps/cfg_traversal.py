@@ -3,14 +3,13 @@ import copy
 import functools
 
 from ara.graph import ABBType, SyscallCategory, CFGView, CFType
-from ara.util import get_null_logger
+from ara.util import get_null_logger, has_path
 from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
 from collections import defaultdict
 from dataclasses import dataclass
 
-from graph_tool.topology import (dominator_tree, label_out_component,
-                                 all_paths)
+from graph_tool.topology import dominator_tree, label_out_component
 
 
 @dataclass
@@ -46,13 +45,26 @@ class Visitor:
     def add_state(self, new_state):
         raise NotImplementedError
 
+    def add_irq_state(self, old_state, new_state, irq):
+        """Handle IRQ state.
+
+        Return True, if the analysis should handle the state by itself.
+        """
+        return True
+
     def add_transition(self, source, target):
         raise NotImplementedError
 
     def schedule(self, new_states):
         raise NotImplementedError
 
-    def cross_core_action(self, state, cpu_ids):
+    def cross_core_action(self, state, cpu_ids, irq=None):
+        """Handle a cross core action.
+
+        state   -- the state, which triggers the action
+        cpu_ids -- the affected CPUs
+        irq     -- the number of the irq that triggers the action.
+        """
         pass
 
     def next_step(self, state_id):
@@ -97,14 +109,6 @@ class _SSERunner:
         new_call_path.add_call_site(self._call_graph, edge)
         return new_call_path
 
-    def _has_path(self, graph, source, target):
-        ap = all_paths(graph, graph.vertex(source), graph.vertex(target))
-        try:
-            next(ap)
-            return True
-        except StopIteration:
-            return False
-
     @functools.lru_cache(maxsize=32)
     def _get_func_cfg(self, func):
         """Get LCFG of function"""
@@ -129,7 +133,7 @@ class _SSERunner:
             for v in loops.vertices():
                 v = func_cfg.vertex(v)
                 for e in v.in_edges():
-                    if self._has_path(func_cfg, v, e.source()):
+                    if has_path(func_cfg, v, e.source()):
                         keep_edge_map[e] = False
                         exit_map[e.source()] = True
 
@@ -200,6 +204,25 @@ class _SSERunner:
     def _get_exec(self, v):
         return ExecState.from_abbtype(self._cfg.vp.type[v])
 
+    def _trigger_irqs(self, state):
+        cpu = state.cpus.one()
+        if not cpu.irq_on:
+            return []
+
+        irq_states = []
+        for irq in self._available_irqs:
+            try:
+                i_st = self._os.handle_irq(self._graph, state, cpu.id, irq)
+                if i_st is not None and self._visitor.add_irq_state(state, i_st, irq):
+                    irq_states.append(i_st)
+            except CrossCoreAction as cca:
+                self._log.debug(f"Cross core action for IRQ {irq} (CPUs: "
+                                f"{cca.cpu_ids}).")
+                self._visitor.cross_core_action(state, cca.cpu_ids, irq=irq)
+                # end analysis on this path
+                return []
+        return irq_states
+
     def _execute(self, state):
         self._visitor.init_execution(state)
         cpu = state.cpus.one()
@@ -225,13 +248,7 @@ class _SSERunner:
             # Trigger all interrupts. We are _not_ deciding over interarrival
             # times here. This should be done by the operation system model.
             self._log.debug("Handle idle. Trigger all interrupts.")
-            new_states = []
-            if cpu.irq_on:
-                for irq in self._available_irqs:
-                    new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                    if new_state is not None:
-                        new_states.append(new_state)
-            return new_states
+            return self._trigger_irqs(state)
 
         elif cpu.exec_state == ExecState.syscall:
             name = self._cfg.vp.name[abb]
@@ -305,7 +322,7 @@ class _SSERunner:
                 return [new_state]
             else:
                 # ISRs are able to exit, all other CFG not
-                return self._os.handle_exit(self._graph, state, 0)
+                return self._os.handle_exit(self._graph, state, cpu.id)
 
         # computation block handling
         # all other paths before should have returned if necessary
@@ -319,12 +336,7 @@ class _SSERunner:
             new_states.append(new_state)
         # Trigger all interrupts. We are _not_ deciding over interarrival times
         # here. This should be done by the operation system model.
-        if cpu.irq_on:
-            for irq in self._available_irqs:
-                new_state = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                if new_state is not None:
-                    new_states.append(new_state)
-        return new_states
+        return new_states + self._trigger_irqs(state)
 
     def _system_semantic(self, state: OSState):
         # we can only handle a single core execution here
@@ -356,9 +368,11 @@ class _SSERunner:
         self._log.info(f"Local SSE: Analysis needed {counter} iterations.")
 
 
-def run_sse(graph, os, visitor=Visitor(), logger=get_null_logger()):
+def run_sse(graph, os, visitor=Visitor(), logger=None):
     # we new a lot of state during the analyiss, so pass the handling to an
     # object that can hold the data
+    if logger is None:
+        logger = get_null_logger()
     runner = _SSERunner(graph=graph, os=os, logger=logger,
                         visitor=visitor)
     return runner.run()

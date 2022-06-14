@@ -1,0 +1,175 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "task_groups": {
+        "SignalGatherGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "ControlTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 20,
+              "schedule": true,
+              "resources": []
+            },
+            "SignalGatherInitiateTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 9,
+              "schedule": true,
+              "spinlocks": ["SPIBusLock"],
+              "resources": [
+                "SPIBus"
+              ]
+            },
+            "SignalGatherFinishedTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 10,
+              "schedule": false,
+              "events": [ ],
+              "resources": [ ]
+            },
+            "SignalProcessingActuateTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 13,
+              "schedule": true,
+              "events": [ ]
+            },
+            "SignalProcessingAttitudeTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 12,
+              "schedule": true,
+              "events": [ ]
+            }
+          }
+        },
+        "SignalGatherTimeoutGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "SignalGatherTimeoutTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 11,
+              "spinlocks": ["SPIBusLock"],
+              "resources": ["SPIBus"],
+              "schedule": true
+            }
+          }
+        },
+        "WatchdogGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "CopterControlWatchdogTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 7,
+              "schedule": false
+            }
+          }
+        }
+      },
+      "resources": {
+        "SPIBus": {}
+      },
+      "events": {
+      },
+      "alarms": {
+        "SamplingAlarm": {
+          "counter": "one_ms_counter",
+          "action": {
+            "action": "activatetask",
+            "task": "ControlTask"
+          },
+          "autostart": true,
+          "alarmtime": 10,
+          "cycletime": 90
+        },
+        "CopterControlWatchdogAlarm": {
+          "counter": "one_ms_counter",
+          "action": {
+            "action": "activatetask",
+            "task": "CopterControlWatchdogTask"
+          }
+        }
+      },
+      "counters": {
+        "one_ms_counter": {
+          "maxallowedvalue": 50000,
+          "ticksperbase": 1,
+          "mincycle": 1,
+          "secondspertick": 0.001
+        }
+      }
+    },
+    {
+      "id": 1,
+      "task_groups": {
+        "FlightControlGroup": {
+          "promises": {
+            "serialized": true
+          },
+          "tasks": {
+            "FlightControlTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 11,
+              "schedule": true
+            },
+            "FlightControlAttitudeTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 14,
+              "schedule": true
+            },
+            "FlightControlActuateTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 15,
+              "schedule": true
+            },
+            "CopterControlTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 6,
+              "schedule": true
+            },
+            "MavlinkSendTask": {
+              "activation": 1,
+              "autostart": false,
+              "priority": 0,
+              "spinlocks": ["SPIBusLock"],
+              "resources": ["SPIBus1"],
+              "schedule": true
+            }
+          }
+        }
+      },
+      "resources": {
+        "SPIBus1": {}
+      },
+      "events": { },
+      "alarms": { },
+      "counters": {},
+      "isrs": {
+        "MavLinkRecvHandler": {
+          "category": 2,
+          "device": 37,
+          "priority": 100
+        }
+      }
+    }
+  ],
+  "spinlocks": [
+    ["SPIBusLock"]
+  ]
+}

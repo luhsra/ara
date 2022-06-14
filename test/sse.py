@@ -4,14 +4,14 @@
 from init_test import init_test, fail_if
 
 import json
+import difflib
 import sys
 
 
 def _dump_trace(trace):
     ns = ',\n'.join([f"    {json.dumps(x)}" for x in trace["vertices"]])
     es = ',\n'.join([f"    {json.dumps(x)}" for x in trace["edges"]])
-    print(f'{{\n  "vertices": [\n{ns}\n  ],\n  "edges": [\n{es}\n  ]\n}}',
-          file=sys.stderr)
+    return f'{{\n  "vertices": [\n{ns}\n  ],\n  "edges": [\n{es}\n  ]\n}}\n'
 
 
 def _get_trace(sstg, v):
@@ -37,18 +37,12 @@ def _to_tuple(t):
 def main():
     """Test for correct SSE execution."""
     config = {"steps": ["LoadOIL",
-                        {
-                            "name": "Printer",
-                            "dot": "cfg.dot",
-                            "from_entry_point": False,
-                            "graph_name": "CFG",
-                            "subgraph": "abbs"
-                        },
+                        "DumpCFG",
                         "ReduceSSTG"]}
     inp = {"oilfile": lambda argv: argv[3]}
-    m_graph, data, log, _ = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp)
 
-    sstg = m_graph.reduced_sstg
+    sstg = data.graph.reduced_sstg
 
     trace = {}
     verts = []
@@ -67,12 +61,16 @@ def main():
         src = edge_map[e.source()]
         tgt = edge_map[e.target()]
         edges.append((src, tgt))
-    trace["edges"] = tuple(edges)
+    trace["edges"] = tuple(sorted(edges))
 
-    # _dump_trace(trace)
+    dt = _dump_trace(trace)
+    print(dt, file=sys.stderr)
+    with open(sys.argv[1]) as f:
+        golden_trace = f.readlines()
+    sys.stderr.writelines(difflib.unified_diff(golden_trace, dt.splitlines(True)))
 
-    fail_if(_to_tuple(data["vertices"]) != trace["vertices"])
-    fail_if(_to_tuple(data["edges"]) != trace["edges"])
+    fail_if(_to_tuple(data.data["vertices"]) != trace["vertices"])
+    fail_if(_to_tuple(data.data["edges"]) != trace["edges"])
 
 
 if __name__ == '__main__':

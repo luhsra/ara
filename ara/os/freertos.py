@@ -278,10 +278,6 @@ class FreeRTOS(OSBase):
         return True
 
     @staticmethod
-    def init(state):
-        state.scheduler_on = False
-
-    @staticmethod
     def get_initial_state(cfg, instances):
         # We can't set a control instance, yet, since FreeRTOS does not start
         # directly. Is has to be the responsibility of the outer analysis to
@@ -521,7 +517,7 @@ class FreeRTOS(OSBase):
     def vTaskDelay(graph, state, cpu_id, args, va):
         cpu = state.cpus[cpu_id]
 
-        if cpu.running is None:
+        if cpu.control_instance is None:
             # TODO proper error handling
             logger.error("ERROR: vTaskDelay called without running Task")
 
@@ -630,11 +626,6 @@ class FreeRTOS(OSBase):
         logger.info(f"Create new Task {args.task_name} (function: {func_name}) (parameters: {args.task_parameters})")
         return state
 
-    @syscall(categories={SyscallCategory.comm},
-             signature=(Arg('handler'), Arg('type')))
-    def xQueueTakeMutexRecursive(graph, state, cpu_id, args, va):
-        pass
-
     @syscall(categories={SyscallCategory.create}, signature=(Arg("size"),))
     def xStreamBufferGenericCreate(graph, state, cpu_id, args, va):
         state = state.copy()
@@ -667,6 +658,10 @@ class FreeRTOS(OSBase):
         return state
 
     # HERE BEGINS THE TODO sections, all following syscalls are stubs
+
+    @syscall
+    def xQueueTakeMutexRecursive(graph, state, cpu_id, args, va):
+        pass
 
     @syscall
     def eTaskGetState(graph, state, cpu_id, args, va):

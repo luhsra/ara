@@ -3,7 +3,7 @@ settings_dir = meson.current_source_dir()
 # common flags for clang
 clang_flags = ['-g',  # generate debug information
                '-O0',
-               '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA)
+               '-Xclang', '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA)
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',

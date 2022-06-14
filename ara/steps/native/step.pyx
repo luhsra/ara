@@ -377,12 +377,12 @@ def provide_steps():
     objects as steps exist.
     """
     return [_native_step_fac(make_step_fac[cstep.BBSplit]()),
+            _native_step_fac(make_step_fac[cstep.BBTimings]()),
             _native_step_fac(make_step_fac[cstep.CDummy]()),
             _native_step_fac(make_step_fac[cstep.CompInsert]()),
             _native_step_fac(make_step_fac[cstep.FakeEntryPoint]()),
             _native_step_fac(make_step_fac[cstep.FnSingleExit]()),
             _native_step_fac(make_step_fac[cstep.CallGraph]()),
-            _native_step_fac(make_step_fac[cstep.CheckGraph]()),
             _native_step_fac(make_step_fac[cstep.IRWriter]()),
             _native_step_fac(make_step_fac[cstep.IRReader]()),
             _native_step_fac(make_step_fac[cstep.LLVMMap]()),

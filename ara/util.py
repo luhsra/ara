@@ -4,6 +4,9 @@
 import sys
 import logging
 
+from itertools import tee
+from graph_tool.topology import shortest_path
+
 
 LEVEL = {"critical": logging.CRITICAL,
          "error": logging.ERROR,
@@ -109,7 +112,9 @@ def get_logger(name: str, level=None):
 
 def get_null_logger():
     """Get a logger that does absolutely nothing."""
-    return logging.getLogger('null').addHandler(logging.NullHandler())
+    null = logging.getLogger('null')
+    null.disabled = True
+    return null
 
 
 def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):
@@ -139,6 +144,37 @@ def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=Fa
     logging.basicConfig(format=_format, level=logging.DEBUG)
     DieOnErrorLogger.werr = werr
     return logger_manager.get_logger(root_name, level)
+
+
+def dominates(dom_tree, x, y):
+    """Does node x dominate node y?"""
+    while y:
+        if x == y:
+            return True
+        y = dom_tree[y]
+    return False
+
+
+def has_path( graph, source, target):
+    """Is there a path from source to target?"""
+    _, elist = shortest_path(graph, source, target)
+    return len(elist) > 0
+
+
+def pairwise(iterable):
+    """Backport of Python pairwise. See itertools.pairwise."""
+    # pairwise('ABCDEFG') --> AB BC CD DE EF FG
+    version = sys.version_info
+    if version.major >= 3 and version.minor >= 10:
+        log = get_logger("util")
+        log.warn("You are using Python 3.10. Consider switching to native "
+                 "pairwise.")
+        from itertools import pairwise as pw
+        return pw(iterable)
+
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
 
 
 class VarianceDict(dict):

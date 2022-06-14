@@ -4,6 +4,7 @@ app_flags = ['-DconfigINCLUDE_ALL_DECLS=1',
 # experiment scripts
 GenericTimingExperiment = files('GenericTimingExperiment.py')
 ShowGenericTimingExperiment = files('make_figures.py')
+InstanceGraphExperiment = files('instance_graph_experiment.py')
 
 
 # FreeRTOS examples
@@ -108,16 +109,20 @@ foreach app : ir_apps + hw_apps
     #                            +----------------+           +----------------+
 
     name_prefix = 'freertos-' + app + '-' + target
-    ara_target = custom_target(name_prefix + '-os',
-                               input: app_vanilla_ll,
-                               depfile: name_prefix+ '-os.cc.dep',
-                               output: [name_prefix + '-os.cc',
-                                        name_prefix + '-os.cc.startup.s',
-                                        name_prefix + '-modifiedapp.ll',
-                                        name_prefix + '-os.cc.freertos_overrides.h',
-                                       ],
-                               command: get_variable('ara_gen_cmd_' + target)
-                              )
+    if get_option('execute_ara')
+      ara_target = custom_target(name_prefix + '-os',
+                                 input: app_vanilla_ll,
+                                 depfile: name_prefix+ '-os.cc.dep',
+                                 output: [name_prefix + '-os.cc',
+                                          name_prefix + '-os.cc.startup.s',
+                                          name_prefix + '-modifiedapp.ll',
+                                          name_prefix + '-os.cc.freertos_overrides.h',
+                                         ],
+                                 command: get_variable('ara_gen_cmd_' + target)
+                                )
+    else
+      ara_target = disabler()
+    endif
     os_target = [ara_target[0], ara_target[1]]
     app_aramodified_ll = ara_target[2]
     freertos_overrides = ara_target[3]
@@ -315,3 +320,18 @@ subdir('AUTOSAR')
 examples = run_target('examples',
                       command: nop,
                       depends: [osek_targets, freertos_targets])
+
+
+# versuchung experiments
+run_target('gpslogger_instance_experiment',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '--llvm_ir=../appl/FreeRTOS/GPSLogger/gpslogger_app.ll'],
+    env: [python_path],
+    depends: ara_py
+)
+
+run_target('librepilot_instance_experiment',
+    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '--llvm_ir=../appl/FreeRTOS/Librepilot/librepilot_mock.ll',
+              '--custom_step_settings=../../appl/librepilot_experiment_settings.json'],
+    env: [python_path],
+    depends: ara_py
+)

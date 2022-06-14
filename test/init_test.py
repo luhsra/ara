@@ -5,6 +5,8 @@ import logging
 import sys
 import os
 
+from dataclasses import dataclass
+
 
 def fake_step_module():
     """Fake the step module into the correct package."""
@@ -41,6 +43,7 @@ def fail_if(condition, *arg, dry=False):
     """
     if condition or dry:
         print("ERROR:", *arg, file=sys.stderr)
+        print("Tracefile:", sys.argv[1], file=sys.stderr)
         if condition and not dry:
             sys.exit(1)
 
@@ -48,13 +51,23 @@ def fail_if(condition, *arg, dry=False):
 def get_config(i_file):
     """Return the default common config."""
     return {'log_level': os.environ.get('ARA_LOGLEVEL', 'warn'),
-            'dump_prefix': 'dumps/{step_name}.',
+            'dump_prefix': 'dumps/{step_name}',
             'dump': bool(os.environ.get('ARA_DUMP', '')),
             'runtime_stats': True,
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
             'entry_point': 'main',
+            'step_data': False,
             'input_file': i_file}
+
+
+@dataclass
+class TestData:
+    graph: Graph
+    data: dict
+    data_file: str
+    log: object
+    step_manager: StepManager
 
 
 def init_test(steps=None, extra_config=None, logger_name=None,
@@ -112,4 +125,8 @@ def init_test(steps=None, extra_config=None, logger_name=None,
 
     s_manager.execute(conf, extra_config, steps)
 
-    return g, data, logger, s_manager
+    return TestData(graph=g,
+                    data=data,
+                    data_file=json_file,
+                    log=logger,
+                    step_manager=s_manager)

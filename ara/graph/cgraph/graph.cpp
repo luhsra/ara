@@ -111,6 +111,7 @@ namespace ara::graph {
 
 		cfg.etype = get_property<decltype(cfg.etype)>(eprops, "type");
 		ARA_EMAP(is_entry)
+		ARA_EMAP(back_edge)
 
 #undef ARA_VMAP
 #undef ARA_EMAP

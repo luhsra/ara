@@ -1,0 +1,489 @@
+@startuml
+participant SPIBus
+
+control SignalGatherInitiateTask << 24 SGG >>
+control SignalGatherFinishedTask << 25 SGG >>
+control SignalGatherTimeoutTask << 23 SGG >>
+control SignalProcessingActuateTask << 22 SGG >>
+control SignalProcessingAttitudeTask << 21 SGG >>
+
+participant SPIBusLock
+
+participant SPIBus1
+control FlightControlTask << 11 FCG >>
+control FlightControlAttitudeTask << 12 FCG >>
+control FlightControlActuateTask << 13 FCG >>
+control MavlinkSendTask << 10 FCG >>
+
+control CopterControlTask << 5 MRG >>
+control CopterControlWatchdogTask << 1 WDG >>
+
+participant MavLinkRecvHandler << 100 ISR >> #lightblue
+participant AlarmFlightControlTask << 100 ISR >> #lightblue
+participant AlarmSignalGatherInitiateTask << 100 ISR >>  #lightblue
+participant AlarmFlightControlTask << 100 >> #lightblue
+participant AlarmCopterControlWatchdogTask << 100 >> #lightblue
+
+
+actor int
+== Counter 0, round 0 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherTimeoutTask: AT
+SignalGatherInitiateTask -> SPIBusLock: get
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalGatherTimeoutTask
+SignalGatherTimeoutTask -> SPIBus: get
+activate SPIBus
+SignalGatherTimeoutTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherTimeoutTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherTimeoutTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherTimeoutTask -> SignalGatherFinishedTask: CT
+deactivate SignalGatherTimeoutTask
+
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+int-> AlarmFlightControlTask: int
+AlarmFlightControlTask -> FlightControlTask: AT
+activate FlightControlTask
+FlightControlTask -> FlightControlAttitudeTask
+deactivate FlightControlTask
+activate FlightControlAttitudeTask
+FlightControlAttitudeTask -> FlightControlAttitudeTask: TT
+deactivate FlightControlAttitudeTask
+activate FlightControlTask
+FlightControlTask -> FlightControlActuateTask
+deactivate FlightControlTask
+activate FlightControlActuateTask
+FlightControlActuateTask -> FlightControlActuateTask: TT
+deactivate FlightControlActuateTask
+activate FlightControlTask
+FlightControlTask -> MavlinkSendTask: AT
+FlightControlTask -> FlightControlTask: TT
+deactivate FlightControlTask
+activate MavlinkSendTask
+MavlinkSendTask -> SPIBus1: get
+deactivate MavlinkSendTask
+int -> MavLinkRecvHandler: int
+MavLinkRecvHandler -> CopterControlTask: AT
+activate MavlinkSendTask
+MavlinkSendTask -> SPIBusLock: get
+activate SPIBusLock
+MavlinkSendTask -> SPIBusLock: release
+deactivate SPIBusLock
+MavlinkSendTask -> SPIBus1: release
+deactivate SPIBus
+MavlinkSendTask -> MavlinkSendTask: TT
+deactivate MavlinkSendTask
+activate CopterControlTask
+CopterControlTask -> int: suspend
+CopterControlTask -> int: resume
+CopterControlTask -> CopterControlTask: TT
+deactivate CopterControlTask
+
+== Counter 1 ==
+
+== Counter 2 ==
+
+== Counter 3, round 1 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherFinishedTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+deactivate SignalGatherInitiateTask
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+== Counter 4 ==
+
+== Counter 5 ==
+
+== Counter 6, round 2 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherTimeoutTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalGatherTimeoutTask
+SignalGatherTimeoutTask -> SPIBus: get
+activate SPIBus
+SignalGatherTimeoutTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherTimeoutTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherTimeoutTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherTimeoutTask -> SignalGatherFinishedTask: CT
+deactivate SignalGatherTimeoutTask
+
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+
+== Coutner 7 ==
+
+== Counter 8 ==
+
+== Counter 9, round 3 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherFinishedTask: AT
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+deactivate SignalGatherInitiateTask
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+
+int-> AlarmFlightControlTask: int
+AlarmFlightControlTask -> FlightControlTask: AT
+activate FlightControlTask
+FlightControlTask -> FlightControlAttitudeTask
+deactivate FlightControlTask
+activate FlightControlAttitudeTask
+FlightControlAttitudeTask -> FlightControlAttitudeTask: TT
+deactivate FlightControlAttitudeTask
+activate FlightControlTask
+FlightControlTask -> FlightControlActuateTask
+deactivate FlightControlTask
+activate FlightControlActuateTask
+FlightControlActuateTask -> FlightControlActuateTask: TT
+deactivate FlightControlActuateTask
+activate FlightControlTask
+FlightControlTask -> MavlinkSendTask: AT
+FlightControlTask -> FlightControlTask: TT
+deactivate FlightControlTask
+activate MavlinkSendTask
+MavlinkSendTask -> SPIBus1: get
+deactivate MavlinkSendTask
+int -> MavLinkRecvHandler: int
+MavLinkRecvHandler -> CopterControlTask: AT
+activate MavlinkSendTask
+activate SPIBus
+MavlinkSendTask -> SPIBusLock: get
+activate SPIBusLock
+MavlinkSendTask -> SPIBusLock: release
+deactivate SPIBusLock
+MavlinkSendTask -> SPIBus1: release
+deactivate SPIBus
+MavlinkSendTask -> MavlinkSendTask: TT
+deactivate MavlinkSendTask
+activate CopterControlTask
+CopterControlTask -> int: suspend
+CopterControlTask -> int: resume
+CopterControlTask -> CopterControlTask: TT
+deactivate CopterControlTask
+
+== Counter 10 ==
+== Counter 11 ==
+== Counter 12, round 4 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherTimeoutTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalGatherTimeoutTask
+SignalGatherTimeoutTask -> SPIBus: get
+activate SPIBus
+SignalGatherTimeoutTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherTimeoutTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherTimeoutTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherTimeoutTask -> SignalGatherFinishedTask: CT
+deactivate SignalGatherTimeoutTask
+
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+== Counter 13 ==
+== Counter 14 ==
+== Counter 15, round 5 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherFinishedTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+deactivate SignalGatherInitiateTask
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+== Counter 16 ==
+== Counter 17 ==
+== Counter 18, round 6 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherTimeoutTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalGatherTimeoutTask
+SignalGatherTimeoutTask -> SPIBus: get
+activate SPIBus
+SignalGatherTimeoutTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherTimeoutTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherTimeoutTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherTimeoutTask -> SignalGatherFinishedTask: CT
+deactivate SignalGatherTimeoutTask
+
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+
+== Counter 19 ==
+== Counter 20 ==
+int -> AlarmCopterControlWatchdogTask: int
+AlarmCopterControlWatchdogTask -> CopterControlWatchdogTask: AT
+activate CopterControlWatchdogTask
+CopterControlWatchdogTask -> CopterControlWatchdogTask: TT
+deactivate CopterControlWatchdogTask
+
+
+== Counter 21, round 7 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherFinishedTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+deactivate SignalGatherInitiateTask
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+== Counter 22 ==
+== Counter 23 ==
+== Counter 24, round 8 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SPIBus: get
+activate SPIBus
+SignalGatherInitiateTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherInitiateTask -> SignalGatherTimeoutTask: AT
+SignalGatherInitiateTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherInitiateTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherInitiateTask -> SignalGatherInitiateTask: TT
+deactivate SignalGatherInitiateTask
+
+activate SignalGatherTimeoutTask
+SignalGatherTimeoutTask -> SPIBus: get
+activate SPIBus
+SignalGatherTimeoutTask -> SPIBusLock: get
+activate SPIBusLock
+SignalGatherTimeoutTask -> SPIBusLock: release
+deactivate SPIBusLock
+SignalGatherTimeoutTask -> SPIBus: release
+deactivate SPIBus
+SignalGatherTimeoutTask -> SignalGatherFinishedTask: CT
+deactivate SignalGatherTimeoutTask
+
+activate SignalGatherFinishedTask
+SignalGatherFinishedTask -> SignalProcessingAttitudeTask: AT
+SignalGatherFinishedTask -> SignalProcessingActuateTask: AT
+SignalGatherFinishedTask -> SignalGatherFinishedTask: TT
+deactivate SignalGatherFinishedTask
+
+activate SignalProcessingActuateTask
+SignalProcessingActuateTask -> SignalProcessingActuateTask: TT
+deactivate SignalProcessingActuateTask
+
+activate SignalProcessingAttitudeTask
+SignalProcessingAttitudeTask -> SignalProcessingAttitudeTask: TT
+deactivate SignalProcessingAttitudeTask
+
+== Counter 25 ==
+== Counter 26 ==
+== Counter 27, round 9 ==
+int -> AlarmSignalGatherInitiateTask: int
+AlarmSignalGatherInitiateTask -> SignalGatherInitiateTask: AT
+activate SignalGatherInitiateTask
+SignalGatherInitiateTask -> SignalGatherInitiateTask: SHUTDOWN
+deactivate SignalGatherInitiateTask
+== END ==
+
+
+
+
+
+
+
+
+@enduml

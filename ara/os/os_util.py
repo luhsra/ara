@@ -329,6 +329,10 @@ def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
 
 
 def connect_from_here(state, cpu_id, tgt, label, ty=None):
+    """Connect the current instance with tgt.
+
+    The current instance is specified by the current state and the active cpu.
+    """
     cpu = state.cpus[cpu_id]
     connect_instances(state.instances, cpu.control_instance, tgt,
                       cpu.abb, label, ty=ty)

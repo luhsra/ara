@@ -3,7 +3,7 @@ import json
 import pyllco
 
 # Note: init_test must be imported first
-from init_test import init_test, fail_if
+from init_test import init_test
 from ara.graph import ABBType, CFGView, SigType, CallPath
 from ara.steps import get_native_component
 ValueAnalyzer = get_native_component("ValueAnalyzer")
@@ -124,12 +124,12 @@ def main():
     creation_syscalls = set({"xQueueCreateMutex", "xTaskCreateStatic", "xTaskCreate"})
 
     config = {"steps": ["Syscall"] + ValueAnalyzer.get_dependencies()}
-    m_graph, data, log, _ = init_test(extra_config=config)
+    data = init_test(extra_config=config)
     global logger
-    logger = log
-    va = ValueAnalyzer(m_graph)
+    logger = data.log
+    va = ValueAnalyzer(data.graph)
 
-    cfg = m_graph.cfg
+    cfg = data.graph.cfg
 
     syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
 
@@ -145,10 +145,13 @@ def main():
 
     # Creation syscalls must be handled before interaction syscalls.
     for syscall in found_creation_syscalls:
-        perform_va_for_syscall(va, m_graph, syscalls, data, syscall[0], syscall[1])
+        perform_va_for_syscall(va, data.graph, syscalls, data.data,
+                               syscall[0], syscall[1])
 
     for syscall in found_interaction_syscalls:
-        perform_va_for_syscall(va, m_graph, syscalls, data, syscall[0], syscall[1])
+        perform_va_for_syscall(va, data.graph, syscalls, data.data,
+                               syscall[0], syscall[1])
+
 
 if __name__ == '__main__':
     main()
