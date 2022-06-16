@@ -633,6 +633,26 @@ class InstanceGraph(graph_tool.Graph):
             if instance == self.vp.obj[inst]:
                 return inst
 
+class SVFG(graph_tool.Graph):
+    """SVFG graphtool version"""
+    def __init__(self, graph=None):
+        super().__init__(graph)
+        # vertex properties
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
+
+        # ATTENTION: If you modify this values, you also have to update
+        # cgraph/graph.cpp and cgraph/graph.h.
+        self.vertex_properties["vLabel"] = self.new_vp("string")
+        #self.vertex_properties["vObj"] = self.new_vp("object")  # TODO add obj fields as python object
+
+        self.edge_properties["eLabel"] = self.new_ep("string")
+        #self.edge_properties["eObj"] = self.new_ep("object")
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
@@ -680,5 +700,6 @@ class Graph:
         self.callgraph = Callgraph(self.cfg)
         self.os = None
         self.instances = InstanceGraph()
+        self.svfg = SVFG()
         self.step_data = {}
         self.file_cache = {}
