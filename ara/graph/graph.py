@@ -649,10 +649,10 @@ class SVFG(graph_tool.Graph):
         # ATTENTION: If you modify this values, you also have to update
         # cgraph/graph.cpp and cgraph/graph.h.
         self.vertex_properties["vLabel"] = self.new_vp("string")
-        #self.vertex_properties["vObj"] = self.new_vp("object")  # TODO add obj fields as python object
+        self.vertex_properties["vObj"] = self.new_vp("int64_t") # pointer SVF object # TODO add obj fields as python objects
 
         self.edge_properties["eLabel"] = self.new_ep("string")
-        #self.edge_properties["eObj"] = self.new_ep("object")
+        self.edge_properties["eObj"] = self.new_ep("int64_t")
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.

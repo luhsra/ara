@@ -552,11 +552,27 @@ namespace ara::graph {
 		graph_tool::GraphInterface& graph;
 		/* vertex properties */
 		typename graph_tool::vprop_map_t<std::string>::type vLabel;
-		typename graph_tool::vprop_map_t<SVF::VFGNode*>::type vObj;
+		typename graph_tool::vprop_map_t<int64_t>::type vObj;
 
 		/* edge properties */
 		typename graph_tool::eprop_map_t<std::string>::type eLabel;
-		typename graph_tool::eprop_map_t<SVF::VFGEdge*>::type eObj;
+		typename graph_tool::eprop_map_t<int64_t>::type eObj;
+
+		/**
+		 * Return the SVF object living in nodes
+		 */
+		template <class Graph>
+		SVF::VFGNode* get_node_obj(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return reinterpret_cast<SVF::VFGNode*>(vObj[v]);
+		}
+
+		/**
+		 * Return the SVF object living in edges
+		 */
+		template <class Graph>
+		SVF::VFGEdge* get_edge_obj(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return reinterpret_cast<SVF::VFGEdge*>(eObj[v]);
+		}
 
 		/**
 		 * Return a graph tool SVFG from the corresponding Python graph.

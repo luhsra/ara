@@ -296,12 +296,12 @@ namespace ara::graph {
 #define ARA_EMAP(Value) ARA_MAP(svfg, Value, eprops)
 
 		ARA_VMAP(vLabel)
-		//ARA_VMAP(vObj)
+		ARA_VMAP(vObj)
 
 		PyObject* eprops = get_eprops(py_svfg);
 
 		ARA_EMAP(eLabel)
-		//ARA_EMAP(eObj)
+		ARA_EMAP(eObj)
 
 #undef ARA_VMAP
 #undef ARA_EMAP
