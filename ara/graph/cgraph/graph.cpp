@@ -300,7 +300,6 @@ namespace ara::graph {
 
 		PyObject* eprops = get_eprops(py_svfg);
 
-		ARA_EMAP(eLabel)
 		ARA_EMAP(eObj)
 
 #undef ARA_VMAP
@@ -322,8 +321,7 @@ namespace ara::graph {
 
 	std::unique_ptr<SVFG> SVFG::get_ptr(PyObject* py_svfg) {
 		assert(py_svfg != nullptr);
-		std::unique_ptr<SVFG> svfg =
-		    std::make_unique<SVFGUniqueEnabler>(get_graph(py_svfg));
+		std::unique_ptr<SVFG> svfg = std::make_unique<SVFGUniqueEnabler>(get_graph(py_svfg));
 		create_properties(*svfg, py_svfg);
 		return svfg;
 	}

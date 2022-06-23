@@ -5,6 +5,8 @@
 #include "mix.h"
 #include "os.h"
 
+#include <Graphs/VFGEdge.h>
+#include <Graphs/VFGNode.h>
 #include <Python.h>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/python.hpp>
@@ -13,8 +15,6 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <memory>
-#include <Graphs/VFGNode.h>
-#include <Graphs/VFGEdge.h>
 
 namespace ara::graph {
 
@@ -555,7 +555,6 @@ namespace ara::graph {
 		typename graph_tool::vprop_map_t<int64_t>::type vObj;
 
 		/* edge properties */
-		typename graph_tool::eprop_map_t<std::string>::type eLabel;
 		typename graph_tool::eprop_map_t<int64_t>::type eObj;
 
 		/**
