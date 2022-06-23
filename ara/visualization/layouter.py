@@ -7,7 +7,7 @@ from ara.graph import ABBType, CFType, Graph
 from ara.visualization import ara_manager
 from ara.visualization.trace import trace_handler
 
-from ara.visualization.widgets.graph_elements import AbbNode, GraphEdge, Subgraph, CallGraphNode, InstanceNode
+from ara.visualization.widgets.graph_elements import AbbNode, GraphEdge, SVFGNode, Subgraph, CallGraphNode, InstanceNode
 from ara.visualization.util import GraphTypes, StepMode
 
 VALID_EDGE_TYPE = [CFType.lcf, CFType.icf]
@@ -50,6 +50,7 @@ class Layouter(QObject):
         self.call_graph_view = AGraph(strict=False, directed=True)
         self.cfg_view = AGraph(strict=False, directed=True)
         self.instance_graph_view = AGraph(strict=False, directed=True)
+        self.svfg_view = AGraph(strict=False, directed=True)
 
         self.call_graph_view.graph_attr["overlap"] = "false"
 
@@ -260,6 +261,23 @@ class Layouter(QObject):
                 str(hash(edge.target())),
                 label=instance_graph.ep.label[edge])
 
+    def _update_svfg_view(self, mode=StepMode.DEFAULT):
+        """ Create SVFG view. """
+        svfg = self._graph.svfg
+        for vertex in svfg.vertices():
+            self.svfg_view.add_node(
+                str(hash(vertex)),
+                shape="box",
+                label=svfg.vp.vLabel[vertex], # TODO: fix bad alloc error
+                width=5,
+                height=0.75
+            )
+        for edge in svfg.edges():
+            self.svfg_view.add_edge(
+                str(hash(edge.source())),
+                str(hash(edge.target())),
+            )
+
     def _create_return_data(self, graph: AGraph, return_list, graph_type: GraphTypes = GraphTypes.ABB):
         """ Prepares the data so its easier to process by the gui. """
         for n in graph.nodes():
@@ -276,6 +294,8 @@ class Layouter(QObject):
                 return_list.append(CallGraphNode(n))
             if graph_type == GraphTypes.INSTANCE:
                 return_list.append(InstanceNode(n))
+            if graph_type == GraphTypes.SVFG:
+                return_list.append(SVFGNode(n))
 
         for e in graph.edges():
             if not e.attr.__contains__("pos") or e.attr["pos"] is None:
@@ -306,6 +326,12 @@ class Layouter(QObject):
         if graph_type == GraphTypes.INSTANCE:
             self._create_return_data(
                 self.instance_graph_view,
+                return_data,
+                graph_type)
+
+        if graph_type == GraphTypes.SVFG:
+            self._create_return_data(
+                self.svfg_view,
                 return_data,
                 graph_type)
 
@@ -341,6 +367,9 @@ class Layouter(QObject):
                 if graph_type == GraphTypes.INSTANCE:
                     self.instance_graph_view.clear()
                     self._update_instance_graph_view(mode)
+                if graph_type == GraphTypes.SVFG:
+                    self.svfg_view.clear()
+                    self._update_svfg_view(mode)
 
             if graph_type == GraphTypes.ABB:
                 self.cfg_view.layout("dot")
@@ -348,6 +377,8 @@ class Layouter(QObject):
                 self.call_graph_view.layout("dot")
             if graph_type == GraphTypes.INSTANCE:
                 self.instance_graph_view.layout("dot")
+            if graph_type == GraphTypes.SVFG:
+                self.svfg_view.layout("dot")
 
         except Exception as e:
             print(e)

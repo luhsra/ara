@@ -15,7 +15,7 @@ from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
 from .util import RESOURCE_PATH, GraphTypes, StepMode
 from .widgets import graph_views
-from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView
+from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView, SVFGView
 
 loader = QUiLoader()
 
@@ -62,10 +62,12 @@ class GuiWindow(QMainWindow):
         self.dw_cfg = QDockWidget("CFG View", self)
         self.dw_callgraph = QDockWidget("CallGraph View", self)
         self.dw_instance_graph = QDockWidget("Instance View", self)
+        self.dw_svfg = QDockWidget("SVFG View", self)
 
         self.dw_cfg.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
         self.dw_callgraph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
         self.dw_instance_graph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
+        self.dw_svfg.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
 
         self.dw_step_queue = loader.load(RESOURCE_PATH.get() + "step_queue.ui")
         self.dw_function_search = loader.load(RESOURCE_PATH.get() + "function_list_search.ui")
@@ -106,6 +108,7 @@ class GuiWindow(QMainWindow):
         self.sig_change_mode.connect(self.dw_cfg.widget().set_mode)
         self.sig_change_mode.connect(self.dw_callgraph.widget().set_mode)
         self.sig_change_mode.connect(self.dw_instance_graph.widget().set_mode)
+        self.sig_change_mode.connect(self.dw_svfg.widget().set_mode)
 
         self.sig_reset_trace_handler.connect(trace_handler.INSTANCE.reset)
         self.sig_reset_trace_handler.connect(self.dw_callgraph.widget().expansion_points_reset)
@@ -128,6 +131,7 @@ class GuiWindow(QMainWindow):
         self.dw_cfg.setAllowedAreas(Qt.AllDockWidgetAreas)
         self.dw_callgraph.setAllowedAreas(Qt.AllDockWidgetAreas)
         self.dw_instance_graph.setAllowedAreas(Qt.AllDockWidgetAreas)
+        self.dw_svfg.setAllowedAreas(Qt.AllDockWidgetAreas)
 
         self.dw_step_queue.setAllowedAreas(Qt.AllDockWidgetAreas)
         self.dw_function_search.setAllowedAreas(Qt.AllDockWidgetAreas)
@@ -137,14 +141,17 @@ class GuiWindow(QMainWindow):
         self.dw_cfg.setWidget(CFGView(signal_combiner))
         self.dw_callgraph.setWidget(CallGraphView(signal_combiner))
         self.dw_instance_graph.setWidget(InstanceGraphView(signal_combiner))
+        self.dw_svfg.setWidget(SVFGView(signal_combiner))
 
         self.dw_cfg.widget().setRenderHint(QPainter.Antialiasing)
         self.dw_callgraph.widget().setRenderHint(QPainter.Antialiasing)
         self.dw_instance_graph.widget().setRenderHint(QPainter.Antialiasing)
+        self.dw_svfg.widget().setRenderHint(QPainter.Antialiasing)
 
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_cfg)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_callgraph)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_instance_graph)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_svfg)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_step_queue)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_function_search)
 

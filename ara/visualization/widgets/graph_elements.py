@@ -143,6 +143,15 @@ class InstanceNode(AbstractNode):
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.sublabel_text.setText(str(self.data.attr["sublabel"]))
 
+class SVFGNode(AbstractNode):
+    """
+        Node of the SVFG.
+    """
+
+    def __init__(self, node:Node):
+        super().__init__(node, RESOURCE_PATH.get() + "node.ui")
+
+        self.widget.label_text.setText(self.data.attr["label"])
 
 class Subgraph(GraphicsObject):
     """

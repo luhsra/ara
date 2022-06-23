@@ -341,3 +341,10 @@ class InstanceGraphView(BaseGraphView):
     """
     def __init__(self, signal_combiner):
         super().__init__(GraphTypes.INSTANCE, signal_combiner)
+
+class SVFGView(BaseGraphView):
+    """
+        SVFG view.
+    """
+    def __init__(self, signal_combiner):
+        super().__init__(GraphTypes.SVFG, signal_combiner)

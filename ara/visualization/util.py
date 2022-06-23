@@ -12,6 +12,7 @@ class GraphTypes(Enum):
     ABB = "Abb"
     INSTANCE = "Instance"
     CALLGRAPH = "CallGraph"
+    SVFG = "SVFG"
 
 
 class StepMode:
