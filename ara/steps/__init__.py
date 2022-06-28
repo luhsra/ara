@@ -12,6 +12,7 @@ def provide_steps():
     from .dummy import Dummy
     from .dump_cfg import DumpCFG
     from .dump_instances import DumpInstances
+    from .dump_sstg import DumpSSTG
     from .fake_timings import FakeTimings
     from .generator import Generator
     from .icfg import ICFG
@@ -45,6 +46,7 @@ def provide_steps():
     yield Dummy
     yield DumpCFG
     yield DumpInstances
+    yield DumpSSTG
     yield FakeTimings
     yield Generator
     yield ICFG
