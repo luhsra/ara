@@ -924,3 +924,15 @@ class AUTOSAR(OSBase):
                                InstanceEdge.wait)
 
         return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def ShutdownMachine(cfg, state, cpu_id, args, va):
+        """Special handling for ShutdownMachine.
+
+        Actually, this is not an AUTOSAR syscall. However, a machine shutdown
+        prevents the system from executing further, so continue the analysis
+        beyond this point is meaningless.
+        """
+        # just return nothing. The system terminates here.
+        return []
