@@ -88,7 +88,7 @@ class ARAManager(QObject):
                             action='store_true')
         parser.add_argument('--manual-corrections', metavar="FILE",
                             help="File with manual corrections")
-        parser.add_argument('--trace_algorithm', action='store_true', default=False,
+        parser.add_argument('--trace_algorithm', action='store_true', default=True,
                             help="Create a trace of supported algorithms for the gui to visualize")
 
         self.args = parser.parse_args()
