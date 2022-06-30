@@ -71,7 +71,7 @@ def _sstg_state_as_dot(sstg, state_vert):
     return attrs
 
 
-def sstg_to_dot(sstg, label="SSTG"):
+def sstg_to_dot(sstg, label="SSTG", reduced=False):
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     for state_vert in sstg.vertices():
@@ -80,6 +80,8 @@ def sstg_to_dot(sstg, label="SSTG"):
         )
         dot_state = pydot.Node(str(state_vert), **attrs)
         dot_graph.add_node(dot_state)
+    if "reduced" in sstg.ep and not reduced:
+        sstg = GraphView(sstg, efilt=sstg.ep.reduced.fa != True)
     for edge in sstg.edges():
         label = f"{sstg.ep.bcet[edge]} - {sstg.ep.wcet[edge]}"
         dot_graph.add_edge(
@@ -658,7 +660,7 @@ class Printer(Step):
         else:
             sstg = self._graph.sstg
 
-        dot_graph = sstg_to_dot(sstg, name)
+        dot_graph = sstg_to_dot(sstg, name, reduced)
         self._write_dot(dot_graph)
 
     def print_mstg(self):
