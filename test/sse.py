@@ -38,7 +38,8 @@ def main():
     """Test for correct SSE execution."""
     config = {"steps": ["LoadOIL",
                         "DumpCFG",
-                        "ReduceSSTG"]}
+                        "ReduceSSTG",
+                        "DumpSSTG"]}
     inp = {"oilfile": lambda argv: argv[3]}
     data = init_test(extra_config=config, extra_input=inp)
 

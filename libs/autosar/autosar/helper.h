@@ -10,9 +10,6 @@
  * from the application
  */
 
-static void forceinline ShutdownMachine(void) {
-	Machine::shutdown();
-}
-
+extern "C" void ShutdownMachine(void) { Machine::shutdown(); }
 
 #endif

@@ -195,7 +195,7 @@ class SysCall:
         new_states = self._func(graph, new_state, cpu_id, args, va)
         assert new_states is not None, "The syscall does not return anything."
 
-        # few syscalls return multiple follow up states, so wrap everythin
+        # few syscalls return multiple follow up states, so wrap everything
         # into a list, if not already done
         if not isinstance(new_states, list):
             new_states = [new_states]
