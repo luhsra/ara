@@ -499,8 +499,10 @@ class AUTOSAR(OSBase):
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            if obj.cpu_id in cpus and state.context[obj].status in [TaskStatus.running, TaskStatus.ready]:
+            status = state.context[obj].status
+            if obj.cpu_id in cpus and status in [TaskStatus.running, TaskStatus.ready]:
                 cpu_map[obj.cpu_id].append((v, state.context[obj]))
+            logger.debug(f"Object {obj} is in status {str(status)}")
 
         # update cpus
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):

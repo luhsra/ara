@@ -39,7 +39,8 @@ def main():
     config = {"steps": ["LoadOIL",
                         "DumpCFG",
                         "ReduceSSTG",
-                        "DumpSSTG"]}
+                        "DumpSSTG"],
+              "logger": {"AUTOSAR": "debug"}}
     inp = {"oilfile": lambda argv: argv[3]}
     data = init_test(extra_config=config, extra_input=inp)
 
