@@ -81,7 +81,7 @@ test-preproc:
   only: [soso, citest]
   interruptible: true
   variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+    TEST_BUILD: '$PERSISTENT_DIR/build-preproc-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
     - cp -a $WRAP_BUILD $TEST_BUILD
@@ -96,7 +96,7 @@ test-sia:
   only: [soso, citest]
   interruptible: true
   variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+    TEST_BUILD: '$PERSISTENT_DIR/build-sia-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
     - cp -a $WRAP_BUILD $TEST_BUILD
@@ -110,7 +110,7 @@ test-sse:
   only: [soso, citest]
   interruptible: true
   variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+    TEST_BUILD: '$PERSISTENT_DIR/build-sse-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
     - cp -a $WRAP_BUILD $TEST_BUILD
