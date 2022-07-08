@@ -149,9 +149,10 @@ class SVFGNode(AbstractNode):
     """
 
     def __init__(self, node:Node):
-        super().__init__(node, RESOURCE_PATH.get() + "node.ui")
+        super().__init__(node, RESOURCE_PATH.get() + "svfg_node.ui")
 
-        self.widget.label_text.setText(self.data.attr["label"])
+        self.widget.label_text.setText(str(self.data.attr["label"]))
+        self.widget.label_text.setWordWrap(True)
 
 class Subgraph(GraphicsObject):
     """
