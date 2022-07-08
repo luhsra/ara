@@ -14,18 +14,27 @@ using namespace SVF;
 namespace ara::step {
 	std::string SVFAnalyses::get_description() { return "Run SVF analyses."; }
 
+	const unsigned MAX_STRING_LEN = 150;
+	void cut_long_string(std::string& str) {
+		if (str.length() > MAX_STRING_LEN) {
+			str = str.substr(0, 150);
+		}
+	}
+
 	// map SVF SVFG to graph_tool SVFG
 	template <typename SVFGGraphtool>
 	void map_svfg(SVFGGraphtool& g, graph::SVFG svfg_graphtool, SVF::SVFG& svfg_svf, Logger& logger) {
 		using GraphtoolVertex = typename boost::graph_traits<SVFGGraphtool>::vertex_descriptor;
 		std::map<const SVF::VFGNode*, GraphtoolVertex> svf_to_ara_nodes;
-		(void)logger;
+		logger.info() << "Converting SVF graph to graphtool" << endl;
 
 		// convert nodes
 		for (const std::pair<const unsigned int, SVF::VFGNode*> pair : svfg_svf) {
 			auto svf_vertex = std::get<1>(pair);
 			auto graphtool_vertex = boost::add_vertex(g);
-			svfg_graphtool.vLabel[graphtool_vertex] = svf_vertex->toString();
+			std::string vertex_label = svf_vertex->toString();
+			cut_long_string(vertex_label);
+			svfg_graphtool.vLabel[graphtool_vertex] = vertex_label;
 			svfg_graphtool.vObj[graphtool_vertex] = reinterpret_cast<uintptr_t>(svf_vertex);
 			svf_to_ara_nodes[svf_vertex] = graphtool_vertex;
 		}
