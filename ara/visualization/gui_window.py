@@ -151,7 +151,7 @@ class GuiWindow(QMainWindow):
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_cfg)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_callgraph)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_instance_graph)
-        self.addDockWidget(Qt.TopDockWidgetArea, self.dw_svfg)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_svfg)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_step_queue)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_function_search)
 
