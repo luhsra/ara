@@ -343,7 +343,7 @@ def mstg_to_dot(mstg, label="MSTG"):
     return dot_graph
 
 
-def sp_mstg_to_dot(mstg, label="SP MSTG"):
+def sp_mstg_to_dot(mstg, label="SyncPoints MSTG"):
     shorten = {
             "AUTOSAR_GetSpinlock": "GL",
             "AUTOSAR_ReleaseSpinlock": "RL",
@@ -353,6 +353,16 @@ def sp_mstg_to_dot(mstg, label="SP MSTG"):
             "AUTOSAR_WaitEvent": "WE",
 
     }
+    legend = '<br/>'.join([html.escape(x) for x in [
+        "state format:",
+        "$entry sync point$ -> $exit sync point$",
+        "coreX, stateY (trggering syscall)",
+        "",
+        "edge format:",
+        "dashed, red: sy2sy (sync point to sync point)",
+        "dotted, green: follow_sync (following SPs in time)",
+        ]])
+    label = f"<{html.escape(str(label))}<br/><br/>{legend}>"
     dot_graph = pydot.Dot(graph_type="digraph", label=label)
 
     def _dsp(vertex, label=None):
