@@ -186,6 +186,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
         env: [python_path],
+        depends: ara_py,
         suite: ['analysis', 'preproc']
     )
 
