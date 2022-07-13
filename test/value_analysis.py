@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import json
-import pyllco
 
 # Note: init_test must be imported first
 from init_test import init_test
+import pyllco
 from ara.graph import ABBType, CFGView, SigType, CallPath
 from ara.steps import get_native_component
 ValueAnalyzer = get_native_component("ValueAnalyzer")
+
 
 def value_to_py(value, attrs):
     if value is None:

@@ -10,7 +10,9 @@ from dataclasses import dataclass
 
 def fake_step_module():
     """Fake the step module into the correct package."""
+    sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
     import graph_tool
+    import pyllco
     def load(what, where):
         module = importlib.import_module(what)
         sys.modules[where] = module
@@ -18,6 +20,8 @@ def fake_step_module():
     load("graph_data", "ara.graph.graph_data")
     load("py_logging", "ara.steps.py_logging")
     load("step", "ara.steps.step")
+
+    sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 
 fake_step_module()
