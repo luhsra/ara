@@ -8,18 +8,38 @@
 #include <SVF-FE/PAGBuilder.h>
 #include <Util/BasicTypes.h>
 #include <WPA/Andersen.h>
+#include <sstream>
 
 using namespace SVF;
 
 namespace ara::step {
-	std::string SVFAnalyses::get_description() { return "Run SVF analyses."; }
+	// clang-format off
+	// clang-format is failing to recognize the lambda function here
+	namespace {
+		// manual mapping of svf/include/Graphs/VFGNode.h
+		constexpr auto type_to_str{[]() constexpr {
+			std::array<const char*, 24> result{};
+			result[VFGNode::VFGNodeK::Addr] = "AddrVFGNode";
+			result[VFGNode::VFGNodeK::Copy] = "Copy";
+			result[VFGNode::VFGNodeK::Gep] = "Gep";
+			result[VFGNode::VFGNodeK::Store] = "Store";
+			result[VFGNode::VFGNodeK::Load] = "Load";
+			result[VFGNode::VFGNodeK::Cmp] = "Cmp";
+			result[VFGNode::VFGNodeK::BinaryOp] = "BinaryOp";
+			result[VFGNode::VFGNodeK::UnaryOp] = "UnaryOp";
+			result[VFGNode::VFGNodeK::TPhi] = "TPhi";
+			result[VFGNode::VFGNodeK::TIntraPhi] = "TIntraPhi";
+			result[VFGNode::VFGNodeK::TInterPhi] = "TInterPhi";
+			result[VFGNode::VFGNodeK::MPhi] = "MPhi";
+			// TODO: here are some values missing, see svf/include/Graphs/VFGNode.h
+			return result;
+		}()};
+	} // namespace
+}
+// clang-format on
 
-	const unsigned MAX_STRING_LEN = 150;
-	void cut_long_string(std::string& str) {
-		if (str.length() > MAX_STRING_LEN) {
-			str = str.substr(0, 150);
-		}
-	}
+namespace ara::step {
+	std::string SVFAnalyses::get_description() { return "Run SVF analyses."; }
 
 	// map SVF SVFG to graph_tool SVFG
 	template <typename SVFGGraphtool>
@@ -29,20 +49,17 @@ namespace ara::step {
 		logger.info() << "Converting SVF graph to graphtool" << endl;
 
 		// convert nodes
-		for (const std::pair<const unsigned int, SVF::VFGNode*> pair : svfg_svf) {
-			auto svf_vertex = std::get<1>(pair);
+		for (const auto& [_, svf_vertex] : svfg_svf) {
 			auto graphtool_vertex = boost::add_vertex(g);
-			std::string vertex_label = svf_vertex->toString();
-			cut_long_string(vertex_label);
-			svfg_graphtool.vLabel[graphtool_vertex] = vertex_label;
+			std::stringstream ss;
+			ss << type_to_str[svf_vertex->getNodeKind()] << " ID: " << svf_vertex->getId();
+			svfg_graphtool.vLabel[graphtool_vertex] = ss.str();
 			svfg_graphtool.vObj[graphtool_vertex] = reinterpret_cast<uintptr_t>(svf_vertex);
 			svf_to_ara_nodes[svf_vertex] = graphtool_vertex;
 		}
 
 		// convert edges
-		for (const auto& node : svf_to_ara_nodes) {
-			auto svf_vertex = node.first;
-			auto graphtool_vertex = node.second;
+		for (const auto& [svf_vertex, graphtool_vertex] : svf_to_ara_nodes) {
 			// convert all incoming edges of all vertices (We can not iterate over all edges directly)
 			for (const SVF::VFGEdge* svf_edge :
 			     boost::make_iterator_range(svf_vertex->InEdgeBegin(), svf_vertex->InEdgeEnd())) {
