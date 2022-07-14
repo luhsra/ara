@@ -13,9 +13,10 @@ log_bridge = py3_inst.extension_module('py_logging',
 
 log_bridge_incl = include_directories('.')
 
+# Attention: When using this dependency, you must also
+# somehow trigger the compilation of log_bridge.
 log_dep = declare_dependency(
   include_directories: log_bridge_incl,
-  link_with: log_bridge,
   sources: py_logging_header)
 
 # steps
@@ -82,7 +83,9 @@ step_mod = py3_inst.extension_module('step',
         'svf_analyses.cpp',
         'svf_transformation.cpp',
         'value_analyzer.cpp') + test_sources,
+  override_options: 'b_lundef=false',
   cpp_pch: 'pch/steps_pch.h',
+  link_depends: [log_bridge, graph_data_mod],
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep, cudd_dep]
 )
 

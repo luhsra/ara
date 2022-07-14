@@ -1,7 +1,7 @@
 {
   "vertices": [
     [0, ["AUTOSAR_ActivateTask", "Handler11", "CallPath()"]],
-    [1, ["AUTOSAR_ActivateTask", "Handler11", "Callpath([ABB9, AUTOSAR_TASK_FUNC_Handler11 -> bar])"]],
+    [1, ["AUTOSAR_ActivateTask", "Handler11", "Callpath([ABB16, AUTOSAR_TASK_FUNC_Handler11 -> bar])"]],
     [2, ["AUTOSAR_ChainTask", "Handler11", "CallPath()"]],
     [3, ["AUTOSAR_TerminateTask", "Handler12", "CallPath()"]],
     [4, ["AUTOSAR_TerminateTask", "Handler13", "CallPath()"]],

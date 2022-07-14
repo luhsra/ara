@@ -116,6 +116,7 @@ ara_py_content = '''#!@0@
 """Automatic Real-time System Analyzer"""
 import importlib
 import sys
+import os
 import graph_tool
 
 def load(what, where):
@@ -123,10 +124,15 @@ def load(what, where):
     sys.modules[where] = module
 
 sys.path = [@1@] + sys.path
+sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+
+import pyllco
 
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
+
+sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 import ara.ara as _ara
 sys.exit(_ara.main())'''

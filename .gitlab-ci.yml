@@ -81,13 +81,13 @@ test-preproc:
   only: [soso, citest]
   interruptible: true
   variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+    TEST_BUILD: '$PERSISTENT_DIR/build-preproc-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -a $WRAP_BUILD $TEST_BUILD
+    - cp -a $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite ara-link
-    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite preproc
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite ara-link
+    - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite preproc
 
 test-sia:
   stage: test
@@ -96,10 +96,10 @@ test-sia:
   only: [soso, citest]
   interruptible: true
   variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+    TEST_BUILD: '$PERSISTENT_DIR/build-sia-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -a $WRAP_BUILD $TEST_BUILD
+    - cp -a $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sia
 
@@ -110,10 +110,10 @@ test-sse:
   only: [soso, citest]
   interruptible: true
   variables:
-    TEST_BUILD: '$PERSISTENT_DIR/build-toplevel-tests'
+    TEST_BUILD: '$PERSISTENT_DIR/build-sse-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -a $WRAP_BUILD $TEST_BUILD
+    - cp -a $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sse
 

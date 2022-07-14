@@ -1,0 +1,38 @@
+{
+	"cpus": [
+		{
+			"id": 0,
+			"tasks": {
+			      "J1": {
+			        "activation": 1,
+			        "autostart": false,
+			        "priority": 3,
+			        "schedule": true,
+              		"resources": [ "dotted" ]
+			      },
+			      "J2": {
+			        "activation": 1,
+			        "autostart": false,
+			        "priority": 2,
+			        "schedule": true,
+              		"resources": [ "black", "shaded" ]
+			      },
+			      "J3": {
+			        "activation": 1,
+			        "autostart": true,
+			        "priority": 1,
+			        "schedule": true,
+              		"resources": [ "black", "shaded" ]
+			      }
+			},
+			"resources": {
+				"black": {},
+				"dotted": {},
+				"shaded": {}
+			},
+			"events": {},
+			"counters": {},
+			"alarms": {}
+		}
+	]
+}

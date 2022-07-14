@@ -77,7 +77,7 @@ elif get_option('arch') == 'arm'
   # external gcc dir
   if get_option('arm_gcc_version') == 'default'
     system_gcc = find_program('arm-none-eabi-gcc')
-    r = run_command(py3_inst, gcc_version, system_gcc.path())
+    r = run_command(py3_inst, gcc_version, system_gcc.path(), check: true)
     if r.returncode() != 0
       error('Cannot extract default GCC option. Consider setting "arm_gcc_version".')
     endif

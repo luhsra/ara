@@ -499,8 +499,11 @@ class AUTOSAR(OSBase):
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            if obj.cpu_id in cpus and state.context[obj].status in [TaskStatus.running, TaskStatus.ready]:
-                cpu_map[obj.cpu_id].append((v, state.context[obj]))
+            if obj.cpu_id in cpus:
+                status = state.context[obj].status
+                if status in [TaskStatus.running, TaskStatus.ready]:
+                    cpu_map[obj.cpu_id].append((v, state.context[obj]))
+                logger.debug(f"Object {obj} is in status {str(status)}")
 
         # update cpus
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
@@ -796,7 +799,8 @@ class AUTOSAR(OSBase):
     @staticmethod
     def connect_events(state, cpu_id, event_mask, label, ty):
         for v, event in state.instances.get(Event):
-            if (event.index & event_mask) == event.index:
+            if event.index is not None and \
+                    (event.index & event_mask) == event.index:
                 connect_from_here(state, cpu_id, v, label, ty=ty)
 
     @staticmethod
@@ -813,9 +817,6 @@ class AUTOSAR(OSBase):
         if task_ctx.status != TaskStatus.suspended:
             task_ctx.received_events |= event_mask
 
-        AUTOSAR.connect_events(state, cpu_id, event_mask, "SetEvent",
-                               InstanceEdge.sete)
-
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -824,7 +825,11 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.task, Task))
         assert(isinstance(args.event_mask, int))
-        return AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
+        state = AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
+        AUTOSAR.connect_events(state, cpu_id, args.event_mask, "SetEvent",
+                               InstanceEdge.sete)
+        return state
+
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),

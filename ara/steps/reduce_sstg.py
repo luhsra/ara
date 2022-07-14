@@ -27,7 +27,10 @@ class ReduceSSTG(Step):
     def run(self):
         sstg = self._graph.sstg
 
+        # nodes that belong the the reduced graph
         sstg.vp.reduced = sstg.new_vp("bool", val=False)
+        # edges that are newly created for the reduced graph
+        sstg.ep.reduced = sstg.new_ep("bool", val=False)
 
         todo_v = sstg.new_vp("bool", val=True)
 
@@ -46,9 +49,9 @@ class ReduceSSTG(Step):
                         for out_v in reduced_v.out_neighbors():
                             new_edges.add((in_v, out_v))
                 for src, tgt in new_edges:
-                    # query edge so it is only created if it is _not_ existing
-                    sstg.edge(sstg.vertex(src), sstg.vertex(tgt),
-                              add_missing=True)
+                    if not sstg.edge(sstg.vertex(src), sstg.vertex(tgt)):
+                        e = sstg.add_edge(sstg.vertex(src), sstg.vertex(tgt))
+                        sstg.ep.reduced[e] = True
                 todo_v[v] = False
 
         self._graph.reduced_sstg = GraphView(sstg, vfilt=sstg.vp.reduced)
