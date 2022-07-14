@@ -268,7 +268,7 @@ class Layouter(QObject):
             self.svfg_view.add_node(
                 str(hash(vertex)),
                 shape="box",
-                label=svfg.vp.vLabel[vertex], # TODO: fix bad alloc error
+                label=svfg.vp.label[vertex], # TODO: fix bad alloc error
                 width=5,
                 height=0.75
             )

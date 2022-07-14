@@ -53,8 +53,8 @@ namespace ara::step {
 			auto graphtool_vertex = boost::add_vertex(g);
 			std::stringstream ss;
 			ss << type_to_str[svf_vertex->getNodeKind()] << " ID: " << svf_vertex->getId();
-			svfg_graphtool.vLabel[graphtool_vertex] = ss.str();
-			svfg_graphtool.vObj[graphtool_vertex] = reinterpret_cast<uintptr_t>(svf_vertex);
+			svfg_graphtool.label[graphtool_vertex] = ss.str();
+			svfg_graphtool.obj[graphtool_vertex] = reinterpret_cast<uintptr_t>(svf_vertex);
 			svf_to_ara_nodes[svf_vertex] = graphtool_vertex;
 		}
 
@@ -64,7 +64,7 @@ namespace ara::step {
 			for (const SVF::VFGEdge* svf_edge :
 			     boost::make_iterator_range(svf_vertex->InEdgeBegin(), svf_vertex->InEdgeEnd())) {
 				auto graphtool_edge = boost::add_edge(svf_to_ara_nodes[svf_edge->getSrcNode()], graphtool_vertex, g);
-				svfg_graphtool.eObj[graphtool_edge.first] = reinterpret_cast<uintptr_t>(svf_edge);
+				svfg_graphtool.eobj[graphtool_edge.first] = reinterpret_cast<uintptr_t>(svf_edge);
 			}
 		}
 	}

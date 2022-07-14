@@ -293,14 +293,14 @@ namespace ara::graph {
 		PyObject* vprops = get_vprops(py_svfg);
 
 #define ARA_VMAP(Value) ARA_MAP(svfg, Value, vprops)
-#define ARA_EMAP(Value) ARA_MAP(svfg, Value, eprops)
 
-		ARA_VMAP(vLabel)
-		ARA_VMAP(vObj)
+		ARA_VMAP(label)
+		ARA_VMAP(obj)
 
 		PyObject* eprops = get_eprops(py_svfg);
 
-		ARA_EMAP(eObj)
+		// ARA_EMAP does not work here since the C++ and Python name differ
+		svfg.eobj = get_property<decltype(svfg.eobj)>(eprops, "obj");
 
 #undef ARA_VMAP
 #undef ARA_EMAP
