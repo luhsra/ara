@@ -86,6 +86,14 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
+    test('ir-writer',
+        py3_inst,
+        args: [files('ir_writer.py'), files('empty.json'), gpslogger_application],
+        env: [python_path],
+        depends: ara_py,
+        suite: ['analysis', 'preproc']
+    )
+
     lock_files = {
                    'autosar_multicore_locks_a': files('locks_a.json'),
                    'autosar_multicore_locks_b': files('locks_b.json'),

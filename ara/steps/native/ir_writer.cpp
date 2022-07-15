@@ -28,6 +28,7 @@ namespace ara::step {
 			output = &logger.info().llvm_ostream();
 		} else {
 			std::error_code error;
+			std::filesystem::create_directories(std::filesystem::path(fn).parent_path());
 			out_file = std::make_unique<llvm::raw_fd_ostream>(fn, error, llvm::sys::fs::OpenFlags::OF_Text);
 			if (out_file->has_error()) {
 				logger.err() << out_file->error() << std::endl;
