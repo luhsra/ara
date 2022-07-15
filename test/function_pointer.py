@@ -8,7 +8,6 @@ from init_test import init_test, fail_if
 def main():
     """Test for correct function pointer mapping."""
     config = {"steps": ["CFGOptimize",
-                        "IRWriter",
                         "ResolveFunctionPointer",
                         "CallGraphStats"]}
     data = init_test(extra_config=config, logger_name="fpointer")
