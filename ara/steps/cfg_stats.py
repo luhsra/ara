@@ -1,6 +1,7 @@
 """Container for CFGStats."""
 from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory, NodeLevel
 from .step import Step
+from .util import open_with_dirs
 from graph_tool.topology import label_components
 from ara.os import get_syscalls
 
@@ -83,7 +84,7 @@ class CFGStats(Step):
             self._log.info(f"Number of syscalls for category {cat.name}: {count}")
 
         if self.dump.get():
-            with open(self.dump_prefix.get() + '.json', 'w') as f:
+            with open_with_dirs(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_abbs": num_abbs,
                            "num_syscalls": num_syscalls,
                            "num_calls": num_calls,

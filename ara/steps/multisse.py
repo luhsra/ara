@@ -2,6 +2,7 @@
 
 from .option import Option, String, Bool
 from .step import Step
+from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
 from ara.graph import MSTGraph, StateType, MSTType, single_check, vertex_types, edge_types
@@ -369,16 +370,16 @@ class MultiSSE(Step):
 
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
-        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
         dot_graph = mstg_to_dot(self._mstg.g, label=f"MSTG {extra}")
-        dot_graph.write(dot_path)
+        with open_with_dirs(dot_path):
+            dot_graph.write(dot_path)
         self._log.info(f"Write MSTG to {dot_path}.")
 
         dot_file = self.dump_prefix.get() + f"mstg.{extra}.sp.dot"
         dot_path = os.path.abspath(dot_file)
-        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
         dot_graph = sp_mstg_to_dot(self._mstg.g, label=f"SP MSTG {extra}")
-        dot_graph.write(dot_path)
+        with open_with_dirs(dot_path):
+            dot_graph.write(dot_path)
         self._log.info(f"Write SP MSTG to {dot_path}.")
 
     def _get_initial_state(self):

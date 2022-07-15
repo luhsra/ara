@@ -1,5 +1,6 @@
 """Container for ApplyTimings."""
 from .step import Step
+from .util import open_with_dirs
 from .option import Option, String
 from ara.graph import ABBType
 
@@ -49,7 +50,7 @@ class ApplyTimings(Step):
         if create_timings:
             self._log.info("Create an example timing file.")
 
-            with open(create_timings, 'w') as f:
+            with open_with_dirs(create_timings, 'w') as f:
                 f.write("{\n")
                 first = True
                 for abb in abbs.vertices():
