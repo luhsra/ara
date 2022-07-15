@@ -82,8 +82,8 @@ test-preproc:
     TEST_BUILD: '$PERSISTENT_DIR/build-preproc-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -l $WRAP_BUILD/ara $TEST_BUILD/
-    - cp -l $WRAP_BUILD/subprojects $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
     - cp -an $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite ara-link
@@ -99,8 +99,8 @@ test-sia:
     TEST_BUILD: '$PERSISTENT_DIR/build-sia-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -l $WRAP_BUILD/ara $TEST_BUILD/
-    - cp -l $WRAP_BUILD/subprojects $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
     - cp -an $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sia
@@ -115,8 +115,8 @@ test-sse:
     TEST_BUILD: '$PERSISTENT_DIR/build-sse-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -l $WRAP_BUILD/ara $TEST_BUILD/
-    - cp -l $WRAP_BUILD/subprojects $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
     - cp -an $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sse
