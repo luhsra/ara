@@ -19,7 +19,7 @@ graph_data_mod = py3_inst.extension_module('graph_data',
   'callpath.cpp',
   'mix.cpp',
   'os.cpp',
-  link_args: '-rdynamic',
+  gnu_symbol_visibility: 'default',
   override_options: 'b_lundef=false',
   dependencies: [py3_inst.dependency(), llvm_dep, boost_dep, graph_tool_dep, common_dep, pyllco_dep, svf_dep]
 )

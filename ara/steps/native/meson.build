@@ -8,6 +8,7 @@ py_logging_header = py_logging_pyx_cpp[1]
 
 log_bridge = py3_inst.extension_module('py_logging',
   py_logging_pyx_cpp,
+  gnu_symbol_visibility: 'default',
   dependencies: py3_inst.dependency()
 )
 
@@ -83,6 +84,7 @@ step_mod = py3_inst.extension_module('step',
         'svf_analyses.cpp',
         'svf_transformation.cpp',
         'value_analyzer.cpp') + test_sources,
+  gnu_symbol_visibility: 'default',
   override_options: 'b_lundef=false',
   cpp_pch: 'pch/steps_pch.h',
   link_depends: [log_bridge, graph_data_mod],
