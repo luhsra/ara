@@ -13,7 +13,7 @@ class ProcessingSignalManager(QObject):
     sig_execute_chain = Signal(list)
 
     sig_init_done = Signal()
-    # first bool indicates if there are more step
+    # first bool indicates if there are more steps
     # second bool indicates if there has been a trace
     sig_step_done = Signal(bool, bool)
     sig_finish_done = Signal()
