@@ -1,13 +1,24 @@
 from PySide6.QtWidgets import QApplication
 
-from PySide6.QtCore import QThread
+from PySide6.QtCore import QThread, QTimer
 
 from . import ara_manager
 from .trace import trace_handler
 from .gui_window import GuiWindow
-
+import signal
 
 application = QApplication([])
+
+# stop ARA on CTRL+C
+def kill_ara(signal, _):
+	application.quit()
+signal.signal(signal.SIGINT, kill_ara)
+signal.signal(signal.SIGTERM, kill_ara)
+
+# send events constantly to make sure python is reacting to signals
+timer = QTimer()
+timer.timeout.connect(lambda: None)
+timer.start(300)
 
 gui_window = GuiWindow(None)
 
