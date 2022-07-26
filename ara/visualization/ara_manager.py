@@ -158,8 +158,6 @@ class ARAManager(QObject):
 
     @Slot()
     def step(self):
-        trace_exist = self.s_manager.is_next_step_traceable()
-
         if self.s_manager.step() == 0:
             ara_signal.SIGNAL_MANAGER.sig_step_done.emit(len(self.s_manager.get_steps()) > 0,
                                                          not(self.s_manager.get_trace() is None))
