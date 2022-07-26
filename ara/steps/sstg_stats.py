@@ -1,5 +1,6 @@
 """Container for SSTGStats."""
 from .step import Step
+from .util import open_with_dirs
 
 import json
 
@@ -20,7 +21,7 @@ class SSTGStats(Step):
         self._log.info(f"Number of transitions: {num_transitions}")
 
         if self.dump.get():
-            with open(self.dump_prefix.get() + '.json', 'w') as f:
+            with open_with_dirs(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_absss": num_absss,
                           "num_transitions": num_transitions}
                 json.dump(values, f, indent=4)

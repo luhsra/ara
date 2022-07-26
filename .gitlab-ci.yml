@@ -5,7 +5,7 @@ stages:
   - cleanup
 
 variables:
-  PERSISTENT_DIR: '/home/gitlab-runner/dont_bakup/ara-build$CI_PIPELINE_ID'
+  PERSISTENT_DIR: '/home/gitlab-runner/dont_backup/ara-build$CI_PIPELINE_ID'
   WRAP_BUILD: '$PERSISTENT_DIR/build'
   WRAP_SUBPROJECTS: '$PERSISTENT_DIR/subprojects'
   C_SOURCE: '/tmp/ara'
@@ -58,8 +58,6 @@ build-gcc:
     - echo "Building with gcc"
     - CC=gcc CXX=g++ eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson setup --native-file $C_SOURCE/native-lab.txt -Db_pch=true $C_BUILD $C_SOURCE
     - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- meson compile -C $C_BUILD ara-py
-    - echo "Emptying files for further processing."
-    - eval $BWRAP --bind $WRAP_BUILD $C_BUILD -- $C_SOURCE/tools/clean_build_directory.py $C_BUILD
     - sync
 
 build-clang:
@@ -84,7 +82,9 @@ test-preproc:
     TEST_BUILD: '$PERSISTENT_DIR/build-preproc-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -a $WRAP_BUILD/. $TEST_BUILD
+    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
+    - cp -an $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite ara-link
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD -v --suite preproc
@@ -99,7 +99,9 @@ test-sia:
     TEST_BUILD: '$PERSISTENT_DIR/build-sia-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -a $WRAP_BUILD/. $TEST_BUILD
+    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
+    - cp -an $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sia
 
@@ -113,7 +115,9 @@ test-sse:
     TEST_BUILD: '$PERSISTENT_DIR/build-sse-tests'
   script:
     - echo "Make a copy of the build directory (from $WRAP_BUILD to $TEST_BUILD)"
-    - cp -a $WRAP_BUILD/. $TEST_BUILD
+    - cp -rl $WRAP_BUILD/ara $TEST_BUILD/
+    - cp -rl $WRAP_BUILD/subprojects $TEST_BUILD/
+    - cp -an $WRAP_BUILD/. $TEST_BUILD
     - echo "Run tests"
     - eval $BWRAP --bind $TEST_BUILD $C_BUILD -- meson test -C $C_BUILD --suite sse
 

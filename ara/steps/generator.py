@@ -4,6 +4,7 @@ import sys
 
 from ara.graph import Graph
 from .step import Step
+from .util import open_with_dirs
 from .option import Option, Choice, String, Bool
 
 from ara.generator import *
@@ -80,7 +81,7 @@ class Generator(Step):
             src_files += gen.get_dependencies()
             if self._step_manager._config.program['step_settings']:
                 src_files += self._step_manager._config.program['step_settings']
-            with open(dep_file, 'w') as fd:
+            with open_with_dirs(dep_file, 'w') as fd:
                 fd.write(gen.file_prefix + ": ")
                 fd.write("\\\n".join(src_files))
 

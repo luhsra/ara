@@ -1,4 +1,4 @@
-"""Container for Dummy."""
+"""Container for LockElision."""
 from ara.os.autosar import Spinlock
 from ara.os.os_base import ExecState
 from ara.graph import MSTType, single_check
@@ -13,7 +13,8 @@ class LockElision(Step):
     # Is has the following structure:
     # (Class of lock, Function which returns the name,
     #  Function which specifies that the lock is spinning)
-    LOCKS = [(Spinlock, lambda x: x.name, lambda x: x.is_spinning)]
+    LOCKS = [(Spinlock, lambda x: x.name,
+              lambda x: x.on_hold and len(x.wait_for) > 0)]
 
     def _may_spin(self, state, cpu_id):
         mstg = self._graph.mstg
@@ -36,7 +37,6 @@ class LockElision(Step):
                                 dst, mstg.vp.state[dst].id, spin)
                 may_spin |= spin
         return may_spin, handled
-
 
     def get_single_dependencies(self):
         return ["MultiSSE"]
@@ -61,7 +61,8 @@ class LockElision(Step):
                             for sync_point in m2sy.vertex(ms).in_neighbors():
                                 state = m2sy.vp.state[sync_point]
                                 if state and obj in state.context and get_status(state.context[obj]):
-                                    lock_count[get_name(obj)] += 1
+                                    self._log.debug(f"Lock {name} spins in state {state_vert} ({state.context[obj]})")
+                                    lock_count[name] += 1
                             if len(list(m2sy.vertex(ms).out_neighbors())) == 0:
                                 deadlock[name] = deadlock.get(name, 0) + 1
 

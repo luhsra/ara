@@ -72,10 +72,11 @@ def main():
     inp = {"oilfile": lambda argv: argv[3]}
     if with_timings:
         config = {"steps": ["ApplyTimings", "LockElision"],
-                  "MultiSSE": {"with_times": True}}
+                  "MultiSSE": {"with_times": True, "dump": True}}
         inp["timings"] = lambda argv: argv[4]
     else:
-        config = {"steps": ["LockElision"]}
+        config = {"steps": ["LockElision"],
+                  "MultiSSE": {"dump": True}}
     data = init_test(extra_config=config, extra_input=inp)
 
     mstg = data.graph.mstg

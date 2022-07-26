@@ -4,6 +4,7 @@ from ara.os.os_base import ExecState
 
 from .option import Option, String, Choice, Bool
 from .step import Step
+from .util import open_with_dirs
 
 from graph_tool import GraphView
 from graph_tool.topology import all_paths
@@ -481,8 +482,8 @@ class Printer(Step):
         dot_path = self.dot.get()
         assert dot_path
         dot_path = os.path.abspath(dot_path)
-        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
-        dot.write(dot_path)
+        with open_with_dirs(dot_path):
+            dot.write(dot_path)
         self._log.info(f"Write {self.subgraph.get()} to {dot_path}.")
 
     def _gen_html_file(self, filename):
@@ -508,8 +509,7 @@ class Printer(Step):
         with open(filename) as f:
             code = f.read()
 
-        os.makedirs(os.path.dirname(hfile), exist_ok=True)
-        with open(hfile, 'w') as g:
+        with open_with_dirs(hfile, 'w') as g:
             g.write(highlight(code, CppLexer(),
                               HtmlFormatter(linenos='inline',
                                             lineanchors='line', full=True)))

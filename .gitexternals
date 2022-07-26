@@ -12,7 +12,7 @@
 
 [external "sparsedata"]
 	path = subprojects/sparsedata
-	url = git@scm.sra.uni-hannover.de:research/SparseData.git
+	url = https://scm.sra.uni-hannover.de/published/SparseData.git
 	branch = master
 	vcs = git
 
