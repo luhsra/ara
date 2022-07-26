@@ -67,6 +67,7 @@ namespace ara::step {
 				svfg_graphtool.eobj[graphtool_edge.first] = reinterpret_cast<uintptr_t>(svf_edge);
 			}
 		}
+		logger.info() << "Conversion finished" << endl;
 	}
 
 	void SVFAnalyses::run() {
