@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from queue import PriorityQueue
 
 import traceback
@@ -11,10 +12,11 @@ class TraceContext:
         This objects holds the data which is needed for the processing of the trace.
     """
 
-    def __init__(self, callgraph, cfg, instances):
+    def __init__(self, callgraph, cfg, instances, svfg):
         self.cfg = cfg
         self.callgraph = callgraph
         self.instances = instances
+        self.svfg = svfg
 
 
 class IndexFactory:
@@ -68,6 +70,10 @@ class BaseTraceElement:
 
         return self.index < other.index
 
+@dataclass
+class LogTraceElement:
+    trace_elem: BaseTraceElement
+    log_line: str
 
 class CallgraphNodeHighlightTraceElement(BaseTraceElement):
     """

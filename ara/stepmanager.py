@@ -21,6 +21,9 @@ from collections import defaultdict
 
 import traceback
 
+from ara.visualization.trace.trace_type import AlgorithmTrace
+from ara.visualization.trace.tracer_api.tracer import Tracer
+
 from .util import get_logger, get_logger_manager, LEVEL
 from .steps import provide_steps
 from .steps.step import Step
@@ -367,6 +370,7 @@ class StepManager:
         return self._last_step_trace
 
     def step(self):
+        """Run next step. Executed by ARA visualization exclusively"""
 
         try:
 
@@ -418,7 +422,13 @@ class StepManager:
                     time_after = time.time()
 
                 if current_traceable:
-                    self._last_step_trace = current.step.trace
+                    trace_api = current.step.trace
+                    if type(trace_api) == AlgorithmTrace:
+                        self._last_step_trace = trace_api
+                    elif type(trace_api) == Tracer:
+                        self._last_step_trace = trace_api.low_level_trace
+                    else:
+                        raise RuntimeError(f"Unknown object {trace_api} in step.trace")
 
                 # runtime stats handling
                 if self._runtime_stats:
