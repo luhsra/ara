@@ -18,6 +18,7 @@ from ..graph.graph import Graph
 from ..steplisting import print_avail_steps
 from ..stepmanager import StepManager
 from ..util import init_logging
+from  .trace import trace_handler
 
 
 class ARAManager(QObject):
@@ -158,6 +159,7 @@ class ARAManager(QObject):
 
     @Slot()
     def step(self):
+        trace_handler.INSTANCE.reset()
         if self.s_manager.step() == 0:
             ara_signal.SIGNAL_MANAGER.sig_step_done.emit(len(self.s_manager.get_steps()) > 0,
                                                          not(self.s_manager.get_trace() is None))

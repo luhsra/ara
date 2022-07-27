@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 from enum import Enum
+
+from ara.visualization.util import GraphTypes
 
 
 # The color numbers are used for determining the correct style in the style sheet.
@@ -12,3 +15,9 @@ class Color(Enum):
     AQUA = "2"
     GREEN = "3"
     ORANGE = "4"
+
+@dataclass(frozen=True)
+class TraceElementSetting:
+    is_vertex: bool
+    graph: GraphTypes
+    obj: any

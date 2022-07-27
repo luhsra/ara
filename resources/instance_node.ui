@@ -27,6 +27,22 @@
 	border: 2px solid black;
 	border-radius: 5px;
 }
+
+#instance_node[highlighted=&quot;1&quot;] {
+	border-color: red;
+}
+
+#instance_node[highlighted=&quot;2&quot;] {
+	border-color: aqua;
+}
+
+#instance_node[highlighted=&quot;3&quot;] {
+	border-color: rgb(0,255,0);
+}
+
+#instance_node[highlighted=&quot;4&quot;] {
+	border-color: orange;
+}
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

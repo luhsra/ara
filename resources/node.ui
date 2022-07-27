@@ -29,6 +29,22 @@
 #type, #subtype, #node { 
 	border: 2px solid black;
 }
+
+#node[highlighted=&quot;1&quot;] {
+	border-color: red;
+}
+
+#node[highlighted=&quot;2&quot;] {
+	border-color: aqua;
+}
+
+#node[highlighted=&quot;3&quot;] {
+	border-color: rgb(0,255,0);
+}
+
+#node[highlighted=&quot;4&quot;] {
+	border-color: orange;
+}
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">

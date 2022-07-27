@@ -2,9 +2,12 @@ from dataclasses import dataclass
 from queue import PriorityQueue
 
 import traceback
+from ara.graph.graph import CFG, Callgraph
+from graph_tool.libgraph_tool_core import Vertex
 
 from ara.visualization.trace import trace_lib
-from ara.visualization.widgets.graph_elements import CallgraphNodeSetting, CallgraphEdgeSetting
+from ara.visualization.util import GraphTypes
+from ara.visualization.widgets.graph_elements import NodeSetting, CallgraphEdgeSetting
 
 
 class TraceContext:
@@ -45,6 +48,7 @@ class BaseTraceElement:
         self.index = self.global_index.get_value_and_increment()
         self.gui_element_settings = dict()
         self.extension_points = set()
+        self.entry_points = set()
 
     def get_graphical_handling(self):
         return self.gui_element_settings
@@ -52,10 +56,16 @@ class BaseTraceElement:
     def get_extension_points(self):
         return self.extension_points
 
+    def get_entry_points(self):
+        return self.entry_points
+
     def apply_changes(self, context:TraceContext):
         pass
 
     def print_debug(self, context:TraceContext):
+        pass
+
+    def undo_changes(self, gui_element_settings: dict):
         pass
 
     def __gt__(self, other):
@@ -72,31 +82,77 @@ class BaseTraceElement:
 
 @dataclass
 class LogTraceElement:
-    trace_elem: BaseTraceElement
+    trace_elem: BaseTraceElement    # Can also be of type list to contain more elements
     log_line: str
 
-class CallgraphNodeHighlightTraceElement(BaseTraceElement):
+class NodeHighlightTraceElement(BaseTraceElement):
     """
         Trace element which highlights a call graph node.
     """
 
-    def __init__(self, node, callgraph, color=trace_lib.Color.RED):
+    def __init__(self, node: Vertex, graph: GraphTypes, color=trace_lib.Color.RED):
         super().__init__()
-        self.node_id = callgraph.vp.function_name[node]
+        self.node = node
+        self.graph = graph
         self.color = color
 
     def apply_changes(self, context:TraceContext):
         try:
-            self.gui_element_settings[self.node_id] = CallgraphNodeSetting(self.node_id,
-                                                                           highlighting=True,
-                                                                           highlight_color=self.color)
-            self.extension_points.add(self.node_id)
+            trace_setting = trace_lib.TraceElementSetting(True, self.graph, self.node if isinstance(self.node, str) else int(self.node))
+            self.gui_element_settings[trace_setting] = NodeSetting(highlighting=True,
+                                                                   highlight_color=self.color)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
 
+    def undo_changes(self, gui_element_settings: dict):
+        try:
+            trace_setting = trace_lib.TraceElementSetting(True, self.graph, self.node)
+            del gui_element_settings[trace_setting]
+        except Exception as e:
+            print(traceback.format_exc())
+
     def print_debug(self, context):
-        print(f"Highlighting node: {self.node_id}")
+        print(f"Highlighting node: {self.node}")
+
+class CFGNodeHighlightTraceElement(NodeHighlightTraceElement):
+    def __init__(self, node: Vertex, cfg: CFG, callgraph: Callgraph, color=trace_lib.Color.RED):
+        super().__init__(node, GraphTypes.ABB, color)
+        self.cfg = cfg
+        self.callgraph = callgraph
+
+    def apply_changes(self, context: TraceContext):
+        super().apply_changes(context)
+        try:
+            cfg_function = self.cfg.get_function(self.node)
+            function = self.callgraph.vertex(self.cfg.vp.call_graph_link[cfg_function])
+            if function != None:
+                func_name = self.callgraph.vp.function_name[function]
+                if isinstance(func_name, str) and len(func_name) > 0:
+                    self.entry_points.add(func_name)
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+
+class CallgraphNodeHighlightTraceElement(NodeHighlightTraceElement):
+    """
+        Trace element which highlights a call graph node.
+    """
+    def __init__(self, node: Vertex, callgraph: Callgraph, color=trace_lib.Color.RED):
+        super().__init__(callgraph.vp.function_name[node], GraphTypes.CALLGRAPH, color)
+
+    def apply_changes(self, context: TraceContext):
+        super().apply_changes(context)
+        # TODO: filter by graph on extension points 
+        try:
+            self.extension_points.add(self.node)
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+
+    def undo_changes(self, gui_element_settings: dict):
+        super().undo_changes(gui_element_settings)
+        # TODO: handle extension point remove
 
 
 class CallgraphPathHighlightTraceElement(BaseTraceElement):
@@ -147,13 +203,17 @@ class CallgraphPathHighlightTraceElement(BaseTraceElement):
 class ResetPartialChangesTraceElement(BaseTraceElement):
     """
         Element to reset partial changes.
-        Not implemented.
-        Needs to be handled similar to the ResetChangesTraceElement in the trace handler.
+        Undoes all containing trace elements.
     """
 
-    def __init__(self, element):
+    def __init__(self, elements):
         super().__init__()
-        self.element = element
+        self.elements = elements
+
+    def undo_changes(self, gui_element_settings: dict):
+        """Calls undo_changes() on all trace elements in elements."""
+        for element in self.elements:
+            element.undo_changes(gui_element_settings)
 
 
 class ResetChangesTraceElement(BaseTraceElement):

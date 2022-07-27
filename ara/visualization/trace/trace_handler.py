@@ -4,8 +4,9 @@ from PySide6.QtCore import QObject, Slot, Signal
 
 from ara.visualization import ara_manager
 from ara.visualization.signal import ara_signal
-from ara.visualization.trace.trace_components import LogTraceElement, TraceContext, ResetChangesTraceElement
+from ara.visualization.trace.trace_components import BaseTraceElement, LogTraceElement, ResetPartialChangesTraceElement, TraceContext, ResetChangesTraceElement
 from ara.visualization.trace.trace_type import AlgorithmTrace
+from ara.visualization.widgets.graph_views import CONTEXT
 
 
 class TraceHandler(QObject):
@@ -58,20 +59,32 @@ class TraceHandler(QObject):
             self._print_trace_log(current_element)
             current_element = current_element.trace_elem
             if current_element != None:
-                if isinstance(current_element, ResetChangesTraceElement):
-                    self.gui_element_settings.clear()
-                    self.sig_extension_points_reset.emit()
+                if isinstance(current_element, BaseTraceElement):
+                    elements = [current_element]
                 else:
-                    current_element.apply_changes(self.context)
+                    elements = current_element
+                for element in elements:
+                    if isinstance(element, ResetChangesTraceElement):
+                        self.reset()
+                    elif isinstance(element, ResetPartialChangesTraceElement):
+                        element.undo_changes(self.gui_element_settings)
+                    else:
+                        element.apply_changes(self.context)
 
-                    self.gui_element_settings.update(current_element.gui_element_settings)
-                    self.sig_extension_points_discovered.emit(current_element.extension_points)
+                        self.gui_element_settings.update(element.gui_element_settings)
+                        self.sig_extension_points_discovered.emit(element.extension_points)
+                        CONTEXT.entry_points.update(element.entry_points)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
 
         self.trace_id += 1
         ara_signal.SIGNAL_MANAGER.sig_step_done.emit(self.trace.has_next_element(), False)
+
+    def reset(self):
+        self.gui_element_settings.clear()
+        self.sig_extension_points_reset.emit()
+        # TODO: clear user added entry points
 
     def get_gui_element_settings(self):
         return self.gui_element_settings

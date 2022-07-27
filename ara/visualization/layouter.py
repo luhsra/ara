@@ -166,7 +166,7 @@ class Layouter(QObject):
                     subgraph.add_node(
                         str(hash(node)),
                         label=cfg.vp.name[node],
-                        id=cfg.vp.name[node],
+                        id=node,
                         shape="box",
                         type=node_type,
                         subtype=cfg.vp.type[node],
@@ -204,7 +204,7 @@ class Layouter(QObject):
                             subgraph.add_node(
                                 str(hash(discovered_node)),
                                 label=cfg.vp.name[discovered_node],
-                                id=cfg.vp.name[discovered_node],
+                                id=discovered_node,
                                 shape="box",
                                 type="ABB",
                                 subtype=cfg.vp.type[discovered_node],
@@ -254,7 +254,8 @@ class Layouter(QObject):
                 label=label,
                 sublabel=sublabel,
                 width=text_to_len(longest_label_text),
-                height=0.75)
+                height=0.75,
+                id=instance)
         for edge in self._graph.instances.edges():
             self.instance_graph_view.add_edge(
                 str(hash(edge.source())),
@@ -263,14 +264,19 @@ class Layouter(QObject):
 
     def _update_svfg_view(self, mode=StepMode.DEFAULT):
         """ Create SVFG view. """
-        svfg = self._graph.svfg
+        if mode is StepMode.TRACE:
+            svfg = trace_handler.INSTANCE.context.svfg
+        else:
+            svfg = self._graph.svfg
+
         for vertex in svfg.vertices():
             self.svfg_view.add_node(
                 str(hash(vertex)),
                 shape="box",
-                label=svfg.vp.label[vertex], # TODO: fix bad alloc error
+                label=svfg.vp.label[vertex],
                 width=5,
-                height=0.75
+                height=0.75,
+                id=vertex
             )
         for edge in svfg.edges():
             self.svfg_view.add_edge(

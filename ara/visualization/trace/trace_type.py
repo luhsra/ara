@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List
 
 from ara.visualization.trace.trace_components import BaseTraceElement, LogTraceElement
 
@@ -15,7 +16,12 @@ class AlgorithmTrace:
         self.instances = instances
         self.svfg = svfg
 
-    def add_element(self, element:BaseTraceElement, log_message:str=None):
+    def add_element(self, element:List[BaseTraceElement], log_message:str=None):
+        """Adds a new trace.
+        
+        element can be a single trace element or multiple trace elements in a list
+        log_message will be printed on terminal while displaying the trace
+        """
         self.trace_elements.append(LogTraceElement(element, log_message))
 
     def get_amount_of_traces(self):

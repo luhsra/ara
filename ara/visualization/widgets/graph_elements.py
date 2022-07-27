@@ -7,7 +7,7 @@ from pygraphviz import AGraph
 
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
-from ara.visualization.util import RESOURCE_PATH
+from ara.visualization.util import RESOURCE_PATH, GraphTypes
 
 DPI_LEVEL = 72
 
@@ -36,6 +36,7 @@ class AbstractNode(GraphicsObject):
         super().__init__(ui_path)
 
         self.data = node
+        self.id = self.data.attr["id"]
         pos = self.data.attr["pos"].split(",")
 
         width = float(self.data.attr["width"]) * DPI_LEVEL
@@ -45,6 +46,19 @@ class AbstractNode(GraphicsObject):
         y = -float(pos[1]) - 0.5 * height
 
         self.setGeometry(int(x), int(y), int(width), int(height))
+        self.highlighting = False
+
+    def reload_stylesheet(self):
+        """
+            Reloads the stylesheet of the widget. This needs to be done, if a property is changed after the creation
+            of the object, otherwise the design doesn't update.
+        """
+        self.widget.setStyleSheet(self.widget.styleSheet())
+
+    def set_highlighted(self, color=trace_lib.Color.RED):
+        self.highlighting = True
+        self.widget.setProperty("highlighted", color.value)
+        self.reload_stylesheet()
 
 
 class AbbNode(AbstractNode):
@@ -81,24 +95,16 @@ class CallGraphNode(AbstractNode):
     def __init__(self, node:Node):
         super().__init__(node, RESOURCE_PATH.get() + "callgraph_node.ui")
 
-        self.id = self.data.attr["id"]
-
         self.widget.label_text.setText(str(self.data.attr["label"]))
 
         self.adjacency = False
         self.selected = False
         self.expansion = False
-        self.highlighting = False
 
         if self.data.attr["adjacency"] == "true":
             self.adjacency = True
             self.widget.setProperty("adjacency", "true")
 
-        self.reload_stylesheet()
-
-    def set_highlighted(self, color=trace_lib.Color.RED):
-        self.highlighting = True
-        self.widget.setProperty("highlighted", color.value)
         self.reload_stylesheet()
 
     def mousePressEvent(self, event:QMouseEvent) -> None:
@@ -124,13 +130,6 @@ class CallGraphNode(AbstractNode):
             self.expansion = False
             self.sig_expansion_unselected.emit(self.data.attr["label"])
             return
-
-    def reload_stylesheet(self):
-        """
-            Reloads the stylesheet of the widget. This needs to be done, if a property is changed after the creation
-            of the object, otherwise the design doesn't update.
-        """
-        self.widget.setStyleSheet(self.widget.styleSheet())
 
 
 class InstanceNode(AbstractNode):
@@ -276,13 +275,12 @@ class GraphEdge(QGraphicsPathItem):
         self.path.lineTo(edge_point)
 
 
-class CallgraphNodeSetting:
+class NodeSetting:
     """
-        This is used by the trace system to set the visual design of a call graph node.
+        This is used by the trace system to set the visual design of a node.
     """
 
-    def __init__(self, node_id, highlighting: bool, highlight_color=trace_lib.Color.RED):
-        self.node_id = node_id
+    def __init__(self, highlighting: bool, highlight_color=trace_lib.Color.RED):
         self.highlighting = highlighting
         self.highlight_color = highlight_color
 

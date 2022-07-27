@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from PySide6.QtCore import Slot, Qt, QThread, Signal, QObject
 from PySide6.QtGui import QWheelEvent, QPainter
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidget, QWidget
@@ -5,9 +6,9 @@ from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidge
 from ara.visualization.layouter import Layouter
 from ara.visualization.signal import ara_signal
 from ara.visualization.signal.signal_combiner import SignalCombiner
-from ara.visualization.trace import trace_handler
+from ara.visualization.trace import trace_handler, trace_lib
 from ara.visualization.util import GraphTypes, StepMode
-from ara.visualization.widgets.graph_elements import GraphicsObject, Subgraph, AbbNode, CallGraphNode
+from ara.visualization.widgets.graph_elements import AbstractNode, GraphicsObject, InstanceNode, SVFGNode, Subgraph, AbbNode, CallGraphNode
 
 
 class GraphScene(QGraphicsScene):
@@ -119,7 +120,7 @@ class BaseGraphView(QGraphicsView):
 
     sig_work_done = Signal(str)
 
-    def __init__(self, graph_type: GraphTypes, signal_combiner: SignalCombiner):
+    def __init__(self, signal_combiner: SignalCombiner):
         super().__init__()
         self.signal_combiner = signal_combiner
 
@@ -131,7 +132,6 @@ class BaseGraphView(QGraphicsView):
         self.layouter.moveToThread(self.layouter_thread)
 
         self.setScene(GraphScene())
-        self.graph_type = graph_type
         self.setup_signals()
 
         self.dragging = False
@@ -220,8 +220,21 @@ class BaseGraphView(QGraphicsView):
         self.mode = mode
 
     # Abstract
-    def handle_node_add(self, node):
+    @property
+    @abstractmethod
+    def node_type(self) -> type:
         pass
+
+    @property
+    @abstractmethod
+    def graph_type(self) -> GraphTypes:
+        pass
+
+    def handle_node_add(self, node):
+        if isinstance(node, self.node_type):
+            trace_setting = trace_lib.TraceElementSetting(True, self.graph_type, int(node.id))
+            if trace_handler.INSTANCE.gui_element_settings.__contains__(trace_setting):
+                trace_handler.INSTANCE.gui_element_settings[trace_setting].apply(node)
 
     def handle_edge_add(self, edge):
         pass
@@ -240,8 +253,8 @@ class CallGraphView(BaseGraphView):
 
     sig_expansion_points_deselected = Signal(str, str)
 
-    def __init__(self, signal_combiner):
-        super().__init__(GraphTypes.CALLGRAPH, signal_combiner)
+    node_type = CallGraphNode
+    graph_type = GraphTypes.CALLGRAPH
 
     def handle_node_add(self, node):
         """
@@ -253,8 +266,9 @@ class CallGraphView(BaseGraphView):
             node.sig_adjacency_selected.connect(self.adjacency_expansion)
             node.sig_expansion_unselected.connect(self.expansion_retraction)
 
-            if trace_handler.INSTANCE.gui_element_settings.__contains__(node.id):
-                trace_handler.INSTANCE.gui_element_settings[node.id].apply(node)
+            trace_setting = trace_lib.TraceElementSetting(True, GraphTypes.CALLGRAPH, node.id)
+            if trace_handler.INSTANCE.gui_element_settings.__contains__(trace_setting):
+                trace_handler.INSTANCE.gui_element_settings[trace_setting].apply(node)
 
             if CONTEXT.get_expansion_points().__contains__(node.data.attr["label"]):
                 node.widget.setProperty("expansion", "true")
@@ -331,20 +345,21 @@ class CFGView(BaseGraphView):
     """
         CFG view.
     """
-    def __init__(self, signal_combiner):
-        super().__init__(GraphTypes.ABB, signal_combiner)
+    node_type = AbbNode
+    graph_type = GraphTypes.ABB
 
 
 class InstanceGraphView(BaseGraphView):
     """
         Instance graph view.
     """
-    def __init__(self, signal_combiner):
-        super().__init__(GraphTypes.INSTANCE, signal_combiner)
+    node_type = InstanceNode
+    graph_type = GraphTypes.INSTANCE
+
 
 class SVFGView(BaseGraphView):
     """
         SVFG view.
     """
-    def __init__(self, signal_combiner):
-        super().__init__(GraphTypes.SVFG, signal_combiner)
+    node_type = SVFGNode
+    graph_type = GraphTypes.SVFG
