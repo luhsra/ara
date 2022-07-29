@@ -22,7 +22,7 @@ class Entity:
 
 @dataclass
 class GraphNode:
-    node: Vertex    # Can also be function name string but only for Callgraph
+    node: Vertex
     graph: GraphTypes
     def __str__(self):
         return f"node {self.node} in {self.graph.value}"
