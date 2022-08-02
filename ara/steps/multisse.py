@@ -81,7 +81,7 @@ class Metastate:
     state: graph_tool.Vertex  # vertex of the state
     entry: graph_tool.Vertex  # vertex of the entry ABB
     new_entry: bool  # is the entry point new
-    is_new: bool  # is this Metastate already evaluated
+    is_new: bool  # is this Metastate new or already evaluated
     cross_points: List[graph_tool.Vertex]  # new cross points of Metastate
     irqs: List[Tuple[graph_tool.Vertex, int]]  # new (cross) irqs of MS
     cpu_id: int  # cpu_id of this state
@@ -1397,6 +1397,7 @@ class MultiSSE(Step):
         return ret
 
     def _find_common_crosspoints(self, metastates):
+        """Return all common cross points of this specific set of metastates."""
         st2sy = self._mstg.g.edge_type(MSTType.st2sy)
         cps_lists = [
             set(st2sy.vertex(x.entry).in_neighbors())
@@ -1404,16 +1405,22 @@ class MultiSSE(Step):
         ]
         return reduce(lambda a, b: a & b, cps_lists)
 
-    def _link_neighbor_crosspoint(self, common_cp, cp):
+    def _link_neighbor_crosspoint(self, cp, neighbor_cp):
+        """Make cp to a neighbor of neighbor_cp.
+
+        The idea is that a neighbor cp results in the same set of metastates
+        so all its outgoing edges can be overtaken.
+        Additionally, the neighbors are marked as such with a special edge.
+        """
         mstg = self._mstg.g
 
         # mark as neighbor
-        e = mstg.edge(common_cp, cp, add_missing=True)
+        e = mstg.edge(neighbor_cp, cp, add_missing=True)
         mstg.ep.type[e] = MSTType.sync_neighbor
 
         # sync edges
         sy2sy = mstg.edge_type(MSTType.sy2sy)
-        for v in list(sy2sy.vertex(common_cp).out_neighbors()):
+        for v in list(sy2sy.vertex(neighbor_cp).out_neighbors()):
             self._log.debug(
                 f"Neighbor: Link sy2sy edge: {int(cp)} -> {int(v)}")
             new_e = sy2sy.edge(mstg.vertex(cp),
@@ -1421,7 +1428,7 @@ class MultiSSE(Step):
                                add_missing=True)
             mstg.ep.type[new_e] = MSTType.sy2sy
         follow_sync = mstg.edge_type(MSTType.follow_sync)
-        for v in list(follow_sync.vertex(common_cp).out_neighbors()):
+        for v in list(follow_sync.vertex(neighbor_cp).out_neighbors()):
             self._log.debug(
                 f"Neighbor: Link follow_sync edge: {int(cp)} -> {int(v)}")
             new_e = follow_sync.edge(mstg.vertex(cp),
@@ -1841,12 +1848,6 @@ class MultiSSE(Step):
         # store cross_point that need a reevaluation
         reevaluates = set()
 
-        def do_pairing(cp, metastate):
-            """Wrapper for do_full_pairing."""
-            to_stack, reeval = self._do_full_pairing(cp, metastate)
-            stack.extend([(x, None) for x in to_stack])
-            reevaluates.update(reeval)
-
         # actual algorithm
         counter = 0
         while stack:
@@ -1884,53 +1885,40 @@ class MultiSSE(Step):
                 self._dump_mstg(extra=f"round.{counter:03d}.wm")
 
             # handle the next cross points
-            for cpu_id, metastate in metastates.items():
-                self._log.debug(
-                    f"Evaluate cross points of metastate {metastate}.")
+            # we need a new pairing for all CPUs, if somewhere is a new entry,
+            # or the entire metastate is_new
+            new_entry = any([x.new_entry for x in metastates.values()])
+            is_new = any([x.is_new for x in metastates.values()])
 
-                if metastate.new_entry:
-                    self._log.debug(
-                        "Metastate has a new entry. Do a full pairing.")
-                    do_pairing(cp, metastate)
-                    continue
 
-                others = set(metastates.keys()) - {cpu_id}
-                if any([metastates[x].is_new for x in others]):
-                    self._log.debug(
-                        "At least one pairing state is new. Do a full pairing."
-                    )
-                    do_pairing(cp, metastate)
-                    continue
-
-                if any([metastates[x].new_entry for x in others]):
-                    self._log.debug(
-                        "At least one pairing state has a new entry. Do a full pairing."
-                    )
-                    do_pairing(cp, metastate)
-                    continue
-
+            # Check for shortcut. If the metastates are not new and we find
+            # another already existing cross point that results in the exact
+            # same metastates than this cross point, we can just link its
+            # already existing outgoing edges.
+            neighbor_found_and_linked = False
+            if not (new_entry or is_new):
                 common_cps = self._find_common_crosspoints(metastates) - {cp}
-                good_cps = False
                 for common_cp in common_cps:
                     if set(self._mstg.cross_point_map[common_cp]) == set(
                             metastates.keys()):
-                        good_common_cp = common_cp
                         self._log.debug(
-                            f"Metastate is not new. Find an equal common cp {int(good_common_cp)}."
+                            f"Metastate is not new. Found an equal common cp {int(common_cp)}."
                         )
-                        self._link_neighbor_crosspoint(common_cp, cp)
-                        good_cps = True
+                        self._link_neighbor_crosspoint(cp, common_cp)
+                        neighbor_found_and_linked = True
 
-                if good_cps:
-                    continue
-                else:
-                    self._log.debug("No equal common cp.")
+            # we don't find a neighbor so do a full pairing across all
+            # metastates
+            if not neighbor_found_and_linked:
+                for cpu_id, metastate in metastates.items():
+                    self._log.debug(
+                        f"Evaluate cross points of metastate {metastate}.")
+                    to_stack, reeval = self._do_full_pairing(cp, metastate)
+                    stack.extend([(x, None) for x in to_stack])
+                    reevaluates.update(reeval)
 
-                self._log.debug(
-                    "Found already existing but unconnected metastates. Do a full pairing."
-                )
-                do_pairing(cp, metastate)
-
+            # The stack is empty. Copy the cross points that need a
+            # reevaluation back to the stack and perform the next round.
             if not stack:
                 self._log.debug("Stack empty. Beginning with reevaluations")
                 stack.extend(list(set(reevaluates)))
