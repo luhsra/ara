@@ -37,6 +37,10 @@ sse_counter = 0
 
 
 class CrossExecState(enum.IntEnum):
+    """Execution state of an MSTG state.
+
+    It extends the normal ExecState.
+    """
     idle = ExecState.idle
     computation = ExecState.computation
     waiting = ExecState.waiting
@@ -54,8 +58,26 @@ class CrossExecState(enum.IntEnum):
     no_time = ExecState.no_time | cross_syscall
 
 
+@dataclass(frozen=True)
+class NewNodeReevaluation:
+    """Store necessary data for the reevaluation of a new node."""
+    from_cp: graph_tool.Vertex
+    cores: Set[int]
+
+
+@dataclass(frozen=True)
+class NewEdgeReevaluation:
+    """Store necessary data for the reevaluation of a new edge."""
+    root: graph_tool.Vertex  # the root cross point
+
+
 @dataclass
 class Metastate:
+    """Representaion of a Metastate.
+
+    In the final MSTG, the Metastate is stored as vertex only.
+    However, this dataclass captures analysis specific attributes.
+    """
     state: graph_tool.Vertex  # vertex of the state
     entry: graph_tool.Vertex  # vertex of the entry ABB
     new_entry: bool  # is the entry point new
@@ -77,6 +99,7 @@ class Metastate:
 
 @dataclass(frozen=True)
 class Range:
+    """A range between two vertices."""
     start: graph_tool.Vertex
     end: graph_tool.Vertex
 
@@ -96,7 +119,8 @@ class TimeRange:
     up: int
     to: int
 
-    def get_overlap(self, other: "TimeRange"):
+    def get_overlap(self, other: "TimeRange") -> "TimeRange":
+        """Return a new TimeRange specifying the overlap between two ranges."""
         new_up = max(self.up, other.up)
         new_to = min(self.to, other.to)
         if new_to > new_up:
@@ -172,6 +196,8 @@ class CrossContext:
 
 
 class Equations:
+    """Equation system for calculation of possible pairing partners."""
+
     def __init__(self):
         self._bounds = {}
         self._equalities = []
@@ -229,6 +255,7 @@ class Equations:
         return linprog(c, A_eq=self._equalities, b_eq=b_eq, bounds=bounds)
 
     def solvable(self):
+        """Return, if the equation system has a solution."""
         if self._highest == 0:
             return True
         res = self._solve_for_var(0)
@@ -267,13 +294,21 @@ class Equations:
                              to=self._get_maximum(var))
         return self._bounds[var]
 
-    def add_range(self, edge, time):
+    def add_range(self, edge: graph_tool.Edge, time: TimeRange):
+        """Store that the specified edge lives only in the range time.
+
+        Basically store for edge e the equation: up < time_e < to
+        """
         assert isinstance(time, TimeRange)
         assert time.to >= time.up and time.up >= 0
         var = self._get_variable(edge)
         self._bounds[var] = time
 
     def add_equality(self, left_edges, right_edges):
+        """Store that the left_edges sum must be equal to the right_edges sum.
+
+        Store an equation like: a_left + b_left + c_left = d_right + e_right
+        """
         le = set(left_edges)
         re = set(right_edges)
         common = le & re
@@ -294,13 +329,17 @@ class Equations:
 
 
 def set_time(prop, idx, number):
+    """Set the time number to the property prop at index idx."""
+    # translate infinity
     if number == math.inf:
         number = MAX_INT64
     prop[idx] = number
 
 
 def get_time(prop, idx):
+    """Get the time at the property prop at index idx."""
     number = prop[idx]
+    # translate infinity
     if number == MAX_INT64:
         return math.inf
     return number
@@ -308,6 +347,7 @@ def get_time(prop, idx):
 
 @dataclass(frozen=True)
 class FakeEdge:
+    """Represents an edge that don't exist in the graph."""
     src: graph_tool.Vertex
     tgt: graph_tool.Vertex
 
@@ -338,11 +378,17 @@ class StateList:
 @dataclass
 class MSTG:
     g: MSTGraph
+
     # store the affected cores of a cross syscall
+    # contains a vector[int]
     cross_core_map: graph_tool.PropertyMap
+
     # store the ecec type of a state
+    # contains a mask of CrossExecState
     type_map: graph_tool.PropertyMap
+
     # store which cores are affected by this synchronisation point
+    # contains a vector[int]
     cross_point_map: graph_tool.PropertyMap
 
 
@@ -1011,9 +1057,14 @@ class MultiSSE(Step):
         # Iterate all pairs and look if there is a path between the pair
         # elements. If so, remove all nodes except of the last one.
         predecessors = set(cps)
+        self._log.error(f"Preds {[int(x) for x in predecessors]}")
         src_blacklist = set()
         pair_blacklist = set()
         for src, tgt in permutations(reversed(list(cps)), 2):
+            self._log.error(int(src))
+            self._log.error(int(tgt))
+            self._log.error(f"src_blacklist {[int(x) for x in src_blacklist]}")
+            self._log.error(f"pair_blacklist {[(int(x), int(y)) for x, y in pair_blacklist]}")
             if src in src_blacklist:
                 continue
             if (src, tgt) in pair_blacklist:
@@ -1146,6 +1197,8 @@ class MultiSSE(Step):
         """Find all possible combinations of computation blocks that fit to
         the cross_state.
         """
+        # 1. Find all root cross points (which forms the root for the
+        #    following searches)
         mstg = self._mstg.g
         affected_cores = self._mstg.cross_core_map[cross_state]
         current_core = mstg.vp.cpu_id[cross_state]
@@ -1164,6 +1217,10 @@ class MultiSSE(Step):
                         f"root cross points {[int(x[0]) for x in root_cps]}.")
         combinations = set()
         for root, path in root_cps:
+            # 2. For each root cross point get the actual affected following
+            #    cross points.
+            #    They can be restricted by the set of affected cores or by an
+            #    explicitly given starting point.
             reach = label_out_component(sync_graph, sync_graph.vertex(root))
             reach[root] = True
             r_graph = GraphView(sync_graph, vfilt=reach)
@@ -1184,6 +1241,8 @@ class MultiSSE(Step):
 
             ctx = self._gen_context(r_graph, cross_state, current_core, cp,
                                     root, path)
+            # If time should be considered, build the (initial) equation
+            # system.
             eqs = Equations()
             if self.with_times.get():
                 self._log.debug("Check for prior syscalls.")
@@ -1205,6 +1264,8 @@ class MultiSSE(Step):
                     edges = self._get_fs_path(ctx, start_from)
                     self._add_ranges(eqs, edges)
 
+            # 3. Build the actual product from each possible cross point
+            #    (while respecting time constraints if given.
             for state_list in self._build_product(ctx, cps, eqs,
                                                   affected_cores, []):
                 timely_cps = self._find_timed_predecessor(
@@ -1605,8 +1666,7 @@ class MultiSSE(Step):
                         cores = frozenset(self._mstg.cross_point_map[other_cp])
                         en2ex = mstg.edge_type(MSTType.en2ex)
                         for exit_sp in en2ex.vertex(other_cp).out_neighbors():
-                            reeval.add((exit_sp, (("type", "new edge"),
-                                                  ("root", root))))
+                            reeval.add((exit_sp, NewEdgeReevaluation(root=root)))
                     else:
                         self._log.warn("Already exists.")
 
@@ -1653,10 +1713,100 @@ class MultiSSE(Step):
                                 "more pairing possibilities to the cross syscall "
                                 f"for CPUs {cores} (starting from {int(i_cp)})"
                             )
-                            reeval.add((i_cp, (("type", "new node"),
-                                               ("from", other_cp),
-                                               ("cores", frozenset(cores)))))
+                            reeval.add((i_cp,
+                                        NewNodeReevaluation(
+                                            from_cp=other_cp,
+                                            cores=frozenset(cores))))
         return exits, reeval
+
+    def create_mstg(self):
+        """Prepares a MSTG object.
+
+        It contains of the MSTGraph itself together with various analysis
+        specific property maps.
+        """
+        # create graph
+        mstg = MSTGraph()
+
+        # store the affected other cores of this syscall
+        cross_core_map = mstg.new_vp("vector<int32_t>")
+
+        # mark states with a length and which triggers a cross core action
+        # contains a mask of CrossExecState
+        type_map = mstg.new_vp("int")
+
+        # cores which are connected with a cross point
+        cross_point_map = mstg.new_vp("vector<int32_t>")
+
+        return MSTG(g=mstg,
+                    cross_core_map=cross_core_map,
+                    type_map=type_map,
+                    cross_point_map=cross_point_map)
+
+    def _reevaluate_cross_point(self, cp, reeval_info):
+        """Perform a reevaluation of cp which was already evaluated.
+
+        reeval_info gives additional hints why the reevaluation is needed.
+        """
+        if isinstance(reeval_info, NewNodeReevaluation):
+            start_from = reeval_info.from_cp
+            cores = reeval_info.cores
+            kwargs = {"start_from": start_from}
+            debug = f" starting from {int(start_from)}"
+        else:
+            root = reeval_info.root
+            cores = self._mstg.cross_point_map[cp]
+            kwargs = {"only_root": root}
+            debug = f" evaluating only {int(root)}"
+
+        self._log.debug(
+            f"Node {int(cp)} is already evaluated but some new "
+            f"knowledge exists. Reevaluating CPUs {list(cores)} "
+            f"{debug}.")
+
+        st2sy = self._mstg.g.edge_type(MSTType.st2sy)
+        stack = []
+        reevaluates = set()
+        for cpu_id in cores:
+            sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
+            entry = single_check(sts.vertex(cp).out_neighbors())
+            to_stack, reeval = self._do_full_pairing(
+                cp,
+                Metastate(state=self._mstg.g.get_metastate(entry),
+                          entry=entry,
+                          new_entry=False,
+                          is_new=False,
+                          cross_points=[],
+                          irqs=[],
+                          cpu_id=cpu_id),
+                **kwargs)
+            stack += to_stack
+            reevaluates |= reeval
+        return stack, reevaluates
+
+    def _calculate_new_metastates(self, cp):
+        """Calculate new metastates from an existing cross point."""
+        states = self._get_single_core_states(self._mstg.g.vp.state[cp])
+        mstg = self._mstg.g
+
+        metastates = {}
+
+        for cpu_id, state in states.items():
+            metastate = self._run_sse(cpu_id, state)
+
+            # add m2sy edge
+            e = mstg.add_edge(cp, metastate.state)
+            mstg.ep.type[e] = MSTType.m2sy
+            mstg.ep.cpu_id[e] = metastate.cpu_id
+
+            # add st2sy edge
+            e = mstg.add_edge(cp, metastate.entry)
+            mstg.ep.type[e] = MSTType.st2sy
+            mstg.ep.cpu_id[e] = metastate.cpu_id
+
+            metastates[cpu_id] = metastate
+
+        return metastates
 
     def run(self):
         entry_label = self.entry_point.get()
@@ -1664,37 +1814,32 @@ class MultiSSE(Step):
             self._fail("Entry point must be given.")
         self._log.info(f"Analyzing entry point: '{entry_label}'")
 
-        # create graph
-        mstg = MSTGraph()
-        # store the affected other cores of this syscall
-        cross_core_map = mstg.new_vp("vector<int32_t>")
-        # mark states with a length and witch trigger a cross core action
-        type_map = mstg.new_vp("int")
-        # cores which are connected with a cross point
-        cross_point_map = mstg.new_vp("vector<int32_t>")
+        self._mstg = self.create_mstg()
+        mstg = self._mstg.g
 
-        # handled = mstg.new_vp("bool")
-
+        # map between a state (the hash of it) and the vertex in the MSTG
         self._state_map = {}
-
-        self._mstg = MSTG(g=mstg,
-                          cross_core_map=cross_core_map,
-                          type_map=type_map,
-                          cross_point_map=cross_point_map)
 
         # initialize stack
         cross_point = self._get_initial_state()
 
         # stack consisting of the current exit cross point
         stack = [(cross_point, None)]
+        # store cross_point that need a reevaluation
         reevaluates = set()
 
         # actual algorithm
         counter = 0
         while stack:
+            # cp: the current cross point
+            # reeval_info: information if a reevaluation is needed, of type
+            #              NewNodeReevaluation or NewEdgeReevaluation or None
             cp, reeval_info = stack.pop(0)
             if (cp, reeval_info) in reevaluates:
-                self._log.debug(f"Skip {int(cp)}. Is in reevaluates.")
+                # we don't need to analyse cross points that are reevaluated
+                # later on anyway.
+                self._log.debug(f"Skip {int(cp)}. It is already marked for "
+                                "reevaluation.")
                 continue
 
             # if counter == 8:
@@ -1707,64 +1852,14 @@ class MultiSSE(Step):
                 self._dump_mstg(extra=f"round.{counter:03d}")
             counter += 1
 
-            # if handled[cp]:
-            #     continue
-            # handled[cp] = True
             if reeval_info:
-                reeval_info = dict(reeval_info)
-                if reeval_info["type"] == "new node":
-                    start_from = reeval_info["from"]
-                    cores = reeval_info["cores"]
-                    kwargs = {"start_from": start_from}
-                    debug = f" starting from {int(start_from)}"
-                else:
-                    root = reeval_info["root"]
-                    cores = self._mstg.cross_point_map[cp]
-                    kwargs = {"only_root": root}
-                    debug = f" evaluating only {int(root)}"
-
-                self._log.debug(
-                    f"Node {int(cp)} is already evaluated but some new "
-                    f"knowledge exists. Reevaluating CPUs {list(cores)} "
-                    f"{debug}.")
-
-                st2sy = mstg.edge_type(MSTType.st2sy)
-                for cpu_id in cores:
-                    sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
-                    entry = single_check(sts.vertex(cp).out_neighbors())
-                    to_stack, reeval = self._do_full_pairing(
-                        cp,
-                        Metastate(state=mstg.get_metastate(entry),
-                                  entry=entry,
-                                  new_entry=False,
-                                  is_new=False,
-                                  cross_points=[],
-                                  irqs=[],
-                                  cpu_id=cpu_id),
-                        **kwargs)
-                    stack += to_stack
-                    reevaluates |= reeval
+                t_stack, reevals = self._reevaluate_cross_point(cp, reeval_info)
+                stack += t_stack
+                reevaluates |= reevals
                 continue
 
             # handle current cross point
-            states = self._get_single_core_states(self._mstg.g.vp.state[cp])
-
-            metastates = {}
-
-            for cpu_id, state in states.items():
-                metastate = self._run_sse(cpu_id, state)
-
-                # add m2sy edge
-                e = mstg.add_edge(cp, metastate.state)
-                mstg.ep.type[e] = MSTType.m2sy
-                mstg.ep.cpu_id[e] = metastate.cpu_id
-
-                # add st2sy edge
-                e = mstg.add_edge(cp, metastate.entry)
-                mstg.ep.type[e] = MSTType.st2sy
-                mstg.ep.cpu_id[e] = metastate.cpu_id
-
-                metastates[cpu_id] = metastate
+            metastates = self._calculate_new_metastates(cp)
 
             if self.dump.get():
                 self._dump_mstg(extra=f"round.{counter:03d}.wm")
@@ -1773,6 +1868,7 @@ class MultiSSE(Step):
             for cpu_id, metastate in metastates.items():
                 self._log.debug(
                     f"Evaluate cross points of metastate {metastate}.")
+
                 if metastate.new_entry:
                     self._log.debug(
                         "Metastate has a new entry. Do a full pairing.")
