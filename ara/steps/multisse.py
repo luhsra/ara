@@ -1609,7 +1609,7 @@ class MultiSSE(Step):
         assert t.up >= 0 and t.to >= t.up
         return t
 
-    def _do_full_pairing(self, cp, metastate, start_from=None, only_root=None):
+    def _find_new_cps(self, cp, metastate, start_from=None, only_root=None):
         """Try to find the next cross points coming from metastate.
 
         cp         -- root cross point (entry for the metastate)
@@ -1624,7 +1624,10 @@ class MultiSSE(Step):
            This is a list of pairs, which denotes the cross point and the
            reason why a reevaluation is needed.
         """
+        # container for the return values
+        # list of new exit cross points
         exits = []
+        # list of cross points that need reevaluation
         reeval = set()
 
         cross_list = []
@@ -1790,7 +1793,7 @@ class MultiSSE(Step):
         for cpu_id in cores:
             sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
             entry = single_check(sts.vertex(cp).out_neighbors())
-            to_stack, reeval = self._do_full_pairing(
+            to_stack, reeval = self._find_new_cps(
                 cp,
                 Metastate(state=self._mstg.g.get_metastate(entry),
                           entry=entry,
@@ -1913,7 +1916,7 @@ class MultiSSE(Step):
                 for cpu_id, metastate in metastates.items():
                     self._log.debug(
                         f"Evaluate cross points of metastate {metastate}.")
-                    to_stack, reeval = self._do_full_pairing(cp, metastate)
+                    to_stack, reeval = self._find_new_cps(cp, metastate)
                     stack.extend([(x, None) for x in to_stack])
                     reevaluates.update(reeval)
 
