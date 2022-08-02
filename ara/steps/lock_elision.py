@@ -1,7 +1,7 @@
 """Container for LockElision."""
 from ara.os.autosar import Spinlock
 from ara.os.os_base import ExecState
-from ara.graph import MSTType, single_check
+from ara.graph import MSTType
 from .step import Step
 
 
@@ -25,17 +25,17 @@ class LockElision(Step):
         may_spin = False
         for sync in st2sy.vertex(state).out_neighbours():
             handled.add(sync)
-            exit_sync = single_check(en2ex.vertex(sync).out_neighbours())
 
-            for e in st2sy.vertex(exit_sync).out_edges():
-                if st2sy.ep.cpu_id[e] != cpu_id:
-                    continue
-                dst = mstg.vertex(e.source())
-                spin = mstg.vp.state[dst].cpus[cpu_id].exec_state == ExecState.waiting
-                self._log.debug("%s (%s) -> %s (%s) == %s",
-                                state, mstg.vp.state[state].id,
-                                dst, mstg.vp.state[dst].id, spin)
-                may_spin |= spin
+            for exit_sync in en2ex.vertex(sync).out_neighbors():
+                for e in st2sy.vertex(exit_sync).out_edges():
+                    if st2sy.ep.cpu_id[e] != cpu_id:
+                        continue
+                    dst = mstg.vertex(e.source())
+                    spin = mstg.vp.state[dst].cpus[cpu_id].exec_state == ExecState.waiting
+                    self._log.debug("%s (%s) -> %s (%s) == %s",
+                                    state, mstg.vp.state[state].id,
+                                    dst, mstg.vp.state[dst].id, spin)
+                    may_spin |= spin
         return may_spin, handled
 
     def get_single_dependencies(self):
@@ -88,7 +88,6 @@ class LockElision(Step):
         for res in details.values():
             s = {True: "will spin", False: "won't spin"}[res['spins']]
             self._log.warn(f"State {res['state']} {s}")
-
 
         self._set_step_data({'spin_states': lock_count,
                              'DEADLOCK': deadlock,
