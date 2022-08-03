@@ -1605,7 +1605,7 @@ class MultiSSE(Step):
             for nex in cur.out_neighbors():
                 stack.append(nex)
 
-        t =  TimeRange(up=get_time(t_from, state), to=get_time(t_to, state))
+        t = TimeRange(up=get_time(t_from, state), to=get_time(t_to, state))
         assert t.up >= 0 and t.to >= t.up
         return t
 
@@ -1876,7 +1876,8 @@ class MultiSSE(Step):
             counter += 1
 
             if reeval_info:
-                t_stack, reevals = self._reevaluate_cross_point(cp, reeval_info)
+                t_stack, reevals = self._reevaluate_cross_point(cp,
+                                                                reeval_info)
                 stack.extend([(x, None) for x in t_stack])
                 reevaluates.update(reevals)
                 continue
@@ -1893,7 +1894,6 @@ class MultiSSE(Step):
             new_entry = any([x.new_entry for x in metastates.values()])
             is_new = any([x.is_new for x in metastates.values()])
 
-
             # Check for shortcut. If the metastates are not new and we find
             # another already existing cross point that results in the exact
             # same metastates than this cross point, we can just link its
@@ -1905,7 +1905,8 @@ class MultiSSE(Step):
                     if set(self._mstg.cross_point_map[common_cp]) == set(
                             metastates.keys()):
                         self._log.debug(
-                            f"Metastate is not new. Found an equal common cp {int(common_cp)}."
+                            "Metastate is not new. Found an equal common "
+                            f"cp {int(common_cp)}."
                         )
                         self._link_neighbor_crosspoint(cp, common_cp)
                         neighbor_found_and_linked = True
@@ -1932,7 +1933,8 @@ class MultiSSE(Step):
         self._graph.mstg = mstg
 
         self._log.debug(
-            f"Cache of find_timed_predecessor: {self._find_timed_predecessor.cache_info()}"
+            "Cache of find_timed_predecessor: "
+            f"{self._find_timed_predecessor.cache_info()}"
         )
 
         if self.dump.get():
