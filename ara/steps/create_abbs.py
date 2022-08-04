@@ -1,6 +1,5 @@
 """Container for CreateABBs."""
 from ara.graph import NodeLevel, CFType, ABBType, edge_types, CFGView
-from ara.util import has_path
 from .step import Step
 from .option import Option, String
 
@@ -10,7 +9,7 @@ from dataclasses import dataclass
 from typing import Set
 
 from graph_tool import GraphView, Graph
-from graph_tool.topology import dominator_tree, all_paths, label_components
+from graph_tool.topology import dominator_tree, all_circuits
 
 import numpy
 
@@ -49,6 +48,16 @@ class CreateABBs(Step):
         self._set_step_data(a + 1)
         return a
 
+    def _all_loops_in_set(self, vertex, graph, s):
+        """Check, if all loops which contain `vertex` are fully in set s."""
+        for circuit in all_circuits(graph):
+            if vertex not in circuit:
+                continue
+            cset = set(circuit)
+            if not cset.issubset(s):
+                return False
+        return True
+
     def _add_abb(self, graph, func, entry, exit_v, body):
         cfg = self._graph.cfg
         name = cfg.vp.name
@@ -65,10 +74,10 @@ class CreateABBs(Step):
 
         cfg.vp.is_exit_loop_head[abb] = cfg.vp.is_exit_loop_head[entry]
         cfg.vp.part_of_loop[abb] = cfg.vp.part_of_loop[entry]
-        if cfg.vp.part_of_loop[entry]:
-            # does the ABB consume the loop?
-            if all([set(path).issubset(all_bbs) for path in all_paths(graph, entry, entry)]):
-                cfg.vp.part_of_loop[abb] = False
+
+        if (cfg.vp.part_of_loop[entry] and
+                self._all_loops_in_set(entry, graph, all_bbs)):
+            cfg.vp.part_of_loop[abb] = False
 
         if cfg.vp.type[abb] in [ABBType.call, ABBType.syscall]:
             cfg.vp.files[abb] = cfg.vp.files[entry]

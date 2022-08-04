@@ -186,12 +186,6 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
-    test('recursive',
-        py3_inst,
-        args: [files('recursive.py'), files('recursive.json'), freertos_icfg],
-        env: [python_path],
-        suite: ['analysis', 'preproc']
-    )
 
     test('src-loc',
         py3_inst,

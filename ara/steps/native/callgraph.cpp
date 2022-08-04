@@ -177,7 +177,6 @@ namespace ara::step {
 				logger.info() << "Added " << node_counter << " vertices and " << edge_counter << " edges." << std::endl;
 				if (node_counter != 0 || edge_counter != 0) {
 					step_manager.chain_step("SystemRelevantFunctions");
-					step_manager.chain_step("RecursiveFunctions");
 				}
 			}
 		};

@@ -2,12 +2,13 @@
 
 from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFType
 from dataclasses import dataclass
-from ara.util import dominates, has_path
+from ara.util import dominates, has_path, is_recursive
 from ara.visualization.trace.tracer_api.tracer import GraphNode, GraphPath, init_fast_trace
 from ara.graph.mix import GraphType, ARA_ENTRY_POINT
 
 from .step import Step
 from .option import Option, String
+
 
 from ara.os.os_base import CPU, ExecState
 
@@ -237,12 +238,12 @@ class FlatAnalysis(Step):
                         abb = cfg.vertex(callg.ep.callsite[edge])
                         fake_cpu.call_path.add_call_site(callg, edge)
                         self._set_flags(fake_cpu.analysis_context, abb)
-                        fake_cpu.analysis_context.recursive |= callg.vp.recursive[
-                            edge.target()]
+                        if not fake_cpu.analysis_context.recursive:
+                            fake_cpu.analysis_context.recursive = is_recursive(callg, edge.target())
 
                     self._set_flags(fake_cpu.analysis_context, syscall)
-                    fake_cpu.analysis_context.recursive |= callg.vp.recursive[
-                        function]
+                    if not fake_cpu.analysis_context.recursive:
+                        fake_cpu.analysis_context.recursive = is_recursive(callg, function)
 
                     os.interpret(self._graph,
                                  state,
@@ -250,6 +251,7 @@ class FlatAnalysis(Step):
                                  categories=self._search_category())
 
         self._trigger_new_steps()
+        self._log.debug(is_recursive.cache_info())
 
         if self.dump.get():
             spec, graph_name = self._dump_names()
@@ -269,12 +271,7 @@ class SIA(FlatAnalysis):
                          ty=String())
 
     def get_single_dependencies(self):
-        deps = [
-            "RecursiveFunctions", {
-                "name": "Syscall",
-                "entry_point": self.entry_point.get()
-            }
-        ]
+        deps = [{"name": "Syscall", "entry_point": self.entry_point.get()}]
         deps += self._get_os_specific_deps()
         return deps
 

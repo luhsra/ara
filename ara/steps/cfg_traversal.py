@@ -7,9 +7,8 @@ from dataclasses import dataclass
 from graph_tool.topology import dominator_tree, label_out_component
 
 from ara.graph import SyscallCategory, CFGView, CFType
-from ara.util import get_null_logger, has_path
+from ara.util import get_null_logger, has_path, is_recursive
 from ara.os.os_base import OSState, CrossCoreAction, ExecState
-
 
 
 @dataclass
@@ -176,11 +175,11 @@ class _SSERunner:
 
             # check if in a recursive function and mark accordingly
             func = self._cfg.get_function(self._cfg.vertex(abb))
-            context.recursive = self._call_graph.vp.recursive[
-                self._call_graph.vertex(
-                    self._cfg.vp.call_graph_link[func]
-                )
-            ]
+
+            func_vert = self._call_graph.vertex(
+                self._cfg.vp.call_graph_link[func]
+            )
+            context.recursive = is_recursive(self._call_graph, func_vert)
 
             context.branch = (self._cond_func.get(call_path, False) or
                               self._is_in_condition(abb))
@@ -309,11 +308,12 @@ class _SSERunner:
                 func = new_state.cfg.get_function(
                     new_state.cfg.vertex(next_node)
                 )
-                new_state.recursive = self._call_graph.vp.recursive[
-                    self._call_graph.vertex(
-                        new_state.cfg.vp.call_graph_link[func]
-                    )
-                ]
+
+                func_vert = self._call_graph.vertex(
+                    self._cfg.vp.call_graph_link[func]
+                )
+                new_state.recursive = is_recursive(self._call_graph, func_vert)
+
                 new_state.cpus.one().abb = next_node
                 new_state.cpus.one().call_path.pop_back()
                 new_state.cpus.one().exec_state = self._get_exec(next_node)
