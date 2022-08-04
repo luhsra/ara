@@ -21,7 +21,7 @@ from graph_tool.topology import label_out_component, dominator_tree, shortest_pa
 from graph_tool.search import bfs_search, BFSVisitor, StopSearch
 from graph_tool import GraphView
 from itertools import product, chain, permutations, islice
-from typing import List, Dict, Set, Tuple
+from typing import List, Dict, Set, Tuple, Optional
 from copy import deepcopy
 from scipy.optimize import linprog
 
@@ -621,39 +621,46 @@ class MultiSSE(Step):
             is_new=is_new,
         )
 
-    def _find_cross(self, state, entry, cross_type):
+    def _find_cross(self, metastate, entry, cross_type):
+        """Find all states of type cross_type coming for a given metastate
+        coming from entry.
+        """
         mstg = self._mstg.g
-        filt_mstg = GraphView(
+        s2s = mstg.vertex_type(StateType.state)
+
+        # the algorithm works a follows:
+        # 1. Mark all reachable states coming from entry (within the same
+        #    metastate).
+        # 2. Filter this set for the given cross_type.
+        oc = label_out_component(s2s, s2s.vertex(entry))
+        oc[metastate] = True
+
+        type_filtered = GraphView(
             mstg,
             vfilt=(((mstg.vp.type.fa == StateType.metastate) +
                     (self._mstg.type_map.fa & cross_type) > 0)),
         )
-        s2s = mstg.vertex_type(StateType.state)
+        reachable_filtered = GraphView(type_filtered, vfilt=oc)
 
-        oc = label_out_component(s2s, s2s.vertex(entry))
-        oc[state] = True
-        filt = GraphView(filt_mstg, vfilt=oc)
+        return list(reachable_filtered.vertex(metastate).out_neighbors())
 
-        return list(filt.vertex(state).out_neighbors())
-
-    def _find_cross_states(self, state, entry):
+    def _find_cross_states(self, metastate, entry):
         """Return all syscalls that possibly affect other cores."""
-        return self._find_cross(state, entry, CrossExecState.cross_syscall)
+        return self._find_cross(metastate, entry, CrossExecState.cross_syscall)
 
     def _find_irqs(self, state, entry):
-        """Return all syscalls that possibly affect other cores."""
-        sts = self._find_cross(state, entry,
-                               CrossExecState.cross_irq | CrossExecState.irq)
+        """Return all IRQs that possibly affect other cores."""
+        ists = self._find_cross(state, entry,
+                                CrossExecState.cross_irq | CrossExecState.irq)
         mstg = self._mstg.g
         st2sy = mstg.edge_type(MSTType.st2sy)
         out = []
-        for st in sts:
+        for irq_state in ists:
             # every state must have be evaluated before
             # so check their irqs iterating the out edges
             irq = set([mstg.ep.irq[e]
-                       for e in st2sy.vertex(st).out_edges()
-                       if mstg.ep.irq[e] != -1])
-            out += list(product([st], irq))
+                       for e in st2sy.vertex(irq_state).out_edges()]) - {-1}
+            out.extend(product([irq_state], irq))
         return out
 
     def _find_root_cross_points(self, sp, current_core, affected_cores, only_root=None):
@@ -1630,26 +1637,31 @@ class MultiSSE(Step):
         # list of cross points that need reevaluation
         reeval = set()
 
+        @dataclass
+        class CrossState:
+            # state within the metastate that triggers a new cross point
+            state: graph_tool.Vertex
+            # optional IRQ that is responsible for the trigger
+            irq: Optional[int] = None
+
         cross_list = []
         if not metastate.is_new:
-            metastate.cross_points = self._find_cross_states(
-                metastate.state, metastate.entry)
-            cross_list += [{"type": "irq", "state": x, "irq": y}
-                           for x, y in self._find_irqs(metastate.state,
-                                                       metastate.entry)]
+            cross_points = self._find_cross_states(metastate.state,
+                                                   metastate.entry)
+            irqs = self._find_irqs(metastate.state, metastate.entry)
         else:
-            cross_list += [{"type": "irq", "state": x, "irq": y}
-                           for x, y in metastate.irqs]
+            cross_points = metastate.cross_points
+            irqs = metastate.irqs
 
-        cross_list += [{"type": "cross_point", "state": x}
-                       for x in metastate.cross_points]
+        cross_list += [CrossState(state=x, irq=y) for x, y in irqs]
+        cross_list += [CrossState(state=x) for x in cross_points]
 
         sf = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_points]} "
                         f"(last sync point {int(cp)}{sf})")
         for cross_state in cross_list:
-            c_state = cross_state["state"]
+            c_state = cross_state.state
             if self.with_times.get():
                 time = self._get_relative_time(cp, metastate.cpu_id,
                                                c_state)
@@ -1708,9 +1720,7 @@ class MultiSSE(Step):
                         else:
                             self._log.warn("Time link already exists.")
                 else:
-                    if cross_state["type"] == "irq":
-                        assert "irq" in cross_state
-                    irq = cross_state.get("irq", None)
+                    irq = cross_state.irq
                     other_cp = self._create_cross_point(
                         c_state, timed_candidates, root, pred_cps, irq=irq)
                     exits += self._evaluate_crosspoint(other_cp, root)
