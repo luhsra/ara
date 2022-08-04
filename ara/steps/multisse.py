@@ -132,15 +132,26 @@ class TimeRange:
 
 
 @dataclass(frozen=True)
-class RelativeTime:
-    """A TimeRange relative to a specific root node."""
-    root: graph_tool.Vertex
+class TimedVertex:
+    """An arbitrary graph vertex associated with a time."""
+    vertex: graph_tool.Vertex
     range: TimeRange
 
     def __repr__(self):
-        return ("RelativeTime("
-                f"root: {int(self.root)}, "
+        return ("TimedVertex("
+                f"vertex: {int(self.vertex)}, "
                 f"range: {self.range})")
+
+
+@dataclass(frozen=True)
+class TimeCandidateSet:
+    """Container for a set of candidates fitting to  a cross state."""
+    # a list of other candidate vertices
+    candidates: List[graph_tool.Vertex]
+    # a list of predecessor CPs, for each pred CP a time is given, when this pred CP can exist TODO
+    pred_cps: Tuple[TimedVertex]
+    # the root CP for this candidate set
+    root_cp: graph_tool.Vertex
 
 
 @dataclass(frozen=True)
@@ -1106,7 +1117,7 @@ class MultiSSE(Step):
         for ocp in cps:
             time = state_list.eqs.get_interval_for(
                 FakeEdge(src=ocp, tgt=loose_ends[int(ocp)]))
-            timed_cps.append((ocp, time))
+            timed_cps.append(TimedVertex(vertex=ocp, range=time))
         return frozenset(timed_cps)
 
     def _gen_context(self, graph, cross_syscall, cpu_id, cp, root, path):
@@ -1244,7 +1255,6 @@ class MultiSSE(Step):
                                                       end=None),
                                                 old_cps=cps)
             self._log.debug(f"Starting from cross points {cps}.")
-            rtime = RelativeTime(root=cp, range=time)
 
             ctx = self._gen_context(r_graph, cross_state, current_core, cp,
                                     root, path)
@@ -1253,7 +1263,7 @@ class MultiSSE(Step):
             eqs = Equations()
             if self.with_times.get():
                 self._log.debug("Check for prior syscalls.")
-                if self._has_prior_syscalls(ctx, rtime.range.up):
+                if self._has_prior_syscalls(ctx, time.up):
                     self._log.debug(f"Skip evaluations of {int(cross_state)} "
                                     f"from root {int(root)}. There are prior "
                                     "not evaluated syscalls that may affect "
@@ -1265,7 +1275,7 @@ class MultiSSE(Step):
                          for src, tgt in pairwise(path)]
                 self._add_ranges(eqs, edges)
 
-                eqs.add_range(FakeEdge(src=cp, tgt=cross_state), rtime.range)
+                eqs.add_range(FakeEdge(src=cp, tgt=cross_state), time)
 
                 if start_from is not None:
                     edges = self._get_fs_path(ctx, start_from)
@@ -1284,11 +1294,12 @@ class MultiSSE(Step):
                     timed_pred_cps = self._get_pred_times(
                         timely_cps, state_list, cp, cross_state)
                 else:
-                    timed_pred_cps = frozenset([(x, TimeRange(up=0, to=0))
+                    timed_pred_cps = frozenset([TimedVertex(vertex=x, range=TimeRange(up=0, to=0))
                                                 for x in timely_cps])
 
-                combinations.add((tuple([x[0] for x in state_list.states]),
-                                  timed_pred_cps, root))
+                combinations.add(TimeCandidateSet(candidates=tuple([x[0] for x in state_list.states]),
+                                                  pred_cps=timed_pred_cps,
+                                                  root_cp=root))
         # for a, b in combinations:
         #     self._log.warn(f"{[int(x) for x in a]} {[int(x) for x in b]}")
         return combinations
@@ -1309,13 +1320,13 @@ class MultiSSE(Step):
             e = mstg.add_edge(old_cross, new_cp)
             mstg.ep.type[e] = MSTType.sy2sy
 
-        for pred_cp, time in pred_cps:
+        for pred_cp in pred_cps:
             self._log.debug(
-                f"Add time edge between {int(pred_cp)} and {int(new_cp)}.")
-            e = mstg.add_edge(pred_cp, new_cp)
+                f"Add time edge between {int(pred_cp.vertex)} and {int(new_cp)}.")
+            e = mstg.add_edge(pred_cp.vertex, new_cp)
             mstg.ep.type[e] = MSTType.follow_sync
-            set_time(mstg.ep.bcet, e, time.up)
-            set_time(mstg.ep.wcet, e, time.to)
+            set_time(mstg.ep.bcet, e, pred_cp.range.up)
+            set_time(mstg.ep.wcet, e, pred_cp.range.to)
 
         for src in chain([cross_state], timed_states):
             e = mstg.add_edge(src, new_cp)
@@ -1669,61 +1680,67 @@ class MultiSSE(Step):
                 time = TimeRange(up=0, to=0)
 
             if self._mstg.type_map[c_state] & CrossExecState.irq:
-                it = [([], [(cp, time)], cp)]
+                # we have a core local interrupt, so the candidate
+                # set is empty and we need to pair with ourselves
+                it = [TimeCandidateSet(candidates=[],
+                                        pred_cps=[TimedVertex(vertex=cp,
+                                                              range=time)],
+                                        root_cp=cp)]
             else:
                 it = self._find_timed_states(c_state, cp, time,
                                              start_from=start_from,
                                              only_root=only_root)
 
-            for timed_candidates, pred_cps, root in it:
+            for cands in it:
+                root_cp = cands.root_cp
                 self._log.debug(
                     f"Evaluating cross point between {int(c_state)} and "
-                    f"{[int(x) for x in timed_candidates]}")
+                    f"{[int(x) for x in cands.candidates]}")
                 other_cp = self._get_existing_cross_point(
-                    c_state, timed_candidates)
+                    c_state, cands.candidates)
                 if other_cp:
                     mstg = self._mstg.g
                     # just link the new cp to it, if it is new
                     self._log.debug(
-                        f"Link from {int(root)} to existing cross point "
+                        f"Link from {int(root_cp)} to existing cross point "
                         f"{int(other_cp)} ({int(c_state)} with "
-                        f"{[int(x) for x in timed_candidates]}).")
-                    exists = mstg.edge(root, other_cp)
+                        f"{[int(x) for x in cands.candidates]}).")
+                    exists = mstg.edge(root_cp, other_cp)
                     if not exists:
-                        m2sy_edge = mstg.add_edge(root, other_cp)
+                        m2sy_edge = mstg.add_edge(root_cp, other_cp)
                         mstg.ep.type[m2sy_edge] = MSTType.sy2sy
 
                         # trigger a reevaluation
                         self._log.debug(
-                            f"New edge between {int(root)} and {int(other_cp)}"
+                            f"New edge between {int(root_cp)} and {int(other_cp)}"
                             " can lead to new syscall execution orders. "
                             f"Trigger a reevaluation for {int(other_cp)}"
                         )
                         cores = frozenset(self._mstg.cross_point_map[other_cp])
                         en2ex = mstg.edge_type(MSTType.en2ex)
                         for exit_sp in en2ex.vertex(other_cp).out_neighbors():
-                            reeval.add((exit_sp, NewEdgeReevaluation(root=root)))
+                            reeval.add((exit_sp, NewEdgeReevaluation(root=root_cp)))
                     else:
                         self._log.warn("Already exists.")
 
                     follow_sync = mstg.edge_type(MSTType.follow_sync)
-                    for pred_cp, time in pred_cps:
+                    for pred_cp in cands.pred_cps:
                         self._log.debug(
-                            f"Time link from {int(pred_cp)} to existing "
+                            f"Time link from {int(pred_cp.vertex)} to existing "
                             f"cross point {int(other_cp)}")
-                        exists = follow_sync.edge(pred_cp, other_cp)
+                        exists = follow_sync.edge(pred_cp.vertex, other_cp)
                         if not exists:
-                            m2sy_edge = mstg.add_edge(pred_cp, other_cp)
+                            m2sy_edge = mstg.add_edge(pred_cp.vertex, other_cp)
                             mstg.ep.type[m2sy_edge] = MSTType.follow_sync
-                            set_time(mstg.ep.bcet, m2sy_edge, time.up)
-                            set_time(mstg.ep.wcet, m2sy_edge, time.to)
+                            set_time(mstg.ep.bcet, m2sy_edge, pred_cp.range.up)
+                            set_time(mstg.ep.wcet, m2sy_edge, pred_cp.range.to)
                         else:
                             self._log.warn("Time link already exists.")
                 else:
                     irq = cross_state.irq
                     other_cp = self._create_cross_point(
-                        c_state, timed_candidates, root, pred_cps, irq=irq)
-                    exits += self._evaluate_crosspoint(other_cp, root)
+                        c_state, cands.candidates, root_cp, cands.pred_cps, irq=irq)
+                    exits += self._evaluate_crosspoint(other_cp, root_cp)
 
                     # trigger a reevaluation if necessary
                     current_cpus = set(self._mstg.cross_point_map[cp])
