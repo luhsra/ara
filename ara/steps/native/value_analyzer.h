@@ -318,7 +318,9 @@ namespace ara::step {
 		/**
 		 * Get the SVF::VFGNode to a specific llvm::Value.
 		 */
-		const SVF::VFGNode* get_vfg_node(const SVF::SVFG& vfg, const llvm::Value& start, int argument_nr = -1);
+		template <typename SVFGGraphtool>
+		const SVF::VFGNode* get_vfg_node(SVFGGraphtool& g, const graph::SVFG svfg, const llvm::Value& start,
+		                                 int argument_nr = -1);
 
 		/**
 		 * Perform an actual search. It traverses backwards in the Value Flow Graph to retrieve the origin of a specific
@@ -346,7 +348,8 @@ namespace ara::step {
 		 * \param hint        what type of analysis should be done
 		 * \param type        the expected object type, currently unused
 		 */
-		ValueAnalyzer::Result get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath,
+		template <typename SVFGGraphtool>
+		ValueAnalyzer::Result get_argument_value(SVFGGraphtool& g, llvm::CallBase& callsite, graph::CallPath callpath,
 		                                         unsigned argument_nr, graph::SigType hint, PyObject* type);
 
 		/**
@@ -360,7 +363,8 @@ namespace ara::step {
 		 *
 		 * \return whether a connection is found
 		 */
-		bool has_connection(llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
+		template <typename SVFGGraphtool>
+		bool has_connection(SVFGGraphtool& g, llvm::CallBase& callsite, graph::CallPath callpath, unsigned argument_nr,
 		                    OSObject obj_index);
 
 		/**
@@ -409,15 +413,38 @@ namespace ara::step {
 		 *
 		 * Uses do_backward_value_search internally to perform the actual analysis.
 		 */
-		const llvm::Value* get_return_value(const llvm::CallBase& callsite, graph::CallPath callpath);
+		template <typename SVFGGraphtool>
+		const llvm::Value* get_return_value(SVFGGraphtool& g, const llvm::CallBase& callsite, graph::CallPath callpath);
 
-		ValueAnalyzer::Result get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath);
+		template <typename SVFGGraphtool>
+		ValueAnalyzer::Result get_memory_value(SVFGGraphtool& g, const llvm::Value* intermediate_value,
+		                                       graph::CallPath callpath);
 
+		template <typename SVFGGraphtool>
 		std::vector<std::pair<const llvm::Value*, graph::CallPath>>
-		get_assignments(const llvm::Value* value, const std::vector<const llvm::GetElementPtrInst*>& gep,
-		                graph::CallPath callpath);
+		get_assignments(SVFGGraphtool& g, const llvm::Value* value,
+		                const std::vector<const llvm::GetElementPtrInst*>& gep, graph::CallPath callpath);
 
 		PyObject* py_repack(ValueAnalyzer::Result&& result) const;
+
+		/**
+		 * Assign an (artificial) system object to an callsite return value or the nth argument pointer origin.
+		 *
+		 * Internally, the function also performs a value analysis since it tries to follow back the requested location
+		 * (return value or argument) to which the object should be stored on the current callpath to a unique location.
+		 * It then assign the object at this location where it can be found again by subsequent calls of
+		 * get_argument_value.
+		 *
+		 * \param callsite    the callsite to which the system object should be assigned
+		 * \param obj_index   the unique ID of the object (the actual object is stored in Python)
+		 * \param callpath    the callpath (currect context) which applies for this call
+		 * \param argument_nr the argument to which the object should be assigned. If argument_nr is -1 the object is
+		 * assigned to the return value of this call, otherwise to nth argument which is assumed to be a pointer or
+		 * reference.
+		 */
+		template <typename SVFGGraphtool>
+		void assign_system_object(SVFGGraphtool& g, const llvm::Value* value, OSObject obj_index,
+		                          const std::vector<const llvm::GetElementPtrInst*>&, const graph::CallPath& callpath);
 
 	  public:
 		// WARNING: do not use this class alone, always use the Python ValueAnalyzer.
@@ -450,22 +477,11 @@ namespace ara::step {
 		                             graph::CallPath callpath);
 
 		/**
-		 * Assign an (artificial) system object to an callsite return value or the nth argument pointer origin.
-		 *
-		 * Internally, the function also performs a value analysis since it tries to follow back the requested location
-		 * (return value or argument) to which the object should be stored on the current callpath to a unique location.
-		 * It then assign the object at this location where it can be found again by subsequent calls of
-		 * get_argument_value.
-		 *
-		 * \param callsite    the callsite to which the system object should be assigned
-		 * \param obj_index   the unique ID of the object (the actual object is stored in Python)
-		 * \param callpath    the callpath (currect context) which applies for this call
-		 * \param argument_nr the argument to which the object should be assigned. If argument_nr is -1 the object is
-		 * assigned to the return value of this call, otherwise to nth argument which is assumed to be a pointer or
-		 * reference.
+		 * Wrapper call for assign_system_object. See its documentation for details.
 		 */
-		void assign_system_object(const llvm::Value* value, OSObject obj_index,
-		                          const std::vector<const llvm::GetElementPtrInst*>&, const graph::CallPath& callpath);
+		void py_assign_system_object(const llvm::Value* value, OSObject obj_index,
+		                             const std::vector<const llvm::GetElementPtrInst*>&,
+		                             const graph::CallPath& callpath);
 
 		// /**
 		//  * Wrapper call for assign_system_object. See its documentation for details.

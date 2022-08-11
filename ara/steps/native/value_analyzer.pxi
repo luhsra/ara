@@ -195,8 +195,8 @@ cdef class ValueAnalyzer:
         for py_gep in offset:
             gep = py_gep
             c_offset.push_back(gep._gep_inst())
-        deref(self._c_va).assign_system_object(value._val, obj_index, c_offset,
-                                               callpath._c_callpath)
+        deref(self._c_va).py_assign_system_object(value._val, obj_index, c_offset,
+                                                  callpath._c_callpath)
 
     def has_connection(self, callsite, callpath: CallPath, argument_nr, sys_obj):
         """Check, if an syscall argument and a target candidate are connected.
