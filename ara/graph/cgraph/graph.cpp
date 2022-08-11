@@ -307,9 +307,9 @@ namespace ara::graph {
 #undef ARA_MAP
 	}
 
-	SVFG SVFG::get(PyObject* py_svfg) {
+	SVFG SVFG::get(PyObject* py_svfg, GraphData& graph_data) {
 		assert(py_svfg != nullptr);
-		SVFG svfg(get_graph(py_svfg));
+		SVFG svfg(get_graph(py_svfg), graph_data);
 		create_properties(svfg, py_svfg);
 		return svfg;
 	}
@@ -319,9 +319,9 @@ namespace ara::graph {
 		SVFGUniqueEnabler(Args&&... args) : SVFG(std::forward<Args>(args)...) {}
 	};
 
-	std::unique_ptr<SVFG> SVFG::get_ptr(PyObject* py_svfg) {
+	std::unique_ptr<SVFG> SVFG::get_ptr(PyObject* py_svfg, GraphData& graph_data) {
 		assert(py_svfg != nullptr);
-		std::unique_ptr<SVFG> svfg = std::make_unique<SVFGUniqueEnabler>(get_graph(py_svfg));
+		std::unique_ptr<SVFG> svfg = std::make_unique<SVFGUniqueEnabler>(get_graph(py_svfg), graph_data);
 		create_properties(*svfg, py_svfg);
 		return svfg;
 	}
@@ -331,7 +331,7 @@ namespace ara::graph {
 		PyObject* pysvfg = PyObject_GetAttrString(graph, "svfg");
 		assert(pysvfg != nullptr);
 
-		return SVFG::get(pysvfg);
+		return SVFG::get(pysvfg, this->get_graph_data());
 	}
 
 	std::unique_ptr<SVFG> Graph::get_svfg_graphtool_ptr() {
@@ -339,6 +339,6 @@ namespace ara::graph {
 		PyObject* pysvfg = PyObject_GetAttrString(graph, "svfg");
 		assert(pysvfg != nullptr);
 
-		return SVFG::get_ptr(pysvfg);
+		return SVFG::get_ptr(pysvfg, this->get_graph_data());
 	}
 } // namespace ara::graph

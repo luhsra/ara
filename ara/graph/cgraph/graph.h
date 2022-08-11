@@ -544,7 +544,8 @@ namespace ara::graph {
 	struct SVFG {
 	  private:
 		friend class Graph;
-		SVFG(graph_tool::GraphInterface& graph) : graph(graph){};
+		GraphData& graph_data;
+		SVFG(graph_tool::GraphInterface& graph, GraphData& graph_data) : graph_data(graph_data), graph(graph){};
 
 		struct SVFGUniqueEnabler;
 
@@ -574,10 +575,34 @@ namespace ara::graph {
 		}
 
 		/**
+		 * Graphtool replacement for SVF::SVFG::fromValue()
+		 *
+		 * Return the corresponding nodes to a given llvm::Value. return an empty list, if no mapping is possible.
+		 */
+		template <class Graph>
+		std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>
+		from_llvm_value(const llvm::Value& llvm_value) const {
+			// handle special nodes [nullptr and blackhole]
+			if (SVF::SymbolTableInfo::isNullPtrSym(&llvm_value)) {
+				return {this->graph_data.nullptr_node};
+			}
+			if (SVF::SymbolTableInfo::isBlackholeSym(&llvm_value)) {
+				return {this->graph_data.blackhole_node};
+			}
+
+			// table lookup llvm_value -> nodes
+			auto vertex_container = this->graph_data.value_to_svfg_node.find(&llvm_value);
+			if (vertex_container == this->graph_data.value_to_svfg_node.end()) {
+				return std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>{};
+			}
+			return std::get<1>(*vertex_container);
+		}
+
+		/**
 		 * Return a graph tool SVFG from the corresponding Python graph.
 		 */
-		static SVFG get(PyObject* py_instancegraph);
-		static std::unique_ptr<SVFG> get_ptr(PyObject* py_instancegraph);
+		static SVFG get(PyObject* py_svfg, GraphData& graph_data);
+		static std::unique_ptr<SVFG> get_ptr(PyObject* py_svfg, GraphData& graph_data);
 	};
 
 	/**

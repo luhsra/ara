@@ -43,6 +43,14 @@ namespace ara::graph {
 		 */
 		std::map<const llvm::Function*, llvmext::Function> functions;
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
+
+		/**
+		 * Map required for SVFG::from_llvm_value()
+		 */
+		std::map<const llvm::Value*, std::vector<uint64_t>> value_to_svfg_node;
+		uint64_t nullptr_node;
+		uint64_t blackhole_node;
+
 		/**
 		 * Workaround for SVF classes where we need additional attributes.
 		 * The tuple conists of the
