@@ -45,11 +45,9 @@ namespace ara::graph {
 		std::map<const llvm::BasicBlock*, llvmext::BasicBlock> basic_blocks;
 
 		/**
-		 * Map required for SVFG::from_llvm_value()
+		 * Map required for SVFG::get_node_from_svf_node()
 		 */
-		std::map<const llvm::Value*, std::vector<uint64_t>> value_to_svfg_node;
-		uint64_t nullptr_node;
-		uint64_t blackhole_node;
+		std::map<const SVF::SVFGNode*, uint64_t> svfg_to_graphtool_node;
 
 		/**
 		 * Workaround for SVF classes where we need additional attributes.

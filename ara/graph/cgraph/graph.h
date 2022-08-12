@@ -575,27 +575,39 @@ namespace ara::graph {
 		}
 
 		/**
+		 * Return graphtool node from svf node. Empty optional if graphtool node could not be found.
+		 */
+		template <class Graph>
+		std::optional<typename boost::graph_traits<Graph>::vertex_descriptor>
+		get_node_from_svf_node(const SVF::SVFGNode* svf_node) const {
+			auto node = this->graph_data.svfg_to_graphtool_node.find(svf_node);
+			if (node == this->graph_data.svfg_to_graphtool_node.end()) {
+				return {};
+			}
+			return std::get<1>(*node);
+		}
+
+		/**
 		 * Graphtool replacement for SVF::SVFG::fromValue()
 		 *
 		 * Return the corresponding nodes to a given llvm::Value. return an empty list, if no mapping is possible.
 		 */
 		template <class Graph>
-		std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>
+		std::set<typename boost::graph_traits<Graph>::vertex_descriptor>
 		from_llvm_value(const llvm::Value& llvm_value) const {
-			// handle special nodes [nullptr and blackhole]
-			if (SVF::SymbolTableInfo::isNullPtrSym(&llvm_value)) {
-				return {this->graph_data.nullptr_node};
-			}
-			if (SVF::SymbolTableInfo::isBlackholeSym(&llvm_value)) {
-				return {this->graph_data.blackhole_node};
-			}
+			using GraphtoolVertex = typename boost::graph_traits<Graph>::vertex_descriptor;
 
-			// table lookup llvm_value -> nodes
-			auto vertex_container = this->graph_data.value_to_svfg_node.find(&llvm_value);
-			if (vertex_container == this->graph_data.value_to_svfg_node.end()) {
-				return std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>{};
+			// call fromValue()
+			std::set<const SVF::SVFGNode*> svf_nodes = this->graph_data.get_svfg().fromValue(&llvm_value);
+
+			// convert svfg nodes to graphtool nodes
+			std::set<GraphtoolVertex> ret;
+			for (const SVF::SVFGNode* svf_node : svf_nodes) {
+				std::optional<GraphtoolVertex> vertex = this->get_node_from_svf_node<Graph>(svf_node);
+				assert(vertex.has_value() && "Could not get graphtool vertex from svf vertex!");
+				ret.insert(vertex.value());
 			}
-			return std::get<1>(*vertex_container);
+			return ret;
 		}
 
 		/**
