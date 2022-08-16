@@ -423,15 +423,15 @@ class MSTG:
 
     # store the affected cores of a cross syscall
     # contains a vector[int]
-    cross_core_map: graph_tool.PropertyMap
+    cross_core_map: graph_tool.VertexPropertyMap
 
     # store the ecec type of a state
     # contains a mask of CrossExecState
-    type_map: graph_tool.PropertyMap
+    type_map: graph_tool.VertexPropertyMap
 
     # store which cores are affected by this synchronisation point
     # contains a vector[int]
-    cross_point_map: graph_tool.PropertyMap
+    cross_point_map: graph_tool.VertexPropertyMap
 
 
 class MultiSSE(Step):
@@ -1163,11 +1163,9 @@ class MultiSSE(Step):
 
         entry = mstg.get_entry_state(entry_sp, cpu_id)
 
-        # TODO: Is there a case where there is no exit_sp?
         if exit_sp:
             exit_s = mstg.get_exit_state(exit_sp, cpu_id)
         else:
-            self._log.error("TODO: No exit")
             exit_s = None
 
         reachable = self._get_reachable_states(entry, exit_state=exit_s)
@@ -1260,19 +1258,10 @@ class MultiSSE(Step):
         For its working, the function calculates a path between each SP pair.
         If one exists, it removes every element except of the last one.
         """
-
-
-        # Iterate all pairs and look if there is a path between the pair
-        # elements. If so, remove all nodes except of the last one.
         predecessors = set(sps)
-        self._log.error(f"Preds {[int(x) for x in predecessors]}")
         src_blacklist = set()
         pair_blacklist = set()
         for src, tgt in permutations(reversed(list(sps)), 2):
-            self._log.error(int(src))
-            self._log.error(int(tgt))
-            self._log.error(f"src_blacklist {[int(x) for x in src_blacklist]}")
-            self._log.error(f"pair_blacklist {[(int(x), int(y)) for x, y in pair_blacklist]}")
             if src in src_blacklist:
                 continue
             if (src, tgt) in pair_blacklist:
@@ -1470,9 +1459,16 @@ class MultiSSE(Step):
             #    cross points.
             #    They can be restricted by the set of affected cores or by an
             #    explicitly given starting point.
+
+            # build a restricted graph that only sees the history coming from
+            # the root vertex
             reach = label_out_component(sp_graph, sp_graph.vertex(root))
             reach[root] = True
-            r_graph = GraphView(sp_graph, vfilt=reach)
+            cut_history = mstg.new_ep("bool", val=True)
+            for edge in mstg.vertex(root).in_edges():
+                cut_history[edge] = False
+            r_graph = GraphView(sp_graph, vfilt=reach, efilt=cut_history)
+
             self._log.debug(f"Evaluating root cross point {int(root)} "
                             f"with path {[int(x) for x in path]}.")
 
