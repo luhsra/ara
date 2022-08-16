@@ -929,7 +929,7 @@ class MultiSSE(Step):
                     if self.with_times.get():
                         # e must have a follow_sync edge path to the last SP
                         ff_edges = self._get_followsync_path(ctx, e.target(),
-                                                             from_cp=last_exit_cp)
+                                                             from_sp=last_exit_cp)
                         self._add_ranges(eqs, ff_edges)
 
                 if core_graph.ep.type[e] == MSTType.en2ex:
