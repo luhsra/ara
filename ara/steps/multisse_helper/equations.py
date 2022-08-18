@@ -3,12 +3,31 @@ from .common import TimeRange
 from ara.util import get_logger
 
 import graph_tool
+import logging
 import math
 
 from copy import deepcopy
 from scipy.optimize import linprog
 
 log = get_logger("MultiSSE.EQs", inherit=True)
+
+
+# translation map between the hash of edges and their names
+edge_strings = {}
+
+
+def p_in(edge):
+    # do only anything when debugging is active
+    if log.getEffectiveLevel() == logging.DEBUG:
+        global edge_strings
+        edge_strings[hash(edge)] = str(edge)
+
+
+def e_str(h_edge):
+    if log.getEffectiveLevel() == logging.DEBUG:
+        global edge_strings
+        return edge_strings[h_edge]
+    return f"{h_edge}_hashed"
 
 
 class Equations:
@@ -40,11 +59,12 @@ class Equations:
                 [alphabet[idx] for idx, elem in enumerate(eq) if elem == -1])
 
             ret += f"\n  {left} = {right}"
-        ret += f"\n  Mapping: {[(str(e), alphabet[idx]) for e, idx in self._v_map.items()]})"
+        ret += f"\n  Mapping: {[(e_str(e), alphabet[idx]) for e, idx in self._v_map.items()]})"
         return ret
 
     def _get_variable(self, edge, must_exist=False):
         hedge = hash(edge)
+        p_in(edge)
         if hedge not in self._v_map:
             if must_exist:
                 assert False, f"Edge {edge} does not exist."
@@ -70,6 +90,7 @@ class Equations:
 
     def solvable(self):
         """Return, if the equation system has a solution."""
+        log.debug("Is the equation system solvable: %s", self)
         if self._highest == 0:
             return True
         res = self._solve_for_var(0)
@@ -104,9 +125,13 @@ class Equations:
         """Return the solution interval for a specific edge."""
         var = self._get_variable(edge, must_exist=True)
         if self._has_equation(var):
-            return TimeRange(up=self._get_minimum(var),
-                             to=self._get_maximum(var))
-        return self._bounds[var]
+            ret = TimeRange(up=self._get_minimum(var),
+                            to=self._get_maximum(var))
+        else:
+            ret = self._bounds[var]
+        log.debug("Solution of the equation system for %s: %s\n%s",
+                  edge, ret, self)
+        return ret
 
     def add_range(self, edge: graph_tool.Edge, time: TimeRange):
         """Store that the specified edge lives only in the range time.
