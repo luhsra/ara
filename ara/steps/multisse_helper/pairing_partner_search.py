@@ -112,7 +112,7 @@ class PairingPartnerSearch:
         timing_calc    -- A TimingCalculator instance, if timing is wanted.
                           None, otherwise.
         """
-        self._log = get_logger("MultiSSE.PPS")
+        self._log = get_logger("MultiSSE.PPS", inherit=True)
         self._mstg = mstg
         self._core_map = core_map
         self._type_map = type_map

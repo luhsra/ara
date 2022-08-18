@@ -30,7 +30,7 @@ def get_time(prop, idx):
 
 class TimingCalculator():
     def __init__(self, mstg, type_map):
-        self._log = get_logger("MultiSSE.WCET")
+        self._log = get_logger("MultiSSE.WCET", inherit=True)
         self._mstg = mstg
         self._type_map = type_map
 

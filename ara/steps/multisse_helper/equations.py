@@ -8,7 +8,7 @@ import math
 from copy import deepcopy
 from scipy.optimize import linprog
 
-log = get_logger("MultiSSE.EQs")
+log = get_logger("MultiSSE.EQs", inherit=True)
 
 
 class Equations:

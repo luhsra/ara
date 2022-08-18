@@ -61,15 +61,24 @@ class LoggerManager:
             return self._logger_levels[logger]
         return self._log_level
 
-    def get_logger(self, name: str, level=None):
+    def get_logger(self, name: str, level=None, inherit=False):
         """Get a sublogger with an preinitialized level.
 
         Arguments:
-        name  -- name of the sublogger
-        level -- Level of the sublogger (default: the global log level)
+        name    -- name of the sublogger
+        level   -- Level of the sublogger (default: the global log level)
+        inherit -- If the logger is a child logger ("A.B", B derives from
+                   child), then inherit the level from the parent. Note,
+                   that this works in one direction only due to the nature
+                   of Python logging. So only if the parent has a more
+                   detailed level as ARA itself, it will be transferred
+                   the to child.
         """
         if not level:
-            level = self.get_log_level(name)
+            if inherit:
+                level = logging.NOTSET
+            else:
+                level = self.get_log_level(name)
         logger = logging.getLogger(name)
         logger.setLevel(level)
         self._loggers[name] = logger
@@ -105,9 +114,9 @@ def get_logger_manager():
     return _logger_manager
 
 
-def get_logger(name: str, level=None):
+def get_logger(name: str, level=None, inherit=False):
     """Convenience method. See LoggerManager.get_logger."""
-    return get_logger_manager().get_logger(name, level)
+    return get_logger_manager().get_logger(name, level, inherit)
 
 
 def get_null_logger():
