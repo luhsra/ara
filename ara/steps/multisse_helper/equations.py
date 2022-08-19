@@ -90,10 +90,10 @@ class Equations:
 
     def solvable(self):
         """Return, if the equation system has a solution."""
-        log.debug("Is the equation system solvable: %s", self)
         if self._highest == 0:
             return True
         res = self._solve_for_var(0)
+        log.debug("The equation system is solvable: %d, %s", res.success, self)
         return res.success
 
     def _has_equation(self, var):

@@ -5,10 +5,10 @@ from .step import Step
 from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from .multisse_helper.common import CrossExecState, find_irqs, find_cross_syscalls
+from .multisse_helper.common import CrossExecState, FakeEdge, find_irqs, find_cross_syscalls
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
-from .multisse_helper.pairing_partner_search import PairingPartnerSearch, Range, FakeEdge, TimeCandidateSet
+from .multisse_helper.pairing_partner_search import search_for_pairing_partners, Range, TimeCandidateSet
 from .multisse_helper.wcet_calculation import TimingCalculator, get_time, set_time
 from ara.graph import MSTGraph, StateType, MSTType, single_check, edge_types
 from ara.util import pairwise
@@ -499,8 +499,8 @@ class MultiSSE(Step):
                                          StateType.exit_sync),
                 efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
 
-    def _find_timed_states(self, cross_state, last_sp, time,
-                           start_from=None, only_root=None):
+    def _find_pairing_partners(self, cross_state, last_sp,
+                               start_from=None, only_root=None):
         """Find all possible combinations of computation blocks that fit to
         the cross_state.
 
@@ -516,15 +516,27 @@ class MultiSSE(Step):
         affected_cores = self._mstg.cross_core_map[cross_state]
         current_core = mstg.vp.cpu_id[cross_state]
 
+        time = None
+        if self.with_times.get():
+            time = self._timings.get_relative_time(last_sp, current_core,
+                                                   cross_state)
+
+        if self._mstg.type_map[cross_state] & CrossExecState.irq:
+            # we have a core local interrupt, so the candidate
+            # set is empty and we need to pair with ourselves
+            tr = TimeRange(up=0, to=0)
+            if time:
+                tr = time.get_interval_for(FakeEdge(src=last_sp, tgt=cross_state))
+            return [TimeCandidateSet.set_without_candidates(last_sp, tr)]
+
         root_paths = self._find_root_cross_points(last_sp, current_core,
                                                   affected_cores,
                                                   only_root=only_root)
 
         combinations = set()
         for path in root_paths:
-            self._log.debug(f"Find pairing candidates for node {int(cross_state)} "
-                            f"(time: {time}) starting from "
-                            f"root SP {int(path[0])}.")
+            self._log.debug("Find pairing candidates for node %d (time: %s) "
+                            "starting from root SP %d", cross_state, time, path[0])
             # 2. For each root cross point get the actual affected following
             #    cross points.
             #    They can be restricted by the set of affected cores or by an
@@ -532,16 +544,16 @@ class MultiSSE(Step):
             starts = []
             if start_from:
                 starts.append(Range(start=start_from, end=None))
-            pps = PairingPartnerSearch(self._mstg.g,
-                                       self._mstg.cross_point_map,
-                                       self._mstg.type_map,
-                                       path,
-                                       cross_state,
-                                       time,
-                                       affected_cores,
-                                       starts,
-                                       timing_calc=self._timings)
-            combinations.update(pps.find_combinations())
+            combs = search_for_pairing_partners(self._mstg.g,
+                                                self._mstg.cross_point_map,
+                                                self._mstg.type_map,
+                                                path,
+                                                cross_state,
+                                                affected_cores,
+                                                starts,
+                                                timing_calc=self._timings,
+                                                time=time)
+            combinations.update(combs)
 
         # for a, b in combinations:
         #     self._log.warn(f"{[int(x) for x in a]} {[int(x) for x in b]}")
@@ -808,18 +820,8 @@ class MultiSSE(Step):
                         f"(last sync point {int(cp)}{sf})")
         for cross_state in cross_list:
             c_state = cross_state.state
-            if self.with_times.get():
-                time = self._timings.get_relative_time(cp, metastate.cpu_id,
-                                                       c_state)
-            else:
-                time = TimeRange(up=0, to=0)
 
-            if self._mstg.type_map[c_state] & CrossExecState.irq:
-                # we have a core local interrupt, so the candidate
-                # set is empty and we need to pair with ourselves
-                it = [TimeCandidateSet.set_without_candidates(cp, time)]
-            else:
-                it = self._find_timed_states(c_state, cp, time,
+            it = self._find_pairing_partners(c_state, cp,
                                              start_from=start_from,
                                              only_root=only_root)
 

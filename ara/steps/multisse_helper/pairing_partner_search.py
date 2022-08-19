@@ -1,6 +1,6 @@
 from .equations import Equations
 from .constrained_sps import get_constrained_sps
-from .common import Range, CPRange, get_reachable_states, CrossExecState, TimeRange, find_cross_syscalls
+from .common import Range, CPRange, FakeEdge, get_reachable_states, CrossExecState, TimeRange, find_cross_syscalls
 from .wcet_calculation import TimingCalculator, get_time
 
 from ara.graph import StateType, MSTType, vertex_types, single_check
@@ -13,27 +13,6 @@ from typing import List, Set, Tuple
 from itertools import chain, permutations, product
 from collections import defaultdict
 from graph_tool.topology import shortest_path
-
-
-@dataclass(frozen=True, eq=True)
-class FakeEdge:
-    """Represents an edge that don't exist in the graph."""
-    src: graph_tool.Vertex
-    tgt: graph_tool.Vertex
-
-    def source(self):
-        return self.src
-
-    def target(self):
-        return self.tgt
-
-    def __repr__(self):
-        def none_or_int(v):
-            if v:
-                return int(v)
-            return None
-
-        return f"FakeEdge({none_or_int(self.src)}, {none_or_int(self.tgt)})"
 
 
 @dataclass(frozen=True)
@@ -89,7 +68,7 @@ class StateList:
     eqs: Equations
 
 
-class PairingPartnerSearch:
+class _PairingPartnerSearch:
     """Find possible pairing partner for a given cross syscall."""
 
     def __init__(self,
@@ -98,10 +77,10 @@ class PairingPartnerSearch:
                  type_map: graph_tool.VertexPropertyMap,
                  path: List[graph_tool.Vertex],
                  cross_state: graph_tool.Vertex,
-                 time: TimeRange,
                  affected_cores: Set[int],
                  restrictions: List[Range],
-                 timing_calc: TimingCalculator = None):
+                 timing_calc: TimingCalculator = None,
+                 time: Equations = None):
         """Initializes the search.
 
         mstg           -- The MSTG
@@ -137,6 +116,50 @@ class PairingPartnerSearch:
         for edge in mstg.vertex(root).in_edges():
             cut_history[edge] = False
         self._sp_graph = graph_tool.GraphView(reach, efilt=cut_history)
+
+        # do the actual work
+        self._log.debug(f"Evaluating cross state {int(self._cross_state)}"
+                        f" with path {[int(x) for x in self._path]}"
+                        " from the root SP to the last SP.")
+
+        corridor = self._get_corridor()
+        self._log.debug(f"Starting from SPs {corridor}.")
+
+        if self._timings:
+            assert time, "Timings are requested but not given"
+            self._log.debug(f"The time of SP {int(self._cross_state)} to"
+                            f" cross state {int(self._last_sp)} is"
+                            f" {self._time}.")
+            eqs = self._build_equations(time)
+        else:
+            eqs = None
+
+        # 3. Build the actual product from each possible cross point
+        #    (while respecting time constraints if given.
+        self._combinations = set()
+        for state_list in self._build_product(corridor, eqs,
+                                              self._affected_cores, []):
+            # we now have a set of candidates for a new SP
+            # next step is to calculate the predecessors in time for the
+            # new SP
+            timely_cps = self._find_timed_predecessor(
+                self._sp_graph,
+                frozenset([self._last_sp] + [x.root for x in state_list.states]))
+            # self._log.debug(
+            #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
+            if self._timings:
+                timed_pred_cps = self._get_pred_times(
+                    timely_cps, state_list, self._last_sp, self._cross_state)
+            else:
+                timed_pred_cps = frozenset([TimedVertex(vertex=x, range=TimeRange(up=0, to=0))
+                                            for x in timely_cps])
+
+            self._combinations.add(TimeCandidateSet(candidates=tuple([x.state for x in state_list.states]),
+                                                    pred_cps=timed_pred_cps,
+                                                    root_cp=self._root))
+
+    def get_result(self):
+        return self._combinations
 
     def _is_successor_of(self, orig_sp, new_sp):
         """Is new_sp a successor of orig_sp?"""
@@ -187,21 +210,17 @@ class PairingPartnerSearch:
 
         good_v = []
         for v in r1.vertices():
+            self._log.debug("Check if %d is a good candidate", v)
             if not self._timings:
                 # shortcut if timings are not relevant
                 good_v.append((v, None))
                 continue
             new_eqs = eqs.copy()
-            state_time = self._timings.get_relative_time(entry_sp, cpu_id, v)
-            e = FakeEdge(src=entry_sp, tgt=v)
-            new_eqs.add_range(e, state_time)
+            self._timings.get_relative_time(entry_sp, cpu_id, v, eqs=new_eqs)
             root_edges = self._get_edges_to(root_sp)
+            e = FakeEdge(src=entry_sp, tgt=v)
             cur_edges = self._get_followsync_path(entry_sp) + [e]
-            # self._log.debug(f"GTS: V: {int(v)} Edges: "
-            #                 f"{[str(e) for e in root_edges]}"
-            #                 f"{[str(e) for e in cur_edges]}")
             new_eqs.add_equality(root_edges, cur_edges)
-            # self._log.debug(f"GTS: EQs: {new_eqs}")
             if new_eqs.solvable():
                 good_v.append((v, new_eqs))
         return good_v
@@ -265,14 +284,13 @@ class PairingPartnerSearch:
                                       old_sps=sps)
         return sps
 
-    def _build_equations(self):
+    def _build_equations(self, eqs):
         # If time should be considered, build the (initial) equation
         # system.
-        eqs = Equations()
         self._log.debug("Check for prior syscalls.")
         # TODO check, if this is really necessary or is we can come to
         # a point where syscalls are evaluated (mostly) in order.
-        if self._has_prior_syscalls(self._time.up):
+        if self._has_prior_syscalls(self._time):
             self._log.debug(f"Skip evaluations of {int(self._cross_state)} "
                             f"from root {int(self._root)}. There are prior "
                             "not evaluated syscalls that may affect "
@@ -285,13 +303,8 @@ class PairingPartnerSearch:
                  for src, tgt in pairwise(self._path)]
         self._add_ranges(eqs, edges)
 
-        # add the time range of the cross_state to eqs
-        eqs.add_range(FakeEdge(src=self._last_sp, tgt=self._cross_state),
-                      self._time)
-
         for restriction in self._restrictions:
             # add all edges on the path from the root SP to start_from
-            self._log.error(restriction)
             edges = self._get_followsync_path(restriction.start)
             self._add_ranges(eqs, edges)
         return eqs
@@ -356,7 +369,7 @@ class PairingPartnerSearch:
         paths = set([(x.source(), x) for x in chain(*paths)])
 
         start = core_graph.vertex(sp.range.start)
-        stack = [(start, [FakeEdge(src=None, tgt=start)])]
+        stack = [(start, [FakeEdge(src=-1, tgt=start)])]
 
         visited = core_graph.new_vp("bool")
         visited_entries = defaultdict(list)
@@ -534,15 +547,16 @@ class PairingPartnerSearch:
         st2sy = self._mstg.edge_type(MSTType.st2sy)
         return st2sy.vertex(state).out_degree() > 0
 
-    def _has_prior_syscalls(self, cross_bcst):
+    def _has_prior_syscalls(self, own_eqs):
         """Check for an unevaluated prior syscall.
 
         Therefore, check all syscalls laying on the path between the current
         cross syscall and the root SP.
 
         Arguments:
-        cross_bcst -- The BCST of the current cross syscall
+        own_eqs -- The equation system of the current cross syscall
         """
+        # TODO refactor the whole function. It is necessary at all?
         cpm = self._core_map
         mstg = self._mstg
 
@@ -598,8 +612,10 @@ class PairingPartnerSearch:
                     wcst = 0
                     for e in path:
                         wcst += get_time(mstg.ep.wcet, e)
-                    wcst += self._timings.get_relative_time(sp, cpu_id, cross_syscall).to
-                    bcst = cross_bcst
+                    other_eqs = self._timings.get_relative_time(sp, cpu_id, cross_syscall)
+                    wcst += other_eqs.get_interval_for(FakeEdge(src=sp, tgt=cross_syscall)).to
+                    bcst = own_eqs.get_interval_for(FakeEdge(src=self._last_sp,
+                                                             tgt=self._cross_state)).up
                     for e in self._get_edges_to(root):
                         if isinstance(e, FakeEdge):
                             continue
@@ -635,47 +651,6 @@ class PairingPartnerSearch:
             timed_sps.append(TimedVertex(vertex=other_sp, range=time))
         return frozenset(timed_sps)
 
-    def find_combinations(self):
-        self._log.debug(f"Evaluating cross state {int(self._cross_state)}"
-                        f" with path {[int(x) for x in self._path]}"
-                        " from the root SP to the last SP.")
-
-        corridor = self._get_corridor()
-        self._log.debug(f"Starting from SPs {corridor}.")
-
-        if self._timings:
-            self._log.debug(f"The time of SP {int(self._cross_state)} to"
-                            f" cross state {int(self._last_sp)} is"
-                            f" {self._time}.")
-            eqs = self._build_equations()
-        else:
-            eqs = None
-
-        # 3. Build the actual product from each possible cross point
-        #    (while respecting time constraints if given.
-        combinations = set()
-        for state_list in self._build_product(corridor, eqs,
-                                              self._affected_cores, []):
-            # we now have a set of candidates for a new SP
-            # next step is to calculate the predecessors in time for the
-            # new SP
-            timely_cps = self._find_timed_predecessor(
-                self._sp_graph,
-                frozenset([self._last_sp] + [x.root for x in state_list.states]))
-            # self._log.debug(
-            #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
-            if self._timings:
-                timed_pred_cps = self._get_pred_times(
-                    timely_cps, state_list, self._last_sp, self._cross_state)
-            else:
-                timed_pred_cps = frozenset([TimedVertex(vertex=x, range=TimeRange(up=0, to=0))
-                                            for x in timely_cps])
-
-            combinations.add(TimeCandidateSet(candidates=tuple([x.state for x in state_list.states]),
-                                              pred_cps=timed_pred_cps,
-                                              root_cp=self._root))
-        return combinations
-
     def _get_edges_to(self, sp):
         "Return all edges from the cross core to the SP laying on the path." ""
         edge_path = [FakeEdge(src=self._last_sp, tgt=self._cross_state)]
@@ -690,6 +665,25 @@ class PairingPartnerSearch:
         return edge_path
 
     def __repr__(self):
-        return ("PairingPartnerSearch("
+        return ("_PairingPartnerSearch("
                 f"cpu_id: {self._cpu_id}, "
                 f"path: {[(int(x.source()), int(x.target())) for x in self._path]}, ")
+
+
+def search_for_pairing_partners(mstg: graph_tool.Graph,
+                                core_map: graph_tool.VertexPropertyMap,
+                                type_map: graph_tool.VertexPropertyMap,
+                                path: List[graph_tool.Vertex],
+                                cross_state: graph_tool.Vertex,
+                                affected_cores: Set[int],
+                                restrictions: List[Range],
+                                timing_calc: TimingCalculator = None,
+                                time: Equations = None):
+    """Search pairing partners.
+
+    Wrapper function for _PairingPartnerSearch.
+    """
+    p = _PairingPartnerSearch(mstg, core_map, type_map, path, cross_state,
+                              affected_cores, restrictions,
+                              timing_calc=timing_calc, time=time)
+    return p.get_result()

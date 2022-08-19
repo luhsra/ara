@@ -9,6 +9,34 @@ from graph_tool.topology import label_out_component
 from itertools import product
 
 
+@dataclass(frozen=True, eq=True)
+class FakeEdge:
+    """Represents an edge that don't exist in the graph."""
+    src: Vertex
+    tgt: Vertex
+
+    def source(self):
+        return self.src
+
+    def target(self):
+        return self.tgt
+
+    def __repr__(self):
+        def none_or_int(v):
+            if v:
+                return int(v)
+            return None
+
+        return f"FakeEdge({none_or_int(self.src)}, {none_or_int(self.tgt)})"
+
+    def __hash__(self):
+        """Generate a hash based on the input vertices."""
+        # It is utterly important that the hash is equal for the same set of
+        # vertices. Normally, this should happen automatically by the dataclass
+        # decorator but we provide a function just to be save.
+        return hash((int(self.src), int(self.tgt)))
+
+
 @dataclass(frozen=True)
 class Range:
     """A range between two vertices."""

@@ -16,16 +16,55 @@ LEVEL = {"critical": logging.CRITICAL,
          "debug": logging.DEBUG}
 
 
+class ContinueSignal(Exception):
+    """Something in an inner loop happened that should cause the outer loop to
+    continue.
+
+    Use as:
+    ```
+    for i in range(10):
+        try:
+            for j in range(5):
+                if condition:
+                    raise ContinueSignal
+        except ContinueSignal:
+            continue
+    ```
+    """
+    pass
+
+
+class BreakSignal(Exception):
+    """Something in an inner loop happened that should cause the outer loop to
+    break.
+
+    Use as:
+    ```
+    for i in range(10):
+        try:
+            for j in range(5):
+                if condition:
+                    raise BreakSignal
+        except BreakSignal:
+            break
+    ```
+    """
+    pass
+
+
 class DieOnErrorLogger(logging.getLoggerClass()):
     werr = False
+
     def critical(self, *args, **kwargs):
         super().error(*args, **kwargs)
         sys.exit(1)
+
     def error(self, *args, **kwargs):
         if self.werr:
             super().error(*args, **kwargs)
         else:
             super().error(*args, **kwargs)
+
     def warning(self, *args, **kwargs):
         if self.werr:
             super().error(*args, **kwargs)
@@ -34,6 +73,7 @@ class DieOnErrorLogger(logging.getLoggerClass()):
             super().warning(*args, **kwargs)
 
 logging.setLoggerClass(DieOnErrorLogger)
+
 
 class LoggerManager:
     """Manages loggers for ARA."""
@@ -86,10 +126,10 @@ class LoggerManager:
 
     @staticmethod
     def _matplotlib_logging_hack():
-        """We are using a global logger on level default. However, this leads to a
-        bunch of (unwanted) log output from matplotlib. We are not using matplotlib
-        in any way, but it is loaded as a dependency of graph tool. This function
-        sets matplotlib internal logging to the ARA global level.
+        """We are using a global logger on level default. However, this leads
+        to a bunch of (unwanted) log output from matplotlib. We are not using
+        matplotlib in any way, but it is loaded as a dependency of graph tool.
+        This function sets matplotlib internal logging to the ARA global level.
         """
         try:
             import matplotlib
@@ -99,12 +139,10 @@ class LoggerManager:
             pass
 
 
-
-
 # place this in a global variable to make a singleton out of it
 # this is to circumvent one restriction of the Python logging framework that
-# allows only log levels below the root log levels for subloggers. We don't want
-# this for ARA.
+# allows only log levels below the root log levels for subloggers. We don't
+# want # this for ARA.
 # Access this variable with get_logger_manager()
 _logger_manager = LoggerManager()
 
@@ -126,7 +164,8 @@ def get_null_logger():
     return null
 
 
-def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root', werr=False):
+def init_logging(level=logging.DEBUG, max_stepname=20, root_name='root',
+                 werr=False):
     """Init logging with color and timestamps.
 
     Returns a root logger with correct log level.
@@ -164,7 +203,7 @@ def dominates(dom_tree, x, y):
     return False
 
 
-def has_path( graph, source, target):
+def has_path(graph, source, target):
     """Is there a path from source to target?"""
     _, elist = shortest_path(graph, source, target)
     return len(elist) > 0
@@ -176,8 +215,8 @@ def pairwise(iterable):
     version = sys.version_info
     if version.major >= 3 and version.minor >= 10:
         log = get_logger("util")
-        log.warn("You are using Python 3.10. Consider switching to native "
-                 "pairwise.")
+        log.warn("You are using Python 3.10 and ara.util.pairwise. Consider "
+                 "switching to native pairwise from itertools.")
         from itertools import pairwise as pw
         return pw(iterable)
 
