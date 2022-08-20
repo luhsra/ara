@@ -74,6 +74,15 @@ class TestData:
     step_manager: StepManager
 
 
+def init_test_logging(logger_name=None, log_level='warn'):
+    # the environment is always more powerful
+    log_level = os.environ.get('ARA_LOGLEVEL', log_level)
+    logger = init_logging(level=log_level, root_name='ara.test')
+    if logger_name is not None:
+        logger = get_logger(logger_name)
+    return logger
+
+
 def init_test(steps=None, extra_config=None, logger_name=None,
               extra_input=None):
     """Common interface for test. Reads a JSON file and some ll-file from the
@@ -97,9 +106,7 @@ def init_test(steps=None, extra_config=None, logger_name=None,
                   gets sys.argv as argument and should return a valid value.
     """
     log_level = os.environ.get('ARA_LOGLEVEL', 'warn')
-    logger = init_logging(level=log_level, root_name='ara.test')
-    if logger_name is not None:
-        logger = get_logger(logger_name)
+    logger = init_test_logging(logger_name=logger_name)
     if not extra_config:
         extra_config = {}
     g = Graph()
