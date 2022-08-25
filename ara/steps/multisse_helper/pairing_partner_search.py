@@ -216,7 +216,7 @@ class _PairingPartnerSearch:
                 good_v.append((v, None))
                 continue
             new_eqs = eqs.copy()
-            self._timings.get_relative_time(entry_sp, cpu_id, v, eqs=new_eqs)
+            self._timings.get_relative_time(entry_sp, v, eqs=new_eqs)
             root_edges = self._get_edges_to(root_sp)
             e = FakeEdge(src=entry_sp, tgt=v)
             cur_edges = self._get_followsync_path(entry_sp) + [e]
@@ -614,7 +614,7 @@ class _PairingPartnerSearch:
                     wcst = 0
                     for e in path:
                         wcst += get_time(mstg.ep.wcet, e)
-                    other_eqs = self._timings.get_relative_time(sp, cpu_id, cross_syscall)
+                    other_eqs = self._timings.get_relative_time(sp, cross_syscall)
                     wcst += other_eqs.get_interval_for(FakeEdge(src=sp, tgt=cross_syscall)).to
                     bcst = own_eqs.get_interval_for(FakeEdge(src=self._last_sp,
                                                              tgt=self._cross_state)).up

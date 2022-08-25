@@ -206,7 +206,7 @@ class TimingCalculator():
                                         to=get_time(mstg.ep.wcet, edge)))
             eqs.add_equality({whole_entry}, to_substract | {entry_edge})
 
-    def get_relative_time(self, sp, cpu_id, state, eqs=None):
+    def get_relative_time(self, sp, state, eqs=None):
         """Return the execution time of state relative to the SP sp.
 
         Since the current state can be a continuation (same ABB) of
@@ -220,6 +220,7 @@ class TimingCalculator():
         the equation are appended to eqs.
         """
         mstg = self._mstg
+        cpu_id = mstg.vp.cpu_id[state]
         entry = mstg.get_entry_state(sp, cpu_id)
         s2s = mstg.edge_type(MSTType.s2s)
         g = get_reachable_states(s2s, entry, exit_state=state)

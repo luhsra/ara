@@ -518,8 +518,7 @@ class MultiSSE(Step):
 
         time = None
         if self.with_times.get():
-            time = self._timings.get_relative_time(last_sp, current_core,
-                                                   cross_state)
+            time = self._timings.get_relative_time(last_sp, cross_state)
 
         if self._mstg.type_map[cross_state] & CrossExecState.irq:
             # we have a core local interrupt, so the candidate
