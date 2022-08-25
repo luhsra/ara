@@ -1,7 +1,7 @@
 from .common import TimeRange, CrossExecState, get_reachable_states, FakeEdge
 from .equations import Equations
 
-from ara.graph import StateType, MSTType, single_check
+from ara.graph import StateType, MSTType, single_check, vertex_types
 from ara.util import dominates, get_logger, ContinueSignal
 
 import math
@@ -30,11 +30,11 @@ def get_time(prop, idx):
 
 
 class TimingCalculator():
-    def __init__(self, mstg, type_map):
+    def __init__(self, mstg, type_map, sp_core_map):
         self._log = get_logger("MultiSSE.WCET", inherit=True)
         self._mstg = mstg
         self._type_map = type_map
-
+        self._sp_core_map = sp_core_map
 
     def _calculate_entry_execution_time(self, eqs, sp, cpu_id, entry,
                                         entry_must_be_over=True):
@@ -49,14 +49,16 @@ class TimingCalculator():
         """
         mstg = self._mstg
         g1 = mstg.edge_type(MSTType.st2sy, MSTType.s2s, MSTType.en2ex)
-        follow_sync = mstg.edge_type(MSTType.follow_sync)
+        follow_sync_tmp = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
+        follow_sync = vertex_types(follow_sync_tmp, mstg.vp.type,
+                                   StateType.entry_sync, StateType.exit_sync)
 
-        def good_edge(e):
+        def core_graph_good_edge(e):
             if mstg.ep.type[e] == MSTType.st2sy:
                 return mstg.ep.cpu_id[e] == cpu_id
             return True
 
-        core_graph = GraphView(g1, efilt=good_edge,
+        core_graph = GraphView(g1, efilt=core_graph_good_edge,
                                vfilt=self._type_map.fa != CrossExecState.idle)
 
         # default case, worst case, the entry is executed as a whole before
@@ -112,20 +114,60 @@ class TimingCalculator():
                 # the same state was executed before
                 interrupted_state = entry_state
 
-            common_sps = set(interrupted_state.in_neighbors()) & set(
-                follow_sync.vertex(entry_sp).in_neighbors())
+            state_sps = set(interrupted_state.in_neighbors())
+            sp_sps = set(follow_sync.vertex(entry_sp).in_neighbors())
+            common_sps = state_sps & sp_sps
 
-            if len(common_sps) != 1:
+            if len(common_sps) > 1:
                 self._log.warn("Found a state with none or multiple common "
                                "SPs. This is not supported.")
                 eqs.add_range(entry_edge, default_range)
                 return
 
+            if len(common_sps) == 0:
+                # no common SP between interrupted state and predecessors in
+                # time of the current SP, trying to search a path over the SPs
+                # that do not belong to the current core.
+
+                def follow_sync_good_vertex(v):
+                    if v in state_sps:
+                        return True
+                    if v == entry_sp:
+                        return True
+                    return cpu_id not in self._sp_core_map[v]
+
+                fs_non_core = GraphView(follow_sync,
+                                        vfilt=follow_sync_good_vertex)
+
+                found = None
+                for state_sp in state_sps:
+                    if mstg.vp.type[state_sp] != StateType.exit_sync:
+                        continue
+                    _, sp_list = shortest_path(fs_non_core, state_sp, entry_sp)
+                    if len(sp_list) > 0:
+                        if found:
+                            self._log.warn("Multiple paths to state SPs found."
+                                           "This is not supported.")
+                            eqs.add_range(entry_edge, default_range)
+                            return
+                        found = (state_sp, sp_list)
+                if found:
+                    # found contains our path
+                    self._log.debug("Found a previous execution fitting to the"
+                                    " path %s.", list(map(str, found[1])))
+                    to_substract.update(filter(lambda x: mstg.ep.type[x] == MSTType.follow_sync,
+                                               found[1]))
+                    v_filter[exit_sp] = False
+                    exit_sp = found[0]
+                    continue
+                else:
+                    self._log.warn("No path between the corresponding SPs "
+                                   "found.This is not supported.")
+                    eqs.add_range(entry_edge, default_range)
+                    return
+
             common_sp = single_check(common_sps)
             follow_edge = follow_sync.edge(common_sp, entry_sp)
-            eqs.add_range(follow_edge,
-                          TimeRange(up=get_time(mstg.ep.bcet, follow_edge),
-                                    to=get_time(mstg.ep.wcet, follow_edge)))
             to_substract.add(follow_edge)
             self._log.debug("Found a previous execution fitting to edge %s.",
                             follow_edge)
@@ -158,6 +200,10 @@ class TimingCalculator():
             eqs.add_range(entry_edge,
                           TimeRange(up=0,
                                     to=get_time(mstg.vp.wcet, entry)))
+            for edge in to_substract:
+                eqs.add_range(edge,
+                              TimeRange(up=get_time(mstg.ep.bcet, edge),
+                                        to=get_time(mstg.ep.wcet, edge)))
             eqs.add_equality({whole_entry}, to_substract | {entry_edge})
 
     def get_relative_time(self, sp, cpu_id, state, eqs=None):

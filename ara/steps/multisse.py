@@ -967,7 +967,8 @@ class MultiSSE(Step):
         mstg = self._mstg.g
 
         if self.with_times.get():
-            self._timings = TimingCalculator(mstg, self._mstg.type_map)
+            self._timings = TimingCalculator(mstg, self._mstg.type_map,
+                                             self._mstg.cross_point_map)
         else:
             self._timings = None
 
