@@ -3,8 +3,10 @@
 
 import sys
 import logging
+import functools
 
-from itertools import tee
+from inspect import Parameter, signature
+from itertools import tee, chain, repeat
 from graph_tool.topology import shortest_path
 
 
@@ -215,8 +217,8 @@ def pairwise(iterable):
     version = sys.version_info
     if version.major >= 3 and version.minor >= 10:
         log = get_logger("util")
-        log.warn("You are using Python 3.10 and ara.util.pairwise. Consider "
-                 "switching to native pairwise from itertools.")
+        log.warning("You are using Python 3.10 and ara.util.pairwise. "
+                    "Consider switching to native pairwise from itertools.")
         from itertools import pairwise as pw
         return pw(iterable)
 
@@ -232,3 +234,54 @@ class VarianceDict(dict):
             return self[key]
         self[key] = default_value
         return self[key]
+
+
+def debug_log(original_function=None, *,
+              hide_inner_output: bool = False,
+              logger: logging.Logger = None):
+    """Decorator for an automatic function log.
+
+    It logs all input and output to the given logger, or, if logger is not
+    given, to self._log. If hide_inner_output is specified it also sets the
+    loglevel for all innner output to CRITICAL thus effectively preventing
+    every internal output.
+    """
+
+    def _decorate(function):
+
+        @functools.wraps(function)
+        def wrapped_function(*args, **kwargs):
+            if logger is None:
+                log = args[0]._log
+            else:
+                log = logger
+
+            sig = signature(function)
+            res = f"Call to {function.__name__}("
+            parms = []
+            for parm, value in zip(sig.parameters.values(),
+                                   chain(args, repeat(None))):
+                if parm.default != Parameter.empty:
+                    # keyword argument
+                    kvalue = kwargs.get(parm.name, parm.default)
+                    parms.append(f"{parm.name}={kvalue}")
+                else:
+                    parms.append(f"{parm.name}={value}")
+
+            res += ", ".join(parms) + ")"
+            log.debug(res)
+            if hide_inner_output:
+                logging.disable()
+            ret = function(*args, **kwargs)
+            if hide_inner_output:
+                # enable again
+                logging.disable(logging.NOTSET)
+            log.debug(f"The result is: {ret}")
+            return ret
+
+        return wrapped_function
+
+    if original_function:
+        return _decorate(original_function)
+
+    return _decorate
