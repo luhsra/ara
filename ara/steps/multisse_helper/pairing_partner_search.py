@@ -4,7 +4,7 @@ from .common import Range, CPRange, FakeEdge, get_reachable_states, CrossExecSta
 from .wcet_calculation import TimingCalculator, get_time
 
 from ara.graph import StateType, MSTType, vertex_types, single_check
-from ara.util import get_logger, has_path, pairwise
+from ara.util import get_logger, has_path, pairwise, debug_log
 
 import graph_tool
 
@@ -287,7 +287,6 @@ class _PairingPartnerSearch:
     def _build_equations(self, eqs):
         # If time should be considered, build the (initial) equation
         # system.
-        self._log.debug("Check for prior syscalls.")
         # TODO check, if this is really necessary or is we can come to
         # a point where syscalls are evaluated (mostly) in order.
         if self._has_prior_syscalls(self._time):
@@ -547,6 +546,7 @@ class _PairingPartnerSearch:
         st2sy = self._mstg.edge_type(MSTType.st2sy)
         return st2sy.vertex(state).out_degree() > 0
 
+    @debug_log(hide_inner_output=True)
     def _has_prior_syscalls(self, own_eqs):
         """Check for an unevaluated prior syscall.
 
@@ -557,6 +557,8 @@ class _PairingPartnerSearch:
         own_eqs -- The equation system of the current cross syscall
         """
         # TODO refactor the whole function. It is necessary at all?
+        self._log.debug("Check for prior syscalls.")
+
         cpm = self._core_map
         mstg = self._mstg
 
@@ -667,7 +669,8 @@ class _PairingPartnerSearch:
     def __repr__(self):
         return ("_PairingPartnerSearch("
                 f"cpu_id: {self._cpu_id}, "
-                f"path: {[(int(x.source()), int(x.target())) for x in self._path]}, ")
+                f"cross_state: {int(self._cross_state)}, "
+                f"path: {[int(x) for x in self._path]}")
 
 
 def search_for_pairing_partners(mstg: graph_tool.Graph,
