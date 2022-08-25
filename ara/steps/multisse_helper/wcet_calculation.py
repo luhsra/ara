@@ -6,10 +6,24 @@ from ara.util import dominates, get_logger, ContinueSignal
 
 import math
 
-from graph_tool import GraphView
+from dataclasses import dataclass
+from graph_tool import GraphView, Edge
 from graph_tool.topology import shortest_path, dominator_tree
+from typing import Union
 
 MAX_INT64 = 2**63 - 1
+
+
+@dataclass(frozen=True)
+class TimedEdge:
+    """An arbitrary graph vertex associated with a time."""
+    edge: Union[Edge, FakeEdge]
+    range: TimeRange
+
+    def __repr__(self):
+        return ("TimedEdge("
+                f"edge: {str(self.edge)}, "
+                f"range: {self.range})")
 
 
 def set_time(prop, idx, number):
@@ -35,6 +49,16 @@ class TimingCalculator():
         self._mstg = mstg
         self._type_map = type_map
         self._sp_core_map = sp_core_map
+
+    def _timed_follow_edges(self, *edges):
+        """Return only follow sync edges together with their time."""
+        mstg = self._mstg
+        for edge in edges:
+            if mstg.ep.type[edge] != MSTType.follow_sync:
+                continue
+            yield TimedEdge(edge=edge,
+                            range=TimeRange(up=get_time(mstg.ep.bcet, edge),
+                                            to=get_time(mstg.ep.wcet, edge)))
 
     def _calculate_entry_execution_time(self, eqs, sp, cpu_id, entry,
                                         entry_must_be_over=True):
@@ -74,6 +98,7 @@ class TimingCalculator():
         exit_sp = sp
         entry_state = entry
         to_substract = set()
+        after_hook = None
         # SP where entry really starts
         while True:
             g = GraphView(core_graph, vfilt=v_filter)
@@ -152,23 +177,63 @@ class TimingCalculator():
                             return
                         found = (state_sp, sp_list)
                 if found:
-                    # found contains our path
+                    # the interrupted state starts at an SP and found contains
+                    # our path
                     self._log.debug("Found a previous execution fitting to the"
                                     " path %s.", list(map(str, found[1])))
-                    to_substract.update(filter(lambda x: mstg.ep.type[x] == MSTType.follow_sync,
-                                               found[1]))
+                    to_substract.update(self._timed_follow_edges(*found[1]))
                     v_filter[exit_sp] = False
                     exit_sp = found[0]
                     continue
                 else:
-                    self._log.warn("No path between the corresponding SPs "
-                                   "found.This is not supported.")
-                    eqs.add_range(entry_edge, default_range)
-                    return
+                    if len(sp_sps) > 1:
+                        self._log.warn("The requested entry is continued but "
+                                       "not an entry in the previous metastate."
+                                       " The SP that interrupts the entry also "
+                                       "have multiple predecessors in time. We "
+                                       "are not able to handle this, currently.")
+                        eqs.add_range(entry_edge, default_range)
+                        return
+                    # we have an entry that is continued but is not the entry
+                    # state in the previous metastate. So get the relative
+                    # time up until that entry. Our original search must end
+                    # here.
+                    prev_sp = single_check(sp_sps)
+                    self.get_relative_time(prev_sp,
+                                           interrupted_state, eqs=eqs,
+                                           include_self=False)
+                    # edge calculated with get_relative_time
+                    grt_edge = FakeEdge(src=prev_sp, tgt=interrupted_state)
+                    # get_relative_set calculates the time up to the entry of
+                    # interrupted_state. However, we need an additional edge
+                    # for the interval of interrupted_state itself. We are
+                    # doing that by an edge from the interrupted state to
+                    # itself (or an additional following state).
+                    #
+                    # we have the following situation
+                    #           ´-- i_state_part --`
+                    # |-- grt --.-- interrupted_ --|----- _state ---------|
+                    # |         . to_substract[1] .|.. to_substract[0] ...|
+                    # prev_sp                     entry_sp
+                    exit_sp = interrupted_state
+                    i_state_part = FakeEdge(src=interrupted_state,
+                                            tgt=entry_sp)
+                    to_substract.add(TimedEdge(edge=i_state_part,
+                                               range=TimeRange(up=0,
+                                                               to=math.inf)))
+                    f_edge = follow_sync.edge(prev_sp, entry_sp)
+                    eqs.add_range(f_edge,
+                                  TimeRange(up=get_time(mstg.ep.bcet, f_edge),
+                                            to=get_time(mstg.ep.wcet, f_edge)))
+                    # we need to add the equality delayed since the range of
+                    # i_state_part is currently undefined
+                    after_hook = (lambda:
+                            eqs.add_equality({f_edge}, {grt_edge, i_state_part}))
+                    break
 
             common_sp = single_check(common_sps)
             follow_edge = follow_sync.edge(common_sp, entry_sp)
-            to_substract.add(follow_edge)
+            to_substract.update(self._timed_follow_edges(follow_edge))
             self._log.debug("Found a previous execution fitting to edge %s.",
                             follow_edge)
 
@@ -200,13 +265,13 @@ class TimingCalculator():
             eqs.add_range(entry_edge,
                           TimeRange(up=0,
                                     to=get_time(mstg.vp.wcet, entry)))
-            for edge in to_substract:
-                eqs.add_range(edge,
-                              TimeRange(up=get_time(mstg.ep.bcet, edge),
-                                        to=get_time(mstg.ep.wcet, edge)))
-            eqs.add_equality({whole_entry}, to_substract | {entry_edge})
+            for t_edge in to_substract:
+                eqs.add_range(t_edge.edge, t_edge.range)
+            eqs.add_equality({whole_entry}, set(map(lambda x: x.edge, to_substract)) | {entry_edge})
+        if after_hook:
+            after_hook()
 
-    def get_relative_time(self, sp, state, eqs=None):
+    def get_relative_time(self, sp, state, eqs=None, include_self=True):
         """Return the execution time of state relative to the SP sp.
 
         Since the current state can be a continuation (same ABB) of
@@ -218,6 +283,10 @@ class TimingCalculator():
 
         If eqs is not given a new Equation object will be returned otherwise
         the equation are appended to eqs.
+
+        If include_self is set, the relative time from the SP sp to the point
+        in time _after_ the execution of the State state is calculated else
+        the point in time _directly before_ the execution of the State state.
         """
         mstg = self._mstg
         cpu_id = mstg.vp.cpu_id[state]
@@ -232,6 +301,11 @@ class TimingCalculator():
         if not eqs:
             eqs = Equations()
 
+        # early return when no work is given
+        if not include_self and state == entry:
+            eqs.add_range(target_edge, TimeRange(up=0, to=0))
+            return eqs
+
         inf_time = [CrossExecState.idle, CrossExecState.waiting]
 
         def get_bcet(node):
@@ -242,6 +316,8 @@ class TimingCalculator():
             return g.vp.bcet[node]
 
         def get_wcet(node):
+            if not include_self and state == node:
+                return 0
             if type_map[node] in inf_time:
                 return math.inf
             return g.vp.wcet[node]
