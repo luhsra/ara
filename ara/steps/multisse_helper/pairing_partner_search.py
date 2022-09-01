@@ -287,15 +287,6 @@ class _PairingPartnerSearch:
     def _build_equations(self, eqs):
         # If time should be considered, build the (initial) equation
         # system.
-        # TODO check, if this is really necessary or is we can come to
-        # a point where syscalls are evaluated (mostly) in order.
-        if self._has_prior_syscalls(self._time):
-            self._log.debug(f"Skip evaluations of {int(self._cross_state)} "
-                            f"from root {int(self._root)}. There are prior "
-                            "not evaluated syscalls that may affect "
-                            "this one.")
-            return set()
-
         # add all SPs on the path to the root to the equation system
         follow_sync = self._mstg.edge_type(MSTType.follow_sync)
         edges = [follow_sync.edge(src, self._mstg.get_entry_cp(tgt))
@@ -545,87 +536,6 @@ class _PairingPartnerSearch:
         """Check, if a state is already evaluated."""
         st2sy = self._mstg.edge_type(MSTType.st2sy)
         return st2sy.vertex(state).out_degree() > 0
-
-    @debug_log(hide_inner_output=True)
-    def _has_prior_syscalls(self, own_eqs):
-        """Check for an unevaluated prior syscall.
-
-        Therefore, check all syscalls laying on the path between the current
-        cross syscall and the root SP.
-
-        Arguments:
-        own_eqs -- The equation system of the current cross syscall
-        """
-        # TODO refactor the whole function. It is necessary at all?
-        self._log.debug("Check for prior syscalls.")
-
-        cpm = self._core_map
-        mstg = self._mstg
-
-        handled_cores = set()
-        to_handle_sps = set()
-        # first, collect all SPs that are possibly before the current SP.
-        for exit_sp in self._path:
-            cores = set(cpm[exit_sp])
-            if cores in handled_cores:
-                continue
-
-            stack = [(exit_sp, ())]
-
-            while stack:
-                cur_sp, path = stack.pop()
-                is_entry_sync = (mstg.vp.type[cur_sp] == StateType.entry_sync)
-                if is_entry_sync:
-                    handled_cores |= set(cpm[cur_sp])
-                elif mstg.vertex(cur_sp).out_degree() > 0:
-                    # if an exit SP has already connected metastates, it can
-                    # lead to unevaluated syscalls.
-                    to_handle_sps.add((cur_sp, path, exit_sp))
-
-                # all edges to SPs that follow in time
-                for e in self._sp_graph.vertex(cur_sp).out_edges():
-                    if is_entry_sync:
-                        stack.append((e.target(), path))
-                        continue
-                    if not self._is_follow_sp(e.target()):
-                        # if there is no connection between the found SP and
-                        # the current path.
-                        continue
-                    stack.append((e.target(), path + (e, )))
-
-        # then, check all syscalls following of theses SPs if they are prior
-        # to the current one.
-        for sp, path, root in to_handle_sps:
-            self._log.debug(f"Search cross syscalls of SP {int(sp)} for prior "
-                            f"syscalls than {int(self._cross_state)}")
-            cores = set(cpm[sp])
-            for cpu_id in (cores - {self._cpu_id}):
-                metastate = mstg.get_out_metastate(sp, cpu_id)
-                entry = mstg.get_entry_state(sp, cpu_id)
-                cross_syscalls = find_cross_syscalls(self._mstg, self._type_map, metastate, entry)
-                for cross_syscall in filter(lambda x: not self._is_evaluated(x),
-                                            cross_syscalls):
-                    self._log.debug(f"Check, if {int(cross_syscall)} is prior to "
-                                    f"{int(self._cross_state)}")
-                    # check, if the WCST of the other syscall is lower than
-                    # the BCST of our own syscall.
-                    # In this case, the starting time of the other syscall is
-                    # definitely before this one.
-                    wcst = 0
-                    for e in path:
-                        wcst += get_time(mstg.ep.wcet, e)
-                    other_eqs = self._timings.get_relative_time(sp, cross_syscall)
-                    wcst += other_eqs.get_interval_for(FakeEdge(src=sp, tgt=cross_syscall)).to
-                    bcst = own_eqs.get_interval_for(FakeEdge(src=self._last_sp,
-                                                             tgt=self._cross_state)).up
-                    for e in self._get_edges_to(root):
-                        if isinstance(e, FakeEdge):
-                            continue
-                        bcst += get_time(mstg.ep.bcet, e)
-                    if wcst < bcst:
-                        return True
-        self._log.debug("Did not found prior syscalls.")
-        return False
 
     def _get_pred_times(self, sps, state_list: StateList, sp, cross_state):
         """Assign a new follow up time for all nodes in state_list.
