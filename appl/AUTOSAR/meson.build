@@ -105,7 +105,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'n',                     'oil': 'system_m.json'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-chain',   'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-b',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-c',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-d',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
