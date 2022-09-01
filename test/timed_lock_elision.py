@@ -59,12 +59,12 @@ def main():
     data = init_test(extra_config=config, extra_input=inp)
 
     locks = data.graph.step_data["LockElision"]
-    del locks['details']
     t_data = data.data['with_timing']
 
     if data.log.level <= logging.INFO:
         data.log.warning(json.dumps(locks))
-    fail_if(t_data != locks)
+    # TODO locks has a bunch more fields, use that
+    fail_if(t_data["spin_states"] != locks["spin_states"])
 
 
 if __name__ == '__main__':
