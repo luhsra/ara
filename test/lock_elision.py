@@ -50,13 +50,13 @@ def main():
     data = init_test(extra_config=config, extra_input=inp)
 
     locks = data.graph.step_data["LockElision"]
-    del locks['callsites']
-    del locks['DEADLOCK']
     t_data = data.data['no_timing']
 
     if data.log.level <= logging.INFO:
         data.log.warning(json.dumps(locks))
-    fail_if(t_data != locks)
+    fail_if(t_data['spin_states'] != locks['spin_states'])
+    if 'DEADLOCK' in t_data:
+        fail_if(t_data['DEADLOCK'] != locks['DEADLOCK'])
 
 
 if __name__ == '__main__':
