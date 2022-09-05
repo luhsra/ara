@@ -541,7 +541,12 @@ namespace ara::step {
 				    } else if (PyObject_IsInstance(inst.ptr(), mutex_cls.ptr())) {
 					    replace_mutex_create(inst);
 				    } else {
-					    logger.error() << "unknown instance: " << inst << std::endl;
+					    str init_type = extract<str>(inst.attr("specialization_level"));
+					    if ("unchanged" == init_type) {
+						    logger.info() << "ignored unknown but unchanged instance: " << inst << std::endl;
+					    } else {
+						    logger.error() << "unknown instance: " << inst << std::endl;
+					    }
 				    }
 			    }
 		    },

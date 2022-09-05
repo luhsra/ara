@@ -66,13 +66,13 @@ class VanillaTCB(StructDataObject):
 
         if not initialized:
             return
-        self['uxPriority'] = task.priority
+        self['uxPriority'] = task.priority or 0
         self['pxTopOfStack'] = task.impl.stack.tos
         self['pxStack'] = f"(StackType_t*) &{task.impl.stack.name}"
         name = [f"'{task.name[i]}'" for i in range(min(len(task.name), name_length-1))]
         name.append('0')
         self['pcTaskName'] = "{" + ", ".join(name) + "}"
-        self['uxBasePriority'] = f"{task.priority}"
+        self['uxBasePriority'] = f"{task.priority or 0}"
         self['xStateListItem'] = self.arch.ListItem('xStateListItem')
         self['xEventListItem'] = self.arch.ListItem('xEventListItem')
 

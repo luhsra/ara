@@ -60,7 +60,7 @@ class ClassifySpecializationsFreeRTOS(Step):
 
     def not_implemented_classifier(self, obj):
         if self.graceful_degrade:
-            self._log.error("Classification of %s not implemented. %s", type(obj), obj)
+            self._log.error("Classification of %s not implemented. %s --> degrade to unchanged", type(obj), obj)
             obj.specialization_level = "unchanged"
         else:
             self._log.critical("Classification of %s not implemented. %s", type(obj), obj)
@@ -89,6 +89,10 @@ class ClassifySpecializationsFreeRTOS(Step):
         stack_size_known = is_castable(obj.stack_size, int)
         func_known = is_castable(obj.function, [pyllco.Constant, str])
         parameters_known = is_castable(obj.parameters, [pyllco.Constant, int, str])
+        targets = self._graph.cfg.get_call_targets(obj.abb) if obj.abb else None
+        names = [self._graph.cfg.vp.name[f] for f in targets] if targets else None
+        if 'xTaskCreateStatic' in names:
+            return self.degrade('any', 'unchanged', obj, 'already static')
         if not stack_size_known:
             return self.degrade('any', 'unchanged', obj, 'stack_size')
         if self.initialized_memory.get():
