@@ -934,8 +934,25 @@ class FreeRTOS(OSBase):
     def xQueuePeekFromISR(graph, state, cpu_id, args, va):
         pass
 
-    @syscall
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg('handler', ty=Queue, hint=SigType.instance),
+                        Arg('item', raw_value=True),
+                        Arg('ticks')))
     def xQueueReceive(graph, state, cpu_id, args, va):
+        state = state.copy()
+        cpu = state.cpus[cpu_id]
+        abb = cpu.abb
+        cfg = graph.cfg
+
+        queue = args.handler
+        if not queue:
+            logger.error(f"xQueueReceive (files: {cfg.vp.files[abb]}, "
+                         f"lines: {cfg.vp.lines[abb]}): Queue handler cannot be "
+                         "found. Ignoring syscall.")
+        else:
+            queue_node = find_instance_node(state.instances, queue)
+            connect_from_here(state, cpu_id, queue_node, "xQueueReceive")
+        return state
         pass
 
     @syscall
