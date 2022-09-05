@@ -1,0 +1,13 @@
+{
+	"steps": [
+	    {   "name": "InteractionAnalysis",
+		    "log_level": "debug",
+		    "dump": true
+		}	],
+
+	"ClassifySpecializationsFreeRTOS": {
+		"graceful_degrade": true,
+		"initialized_memory": true,
+		"allow_runtime_init": true
+	}
+}
