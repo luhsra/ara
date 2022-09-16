@@ -570,8 +570,8 @@ namespace ara::graph {
 		 * Return the SVF object living in edges
 		 */
 		template <class Graph>
-		SVF::VFGEdge* get_edge_obj(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
-			return reinterpret_cast<SVF::VFGEdge*>(eobj[v]);
+		SVF::VFGEdge* get_edge_obj(typename boost::graph_traits<Graph>::edge_descriptor e) const {
+			return reinterpret_cast<SVF::VFGEdge*>(eobj[e]);
 		}
 
 		/**
