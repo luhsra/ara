@@ -145,51 +145,72 @@ namespace ara::step {
 		return os;
 	}
 
-	Traverser::Traverser(Traverser* boss, const SVF::VFGEdge* edge, graph::CallPath call_path, Bookkeeping& caretaker)
-	    : boss(boss), call_path(call_path), caretaker(caretaker), id(caretaker.get_new_id()) {
-		trace.emplace_back(edge);
+	template <typename SVFG>
+	std::ostream& operator<<(std::ostream& os, const Node<SVFG> node) {
+		// TODO: make print tidy
+		os << "Node(";
+		os << node;
+		os << ')' << std::endl;
+		return os;
 	}
 
-	void Traverser::remove(size_t traverser_id) {
+	template <typename SVFG>
+	std::ostream& operator<<(std::ostream& os, const PrintableEdge<SVFG>&& edge) {
+		os << "Edge(";
+		os << source(edge.edge, edge.g);
+		os << "->";
+		os << target(edge.edge, edge.g);
+		os << ')' << std::endl;
+		return os;
+	}
+
+	template <class SVFG>
+	void Traverser<SVFG>::remove(size_t traverser_id) {
 		workers.erase(traverser_id);
 		// keep going
 		act_if_necessary();
 	}
 
-	void Traverser::die() {
-		dbg() << "change status: dead" << std::endl;
+	template <class SVFG>
+	void Traverser<SVFG>::die() {
+		this->dbg() << "change status: dead" << std::endl;
 		status = Status::dead;
 	}
 
-	void Traverser::die_and_notify() {
+	template <class SVFG>
+	void Traverser<SVFG>::die_and_notify() {
 		die();
 		boss->remove(get_id());
 	}
 
-	void Traverser::sleep() {
-		dbg() << "change status: sleeping" << std::endl;
+	template <class SVFG>
+	void Traverser<SVFG>::sleep() {
+		this->dbg() << "change status: sleeping" << std::endl;
 		status = Status::sleeping;
 	}
 
-	void Traverser::wakeup() {
-		dbg() << "change status: active" << std::endl;
+	template <class SVFG>
+	void Traverser<SVFG>::wakeup() {
+		this->dbg() << "change status: active" << std::endl;
 		status = Status::active;
 	}
 
-	void Traverser::do_step() {
-		const auto current_edge = trace.back();
+	template <class SVFG>
+	void Traverser<SVFG>::do_step() {
+		assert(trace.back().has_value());
+		Edge<SVFG> current_edge = *trace.back();
 		if (!skip_first_edge) {
-			dbg() << "Analyzing edge " << *current_edge << std::endl;
+			this->dbg() << "Analyzing edge " << PrintableEdge(current_edge, caretaker.get_g()) << std::endl;
 			if (eval_result(handle_edge(current_edge))) {
 				return;
 			}
 			skip_first_edge = false;
 		}
 
-		const SVF::VFGNode* current_node = current_edge->getSrcNode();
-		dbg() << "Analyzing node " << *current_node << std::endl;
+		const Node<SVFG> current_node = source(current_edge, caretaker.get_g());
+		this->dbg() << "Analyzing node " << current_node << std::endl;
 		if (die_at_visited && caretaker.is_visited(current_node)) {
-			die_and_notify();
+			this->die_and_notify();
 			return;
 		}
 		caretaker.mark_visited(current_node);
@@ -201,34 +222,38 @@ namespace ara::step {
 		eval_result(advance(current_node));
 	}
 
-	const SVF::PTACallGraphEdge* Traverser::t_get_callsite(const SVF::VFGEdge* edge) const {
+	template <class SVFG>
+	const SVF::PTACallGraphEdge* Traverser<SVFG>::t_get_callsite(const SVF::VFGEdge* edge) const {
 		return get_callsite(edge, caretaker.get_svf_call_graph());
 	}
 
-	std::pair<Traverser::CPA, const SVF::PTACallGraphEdge*>
-	Traverser::evaluate_callpath(const SVF::VFGEdge* edge, const graph::CallPath& cpath) const {
-		bool is_call =
-		    edge != nullptr && (llvm::isa<SVF::CallDirSVFGEdge>(edge) || llvm::isa<SVF::CallIndSVFGEdge>(edge));
-		bool is_ret = edge != nullptr && (llvm::isa<SVF::RetDirSVFGEdge>(edge) || llvm::isa<SVF::RetIndSVFGEdge>(edge));
+	template <class SVFG>
+	std::pair<CPA, const SVF::PTACallGraphEdge*>
+	Traverser<SVFG>::evaluate_callpath(const Edge<SVFG>& edge, const graph::CallPath& cpath) const {
+		SVF::VFGEdge* vfg_edge = caretaker.get_svfg()->template get_edge_obj<SVFG>(edge);
+		bool is_call = vfg_edge != nullptr &&
+		               (llvm::isa<SVF::CallDirSVFGEdge>(vfg_edge) || llvm::isa<SVF::CallIndSVFGEdge>(vfg_edge));
+		bool is_ret = vfg_edge != nullptr &&
+		              (llvm::isa<SVF::RetDirSVFGEdge>(vfg_edge) || llvm::isa<SVF::RetIndSVFGEdge>(vfg_edge));
 
-		const SVF::PTACallGraphEdge* cg_edge = t_get_callsite(edge);
+		const SVF::PTACallGraphEdge* cg_edge = t_get_callsite(vfg_edge);
 		if (cg_edge == nullptr) {
-			return std::make_pair(Traverser::CPA::keep, cg_edge);
+			return std::make_pair(CPA::keep, cg_edge);
 		}
 		if (cpath.size() == 0) {
 			if (is_ret) {
-				return std::make_pair(Traverser::CPA::add, cg_edge);
+				return std::make_pair(CPA::add, cg_edge);
 			} else {
 				// actually, this cannot not happen, if the call path begins at a root node such as main()
 				// if this happens anyway, it is wanted by the user of the ValueAnlyzer
 				// in this case we just ignore the call path
-				return std::make_pair(Traverser::CPA::keep, cg_edge);
+				return std::make_pair(CPA::keep, cg_edge);
 			}
 		}
 
 		const SVF::PTACallGraphEdge* current = cpath.svf_at(cpath.size() - 1);
 		if (is_call && *cg_edge == current) {
-			return std::make_pair(Traverser::CPA::drop, cg_edge);
+			return std::make_pair(CPA::drop, cg_edge);
 		}
 
 		if (is_ret) {
@@ -236,32 +261,34 @@ namespace ara::step {
 			for (const SVF::PTACallGraphEdge* out_edge :
 			     boost::make_iterator_range(node->OutEdgeBegin(), node->OutEdgeEnd())) {
 				if (*cg_edge == out_edge) {
-					dbg() << "Found valid return edge. Go a level further down..." << std::endl;
-					return std::make_pair(Traverser::CPA::add, cg_edge);
+					this->dbg() << "Found valid return edge. Go a level further down..." << std::endl;
+					return std::make_pair(CPA::add, cg_edge);
 				}
 			}
 		}
-		return std::make_pair(Traverser::CPA::false_path, cg_edge);
+		return std::make_pair(CPA::false_path, cg_edge);
 	}
 
-	void Traverser::update_call_path(const Traverser::CPA action, const SVF::PTACallGraphEdge* edge) {
+	template <class SVFG>
+	void Traverser<SVFG>::update_call_path(const CPA action, const SVF::PTACallGraphEdge* edge) {
 		switch (action) {
-		case Traverser::CPA::drop:
+		case CPA::drop:
 			call_path.pop_back();
 			return;
-		case Traverser::CPA::add:
+		case CPA::add:
 			call_path.add_call_site(caretaker.get_call_graph(), safe_deref(edge));
 			return;
-		case Traverser::CPA::keep:
+		case CPA::keep:
 			// do nothing
 			return;
-		case Traverser::CPA::false_path:
+		case CPA::false_path:
 			assert(false && "cannot handle false_path");
 			return;
 		}
 	}
 
-	TraversalResult Traverser::advance(const SVF::VFGNode* node, bool only_delegate) {
+	template <class SVFG>
+	TraversalResult<SVFG> Traverser<SVFG>::advance(const Node<SVFG> node, bool only_delegate) {
 		// go into the direction of the first edge yourself or delegate
 		bool first = !only_delegate;
 
@@ -270,154 +297,161 @@ namespace ara::step {
 		// make a copy since we can change this->call_path in the first iteration
 		graph::CallPath cp = call_path;
 		unsigned spawned_traversers = 0;
-		for (const SVF::VFGEdge* edge : boost::make_iterator_range(node->InEdgeBegin(), node->InEdgeEnd())) {
-			dbg() << "Eval Callpath: " << cp << " | " << *edge << std::endl;
+		for (auto edge : graph_tool::in_edges_range(node, caretaker.get_g())) {
+			this->dbg() << "Eval Callpath: " << cp << " | " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
 			auto [action, cg_edge] = evaluate_callpath(edge, cp);
-			if (action == Traverser::CPA::false_path) {
-				dbg() << "False path: " << *edge << std::endl;
+			if (action == CPA::false_path) {
+				this->dbg() << "False path: " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
 				continue;
 			}
 
 			++spawned_traversers;
 			if (first) {
-				dbg() << "Advance: self, go to " << *edge << std::endl;
+				this->dbg() << "Advance: self, go to " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
 				this->trace.emplace_back(edge);
 				update_call_path(action, cg_edge);
 				first = false;
 				continue;
 			}
-			auto worker = make_shared<Traverser>(new_boss, edge, cp, caretaker);
-			dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset) << std::endl;
+			auto worker = std::make_shared<Traverser<SVFG>>(new_boss, edge, cp, caretaker);
+			this->dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset)
+			            << std::endl;
 			worker->offset = offset;
-			dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset) << std::endl;
+			this->dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset)
+			            << std::endl;
 			worker->level = level;
 			worker->update_call_path(action, cg_edge);
 			new_boss->hire(worker);
-			dbg() << "Advance: new " << *worker << std::endl;
+			this->dbg() << "Advance: new " << *worker << std::endl;
 			this->caretaker.add_traverser(worker);
 		}
 		if (spawned_traversers == 0) {
-			dbg() << "Advance: No further path. Die." << std::endl;
+			this->dbg() << "Advance: No further path. Die." << std::endl;
 			return Die();
 		}
 		return KeepGoing();
 	}
 
-	void Traverser::sleep_and_send(Report&& report) {
-		sleep();
+	template <class SVFG>
+	void Traverser<SVFG>::sleep_and_send(Report<SVFG>&& report) {
+		this->sleep();
 		boss->send_report(std::move(report));
 	}
 
-	bool Traverser::eval_result(TraversalResult&& result) {
+	template <class SVFG>
+	bool Traverser<SVFG>::eval_result(TraversalResult<SVFG>&& result) {
 		bool ret = false;
-		std::visit(overloaded{[&](Finished f) {
-			                      dbg() << "Finished: Send report" << std::endl;
+		std::visit(overloaded{[&](Finished<SVFG> f) {
+			                      this->dbg() << "Finished: Send report" << std::endl;
 			                      sleep_and_send(std::move(f.report));
 			                      ret = true;
 		                      },
 		                      [&](Wait w) {
-			                      dbg() << "Waiting for reason " << w.reason << std::endl;
+			                      this->dbg() << "Waiting for reason " << w.reason << std::endl;
 			                      reason = w.reason;
-			                      sleep();
+			                      this->sleep();
 			                      ret = true;
 		                      },
 		                      [&](KeepGoing) { ret = false; },
 		                      [&](Die) {
-			                      die_and_notify();
+			                      this->die_and_notify();
 			                      ret = true;
 		                      }},
 		           result);
 		return ret;
 	}
 
-	TraversalResult Traverser::handle_edge(const SVF::VFGEdge* edge) {
+	template <class SVFG>
+	TraversalResult<SVFG> Traverser<SVFG>::handle_edge(const Edge<SVFG>& edge) {
+		SVF::VFGEdge* vfg_edge = caretaker.get_svfg()->template get_edge_obj<SVFG>(edge);
 		auto hint = caretaker.get_hint();
 		auto good_edge = [&]() {
 			if (hint == graph::SigType::symbol) {
-				return llvm::isa<SVF::CallDirSVFGEdge>(edge);
-			} else {
-				return llvm::isa<SVF::CallDirSVFGEdge>(edge) || llvm::isa<SVF::CallIndSVFGEdge>(edge);
+				return llvm::isa<SVF::CallDirSVFGEdge>(vfg_edge);
 			}
+			return llvm::isa<SVF::CallDirSVFGEdge>(vfg_edge) || llvm::isa<SVF::CallIndSVFGEdge>(vfg_edge);
 		};
 		if (good_edge()) {
-			const SVF::PTACallGraphEdge* cg_edge = t_get_callsite(edge);
+			const SVF::PTACallGraphEdge* cg_edge = t_get_callsite(vfg_edge);
 			if (cg_edge && call_path.size() > 0 && *cg_edge == call_path.svf_at(call_path.size() - 1)) {
-				dbg() << "Found call edge further down. This could not be. Die: " << *edge << std::endl;
+				this->dbg() << "Found call edge further down. This could not be. Die: " << *vfg_edge << std::endl;
 				return Die();
 			} else {
-				dbg() << "Found call edge up, waiting for other nodes: " << *edge << std::endl;
+				this->dbg() << "Found call edge up, waiting for other nodes: " << *vfg_edge << std::endl;
 				level++;
-				return Finished{EndOfFunction()};
+				return Finished<SVFG>{EndOfFunction()};
 			}
 		}
-		if (hint == graph::SigType::symbol && llvm::isa<SVF::CallIndSVFGEdge>(edge)) {
-			dbg() << "Found indirect call edge up, while searching for symbols, die: " << *edge << std::endl;
+		if (hint == graph::SigType::symbol && llvm::isa<SVF::CallIndSVFGEdge>(vfg_edge)) {
+			this->dbg() << "Found indirect call edge up, while searching for symbols, die: " << *vfg_edge << std::endl;
 			return Die();
 		}
 
 		return KeepGoing();
 	}
 
-	TraversalResult Traverser::handle_node(const SVF::VFGNode* node) {
-		dbg() << "Handle node: " << *node << std::endl;
-		auto id = caretaker.get_obj_id(node->getId(), offset, call_path);
+	template <class SVFG>
+	TraversalResult<SVFG> Traverser<SVFG>::handle_node(const Node<SVFG> node) {
+		this->dbg() << "Handle node: " << node << std::endl;
+		SVF::VFGNode* svf_node = caretaker.get_svfg()->template get_node_obj<SVFG>(node);
+		auto id = caretaker.get_obj_id(node, offset, call_path);
 		if (id) {
-			dbg() << "Found a previous assigned object." << std::endl;
-			dbg() << "CallPath: " << call_path << std::endl;
-			dbg() << "Asked for: " << node->getId() << " " << offset_print(offset) << std::endl;
-			return Finished{FoundValue{*id, node, {}, call_path}};
+			this->dbg() << "Found a previous assigned object." << std::endl;
+			this->dbg() << "CallPath: " << call_path << std::endl;
+			this->dbg() << "Asked for: " << node << " " << offset_print(offset) << std::endl;
+			return Finished<SVFG>{FoundValue<SVFG>{*id, node, {}, call_path}};
 		}
-		if (llvm::isa<SVF::NullPtrVFGNode>(node)) {
+		if (llvm::isa<SVF::NullPtrVFGNode>(svf_node)) {
 			// Sigtype is not important here, a nullptr serves as value and symbol.
-			dbg() << "Found a nullptr." << std::endl;
+			this->dbg() << "Found a nullptr." << std::endl;
 			auto nullval = llvm::ConstantPointerNull::get(
 			    llvm::PointerType::get(llvm::IntegerType::get(caretaker.get_module().getContext(), 8), 0));
-			return Finished{FoundValue{nullval, node, offset, std::nullopt}};
+			return Finished<SVFG>{FoundValue<SVFG>{nullval, node, offset, std::nullopt}};
 		}
 
-		if (auto stmt = llvm::dyn_cast<SVF::StmtVFGNode>(node)) {
+		if (auto stmt = llvm::dyn_cast<SVF::StmtVFGNode>(svf_node)) {
 			const llvm::Value* val = stmt->getPAGEdge()->getValue();
 			auto hint = caretaker.get_hint();
 
 			if (llvm::isa<llvm::GlobalValue>(val)) {
 				// GlobalValues are call path independent so check for object assignment again
-				auto id = caretaker.get_obj_id(node->getId(), offset, graph::CallPath());
+				auto id = caretaker.get_obj_id(node, offset, graph::CallPath());
 				if (id) {
-					dbg() << "Found a previous assigned object." << std::endl;
-					dbg() << "CallPath: " << call_path << std::endl;
-					dbg() << "Asked for: " << node->getId() << " " << offset_print(offset) << std::endl;
-					return Finished{FoundValue{*id, node, {}, graph::CallPath()}};
+					this->dbg() << "Found a previous assigned object." << std::endl;
+					this->dbg() << "CallPath: " << call_path << std::endl;
+					this->dbg() << "Asked for: " << node << " " << offset_print(offset) << std::endl;
+					return Finished<SVFG>{FoundValue<SVFG>{*id, node, {}, graph::CallPath()}};
 				}
 			}
 
 			if (const llvm::GetElementPtrInst* i = llvm::dyn_cast<llvm::GetElementPtrInst>(val)) {
-				dbg() << "Found GetElementPtrInst: " << pretty_print(*i) << std::endl;
+				this->dbg() << "Found GetElementPtrInst: " << pretty_print(*i) << std::endl;
 				offset.emplace_back(i);
-				dbg() << "New offset: " << offset_print(offset) << std::endl;
+				this->dbg() << "New offset: " << offset_print(offset) << std::endl;
 			}
 
 			if (hint == graph::SigType::value || hint == graph::SigType::undefined) {
 				if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(val)) {
-					dbg() << "Found constant data: " << pretty_print(*c) << std::endl;
-					return Finished{FoundValue{c, node, offset, std::nullopt}};
+					this->dbg() << "Found constant data: " << pretty_print(*c) << std::endl;
+					return Finished<SVFG>{FoundValue<SVFG>{c, node, offset, std::nullopt}};
 				}
 
 				if (const llvm::Function* func = llvm::dyn_cast<llvm::Function>(val)) {
-					dbg() << "Found function: " << pretty_print(*func) << std::endl;
-					return Finished{FoundValue{func, node, offset, std::nullopt}};
+					this->dbg() << "Found function: " << pretty_print(*func) << std::endl;
+					return Finished<SVFG>{FoundValue<SVFG>{func, node, offset, std::nullopt}};
 				}
 
 				if (const llvm::GlobalVariable* gv = llvm::dyn_cast<llvm::GlobalVariable>(val)) {
 					if (gv->hasExternalLinkage()) {
-						dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
-						return Finished{FoundValue{gv, node, offset, std::nullopt}};
+						this->dbg() << "Found global external constant: " << pretty_print(*gv) << std::endl;
+						return Finished<SVFG>{FoundValue<SVFG>{gv, node, offset, std::nullopt}};
 					} else if (gv->getNumOperands() > 0) { // TODO consider using offset
 						// special handling for strings, they are pointer to constant data
 						const llvm::Value* gvv = gv->getOperand(0);
 						if (gvv != nullptr) {
 							if (const llvm::ConstantData* gvvc = llvm::dyn_cast<llvm::ConstantData>(gvv)) {
-								dbg() << "Found global constant data: " << pretty_print(*gvvc) << std::endl;
-								return Finished{FoundValue{gvvc, node, {}, std::nullopt}};
+								this->dbg() << "Found global constant data: " << pretty_print(*gvvc) << std::endl;
+								return Finished<SVFG>{FoundValue<SVFG>{gvvc, node, {}, std::nullopt}};
 							}
 						}
 					}
@@ -426,18 +460,18 @@ namespace ara::step {
 
 			if (hint == graph::SigType::symbol) {
 				if (const llvm::GlobalValue* gv = llvm::dyn_cast<llvm::GlobalValue>(val)) {
-					dbg() << "Found global value: " << pretty_print(*gv) << std::endl;
-					return Finished{FoundValue{gv, node, offset, std::nullopt}};
+					this->dbg() << "Found global value: " << pretty_print(*gv) << std::endl;
+					return Finished<SVFG>{FoundValue<SVFG>{gv, node, offset, std::nullopt}};
 				}
 
 				if (const llvm::AllocaInst* ai = llvm::dyn_cast<llvm::AllocaInst>(val)) {
-					dbg() << "Found alloca instruction (local variable): " << pretty_print(*ai) << std::endl;
-					return Finished{FoundValue{ai, node, offset, call_path}};
+					this->dbg() << "Found alloca instruction (local variable): " << pretty_print(*ai) << std::endl;
+					return Finished<SVFG>{FoundValue<SVFG>{ai, node, offset, call_path}};
 				}
 			}
 		}
-		if (llvm::isa<SVF::PHIVFGNode>(node)) {
-			dbg() << "Found PHIVFGNode, spawn subtraversers: " << *node << std::endl;
+		if (llvm::isa<SVF::PHIVFGNode>(svf_node)) {
+			this->dbg() << "Found PHIVFGNode, spawn subtraversers: " << node << std::endl;
 			auto result = advance(node, /* only_delegate= */ true);
 			if (std::holds_alternative<Die>(result)) {
 				return result;
@@ -447,36 +481,42 @@ namespace ara::step {
 		return KeepGoing();
 	}
 
-	void Traverser::act_if_necessary() {
+	template <class SVFG>
+	void Traverser<SVFG>::act_if_necessary() {
 		// output
-		dbg() << "Worker has changed something, check if action is required." << std::endl;
-		dbg() << "Current workers:" << std::endl;
+		this->dbg() << "Worker has changed something, check if action is required." << std::endl;
+		this->dbg() << "Current workers:" << std::endl;
 		for (auto worker : workers | boost::adaptors::map_values) {
-			dbg() << "Worker: " << *worker << std::endl;
+			this->dbg() << "Worker: " << *worker << std::endl;
 		}
 		// check
 		if (workers.size() == 0) {
-			die_and_notify();
+			this->die_and_notify();
 			return;
 		}
 		if (std::all_of(workers.begin(), workers.end(), [](auto w) {
 			    return w.second->get_status() == Status::sleeping && w.second->reason != WaitingReason::in_phi;
 		    })) {
-			dbg() << "Got all reports. Acting..." << std::endl;
+			this->dbg() << "Got all reports. Acting..." << std::endl;
 			handle_reports();
 		} else {
-			dbg() << "No action required." << std::endl;
+			this->dbg() << "No action required." << std::endl;
 		}
 	}
 
-	void Traverser::send_report(Report&& report) {
+	template <class SVFG>
+	void Traverser<SVFG>::send_report(Report<SVFG>&& report) {
 		reports.emplace_back(report);
 		act_if_necessary();
 	}
 
-	void Traverser::handle_found_value(FoundValue&& report) { sleep_and_send(report); }
+	template <class SVFG>
+	void Traverser<SVFG>::handle_found_value(FoundValue<SVFG>&& report) {
+		sleep_and_send(report);
+	}
 
-	void Traverser::cleanup_workers() {
+	template <class SVFG>
+	void Traverser<SVFG>::cleanup_workers() {
 		// TODO use std::erase_if in C++20
 		auto it = workers.begin();
 		while (it != workers.end()) {
@@ -488,34 +528,39 @@ namespace ara::step {
 		}
 	}
 
-	void Traverser::hire(std::shared_ptr<Traverser> worker) {
+	template <class SVFG>
+	void Traverser<SVFG>::hire(std::shared_ptr<Traverser> worker) {
 		workers[worker->get_id()] = worker;
 		worker->boss = this;
 	}
 
-	FoundValue Traverser::get_best_find(std::vector<Report>&& finds) const {
+	template <class SVFG>
+	FoundValue<SVFG> Traverser<SVFG>::get_best_find(std::vector<Report<SVFG>>&& finds) const {
 		// current heuristic: if a previous assigned instance is found, take that, otherwise the first one
-		auto found_instance = [](Report& r) { return std::holds_alternative<OSObject>(std::get<FoundValue>(r).value); };
+		auto found_instance = [](Report<SVFG>& r) {
+			return std::holds_alternative<OSObject>(std::get<FoundValue<SVFG>>(r).value);
+		};
 		auto it = std::find_if(finds.begin(), finds.end(), found_instance);
 		if (it != finds.end()) {
-			return std::get<FoundValue>(std::move(*it));
+			return std::get<FoundValue<SVFG>>(std::move(*it));
 		}
-		return std::get<FoundValue>(std::move(finds[0]));
+		return std::get<FoundValue<SVFG>>(std::move(finds[0]));
 	}
 
-	void Traverser::handle_reports() {
-		auto found_value = [](Report& r) { return std::holds_alternative<FoundValue>(r); };
+	template <class SVFG>
+	void Traverser<SVFG>::handle_reports() {
+		auto found_value = [](Report<SVFG>& r) { return std::holds_alternative<FoundValue<SVFG>>(r); };
 
 		auto it = std::find_if(reports.begin(), reports.end(), found_value);
 		if (it != reports.end()) {
-			std::vector<Report> finds;
+			std::vector<Report<SVFG>> finds;
 			std::copy_if(reports.begin(), reports.end(), std::back_inserter(finds), found_value);
 			if (finds.size() > 1 && reason == WaitingReason::in_phi) {
 				// TODO we must not have two Found Values otherwise we are not able to handle it
-				dbg() << "PHINode with multiple value nodes is not supported." << std::endl;
+				this->dbg() << "PHINode with multiple value nodes is not supported." << std::endl;
 				throw ValuesUnknown("PHINode with multiple value nodes is not supported.");
 			}
-			dbg() << "Worker found a value, forwarding..." << std::endl;
+			this->dbg() << "Worker found a value, forwarding..." << std::endl;
 			auto report = get_best_find(std::move(finds));
 
 			std::for_each(workers.begin(), workers.end(), [](auto w) { w.second->die(); });
@@ -526,7 +571,7 @@ namespace ara::step {
 			return;
 		}
 		if (std::all_of(reports.begin(), reports.end(),
-		                [](Report& r) { return std::holds_alternative<EndOfFunction>(r); })) {
+		                [](Report<SVFG>& r) { return std::holds_alternative<EndOfFunction>(r); })) {
 			if (workers.size() == 1 && reason == WaitingReason::in_phi && boss != this) {
 				// currently waiting in phi node and we have only one subtraverser
 				// We can savely ignore the phi in this case. Pass the traverser to our boss.
@@ -535,18 +580,18 @@ namespace ara::step {
 				workers.clear();
 				assert(reports.size() == 1 && "workers and reports size must match here");
 				// we have no job anymore, just die()
-				dbg() << "Found PHI with one possible continuation. Continue with T" << worker->get_id() << " (boss=T"
-				      << boss->get_id() << "). Removing ourself." << std::endl;
+				this->dbg() << "Found PHI with one possible continuation. Continue with T" << worker->get_id()
+				            << " (boss=T" << boss->get_id() << "). Removing ourself." << std::endl;
 				auto report = std::move(*reports.begin());
 				reports.clear();
 				boss->send_report(std::move(report));
-				die_and_notify();
+				this->die_and_notify();
 			} else {
 				auto travs = choose_best_next_traversers();
-				dbg() << "All subordinates reached end of current call level." << std::endl;
+				this->dbg() << "All subordinates reached end of current call level." << std::endl;
 				reports.clear();
 				for (auto t : travs) {
-					dbg() << "Continue with: " << t->get_id() << std::endl;
+					this->dbg() << "Continue with: " << t->get_id() << std::endl;
 					t->wakeup();
 					t->skip_first_edge = true;
 				}
@@ -554,11 +599,14 @@ namespace ara::step {
 		}
 	}
 
-	std::vector<shared_ptr<Traverser>> Traverser::choose_best_next_traversers() {
-		std::vector<shared_ptr<Traverser>> indirects;
-		std::vector<shared_ptr<Traverser>> directs;
+	template <class SVFG>
+	std::vector<shared_ptr<Traverser<SVFG>>> Traverser<SVFG>::choose_best_next_traversers() {
+		std::vector<shared_ptr<Traverser<SVFG>>> indirects;
+		std::vector<shared_ptr<Traverser<SVFG>>> directs;
 		for (auto worker : workers | boost::adaptors::map_values) {
-			if (llvm::isa<SVF::CallIndSVFGEdge>(worker->trace.back())) {
+			assert(worker->trace.back().has_value());
+			if (llvm::isa<SVF::CallIndSVFGEdge>(
+			        caretaker.get_svfg()->template get_edge_obj<SVFG>(*worker->trace.back()))) {
 				indirects.emplace_back(worker);
 			} else {
 				directs.emplace_back(worker);
@@ -570,19 +618,25 @@ namespace ara::step {
 		return directs;
 	}
 
-	Logger::LogStream& Traverser::dbg() const {
+	template <class SVFG>
+	Logger::LogStream& Traverser<SVFG>::dbg() const {
 		auto& ls = caretaker.get_logger().debug();
 		ls << std::string(level, ' ');
 		ls << 'T' << id << " (" << call_path.size() << "): ";
 		return ls;
 	}
 
-	std::ostream& operator<<(std::ostream& os, const Traverser& t) {
+	template <typename SVFG>
+	std::ostream& operator<<(std::ostream& os, const Traverser<SVFG>& t) {
 		os << "Traverser(";
 		os << "id=" << t.get_id();
 		os << ", boss=" << t.boss->get_id();
-		auto& edge = t.trace.back();
-		os << ", edge=" << edge->getSrcNode()->getId() << "->" << edge->getDstNode()->getId();
+		std::optional<Edge<SVFG>> edge = t.trace.back();
+		if (edge.has_value()) {
+			os << ", edge=" << source(*edge, t.caretaker.get_g()) << "->" << target(*edge, t.caretaker.get_g());
+		} else {
+			os << ", edge=nullptr";
+		}
 		os << ", status=" << t.status;
 		if (t.reason != WaitingReason::not_set) {
 			os << ", reason=" << t.reason;
@@ -591,62 +645,68 @@ namespace ara::step {
 		return os;
 	}
 
-	void Manager::act_if_necessary() {
-		if (workers.size() == 0) {
-			caretaker.get_logger().warn() << "Manager:: Did not found a valid value." << std::endl;
+	template <class SVFG>
+	void Manager<SVFG>::act_if_necessary() {
+		if (this->workers.size() == 0) {
+			this->caretaker.get_logger().warn() << "Manager:: Did not found a valid value." << std::endl;
 			throw ValuesUnknown("Manager: Did not found a valid value.");
 		}
-		Traverser::act_if_necessary();
+		Traverser<SVFG>::act_if_necessary();
 	}
 
-	bool Manager::eval_node_result(TraversalResult&& result) {
+	template <class SVFG>
+	bool Manager<SVFG>::eval_node_result(TraversalResult<SVFG>&& result) {
 		bool ret = false;
-		std::visit(overloaded{[&](Finished f) {
-			                      this->value = std::move(std::get<FoundValue>(f.report));
+		std::visit(overloaded{[&](Finished<SVFG> f) {
+			                      this->value = std::move(std::get<FoundValue<SVFG>>(f.report));
 			                      this->caretaker.stop();
 			                      ret = true;
 		                      },
 		                      [&](Wait w) {
-			                      reason = w.reason;
-			                      sleep();
+			                      this->reason = w.reason;
+			                      this->sleep();
 			                      ret = true;
 		                      },
 		                      [&](KeepGoing) { ret = false; },
 		                      [&](Die) {
-			                      die_and_notify();
+			                      this->die_and_notify();
 			                      ret = true;
 		                      }},
 		           result);
 		return ret;
 	}
 
-	void Manager::do_step() {
-		dbg() << "Manager: search current node" << std::endl;
-		if (eval_node_result(handle_node(node))) {
+	template <class SVFG>
+	void Manager<SVFG>::do_step() {
+		this->dbg() << "Manager: search current node" << std::endl;
+		if (eval_node_result(this->handle_node(node))) {
 			return;
 		}
-		caretaker.mark_visited(node);
+		this->caretaker.mark_visited(node);
 
-		dbg() << "Manager: delegate" << std::endl;
-		TraversalResult result = advance(node, /* only_delegate= */ true);
+		this->dbg() << "Manager: delegate" << std::endl;
+		TraversalResult<SVFG> result = this->advance(node, /* only_delegate= */ true);
 		if (std::holds_alternative<Die>(result)) {
 			throw ValuesUnknown("Start node has no incoming flows.");
 		}
-		sleep();
+		this->sleep();
 	}
 
-	void Manager::handle_found_value(FoundValue&& report) {
+	template <class SVFG>
+	void Manager<SVFG>::handle_found_value(FoundValue<SVFG>&& report) {
 		value = report;
-		sleep();
-		caretaker.stop();
+		this->sleep();
+		this->caretaker.stop();
 	}
 
-	const FoundValue Manager::get_value() {
+	template <class SVFG>
+	const FoundValue<SVFG> Manager<SVFG>::get_value() {
 		assert(value && "no value");
 		return *value;
 	}
 
-	void Bookkeeping::run() {
+	template <class SVFG>
+	void Bookkeeping<SVFG>::run() {
 		// while(true) {
 		for (int i = 0; i < 100; ++i) {
 			for (auto it = traversers.begin(); it != traversers.end();) {
@@ -671,53 +731,59 @@ namespace ara::step {
 		va.logger.debug() << "Stopping after 100 iterations." << std::endl;
 	}
 
-	llvm::Module& Bookkeeping::get_module() const { return va.graph.get_module(); }
+	template <class SVFG>
+	llvm::Module& Bookkeeping<SVFG>::get_module() const {
+		return va.graph.get_module();
+	}
 
-	Logger& Bookkeeping::get_logger() const { return va.logger; }
+	template <class SVFG>
+	Logger& Bookkeeping<SVFG>::get_logger() const {
+		return va.logger;
+	}
 
-	std::optional<OSObject> Bookkeeping::get_obj_id(const SVF::NodeID id,
-	                                                const std::vector<const llvm::GetElementPtrInst*>& offset,
-	                                                const graph::CallPath& callpath) const {
+	template <class SVFG>
+	std::optional<OSObject> Bookkeeping<SVFG>::get_obj_id(const Node<SVFG> node,
+	                                                      const std::vector<const llvm::GetElementPtrInst*>& offset,
+	                                                      const graph::CallPath& callpath) const {
 		auto num_offsets = convert_to_number_offsets(offset);
 		if (!num_offsets) {
 			return std::nullopt;
 		}
-		auto it = va.obj_map.left.find(std::make_tuple(id, *num_offsets, callpath.hash()));
+		auto it = va.obj_map.left.find(std::make_tuple(node, *num_offsets, callpath.hash()));
 		if (it != va.obj_map.left.end()) {
 			return it->second;
 		}
 		return std::nullopt;
 	}
 
-	void ValueAnalyzer::fail(const char* msg) {
+	template <class SVFG>
+	void ValueAnalyzerImpl<SVFG>::fail(const char* msg) {
 		logger.error() << "ERROR: " << msg << std::endl;
 		throw ValuesUnknown(msg);
 	}
 
-	template <typename SVFGGraphtool>
-	const SVF::VFGNode* ValueAnalyzer::get_vfg_node(SVFGGraphtool& g, const graph::SVFG svfg, const llvm::Value& start,
-	                                                int argument_nr) {
-		using GraphtoolVertex = typename boost::graph_traits<SVFGGraphtool>::vertex_descriptor;
-		auto nodes = svfg.from_llvm_value<SVFGGraphtool>(start);
+	template <class SVFG>
+	const Node<SVFG> ValueAnalyzerImpl<SVFG>::get_vfg_node(const llvm::Value& start, int argument_nr) {
+		auto nodes = this->svfg->from_llvm_value<SVFG>(start);
 		if (nodes.size() == 0) {
 			logger.error() << "Call get_vfg_node with: " << start << " and argument_nr: " << argument_nr << std::endl;
 			throw ValuesUnknown("Cannot go back from llvm::Value to an SVF node");
 		}
 		if (nodes.size() == 1) {
 			// we have an 1 to 1 mapping, so just return
-			return svfg.get_node_obj<SVFGGraphtool>(*nodes.begin());
+			return *nodes.begin();
 		}
 		// more than one node, we need to do a back mapping with a heuristic
 
 		// helper variables for addr_pattern
-		uint64_t addr; // a graphtool vertex
+		uint64_t addr = 0; // a graphtool vertex
 		bool addr_set = false;
 		bool addr_pattern_valid = true;
 		auto fail_with_msg = [&](const char* msg) {
 			logger.debug() << msg << std::endl;
 			addr_pattern_valid = false;
 		};
-		auto assign_addr = [&](const GraphtoolVertex n) {
+		auto assign_addr = [&](const Node<SVFG> n) {
 			if (addr_set && static_cast<uint64_t>(n) == addr) {
 				return;
 			} else if (addr_set) {
@@ -735,7 +801,7 @@ namespace ara::step {
 				for (auto edge : graph_tool::out_edges_range(node, g)) {
 					auto cand = target(edge, g);
 					logger.debug() << "cand: " << cand << std::endl;
-					if (auto phi = llvm::dyn_cast<SVF::InterPHIVFGNode>(svfg.get_node_obj<SVFGGraphtool>(cand))) {
+					if (auto phi = llvm::dyn_cast<SVF::InterPHIVFGNode>(this->svfg->get_node_obj<SVFG>(cand))) {
 						logger.debug() << "PHINode: " << *phi << std::endl;
 						if (phi->isFormalParmPHI()) {
 							if (auto arg = llvm::dyn_cast<llvm::Argument>(phi->getValue())) {
@@ -752,7 +818,7 @@ namespace ara::step {
 			} else {
 				// Pattern 2: We have only one AddrVFGNode and multiple pointer (GepVFGNodes) to this node
 				if (addr_pattern_valid) {
-					SVF::VFGNode* vfg_node = svfg.get_node_obj<SVFGGraphtool>(node);
+					SVF::VFGNode* vfg_node = this->svfg->get_node_obj<SVFG>(node);
 					if (llvm::dyn_cast<SVF::AddrVFGNode>(vfg_node)) {
 						assign_addr(node);
 					} else if (llvm::isa<SVF::GepVFGNode>(vfg_node)) {
@@ -763,7 +829,7 @@ namespace ara::step {
 								break;
 							}
 							auto cand = source(edge, g);
-							if (llvm::dyn_cast<SVF::AddrVFGNode>(svfg.get_node_obj<SVFGGraphtool>(cand))) {
+							if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->get_node_obj<SVFG>(cand))) {
 								assign_addr(node);
 							} else {
 								fail_with_msg("Addr pattern failed. Found a pointer to a non AddrVFGNode");
@@ -775,23 +841,24 @@ namespace ara::step {
 			}
 
 			// Pattern 3: Any element in the list is a nullptr
-			if (llvm::isa<SVF::NullPtrVFGNode>(svfg.get_node_obj<SVFGGraphtool>(node))) {
+			if (llvm::isa<SVF::NullPtrVFGNode>(this->svfg->get_node_obj<SVFG>(node))) {
 				logger.debug() << "Patter 3, found nullptr: " << node << std::endl;
-				return svfg.get_node_obj<SVFGGraphtool>(node);
+				return node;
 			}
 		}
 		if (addr_pattern_valid && addr_set) {
 			logger.debug() << "Patter 2, found one address with multiple pointers: " << addr << std::endl;
-			return svfg.get_node_obj<SVFGGraphtool>(addr);
+			return addr;
 		}
 
 		assert(false && "This must not happen. Update the above for loop.");
 	}
 
-	FoundValue ValueAnalyzer::do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath,
-	                                                   graph::SigType hint) {
-		Bookkeeping caretaker(*this, callgraph, s_callgraph, hint);
-		shared_ptr<Manager> root = std::make_shared<Manager>(start, callpath, caretaker);
+	template <class SVFG>
+	FoundValue<SVFG> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
+	                                                                   graph::SigType hint) {
+		Bookkeeping caretaker(*this, this->callgraph, this->svfg, g, svf_objects.s_callgraph, hint);
+		std::shared_ptr<Manager<SVFG>> root = std::make_shared<Manager<SVFG>>(start, callpath, caretaker);
 		caretaker.add_traverser(root);
 
 		caretaker.run();
@@ -800,15 +867,16 @@ namespace ara::step {
 		return result;
 	}
 
-	const llvm::Value& ValueAnalyzer::get_nth_arg(const llvm::CallBase& callsite, const unsigned argument_nr) const {
+	template <class SVFG>
+	const llvm::Value& ValueAnalyzerImpl<SVFG>::get_nth_arg(const llvm::CallBase& callsite,
+	                                                        const unsigned argument_nr) const {
 		const auto& use = callsite.getArgOperandUse(argument_nr);
 		return safe_deref(use.get());
 	}
 
-	template <typename SVFGGraphtool>
-	ValueAnalyzer::Result ValueAnalyzer::get_argument_value(SVFGGraphtool& g, llvm::CallBase& callsite,
-	                                                        graph::CallPath callpath, unsigned argument_nr,
-	                                                        graph::SigType hint, PyObject*) {
+	template <class SVFG>
+	Result ValueAnalyzerImpl<SVFG>::get_argument_value(llvm::CallBase& callsite, graph::CallPath callpath,
+	                                                   unsigned argument_nr, graph::SigType hint, PyObject*) {
 		if (is_call_to_intrinsic(callsite)) {
 			throw ValuesUnknown("Called function is an intrinsic.");
 		}
@@ -828,12 +896,12 @@ namespace ara::step {
 		logger.debug() << "Analyzing argument " << argument_nr << ": " << pretty_print(val) << std::endl;
 
 		// fast lane, if val is a constant, take it
-		FoundValue value;
+		FoundValue<SVFG> value;
 		if (const llvm::ConstantData* c = llvm::dyn_cast<llvm::ConstantData>(&val)) {
 			logger.debug() << "Found constant data: " << pretty_print(*c) << std::endl;
-			value = FoundValue{c, nullptr, {}, std::nullopt};
+			value = FoundValue<SVFG>{c, std::nullopt, {}, std::nullopt};
 		} else {
-			const SVF::VFGNode* v_node = get_vfg_node<SVFGGraphtool>(g, graph.get_svfg_graphtool(), val, argument_nr);
+			const Node<SVFG> v_node = get_vfg_node(val, argument_nr);
 			value = do_backward_value_search(v_node, callpath, hint);
 		}
 
@@ -847,21 +915,22 @@ namespace ara::step {
 		return Result{std::move(value.value), std::move(value.offset), std::move(attrs), std::move(value.callpath)};
 	}
 
-	const SVF::StoreVFGNode* ValueAnalyzer::find_next_store(const SVF::VFGNode* start) {
+	template <class SVFG>
+	const SVF::StoreVFGNode* ValueAnalyzerImpl<SVFG>::find_next_store(const Node<SVFG> start) {
 		// we assume that the found value node is a PHINode or similar but flows directly or with some copies into a
 		// statement node (the respective store) maybe this needs to be improved some time
-		const SVF::VFGNode* current = start;
+		Node<SVFG> current = start;
 		// random constant, prevent endless loops, this amount of copies is unlikely
 		for (unsigned i = 0; i < 20; ++i) {
-			logger.debug() << "Downward search: " << *current << std::endl;
-			for (const SVF::VFGEdge* edge :
-			     boost::make_iterator_range(current->OutEdgeBegin(), current->OutEdgeEnd())) {
-				SVF::VFGNode* cand = edge->getDstNode();
-				if (llvm::isa<SVF::CopyVFGNode>(cand)) {
+			logger.debug() << "Downward search: " << current << std::endl;
+			for (auto edge : graph_tool::out_edges_range(current, g)) {
+				Node<SVFG> cand = target(edge, g);
+				SVF::VFGNode* svf_cand = this->svfg->get_node_obj<SVFG>(cand);
+				if (llvm::isa<SVF::CopyVFGNode>(svf_cand)) {
 					current = cand;
 					break; // only inner for loop
 				}
-				if (auto store = llvm::dyn_cast<SVF::StoreVFGNode>(cand)) {
+				if (auto store = llvm::dyn_cast<SVF::StoreVFGNode>(svf_cand)) {
 					logger.debug() << "Found store node: " << *store << std::endl;
 					return store;
 				}
@@ -870,30 +939,29 @@ namespace ara::step {
 		return nullptr;
 	}
 
-	template <typename SVFGGraphtool>
-	void ValueAnalyzer::assign_system_object(SVFGGraphtool& g, const llvm::Value* value, OSObject obj_index,
-	                                         const std::vector<const llvm::GetElementPtrInst*>& offsets,
-	                                         const graph::CallPath& callpath) {
-		const SVF::VFGNode* v_node = get_vfg_node<SVFGGraphtool>(g, graph.get_svfg_graphtool(), safe_deref(value));
-		SVF::NodeID id = v_node->getId();
+	template <class SVFG>
+	void ValueAnalyzerImpl<SVFG>::assign_system_object(const llvm::Value* value, OSObject obj_index,
+	                                                   const std::vector<const llvm::GetElementPtrInst*>& offsets,
+	                                                   const graph::CallPath& callpath) {
+		const Node<SVFG> v_node = get_vfg_node(safe_deref(value));
 
-		logger.debug() << "Assign object ID " << obj_index << " to SVF node ID: " << id;
+		logger.debug() << "Assign object ID " << obj_index << " to SVFG node: " << v_node;
 		if (offsets.size() != 0) {
 			logger.debug() << " with offset " << offset_print(offsets);
 		}
 		logger.debug() << " and callpath " << callpath << "." << std::endl;
 		auto num_offsets = convert_to_number_offsets(offsets);
 		if (num_offsets) {
-			obj_map.insert(
-			    graph::GraphData::ObjMap::value_type(std::make_tuple(id, *num_offsets, callpath.hash()), obj_index));
+			obj_map.insert(graph::GraphData::ObjMap::value_type(std::make_tuple(v_node, *num_offsets, callpath.hash()),
+			                                                    obj_index));
 		} else {
 			logger.error() << "Cannot calculate get_element_ptr offsets. Do not assign anything." << std::endl;
 		}
 	}
 
-	template <typename SVFGGraphtool>
-	bool ValueAnalyzer::has_connection(SVFGGraphtool& g, llvm::CallBase& callsite, graph::CallPath,
-	                                   unsigned argument_nr, OSObject obj_index) {
+	template <class SVFG>
+	bool ValueAnalyzerImpl<SVFG>::has_connection(llvm::CallBase& callsite, graph::CallPath, unsigned argument_nr,
+	                                             OSObject obj_index) {
 		if (is_call_to_intrinsic(callsite)) {
 			throw ConnectionStatusUnknown("Called function is an intrinsic.");
 		}
@@ -915,16 +983,16 @@ namespace ara::step {
 		// TODO handle offset and callpath
 
 		/* retrieve SVFG node for system object */
-		const SVF::VFGNode* obj_node = graph.get_svfg().getGNode(std::get<0>(id));
+		const Node<SVFG> obj_node = static_cast<Node<SVFG>>(std::get<0>(id));
 
 		/* retrieve SVFG node for input triple */
 		const llvm::Value& val = get_nth_arg(callsite, argument_nr);
-		const SVF::VFGNode* input_node = get_vfg_node<SVFGGraphtool>(g, graph.get_svfg_graphtool(), val);
+		const Node<SVFG> input_node = get_vfg_node(val);
 
-		logger.debug() << "Find connection between " << *input_node << " and " << *obj_node << std::endl;
+		logger.debug() << "Find connection between " << input_node << " and " << obj_node << std::endl;
 
-		std::set<const SVF::VFGNode*> visited;
-		std::stack<const SVF::VFGNode*> node_stack;
+		std::set<Node<SVFG>> visited;
+		std::stack<Node<SVFG>> node_stack;
 
 		/* starting the search from the object node makes the search terminate quickly in many cases */
 		auto starting_node = obj_node;
@@ -942,13 +1010,13 @@ namespace ara::step {
 			auto current_node = node_stack.top();
 			node_stack.pop();
 
-			for (const SVF::VFGEdge* edge :
-			     boost::make_iterator_range(current_node->OutEdgeBegin(), current_node->OutEdgeEnd())) {
-				auto node = edge->getDstNode();
+			for (auto edge : graph_tool::out_edges_range(current_node, g)) {
+				auto node = target(edge, g);
+				SVF::VFGNode* svf_node = this->svfg->get_node_obj<SVFG>(node);
 				if (visited.find(node) == visited.end()) {
-					if (llvm::isa<SVF::MRSVFGNode>(node))
+					if (llvm::isa<SVF::MRSVFGNode>(svf_node))
 						continue; // helps constructed example
-					if (llvm::isa<SVF::NullPtrVFGNode>(node))
+					if (llvm::isa<SVF::NullPtrVFGNode>(svf_node))
 						continue; // helps gpslogger
 					if (node == target_node) {
 						logger.debug() << "Found connection after visiting " << visited.size() << " nodes."
@@ -959,13 +1027,13 @@ namespace ara::step {
 					node_stack.push(node);
 				}
 			}
-			for (const SVF::VFGEdge* edge :
-			     boost::make_iterator_range(current_node->InEdgeBegin(), current_node->InEdgeEnd())) {
-				auto node = edge->getSrcNode();
+			for (auto edge : graph_tool::in_edges_range(current_node, g)) {
+				auto node = source(edge, g);
+				SVF::VFGNode* svf_node = this->svfg->get_node_obj<SVFG>(node);
 				if (visited.find(node) == visited.end()) {
-					if (llvm::isa<SVF::MRSVFGNode>(node))
+					if (llvm::isa<SVF::MRSVFGNode>(svf_node))
 						continue;
-					if (llvm::isa<SVF::NullPtrVFGNode>(node))
+					if (llvm::isa<SVF::NullPtrVFGNode>(svf_node))
 						continue;
 					if (node == target_node) {
 						logger.debug() << "Found connection after visiting " << visited.size() << " nodes."
@@ -1006,7 +1074,8 @@ namespace ara::step {
 		return py_offsets;
 	}
 
-	const llvm::Value* ValueAnalyzer::get_llvm_return(const llvm::CallBase& callsite) const {
+	template <class SVFG>
+	const llvm::Value* ValueAnalyzerImpl<SVFG>::get_llvm_return(const llvm::CallBase& callsite) const {
 		for (const auto user : callsite.users()) {
 			if (const auto store = llvm::dyn_cast<llvm::StoreInst>(user)) {
 				return store->getPointerOperand();
@@ -1016,14 +1085,13 @@ namespace ara::step {
 		return &callsite;
 	}
 
-	template <typename SVFGGraphtool>
-	const llvm::Value* ValueAnalyzer::get_return_value(SVFGGraphtool& g, const llvm::CallBase& callsite,
-	                                                   graph::CallPath) {
+	template <class SVFG>
+	const llvm::Value* ValueAnalyzerImpl<SVFG>::get_return_value(const llvm::CallBase& callsite, graph::CallPath) {
 		if (callsite.getFunctionType()->getReturnType()->isVoidTy()) {
 			fail("Cannot get return value of void function.");
 		}
 		logger.debug() << "Get return value of " << callsite << std::endl;
-		const SVF::VFGNode* node = get_vfg_node<SVFGGraphtool>(g, graph.get_svfg_graphtool(), callsite);
+		const Node<SVFG> node = get_vfg_node(callsite);
 
 		auto store = find_next_store(node);
 		if (store != nullptr) {
@@ -1035,29 +1103,29 @@ namespace ara::step {
 		return get_llvm_return(callsite);
 	}
 
-	template <typename SVFGGraphtool>
-	ValueAnalyzer::Result ValueAnalyzer::get_memory_value(SVFGGraphtool& g, const llvm::Value* intermediate_value,
-	                                                      graph::CallPath callpath) {
-		const SVF::VFGNode* v_node =
-		    get_vfg_node<SVFGGraphtool>(g, graph.get_svfg_graphtool(), safe_deref(intermediate_value));
-		FoundValue result = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
-		return ValueAnalyzer::Result{result.value, result.offset, std::nullopt, result.callpath};
+	template <class SVFG>
+	Result ValueAnalyzerImpl<SVFG>::get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath) {
+		const Node<SVFG> v_node = get_vfg_node(safe_deref(intermediate_value));
+		FoundValue<SVFG> result = do_backward_value_search(v_node, callpath, graph::SigType::symbol);
+		return Result{result.value, result.offset, std::nullopt, result.callpath};
 	}
 
 	PyObject* ValueAnalyzer::py_get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callgraph) {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
-		    [&](auto& g) { res = py_repack(get_memory_value(g, intermediate_value, callgraph)); },
-		    graph_tool::always_directed())(graph.get_svfg_graphtool().graph.get_graph_view());
+		    [&](auto& g) {
+			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    res = py_repack(impl.get_memory_value(intermediate_value, callgraph));
+		    },
+		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 		return res;
 	}
 
-	template <typename SVFGGraphtool>
-	std::vector<std::pair<const llvm::Value*, graph::CallPath>>
-	ValueAnalyzer::get_assignments(SVFGGraphtool& g, const llvm::Value* value,
-	                               const std::vector<const llvm::GetElementPtrInst*>& gep, graph::CallPath callpath) {
-		const SVF::VFGNode* start_node = get_vfg_node<SVFGGraphtool>(g, graph.get_svfg_graphtool(), safe_deref(value));
-		std::stack<std::pair<const SVF::VFGNode*, graph::CallPath>> nodes;
+	template <class SVFG>
+	std::vector<std::pair<const llvm::Value*, graph::CallPath>> ValueAnalyzerImpl<SVFG>::get_assignments(
+	    const llvm::Value* value, const std::vector<const llvm::GetElementPtrInst*>& gep, graph::CallPath callpath) {
+		const Node<SVFG> start_node = get_vfg_node(safe_deref(value));
+		std::stack<std::pair<const Node<SVFG>, graph::CallPath>> nodes;
 		nodes.emplace(std::make_pair(start_node, callpath));
 		std::vector<std::pair<const llvm::Value*, graph::CallPath>> stores;
 		auto gep_iter = gep.rbegin();
@@ -1065,8 +1133,10 @@ namespace ara::step {
 			auto [node, path] = nodes.top();
 			nodes.pop();
 
+			SVF::VFGNode* svf_node = this->svfg->get_node_obj<SVFG>(node);
+
 			// termination condition
-			if (auto gep_node = llvm::dyn_cast<SVF::GepVFGNode>(node)) {
+			if (auto gep_node = llvm::dyn_cast<SVF::GepVFGNode>(svf_node)) {
 				const llvm::GetElementPtrInst* gep_inst =
 				    llvm::cast<llvm::GetElementPtrInst>(gep_node->getPAGEdge()->getValue());
 				if (get_offset(gep_inst) != get_offset(*(gep_iter++))) {
@@ -1074,17 +1144,18 @@ namespace ara::step {
 					continue;
 				}
 			}
-			if (auto gep_node = llvm::dyn_cast<SVF::StoreVFGNode>(node)) {
+			if (auto gep_node = llvm::dyn_cast<SVF::StoreVFGNode>(svf_node)) {
 				const llvm::Value* val = gep_node->getPAGEdge()->getValue();
 				stores.emplace_back(std::make_pair(val, path));
 			}
 
 			// next step
-			for (const SVF::VFGEdge* edge : boost::make_iterator_range(node->OutEdgeBegin(), node->OutEdgeEnd())) {
-				if (llvm::isa<SVF::CallDirSVFGEdge>(edge) || llvm::isa<SVF::CallIndSVFGEdge>(edge)) {
-					path.add_call_site(callgraph, safe_deref(get_callsite(edge, s_callgraph)));
+			for (auto edge : graph_tool::out_edges_range(node, g)) {
+				SVF::VFGEdge* svf_edge = this->svfg->get_edge_obj<SVFG>(edge);
+				if (llvm::isa<SVF::CallDirSVFGEdge>(svf_edge) || llvm::isa<SVF::CallIndSVFGEdge>(svf_edge)) {
+					path.add_call_site(callgraph, safe_deref(get_callsite(svf_edge, svf_objects.s_callgraph)));
 				}
-				nodes.emplace(std::make_pair(edge->getDstNode(), path));
+				nodes.emplace(std::make_pair(target(edge, g), path));
 			}
 		}
 
@@ -1095,8 +1166,12 @@ namespace ara::step {
 	                                            const std::vector<const llvm::GetElementPtrInst*>& gep,
 	                                            graph::CallPath callpath) {
 		std::vector<std::pair<const llvm::Value*, graph::CallPath>> values;
-		graph_tool::gt_dispatch<>()([&](auto& g) { values = get_assignments(g, value, gep, callpath); },
-		                            graph_tool::always_directed())(graph.get_svfg_graphtool().graph.get_graph_view());
+		graph_tool::gt_dispatch<>()(
+		    [&](auto& g) {
+			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    values = impl.get_assignments(value, gep, callpath);
+		    },
+		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 
 		PyObject* py_values = PyTuple_New(values.size());
 		for (const auto& indexed_val : values | boost::adaptors::indexed()) {
@@ -1109,7 +1184,7 @@ namespace ara::step {
 		return py_values;
 	}
 
-	PyObject* ValueAnalyzer::py_repack(ValueAnalyzer::Result&& result) const {
+	PyObject* ValueAnalyzer::py_repack(Result&& result) const {
 		PyObject* py_callpath = (result.callpath) ? result.callpath->get_python_obj() : Py_None;
 		PyObject* py_attrs = (result.attrs) ? get_obj_from_attr_set(*result.attrs) : Py_None;
 		return PyTuple_Pack(4, py_repack_raw_value(result.value), py_repack_offsets(result.offset), py_attrs,
@@ -1118,8 +1193,6 @@ namespace ara::step {
 
 	PyObject* ValueAnalyzer::py_get_argument_value(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr,
 	                                               int hint, PyObject* type) {
-		// ara::graph::Trace visualization_trace = this->graph.get_visualization_trace();
-		// visualization_trace.add_element(ara::graph::NodeHighlightTraceElement(0));
 
 		llvm::CallBase* ll_callsite;
 		graph_tool::gt_dispatch<>()([&](auto& g) { get_llvm_callsite(g, &ll_callsite, callsite); },
@@ -1128,10 +1201,11 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    res = py_repack(get_argument_value(g, safe_deref(ll_callsite), callpath, argument_nr,
-			                                       static_cast<graph::SigType>(hint), type));
+			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    res = py_repack(impl.get_argument_value(safe_deref(ll_callsite), callpath, argument_nr,
+			                                            static_cast<graph::SigType>(hint), type));
 		    },
-		    graph_tool::always_directed())(graph.get_svfg_graphtool().graph.get_graph_view());
+		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 
 		return res;
 	}
@@ -1144,10 +1218,11 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
+			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
 			    res = get_obj_from_value(
-			        safe_deref(const_cast<llvm::Value*>(get_return_value(g, safe_deref(ll_callsite), callpath))));
+			        safe_deref(const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath))));
 		    },
-		    graph_tool::always_directed())(graph.get_svfg_graphtool().graph.get_graph_view());
+		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 		return res;
 	}
 
@@ -1156,10 +1231,10 @@ namespace ara::step {
 	                                            const graph::CallPath& callpath) {
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    (void)g;
-			    assign_system_object(g, value, obj_index, offsets, callpath);
+			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    impl.assign_system_object(value, obj_index, offsets, callpath);
 		    },
-		    graph_tool::always_directed())(graph.get_svfg_graphtool().graph.get_graph_view());
+		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 	}
 
 	bool ValueAnalyzer::py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr,
@@ -1171,10 +1246,10 @@ namespace ara::step {
 		bool ret;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    (void)g;
-			    ret = has_connection(g, safe_deref(ll_callsite), callpath, argument_nr, obj_index);
+			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ret = impl.has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
 		    },
-		    graph_tool::always_directed())(graph.get_svfg_graphtool().graph.get_graph_view());
+		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 		return ret;
 	}
 

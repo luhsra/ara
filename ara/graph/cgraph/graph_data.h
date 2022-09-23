@@ -52,11 +52,11 @@ namespace ara::graph {
 		/**
 		 * Workaround for SVF classes where we need additional attributes.
 		 * The tuple conists of the
-		 * 1. the SVF Node (SVF::NodeID)
+		 * 1. the SVFG Node (typename boost::graph_traits<SVFGGraphtool>::vertex_descriptor as uint64_t)
 		 * 2. a list of offset into a compound type (std::vector<int64_t>)
 		 * 3. a context/CallPath (represented as hash due to include loops, std::size_t)
 		 */
-		using ObjMap = boost::bimap<std::tuple<SVF::NodeID, std::vector<int64_t>, std::size_t>, uint64_t>;
+		using ObjMap = boost::bimap<std::tuple<uint64_t, std::vector<int64_t>, std::size_t>, uint64_t>;
 		ObjMap obj_map;
 
 		GraphData() : module(nullptr), svfg(nullptr) {}
