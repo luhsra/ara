@@ -3,7 +3,7 @@
 from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFG, InstanceGraph, CFType
 from dataclasses import dataclass
 from ara.util import dominates, has_path
-from ara.visualization.trace.tracer_api.tracer import GraphNode, init_fast_trace
+from ara.visualization.trace.tracer_api.tracer import GraphNode, GraphPath, init_fast_trace
 from ara.visualization.util import GraphTypes
 
 from .step import Step
@@ -228,6 +228,9 @@ class FlatAnalysis(Step):
                 for path in chain(all_paths(rev_cg, function, entry_point,
                                             edges=True), path_to_self):
 
+                    if self.trace_algorithm.get():
+                        self.trace.entity_is_looking_at(sia_entity, GraphPath(path, GraphTypes.CALLGRAPH))
+
                     abb = cfg.vertex(syscall)
                     state = init_state.copy()
 
@@ -246,11 +249,7 @@ class FlatAnalysis(Step):
                                                   scheduler_on=self._is_chained_analysis()
                                              ))
                     fake_cpu = state.cpus[cpu_id]
-                    if self.trace_algorithm.get():
-                        path_highlight = CallgraphPathHighlightTraceElement()
                     for edge in reversed(path):
-                        if self.trace_algorithm.get():
-                            path_highlight.add_edge(edge, callg)
                         abb = cfg.vertex(callg.ep.callsite[edge])
                         fake_cpu.call_path.add_call_site(callg, edge)
                         self._set_flags(fake_cpu.analysis_context, abb)
