@@ -2,6 +2,7 @@ from abc import abstractmethod
 from PySide6.QtCore import Slot, Qt, QThread, Signal, QObject
 from PySide6.QtGui import QWheelEvent, QPainter
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidget, QWidget
+from graph_tool.libgraph_tool_core import Vertex
 
 from ara.visualization.layouter import Layouter
 from ara.visualization.signal import ara_signal
@@ -43,6 +44,8 @@ class GraphViewContext(QObject):
     callgraph_expansion_points = set()
 
     callgraph_soft_expansion_points = set()
+
+    svfg_expansion_points = []
 
     sig_update_graphview = Signal(GraphTypes)
 
@@ -103,7 +106,12 @@ class GraphViewContext(QObject):
         self.callgraph_soft_expansion_points.clear()
         self.sig_expansion_point_updated.emit("")
 
+    @Slot()
+    def add_svfg_expansion_point(self, point):
+        self.svfg_expansion_points.append(point)
+
     def get_expansion_points(self):
+        """Note: Is not returning SVFG expansion points"""
         return self.callgraph_expansion_points | self.callgraph_soft_expansion_points
 
 
@@ -116,7 +124,7 @@ class BaseGraphView(QGraphicsView):
     """
     # set = expansion points
     # bool = layout only - deprecated
-    sig_layout_start = Signal(GraphTypes, set, bool, StepMode)
+    sig_layout_start = Signal(GraphTypes, set, list, bool, StepMode)
 
     sig_work_done = Signal(str)
 
@@ -177,9 +185,9 @@ class BaseGraphView(QGraphicsView):
             return
 
         if self.graph_type == GraphTypes.CALLGRAPH:
-            self.sig_layout_start.emit(self.graph_type, CONTEXT.get_expansion_points(), False, self.mode)
+            self.sig_layout_start.emit(self.graph_type, CONTEXT.get_expansion_points(), CONTEXT.svfg_expansion_points, False, self.mode)
         else:
-            self.sig_layout_start.emit(self.graph_type, CONTEXT.entry_points, False, self.mode)
+            self.sig_layout_start.emit(self.graph_type, CONTEXT.entry_points, CONTEXT.svfg_expansion_points, False, self.mode)
 
     @Slot()
     def update_view(self):
@@ -363,3 +371,13 @@ class SVFGView(BaseGraphView):
     """
     node_type = SVFGNode
     graph_type = GraphTypes.SVFG
+
+    def handle_node_add(self, node):
+        if isinstance(node, self.node_type):
+            node.sig_adjacency_selected.connect(self.adjacency_expansion)
+        super().handle_node_add(node)
+
+    @Slot(Vertex)
+    def adjacency_expansion(self, point):
+        CONTEXT.add_svfg_expansion_point(point)
+        self.start_update(False, False)

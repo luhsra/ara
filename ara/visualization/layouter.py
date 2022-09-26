@@ -2,6 +2,7 @@ import traceback
 
 from PySide6.QtCore import Slot, QObject, Signal
 from pygraphviz import AGraph
+from graph_tool.libgraph_tool_core import Vertex, Edge
 
 from ara.graph import ABBType, CFType, Graph
 from ara.visualization import ara_manager
@@ -109,7 +110,7 @@ class Layouter(QObject):
                             height=0.75,
                             width=text_to_len(call_graph.vp.function_name[discovered_node]),
                             shape="box",
-                            adjacency="true",
+                            adjacency=True,
                             id=call_graph.vp.function_name[discovered_node],
                             label=call_graph.vp.function_name[discovered_node])
 
@@ -262,27 +263,57 @@ class Layouter(QObject):
                 str(hash(edge.target())),
                 label=instance_graph.ep.label[edge])
 
-    def _update_svfg_view(self, mode=StepMode.DEFAULT):
+    def _update_svfg_view(self, extension_points: list[Vertex], mode=StepMode.DEFAULT):
         """ Create SVFG view. """
         if mode is StepMode.TRACE:
             svfg = trace_handler.INSTANCE.context.svfg
         else:
             svfg = self._graph.svfg
 
-        for vertex in svfg.vertices():
+        created_nodes = set()
+        created_edges = set()
+        adjacent_nodes = set()
+
+        def add_node(node: Vertex, adjacency: bool = False):
             self.svfg_view.add_node(
-                str(hash(vertex)),
+                str(hash(node)),
                 shape="box",
-                label=svfg.vp.label[vertex],
+                label=svfg.vp.label[node],
                 width=5,
                 height=0.75,
-                id=vertex
+                id=node,
+                adjacency="True" if adjacency else ""
             )
-        for edge in svfg.edges():
-            self.svfg_view.add_edge(
-                str(hash(edge.source())),
-                str(hash(edge.target())),
-            )
+
+        def add_expanded_node(node: Vertex):
+            add_node(node)
+            created_nodes.add(node)
+            adjacent_nodes.discard(node)
+
+        def add_adjacent_node(node: Vertex):
+            if not node in created_nodes:
+                adjacent_nodes.add(node)
+                created_nodes.add(node)
+
+        def add_edge(edge: Edge):
+            if not edge in created_edges:
+                self.svfg_view.add_edge(
+                    str(hash(edge.source())),
+                    str(hash(edge.target())),
+                )
+                created_edges.add(edge)
+                add_adjacent_node(edge.source())
+                add_adjacent_node(edge.target())
+
+        for node in extension_points:
+            node = svfg.vertex(node)
+            add_expanded_node(node)
+            for edge in node.all_edges():
+                add_edge(edge)
+
+        for node in adjacent_nodes:
+            add_node(node, True)
+
 
     def _create_return_data(self, graph: AGraph, return_list, graph_type: GraphTypes = GraphTypes.ABB):
         """ Prepares the data so its easier to process by the gui. """
@@ -343,8 +374,8 @@ class Layouter(QObject):
 
         return return_data
 
-    @Slot(GraphTypes, set, bool, StepMode)
-    def layout(self, graph_type, entry_points, layout_only=False, mode=StepMode.DEFAULT):
+    @Slot(GraphTypes, set, list, bool, StepMode)
+    def layout(self, graph_type, entry_points, svfg_extension_points=[], layout_only=False, mode=StepMode.DEFAULT):
         """
             Build the internal graph views.
         """
@@ -375,7 +406,15 @@ class Layouter(QObject):
                     self._update_instance_graph_view(mode)
                 if graph_type == GraphTypes.SVFG:
                     self.svfg_view.clear()
-                    self._update_svfg_view(mode)
+                    # TODO select start node differently
+                    if mode is StepMode.TRACE:
+                        svfg = trace_handler.INSTANCE.context.svfg
+                    else:
+                        svfg = self._graph.svfg
+                    for x in svfg.vertices():
+                        svfg_extension_points.append(x)
+                        break
+                    self._update_svfg_view(svfg_extension_points, mode)
 
             if graph_type == GraphTypes.ABB:
                 self.cfg_view.layout("dot")

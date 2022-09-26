@@ -28,6 +28,10 @@
 	border-radius: 5px;
 }
 
+#svfg_node[adjacency=&quot;true&quot;]{
+	border-color: lightgrey;
+}
+
 #svfg_node[highlighted=&quot;1&quot;] {
 	border-color: red;
 }

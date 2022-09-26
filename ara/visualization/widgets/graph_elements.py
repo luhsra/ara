@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphics
 from PySide6.QtGui import QPen, QPainterPath, QMouseEvent
 from pygraphviz import Node, Edge
 from pygraphviz import AGraph
+from graph_tool.libgraph_tool_core import Vertex
 
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
@@ -60,6 +61,22 @@ class AbstractNode(GraphicsObject):
         self.widget.setProperty("highlighted", color.value)
         self.reload_stylesheet()
 
+class AdjacencyNode(AbstractNode):
+    """Node able to be adjacent to a an expansion point"""
+    def __init__(self, node:Node, ui_path=RESOURCE_PATH.get() + "node.ui"):
+        super().__init__(node, ui_path)
+        self.adjacency = False
+        self.widget.setProperty("adjacency", "false")
+        if self.data.attr["adjacency"] == "True":
+            self.adjacency = True
+            self.widget.setProperty("adjacency", "true")
+        self.reload_stylesheet()
+
+    def set_adjacency(self, adj: bool):
+        self.adjacency = adj
+        self.widget.setProperty("adjacency", "true" if adj else "")
+        self.reload_stylesheet()
+
 
 class AbbNode(AbstractNode):
     """
@@ -79,7 +96,7 @@ class AbbNode(AbstractNode):
         print("Do Something with the clicks")
 
 
-class CallGraphNode(AbstractNode):
+class CallGraphNode(AdjacencyNode):
     """
         Node of a call graph. Contains all signals to make a graph selection and handle the expansion of the graph.
     """
@@ -97,19 +114,12 @@ class CallGraphNode(AbstractNode):
 
         self.widget.label_text.setText(str(self.data.attr["label"]))
 
-        self.adjacency = False
         self.selected = False
         self.expansion = False
 
-        if self.data.attr["adjacency"] == "true":
-            self.adjacency = True
-            self.widget.setProperty("adjacency", "true")
-
-        self.reload_stylesheet()
-
     def mousePressEvent(self, event:QMouseEvent) -> None:
         if event.button() == Qt.LeftButton:
-            if self.adjacency is True:
+            if self.adjacency:
                 self.sig_adjacency_selected.emit(self.data.attr["label"])
                 return
 
@@ -142,16 +152,24 @@ class InstanceNode(AbstractNode):
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.sublabel_text.setText(str(self.data.attr["sublabel"]))
 
-class SVFGNode(AbstractNode):
+class SVFGNode(AdjacencyNode):
     """
         Node of the SVFG.
     """
+
+    sig_adjacency_selected = Signal(Vertex)
 
     def __init__(self, node:Node):
         super().__init__(node, RESOURCE_PATH.get() + "svfg_node.ui")
 
         self.widget.label_text.setText(str(self.data.attr["label"]))
         self.widget.label_text.setWordWrap(True)
+
+    def mousePressEvent(self, event:QMouseEvent) -> None:
+        if event.button() == Qt.LeftButton:
+            if self.adjacency:
+                self.sig_adjacency_selected.emit(self.id)
+                return
 
 class Subgraph(GraphicsObject):
     """
