@@ -20,32 +20,29 @@ from dataclasses import dataclass
 import functools
 
 
-
-
 @dataclass
 class SIAContext:
     """Analysis Context for SIA´s fake CPU in OSState"""
     callg: Callgraph
-    branch: bool         # is this state coming from a branch
-    loop: bool           # is this state coming from a loop
-    recursive: bool      # is this state executing on a recursive path
+    branch: bool  # is this state coming from a branch
+    loop: bool  # is this state coming from a loop
+    recursive: bool  # is this state executing on a recursive path
     usually_taken: bool  # is this state coming from a branch where
-                         # all other branches ends in an endless loop
-    scheduler_on: bool   # Is the global scheduler on
+    # all other branches ends in an endless loop
+    scheduler_on: bool  # Is the global scheduler on
 
     def copy(self):
-        return SIAContext(
-            callg=self.callg,
-            branch=self.branch,
-            loop=self.loop,
-            recursive=self.recursive,
-            usually_taken=self.usually_taken,
-            scheduler_on=self.scheduler_on
-        )
+        return SIAContext(callg=self.callg,
+                          branch=self.branch,
+                          loop=self.loop,
+                          recursive=self.recursive,
+                          usually_taken=self.usually_taken,
+                          scheduler_on=self.scheduler_on)
 
 
 class FlatAnalysis(Step):
     """Flat Analysis"""
+
     def get_single_dependencies(self):
         raise NotImplementedError
 
@@ -104,11 +101,9 @@ class FlatAnalysis(Step):
         # Algorithm: abb must not dominate all exits
         func = self._graph.cfg.get_function(abb)
         dom_tree, exit_abbs = self._create_dom_tree(
-                func,
-                respect_endless_loops=respect_endless_loops
-        )
-        return not all([dominates(dom_tree, abb, x)
-                       for x in exit_abbs.vertices()])
+            func, respect_endless_loops=respect_endless_loops)
+        return not all(
+            [dominates(dom_tree, abb, x) for x in exit_abbs.vertices()])
 
     def _is_usually_taken(self, abb):
         """Is this abb usually taken?
@@ -126,19 +121,21 @@ class FlatAnalysis(Step):
              4o--´
         The node 2 is usually taken.
         """
-        return (self._is_in_condition(abb, respect_endless_loops=True) and not
-                self._is_in_condition(abb, respect_endless_loops=False))
+        return (self._is_in_condition(abb, respect_endless_loops=True) and
+                not self._is_in_condition(abb, respect_endless_loops=False))
 
     def _is_chained_analysis(self):
-        return self.get_name() in {x.name
-                                   for x in self._step_manager.get_history()}
+        return self.get_name() in {
+            x.name
+            for x in self._step_manager.get_history()
+        }
 
     def _set_flags(self, analysis_context: SIAContext, abb):
         analysis_context.branch |= self._is_in_condition(abb)
         analysis_context.loop |= self._graph.cfg.vp.part_of_loop[abb]
         analysis_context.usually_taken = (self._is_usually_taken(abb) or
-                                          (analysis_context.usually_taken and
-                                          not self._is_in_condition(abb)))
+                                          (analysis_context.usually_taken
+                                           and not self._is_in_condition(abb)))
 
     def _iterate_control_entry_points(self):
         """Return a generator over all tasks in self._graph.instances.
@@ -200,11 +197,18 @@ class FlatAnalysis(Step):
 
             if self.trace_algorithm.get():
                 abb = cfg.vertex(syscall)
-                syscall_node = [x.target() for x in abb.out_edges() if cfg.ep.type[x] == CFType.icf]
+                syscall_node = [
+                    x.target() for x in abb.out_edges()
+                    if cfg.ep.type[x] == CFType.icf
+                ]
                 syscall_cfg_func = cfg.get_function(syscall_node[0])
 
-                syscall_func = callg.vertex(cfg.vp.call_graph_link[syscall_cfg_func])
-                self.trace.entity_on_node(sia_entity, [GraphNode(abb, GraphTypes.ABB), GraphNode(syscall_func, GraphTypes.CALLGRAPH)])
+                syscall_func = callg.vertex(
+                    cfg.vp.call_graph_link[syscall_cfg_func])
+                self.trace.entity_on_node(sia_entity, [
+                    GraphNode(abb, GraphTypes.ABB),
+                    GraphNode(syscall_func, GraphTypes.CALLGRAPH)
+                ])
 
             rev_cg = GraphView(callg, reversed=True)
             init_state = os.get_initial_state(cfg, instances)
@@ -225,53 +229,59 @@ class FlatAnalysis(Step):
                                 f"{callg.vp.function_name[entry_point]}")
 
                 path_to_self = [[]] if entry_point == function else []
-                for path in chain(all_paths(rev_cg, function, entry_point,
-                                            edges=True), path_to_self):
+                for path in chain(
+                        all_paths(rev_cg, function, entry_point, edges=True),
+                        path_to_self):
 
                     if self.trace_algorithm.get():
-                        self.trace.entity_is_looking_at(sia_entity, GraphPath(path, GraphTypes.CALLGRAPH))
+                        self.trace.entity_is_looking_at(
+                            sia_entity, GraphPath(path, GraphTypes.CALLGRAPH))
 
                     abb = cfg.vertex(syscall)
                     state = init_state.copy()
 
-                    state.cpus[cpu_id] = CPU(id=state.cpus[cpu_id].id,
-                                             irq_on=False,
-                                             control_instance=inst,
-                                             abb=abb,
-                                             call_path=CallPath(),
-                                             exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
-                                             analysis_context=SIAContext(
-                                                  callg=callg,
-                                                  branch=branch,
-                                                  loop=loop,
-                                                  recursive=False,
-                                                  usually_taken=False,
-                                                  scheduler_on=self._is_chained_analysis()
-                                             ))
+                    state.cpus[cpu_id] = CPU(
+                        id=state.cpus[cpu_id].id,
+                        irq_on=False,
+                        control_instance=inst,
+                        abb=abb,
+                        call_path=CallPath(),
+                        exec_state=ExecState.from_abbtype(cfg.vp.type[abb]),
+                        analysis_context=SIAContext(
+                            callg=callg,
+                            branch=branch,
+                            loop=loop,
+                            recursive=False,
+                            usually_taken=False,
+                            scheduler_on=self._is_chained_analysis()))
                     fake_cpu = state.cpus[cpu_id]
                     for edge in reversed(path):
                         abb = cfg.vertex(callg.ep.callsite[edge])
                         fake_cpu.call_path.add_call_site(callg, edge)
                         self._set_flags(fake_cpu.analysis_context, abb)
-                        fake_cpu.analysis_context.recursive |= callg.vp.recursive[edge.target()]
+                        fake_cpu.analysis_context.recursive |= callg.vp.recursive[
+                            edge.target()]
 
                     self._set_flags(fake_cpu.analysis_context, syscall)
-                    fake_cpu.analysis_context.recursive |= callg.vp.recursive[function]
+                    fake_cpu.analysis_context.recursive |= callg.vp.recursive[
+                        function]
 
-                    os.interpret(
-                        self._graph, state, 0,
-                        categories=self._search_category()
-                    )
+                    os.interpret(self._graph,
+                                 state,
+                                 0,
+                                 categories=self._search_category())
 
         self._trigger_new_steps()
 
         if self.dump.get():
             spec, graph_name = self._dump_names()
             dot_file = f'{self.dump_prefix.get()}.{spec}.dot'
-            self._step_manager.chain_step({"name": "Printer",
-                                           "dot": dot_file,
-                                           "graph_name": graph_name,
-                                           "subgraph": 'instances'})
+            self._step_manager.chain_step({
+                "name": "Printer",
+                "dot": dot_file,
+                "graph_name": graph_name,
+                "subgraph": 'instances'
+            })
 
 
 class SIA(FlatAnalysis):
@@ -281,8 +291,12 @@ class SIA(FlatAnalysis):
                          ty=String())
 
     def get_single_dependencies(self):
-        deps = ["RecursiveFunctions",
-                {"name": "Syscall", "entry_point": self.entry_point.get()}]
+        deps = [
+            "RecursiveFunctions", {
+                "name": "Syscall",
+                "entry_point": self.entry_point.get()
+            }
+        ]
         deps += self._get_os_specific_deps()
         return deps
 
@@ -292,10 +306,10 @@ class SIA(FlatAnalysis):
         for entry, _ in self._iterate_control_entry_points():
             func_name = self._graph.cfg.vp.name[entry]
             if func_name not in step_data:
-                self._step_manager.chain_step(
-                        {"name": self.get_name(),
-                         "entry_point": func_name}
-                )
+                self._step_manager.chain_step({
+                    "name": self.get_name(),
+                    "entry_point": func_name
+                })
                 step_data.add(func_name)
 
     def _get_entry_points(self):
@@ -311,8 +325,10 @@ class SIA(FlatAnalysis):
         # find instance that belongs to this point
         cfg_func = self._graph.cfg.vertex(callgraph.vp.function[entry_point])
 
-        instances = [v for func, v in self._iterate_control_entry_points()
-                     if func == cfg_func]
+        instances = [
+            v for func, v in self._iterate_control_entry_points()
+            if func == cfg_func
+        ]
 
         result = [(entry_point, x) for x in instances]
         if result:
