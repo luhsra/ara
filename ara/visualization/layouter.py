@@ -62,7 +62,9 @@ class Layouter(QObject):
     def _fail(self, message):
         print(message)
 
-    def _update_call_graph_view(self, entry_points=None, mode=StepMode.DEFAULT):
+    def _update_call_graph_view(self,
+                                entry_points=None,
+                                mode=StepMode.DEFAULT):
         """ Create call graph view. """
         try:
             if mode is StepMode.TRACE:
@@ -75,7 +77,8 @@ class Layouter(QObject):
             nodes = []
             edges = []
 
-            for node in call_graph.get_vertices_for_entries_bfs(entry_points, 1):
+            for node in call_graph.get_vertices_for_entries_bfs(
+                    entry_points, 1):
                 # Create Node
                 if call_graph.vp.recursive[node]:
                     # Set Information about recursive
@@ -108,7 +111,8 @@ class Layouter(QObject):
                         self.call_graph_view.add_node(
                             str(hash(discovered_node)),
                             height=0.75,
-                            width=text_to_len(call_graph.vp.function_name[discovered_node]),
+                            width=text_to_len(
+                                call_graph.vp.function_name[discovered_node]),
                             shape="box",
                             adjacency=True,
                             id=call_graph.vp.function_name[discovered_node],
@@ -118,8 +122,7 @@ class Layouter(QObject):
                         str(hash(edge.source())),
                         str(hash(edge.target())),
                         id=call_graph.ep.callsite_name[edge],
-                        label=call_graph.ep.callsite_name[edge]
-                    )
+                        label=call_graph.ep.callsite_name[edge])
 
         except Exception as e:
             print(e)
@@ -164,16 +167,14 @@ class Layouter(QObject):
                     cfg_nodes = cfg.get_abbs(function)
 
                 for node in cfg_nodes:
-                    subgraph.add_node(
-                        str(hash(node)),
-                        label=cfg.vp.name[node],
-                        id=node,
-                        shape="box",
-                        type=node_type,
-                        subtype=cfg.vp.type[node],
-                        width=1.5,
-                        height=0.75
-                    )
+                    subgraph.add_node(str(hash(node)),
+                                      label=cfg.vp.name[node],
+                                      id=node,
+                                      shape="box",
+                                      type=node_type,
+                                      subtype=cfg.vp.type[node],
+                                      width=1.5,
+                                      height=0.75)
                     nodes.add(node)
 
             for node in nodes:
@@ -210,8 +211,7 @@ class Layouter(QObject):
                                 type="ABB",
                                 subtype=cfg.vp.type[discovered_node],
                                 width=1.5,
-                                height=0.75
-                            )
+                                height=0.75)
                             extended_nodes.add(discovered_node)
 
                     # Filter edges to adjacent nodes for the BB representation because there
@@ -247,7 +247,8 @@ class Layouter(QObject):
             label = label_parts[0]
             sublabel = label_parts[1] if len(label_parts) > 1 else ""
 
-            longest_label_text = label if len(label) > len(sublabel) else sublabel
+            longest_label_text = label if len(label) > len(
+                sublabel) else sublabel
 
             self.instance_graph_view.add_node(
                 str(hash(instance)),
@@ -263,7 +264,9 @@ class Layouter(QObject):
                 str(hash(edge.target())),
                 label=instance_graph.ep.label[edge])
 
-    def _update_svfg_view(self, extension_points: list[Vertex], mode=StepMode.DEFAULT):
+    def _update_svfg_view(self,
+                          extension_points: list[Vertex],
+                          mode=StepMode.DEFAULT):
         """ Create SVFG view. """
         if mode is StepMode.TRACE:
             svfg = trace_handler.INSTANCE.context.svfg
@@ -275,15 +278,13 @@ class Layouter(QObject):
         adjacent_nodes = set()
 
         def add_node(node: Vertex, adjacency: bool = False):
-            self.svfg_view.add_node(
-                str(hash(node)),
-                shape="box",
-                label=svfg.vp.label[node],
-                width=5,
-                height=0.75,
-                id=node,
-                adjacency="True" if adjacency else ""
-            )
+            self.svfg_view.add_node(str(hash(node)),
+                                    shape="box",
+                                    label=svfg.vp.label[node],
+                                    width=5,
+                                    height=0.75,
+                                    id=node,
+                                    adjacency="True" if adjacency else "")
 
         def add_expanded_node(node: Vertex):
             add_node(node)
@@ -314,8 +315,10 @@ class Layouter(QObject):
         for node in adjacent_nodes:
             add_node(node, True)
 
-
-    def _create_return_data(self, graph: AGraph, return_list, graph_type: GraphTypes = GraphTypes.ABB):
+    def _create_return_data(self,
+                            graph: AGraph,
+                            return_list,
+                            graph_type: GraphTypes = GraphTypes.ABB):
         """ Prepares the data so its easier to process by the gui. """
         for n in graph.nodes():
             if not n.attr.__contains__("pos") or n.attr["pos"] is None:
@@ -350,32 +353,27 @@ class Layouter(QObject):
         return_data = []
 
         if graph_type == GraphTypes.ABB:
-            self._create_return_data(
-                self.cfg_view,
-                return_data,
-                graph_type)
+            self._create_return_data(self.cfg_view, return_data, graph_type)
 
         if graph_type == GraphTypes.CALLGRAPH:
-            self._create_return_data(
-                self.call_graph_view,
-                return_data,
-                graph_type)
+            self._create_return_data(self.call_graph_view, return_data,
+                                     graph_type)
         if graph_type == GraphTypes.INSTANCE:
-            self._create_return_data(
-                self.instance_graph_view,
-                return_data,
-                graph_type)
+            self._create_return_data(self.instance_graph_view, return_data,
+                                     graph_type)
 
         if graph_type == GraphTypes.SVFG:
-            self._create_return_data(
-                self.svfg_view,
-                return_data,
-                graph_type)
+            self._create_return_data(self.svfg_view, return_data, graph_type)
 
         return return_data
 
     @Slot(GraphTypes, set, list, bool, StepMode)
-    def layout(self, graph_type, entry_points, svfg_extension_points=[], layout_only=False, mode=StepMode.DEFAULT):
+    def layout(self,
+               graph_type,
+               entry_points,
+               svfg_extension_points=[],
+               layout_only=False,
+               mode=StepMode.DEFAULT):
         """
             Build the internal graph views.
         """
@@ -383,10 +381,9 @@ class Layouter(QObject):
         try:
             # Prevent multiple layout calls.
             if self._running:
-              return
+                return
 
             self._running = True
-
 
             if not GraphTypes.__contains__(graph_type):
                 print(f"The subgraph {graph_type} does not exist")

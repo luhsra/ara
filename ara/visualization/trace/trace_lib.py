@@ -16,6 +16,7 @@ class Color(Enum):
     GREEN = "3"
     ORANGE = "4"
 
+
 @dataclass(frozen=True)
 class TraceElementSetting:
     is_vertex: bool

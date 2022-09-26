@@ -64,18 +64,23 @@ class GuiWindow(QMainWindow):
         self.dw_instance_graph = QDockWidget("Instance View", self)
         self.dw_svfg = QDockWidget("SVFG View", self)
 
-        self.dw_cfg.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
-        self.dw_callgraph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
-        self.dw_instance_graph.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
-        self.dw_svfg.setFeatures(QDockWidget.DockWidgetMovable | QDockWidget.DockWidgetFloatable)
+        self.dw_cfg.setFeatures(QDockWidget.DockWidgetMovable
+                                | QDockWidget.DockWidgetFloatable)
+        self.dw_callgraph.setFeatures(QDockWidget.DockWidgetMovable
+                                      | QDockWidget.DockWidgetFloatable)
+        self.dw_instance_graph.setFeatures(QDockWidget.DockWidgetMovable
+                                           | QDockWidget.DockWidgetFloatable)
+        self.dw_svfg.setFeatures(QDockWidget.DockWidgetMovable
+                                 | QDockWidget.DockWidgetFloatable)
 
         self.dw_step_queue = loader.load(RESOURCE_PATH.get() + "step_queue.ui")
-        self.dw_function_search = loader.load(RESOURCE_PATH.get() + "function_list_search.ui")
+        self.dw_function_search = loader.load(RESOURCE_PATH.get() +
+                                              "function_list_search.ui")
 
         self.proxies = []
 
         center_widget = QWidget()
-        center_widget.setMaximumSize(1,1)
+        center_widget.setMaximumSize(1, 1)
         self.setCentralWidget(center_widget)
         self.init()
         self.setup_signals()
@@ -98,12 +103,15 @@ class GuiWindow(QMainWindow):
 
         self.sig_exec_trace_step.connect(trace_handler.INSTANCE.step)
 
-        ara_signal.SIGNAL_MANAGER.sig_init_done.connect(self.handle_button_activation)
-        ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.connect(ara_manager.INSTANCE.step)
+        ara_signal.SIGNAL_MANAGER.sig_init_done.connect(
+            self.handle_button_activation)
+        ara_signal.SIGNAL_MANAGER.sig_step_dependencies_discovered.connect(
+            ara_manager.INSTANCE.step)
 
         ara_signal.SIGNAL_MANAGER.sig_step_done.connect(self.handle_step_done)
 
-        ara_signal.SIGNAL_MANAGER.sig_execute_chain.connect(self.update_step_list)
+        ara_signal.SIGNAL_MANAGER.sig_execute_chain.connect(
+            self.update_step_list)
 
         self.sig_change_mode.connect(self.dw_cfg.widget().set_mode)
         self.sig_change_mode.connect(self.dw_callgraph.widget().set_mode)
@@ -111,20 +119,27 @@ class GuiWindow(QMainWindow):
         self.sig_change_mode.connect(self.dw_svfg.widget().set_mode)
 
         self.sig_reset_trace_handler.connect(trace_handler.INSTANCE.reset)
-        self.sig_reset_trace_handler.connect(self.dw_callgraph.widget().expansion_points_reset)
+        self.sig_reset_trace_handler.connect(
+            self.dw_callgraph.widget().expansion_points_reset)
 
         ##
 
-        self.dw_function_search.listSearchBar.textChanged.connect(self.update_function_list)
-        self.dw_function_search.listSearch.itemSelectionChanged.connect(self.update_callgraph_selection)
+        self.dw_function_search.listSearchBar.textChanged.connect(
+            self.update_function_list)
+        self.dw_function_search.listSearch.itemSelectionChanged.connect(
+            self.update_callgraph_selection)
 
-        self.sig_expansion_point_selected.connect(graph_views.CONTEXT.set_expansion_points)
+        self.sig_expansion_point_selected.connect(
+            graph_views.CONTEXT.set_expansion_points)
 
-        graph_views.CONTEXT.sig_expansion_point_updated.connect(self.refresh_function_list_selection)
+        graph_views.CONTEXT.sig_expansion_point_updated.connect(
+            self.refresh_function_list_selection)
 
-        self.dw_function_search.listSearch.itemDoubleClicked.connect(self.add_entry_point)
+        self.dw_function_search.listSearch.itemDoubleClicked.connect(
+            self.add_entry_point)
 
-        self.sig_entry_point_selected.connect(graph_views.CONTEXT.switch_entry_point)
+        self.sig_entry_point_selected.connect(
+            graph_views.CONTEXT.switch_entry_point)
 
     def init(self):
         # Graph Views
@@ -180,10 +195,13 @@ class GuiWindow(QMainWindow):
 
         if self._send_updates:
 
-            current_extension_points = graph_views.CONTEXT.get_expansion_points()
+            current_extension_points = graph_views.CONTEXT.get_expansion_points(
+            )
 
             for point in current_extension_points:
-                if len(self.dw_function_search.listSearch.findItems(point, Qt.MatchFlag.MatchExactly)) == 0:
+                if len(
+                        self.dw_function_search.listSearch.findItems(
+                            point, Qt.MatchFlag.MatchExactly)) == 0:
                     items.add(point)
 
             for item in self.dw_function_search.listSearch.selectedItems():
@@ -198,11 +216,14 @@ class GuiWindow(QMainWindow):
 
         self._send_updates = False
 
-        for item in self.dw_function_search.listSearch.findItems("", Qt.MatchFlag.MatchContains):
+        for item in self.dw_function_search.listSearch.findItems(
+                "", Qt.MatchFlag.MatchContains):
             if item.text() in graph_views.CONTEXT.get_expansion_points():
-                self.dw_function_search.listSearch.setCurrentItem(item, QItemSelectionModel.Select)
+                self.dw_function_search.listSearch.setCurrentItem(
+                    item, QItemSelectionModel.Select)
             else:
-                self.dw_function_search.listSearch.setCurrentItem(item, QItemSelectionModel.Deselect)
+                self.dw_function_search.listSearch.setCurrentItem(
+                    item, QItemSelectionModel.Deselect)
 
         self._send_updates = True
 
@@ -248,7 +269,7 @@ class GuiWindow(QMainWindow):
         if self.mode == StepMode.TRACE:
             source_graph = trace_handler.INSTANCE.context.callgraph
 
-        function_list:QListWidget = self.dw_function_search.listSearch
+        function_list: QListWidget = self.dw_function_search.listSearch
 
         function_list.clear()
 
@@ -267,7 +288,6 @@ class GuiWindow(QMainWindow):
         self.refresh_function_list_selection("")
 
         self._send_updates = True
-
 
     @Slot()
     def enable_start_button(self):

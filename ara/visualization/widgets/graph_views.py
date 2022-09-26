@@ -59,28 +59,30 @@ class GraphViewContext(QObject):
         super().__init__()
 
     def setup_signals(self):
-        trace_handler.INSTANCE.sig_extension_points_discovered.connect(self.register_expansion_points)
-        trace_handler.INSTANCE.sig_extension_points_reset.connect(self.reset_soft_expansion_points)
+        trace_handler.INSTANCE.sig_extension_points_discovered.connect(
+            self.register_expansion_points)
+        trace_handler.INSTANCE.sig_extension_points_reset.connect(
+            self.reset_soft_expansion_points)
 
     @Slot(set, str)
-    def register_expansion_points(self, points:set, source):
+    def register_expansion_points(self, points: set, source):
         self.callgraph_soft_expansion_points.update(points)
-        self.sig_expansion_point_updated.emit( source)
+        self.sig_expansion_point_updated.emit(source)
 
     @Slot(set, str)
     def set_expansion_points(self, points, source):
         self.callgraph_expansion_points = points
-        self.sig_expansion_point_updated.emit( source)
+        self.sig_expansion_point_updated.emit(source)
 
     @Slot(str, str)
     def register_expansion_point(self, point, source):
         self.callgraph_expansion_points.add(point)
-        self.sig_expansion_point_updated.emit( source)
+        self.sig_expansion_point_updated.emit(source)
 
     @Slot(str, str)
     def remove_expansion_point(self, point, source):
         self.callgraph_expansion_points.remove(point)
-        self.sig_expansion_point_updated.emit( source)
+        self.sig_expansion_point_updated.emit(source)
 
     @Slot(str, str)
     def register_entry_point(self, point, source):
@@ -185,9 +187,14 @@ class BaseGraphView(QGraphicsView):
             return
 
         if self.graph_type == GraphTypes.CALLGRAPH:
-            self.sig_layout_start.emit(self.graph_type, CONTEXT.get_expansion_points(), CONTEXT.svfg_expansion_points, False, self.mode)
+            self.sig_layout_start.emit(self.graph_type,
+                                       CONTEXT.get_expansion_points(),
+                                       CONTEXT.svfg_expansion_points, False,
+                                       self.mode)
         else:
-            self.sig_layout_start.emit(self.graph_type, CONTEXT.entry_points, CONTEXT.svfg_expansion_points, False, self.mode)
+            self.sig_layout_start.emit(self.graph_type, CONTEXT.entry_points,
+                                       CONTEXT.svfg_expansion_points, False,
+                                       self.mode)
 
     @Slot()
     def update_view(self):
@@ -240,9 +247,12 @@ class BaseGraphView(QGraphicsView):
 
     def handle_node_add(self, node):
         if isinstance(node, self.node_type):
-            trace_setting = trace_lib.TraceElementSetting(True, self.graph_type, int(node.id))
-            if trace_handler.INSTANCE.gui_element_settings.__contains__(trace_setting):
-                trace_handler.INSTANCE.gui_element_settings[trace_setting].apply(node)
+            trace_setting = trace_lib.TraceElementSetting(
+                True, self.graph_type, int(node.id))
+            if trace_handler.INSTANCE.gui_element_settings.__contains__(
+                    trace_setting):
+                trace_handler.INSTANCE.gui_element_settings[
+                    trace_setting].apply(node)
 
     def handle_edge_add(self, edge):
         pass
@@ -274,11 +284,15 @@ class CallGraphView(BaseGraphView):
             node.sig_adjacency_selected.connect(self.adjacency_expansion)
             node.sig_expansion_unselected.connect(self.expansion_retraction)
 
-            trace_setting = trace_lib.TraceElementSetting(True, GraphTypes.CALLGRAPH, node.id)
-            if trace_handler.INSTANCE.gui_element_settings.__contains__(trace_setting):
-                trace_handler.INSTANCE.gui_element_settings[trace_setting].apply(node)
+            trace_setting = trace_lib.TraceElementSetting(
+                True, GraphTypes.CALLGRAPH, node.id)
+            if trace_handler.INSTANCE.gui_element_settings.__contains__(
+                    trace_setting):
+                trace_handler.INSTANCE.gui_element_settings[
+                    trace_setting].apply(node)
 
-            if CONTEXT.get_expansion_points().__contains__(node.data.attr["label"]):
+            if CONTEXT.get_expansion_points().__contains__(
+                    node.data.attr["label"]):
                 node.widget.setProperty("expansion", "true")
                 node.expansion = True
                 node.reload_stylesheet()
@@ -297,16 +311,21 @@ class CallGraphView(BaseGraphView):
 
     def setup_signals(self):
         super().setup_signals()
-        trace_handler.INSTANCE.sig_extension_points_discovered.connect(self.expansion_points_discovered)
-        trace_handler.INSTANCE.sig_extension_points_reset.connect(self.expansion_points_reset)
+        trace_handler.INSTANCE.sig_extension_points_discovered.connect(
+            self.expansion_points_discovered)
+        trace_handler.INSTANCE.sig_extension_points_reset.connect(
+            self.expansion_points_reset)
 
         self.sig_entry_point_selected.connect(CONTEXT.register_entry_point)
         self.sig_entry_point_deselected.connect(CONTEXT.remove_entry_point)
 
-        self.sig_expansion_point_selected.connect(CONTEXT.register_expansion_point)
-        self.sig_expansion_points_deselected.connect(CONTEXT.remove_expansion_point)
+        self.sig_expansion_point_selected.connect(
+            CONTEXT.register_expansion_point)
+        self.sig_expansion_points_deselected.connect(
+            CONTEXT.remove_expansion_point)
 
-        CONTEXT.sig_expansion_point_updated.connect(self.handle_expansion_points_update)
+        CONTEXT.sig_expansion_point_updated.connect(
+            self.handle_expansion_points_update)
 
     @Slot(str)
     def handle_expansion_points_update(self, source):

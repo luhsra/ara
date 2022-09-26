@@ -9,9 +9,12 @@ import signal
 
 application = QApplication([])
 
+
 # stop ARA on CTRL+C
 def kill_ara(signal, _):
-	application.quit()
+    application.quit()
+
+
 signal.signal(signal.SIGINT, kill_ara)
 signal.signal(signal.SIGTERM, kill_ara)
 

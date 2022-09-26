@@ -20,7 +20,7 @@ class TraceHandler(QObject):
     def __init__(self):
         super().__init__()
 
-        self.trace:AlgorithmTrace = None
+        self.trace: AlgorithmTrace = None
 
         self.context = None
 
@@ -30,12 +30,8 @@ class TraceHandler(QObject):
     def init(self):
         try:
             self.trace = ara_manager.INSTANCE.get_trace()
-            self.context = TraceContext(
-                self.trace.callgraph,
-                self.trace.cfg,
-                self.trace.instances,
-                self.trace.svfg
-            )
+            self.context = TraceContext(self.trace.callgraph, self.trace.cfg,
+                                        self.trace.instances, self.trace.svfg)
             self.trace_amount = self.trace.get_amount_of_traces()
             self.trace_id = 0
 
@@ -44,7 +40,9 @@ class TraceHandler(QObject):
             print(traceback.format_exc())
 
     def _print_trace_log(self, element: LogTraceElement):
-        print(f"--- Display Trace {self.trace_id + 1} of {self.trace_amount} ---")
+        print(
+            f"--- Display Trace {self.trace_id + 1} of {self.trace_amount} ---"
+        )
         # print log line of trace to terminal:
         if element.log_line != None:
             print(element.log_line, end='')
@@ -59,10 +57,8 @@ class TraceHandler(QObject):
             self._print_trace_log(current_element)
             current_element = current_element.trace_elem
             if current_element != None:
-                if isinstance(current_element, BaseTraceElement):
-                    elements = [current_element]
-                else:
-                    elements = current_element
+                elements = [current_element] if isinstance(
+                    current_element, BaseTraceElement) else current_element
                 for element in elements:
                     if isinstance(element, ResetChangesTraceElement):
                         self.reset()
@@ -71,15 +67,18 @@ class TraceHandler(QObject):
                     else:
                         element.apply_changes(self.context)
 
-                        self.gui_element_settings.update(element.gui_element_settings)
-                        self.sig_extension_points_discovered.emit(element.extension_points)
+                        self.gui_element_settings.update(
+                            element.gui_element_settings)
+                        self.sig_extension_points_discovered.emit(
+                            element.extension_points)
                         CONTEXT.entry_points.update(element.entry_points)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
 
         self.trace_id += 1
-        ara_signal.SIGNAL_MANAGER.sig_step_done.emit(self.trace.has_next_element(), False)
+        ara_signal.SIGNAL_MANAGER.sig_step_done.emit(
+            self.trace.has_next_element(), False)
 
     def reset(self):
         self.gui_element_settings.clear()

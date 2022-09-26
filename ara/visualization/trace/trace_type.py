@@ -16,7 +16,9 @@ class AlgorithmTrace:
         self.instances = instances
         self.svfg = svfg
 
-    def add_element(self, element:List[BaseTraceElement], log_message:str=None):
+    def add_element(self,
+                    element: List[BaseTraceElement],
+                    log_message: str = None):
         """Adds a new trace.
         
         element can be a single trace element or multiple trace elements in a list
@@ -32,4 +34,3 @@ class AlgorithmTrace:
 
     def has_next_element(self) -> bool:
         return len(self.trace_elements) > 0
-
