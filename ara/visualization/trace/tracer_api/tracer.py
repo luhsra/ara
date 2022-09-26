@@ -1,6 +1,6 @@
 
 from ara.visualization.trace import trace_lib
-from graph_tool.libgraph_tool_core import Vertex
+from graph_tool.libgraph_tool_core import Vertex, Edge
 from datetime import datetime
 from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetPartialChangesTraceElement
 from dataclasses import dataclass
@@ -27,8 +27,21 @@ class GraphNode:
     def __str__(self):
         return f"node {self.node} in {self.graph.value}"
 
-class Path:
-    pass
+@dataclass
+class GraphPath:
+    edges: List[Edge]
+    graph: GraphTypes
+    def __str__(self):
+        output_str = "path ["
+        first_run = True
+        for edge in self.edges:
+            if not first_run:
+                output_str += ", "
+            output_str += str(edge)
+            first_run = False
+        output_str += f"] in {self.graph.value}"
+        return output_str
+
 
 class Tracer:
     def __init__(self, trace_name: str, callgraph, cfg, instances, svfg, low_level_trace:AlgorithmTrace=None):
@@ -43,10 +56,10 @@ class Tracer:
         print(line, end='')
         return line
 
-    def _format_node_output(self, ent: Entity, nodes: List[GraphNode], msg: str) -> str:
+    def _format_list_output(self, ent: Entity, objects: List[GraphNode], msg: str) -> str:
         output_str = ""
-        for node in nodes:
-            output_str += self._format_trace_output(ent, msg + str(node))
+        for obj in objects:
+            output_str += self._format_trace_output(ent, msg + str(obj))
         return output_str
 
     def _highlight_nodes(self, nodes: List[GraphNode], color=trace_lib.Color.RED) -> List[BaseTraceElement]:
@@ -87,10 +100,22 @@ class Tracer:
             nodes = [nodes]
         actions = self._highlight_nodes(nodes, ent.color)
         self._handle_entity_reset(ent, actions)
-        self.low_level_trace.add_element(actions, self._format_node_output(ent, nodes, "is on "))
+        self.low_level_trace.add_element(actions, self._format_list_output(ent, nodes, "is on "))
 
-    def entity_is_looking_at(self, ent: Entity, paths: List[Path]):
-        pass
+    def entity_is_looking_at(self, ent: Entity, paths: List[GraphPath]):
+        if isinstance(paths, GraphPath):
+            paths = [paths]
+        self.low_level_trace.add_element(None, self._format_list_output(ent, paths, "is looking at "))
+
+    def go_to_node(self, ent: Entity, path: GraphPath):
+        self.low_level_trace.add_element(None, self._format_trace_output(ent, f"goes to node {path[len(path) - 1].target()} via path {path}"))
+
+    def duplicate(self, old_entity: Entity, new_name: str) -> Entity:
+        # just do a new entity there is no connection to the old entity that can be copied in some way
+        return self.get_entity(new_name if new_name != None else f"{old_entity.name}_clon")
+
+    def change_status(self, ent: Entity, status: str):
+        self.low_level_trace.add_element(None, self._format_trace_output(ent, f"changes status to '{status}'"))
 
     def get_subtrace(self, name: str):
         return Tracer(self.trace_name + ":" + name, None, None, None, None, low_level_trace=self.low_level_trace)
