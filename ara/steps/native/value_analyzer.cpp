@@ -857,7 +857,7 @@ namespace ara::step {
 	template <class SVFG>
 	FoundValue<SVFG> ValueAnalyzerImpl<SVFG>::do_backward_value_search(const Node<SVFG> start, graph::CallPath callpath,
 	                                                                   graph::SigType hint) {
-		Bookkeeping caretaker(*this, this->callgraph, this->svfg, g, svf_objects.s_callgraph, hint);
+		Bookkeeping caretaker(*this, this->callgraph, this->svfg, g, trace, svf_objects.s_callgraph, hint);
 		std::shared_ptr<Manager<SVFG>> root = std::make_shared<Manager<SVFG>>(start, callpath, caretaker);
 		caretaker.add_traverser(root);
 
@@ -1114,7 +1114,7 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, graph, trace, logger, svfg, svf_objects};
 			    res = py_repack(impl.get_memory_value(intermediate_value, callgraph));
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
@@ -1168,7 +1168,7 @@ namespace ara::step {
 		std::vector<std::pair<const llvm::Value*, graph::CallPath>> values;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, graph, trace, logger, svfg, svf_objects};
 			    values = impl.get_assignments(value, gep, callpath);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
@@ -1201,7 +1201,7 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, graph, trace, logger, svfg, svf_objects};
 			    res = py_repack(impl.get_argument_value(safe_deref(ll_callsite), callpath, argument_nr,
 			                                            static_cast<graph::SigType>(hint), type));
 		    },
@@ -1218,7 +1218,7 @@ namespace ara::step {
 		PyObject* res;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, graph, trace, logger, svfg, svf_objects};
 			    res = get_obj_from_value(
 			        safe_deref(const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath))));
 		    },
@@ -1231,7 +1231,7 @@ namespace ara::step {
 	                                            const graph::CallPath& callpath) {
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, graph, trace, logger, svfg, svf_objects};
 			    impl.assign_system_object(value, obj_index, offsets, callpath);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
@@ -1246,7 +1246,7 @@ namespace ara::step {
 		bool ret;
 		graph_tool::gt_dispatch<>()(
 		    [&](auto& g) {
-			    ValueAnalyzerImpl impl{g, graph, logger, svfg, svf_objects};
+			    ValueAnalyzerImpl impl{g, graph, trace, logger, svfg, svf_objects};
 			    ret = impl.has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());

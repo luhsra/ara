@@ -53,7 +53,7 @@ cdef class ValueAnalyzer:
     def get_dependencies():
         return ["CallGraph"]
 
-    def __cinit__(self, graph):
+    def __cinit__(self, graph, trace):
         self._graph = graph
         self._log = get_logger("ValueAnalyzer")
         self._sys_objects = self._graph._va_system_objects
@@ -61,7 +61,7 @@ cdef class ValueAnalyzer:
         cdef graph_data.PyGraphData g_data = graph._graph_data
         cdef cgraph.Graph gwrap = cgraph.Graph(graph, g_data._c_data)
 
-        self._c_va = CVA.get(move(gwrap), self._log)
+        self._c_va = CVA.get(move(gwrap), trace.get_subtrace("ValueAnalyzer") if trace is not None else None, self._log)
 
     def _check_callsite(self, callsite):
         assert(self._graph.cfg.vp.type[callsite] in [ABBType.syscall,
