@@ -123,9 +123,9 @@ class ARAManager(QObject):
                             metavar="FILE",
                             help="File with manual corrections")
         parser.add_argument(
-            '--trace_algorithm',
+            '--no_trace_algorithm',
             action='store_true',
-            default=True,
+            default=False,
             help=
             "Create a trace of supported algorithms for the gui to visualize")
 
@@ -185,8 +185,9 @@ class ARAManager(QObject):
                 "steps", None):
             self.args.step = ['SIA']
 
-        self.init_execution(vars(self.args), self.extra_settings,
-                            self.args.step)
+        arg_dict = vars(self.args)
+        arg_dict['trace_algorithm'] = not self.args.no_trace_algorithm
+        self.init_execution(arg_dict, self.extra_settings, self.args.step)
         ara_signal.SIGNAL_MANAGER.sig_init_done.emit()
         ara_signal.SIGNAL_MANAGER.sig_execute_chain.emit(
             self.s_manager.get_execution_chain())
