@@ -7,11 +7,11 @@ from carguments cimport Argument as CArgument, Arguments as CArguments, CallPath
 from os cimport SysCall as CSysCall
 from common.cy_helper cimport to_string
 from cgraph cimport CallGraph, SigType as CSigType
-from cy_helper cimport to_sigtype, safe_get_value, insert_in_map
+from cy_helper cimport to_sigtype, safe_get_value
 
 from libcpp.cast cimport reinterpret_cast
 from libcpp.memory cimport unique_ptr, shared_ptr
-from libcpp.map cimport map as cppmap
+from libcpp.set cimport set as cset
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
@@ -274,12 +274,16 @@ cdef public string py_os_get_name(object os):
     return os.get_name().encode('UTF-8')
 
 
-cdef public cppmap[const string, CSysCall] py_os_detected_syscalls(object os):
-    cdef cppmap[const string, CSysCall] syscalls
-    for syscall_name, syscall in os.detected_syscalls().items():
-        insert_in_map(syscalls, syscall_name.encode('UTF-8'),
-                      CSysCall(syscall, os))
+cdef public cset[string] py_os_get_syscall_names(object os):
+    cdef cset[string] syscalls
+    for syscall_name in os.syscalls:
+        syscalls.insert(syscall_name.encode('UTF-8'))
     return syscalls
+
+
+cdef public object py_os_get_syscall(object os, string name):
+    return os.syscalls[name.decode('UTF-8')]
+
 
 cdef public object py_get_callpath(const CCallPath& callpath):
     cp = CallPath()

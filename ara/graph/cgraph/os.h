@@ -7,7 +7,7 @@
 
 #include <Python.h>
 #include <boost/python.hpp>
-#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -36,6 +36,8 @@ namespace ara::os {
 		explicit OS(PyObject* obj);
 		explicit OS(boost::python::object obj) : obj(obj){};
 		std::string get_name() const;
-		std::map<const std::string, SysCall> detected_syscalls() const;
+
+		std::set<std::string> get_syscall_names() const;
+		SysCall get_syscall(const std::string& name) const;
 	};
 } // namespace ara::os
