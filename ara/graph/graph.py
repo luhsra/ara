@@ -413,12 +413,12 @@ class MSTGraph(graph_tool.Graph):
         # vertex properties
         self.vertex_properties["state"] = self.new_vp("object")
         self.vertex_properties["type"] = self.new_vp("int")  # StateType
-        self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
+        self.vertex_properties["cpu_id"] = self.new_vp("int")  # for StateType.metastate and StateType.state
         self.vertex_properties["bcet"] = self.new_vp("int64_t", val=-1)
         self.vertex_properties["wcet"] = self.new_vp("int64_t", val=-1)
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
-        self.edge_properties["irq"] = self.new_ep("int", val=-1)
+        self.edge_properties["irq"] = self.new_ep("int", val=-1)  # IRQ that leads to that transition
         self.edge_properties["bcet"] = self.new_ep("int64_t", val=-1)
         self.edge_properties["wcet"] = self.new_ep("int64_t", val=-1)
         # dominator_tree has 0 as default value. We are creating a fake node 0

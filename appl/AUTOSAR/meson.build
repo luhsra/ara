@@ -103,9 +103,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'l',                     'oil': 'system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'm',                     'oil': 'system_m.json'},
   {'core': 'multicore',  'path': 'locks' / '3cores',  'name': 'n',                     'oil': 'system_m.json'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-chain',   'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-a-start5',  'oil': 'EXTRACT',              'mtrace': 'EXTRACT', 'locks': 'EXTRACT', 'timing': 'BB', 'ttrace': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-b',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-c',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
   {'core': 'multicore',  'path': 'locks' / '6cores',  'name': 'identity-d',         'oil': 'identity-system.json', 'mtrace': 'EXTRACT', 'locks': 'EXTRACT'},
@@ -125,13 +125,13 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'paper',              'name': 'running_long11',        'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'deadlock',              'oil': 'system_running.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'deadlock.trace.json'},
   {'core': 'multicore',  'path': 'paper',              'name': 'minimal',               'oil': 'system_minimal.json', 'locks': 'EXTRACT'},
-  {'core': 'multicore',  'path': 'paper',              'name': 'event',                 'oil': 'system_event.json', 'locks': 'EXTRACT'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'event',                 'oil': 'system_event.json', 'locks': 'EXTRACT', 'mtrace': 'EXTRACT'},
   {'core': 'multicore',  'path': 'paper',              'name': 'timing',                'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'interrupt_as_tasks',    'oil': 'system_interrupt_as_tasks.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'interrupt_as_tasks2',   'oil': 'system_interrupt_as_tasks.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'interrupt_as_tasks3',   'oil': 'system_interrupt_as_tasks.json', 'locks': 'EXTRACT', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'paper',              'name': 'timing-semiordered',    'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
-  {'core': 'multicore',  'path': 'paper',              'name': 'timing-ordered',        'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'paper',              'name': 'timing-ordered',        'oil': 'system_timing.json', 'locks': 'EXTRACT', 'timing': 'BB', 'mtrace': 'EXTRACT', 'ttrace': 'EXTRACT'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-without-alarms', 'oil': 'copter-without-alarms_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
@@ -200,6 +200,12 @@ foreach app : autosar_apps
 
   if not app.has_key('ttrace')
     time_test =  disabler()
+  elif app['ttrace'] == 'EXTRACT'
+    time_test = custom_target(full_name + '.ttrace.json',
+                              input: sys + '.cc',
+                              output : full_name + '.ttrace.json',
+                              capture: true,
+                              command : [sed, '-n', '/if TIMING_JSON/,/TIMING_JSON/{/TIMING_JSON/d;p}', '@INPUT@'])
   else
     time_test = files(app['core'] / app['path'] / app['ttrace'])
   endif
@@ -208,12 +214,6 @@ foreach app : autosar_apps
   # timings for multisse with lock elision
   if not app.has_key('timing')
     sys_timings = disabler()
-  elif app['timing'] == 'EXTRACT'
-    sys_timings = custom_target(full_name + '.timing.json',
-                                input: sys + '.cc',
-                                output : full_name + '.timing.json',
-                                capture: true,
-                                command : [sed, '-n', '/if TIMING_JSON/,/TIMING_JSON/{/TIMING_JSON/d;p}', '@INPUT@'])
   elif app['timing'] == 'BB'
     sys_timings = 'BB'
   else

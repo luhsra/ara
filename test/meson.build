@@ -22,6 +22,14 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
+    test('equations',
+        py3_inst,
+        args: [files('equations.py')],
+        env: [python_path],
+        depends: ara_py,
+        suite: ['analysis', 'multisse']
+    )
+
     test('function-pointer',
         py3_inst,
         args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
