@@ -17,7 +17,7 @@ namespace ara::step {
 		static std::string get_description();
 		static Step::OptionVec get_local_options() { return {}; }
 
-		virtual std::vector<std::string> get_single_dependencies() override { return {"IRReader"}; }
+		virtual std::vector<std::string> get_single_dependencies() override { return {"RemoveSysfuncBody"}; }
 
 		virtual void run() override;
 	};

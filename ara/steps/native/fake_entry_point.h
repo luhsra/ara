@@ -15,7 +15,7 @@ namespace ara::step {
 	  public:
 		static std::string get_name() { return "FakeEntryPoint"; }
 		static std::string get_description();
-		virtual std::vector<std::string> get_single_dependencies() override { return {"IRReader"}; }
+		virtual std::vector<std::string> get_single_dependencies() override { return {"RemoveSysfuncBody"}; }
 
 		virtual void run() override;
 	};

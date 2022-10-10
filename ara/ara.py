@@ -74,15 +74,6 @@ def main():
     parser.add_argument('--os', help="the OS of the given application",
                         choices=get_os_model_names(), required=True)
 
-    # The following arguments set an option for a specific/multiple step(s).
-    # If you do not want them to be a global switch, remove them here.
-
-    # Option for IRReader
-    parser.add_argument('--no-sysfunc-body', help="Runs the RemoveSysfuncBody step after IRReader. "
-                                            "This will increase the performance of the analysis and reduces the false-positive syscall detection rate. "
-                                            "Warning: Do not use this argument for the synthesis!",
-                        action='store_true', default=False)
-
     # Option for [SysFuncts, SystemRelevantFunctions]. Always set this option for both steps otherwise this leads to undefined behaviour.
     parser.add_argument('--no-stubs', help="Do not handle system functions that are declared as stub. "
                                            "This can increase the performance of the analysis if you have many stubs in your OS model. "

@@ -17,17 +17,12 @@ namespace ara::step {
 		static const inline option::TOption<option::String> input_file_template{"input_file", "Get input file."};
 		option::TOptEntity<option::String> input_file;
 
-		static const inline option::TOption<option::Bool> no_sysfunc_body_template{
-		    "no_sysfunc_body", "Chain the step RemoveSysfuncBody if true."
-		                       "See the description of RemoveSysfuncBody."};
-		option::TOptEntity<option::Bool> no_sysfunc_body;
-
 		virtual void init_options();
 
 	  public:
 		static std::string get_name() { return "IRReader"; }
 		static std::string get_description();
-		static Step::OptionVec get_local_options() { return {input_file_template, no_sysfunc_body_template}; }
+		static Step::OptionVec get_local_options() { return {input_file_template}; }
 
 		virtual void run() override;
 	};
