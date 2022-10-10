@@ -10,7 +10,7 @@ import sys
 from .graph import Graph
 from .stepmanager import StepManager
 from .util import init_logging
-from .os import get_os_model_names, get_os_model_by_name
+from .os import get_os_names, get_os
 
 from .steplisting import print_avail_steps
 
@@ -72,7 +72,7 @@ def main():
                         help="File with manual corrections")
 
     parser.add_argument('--os', help="the OS of the given application",
-                        choices=get_os_model_names(), required=True)
+                        choices=get_os_names(), required=True)
 
     # option for [sysfuncts, systemrelevantfunctions]:
     parser.add_argument('--with-stubs', help="analyze system functions that "
@@ -125,7 +125,7 @@ def main():
         else:
             extra_settings["steps"].append("ManualCorrections")
 
-    g.os = get_os_model_by_name(args.os)
+    g.os = get_os(args.os)
 
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']

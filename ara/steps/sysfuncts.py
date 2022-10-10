@@ -1,7 +1,5 @@
 """Container for Sysfuncts."""
 
-from ara.os import get_oses
-
 from .step import Step
 from .option import Option, Bool
 
@@ -37,8 +35,6 @@ class SysFuncts(Step):
         return False
 
     def run(self):
-        self.oses = get_oses()
-
         for nod in self._graph.functs.vertices():
             call = self._graph.functs.vp.name[nod]
             self._graph.functs.vp.sysfunc[nod] = self.is_syscall(call)

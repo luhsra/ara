@@ -5,7 +5,7 @@ import sys
 import os
 import tempfile
 
-from ara.os import get_os_model_by_name
+from ara.os import get_os
 from dataclasses import dataclass
 
 
@@ -133,7 +133,7 @@ def init_test(steps=None, extra_config=None, logger_name=None,
     if not extra_config:
         extra_config = {}
     g = Graph()
-    g.os = get_os_model_by_name(os_name)
+    g.os = get_os(os_name)
 
     json_file = sys.argv[1]
     i_file = sys.argv[2]

@@ -10,8 +10,9 @@ from ..init_test import get_config
 from ara.util import init_logging
 from ara.graph import Graph
 from ara.stepmanager import StepManager
-from ara.steps.step import Step, provide_test_steps
+from ara.steps.step import provide_test_steps
 from ara.steps import provide_steps
+from ara.os import get_os
 
 
 
@@ -27,6 +28,7 @@ def main():
     """Test for correct splitting of basic blocks."""
     init_logging(level=logging.DEBUG)
     g = Graph()
+    g.os = get_os("FreeRTOS")
     assert len(sys.argv) == 3
     test_step = sys.argv[1]
     i_file = sys.argv[2]

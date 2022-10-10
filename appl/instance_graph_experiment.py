@@ -27,7 +27,7 @@ fake_step_module()
 
 from ara.stepmanager import StepManager
 from ara.graph.graph import Graph
-from ara.os import get_os_model_by_name, get_os_model_names
+from ara.os import get_os, get_os_names
 
 MISSING = '/empty'
 
@@ -138,10 +138,10 @@ class InstanceGraphExperiment(Experiment):
 
         g = Graph()
         if self._is_arg_set(self.inputs.os):
-            if self.inputs.os.value not in get_os_model_names():
+            if self.inputs.os.value not in get_os_names():
                 self.logger.error(f"Unknown os model {self.inputs.os.value}!")
                 raise RuntimeError("Unknown os model {self.inputs.os.value}!")
-            g.os = get_os_model_by_name(self.inputs.os.value)
+            g.os = get_os(self.inputs.os.value)
         s_manager = StepManager(g)
         s_manager.execute(conf, step_settings, None)
         if self.inputs.is_ina.value:

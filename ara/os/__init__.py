@@ -4,7 +4,7 @@ from typing import List
 _os_models: dict = None  # Dictionary with names -> OS-model-object
 
 
-def init_os_package():
+def _init_os_package():
     """Initializes this package.
 
     It is not required to call this function.
@@ -15,7 +15,6 @@ def init_os_package():
     """
     global _os_models
     if _os_models is None:
-
         # Register your new OS Model here:
         from .freertos import FreeRTOS
         from .osek import OSEK
@@ -24,24 +23,18 @@ def init_os_package():
         from .posix.posix import POSIX
 
         _os_models = {
-            model.__name__: model
+            model.get_name(): model
             for model in [FreeRTOS, OSEK, AUTOSAR, ZEPHYR, POSIX]
         }  # And here
 
 
-def get_os_model_names() -> List[str]:
+def get_os_names() -> List[str]:
     """Return all supported OSes as string."""
-    init_os_package()
+    _init_os_package()
     return list(_os_models.keys())
 
 
-def get_os_model_by_name(name: str):
-    """Return the os called name."""
-    init_os_package()
+def get_os(name: str):
+    """Return the OS with name."""
+    _init_os_package()
     return _os_models[name]
-
-
-def get_oses() -> List:
-    """Return all supported OSes as os model objects."""
-    init_os_package()
-    return _os_models.values()
