@@ -22,7 +22,7 @@ class CFGStats(Step):
         bbs = self._graph.bbs
         bb_calls = CFGView(bbs, vfilt=cfg.vp.type.fa == ABBType.call)
         abbs = self._graph.abbs
-        syscalls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.syscall)
+        syscall_graph = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.syscall)
         calls = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.call)
         computation = CFGView(abbs, vfilt=cfg.vp.type.fa == ABBType.computation)
         functs = self._graph.functs
@@ -30,7 +30,7 @@ class CFGStats(Step):
         num_bbs = bbs.num_vertices()
         num_bb_calls = bb_calls.num_vertices()
         num_abbs = abbs.num_vertices()
-        num_syscalls = syscalls.num_vertices()
+        num_syscalls = syscall_graph.num_vertices()
         num_calls = calls.num_vertices()
         num_computation = computation.num_vertices()
         num_functions = functs.num_vertices()
@@ -38,9 +38,7 @@ class CFGStats(Step):
         num_iedges = icfg.num_edges()
 
         # syscall categories
-        syscalls = {}
-        if self._graph.os is not None:
-            syscalls = self._graph.os.detected_syscalls()
+        syscalls = self._graph.os.syscalls
         model_calls = dict([(n, o.categories) for n, o in syscalls.items()])
 
         cat_counter = dict([(c, 0) for c in SyscallCategory])

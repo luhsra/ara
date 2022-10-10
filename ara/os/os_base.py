@@ -213,8 +213,15 @@ class OSState:
         return None
 
 
-class OSBase:
-    
+class OSCreator(type):
+    def __new__(cls, name, bases, dct):
+        x = super().__new__(cls, name, bases, dct)
+        x.syscalls = {f: getattr(x, f) for f in dir(x)
+                      if hasattr(getattr(x, f), 'syscall')}
+        return x
+
+
+class OSBase(metaclass=OSCreator):
     config = {}
 
     @classmethod
@@ -225,31 +232,14 @@ class OSBase:
     @classmethod
     def is_syscall(cls, function_name):
         """Return whether a function name is a system call of this OS."""
-        sys_dict = cls.detected_syscalls()
-        return sys_dict.get(function_name, None) != None
+        if hasattr(cls, function_name):
+            return hasattr(getattr(cls, function_name), "syscall")
+        return False
 
     @classmethod
     def is_interaction(cls, ty) -> bool:
         """Return whether an edge type is an interaction in this OS."""
         return True
-
-    @classmethod
-    def detected_syscalls(cls):
-        """Return a dict of detected system calls.
-
-        The key is the syscall name, the value the syscall interpretation
-        function.
-        """
-        names = [x for x in dir(cls) if hasattr(getattr(cls, x), 'syscall')]
-        syscalls = []
-        for name in names:
-            syscall = getattr(cls, name)
-            syscalls.append((name, syscall))
-            for alias in syscall.aliases:
-                syscalls.append((alias, syscall))
-        sys_dict = dict(syscalls)
-        assert len(sys_dict) == len(syscalls), "Ambigoues syscall name"
-        return sys_dict
 
     @staticmethod
     def get_special_steps():
@@ -257,7 +247,7 @@ class OSBase:
         from ara.steps import get_native_component
         ValueAnalyzer = get_native_component("ValueAnalyzer")
         return ValueAnalyzer.get_dependencies()
-    
+
     @staticmethod
     def has_dynamic_instances():
         """Does this OS create instances at runtime?"""

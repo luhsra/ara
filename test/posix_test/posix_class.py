@@ -43,7 +43,7 @@ def main():
         fail_if(not hasattr(POSIX, OS_method), f"The OS interface method {OS_method} is missing in POSIX")
 
     posix_class_dir = dir(POSIX)
-    posix_detected_syscalls = POSIX.detected_syscalls()
+    posix_detected_syscalls = POSIX.syscalls
     for syscall in syscall_set:
 
         # Check if the syscall_set contains only strings

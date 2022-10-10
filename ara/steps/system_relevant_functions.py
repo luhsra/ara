@@ -1,5 +1,5 @@
 """Container for SystemRelevantFunction."""
-from ara.graph import Graph, SyscallCategory
+from ara.graph import SyscallCategory
 from .step import Step
 
 from graph_tool import GraphView
@@ -30,7 +30,7 @@ class SystemRelevantFunctions(Step):
         every_set = {SyscallCategory.every, }
 
         # begin with syscalls, they are always entry points
-        for syscall, sys_func in self._graph.os.detected_syscalls().items():
+        for syscall, sys_func in self._graph.os.syscalls.items():
             if self.no_stubs.get() and sys_func.is_stub:
                 continue
             for sys_cat in every_set | sys_func.categories:

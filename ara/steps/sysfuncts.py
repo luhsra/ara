@@ -25,7 +25,7 @@ class SysFuncts(Step):
         This method also auto detects the OS if self._graph.os is not set.
         """
         def return_if_no_stub(os, syscall_name):
-            return (not os.detected_syscalls()[syscall_name].is_stub) if self.no_stubs.get() else True
+            return (not os.syscalls[syscall_name].is_stub) if self.no_stubs.get() else True
         
         if self._graph.os is not None:
             if self._graph.os.is_syscall(syscall_name):

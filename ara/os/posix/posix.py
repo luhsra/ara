@@ -5,7 +5,7 @@ Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"
 
 from ara.graph import SyscallCategory, CallPath
 from ara.graph.graph import Graph
-from ..os_base import OSBase, CPUList, CPU, OSState, ExecState
+from ..os_base import OSBase, OSCreator, CPUList, CPU, OSState, ExecState
 from ..os_util import SysCall, set_next_abb, syscall
 from .posix_utils import PosixEdgeType, PosixOptions, get_running_thread, logger, get_musl_weak_alias
 from .file import FileSyscalls
@@ -37,7 +37,7 @@ from .native_musl_syscalls import MuslSyscalls, is_musl_syscall_wrapper, get_mus
           and search for you desired/undetected syscall.
 
     To add a syscall stub, the only thing you need to do is adding the syscall name to the syscall_set. (See syscall_set.py)
-    
+
     If you want to implement a new instance for the Instance Graph, create a new module in this package and make sure
     that _POSIXSyscalls inherits from the new syscall class that contains the new syscall methods.
 '''
@@ -54,9 +54,10 @@ class _POSIXSyscalls(MutexSyscalls, SemaphoreSyscalls, CondSyscalls,
     """This class combines all implemented syscall methods."""
     pass
 
-class _POSIXMetaClass(type(_POSIXSyscalls)):
-    """This is the MetaClass for the POSIX class. 
-        
+
+class _POSIXMetaClass(OSCreator, type(_POSIXSyscalls)):
+    """This is the MetaClass for the POSIX class.
+
     The only purpose of this class is to provide the methods __dir__ and __getattr__ for the POSIX class.
     """
 
@@ -155,7 +156,7 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
             syscall_function = getattr(POSIX, musl_syscall)
             sig_offest = 1 # Ignore first argument
         else:
-            syscall_function = POSIX.detected_syscalls()[syscall] # Alias handling
+            syscall_function = POSIX.syscalls[syscall] # Alias handling
 
         if isinstance(categories, SyscallCategory):
             categories = set((categories,))
