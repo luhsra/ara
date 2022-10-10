@@ -30,14 +30,6 @@ class SysFuncts(Step):
         if self._graph.os is not None:
             if self._graph.os.is_syscall(syscall_name):
                 return return_if_no_stub(self._graph.os, syscall_name)
-        else:
-            # TODO: improve auto os detection to run with syscalls in multiple oses (like memcpy) 
-            for os in self.oses:
-                if os.is_syscall(syscall_name):
-                    is_stub = os.detected_syscalls()[syscall_name].is_stub
-                    if not is_stub:
-                        self._graph.os = os
-                    return (not is_stub) if self.no_stubs.get() else True
         return False
 
     def run(self):
@@ -46,8 +38,6 @@ class SysFuncts(Step):
         for nod in self._graph.functs.vertices():
             call = self._graph.functs.vp.name[nod]
             self._graph.functs.vp.sysfunc[nod] = self.is_syscall(call)
-        if self._graph.os is None:
-            self._log.warn("OS cannot be detected. Are there any syscalls?")
 
         if self.dump.get():
             self._step_manager.chain_step(

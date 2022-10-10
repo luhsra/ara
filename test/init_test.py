@@ -104,7 +104,7 @@ def init_test_logging(logger_name=None, log_level='warn'):
 
 
 def init_test(steps=None, extra_config=None, logger_name=None,
-              extra_input=None, os_name: str = None):
+              extra_input=None, os_name: str = "FreeRTOS"):
     """Common interface for test. Reads a JSON file and some ll-file from the
     command line and make them available.
 
@@ -133,8 +133,7 @@ def init_test(steps=None, extra_config=None, logger_name=None,
     if not extra_config:
         extra_config = {}
     g = Graph()
-    if os_name != None:
-        g.os = get_os_model_by_name(os_name)
+    g.os = get_os_model_by_name(os_name)
 
     json_file = sys.argv[1]
     i_file = sys.argv[2]

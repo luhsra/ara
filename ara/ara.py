@@ -71,10 +71,8 @@ def main():
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
 
-    os_model_names = get_os_model_names()
-    os_model_names.append("auto")
-    parser.add_argument('--os', help="the os of the given application",
-                        choices=os_model_names, default="auto")
+    parser.add_argument('--os', help="the OS of the given application",
+                        choices=get_os_model_names(), required=True)
 
     # The following arguments set an option for a specific/multiple step(s).
     # If you do not want them to be a global switch, remove them here.
@@ -93,19 +91,15 @@ def main():
 
     args = parser.parse_args()
 
-    del os_model_names
-
     if args.log_level != 'debug' and args.verbose:
         args.log_level = 'info'
 
-    logger = init_logging(level=args.log_level, root_name='ara', werr=args.Werr)
+    logger = init_logging(level=args.log_level, root_name='ara',
+                          werr=args.Werr)
 
     g = Graph()
     s_manager = StepManager(g)
     avail_steps = s_manager.get_steps()
-
-    if args.os and args.os != "auto":
-        g.os = get_os_model_by_name(args.os)
 
     if args.list_steps:
         print(print_avail_steps(avail_steps))
@@ -138,9 +132,8 @@ def main():
             args.step = None
         else:
             extra_settings["steps"].append("ManualCorrections")
-    
-    if args.os != "auto":
-        g.os = get_os_model_by_name(args.os)
+
+    g.os = get_os_model_by_name(args.os)
 
     if args.step is None and not extra_settings.get("steps", None):
         args.step = ['SIA']
@@ -150,11 +143,12 @@ def main():
 
     if args.ir_output:
         s_manager.execute(s_args,
-                          {'steps': [{'name':'IRWriter',
+                          {'steps': [{'name': 'IRWriter',
                                       'ir_file': args.ir_output}]}, None)
 
     logger.info("History: \n" + "\n".join([f"{se.uuid} {se.name}"
                                            for se in s_manager.get_history()]))
+
 
 if __name__ == '__main__':
     main()

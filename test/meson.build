@@ -18,6 +18,7 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [ara_py, 'empty',
                '-v',
+               '--os', 'FreeRTOS',
                '--step-settings', files('dummy_settings.json')],
         suite: ['analysis', 'preproc']
     )
