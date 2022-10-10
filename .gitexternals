@@ -34,7 +34,7 @@
 	branch = posix
 	vcs = git
 
-[external "libmicrohttpd"]
+[external "libmicrohttpd-orig"]
 	path = subprojects/libmicrohttpd_orig
 	url = https://scm.sra.uni-hannover.de/source/libmicrohttpd.git
 	branch = master
