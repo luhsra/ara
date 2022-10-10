@@ -1,20 +1,22 @@
 """Container for Sysfuncts."""
 
-from ara.graph import Graph
 from ara.os import get_oses
 
 from .step import Step
 from .option import Option, Bool
 
+
 class SysFuncts(Step):
     """Label system functions as such and detect the OS."""
 
-    no_stubs = Option(name="no_stubs",
-                      help="Do not label system functions that are declared as stub. "
-                            "This can increase the performance of the analysis if you have many stubs in your OS model. "
-                            "Set this option also for SystemRelevantFunctions or set the commandline argument --no-stubs.",
-                      ty=Bool(),
-                      default_value=False)
+    with_stubs = Option(name="with_stubs",
+                        help="Do label system functions that are declared as "
+                             "stub. This is likely to increase the runtime "
+                             "and usually only necessary for debugging.Set "
+                             "this option also for SystemRelevantFunctions"
+                             " or with --with-stubs.",
+                        ty=Bool(),
+                        default_value=False)
 
     def get_single_dependencies(self):
         return ["LLVMMap"]
@@ -25,8 +27,10 @@ class SysFuncts(Step):
         This method also auto detects the OS if self._graph.os is not set.
         """
         def return_if_no_stub(os, syscall_name):
-            return (not os.syscalls[syscall_name].is_stub) if self.no_stubs.get() else True
-        
+            if self.with_stubs.get():
+                return True
+            return not os.syscalls[syscall_name].is_stub
+
         if self._graph.os is not None:
             if self._graph.os.is_syscall(syscall_name):
                 return return_if_no_stub(self._graph.os, syscall_name)

@@ -16,9 +16,10 @@ from .os_base import ExecState
 # from ara.util import get_logger
 # logger = get_logger("OS_UTIL")
 
+
 class AutoDotInstance(ABC):
     """This class auto implements as_dot() and get_maximal_id().
-    
+
     Instances that inherit from this class must implement wanted_attrs() and dot_appearance() to describe the dot printing."""
     @property
     @abstractmethod
@@ -52,6 +53,7 @@ class AutoDotInstance(ABC):
         max_id_components.append(self.__class__.__name__)
         return '.'.join(map(str, max_id_components))
 
+
 class UnsuitableArgumentException(Exception):
     """The argument contains a value that is not suitable."""
 
@@ -72,10 +74,11 @@ class UnknownArgument:
     def __str__(self):
         return "<unknown>"
 
+
 @dataclasses.dataclass(unsafe_hash=True)
 class DefaultArgument:
     """A wrapper class to indicate that an argument for an instance is not set.
-    
+
     If value is not modified the encapsulated value is holding simply <default>.
     You can modify the default value as you wish.
     """
@@ -85,10 +88,11 @@ class DefaultArgument:
     def __str__(self):
         return str(self.value)
 
+
 @dataclasses.dataclass(unsafe_hash=True)
 class LikelyArgument:
     """Represents the likely attribute.
-    
+
     The likely attribute means:
     It is not sure that the variable has this value but it is likely.
     """
@@ -97,6 +101,7 @@ class LikelyArgument:
 
     def __str__(self):
         return f"<likely: {self.value}>"
+
 
 def is_llvm_type(ty):
     return getattr(ty, '__module__', None) == pyllco.__name__
@@ -152,7 +157,7 @@ class Argument:
     # WARNING: raw_value must come _before_ hint, since hint modifies raw_value
     raw_value: bool = False
     hint: _SigType = _SigType.value
-    optional: bool = False  # Set this to True if this argument is an optional argument for the syscall. 
+    optional: bool = False  # Set this to True if this argument is an optional argument for the syscall.
 
     def get_hint(self) -> _SigType:
         return self._hint
@@ -190,7 +195,7 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, has_time, signature, custom_control_flow, aliases, name, is_stub, signal_safe):
+    def __init__(self, func_body, categories, has_time, signature, custom_control_flow, aliases, name, signal_safe, is_stub):
         # visible attributes
         self.syscall = True
         self.categories = categories
@@ -200,8 +205,8 @@ class SysCall:
         self.has_time = has_time
         self._ccf = custom_control_flow
         self.name = name if name != None else func_body.__name__
-        self.is_stub = is_stub
         self.signal_safe = signal_safe
+        self.is_stub = is_stub
 
     def get_name(self):
         """Returns the name of the syscall function."""
@@ -233,7 +238,7 @@ class SysCall:
         state       -- the OS state
         cpu_id      -- the cpu_id that should be interpreted
         sig_offset  -- offset at which position the signature for the syscall function starts.
-                       The default value is 0. Do not set this value unless you have at least 
+                       The default value is 0. Do not set this value unless you have at least
                        one argument at the beginning that does not belong to the syscall signature.
         """
 
@@ -303,8 +308,8 @@ def syscall(*args,
             custom_control_flow: bool = False,
             aliases: Tuple[str] = None,
             name: str = None,
-            is_stub: bool = False,
-            signal_safe: bool = False):
+            signal_safe: bool = False,
+            is_stub: bool = False):
     """System call decorator. Changes a function into a system call.
 
     Returns a Syscall object. See it's documentation for more information.
@@ -315,9 +320,8 @@ def syscall(*args,
     has_time            -- The syscall handling needs time (e.g. taking a spinlock)
     custom_control_flow -- Does this system call alter the control flow?
     aliases             -- Alias names of the system call.
-    name                -- The name of the syscall. 
+    name                -- The name of the syscall.
                            If not set, the name of the syscalls equals the name of the decorated function.
-    is_stub             -- Set this to True if the syscall is not implemented and only a Stub.
     signal_safe         -- Is it safe to call the syscall in a signal handler? (default: False)
     """
     if categories is None:
@@ -333,19 +337,22 @@ def syscall(*args,
     outer_aliases = aliases
     outer_ccf = custom_control_flow
     outer_name = name
-    outer_is_stub = is_stub
     outer_signal_safe = signal_safe
+    outer_is_stub = is_stub
 
     def wrap(func, categories=outer_categories, has_time=outer_has_time, signature=outer_signature,
-             custom_control_flow=outer_ccf, aliases=outer_aliases, name=outer_name, 
-             is_stub=outer_is_stub, signal_safe=outer_signal_safe):
-        wrapper = SysCall(func, categories, has_time, signature, custom_control_flow, aliases, name, is_stub, signal_safe)
+             custom_control_flow=outer_ccf, aliases=outer_aliases,
+             name=outer_name, signal_safe=outer_signal_safe,
+             is_stub=outer_is_stub):
+        wrapper = SysCall(func, categories, signature, custom_control_flow,
+                          aliases, name, signal_safe, is_stub)
         return wrapper
 
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, has_time, signature, custom_control_flow, aliases, name, is_stub, signal_safe)
+        func = wrap(args[0], categories, has_time, signature, custom_control_flow,
+                    aliases, name, signal_safe, is_stub=True)
         return func
 
     # decorator was called with keyword arguments, the returned function is

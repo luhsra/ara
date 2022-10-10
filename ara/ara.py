@@ -74,10 +74,11 @@ def main():
     parser.add_argument('--os', help="the OS of the given application",
                         choices=get_os_model_names(), required=True)
 
-    # Option for [SysFuncts, SystemRelevantFunctions]. Always set this option for both steps otherwise this leads to undefined behaviour.
-    parser.add_argument('--no-stubs', help="Do not handle system functions that are declared as stub. "
-                                           "This can increase the performance of the analysis if you have many stubs in your OS model. "
-                                           "Note: The RemoveSysfuncBody step will always handle all system functions [stubs included. This is intended].",
+    # option for [sysfuncts, systemrelevantfunctions]:
+    parser.add_argument('--with-stubs', help="analyze system functions that "
+                                             "are only stubs. usually, this is"
+                                             " only helpful for debugging "
+                                             "purposes.",
                         action='store_true', default=False)
 
     args = parser.parse_args()
