@@ -1,10 +1,20 @@
 """Helper functions that are needed in multiple places."""
+import os
+
+from contextlib import contextmanager
 
 
 def raise_and_error(logger, message, exception=RuntimeError):
     """Error log message and raise it as exception."""
     logger.error(message)
     raise exception(message)
+
+@contextmanager
+def open_with_dirs(path, flags="w"):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, flags) as g:
+        yield g
+
 
 class Wrapper:
     def set_wrappee(self, wrappee):

@@ -24,6 +24,10 @@ cdef extern from "bb_split.h" namespace "ara::step":
     cdef cppclass BBSplit:
         pass
 
+cdef extern from "bb_timings.h" namespace "ara::step":
+    cdef cppclass BBTimings:
+        pass
+
 cdef extern from "cdummy.h" namespace "ara::step":
     cdef cppclass CDummy:
         pass

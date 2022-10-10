@@ -1,17 +1,17 @@
 """Container for SIA."""
-from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph
-from dataclasses import dataclass
-
-from ara.graph.mix import ARA_ENTRY_POINT
 from .step import Step
 from .option import Option, String
 
-from ara.os.os_base import OSState, CPU, ExecState
+from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph
+from ara.graph.mix import ARA_ENTRY_POINT
+from ara.os.os_base import CPU, ExecState
+from ara.util import dominates, has_path
 
 from graph_tool import GraphView
 from graph_tool.topology import all_paths, dominator_tree, label_out_component
 from graph_tool.util import find_vertex
 from itertools import chain
+from dataclasses import dataclass
 
 import functools
 
@@ -48,23 +48,6 @@ class FlatAnalysis(Step):
             return ['SysFuncts']
         return self._graph.os.get_special_steps()
 
-    def _dominates(self, dom_tree, abb_x, abb_y):
-        """Does abb_x dominate abb_y?"""
-        while abb_y:
-            if abb_x == abb_y:
-                return True
-            abb_y = dom_tree[abb_y]
-        return False
-
-    def _has_path(self, graph, source, target):
-        """Is there a path from source to target?"""
-        ap = all_paths(graph, graph.vertex(source), graph.vertex(target))
-        try:
-            next(ap)
-            return True
-        except StopIteration:
-            return False
-
     @functools.lru_cache(maxsize=32)
     def _get_func_cfg(self, func):
         """Get LCFG of function"""
@@ -96,7 +79,8 @@ class FlatAnalysis(Step):
                 loop_head = func_cfg.vertex(loop_head)
                 for e in loop_head.in_edges():
                     loop_end = e.source()
-                    if self._has_path(func_cfg, loop_head, loop_end):
+                    if loop_head == loop_end or \
+                       has_path(func_cfg, loop_head, loop_end):
                         # if edge that is a part of the loop
                         # drop it
                         keep_edge_map[e] = False
@@ -117,14 +101,14 @@ class FlatAnalysis(Step):
                 func,
                 respect_endless_loops=respect_endless_loops
         )
-        return not all([self._dominates(dom_tree, abb, x)
+        return not all([dominates(dom_tree, abb, x)
                        for x in exit_abbs.vertices()])
 
     def _is_usually_taken(self, abb):
         """Is this abb usually taken?
 
         Usually taken means that the abb is part of a branch, where all sibling
-        branches end is an endless loop.
+        branches end in an endless loop.
 
         Consider this example:
          1o

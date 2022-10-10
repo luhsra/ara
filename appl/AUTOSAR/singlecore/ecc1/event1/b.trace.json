@@ -6,15 +6,17 @@
     [3, ["AUTOSAR_TerminateTask", "H1", "CallPath()"]],
     [4, ["AUTOSAR_WaitEvent", "H1", "CallPath()"]],
     [5, ["AUTOSAR_WaitEvent", "H1", "CallPath()"]],
-    [6, ["Start"]]
+    [6, ["ShutdownMachine", "H2", "CallPath()"]],
+    [7, ["Start"]]
   ],
   "edges": [
-    [6, 0],
     [0, 4],
-    [4, 2],
+    [1, 7],
     [2, 5],
-    [5, 3],
     [3, 1],
-    [1, 6]
+    [3, 6],
+    [4, 2],
+    [5, 3],
+    [7, 0]
   ]
 }

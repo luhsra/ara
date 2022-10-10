@@ -8,14 +8,16 @@ py_logging_header = py_logging_pyx_cpp[1]
 
 log_bridge = py3_inst.extension_module('py_logging',
   py_logging_pyx_cpp,
+  gnu_symbol_visibility: 'default',
   dependencies: py3_inst.dependency()
 )
 
 log_bridge_incl = include_directories('.')
 
+# Attention: When using this dependency, you must also
+# somehow trigger the compilation of log_bridge.
 log_dep = declare_dependency(
   include_directories: log_bridge_incl,
-  link_with: log_bridge,
   sources: py_logging_header)
 
 # steps
@@ -66,26 +68,33 @@ step_mod = py3_inst.extension_module('step',
   files('step.cpp',
         'option.cpp',
         'step_manager.cpp',
+        # C++ steps from here on (sorted alphabetically)
         'bb_split.cpp',
+        'bb_timings.cpp',
+        'callgraph.cpp',
         'cdummy.cpp',
         'comp_insert.cpp',
         'fake_entry_point.cpp',
         'fn_single_exit.cpp',
-        'callgraph.cpp',
         'ir_reader.cpp',
         'ir_writer.cpp',
         'llvm_map.cpp',
         'llvm_optimization.cpp',
         'load_freertos_config.cpp',
+        'posix_static.cpp',
+        'remove_sysfunc_body.cpp',
         'replace_syscalls_create.cpp',
         'resolve_function_pointer.cpp',
         'svf_analyses.cpp',
         'svf_transformation.cpp',
-        'value_analyzer.cpp',
         'zephyr_static.cpp',
-        'remove_sysfunc_body.cpp',
-        'posix_static.cpp') + test_sources,
+        # additional C++ entities
+        'value_analyzer.cpp') + test_sources,
+  gnu_symbol_visibility: 'default',
+  override_options: 'b_lundef=false',
+>>>>>>> soso
   cpp_pch: 'pch/steps_pch.h',
+  link_depends: [log_bridge, graph_data_mod],
   dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep, cudd_dep]
 )
 

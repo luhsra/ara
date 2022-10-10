@@ -19,7 +19,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool'])
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'scipy'])
 
 ## llvm dependencies
 llvm_version = ['>=10', '<13']
@@ -126,6 +126,7 @@ ara_py_content = '''#!@0@
 """Automatic Real-time System Analyzer"""
 import importlib
 import sys
+import os
 import graph_tool
 
 def load(what, where):
@@ -133,10 +134,15 @@ def load(what, where):
     sys.modules[where] = module
 
 sys.path = [@1@] + sys.path
+sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+
+import pyllco
 
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
+
+sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 import ara.ara as _ara
 sys.exit(_ara.main())'''
@@ -165,12 +171,13 @@ subdir('test')
 if get_option('enable_toplevel_tests')
     settings = 'settings'
     app = autosar_singlecore_bcc1_task1_a
+    app = autosar_multicore_paper_running
     test('ara_tester',
        py3_inst,
        args: [ara_py, app['ll'],
               '--log-level', 'warn', '--runtime-stats', '--runtime-stats-file', 'dump', '--runtime-stats-format', 'json',
               '--oilfile', app['oil'],
-              #'--timings', app['sys_timings'],
+              '--timings', app['sys_timings'],
               '--step-settings', files(settings / 'extra_settings.json')],
               # '--manual-corrections', instance_corrections],
        suite: 'toplevel'

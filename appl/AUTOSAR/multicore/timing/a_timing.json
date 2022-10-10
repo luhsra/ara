@@ -1,14 +1,14 @@
 {
-	"ABB0": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
-	"ABB2": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
-	"ABB3": {"function": "main", "bcet": 0, "wcet": 0},
-	"ABB5": {"function": "main", "bcet": 0, "wcet": 0},
-	"ABB7": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 50, "wcet": 100},
-	"ABB9": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 1, "wcet": 2},
-	"ABB11": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 1, "wcet": 2},
-	"ABB13": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 1, "wcet": 2},
-	"ABB17": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2},
-	"ABB19": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2},
-	"ABB21": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2},
-	"ABB23": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2}
+  "ABB0": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
+  "ABB2": {"function": "__ara_fake_entry", "bcet": 0, "wcet": 0},
+  "ABB3": {"function": "main", "bcet": 0, "wcet": 0},
+  "ABB5": {"function": "main", "bcet": 0, "wcet": 0},
+  "ABB7": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 50, "wcet": 100},
+  "ABB9": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 1, "wcet": 2},
+  "ABB11": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 1, "wcet": 2},
+  "ABB13": {"function": "AUTOSAR_TASK_FUNC_T11", "bcet": 1, "wcet": 2},
+  "ABB17": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2},
+  "ABB19": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2},
+  "ABB21": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2},
+  "ABB23": {"function": "AUTOSAR_TASK_FUNC_T01", "bcet": 1, "wcet": 2}
 }

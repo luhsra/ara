@@ -6,10 +6,14 @@ import os
 import tempfile
 
 from ara.os import get_os_model_by_name
+from dataclasses import dataclass
+
 
 def fake_step_module():
     """Fake the step module into the correct package."""
+    sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
     import graph_tool
+    import pyllco
     def load(what, where):
         module = importlib.import_module(what)
         sys.modules[where] = module
@@ -17,6 +21,8 @@ def fake_step_module():
     load("graph_data", "ara.graph.graph_data")
     load("py_logging", "ara.steps.py_logging")
     load("step", "ara.steps.step")
+
+    sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 
 fake_step_module()
@@ -42,8 +48,10 @@ def fail_if(condition, *arg, dry=False):
     """
     if condition or dry:
         print("ERROR:", *arg, file=sys.stderr)
+        print("Tracefile:", sys.argv[1], file=sys.stderr)
         if condition and not dry:
             sys.exit(1)
+
 
 def fail_if_json_not_equal(expected, actual):
     if expected != actual:
@@ -73,7 +81,17 @@ def get_config(i_file):
             'runtime_stats_file': 'logger',
             'runtime_stats_format': 'human',
             'entry_point': 'main',
+            'step_data': False,
             'input_file': i_file}
+
+
+@dataclass
+class TestData:
+    graph: Graph
+    data: dict
+    data_file: str
+    log: object
+    step_manager: StepManager
 
 
 def init_test(steps=None, extra_config=None, logger_name=None,
@@ -136,4 +154,8 @@ def init_test(steps=None, extra_config=None, logger_name=None,
 
     s_manager.execute(conf, extra_config, steps)
 
-    return g, data, logger, s_manager
+    return TestData(graph=g,
+                    data=data,
+                    data_file=json_file,
+                    log=logger,
+                    step_manager=s_manager)

@@ -55,6 +55,10 @@ namespace ara::step {
 				// attributes from LLVM analyses
 				auto& map = graph_data.basic_blocks;
 				cfg.is_exit[bb] = (map.find(llvm_bb) != map.end()) ? map.at(llvm_bb).is_exit_block : false;
+				if (type == graph::ABBType::not_implemented) {
+					// not implemented fake bbs are always exists
+					cfg.is_exit[bb] = true;
+				}
 				cfg.is_exit_loop_head[bb] =
 				    (map.find(llvm_bb) != map.end()) ? map.at(llvm_bb).is_exit_loop_head : false;
 				cfg.part_of_loop[bb] = (map.find(llvm_bb) != map.end()) ? map.at(llvm_bb).is_part_of_loop : false;

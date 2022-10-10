@@ -1,0 +1,65 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "T1": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": true,
+          "spinlocks": [ "S1" ],
+          "resources": []
+        }
+      },
+      "resources": {"R1": {} },
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 1,
+      "tasks": {
+        "T2": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 2,
+          "schedule": true,
+          "spinlocks": [ "S1" ]
+        },
+        "T3": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 3,
+          "schedule": true,
+          "spinlocks": [],
+          "resources": []
+        }
+      },
+      "resources": {
+          "R1": {}
+      },
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 2,
+      "tasks": {
+        "T4": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 2,
+          "schedule": true,
+          "spinlocks": [ "S1" ]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ],
+  "spinlocks": [ ["S1"] ]
+}

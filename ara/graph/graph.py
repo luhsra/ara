@@ -10,6 +10,12 @@ from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 from collections.abc import Iterator
 
 
+def _log(obj):
+    """Return a logger. Meant for debugging."""
+    from ara.util import get_logger
+    return get_logger(obj.__class__.__name__)
+
+
 class FailedGraphConstraint(Exception):
     """The graph has another structure than anticipated."""
 
@@ -30,6 +36,38 @@ def single_check(iterator):
     if second is not None:
         raise FailedGraphConstraint("More than one element present.")
     return first
+
+
+def vertex_types(graph, prop, *types):
+    """Return a GraphView where all vertices are filtered by types.
+
+    The filter leads to a new graph where only vertices are allowed that are
+    of any of the given types.
+
+    All types must be integers which are concatenable with a binary or.
+
+    Arguments:
+    graph -- the graph that should be filtered
+    prop  -- the property that shore the types
+    types -- the types that are allowed
+    """
+    return graph_tool.GraphView(graph, vfilt=(prop.fa & sum(types) != 0))
+
+
+def edge_types(graph, prop, *types):
+    """Return a GraphView where all edges are filtered by types.
+
+    The filter leads to a new graph where only edges are allowed that are
+    of any of the given types.
+
+    All types must be integers which are concatenable with a binary or.
+
+    Arguments:
+    graph -- the graph that should be filtered
+    prop  -- the property that shore the types
+    types -- the types that are allowed
+    """
+    return graph_tool.GraphView(graph, efilt=(prop.fa & sum(types) != 0))
 
 
 class CFGError(Exception):
@@ -85,11 +123,14 @@ class CFG(graph_tool.Graph):
         self.edge_properties["type"] = self.new_ep("int") # CFType
         # f2a, a2b edges
         self.edge_properties["is_entry"] = self.new_ep("bool")
+        # icf, lcf edges
+        self.edge_properties["back_edge"] = self.new_ep("bool")
 
     def get_function_by_name(self, name: str):
         """Find a specific function."""
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
-        assert len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
+        assert len(func) == 1, f'function {name} not unambiguous: {func}'
+        assert self.vp.level[func[0]] == NodeLevel.function
         return func[0]
 
     def get_llvm_obj(self, vertex):
@@ -101,7 +142,7 @@ class CFG(graph_tool.Graph):
         return _get_llvm_obj(self, vertex)
 
     def get_function(self, abb):
-        """Get the function node for an ABB."""
+        """Get the function node for an ABB or BB."""
         abb = self.vertex(abb)
 
         def is_func(abb):
@@ -118,6 +159,14 @@ class CFG(graph_tool.Graph):
         for edge in self.vertex(function).out_edges():
             if self.ep.type[edge] == CFType.f2a:
                 yield edge.target()
+
+    def has_abbs(self, function):
+        """Has this function ABBs?"""
+        try:
+            next(self.get_abbs(function))
+            return True
+        except StopIteration:
+            return False
 
     def get_function_bbs(self, function):
         """Get the BBs of the functions."""
@@ -158,14 +207,14 @@ class CFG(graph_tool.Graph):
             raise CFGError("No BB found.")
         return ret
 
-    def _get_entry(self, function, edge_type=CFType.f2a):
-        """Return the entry block of the given function."""
+    def _get_entry(self, block, edge_type=CFType.f2a):
+        """Return the entry block of the given function or block."""
         def is_entry(block):
             return self.ep.is_entry[block] and self.ep.type[block] == edge_type
 
-        function = self.vertex(function)
+        block = self.vertex(block)
 
-        entry = list(filter(is_entry, function.out_edges()))
+        entry = list(filter(is_entry, block.out_edges()))
         assert len(entry) == 1
         return entry[0].target()
 
@@ -173,27 +222,40 @@ class CFG(graph_tool.Graph):
         """Return the entry abb of the given function."""
         return self._get_entry(function, edge_type=CFType.f2a)
 
-    def get_entry_bb(self, function):
+    def get_function_entry_bb(self, function):
         """Return the entry bb of the given function."""
         return self._get_entry(function, edge_type=CFType.f2b)
 
-    def _get_exit(self, function, level):
-        function = self.vertex(function)
+    def get_entry_bb(self, abb):
+        """Return the entry BB of the given ABB."""
+        return self._get_entry(function, edge_type=CFType.a2b)
+
+    def _get_exit(self, block, level):
+        block = self.vertex(block)
 
         def is_exit(block):
             return self.vp.is_exit[block] and self.vp.level[block] == level
 
-        entry = list(filter(is_exit, function.out_neighbors()))
+        entry = list(filter(is_exit, block.out_neighbors()))
         if entry:
             assert len(entry) == 1, f"Multiple exits in function {self.vp.name[function]}"
             return entry[0]
         return None
 
     def get_function_exit_bb(self, function):
-        return self._get_exit(function, level=NodeLevel.bb)
+        """Return the exit BB of a function."""
+        if self.has_abbs(function):
+            return self.get_exit_bb(self.get_exit_abb(function))
+        else:
+            return self._get_exit(function, level=NodeLevel.bb)
 
     def get_exit_abb(self, function):
+        """Return the exit ABB of a function."""
         return self._get_exit(function, level=NodeLevel.abb)
+
+    def get_exit_bb(self, abb):
+        """Return the exit BB of an ABB."""
+        return self._get_exit(abb, level=NodeLevel.bb)
 
     def get_syscall_name(self, abb):
         """Return the called syscall name for a given abb."""
@@ -287,6 +349,9 @@ class CFGView(graph_tool.GraphView):
     def get_abbs(self, *args, **kwargs):
         return self.base.get_abbs(*args, **kwargs)
 
+    def get_abb(self, *args, **kwargs):
+        return self.base.get_abb(*args, **kwargs)
+
     def get_entry_abb(self, *args, **kwargs):
         return self.base.get_entry_abb(*args, **kwargs)
 
@@ -349,10 +414,21 @@ class MSTGraph(graph_tool.Graph):
         self.vertex_properties["state"] = self.new_vp("object")
         self.vertex_properties["type"] = self.new_vp("int")  # StateType
         self.vertex_properties["cpu_id"] = self.new_vp("int")  # only for StateType.metastate
+        self.vertex_properties["bcet"] = self.new_vp("int64_t", val=-1)
+        self.vertex_properties["wcet"] = self.new_vp("int64_t", val=-1)
         self.edge_properties["type"] = self.new_ep("int")  # MSTType
         self.edge_properties["cpu_id"] = self.new_ep("int")
+        self.edge_properties["irq"] = self.new_ep("int", val=-1)
         self.edge_properties["bcet"] = self.new_ep("int64_t", val=-1)
         self.edge_properties["wcet"] = self.new_ep("int64_t", val=-1)
+        # dominator_tree has 0 as default value. We are creating a fake node 0
+        # here that captures this value.
+        self.add_vertex()
+
+    def add_edge(self, *args, **kwargs):
+        e = super().add_edge(*args, **kwargs)
+        self.ep.irq[e] = -1
+        return e
 
     def get_metastates(self):
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.metastate)
@@ -362,12 +438,13 @@ class MSTGraph(graph_tool.Graph):
             return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.exit_sync)
         return graph_tool.GraphView(self, vfilt=self.vp.type.fa == StateType.entry_sync)
 
-    def edge_type(self, msttype):
-        """Return a GraphView with this special edge type filter."""
-        return graph_tool.GraphView(
-            self,
-            efilt=(self.ep.type.fa == msttype)
-        )
+    def edge_type(self, *msttypes):
+        """Return a GraphView so only the given edge types are allowed."""
+        return edge_types(self, self.ep.type, *msttypes)
+
+    def vertex_type(self, *statetypes):
+        """Return a GraphView so only the given vertex types are allowed."""
+        return vertex_types(self, self.vp.type, *statetypes)
 
     def get_metastate(self, state):
         """Return the metastate that belongs to a state."""
@@ -376,8 +453,76 @@ class MSTGraph(graph_tool.Graph):
 
     def get_entry_cp(self, exit_cp):
         """Return the entry_cp that belongs to an exit_cp."""
-        fu = self.edge_type(MSTType.follow_up)
+        fu = self.edge_type(MSTType.en2ex)
         return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
+
+    def get_syscall_name(self, state):
+        """Return the syscall name, if state belongs to one.
+
+        It return an empty string otherwise.
+        """
+        if self.vp.type[state] != StateType.state:
+            return ''
+        obj = self.vp.state[state]
+        abb = obj.cpus.one().abb
+        if abb is None:
+            return ''
+        return obj.cfg.get_syscall_name(obj.cpus.one().abb)
+
+    def get_syscall_state(self, entry_sp):
+        """Get the syscall state that triggers this SP.
+
+        Return a tuple:
+        The first element contains the state.
+        The second element contains the core.
+        The third element contains the IRQ number or -1, if the SP is not IRQ
+        triggered.
+        """
+        st2sy = self.edge_type(MSTType.st2sy)
+        for e in st2sy.vertex(entry_sp).in_edges():
+            irq = self.ep.irq[e]
+            core = self.ep.cpu_id[e]
+            if irq >= 0:
+                return self.vertex(e.source()), core, irq
+            if self.get_syscall_name(e.source()):
+                return self.vertex(e.source()), core, -1
+
+    def get_exec_state(self, state):
+        """Return the execution state of the given state.
+
+        Return None, if false type of input state.
+        """
+        if self.vp.type[state] != StateType.state:
+            return None
+        obj = self.vp.state[state]
+        return obj.cpus.one().exec_state
+
+    def _get_cpu_bound_state(self, graph_v, in_v, cpu_id):
+        return self.vertex(single_check([e.target()
+                                         for e in graph_v.vertex(in_v).out_edges()
+                                         if graph_v.ep.cpu_id[e] == cpu_id]))
+
+    def get_entry_state(self, entry_cp, cpu_id):
+        """Return the entry state that belongs to an entry SP for a cpu_id."""
+        st2sy = self.edge_type(MSTType.st2sy)
+        return self._get_cpu_bound_state(st2sy, entry_cp, cpu_id)
+
+    def get_exit_state(self, exit_cp, cpu_id):
+        """Return the exit state that belongs to an exit SP for a cpu_id."""
+        st2sy = graph_tool.GraphView(self.edge_type(MSTType.st2sy),
+                                     reversed=True)
+        return self._get_cpu_bound_state(st2sy, exit_cp, cpu_id)
+
+    def get_out_metastate(self, entry_cp, cpu_id):
+        """Return the metastate that belongs to an entry SP for a cpu_id."""
+        m2sy = self.edge_type(MSTType.m2sy)
+        return self._get_cpu_bound_state(m2sy, entry_cp, cpu_id)
+
+    def get_in_metastate(self, exit_cp, cpu_id):
+        """Return the metastate that belongs to an exit SP for a cpu_id."""
+        m2sy = graph_tool.GraphView(self.edge_type(MSTType.m2sy),
+                                    reversed=True)
+        return self._get_cpu_bound_state(m2sy, exit_cp, cpu_id)
 
 
 class InstanceGraph(graph_tool.Graph):

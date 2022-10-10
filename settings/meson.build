@@ -3,7 +3,7 @@ settings_dir = meson.current_source_dir()
 # common flags for clang
 clang_flags = ['-g',  # generate debug information
                '-O0',
-               '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA)
+               '-Xclang', '-disable-O0-optnone',  # don't set the noopt attribute (prevent optimization needed by ARA)
                '-ffunction-sections',
                '-fdata-sections',
                '-fno-rtti',
@@ -77,7 +77,7 @@ elif get_option('arch') == 'arm'
   # external gcc dir
   if get_option('arm_gcc_version') == 'default'
     system_gcc = find_program('arm-none-eabi-gcc')
-    r = run_command(py3_inst, gcc_version, system_gcc.path())
+    r = run_command(py3_inst, gcc_version, system_gcc.path(), check: true)
     if r.returncode() != 0
       error('Cannot extract default GCC option. Consider setting "arm_gcc_version".')
     endif

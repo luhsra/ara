@@ -1,6 +1,6 @@
 {
   "vertices": [
-    [0, ["AUTOSAR_ActivateTask", "Handler11", "Callpath([ABB9, AUTOSAR_TASK_FUNC_Handler11 -> bar])"]],
+    [0, ["AUTOSAR_ActivateTask", "Handler11", "Callpath([ABB14, AUTOSAR_TASK_FUNC_Handler11 -> bar])"]],
     [1, ["AUTOSAR_ChainTask", "Handler11", "CallPath()"]],
     [2, ["AUTOSAR_ChainTask", "Handler11", "CallPath()"]],
     [3, ["AUTOSAR_TerminateTask", "Handler12", "CallPath()"]],
@@ -10,13 +10,13 @@
     [7, ["Start"]]
   ],
   "edges": [
-    [7, 0],
-    [7, 1],
     [0, 2],
     [1, 4],
-    [4, 6],
     [2, 5],
+    [3, 6],
+    [4, 6],
     [5, 3],
-    [3, 6]
+    [7, 0],
+    [7, 1]
   ]
 }

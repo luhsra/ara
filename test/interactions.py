@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import json
 import os.path
 
 # Note: init_test must be imported first
@@ -9,8 +8,8 @@ from init_test import fail_if_json_not_equal, init_test
 def main():
     """Test for correct interaction detection."""
     config = {"steps": ["InteractionAnalysis"]}
-    m_graph, data, log, _ = init_test(extra_config=config)
-    instances = m_graph.instances
+    data = init_test(extra_config=config)
+    instances = data.graph.instances
     dump = []
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -54,7 +53,7 @@ def main():
         return "1"
 
     # log.warn(json.dumps(sorted(dump, key=sort_key), indent=2))
-    fail_if_json_not_equal(data, sorted(dump, key=sort_key))
+    fail_if_json_not_equal(data.data, sorted(dump, key=sort_key))
 
 
 if __name__ == '__main__':

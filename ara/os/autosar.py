@@ -1,7 +1,7 @@
 from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
 from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
 from ara.util import get_logger
-from ara.graph import CallPath, SyscallCategory, SigType, single_check
+from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
 
 import graph_tool
 import html
@@ -35,16 +35,16 @@ class SyscallInfo:
 
 
 class InstanceEdge(IntEnum):
-    have = 1
-    trigger = 2
-    activate = 3
-    chain = 4
-    nestable = 5
-    terminate = 6
-    get = 7
-    release = 8
-    sete = 9
-    wait = 10
+    have = 1 << 1
+    trigger = 1 << 2
+    activate = 1 << 3
+    chain = 1 << 4
+    nestable = 1 << 5
+    terminate = 1 << 6
+    get = 1 << 7
+    release = 1 << 8
+    sete = 1 << 9
+    wait = 1 << 10
 
 
 @dataclass(eq=False)
@@ -66,6 +66,14 @@ class AUTOSARInstance(CPUBounded):
 @dataclass
 class TaskGroup(AUTOSARInstance):
     promises: dict
+
+
+class IRQStatus(AUTOSARInstance):
+    pass
+
+
+class OSIRQStatus(AUTOSARInstance):
+    pass
 
 
 @dataclass(repr=False)
@@ -122,17 +130,19 @@ class Spinlock:
 
 @dataclass
 class SpinlockContext:
-    is_spinning: bool = False
+    on_hold: bool = False
+    held_by: Any = None
     wait_for: List[int] = field(default_factory=list)  # list of cpu_ids
 
     def __hash__(self):
         return hash(("SpinlockContext",
-                     self.is_spinning,
+                     self.on_hold,
                      tuple(self.wait_for)))
 
     def __copy__(self):
         """Make a deep copy."""
-        return SpinlockContext(is_spinning=self.is_spinning,
+        return SpinlockContext(on_hold=self.on_hold,
+                               held_by=self.held_by,
                                wait_for=[x for x in self.wait_for])
 
 
@@ -156,24 +166,6 @@ class AlarmContext:
     increment: int
     cycle: int
     active: bool
-
-
-@dataclass
-class AUTOSARContext:
-    irq_status: dict
-    os_irq_status: dict
-
-    def __hash__(self):
-        return hash(("AUTOSARContext",
-                     tuple(self.irq_status.items()),
-                     tuple(self.os_irq_status.items())))
-
-    def __copy__(self):
-        """Make a deep copy."""
-        def copy_dict(x):
-            return dict([(k, v) for k, v in x.items()])
-        return AUTOSARContext(irq_status=copy_dict(self.irq_status),
-                              os_irq_status=copy_dict(self.os_irq_status))
 
 
 @dataclass(repr=False)
@@ -224,20 +216,40 @@ class AUTOSAR(OSBase):
         return False
 
     @staticmethod
-    def get_cpu_local_contexts(context, cpu_id):
+    def get_cpu_local_contexts(context, cpu_id, instances):
         local_contexts = []
         for inst, ctx in context.items():
             if getattr(inst, "cpu_id", None) == cpu_id:
                 local_contexts.append((inst, ctx))
+            # weird case of locks for one core
+            if isinstance(inst, Spinlock):
+                cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
+                if len(cpus) == 1:
+                    local_contexts.append((inst, ctx))
         return dict(local_contexts)
 
     @staticmethod
-    def get_global_contexts(context):
+    def get_global_contexts(context, instances):
         local_contexts = []
         for inst, ctx in context.items():
+            # weird case of locks for one core
+            if isinstance(inst, Spinlock):
+                cpus = AUTOSAR.get_cpus_of_spinlock(inst, instances)
+                if len(cpus) == 1:
+                    continue
             if not hasattr(inst, "cpu_id"):
                 local_contexts.append((inst, ctx))
         return dict(local_contexts)
+
+    @staticmethod
+    def _irq_status_key(cpu_id):
+        return IRQStatus(name="AUTOSAR_IRQ_STATUS_" + str(cpu_id),
+                         cpu_id=cpu_id)
+
+    @staticmethod
+    def _os_irq_status_key(cpu_id):
+        return OSIRQStatus(name="AUTOSAR_OSIRQ_STATUS_" + str(cpu_id),
+                           cpu_id=cpu_id)
 
     @staticmethod
     def get_initial_state(cfg, instances):
@@ -260,6 +272,9 @@ class AUTOSAR(OSBase):
                 cpu_map[obj.cpu_id] = []
             if obj.autostart:
                 cpu_map[obj.cpu_id].append((v, obj))
+        for v, obj in chain(instances.get(Alarm), instances.get(ISR)):
+            if obj.cpu_id not in cpu_map:
+                cpu_map[obj.cpu_id] = []
 
         # construct actual CPUs
         cpus = []
@@ -268,7 +283,7 @@ class AUTOSAR(OSBase):
         os_irq_status = {}
         for cpu_id, tasks in cpu_map.items():
             if len(tasks) == 0:
-                # we have the CPU but not task that can be scheduled
+                # we have the CPU but no task that can be scheduled
                 cpus.append(CPU(id=cpu_id,
                                 irq_on=True,
                                 control_instance=None,
@@ -299,7 +314,10 @@ class AUTOSAR(OSBase):
         for _, obj in instances.get(Task):
             prio = 2 * obj.priority
             max_prio = max(max_prio, prio)
-            state.context[obj] = TaskContext(status=TaskStatus.suspended,
+            status = TaskStatus.suspended
+            if obj.autostart:
+                status = TaskStatus.ready
+            state.context[obj] = TaskContext(status=status,
                                              abb=cfg.get_entry_abb(obj.function),
                                              call_path=CallPath(),
                                              dyn_prio=[prio])
@@ -327,9 +345,11 @@ class AUTOSAR(OSBase):
         for _, spinlock in instances.get(Spinlock):
             state.context[spinlock] = SpinlockContext()
 
-        # special context object for os specific state
-        state.context["AUTOSAR"] = AUTOSARContext(irq_status=irq_status,
-                                                  os_irq_status=os_irq_status)
+        # special context objects for os specific state
+        for cpu_id, value in irq_status.items():
+            state.context[AUTOSAR._irq_status_key(cpu_id)] = value
+        for cpu_id, value in os_irq_status.items():
+            state.context[AUTOSAR._os_irq_status_key(cpu_id)] = value
 
         return state
 
@@ -341,116 +361,24 @@ class AUTOSAR(OSBase):
     def init(instances):
         pass
 
-    @staticmethod
-    def get_next_timed_event(time, instances, cpu):
-        """Returns the next timed event, e.g. an Alarm, that occurs after a given time."""
-        event_list = []
-        for v_instance in instances.vertices():
-            instance = instances.vp.obj[v_instance]
-            if isinstance(instance, Alarm):
-                alarm = instance
-                counter = alarm.counter
-
-                if counter is not None and alarm.cpu_id == cpu:
-
-                    # only handle autostart alarms at the moment
-                    if alarm.autostart:
-                        # period of the alarm in ms
-                        period = alarm.cycletime * counter.secondspertick * 1000
-                        alarmtime = alarm.alarmtime * counter.secondspertick * 1000
-
-                        mod = time % period
-                        if mod < alarmtime:
-                            diff = alarmtime - mod
-                        else:
-                            diff = alarmtime + period - mod
-
-                        event_time = time + diff
-                        event_list.append((event_time, alarm))
-
-        # sort event list to get nearest event
-        event_list.sort(key=lambda x: x[0])
-        if len(event_list) != 0:
-            return event_list[0]
-        else:
-            return None, None
+    def _get_taskgroup_for_task(instances, task_v):
+        have = edge_types(instances, instances.ep.type, InstanceEdge.have)
+        return instances.vertex(single_check(have.vertex(task_v).in_neighbors()))
 
     @staticmethod
-    def execute_event(event, state):
-        """Interprets a timed event, e.g. an alarm, and creates a new state."""
-        new_state = state.copy()
-
-        if isinstance(event, Alarm):
-            alarm = event
-            if alarm.action == AlarmAction.ACTIVATETASK:
-                if alarm.task not in new_state.activated_tasks:
-                    new_state.activated_tasks.append(alarm.task)
-                    AUTOSAR.schedule(new_state, new_state.cpu)
-
-        new_state.from_event = True
-        return new_state
-
-    @staticmethod
-    def handle_isr(state):
-        """Handles an IRQ."""
-        new_states = []
-        current_isr = state.get_current_isr()
-        scheduled_task = state.get_scheduled_task()
-        priority = 0
-
-        if current_isr is not None:
-            priority = current_isr.priority
-
-        # go through all ISRs in instances
-        for v in state.instances.vertices():
-            isr = state.instances.vp.obj[v]
-            if isinstance(isr, ISR):
-                if isr.cpu_id == state.cpu:
-                    if (current_isr is None or isr.name != current_isr.name) and isr not in state.activated_isrs:
-                        if isr.priority > priority and scheduled_task not in isr.group:
-                        # if isr.priority > priority:
-                            new_state = state.copy()
-                            new_states.append(new_state)
-                            # new_state.from_isr = True
-
-                            # activate new isr
-                            new_state.activated_isrs.append_item(isr)
-
-                            # schedule the interrupts
-                            for _list in new_state.activated_isrs.values():
-                                _list.sort(key=lambda isr: isr.priority, reverse=True)
-
-        return new_states
-
-    @staticmethod
-    def exit_isr(state):
-        """Handles the end of an ISR."""
-        new_state = state.copy()
-        current_isr = state.get_current_isr()
-
-        # remove isr from list of activated isrs
-        new_state.activated_isrs.remove_item(current_isr)
-
-        # reset abb of isr to the entry abb
-        new_state.set_abb(current_isr.name, new_state.entry_abbs[current_isr.name])
-
-        if new_state.get_running_abb() is None or new_state.interrupts_enabled.get_value() is None:
-            return AUTOSAR.decompress_state(new_state)
-        else:
-            return [new_state]
+    def _get_all_tasks_of_taskgroup(instances, task_group):
+        have = edge_types(instances, instances.ep.type, InstanceEdge.have)
+        return frozenset([instances.vertex(x) for x in have.vertex(task_group).out_neighbors()])
 
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
-        def filtered_instances(edge_type):
-            return graph_tool.GraphView(
-                state.instances,
-                efilt=state.instances.ep.type.fa == int(edge_type)
-            )
-
         # we handle alarms only
         instances = state.instances
         vertex = instances.vertex(irq)
         obj = instances.vp.obj[vertex]
+
+        activates = edge_types(instances, instances.ep.type, InstanceEdge.activate)
+        event_tgt = edge_types(instances, instances.ep.type, InstanceEdge.have)
 
         if obj.cpu_id != cpu_id:
             # false CPU
@@ -460,20 +388,26 @@ class AUTOSAR(OSBase):
             # do not trigger alarms, if an interrupt is handled
             if isinstance(state.cur_control_inst(cpu_id), ISR):
                 return
+            # the current control instance must be a task
+
             alarm_ctx = state.context.get(obj, False)
             # TODO interarrival times
             if alarm_ctx and alarm_ctx.active:
-                activates = filtered_instances(InstanceEdge.activate)
                 acty_vertex = single_check(activates.vertex(vertex).out_neighbors())
                 acty = instances.vp.obj[acty_vertex]
-
                 if isinstance(acty, Task):
+                    # do not trigger alarms, if in handling task or taskgroup
+                    if acty.cpu_id == cpu_id:
+                        ctl_inst = state.cpus[cpu_id].control_instance
+                        if ctl_inst is not None:
+                            all_tasks = AUTOSAR._get_all_tasks_of_taskgroup(instances, AUTOSAR._get_taskgroup_for_task(instances, ctl_inst))
+                            if acty_vertex in all_tasks:
+                                return
                     logger.debug(f"Alarm {obj.name} activates {acty.name}.")
                     new_state = state.copy()
                     return AUTOSAR.ActivateTask(new_state, cpu_id, acty)
                 elif isinstance(acty, Event):
                     logger.debug(f"Alarm {obj.name} sets {acty.name}.")
-                    event_tgt = filtered_instances(InstanceEdge.have)
                     new_state = state.copy()
                     for t in event_tgt.vertex(acty_vertex).in_neighbors():
                         task = instances.vp.obj[instances.vertex(t)]
@@ -574,11 +508,18 @@ class AUTOSAR(OSBase):
         cpu_map = defaultdict(list)
         for v in state.instances.get_controls().vertices():
             obj = state.instances.vp.obj[v]
-            if obj.cpu_id in cpus and state.context[obj].status in [TaskStatus.running, TaskStatus.ready]:
-                cpu_map[obj.cpu_id].append((v, state.context[obj]))
+            if obj.cpu_id in cpus:
+                status = state.context[obj].status
+                if status in [TaskStatus.running, TaskStatus.ready]:
+                    cpu_map[obj.cpu_id].append((v, state.context[obj]))
+                logger.debug(f"Object {obj} is in status {str(status)}")
 
         # update cpus
         for cpu in filter(lambda cpu: cpu.id in cpus, state.cpus):
+            # the busy waiting state does never change
+            if cpu.exec_state == ExecState.waiting:
+                continue
+
             if not (cpu.id in cpu_map and len(cpu_map[cpu.id]) != 0):
                 # idle state
                 new_vertex = None
@@ -614,8 +555,11 @@ class AUTOSAR(OSBase):
 
             # shortcut for same task
             if new_vertex == old_vertex:
-                logger.debug("Skip schedule, since the task is the same.")
-                continue
+                old_abb = cpu.abb
+                new_abb = None if new_ctx is None else new_ctx.abb
+                if old_abb == new_abb:
+                    logger.debug("Skip schedule, since the task is the same.")
+                    continue
 
             # write old values back to instance only if running or blocked
             if old_vertex:
@@ -644,118 +588,6 @@ class AUTOSAR(OSBase):
                 cpu.exec_state = ExecState.idle
 
     @staticmethod
-    def decompress_state(state):
-
-        def delete_key(state, key):
-            del state.activated_tasks[key]
-            del state.activated_isrs[key]
-            del state.interrupts_enabled[key]
-            for option in state.abbs.values():
-                del option[key]
-            for option in state.call_nodes.values():
-                del option[key]
-
-
-        def switch_key(state):
-            # switch some random key to the id of the state, then delete the random key
-            oldkey = list(state.activated_tasks.keys()).pop()
-            state.set_activated_task(state.activated_tasks[oldkey])
-            state.set_activated_isr(state.activated_isrs[oldkey])
-            state.set_interrupts_enabled_flag(state.interrupts_enabled[oldkey])
-            for option in state.abbs.values():
-                option[state.key] = option[oldkey]
-            for option in state.call_nodes.values():
-                option[state.key] = option[oldkey]
-
-            # delete_key(state, oldkey)
-
-        # print(f"decompress {state}")
-        # print(f"abbs: {state.abbs}")
-        # print(f"activated tasks: {state.activated_tasks}")
-        new_states = []
-        task_names = []
-        for key, activated_tasks_list in state.activated_tasks.items():
-            activated_isrs_list = state.activated_isrs[key]
-            if len(activated_tasks_list) > 0:
-                task = activated_tasks_list[0]
-                if len(activated_isrs_list) > 0:
-                    task = activated_isrs_list[0]
-                if task.name not in task_names:
-                    task_names.append(task.name)
-
-        # return the original state if no tasks are activated, e.g. idle state
-        if len(task_names) == 0:
-            new_states.append(state)
-
-        # print(f"tasknames: {task_names}")
-
-        for taskname in task_names:
-            interstates = []
-            interstate = state.copy()
-
-            # remove every tasklist that has a different running task as taskname
-            for key, activated_tasks_list in state.activated_tasks.items():
-                activated_isrs_list = state.activated_isrs[key]
-                if key == state.key:
-                    key = interstate.key
-                if taskname.startswith("AUTOSAR_ISR"):
-                    if len(activated_isrs_list) == 0 or activated_isrs_list[0].name != taskname:
-                        delete_key(interstate, key)
-                else:
-                    if len(activated_tasks_list) == 0 or activated_tasks_list[0].name != taskname or len(activated_isrs_list) > 0:
-                        # remove the tasklist and everything with the same key
-                        delete_key(interstate, key)
-
-
-            # check if the interrupts enabled flag is unique
-            if interstate.interrupts_enabled.get_value() is None:
-                new_state_true = interstate.copy()
-                new_state_false = interstate.copy()
-
-                for key, flag in interstate.interrupts_enabled.items():
-                    if flag:
-                        if key == interstate.key:
-                            key = new_state_false.key
-                        delete_key(new_state_false, key)
-                    else:
-                        if key == interstate.key:
-                            key = new_state_true.key
-                        delete_key(new_state_true, key)
-
-                interstates.append(new_state_true)
-                interstates.append(new_state_false)
-            else:
-                interstates.append(interstate)
-
-            # print(f"interstate {taskname}:{interstate}")
-
-            for interstate in interstates:
-                # make sure all states have self id as a key
-                if interstate.key not in interstate.activated_tasks:
-                    switch_key(interstate)
-
-                # check if the running abb is unique
-                if interstate.abbs[taskname].get_value() is None:
-                    for key, abb in interstate.abbs[taskname].items():
-                        activated_tasks_list = interstate.activated_tasks[key]
-                        activated_isrs_list = interstate.activated_isrs[key]
-                        interrupt_flag = interstate.interrupts_enabled[key]
-                        # if len(activated_tasks_list) > 0 and activated_tasks_list[0].name == taskname or len(activated_isrs_list) > 0 and activated_isrs_list[0].name == taskname:
-                        new_state = interstate.copy()
-                        new_states.append(new_state)
-
-                        new_state.set_abb(taskname, abb)
-                        new_state.set_activated_task(activated_tasks_list.copy())
-                        new_state.set_activated_isr(activated_isrs_list.copy())
-                        new_state.set_interrupts_enabled_flag(interrupt_flag)
-                        # print(f"new_state {taskname}:{new_state}")
-                else:
-                    new_states.append(interstate)
-
-        return new_states
-
-
-    @staticmethod
     def check_cpu(state, cpu_id):
         """Check, if cpu_id is supported in state.
 
@@ -774,6 +606,8 @@ class AUTOSAR(OSBase):
         AUTOSAR.check_cpu(state, task.cpu_id)
         ctx = state.context[task]
         if ctx.status is not TaskStatus.running:
+            if ctx.status is TaskStatus.suspended:
+                ctx.abb = state.cfg.get_entry_abb(task.function)
             ctx.status = TaskStatus.ready
         return state
 
@@ -811,8 +645,8 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "ChainTask must be called in a task"
 
-        AUTOSAR.TerminateTask(state, cpu_id)
-        AUTOSAR.ActivateTask(state, cpu_id, args.task)
+        state = AUTOSAR.TerminateTask(state, cpu_id)
+        state = AUTOSAR.ActivateTask(state, cpu_id, args.task)
 
         t = find_instance_node(state.instances, args.task)
         connect_from_here(state, cpu_id, t, "ChainTask",
@@ -857,16 +691,21 @@ class AUTOSAR(OSBase):
         pass
 
     @staticmethod
-    def check_spinlock_cpus(state, spinlock):
-        available_cpus = set([cpu.id for cpu in state.cpus])
+    def get_cpus_of_spinlock(spinlock, instances):
         needed_cpus = set()
-        lock = state.instances.get_node(spinlock)
+        lock = instances.get_node(spinlock)
         filt = graph_tool.GraphView(
-            state.instances,
-            efilt=state.instances.ep.type.fa == int(InstanceEdge.have)
+            instances,
+            efilt=instances.ep.type.fa == int(InstanceEdge.have)
         )
         for task in filt.vertex(lock).in_neighbors():
             needed_cpus.add(filt.vp.obj[task].cpu_id)
+        return needed_cpus
+
+    @staticmethod
+    def check_spinlock_cpus(state, spinlock):
+        available_cpus = set([cpu.id for cpu in state.cpus])
+        needed_cpus = AUTOSAR.get_cpus_of_spinlock(spinlock, state.instances)
 
         if needed_cpus > available_cpus:
             raise CrossCoreAction(needed_cpus - available_cpus)
@@ -879,13 +718,16 @@ class AUTOSAR(OSBase):
         AUTOSAR.check_spinlock_cpus(state, args.spinlock)
 
         lock_ctx = state.context[args.spinlock]
-        if lock_ctx.is_spinning:
+        if lock_ctx.on_hold:
+            logger.info("GL by %s, but lock is on hold: %s",
+                        state.cur_control_inst(cpu_id), lock_ctx)
             # active wait in this state
             lock_ctx.wait_for.append(cpu_id)
             state.cpus[cpu_id].exec_state = ExecState.waiting
         else:
             # just go the the next block but set the lock
-            lock_ctx.is_spinning = True
+            lock_ctx.on_hold = True
+            lock_ctx.held_by = state.cur_control_inst(cpu_id)
             set_next_abb(state, cpu_id)
         return state
 
@@ -901,7 +743,8 @@ class AUTOSAR(OSBase):
         # local backup
         wait_for = lock_ctx.wait_for
         lock_ctx.wait_for = []
-        lock_ctx.is_spinning = False
+        lock_ctx.on_hold = False
+        lock_ctx.held_by = None
 
         # the current CPU just follows the control flow
         set_next_abb(state, cpu_id)
@@ -951,25 +794,27 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_ResumeAllInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].irq_status[cpu_id] -= 1
-        if state.context["AUTOSAR"].irq_status[cpu_id] == 0:
+        state.context[AUTOSAR._irq_status_key(cpu_id)] -= 1
+        if state.context[AUTOSAR._irq_status_key(cpu_id)] == 0:
             state.cpus[cpu_id].irq_on = True
         return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_ResumeOSInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].os_irq_status[cpu_id] -= 1
+        state.context[AUTOSAR._os_irq_status_key(cpu_id)] -= 1
         return state
 
     @staticmethod
     def connect_events(state, cpu_id, event_mask, label, ty):
         for v, event in state.instances.get(Event):
-            if (event.index & event_mask) == event.index:
+            if event.index is not None and \
+                    (event.index & event_mask) == event.index:
                 connect_from_here(state, cpu_id, v, label, ty=ty)
 
     @staticmethod
     def SetEvent(state, cpu_id, task, event_mask):
+        AUTOSAR.check_cpu(state, task.cpu_id)
         task_ctx = state.context[task]
         if task_ctx.status == TaskStatus.blocked and \
            event_mask & task_ctx.waited_events != 0:
@@ -981,9 +826,6 @@ class AUTOSAR(OSBase):
         if task_ctx.status != TaskStatus.suspended:
             task_ctx.received_events |= event_mask
 
-        AUTOSAR.connect_events(state, cpu_id, event_mask, "SetEvent",
-                               InstanceEdge.sete)
-
         return state
 
     @syscall(categories={SyscallCategory.comm},
@@ -992,7 +834,11 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.task, Task))
         assert(isinstance(args.event_mask, int))
-        return AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
+        state = AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
+        AUTOSAR.connect_events(state, cpu_id, args.event_mask, "SetEvent",
+                               InstanceEdge.sete)
+        return state
+
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
@@ -1037,14 +883,14 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_SuspendAllInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].irq_status[cpu_id] += 1
+        state.context[AUTOSAR._irq_status_key(cpu_id)] += 1
         state.cpus[cpu_id].irq_on = False
         return state
 
     @syscall(categories={SyscallCategory.comm},
              signature=tuple())
     def AUTOSAR_SuspendOSInterrupts(cfg, state, cpu_id, args, va):
-        state.context["AUTOSAR"].os_irq_status[cpu_id] += 1
+        state.context[AUTOSAR._os_irq_status_key(cpu_id)] += 1
         return state
 
     @staticmethod
@@ -1092,3 +938,15 @@ class AUTOSAR(OSBase):
                                InstanceEdge.wait)
 
         return state
+
+    @syscall(categories={SyscallCategory.comm},
+             signature=tuple())
+    def ShutdownMachine(cfg, state, cpu_id, args, va):
+        """Special handling for ShutdownMachine.
+
+        Actually, this is not an AUTOSAR syscall. However, a machine shutdown
+        prevents the system from executing further, so continue the analysis
+        beyond this point is meaningless.
+        """
+        # just return nothing. The system terminates here.
+        return []

@@ -7,6 +7,7 @@ import graph_tool
 import os
 
 from .printer import sstg_to_dot
+from .util import open_with_dirs
 
 
 class SSE(Step):
@@ -28,9 +29,9 @@ class SSE(Step):
     def dump_sstg(self, sstg, extra):
         dot_file = self.dump_prefix.get() + f"sstg.{extra}.dot"
         dot_path = os.path.abspath(dot_file)
-        os.makedirs(os.path.dirname(dot_path), exist_ok=True)
         dot_graph = sstg_to_dot(sstg, f"SSTG {extra}")
-        dot_graph.write(dot_path)
+        with open_with_dirs(dot_path):
+            dot_graph.write(dot_path)
         self._log.info(f"Write SSTG to {dot_path}.")
 
     def run(self):

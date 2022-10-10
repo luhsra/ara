@@ -279,12 +279,12 @@ class OSBase:
         raise NotImplementedError
 
     @staticmethod
-    def get_cpu_local_contexts(contexts, cpu_id):
+    def get_cpu_local_contexts(contexts, cpu_id, instances):
         """Get all contexts that affect cpu_id."""
         raise NotImplementedError
 
     @staticmethod
-    def get_global_contexts(contexts):
+    def get_global_contexts(contexts, instances):
         """Get all contexts that affect multiple CPUs."""
         raise NotImplementedError
 

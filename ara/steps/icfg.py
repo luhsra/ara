@@ -6,6 +6,8 @@ from .option import Option, String
 from enum import IntEnum
 from graph_tool import GraphView
 
+import logging
+
 
 class ICFG(Step):
     """Map interprocedural edges.
@@ -47,11 +49,13 @@ class ICFG(Step):
             self._log.debug(f"Analyzing function {cfg.vp.name[cur_func]}.")
 
             to_be_linked = []
+            skip_func = False
 
             for bb in cfg.get_function_bbs(cur_func):
-                if (icfg.vertex(bb).out_degree() > 0):
+                if (icfg.vertex(bb).out_degree() + icfg.vertex(bb).in_degree() > 0):
                     # function already handled in a previous ICFG run
-                    continue
+                    skip_func = True
+                    break
                 # find other functions
                 linked = False
                 if cfg.vp.type[bb] in [ABBType.syscall, ABBType.call]:
@@ -66,16 +70,16 @@ class ICFG(Step):
                         if sys_rel_cg.ep.callsite[callsite] == bb:
                             # for all callsites in the callgraph belonging to
                             # this BB
-                            callee = sys_rel_cg.vp.function[callsite.target()]
+                            callee = cfg.vertex(sys_rel_cg.vp.function[callsite.target()])
                             self._log.debug("Found system relevant call "
                                             f"to {cfg.vp.name[callee]}.")
-                            entry = cfg.get_entry_bb(cfg.vertex(callee))
+                            entry = cfg.get_function_entry_bb(callee)
                             to_be_linked.append((ICFG._ET.IN, bb, entry))
                             link_counter += 1
                             linked = True
                             assert lcfg.vertex(bb).out_degree() == 1
                             n_bb = next(lcfg.vertex(bb).out_neighbors())
-                            exit_bb = cfg.get_function_exit_bb(cfg.vertex(callee))
+                            exit_bb = cfg.get_function_exit_bb(callee)
                             if exit_bb:
                                 to_be_linked.append(
                                     (ICFG._ET.OUT, exit_bb, n_bb)
@@ -87,9 +91,13 @@ class ICFG(Step):
                     for n_bb in lcfg.vertex(bb).out_neighbors():
                         to_be_linked.append((ICFG._ET.STD, bb, n_bb))
 
+            if skip_func:
+                continue
+
             # link abbs
             for ty, src, target in to_be_linked:
-                if ty in [ICFG._ET.IN, ICFG._ET.OUT]:
+                # some logging output
+                if self._log.getEffectiveLevel() <= logging.DEBUG and ty in [ICFG._ET.IN, ICFG._ET.OUT]:
                     s = cfg.vp.name[src]
                     t = cfg.vp.name[target]
                     self._log.debug(f"Add {to_s[ty]} edge from {s} to {t}.")

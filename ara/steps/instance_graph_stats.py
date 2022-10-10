@@ -3,6 +3,7 @@ import json
 import graph_tool
 from typing import Any, List
 from .step import Step
+from .util import open_with_dirs
 
 
 class MissingInteractions:
@@ -160,7 +161,7 @@ class InstanceGraphStats(Step):
         self._log.info(f"Collected data: {output_dict}")
 
         if self.dump.get():
-            with open(self.dump_prefix.get() + '.json', 'w') as f:
+            with open_with_dirs(self.dump_prefix.get() + '.json', 'w') as f:
                 json.dump(output_dict, f, indent=4)
             if MissingInteractions.in_use:
                 self._write_failing_interaction_syscalls_to_file()

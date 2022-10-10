@@ -143,6 +143,18 @@ class StepManager:
             for line in stats_string.split('\n'):
                 self._log.info(line)
 
+    def _emit_step_data(self, step_data_output, dump_prefix):
+        data = self._graph.step_data
+        if step_data_output == 'dump':
+            file_name = dump_prefix.replace('{step_name}', 'ARA')
+            file_name = file_name.replace('{uuid}', '-')
+            file_name += 'step_data.json'
+        else:
+            file_name = step_data_output
+        with open(file_name, 'w') as f:
+            json.dump(data, f)
+            f.write('\n')
+
     def _get_config(self, step):
         """
         Takes a StepEntry and applies the global, extra and step config to
@@ -321,6 +333,8 @@ class StepManager:
         runtime_stats_file = program_config['runtime_stats_file']
         runtime_stats_format = program_config['runtime_stats_format']
         dump_prefix = program_config['dump_prefix']
+        step_data_output = program_config['step_data']
+
 
         self._execute_chain = [self._make_step_entry(step, explicit=True)
                                for step in reversed(steps)]
@@ -334,3 +348,5 @@ class StepManager:
         if self._runtime_stats:
             self._emit_runtime_stats(self._step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)
+        if step_data_output:
+            self._emit_step_data(step_data_output, dump_prefix)

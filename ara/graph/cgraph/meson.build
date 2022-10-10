@@ -19,12 +19,13 @@ graph_data_mod = py3_inst.extension_module('graph_data',
   'callpath.cpp',
   'mix.cpp',
   'os.cpp',
+  gnu_symbol_visibility: 'default',
+  override_options: 'b_lundef=false',
   dependencies: [py3_inst.dependency(), llvm_dep, boost_dep, graph_tool_dep, common_dep, pyllco_dep, svf_dep]
 )
 graph_data_dir = meson.current_build_dir()
 
 graph_dep = declare_dependency(
   include_directories: graph_inc,
-  link_with: graph_data_mod,
   sources: graph_data_pyx_header
 )

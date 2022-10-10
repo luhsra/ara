@@ -388,6 +388,10 @@ namespace ara::step {
 		int handled_blocks = 0;
 		llvm::Function* entry = graph.get_module().getFunction(entry_point);
 
+		if (entry == nullptr) {
+			fail("entry_point is not a valid LLVM function.");
+		}
+
 		std::set<const llvm::Function*> handled_functions;
 		unhandled_functions.push(entry);
 

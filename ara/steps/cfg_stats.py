@@ -1,13 +1,13 @@
 """Container for CFGStats."""
 from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory, NodeLevel
 from .step import Step
+from .util import open_with_dirs
 from graph_tool.topology import label_components
 
-import graph_tool
 import json
-import sys
 import numpy
 import statistics
+
 
 class CFGStats(Step):
     """Gather statistics about the Control Flow Graph."""
@@ -92,19 +92,19 @@ class CFGStats(Step):
             self._log.info(f"Number of syscalls for category {cat.name}: {count}")
 
         if self.dump.get():
-            with open(self.dump_prefix.get() + '.json', 'w') as f:
+            with open_with_dirs(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_bbs": num_bbs,
-                           "num_abbs": num_abbs,
-                           "num_syscalls": num_syscalls,
-                           "num_calls": num_calls,
-                           "num_bb_calls": num_bb_calls,
-                           "num_computation": num_computation,
-                           "num_functions": num_functions,
-                           "num_local_edges": num_ledges,
-                           "num_interprocedural_edges": num_iedges,
-                           "local_average_cyclomatic_complexity": lv,
-                           "local_boxplot_cyclomatic_complexity": lv_box,
-                           "interprocedural_cyclomatic_complexity": iv}
+                          "num_abbs": num_abbs,
+                          "num_syscalls": num_syscalls,
+                          "num_calls": num_calls,
+                          "num_bb_calls": num_bb_calls,
+                          "num_computation": num_computation,
+                          "num_functions": num_functions,
+                          "num_local_edges": num_ledges,
+                          "num_interprocedural_edges": num_iedges,
+                          "local_average_cyclomatic_complexity": lv,
+                          "local_boxplot_cyclomatic_complexity": lv_box,
+                          "interprocedural_cyclomatic_complexity": iv}
                 for cat, count in cat_counter.items():
                     values[f"num_category_{cat.name}"] = count
                 json.dump(values, f, indent=4)

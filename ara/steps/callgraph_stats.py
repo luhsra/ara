@@ -1,14 +1,12 @@
 """Container for CFGStats."""
-from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory
 from .step import Step
-from graph_tool.topology import label_components, min_spanning_tree, pseudo_diameter
+from .util import open_with_dirs
+
+from graph_tool.topology import min_spanning_tree, pseudo_diameter
 from graph_tool import GraphView
 
-import graph_tool
 import json
-import sys
-import numpy
-import statistics
+
 
 class CallGraphStats(Step):
     """Gather statistics about the Control Flow Graph."""
@@ -36,7 +34,7 @@ class CallGraphStats(Step):
         self._log.info(f"Maximum call path depth: {max_cd}")
 
         if self.dump.get():
-            with open(self.dump_prefix.get() + '.json', 'w') as f:
+            with open_with_dirs(self.dump_prefix.get() + '.json', 'w') as f:
                 values = {"num_functions": num_functions,
                           "num_callees": num_callees,
                           "max_path_depth": max_cd}

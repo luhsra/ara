@@ -1,0 +1,5 @@
+*.dict*
+*.cc
+*.oil
+*.dot
+gen/
