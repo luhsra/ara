@@ -17,14 +17,13 @@ def _init_os_package():
     if _os_models is None:
         # Register your new OS Model here:
         from .freertos import FreeRTOS
-        from .osek import OSEK
         from .autosar import AUTOSAR
         from .zephyr import ZEPHYR
         from .posix.posix import POSIX
 
         _os_models = {
             model.get_name(): model
-            for model in [FreeRTOS, OSEK, AUTOSAR, ZEPHYR, POSIX]
+            for model in [FreeRTOS, AUTOSAR, ZEPHYR, POSIX]
         }  # And here
 
 
