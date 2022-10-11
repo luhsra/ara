@@ -222,6 +222,8 @@ class OSCreator(type):
 
 
 class OSBase(metaclass=OSCreator):
+    # specify possible edge types for the InstanceGraph
+    EdgeType = None
     config = {}
 
     @classmethod

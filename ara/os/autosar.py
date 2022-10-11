@@ -204,8 +204,7 @@ class AUTOSAR(OSBase):
 
     See https://www.autosar.org/fileadmin/user_upload/standards/classic/20-11/AUTOSAR_SWS_OS.pdf
     """
-    
-    EdgeType = InstanceEdge # required for instance_graph test script
+    EdgeType = InstanceEdge
 
     @staticmethod
     def get_special_steps():
