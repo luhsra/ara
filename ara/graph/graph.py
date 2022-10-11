@@ -553,7 +553,8 @@ class InstanceGraph(graph_tool.Graph):
         self.edge_properties["label"] = self.new_ep("string")
         self.edge_properties["type"] = self.new_ep("int")  # OS specific type
         self.edge_properties["syscall"] = self.new_ep("int")  # ABB vertex ID
-        self.edge_properties["number"] = self.new_ep("int64_t")  # not distinguishable interactions: increment number field instead of add a new edge
+        # not distinguishable interactions
+        self.edge_properties["quantity"] = self.new_ep("int64_t")
 
     def get_controls(self):
         return graph_tool.GraphView(self, vfilt=self.vp.is_control)

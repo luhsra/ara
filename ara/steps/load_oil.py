@@ -30,7 +30,7 @@ class LoadOIL(Step):
 
     def _add_edge(self, instances, src, tgt):
         e = instances.add_edge(src, tgt)
-        instances.ep.number[e] = 1
+        instances.ep.quantity[e] = 1
         return e
 
     def run(self):

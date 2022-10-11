@@ -132,7 +132,7 @@ class InstanceGraphStats(Step):
         for edge in instances.edges():
             if not os.is_interaction(instances.ep.type[edge]):
                 continue
-            number_prop = instances.ep.number[edge]
+            number_prop = instances.ep.quantity[edge]
             assert number_prop >= 1
             target = instances.vp.obj[edge.target()]
             target_type_str = type(target).__name__

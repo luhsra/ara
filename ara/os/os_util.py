@@ -439,13 +439,13 @@ def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
                     [("syscall", abb),
                      ("label", label),
                      ("type", (0 if ty is None else ty))]]):
-                instance_graph.ep.number[edge] += 1
+                instance_graph.ep.quantity[edge] += 1
                 return
 
     e = instance_graph.add_edge(src, tgt)
     instance_graph.ep.syscall[e] = abb
     instance_graph.ep.label[e] = label
-    instance_graph.ep.number[e] = 1
+    instance_graph.ep.quantity[e] = 1
     if ty is not None:
         instance_graph.ep.type[e] = ty
 
