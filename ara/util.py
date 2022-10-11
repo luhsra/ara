@@ -254,11 +254,11 @@ class KConfigFile(dict):
 
                 self[tokens[0]] = tokens[1]
 
-llvm_suffix = re.compile(".+\.\d+")
 
+llvm_suffix = re.compile(".+\.\d+")
 def drop_llvm_suffix(name: str) -> str:
     """Remove the llvm suffix from a name
-    
+
     E.g. sleep.5 -> sleep
     """
     if llvm_suffix.match(name) is not None:

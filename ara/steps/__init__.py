@@ -55,7 +55,6 @@ def provide_steps():
     yield ICFG
     yield IPIAvoidance
     yield InstanceGraphStats
-    yield InstanceGraphStats
     yield InteractionAnalysis
     yield LoadOIL
     yield LockElision

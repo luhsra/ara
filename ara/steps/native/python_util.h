@@ -7,6 +7,8 @@
 #include <Python.h>
 #include <pyllco.h>
 
+// TODO replace this wtth Cython code
+
 // Create a py dict from the given elements, this is a ref stealing
 // operation
 inline PyObject* py_dict(std::initializer_list<std::pair<const char*, PyObject*>> elements) {

@@ -353,7 +353,7 @@ class AUTOSAR(OSBase):
         return state
 
     @staticmethod
-    def is_interaction(ty):
+    def is_interaction(ty) -> bool:
         return ty != InstanceEdge.have
 
     def _get_taskgroup_for_task(instances, task_v):

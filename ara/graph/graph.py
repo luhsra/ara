@@ -587,6 +587,7 @@ class InstanceGraph(graph_tool.Graph):
                 continue
             yield obj.function, inst
 
+
 class Graph:
     """Container for all data that ARA uses from multiple steps.
 

@@ -38,10 +38,10 @@ class Syscall(Step):
             dot_file = self.dump_prefix.get() + f'{entry_label}.dot'
             name = f"CFG with syscalls (Function: {entry_label})"
             self._step_manager.chain_step({"name": "Printer",
-                                            "dot": dot_file,
-                                            "graph_name": name,
-                                            "entry_point": entry_label,
-                                            "from_entry_point": True,
-                                            "subgraph": 'abbs'})
+                                           "dot": dot_file,
+                                           "graph_name": name,
+                                           "entry_point": entry_label,
+                                           "from_entry_point": True,
+                                           "subgraph": 'abbs'})
 
         self._log.info(f"Found {syscall_counter} syscalls.")

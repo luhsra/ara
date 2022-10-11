@@ -258,7 +258,6 @@ class SysCall:
         callpath = new_state.cpus[cpu_id].call_path
 
         # retrieve arguments
-        ValuesUnknown = get_native_component("ValuesUnknown")
         for idx, arg in enumerate(self._signature):
             fields.append((arg.name, arg.ty))
             hint = arg.hint
@@ -426,14 +425,13 @@ def connect_instances(instance_graph, src, tgt, abb, label, ty=None):
     tgt = instance_graph.vertex(tgt)
     # filter same interactions
     existing = instance_graph.edge(src, tgt, all_edges=True)
-    if len(existing) >= 1:
-        for edge in existing:
-            if all([instance_graph.ep[x][edge] == y for x, y in
-                    [("syscall", abb),
-                     ("label", label),
-                     ("type", (0 if ty is None else ty))]]):
-                instance_graph.ep.quantity[edge] += 1
-                return
+    for edge in existing:
+        if all([instance_graph.ep[x][edge] == y for x, y in
+                [("syscall", abb),
+                 ("label", label),
+                 ("type", (0 if ty is None else ty))]]):
+            instance_graph.ep.quantity[edge] += 1
+            return
 
     e = instance_graph.add_edge(src, tgt)
     instance_graph.ep.syscall[e] = abb
