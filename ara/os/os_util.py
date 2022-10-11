@@ -195,14 +195,13 @@ class SysCall:
     A Syscall objects acts like a (static) function and can be called.
     """
 
-    def __init__(self, func_body, categories, has_time, signature, custom_control_flow, aliases, name, signal_safe, is_stub):
+    def __init__(self, func_body, categories, signature, custom_control_flow, aliases, name, signal_safe, is_stub):
         # visible attributes
         self.syscall = True
         self.categories = categories
         self.aliases = aliases
         self._func = func_body
         self._signature = signature
-        self.has_time = has_time
         self._ccf = custom_control_flow
         self.name = name if name != None else func_body.__name__
         self.signal_safe = signal_safe
@@ -304,7 +303,6 @@ class SysCall:
 def syscall(*args,
             categories: Tuple[_SyscallCategory] = None,
             signature: Tuple[Argument] = None,
-            has_time: bool = False,
             custom_control_flow: bool = False,
             aliases: Tuple[str] = None,
             name: str = None,
@@ -317,7 +315,6 @@ def syscall(*args,
     Arguments:
     categories          -- Categories of the system call
     signature           -- Specification of all system call arguments
-    has_time            -- The syscall handling needs time (e.g. taking a spinlock)
     custom_control_flow -- Does this system call alter the control flow?
     aliases             -- Alias names of the system call.
     name                -- The name of the syscall.
@@ -332,7 +329,6 @@ def syscall(*args,
         aliases = []
 
     outer_categories = categories
-    outer_has_time = has_time
     outer_signature = signature
     outer_aliases = aliases
     outer_ccf = custom_control_flow
@@ -340,7 +336,7 @@ def syscall(*args,
     outer_signal_safe = signal_safe
     outer_is_stub = is_stub
 
-    def wrap(func, categories=outer_categories, has_time=outer_has_time, signature=outer_signature,
+    def wrap(func, categories=outer_categories, signature=outer_signature,
              custom_control_flow=outer_ccf, aliases=outer_aliases,
              name=outer_name, signal_safe=outer_signal_safe,
              is_stub=outer_is_stub):
@@ -351,7 +347,7 @@ def syscall(*args,
     if len(args) == 1 and callable(args[0]):
         # decorator was called without keyword arguments, first argument is the
         # function, return a replacement function for the decorated function
-        func = wrap(args[0], categories, has_time, signature, custom_control_flow,
+        func = wrap(args[0], categories, signature, custom_control_flow,
                     aliases, name, signal_safe, is_stub=True)
         return func
 
