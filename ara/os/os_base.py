@@ -224,7 +224,7 @@ class OSCreator(type):
 class OSBase(metaclass=OSCreator):
     # specify possible edge types for the InstanceGraph
     EdgeType = None
-    config = {}
+    config = {}  # compile time config, TODO: this needs to be in the state
 
     @classmethod
     def get_name(cls):
