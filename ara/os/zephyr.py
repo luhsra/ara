@@ -499,10 +499,6 @@ class ZEPHYR(OSBase):
         connect_from_here(state, cpu_id, ZEPHYR.kernel, call, ty=ZephyrEdgeType.interaction)
 
     @staticmethod
-    def init(state):
-        pass
-
-    @staticmethod
     def get_initial_state(cfg, instances):
         return OSState(cpus=CPUList([CPU(id=0,
                                          irq_on=True,

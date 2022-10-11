@@ -100,10 +100,6 @@ class POSIX(OSBase, _POSIXSyscalls, metaclass=_POSIXMetaClass):
         return True
 
     @staticmethod
-    def init(state):
-        pass
-
-    @staticmethod
     def get_initial_state(cfg, instances):
         return OSState(cpus=CPUList([CPU(id=0,
                                          irq_on=True,

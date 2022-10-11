@@ -356,10 +356,6 @@ class AUTOSAR(OSBase):
     def is_interaction(ty):
         return ty != InstanceEdge.have
 
-    @staticmethod
-    def init(instances):
-        pass
-
     def _get_taskgroup_for_task(instances, task_v):
         have = edge_types(instances, instances.ep.type, InstanceEdge.have)
         return instances.vertex(single_check(have.vertex(task_v).in_neighbors()))
