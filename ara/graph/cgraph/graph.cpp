@@ -158,12 +158,6 @@ namespace ara::graph {
 		return os::OS(os);
 	}
 
-	bool Graph::has_os_set() {
-		PyObject* os = PyObject_GetAttrString(graph, "os");
-		assert(os != nullptr && "Error in PyObject_GetAttrString(graph, \"os\");");
-		return os != Py_None;
-	}
-
 	inline void create_properties(CallGraph& callgraph, PyObject* py_callgraph) {
 		PyObject* vprops = get_vprops(py_callgraph);
 

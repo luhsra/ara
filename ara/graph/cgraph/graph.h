@@ -570,7 +570,6 @@ namespace ara::graph {
 		PyObject* get_pygraph() { return graph; }
 
 		os::OS get_os();
-		bool has_os_set();
 
 		CFG get_cfg();
 		std::unique_ptr<CFG> get_cfg_ptr();
