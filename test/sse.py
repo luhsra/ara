@@ -43,7 +43,7 @@ def main():
               "SSE": {"log_level": "debug"},
               "logger": {"AUTOSAR": "debug"}}
     inp = {"oilfile": lambda argv: argv[3]}
-    data = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp, os_name="AUTOSAR")
 
     sstg = data.graph.reduced_sstg
 
