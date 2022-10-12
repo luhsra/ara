@@ -19,4 +19,11 @@ namespace ara::step::py_util {
 	 */
 	void py_assert(bool cond, const std::string&& msg, Logger& logger, const PyObject* error_with_obj = nullptr);
 
+	/**
+	 * @brief Aborts execution if a python error occured
+	 * 
+	 * @param display_msg display message on true
+	 */
+	void handle_py_error(bool display_msg = true);
+
 } // namespace ara::step::py_util
