@@ -12,13 +12,6 @@ class RESOURCE_PATH:
         RESOURCE_PATH.res_path = path
 
 
-class GraphTypes(Enum):
-    ABB = "Abb"
-    INSTANCE = "Instance"
-    CALLGRAPH = "CallGraph"
-    SVFG = "SVFG"
-
-
 class StepMode:
     DEFAULT = 1
     TRACE = 2

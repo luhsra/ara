@@ -10,10 +10,11 @@ from PySide6.QtCore import Slot
 from PySide6.QtGui import QPainter, Qt
 
 from . import ara_manager
+from ara.graph.mix import GraphTypes
 from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
-from .util import RESOURCE_PATH, GraphTypes, StepMode
+from .util import RESOURCE_PATH, StepMode
 from .widgets import graph_views
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView, SVFGView
 

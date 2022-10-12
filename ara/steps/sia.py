@@ -4,7 +4,7 @@ from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CF
 from dataclasses import dataclass
 from ara.util import dominates, has_path
 from ara.visualization.trace.tracer_api.tracer import GraphNode, GraphPath, init_fast_trace
-from ara.visualization.util import GraphTypes
+from ara.graph.mix import GraphTypes
 
 from .step import Step
 from .option import Option, String

@@ -6,7 +6,7 @@ from ara.graph.graph import CFG, Callgraph
 from graph_tool.libgraph_tool_core import Vertex
 
 from ara.visualization.trace import trace_lib
-from ara.visualization.util import GraphTypes
+from ara.graph.mix import GraphTypes
 from ara.visualization.widgets.graph_elements import NodeSetting, CallgraphEdgeSetting
 
 

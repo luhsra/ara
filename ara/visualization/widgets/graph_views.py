@@ -4,11 +4,12 @@ from PySide6.QtGui import QWheelEvent, QPainter
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidget, QWidget
 from graph_tool.libgraph_tool_core import Vertex
 
+from ara.graph.mix import GraphTypes
 from ara.visualization.layouter import Layouter
 from ara.visualization.signal import ara_signal
 from ara.visualization.signal.signal_combiner import SignalCombiner
 from ara.visualization.trace import trace_handler, trace_lib
-from ara.visualization.util import GraphTypes, StepMode
+from ara.visualization.util import StepMode
 from ara.visualization.widgets.graph_elements import AbstractNode, GraphicsObject, InstanceNode, SVFGNode, Subgraph, AbbNode, CallGraphNode
 
 
@@ -128,7 +129,7 @@ class BaseGraphView(QGraphicsView):
     # bool = layout only - deprecated
     sig_layout_start = Signal(GraphTypes, set, list, bool, StepMode)
 
-    sig_work_done = Signal(str)
+    sig_work_done = Signal(int)
 
     def __init__(self, signal_combiner: SignalCombiner):
         super().__init__()

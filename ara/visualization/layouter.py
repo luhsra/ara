@@ -5,11 +5,12 @@ from pygraphviz import AGraph
 from graph_tool.libgraph_tool_core import Vertex, Edge
 
 from ara.graph import ABBType, CFType, Graph
+from ara.graph.mix import GraphTypes
 from ara.visualization import ara_manager
 from ara.visualization.trace import trace_handler
 
 from ara.visualization.widgets.graph_elements import AbbNode, GraphEdge, SVFGNode, Subgraph, CallGraphNode, InstanceNode
-from ara.visualization.util import GraphTypes, StepMode
+from ara.visualization.util import StepMode
 
 VALID_EDGE_TYPE = [CFType.lcf, CFType.icf]
 

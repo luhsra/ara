@@ -6,7 +6,7 @@ class SignalCombiner(QObject):
         This class is used to combine multiple signal sources into one output. This is done
         by tracking the sources which have triggered and which haven't. If a signal was
         received from every source a new output signal is emitted.
-        The signal sources are tracked individual to prevent an output being triggerd by
+        The signal sources are tracked individual to prevent an output being triggered by
         just a singular source which might send multiple signals.
     """
 
@@ -24,7 +24,7 @@ class SignalCombiner(QObject):
         assert not self.senders.__contains__(id)
         self.senders[id] = False
 
-    @Slot(str)
+    @Slot(type)
     def receive(self, id):
         """
             Receives a signal from a registered sender.

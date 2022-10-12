@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 
-from ara.visualization.util import GraphTypes
+from ara.graph.mix import GraphTypes
 
 
 # The color numbers are used for determining the correct style in the style sheet.

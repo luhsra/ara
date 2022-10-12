@@ -8,7 +8,7 @@ from graph_tool.libgraph_tool_core import Vertex
 
 from ara.graph import CFType
 from ara.visualization.trace import trace_lib, trace_util
-from ara.visualization.util import RESOURCE_PATH, GraphTypes
+from ara.visualization.util import RESOURCE_PATH
 
 DPI_LEVEL = 72
 
