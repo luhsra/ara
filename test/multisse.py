@@ -77,7 +77,7 @@ def main():
     else:
         config = {"steps": ["LockElision"],
                   "MultiSSE": {"dump": True}}
-    data = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp, os_name="AUTOSAR")
 
     mstg = data.graph.mstg
     reduced = mstg.vertex_type(StateType.entry_sync, StateType.exit_sync)

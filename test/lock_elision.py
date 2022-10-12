@@ -47,7 +47,7 @@ def main():
                         },
                         "LockElision"]}
     inp = {"oilfile": lambda argv: argv[3]}
-    data = init_test(extra_config=config, extra_input=inp)
+    data = init_test(extra_config=config, extra_input=inp, os_name="AUTOSAR")
 
     locks = data.graph.step_data["LockElision"]
     t_data = data.data['no_timing']
