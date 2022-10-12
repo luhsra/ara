@@ -155,7 +155,7 @@ namespace ara::step {
 	}
 
 	template <typename SVFG>
-	std::ostream& operator<<(std::ostream& os, const PrintableEdge<SVFG>&& edge) {
+	std::ostream& operator<<(std::ostream& os, const PrintableEdge<SVFG>& edge) {
 		os << "Edge(";
 		os << source(edge.edge, edge.g);
 		os << "->";
@@ -197,8 +197,8 @@ namespace ara::step {
 
 	template <class SVFG>
 	void Traverser<SVFG>::do_step() {
-		assert(trace.back().has_value());
-		Edge<SVFG> current_edge = *trace.back();
+		assert(!trace.empty());
+		Edge<SVFG> current_edge = trace.back();
 		if (!skip_first_edge) {
 			this->dbg() << "Analyzing edge " << PrintableEdge(current_edge, caretaker.get_g()) << std::endl;
 			if (eval_result(handle_edge(current_edge))) {
@@ -288,6 +288,13 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
+	void Traverser<SVFG>::add_edge_to_trace(const Edge<SVFG>& edge) {
+		this->trace.emplace_back(edge);
+		this->path.template add_edge<SVFG>(caretaker.get_trace(), edge, caretaker.get_g());
+		caretaker.get_trace().go_to_node(this->entity, this->path, false);
+	}
+
+	template <class SVFG>
 	TraversalResult<SVFG> Traverser<SVFG>::advance(const Node<SVFG> node, bool only_delegate) {
 		// go into the direction of the first edge yourself or delegate
 		bool first = !only_delegate;
@@ -299,6 +306,11 @@ namespace ara::step {
 		unsigned spawned_traversers = 0;
 		for (auto edge : graph_tool::in_edges_range(node, caretaker.get_g())) {
 			this->dbg() << "Eval Callpath: " << cp << " | " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
+
+			tracer::GraphPath eval_path = this->path.clone();
+			eval_path.template add_edge<SVFG>(caretaker.get_trace(), edge, caretaker.get_g());
+			caretaker.get_trace().entity_is_looking_at(this->entity, eval_path);
+
 			auto [action, cg_edge] = evaluate_callpath(edge, cp);
 			if (action == CPA::false_path) {
 				this->dbg() << "False path: " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
@@ -308,7 +320,8 @@ namespace ara::step {
 			++spawned_traversers;
 			if (first) {
 				this->dbg() << "Advance: self, go to " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
-				this->trace.emplace_back(edge);
+				caretaker.get_trace().go_to_node(this->entity, eval_path, false);
+				this->path = eval_path;
 				update_call_path(action, cg_edge);
 				first = false;
 				continue;
@@ -604,9 +617,9 @@ namespace ara::step {
 		std::vector<shared_ptr<Traverser<SVFG>>> indirects;
 		std::vector<shared_ptr<Traverser<SVFG>>> directs;
 		for (auto worker : workers | boost::adaptors::map_values) {
-			assert(worker->trace.back().has_value());
+			assert(!worker->trace.empty());
 			if (llvm::isa<SVF::CallIndSVFGEdge>(
-			        caretaker.get_svfg()->template get_edge_obj<SVFG>(*worker->trace.back()))) {
+			        caretaker.get_svfg()->template get_edge_obj<SVFG>(worker->trace.back()))) {
 				indirects.emplace_back(worker);
 			} else {
 				directs.emplace_back(worker);
@@ -631,9 +644,9 @@ namespace ara::step {
 		os << "Traverser(";
 		os << "id=" << t.get_id();
 		os << ", boss=" << t.boss->get_id();
-		std::optional<Edge<SVFG>> edge = t.trace.back();
-		if (edge.has_value()) {
-			os << ", edge=" << source(*edge, t.caretaker.get_g()) << "->" << target(*edge, t.caretaker.get_g());
+		if (!t.trace.empty()) {
+			Edge<SVFG> edge = t.trace.back();
+			os << ", edge=" << source(edge, t.caretaker.get_g()) << "->" << target(edge, t.caretaker.get_g());
 		} else {
 			os << ", edge=nullptr";
 		}
@@ -860,6 +873,9 @@ namespace ara::step {
 		Bookkeeping caretaker(*this, this->callgraph, this->svfg, g, trace, svf_objects.s_callgraph, hint);
 		std::shared_ptr<Manager<SVFG>> root = std::make_shared<Manager<SVFG>>(start, callpath, caretaker);
 		caretaker.add_traverser(root);
+
+		trace.entity_on_node(root->get_entity(),
+		                     tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphTypes::SVFG));
 
 		caretaker.run();
 		auto& result = root->get_value();

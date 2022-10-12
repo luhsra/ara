@@ -90,7 +90,7 @@ namespace ara::step {
 	std::ostream& operator<<(std::ostream& os, const Node<SVFG> node);
 
 	template <typename SVFG>
-	std::ostream& operator<<(std::ostream& os, const PrintableEdge<SVFG>&& edge);
+	std::ostream& operator<<(std::ostream& os, const PrintableEdge<SVFG>& edge);
 
 	template <typename SVFG>
 	class Bookkeeping;
@@ -140,7 +140,9 @@ namespace ara::step {
 		/**
 		 * The path of all gone edges
 		 */
-		std::vector<std::optional<Edge<SVFG>>> trace;
+		std::vector<Edge<SVFG>> trace;
+
+		tracer::GraphPath path;
 
 		/**
 		 * Reports from employes.
@@ -192,6 +194,8 @@ namespace ara::step {
 		 */
 		TraversalResult<SVFG> handle_node(const Node<SVFG> node);
 
+		void add_edge_to_trace(const Edge<SVFG>& edge);
+
 		/**
 		 * Advance one edge further. May spawn other traversers (colleagues).
 		 */
@@ -222,11 +226,13 @@ namespace ara::step {
 		void remove(size_t traverser_id);
 
 	  public:
-		Traverser(Traverser* boss, std::optional<Edge<SVFG>> edge, graph::CallPath call_path,
+		Traverser(Traverser* boss, const std::optional<Edge<SVFG>>& edge, graph::CallPath call_path,
 		          Bookkeeping<SVFG>& caretaker)
-		    : boss(boss), call_path(call_path), caretaker(caretaker), id(caretaker.get_new_id()),
-		      entity(caretaker.get_trace().get_entity("Traverser_" + id)) {
-			trace.emplace_back(edge);
+		    : boss(boss), call_path(call_path), path(graph::GraphTypes::SVFG), caretaker(caretaker),
+		      id(caretaker.get_new_id()), entity(caretaker.get_trace().get_entity("Traverser_" + std::to_string(id))) {
+			if (edge.has_value()) {
+				add_edge_to_trace(*edge);
+			}
 		}
 
 		virtual ~Traverser(){};
@@ -249,6 +255,7 @@ namespace ara::step {
 		void wakeup();
 		Status get_status() const { return status; }
 		size_t get_id() const { return id; }
+		tracer::Entity& get_entity() { return entity; }
 		friend std::ostream& operator<<<SVFG>(std::ostream& os, const Traverser<SVFG>& t);
 	};
 
