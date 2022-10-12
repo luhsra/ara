@@ -1,28 +1,78 @@
 #pragma once
 
 #include "logging.h"
+#include "mix.h"
 
 #include <Python.h>
+#include <boost/python.hpp>
+
+// we use 'unsigned long' directly for vertex ids in cython, so make sure it is the same as uint64_t
+static_assert(sizeof(uint64_t) == sizeof(unsigned long));
 
 namespace ara::step::tracer {
 
+	template <typename Graph>
+	using Edge = typename boost::graph_traits<Graph>::edge_descriptor;
+
 	class Entity {
-		PyObject* ent;
+		boost::python::object ent;
 
 	  public:
-		Entity(PyObject* ent) : ent(ent) {}
-		~Entity() { Py_XDECREF(ent); }
-		PyObject* getPyObj() { return ent; }
+		Entity(PyObject* ent);
+		boost::python::object get_obj() const { return ent; }
 	};
 
-	class Tracer {
-		PyObject* trace; // nullptr means that tracing is deactivated. In that case all calls does nothing.
-		Logger& logger;
+	class GraphNode {
+		uint64_t node;
+		graph::GraphTypes type;
 
 	  public:
-		Tracer(PyObject* trace, Logger& logger)
-		    : trace((trace && trace != Py_None) ? Py_NewRef(trace) : nullptr), logger(logger) {}
-		~Tracer() { Py_XDECREF(trace); }
-		Entity get_entity(std::string&& str);
+		GraphNode(uint64_t node, graph::GraphTypes type) : node(node), type(type) {}
+		uint64_t get_node() const { return node; }
+		graph::GraphTypes get_type() const { return type; }
+	};
+
+	class GraphPath;
+
+	class Tracer {
+		boost::python::object tracer; // nullptr means that tracing is deactivated. In that case all calls does nothing.
+		Logger& logger;
+		boost::python::object get_vertex_by_id(const GraphNode& node) const;
+
+	  public:
+		Tracer(PyObject* tracer, Logger& logger);
+		bool is_active() const { return !tracer.is_none(); }
+		Entity get_entity(const std::string& str) const;
+		void entity_on_node(const Entity& ent,
+		                    const GraphNode& node) const; // currently only support for one Node in this wrapper
+		void entity_is_looking_at(const Entity& ent,
+		                          const GraphPath& path) const; // currently only support for one Path in this wrapper
+		void go_to_node(const Entity& ent, const GraphPath& path, bool forward = true) const;
+		boost::python::object add_edge_to_path(boost::python::object path, uint64_t source, uint64_t target,
+		                                       graph::GraphTypes type) const;
+	};
+
+	class GraphPath {
+		boost::python::object path;
+		graph::GraphTypes type;
+
+	  public:
+		GraphPath(graph::GraphTypes type) : path(boost::python::object{}), type(type) {}
+
+		/**
+		 * @brief Clones this object and creates a copy of python obj path
+		 */
+		GraphPath clone();
+
+		template <typename Graph>
+		void add_edge(const Tracer& tracer, const Edge<Graph>& edge, const Graph& g) {
+			if (!tracer.is_active()) {
+				return;
+			}
+			this->path = tracer.add_edge_to_path(this->path, source(edge, g), target(edge, g), this->type);
+		}
+
+		boost::python::object get_path() const { return path; }
+		graph::GraphTypes get_type() const { return type; }
 	};
 } // namespace ara::step::tracer

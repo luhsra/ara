@@ -417,3 +417,5 @@ cdef public void step_manager_change_global_config(object step_manager, const ch
 
 cdef public const char* step_manager_get_execution_id(object step_manager):
     return str(step_manager.get_execution_id()).encode('UTF-8')
+
+include "tracer_api.pxi"
