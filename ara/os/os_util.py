@@ -8,7 +8,6 @@ from typing import Tuple
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
 from ara.steps.util import current_step
-from ara.visualization.trace.tracer_api.tracer import init_fast_trace
 
 from .os_base import ExecState
 
@@ -168,7 +167,7 @@ class SysCall:
 
         va = ValueAnalyzer(
             graph,
-            current_step.trace if hasattr(current_step, "trace") else None)
+            current_step.tracer if hasattr(current_step, "tracer") else None)
 
         # copy the original state
         new_state = state.copy()

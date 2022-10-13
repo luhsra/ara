@@ -183,7 +183,7 @@ class FlatAnalysis(Step):
             from ..visualization.trace.trace_type import AlgorithmTrace
 
             init_fast_trace(self)
-            sia_entity = self.trace.get_entity("SIA_entity")
+            sia_entity = self.tracer.get_entity("SIA_entity")
 
         # actual algorithm
         syscalls = CFGView(cfg, vfilt=cfg.vp.type.fa == ABBType.syscall)
@@ -205,7 +205,7 @@ class FlatAnalysis(Step):
 
                 syscall_func = callg.vertex(
                     cfg.vp.call_graph_link[syscall_cfg_func])
-                self.trace.entity_on_node(sia_entity, [
+                self.tracer.entity_on_node(sia_entity, [
                     GraphNode(abb, GraphTypes.ABB),
                     GraphNode(syscall_func, GraphTypes.CALLGRAPH)
                 ])
@@ -234,7 +234,7 @@ class FlatAnalysis(Step):
                         path_to_self):
 
                     if self.trace_algorithm.get():
-                        self.trace.entity_is_looking_at(
+                        self.tracer.entity_is_looking_at(
                             sia_entity, GraphPath(path, GraphTypes.CALLGRAPH))
 
                     abb = cfg.vertex(syscall)

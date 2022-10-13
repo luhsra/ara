@@ -134,7 +134,6 @@ class Tracer:
             actions, self._format_list_output(ent, nodes, "is on "))
 
     def entity_is_looking_at(self, ent: Entity, paths: List[GraphPath]):
-        # TODO: handle null elements and None
         if isinstance(paths, GraphPath):
             paths = [paths]
         self.low_level_trace.add_element(
@@ -213,7 +212,7 @@ def init_fast_trace(step, name: str = None):
     if name == None:
         name = step.get_name()
     graph = step._graph
-    step.trace = Tracer(name, graph.callgraph, graph.cfg, graph.instances,
+    step.tracer = Tracer(name, graph.callgraph, graph.cfg, graph.instances,
                         graph.svfg)
 
 
@@ -223,6 +222,6 @@ def init_trace(step, name: str = None):
     if name == None:
         name = step.get_name()
     graph = step._graph
-    step.trace = Tracer(name, Callgraph(graph.cfg, graph=CFG(graph.callgraph)),
+    step.tracer = Tracer(name, Callgraph(graph.cfg, graph=CFG(graph.callgraph)),
                         CFG(graph.cfg), InstanceGraph(graph.instances),
                         SVFG(graph.svfg))

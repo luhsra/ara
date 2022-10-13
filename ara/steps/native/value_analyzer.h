@@ -229,7 +229,7 @@ namespace ara::step {
 		Traverser(Traverser* boss, const std::optional<Edge<SVFG>>& edge, graph::CallPath call_path,
 		          Bookkeeping<SVFG>& caretaker)
 		    : boss(boss), call_path(call_path), path(graph::GraphTypes::SVFG), caretaker(caretaker),
-		      id(caretaker.get_new_id()), entity(caretaker.get_trace().get_entity("Traverser_" + std::to_string(id))) {
+		      id(caretaker.get_new_id()), entity(caretaker.get_tracer().get_entity("Traverser_" + std::to_string(id))) {
 			if (edge.has_value()) {
 				add_edge_to_trace(*edge);
 			}
@@ -273,16 +273,16 @@ namespace ara::step {
 		std::shared_ptr<graph::CallGraph> call_graph;
 		std::shared_ptr<graph::SVFG> svfg;
 		SVFG& g;
-		tracer::Tracer& trace;
+		tracer::Tracer& tracer;
 		const SVF::PTACallGraph* s_call_graph;
 		graph::SigType hint;
 		bool should_stop = false;
 		size_t next_id = 0;
 
 		Bookkeeping(ValueAnalyzerImpl<SVFG>& va, std::shared_ptr<graph::CallGraph> call_graph,
-		            std::shared_ptr<graph::SVFG> svfg, SVFG& g, tracer::Tracer& trace,
+		            std::shared_ptr<graph::SVFG> svfg, SVFG& g, tracer::Tracer& tracer,
 		            const SVF::PTACallGraph* s_call_graph, graph::SigType hint)
-		    : va(va), call_graph(call_graph), svfg(svfg), g(g), trace(trace), s_call_graph(s_call_graph), hint(hint) {}
+		    : va(va), call_graph(call_graph), svfg(svfg), g(g), tracer(tracer), s_call_graph(s_call_graph), hint(hint) {}
 		template <typename T>
 		friend class ValueAnalyzerImpl;
 
@@ -294,7 +294,7 @@ namespace ara::step {
 		const SVF::PTACallGraph* get_svf_call_graph() const { return s_call_graph; }
 		std::shared_ptr<graph::SVFG> get_svfg() const { return svfg; };
 		SVFG& get_g() const { return g; }
-		tracer::Tracer& get_trace() const { return trace; }
+		tracer::Tracer& get_tracer() const { return tracer; }
 		graph::SigType get_hint() { return hint; }
 		size_t get_new_id() { return next_id++; }
 		void stop() { should_stop = true; }
@@ -363,7 +363,7 @@ namespace ara::step {
 		SVFG& g;
 		graph::Graph& graph;
 		graph::CFG cfg;
-		tracer::Tracer& trace;
+		tracer::Tracer& tracer;
 		Logger& logger;
 		std::shared_ptr<graph::CallGraph> callgraph;
 		std::shared_ptr<graph::SVFG> svfg;
@@ -479,9 +479,9 @@ namespace ara::step {
 
 		Result get_memory_value(const llvm::Value* intermediate_value, graph::CallPath callpath);
 
-		ValueAnalyzerImpl(SVFG& g, graph::Graph& graph, tracer::Tracer& trace, Logger& logger,
+		ValueAnalyzerImpl(SVFG& g, graph::Graph& graph, tracer::Tracer& tracer, Logger& logger,
 		                  std::shared_ptr<graph::SVFG> svfg, SVFObjects& svf_objects)
-		    : g(g), graph(graph), cfg(graph.get_cfg()), trace(trace), logger(logger),
+		    : g(g), graph(graph), cfg(graph.get_cfg()), tracer(tracer), logger(logger),
 		      callgraph(graph.get_callgraph_ptr()), svfg(svfg), obj_map(graph.get_graph_data().obj_map),
 		      svf_objects(svf_objects) {}
 	};
@@ -489,7 +489,7 @@ namespace ara::step {
 	class ValueAnalyzer {
 		graph::Graph graph;
 		Logger logger;
-		tracer::Tracer trace;
+		tracer::Tracer tracer;
 		graph::CFG cfg;
 		std::shared_ptr<graph::SVFG> svfg;
 		SVFObjects svf_objects;
@@ -522,12 +522,12 @@ namespace ara::step {
 	  public:
 		// WARNING: do not use this class alone, always use the Python ValueAnalyzer.
 		// If Cython would support this, this constructor would be private.
-		ValueAnalyzer(graph::Graph&& graph, PyObject* trace, PyObject* logger)
-		    : graph(std::move(graph)), logger(Logger(logger)), trace(tracer::Tracer(trace, this->logger)),
+		ValueAnalyzer(graph::Graph&& graph, PyObject* tracer, PyObject* logger)
+		    : graph(std::move(graph)), logger(Logger(logger)), tracer(tracer::Tracer(tracer, this->logger)),
 		      cfg(graph.get_cfg()), svfg(graph.get_svfg_graphtool_ptr()) {}
 
-		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* trace, PyObject* logger) {
-			return std::make_unique<ValueAnalyzer>(std::move(graph), trace, logger);
+		static std::unique_ptr<ValueAnalyzer> get(graph::Graph&& graph, PyObject* tracer, PyObject* logger) {
+			return std::make_unique<ValueAnalyzer>(std::move(graph), tracer, logger);
 		}
 
 		/**
