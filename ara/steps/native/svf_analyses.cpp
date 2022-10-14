@@ -59,7 +59,7 @@ namespace ara::step {
 		for (const auto& [_, svf_vertex] : svfg_svf) {
 			auto graphtool_vertex = boost::add_vertex(g);
 			std::stringstream ss;
-			ss << type_to_str[svf_vertex->getNodeKind()] << " ID: " << svf_vertex->getId();
+			ss << type_to_str[svf_vertex->getNodeKind()] << " ID: " << static_cast<uint64_t>(graphtool_vertex);
 			svfg_graphtool.label[graphtool_vertex] = ss.str();
 			svfg_graphtool.obj[graphtool_vertex] = reinterpret_cast<uintptr_t>(svf_vertex);
 
