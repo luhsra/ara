@@ -24,12 +24,12 @@ namespace ara::step::tracer {
 
 	class GraphNode {
 		uint64_t node;
-		graph::GraphTypes type;
+		graph::GraphType type;
 
 	  public:
-		GraphNode(uint64_t node, graph::GraphTypes type) : node(node), type(type) {}
+		GraphNode(uint64_t node, graph::GraphType type) : node(node), type(type) {}
 		uint64_t get_node() const { return node; }
-		graph::GraphTypes get_type() const { return type; }
+		graph::GraphType get_type() const { return type; }
 	};
 
 	class GraphPath;
@@ -49,16 +49,16 @@ namespace ara::step::tracer {
 		                          const GraphPath& path) const; // currently only support for one Path in this wrapper
 		void go_to_node(const Entity& ent, const GraphPath& path, bool forward = true) const;
 		boost::python::object add_edge_to_path(boost::python::object path, uint64_t source, uint64_t target,
-		                                       graph::GraphTypes type) const;
+		                                       graph::GraphType type) const;
 		void clear() const;
 	};
 
 	class GraphPath {
 		boost::python::object path;
-		graph::GraphTypes type;
+		graph::GraphType type;
 
 	  public:
-		GraphPath(graph::GraphTypes type) : path(boost::python::object{}), type(type) {}
+		GraphPath(graph::GraphType type) : path(boost::python::object{}), type(type) {}
 
 		/**
 		 * @brief Clones this object and creates a copy of python obj path
@@ -74,6 +74,6 @@ namespace ara::step::tracer {
 		}
 
 		boost::python::object get_path() const { return path; }
-		graph::GraphTypes get_type() const { return type; }
+		graph::GraphType get_type() const { return type; }
 	};
 } // namespace ara::step::tracer

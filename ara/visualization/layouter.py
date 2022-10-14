@@ -5,7 +5,7 @@ from pygraphviz import AGraph
 from graph_tool.libgraph_tool_core import Vertex, Edge
 
 from ara.graph import ABBType, CFType, Graph
-from ara.graph.mix import GraphTypes
+from ara.graph.mix import GraphType
 from ara.visualization import ara_manager
 from ara.visualization.trace import trace_handler
 
@@ -319,23 +319,23 @@ class Layouter(QObject):
     def _create_return_data(self,
                             graph: AGraph,
                             return_list,
-                            graph_type: GraphTypes = GraphTypes.ABB):
+                            graph_type: GraphType = GraphType.ABB):
         """ Prepares the data so its easier to process by the gui. """
         for n in graph.nodes():
             if not n.attr.__contains__("pos") or n.attr["pos"] is None:
                 continue
 
-            if graph_type == GraphTypes.ABB:
+            if graph_type == GraphType.ABB:
                 if n.attr["subtype"] == "0":
                     # The CallGraphNode is used here, to save making a second generic node
                     return_list.append(CallGraphNode(n))
                 else:
                     return_list.append(AbbNode(n))
-            if graph_type == GraphTypes.CALLGRAPH:
+            if graph_type == GraphType.CALLGRAPH:
                 return_list.append(CallGraphNode(n))
-            if graph_type == GraphTypes.INSTANCE:
+            if graph_type == GraphType.INSTANCE:
                 return_list.append(InstanceNode(n))
-            if graph_type == GraphTypes.SVFG:
+            if graph_type == GraphType.SVFG:
                 return_list.append(SVFGNode(n))
 
         for e in graph.edges():
@@ -347,28 +347,28 @@ class Layouter(QObject):
             return_list.append(Subgraph(g))
             self._create_return_data(g, return_list)
 
-    def get_data(self, graph_type: GraphTypes):
-        if not GraphTypes.__contains__(graph_type):
+    def get_data(self, graph_type: GraphType):
+        if not GraphType.__contains__(graph_type):
             print(f"The subgraph {graph_type} does not exist")
             return
         return_data = []
 
-        if graph_type == GraphTypes.ABB:
+        if graph_type == GraphType.ABB:
             self._create_return_data(self.cfg_view, return_data, graph_type)
 
-        if graph_type == GraphTypes.CALLGRAPH:
+        if graph_type == GraphType.CALLGRAPH:
             self._create_return_data(self.call_graph_view, return_data,
                                      graph_type)
-        if graph_type == GraphTypes.INSTANCE:
+        if graph_type == GraphType.INSTANCE:
             self._create_return_data(self.instance_graph_view, return_data,
                                      graph_type)
 
-        if graph_type == GraphTypes.SVFG:
+        if graph_type == GraphType.SVFG:
             self._create_return_data(self.svfg_view, return_data, graph_type)
 
         return return_data
 
-    @Slot(GraphTypes, set, list, bool, StepMode)
+    @Slot(GraphType, set, list, bool, StepMode)
     def layout(self,
                graph_type,
                entry_points,
@@ -386,23 +386,23 @@ class Layouter(QObject):
 
             self._running = True
 
-            if not GraphTypes.__contains__(graph_type):
+            if not GraphType.__contains__(graph_type):
                 print(f"The subgraph {graph_type} does not exist")
                 return
 
             if not layout_only:
-                if graph_type == GraphTypes.ABB:
+                if graph_type == GraphType.ABB:
                     self.cfg_view.clear()
                     self._update_cfg_view(entry_points, mode)
-                if graph_type == GraphTypes.CALLGRAPH:
+                if graph_type == GraphType.CALLGRAPH:
                     self.call_graph_view.clear()
                     self.call_graph_view.graph_attr["overlap"] = "false"
                     self.call_graph_view.graph_attr["splines"] = "true"
                     self._update_call_graph_view(entry_points, mode)
-                if graph_type == GraphTypes.INSTANCE:
+                if graph_type == GraphType.INSTANCE:
                     self.instance_graph_view.clear()
                     self._update_instance_graph_view(mode)
-                if graph_type == GraphTypes.SVFG:
+                if graph_type == GraphType.SVFG:
                     self.svfg_view.clear()
                     # TODO select start node differently
                     if mode is StepMode.TRACE:
@@ -411,13 +411,13 @@ class Layouter(QObject):
                         svfg = self._graph.svfg
                     self._update_svfg_view(svfg_extension_points, mode)
 
-            if graph_type == GraphTypes.ABB:
+            if graph_type == GraphType.ABB:
                 self.cfg_view.layout("dot")
-            if graph_type == GraphTypes.CALLGRAPH:
+            if graph_type == GraphType.CALLGRAPH:
                 self.call_graph_view.layout("dot")
-            if graph_type == GraphTypes.INSTANCE:
+            if graph_type == GraphType.INSTANCE:
                 self.instance_graph_view.layout("dot")
-            if graph_type == GraphTypes.SVFG:
+            if graph_type == GraphType.SVFG:
                 self.svfg_view.layout("dot")
 
         except Exception as e:

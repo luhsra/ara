@@ -228,7 +228,7 @@ namespace ara::step {
 	  public:
 		Traverser(Traverser* boss, const std::optional<Edge<SVFG>>& edge, graph::CallPath call_path,
 		          Bookkeeping<SVFG>& caretaker)
-		    : boss(boss), call_path(call_path), path(graph::GraphTypes::SVFG), caretaker(caretaker),
+		    : boss(boss), call_path(call_path), path(graph::GraphType::SVFG), caretaker(caretaker),
 		      id(caretaker.get_new_id()), entity(caretaker.get_tracer().get_entity("Traverser_" + std::to_string(id))) {
 			if (edge.has_value()) {
 				add_edge_to_trace(*edge);

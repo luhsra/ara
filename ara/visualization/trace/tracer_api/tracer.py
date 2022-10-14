@@ -8,7 +8,7 @@ from typing import List
 from ara.graph.graph import CFG, SVFG, Callgraph, InstanceGraph
 
 from ara.visualization.trace.trace_type import AlgorithmTrace
-from ara.graph.mix import GraphTypes
+from ara.graph.mix import GraphType
 
 
 @dataclass
@@ -20,17 +20,17 @@ class Entity:
 
 
 def _value_to_graphtypes(value):
-    if type(value) != GraphTypes:
+    if type(value) != GraphType:
         if type(value) != int:
-            assert False, f"Unknown GraphTypes type. type is {type(value)}"
-        value = GraphTypes(value)
+            assert False, f"Unknown GraphType type. type is {type(value)}"
+        value = GraphType(value)
     return value
 
 
 @dataclass
 class GraphNode:
     node: Vertex
-    graph: GraphTypes
+    graph: GraphType
 
     def __post_init__(self):
         self.graph = _value_to_graphtypes(self.graph)
@@ -42,7 +42,7 @@ class GraphNode:
 @dataclass
 class GraphPath:
     path: List[Edge]  # argument will be copied
-    graph: GraphTypes
+    graph: GraphType
 
     def __post_init__(self):
         self.graph = _value_to_graphtypes(self.graph)
@@ -96,16 +96,16 @@ class Tracer:
                          color=trace_lib.Color.RED) -> List[BaseTraceElement]:
         highlight_node_elems = []
         for node in nodes:
-            if node.graph == GraphTypes.CALLGRAPH:
+            if node.graph == GraphType.CALLGRAPH:
                 highlight_node_elems.append(
                     CallgraphNodeHighlightTraceElement(
                         node.node, self.low_level_trace.callgraph, color))
-            elif node.graph == GraphTypes.ABB:
+            elif node.graph == GraphType.ABB:
                 highlight_node_elems.append(
                     CFGNodeHighlightTraceElement(
                         node.node, self.low_level_trace.cfg,
                         self.low_level_trace.callgraph, color))
-            elif node.graph == GraphTypes.SVFG:
+            elif node.graph == GraphType.SVFG:
                 highlight_node_elems.append(
                     SVFGNodeHighlightTraceElement(node.node, color))
             else:
@@ -211,13 +211,13 @@ class Tracer:
         return self.low_level_trace.add_element(element, log_message)
 
     def _get_graph_by_type(self, graph_type: int):
-        if graph_type == GraphTypes.SVFG.value:
+        if graph_type == GraphType.SVFG.value:
             return self.low_level_trace.svfg
-        elif graph_type == GraphTypes.CALLGRAPH.value:
+        elif graph_type == GraphType.CALLGRAPH.value:
             return self.low_level_trace.callgraph
-        elif graph_type == GraphTypes.INSTANCE.value:
+        elif graph_type == GraphType.INSTANCE.value:
             return self.low_level_trace.instances
-        elif graph_type == GraphTypes.ABB.value:
+        elif graph_type == GraphType.ABB.value:
             return self.low_level_trace.cfg
         assert False
         return None

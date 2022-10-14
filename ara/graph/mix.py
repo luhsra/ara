@@ -163,9 +163,9 @@ class MSTType(enum.IntEnum): # */
 
 #undef MIX
 #define MIX 1 /*
-class GraphTypes(enum.IntEnum): # */
+class GraphType(enum.IntEnum): # */
     #undef pass
-    #define pass namespace ara::graph { enum class GraphTypes {
+    #define pass namespace ara::graph { enum class GraphType {
     pass
 
     ABB = 0,
@@ -174,7 +174,7 @@ class GraphTypes(enum.IntEnum): # */
     SVFG = 3,
 
     #undef pass
-    #define pass }; STANDARD_OPERATORS(GraphTypes)}
+    #define pass }; STANDARD_OPERATORS(GraphType)}
     pass
 
 #undef EQUAL_OPERATOR

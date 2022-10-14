@@ -875,7 +875,7 @@ namespace ara::step {
 		caretaker.add_traverser(root);
 
 		tracer.entity_on_node(root->get_entity(),
-		                      tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphTypes::SVFG));
+		                      tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphType::SVFG));
 
 		caretaker.run();
 		auto& result = root->get_value();

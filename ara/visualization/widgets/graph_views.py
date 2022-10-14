@@ -4,7 +4,7 @@ from PySide6.QtGui import QWheelEvent, QPainter
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsProxyWidget, QWidget
 from graph_tool.libgraph_tool_core import Vertex
 
-from ara.graph.mix import GraphTypes
+from ara.graph.mix import GraphType
 from ara.visualization.layouter import Layouter
 from ara.visualization.signal import ara_signal
 from ara.visualization.signal.signal_combiner import SignalCombiner
@@ -48,7 +48,7 @@ class GraphViewContext(QObject):
 
     svfg_expansion_points = []
 
-    sig_update_graphview = Signal(GraphTypes)
+    sig_update_graphview = Signal(GraphType)
 
     sig_expansion_point_updated = Signal(str)
 
@@ -101,8 +101,8 @@ class GraphViewContext(QObject):
             self.entry_points.remove(point)
         else:
             self.entry_points.add(point)
-        self.sig_update_graphview.emit(GraphTypes.CALLGRAPH)
-        self.sig_update_graphview.emit(GraphTypes.ABB)
+        self.sig_update_graphview.emit(GraphType.CALLGRAPH)
+        self.sig_update_graphview.emit(GraphType.ABB)
 
     @Slot()
     def reset_soft_expansion_points(self):
@@ -131,7 +131,7 @@ class BaseGraphView(QGraphicsView):
     """
     # set = expansion points
     # bool = layout only - deprecated
-    sig_layout_start = Signal(GraphTypes, set, list, bool, StepMode)
+    sig_layout_start = Signal(GraphType, set, list, bool, StepMode)
 
     sig_work_done = Signal(int)
 
@@ -181,7 +181,7 @@ class BaseGraphView(QGraphicsView):
         else:
             self.scale(0.9, 0.9)
 
-    @Slot(GraphTypes)
+    @Slot(GraphType)
     def _internal_update(self, type):
         if type == self.graph_type:
             self.start_update(False, False)
@@ -191,7 +191,7 @@ class BaseGraphView(QGraphicsView):
         if not self.isVisible():
             return
 
-        if self.graph_type == GraphTypes.CALLGRAPH:
+        if self.graph_type == GraphType.CALLGRAPH:
             self.sig_layout_start.emit(self.graph_type,
                                        CONTEXT.get_expansion_points(),
                                        CONTEXT.svfg_expansion_points, False,
@@ -247,7 +247,7 @@ class BaseGraphView(QGraphicsView):
 
     @property
     @abstractmethod
-    def graph_type(self) -> GraphTypes:
+    def graph_type(self) -> GraphType:
         pass
 
     def handle_node_add(self, node):
@@ -277,7 +277,7 @@ class CallGraphView(BaseGraphView):
     sig_expansion_points_deselected = Signal(str, str)
 
     node_type = CallGraphNode
-    graph_type = GraphTypes.CALLGRAPH
+    graph_type = GraphType.CALLGRAPH
 
     def handle_node_add(self, node):
         """
@@ -290,7 +290,7 @@ class CallGraphView(BaseGraphView):
             node.sig_expansion_unselected.connect(self.expansion_retraction)
 
             trace_setting = trace_lib.TraceElementSetting(
-                True, GraphTypes.CALLGRAPH, node.id)
+                True, GraphType.CALLGRAPH, node.id)
             if trace_handler.INSTANCE.gui_element_settings.__contains__(
                     trace_setting):
                 trace_handler.INSTANCE.gui_element_settings[
@@ -365,12 +365,12 @@ class CallGraphView(BaseGraphView):
     @Slot(str)
     def selection_added(self, name):
         self.sig_entry_point_selected.emit(name, "CallGraph")
-        CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
+        CONTEXT.sig_update_graphview.emit(GraphType.ABB)
 
     @Slot(str)
     def selection_removed(self, name):
         self.sig_entry_point_deselected.emit(name, "CallGraph")
-        CONTEXT.sig_update_graphview.emit(GraphTypes.ABB)
+        CONTEXT.sig_update_graphview.emit(GraphType.ABB)
 
 
 class CFGView(BaseGraphView):
@@ -378,7 +378,7 @@ class CFGView(BaseGraphView):
         CFG view.
     """
     node_type = AbbNode
-    graph_type = GraphTypes.ABB
+    graph_type = GraphType.ABB
 
 
 class InstanceGraphView(BaseGraphView):
@@ -386,7 +386,7 @@ class InstanceGraphView(BaseGraphView):
         Instance graph view.
     """
     node_type = InstanceNode
-    graph_type = GraphTypes.INSTANCE
+    graph_type = GraphType.INSTANCE
 
 
 class SVFGView(BaseGraphView):
@@ -394,7 +394,7 @@ class SVFGView(BaseGraphView):
         SVFG view.
     """
     node_type = SVFGNode
-    graph_type = GraphTypes.SVFG
+    graph_type = GraphType.SVFG
 
     def handle_node_add(self, node):
         if isinstance(node, self.node_type):

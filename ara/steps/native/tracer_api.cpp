@@ -34,7 +34,7 @@ namespace ara::step::tracer {
 	}
 
 	boost::python::object Tracer::add_edge_to_path(boost::python::object path, uint64_t source, uint64_t target,
-	                                               graph::GraphTypes type) const {
+	                                               graph::GraphType type) const {
 		PyObject* edge =
 		    py_tracer_add_edge_to_path(this->tracer.ptr(), path.ptr(), source, target, static_cast<int>(type));
 		py_util::handle_py_error();

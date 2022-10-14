@@ -4,7 +4,7 @@ from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CF
 from dataclasses import dataclass
 from ara.util import dominates, has_path
 from ara.visualization.trace.tracer_api.tracer import GraphNode, GraphPath, init_fast_trace
-from ara.graph.mix import GraphTypes
+from ara.graph.mix import GraphType
 
 from .step import Step
 from .option import Option, String
@@ -206,8 +206,8 @@ class FlatAnalysis(Step):
                 syscall_func = callg.vertex(
                     cfg.vp.call_graph_link[syscall_cfg_func])
                 self.tracer.entity_on_node(sia_entity, [
-                    GraphNode(abb, GraphTypes.ABB),
-                    GraphNode(syscall_func, GraphTypes.CALLGRAPH)
+                    GraphNode(abb, GraphType.ABB),
+                    GraphNode(syscall_func, GraphType.CALLGRAPH)
                 ])
 
             rev_cg = GraphView(callg, reversed=True)
@@ -235,7 +235,7 @@ class FlatAnalysis(Step):
 
                     if self.trace_algorithm.get():
                         self.tracer.entity_is_looking_at(
-                            sia_entity, GraphPath(path, GraphTypes.CALLGRAPH))
+                            sia_entity, GraphPath(path, GraphType.CALLGRAPH))
 
                     abb = cfg.vertex(syscall)
                     state = init_state.copy()

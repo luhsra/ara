@@ -6,7 +6,7 @@ from ara.graph.graph import CFG, Callgraph
 from graph_tool.libgraph_tool_core import Vertex
 
 from ara.visualization.trace import trace_lib
-from ara.graph.mix import GraphTypes
+from ara.graph.mix import GraphType
 from ara.visualization.widgets.graph_elements import NodeSetting, CallgraphEdgeSetting
 
 
@@ -95,7 +95,7 @@ class NodeHighlightTraceElement(BaseTraceElement):
 
     def __init__(self,
                  node: Vertex,
-                 graph: GraphTypes,
+                 graph: GraphType,
                  color=trace_lib.Color.RED):
         super().__init__()
         self.node = node
@@ -130,7 +130,7 @@ class NodeHighlightTraceElement(BaseTraceElement):
 class SVFGNodeHighlightTraceElement(NodeHighlightTraceElement):
 
     def __init__(self, node: Vertex, color=trace_lib.Color.RED):
-        super().__init__(node, GraphTypes.SVFG, color)
+        super().__init__(node, GraphType.SVFG, color)
 
     def apply_changes(self, context: TraceContext):
         super().apply_changes(context)
@@ -147,7 +147,7 @@ class CFGNodeHighlightTraceElement(NodeHighlightTraceElement):
                  cfg: CFG,
                  callgraph: Callgraph,
                  color=trace_lib.Color.RED):
-        super().__init__(node, GraphTypes.ABB, color)
+        super().__init__(node, GraphType.ABB, color)
         self.cfg = cfg
         self.callgraph = callgraph
 
@@ -176,7 +176,7 @@ class CallgraphNodeHighlightTraceElement(NodeHighlightTraceElement):
                  callgraph: Callgraph,
                  color=trace_lib.Color.RED):
         super().__init__(callgraph.vp.function_name[node],
-                         GraphTypes.CALLGRAPH, color)
+                         GraphType.CALLGRAPH, color)
 
     def apply_changes(self, context: TraceContext):
         super().apply_changes(context)

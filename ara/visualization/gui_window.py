@@ -10,7 +10,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtGui import QPainter, Qt
 
 from . import ara_manager
-from ara.graph.mix import GraphTypes
+from ara.graph.mix import GraphType
 from .signal import ara_signal
 from .signal.signal_combiner import SignalCombiner
 from .trace import trace_handler
@@ -58,7 +58,7 @@ class GuiWindow(QMainWindow):
         self.w_right = QWidget()
         self.l_right = QVBoxLayout(self.w_right)
 
-        self.v_graph_type = GraphTypes.ABB
+        self.v_graph_type = GraphType.ABB
 
         self.dw_cfg = QDockWidget("CFG View", self)
         self.dw_callgraph = QDockWidget("CallGraph View", self)

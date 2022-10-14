@@ -108,22 +108,22 @@ namespace ara::graph {
 	EQUAL_OPERATOR(SigType)
 	NOT_EQUAL_OPERATOR(SigType)
 
-	// GraphTypes functions
-	std::ostream& operator<<(std::ostream& str, const GraphTypes& ty) {
+	// GraphType functions
+	std::ostream& operator<<(std::ostream& str, const GraphType& ty) {
 		switch (ty) {
-		case GraphTypes::ABB:
+		case GraphType::ABB:
 			return (str << "Abb");
-		case GraphTypes::INSTANCE:
+		case GraphType::INSTANCE:
 			return (str << "Instance");
-		case GraphTypes::CALLGRAPH:
+		case GraphType::CALLGRAPH:
 			return (str << "CallGraph");
-		case GraphTypes::SVFG:
+		case GraphType::SVFG:
 			return (str << "SVFG");
 		};
 		assert(false);
 		return str;
 	}
 
-	EQUAL_OPERATOR(GraphTypes)
-	NOT_EQUAL_OPERATOR(GraphTypes)
+	EQUAL_OPERATOR(GraphType)
+	NOT_EQUAL_OPERATOR(GraphType)
 } // namespace ara::graph
