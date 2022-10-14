@@ -72,6 +72,8 @@ class TraceHandler(QObject):
                         self.sig_extension_points_discovered.emit(
                             element.extension_points)
                         CONTEXT.entry_points.update(element.entry_points)
+                        CONTEXT.add_svfg_expansion_points(
+                            element.svfg_extension_points)
         except Exception as e:
             print(e)
             print(traceback.format_exc())

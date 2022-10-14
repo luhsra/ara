@@ -110,8 +110,12 @@ class GraphViewContext(QObject):
         self.sig_expansion_point_updated.emit("")
 
     @Slot()
-    def add_svfg_expansion_point(self, point):
+    def add_svfg_expansion_point(self, point: Vertex):
         self.svfg_expansion_points.append(point)
+
+    @Slot()
+    def add_svfg_expansion_points(self, points: list):
+        self.svfg_expansion_points.extend(points)
 
     def get_expansion_points(self):
         """Note: Is not returning SVFG expansion points"""

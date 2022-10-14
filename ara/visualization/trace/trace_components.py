@@ -48,6 +48,7 @@ class BaseTraceElement:
         self.index = self.global_index.get_value_and_increment()
         self.gui_element_settings = dict()
         self.extension_points = set()
+        self.svfg_extension_points = set()
         self.entry_points = set()
 
     def get_graphical_handling(self):
@@ -117,11 +118,26 @@ class NodeHighlightTraceElement(BaseTraceElement):
             trace_setting = trace_lib.TraceElementSetting(
                 True, self.graph, self.node)
             del gui_element_settings[trace_setting]
+        except KeyError as e:
+            pass
         except Exception as e:
             print(traceback.format_exc())
 
     def print_debug(self, context):
         print(f"Highlighting node: {self.node}")
+
+
+class SVFGNodeHighlightTraceElement(NodeHighlightTraceElement):
+
+    def __init__(self, node: Vertex, color=trace_lib.Color.RED):
+        super().__init__(node, GraphTypes.SVFG, color)
+
+    def apply_changes(self, context: TraceContext):
+        super().apply_changes(context)
+        self.svfg_extension_points.add(self.node)
+
+    def undo_changes(self, gui_element_settings: dict):
+        super().undo_changes(gui_element_settings)
 
 
 class CFGNodeHighlightTraceElement(NodeHighlightTraceElement):
