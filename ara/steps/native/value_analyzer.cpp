@@ -875,7 +875,7 @@ namespace ara::step {
 		caretaker.add_traverser(root);
 
 		tracer.entity_on_node(root->get_entity(),
-		                     tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphTypes::SVFG));
+		                      tracer::GraphNode(static_cast<uint64_t>(start), graph::GraphTypes::SVFG));
 
 		caretaker.run();
 		auto& result = root->get_value();
@@ -1134,6 +1134,7 @@ namespace ara::step {
 			    res = py_repack(impl.get_memory_value(intermediate_value, callgraph));
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		tracer.clear();
 		return res;
 	}
 
@@ -1197,6 +1198,7 @@ namespace ara::step {
 			PyObject* py_context_val = PyTuple_Pack(2, py_val, py_callpath);
 			PyTuple_SET_ITEM(py_values, indexed_val.index(), py_context_val);
 		}
+		tracer.clear();
 		return py_values;
 	}
 
@@ -1223,6 +1225,7 @@ namespace ara::step {
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
 
+		tracer.clear();
 		return res;
 	}
 
@@ -1239,6 +1242,7 @@ namespace ara::step {
 			        safe_deref(const_cast<llvm::Value*>(impl.get_return_value(safe_deref(ll_callsite), callpath))));
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		tracer.clear();
 		return res;
 	}
 
@@ -1251,6 +1255,7 @@ namespace ara::step {
 			    impl.assign_system_object(value, obj_index, offsets, callpath);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		tracer.clear();
 	}
 
 	bool ValueAnalyzer::py_has_connection(PyObject* callsite, graph::CallPath callpath, unsigned argument_nr,
@@ -1266,6 +1271,7 @@ namespace ara::step {
 			    ret = impl.has_connection(safe_deref(ll_callsite), callpath, argument_nr, obj_index);
 		    },
 		    graph_tool::always_directed())(svfg->graph.get_graph_view());
+		tracer.clear();
 		return ret;
 	}
 
