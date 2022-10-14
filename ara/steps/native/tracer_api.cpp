@@ -27,14 +27,16 @@ namespace ara::step::tracer {
 	}
 
 	boost::python::object Tracer::get_vertex_by_id(const GraphNode& node) const {
-		PyObject* vertex = py_tracer_get_vertex_by_id(this->tracer.ptr(), node.get_node(), static_cast<int>(node.get_type()));
+		PyObject* vertex =
+		    py_tracer_get_vertex_by_id(this->tracer.ptr(), node.get_node(), static_cast<int>(node.get_type()));
 		py_util::handle_py_error();
 		return boost::python::api::object{boost::python::handle<>(vertex)};
 	}
 
 	boost::python::object Tracer::add_edge_to_path(boost::python::object path, uint64_t source, uint64_t target,
 	                                               graph::GraphTypes type) const {
-		PyObject* edge = py_tracer_add_edge_to_path(this->tracer.ptr(), path.ptr(), source, target, static_cast<int>(type));
+		PyObject* edge =
+		    py_tracer_add_edge_to_path(this->tracer.ptr(), path.ptr(), source, target, static_cast<int>(type));
 		py_util::handle_py_error();
 		return boost::python::api::object{boost::python::handle<>(edge)};
 	}
@@ -55,7 +57,8 @@ namespace ara::step::tracer {
 		}
 
 		boost::python::object vertex = this->get_vertex_by_id(node);
-		py_tracer_entity_on_node(this->tracer.ptr(), ent.get_obj().ptr(), vertex.ptr(), static_cast<int>(node.get_type()));
+		py_tracer_entity_on_node(this->tracer.ptr(), ent.get_obj().ptr(), vertex.ptr(),
+		                         static_cast<int>(node.get_type()));
 		py_util::handle_py_error();
 	}
 
@@ -65,7 +68,7 @@ namespace ara::step::tracer {
 		}
 
 		py_tracer_entity_is_looking_at(this->tracer.ptr(), ent.get_obj().ptr(), path.get_path().ptr(),
-		                        static_cast<int>(path.get_type()));
+		                               static_cast<int>(path.get_type()));
 		py_util::handle_py_error();
 	}
 
@@ -74,8 +77,17 @@ namespace ara::step::tracer {
 			return;
 		}
 
-		py_tracer_go_to_node(this->tracer.ptr(), ent.get_obj().ptr(), path.get_path().ptr(), static_cast<int>(path.get_type()),
-		              forward);
+		py_tracer_go_to_node(this->tracer.ptr(), ent.get_obj().ptr(), path.get_path().ptr(),
+		                     static_cast<int>(path.get_type()), forward);
+		py_util::handle_py_error();
+	}
+
+	void Tracer::clear() const {
+		if (this->tracer.is_none()) {
+			return;
+		}
+
+		py_tracer_clear(this->tracer.ptr());
 		py_util::handle_py_error();
 	}
 

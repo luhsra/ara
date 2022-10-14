@@ -1,7 +1,7 @@
 from ara.visualization.trace import trace_lib
 from graph_tool.libgraph_tool_core import Vertex, Edge
 from datetime import datetime
-from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetPartialChangesTraceElement
+from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
@@ -16,7 +16,7 @@ class Entity:
     #id: int
     name: str
     color: trace_lib.Color
-    undo_previous_elems: ResetPartialChangesTraceElement  # Reset operation to undo all changes made by the entity on its last trace
+    last_reset: ResetPartialChangesTraceElement  # Reset operation to undo all changes made by the entity on its last trace
 
 
 def _value_to_graphtypes(value):
@@ -62,6 +62,9 @@ class GraphPath:
 
 class Tracer:
 
+    last_reset = [
+    ]  # contains clear actions that need to be performed on next trace
+
     def __init__(self,
                  trace_name: str,
                  callgraph,
@@ -102,23 +105,31 @@ class Tracer:
                     CFGNodeHighlightTraceElement(
                         node.node, self.low_level_trace.cfg,
                         self.low_level_trace.callgraph, color))
+            elif node.graph == GraphTypes.SVFG:
+                highlight_node_elems.append(
+                    SVFGNodeHighlightTraceElement(node.node, color))
             else:
                 highlight_node_elems.append(
                     NodeHighlightTraceElement(node.node, node.graph, color))
         return highlight_node_elems
 
-    def _handle_entity_reset(self, ent: Entity,
-                             actions: List[BaseTraceElement]):
-        """Fill actions with undo operation of all changes from last trace of the entity.
+    def _handle_entity_reset(
+            self, ent: Entity,
+            actions: List[BaseTraceElement]) -> List[BaseTraceElement]:
+        """Fill actions with undo operation of all changes from last trace of the entity (or from self.last_reset).
         
-        Also updates the undo_previous_elems field with the changes in actions
+        Also updates the last_reset field with the changes in actions
         """
-        undo_previous_elems = ent.undo_previous_elems
-        ent.undo_previous_elems = ResetPartialChangesTraceElement(
-            actions.copy())
-        if undo_previous_elems != None:
-            # undo previous change:
+        undo_previous_elems = ent.last_reset
+        ent.last_reset = ResetPartialChangesTraceElement(actions.copy())
+
+        # undo previous change:
+        if len(self.last_reset) > 0:
+            actions = self.last_reset + actions
+            self.last_reset = []
+        if undo_previous_elems is not None:
             actions.insert(0, undo_previous_elems)
+        return actions
 
     def get_entity(self, name: str):
         """Creates a new entity on this trace"""
@@ -128,16 +139,18 @@ class Tracer:
     def entity_on_node(self, ent: Entity, nodes: List[GraphNode]):
         if isinstance(nodes, GraphNode):
             nodes = [nodes]
-        actions = self._highlight_nodes(nodes, ent.color)
-        self._handle_entity_reset(ent, actions)
+        actions = self._handle_entity_reset(
+            ent, self._highlight_nodes(nodes, ent.color))
         self.low_level_trace.add_element(
             actions, self._format_list_output(ent, nodes, "is on "))
 
     def entity_is_looking_at(self, ent: Entity, paths: List[GraphPath]):
         if isinstance(paths, GraphPath):
             paths = [paths]
+        actions = self._handle_entity_reset(ent, [])  # TODO: add action
+        self._handle_entity_reset(ent, actions)
         self.low_level_trace.add_element(
-            None, self._format_list_output(ent, paths, "is looking at "))
+            actions, self._format_list_output(ent, paths, "is looking at "))
 
     def go_to_node(self, ent: Entity, path: GraphPath, forward: bool = True):
         """go the path to a node
@@ -149,8 +162,10 @@ class Tracer:
                     If you follow input edges, set forward to False:
                         In this case the destination node is the source of the last edge in path.
         """
+        actions = self._handle_entity_reset(ent, [])  # TODO: add action
+        self._handle_entity_reset(ent, actions)
         self.low_level_trace.add_element(
-            None,
+            actions,
             self._format_trace_output(
                 ent,
                 f"goes to node {path.path[-1].target() if forward else path.path[-1].source()} via {path}"
@@ -173,6 +188,18 @@ class Tracer:
                       None,
                       None,
                       low_level_trace=self.low_level_trace)
+
+    def clear(self):
+        """Append a clear operation that removes all trace elements for next trace.
+        
+        Note: All entities are invalidated at this point, do not reuse them.
+        """
+        self.last_reset.append(ResetChangesTraceElement())
+
+    def die_entity(self, ent: Entity):
+        """Remove all trace elements of an entity"""
+        self.last_reset.append(ent.last_reset)
+        ent.last_reset = None
 
     def add_element(self,
                     element: List[BaseTraceElement],
@@ -206,6 +233,10 @@ class Tracer:
             source, target
         )  # TODO: improve performance by e.g. not using Edge object directly
 
+    def destroy(self):
+        """Called after step is gone"""
+        self.last_reset = []
+
 
 def init_fast_trace(step, name: str = None):
     """Same as init_trace() but without graph copies"""
@@ -213,7 +244,7 @@ def init_fast_trace(step, name: str = None):
         name = step.get_name()
     graph = step._graph
     step.tracer = Tracer(name, graph.callgraph, graph.cfg, graph.instances,
-                        graph.svfg)
+                         graph.svfg)
 
 
 def init_trace(step, name: str = None):
@@ -222,6 +253,7 @@ def init_trace(step, name: str = None):
     if name == None:
         name = step.get_name()
     graph = step._graph
-    step.tracer = Tracer(name, Callgraph(graph.cfg, graph=CFG(graph.callgraph)),
-                        CFG(graph.cfg), InstanceGraph(graph.instances),
-                        SVFG(graph.svfg))
+    step.tracer = Tracer(name, Callgraph(graph.cfg,
+                                         graph=CFG(graph.callgraph)),
+                         CFG(graph.cfg), InstanceGraph(graph.instances),
+                         SVFG(graph.svfg))

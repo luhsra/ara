@@ -32,3 +32,6 @@ cdef public object py_tracer_add_edge_to_path(object tracer, object edge_list, u
         edge_list = []
     edge_list.append(tracer.get_edge_by_nodes(source, target, graph_type))
     return edge_list
+
+cdef public void py_tracer_clear(object tracer) except *:
+    tracer.clear()

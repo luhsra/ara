@@ -50,6 +50,7 @@ namespace ara::step::tracer {
 		void go_to_node(const Entity& ent, const GraphPath& path, bool forward = true) const;
 		boost::python::object add_edge_to_path(boost::python::object path, uint64_t source, uint64_t target,
 		                                       graph::GraphTypes type) const;
+		void clear() const;
 	};
 
 	class GraphPath {

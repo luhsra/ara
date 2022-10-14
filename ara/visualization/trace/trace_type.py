@@ -34,3 +34,7 @@ class AlgorithmTrace:
 
     def has_next_element(self) -> bool:
         return len(self.trace_elements) > 0
+
+    def destroy(self):
+        """Called after step is gone"""
+        pass

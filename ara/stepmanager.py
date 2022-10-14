@@ -422,13 +422,14 @@ class StepManager:
                     time_after = time.time()
 
                 if current_traceable:
-                    trace_api = current.step.tracer
-                    if type(trace_api) == AlgorithmTrace:
-                        self._last_step_trace = trace_api
-                    elif type(trace_api) == Tracer:
-                        self._last_step_trace = trace_api.low_level_trace
+                    tracer = current.step.tracer
+                    tracer.destroy()
+                    if type(tracer) == AlgorithmTrace:
+                        self._last_step_trace = tracer
+                    elif type(tracer) == Tracer:
+                        self._last_step_trace = tracer.low_level_trace
                     else:
-                        raise RuntimeError(f"Unknown object {trace_api} in step.tracer")
+                        raise RuntimeError(f"Unknown object {tracer} in step.tracer")
 
                 # runtime stats handling
                 if self._runtime_stats:
