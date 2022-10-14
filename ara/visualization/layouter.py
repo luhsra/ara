@@ -409,9 +409,6 @@ class Layouter(QObject):
                         svfg = trace_handler.INSTANCE.context.svfg
                     else:
                         svfg = self._graph.svfg
-                    for x in svfg.vertices():
-                        svfg_extension_points.append(x)
-                        break
                     self._update_svfg_view(svfg_extension_points, mode)
 
             if graph_type == GraphTypes.ABB:
