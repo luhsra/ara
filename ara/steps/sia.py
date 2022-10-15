@@ -1,6 +1,6 @@
 """Container for SIA."""
 
-from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFG, InstanceGraph, CFType
+from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFType
 from dataclasses import dataclass
 from ara.util import dominates, has_path
 from ara.visualization.trace.tracer_api.tracer import GraphNode, GraphPath, init_fast_trace
@@ -177,11 +177,6 @@ class FlatAnalysis(Step):
         entry_points = self._get_entry_points()
 
         if self.trace_algorithm.get():
-            from ..visualization.trace import trace_lib
-            from ..visualization.trace.trace_components import CallgraphNodeHighlightTraceElement, \
-                CallgraphPathHighlightTraceElement, ResetChangesTraceElement
-            from ..visualization.trace.trace_type import AlgorithmTrace
-
             init_fast_trace(self)
             sia_entity = self.tracer.get_entity("SIA_entity")
 
