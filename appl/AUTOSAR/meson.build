@@ -1,5 +1,6 @@
 autosar_includes = ['-I', meson.current_source_dir() / 'source' / 'os']
 
+autosar_targets = []
 autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
@@ -137,6 +138,10 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
 ]
+# conformance tests for trampoline
+subdir('multicore' / 'trampoline')
+
+
 no_timing_settings = custom_target(
   output: 'no_timing_settings.json',
   capture: true,
@@ -149,7 +154,6 @@ with_timing_settings = custom_target(
 )
 
 
-autosar_targets = []
 foreach app : autosar_apps
   # src file
   sys = app['core'] / app['path'] / app['name']

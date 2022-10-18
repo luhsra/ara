@@ -23,7 +23,7 @@ def _check_barriers(graph, new_barriers, old_barriers):
 
 
 def get_constrained_sps(g, core_map, cores, new_range, old_sps=None):
-    """Get the SPs that restricted by new_range.
+    """Get the SPs that are restricted by new_range.
 
     Arguments:
     g --         A graph of SPs.
