@@ -1,0 +1,40 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "t1": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 4,
+          "schedule": false,
+          "spinlocks": ["sync"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 1,
+      "tasks": {
+        "t2": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": false,
+          "spinlocks": ["sync"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ],
+  "spinlocks": [
+      ["sync"]
+  ]
+}

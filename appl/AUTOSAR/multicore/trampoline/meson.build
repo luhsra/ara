@@ -1,3 +1,4 @@
+name_prefix_trampoline = 'autosar_multicore_trampoline_'
 tramp_clang = generator(clang,
                         output : '@BASENAME@.ll',
                         depfile : '@BASENAME@.ll.dep',
