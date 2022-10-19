@@ -81,13 +81,13 @@ st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
 ## POSIX
-wllvm = find_program('wllvm')
-extract_bc = find_program('extract-bc') # provided by wllvm
-realpath = find_program('realpath')
+wllvm = find_program('wllvm', required: false, disabler: true)
+extract_bc = find_program('extract-bc', required: false, disabler: true) # provided by wllvm
+realpath = find_program('realpath', required: false, disabler: true)
 
 # Note: libmicrohttpd needs this tools available via PATH:
-autoconf = find_program('autoconf')
-automake = find_program('automake')
+autoconf = find_program('autoconf', required: false, disabler: true)
+automake = find_program('automake', required: false, disabler: true)
 
 ## arch specific build tools
 if get_option('arch') == 'i386'
