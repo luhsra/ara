@@ -11,6 +11,7 @@ def provide_steps():
     from .classify_specializations_freertos import ClassifySpecializationsFreeRTOS
     from .create_abbs import CreateABBs
     from .dummy import Dummy
+    from .dump_callgraph import DumpCallgraph
     from .dump_cfg import DumpCFG
     from .dump_instances import DumpInstances
     from .dump_sstg import DumpSSTG
@@ -47,6 +48,7 @@ def provide_steps():
     yield ClassifySpecializationsFreeRTOS
     yield CreateABBs
     yield Dummy
+    yield DumpCallgraph
     yield DumpCFG
     yield DumpInstances
     yield DumpSSTG
