@@ -71,12 +71,13 @@ def main():
     with_timings = len(sys.argv) > 4
     inp = {"oilfile": lambda argv: argv[3]}
     if with_timings:
-        config = {"steps": ["ApplyTimings", "LockElision"],
+        config = {"steps": ["ApplyTimings", "LockElision", "DumpCFG"],
                   "MultiSSE": {"with_times": True, "dump": True}}
         inp["timings"] = lambda argv: argv[4]
     else:
-        config = {"steps": ["LockElision"],
-                  "MultiSSE": {"dump": True}}
+        config = {"steps": ["LockElision", "DumpCFG", "DumpCallgraph", "DumpInstances"],
+                  "MultiSSE": {"dump": True, "log_level": "debug"},
+                  "logger": {"AUTOSAR": "debug"}}
     data = init_test(extra_config=config, extra_input=inp, os_name="AUTOSAR")
 
     mstg = data.graph.mstg
