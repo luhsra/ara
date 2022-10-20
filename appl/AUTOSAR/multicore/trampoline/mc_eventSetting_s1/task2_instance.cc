@@ -37,7 +37,7 @@
 DeclareSpinlock(sync);
 DeclareSpinlock(end_of_tests);
 
-DeclareEvent(event);
+DeclareEvent(event, 0);
 
 static void test_t2_instance(void)
 {

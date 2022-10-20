@@ -39,7 +39,7 @@
 DeclareSpinlock(sync);
 DeclareSpinlock(end_of_tests);
 
-DeclareEvent(event);
+DeclareEvent(event, 0);
 
 DeclareTask(no_access_task);
 DeclareTask(t2);

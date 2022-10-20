@@ -37,7 +37,7 @@
 #include "Os.h"
 
 DeclareAlarm(should_not_expire);
-DeclareEvent(t2_event);
+DeclareEvent(t2_event, 0);
 DeclareSpinlock(sync);
 
 static void test_t2_instance(void)

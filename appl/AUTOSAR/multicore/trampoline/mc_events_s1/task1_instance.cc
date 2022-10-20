@@ -37,7 +37,7 @@
 #include "Os.h"
 
 DeclareSpinlock(spin0);
-DeclareEvent(t1_event);
+DeclareEvent(t1_event, 0);
 
 static void test_t1_instance(void)
 {

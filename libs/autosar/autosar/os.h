@@ -76,7 +76,7 @@
 	extern const SpinlockType AUTOSAR_SPINLOCK_##x;                                                                    \
 	static dosek_unused const SpinlockType& x = AUTOSAR_SPINLOCK_##x;
 
-#define DeclareEvent(x, c) extern const EventMaskType x = (c);
+#define DeclareEvent(x, c) __attribute__((weak)) extern const EventMaskType x = (c);
 
 #define SetEvent(task,event)						\
   AUTOSAR_SetEvent(AUTOSAR_TASK_##task,event)

@@ -57,6 +57,3 @@ using TryToGetSpinlockType = int;
 #define GetSpinlock_IE(name) GetSpinlock(name)
 
 
-#define DeclareEvent(x)							\
-	extern const EventMaskType AUTOSAR_EVENT_ ## x;			\
-    static dosek_unused const EventMaskType &x = AUTOSAR_EVENT_ ## x
