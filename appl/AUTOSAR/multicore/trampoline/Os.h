@@ -21,7 +21,7 @@ using TryToGetSpinlockType = int;
 #define TestRef int
 
 #define TestRunner_start()
-#define TestRunner_runTest(t)
+#define TestRunner_runTest(t) t
 #define TestRunner_end()
 #define addFailure(msg, line, file)
 
