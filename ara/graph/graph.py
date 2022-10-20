@@ -575,6 +575,10 @@ class InstanceGraph(graph_tool.Graph):
             if instance == self.vp.obj[inst]:
                 return inst
 
+    def edge_type(self, *edgetypes):
+        """Return a GraphView so only the given edge types are allowed."""
+        return edge_types(self, self.ep.type, *edgetypes)
+
     def iterate_control_entry_points(self):
         """Return a generator over all tasks in the instance graph.
 
