@@ -65,23 +65,29 @@ class LoadOIL(Step):
                         return v
             self._fail("Couldn't find instance with name " + name)
 
+        spinlock2vertex = {}
         for spinlocks in oil.get("spinlocks", []):
             old_spinlock = None
             for spinlock in spinlocks:
-                s = instances.add_vertex()
-                instances.vp.obj[s] = _autosar.Spinlock(
-                    name=spinlock
-                )
-                instances.vp.label[s] = spinlock
+                if spinlock not in spinlock2vertex:
+                    s = instances.add_vertex()
+                    instances.vp.obj[s] = _autosar.Spinlock(
+                        name=spinlock
+                    )
+                    instances.vp.label[s] = spinlock
+
+                    code_instance = va.find_global(_autosar.SPINLOCK_PREFIX + spinlock)
+                    if code_instance is not None:
+                        va.assign_system_object(code_instance, instances.vp.obj[s])
+                    spinlock2vertex[spinlock] = s
+                else:
+                    s = spinlock2vertex[spinlock]
+
                 if old_spinlock:
                     e = self._add_edge(instances, old_spinlock, s)
                     instances.ep.label[e] = "nestable in order"
                     instances.ep.type[e] = _autosar.InstanceEdge.nestable
                 old_spinlock = s
-
-                code_instance = va.find_global(_autosar.SPINLOCK_PREFIX + spinlock)
-                if code_instance is not None:
-                    va.assign_system_object(code_instance, instances.vp.obj[s])
 
         res_scheduler = None
         for cpu in oil["cpus"]:
