@@ -55,7 +55,11 @@
     }
   ],
   "spinlocks": [
-    ["lock_task", "lock_isr", "already_taken", "not_successor", "sync"]
-    ]
-
+    ["lock_task", "lock_isr"],
+    ["lock_task", "sync"],
+    ["lock_isr", "sync"],
+    ["already_taken", "sync"],
+    ["not_successor", "sync"],
+    ["sync"]
+  ]
 }
