@@ -19,7 +19,7 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'scipy'])
+py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'PySide6', 'scipy'])
 if py3_inst.language_version().version_compare('<3.9')
     error('At least Python 3.9 is required.')
 endif
@@ -150,6 +150,34 @@ sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 import ara.ara as _ara
 sys.exit(_ara.main())'''
 
+gui_py_content = '''#!@0@
+"""Automatic Real-time System Analyzer GUI"""
+import importlib
+import sys
+import os
+import graph_tool
+
+def load(what, where):
+    module = importlib.import_module(what)
+    sys.modules[where] = module
+
+sys.path = [@1@] + sys.path
+sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+
+import pyllco
+
+load("graph_data", "ara.graph.graph_data")
+load("py_logging", "ara.steps.py_logging")
+load("step", "ara.steps.step")
+
+import ara.ara as _ara
+from ara.visualization.util import RESOURCE_PATH
+RESOURCE_PATH.set('@2@')
+import ara.visualization.main
+sys.exit()'''
+
+subdir('resources')
+
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
 python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
 
@@ -158,6 +186,14 @@ ara_py = custom_target('ara-py',
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
     command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
+    build_by_default: true
+)
+
+gui_py = custom_target('gui-py',
+    input: [],
+    output: 'gui.py',
+    depends: [step_mod, graph_data_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
     build_by_default: true
 )
 
@@ -238,6 +274,26 @@ if get_option('enable_toplevel_tests')
             timeout: 14400
         )
     endif
+
+    test('cfg_pic',
+       py3_inst,
+       args: [ara_py, freertos_cfg_pic,
+              '--dump',
+              '--log-level', 'info',
+              '--step', 'SIA'],
+       suite: 'toplevel',
+       timeout: 30
+    )
+
+    test('cfg_pic',
+       py3_inst,
+       args: [ara_py, freertos_visualization_thesis_example,
+              '--dump',
+              '--log-level', 'info',
+              '--step', 'SIA'],
+       suite: 'toplevel',
+       timeout: 30
+    )
 
     test('sse-i4copter',
       py3_inst,

@@ -158,6 +158,13 @@ class Step(SuperStep):
                                 "(default: dumps/{step_name}.{uuid}.).",
                                 option.String(),
                                 is_global=True)
+    trace_algorithm = option.Option(
+        "trace_algorithm",
+        "Create a trace of supported algorithms for the gui to visualize",
+        option.Bool(),
+        is_global=True
+    )
+
     def __init__(self, graph, step_manager):
         super().__init__(graph, step_manager)
         self._opts = []
@@ -415,3 +422,5 @@ cdef public void step_manager_change_global_config(object step_manager, const ch
 
 cdef public const char* step_manager_get_execution_id(object step_manager):
     return str(step_manager.get_execution_id()).encode('UTF-8')
+
+include "tracer_api.pxi"

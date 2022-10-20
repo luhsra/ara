@@ -1,6 +1,7 @@
 
 import graph_tool
 import graph_tool.util
+from graph_tool.search import bfs_iterator
 
 from graph_tool.topology import label_out_component
 
@@ -93,12 +94,19 @@ class CFG(graph_tool.Graph):
 
     The pointer to the respective LLVM datastructure is stored via llvm_link.
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, graph=None):
+        super().__init__(graph)
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
+
         # properties
         # ATTENTION: If you modify this values, you also have to update
         # cgraph/graph.cpp and cgraph/graph.h.
-
         # vertex properties
         self.vertex_properties["name"] = self.new_vp("string")
         self.vertex_properties["type"] = self.new_vp("int") # ABBType
@@ -125,6 +133,10 @@ class CFG(graph_tool.Graph):
         self.edge_properties["is_entry"] = self.new_ep("bool")
         # icf, lcf edges
         self.edge_properties["back_edge"] = self.new_ep("bool")
+
+    def contains_function_by_name(self, name: str):
+        func = graph_tool.util.find_vertex(self, self.vp["name"], name)
+        return len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
 
     def get_function_by_name(self, name: str):
         """Find a specific function."""
@@ -365,8 +377,15 @@ class CFGView(graph_tool.GraphView):
 class Callgraph(graph_tool.Graph):
     """ Callgraph on which nodes represents functions and edges function calls.
     """
-    def __init__(self, cfg):
-        super().__init__()
+    def __init__(self, cfg, graph=None):
+        super().__init__(graph)
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
 
         #vertex properties
         self.vertex_properties["function"] = self.new_vp("long")
@@ -385,6 +404,12 @@ class Callgraph(graph_tool.Graph):
         for syscat in SyscallCategory:
             property_name = "syscall_category_" + syscat.name
             self.vertex_properties[property_name] = self.new_vp("bool")
+
+    def get_edge_for_callsite_name(self, callsite_name):
+        for edge in self.edges():
+            if self.ep.callsite_name[edge] == callsite_name:
+                return edge
+        return None
 
     def get_edge_for_callsite(self, callsite):
         for edge in self.edges():
@@ -405,6 +430,38 @@ class Callgraph(graph_tool.Graph):
         # TODO convert this the vertex_type once multios is merged
         return graph_tool.GraphView(self, vfilt=self.vp.syscall_category_every)
 
+    def get_vertices_bfs(self, entry_name, depth=1):
+        """Return the breath first reachable nodes from entry_name"""
+        dist = {}
+
+        entry = self.get_node_with_name(entry_name)
+        it_bf = bfs_iterator(self, entry)
+
+        if entry is None:
+            return
+
+        dist[entry] = 0
+        yield entry
+        for v in it_bf:
+            dist[v.target()] = dist[v.source()] + 1
+
+            if dist[v.target()] > depth:
+                return
+            yield v.target()
+
+    def get_vertices_for_entries_bfs(self, entry_names:list, depth):
+        """Returns the breath first reachable nodes from entries"""
+        # Todo: Port to more graph_tool friendly solution
+        ret = set()
+        for entry in entry_names:
+            for vertex in self.get_vertices_bfs(entry, depth):
+                ret.add(vertex)
+
+        return ret
+
+    def copy_callgraph(self, cfg):
+        new = Callgraph(cfg, self)
+        return new
 
 class MSTGraph(graph_tool.Graph):
     """The Multi state transition graph"""
@@ -529,9 +586,17 @@ class InstanceGraph(graph_tool.Graph):
     """Tracks all instances (nodes) with its flow insensitive interactions
     (edges).
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, graph=None):
+        super().__init__(graph)
         # vertex properties
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
+
         # ATTENTION: If you modify this values, you also have to update
         # cgraph/graph.cpp and cgraph/graph.h.
         self.vertex_properties["label"] = self.new_vp("string")
@@ -587,6 +652,25 @@ class InstanceGraph(graph_tool.Graph):
                 continue
             yield obj.function, inst
 
+class SVFG(graph_tool.Graph):
+    """SVFG graphtool version"""
+    def __init__(self, graph=None):
+        super().__init__(graph)
+        # vertex properties
+
+        # If a graph is used to initialize the values, everthing
+        # is copied from it. If we do not return from here
+        # we will just overwrite the copied values with new empty
+        # properties maps.
+        if not (graph is None):
+            return
+
+        # ATTENTION: If you modify this values, you also have to update
+        # cgraph/graph.cpp and cgraph/graph.h.
+        self.vertex_properties["label"] = self.new_vp("string")
+        self.vertex_properties["obj"] = self.new_vp("int64_t") # pointer SVF object # TODO add obj fields as python objects
+
+        self.edge_properties["obj"] = self.new_ep("int64_t")
 
 class Graph:
     """Container for all data that ARA uses from multiple steps.
@@ -634,5 +718,6 @@ class Graph:
         self.callgraph = Callgraph(self.cfg)
         self.os = None
         self.instances = InstanceGraph()
+        self.svfg = SVFG()
         self.step_data = {}
         self.file_cache = {}

@@ -9,6 +9,10 @@ class CFGOptimize(Step):
     def get_single_dependencies(self):
         return ['IRReader', 'FakeEntryPoint']
 
+    @staticmethod
+    def is_traceable():
+        return False
+
     def run(self):
         self._step_manager.chain_step(
             {

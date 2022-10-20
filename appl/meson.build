@@ -17,6 +17,7 @@ freertos_targets = []
 ir_apps = [
   'abb_merge',
   'argument_load',
+  'cfg_pic',
   'condition',
   'critical_region_detection',
   'deadlock',
@@ -36,6 +37,7 @@ ir_apps = [
   'ospert',
   'priority_inversion',
   'rtas20_example',
+  'visualization_thesis_example',
   'src_loc',
   # 'simple_queue_send',
   'sse',

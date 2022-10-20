@@ -19,6 +19,11 @@ from typing import List
 from dataclasses import dataclass
 from collections import defaultdict
 
+import traceback
+
+from ara.visualization.trace.trace_type import AlgorithmTrace
+from ara.visualization.trace.tracer_api.tracer import Tracer
+
 from .util import get_logger, get_logger_manager, LEVEL
 from .steps import provide_steps
 from .steps.step import Step
@@ -86,6 +91,7 @@ class StepManager:
         self._config = None
         self._step_history = []
         self._chained_steps = defaultdict(set)
+        self._last_step_trace = None
 
     def clear_history(self):
         self._step_history = []
@@ -142,18 +148,6 @@ class StepManager:
         elif stats_file == 'logger':
             for line in stats_string.split('\n'):
                 self._log.info(line)
-
-    def _emit_step_data(self, step_data_output, dump_prefix):
-        data = self._graph.step_data
-        if step_data_output == 'dump':
-            file_name = dump_prefix.replace('{step_name}', 'ARA')
-            file_name = file_name.replace('{uuid}', '-')
-            file_name += 'step_data.json'
-        else:
-            file_name = step_data_output
-        with open(file_name, 'w') as f:
-            json.dump(data, f)
-            f.write('\n')
 
     def _get_config(self, step):
         """
@@ -290,6 +284,12 @@ class StepManager:
             return self._execute_chain[-1].uuid
         return None
 
+    def get_execution_chain(self):
+        """Returns the Execution Chain"""
+        if self._execute_chain:
+            return self._execute_chain
+        return []
+
     def execute(self, program_config, extra_config, esteps: List[str]):
         """Executes all steps in correct order.
 
@@ -299,6 +299,13 @@ class StepManager:
         esteps         -- list of steps to execute. The elements are strings
                           that matches the ones returned by step.get_name().
         """
+
+        self.init_execution(program_config, extra_config, esteps)
+        self._execute_steps_with_deps(self._step_history)
+        self.finish_execution(program_config)
+
+    def init_execution(self, program_config, extra_config, esteps: List[str]):
+        """Initialises the execution."""
         self._apply_logger_config(extra_config)
 
         # get a list of steps, either from extra_config or esteps
@@ -330,17 +337,18 @@ class StepManager:
 
         # extract the step manager specific config
         self._runtime_stats = program_config['runtime_stats']
-        runtime_stats_file = program_config['runtime_stats_file']
-        runtime_stats_format = program_config['runtime_stats_format']
-        dump_prefix = program_config['dump_prefix']
-        step_data_output = program_config['step_data']
-
 
         self._execute_chain = [self._make_step_entry(step, explicit=True)
                                for step in reversed(steps)]
         self._config = config
 
-        self._execute_steps_with_deps(self._step_history)
+    def finish_execution(self, program_config):
+        """Finishes the execution.
+
+        """
+        runtime_stats_file = program_config['runtime_stats_file']
+        runtime_stats_format = program_config['runtime_stats_format']
+        dump_prefix = program_config['dump_prefix']
 
         self._config = None
         self._execute_chain = None
@@ -348,5 +356,96 @@ class StepManager:
         if self._runtime_stats:
             self._emit_runtime_stats(self._step_history, runtime_stats_format,
                                      runtime_stats_file, dump_prefix)
-        if step_data_output:
-            self._emit_step_data(step_data_output, dump_prefix)
+
+    def is_next_step_traceable(self):
+        """ Returns true if the next step in the execution chain supports tracing of its algorithm."""
+        next_step_entry = self._execute_chain[-1]
+        if next_step_entry.step is None or not hasattr(next_step_entry.step, "is_traceable"):
+            return False
+
+        return self._execute_chain[-1].step.is_traceable()
+
+    def get_trace(self):
+        """ Returns the trace of the last step ran."""
+        return self._last_step_trace
+
+    def step(self):
+        """Run next step. Executed by ARA visualization exclusively"""
+
+        try:
+
+            current = self._execute_chain[-1]
+
+            current_traceable = self.is_next_step_traceable()
+
+            self._last_step_trace = None
+
+            self._log.debug("Beginning execution of "
+                            f"{current.name} (UUID: {current.uuid}).")
+
+            # initialize step
+            if current.step is None:
+                if current.name not in self._steps:
+                    rae(self._log, f"Step {current.name} does not exist",
+                        exception=StepManagerException)
+                step_inst = self._steps[current.name](self._graph, self)
+                current.step = step_inst
+            current_step.set_wrappee(current.step)
+
+            # apply config
+            current.all_config = self._get_config(current)
+            self._log.debug(f"Apply config: {current.all_config}")
+            current.step.apply_config(current.all_config)
+
+            # dependency handling
+            d_hist = self._make_history_dict(self._step_history)
+            dependencies = current.step.get_dependencies(d_hist)
+            if dependencies:
+                self._log.debug(f"Step has dependencies: {dependencies}")
+                dependency = dependencies[0]
+                self._execute_chain.append(self._make_step_entry(dependency))
+                return 1 # previously continue,
+
+            d_hist = self._make_history_dict(self._step_history)
+            if current.explicit or current.step.is_necessary_anymore(d_hist):
+                # execution
+                self._log.info(
+                    f"Execute {current.name} (UUID: {current.uuid})."
+                )
+
+                if self._runtime_stats:
+                    time_before = time.time()
+
+                current.step.run()
+
+                if self._runtime_stats:
+                    time_after = time.time()
+
+                if current_traceable:
+                    tracer = current.step.tracer
+                    tracer.destroy()
+                    if type(tracer) == AlgorithmTrace:
+                        self._last_step_trace = tracer
+                    elif type(tracer) == Tracer:
+                        self._last_step_trace = tracer.low_level_trace
+                    else:
+                        raise RuntimeError(f"Unknown object {tracer} in step.tracer")
+
+                # runtime stats handling
+                if self._runtime_stats:
+                    current.runtime = time_after - time_before
+                    self._log.debug(f"{current.name} had a runtime of "
+                                    f"{current.runtime:0.2f}s.")
+                self._step_history.append(current)
+
+            else:
+                # skip step
+                self._log.debug(f"Skip {current.name} (UUID: {current.uuid}).")
+
+            self._execute_chain.pop()
+
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+
+        return 0

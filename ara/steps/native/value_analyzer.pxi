@@ -53,7 +53,7 @@ cdef class ValueAnalyzer:
     def get_dependencies():
         return ["CallGraph"]
 
-    def __cinit__(self, graph):
+    def __cinit__(self, graph, tracer):
         self._graph = graph
         self._log = get_logger("ValueAnalyzer")
         self._sys_objects = self._graph._va_system_objects
@@ -61,7 +61,7 @@ cdef class ValueAnalyzer:
         cdef graph_data.PyGraphData g_data = graph._graph_data
         cdef cgraph.Graph gwrap = cgraph.Graph(graph, g_data._c_data)
 
-        self._c_va = CVA.get(move(gwrap), self._log)
+        self._c_va = CVA.get(move(gwrap), tracer.get_subtrace("ValueAnalyzer") if tracer is not None else None, self._log)
 
     def _check_callsite(self, callsite):
         assert(self._graph.cfg.vp.type[callsite] in [ABBType.syscall,
@@ -195,8 +195,8 @@ cdef class ValueAnalyzer:
         for py_gep in offset:
             gep = py_gep
             c_offset.push_back(gep._gep_inst())
-        deref(self._c_va).assign_system_object(value._val, obj_index, c_offset,
-                                               callpath._c_callpath)
+        deref(self._c_va).py_assign_system_object(value._val, obj_index, c_offset,
+                                                  callpath._c_callpath)
 
     def has_connection(self, callsite, callpath: CallPath, argument_nr, sys_obj):
         """Check, if an syscall argument and a target candidate are connected.

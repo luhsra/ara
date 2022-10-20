@@ -44,9 +44,6 @@ def main():
                         help="Choose whether emit the data in a human readable"
                         " format or in machine readable JSON.",
                         default='human')
-    parser.add_argument('--step-data', default=False, const='dump', nargs='?',
-                        help="Emit step data into dumps folder or optionally"
-                        " given file", metavar="FILE")
     parser.add_argument('--entry-point', '-e', help="system entry point",
                         default='main')
     parser.add_argument('--isr', '-i', action='append',
@@ -70,6 +67,8 @@ def main():
                         action='store_true')
     parser.add_argument('--manual-corrections', metavar="FILE",
                         help="File with manual corrections")
+    parser.add_argument('--trace_algorithm', action='store_true', default=False,
+                        help="Create a trace of supported algorithms for the gui to visualize")
 
     parser.add_argument('--os', help="the OS of the given application",
                         choices=get_os_names(), required=True)
