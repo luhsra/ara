@@ -727,6 +727,24 @@ class AUTOSAR(OSBase):
         return state
 
     @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),
+                        Arg("success", hint=SigType.symbol),))
+    def AUTOSAR_TryToGetSpinlock(cfg, state, cpu_id, args, va):
+        assert isinstance(args.spinlock, Spinlock)
+        AUTOSAR.check_spinlock_cpus(state, args.spinlock)
+
+        lock_ctx = state.context[args.spinlock]
+        if lock_ctx.on_hold:
+            logger.info("TGL by %s, but lock is on hold: %s",
+                        state.cur_control_inst(cpu_id), lock_ctx)
+            # just to nothing
+        else:
+            # just go the the next block but set the lock
+            lock_ctx.on_hold = True
+            lock_ctx.held_by = state.cur_control_inst(cpu_id)
+        return state
+
+    @syscall(categories={SyscallCategory.comm},
              signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),),
              custom_control_flow=True)
     def AUTOSAR_ReleaseSpinlock(cfg, state, cpu_id, args, va):

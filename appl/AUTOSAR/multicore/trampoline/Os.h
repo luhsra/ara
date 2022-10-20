@@ -54,7 +54,6 @@ using TryToGetSpinlockType = int;
 //TODO make this calls working as expected by AUTOSAR
 #define DeclareApplication(name)
 #define TerminateApplication(name, x) E_OK;
-#define TryToGetSpinlock(name, success) GetSpinlock(name)
 #define GetSpinlock_IE(name) GetSpinlock(name)
 
 

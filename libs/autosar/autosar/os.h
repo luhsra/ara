@@ -68,6 +68,8 @@
 
 #define GetSpinlock(x) AUTOSAR_GetSpinlock(AUTOSAR_SPINLOCK_##x)
 
+#define TryToGetSpinlock(x, s) AUTOSAR_TryToGetSpinlock(AUTOSAR_SPINLOCK_##x, s)
+
 #define ReleaseSpinlock(x) AUTOSAR_ReleaseSpinlock(AUTOSAR_SPINLOCK_##x)
 
 #define DeclareSpinlock(x)                                                                                             \
@@ -241,6 +243,12 @@ extern StatusType AUTOSAR_ReleaseResource(ResourceType r);
  * \param r The SPINLOCK to be locked
  **/
 extern StatusType AUTOSAR_GetSpinlock(SpinlockType r);
+
+/**
+ * \brief Try to acquire a SPINLOCK
+ * \param r The SPINLOCK to be locked
+ **/
+extern StatusType AUTOSAR_TryToGetSpinlock(SpinlockType r, int* success);
 
 /**
  * \brief Release the given SPINLOCK again
