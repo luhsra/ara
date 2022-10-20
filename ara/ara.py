@@ -72,7 +72,7 @@ def main():
                         help="File with manual corrections")
 
     parser.add_argument('--os', help="the OS of the given application",
-                        choices=get_os_names(), required=True)
+                        choices=get_os_names())
 
     # option for [sysfuncts, systemrelevantfunctions]:
     parser.add_argument('--with-stubs', help="analyze system functions that "
@@ -98,6 +98,8 @@ def main():
         sys.exit(0)
     elif not args.input_file:
         parser.error('an input_file is required (except -l or -h is set)')
+    elif not args.os:
+        parser.error('setting of --os is required (except -l or -h is set)')
 
     logger.debug(f"Processing file: {args.input_file}")
 
