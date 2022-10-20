@@ -5,35 +5,24 @@
       "tasks": {
         "t1": {
           "activation": 1,
-          "autostart": true,
+          "autostart": false,
           "priority": 1,
           "schedule": false,
           "spinlocks": ["sync"]
-        },
-        "should_not_run": {
-          "activation": 1,
-          "priority": 2,
-          "schedule": false,
-          "autostart": false
         }
       },
       "resources": {},
       "events": {},
     "alarms": {
-      "activate_task_across_cores": {
+      "t1_alarm": {
         "counter": "SystemCounter_core0",
         "action":
         {"action": "activatetask",
-         "task": "t2"
-        }
-      },
-      "should_not_expire": {
-        "counter": "SystemCounter_core0",
-        "action": {
-          "action": "activatetask",
-          "task": "should_not_run"
+         "task": "t1"
         },
-        "autostart": false
+        "autostart": true,
+        "alarmtime": 5,
+        "cycletime": 0
       }
     },
     "counters": {
@@ -52,14 +41,30 @@
           "autostart": false,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync"],
-          "events": ["t2_event"]
+          "spinlocks": ["sync"]
         }
       },
       "resources": {},
-      "events": {"t2_event": {}},
-      "alarms": {},
-      "counters": {},
+      "events": {},
+      "alarms": {
+        "t2_alarm": {
+          "counter": "SystemCounter_core1",
+          "action":
+          {"action": "activatetask",
+           "task": "t2"
+          },
+          "autostart": true,
+          "alarmtime": 10,
+          "cycletime": 0
+        }
+      },
+      "counters": {
+        "SystemCounter_core1": {
+          "mincycle": 1,
+          "maxallowedvalue": 1000,
+          "ticksperbase": 1
+        }
+      },
       "isrs": {}
     }
   ],

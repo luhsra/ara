@@ -1,0 +1,31 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "t1": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": false,
+          "events": ["t1_event"],
+          "spinlocks": ["spin0"]
+        }
+      },
+    "resources": {},
+    "events": {"t1_event": {}},
+    "alarms": {},
+    "counters": {
+      "SystemCounter_core0": {
+        "mincycle": 1,
+        "maxallowedvalue": 1000,
+        "ticksperbase": 1
+      }
+    },
+      "isrs": {}
+    }
+  ],
+  "spinlocks": [
+    ["spin0"]
+  ]
+}

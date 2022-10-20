@@ -55,6 +55,8 @@
 TestRef t1_instance(void);
 TestRef t2_instance(void);
 
+DeclareTask(t2);
+
 int main(void)
 {
 #if NUMBER_OF_CORES > 1

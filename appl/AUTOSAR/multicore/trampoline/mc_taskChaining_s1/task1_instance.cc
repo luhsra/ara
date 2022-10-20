@@ -37,6 +37,9 @@
 #include "Os.h"
 
 DeclareSpinlock(end_of_tests);
+DeclareTask(chain);
+DeclareTask(no_access);
+DeclareTask(t2);
 
 static void test_t1_instance(void)
 {

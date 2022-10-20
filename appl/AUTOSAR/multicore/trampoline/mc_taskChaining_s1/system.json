@@ -8,34 +8,19 @@
           "autostart": true,
           "priority": 1,
           "schedule": false,
-          "spinlocks": ["sync"]
+          "spinlocks": ["end_of_tests"]
         },
-        "should_not_run": {
+        "t2": {
           "activation": 1,
-          "priority": 2,
+          "autostart": false,
+          "priority": 1,
           "schedule": false,
-          "autostart": false
+          "spinlocks": ["end_of_tests"]
         }
       },
       "resources": {},
       "events": {},
-    "alarms": {
-      "activate_task_across_cores": {
-        "counter": "SystemCounter_core0",
-        "action":
-        {"action": "activatetask",
-         "task": "t2"
-        }
-      },
-      "should_not_expire": {
-        "counter": "SystemCounter_core0",
-        "action": {
-          "action": "activatetask",
-          "task": "should_not_run"
-        },
-        "autostart": false
-      }
-    },
+    "alarms": {},
     "counters": {
       "SystemCounter_core0": {
         "mincycle": 1,
@@ -47,23 +32,35 @@
     }, {
       "id": 1,
       "tasks": {
-        "t2": {
+        "chain": {
           "activation": 1,
           "autostart": false,
           "priority": 1,
+          "schedule": true,
+          "spinlocks": ["end_of_tests"]
+        },
+        "no_access": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 2,
           "schedule": false,
-          "spinlocks": ["sync"],
-          "events": ["t2_event"]
+          "spinlocks": ["end_of_tests"]
         }
       },
       "resources": {},
-      "events": {"t2_event": {}},
+      "events": {},
       "alarms": {},
-      "counters": {},
+      "counters": {
+        "SystemCounter_core1": {
+          "mincycle": 1,
+          "maxallowedvalue": 1000,
+          "ticksperbase": 1
+        }
+      },
       "isrs": {}
     }
   ],
   "spinlocks": [
-      ["sync"]
+      ["end_of_tests"]
   ]
 }

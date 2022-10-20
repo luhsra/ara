@@ -38,6 +38,9 @@
 
 DeclareSpinlock(end_of_tests);
 
+DeclareTask(no_access);
+DeclareTask(t2);
+
 static void test_t1_instance(void)
 {
   StatusType r1, r2;

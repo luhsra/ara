@@ -1,0 +1,61 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "t1": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": false,
+          "spinlocks": ["sync", "end_of_tests"]
+        }
+      },
+      "resources": {},
+      "events": {},
+    "alarms": {},
+    "counters": {
+      "SystemCounter_core0": {
+        "mincycle": 1,
+        "maxallowedvalue": 1000,
+        "ticksperbase": 1
+      }
+    },
+      "isrs": {}
+    }, {
+      "id": 1,
+      "tasks": {
+        "t2": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": true,
+          "events": ["event"],
+          "spinlocks": ["sync", "end_of_tests"]
+        },
+        "no_access_task": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 2,
+          "schedule": false,
+          "events": ["event"],
+          "spinlocks": ["sync", "end_of_tests"]
+        }
+      },
+      "resources": {},
+      "events": {"event": {}},
+      "alarms": {},
+      "counters": {
+        "SystemCounter_core1": {
+          "mincycle": 1,
+          "maxallowedvalue": 1000,
+          "ticksperbase": 1
+        }
+      },
+      "isrs": {}
+    }
+  ],
+  "spinlocks": [
+    ["sync", "end_of_tests"]
+  ]
+}

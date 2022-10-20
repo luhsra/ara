@@ -74,6 +74,8 @@ TestRef t1_instance(void);
 TestRef t2_instance(void);
 TestRef isr_instance(void);
 
+DeclareInterrupt(SOFT_IRQ0);
+
 int main(void)
 {
 #if NUMBER_OF_CORES > 1
