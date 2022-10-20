@@ -1,9 +1,3 @@
-from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
-from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
-from ara.util import get_logger
-from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
-
-import graph_tool
 import html
 
 from collections import defaultdict
@@ -12,8 +6,16 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from itertools import chain
 from typing import Any, List, Tuple
+from graph_tool import GraphView
+from graph_tool.search import dfs_iterator
 
 import pyllco
+
+from ara.util import get_logger, has_path
+from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
+
+from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
+from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
 
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
@@ -367,7 +369,7 @@ class AUTOSAR(OSBase):
 
     @staticmethod
     def handle_irq(graph, state, cpu_id, irq):
-        # we handle alarms only
+        # we handle alarms and ISRs
         instances = state.instances
         vertex = instances.vertex(irq)
         obj = instances.vp.obj[vertex]
@@ -414,7 +416,11 @@ class AUTOSAR(OSBase):
             return None
         elif isinstance(obj, ISR):
             # do not trigger same interrupt again
-            if state.cur_control_inst(cpu_id) == obj:
+            cur_inst = state.cur_control_inst(cpu_id)
+            if cur_inst == obj:
+                return
+            # shortcut: do not create an SP for an non preemptable task
+            if isinstance(cur_inst, Task) and not cur_inst.schedule:
                 return
             logger.debug(f"Interrupt: Activate {obj.name}")
             new_state = state.copy()
@@ -689,7 +695,7 @@ class AUTOSAR(OSBase):
     def get_cpus_of_spinlock(spinlock, instances):
         needed_cpus = set()
         lock = instances.get_node(spinlock)
-        filt = graph_tool.GraphView(
+        filt = GraphView(
             instances,
             efilt=instances.ep.type.fa == int(InstanceEdge.have)
         )
@@ -705,53 +711,101 @@ class AUTOSAR(OSBase):
         if needed_cpus > available_cpus:
             raise CrossCoreAction(needed_cpus - available_cpus)
 
+    @staticmethod
+    def GetSpinlock(state, cpu_id, lock, blocking=True):
+        name = "GS" if blocking else "TGS"
+        assert isinstance(lock, Spinlock)
+        # trigger a crosscoreaction
+        AUTOSAR.check_spinlock_cpus(state, lock)
+        instances = state.instances
+        cur_ctl = state.cur_control_inst(cpu_id)
+
+        lock_ctx = state.context[lock]
+        # sanity checks
+        # check for second activation
+        if lock_ctx.on_hold and lock_ctx.held_by == cur_ctl:
+            logger.info("%s by %s, but we already held the lock: %s",
+                        name, cur_ctl, lock_ctx)
+            # just keep doing
+            set_next_abb(state, cpu_id)
+            return state
+        # check for allowed nesting
+        lock_v = instances.get_node(lock)
+        nest = instances.edge_type(InstanceEdge.nestable)
+        for o_lock_v, o_lock in instances.get(Spinlock):
+            o_ctx = state.context[o_lock]
+            if o_ctx.on_hold and o_ctx.held_by == cur_ctl:
+                if not has_path(nest, o_lock_v, lock_v):
+                    logger.info("%s in %s not allowed due to nesting: %s",
+                                name, cur_ctl, lock)
+                    # just keep doing
+                    set_next_abb(state, cpu_id)
+                    return state
+
+        if lock_ctx.on_hold:
+            logger.info("%s by %s, but lock is on hold: %s",
+                        name, cur_ctl, lock_ctx)
+            if blocking:
+                # active wait in this state
+                lock_ctx.wait_for.append(cpu_id)
+                state.cpus[cpu_id].exec_state = ExecState.waiting
+                return state
+            # just keep doing
+            set_next_abb(state, cpu_id)
+            return state
+        # just go to the next block but set the lock
+        lock_ctx.on_hold = True
+        lock_ctx.held_by = cur_ctl
+        set_next_abb(state, cpu_id)
+        return state
+
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),),
              custom_control_flow=True)
     def AUTOSAR_GetSpinlock(cfg, state, cpu_id, args, va):
-        assert(isinstance(args.spinlock, Spinlock))
-        AUTOSAR.check_spinlock_cpus(state, args.spinlock)
-
-        lock_ctx = state.context[args.spinlock]
-        if lock_ctx.on_hold:
-            logger.info("GL by %s, but lock is on hold: %s",
-                        state.cur_control_inst(cpu_id), lock_ctx)
-            # active wait in this state
-            lock_ctx.wait_for.append(cpu_id)
-            state.cpus[cpu_id].exec_state = ExecState.waiting
-        else:
-            # just go the the next block but set the lock
-            lock_ctx.on_hold = True
-            lock_ctx.held_by = state.cur_control_inst(cpu_id)
-            set_next_abb(state, cpu_id)
-        return state
+        return AUTOSAR.GetSpinlock(state, cpu_id, args.spinlock)
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),
-                        Arg("success", hint=SigType.symbol),))
+                        Arg("success", hint=SigType.symbol),),
+             custom_control_flow=True)
     def AUTOSAR_TryToGetSpinlock(cfg, state, cpu_id, args, va):
-        assert isinstance(args.spinlock, Spinlock)
-        AUTOSAR.check_spinlock_cpus(state, args.spinlock)
-
-        lock_ctx = state.context[args.spinlock]
-        if lock_ctx.on_hold:
-            logger.info("TGL by %s, but lock is on hold: %s",
-                        state.cur_control_inst(cpu_id), lock_ctx)
-            # just to nothing
-        else:
-            # just go the the next block but set the lock
-            lock_ctx.on_hold = True
-            lock_ctx.held_by = state.cur_control_inst(cpu_id)
-        return state
+        return AUTOSAR.GetSpinlock(state, cpu_id, args.spinlock,
+                                   blocking=False)
 
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("spinlock", ty=Spinlock, hint=SigType.instance),),
              custom_control_flow=True)
     def AUTOSAR_ReleaseSpinlock(cfg, state, cpu_id, args, va):
-        assert(isinstance(args.spinlock, Spinlock))
+        assert isinstance(args.spinlock, Spinlock)
         AUTOSAR.check_spinlock_cpus(state, args.spinlock)
 
+        instances = state.instances
         lock_ctx = state.context[args.spinlock]
+        cur_ctl = state.cur_control_inst(cpu_id)
+
+        # if we came from a TryToGetSpinlock, this may be a noop
+        if not lock_ctx.on_hold:
+            logger.info("RS: Task %s, the spinlock is not on hold: %s",
+                        cur_ctl, lock_ctx)
+            set_next_abb(state, cpu_id)
+            return state
+        if lock_ctx.held_by != cur_ctl:
+            logger.info("RS: Task %s, the spinlock is not held by us: %s",
+                        cur_ctl, lock_ctx)
+            set_next_abb(state, cpu_id)
+            return state
+        lock_v = instances.get_node(args.spinlock)
+        nest = GraphView(instances.edge_type(InstanceEdge.nestable),
+                         reversed=True)
+        for e in dfs_iterator(nest, nest.vertex(lock_v)):
+            o_ctx = state.context[instances.vp.obj[e.target()]]
+            if o_ctx.on_hold and o_ctx.held_by == cur_ctl:
+                logger.info("RS: Task %s, not allowed due to nesting: %s",
+                            cur_ctl, instances.vp.name[e.target()])
+                # just keep doing
+                set_next_abb(state, cpu_id)
+                return state
 
         # local backup
         wait_for = lock_ctx.wait_for
@@ -852,7 +906,6 @@ class AUTOSAR(OSBase):
                                InstanceEdge.sete)
         return state
 
-
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
                         Arg("increment"),
@@ -875,8 +928,10 @@ class AUTOSAR(OSBase):
         - AUTOSAR the alarm is not set and the API call returns
           E_OS_VALUE
         """
-        assert(isinstance(args.increment, int))
-        assert(isinstance(args.cycle, int))
+        assert isinstance(args.increment, int)
+        assert isinstance(args.cycle, int)
+
+        logger.error(repr(args.alarm))
 
         AUTOSAR.check_cpu(state, args.alarm.cpu_id)
 
