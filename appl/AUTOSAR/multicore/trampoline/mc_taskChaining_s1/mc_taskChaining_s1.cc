@@ -105,12 +105,14 @@ TASK(t1)
 TASK(chain)
 {
   TestRunner_runTest(t2_instance());
+  TerminateTask();
   ShutdownOS(E_OK);
 }
 
 DeclareSpinlock(end_of_tests);
 TASK(t2)
 {
+  TerminateTask();
   SyncAllCores(end_of_tests);
   ShutdownOS(E_OK);
 }

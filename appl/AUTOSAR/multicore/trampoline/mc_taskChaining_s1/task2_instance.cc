@@ -40,6 +40,7 @@ static void test_t2_instance(void)
 {
   SCHEDULING_CHECK_STEP(2);
 
+  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 

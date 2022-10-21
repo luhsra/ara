@@ -39,6 +39,7 @@ DeclareSpinlock(end_of_tests);
 static void test_t2_instance(void)
 {
   /* Wait end of tests */
+  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 

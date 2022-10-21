@@ -30,6 +30,7 @@
           "autostart": false,
           "priority": 1,
           "schedule": false,
+          "accessing_application": [0],
           "spinlocks": ["end_of_tests"]
         },
         "no_access": {
@@ -37,6 +38,7 @@
           "autostart": false,
           "priority": 1,
           "schedule": false,
+          "accessing_application": [],
           "spinlocks": ["end_of_tests"]
         }
       },

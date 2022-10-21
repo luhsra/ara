@@ -53,6 +53,7 @@ static void test_t1_instance(void)
   r2 = ActivateTask(t2);
   SCHEDULING_CHECK_AND_EQUAL_INT(2, E_OK, r2);
 
+  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 
