@@ -976,6 +976,12 @@ class AUTOSAR(OSBase):
         cur_task = state.cur_control_inst(cpu_id)
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
+        # check if we are holding a spinlock
+        for o_lock_v, o_lock in instances.get(Spinlock):
+            o_ctx = state.context[o_lock]
+            if o_ctx.on_hold and o_ctx.held_by == cur_task:
+                return state
+
         state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
                                               abb=state.cfg.get_entry_abb(cur_task.function),
                                               call_path=CallPath(),
