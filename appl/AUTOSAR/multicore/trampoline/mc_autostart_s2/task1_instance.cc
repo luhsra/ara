@@ -38,6 +38,7 @@ DeclareSpinlock(sync);
 
 static void test_t1_instance(void)
 {
+  TerminateTask();
   SyncAllCores(sync);
 }
 
