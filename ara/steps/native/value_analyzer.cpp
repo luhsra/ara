@@ -320,6 +320,7 @@ namespace ara::step {
 			++spawned_traversers;
 			if (first) {
 				this->dbg() << "Advance: self, go to " << PrintableEdge(edge, caretaker.get_g()) << std::endl;
+				this->trace.emplace_back(edge);
 				caretaker.get_tracer().go_to_node(this->entity, eval_path, false);
 				this->path = eval_path;
 				update_call_path(action, cg_edge);
