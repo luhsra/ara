@@ -17,7 +17,7 @@ def main():
         setting_file = sys.argv[4]
         with open(setting_file, "r") as f:
             config = json.load(f)
-    data = init_test(extra_config=config)
+    data = init_test(extra_config=config, os_name=os_name)
 
     with open("dumps/InstanceGraphStats.json", "r") as f:
         actual = json.load(f)
