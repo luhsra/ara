@@ -19,7 +19,13 @@ cython_flags = ['-Wextra', '--cplus', '-3']
 
 py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
-py3_inst = py3_mod.find_installation('python3', modules: ['pydot', 'graph_tool', 'PySide6', 'scipy'])
+
+python_modules = ['pydot', 'graph_tool']
+if get_option('enable_gui')
+    python_modules += ['PySide6', 'scipy']
+endif
+
+py3_inst = py3_mod.find_installation('python3', modules: python_modules)
 if py3_inst.language_version().version_compare('<3.9')
     error('At least Python 3.9 is required.')
 endif
@@ -151,6 +157,19 @@ from ara.ara import Main
 main = Main()
 sys.exit(main.main(False))'''
 
+python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
+python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
+
+ara_py = custom_target('ara-py',
+    input: [],
+    output: 'ara.py',
+    depends: [step_mod, graph_data_mod],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
+    build_by_default: true
+)
+
+if get_option('enable_gui')
+
 gui_py_content = '''#!@0@
 """Automatic Real-time System Analyzer GUI"""
 import importlib
@@ -177,27 +196,16 @@ RESOURCE_PATH.set('@2@')
 import ara.visualization.main
 sys.exit()'''
 
-subdir('resources')
+    subdir('resources')
 
-python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
-python_path = 'PYTHONPATH=' + ':'.join(python_dirs)
-
-ara_py = custom_target('ara-py',
-    input: [],
-    output: 'ara.py',
-    depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
-    build_by_default: true
-)
-
-gui_py = custom_target('gui-py',
-    input: [],
-    output: 'gui.py',
-    depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
-    build_by_default: true
-)
-
+    gui_py = custom_target('gui-py',
+        input: [],
+        output: 'gui.py',
+        depends: [step_mod, graph_data_mod],
+        command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', gui_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', resources_dir + '/')],
+        build_by_default: true
+    )
+endif
 
 # build test applications with help of ARA
 # Attention: The include order is important here.

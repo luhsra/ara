@@ -1,5 +1,6 @@
 option('arch', type: 'combo', choices: ['arm', 'i386'], value: 'arm',
     description: 'Set the architecture for which the test applications are built.')
+option('enable_gui', type: 'boolean', value: false)
 
 option('enable_qemu_tests', type: 'boolean', value: true)
 option('enable_step_tests', type: 'boolean', value: true,
