@@ -84,7 +84,7 @@ class Main:
                                 help="Create a trace of supported algorithms for the gui to visualize")
 
         parser.add_argument('--os', help="the OS of the given application",
-                            choices=get_os_names(), required=True)
+                            choices=get_os_names())
 
         # option for [sysfuncts, systemrelevantfunctions]:
         parser.add_argument('--with-stubs', help="analyze system functions that "
@@ -108,6 +108,8 @@ class Main:
             sys.exit(0)
         elif not self.args.input_file:
             parser.error('an input_file is required (except -l or -h is set)')
+        elif not self.args.os:
+            parser.error('setting of --os is required (except -l or -h is set)')
 
         logger.debug(f"Processing file: {self.args.input_file}")
 
