@@ -147,8 +147,9 @@ load("step", "ara.steps.step")
 
 sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
-import ara.ara as _ara
-sys.exit(_ara.main())'''
+from ara.ara import Main
+main = Main()
+sys.exit(main.main(False))'''
 
 gui_py_content = '''#!@0@
 """Automatic Real-time System Analyzer GUI"""
