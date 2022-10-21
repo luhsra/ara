@@ -196,18 +196,6 @@
   },
   {
     "source": "Thread 1",
-    "target": "Semaphore 2",
-    "label": "sem_wait()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 1",
-    "target": "Semaphore 0",
-    "label": "sem_wait()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 1",
     "target": "Semaphore 0",
     "label": "sem_post()",
     "type": "interaction"
@@ -220,18 +208,6 @@
   },
   {
     "source": "Thread 2",
-    "target": "Semaphore 1",
-    "label": "sem_wait()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 2",
-    "target": "Semaphore 0",
-    "label": "sem_wait()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 2",
     "target": "Semaphore 0",
     "label": "sem_post()",
     "type": "interaction"
@@ -240,6 +216,30 @@
     "source": "Thread 2",
     "target": "Semaphore 2",
     "label": "sem_post()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Semaphore 0",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Semaphore 2",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Semaphore 0",
+    "label": "sem_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 2",
+    "target": "Semaphore 1",
+    "label": "sem_wait()",
     "type": "interaction"
   },
   {

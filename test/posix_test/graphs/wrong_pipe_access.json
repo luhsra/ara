@@ -77,15 +77,15 @@
     "type": "interaction_error"
   },
   {
-    "source": "Main Thread",
-    "target": "Thread 1",
-    "label": "pthread_join()",
-    "type": "interaction"
-  },
-  {
     "source": "Thread 1",
     "target": "Pipe 0",
     "label": "used write() with READ fd",
     "type": "interaction_error"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_join()",
+    "type": "interaction"
   }
 ]

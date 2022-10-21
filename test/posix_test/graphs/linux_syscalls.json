@@ -45,6 +45,12 @@
   },
   {
     "source": "Main Thread",
+    "target": "Main Thread",
+    "label": "pause()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
     "target": "testfile",
     "label": "read()",
     "type": "interaction"
@@ -59,12 +65,6 @@
     "source": "Main Thread",
     "target": "testfile",
     "label": "writev()",
-    "type": "interaction"
-  },
-  {
-    "source": "Main Thread",
-    "target": "Main Thread",
-    "label": "pause()",
     "type": "interaction"
   }
 ]

@@ -71,6 +71,12 @@
     "type": "interaction"
   },
   {
+    "source": "Thread 1",
+    "target": "testfile",
+    "label": "open(O_WRONLY)",
+    "type": "interaction"
+  },
+  {
     "source": "Main Thread",
     "target": "Thread 1",
     "label": "pthread_join()",
@@ -80,12 +86,6 @@
     "source": "Main Thread",
     "target": "testfile",
     "label": "read()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 1",
-    "target": "testfile",
-    "label": "open(O_WRONLY)",
     "type": "interaction"
   },
   {

@@ -72,14 +72,14 @@
   },
   {
     "source": "Main Thread",
-    "target": "Pipe 0",
-    "label": "read()",
+    "target": "Thread 1",
+    "label": "pthread_join()",
     "type": "interaction"
   },
   {
     "source": "Main Thread",
-    "target": "Thread 1",
-    "label": "pthread_join()",
+    "target": "Pipe 0",
+    "label": "read()",
     "type": "interaction"
   },
   {

@@ -3,15 +3,15 @@
     "label": "ConditionVariable 0",
     "id": "ConditionVariable 0",
     "branch": 0,
-    "usually_taken": 0,
+    "usually_taken": 1,
     "loop": 0,
     "recursive": 0,
-    "after_scheduler": 1,
+    "after_scheduler": 0,
     "unique": 1,
     "is_control": 0,
-    "file": "../appl/POSIX/test_appl/condition_variable.c",
-    "line": 28,
-    "specialization_level": "",
+    "file": "../appl/POSIX/test_appl/condition_var_broadcast.c",
+    "line": 7,
+    "specialization_level": "N/A",
     "type": "instance",
     "name": "ConditionVariable 0",
     "num_id": 0
@@ -41,21 +41,21 @@
     "label": "Mutex 0",
     "id": "Mutex 0",
     "branch": 0,
-    "usually_taken": 0,
+    "usually_taken": 1,
     "loop": 0,
     "recursive": 0,
-    "after_scheduler": 1,
+    "after_scheduler": 0,
     "unique": 1,
     "is_control": 0,
-    "file": "../appl/POSIX/test_appl/condition_variable.c",
-    "line": 27,
-    "specialization_level": "",
+    "file": "../appl/POSIX/test_appl/condition_var_broadcast.c",
+    "line": 8,
+    "specialization_level": "N/A",
     "type": "instance",
     "name": "Mutex 0",
     "num_id": 0
   },
   {
-    "label": "Thread 1 (new_thread_routine)",
+    "label": "Thread 1 (new_thread_routine_receiver)",
     "id": "Thread 1",
     "branch": 0,
     "usually_taken": 0,
@@ -64,11 +64,11 @@
     "after_scheduler": 1,
     "unique": 1,
     "is_control": 1,
-    "file": "../appl/POSIX/test_appl/condition_variable.c",
-    "line": 29,
+    "file": "../appl/POSIX/test_appl/condition_var_broadcast.c",
+    "line": 40,
     "specialization_level": "",
     "type": "instance",
-    "function_name": "new_thread_routine",
+    "function_name": "new_thread_routine_receiver",
     "inherited_sched_attr": "<default>",
     "name": "Thread 1",
     "num_id": 1,
@@ -76,10 +76,25 @@
     "sched_priority": "<default>"
   },
   {
-    "source": "Main Thread",
-    "target": "ConditionVariable 0",
-    "label": "pthread_cond_init()",
-    "type": "create"
+    "label": "Thread 2 (new_thread_routine_sender)",
+    "id": "Thread 2",
+    "branch": 0,
+    "usually_taken": 0,
+    "loop": 0,
+    "recursive": 0,
+    "after_scheduler": 1,
+    "unique": 1,
+    "is_control": 1,
+    "file": "../appl/POSIX/test_appl/condition_var_broadcast.c",
+    "line": 39,
+    "specialization_level": "",
+    "type": "instance",
+    "function_name": "new_thread_routine_sender",
+    "inherited_sched_attr": "<default>",
+    "name": "Thread 2",
+    "num_id": 2,
+    "sched_policy": "<default>",
+    "sched_priority": "<default>"
   },
   {
     "source": "Main Thread",
@@ -89,20 +104,20 @@
   },
   {
     "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_init()",
+    "target": "Thread 2",
+    "label": "pthread_create()",
     "type": "create"
   },
   {
-    "source": "Thread 1",
-    "target": "Thread 1",
+    "source": "Thread 2",
+    "target": "Thread 2",
     "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
     "type": "interaction"
   },
   {
-    "source": "Thread 1",
+    "source": "Thread 2",
     "target": "ConditionVariable 0",
-    "label": "pthread_cond_signal()",
+    "label": "pthread_cond_broadcast()",
     "type": "interaction"
   },
   {
@@ -113,6 +128,18 @@
   },
   {
     "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_cond_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "ConditionVariable 0",
+    "label": "pthread_cond_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
     "target": "Mutex 0",
     "label": "pthread_cond_wait()",
     "type": "interaction"
@@ -125,12 +152,30 @@
   },
   {
     "source": "Main Thread",
+    "target": "Thread 2",
+    "label": "pthread_detach()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_lock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
     "target": "Mutex 0",
     "label": "pthread_mutex_lock()",
     "type": "interaction"
   },
   {
     "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
     "target": "Mutex 0",
     "label": "pthread_mutex_unlock()",
     "type": "interaction"

@@ -40,13 +40,13 @@
   {
     "source": "Main Thread",
     "target": "testfile",
-    "label": "open(O_WRONLY)",
-    "type": "interaction"
+    "label": "used read() with WRITE fd",
+    "type": "interaction_error"
   },
   {
     "source": "Main Thread",
     "target": "testfile",
-    "label": "used read() with WRITE fd",
-    "type": "interaction_error"
+    "label": "open(O_WRONLY)",
+    "type": "interaction"
   }
 ]

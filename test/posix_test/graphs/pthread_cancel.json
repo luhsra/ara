@@ -48,9 +48,15 @@
     "type": "create"
   },
   {
-    "source": "Main Thread",
+    "source": "Thread 1",
     "target": "Thread 1",
-    "label": "pthread_detach()",
+    "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Main Thread",
+    "label": "nanosleep(tv_sec: 5, tv_nsec: 0)",
     "type": "interaction"
   },
   {
@@ -61,14 +67,8 @@
   },
   {
     "source": "Main Thread",
-    "target": "Main Thread",
-    "label": "nanosleep(tv_sec: 5, tv_nsec: 0)",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 1",
     "target": "Thread 1",
-    "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
+    "label": "pthread_detach()",
     "type": "interaction"
   }
 ]
