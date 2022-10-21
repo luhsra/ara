@@ -844,7 +844,7 @@ namespace ara::step {
 							}
 							auto cand = source(edge, g);
 							if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->get_node_obj<SVFG>(cand))) {
-								assign_addr(node);
+								assign_addr(cand);
 							} else {
 								fail_with_msg("Addr pattern failed. Found a pointer to a non AddrVFGNode");
 							}
