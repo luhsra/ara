@@ -49,7 +49,7 @@ static void test_t1_instance(void)
   int totalCores = GetNumberOfActivatedCores();
 
   /* Be sure the other cores have finished executing the StartupHook */
-  SyncAllCores(sync);
+  // SyncAllCores(sync);
 
   /* For each activated core, check if it has successfully executed the
    * StartupHook.
@@ -61,7 +61,7 @@ static void test_t1_instance(void)
   }
 
   /* Notify end of tests */
-  SyncAllCores(end_of_tests);
+  // SyncAllCores(end_of_tests);
 }
 
 /*create the test suite with all the test cases*/

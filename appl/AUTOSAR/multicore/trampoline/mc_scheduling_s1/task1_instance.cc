@@ -51,6 +51,7 @@ static void test_t1_instance(void)
   SCHEDULING_CHECK_AND_EQUAL_INT(2, E_OK, r1);
 
   /* Wait for the core 1 to execute task t2 */
+  TerminateTask();
   SyncAllCores(sync);
 }
 

@@ -41,11 +41,12 @@ DeclareEvent(event, 0);
 
 static void test_t2_instance(void)
 {
-  SyncAllCores(sync);
+  // SyncAllCores(sync);
 
   WaitEvent(event);
 
   /* Wait end of tests */
+  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 

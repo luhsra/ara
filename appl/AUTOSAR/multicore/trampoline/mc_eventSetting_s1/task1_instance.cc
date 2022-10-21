@@ -48,7 +48,7 @@ static void test_t1_instance(void)
 {
   StatusType r1, r2;
 
-  SyncAllCores(sync);
+  // SyncAllCores(sync);
 
   SCHEDULING_CHECK_INIT(1);
   r1 = SetEvent(no_access_task, event);
@@ -58,6 +58,7 @@ static void test_t1_instance(void)
   r2 = SetEvent(t2, event);
   SCHEDULING_CHECK_AND_EQUAL_INT(2, E_OK, r2);
 
+  TerminateTask();
   SyncAllCores(end_of_tests);
 }
 

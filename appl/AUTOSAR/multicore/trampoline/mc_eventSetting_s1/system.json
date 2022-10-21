@@ -39,6 +39,7 @@
           "priority": 2,
           "schedule": false,
           "events": ["event"],
+          "accessing_application": [],
           "spinlocks": ["sync", "end_of_tests"]
         }
       },

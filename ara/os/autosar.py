@@ -907,6 +907,10 @@ class AUTOSAR(OSBase):
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
         assert(isinstance(args.task, Task))
         assert(isinstance(args.event_mask, int))
+        if args.task.accessing_application is not None:
+            if cpu_id not in args.task.accessing_application:
+                logger.debug(f"Unallowed AT of {args.task} from {cpu_id=}.")
+                return state
         state = AUTOSAR.SetEvent(state, cpu_id, args.task, args.event_mask)
         AUTOSAR.connect_events(state, cpu_id, args.event_mask, "SetEvent",
                                InstanceEdge.sete)

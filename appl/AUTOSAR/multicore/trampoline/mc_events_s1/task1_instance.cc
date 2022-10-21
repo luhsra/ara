@@ -50,6 +50,7 @@ static void test_t1_instance(void)
   SCHEDULING_CHECK_INIT(2);
   r2 = WaitEvent(t1_event);
   SCHEDULING_CHECK_AND_EQUAL_INT(2, E_OS_SPINLOCK, r2);
+  TerminateTask();
 }
 
 TestRef t1_instance(void)

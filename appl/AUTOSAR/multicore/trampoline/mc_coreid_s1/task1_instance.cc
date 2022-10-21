@@ -45,6 +45,7 @@ static void test_t1_instance(void)
   SCHEDULING_CHECK_INIT(1);
   r1 = GetNumberOfActivatedCores();
   SCHEDULING_CHECK_AND_EQUAL_INT(1, user_number_of_cores, r1);
+  TerminateTask();
 }
 
 TestRef t1_instance(void)

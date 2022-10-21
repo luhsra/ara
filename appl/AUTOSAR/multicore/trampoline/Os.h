@@ -30,7 +30,7 @@ using TryToGetSpinlockType = int;
 #define OSDEFAULTAPPMODE 0
 
 #define new_TestFixture(unused, func) func();
-#define SyncAllCores(lock_name) GetSpinlock(lock_name)
+#define SyncAllCores(lock_name) {GetSpinlock(lock_name); ReleaseSpinlock(lock_name);}
 #define SyncAllCores_Init()
 
 

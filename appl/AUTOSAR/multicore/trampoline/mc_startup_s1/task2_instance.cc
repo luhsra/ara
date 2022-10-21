@@ -40,10 +40,10 @@ DeclareSpinlock(end_of_tests);
 static void test_t2_instance(void)
 {
   /* Notify StartupHook has been crossed */
-  SyncAllCores(sync);
+  // SyncAllCores(sync);
 
   /* Wait end of tests */
-  SyncAllCores(end_of_tests);
+  // SyncAllCores(end_of_tests);
 }
 
 TestRef t2_instance(void)
