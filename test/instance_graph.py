@@ -79,9 +79,11 @@ def json_instance_graph(instances, edge_type_class: IntEnum):
         dump.append(i_dump)
 
     def sort_key(item):
-        if item['type'] == "instance":
-            return "0" + item['id']
-        return "1"
+        if item["type"] == "instance":
+            ret = "0" + item["id"]
+        else:
+            ret = "1" + item["type"] + "|" + item["label"] + "|" + item["source"] + "|" + item["target"]
+        return ret
 
     return sorted(dump, key=sort_key)
 
