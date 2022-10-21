@@ -218,6 +218,10 @@ class OSCreator(type):
         x = super().__new__(cls, name, bases, dct)
         x.syscalls = {f: getattr(x, f) for f in dir(x)
                       if hasattr(getattr(x, f), 'syscall')}
+        for syscall in list(x.syscalls.values()):
+            for alias in syscall.aliases:
+                x.syscalls[alias] = syscall
+                setattr(x, alias, syscall)
         return x
 
 
