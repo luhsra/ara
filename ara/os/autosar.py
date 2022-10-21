@@ -977,10 +977,11 @@ class AUTOSAR(OSBase):
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
         # check if we are holding a spinlock
-        for o_lock_v, o_lock in instances.get(Spinlock):
-            o_ctx = state.context[o_lock]
-            if o_ctx.on_hold and o_ctx.held_by == cur_task:
-                return state
+        for o_lock_v, o_lock in state.instances.get(Spinlock):
+            if o_lock in state.context:
+                o_ctx = state.context[o_lock]
+                if o_ctx.on_hold and o_ctx.held_by == cur_task:
+                    return state
 
         state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
                                               abb=state.cfg.get_entry_abb(cur_task.function),
