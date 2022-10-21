@@ -222,7 +222,7 @@ class SysCall:
         static method so just return itself here."""
         return self
 
-    def __call__(self, graph, state, cpu_id):
+    def __call__(self, graph, state, cpu_id, sig_offset=0):
         """Interpret the system call.
 
         In principal, this function performs a value analysis, then calls
@@ -239,9 +239,12 @@ class SysCall:
         va     -- The value analyzer.
 
         Arguments:
-        graph  -- the graph object
-        state  -- the OS state
-        cpu_id -- the cpu_id that should be interpreted
+        graph       -- the graph object
+        state       -- the OS state
+        cpu_id      -- the cpu_id that should be interpreted
+        sig_offset  -- offset at which position the signature for the syscall function starts.
+                       The default value is 0. Do not set this value unless you have at least
+                       one argument at the beginning that does not belong to the syscall signature.
         """
 
         if _SyscallCategory.undefined in self.categories:
@@ -272,8 +275,8 @@ class SysCall:
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
             try:
-                result = va.get_argument_value(abb,
-                                               idx,
+                result = va.get_argument_value(abb, 
+                                               idx + sig_offset,
                                                callpath=callpath,
                                                hint=hint)
             except ValuesUnknown as e:
