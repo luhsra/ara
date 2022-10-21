@@ -84,6 +84,7 @@ class Task(AUTOSARInstance, ControlInstance):
     activation: Any
     autostart: bool
     schedule: Any
+    accessing_application: list
 
     def __hash__(self):
         return AUTOSARInstance.__hash__(self)
@@ -615,6 +616,11 @@ class AUTOSAR(OSBase):
     @syscall(categories={SyscallCategory.comm},
              signature=(Arg("task", ty=Task, hint=SigType.instance),))
     def AUTOSAR_ActivateTask(cfg, state, cpu_id, args, va):
+        if args.task.accessing_application is not None:
+            logger.debug(f"{args.task.accessing_application=}")
+            if cpu_id not in args.task.accessing_application:
+                logger.debug(f"Unallowed AT of {args.task} from {cpu_id=}.")
+                return state
         AUTOSAR.ActivateTask(state, cpu_id, args.task)
         t = find_instance_node(state.instances, args.task)
         connect_from_here(state, cpu_id, t, "ActivateTask",

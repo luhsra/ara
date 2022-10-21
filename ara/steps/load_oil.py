@@ -169,6 +169,7 @@ class LoadOIL(Step):
                         activation=task["activation"],
                         autostart=task["autostart"],
                         schedule=task["schedule"],
+                        accessing_application=task.get("accessing_application"),
                         cpu_id=cpu_id,
                         artificial=False
                     )
