@@ -2,6 +2,7 @@ from pickletools import pybytes
 import graph_tool.util
 from ara.graph.mix import ARA_ENTRY_POINT
 from ara.steps.instance_graph_stats import MissingInteractions
+from ara.steps.util import current_step
 import pyllco
 from .step import Step
 from pydoc import locate
@@ -57,7 +58,7 @@ class ZephyrStaticPost(Step):
         # avoid dependency conflicts, therefore import dynamically
         from ara.steps import get_native_component
         ValueAnalyzer = get_native_component("ValueAnalyzer")
-        va = ValueAnalyzer(self._graph)
+        va = ValueAnalyzer(self._graph, current_step.tracer if hasattr(current_step, "tracer") else None)
 
         # Currently, we just look for a config with the same name as the app.ll
         ZEPHYR.config = KConfigFile(self.input_file.get()[:-3] + '.config')
