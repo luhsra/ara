@@ -808,7 +808,7 @@ class AUTOSAR(OSBase):
             o_ctx = state.context[instances.vp.obj[e.target()]]
             if o_ctx.on_hold and o_ctx.held_by == cur_ctl:
                 logger.info("RS: Task %s, not allowed due to nesting: %s",
-                            cur_ctl, instances.vp.name[e.target()])
+                            cur_ctl, instances.vp.label[e.target()])
                 # just keep doing
                 set_next_abb(state, cpu_id)
                 return state
