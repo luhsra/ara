@@ -4,6 +4,7 @@
 #include "mix.h"
 
 #include <Python.h>
+#include <boost/graph/graph_traits.hpp>
 #include <boost/python.hpp>
 
 // we use 'unsigned long' directly for vertex ids in cython, so make sure it is the same as uint64_t
