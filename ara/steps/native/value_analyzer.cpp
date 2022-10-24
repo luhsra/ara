@@ -67,7 +67,8 @@ namespace ara::step {
 		}
 
 		std::optional<std::vector<int64_t>>
-		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets, const llvm::Module& llvm_module) {
+		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets,
+		                          const llvm::Module& llvm_module) {
 			std::vector<int64_t> number_offsets;
 			for (const auto& gep : offsets) {
 				auto number = get_offset(gep, llvm_module);
@@ -810,12 +811,51 @@ namespace ara::step {
 
 		// iterate all nodes to check for specific pattern
 		for (auto node : nodes) {
-			// Pattern 1: We are searching an argument, the next node has to be a FormalParmPHI
-			if (argument_nr >= 0) {
+			// Pattern 1: We have only one AddrVFGNode and multiple pointer (GepVFGNodes) to this node
+			if (addr_pattern_valid) {
+				SVF::VFGNode* vfg_node = this->svfg->template get_node_obj<SVFG>(node);
+				if (llvm::dyn_cast<SVF::AddrVFGNode>(vfg_node)) {
+					assign_addr(node);
+				} else if (llvm::isa<SVF::GepVFGNode>(vfg_node)) {
+					bool first_node = true;
+					for (auto edge : graph_tool::in_edges_range(node, g)) {
+						if (!first_node) {
+							fail_with_msg("Addr pattern failed. Found a pointer to more than one node.");
+							break;
+						}
+						auto cand = source(edge, g);
+						if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
+							assign_addr(cand);
+						} else {
+							fail_with_msg("Addr pattern failed. Found a pointer to a non AddrVFGNode");
+						}
+						first_node = false;
+					}
+				}
+			}
+
+			// Pattern 2: Any element in the list is a nullptr
+			if (llvm::isa<SVF::NullPtrVFGNode>(this->svfg->template get_node_obj<SVFG>(node))) {
+				logger.debug() << "Pattern 2, found nullptr: " << node << std::endl;
+				return node;
+			}
+		}
+
+		if (addr_pattern_valid && addr_set) {
+			logger.debug() << "Pattern 1, found one address with multiple pointers: " << addr << std::endl;
+			return addr;
+		}
+
+		// ATTENTION: Pattern 3 is under development
+		if (argument_nr >= 0) {
+			logger.warning() << "get_vfg_node(): try to check for Pattern 3 which is under development" << std::endl;
+			for (auto node : nodes) {
+				// Pattern 3: We are searching an argument, the next node has to be a FormalParmPHI
 				for (auto edge : graph_tool::out_edges_range(node, g)) {
 					auto cand = target(edge, g);
 					logger.debug() << "cand: " << cand << std::endl;
-					if (auto phi = llvm::dyn_cast<SVF::InterPHIVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
+					if (auto phi =
+					        llvm::dyn_cast<SVF::InterPHIVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
 						logger.debug() << "PHINode: " << *phi << std::endl;
 						if (phi->isFormalParmPHI()) {
 							if (auto arg = llvm::dyn_cast<llvm::Argument>(phi->getValue())) {
@@ -829,40 +869,7 @@ namespace ara::step {
 						}
 					}
 				}
-			} else {
-				// Pattern 2: We have only one AddrVFGNode and multiple pointer (GepVFGNodes) to this node
-				if (addr_pattern_valid) {
-					SVF::VFGNode* vfg_node = this->svfg->template get_node_obj<SVFG>(node);
-					if (llvm::dyn_cast<SVF::AddrVFGNode>(vfg_node)) {
-						assign_addr(node);
-					} else if (llvm::isa<SVF::GepVFGNode>(vfg_node)) {
-						bool first_node = true;
-						for (auto edge : graph_tool::in_edges_range(node, g)) {
-							if (!first_node) {
-								fail_with_msg("Addr pattern failed. Found a pointer to more than one node.");
-								break;
-							}
-							auto cand = source(edge, g);
-							if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
-								assign_addr(cand);
-							} else {
-								fail_with_msg("Addr pattern failed. Found a pointer to a non AddrVFGNode");
-							}
-							first_node = false;
-						}
-					}
-				}
 			}
-
-			// Pattern 3: Any element in the list is a nullptr
-			if (llvm::isa<SVF::NullPtrVFGNode>(this->svfg->template get_node_obj<SVFG>(node))) {
-				logger.debug() << "Patter 3, found nullptr: " << node << std::endl;
-				return node;
-			}
-		}
-		if (addr_pattern_valid && addr_set) {
-			logger.debug() << "Patter 2, found one address with multiple pointers: " << addr << std::endl;
-			return addr;
 		}
 
 		assert(false && "get_vfg_node(): No pattern is matching!");
