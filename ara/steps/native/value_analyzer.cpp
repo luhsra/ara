@@ -778,7 +778,7 @@ namespace ara::step {
 
 	template <class SVFG>
 	const Node<SVFG> ValueAnalyzerImpl<SVFG>::get_vfg_node(const llvm::Value& start, int argument_nr) {
-		auto nodes = this->svfg->from_llvm_value<SVFG>(start);
+		auto nodes = this->svfg->template from_llvm_value<SVFG>(start);
 		if (nodes.size() == 0) {
 			logger.error() << "Call get_vfg_node with: " << start << " and argument_nr: " << argument_nr << std::endl;
 			throw ValuesUnknown("Cannot go back from llvm::Value to an SVF node");
@@ -815,7 +815,7 @@ namespace ara::step {
 				for (auto edge : graph_tool::out_edges_range(node, g)) {
 					auto cand = target(edge, g);
 					logger.debug() << "cand: " << cand << std::endl;
-					if (auto phi = llvm::dyn_cast<SVF::InterPHIVFGNode>(this->svfg->get_node_obj<SVFG>(cand))) {
+					if (auto phi = llvm::dyn_cast<SVF::InterPHIVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
 						logger.debug() << "PHINode: " << *phi << std::endl;
 						if (phi->isFormalParmPHI()) {
 							if (auto arg = llvm::dyn_cast<llvm::Argument>(phi->getValue())) {
@@ -832,7 +832,7 @@ namespace ara::step {
 			} else {
 				// Pattern 2: We have only one AddrVFGNode and multiple pointer (GepVFGNodes) to this node
 				if (addr_pattern_valid) {
-					SVF::VFGNode* vfg_node = this->svfg->get_node_obj<SVFG>(node);
+					SVF::VFGNode* vfg_node = this->svfg->template get_node_obj<SVFG>(node);
 					if (llvm::dyn_cast<SVF::AddrVFGNode>(vfg_node)) {
 						assign_addr(node);
 					} else if (llvm::isa<SVF::GepVFGNode>(vfg_node)) {
@@ -843,7 +843,7 @@ namespace ara::step {
 								break;
 							}
 							auto cand = source(edge, g);
-							if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->get_node_obj<SVFG>(cand))) {
+							if (llvm::dyn_cast<SVF::AddrVFGNode>(this->svfg->template get_node_obj<SVFG>(cand))) {
 								assign_addr(cand);
 							} else {
 								fail_with_msg("Addr pattern failed. Found a pointer to a non AddrVFGNode");
@@ -855,7 +855,7 @@ namespace ara::step {
 			}
 
 			// Pattern 3: Any element in the list is a nullptr
-			if (llvm::isa<SVF::NullPtrVFGNode>(this->svfg->get_node_obj<SVFG>(node))) {
+			if (llvm::isa<SVF::NullPtrVFGNode>(this->svfg->template get_node_obj<SVFG>(node))) {
 				logger.debug() << "Patter 3, found nullptr: " << node << std::endl;
 				return node;
 			}
@@ -942,7 +942,7 @@ namespace ara::step {
 			logger.debug() << "Downward search: " << current << std::endl;
 			for (auto edge : graph_tool::out_edges_range(current, g)) {
 				Node<SVFG> cand = target(edge, g);
-				SVF::VFGNode* svf_cand = this->svfg->get_node_obj<SVFG>(cand);
+				SVF::VFGNode* svf_cand = this->svfg->template get_node_obj<SVFG>(cand);
 				if (llvm::isa<SVF::CopyVFGNode>(svf_cand)) {
 					current = cand;
 					break; // only inner for loop
@@ -1029,7 +1029,7 @@ namespace ara::step {
 
 			for (auto edge : graph_tool::out_edges_range(current_node, g)) {
 				auto node = target(edge, g);
-				SVF::VFGNode* svf_node = this->svfg->get_node_obj<SVFG>(node);
+				SVF::VFGNode* svf_node = this->svfg->template get_node_obj<SVFG>(node);
 				if (visited.find(node) == visited.end()) {
 					if (llvm::isa<SVF::MRSVFGNode>(svf_node))
 						continue; // helps constructed example
@@ -1046,7 +1046,7 @@ namespace ara::step {
 			}
 			for (auto edge : graph_tool::in_edges_range(current_node, g)) {
 				auto node = source(edge, g);
-				SVF::VFGNode* svf_node = this->svfg->get_node_obj<SVFG>(node);
+				SVF::VFGNode* svf_node = this->svfg->template get_node_obj<SVFG>(node);
 				if (visited.find(node) == visited.end()) {
 					if (llvm::isa<SVF::MRSVFGNode>(svf_node))
 						continue;
@@ -1151,7 +1151,7 @@ namespace ara::step {
 			auto [node, path] = nodes.top();
 			nodes.pop();
 
-			SVF::VFGNode* svf_node = this->svfg->get_node_obj<SVFG>(node);
+			SVF::VFGNode* svf_node = this->svfg->template get_node_obj<SVFG>(node);
 
 			// termination condition
 			if (auto gep_node = llvm::dyn_cast<SVF::GepVFGNode>(svf_node)) {
@@ -1169,7 +1169,7 @@ namespace ara::step {
 
 			// next step
 			for (auto edge : graph_tool::out_edges_range(node, g)) {
-				SVF::VFGEdge* svf_edge = this->svfg->get_edge_obj<SVFG>(edge);
+				SVF::VFGEdge* svf_edge = this->svfg->template get_edge_obj<SVFG>(edge);
 				if (llvm::isa<SVF::CallDirSVFGEdge>(svf_edge) || llvm::isa<SVF::CallIndSVFGEdge>(svf_edge)) {
 					path.add_call_site(callgraph, safe_deref(get_callsite(svf_edge, svf_objects.s_callgraph)));
 				}
