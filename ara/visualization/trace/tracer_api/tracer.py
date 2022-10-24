@@ -1,15 +1,30 @@
-from ara.visualization.trace import trace_lib
 from graph_tool.libgraph_tool_core import Vertex, Edge
 from datetime import datetime
-from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 from ara.graph.graph import CFG, SVFG, Callgraph, InstanceGraph
-
-from ara.visualization.trace.trace_type import AlgorithmTrace
 from ara.graph.mix import GraphType
+from ara.util import SUPPORT_FOR_GUI
+from ara.visualization.trace import trace_lib
 
+if SUPPORT_FOR_GUI:
+    from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement
+    from ara.visualization.trace.trace_type import AlgorithmTrace
+else:
+    # stubs
+    class AlgorithmTrace:
+        def __init__(self, callgraph, cfg, instances, svfg):
+            pass
+
+        def add_element(self, element: any, log_message: str = None):
+            pass
+
+        def destroy(self):
+            pass
+
+    class BaseTraceElement:
+        pass
 
 @dataclass
 class Entity:
@@ -94,6 +109,9 @@ class Tracer:
     def _highlight_nodes(self,
                          nodes: List[GraphNode],
                          color=trace_lib.Color.RED) -> List[BaseTraceElement]:
+        if not SUPPORT_FOR_GUI:
+            return []
+
         highlight_node_elems = []
         for node in nodes:
             if node.graph == GraphType.CALLGRAPH:
@@ -120,6 +138,9 @@ class Tracer:
         
         Also updates the last_reset field with the changes in actions
         """
+        if not SUPPORT_FOR_GUI:
+            return actions
+
         undo_previous_elems = ent.last_reset
         ent.last_reset = ResetPartialChangesTraceElement(actions.copy())
 

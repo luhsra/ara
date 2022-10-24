@@ -21,8 +21,10 @@ py3_mod = import('python')
 # TODO add version argument to find_installation: see https://github.com/mesonbuild/meson/issues/7078
 
 python_modules = ['pydot', 'graph_tool']
+support_for_gui = 'False'  # Needs to be string to inject into ara.py
 if get_option('enable_gui')
     python_modules += ['PySide6', 'scipy']
+    support_for_gui = 'True'
 endif
 
 py3_inst = py3_mod.find_installation('python3', modules: python_modules)
@@ -154,7 +156,7 @@ load("step", "ara.steps.step")
 sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 from ara.ara import Main
-main = Main()
+main = Main(@2@)
 sys.exit(main.main(False))'''
 
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
@@ -164,7 +166,7 @@ ara_py = custom_target('ara-py',
     input: [],
     output: 'ara.py',
     depends: [step_mod, graph_data_mod],
-    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"')],
+    command: [py3_inst, dump_cmds, '@OUTPUT@', '0o755', ara_py_content.format(py3_inst.path(), '"' + '", "'.join(python_dirs) + '"', support_for_gui)],
     build_by_default: true
 )
 

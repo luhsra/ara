@@ -31,7 +31,7 @@ class ARAManager(QObject):
 
     def __init__(self):
         super().__init__(None)
-        self.main = Main()
+        self.main = Main(True)
         self.copy_main_fields()
 
     @Slot()

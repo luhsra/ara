@@ -9,7 +9,7 @@ import sys
 
 from .graph import Graph
 from .stepmanager import StepManager
-from .util import init_logging
+from .util import init_logging, SUPPORT_FOR_GUI
 from .os import get_os_names, get_os
 
 from .steplisting import print_avail_steps
@@ -17,7 +17,8 @@ from .steplisting import print_avail_steps
 
 class Main:
 
-    def __init__(self):
+    def __init__(self, support_for_gui: bool = False):
+        SUPPORT_FOR_GUI.set_wrappee(support_for_gui)
         self.args = None
         self.extra_settings = {}
         self.graph = Graph()
