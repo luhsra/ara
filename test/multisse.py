@@ -92,6 +92,10 @@ def main():
 
     golden, correct_cores = _build_graph(data.data, timings=with_timings)
 
+    if len(data.data["vertices"]) == 1 and len(data.data["edges"]) == 0:
+        if len(list(reduced.vertices())) == 1:
+            if len(list(reduced.edges())) == 0:
+                return
     fail_if(len(data.data["vertices"]) == 0)
     is_isomorph, iso_map = isomorphism(reduced, golden, reduced.vp["cores"],
                                        correct_cores, isomap=True)
