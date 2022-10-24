@@ -53,7 +53,7 @@ cdef class ValueAnalyzer:
     def get_dependencies():
         return ["CallGraph"]
 
-    def __cinit__(self, graph, tracer):
+    def __cinit__(self, graph, tracer=None):
         self._graph = graph
         self._log = get_logger("ValueAnalyzer")
         self._sys_objects = self._graph._va_system_objects
