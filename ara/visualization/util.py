@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 class RESOURCE_PATH:
     """Contains path to resource directory"""
     res_path = "../"
@@ -11,6 +8,18 @@ class RESOURCE_PATH:
     def set(path: str):
         RESOURCE_PATH.res_path = path
 
+class __SUPPORT_FOR_GUI:
+    """True if Meson option enable_gui is set"""
+    def __init__(self):
+        self.support = False
+
+    def set(self, support: bool):
+        self.support = support
+
+    def __bool__(self):
+        return bool(self.support)
+
+SUPPORT_FOR_GUI = __SUPPORT_FOR_GUI()
 
 class StepMode:
     DEFAULT = 1

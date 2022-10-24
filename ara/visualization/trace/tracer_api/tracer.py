@@ -1,29 +1,21 @@
 from graph_tool.libgraph_tool_core import Vertex, Edge
 from datetime import datetime
 from dataclasses import dataclass
-from pathlib import Path
 from typing import List
 from ara.graph.graph import CFG, SVFG, Callgraph, InstanceGraph
 from ara.graph.mix import GraphType
-from ara.util import SUPPORT_FOR_GUI
+from ara.visualization.util import SUPPORT_FOR_GUI
 from ara.visualization.trace import trace_lib
+from ara.visualization.trace.trace_type import AlgorithmTrace
 
 if SUPPORT_FOR_GUI:
     from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement
-    from ara.visualization.trace.trace_type import AlgorithmTrace
 else:
     # stubs
-    class AlgorithmTrace:
-        def __init__(self, callgraph, cfg, instances, svfg):
-            pass
-
-        def add_element(self, element: any, log_message: str = None):
-            pass
-
-        def destroy(self):
-            pass
-
     class BaseTraceElement:
+        pass
+
+    class ResetPartialChangesTraceElement:
         pass
 
 @dataclass

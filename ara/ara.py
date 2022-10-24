@@ -9,7 +9,8 @@ import sys
 
 from .graph import Graph
 from .stepmanager import StepManager
-from .util import init_logging, SUPPORT_FOR_GUI
+from .util import init_logging
+from .visualization.util import SUPPORT_FOR_GUI
 from .os import get_os_names, get_os
 
 from .steplisting import print_avail_steps
@@ -17,15 +18,20 @@ from .steplisting import print_avail_steps
 
 class Main:
 
-    def __init__(self, support_for_gui: bool = False):
-        SUPPORT_FOR_GUI.set_wrappee(support_for_gui)
+    def __init__(self):
         self.args = None
         self.extra_settings = {}
         self.graph = Graph()
         self.s_manager = StepManager(self.graph)
 
     def main(self, gui=False):
-        """Entry point for ARA."""
+        """Entry point for ARA.
+        
+        gui: set to True if ARAs GUI is activated (gui.py was called instead of ara.py)
+        """
+        if not SUPPORT_FOR_GUI:
+            assert not gui, "main(): gui set to True but gui is not supported"
+
         parser = argparse.ArgumentParser(
             prog=sys.argv[0],
             description=sys.modules[__name__].__doc__,

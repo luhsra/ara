@@ -149,6 +149,9 @@ sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
 
 import pyllco
 
+from ara.visualization.util import SUPPORT_FOR_GUI
+SUPPORT_FOR_GUI.set(@2@)
+
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
@@ -156,7 +159,7 @@ load("step", "ara.steps.step")
 sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
 
 from ara.ara import Main
-main = Main(@2@)
+main = Main()
 sys.exit(main.main(False))'''
 
 python_dirs = [source_dir, pyllco_dir, step_dir, graph_data_dir]
@@ -188,13 +191,15 @@ sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
 
 import pyllco
 
+from ara.visualization.util import RESOURCE_PATH, SUPPORT_FOR_GUI
+RESOURCE_PATH.set('@2@')
+SUPPORT_FOR_GUI.set(True)
+
 load("graph_data", "ara.graph.graph_data")
 load("py_logging", "ara.steps.py_logging")
 load("step", "ara.steps.step")
 
 import ara.ara as _ara
-from ara.visualization.util import RESOURCE_PATH
-RESOURCE_PATH.set('@2@')
 import ara.visualization.main
 sys.exit()'''
 

@@ -17,8 +17,6 @@ LEVEL = {"critical": logging.CRITICAL,
          "warn": logging.WARNING,
          "info": logging.INFO,
          "debug": logging.DEBUG}
-    
-SUPPORT_FOR_GUI = Wrapper()
 
 class ContinueSignal(Exception):
     """Something in an inner loop happened that should cause the outer loop to
