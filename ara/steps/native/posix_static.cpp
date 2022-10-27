@@ -9,6 +9,7 @@
 #include <graph_selectors.hh>
 #include <string>
 #include <unordered_map>
+#include <filesystem>
 
 namespace ara::step {
 	namespace {
