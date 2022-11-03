@@ -81,8 +81,10 @@ zephyr_root = join_paths(get_option('zephyr_dir'), 'zephyr')
 # run_target(): Meson expects this to have no output.
 foreach app : zephyr_apps
     target = custom_target(app,
+        env: [python_path],
+        depends: ara_py,
         command: [py3_inst,
-        join_paths(meson.current_source_dir(), 'compile_zephyr.py'), 
+        join_paths(meson.current_source_dir(), 'compile_zephyr.py'),
         app,
         '--source_dir=' + join_paths(meson.current_source_dir(), app),
         '--build_dir=' + join_paths(meson.current_build_dir(), app),
