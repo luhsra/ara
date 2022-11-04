@@ -110,6 +110,18 @@
     "limit": 1
   },
   {
+    "source": "threadA_data",
+    "target": "threadA_sem",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "threadA_data",
+    "target": "threadB_sem",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
     "source": "__main",
     "target": "threadA_data",
     "label": "k_thread_create",
@@ -117,37 +129,31 @@
   },
   {
     "source": "threadA_data",
-    "target": "threadA_sem",
-    "label": "k_sem_init",
-    "type": "create"
-  },
-  {
-    "source": "threadA_data",
-    "target": "threadB_sem",
-    "label": "k_sem_init",
-    "type": "create"
-  },
-  {
-    "source": "threadA_data",
     "target": "threadB_data",
     "label": "k_thread_create",
     "type": "create"
   },
   {
     "source": "threadA_data",
-    "target": "threadA_sem",
-    "label": "k_sem_take",
+    "target": "threadA_data",
+    "label": "k_current_get",
     "type": "interaction"
   },
   {
-    "source": "threadA_data",
-    "target": "threadA_data",
+    "source": "threadB_data",
+    "target": "threadB_data",
     "label": "k_current_get",
     "type": "interaction"
   },
   {
     "source": "threadA_data",
     "target": "threadA_data",
+    "label": "k_msleep",
+    "type": "interaction"
+  },
+  {
+    "source": "threadB_data",
+    "target": "threadB_data",
     "label": "k_msleep",
     "type": "interaction"
   },
@@ -159,26 +165,20 @@
   },
   {
     "source": "threadB_data",
-    "target": "threadB_sem",
+    "target": "threadA_sem",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "threadA_data",
+    "target": "threadA_sem",
     "label": "k_sem_take",
     "type": "interaction"
   },
   {
     "source": "threadB_data",
-    "target": "threadB_data",
-    "label": "k_current_get",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadB_data",
-    "label": "k_msleep",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadA_sem",
-    "label": "k_sem_give",
+    "target": "threadB_sem",
+    "label": "k_sem_take",
     "type": "interaction"
   }
 ]

@@ -117,18 +117,6 @@
   },
   {
     "source": "threadA_data",
-    "target": "threadA_sem",
-    "label": "sys_sem_init",
-    "type": "create"
-  },
-  {
-    "source": "threadA_data",
-    "target": "threadB_sem",
-    "label": "sys_sem_init",
-    "type": "create"
-  },
-  {
-    "source": "threadA_data",
     "target": "threadB_data",
     "label": "k_thread_create",
     "type": "create"
@@ -136,8 +124,14 @@
   {
     "source": "threadA_data",
     "target": "threadA_sem",
-    "label": "sys_sem_take",
-    "type": "interaction"
+    "label": "sys_sem_init",
+    "type": "create"
+  },
+  {
+    "source": "threadA_data",
+    "target": "threadB_sem",
+    "label": "sys_sem_init",
+    "type": "create"
   },
   {
     "source": "threadA_data",
@@ -146,8 +140,20 @@
     "type": "interaction"
   },
   {
+    "source": "threadB_data",
+    "target": "threadB_data",
+    "label": "k_current_get",
+    "type": "interaction"
+  },
+  {
     "source": "threadA_data",
     "target": "threadA_data",
+    "label": "k_msleep",
+    "type": "interaction"
+  },
+  {
+    "source": "threadB_data",
+    "target": "threadB_data",
     "label": "k_msleep",
     "type": "interaction"
   },
@@ -155,30 +161,24 @@
     "source": "threadA_data",
     "target": "threadB_sem",
     "label": "sys_sem_give",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadB_sem",
-    "label": "sys_sem_take",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadB_data",
-    "label": "k_current_get",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadB_data",
-    "label": "k_msleep",
     "type": "interaction"
   },
   {
     "source": "threadB_data",
     "target": "threadA_sem",
     "label": "sys_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "threadA_data",
+    "target": "threadA_sem",
+    "label": "sys_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "threadB_data",
+    "target": "threadB_sem",
+    "label": "sys_sem_take",
     "type": "interaction"
   }
 ]

@@ -98,9 +98,9 @@
     "type": "interaction"
   },
   {
-    "source": "__main",
-    "target": "work",
-    "label": "k_queue_prepend",
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_lock",
     "type": "interaction"
   },
   {
@@ -112,7 +112,7 @@
   {
     "source": "worker",
     "target": "guard",
-    "label": "k_mutex_lock",
+    "label": "k_mutex_unlock",
     "type": "interaction"
   },
   {
@@ -122,9 +122,9 @@
     "type": "interaction"
   },
   {
-    "source": "worker",
-    "target": "guard",
-    "label": "k_mutex_unlock",
+    "source": "__main",
+    "target": "work",
+    "label": "k_queue_prepend",
     "type": "interaction"
   }
 ]

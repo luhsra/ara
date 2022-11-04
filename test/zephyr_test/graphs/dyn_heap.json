@@ -72,33 +72,27 @@
     "stack_size": 1024
   },
   {
-    "source": "thread_a",
-    "target": "__kernel",
-    "label": "k_calloc",
-    "type": "interaction"
-  },
-  {
-    "source": "thread_a",
-    "target": "shared_heap",
-    "label": "k_heap_free",
-    "type": "interaction"
-  },
-  {
-    "source": "thread_a",
-    "target": "__kernel",
-    "label": "k_free",
-    "type": "interaction"
-  },
-  {
     "source": "__main",
     "target": "shared_heap",
     "label": "k_heap_init",
     "type": "create"
   },
   {
+    "source": "thread_a",
+    "target": "__kernel",
+    "label": "k_calloc",
+    "type": "interaction"
+  },
+  {
     "source": "__main",
     "target": "__kernel",
-    "label": "k_malloc",
+    "label": "k_free",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_a",
+    "target": "__kernel",
+    "label": "k_free",
     "type": "interaction"
   },
   {
@@ -108,9 +102,15 @@
     "type": "interaction"
   },
   {
+    "source": "thread_a",
+    "target": "shared_heap",
+    "label": "k_heap_free",
+    "type": "interaction"
+  },
+  {
     "source": "__main",
     "target": "__kernel",
-    "label": "k_free",
+    "label": "k_malloc",
     "type": "interaction"
   }
 ]

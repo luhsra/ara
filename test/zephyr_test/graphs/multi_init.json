@@ -124,6 +124,12 @@
     "stack_size": 1024
   },
   {
+    "source": "__main",
+    "target": "sem0",
+    "label": "k_sem_init",
+    "type": "create"
+  },
+  {
     "source": "threadA",
     "target": "sem0.1",
     "label": "k_sem_init",
@@ -132,12 +138,6 @@
   {
     "source": "threadA",
     "target": "sem1.1",
-    "label": "k_sem_init",
-    "type": "create"
-  },
-  {
-    "source": "__main",
-    "target": "sem0",
     "label": "k_sem_init",
     "type": "create"
   },

@@ -72,16 +72,16 @@
     "size": 256
   },
   {
-    "source": "thread_a",
-    "target": "work",
-    "label": "k_pipe_get",
-    "type": "interaction"
-  },
-  {
     "source": "__main",
     "target": "work",
     "label": "k_pipe_alloc_init",
     "type": "create"
+  },
+  {
+    "source": "thread_a",
+    "target": "work",
+    "label": "k_pipe_get",
+    "type": "interaction"
   },
   {
     "source": "__main",
