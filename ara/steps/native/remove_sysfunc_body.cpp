@@ -32,9 +32,17 @@ namespace ara::step {
 		if (drop_llvm_suffix.get().value_or(false)) {
 			std::map<std::string, std::vector<Function*>> functs;
 			for (Function& func : module) {
-				if (os_syscalls.find(get_name_without_suffix(func)) != os_syscalls.end()) {
+				auto name_without_suffix = get_name_without_suffix(func);
+				// Completely remove llvm suffix syscalls
+				if (os_syscalls.find(name_without_suffix) != os_syscalls.end()) {
 					logger.debug() << "Remove function body of " << func.getName().str() << std::endl;
 					func.deleteBody();
+					if (!func.getName().equals(name_without_suffix)) {
+						logger.debug() << "Update all " << func.getName().str() << "() calls to " << name_without_suffix
+						               << "()" << std::endl;
+						Function* actual_syscall = module.getFunction(name_without_suffix);
+						func.replaceAllUsesWith(actual_syscall);
+					}
 				}
 			}
 		} else {
