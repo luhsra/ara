@@ -250,14 +250,17 @@ class CFG(graph_tool.Graph):
 
         entry = list(filter(is_exit, block.out_neighbors()))
         if entry:
-            assert len(entry) == 1, f"Multiple exits in function {self.vp.name[function]}"
+            assert len(entry) == 1, f"Multiple exits in function {self.vp.name[block]}"
             return entry[0]
         return None
 
     def get_function_exit_bb(self, function):
         """Return the exit BB of a function."""
         if self.has_abbs(function):
-            return self.get_exit_bb(self.get_exit_abb(function))
+            exit_abb = self.get_exit_abb(function)
+            if exit_abb is None:
+                return None
+            return self.get_exit_bb(exit_abb)
         else:
             return self._get_exit(function, level=NodeLevel.bb)
 

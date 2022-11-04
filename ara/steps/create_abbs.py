@@ -181,7 +181,8 @@ class CreateABBs(Step):
                 # It may, however possible that its exit ABB has new outgoing
                 # ICF edges
                 exit_abb = cfg.get_exit_abb(func)
-                self._add_icf_edges(exit_abb, cfg.get_exit_bb(exit_abb))
+                if exit_abb is not None:
+                    self._add_icf_edges(exit_abb, cfg.get_exit_bb(exit_abb))
                 continue
             self._log.warn(f"Handle {name[func]}")
 
