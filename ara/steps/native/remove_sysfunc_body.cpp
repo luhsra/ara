@@ -1,8 +1,6 @@
 #include "remove_sysfunc_body.h"
 
-#include "llvm/IR/Function.h"
-#include "llvm/IR/Module.h"
-
+#include <common/llvm_common.h>
 #include <os.h>
 #include <pyllco.h>
 #include <vector>
@@ -20,6 +18,34 @@ namespace ara::step {
 		opts.emplace_back(drop_llvm_suffix);
 	}
 
+	void RemoveSysfuncBody::remove_llvm_suffix_syscall(Function& func, const std::string& name_without_suffix,
+	                                                   Module& module) {
+		Function* actual_syscall = module.getFunction(name_without_suffix);
+
+		bool use_found = false;
+		for (auto use = func.use_begin(); use != func.use_end(); ++use) {
+			use->getUser()->getType()->dump();
+			if (const Instruction* instr = llvm::dyn_cast<const Instruction>(use->getUser())) {
+				use_found = true;
+				std::ostringstream loc_str;
+				try {
+					const auto& [source, line] = get_source_location(*instr);
+					loc_str << std::filesystem::canonical(source) << ":" << line;
+				} catch (const LLVMError& e) {
+					loc_str << "<location unknown (no debug info?)>";
+				}
+				logger.debug() << "Update use of " << func.getName().str() << "() in " << loc_str.str() << std::endl;
+			} else {
+				logger.warning() << "Use of " << func.getName().str() << " is not an instruction" << std::endl;
+			}
+		}
+		if (use_found) {
+			logger.warning() << "Update all " << func.getName().str() << "() calls to " << name_without_suffix << "()"
+			                 << std::endl;
+			func.replaceAllUsesWith(actual_syscall);
+		}
+	}
+
 	void RemoveSysfuncBody::run() {
 
 		std::set<std::string> os_syscalls = this->graph.get_os().get_syscall_names();
@@ -30,18 +56,13 @@ namespace ara::step {
 		// Delete the body of all system functions
 		Module& module = graph.get_module();
 		if (drop_llvm_suffix.get().value_or(false)) {
-			std::map<std::string, std::vector<Function*>> functs;
 			for (Function& func : module) {
 				auto name_without_suffix = get_name_without_suffix(func);
-				// Completely remove llvm suffix syscalls
 				if (os_syscalls.find(name_without_suffix) != os_syscalls.end()) {
 					logger.debug() << "Remove function body of " << func.getName().str() << std::endl;
 					func.deleteBody();
 					if (!func.getName().equals(name_without_suffix)) {
-						logger.debug() << "Update all " << func.getName().str() << "() calls to " << name_without_suffix
-						               << "()" << std::endl;
-						Function* actual_syscall = module.getFunction(name_without_suffix);
-						func.replaceAllUsesWith(actual_syscall);
+						remove_llvm_suffix_syscall(func, name_without_suffix, module);
 					}
 				}
 			}
