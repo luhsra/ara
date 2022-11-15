@@ -286,7 +286,7 @@ namespace ara::step {
 				first = false;
 				continue;
 			}
-			auto worker = make_shared<Traverser>(new_boss, edge, cp, caretaker);
+			auto worker = std::make_shared<Traverser>(new_boss, edge, cp, caretaker);
 			dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset) << std::endl;
 			worker->offset = offset;
 			dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset) << std::endl;
@@ -554,9 +554,9 @@ namespace ara::step {
 		}
 	}
 
-	std::vector<shared_ptr<Traverser>> Traverser::choose_best_next_traversers() {
-		std::vector<shared_ptr<Traverser>> indirects;
-		std::vector<shared_ptr<Traverser>> directs;
+	std::vector<std::shared_ptr<Traverser>> Traverser::choose_best_next_traversers() {
+		std::vector<std::shared_ptr<Traverser>> indirects;
+		std::vector<std::shared_ptr<Traverser>> directs;
 		for (auto worker : workers | boost::adaptors::map_values) {
 			if (llvm::isa<SVF::CallIndSVFGEdge>(worker->trace.back())) {
 				indirects.emplace_back(worker);
@@ -790,7 +790,7 @@ namespace ara::step {
 	FoundValue ValueAnalyzer::do_backward_value_search(const SVF::VFGNode* start, graph::CallPath callpath,
 	                                                   graph::SigType hint) {
 		Bookkeeping caretaker(*this, callgraph, s_callgraph, hint);
-		shared_ptr<Manager> root = std::make_shared<Manager>(start, callpath, caretaker);
+		std::shared_ptr<Manager> root = std::make_shared<Manager>(start, callpath, caretaker);
 		caretaker.add_traverser(root);
 
 		caretaker.run();

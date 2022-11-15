@@ -483,7 +483,7 @@ namespace ara::step {
 				auto call_targets = entry_d->getArray("call_targets");
 				fail_if_empty(call_targets, opt_name, "Invalid JSON. Expecting a call_targets entry.");
 
-				std::set<string> call_t;
+				std::set<std::string> call_t;
 				for (const llvm::json::Value& func_val : *call_targets) {
 					auto func = func_val.getAsString();
 					fail_if_empty(func, opt_name, "Invalid JSON. Expecting a list of strings as call_targets.");
