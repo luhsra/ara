@@ -40,6 +40,7 @@ elif get_option('arch') == 'arm'
                   '-mthumb',
                   '-mcpu=cortex-m3',
                   '-march=armv7-m',
+                  '-mfloat-abi=soft',
                   '-mabi=aapcs',
                   '-DF_CPU=72000000L',
                   '-DMCU_STM32F103RB',
