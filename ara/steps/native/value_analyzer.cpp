@@ -813,7 +813,7 @@ namespace ara::step {
 			throw ValuesUnknown("Called function is indirect.");
 		}
 
-		if (argument_nr >= callsite.getNumArgOperands()) {
+		if (argument_nr >= callsite.arg_size()) {
 			throw ValuesUnknown("Argument number is too big.");
 		}
 
@@ -896,7 +896,7 @@ namespace ara::step {
 			throw ConnectionStatusUnknown("Called function is indirect.");
 		}
 
-		if (argument_nr >= callsite.getNumArgOperands()) {
+		if (argument_nr >= callsite.arg_size()) {
 			throw ConnectionStatusUnknown("Argument number is too big.");
 		}
 
