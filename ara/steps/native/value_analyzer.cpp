@@ -100,7 +100,7 @@ namespace ara::step {
 			if (!id) {
 				return nullptr;
 			}
-			const SVF::CallBlockNode* cbn = callgraph->getCallSite(*id);
+			const SVF::CallICFGNode* cbn = callgraph->getCallSite(*id);
 			if (cbn == nullptr) {
 				return nullptr;
 			}

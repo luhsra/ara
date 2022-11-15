@@ -3,7 +3,6 @@
 #include "common/exceptions.h"
 #include "common/util.h"
 
-#include <Graphs/PAG.h>
 #include <Graphs/PTACallGraph.h>
 #include <WPA/Andersen.h>
 #include <boost/graph/filtered_graph.hpp>
@@ -113,7 +112,7 @@ namespace ara::step {
 				edge_counter++;
 
 				// properties
-				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
+				const SVF::CallICFGNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
 				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent();
 				CFVertex bb = cfg.back_map(cfg_obj, safe_deref(out_bb));
 

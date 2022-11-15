@@ -61,7 +61,6 @@ svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefi
                             'BUILD_SHARED_LIBS': 'on'})
 svf_proj = cmake.subproject('svf', options: svf_opts)
 svf_dep = svf_proj.dependency('Svf')
-cudd_dep = svf_proj.dependency('Cudd')
 
 ## sparsedata
 sparsedata = subproject('sparsedata')

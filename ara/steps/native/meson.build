@@ -94,6 +94,6 @@ step_mod = py3_inst.extension_module('step',
   override_options: 'b_lundef=false',
   cpp_pch: 'pch/steps_pch.h',
   link_depends: [log_bridge, graph_data_mod],
-  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep, cudd_dep]
+  dependencies: [log_dep, py3_inst.dependency(), llvm_dep, graph_tool_dep, graph_dep, common_dep, pyllco_dep, svf_dep]
 )
 

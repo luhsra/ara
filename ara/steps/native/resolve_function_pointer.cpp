@@ -180,7 +180,7 @@ namespace ara::step {
 		return false;
 	}
 
-	void ResolveFunctionPointer::link_indirect_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
+	void ResolveFunctionPointer::link_indirect_pointer(const CallICFGNode& cbn, PTACallGraph& callgraph,
 	                                                   const llvm::Function& target, const LLVMModuleSet& module) {
 		// modify the SVF Callgraph
 		const SVFFunction* callee = module.getSVFFunction(&target);
@@ -285,7 +285,7 @@ namespace ara::step {
 		return ret;
 	}
 
-	void ResolveFunctionPointer::resolve_function_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
+	void ResolveFunctionPointer::resolve_function_pointer(const CallICFGNode& cbn, PTACallGraph& callgraph,
 	                                                      const LLVMModuleSet& module) {
 		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
 		if (is_call_to_intrinsic(*call_inst)) {
@@ -408,7 +408,7 @@ namespace ara::step {
 			for (const auto& bb : *current_function) {
 				for (const auto& i : bb) {
 					if (SVFUtil::isCallSite(&i) && SVFUtil::isNonInstricCallSite(&i)) {
-						CallBlockNode* cbn = icfg.getCallBlockNode(&i);
+						CallICFGNode* cbn = icfg.getCallICFGNode(&i);
 						if (callgraph.hasCallGraphEdge(cbn)) {
 							// add all following functions to unhandled_functions
 							for (auto it = callgraph.getCallEdgeBegin(cbn); it != callgraph.getCallEdgeEnd(cbn); ++it) {
