@@ -905,8 +905,8 @@ class AUTOSAR(OSBase):
              signature=(Arg("task", ty=Task, hint=SigType.instance),
                         Arg("event_mask")))
     def AUTOSAR_SetEvent(cfg, state, cpu_id, args, va):
-        assert(isinstance(args.task, Task))
-        assert(isinstance(args.event_mask, int))
+        assert isinstance(args.task, Task)
+        assert isinstance(args.event_mask, int)
         if args.task.accessing_application is not None:
             if cpu_id not in args.task.accessing_application:
                 logger.debug(f"Unallowed AT of {args.task} from {cpu_id=}.")
