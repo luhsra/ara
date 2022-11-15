@@ -46,7 +46,7 @@ namespace ara::step {
 	void map_svfg(SVFGGraphtool& g, graph::SVFG svfg_graphtool, SVF::SVFG& svfg_svf, Logger& logger,
 	              graph::GraphData& graph_data) {
 		using GraphtoolVertex = typename boost::graph_traits<SVFGGraphtool>::vertex_descriptor;
-		logger.info() << "Converting SVF graph to graphtool" << endl;
+		logger.info() << "Converting SVF graph to graphtool" << std::endl;
 
 		// function to register node in svfg_to_graphtool_node map
 		auto add_node_in_map = [&](const SVF::VFGNode* svf_vertex, GraphtoolVertex vertex) {
@@ -77,7 +77,7 @@ namespace ara::step {
 				svfg_graphtool.eobj[graphtool_edge.first] = reinterpret_cast<uintptr_t>(svf_edge);
 			}
 		}
-		logger.info() << "Conversion finished" << endl;
+		logger.info() << "Conversion finished" << std::endl;
 	}
 
 	void SVFAnalyses::run() {

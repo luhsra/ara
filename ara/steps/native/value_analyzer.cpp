@@ -328,8 +328,6 @@ namespace ara::step {
 				first = false;
 				continue;
 			}
-			auto worker = std::make_shared<Traverser>(new_boss, edge, cp, caretaker);
-			dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset) << std::endl;
 			auto worker = std::make_shared<Traverser<SVFG>>(new_boss, edge, cp, caretaker);
 			this->dbg() << "COPY: Src: " << offset_print(offset) << " Dst: " << offset_print(worker->offset)
 			            << std::endl;
