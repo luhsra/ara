@@ -5,6 +5,8 @@
 #include "mix.h"
 #include "os.h"
 
+#include <Graphs/VFGEdge.h>
+#include <Graphs/VFGNode.h>
 #include <Python.h>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/python.hpp>
@@ -525,7 +527,7 @@ namespace ara::graph {
 		typename graph_tool::eprop_map_t<int>::type syscall;
 
 		/**
-		 * Return a CallGraph from the corresponding Python graph.
+		 * Return a InstanceGraph from the corresponding Python graph.
 		 */
 		static InstanceGraph get(PyObject* py_instancegraph);
 		static std::unique_ptr<InstanceGraph> get_ptr(PyObject* py_instancegraph);
@@ -537,6 +539,82 @@ namespace ara::graph {
 		const llvm::Instruction* get_llvm_soc(typename boost::graph_traits<Graph>::vertex_descriptor v) const {
 			return reinterpret_cast<const llvm::Instruction*>(llvm_soc[v]);
 		}
+	};
+
+	struct SVFG {
+	  private:
+		friend class Graph;
+		GraphData& graph_data;
+		SVFG(graph_tool::GraphInterface& graph, GraphData& graph_data) : graph_data(graph_data), graph(graph){};
+
+		struct SVFGUniqueEnabler;
+
+	  public:
+		graph_tool::GraphInterface& graph;
+		/* vertex properties */
+		typename graph_tool::vprop_map_t<std::string>::type label;
+		typename graph_tool::vprop_map_t<int64_t>::type obj;
+
+		/* edge properties */
+		typename graph_tool::eprop_map_t<int64_t>::type eobj;
+
+		/**
+		 * Return the SVF object living in nodes
+		 */
+		template <class Graph>
+		SVF::VFGNode* get_node_obj(const typename boost::graph_traits<Graph>::vertex_descriptor v) const {
+			return reinterpret_cast<SVF::VFGNode*>(obj[v]);
+		}
+
+		/**
+		 * Return the SVF object living in edges
+		 */
+		template <class Graph>
+		SVF::VFGEdge* get_edge_obj(const typename boost::graph_traits<Graph>::edge_descriptor& e) const {
+			return reinterpret_cast<SVF::VFGEdge*>(eobj[e]);
+		}
+
+		/**
+		 * Return graphtool node from svf node. Empty optional if graphtool node could not be found.
+		 */
+		template <class Graph>
+		std::optional<typename boost::graph_traits<Graph>::vertex_descriptor>
+		get_node_from_svf_node(const SVF::SVFGNode* svf_node) const {
+			auto node = this->graph_data.svfg_to_graphtool_node.find(svf_node);
+			if (node == this->graph_data.svfg_to_graphtool_node.end()) {
+				return {};
+			}
+			return std::get<1>(*node);
+		}
+
+		/**
+		 * Graphtool replacement for SVF::SVFG::fromValue()
+		 *
+		 * Return the corresponding nodes to a given llvm::Value. return an empty list, if no mapping is possible.
+		 */
+		template <class Graph>
+		std::set<typename boost::graph_traits<Graph>::vertex_descriptor>
+		from_llvm_value(const llvm::Value& llvm_value) const {
+			using GraphtoolVertex = typename boost::graph_traits<Graph>::vertex_descriptor;
+
+			// call fromValue()
+			std::set<const SVF::SVFGNode*> svf_nodes = this->graph_data.get_svfg().fromValue(&llvm_value);
+
+			// convert svfg nodes to graphtool nodes
+			std::set<GraphtoolVertex> ret;
+			for (const SVF::SVFGNode* svf_node : svf_nodes) {
+				std::optional<GraphtoolVertex> vertex = this->get_node_from_svf_node<Graph>(svf_node);
+				assert(vertex.has_value() && "Could not get graphtool vertex from svf vertex!");
+				ret.insert(vertex.value());
+			}
+			return ret;
+		}
+
+		/**
+		 * Return a graph tool SVFG from the corresponding Python graph.
+		 */
+		static SVFG get(PyObject* py_svfg, GraphData& graph_data);
+		static std::unique_ptr<SVFG> get_ptr(PyObject* py_svfg, GraphData& graph_data);
 	};
 
 	/**
@@ -579,5 +657,8 @@ namespace ara::graph {
 
 		InstanceGraph get_instances();
 		std::unique_ptr<InstanceGraph> get_instances_ptr();
+
+		SVFG get_svfg_graphtool();
+		std::unique_ptr<SVFG> get_svfg_graphtool_ptr();
 	};
 } // namespace ara::graph

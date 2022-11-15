@@ -91,16 +91,16 @@
     "stack_size": 1024
   },
   {
-    "source": "t1",
-    "target": "q1",
-    "label": "k_queue_append",
-    "type": "interaction"
-  },
-  {
     "source": "__main",
     "target": "t2",
     "label": "k_thread_create",
     "type": "create"
+  },
+  {
+    "source": "t1",
+    "target": "q1",
+    "label": "k_queue_append",
+    "type": "interaction"
   },
   {
     "source": "t2",

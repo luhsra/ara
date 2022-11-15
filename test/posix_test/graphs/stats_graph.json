@@ -68,26 +68,26 @@
   },
   {
     "source": "Main Thread",
-    "target": "Pipe 0",
-    "label": "write()",
-    "type": "interaction"
-  },
-  {
-    "source": "Main Thread",
     "target": "Mutex 0",
     "label": "pthread_mutex_lock()",
     "type": "interaction"
   },
   {
     "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_unlock()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
     "target": "Pipe 0",
     "label": "write()",
     "type": "interaction"
   },
   {
     "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_unlock()",
+    "target": "Pipe 0",
+    "label": "write()",
     "type": "interaction"
   }
 ]

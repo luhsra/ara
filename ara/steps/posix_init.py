@@ -2,6 +2,7 @@ from pydoc import locate
 from ara.graph.mix import ARA_ENTRY_POINT
 from ara.os.os_base import ControlInstance
 from ara.steps.instance_graph_stats import MissingInteractions
+from ara.steps.util import current_step
 from .step import Step
 from .option import Option, Bool, Choice
 from ara.os.os_util import assign_id
@@ -69,7 +70,7 @@ class POSIXInit(Step):
         # avoid dependency conflicts, therefore import dynamically
         from ara.steps import get_native_component
         ValueAnalyzer = get_native_component("ValueAnalyzer")
-        va = ValueAnalyzer(self._graph)
+        va = ValueAnalyzer(self._graph, current_step.tracer if hasattr(current_step, "tracer") else None)
 
         # Create static instances that are detected by POSIXStatic
         instances = self._graph.instances

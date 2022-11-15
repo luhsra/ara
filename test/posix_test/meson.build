@@ -9,25 +9,14 @@ test('posix_class',
 
 remove_sysfunc_body_data = meson.current_source_dir() / 'testdata/remove_sysfunc_body_test.ll'
 
-test('remove_sysfunc_body_auto',
-    py3_inst,
-    args: [files('remove_sysfunc_body.py'), files('remove_sysfunc_body.json'), remove_sysfunc_body_data, 'False'],
-    env: [python_path],
-    suite: 'posix'
-)
-test('remove_sysfunc_body_posix',
+test('remove_sysfunc_body',
     py3_inst,
     args: [files('remove_sysfunc_body.py'), files('remove_sysfunc_body.json'), remove_sysfunc_body_data, 'False', 'POSIX'],
     env: [python_path],
     suite: 'posix'
 )
-test('remove_sysfunc_body_auto_drop',
-    py3_inst,
-    args: [files('remove_sysfunc_body.py'), files('remove_sysfunc_body_drop_llvm.json'), remove_sysfunc_body_data, 'True'],
-    env: [python_path],
-    suite: 'posix'
-)
-test('remove_sysfunc_body_posix_drop',
+
+test('remove_sysfunc_body_drop',
     py3_inst,
     args: [files('remove_sysfunc_body.py'), files('remove_sysfunc_body_drop_llvm.json'), remove_sysfunc_body_data, 'True', 'POSIX'],
     env: [python_path],
@@ -451,7 +440,7 @@ test('condition_var_broadcast',
 )
 test('condition_var_broad_musl',
         py3_inst,
-        args: [files('../instance_graph.py'), graphs / 'condition_var_broadcast.json', posix_condition_var_broadcast_musl, 'POSIX'],
+        args: [files('../instance_graph.py'), graphs / 'condition_var_broad_musl.json', posix_condition_var_broadcast_musl, 'POSIX'],
         env: [python_path],
         suite: 'posix',
         timeout: 300

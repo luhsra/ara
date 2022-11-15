@@ -29,7 +29,7 @@ define dso_local i8* @no_syscall_() #0 {
 	ret i8* null
 }
 
-define dso_local i32 @__pthread_create() #0 {
+define dso_local i32 @pthread_cancel() #0 {
 	call i8* @no_syscall_()
 	ret i32 2
 }
@@ -44,7 +44,7 @@ define dso_local i8 @pthread_cond_timedwait() #0 {
 	ret i8 48
 }
 
-define dso_local i32 @pthread_create.3() #0 {
+define dso_local i32 @pthread_cancel.3() #0 {
 	call i8 @sleep()
 	ret i32 32
 }
@@ -54,10 +54,10 @@ define dso_local i32 @main() #0 {
 	call i32 @pthread_join()
 	call i8 @pause()
 	call i8* @___pause()
-	call i32 @__pthread_create()
+	call i32 @pthread_cancel()
 	call i32 @_open64()
 	call i8 @pthread_cond_timedwait()
-	call i32 @pthread_create.3()
+	call i32 @pthread_cancel.3()
 	%9 = add i32 2, 1
 	ret i32 %9
 }

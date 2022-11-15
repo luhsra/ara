@@ -1,7 +1,7 @@
 from ara.steps.instance_graph_stats import MissingInteractions
 from .os_util import UnknownArgument, syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
-from ara.util import get_logger, drop_llvm_suffix
+from ara.util import get_logger
 from ara.graph import SyscallCategory, SigType, CallPath, CFG
 from ara.steps import get_native_component
 from dataclasses import dataclass
@@ -331,23 +331,6 @@ class ZEPHYR(OSBase):
     def has_dynamic_instances():
         return True
 
-    @classmethod
-    def is_syscall(cls, function_name: str) -> bool:
-        """
-        Returns true if the given name belongs to a syscall, ignoring a potential llvm suffix.
-        This overrides the behaviour of OSBase
-        """
-        # Drop the llvm suffix for all functions. Should not pose a problem since they can't occur
-        # in regular C identifiers
-        alias_name = function_name
-        function_name = drop_llvm_suffix(function_name)
-
-        if hasattr(cls, function_name) and hasattr(getattr(cls, function_name), 'syscall'):
-            if alias_name != function_name:
-                getattr(cls, function_name).aliases.append(alias_name)
-            return True
-        return False
-
     @staticmethod
     def get_unique_id(ident: str) -> str:
         """Generate a unique id by taking the actual one and appending a number to deduplicate"""
@@ -525,7 +508,6 @@ class ZEPHYR(OSBase):
         cfg = graph.cfg
         abb = state.cpus[cpu_id].abb
         syscall_name = cfg.get_syscall_name(abb)
-        syscall_name = drop_llvm_suffix(syscall_name)
         logger.debug(f"Get syscall: {syscall_name}, ABB: {cfg.vp.name[abb]}"
                      f" (in {cfg.vp.name[cfg.get_function(abb)]})")
 

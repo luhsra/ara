@@ -18,13 +18,8 @@
 		"drop_llvm_suffix": false
 	},
 
-	"SysFuncts": {
-		"no_stubs": true
-	},
-
 	"SystemRelevantFunctions": {
-		"dump": true,
-		"no_stubs": true
+		"dump": true
 	},
 
 	"CallGraph": {

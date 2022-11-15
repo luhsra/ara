@@ -137,7 +137,7 @@ LLVM_LLC ?= llc
 LLVM_OPT ?= opt
 WLLVM ?= wllvm
 EXTRACT_BC ?= extract-bc
-# CLANG ?= clang # clang needs to be available via PATH.
+CLANG ?= clang
 
 # Suffix for all LLVM programs. [the shell executes: <llvm-program>$(LLVM_SUFFIX)]
 # If "" not working than choose "-$(LLVM_VERSION)".
@@ -157,6 +157,9 @@ export EXTRACT_BC_ARGS
 
 # Make sure to always use clang with WLLVM.
 export LLVM_COMPILER = clang
+export LLVM_COMPILER_PATH = $(shell dirname $(CLANG))
+export LLVM_CC_NAME = $(shell basename $(CLANG))
+export LLVM_CXX_NAME = $(shell basename $(CLANG)) # TODO: adapt name to clang++ if required
 
 # Check dependencies
 ifeq ($(call command_availiable,$(WLLVM)), false)

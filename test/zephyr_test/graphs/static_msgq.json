@@ -94,9 +94,15 @@
     "type": "create"
   },
   {
-    "source": "__main",
-    "target": "guard",
-    "label": "k_mutex_lock",
+    "source": "worker",
+    "target": "work",
+    "label": "k_msgq_get",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "work",
+    "label": "k_msgq_num_used_get",
     "type": "interaction"
   },
   {
@@ -108,13 +114,7 @@
   {
     "source": "__main",
     "target": "guard",
-    "label": "k_mutex_unlock",
-    "type": "interaction"
-  },
-  {
-    "source": "worker",
-    "target": "work",
-    "label": "k_msgq_num_used_get",
+    "label": "k_mutex_lock",
     "type": "interaction"
   },
   {
@@ -124,9 +124,9 @@
     "type": "interaction"
   },
   {
-    "source": "worker",
-    "target": "work",
-    "label": "k_msgq_get",
+    "source": "__main",
+    "target": "guard",
+    "label": "k_mutex_unlock",
     "type": "interaction"
   },
   {

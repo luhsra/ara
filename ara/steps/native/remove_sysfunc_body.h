@@ -4,6 +4,8 @@
 #include "step.h"
 
 #include "llvm/ADT/StringRef.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
 
 #include <Python.h>
 #include <graph.h>
@@ -22,6 +24,8 @@ namespace ara::step {
 		    /* default = */ true};
 		option::TOptEntity<option::Bool> drop_llvm_suffix;
 		virtual void init_options();
+		void remove_llvm_suffix_syscall(llvm::Function& func, const std::string& name_without_suffix,
+		                                llvm::Module& module);
 
 	  public:
 		static std::string get_name() { return "RemoveSysfuncBody"; }

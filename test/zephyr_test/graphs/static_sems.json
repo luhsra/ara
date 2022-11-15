@@ -116,50 +116,14 @@
     "type": "create"
   },
   {
-    "source": "thread_a",
-    "target": "threadA_sem",
-    "label": "k_sem_take",
-    "type": "interaction"
-  },
-  {
-    "source": "thread_a",
-    "target": "thread_a",
+    "source": "threadB_data",
+    "target": "threadB_data",
     "label": "k_current_get",
     "type": "interaction"
   },
   {
     "source": "thread_a",
     "target": "thread_a",
-    "label": "k_msleep",
-    "type": "interaction"
-  },
-  {
-    "source": "thread_a",
-    "target": "threadB_sem",
-    "label": "k_sem_give",
-    "type": "interaction"
-  },
-  {
-    "source": "__main",
-    "target": "thread_a",
-    "label": "k_thread_join",
-    "type": "interaction"
-  },
-  {
-    "source": "__main",
-    "target": "threadB_data",
-    "label": "k_thread_join",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadB_sem",
-    "label": "k_sem_take",
-    "type": "interaction"
-  },
-  {
-    "source": "threadB_data",
-    "target": "threadB_data",
     "label": "k_current_get",
     "type": "interaction"
   },
@@ -170,9 +134,45 @@
     "type": "interaction"
   },
   {
+    "source": "thread_a",
+    "target": "thread_a",
+    "label": "k_msleep",
+    "type": "interaction"
+  },
+  {
     "source": "threadB_data",
     "target": "threadA_sem",
     "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_a",
+    "target": "threadB_sem",
+    "label": "k_sem_give",
+    "type": "interaction"
+  },
+  {
+    "source": "threadB_data",
+    "target": "threadB_sem",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "thread_a",
+    "target": "threadA_sem",
+    "label": "k_sem_take",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "threadB_data",
+    "label": "k_thread_join",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "thread_a",
+    "label": "k_thread_join",
     "type": "interaction"
   }
 ]

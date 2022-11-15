@@ -125,22 +125,10 @@
     "stack_size": 1024
   },
   {
-    "source": "main.__isr_produce_work_isr_irq_2",
-    "target": "guard",
-    "label": "k_mutex_lock",
-    "type": "interaction"
-  },
-  {
-    "source": "main.__isr_produce_work_isr_irq_2",
-    "target": "work",
-    "label": "k_stack_push",
-    "type": "interaction"
-  },
-  {
-    "source": "main.__isr_produce_work_isr_irq_2",
-    "target": "guard",
-    "label": "k_mutex_unlock",
-    "type": "interaction"
+    "source": "__main",
+    "target": "worker",
+    "label": "k_thread_create",
+    "type": "create"
   },
   {
     "source": "main.__isr_produce_more_work_isr_irq_3",
@@ -149,15 +137,33 @@
     "type": "interaction"
   },
   {
-    "source": "main.__isr_produce_more_work_isr_irq_3",
+    "source": "__main",
     "target": "guard",
     "label": "k_mutex_lock",
     "type": "interaction"
   },
   {
     "source": "main.__isr_produce_more_work_isr_irq_3",
-    "target": "work",
-    "label": "k_stack_push",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_work_isr_irq_2",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_lock",
+    "type": "interaction"
+  },
+  {
+    "source": "__main",
+    "target": "guard",
+    "label": "k_mutex_unlock",
     "type": "interaction"
   },
   {
@@ -167,25 +173,7 @@
     "type": "interaction"
   },
   {
-    "source": "__main",
-    "target": "worker",
-    "label": "k_thread_create",
-    "type": "create"
-  },
-  {
-    "source": "__main",
-    "target": "guard",
-    "label": "k_mutex_lock",
-    "type": "interaction"
-  },
-  {
-    "source": "__main",
-    "target": "work",
-    "label": "k_stack_push",
-    "type": "interaction"
-  },
-  {
-    "source": "__main",
+    "source": "main.__isr_produce_work_isr_irq_2",
     "target": "guard",
     "label": "k_mutex_unlock",
     "type": "interaction"
@@ -193,7 +181,7 @@
   {
     "source": "worker",
     "target": "guard",
-    "label": "k_mutex_lock",
+    "label": "k_mutex_unlock",
     "type": "interaction"
   },
   {
@@ -203,9 +191,21 @@
     "type": "interaction"
   },
   {
-    "source": "worker",
-    "target": "guard",
-    "label": "k_mutex_unlock",
+    "source": "__main",
+    "target": "work",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_more_work_isr_irq_3",
+    "target": "work",
+    "label": "k_stack_push",
+    "type": "interaction"
+  },
+  {
+    "source": "main.__isr_produce_work_isr_irq_2",
+    "target": "work",
+    "label": "k_stack_push",
     "type": "interaction"
   }
 ]

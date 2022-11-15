@@ -87,8 +87,8 @@
   },
   {
     "source": "__main",
-    "target": "worker",
-    "label": "k_thread_create",
+    "target": "guard",
+    "label": "k_mutex_init",
     "type": "create"
   },
   {
@@ -99,8 +99,8 @@
   },
   {
     "source": "__main",
-    "target": "guard",
-    "label": "k_mutex_init",
+    "target": "worker",
+    "label": "k_thread_create",
     "type": "create"
   },
   {
@@ -110,9 +110,9 @@
     "type": "interaction"
   },
   {
-    "source": "__main",
-    "target": "work",
-    "label": "k_queue_prepend",
+    "source": "worker",
+    "target": "guard",
+    "label": "k_mutex_lock",
     "type": "interaction"
   },
   {
@@ -124,7 +124,7 @@
   {
     "source": "worker",
     "target": "guard",
-    "label": "k_mutex_lock",
+    "label": "k_mutex_unlock",
     "type": "interaction"
   },
   {
@@ -134,9 +134,9 @@
     "type": "interaction"
   },
   {
-    "source": "worker",
-    "target": "guard",
-    "label": "k_mutex_unlock",
+    "source": "__main",
+    "target": "work",
+    "label": "k_queue_prepend",
     "type": "interaction"
   }
 ]

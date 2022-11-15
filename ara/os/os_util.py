@@ -10,6 +10,7 @@ from typing import Tuple, Set
 
 from ara.graph import SyscallCategory as _SyscallCategory, SigType as _SigType
 from ara.graph import CFType as _CFType, CFGView as _CFGView
+from ara.steps.util import current_step
 
 from .os_base import ExecState
 
@@ -114,6 +115,7 @@ def get_argument(value, arg):
     value -- LLVM raw value
     arg   -- Argument for this value
     """
+
     def check_ty(lvalue, ty):
         if isinstance(ty, collections.abc.Container):
             if type(lvalue) in ty:
@@ -141,7 +143,8 @@ def get_argument(value, arg):
         return "nullptr"
     if isinstance(value.value, pyllco.Constant):
         return check_ty(value.value.get(attrs=value.attrs), arg.ty)
-    raise UnsuitableArgumentException("Value cannot be interpreted as Python value")
+    raise UnsuitableArgumentException(
+        "Value cannot be interpreted as Python value")
 
 
 @dataclasses.dataclass
@@ -166,6 +169,8 @@ class Argument:
         if nhint in [_SigType.symbol, _SigType.instance]:
             self.raw_value = True
         self._hint = nhint
+
+
 Argument.hint = property(Argument.get_hint, Argument.set_hint)
 Arg = Argument
 
@@ -179,7 +184,8 @@ def set_next_abb(state, cpu_id):
     cpu = state.cpus[cpu_id]
     for idx, next_abb in enumerate(lcfg.vertex(cpu.abb).out_neighbors()):
         if idx > 1:
-            raise RuntimeError("A syscall must not have more than one successor.")
+            raise RuntimeError(
+                "A syscall must not have more than one successor.")
         cpu.abb = next_abb
         cpu.exec_state = ExecState.from_abbtype(state.cfg.vp.type[next_abb])
 
@@ -216,7 +222,7 @@ class SysCall:
         static method so just return itself here."""
         return self
 
-    def __call__(self, graph, state, cpu_id):
+    def __call__(self, graph, state, cpu_id, sig_offset=0):
         """Interpret the system call.
 
         In principal, this function performs a value analysis, then calls
@@ -233,9 +239,12 @@ class SysCall:
         va     -- The value analyzer.
 
         Arguments:
-        graph  -- the graph object
-        state  -- the OS state
-        cpu_id -- the cpu_id that should be interpreted
+        graph       -- the graph object
+        state       -- the OS state
+        cpu_id      -- the cpu_id that should be interpreted
+        sig_offset  -- offset at which position the signature for the syscall function starts.
+                       The default value is 0. Do not set this value unless you have at least
+                       one argument at the beginning that does not belong to the syscall signature.
         """
 
         if _SyscallCategory.undefined in self.categories:
@@ -246,7 +255,9 @@ class SysCall:
         ValueAnalyzer = get_native_component("ValueAnalyzer")
         ValuesUnknown = get_native_component("ValuesUnknown")
 
-        va = ValueAnalyzer(graph)
+        va = ValueAnalyzer(
+            graph,
+            current_step.tracer if hasattr(current_step, "tracer") else None)
 
         # copy the original state
         new_state = state.copy()
@@ -264,7 +275,8 @@ class SysCall:
             if arg.hint == _SigType.instance:
                 hint = _SigType.symbol
             try:
-                result = va.get_argument_value(abb, idx,
+                result = va.get_argument_value(abb, 
+                                               idx + sig_offset,
                                                callpath=callpath,
                                                hint=hint)
             except ValuesUnknown as e:
@@ -372,8 +384,7 @@ def assign_id(instances, instance):
     then assigns the ID 1.3.1.1 to I4 and 1.3.1.2 to I3.
     """
     other_ids = [(instances.vp.id[x].split('.'), x)
-                 for x in instances.vertices()
-                 if x != instance]
+                 for x in instances.vertices() if x != instance]
 
     target_id = instances.vp.obj[instance].get_maximal_id().split('.')
 
@@ -392,9 +403,9 @@ def assign_id(instances, instance):
         prefix = os.path.commonprefix([target_id, other_id])
         assert prefix != target_id and prefix != other_id, "Cannot find a unique id."
         longest = len(prefix)
-        instances.vp.id[must_be_longer] = '.'.join(other_id[:longest+1])
+        instances.vp.id[must_be_longer] = '.'.join(other_id[:longest + 1])
 
-    instances.vp.id[instance] = '.'.join(target_id[:longest+1])
+    instances.vp.id[instance] = '.'.join(target_id[:longest + 1])
 
 
 def find_return_value(abb, callpath, va):
@@ -448,8 +459,12 @@ def connect_from_here(state, cpu_id, tgt, label, ty=None):
     The current instance is specified by the current state and the active cpu.
     """
     cpu = state.cpus[cpu_id]
-    connect_instances(state.instances, cpu.control_instance, tgt,
-                      cpu.abb, label, ty=ty)
+    connect_instances(state.instances,
+                      cpu.control_instance,
+                      tgt,
+                      cpu.abb,
+                      label,
+                      ty=ty)
 
 def add_self_edge(state, cpu_id, label, ty=None):
     cpu = state.cpus[cpu_id]

@@ -110,15 +110,15 @@
     "type": "interaction"
   },
   {
-    "source": "Thread 1",
-    "target": "Pipe 0",
-    "label": "write()",
-    "type": "interaction"
-  },
-  {
     "source": "Thread 2",
     "target": "Pipe 0",
     "label": "read()",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Pipe 0",
+    "label": "write()",
     "type": "interaction"
   }
 ]

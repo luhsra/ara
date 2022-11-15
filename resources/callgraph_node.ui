@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>callgraph_node</class>
+ <widget class="QWidget" name="callgraph_node">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>371</width>
+    <height>197</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget{
+	background: white; 
+}
+
+#callgraph_node {
+	border: 2px solid black;
+	border-radius: 5px;
+}
+
+#callgraph_node[selected=&quot;true&quot;], #callgraph_node[selected=&quot;true&quot;] QLabel  {
+	border-color: blue;
+	background-color: lightgray;
+}
+
+#callgraph_node[expansion=&quot;true&quot;] {
+	border-style: dashed;
+}
+
+#callgraph_node[adjacency=&quot;true&quot;]{
+	border-color: lightgrey;
+}
+
+#callgraph_node[highlighted=&quot;1&quot;] {
+	border-color: red;
+}
+
+#callgraph_node[highlighted=&quot;2&quot;] {
+	border-color: aqua;
+}
+
+
+#callgraph_node[highlighted=&quot;3&quot;] {
+	border-color: rgb(0,255,0);
+}
+
+#callgraph_node[highlighted=&quot;4&quot;] {
+	border-color: orange;
+}
+
+
+#label_text {
+	font-weight: bold;
+	font-size: 15px;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label_text">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+     <property name="textFormat">
+      <enum>Qt::PlainText</enum>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

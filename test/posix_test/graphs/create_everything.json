@@ -150,14 +150,8 @@
   },
   {
     "source": "Main Thread",
-    "target": "Thread 1",
-    "label": "pthread_create()",
-    "type": "create"
-  },
-  {
-    "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_init()",
+    "target": "Pipe 0",
+    "label": "pipe()",
     "type": "create"
   },
   {
@@ -168,14 +162,14 @@
   },
   {
     "source": "Main Thread",
-    "target": "testfile",
-    "label": "open(O_WRONLY)",
-    "type": "interaction"
+    "target": "Thread 1",
+    "label": "pthread_create()",
+    "type": "create"
   },
   {
     "source": "Main Thread",
-    "target": "Pipe 0",
-    "label": "pipe()",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_init()",
     "type": "create"
   },
   {
@@ -192,8 +186,8 @@
   },
   {
     "source": "Main Thread",
-    "target": "Thread 1",
-    "label": "pthread_join()",
+    "target": "testfile",
+    "label": "open(O_WRONLY)",
     "type": "interaction"
   },
   {
@@ -206,6 +200,12 @@
     "source": "signal_catching_func()",
     "target": "signal_catching_func()",
     "label": "pause()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Thread 1",
+    "label": "pthread_join()",
     "type": "interaction"
   }
 ]

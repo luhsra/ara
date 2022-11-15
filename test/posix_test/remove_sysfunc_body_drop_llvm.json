@@ -4,11 +4,11 @@
     ["_open64", "sleep"],
     ["_printf", "___pause"],
     ["main", "___pause"],
-    ["main", "__pthread_create"],
     ["main", "_open64"],
     ["main", "_printf"],
-    ["main", "pause"], 
+    ["main", "pause"],
+    ["main", "pthread_cancel"],
+    ["main", "pthread_cancel"],
     ["main", "pthread_cond_timedwait"],
-    ["main", "pthread_create.3"],
     ["main", "pthread_join"]
 ]

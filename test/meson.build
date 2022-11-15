@@ -65,7 +65,7 @@ if get_option('enable_step_tests')
 
     test('instance_graph_stats',
         py3_inst,
-        args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction],
+        args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction, 'FreeRTOS'],
         env: [python_path],
         depends: ara_py,
         suite: ['analysis', 'sia']

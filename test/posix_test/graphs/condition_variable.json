@@ -77,12 +77,6 @@
   },
   {
     "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_mutex_init()",
-    "type": "create"
-  },
-  {
-    "source": "Main Thread",
     "target": "ConditionVariable 0",
     "label": "pthread_cond_init()",
     "type": "create"
@@ -92,6 +86,36 @@
     "target": "Thread 1",
     "label": "pthread_create()",
     "type": "create"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_mutex_init()",
+    "type": "create"
+  },
+  {
+    "source": "Thread 1",
+    "target": "Thread 1",
+    "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
+    "type": "interaction"
+  },
+  {
+    "source": "Thread 1",
+    "target": "ConditionVariable 0",
+    "label": "pthread_cond_signal()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "ConditionVariable 0",
+    "label": "pthread_cond_wait()",
+    "type": "interaction"
+  },
+  {
+    "source": "Main Thread",
+    "target": "Mutex 0",
+    "label": "pthread_cond_wait()",
+    "type": "interaction"
   },
   {
     "source": "Main Thread",
@@ -107,32 +131,8 @@
   },
   {
     "source": "Main Thread",
-    "target": "ConditionVariable 0",
-    "label": "pthread_cond_wait()",
-    "type": "interaction"
-  },
-  {
-    "source": "Main Thread",
-    "target": "Mutex 0",
-    "label": "pthread_cond_wait()",
-    "type": "interaction"
-  },
-  {
-    "source": "Main Thread",
     "target": "Mutex 0",
     "label": "pthread_mutex_unlock()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 1",
-    "target": "ConditionVariable 0",
-    "label": "pthread_cond_signal()",
-    "type": "interaction"
-  },
-  {
-    "source": "Thread 1",
-    "target": "Thread 1",
-    "label": "nanosleep(tv_sec: 1, tv_nsec: 0)",
     "type": "interaction"
   }
 ]

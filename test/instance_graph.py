@@ -69,7 +69,7 @@ def json_instance_graph(instances, edge_type_class: IntEnum):
         }
         for name, prop in instances.ep.items():
             if name not in ["syscall", # ignore "syscall" field. This field is too dependent of ABB graph.
-                            "number"]: # ignore "number" field. This field is not visible in the instance graph.
+                            "quantity"]: # ignore "quantity" field. This field is not visible in the instance graph.
                 i_dump[name] = prop[edge]
         if edge_type_class is not None:
             i_dump["type"] = edge_type_class(i_dump["type"]).name
@@ -79,9 +79,11 @@ def json_instance_graph(instances, edge_type_class: IntEnum):
         dump.append(i_dump)
 
     def sort_key(item):
-        if item['type'] == "instance":
-            return "0" + item['id']
-        return "1"
+        if item["type"] == "instance":
+            ret = "0" + item["id"]
+        else:
+            ret = "1" + item["type"] + "|" + item["label"] + "|" + item["source"] + "|" + item["target"]
+        return ret
 
     return sorted(dump, key=sort_key)
 
@@ -125,7 +127,9 @@ def main():
     with open(setting_file, "r") as f:
         config = json.load(f)
     
-    m_graph, data, log, _ = init_test(extra_config=config, extra_input=None, os_name=os_name)
+    data = init_test(extra_config=config, extra_input=None, os_name=os_name)
+    m_graph = data.graph
+    data = data.data
     dump = json_instance_graph(m_graph.instances, m_graph.os.EdgeType if hasattr(m_graph.os, "EdgeType") else None)
     
     if self_is_testcase:

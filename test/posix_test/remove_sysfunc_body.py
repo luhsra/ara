@@ -17,7 +17,9 @@ def test_remove_sysfunc_step(drop_llvm_suffix: bool, os_name: str):
                     "drop_llvm_suffix": drop_llvm_suffix
                 }
              }
-    graph, data, log, _ = init_test(extra_config=config, os_name=os_name)
+    data = init_test(extra_config=config, os_name=os_name)
+    graph = data.graph
+    data = data.data
     call_edges = json_callgraph(graph.callgraph)
 
     fail_if_json_not_equal(data, call_edges)

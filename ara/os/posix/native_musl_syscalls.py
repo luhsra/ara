@@ -2,6 +2,7 @@ import re
 from ara.graph.graph import Graph
 from ara.os.os_base import OSState
 from ara.steps.instance_graph_stats import MissingInteractions
+from ara.steps.util import current_step
 import pyllco
 from ara.graph import SyscallCategory, SigType
 
@@ -45,7 +46,7 @@ def get_musl_syscall(syscall_wrapper_name: str, graph: Graph, state: OSState, cp
     """
     from ara.steps import get_native_component
     ValueAnalyzer = get_native_component("ValueAnalyzer")
-    va = ValueAnalyzer(graph)
+    va = ValueAnalyzer(graph, current_step.tracer if hasattr(current_step, "tracer") else None)
     ValuesUnknown = get_native_component("ValuesUnknown")
     new_state = state.copy()
     abb = new_state.cpus[cpu_id].abb

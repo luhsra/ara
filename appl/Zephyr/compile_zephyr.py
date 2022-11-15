@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 import os
 import shutil
+import importlib
+import sys
 
 parser = ArgumentParser()
 parser.add_argument('--objcopy', type=str)
@@ -22,9 +24,24 @@ parser.add_argument('name', metavar='N', type=str)
 
 args = parser.parse_args()
 
-# import independent of meson build directory
-import sys
-sys.path.insert(0,args.source_dir + '/../../../../ara')
+def fake_step_module():
+    """Fake the step module into the correct package."""
+    sys.setdlopenflags(sys.getdlopenflags() | os.RTLD_GLOBAL)
+    import graph_tool
+    import pyllco
+    def load(what, where):
+        module = importlib.import_module(what)
+        sys.modules[where] = module
+
+    load("graph_data", "ara.graph.graph_data")
+    load("py_logging", "ara.steps.py_logging")
+    load("step", "ara.steps.step")
+
+    sys.setdlopenflags(sys.getdlopenflags() & ~os.RTLD_GLOBAL)
+
+
+fake_step_module()
+
 from ara.util import KConfigFile
 
 # Clear the build dir if it exits and we can't prove that the existing build is for the same board.
