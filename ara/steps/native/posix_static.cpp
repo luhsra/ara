@@ -5,12 +5,12 @@
 #include "llvm/IR/Module.h"
 
 #include <dictobject.h>
+#include <filesystem>
 #include <functional>
 #include <graph_filtering.hh>
 #include <graph_selectors.hh>
 #include <string>
 #include <unordered_map>
-#include <filesystem>
 
 namespace ara::step {
 	namespace {

@@ -78,7 +78,6 @@ namespace ara::step {
 		    /* global = */ true};
 		option::TOptEntity<option::Bool> dump;
 
-
 		const static inline option::TOption<option::String> dump_prefix_template{
 		    "dump_prefix", "If a file is dumped, set this as prefix for the files (default: dumps/{step_name}).",
 		    /* ty = */ option::String(),
@@ -86,14 +85,12 @@ namespace ara::step {
 		    /* global = */ true};
 		option::TOptEntity<option::String> dump_prefix;
 
-
-        const static inline option::TOption<option::Bool> trace_algorithm_template{
-            "trace_algorithm", "Create a trace of supported algorithms for the gui to visualize",
-            /* ty = */ option::Bool(),
-            /* default_value = */ std::nullopt,
-            /* global = */ true
-        };
-        option::TOptEntity<option::Bool> trace_algorithm;
+		const static inline option::TOption<option::Bool> trace_algorithm_template{
+		    "trace_algorithm", "Create a trace of supported algorithms for the gui to visualize",
+		    /* ty = */ option::Bool(),
+		    /* default_value = */ std::nullopt,
+		    /* global = */ true};
+		option::TOptEntity<option::Bool> trace_algorithm;
 
 		/**
 		 * Contruct a native step.
@@ -122,7 +119,9 @@ namespace ara::step {
 		/**
 		 * Retrieve all global options. Used by StepTraits.
 		 */
-		static OptionVec get_global_options() { return {log_level_template, dump_template, dump_prefix_template, trace_algorithm_template}; }
+		static OptionVec get_global_options() {
+			return {log_level_template, dump_template, dump_prefix_template, trace_algorithm_template};
+		}
 
 		/**
 		 * Apply a configuration to the step.
@@ -167,7 +166,7 @@ namespace ara::step {
 			log_level = log_level_template.instantiate(SubStep::get_name());
 			dump = dump_template.instantiate(SubStep::get_name());
 			dump_prefix = dump_prefix_template.instantiate(SubStep::get_name());
-            trace_algorithm = trace_algorithm_template.instantiate(SubStep::get_name());
+			trace_algorithm = trace_algorithm_template.instantiate(SubStep::get_name());
 
 			opts = {log_level, dump, dump_prefix, trace_algorithm};
 		}
