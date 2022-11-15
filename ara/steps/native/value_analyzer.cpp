@@ -67,7 +67,8 @@ namespace ara::step {
 		}
 
 		std::optional<std::vector<int64_t>>
-		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets, const llvm::Module& llvm_module) {
+		convert_to_number_offsets(const std::vector<const llvm::GetElementPtrInst*>& offsets,
+		                          const llvm::Module& llvm_module) {
 			std::vector<int64_t> number_offsets;
 			for (const auto& gep : offsets) {
 				auto number = get_offset(gep, llvm_module);
@@ -732,7 +733,7 @@ namespace ara::step {
 				} else if (llvm::isa<SVF::GepVFGNode>(node)) {
 					bool first_node = true;
 					for (const SVF::VFGEdge* edge :
-							boost::make_iterator_range(node->InEdgeBegin(), node->InEdgeEnd())) {
+					     boost::make_iterator_range(node->InEdgeBegin(), node->InEdgeEnd())) {
 						if (!first_node) {
 							fail_with_msg("Addr pattern failed. Found a pointer to more than one node.");
 							break;

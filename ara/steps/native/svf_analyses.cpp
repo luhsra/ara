@@ -5,8 +5,8 @@
 #include "common/util.h"
 
 #include <Graphs/VFGNode.h>
-#include <Util/BasicTypes.h>
 #include <SVF-FE/SVFIRBuilder.h>
+#include <Util/BasicTypes.h>
 #include <WPA/Andersen.h>
 
 using namespace SVF;
