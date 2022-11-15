@@ -54,10 +54,10 @@ namespace ara::step {
 	    : return_type(ty.getReturnType()) {
 		for (auto it = ty.param_begin(); it != ty.param_end(); ++it) {
 			if (PointerType* ptr = llvm::dyn_cast<PointerType>(*it)) {
-				const auto o_it = t_map.find(ptr->getElementType());
+				const auto o_it = t_map.find(ptr->getPointerElementType());
 				std::set<llvm::Type*> o_types;
 				if (o_it != t_map.end()) {
-					o_types = t_map.at(ptr->getElementType());
+					o_types = t_map.at(ptr->getPointerElementType());
 				}
 				std::vector<Type*> alter_types;
 				alter_types.emplace_back(ptr);
@@ -165,9 +165,9 @@ namespace ara::step {
 			llvm::Type* type2 = *it2;
 			if (llvm::PointerType* pt1 = llvm::dyn_cast<llvm::PointerType>(type1)) {
 				// we need extra care here, the pointer must point to a same sized type
-				type1 = pt1->getElementType();
+				type1 = pt1->getPointerElementType();
 				if (llvm::PointerType* pt2 = llvm::dyn_cast<llvm::PointerType>(type2)) {
-					type2 = pt2->getElementType();
+					type2 = pt2->getPointerElementType();
 				} else {
 					return false;
 				}

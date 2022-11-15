@@ -132,7 +132,7 @@ namespace ara::step {
 
 		void link_indirect_pointer(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);
-		bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate);
+		bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) const;
 
 		void get_atf_from_value(const llvm::Value& value,
 		                        std::vector<std::reference_wrapper<const llvm::Function>>& functions);
