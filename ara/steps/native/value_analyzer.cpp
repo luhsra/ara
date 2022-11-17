@@ -1120,7 +1120,7 @@ namespace ara::step {
 		auto store = find_next_store(node);
 		if (store != nullptr) {
 			logger.debug() << "GRV " << *store->getPAGEdge() << std::endl;
-			return store->getInst();
+			return store->getInst()->getLLVMInstruction();
 		}
 		// fallback
 		logger.warn() << "Did not find a storage node in the SVFG. Falling back to plain LLVM search." << std::endl;
