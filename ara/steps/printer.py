@@ -121,7 +121,13 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
             if mstg.ep.type[e] == MSTType.st2sy:
                 cpu_id = mstg.ep.cpu_id[e]
                 cores.add(cpu_id)
-                cols.append(f"<TD PORT=\"c{cpu_id}\">CPU {cpu_id}</TD>")
+                cpu_name = f"CPU {cpu_id}"
+                cpu = mstg.vp.state[sync].cpus[cpu_id]
+                from .multisse import IRQCPU
+                if isinstance(cpu, IRQCPU):
+                    cpu_name = ("\u26A1" + f"{cpu.reference_cpu_id} " +
+                                f"({cpu_id}, {cpu.irq.name})")
+                cols.append(f"<TD PORT=\"c{cpu_id}\">{cpu_name}</TD>")
         if cols:
             label = '<<TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0">' \
                     '<TR>{}</TR>' \
@@ -174,10 +180,18 @@ def reduced_mstg_to_dot(mstg, label="MSTG"):
     def _add_edge(from_sp, to_sp, core):
         exit_state = mstg.get_exit_state(to_sp, core)
         syscall_name = mstg.get_syscall_name(exit_state)
+        irq = None
+        sys_e = mstg.edge(exit_state, to_sp)
+        assert mstg.ep.type[sys_e] == MSTType.st2sy
+        if mstg.ep.irq[sys_e] >= 0:
+            irq = f"\u26A1 {syscall_name}"
 
         attrs = {"color": "black"}
         if mstg.get_exec_state(exit_state) == ExecState.waiting:
             attrs["color"] = "limegreen"
+        elif irq:
+            attrs["label"] = irq
+            attrs["color"] = "royalblue3"
         elif syscall_name:
             attrs["label"] = _sysshort[syscall_name]
             attrs["color"] = "darkred"
@@ -377,7 +391,8 @@ def sp_mstg_to_dot(mstg, label="SyncPoints MSTG"):
         sys_state, core, irq = mstg.get_syscall_state(sync_point)
         label = f"c{core}, s{int(sys_state)}"
         if irq > 0:
-            label += u" (\u26A1" + f"{irq})"
+            irq_name = mstg.vp.state[sys_state].instances.vp.obj[irq].name
+            label += " (\u26A1" + f"{irq_name})"
         else:
             sys_name = mstg.get_syscall_name(sys_state)
             label += f" ({_sysshort[sys_name]})"

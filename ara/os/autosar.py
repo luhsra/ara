@@ -15,7 +15,8 @@ from ara.util import get_logger, has_path
 from ara.graph import CallPath, SyscallCategory, SigType, single_check, edge_types
 
 from .os_util import syscall, Arg, set_next_abb, connect_from_here, find_instance_node
-from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded
+from .os_base import OSBase, OSState, CPUList, CPU, ControlInstance, TaskStatus, ControlContext, CrossCoreAction, ExecState, CPUBounded, IRQ
+from .interrupts import fake_interrupt_function
 
 TASK_PREFIX = "AUTOSAR_TASK_"
 ALARM_PREFIX = "AUTOSAR_ALARM_"
@@ -105,7 +106,6 @@ class Task(AUTOSARInstance, ControlInstance):
 
 @dataclass
 class TaskContext(ControlContext):
-    dyn_prio: List[int]
     received_events: int = 0
     waited_events: int = 0
 
@@ -121,7 +121,7 @@ class TaskContext(ControlContext):
         return TaskContext(status=self.status,
                            abb=self.abb,
                            call_path=copy(self.call_path),
-                           dyn_prio=[x for x in self.dyn_prio],
+                           dyn_prio=list(self.dyn_prio),
                            received_events=self.received_events,
                            waited_events=self.waited_events)
 
@@ -180,16 +180,10 @@ class ISR(AUTOSARInstance, ControlInstance):
         return AUTOSARInstance.__hash__(self)
 
 
-@dataclass(unsafe_hash=True)
+@dataclass
 class ISRContext(ControlContext):
-    dyn_prio: Tuple[int]
-
-    def __copy__(self):
-        """Make a deep copy."""
-        return ISRContext(status=self.status,
-                          abb=self.abb,
-                          call_path=copy(self.call_path),
-                          dyn_prio=(self.dyn_prio[0],))
+    def __hash__(self):
+        return super().__hash__()
 
 
 @dataclass
@@ -328,7 +322,7 @@ class AUTOSAR(OSBase):
             state.context[obj] = ISRContext(status=TaskStatus.suspended,
                                             abb=cfg.get_entry_abb(obj.function),
                                             call_path=CallPath(),
-                                            dyn_prio=(max_prio + obj.priority,))
+                                            dyn_prio=[max_prio + obj.priority])
 
         for task in running_tasks:
             ctx = state.context[task]
@@ -372,6 +366,8 @@ class AUTOSAR(OSBase):
     def handle_irq(graph, state, cpu_id, irq):
         # we handle alarms and ISRs
         instances = state.instances
+        if isinstance(irq, IRQ):
+            irq = irq.id
         vertex = instances.vertex(irq)
         obj = instances.vp.obj[vertex]
 
@@ -440,13 +436,31 @@ class AUTOSAR(OSBase):
             new_state.context[isr] = ISRContext(status=TaskStatus.suspended,
                                                 abb=state.cfg.get_entry_abb(isr.function),
                                                 call_path=CallPath(),
-                                                dyn_prio=tuple(state.context[isr].dyn_prio))
+                                                dyn_prio=state.context[isr].dyn_prio)
             return [new_state]
         return []
 
     @staticmethod
-    def get_interrupts(instances):
-        return [v for v, _ in chain(instances.get(Alarm), instances.get(ISR))]
+    def get_interrupts(instances, cfg=None):
+        interrupts = []
+        for v, obj in chain(instances.get(Alarm), instances.get(ISR)):
+            if cfg:
+                func_v = fake_interrupt_function(cfg, obj.name)
+                irq = IRQ(id=v,
+                          name=f"IRQ {obj.name}",
+                          cpu_id=obj.cpu_id,
+                          cfg=cfg,
+                          artificial=True,
+                          function=func_v)
+                irq_v = instances.add_vertex()
+                instances.vp.obj[irq_v] = irq
+                instances.vp.label[irq_v] = irq.name
+                instances.vp.id[irq_v] = f"{irq.name}.{v}"
+                instances.vp.is_control[irq_v] = True
+                interrupts.append(irq)
+            else:
+                interrupts.append(v)
+        return interrupts
 
     @staticmethod
     def interpret(graph, state, cpu_id, categories=SyscallCategory.every):
@@ -552,7 +566,8 @@ class AUTOSAR(OSBase):
                isinstance(old_task, Task) and (not old_task.schedule) \
                and state.context[old_task].status == TaskStatus.running:
                 # do not schedule on this CPU
-                logger.debug("Do not schedule: Non preemptible task")
+                logger.debug("CPU %s: Do not schedule: Non preemptible task",
+                             cpu.id)
                 continue
 
             # shortcut for same task
@@ -560,7 +575,8 @@ class AUTOSAR(OSBase):
                 old_abb = cpu.abb
                 new_abb = None if new_ctx is None else new_ctx.abb
                 if old_abb == new_abb:
-                    logger.debug("Skip schedule, since the task is the same.")
+                    logger.debug("CPU %s: Skip schedule, since the task is the same.",
+                                 cpu.id)
                     continue
 
             # write old values back to instance only if running or blocked

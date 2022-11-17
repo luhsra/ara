@@ -1,10 +1,10 @@
-import graph_tool
-
 import copy
 import enum
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, List
+
+import graph_tool
 
 from ara.graph import SyscallCategory, CallPath, CFG, ABBType
 
@@ -102,18 +102,28 @@ class CrossCoreAction(Exception):
         self.cpu_ids = cpu_ids
 
 
-@dataclass
+@dataclass()
 class ControlContext:
     """Changing context for a ControlInstance"""
     status: TaskStatus
     abb: graph_tool.Vertex
     call_path: CallPath
+    # actual priority, stackable, the last entry is the defining one
+    dyn_prio: List[int]
+
+    def __hash__(self):
+        return hash((self.__class__,
+                     int(self.status),
+                     int(self.abb or -1),
+                     self.call_path,
+                     tuple(self.dyn_prio)))
 
     def __copy__(self):
         """Make a deep copy."""
-        return ControlContext(status=self.status,
-                              abb=self.abb,
-                              call_path=copy(self.call_path))
+        return type(self)(status=self.status,
+                          abb=self.abb,
+                          call_path=copy.copy(self.call_path),
+                          dyn_prio=list(self.dyn_prio))
 
 
 @dataclass
@@ -134,6 +144,30 @@ class ControlInstance(CPUBounded):
     cfg: CFG
     artificial: bool
     function: graph_tool.Vertex
+
+
+@dataclass
+class IRQ(ControlInstance):
+    """Full qualified IRQ.
+
+    For the correct IRQ analysis, we treat IRQs as syscall on artificial CPUs.
+    For that they become a control flow attached and act as ControlInstance.
+    """
+    id: int
+    name: str
+
+    def __hash__(self):
+        # the id should be unique already
+        # add the name for extra safety
+        return hash((self.id, self.name))
+
+
+@dataclass
+class IRQContext(ControlContext):
+    """The context that corresponds to an IRQ."""
+
+    def __hash__(self):
+        return super().__hash__()
 
 
 @dataclass
@@ -270,8 +304,13 @@ class OSBase(metaclass=OSCreator):
         raise NotImplementedError
 
     @staticmethod
-    def get_interrupts(instances):
-        """Get all interrupts that lead to an OS action."""
+    def get_interrupts(instances, cfg=None):
+        """Get all interrupts that lead to an OS action.
+
+        If a CFG is provided, the OS model returns full classified interrupts
+        of type IRQ. Especially this is a control instance and provides a fake
+        function which provides the control flow of the interrupt.
+        """
         raise NotImplementedError
 
     @staticmethod

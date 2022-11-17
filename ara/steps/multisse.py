@@ -5,33 +5,30 @@ from .step import Step
 from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from .multisse_helper.common import CrossExecState, FakeEdge, find_irqs, find_cross_syscalls
+from .multisse_helper.common import (CrossExecState, FakeEdge, find_irqs,
+                                     find_cross_syscalls)
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
-from .multisse_helper.pairing_partner_search import search_for_pairing_partners, Range, TimeCandidateSet
-from .multisse_helper.wcet_calculation import TimingCalculator, get_time, set_time
-from ara.graph import MSTGraph, StateType, MSTType, single_check, edge_types
+from .multisse_helper.pairing_partner_search import (
+    search_for_pairing_partners, Range, TimeCandidateSet)
+from .multisse_helper.wcet_calculation import (TimingCalculator,
+                                               set_time)
+from ara.graph import MSTGraph, StateType, MSTType, CallPath, single_check, edge_types
 from ara.util import pairwise
-from ara.os.os_base import OSState, CPUList
+from ara.os.os_base import OSState, CPUList, CPU, IRQ, CrossCoreAction, IRQContext, TaskStatus
+from ara.os.os_util import set_next_abb
 
 import os.path
 import graph_tool
+import copy
 
 from collections import defaultdict
 from dataclasses import dataclass, field
 from functools import reduce
-from graph_tool.topology import label_out_component, shortest_path, all_paths
+from graph_tool.topology import all_paths
 from graph_tool import GraphView
-from itertools import product, chain, islice
+from itertools import chain, islice
 from typing import List, Dict, Set, Tuple, Optional
-
-
-@dataclass(frozen=True)
-class CrossState:
-    # state within the metastate that triggers a new cross point
-    state: graph_tool.Vertex
-    # optional IRQ that is responsible for the trigger
-    irq: Optional[int] = None
 
 
 @dataclass(frozen=True)
@@ -48,6 +45,27 @@ class NewEdgeReevaluation:
 
 
 @dataclass
+class IRQCPU(CPU):
+    irq: IRQ
+    reference_cpu_id: int
+
+    def __hash__(self):
+        return hash((self.irq, super().__hash__()))
+
+    def copy(self):
+        new_ac = None if not self.analysis_context else self.analysis_context.copy()
+        return IRQCPU(id=self.id,
+                      irq_on=self.irq_on,
+                      control_instance=self.control_instance,
+                      abb=self.abb,
+                      call_path=copy.copy(self.call_path),
+                      analysis_context=new_ac,
+                      exec_state=self.exec_state,
+                      irq=self.irq,
+                      reference_cpu_id=self.reference_cpu_id)
+
+
+@dataclass
 class Metastate:
     """Representaion of a Metastate.
 
@@ -59,7 +77,6 @@ class Metastate:
     new_entry: bool  # is the entry point new
     is_new: bool  # is this Metastate new or already evaluated
     cross_syscalls: List[graph_tool.Vertex]  # new cross points of Metastate
-    irqs: List[Tuple[graph_tool.Vertex, int]]  # new (cross) irqs of MS
     cpu_id: int  # cpu_id of this state
 
     def __repr__(self):
@@ -69,7 +86,6 @@ class Metastate:
                 f"new_entry: {self.new_entry}, "
                 f"is_new: {self.is_new}, "
                 f"cross_syscalls: {[int(x) for x in self.cross_syscalls]}, "
-                f"irqs: {[(int(x), y) for x, y in self.irqs]}, "
                 f"cpu_id: {self.cpu_id})")
 
 
@@ -174,6 +190,30 @@ class MultiSSE(Step):
     def _get_initial_state(self):
         os_state = self._graph.os.get_initial_state(self._graph.cfg,
                                                     self._graph.instances)
+        cpu_idx = max([x.id for x in os_state.cpus]) + 1
+        instances = os_state.instances
+        # add interrupts
+        for irq in self._graph.os.get_interrupts(instances,
+                                                 cfg=self._graph.cfg):
+            # every irq gets an own CPU
+            cur_abb = self._graph.cfg.get_entry_abb(irq.function)
+            irq_cpu = IRQCPU(id=cpu_idx,
+                             irq=irq,
+                             reference_cpu_id=irq.cpu_id,
+                             irq_on=True,
+                             control_instance=instances.get_node(irq),
+                             abb=cur_abb,
+                             call_path=CallPath(),
+                             exec_state=CrossExecState.computation,
+                             analysis_context=None)
+            os_state.cpus[irq_cpu.id] = irq_cpu
+            irq.cpu_id = irq_cpu.id
+            irq_ctx = IRQContext(status=TaskStatus.running,
+                                 abb=None,  # already "coded" in the CPU
+                                 call_path=CallPath(),
+                                 dyn_prio=[1])
+            os_state.context[irq] = irq_ctx
+            cpu_idx += 1
 
         # initial cross_point
         mstg = self._mstg.g
@@ -206,7 +246,6 @@ class MultiSSE(Step):
         to_assign_states = set()
         m_state = list()
         cross_syscalls = list()
-        irqs = list()
 
         def _add_state(state):
             h = hash(state)
@@ -244,6 +283,7 @@ class MultiSSE(Step):
 
         class SSEVisitor(Visitor):
             PREVENT_MULTIPLE_VISITS = False
+            HANDLE_INTERRUPTS = False
             CFG_CONTEXT = None
 
             @staticmethod
@@ -252,14 +292,11 @@ class MultiSSE(Step):
 
             @staticmethod
             def cross_core_action(state, cpu_ids, irq=None):
+                assert irq is None, "Wrong interrupt model."
                 v = self._state_map[hash(state)]
                 self._mstg.cross_core_map[v] = cpu_ids
-                if irq is None:
-                    self._mstg.type_map[v] = CrossExecState.cross_syscall
-                    cross_syscalls.append(v)
-                else:
-                    self._mstg.type_map[v] |= CrossExecState.cross_irq
-                    irqs.append((v, irq))
+                self._mstg.type_map[v] = CrossExecState.cross_syscall
+                cross_syscalls.append(v)
 
             @staticmethod
             def schedule(new_state):
@@ -271,15 +308,6 @@ class MultiSSE(Step):
                 if created:
                     to_assign_states.add(v)
                 return created
-
-            @staticmethod
-            def add_irq_state(old_state, new_state, irq):
-                v = self._state_map[hash(old_state)]
-                self._mstg.cross_core_map[v] = []
-                self._mstg.type_map[v] |= CrossExecState.irq
-                irqs.append((v, irq))
-
-                return False
 
             @staticmethod
             def add_transition(source, target):
@@ -307,6 +335,17 @@ class MultiSSE(Step):
             def next_step(counter):
                 pass
 
+        # we have introduced the fake interrupts so we must handle it with a
+        # fake OS
+        class IRQOS(self._graph.os):
+            @staticmethod
+            def interpret(graph, state, cpu_id, categories):
+                if isinstance(state.cpus[cpu_id], IRQCPU):
+                    raise CrossCoreAction(
+                        {state.cpus[cpu_id].reference_cpu_id, })
+                return self._graph.os.interpret(graph, state, cpu_id,
+                                                categories=categories)
+
         # add initial state
         is_new, init_v = _add_state(entry)
 
@@ -317,7 +356,6 @@ class MultiSSE(Step):
                 state=metastate,
                 cpu_id=cpu_id,
                 cross_syscalls=cross_syscalls,
-                irqs=irqs,
                 entry=init_v,
                 new_entry=False,
                 is_new=False,
@@ -327,7 +365,7 @@ class MultiSSE(Step):
 
         run_sse(
             self._graph,
-            self._graph.os,
+            IRQOS,
             visitor=SSEVisitor(),
             # logger=self._log,
         )
@@ -359,7 +397,6 @@ class MultiSSE(Step):
         return Metastate(
             state=m_state,
             cross_syscalls=cross_syscalls,
-            irqs=irqs,
             cpu_id=cpu_id,
             entry=init_v,
             new_entry=True,
@@ -558,66 +595,14 @@ class MultiSSE(Step):
         #     self._log.warn(f"{[int(x) for x in a]} {[int(x) for x in b]}")
         return combinations
 
-    def _create_sync_point(self, cross_state, timed_states, root_sp, pred_sps, irq):
-        """Create a new synchronisation point.
-
-        It synchronizes cross_state with timed_states.
-        Its root is root_sp. Its predecessors in time are pred_sps.
-
-        It returns the new SP.
-        """
-        mstg = self._mstg.g
-        new_sp = mstg.add_vertex()
-        mstg.vp.type[new_sp] = StateType.entry_sync
-        self._log.debug(
-            f"Add new entry cross point {int(new_sp)} between "
-            f"{int(cross_state)} and {[int(x) for x in timed_states]}")
-
-        # link SP with states
-        cpu_ids = set()
-        for src in chain([cross_state], timed_states):
-            e = mstg.add_edge(src, new_sp)
-            if irq and src == cross_state:
-                mstg.ep.irq[e] = irq
-            mstg.ep.type[e] = MSTType.st2sy
-            metastate = mstg.get_metastate(src)
-            cpu_id = mstg.vp.cpu_id[metastate]
-            mstg.ep.cpu_id[e] = cpu_id
-            cpu_ids.add(cpu_id)
-            m2sy_edge = mstg.add_edge(metastate, new_sp)
-            mstg.ep.type[m2sy_edge] = MSTType.m2sy
-            mstg.ep.cpu_id[m2sy_edge] = cpu_id
-
-        self._mstg.cross_point_map[new_sp] = cpu_ids
-
-        # link SP with other SPs
-        self._link_sp_with_pred_sps(new_sp, root_sp, pred_sps)
-
-        return new_sp
-
-    def _evaluate_syncpoint(self, sp, root, cross_state):
-        """Evaluate an entry sync point.
-
-        The algorithm in principle works as following:
-        Get a multicore state out of the single core states.
-        Interpret that state.
-        Make an exit sync point of every outcome.
-
-        The root SP is necessary to get the core independent context.
-        The cross_state simplifies the search for the originator of the SP.
-
-        Return a list of exit sync points.
-        """
+    def _create_multicore_state(self, in_sps, root):
+        """Construct a multi core state out of several single core states and
+        one root node."""
         os = self._graph.os
         mstg = self._mstg.g
-        sp = mstg.vertex(sp)
-        st2sy = mstg.edge_type(MSTType.st2sy)
-
-        # create multicore state
-        cpu_id = mstg.vp.cpu_id[cross_state.state]
 
         states = []
-        for v in st2sy.vertex(sp).in_neighbors():
+        for v in in_sps:
             obj = mstg.vp.state[v]
             states.append(obj)
 
@@ -637,14 +622,73 @@ class MultiSSE(Step):
                               instances=states[0].instances,
                               cfg=states[0].cfg)
         multi_state.context = context
+        return multi_state
+
+    def _create_sync_point(self, multi_state, cross_state, timed_states, root_sp, pred_sps):
+        """Create a new synchronisation point.
+
+        It synchronizes cross_state with timed_states.
+        Its root is root_sp. Its predecessors in time are pred_sps.
+
+        It returns the new SP.
+        """
+        mstg = self._mstg.g
+        new_sp = mstg.add_vertex()
+        mstg.vp.type[new_sp] = StateType.entry_sync
+        mstg.vp.state[new_sp] = multi_state
+        self._log.debug(
+            f"Add new entry cross point {int(new_sp)} between "
+            f"{int(cross_state)} and {[int(x) for x in timed_states]}")
+
+        # link SP with states
+        cpu_ids = set()
+        for src in chain([cross_state], timed_states):
+            e = mstg.add_edge(src, new_sp)
+            mstg.ep.type[e] = MSTType.st2sy
+            metastate = mstg.get_metastate(src)
+            cpu_id = mstg.vp.cpu_id[metastate]
+            mstg.ep.cpu_id[e] = cpu_id
+            cpu_ids.add(cpu_id)
+            m2sy_edge = mstg.add_edge(metastate, new_sp)
+            mstg.ep.type[m2sy_edge] = MSTType.m2sy
+            mstg.ep.cpu_id[m2sy_edge] = cpu_id
+
+        # irq handling
+        cpu = mstg.vp.state[cross_state].cpus.one()
+        if isinstance(cpu, IRQCPU):
+            syscall_edge = mstg.edge(cross_state, new_sp)
+            assert mstg.ep.type[syscall_edge] == MSTType.st2sy
+            mstg.ep.irq[syscall_edge] = cpu.irq.id
+
+        self._mstg.cross_point_map[new_sp] = cpu_ids
+
+        # link SP with other SPs
+        self._link_sp_with_pred_sps(new_sp, root_sp, pred_sps)
+
+        return new_sp
+
+    def _evaluate_syncpoint(self, sp, cpu_id, multi_state,
+                            irq_exit_state=None):
+        """Evaluate an entry sync point.
+
+        The algorithm in principle works as following:
+        Interpret the state if necessary.
+        Make an exit sync point of every outcome.
+
+        Return a list of exit sync points.
+        """
+        os = self._graph.os
+        mstg = self._mstg.g
+        sp = mstg.vertex(sp)
 
         # let the model interpret the created multicore state
-        if cross_state.irq is None:
-            new_states = os.interpret(self._graph, multi_state, cpu_id)
+        new_states = []
+        if irq_exit_state:
+            new_states = [irq_exit_state]
         else:
-            new_states = [os.handle_irq(self._graph, multi_state, cpu_id, cross_state.irq)]
-        for new_state in new_states:
-            os.schedule(new_state)
+            for new_state in os.interpret(self._graph, multi_state, cpu_id):
+                os.schedule(new_state)
+                new_states.append(new_state)
 
         # add follow up cross points for the outcome
         ret = []
@@ -798,49 +842,83 @@ class MultiSSE(Step):
         # list of cross points that need reevaluation
         reeval = set()
 
-        cross_list = []
         if not metastate.is_new:
             cross_syscalls = find_cross_syscalls(self._mstg.g,
                                                  self._mstg.type_map,
                                                  metastate.state,
                                                  metastate.entry)
-            irqs = find_irqs(self._mstg.g, self._mstg.type_map,
-                             metastate.state, metastate.entry)
         else:
-            cross_syscalls = metastate.cross_syscalls
-            irqs = metastate.irqs
-
-        cross_list += [CrossState(state=x, irq=y) for x, y in irqs]
-        cross_list += [CrossState(state=x) for x in cross_syscalls]
+            cross_syscalls = list(metastate.cross_syscalls)
 
         sf = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_syscalls]} "
                         f"(last sync point {int(cp)}{sf})")
-        for cross_state in cross_list:
-            c_state = cross_state.state
-
-            it = self._find_pairing_partners(c_state, cp,
+        while cross_syscalls:
+            cross_state = cross_syscalls.pop(0)
+            it = self._find_pairing_partners(cross_state, cp,
                                              start_from=start_from,
                                              only_root=only_root)
 
             for cands in it:
                 root_cp = cands.root_cp
                 self._log.debug(
-                    f"Evaluating cross point between {int(c_state)} and "
+                    f"Evaluating cross point between {int(cross_state)} and "
                     f"{[int(x) for x in cands.candidates]}")
                 existing_sp = self._get_existing_sync_point(
-                    c_state, cands.candidates)
+                    cross_state, cands.candidates)
                 if existing_sp:
                     self._log.debug(
                         f"Link from {int(root_cp)} to existing cross point "
-                        f"{int(existing_sp)} ({int(c_state)} with "
+                        f"{int(existing_sp)} ({int(cross_state)} with "
                         f"{[int(x) for x in cands.candidates]}).")
                     reeval.update(self._link_sp_with_pred_sps(existing_sp, cands.root_cp, cands.pred_cps, exists=True))
                 else:
+                    # first create the multicore state
+                    # if this is an IRQ triggered SP, it can be incomplete
+                    multi_state = self._create_multicore_state(
+                        [cross_state] + list(cands.candidates), root_cp)
+                    sc_cpu = self._mstg.g.vp.state[cross_state].cpus.one()
+
+                    # interrupt handling
+                    irq_exit_state = None
+                    if isinstance(sc_cpu, IRQCPU):
+                        try:
+                            os = self._graph.os
+                            irq_exit_state = os.handle_irq(self._graph,
+                                                           multi_state,
+                                                           sc_cpu.reference_cpu_id,
+                                                           sc_cpu.irq)
+                            if irq_exit_state is None:
+                                # just skip the rest, the interrupt does not
+                                # do anything, so we omit the SP
+                                continue
+                            # advance the virtual interrupt CPU
+                            set_next_abb(irq_exit_state, sc_cpu.id)
+                            os.schedule(irq_exit_state)
+                        except CrossCoreAction as cca:
+                            # we need other pairing partners
+                            ccm = self._mstg.cross_core_map
+                            ccm[cross_state] = set(chain(ccm[cross_state],
+                                                         cca.cpu_ids))
+                            # reevaluate
+                            cross_syscalls.append(cross_state)
+                            # We have the assumption here that every irq that
+                            # needs an additional core as pairing partner (not
+                            # just the one where the IRQ triggers) does that
+                            # regardless where it interrupts (i.e. what the
+                            # pairing partner is). Therefore we quit the
+                            # further pairing process here to newly begin with
+                            # an extended set of affected cores. This holds for
+                            # AUTOSAR interrupts, TODO: check, if this is the
+                            # case for other operating systems as well.
+                            break
+
                     new_sp = self._create_sync_point(
-                        c_state, cands.candidates, root_cp, cands.pred_cps, cross_state.irq)
-                    exits += self._evaluate_syncpoint(new_sp, root_cp, cross_state)
+                        multi_state, cross_state, cands.candidates, root_cp, cands.pred_cps)
+                    exits += self._evaluate_syncpoint(new_sp, sc_cpu.id,
+                                                      multi_state,
+                                                      irq_exit_state=irq_exit_state)
 
                     # trigger a reevaluation if necessary
                     current_cpus = set(self._mstg.cross_point_map[cp])
@@ -925,7 +1003,6 @@ class MultiSSE(Step):
                           new_entry=False,
                           is_new=False,
                           cross_syscalls=[],
-                          irqs=[],
                           cpu_id=cpu_id),
                 **kwargs)
             stack.extend(to_stack)
@@ -1045,7 +1122,7 @@ class MultiSSE(Step):
             # we don't find a neighbor so do a full pairing across all
             # metastates
             if not neighbor_found_and_linked:
-                for cpu_id, metastate in metastates.items():
+                for _, metastate in metastates.items():
                     self._log.debug(
                         f"Evaluate cross points of metastate {metastate}.")
                     to_stack, reeval = self._find_new_cps(cp, metastate)
