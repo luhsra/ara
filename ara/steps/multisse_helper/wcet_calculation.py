@@ -1,15 +1,15 @@
-from .common import TimeRange, CrossExecState, get_reachable_states, FakeEdge
-from .equations import Equations
+import math
+
+from dataclasses import dataclass
+from typing import Union
+from graph_tool import GraphView, Edge
+from graph_tool.topology import shortest_path, dominator_tree
 
 from ara.graph import StateType, MSTType, single_check, vertex_types
 from ara.util import dominates, get_logger, ContinueSignal
 
-import math
-
-from dataclasses import dataclass
-from graph_tool import GraphView, Edge
-from graph_tool.topology import shortest_path, dominator_tree
-from typing import Union
+from .common import TimeRange, CrossExecState, get_reachable_states, FakeEdge
+from .equations import Equations
 
 MAX_INT64 = 2**63 - 1
 

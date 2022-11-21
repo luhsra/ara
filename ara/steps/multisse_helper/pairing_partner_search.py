@@ -1,18 +1,19 @@
-from .equations import Equations
-from .constrained_sps import get_constrained_sps
-from .common import Range, SPRange, FakeEdge, get_reachable_states, CrossExecState, TimeRange, find_cross_syscalls
-from .wcet_calculation import TimingCalculator, get_time
-
-from ara.graph import StateType, MSTType, vertex_types, single_check
-from ara.util import get_logger, has_path, pairwise, debug_log
-
-import graph_tool
-
 from dataclasses import dataclass
 from typing import List, Set, Tuple
 from itertools import chain, permutations, product
 from collections import defaultdict
+
+import graph_tool
 from graph_tool.topology import shortest_path
+
+from ara.graph import StateType, MSTType, vertex_types, single_check
+from ara.util import get_logger, has_path, pairwise
+
+from .equations import Equations
+from .constrained_sps import get_constrained_sps
+from .common import (Range, SPRange, FakeEdge, get_reachable_states,
+                     CrossExecState, TimeRange)
+from .wcet_calculation import TimingCalculator, get_time
 
 
 @dataclass(frozen=True)

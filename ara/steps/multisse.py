@@ -1,11 +1,30 @@
 """Multicore SSE analysis."""
+import copy
+import os.path
+
+from collections import defaultdict
+from dataclasses import dataclass, field
+from functools import reduce
+from itertools import chain, islice
+from typing import List, Dict, Set
+
+import graph_tool
+
+from graph_tool.topology import all_paths
+
+from ara.graph import (MSTGraph, StateType, MSTType, CallPath, single_check,
+                       edge_types)
+from ara.util import pairwise
+from ara.os.os_base import (OSState, CPUList, CPU, IRQ, CrossCoreAction,
+                            IRQContext, TaskStatus)
+from ara.os.os_util import set_next_abb
 
 from .option import Option, String, Bool
 from .step import Step
 from .util import open_with_dirs
 from .printer import mstg_to_dot, sp_mstg_to_dot
 from .cfg_traversal import Visitor, run_sse
-from .multisse_helper.common import (CrossExecState, FakeEdge, find_irqs,
+from .multisse_helper.common import (CrossExecState, FakeEdge,
                                      find_cross_syscalls)
 from .multisse_helper.constrained_sps import get_constrained_sps
 from .multisse_helper.equations import TimeRange
@@ -13,22 +32,6 @@ from .multisse_helper.pairing_partner_search import (
     search_for_pairing_partners, Range, TimeCandidateSet)
 from .multisse_helper.wcet_calculation import (TimingCalculator,
                                                set_time)
-from ara.graph import MSTGraph, StateType, MSTType, CallPath, single_check, edge_types
-from ara.util import pairwise
-from ara.os.os_base import OSState, CPUList, CPU, IRQ, CrossCoreAction, IRQContext, TaskStatus
-from ara.os.os_util import set_next_abb
-
-import os.path
-import graph_tool
-import copy
-
-from collections import defaultdict
-from dataclasses import dataclass, field
-from functools import reduce
-from graph_tool.topology import all_paths
-from graph_tool import GraphView
-from itertools import chain, islice
-from typing import List, Dict, Set, Tuple, Optional
 
 
 @dataclass(frozen=True)
@@ -425,10 +428,10 @@ class MultiSSE(Step):
                               StateType.exit_sync,
                               StateType.metastate)
         g2 = edge_types(g1, mstg.ep.type, MSTType.m2sy, MSTType.en2ex)
-        g = GraphView(g2, vfilt=lambda v:
-                      g2.vp.cpu_id[v] == current_core
-                      if g2.vp.type[v] == StateType.metastate
-                      else True)
+        g = graph_tool.GraphView(g2, vfilt=lambda v:
+                                 g2.vp.cpu_id[v] == current_core
+                                 if g2.vp.type[v] == StateType.metastate
+                                 else True)
 
         sp_graph = self._get_sp_graph()
 
@@ -518,7 +521,7 @@ class MultiSSE(Step):
                     lc[last] = True
                     lc[entry_sp] = True
                     lc[nex] = True
-                    nc = GraphView(sp_graph, vfilt=lc)
+                    nc = graph_tool.GraphView(sp_graph, vfilt=lc)
                     next_paths.extend(map(lambda p: islice(filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p), 1, None), all_paths(nc, last, nex)))
                 # put all other elements to new paths
                 for n in next_paths[1:]:
@@ -531,7 +534,7 @@ class MultiSSE(Step):
 
     def _get_sp_graph(self):
         """Return a graph consisting only of SPs that follow in the time domain."""
-        return GraphView(
+        return graph_tool.GraphView(
                 self._mstg.g.vertex_type(StateType.entry_sync,
                                          StateType.exit_sync),
                 efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
@@ -993,7 +996,8 @@ class MultiSSE(Step):
         stack = []
         reevaluates = set()
         for cpu_id in cores:
-            sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
+            sts = graph_tool.GraphView(st2sy,
+                                       efilt=st2sy.ep.cpu_id.fa == cpu_id)
             entry = single_check(sts.vertex(sp).out_neighbors())
             to_stack, reeval = self._find_new_sps(
                 sp,

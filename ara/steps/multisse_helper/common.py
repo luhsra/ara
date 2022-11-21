@@ -1,12 +1,12 @@
-from ara.os.os_base import ExecState
-from ara.graph import StateType, MSTType
-
 import enum
 
 from dataclasses import dataclass
+from itertools import product
 from graph_tool import Vertex, GraphView
 from graph_tool.topology import label_out_component
-from itertools import product
+
+from ara.os.os_base import ExecState
+from ara.graph import StateType, MSTType
 
 
 @dataclass(frozen=True, eq=True)

@@ -1,9 +1,10 @@
-from .common import SPRange, Range
-from ara.util import has_path
-
 from collections import defaultdict
 from graph_tool import GraphView
 from graph_tool.search import bfs_search, BFSVisitor, StopSearch
+
+from ara.util import has_path
+from .common import SPRange, Range
+
 
 
 def _check_barriers(graph, new_barriers, old_barriers):
