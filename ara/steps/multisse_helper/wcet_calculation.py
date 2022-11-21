@@ -115,7 +115,7 @@ class TimingCalculator():
             if mstg.vertex(exit_sp).in_degree() == 0:
                 # starting point, there were no previous executions
                 break
-            entry_sp = mstg.get_entry_cp(exit_sp)
+            entry_sp = mstg.get_entry_sp(exit_sp)
             if len(elist) < 2:
                 # the state was not executed before
                 # maybe the ABB was executed before

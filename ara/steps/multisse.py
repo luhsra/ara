@@ -34,14 +34,14 @@ from typing import List, Dict, Set, Tuple, Optional
 @dataclass(frozen=True)
 class NewNodeReevaluation:
     """Store necessary data for the reevaluation of a new node."""
-    from_cp: graph_tool.Vertex
+    from_sp: graph_tool.Vertex
     cores: Set[int]
 
 
 @dataclass(frozen=True)
 class NewEdgeReevaluation:
     """Store necessary data for the reevaluation of a new edge."""
-    root: graph_tool.Vertex  # the root cross point
+    root: graph_tool.Vertex  # the root sync point
 
 
 @dataclass
@@ -76,7 +76,7 @@ class Metastate:
     entry: graph_tool.Vertex  # vertex of the entry ABB
     new_entry: bool  # is the entry point new
     is_new: bool  # is this Metastate new or already evaluated
-    cross_syscalls: List[graph_tool.Vertex]  # new cross points of Metastate
+    cross_syscalls: List[graph_tool.Vertex]  # new sync points of Metastate
     cpu_id: int  # cpu_id of this state
 
     def __repr__(self):
@@ -123,7 +123,7 @@ class CrossContext:
             edge_path.append(
                 single_check(
                     filter(lambda e: self.mstg.ep.type[e] == MSTType.follow_sync,
-                           self.mstg.edge(src, self.mstg.get_entry_cp(tgt),
+                           self.mstg.edge(src, self.mstg.get_entry_sp(tgt),
                                           all_edges=True))))
         return edge_path
 
@@ -148,7 +148,7 @@ class MSTG:
 
     # store which cores are affected by this synchronisation point
     # contains a vector[int]
-    cross_point_map: graph_tool.VertexPropertyMap
+    sync_point_map: graph_tool.VertexPropertyMap
 
 
 class MultiSSE(Step):
@@ -215,15 +215,15 @@ class MultiSSE(Step):
             os_state.context[irq] = irq_ctx
             cpu_idx += 1
 
-        # initial cross_point
+        # initial sync point
         mstg = self._mstg.g
-        cp = mstg.add_vertex()
-        mstg.vp.type[cp] = StateType.exit_sync
-        mstg.vp.state[cp] = os_state
-        self._mstg.cross_point_map[cp] = [x.id for x in os_state.cpus]
-        self._log.debug(f"Add initial cross point {int(cp)}")
+        sp = mstg.add_vertex()
+        mstg.vp.type[sp] = StateType.exit_sync
+        mstg.vp.state[sp] = os_state
+        self._mstg.sync_point_map[sp] = [x.id for x in os_state.cpus]
+        self._log.debug(f"Add initial sync point {int(sp)}")
 
-        return cp
+        return sp
 
     def _get_single_core_states(self, multi_core_state):
         single_core_states = {}
@@ -403,7 +403,7 @@ class MultiSSE(Step):
             is_new=is_new,
         )
 
-    def _find_root_cross_points(self, sp, current_core, affected_cores, only_root=None):
+    def _find_root_sync_points(self, sp, current_core, affected_cores, only_root=None):
         """Find all last SPs that contains all needed cores.
 
         Returns a list of paths. Each path starts at a root node and contains
@@ -435,7 +435,7 @@ class MultiSSE(Step):
         # property map to indicate for every SP if it affects the current_core
         not_core = sp_graph.new_vp("bool", val=False)
         for v in sp_graph.vertices():
-            if current_core not in self._mstg.cross_point_map[v]:
+            if current_core not in self._mstg.sync_point_map[v]:
                 not_core[v] = True
 
         sp_follow = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
@@ -443,7 +443,7 @@ class MultiSSE(Step):
         # self._log.debug(f"FR: {int(sp)}, {current_core}, {affected_cores}")
 
         # calculate roots and the successors for each node
-        root_cps = []
+        root_sps = []
         stack = [g.vertex(sp)]
         succs = defaultdict(set)
         visited = g.new_vp("bool")
@@ -459,12 +459,12 @@ class MultiSSE(Step):
                 continue
             visited[cur_sp] = True
 
-            cores = set(self._mstg.cross_point_map[cur_sp])
+            cores = set(self._mstg.sync_point_map[cur_sp])
             if cores >= wanted_cores:
-                root_cps.append(cur_sp)
+                root_sps.append(cur_sp)
                 continue
 
-            entry_sp = g.vertex(mstg.get_entry_cp(cur_sp))
+            entry_sp = g.vertex(mstg.get_entry_sp(cur_sp))
             for n in chain.from_iterable(map(lambda x: x.in_neighbors(),
                                              entry_sp.in_neighbors())):
                 assert mstg.vp.type[n] == StateType.exit_sync
@@ -472,11 +472,11 @@ class MultiSSE(Step):
                     succs[n].add(cur_sp)
                     stack.append(n)
 
-        # self._log.debug(f"FR: roots {[int(x) for x in root_cps]}")
+        # self._log.debug(f"FR: roots {[int(x) for x in root_sps]}")
         # self._log.debug(f"FR: succs {succs}")
         if only_root:
-            root_cps = {only_root} & set(root_cps)
-            self._log.debug(f"Evaluation only {[int(x) for x in root_cps]} as "
+            root_sps = {only_root} & set(root_sps)
+            self._log.debug(f"Evaluation only {[int(x) for x in root_sps]} as "
                             f"root SP. We only inspect {int(only_root)}.")
 
         # calculate all paths to the roots
@@ -485,7 +485,7 @@ class MultiSSE(Step):
         # successors that was stored previously. Whenever multiple successors
         # exist, the path is split into two.
         ret = []
-        for root in root_cps:
+        for root in root_sps:
             paths = [[root]]
             i = 0
             while i < len(paths):
@@ -507,7 +507,7 @@ class MultiSSE(Step):
                     # a sy2sy edge only. However, in this case, there must be
                     # at least one path of follow_sync edges between them. We
                     # need to find the pathes in this case.
-                    entry_sp = mstg.get_entry_cp(nex)
+                    entry_sp = mstg.get_entry_sp(nex)
                     if follow_sync.edge(last, entry_sp):
                         # direct edge, just append
                         next_paths.append([nex])
@@ -547,7 +547,7 @@ class MultiSSE(Step):
         start_from  -- An optional SP where the search should start from.
         only_root   -- Respect only this SP as root SP.
         """
-        # 1. Find all root cross points (which forms the root for the
+        # 1. Find all root sync points (which forms the root for the
         #    following searches)
         mstg = self._mstg.g
         affected_cores = self._mstg.cross_core_map[cross_state]
@@ -565,23 +565,23 @@ class MultiSSE(Step):
                 tr = time.get_interval_for(FakeEdge(src=last_sp, tgt=cross_state))
             return [TimeCandidateSet.set_without_candidates(last_sp, tr)]
 
-        root_paths = self._find_root_cross_points(last_sp, current_core,
-                                                  affected_cores,
-                                                  only_root=only_root)
+        root_paths = self._find_root_sync_points(last_sp, current_core,
+                                                 affected_cores,
+                                                 only_root=only_root)
 
         combinations = set()
         for path in root_paths:
             self._log.debug("Find pairing candidates for node %d (time: %s) "
                             "starting from root SP %d", cross_state, time, path[0])
-            # 2. For each root cross point get the actual affected following
-            #    cross points.
+            # 2. For each root sync point get the actual affected following
+            #    sync points.
             #    They can be restricted by the set of affected cores or by an
             #    explicitly given starting point.
             starts = []
             if start_from:
                 starts.append(Range(start=start_from, end=None))
             combs = search_for_pairing_partners(self._mstg.g,
-                                                self._mstg.cross_point_map,
+                                                self._mstg.sync_point_map,
                                                 self._mstg.type_map,
                                                 path,
                                                 cross_state,
@@ -637,7 +637,7 @@ class MultiSSE(Step):
         mstg.vp.type[new_sp] = StateType.entry_sync
         mstg.vp.state[new_sp] = multi_state
         self._log.debug(
-            f"Add new entry cross point {int(new_sp)} between "
+            f"Add new entry sync point {int(new_sp)} between "
             f"{int(cross_state)} and {[int(x) for x in timed_states]}")
 
         # link SP with states
@@ -660,7 +660,7 @@ class MultiSSE(Step):
             assert mstg.ep.type[syscall_edge] == MSTType.st2sy
             mstg.ep.irq[syscall_edge] = cpu.irq.id
 
-        self._mstg.cross_point_map[new_sp] = cpu_ids
+        self._mstg.sync_point_map[new_sp] = cpu_ids
 
         # link SP with other SPs
         self._link_sp_with_pred_sps(new_sp, root_sp, pred_sps)
@@ -690,81 +690,80 @@ class MultiSSE(Step):
                 os.schedule(new_state)
                 new_states.append(new_state)
 
-        # add follow up cross points for the outcome
+        # add follow up sync points for the outcome
         ret = []
         for new_state in new_states:
             exit_sp = mstg.add_vertex()
             mstg.vp.type[exit_sp] = StateType.exit_sync
-            self._log.debug(f"Add exit cross point {int(exit_sp)}")
+            self._log.debug(f"Add exit sync point {int(exit_sp)}")
 
             e = mstg.add_edge(sp, exit_sp)
             mstg.ep.type[e] = MSTType.en2ex
-            cpm = self._mstg.cross_point_map
-            cpm[exit_sp] = cpm[sp]
+            spm = self._mstg.sync_point_map
+            spm[exit_sp] = spm[sp]
 
-            # store state in cross_point
+            # store state in sync point
             mstg.vp.state[exit_sp] = new_state
 
             ret.append(exit_sp)
 
         return ret
 
-    def _find_common_crosspoints(self, metastates):
-        """Return all common cross points of this specific set of metastates."""
+    def _find_common_sync_points(self, metastates):
+        """Return all common sync points of this specific set of metastates."""
         st2sy = self._mstg.g.edge_type(MSTType.st2sy)
-        cps_lists = [
+        sps_lists = [
             set(st2sy.vertex(x.entry).in_neighbors())
             for x in metastates.values()
         ]
-        return reduce(lambda a, b: a & b, cps_lists)
+        return reduce(lambda a, b: a & b, sps_lists)
 
-    def _link_neighbor_crosspoint(self, cp, neighbor_cp):
-        """Make cp to a neighbor of neighbor_cp.
+    def _link_neighbor_syncpoint(self, sp, neighbor_sp):
+        """Make SP to a neighbor of neighbor_sp.
 
-        The idea is that a neighbor cp results in the same set of metastates
+        The idea is that a neighbor sp results in the same set of metastates
         so all its outgoing edges can be overtaken.
         Additionally, the neighbors are marked as such with a special edge.
         """
         mstg = self._mstg.g
 
         # mark as neighbor
-        e = mstg.edge(neighbor_cp, cp, add_missing=True)
+        e = mstg.edge(neighbor_sp, sp, add_missing=True)
         mstg.ep.type[e] = MSTType.sync_neighbor
 
         # sync edges
         sy2sy = mstg.edge_type(MSTType.sy2sy)
-        for v in list(sy2sy.vertex(neighbor_cp).out_neighbors()):
+        for v in list(sy2sy.vertex(neighbor_sp).out_neighbors()):
             self._log.debug(
-                f"Neighbor: Link sy2sy edge: {int(cp)} -> {int(v)}")
-            new_e = sy2sy.edge(mstg.vertex(cp),
+                f"Neighbor: Link sy2sy edge: {int(sp)} -> {int(v)}")
+            new_e = sy2sy.edge(mstg.vertex(sp),
                                mstg.vertex(v),
                                add_missing=True)
             mstg.ep.type[new_e] = MSTType.sy2sy
         follow_sync = mstg.edge_type(MSTType.follow_sync)
-        for v in list(follow_sync.vertex(neighbor_cp).out_neighbors()):
+        for v in list(follow_sync.vertex(neighbor_sp).out_neighbors()):
             self._log.debug(
-                f"Neighbor: Link follow_sync edge: {int(cp)} -> {int(v)}")
-            new_e = follow_sync.edge(mstg.vertex(cp),
+                f"Neighbor: Link follow_sync edge: {int(sp)} -> {int(v)}")
+            new_e = follow_sync.edge(mstg.vertex(sp),
                                      mstg.vertex(v),
                                      add_missing=True)
             mstg.ep.type[new_e] = MSTType.follow_sync
 
     def _get_existing_sync_point(self, cross_state, timed_candidates):
-        """Return an existing cross point.
+        """Return an existing sync point.
 
         It has to link exactly cross_state and timed_candidates.
         """
         st2sy = self._mstg.g.edge_type(MSTType.st2sy)
-        cps_lists = [
+        sps_lists = [
             set(st2sy.vertex(x).out_neighbors())
             for x in chain([cross_state], timed_candidates)
         ]
-        cps = reduce(lambda a, b: a & b, cps_lists)
-        if len(cps) == 0:
+        sps = reduce(lambda a, b: a & b, sps_lists)
+        if len(sps) == 0:
             return None
-        else:
-            # More than one synchronisation point to this states is forbidden.
-            return single_check(cps)
+        # More than one synchronisation point to this states is forbidden.
+        return single_check(sps)
 
     def _link_sp_with_pred_sps(self, sp, root_sp, pred_sps, exists=False):
         """Links a synchronisation point with a new set of predecessor SPs.
@@ -821,25 +820,25 @@ class MultiSSE(Step):
 
         return reeval
 
-    def _find_new_cps(self, cp, metastate, start_from=None, only_root=None):
-        """Try to find the next cross points coming from metastate.
+    def _find_new_sps(self, sp, metastate, start_from=None, only_root=None):
+        """Try to find the next sync points coming from metastate.
 
-        cp         -- root cross point (entry for the metastate)
-        metastate  -- the metastate for which new CPs are searched
-        start_from -- starting cross point (narrows the search space, make
+        sp         -- root sync point (entry for the metastate)
+        metastate  -- the metastate for which new SPs are searched
+        start_from -- starting sync point (narrows the search space, make
                       reevaluations more efficient)
         only_root  -- respect only this SP as root SP.
 
         The function returns a pair:
-        1. A list of new exit cross points.
-        2. A Set of cross points that need a reevaluation.
-           This is a list of pairs, which denotes the cross point and the
+        1. A list of new exit sync points.
+        2. A Set of sync points that need a reevaluation.
+           This is a list of pairs, which denotes the sync point and the
            reason why a reevaluation is needed.
         """
         # container for the return values
-        # list of new exit cross points
+        # list of new exit sync points
         exits = []
-        # list of cross points that need reevaluation
+        # list of sync points that need reevaluation
         reeval = set()
 
         if not metastate.is_new:
@@ -853,31 +852,31 @@ class MultiSSE(Step):
         sf = f", start from {int(start_from)}" if start_from else ''
         self._log.debug("Search for candidates for the cross syscalls: "
                         f"{[int(x) for x in metastate.cross_syscalls]} "
-                        f"(last sync point {int(cp)}{sf})")
+                        f"(last sync point {int(sp)}{sf})")
         while cross_syscalls:
             cross_state = cross_syscalls.pop(0)
-            it = self._find_pairing_partners(cross_state, cp,
+            it = self._find_pairing_partners(cross_state, sp,
                                              start_from=start_from,
                                              only_root=only_root)
 
             for cands in it:
-                root_cp = cands.root_cp
+                root_sp = cands.root_sp
                 self._log.debug(
-                    f"Evaluating cross point between {int(cross_state)} and "
+                    f"Evaluating sync point between {int(cross_state)} and "
                     f"{[int(x) for x in cands.candidates]}")
                 existing_sp = self._get_existing_sync_point(
                     cross_state, cands.candidates)
                 if existing_sp:
                     self._log.debug(
-                        f"Link from {int(root_cp)} to existing cross point "
+                        f"Link from {int(root_sp)} to existing sync point "
                         f"{int(existing_sp)} ({int(cross_state)} with "
                         f"{[int(x) for x in cands.candidates]}).")
-                    reeval.update(self._link_sp_with_pred_sps(existing_sp, cands.root_cp, cands.pred_cps, exists=True))
+                    reeval.update(self._link_sp_with_pred_sps(existing_sp, cands.root_sp, cands.pred_sps, exists=True))
                 else:
                     # first create the multicore state
                     # if this is an IRQ triggered SP, it can be incomplete
                     multi_state = self._create_multicore_state(
-                        [cross_state] + list(cands.candidates), root_cp)
+                        [cross_state] + list(cands.candidates), root_sp)
                     sc_cpu = self._mstg.g.vp.state[cross_state].cpus.one()
 
                     # interrupt handling
@@ -915,33 +914,33 @@ class MultiSSE(Step):
                             break
 
                     new_sp = self._create_sync_point(
-                        multi_state, cross_state, cands.candidates, root_cp, cands.pred_cps)
+                        multi_state, cross_state, cands.candidates, root_sp, cands.pred_sps)
                     exits += self._evaluate_syncpoint(new_sp, sc_cpu.id,
                                                       multi_state,
                                                       irq_exit_state=irq_exit_state)
 
                     # trigger a reevaluation if necessary
-                    current_cpus = set(self._mstg.cross_point_map[cp])
-                    new_cpus = set(self._mstg.cross_point_map[new_sp])
+                    current_cpus = set(self._mstg.sync_point_map[sp])
+                    new_cpus = set(self._mstg.sync_point_map[new_sp])
                     unsynced_cpus = current_cpus - new_cpus
 
                     if unsynced_cpus:
                         sp_graph = self._get_sp_graph()
-                        new_cps = get_constrained_sps(
-                            sp_graph, self._mstg.cross_point_map,
+                        new_sps = get_constrained_sps(
+                            sp_graph, self._mstg.sync_point_map,
                             unsynced_cpus, Range(start=new_sp, end=None))
                         on_stack = defaultdict(list)
-                        for core, ran in new_cps.items():
+                        for core, ran in new_sps.items():
                             on_stack[ran.range.start].append(core)
-                        for i_cp, cores in on_stack.items():
+                        for i_sp, cores in on_stack.items():
                             self._log.debug(
-                                f"Current cross point {int(new_sp)} may add "
+                                f"Current sync point {int(new_sp)} may add "
                                 "more pairing possibilities to the cross syscall "
-                                f"for CPUs {cores} (starting from {int(i_cp)})"
+                                f"for CPUs {cores} (starting from {int(i_sp)})"
                             )
-                            reeval.add((i_cp,
+                            reeval.add((i_sp,
                                         NewNodeReevaluation(
-                                            from_cp=new_sp,
+                                            from_sp=new_sp,
                                             cores=frozenset(cores))))
         return exits, reeval
 
@@ -961,32 +960,32 @@ class MultiSSE(Step):
         # contains a mask of CrossExecState
         type_map = mstg.new_vp("int")
 
-        # cores which are connected with a cross point
-        cross_point_map = mstg.new_vp("vector<int32_t>")
+        # cores which are connected with a sync point
+        sync_point_map = mstg.new_vp("vector<int32_t>")
 
         return MSTG(g=mstg,
                     cross_core_map=cross_core_map,
                     type_map=type_map,
-                    cross_point_map=cross_point_map)
+                    sync_point_map=sync_point_map)
 
-    def _reevaluate_cross_point(self, cp, reeval_info):
-        """Perform a reevaluation of cp which was already evaluated.
+    def _reevaluate_sync_point(self, sp, reeval_info):
+        """Perform a reevaluation of SP which was already evaluated.
 
         reeval_info gives additional hints why the reevaluation is needed.
         """
         if isinstance(reeval_info, NewNodeReevaluation):
-            start_from = reeval_info.from_cp
+            start_from = reeval_info.from_sp
             cores = reeval_info.cores
             kwargs = {"start_from": start_from}
             debug = f" starting from {int(start_from)}"
         else:
             root = reeval_info.root
-            cores = self._mstg.cross_point_map[cp]
+            cores = self._mstg.sync_point_map[sp]
             kwargs = {"only_root": root}
             debug = f" evaluating only {int(root)}"
 
         self._log.debug(
-            f"Node {int(cp)} is already evaluated but some new "
+            f"Node {int(sp)} is already evaluated but some new "
             f"knowledge exists. Reevaluating CPUs {list(cores)} "
             f"{debug}.")
 
@@ -995,9 +994,9 @@ class MultiSSE(Step):
         reevaluates = set()
         for cpu_id in cores:
             sts = GraphView(st2sy, efilt=st2sy.ep.cpu_id.fa == cpu_id)
-            entry = single_check(sts.vertex(cp).out_neighbors())
-            to_stack, reeval = self._find_new_cps(
-                cp,
+            entry = single_check(sts.vertex(sp).out_neighbors())
+            to_stack, reeval = self._find_new_sps(
+                sp,
                 Metastate(state=self._mstg.g.get_metastate(entry),
                           entry=entry,
                           new_entry=False,
@@ -1009,9 +1008,9 @@ class MultiSSE(Step):
             reevaluates |= reeval
         return stack, reevaluates
 
-    def _calculate_new_metastates(self, cp):
-        """Calculate new metastates from an existing cross point."""
-        states = self._get_single_core_states(self._mstg.g.vp.state[cp])
+    def _calculate_new_metastates(self, sp):
+        """Calculate new metastates from an existing sync point."""
+        states = self._get_single_core_states(self._mstg.g.vp.state[sp])
         mstg = self._mstg.g
 
         metastates = {}
@@ -1020,12 +1019,12 @@ class MultiSSE(Step):
             metastate = self._run_sse(cpu_id, state)
 
             # add m2sy edge
-            e = mstg.add_edge(cp, metastate.state)
+            e = mstg.add_edge(sp, metastate.state)
             mstg.ep.type[e] = MSTType.m2sy
             mstg.ep.cpu_id[e] = metastate.cpu_id
 
             # add st2sy edge
-            e = mstg.add_edge(cp, metastate.entry)
+            e = mstg.add_edge(sp, metastate.entry)
             mstg.ep.type[e] = MSTType.st2sy
             mstg.ep.cpu_id[e] = metastate.cpu_id
 
@@ -1044,7 +1043,7 @@ class MultiSSE(Step):
 
         if self.with_times.get():
             self._timings = TimingCalculator(mstg, self._mstg.type_map,
-                                             self._mstg.cross_point_map)
+                                             self._mstg.sync_point_map)
         else:
             self._timings = None
 
@@ -1052,24 +1051,24 @@ class MultiSSE(Step):
         self._state_map = {}
 
         # initialize stack
-        cross_point = self._get_initial_state()
+        sync_point = self._get_initial_state()
 
-        # stack consisting of the current exit cross point
-        stack = [(cross_point, None)]
-        # store cross_point that need a reevaluation
+        # stack consisting of the current exit sync point
+        stack = [(sync_point, None)]
+        # store sync_point that need a reevaluation
         reevaluates = set()
 
         # actual algorithm
         counter = 0
         while stack:
-            # cp: the current cross point
+            # sp: the current sync point
             # reeval_info: information if a reevaluation is needed, of type
             #              NewNodeReevaluation or NewEdgeReevaluation or None
-            cp, reeval_info = stack.pop(0)
-            if (cp, reeval_info) in reevaluates:
-                # we don't need to analyse cross points that are reevaluated
+            sp, reeval_info = stack.pop(0)
+            if (sp, reeval_info) in reevaluates:
+                # we don't need to analyse sync points that are reevaluated
                 # later on anyway.
-                self._log.debug(f"Skip {int(cp)}. It is already marked for "
+                self._log.debug(f"Skip {int(sp)}. It is already marked for "
                                 "reevaluation.")
                 continue
 
@@ -1077,46 +1076,46 @@ class MultiSSE(Step):
             #     self._fail("foo")
 
             self._log.debug(
-                f"Round {counter:3d}, handle SP {int(cp)}. "
+                f"Round {counter:3d}, handle SP {int(sp)}. "
                 f"Stack with {len(stack)} state(s)")
             if self.dump.get():
                 self._dump_mstg(extra=f"round.{counter:03d}")
             counter += 1
 
             if reeval_info:
-                t_stack, reevals = self._reevaluate_cross_point(cp,
+                t_stack, reevals = self._reevaluate_sync_point(sp,
                                                                 reeval_info)
                 stack.extend([(x, None) for x in t_stack])
                 reevaluates.update(reevals)
                 continue
 
-            # handle current cross point
-            metastates = self._calculate_new_metastates(cp)
+            # handle current sync point
+            metastates = self._calculate_new_metastates(sp)
 
             if self.dump.get():
                 self._dump_mstg(extra=f"round.{counter:03d}.wm")
 
-            # handle the next cross points
+            # handle the next sync points
             # we need a new pairing for all CPUs, if somewhere is a new entry,
             # or the entire metastate is_new
             new_entry = any([x.new_entry for x in metastates.values()])
             is_new = any([x.is_new for x in metastates.values()])
 
             # Check for shortcut. If the metastates are not new and we find
-            # another already existing cross point that results in the exact
-            # same metastates than this cross point, we can just link its
+            # another already existing sync point that results in the exact
+            # same metastates than this sync point, we can just link its
             # already existing outgoing edges.
             neighbor_found_and_linked = False
             if not (new_entry or is_new):
-                common_cps = self._find_common_crosspoints(metastates) - {cp}
-                for common_cp in common_cps:
-                    if set(self._mstg.cross_point_map[common_cp]) == set(
+                common_sps = self._find_common_sync_points(metastates) - {sp}
+                for common_sp in common_sps:
+                    if set(self._mstg.sync_point_map[common_sp]) == set(
                             metastates.keys()):
                         self._log.debug(
                             "Metastate is not new. Found an equal common "
-                            f"cp {int(common_cp)}."
+                            f"sp {int(common_sp)}."
                         )
-                        self._link_neighbor_crosspoint(cp, common_cp)
+                        self._link_neighbor_syncpoint(sp, common_sp)
                         neighbor_found_and_linked = True
 
             # we don't find a neighbor so do a full pairing across all
@@ -1124,12 +1123,12 @@ class MultiSSE(Step):
             if not neighbor_found_and_linked:
                 for _, metastate in metastates.items():
                     self._log.debug(
-                        f"Evaluate cross points of metastate {metastate}.")
-                    to_stack, reeval = self._find_new_cps(cp, metastate)
+                        f"Evaluate sync points of metastate {metastate}.")
+                    to_stack, reeval = self._find_new_sps(sp, metastate)
                     stack.extend([(x, None) for x in to_stack])
                     reevaluates.update(reeval)
 
-            # The stack is empty. Copy the cross points that need a
+            # The stack is empty. Copy the sync points that need a
             # reevaluation back to the stack and perform the next round.
             if not stack:
                 self._log.debug("Stack empty. Beginning with reevaluations")

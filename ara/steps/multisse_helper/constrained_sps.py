@@ -1,4 +1,4 @@
-from .common import CPRange, Range
+from .common import SPRange, Range
 from ara.util import has_path
 
 from collections import defaultdict
@@ -36,9 +36,9 @@ def get_constrained_sps(g, core_map, cores, new_range, old_sps=None):
     cores={0,1,2}
     new_range={start=SP4, end=None}
     old_sps:
-    { 0: CPRange(root=SP1, range=(start=SP2, end=None),
-      1: CPRange(root=SP1, range=(start=SP2, end=None),
-      2: CPRange(root=SP1, range=(start=SP1, end=None) }
+    { 0: SPRange(root=SP1, range=(start=SP2, end=None),
+      1: SPRange(root=SP1, range=(start=SP2, end=None),
+      2: SPRange(root=SP1, range=(start=SP1, end=None) }
 
     Given this history:
 
@@ -54,9 +54,9 @@ def get_constrained_sps(g, core_map, cores, new_range, old_sps=None):
     SP4:         [ 2 | 3 ]
 
     the result would be a new dict of SPs:
-    { 0: CPRange(root=SP1, range=(start=SP2, end=None),
-      1: CPRange(root=SP1, range=(start=SP3, end=None),
-      2: CPRange(root=SP1, range=(start=SP4, end=None) }
+    { 0: SPRange(root=SP1, range=(start=SP2, end=None),
+      1: SPRange(root=SP1, range=(start=SP3, end=None),
+      2: SPRange(root=SP1, range=(start=SP4, end=None) }
 
     The algorithm works by doing a BFS from the start point of the new
     range backwards and a BFS from the end point of the range forward until
@@ -64,7 +64,7 @@ def get_constrained_sps(g, core_map, cores, new_range, old_sps=None):
     """
     if old_sps is None:
         old_sps = defaultdict(
-            lambda: CPRange(root=None, range=Range(start=None, end=None)))
+            lambda: SPRange(root=None, range=Range(start=None, end=None)))
 
     unbound = {*cores}
     new_starts = {}
@@ -104,7 +104,7 @@ def get_constrained_sps(g, core_map, cores, new_range, old_sps=None):
             g, new_ends, dict([(x, old_sps[x].range.end) for x in cores]))
 
     return dict([(x,
-                  CPRange(root=old_sps[x].root,
+                  SPRange(root=old_sps[x].root,
                           range=Range(start=new_starts[x],
                                       end=new_ends[x])))
                  for x in cores])

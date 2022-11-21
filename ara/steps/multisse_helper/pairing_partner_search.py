@@ -1,6 +1,6 @@
 from .equations import Equations
 from .constrained_sps import get_constrained_sps
-from .common import Range, CPRange, FakeEdge, get_reachable_states, CrossExecState, TimeRange, find_cross_syscalls
+from .common import Range, SPRange, FakeEdge, get_reachable_states, CrossExecState, TimeRange, find_cross_syscalls
 from .wcet_calculation import TimingCalculator, get_time
 
 from ara.graph import StateType, MSTType, vertex_types, single_check
@@ -46,17 +46,17 @@ class TimeCandidateSet:
     candidates: List[graph_tool.Vertex]
     # a list of predecessor SPs. For each pred SP a time range is given, which
     # denotes the time between candidate and pred SP.
-    pred_cps: Tuple[TimedVertex]
+    pred_sps: Tuple[TimedVertex]
     # the root SP for this candidate set
-    root_cp: graph_tool.Vertex
+    root_sp: graph_tool.Vertex
 
     @staticmethod
     def set_without_candidates(sp, time):
         """Return a set without other candidates for the given SP."""
         return TimeCandidateSet(candidates=[],
-                                pred_cps=[TimedVertex(vertex=sp,
+                                pred_sps=[TimedVertex(vertex=sp,
                                                       range=time)],
-                                root_cp=sp)
+                                root_sp=sp)
 
 
 @dataclass(frozen=True)
@@ -134,7 +134,7 @@ class _PairingPartnerSearch:
         else:
             eqs = None
 
-        # 3. Build the actual product from each possible cross point
+        # 3. Build the actual product from each possible sync point
         #    (while respecting time constraints if given.
         self._combinations = set()
         for state_list in self._build_product(corridor, eqs,
@@ -142,21 +142,21 @@ class _PairingPartnerSearch:
             # we now have a set of candidates for a new SP
             # next step is to calculate the predecessors in time for the
             # new SP
-            timely_cps = self._find_timed_predecessor(
+            timely_sps = self._find_timed_predecessor(
                 self._sp_graph,
                 frozenset([self._last_sp] + [x.root for x in state_list.states]))
             # self._log.debug(
-            #    f"Found time predecessors {[int(x) for x in timely_cps]}.")
+            #    f"Found time predecessors {[int(x) for x in timely_sps]}.")
             if self._timings:
-                timed_pred_cps = self._get_pred_times(
-                    timely_cps, state_list, self._last_sp, self._cross_state)
+                timed_pred_sps = self._get_pred_times(
+                    timely_sps, state_list, self._last_sp, self._cross_state)
             else:
-                timed_pred_cps = frozenset([TimedVertex(vertex=x, range=TimeRange(up=0, to=0))
-                                            for x in timely_cps])
+                timed_pred_sps = frozenset([TimedVertex(vertex=x, range=TimeRange(up=0, to=0))
+                                            for x in timely_sps])
 
             self._combinations.add(TimeCandidateSet(candidates=tuple([x.state for x in state_list.states]),
-                                                    pred_cps=timed_pred_cps,
-                                                    root_cp=self._root))
+                                                    pred_sps=timed_pred_sps,
+                                                    root_sp=self._root))
 
     def get_result(self):
         return self._combinations
@@ -167,8 +167,8 @@ class _PairingPartnerSearch:
         _, elist = shortest_path(sync_graph, orig_sp, new_sp)
         return len(elist) > 0
 
-    def _get_path(self, graph, from_cp, to_cp):
-        return shortest_path(graph, from_cp, to_cp)[1]
+    def _get_path(self, graph, from_sp, to_sp):
+        return shortest_path(graph, from_sp, to_sp)[1]
 
     def _add_ranges(self, eqs, edges):
         """Add a range to eqs for every edge in edges."""
@@ -225,7 +225,7 @@ class _PairingPartnerSearch:
                 good_v.append((v, new_eqs))
         return good_v
 
-    def _get_initial_cps(self):
+    def _get_initial_sps(self):
         """Return a mapping for each core which SP belongs to it.
 
         Therefore, it uses the globally defined cores and path.
@@ -241,9 +241,9 @@ class _PairingPartnerSearch:
         SP3:     [ 1 | 2 ]
 
         For cores={0,1,2} and path=["SP1", "SP2", "SP3"], this would result in
-        { 0: CPRange(root=SP1, range=(start=SP2, end=None),
-          1: CPRange(root=SP1, range=(start=SP3, end=None),
-          2: CPRange(root=SP1, range=(start=SP3, end=None) }
+        { 0: SPRange(root=SP1, range=(start=SP2, end=None),
+          1: SPRange(root=SP1, range=(start=SP3, end=None),
+          2: SPRange(root=SP1, range=(start=SP3, end=None) }
 
         Additionally, it outputs the other cores that are synchronized on the
         way to this core:
@@ -255,24 +255,24 @@ class _PairingPartnerSearch:
         core_map = self._core_map
         cores = set(self._affected_cores)
         handled_cores = set()
-        cps = {}
+        sps = {}
         used = {}
         for x in reversed(self._path):
             assert self._mstg.vp.type[x] == StateType.exit_sync
             x_cores = set(core_map[int(x)]) & cores
             for core in x_cores - handled_cores:
-                cps[core] = CPRange(root=self._root,
+                sps[core] = SPRange(root=self._root,
                                     range=Range(start=x, end=None))
                 used[core] = set(handled_cores)
             handled_cores |= x_cores
             if len(cores - handled_cores) == 0:
                 break
-        return cps, used
+        return sps, used
 
     def _get_corridor(self):
         # get the last SPs for each core
-        sps, used_cores = self._get_initial_cps()
-        sps[self._cpu_id] = CPRange(root=self._root,
+        sps, used_cores = self._get_initial_sps()
+        sps[self._cpu_id] = SPRange(root=self._root,
                                     range=Range(start=self._last_sp, end=None))
 
         # restrict it further, if we have a starting point
@@ -289,7 +289,7 @@ class _PairingPartnerSearch:
         # system.
         # add all SPs on the path to the root to the equation system
         follow_sync = self._mstg.edge_type(MSTType.follow_sync)
-        edges = [follow_sync.edge(src, self._mstg.get_entry_cp(tgt))
+        edges = [follow_sync.edge(src, self._mstg.get_entry_sp(tgt))
                  for src, tgt in pairwise(self._path)]
         self._add_ranges(eqs, edges)
 
@@ -375,7 +375,7 @@ class _PairingPartnerSearch:
                 continue
             visited[cur] = True
             visited_entries[cur].append(path[-1])
-            last_exit_cp = path[-1].target()
+            last_exit_sp = path[-1].target()
 
             # iterate
             edges = []
@@ -386,7 +386,7 @@ class _PairingPartnerSearch:
 
                 # skip paths where the sync points do not follow each other
                 if core_graph.vp.type[cur] == StateType.metastate:
-                    nes = set(follow_sync.vertex(last_exit_cp).out_neighbors())
+                    nes = set(follow_sync.vertex(last_exit_sp).out_neighbors())
                     if e.target() not in nes:
                         log(f"Skip {e}. SPs do not follow each other.")
                         continue
@@ -420,7 +420,7 @@ class _PairingPartnerSearch:
                     if self._timings:
                         # e must have a follow_sync edge path to the last SP
                         ff_edges = self._get_followsync_path(e.target(),
-                                                             from_sp=last_exit_cp)
+                                                             from_sp=last_exit_sp)
                         self._add_ranges(eqs, ff_edges)
 
                 if core_graph.ep.type[e] == MSTType.en2ex:
@@ -470,7 +470,7 @@ class _PairingPartnerSearch:
         again to combine that to the rest of the combinations.
 
         Arguments:
-        sps       -- dict of CPRange objects
+        sps       -- dict of SPRange objects
         eqs       -- Timing Equations
 
         cores     -- the cores that need to be processed
@@ -572,7 +572,7 @@ class _PairingPartnerSearch:
             edge_path.append(
                 single_check(
                     filter(lambda e: self._mstg.ep.type[e] == MSTType.follow_sync,
-                           self._mstg.edge(src, self._mstg.get_entry_cp(tgt),
+                           self._mstg.edge(src, self._mstg.get_entry_sp(tgt),
                                            all_edges=True))))
         return edge_path
 

@@ -540,10 +540,10 @@ class MSTGraph(graph_tool.Graph):
         m2s = self.edge_type(MSTType.m2s)
         return self.vertex(single_check(m2s.vertex(state).in_neighbors()))
 
-    def get_entry_cp(self, exit_cp):
-        """Return the entry_cp that belongs to an exit_cp."""
+    def get_entry_sp(self, exit_sp):
+        """Return the entry SP that belongs to an exit SP."""
         fu = self.edge_type(MSTType.en2ex)
-        return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
+        return self.vertex(single_check(fu.vertex(exit_sp).in_neighbors()))
 
     def get_syscall_name(self, state):
         """Return the syscall name, if state belongs to one.

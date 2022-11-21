@@ -55,12 +55,12 @@ class Range:
 
 
 @dataclass(frozen=True)
-class CPRange:
+class SPRange:
     root: Vertex
     range: Range
 
     def __repr__(self):
-        return ("CPRange(" f"root: {int(self.root)}, " f"range: {self.range})")
+        return ("SPRange(" f"root: {int(self.root)}, " f"range: {self.range})")
 
 
 class CrossExecState(enum.IntEnum):
