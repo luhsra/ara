@@ -1,3 +1,5 @@
+subdir('generic')
+
 if get_option('arch') == 'arm'
   subdir('arm')
 elif get_option('arch') == 'posix'
