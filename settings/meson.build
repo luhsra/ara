@@ -35,6 +35,8 @@ obj_flags = ['-c']
 if get_option('arch') == 'i386'
   clang_flags += '--target=i386-pc-linux-gnu'
   clang_flags += '-DX86_STUB=1'
+elif get_option('arch') == 'posix'
+  clang_flags += ''
 elif get_option('arch') == 'arm'
   clang_flags += ['--target=' + target_triple,
                   '-mthumb',
