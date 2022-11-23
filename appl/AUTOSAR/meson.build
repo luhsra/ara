@@ -184,6 +184,33 @@ foreach app : autosar_apps
                                    clang_flags)
   app += {'ll': app_ll}
 
+  app_obj = custom_target(full_name + '_obj',
+                          input : app_ll,
+                          output : full_name + '.ll.o',
+                          depfile : full_name + '.dep',
+                          command : clang_cpp +
+                                    autosar_includes +
+                                    ld_flags +
+                                    obj_flags +
+                                    clang_flags)
+
+  app += {'obj': app_obj}
+
+  if get_option('arch') == 'posix'
+    app_link = custom_target(full_name + '_link',
+                            input: [
+                              app_obj,
+                              libautosar_os,
+                              libautosar_generic,
+                              libautosar_posix
+                            ],
+                            output : full_name,
+                            depfile : full_name + '.dep',
+                            command : clang_cpp +
+                                      autosar_includes +
+                                      ld_flags +
+                                      clang_flags)
+  endif
 
   # trace file for sse testing
   if not app.has_key('mtrace')
