@@ -308,8 +308,9 @@ def debug_log(original_function=None, *,
 @lru_cache(maxsize=1024)
 def is_recursive(callgraph, v):
     """Checks if given vertex v is in a loop => v is recursive"""
-    for neighbour in v.out_neighbors():
-        vert, edge = shortest_path(callgraph, neighbour, v)
+    v = callgraph.vertex(v)
+    for neighbor in v.out_neighbors():
+        vert, edge = shortest_path(callgraph, neighbor, v)
         if vert:
             return True
     return False
