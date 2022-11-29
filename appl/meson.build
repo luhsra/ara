@@ -214,7 +214,7 @@ foreach app : ir_apps + hw_apps
            args: [validate_generator_runner,
                   app,
                   target,
-                  ara_target,
+                  app_aramodified_ll,
                   os_target[0].full_path(),
                   lto_elf,
                  ],

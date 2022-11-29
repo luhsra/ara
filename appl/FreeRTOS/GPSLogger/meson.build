@@ -225,7 +225,7 @@ foreach target : ara_gen_freertos_targets
            args: [validate_generator_runner,
                   'gpslogger',
                   target,
-                  ara_target,
+                  app_aramodified_ll,
                   os_target[0].full_path(),
                   lto_elf,
                  ],

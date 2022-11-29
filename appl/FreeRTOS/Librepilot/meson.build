@@ -286,7 +286,7 @@ foreach application_prefix: ['librepilot_mock']
            args: [validate_generator_runner,
                   application_prefix,
                   target,
-                  ara_target,
+                  app_aramodified_ll,
                   os_target[0].full_path(),
                   lto_elf,
                  ],
