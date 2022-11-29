@@ -125,6 +125,8 @@ namespace ara::step {
 	 */
 	template <typename SVFG>
 	class Traverser {
+	  private:
+	  	static const int MAX_TRAVERSER_LEVEL = 20;
 	  protected:
 		/**
 		 * The traverser's boss.

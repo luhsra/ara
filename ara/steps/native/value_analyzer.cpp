@@ -394,6 +394,10 @@ namespace ara::step {
 			} else {
 				this->dbg() << "Found call edge up, waiting for other nodes: " << *vfg_edge << std::endl;
 				level++;
+				if (level > MAX_TRAVERSER_LEVEL) {
+					this->caretaker.get_logger().warn() << "reached max traverser level" << std::endl;
+					return Die();
+				}
 				return Finished<SVFG>{EndOfFunction()};
 			}
 		}
