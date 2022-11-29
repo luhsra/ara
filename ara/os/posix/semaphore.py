@@ -33,7 +33,8 @@ class SemaphoreSyscalls:
             proc_shared = True if args.pshared.get() > 0 else False
 
         new_semaphore = Semaphore(process_shared=proc_shared,
-                                  init_counter=args.value.get() if type(args.value) == pyllco.ConstantInt else None,
+                                  init_counter=args.value.get() if type(args.value) == pyllco.ConstantInt
+                                                                else "<unknown>",
                                   name=None
         )
         
