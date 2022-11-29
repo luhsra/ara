@@ -137,7 +137,7 @@ endforeach
 # all dependencies found, build the actual program
 
 build_dir = meson.current_build_dir()
-source_dir = meson.source_root()
+source_dir = meson.current_source_dir()
 
 # build ARA itself
 subdir('ara')
