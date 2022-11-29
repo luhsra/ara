@@ -301,7 +301,7 @@ foreach application_prefix: ['librepilot_mock']
       else
         test_elf = lto_elf
       endif
-      test('run_qemu_' + name_prefix,
+      test('run_qemu_' + lto_prefix,
            py3_inst,
            args: [qemu_test_runner,
                   qemu_cmd,

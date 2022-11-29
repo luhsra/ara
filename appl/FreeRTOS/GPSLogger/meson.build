@@ -235,7 +235,7 @@ foreach target : ara_gen_freertos_targets
     endif
 
     if get_option('enable_gpslogger_tests')
-      test('run_qemu_' + name_prefix,
+      test('run_qemu_' + lto_prefix,
            py3_inst,
            args: [qemu_test_runner,
                   qemu_cmd,

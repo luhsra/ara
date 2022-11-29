@@ -224,7 +224,7 @@ foreach app : ir_apps + hw_apps
       endif
 
     if get_option('enable_qemu_tests') and app not in ir_apps
-        test('run_qemu_' + name_prefix,
+        test('run_qemu_' + lto_prefix,
              py3_inst,
              args: [qemu_test_runner,
                     qemu_cmd,
