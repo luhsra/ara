@@ -141,4 +141,4 @@ foreach target : ara_gen_freertos_targets
 endforeach
 llvm_lto_cmd_none = ['cp', '@INPUT@', '@OUTPUT@']
 llvm_lto_cmd_standard = llvm_opt_cmd
-llvm_lto_cmd_rle2 = llvm_opt_cmd + ['-load', sparse_rle2.full_path(), '-SparseRLE2']
+llvm_lto_cmd_rle2 = llvm_opt_cmd + ['-load', sparse_rle2.full_path(), '-SparseRLE2', '-enable-new-pm=0']
