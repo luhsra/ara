@@ -388,7 +388,8 @@ i4copter = autosar_singlecore_complex_isorc
 run_target('i4copter_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir', i4copter['ll'],
-              '--oil', i4copter['oil']],
+              '--oil', i4copter['oil'],
+              '--os=AUTOSAR'],
     env: [python_path],
     depends: ara_py
 )
@@ -397,7 +398,8 @@ run_target('i4copter_sse_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_SSE_Experiment', '-v',
               '--llvm_ir', i4copter['ll'],
               '--oil', i4copter['oil'],
-              '--is_ina=False'],
+              '--is_ina=False',
+              '--os=AUTOSAR'],
     env: [python_path],
     depends: ara_py
 )
