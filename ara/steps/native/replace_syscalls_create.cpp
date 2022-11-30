@@ -439,7 +439,7 @@ namespace ara::step {
 			}
 		}
 		object py_task_parameters = extract<object>(task.attr("parameters"));
-		if (! py_task_parameters.is_none()) {
+		if (!py_task_parameters.is_none()) {
 			if (GlobalVariable* gv = dyn_cast_or_null<GlobalVariable>(get_value_from_obj(py_task_parameters.ptr()))) {
 				change_linkage_to_global(gv);
 			}

@@ -21,7 +21,7 @@ namespace ara::step::py_util {
 
 	/**
 	 * @brief Aborts execution if a python error occured
-	 * 
+	 *
 	 * @param display_msg display message on true
 	 */
 	void handle_py_error(bool display_msg = true);

@@ -1,5 +1,6 @@
 autosar_includes = ['-I', meson.current_source_dir() / 'source' / 'os']
 
+autosar_targets = []
 autosar_apps = [
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'a',                     'oil': 'system.json', 'mtrace': 'a.trace.json'},
   {'core': 'singlecore', 'path': 'bcc1' / 'alarm1',    'name': 'b',                     'oil': 'system.json', 'mtrace': 'b.trace.json'},
@@ -137,6 +138,10 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
 ]
+# conformance tests for trampoline
+subdir('multicore' / 'trampoline')
+
+
 no_timing_settings = custom_target(
   output: 'no_timing_settings.json',
   capture: true,
@@ -149,7 +154,6 @@ with_timing_settings = custom_target(
 )
 
 
-autosar_targets = []
 foreach app : autosar_apps
   # src file
   sys = app['core'] / app['path'] / app['name']
@@ -179,9 +183,6 @@ foreach app : autosar_apps
                                    ir_flags +
                                    clang_flags)
   app += {'ll': app_ll}
-
-  run_target('run_lock_elision_no_timings_' + full_name,
-             command: [py3_inst, ara_py, app_ll, '--oilfile', oil, '-s', 'LockElision', '-s', 'IPIAvoidance'])
 
 
   # trace file for sse testing
@@ -221,41 +222,6 @@ foreach app : autosar_apps
   endif
   app += {'sys_timings': sys_timings}
 
-  generate_timing_settings = custom_target(
-    output: full_name  + '.generate_timing_settings.json',
-    capture: true,
-    command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL", "DumpCFG"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
-  )
-
-
-
-  run_target('run_lock_elision_generate_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
-  run_target('run_lock_elision_with_timings_' + full_name,
-             command: [py3_inst, ara_py, app['ll'], '--oilfile', app['oil'], '--step-settings', with_timing_settings, '--timings', app['sys_timings'], '--step-data'])
-
-  step_data = custom_target(full_name + '.multisse.no_timing.stepdata.json',
-                            input: [ara_py, app['ll'], app['oil']],
-                            output: full_name + '.multisse.no_timing.stepdata.json',
-                            depfile: full_name + '.dep',
-                            command: [py3_inst, ara_py, app['ll'],
-                                      '--dependency_file', '@DEPFILE@',
-                                      '--oilfile', app['oil'],
-                                      '-s', 'LockElision', '-s', 'IPIAvoidance',
-                                      '--step-data', '@OUTPUT@'],
-                           )
-
-  step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
-                            input: [ara_py, app['ll'], app['oil']],
-                            output: full_name + '.multisse.with_timing.stepdata.json',
-                            depfile: full_name + '.dep',
-                            command: [py3_inst, ara_py, app['ll'],
-                                      '--dependency_file', '@DEPFILE@',
-                                      '--oilfile', app['oil'],
-                                      '--step-settings', with_timing_settings,
-                                      '--timings', app['sys_timings'],
-                                      '--step-data', '@OUTPUT@'],
-                           )
 
   # lock elision test data
   if app.has_key('locks')
@@ -272,6 +238,48 @@ foreach app : autosar_apps
   endif
   set_variable(full_name, app)
   autosar_targets += [app]
+
+
+endforeach
+foreach app: autosar_targets
+  full_name = app['full_name']
+  generate_timing_settings = custom_target(
+    output: full_name  + '.generate_timing_settings.json',
+    capture: true,
+    command: ['echo', '{"steps": ["ApplyTimings", "LoadOIL", "DumpCFG"], "ApplyTimings": {"create_timings": "' +  app['full_name'] +'.empty_timing.json"}}'],
+  )
+
+
+  run_target('run_lock_elision_no_timings_' + full_name,
+             command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '-s', 'LockElision', '-s', 'IPIAvoidance'])
+  run_target('run_lock_elision_generate_timings_' + full_name,
+             command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '--step-settings', generate_timing_settings])
+  run_target('run_lock_elision_with_timings_' + full_name,
+             command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR', '--oilfile', app['oil'], '--step-settings', with_timing_settings, '--timings', app['sys_timings'], '--step-data'])
+
+  step_data = custom_target(full_name + '.multisse.no_timing.stepdata.json',
+                            input: [ara_py, app['ll'], app['oil']],
+                            output: full_name + '.multisse.no_timing.stepdata.json',
+                            depfile: full_name + '.dep',
+                            command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR',
+                                      '--dependency_file', '@DEPFILE@',
+                                      '--oilfile', app['oil'],
+                                      '-s', 'LockElision', '-s', 'IPIAvoidance',
+                                      '--step-data', '@OUTPUT@'],
+                           )
+
+  step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
+                            input: [ara_py, app['ll'], app['oil']],
+                            output: full_name + '.multisse.with_timing.stepdata.json',
+                            depfile: full_name + '.dep',
+                            command: [py3_inst, ara_py, app['ll'], '--os', 'AUTOSAR',
+                                      '--dependency_file', '@DEPFILE@',
+                                      '--oilfile', app['oil'],
+                                      '--step-settings', with_timing_settings,
+                                      '--timings', app['sys_timings'],
+                                      '--step-data', '@OUTPUT@'],
+                           )
+
 endforeach
 
 

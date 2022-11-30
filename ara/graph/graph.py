@@ -1,14 +1,17 @@
-
 import graph_tool
 import graph_tool.util
-from graph_tool.search import bfs_iterator
+import math
 
+from graph_tool.search import bfs_iterator
 from graph_tool.topology import label_out_component
 
 from .graph_data import PyGraphData, _get_llvm_obj
 from .mix import ABBType, CFType, SyscallCategory, NodeLevel, StateType, MSTType
 
 from collections.abc import Iterator
+
+MAX_INT64 = 2**63 - 1
+_INF = MAX_INT64
 
 
 def _log(obj):
@@ -109,26 +112,26 @@ class CFG(graph_tool.Graph):
         # cgraph/graph.cpp and cgraph/graph.h.
         # vertex properties
         self.vertex_properties["name"] = self.new_vp("string")
-        self.vertex_properties["type"] = self.new_vp("int") # ABBType
-        self.vertex_properties["level"] = self.new_vp("int") # NodeLevel
+        self.vertex_properties["type"] = self.new_vp("int")  # ABBType
+        self.vertex_properties["level"] = self.new_vp("int")  # NodeLevel
         # Level dependent vertex properties
-        self.vertex_properties["llvm_link"] = self.new_vp("int64_t") # BB/Function
-        self.vertex_properties["bcet"] = self.new_vp("int64_t") # ABB
-        self.vertex_properties["wcet"] = self.new_vp("int64_t") # ABB
-        self.vertex_properties["loop_bound"] = self.new_vp("int64_t") # ABB
-        self.vertex_properties["is_exit"] = self.new_vp("bool") # BB/ABB
-        self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool") # BB/ABB
-        self.vertex_properties["part_of_loop"] = self.new_vp("bool") # BB/ABB
-        self.vertex_properties["loop_head"] = self.new_vp("bool") # ABB
-        self.vertex_properties["files"] = self.new_vp("vector<string>") # BB/call ABB
-        self.vertex_properties["lines"] = self.new_vp("vector<int32_t>") # BB/call ABB
-        self.vertex_properties["implemented"] = self.new_vp("bool") # Function
-        self.vertex_properties["sysfunc"] = self.new_vp("bool") # Function
-        self.vertex_properties["arguments"] = self.new_vp("object") # Function
-        self.vertex_properties["call_graph_link"] = self.new_vp("long") # Function
+        self.vertex_properties["llvm_link"] = self.new_vp("int64_t")  # BB/Function
+        self.vertex_properties["bcet"] = self.new_vp("int64_t")  # ABB
+        self.vertex_properties["wcet"] = self.new_vp("int64_t")  # ABB
+        self.vertex_properties["loop_bound"] = self.new_vp("int64_t")  # ABB
+        self.vertex_properties["is_exit"] = self.new_vp("bool")  # BB/ABB
+        self.vertex_properties["is_exit_loop_head"] = self.new_vp("bool")  # BB/ABB
+        self.vertex_properties["part_of_loop"] = self.new_vp("bool")  # BB/ABB
+        self.vertex_properties["loop_head"] = self.new_vp("bool")  # ABB
+        self.vertex_properties["files"] = self.new_vp("vector<string>")  # BB/call ABB
+        self.vertex_properties["lines"] = self.new_vp("vector<int32_t>")  # BB/call ABB
+        self.vertex_properties["implemented"] = self.new_vp("bool")  # Function
+        self.vertex_properties["sysfunc"] = self.new_vp("bool")  # Function
+        self.vertex_properties["arguments"] = self.new_vp("object")  # Function
+        self.vertex_properties["call_graph_link"] = self.new_vp("long")  # Function
 
         # edge properties
-        self.edge_properties["type"] = self.new_ep("int") # CFType
+        self.edge_properties["type"] = self.new_ep("int")  # CFType
         # f2a, a2b edges
         self.edge_properties["is_entry"] = self.new_ep("bool")
         # icf, lcf edges
@@ -137,6 +140,32 @@ class CFG(graph_tool.Graph):
     def contains_function_by_name(self, name: str):
         func = graph_tool.util.find_vertex(self, self.vp["name"], name)
         return len(func) == 1 and self.vp.level[func[0]] == NodeLevel.function
+
+    def set_bcet(self, node, time):
+        """Set the BCET, math.inf is supported."""
+        if time == math.inf:
+            time = _INF
+        self.vp.bcet[node] = time
+
+    def set_wcet(self, node, time):
+        """Set the WCET, math.inf is supported."""
+        if time == math.inf:
+            time = _INF
+        self.vp.wcet[node] = time
+
+    def get_bcet(self, node):
+        """Return the BCET."""
+        time = self.vp.bcet[node]
+        if time == _INF:
+            return math.inf
+        return time
+
+    def get_wcet(self, node):
+        """Return the WCET."""
+        time = self.vp.wcet[node]
+        if time == _INF:
+            return math.inf
+        return time
 
     def get_function_by_name(self, name: str):
         """Find a specific function."""
@@ -511,10 +540,10 @@ class MSTGraph(graph_tool.Graph):
         m2s = self.edge_type(MSTType.m2s)
         return self.vertex(single_check(m2s.vertex(state).in_neighbors()))
 
-    def get_entry_cp(self, exit_cp):
-        """Return the entry_cp that belongs to an exit_cp."""
+    def get_entry_sp(self, exit_sp):
+        """Return the entry SP that belongs to an exit SP."""
         fu = self.edge_type(MSTType.en2ex)
-        return self.vertex(single_check(fu.vertex(exit_cp).in_neighbors()))
+        return self.vertex(single_check(fu.vertex(exit_sp).in_neighbors()))
 
     def get_syscall_name(self, state):
         """Return the syscall name, if state belongs to one.
@@ -563,12 +592,12 @@ class MSTGraph(graph_tool.Graph):
                                          if graph_v.ep.cpu_id[e] == cpu_id]))
 
     def get_entry_state(self, entry_cp, cpu_id):
-        """Return the entry state that belongs to an entry SP for a cpu_id."""
+        """Return the entry state that belongs to an exit SP for a cpu_id."""
         st2sy = self.edge_type(MSTType.st2sy)
         return self._get_cpu_bound_state(st2sy, entry_cp, cpu_id)
 
     def get_exit_state(self, exit_cp, cpu_id):
-        """Return the exit state that belongs to an exit SP for a cpu_id."""
+        """Return the exit state that belongs to an entry SP for a cpu_id."""
         st2sy = graph_tool.GraphView(self.edge_type(MSTType.st2sy),
                                      reversed=True)
         return self._get_cpu_bound_state(st2sy, exit_cp, cpu_id)
@@ -642,6 +671,10 @@ class InstanceGraph(graph_tool.Graph):
         for inst in self.vertices():
             if instance == self.vp.obj[inst]:
                 return inst
+
+    def edge_type(self, *edgetypes):
+        """Return a GraphView so only the given edge types are allowed."""
+        return edge_types(self, self.ep.type, *edgetypes)
 
     def iterate_control_entry_points(self):
         """Return a generator over all tasks in the instance graph.

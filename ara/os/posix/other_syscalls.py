@@ -22,7 +22,7 @@ class OtherSyscalls:
                         Arg('tv_nsec', hint=SigType.value, ty=pyllco.ConstantInt),
                         Arg('rmtp', hint=SigType.symbol)))
     def ARA_nanosleep_syscall_(graph, state, cpu_id, args, va):
-        tv_sec = args.tv_sec.get() if args.tv_sec != None else "<unknown>"
-        tv_nsec = args.tv_nsec.get() if args.tv_nsec != None else "<unknown>"
+        tv_sec = args.tv_sec.get() if type(args.tv_sec) == pyllco.ConstantInt else "<unknown>"
+        tv_nsec = args.tv_nsec.get() if type(args.tv_nsec) == pyllco.ConstantInt else "<unknown>"
         add_self_edge(state, cpu_id, f"nanosleep(tv_sec: {tv_sec}, tv_nsec: {tv_nsec})", ty=PosixEdgeType.interaction)
         return state

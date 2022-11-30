@@ -3,7 +3,6 @@
 #include "common/exceptions.h"
 #include "common/util.h"
 
-#include <Graphs/PAG.h>
 #include <Graphs/PTACallGraph.h>
 #include <WPA/Andersen.h>
 #include <boost/graph/filtered_graph.hpp>
@@ -113,8 +112,8 @@ namespace ara::step {
 				edge_counter++;
 
 				// properties
-				const SVF::CallBlockNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
-				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent();
+				const SVF::CallICFGNode* out_cbn = svf_callgraph.getCallSite(svf_edge.getCallSiteID());
+				const llvm::BasicBlock* out_bb = safe_deref(out_cbn).getParent()->getLLVMBasicBlock();
 				CFVertex bb = cfg.back_map(cfg_obj, safe_deref(out_bb));
 
 				callgraph.callsite[edge.first] = bb;
@@ -178,7 +177,6 @@ namespace ara::step {
 				logger.info() << "Added " << node_counter << " vertices and " << edge_counter << " edges." << std::endl;
 				if (node_counter != 0 || edge_counter != 0) {
 					step_manager.chain_step("SystemRelevantFunctions");
-					step_manager.chain_step("RecursiveFunctions");
 				}
 			}
 		};

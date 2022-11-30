@@ -21,10 +21,7 @@ class SSE(Step):
                            default_value=False)
 
     def get_single_dependencies(self):
-        if self._graph.os is None:
-            return ["SysFuncts"]
-        deps = self._graph.os.get_special_steps()
-        return deps
+        return ["SysFuncts"] + self._graph.os.get_special_steps()
 
     def dump_sstg(self, sstg, extra):
         dot_file = self.dump_prefix.get() + f"sstg.{extra}.dot"

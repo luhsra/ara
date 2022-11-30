@@ -5,7 +5,7 @@
 #include "common/util.h"
 
 #include <Graphs/VFGNode.h>
-#include <SVF-FE/PAGBuilder.h>
+#include <SVF-FE/SVFIRBuilder.h>
 #include <Util/BasicTypes.h>
 #include <WPA/Andersen.h>
 #include <sstream>
@@ -46,7 +46,7 @@ namespace ara::step {
 	void map_svfg(SVFGGraphtool& g, graph::SVFG svfg_graphtool, SVF::SVFG& svfg_svf, Logger& logger,
 	              graph::GraphData& graph_data) {
 		using GraphtoolVertex = typename boost::graph_traits<SVFGGraphtool>::vertex_descriptor;
-		logger.info() << "Converting SVF graph to graphtool" << endl;
+		logger.info() << "Converting SVF graph to graphtool" << std::endl;
 
 		// function to register node in svfg_to_graphtool_node map
 		auto add_node_in_map = [&](const SVF::VFGNode* svf_vertex, GraphtoolVertex vertex) {
@@ -77,7 +77,7 @@ namespace ara::step {
 				svfg_graphtool.eobj[graphtool_edge.first] = reinterpret_cast<uintptr_t>(svf_edge);
 			}
 		}
-		logger.info() << "Conversion finished" << endl;
+		logger.info() << "Conversion finished" << std::endl;
 	}
 
 	void SVFAnalyses::run() {
@@ -88,19 +88,20 @@ namespace ara::step {
 		logger.info() << "Building SVF graphs." << std::endl;
 		SVFModule* svfModule = LLVMModuleSet::getLLVMModuleSet()->buildSVFModule(graph.get_module());
 		assert(svfModule != nullptr && "SVF Module is null");
+		svfModule->buildSymbolTableInfo();
 
-		PAGBuilder builder;
-		PAG* pag = builder.build(svfModule);
-		assert(pag != nullptr && "PAG is null");
+		SVFIRBuilder builder(svfModule);
+		SVFIR* svfir = builder.build();
+		assert(svfir != nullptr && "SVFIR is null");
 
-		Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(pag);
+		Andersen* ander = AndersenWaveDiff::createAndersenWaveDiff(svfir);
 
 		SVFGBuilder svfBuilder(true);
 		std::unique_ptr<SVFG> svfg(svfBuilder.buildFullSVFG(ander));
 
 		graph.get_graph_data().initialize_svfg(std::move(svfg));
 
-		ICFG* icfg = pag->getICFG();
+		ICFG* icfg = svfir->getICFG();
 		PTACallGraph* callgraph = ander->getPTACallGraph();
 
 		// resolve indirect pointer in the icfg

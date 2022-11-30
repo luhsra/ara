@@ -1,15 +1,15 @@
-from .common import TimeRange, CrossExecState, get_reachable_states, FakeEdge
-from .equations import Equations
+import math
+
+from dataclasses import dataclass
+from typing import Union
+from graph_tool import GraphView, Edge
+from graph_tool.topology import shortest_path, dominator_tree
 
 from ara.graph import StateType, MSTType, single_check, vertex_types
 from ara.util import dominates, get_logger, ContinueSignal
 
-import math
-
-from dataclasses import dataclass
-from graph_tool import GraphView, Edge
-from graph_tool.topology import shortest_path, dominator_tree
-from typing import Union
+from .common import TimeRange, CrossExecState, get_reachable_states, FakeEdge
+from .equations import Equations
 
 MAX_INT64 = 2**63 - 1
 
@@ -115,7 +115,7 @@ class TimingCalculator():
             if mstg.vertex(exit_sp).in_degree() == 0:
                 # starting point, there were no previous executions
                 break
-            entry_sp = mstg.get_entry_cp(exit_sp)
+            entry_sp = mstg.get_entry_sp(exit_sp)
             if len(elist) < 2:
                 # the state was not executed before
                 # maybe the ABB was executed before

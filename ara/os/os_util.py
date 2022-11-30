@@ -293,7 +293,8 @@ class SysCall:
 
         # syscall specific handling
         new_states = self._func(graph, new_state, cpu_id, args, va)
-        assert new_states is not None, "The syscall does not return anything."
+        assert new_states is not None, (f"The syscall {self.name} does not "
+                                        "return anything.")
 
         # few syscalls return multiple follow up states, so wrap everything
         # into a list, if not already done

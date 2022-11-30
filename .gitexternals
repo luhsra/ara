@@ -6,8 +6,8 @@
 
 [external "svf"]
 	path = subprojects/svf
-	url = https://github.com/SVF-tools/SVF
-	branch = SVF-2.3
+	url = https://github.com/luhsra/SVF
+	branch = value2vfg
 	vcs = git
 
 [external "sparsedata"]

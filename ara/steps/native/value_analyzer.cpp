@@ -101,7 +101,7 @@ namespace ara::step {
 			if (!id) {
 				return nullptr;
 			}
-			const SVF::CallBlockNode* cbn = callgraph->getCallSite(*id);
+			const SVF::CallICFGNode* cbn = callgraph->getCallSite(*id);
 			if (cbn == nullptr) {
 				return nullptr;
 			}
@@ -394,6 +394,10 @@ namespace ara::step {
 			} else {
 				this->dbg() << "Found call edge up, waiting for other nodes: " << *vfg_edge << std::endl;
 				level++;
+				if (level > MAX_TRAVERSER_LEVEL) {
+					this->caretaker.get_logger().warn() << "reached max traverser level" << std::endl;
+					return Die();
+				}
 				return Finished<SVFG>{EndOfFunction()};
 			}
 		}
@@ -615,9 +619,9 @@ namespace ara::step {
 	}
 
 	template <class SVFG>
-	std::vector<shared_ptr<Traverser<SVFG>>> Traverser<SVFG>::choose_best_next_traversers() {
-		std::vector<shared_ptr<Traverser<SVFG>>> indirects;
-		std::vector<shared_ptr<Traverser<SVFG>>> directs;
+	std::vector<std::shared_ptr<Traverser<SVFG>>> Traverser<SVFG>::choose_best_next_traversers() {
+		std::vector<std::shared_ptr<Traverser<SVFG>>> indirects;
+		std::vector<std::shared_ptr<Traverser<SVFG>>> directs;
 		for (auto worker : workers | boost::adaptors::map_values) {
 			assert(!worker->trace.empty());
 			if (llvm::isa<SVF::CallIndSVFGEdge>(
@@ -908,7 +912,7 @@ namespace ara::step {
 			throw ValuesUnknown("Called function is indirect.");
 		}
 
-		if (argument_nr >= callsite.getNumArgOperands()) {
+		if (argument_nr >= callsite.arg_size()) {
 			throw ValuesUnknown("Argument number is too big.");
 		}
 
@@ -993,7 +997,7 @@ namespace ara::step {
 			throw ConnectionStatusUnknown("Called function is indirect.");
 		}
 
-		if (argument_nr >= callsite.getNumArgOperands()) {
+		if (argument_nr >= callsite.arg_size()) {
 			throw ConnectionStatusUnknown("Argument number is too big.");
 		}
 
@@ -1120,7 +1124,7 @@ namespace ara::step {
 		auto store = find_next_store(node);
 		if (store != nullptr) {
 			logger.debug() << "GRV " << *store->getPAGEdge() << std::endl;
-			return store->getInst();
+			return store->getInst()->getLLVMInstruction();
 		}
 		// fallback
 		logger.warn() << "Did not find a storage node in the SVFG. Falling back to plain LLVM search." << std::endl;

@@ -214,7 +214,7 @@ foreach app : ir_apps + hw_apps
            args: [validate_generator_runner,
                   app,
                   target,
-                  ara_target,
+                  app_aramodified_ll,
                   os_target[0].full_path(),
                   lto_elf,
                  ],
@@ -224,7 +224,7 @@ foreach app : ir_apps + hw_apps
       endif
 
     if get_option('enable_qemu_tests') and app not in ir_apps
-        test('run_qemu_' + name_prefix,
+        test('run_qemu_' + lto_prefix,
              py3_inst,
              args: [qemu_test_runner,
                     qemu_cmd,
@@ -388,7 +388,8 @@ i4copter = autosar_singlecore_complex_isorc
 run_target('i4copter_instance_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
               '--llvm_ir', i4copter['ll'],
-              '--oil', i4copter['oil']],
+              '--oil', i4copter['oil'],
+              '--os=AUTOSAR'],
     env: [python_path],
     depends: ara_py
 )
@@ -397,7 +398,8 @@ run_target('i4copter_sse_exp',
     command: [py3_inst, InstanceGraphExperiment, '--title=ARA_SSE_Experiment', '-v',
               '--llvm_ir', i4copter['ll'],
               '--oil', i4copter['oil'],
-              '--is_ina=False'],
+              '--is_ina=False',
+              '--os=AUTOSAR'],
     env: [python_path],
     depends: ara_py
 )

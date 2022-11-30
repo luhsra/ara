@@ -34,10 +34,6 @@
         "no_sysfunc_body": true
     },
 
-    "RecursiveFunctions": {
-        "no_recursive_funcs": false
-    },
-
 	"ICFG": {
 		"dump": true
 	},

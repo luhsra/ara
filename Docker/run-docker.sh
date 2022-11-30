@@ -29,4 +29,4 @@ sudo docker run --rm -it \
 	 -v "/tmp/.X11-unix:/tmp/.X11-unix"\
 	 --env=DISPLAY=$DISPLAY\
 	 $qemu_mount \
-	 ara-dev-env-focal /bin/bash
+	 ara-dev-env-jammy /bin/bash

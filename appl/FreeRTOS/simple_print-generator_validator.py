@@ -8,7 +8,7 @@ def check_passthrough(*args):
 
 def check_instances_full_initialized(app_name, modified_app, generated_os, elf):
     assert 'initialized' in generated_os
-    if not re.search('InitializedStack_t<10+> tzzz_0_static_stack', generated_os):
+    if not re.search('InitializedStack_t<10+> tzzz_\d_static_stack', generated_os):
         assert False, 'missing initialized stack for zzz'
 
 def check_instances_full_static(app_name, modified_app, generated_os, elf):

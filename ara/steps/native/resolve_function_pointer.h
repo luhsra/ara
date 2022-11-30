@@ -130,7 +130,7 @@ namespace ara::step {
 		 */
 		void init_compatible_types();
 
-		void link_indirect_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
+		void link_indirect_pointer(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);
 		bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) const;
 
@@ -140,7 +140,7 @@ namespace ara::step {
 		                       std::vector<std::reference_wrapper<const llvm::Function>>& functions);
 		std::vector<std::reference_wrapper<const llvm::Function>> get_address_taken_functions();
 
-		void resolve_function_pointer(const SVF::CallBlockNode& cbn, SVF::PTACallGraph& callgraph,
+		void resolve_function_pointer(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph,
 		                              const SVF::LLVMModuleSet& svfModule);
 		void resolve_indirect_function_pointers(SVF::ICFG& icfg, SVF::PTACallGraph& callgraph,
 		                                        const SVF::LLVMModuleSet& module, std::string entry_point);

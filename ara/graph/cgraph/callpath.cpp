@@ -15,9 +15,9 @@ namespace ara::graph {
 			return "";
 		}
 
-		const SVF::CallBlockNode* node = *calls.begin();
+		const SVF::CallICFGNode* node = *calls.begin();
 		assert(node != nullptr && "call is null");
-		const llvm::Instruction* inst = node->getCallSite();
+		const llvm::Instruction* inst = node->getCallSite()->getLLVMInstruction();
 		assert(inst != nullptr && "inst is null");
 
 		return llvm_to_string(*inst);

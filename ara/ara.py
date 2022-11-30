@@ -17,7 +17,6 @@ from .steplisting import print_avail_steps
 
 
 class Main:
-
     def __init__(self):
         self.args = None
         self.extra_settings = {}
@@ -26,7 +25,7 @@ class Main:
 
     def main(self, gui=False):
         """Entry point for ARA.
-        
+
         gui: set to True if ARAs GUI is activated (gui.py was called instead of ara.py)
         """
         if not SUPPORT_FOR_GUI:
@@ -150,7 +149,7 @@ class Main:
             self.args.step = ['SIA']
 
         s_args = dict([(x, y) for x, y in vars(self.args).items() if y is not None])
-        
+
         if gui:
             s_args['trace_algorithm'] = not self.args.no_trace_algorithm
             self.s_manager.init_execution(s_args, self.extra_settings, self.args.step)

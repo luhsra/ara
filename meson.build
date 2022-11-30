@@ -33,7 +33,7 @@ if py3_inst.language_version().version_compare('<3.9')
 endif
 
 ## llvm dependencies
-llvm_version = ['>=10', '<13']
+llvm_version = ['>=14', '<16']
 llvm_dep = dependency('llvm', method: 'config-tool', version: llvm_version, include_type: 'system')
 
 llvm_bindir = llvm_dep.get_variable(configtool: 'bindir')
@@ -69,7 +69,6 @@ svf_opts.add_cmake_defines({'LLVM_DIR': llvm_dep.get_variable(configtool: 'prefi
                             'BUILD_SHARED_LIBS': 'on'})
 svf_proj = cmake.subproject('svf', options: svf_opts)
 svf_dep = svf_proj.dependency('Svf')
-cudd_dep = svf_proj.dependency('Cudd')
 
 ## sparsedata
 sparsedata = subproject('sparsedata')

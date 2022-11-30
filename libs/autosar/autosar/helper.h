@@ -10,6 +10,6 @@
  * from the application
  */
 
-extern "C" void ShutdownMachine(void) { Machine::shutdown(); }
+__attribute__((weak)) extern "C" void ShutdownMachine(void) { Machine::shutdown(); }
 
 #endif

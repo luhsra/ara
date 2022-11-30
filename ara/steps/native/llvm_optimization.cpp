@@ -27,7 +27,6 @@ namespace ara::step {
 		// The PassManagers have no way to do debug logging to an own ostream. They use dbgs() which always prints to
 		// stdout. Nevertheless, debug logging can be switched on and off, therefore we approximate this with our
 		// log_level.
-		const bool dbg_flag = logger.get_level() == LogLevel::DEBUG;
 		if (!pass_list.get()) {
 			logger.debug() << "pass_list argument is not given. Defaulting to do nothing then." << std::endl;
 			return;
@@ -37,18 +36,14 @@ namespace ara::step {
 		Module& module = graph.get_module();
 
 		// Initialize LLVM Managers
-		ModulePassManager mpm(dbg_flag);
-		ModuleAnalysisManager mam(dbg_flag);
-		FunctionAnalysisManager fam(dbg_flag);
-		CGSCCAnalysisManager cgsccam(dbg_flag);
-		LoopAnalysisManager lam(dbg_flag);
+		ModulePassManager mpm;
+		ModuleAnalysisManager mam;
+		FunctionAnalysisManager fam;
+		CGSCCAnalysisManager cgsccam;
+		LoopAnalysisManager lam;
 
 		// Initialize PassBuilder and register Analyses
-#if LLVM_VERSION_MAJOR <= 11
 		PassBuilder pb;
-#else
-		PassBuilder pb(/* DebugLogging = */ dbg_flag);
-#endif
 		pb.registerModuleAnalyses(mam);
 		pb.registerCGSCCAnalyses(cgsccam);
 		pb.registerFunctionAnalyses(fam);
@@ -56,11 +51,7 @@ namespace ara::step {
 		pb.crossRegisterProxies(lam, fam, cgsccam, mam);
 
 		// Parse pass list from command line options
-#if LLVM_VERSION_MAJOR <= 11
-		if (auto error = pb.parsePassPipeline(mpm, StringRef(*pass_list.get()), false, dbg_flag)) {
-#else
 		if (auto error = pb.parsePassPipeline(mpm, StringRef(*pass_list.get()))) {
-#endif
 			logAllUnhandledErrors(std::move(error), error_logger.llvm_ostream(), "[Parse Error] ");
 			error_logger.flush();
 			std::string step_name = get_name();

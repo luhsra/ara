@@ -118,12 +118,17 @@ if get_option('enable_step_tests')
       else
         continue
       endif
+      if app.has_key('testsuit_extra')
+        testsuit_extra = app['testsuit_extra']
+      else
+        testsuit_extra = []
+      endif
       test('lock_elision_' + app['full_name'],
           py3_inst,
           args: [files('lock_elision.py'), locks, app['ll'], app['oil']],
           env: [python_path],
           depends: ara_py,
-          suite: ['analysis', 'multisse', 'lock_elision']
+          suite: ['analysis', 'multisse', 'lock_elision'] + testsuit_extra
       )
       if app.has_key('sys_timings')
         test('lock_elision_with_timings_' + app['full_name'],
@@ -141,12 +146,17 @@ if get_option('enable_step_tests')
       if app['core'] != 'multicore' or not app.has_key('mtrace')
         continue
       endif
+      if app.has_key('testsuit_extra')
+        testsuit_extra = app['testsuit_extra']
+      else
+        testsuit_extra = []
+      endif
       test('multisse_' + app['full_name'],
           py3_inst,
           args: [files('multisse.py'), app['sys_test'], app['ll'], app['oil']],
           env: [python_path],
           depends: ara_py,
-          suite: ['analysis', 'multisse']
+          suite: ['analysis', 'multisse'] + testsuit_extra
       )
     endforeach
 
@@ -154,12 +164,17 @@ if get_option('enable_step_tests')
       if not app.has_key('ttrace')
         continue
       endif
+      if app.has_key('testsuit_extra')
+        testsuit_extra = app['testsuit_extra']
+      else
+        testsuit_extra = []
+      endif
       test('multisse_with_timings_' + app['full_name'],
           py3_inst,
           args: [files('multisse.py'), app['time_test'], app['ll'], app['oil'], app['sys_timings']],
           env: [python_path],
           depends: ara_py,
-          suite: ['analysis', 'multisse', 'timings']
+          suite: ['analysis', 'multisse', 'timings'] + testsuit_extra
       )
     endforeach
 
@@ -171,12 +186,6 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'preproc']
     )
 
-    test('recursive',
-        py3_inst,
-        args: [files('recursive.py'), files('recursive.json'), freertos_icfg],
-        env: [python_path],
-        suite: ['analysis', 'preproc']
-    )
 
     test('src-loc',
         py3_inst,

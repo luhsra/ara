@@ -17,6 +17,6 @@ class CFGOptimize(Step):
         self._step_manager.chain_step(
             {
                 "name": "LLVMOptimization",
-                "pass_list": "module(function(mem2reg,newgvn),ipsccp,function(dce,simplify-cfg))"
+                "pass_list": "module(function(mem2reg,newgvn),ipsccp,function(dce,simplifycfg))"
             }
         )

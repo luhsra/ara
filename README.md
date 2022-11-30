@@ -10,7 +10,7 @@ Building
 The following dependencies are needed:
 
 - [meson](https://mesonbuild.com/) (>=0.60.0)
-- [llvm](http://llvm.org/) (>=9, <=10)
+- [llvm](http://llvm.org/) (==14)
 - [cython](https://cython.org/) (>=0.29.14)
 - [python](https://www.python.org/) (>=3.7)
 - [pydot](https://pypi.org/project/pydot/)
@@ -27,7 +27,6 @@ Dependencies that are built as subproject:
 
 Getting packages in SRA lab:
 ```
-echo addpackage llvm-9.0 >> ~/.bashrc
 pip3 install --user meson
 . ~/.profile
 ```

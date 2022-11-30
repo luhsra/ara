@@ -1,15 +1,14 @@
-import graph_tool
 import copy
 import functools
-
-from ara.graph import ABBType, SyscallCategory, CFGView, CFType
-from ara.util import get_null_logger, has_path
-from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
 from collections import defaultdict
 from dataclasses import dataclass
 
 from graph_tool.topology import dominator_tree, label_out_component
+
+from ara.graph import SyscallCategory, CFGView, CFType
+from ara.util import get_null_logger, has_path, is_recursive
+from ara.os.os_base import OSState, CrossCoreAction, ExecState
 
 
 @dataclass
@@ -30,6 +29,7 @@ class CFGContext:
 
 class Visitor:
     PREVENT_MULTIPLE_VISITS = True
+    HANDLE_INTERRUPTS = True
     SYSCALL_CATEGORIES = (SyscallCategory.every,)
     CFG_CONTEXT = CFGContext  # set to None if analysis should be deactivated
 
@@ -44,13 +44,6 @@ class Visitor:
 
     def add_state(self, new_state):
         raise NotImplementedError
-
-    def add_irq_state(self, old_state, new_state, irq):
-        """Handle IRQ state.
-
-        Return True, if the analysis should handle the state by itself.
-        """
-        return True
 
     def add_transition(self, source, target):
         raise NotImplementedError
@@ -182,11 +175,11 @@ class _SSERunner:
 
             # check if in a recursive function and mark accordingly
             func = self._cfg.get_function(self._cfg.vertex(abb))
-            context.recursive = self._call_graph.vp.recursive[
-                self._call_graph.vertex(
-                    self._cfg.vp.call_graph_link[func]
-                )
-            ]
+
+            func_vert = self._call_graph.vertex(
+                self._cfg.vp.call_graph_link[func]
+            )
+            context.recursive = is_recursive(self._call_graph, func_vert)
 
             context.branch = (self._cond_func.get(call_path, False) or
                               self._is_in_condition(abb))
@@ -205,6 +198,10 @@ class _SSERunner:
         return ExecState.from_abbtype(self._cfg.vp.type[v])
 
     def _trigger_irqs(self, state):
+        # should we handle interrupts after all?
+        if not self._visitor.HANDLE_INTERRUPTS:
+            return []
+
         cpu = state.cpus.one()
         if not cpu.irq_on:
             return []
@@ -213,7 +210,7 @@ class _SSERunner:
         for irq in self._available_irqs:
             try:
                 i_st = self._os.handle_irq(self._graph, state, cpu.id, irq)
-                if i_st is not None and self._visitor.add_irq_state(state, i_st, irq):
+                if i_st is not None:
                     irq_states.append(i_st)
             except CrossCoreAction as cca:
                 self._log.debug(f"Cross core action for IRQ {irq} (CPUs: "
@@ -311,11 +308,12 @@ class _SSERunner:
                 func = new_state.cfg.get_function(
                     new_state.cfg.vertex(next_node)
                 )
-                new_state.recursive = self._call_graph.vp.recursive[
-                    self._call_graph.vertex(
-                        new_state.cfg.vp.call_graph_link[func]
-                    )
-                ]
+
+                func_vert = self._call_graph.vertex(
+                    self._cfg.vp.call_graph_link[func]
+                )
+                new_state.recursive = is_recursive(self._call_graph, func_vert)
+
                 new_state.cpus.one().abb = next_node
                 new_state.cpus.one().call_path.pop_back()
                 new_state.cpus.one().exec_state = self._get_exec(next_node)

@@ -1,0 +1,69 @@
+{
+  "cpus": [
+    {
+      "id": 0,
+      "tasks": {
+        "t1": {
+          "activation": 1,
+          "autostart": true,
+          "priority": 1,
+          "schedule": false,
+          "spinlocks": ["sync"]
+        },
+        "should_not_run": {
+          "activation": 1,
+          "priority": 2,
+          "schedule": false,
+          "autostart": false
+        }
+      },
+      "resources": {},
+      "events": {},
+    "alarms": {
+      "activate_task_across_cores": {
+        "counter": "SystemCounter_core0",
+        "action":
+        {"action": "activatetask",
+         "task": "t2"
+        }
+      },
+      "should_not_expire": {
+        "counter": "SystemCounter_core0",
+        "action": {
+          "action": "activatetask",
+          "task": "should_not_run"
+        },
+        "autostart": false
+      }
+    },
+    "counters": {
+      "SystemCounter_core0": {
+        "mincycle": 1,
+        "maxallowedvalue": 1000,
+        "ticksperbase": 1
+      }
+    },
+      "isrs": {}
+    }, {
+      "id": 1,
+      "tasks": {
+        "t2": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": false,
+          "spinlocks": ["sync"],
+          "events": ["t2_event"]
+        }
+      },
+      "resources": {},
+      "events": {"t2_event": {}},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }
+  ],
+  "spinlocks": [
+      ["sync"]
+  ]
+}

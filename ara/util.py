@@ -9,7 +9,7 @@ import functools
 from inspect import Parameter, signature
 from itertools import tee, chain, repeat
 from graph_tool.topology import shortest_path
-from ara.steps.util import Wrapper
+from functools import lru_cache
 
 LEVEL = {"critical": logging.CRITICAL,
          "error": logging.ERROR,
@@ -207,7 +207,7 @@ def dominates(dom_tree, x, y):
 
 def has_path(graph, source, target):
     """Is there a path from source to target?"""
-    _, elist = shortest_path(graph, source, target)
+    _, elist = shortest_path(graph, graph.vertex(source), graph.vertex(target))
     return len(elist) > 0
 
 
@@ -303,3 +303,14 @@ def debug_log(original_function=None, *,
         return _decorate(original_function)
 
     return _decorate
+
+
+@lru_cache(maxsize=1024)
+def is_recursive(callgraph, v):
+    """Checks if given vertex v is in a loop => v is recursive"""
+    v = callgraph.vertex(v)
+    for neighbor in v.out_neighbors():
+        vert, edge = shortest_path(callgraph, neighbor, v)
+        if vert:
+            return True
+    return False

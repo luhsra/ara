@@ -54,10 +54,10 @@ namespace ara::step {
 	    : return_type(ty.getReturnType()) {
 		for (auto it = ty.param_begin(); it != ty.param_end(); ++it) {
 			if (PointerType* ptr = llvm::dyn_cast<PointerType>(*it)) {
-				const auto o_it = t_map.find(ptr->getElementType());
+				const auto o_it = t_map.find(ptr->getPointerElementType());
 				std::set<llvm::Type*> o_types;
 				if (o_it != t_map.end()) {
-					o_types = t_map.at(ptr->getElementType());
+					o_types = t_map.at(ptr->getPointerElementType());
 				}
 				std::vector<Type*> alter_types;
 				alter_types.emplace_back(ptr);
@@ -165,9 +165,9 @@ namespace ara::step {
 			llvm::Type* type2 = *it2;
 			if (llvm::PointerType* pt1 = llvm::dyn_cast<llvm::PointerType>(type1)) {
 				// we need extra care here, the pointer must point to a same sized type
-				type1 = pt1->getElementType();
+				type1 = pt1->getPointerElementType();
 				if (llvm::PointerType* pt2 = llvm::dyn_cast<llvm::PointerType>(type2)) {
-					type2 = pt2->getElementType();
+					type2 = pt2->getPointerElementType();
 				} else {
 					return false;
 				}
@@ -180,11 +180,11 @@ namespace ara::step {
 		return false;
 	}
 
-	void ResolveFunctionPointer::link_indirect_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
+	void ResolveFunctionPointer::link_indirect_pointer(const CallICFGNode& cbn, PTACallGraph& callgraph,
 	                                                   const llvm::Function& target, const LLVMModuleSet& module) {
 		// modify the SVF Callgraph
 		const SVFFunction* callee = module.getSVFFunction(&target);
-		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
+		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite()->getLLVMInstruction());
 		if (target.empty()) {
 			logger.warn() << "Possible indirect call to unimplemented function, skipping. Call: " << *call_inst
 			              << " Target: " << target.getName().str() << std::endl;
@@ -285,9 +285,9 @@ namespace ara::step {
 		return ret;
 	}
 
-	void ResolveFunctionPointer::resolve_function_pointer(const CallBlockNode& cbn, PTACallGraph& callgraph,
+	void ResolveFunctionPointer::resolve_function_pointer(const CallICFGNode& cbn, PTACallGraph& callgraph,
 	                                                      const LLVMModuleSet& module) {
-		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite());
+		const llvm::CallBase* call_inst = llvm::cast<llvm::CallBase>(cbn.getCallSite()->getLLVMInstruction());
 		if (is_call_to_intrinsic(*call_inst)) {
 			return;
 		}
@@ -407,8 +407,9 @@ namespace ara::step {
 
 			for (const auto& bb : *current_function) {
 				for (const auto& i : bb) {
-					if (SVFUtil::isCallSite(&i) && SVFUtil::isNonInstricCallSite(&i)) {
-						CallBlockNode* cbn = icfg.getCallBlockNode(&i);
+					const auto* svf_inst = module.getSVFInstruction(&i);
+					if (SVFUtil::isCallSite(&i) && SVFUtil::isNonInstricCallSite(svf_inst)) {
+						CallICFGNode* cbn = icfg.getCallICFGNode(svf_inst);
 						if (callgraph.hasCallGraphEdge(cbn)) {
 							// add all following functions to unhandled_functions
 							for (auto it = callgraph.getCallEdgeBegin(cbn); it != callgraph.getCallEdgeEnd(cbn); ++it) {
@@ -483,7 +484,7 @@ namespace ara::step {
 				auto call_targets = entry_d->getArray("call_targets");
 				fail_if_empty(call_targets, opt_name, "Invalid JSON. Expecting a call_targets entry.");
 
-				std::set<string> call_t;
+				std::set<std::string> call_t;
 				for (const llvm::json::Value& func_val : *call_targets) {
 					auto func = func_val.getAsString();
 					fail_if_empty(func, opt_name, "Invalid JSON. Expecting a list of strings as call_targets.");

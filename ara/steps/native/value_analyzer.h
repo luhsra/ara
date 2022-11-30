@@ -125,6 +125,8 @@ namespace ara::step {
 	 */
 	template <typename SVFG>
 	class Traverser {
+	  private:
+	  	static const int MAX_TRAVERSER_LEVEL = 20;
 	  protected:
 		/**
 		 * The traverser's boss.
@@ -256,7 +258,7 @@ namespace ara::step {
 		Status get_status() const { return status; }
 		size_t get_id() const { return id; }
 		tracer::Entity& get_entity() { return entity; }
-		friend std::ostream& operator<<<SVFG>(std::ostream& os, const Traverser<SVFG>& t);
+		friend std::ostream& operator<< <SVFG>(std::ostream& os, const Traverser<SVFG>& t);
 	};
 
 	template <typename SVFG>
@@ -282,7 +284,8 @@ namespace ara::step {
 		Bookkeeping(ValueAnalyzerImpl<SVFG>& va, std::shared_ptr<graph::CallGraph> call_graph,
 		            std::shared_ptr<graph::SVFG> svfg, SVFG& g, tracer::Tracer& tracer,
 		            const SVF::PTACallGraph* s_call_graph, graph::SigType hint)
-		    : va(va), call_graph(call_graph), svfg(svfg), g(g), tracer(tracer), s_call_graph(s_call_graph), hint(hint) {}
+		    : va(va), call_graph(call_graph), svfg(svfg), g(g), tracer(tracer), s_call_graph(s_call_graph), hint(hint) {
+		}
 		template <typename T>
 		friend class ValueAnalyzerImpl;
 

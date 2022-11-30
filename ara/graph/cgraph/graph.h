@@ -108,13 +108,13 @@ namespace ara::graph {
 		};
 
 		template <typename Graph>
-		auto filter_by_level(Graph& g, const unsigned level_filter) const -> auto {
+		auto filter_by_level(Graph& g, const unsigned level_filter) const -> auto{
 			return boost::filtered_graph<Graph, boost::keep_all, LevelFilter>(g, boost::keep_all(),
 			                                                                  LevelFilter(level_filter, this));
 		}
 
 		template <typename Graph>
-		auto filter_by_level(Graph& g, const NodeLevel level_filter) const -> auto {
+		auto filter_by_level(Graph& g, const NodeLevel level_filter) const -> auto{
 			return filter_by_level(g, static_cast<unsigned>(level_filter));
 		}
 
@@ -122,21 +122,21 @@ namespace ara::graph {
 		 * return a graph that contains only the function nodes
 		 */
 		template <class Graph>
-		auto get_functions(Graph& g) const -> auto {
+		auto get_functions(Graph& g) const -> auto{
 			return filter_by_level(g, NodeLevel::function);
 		}
 		/**
 		 * return a graph that contains only the abb nodes
 		 */
 		template <class Graph>
-		auto get_abbs(Graph& g) const -> auto {
+		auto get_abbs(Graph& g) const -> auto{
 			return filter_by_level(g, NodeLevel::abb);
 		}
 		/**
 		 * return a graph that contains only the abb nodes
 		 */
 		template <class Graph>
-		auto get_bbs(Graph& g) const -> auto {
+		auto get_bbs(Graph& g) const -> auto{
 			return filter_by_level(g, NodeLevel::bb);
 		}
 
@@ -162,7 +162,7 @@ namespace ara::graph {
 		};
 
 		template <typename Graph>
-		auto filter_by_abb(Graph& g, const unsigned type_filter) const -> auto {
+		auto filter_by_abb(Graph& g, const unsigned type_filter) const -> auto{
 			return boost::filtered_graph<Graph, boost::keep_all, ABBTypeFilter>(g, boost::keep_all(),
 			                                                                    ABBTypeFilter(type_filter, this));
 		}

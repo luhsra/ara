@@ -9,12 +9,11 @@
 // clang-format on
 
 #include <Graphs/ICFG.h>
-#include <Graphs/PAG.h>
 #include <Graphs/PTACallGraph.h>
 #include <Graphs/VFGNode.h>
 #include <Python.h>
 #include <SVF-FE/BreakConstantExpr.h>
-#include <SVF-FE/PAGBuilder.h>
+#include <SVF-FE/SVFIRBuilder.h>
 #include <Util/BasicTypes.h>
 #include <Util/SVFUtil.h>
 #include <WPA/Andersen.h>
@@ -32,11 +31,15 @@
 #include <boost/type_traits.hpp>
 #include <cassert>
 #include <common/llvm_common.h>
+#include <dictobject.h>
 #include <filesystem>
 #include <fstream>
 #include <functional>
 #include <graph.h>
+#include <graph_filtering.hh>
+#include <graph_selectors.hh>
 #include <graph_tool.hh>
+#include <initializer_list>
 #include <iostream>
 #include <list>
 #include <llvm/ADT/GraphTraits.h>
@@ -70,7 +73,9 @@
 #include <llvm/Transforms/Utils/UnifyFunctionExitNodes.h>
 #include <map>
 #include <memory>
+#include <object.h>
 #include <optional>
+#include <os.h>
 #include <pyllco.h>
 #include <queue>
 #include <sstream>
@@ -79,6 +84,7 @@
 #include <tuple>
 #include <type_traits>
 #include <typeinfo>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <variant>
