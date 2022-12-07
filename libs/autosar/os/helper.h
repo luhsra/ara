@@ -10,6 +10,6 @@
  * from the application
  */
 
-weak static void forceinline ShutdownMachine(void) { Machine::shutdown(); }
+static void forceinline ShutdownMachine(void) { Machine::shutdown(); }
 
 #endif
