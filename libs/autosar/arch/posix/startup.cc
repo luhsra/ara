@@ -8,7 +8,8 @@
 #include "dispatch.h"
 
 /** Initialisation stub for generic startup code */
-extern "C" void init_generic();
+//extern "C" void init_generic();
+extern "C" void os_main();
 
 using namespace arch;
 
@@ -25,7 +26,8 @@ void arch_startup()
     ITimer::init();
 
 	// Proceed to generic initialisation
-	init_generic();
+	//init_generic();
+    os_main();
 }
 
 //!< POSIX startup obviously in "main"

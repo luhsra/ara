@@ -100,7 +100,7 @@
 
 #define DeactivateDevice(x) OSEKOS_DeactivateDevice(OSEKOS_DEVICE_##x)
 
-#define StartOS(x) OSEKOS_StartOS(x)
+#define StartOS(x) AUTOSAR_StartOS(x)
 
 // #define DeclareMessage(x)						\
 // struct MESSAGEStruct OSEKOS_MESSAGE_##x
@@ -140,8 +140,8 @@ extern "C" {
 #endif
 
 void os_main(void);
-// EXTERN_C_DECL void StartOS(int);
-void StartOS(char*);
+EXTERN_C_DECL void StartOS(int);
+//void StartOS(char*);
 
 /**
  * \brief Artificial function at beginning of a subtask handler

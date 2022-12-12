@@ -1,4 +1,4 @@
-autosar_includes = ['-I', meson.current_source_dir() / 'source' / 'os']
+autosar_includes += ['-I', meson.current_source_dir() / 'source' / 'os']
 
 autosar_targets = []
 autosar_apps = [
@@ -179,6 +179,7 @@ foreach app : autosar_apps
                          output : full_name + '.ll',
                          depfile : full_name + '.ll.dep',
                          command : clang_cpp +
+                                   autosar_includes +
                                    libs_includes +
                                    ir_flags +
                                    clang_flags)
@@ -197,12 +198,28 @@ foreach app : autosar_apps
   app += {'obj': app_obj}
 
   if get_option('arch') == 'posix'
+  if full_name == 'autosar_singlecore_bcc1_sse1_b'
+
+    autosar_obj = custom_target(full_name + '_autosar_obj',
+                          input : sys + '_autosar.cc',
+                          output : full_name + '_autosar.o',
+                          depfile : full_name + '_autosar.dep',
+                          command : clang_cpp +
+                                    autosar_includes +
+                                    ld_flags +
+                                    obj_flags +
+                                    clang_flags)
+
+    app += {'autosar_obj': autosar_obj}
+
     app_link = custom_target(full_name + '_link',
                             input: [
+                              autosar_obj,
                               app_obj,
                               libautosar_os,
                               libautosar_generic,
-                              libautosar_posix
+                              libautosar_posix,
+                              libautosar_test
                             ],
                             output : full_name,
                             depfile : full_name + '.dep',
@@ -210,6 +227,7 @@ foreach app : autosar_apps
                                       autosar_includes +
                                       ld_flags +
                                       clang_flags)
+  endif
   endif
 
   # trace file for sse testing
