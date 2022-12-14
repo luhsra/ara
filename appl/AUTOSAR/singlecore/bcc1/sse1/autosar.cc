@@ -5,6 +5,7 @@
 #include "os/alarm.h"
 #include "os/scheduler/scheduler.h"
 #include "os/util/redundant.h"
+#include "syscall.h"
 #include "machine.h"
 
 extern "C" void  AUTOSAR_TASK_FUNC_H1();
@@ -132,18 +133,11 @@ struct TaskList : public UnencodedTaskListStatic {
 
     static constexpr auto scheduler_prio = 8;
 
-
     Task::prio_t H1;
-
     Task::prio_t H2;
-
     Task::prio_t H3;
-
     Task::prio_t H4;
-
     Task::prio_t H5;
-
-
 
     // idle task id/priority
     static constexpr Task::id_t idle_id     = 0;
@@ -159,7 +153,7 @@ struct TaskList : public UnencodedTaskListStatic {
     { /* empty constructor */ }
 
     forceinline uint32_t isReady(const Task::id_t id) {
-if (id == 1) {
+        if (id == 1) {
             return H1;
         } else if (id == 2) {
             return H2;
@@ -169,7 +163,7 @@ if (id == 1) {
             return H4;
         } else if (id == 5) {
             return H5;
-        } else      {
+        } else {
             assert(false);
             return false;
         }
@@ -177,7 +171,7 @@ if (id == 1) {
 
     /** Set priority of task id to prio **/
     forceinline void set(const Task::id_t id, const Task::prio_t prio) {
-if (id == 1) {
+        if (id == 1) {
            H1 = prio;
         } else if (id == 2) {
            H2 = prio;
@@ -192,36 +186,29 @@ if (id == 1) {
          }
     }
 
-
-
     /** Set priority of task id to prio **/
     forceinline void activate(const Task::id_t id, const Task::prio_t prio) {
-if (id == 1) {
+        if (id == 1) {
             if (H1 < prio) {
                 H1 = prio;
-
             }
         } else if (id == 2) {
             if (H2 < prio) {
                 H2 = prio;
-
             }
         } else if (id == 3) {
             if (H3 < prio) {
                 H3 = prio;
-
             }
         } else if (id == 4) {
             if (H4 < prio) {
                 H4 = prio;
-
             }
         } else if (id == 5) {
             if (H5 < prio) {
                 H5 = prio;
-
             }
-        } else      {
+        } else {
             assert(false);
         }
     }
@@ -233,36 +220,35 @@ if (id == 1) {
         prio = idle_prio;
 
         if (possible_tasks == nullptr || possible_tasks[1]) {
-        if(H1 > prio ) {
-            prio = H1;
-            id = 1;
-        }
+            if(H1 > prio ) {
+                prio = H1;
+                id = 1;
+            }
         }
         if (possible_tasks == nullptr || possible_tasks[2]) {
-        if(H2 > prio ) {
-            prio = H2;
-            id = 2;
-        }
+            if(H2 > prio ) {
+                prio = H2;
+                id = 2;
+            }
         }
         if (possible_tasks == nullptr || possible_tasks[3]) {
-        if(H3 > prio ) {
-            prio = H3;
-            id = 3;
-        }
+            if(H3 > prio ) {
+                prio = H3;
+                id = 3;
+            }
         }
         if (possible_tasks == nullptr || possible_tasks[4]) {
-        if(H4 > prio ) {
-            prio = H4;
-            id = 4;
-        }
+            if(H4 > prio ) {
+                prio = H4;
+                id = 4;
+            }
         }
         if (possible_tasks == nullptr || possible_tasks[5]) {
-        if(H5 > prio ) {
-            prio = H5;
-            id = 5;
+            if(H5 > prio ) {
+                prio = H5;
+                id = 5;
+            }
         }
-        }
-
     }
 
     /** Wait for a specific event mask **/
@@ -370,7 +356,12 @@ struct Scheduler {
         dispatchToCurrentTask();
     }
 
-    noinline void Reschedule(void);
+    noinline void Reschedule() {
+        // update current_task
+        tlist.head(current_task, current_prio);
+        // dispatch
+        dispatchToCurrentTask();
+    }
 
     forceinline void Schedule_impl(bool from_interrupt=false) {
         if(!from_interrupt && in_syscall()) {
@@ -476,32 +467,23 @@ struct Scheduler {
 
     forceinline void dispatchToCurrentTask(void) {
         // dispatch or enter idle
-                if(current_task == 1) {
-                                                                Dispatcher::Dispatch(OS_H1_task);
-        } else                                                                    if(current_task == 2) {
-                                                                Dispatcher::Dispatch(OS_H2_task);
-        } else                                                                    if(current_task == 3) {
-                                                                Dispatcher::Dispatch(OS_H3_task);
-        } else                                                                    if(current_task == 4) {
-                                                                Dispatcher::Dispatch(OS_H4_task);
-        } else                                                                    if(current_task == 5) {
-                                                                Dispatcher::Dispatch(OS_H5_task);
-        } else                                                             if(current_task == TaskList::idle_id) {
+        if(current_task == 1) {
+            Dispatcher::Dispatch(OS_H1_task);
+        } else if(current_task == 2) {
+            Dispatcher::Dispatch(OS_H2_task);
+        } else if(current_task == 3) {
+            Dispatcher::Dispatch(OS_H3_task);
+        } else if(current_task == 4) {
+            Dispatcher::Dispatch(OS_H4_task);
+        } else if(current_task == 5) {
+            Dispatcher::Dispatch(OS_H5_task);
+        } else if(current_task == TaskList::idle_id) {
             Dispatcher::Idle();
-    } else {
+        } else {
         CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
+        }
     }
-}
-
-
 };
-
-void Scheduler::Reschedule() {
-    // update current_task
-    tlist.head(current_task, current_prio);
-    // dispatch
-    dispatchToCurrentTask();
-}
 
 
 Scheduler scheduler_;
@@ -517,8 +499,6 @@ extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
 #include "alarm.h"
 
 namespace os {
-
-
 
 void inlinehint Counter::tick() {
 }
@@ -570,7 +550,6 @@ extern "C" StatusType AUTOSAR_TerminateTask(){
 
     Machine::disable_interrupts();
     {
-        // TODO right task
         scheduler_.TerminateTask_impl(os::getTask(scheduler_.current_task));
     }
     // Return with closed interrupts
@@ -585,13 +564,35 @@ extern "C" void AUTOSAR_kickoff(){
 extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
     Machine::disable_interrupts();
     {
-        // TODO right task
-        scheduler_.ChainTask_impl(OS_H5_task, OS_H1_task);
+        scheduler_.ChainTask_impl(os::getTask(scheduler_.current_task), os::getTask(arg0));
     }
     // Return with closed interrupts
     (void) arg0;
     return E_OK;
 }
+
+extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
+    Machine::disable_interrupts();
+    {
+        scheduler_.GetResource_impl(os::getTask(scheduler_.current_task), 8); // new prio
+
+        Dispatcher::ResumeToTask(os::getTask(scheduler_.current_task));
+    }
+    __OS_enable_irq_after_kernel();
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_ReleaseResource(ResourceType arg0){
+
+    Machine::disable_interrupts();
+    {
+        scheduler_.ReleaseResource_impl(os::getTask(scheduler_.current_task), 2); // new prio
+    }
+    __OS_enable_irq_after_kernel();
+    return E_OK;
+}
+
+
 
 void __OS_HOOK_PreIdleHook(){
     AUTOSAR_kickoff();
@@ -624,4 +625,3 @@ void __OS_enable_irq_after_kernel(){
     sigset_t mask; sigfillset(&mask);
     irq.enable_interrupts(&mask);
 }
-

@@ -198,10 +198,10 @@ foreach app : autosar_apps
   app += {'obj': app_obj}
 
   if get_option('arch') == 'posix'
-  if full_name == 'autosar_singlecore_bcc1_sse1_b'
+  if full_name.substring(0,-2) == 'autosar_singlecore_bcc1_sse1'
 
     autosar_obj = custom_target(full_name + '_autosar_obj',
-                          input : sys + '_autosar.cc',
+                          input : sys.substring(0,-2) + '/autosar.cc',
                           output : full_name + '_autosar.o',
                           depfile : full_name + '_autosar.dep',
                           command : clang_cpp +
