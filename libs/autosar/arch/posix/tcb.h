@@ -22,6 +22,9 @@ extern "C" void *OS_basic_task_stackptr;
 extern "C" uint8_t shared_basic_stack[];
 #endif
 
+#include <pthread.h>
+extern pthread_mutex_t scheduler_mutex;
+
 namespace arch { struct TCB; }
 
 extern "C" void kickoff(arch::TCB *);
@@ -100,6 +103,7 @@ namespace arch {
 		basic_task_frame_pointer() = sp;
 		_startToBT(this);
 	    } else {
+		pthread_mutex_unlock(&scheduler_mutex);
 		_returnTo(&this->sp);
 	    }
 	    Machine::unreachable();

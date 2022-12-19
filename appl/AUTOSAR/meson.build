@@ -137,6 +137,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-with-alarms',    'oil': 'copter-with-alarms_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-single-alarm',   'oil': 'copter-single-alarm_system.json', 'timing': 'BB'},
   {'core': 'multicore',  'path': 'complex',            'name': 'copter-autostart',      'oil': 'copter-autostart_system.json', 'locks': 'EXTRACT', 'timing': 'BB'},
+  {'core': 'multicore',  'path': 'andreas',            'name': 'a',                     'oil': 'system.json'},
 ]
 # conformance tests for trampoline
 subdir('multicore' / 'trampoline')
@@ -198,10 +199,17 @@ foreach app : autosar_apps
   app += {'obj': app_obj}
 
   if get_option('arch') == 'posix'
-  if full_name.substring(0,-2) == 'autosar_singlecore_bcc1_sse1'
+
+  supported = [
+    'autosar_singlecore_bcc1_sse1_a',
+    'autosar_singlecore_bcc1_sse1_b',
+    'autosar_singlecore_bcc1_sse1_c',
+    'autosar_multicore_andreas_a',
+  ]
+  if full_name in supported
 
     autosar_obj = custom_target(full_name + '_autosar_obj',
-                          input : sys.substring(0,-2) + '/autosar.cc',
+                          input : app['core'] / app['path'] / 'autosar.cc',
                           output : full_name + '_autosar.o',
                           depfile : full_name + '_autosar.dep',
                           command : clang_cpp +

@@ -17,6 +17,10 @@ namespace arch {
 	                           void *bottom_of_stack,
 	                           unsigned int size_of_stack,
 	                           void (*startup_function)());
+
+	int get_cpuid();
+	void init_cpuid();
+	void wait_for_cpus();
 }
 
 #endif
