@@ -2,6 +2,8 @@
 #define __HARDWARE_THREADS_H__
 
 namespace arch {
+
+	#define MAX_CPUS 8
 	/**
 	 * \brief Starts another hardware thread (generic interface)
 	 *

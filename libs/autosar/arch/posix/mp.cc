@@ -3,7 +3,6 @@
 #include <pthread.h>
 #include "output.h"
 
-#define MAX_CPUS 8
 pthread_t cpuid[MAX_CPUS];
 
 static void *pthread_wrapper(void* function)
@@ -42,7 +41,7 @@ namespace arch
 		pthread_t id = get_thread_id();
 		for (int i = 0; i <= MAX_CPUS; i++) {
 			if (id == cpuid[i])
-				return 0;
+				return i;
 		}
 	}
 

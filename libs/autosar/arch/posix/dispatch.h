@@ -14,6 +14,7 @@
 #include "output.h"
 #include "tcb.h"
 #include "os/hooks.h"
+#include "hardware_threads.h"
 
 namespace arch {
 
@@ -103,7 +104,7 @@ namespace arch {
                 return;
             }
 
-            debug << "Dispatch to ID: " << (int)next.id << " " << ((void *)&next.tcb) << endl;
+            debug << arch::get_cpuid() << ": Dispatch to ID: " << (int)next.id << " " << ((void *)&next.tcb) << endl;
 
             doDispatch(cur, &next.tcb);
         }
