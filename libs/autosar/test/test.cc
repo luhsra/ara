@@ -37,9 +37,7 @@ extern "C" {
     noinline void test_trace_assert(const char *expected) {
         int good = 1;
         unsigned char count = 0;
-
         test_start_check();
-
         for (; expected[count] != 0 && count < 255; count++) {}
         if (count != trace_table_idx) {
             kout << "trace length != expected " << (int) trace_table_idx << endl;

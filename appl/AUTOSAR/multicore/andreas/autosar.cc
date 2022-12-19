@@ -223,7 +223,7 @@ struct TaskList : public UnencodedTaskListStatic {
         id = idle_id;
         prio = idle_prio;
 
-        if (get_cpuid() == 0) {
+        /*if (get_cpuid() == 0)*/ {
             if (possible_tasks == nullptr || possible_tasks[1]) {
                 if(H1 > prio ) {
                     prio = H1;
@@ -237,7 +237,7 @@ struct TaskList : public UnencodedTaskListStatic {
                 }
             }
         }
-        else if (get_cpuid() == 1) {
+        /*else if (get_cpuid() == 1)*/ {
             if (possible_tasks == nullptr || possible_tasks[3]) {
                 if(H3 > prio ) {
                     prio = H3;
@@ -555,6 +555,7 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
 
 extern "C" void StartAP(){
     CALL_HOOK(StartupHook);
+    debug_core << "StartAP" << endl;
     syscall(__OS_StartOS_dispatch);
     Machine::unreachable();
 }
@@ -569,8 +570,7 @@ extern "C" void StartOS(int arg0){
     scheduler_.SetReadyFromSuspended_impl(OS_H5_task);
 
     init_cpuid();
-
-    arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
+    //arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
 
     CALL_HOOK(StartupHook);
 
@@ -581,15 +581,14 @@ extern "C" void StartOS(int arg0){
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     (void) arg0;
     if (get_cpuid() == 0) {
-        debug << "wait" << endl;
+        debug_core << "wait" << endl;
         wait_for_cpus();
+        sleep(1);
         CALL_HOOK(ShutdownHook, arg0);
         ShutdownMachine();
+        Machine::unreachable();
     }
-    debug << "stopping thread " << get_cpuid() << endl;
-    pthread_exit(0);
-
-    Machine::unreachable();
+    CALL_HOOK(ShutdownHook, arg0);
 }
 
 extern "C" void __OS_ASTSchedule(int arg0){

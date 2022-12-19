@@ -10,8 +10,13 @@
 
 // debugging: print kout+debug on stdout/stderr
 #include "colorterminal.h"
+#include "bufferedterminal.h"
+#include "hardware_threads.h"
 extern ColorTerminal kout;
 extern ColorTerminal debug;
+extern BufferedTerminal debug_core_arr[MAX_CPUS];
+
+#define debug_core (debug_core_arr[arch::get_cpuid()])
 
 #else // DEBUG
 
@@ -19,6 +24,8 @@ extern ColorTerminal debug;
 #include "colorterminal.h"
 extern ColorTerminal kout;
 extern Null_Stream debug;
+
+#define debug_core debug
 
 #endif // DEBUG
 

@@ -26,7 +26,7 @@ namespace arch {
 	static void *idle_sp;
 
         static noinline void idleEntry(void) {
-            debug << "idleEntry" << endl;
+            debug_core << "idleEntry" << endl;
             //int i = 0;
             CALL_HOOK(PreIdleHook);
             while(true){
@@ -80,7 +80,7 @@ namespace arch {
 
         static forceinline void Idle(void) {
             if (m_current != &m_idle) {
-                debug << "Enter idle" << endl;
+                debug_core << "Enter idle" << endl;
                 doDispatch(m_current, &m_idle);
             }
         }
@@ -100,11 +100,11 @@ namespace arch {
             // kout << (void*)current << " " << (void*) &next << endl;
             const TCB *cur = current ? &current->tcb : m_current;
             if(cur == &next.tcb)  {
-                debug << "Dispatch to ID " << (int)next.id << " via return" << endl;
+                debug_core << "Dispatch to ID " << (int)next.id << " via return" << endl;
                 return;
             }
 
-            debug << arch::get_cpuid() << ": Dispatch to ID: " << (int)next.id << " " << ((void *)&next.tcb) << endl;
+            debug_core << "Dispatch to ID: " << (int)next.id << " " << ((void *)&next.tcb) << endl;
 
             doDispatch(cur, &next.tcb);
         }

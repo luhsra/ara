@@ -44,6 +44,9 @@ void PreIdleHook() {
 void ShutdownHook(StatusType status) {
 	(void) status;
 	/* The testcase has finished, check the output */
+
+	kout << "test" << endl; // TODO not printed ???
+	debug << "test" << endl;
 	test_trace_assert("54321");
 	test_finish();
 }

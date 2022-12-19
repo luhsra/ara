@@ -29,6 +29,7 @@
 #include "signalinfo.h"
 #include "output.h"
 #include "irq.h"
+#include "hardware_threads.h"
 
 
 class Machine
@@ -36,6 +37,7 @@ class Machine
 public:
 
     static void init(void) {
+		init_cpuid();
         debug << "Machine::init()" << endl;
 		arch::irq.disable_interrupts();
     }

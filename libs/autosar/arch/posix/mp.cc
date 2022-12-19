@@ -26,7 +26,7 @@ namespace arch
 		pthread_t thread;
 		int error = pthread_create(&thread, nullptr, pthread_wrapper, reinterpret_cast<void*>(startup_function));
 
-		debug << "thread " << hex << thread << " hw " << hardware_number << endl;
+		debug_core << "thread " << hex << thread << " hw " << hardware_number << endl;
 		cpuid[hardware_number] = thread;
 
 		pthread_detach(thread);
@@ -52,7 +52,7 @@ namespace arch
 		}
 
 		cpuid[0] = get_thread_id();
-		debug << "thread " << hex << cpuid[0] << " hw " << 0 << endl;
+		debug_core << "thread " << hex << cpuid[0] << " hw " << 0 << endl;
 	}
 
 	void wait_for_cpus()
@@ -60,7 +60,7 @@ namespace arch
 		int this_id = get_cpuid();
 
 		if (this_id != 0) {
-			debug << "only id 0 should join" << endl;
+			debug_core << "only id 0 should join" << endl;
 			return;
 		}
 
@@ -68,7 +68,7 @@ namespace arch
 		for (int i = 0; i <= MAX_CPUS; i++) {
 			if (i != this_id && cpuid[i] != -1 ) {
 				pthread_join(cpuid[i], 0);
-				debug << "joining cpuid " << i << endl;
+				debug_core << "joining cpuid " << i << endl;
 			}
 		}
 
