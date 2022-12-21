@@ -223,7 +223,7 @@ struct TaskList : public UnencodedTaskListStatic {
         id = idle_id;
         prio = idle_prio;
 
-        /*if (get_cpuid() == 0)*/ {
+        if (get_cpuid() == 1) {
             if (possible_tasks == nullptr || possible_tasks[1]) {
                 if(H1 > prio ) {
                     prio = H1;
@@ -237,7 +237,7 @@ struct TaskList : public UnencodedTaskListStatic {
                 }
             }
         }
-        /*else if (get_cpuid() == 1)*/ {
+        else if (get_cpuid() == 0) {
             if (possible_tasks == nullptr || possible_tasks[3]) {
                 if(H3 > prio ) {
                     prio = H3;
@@ -371,6 +371,7 @@ struct Scheduler {
     }
 
     noinline void Reschedule() {
+        debug_core << __FUNCTION__ << endl;
         // update current_task
         tlist.head(current_tasks[get_cpuid()], current_prios[get_cpuid()]);
         // dispatch
@@ -548,6 +549,7 @@ void inlinehint Counter::tick() {
 } // os
 
 extern "C" void __OS_StartOS_dispatch(int arg0){
+    debug_core << __FUNCTION__ << endl;
     (void) arg0;
     pthread_mutex_lock(&scheduler_mutex);
     scheduler_.InlinedReschedule();
@@ -567,10 +569,11 @@ extern "C" void StartOS(int arg0){
     Dispatcher::Prepare(OS_H3_task);
     Dispatcher::Prepare(OS_H4_task);
     Dispatcher::Prepare(OS_H5_task);
+    scheduler_.SetReadyFromSuspended_impl(OS_H2_task);
     scheduler_.SetReadyFromSuspended_impl(OS_H5_task);
 
     init_cpuid();
-    //arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
+    arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
 
     CALL_HOOK(StartupHook);
 
@@ -581,14 +584,14 @@ extern "C" void StartOS(int arg0){
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     (void) arg0;
     if (get_cpuid() == 0) {
-        debug_core << "wait" << endl;
+        sleep(2);
         wait_for_cpus();
-        sleep(1);
         CALL_HOOK(ShutdownHook, arg0);
         ShutdownMachine();
         Machine::unreachable();
     }
-    CALL_HOOK(ShutdownHook, arg0);
+
+    // TODO segfault for thread 1
 }
 
 extern "C" void __OS_ASTSchedule(int arg0){

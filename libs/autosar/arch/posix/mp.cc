@@ -59,12 +59,6 @@ namespace arch
 	{
 		int this_id = get_cpuid();
 
-		if (this_id != 0) {
-			debug_core << "only id 0 should join" << endl;
-			return;
-		}
-
-
 		for (int i = 0; i < MAX_CPUS; i++) {
 			if (i != this_id && cpuid[i] != -1 ) {
 				pthread_join(cpuid[i], 0);

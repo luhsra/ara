@@ -27,7 +27,13 @@ namespace arch {
 
         static noinline void idleEntry(void) {
             debug_core << "idleEntry" << endl;
-            //int i = 0;
+            //TODO correctly unlock where needed
+            pthread_mutex_unlock(&scheduler_mutex);
+            pthread_mutex_unlock(&scheduler_mutex);
+            pthread_mutex_unlock(&scheduler_mutex);
+            pthread_mutex_unlock(&scheduler_mutex);
+            pthread_mutex_unlock(&scheduler_mutex);
+            pthread_mutex_unlock(&scheduler_mutex);
             CALL_HOOK(PreIdleHook);
             while(true){
                 Machine::nop();
