@@ -181,7 +181,6 @@ foreach app : autosar_apps
                          depfile : full_name + '.ll.dep',
                          command : clang_cpp +
                                    autosar_includes +
-                                   libs_includes +
                                    ir_flags +
                                    clang_flags)
   app += {'ll': app_ll}

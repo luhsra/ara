@@ -7,7 +7,6 @@
 
 
 
-
 /******************************************************************************
  *                                                                            *
  * Macro Definitions                                                          *
@@ -189,9 +188,8 @@ extern "C" {
     
 
 
- void os_main(void);
-//EXTERN_C_DECL void StartOS(int);
- void StartOS(char *);
+void os_main(void);
+EXTERN_C_DECL void StartOS(int);
 
 
 /**
