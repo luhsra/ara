@@ -47,7 +47,7 @@ namespace arch
 
 	void init_cpuid()
 	{
-		for (int i = 0; i <= MAX_CPUS; i++) {
+		for (int i = 0; i < MAX_CPUS; i++) {
 			cpuid[i] = -1;
 		}
 
@@ -65,7 +65,7 @@ namespace arch
 		}
 
 
-		for (int i = 0; i <= MAX_CPUS; i++) {
+		for (int i = 0; i < MAX_CPUS; i++) {
 			if (i != this_id && cpuid[i] != -1 ) {
 				pthread_join(cpuid[i], 0);
 				debug_core << "joining cpuid " << i << endl;

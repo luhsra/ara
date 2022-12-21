@@ -19,7 +19,7 @@ public:
 
 	void clear(){};
 
-	void putchar(char character) {
+	virtual void putchar(char character) override {
 		if (idx == 0) {
 			buf[idx++] = '0' + arch::get_cpuid();
 			buf[idx++] = ':';
@@ -28,7 +28,7 @@ public:
 		
 		if (character == '\n') {
 			pthread_mutex_lock(&mutex);
-			write(STDERR_FILENO, &buf, idx);
+			write(m_channel, &buf, idx);
 			memset(buf, 0, sizeof(buf));
 			idx = 0;
 			pthread_mutex_unlock(&mutex);

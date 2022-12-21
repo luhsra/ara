@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 class Terminal : public O_Stream<Terminal> {
+protected:
     const uint16_t m_channel;
 public:
     enum port_t {
@@ -23,7 +24,7 @@ public:
 
 	Terminal(port_t port) : m_channel(port) {};
 
-	void putchar(char c);
+	virtual void putchar(char c);
 
 	void puts(const char* data);
 };
