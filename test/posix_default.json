@@ -1,0 +1,18 @@
+{
+	"steps": [
+		"InteractionAnalysis"
+	],
+
+	"POSIXInit": {
+		"system_profile": "POSIX",
+		"enable_musl_syscalls": true
+	},
+
+    "IRReader": {
+        "no_sysfunc_body": true
+    },
+
+	"RemoveSysfuncBody": {
+        "drop_llvm_suffix": false
+    }
+}

@@ -123,8 +123,8 @@ def main():
     # Load Settings
     DEFAULT_SETTING_FILE = "default_instance_graph_config.json"
     DEFAULT_SETTING_FILE_OS = {
-        "POSIX": "posix_test/settings/posix_default.json",
-        "ZEPHYR": "zephyr_test/settings/zephyr_default.json",
+        "POSIX": "posix_default.json",
+        "ZEPHYR": "zephyr_default.json",
     }
     os_name = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != '-' else None
     setting_file = sys.argv[4] if len(sys.argv) > 4 else path_next_to_self_file(DEFAULT_SETTING_FILE_OS.get(os_name) if os_name in DEFAULT_SETTING_FILE_OS else DEFAULT_SETTING_FILE)
