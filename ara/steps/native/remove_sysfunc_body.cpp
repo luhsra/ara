@@ -24,7 +24,6 @@ namespace ara::step {
 
 		bool use_found = false;
 		for (auto use = func.use_begin(); use != func.use_end(); ++use) {
-			use->getUser()->getType()->dump();
 			if (const Instruction* instr = llvm::dyn_cast<const Instruction>(use->getUser())) {
 				use_found = true;
 				std::ostringstream loc_str;
