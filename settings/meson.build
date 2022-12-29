@@ -133,12 +133,15 @@ ara_gen_freertos_targets = ['passthrough',
                             'interactions',
                            ]
 
+ara_gen_freertos_cmds = {}
+
 foreach target : ara_gen_freertos_targets
   set_variable('ara_gen_cmd_'+target, ara_gen_cmd +
                              [ '--os', 'FreeRTOS', '--step-settings',
                                files(join_paths(settings_dir, 'freertos_'+target+'.json')),
                              ]
               )
+  ara_gen_freertos_cmds += {target: get_variable('ara_gen_cmd_'+target)}
 endforeach
 llvm_lto_cmd_none = ['cp', '@INPUT@', '@OUTPUT@']
 llvm_lto_cmd_standard = llvm_opt_cmd
