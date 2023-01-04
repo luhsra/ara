@@ -565,16 +565,12 @@ extern "C" void StartOS(int arg0){
 }
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
-    (void) arg0;
-    if (get_cpuid() == 0) {
-        sleep(2);
-        wait_for_cpus();
-        CALL_HOOK(ShutdownHook, arg0);
-        ShutdownMachine();
-        Machine::unreachable();
-    }
+    guard.enter();
+    debug_core << __FUNCTION__ << endl;
 
-    // TODO segfault for thread 1
+    CALL_HOOK(ShutdownHook, arg0);
+    ShutdownMachine();
+    Machine::unreachable();
 }
 
 extern "C" void __OS_ASTSchedule(int arg0){

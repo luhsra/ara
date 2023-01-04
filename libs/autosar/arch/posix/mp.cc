@@ -44,6 +44,7 @@ namespace arch
 				return i;
 		}
 		debug << "CPU ID not initialized!" << endl;
+		return 0;
 	}
 
 	void init_cpuid()
