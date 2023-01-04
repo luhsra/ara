@@ -114,9 +114,6 @@ namespace os{
     }
 }
 
-#include <pthread.h>
-pthread_mutex_t scheduler_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-
 using namespace arch;
 using namespace os::tasks;
 
@@ -356,14 +353,13 @@ struct Scheduler {
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
-        pthread_mutex_lock(&scheduler_mutex);
         tlist.head<possible_tasks>(current_tasks[get_cpuid()], current_prios[get_cpuid()]);
 
         dispatchToCurrentTask();
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void InlinedReschedule(void) {
+        debug_core << __FUNCTION__ << endl;
         // update current_task
         tlist.head(current_tasks[get_cpuid()], current_prios[get_cpuid()]);
         // dispatch
@@ -379,7 +375,8 @@ struct Scheduler {
     }
 
     forceinline void Schedule_impl(bool from_interrupt=false) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << endl;
+        guard.enter();
         if(!from_interrupt && in_syscall()) {
             // in syscall: reschedule directly
 #ifdef CONFIG_OS_INLINE_SCHEDULER
@@ -392,94 +389,80 @@ struct Scheduler {
             // Calls also Reschedule()
             request_reschedule_ast();
         }
-        pthread_mutex_unlock(&scheduler_mutex);
+        guard.leave();
     }
 
     forceinline void SetReady_impl(const Task &task) {
-
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
         tlist.activate(task.id, task.prio);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
 
     forceinline void SetSuspended_impl(const Task &t) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) t.id << ")" << endl;
         Dispatcher::Destroy(t);
         tlist.remove(t.id);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
         SetReady_impl(task);
         Schedule_impl(from_interrupt);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) from.id << "," << to.id <<")" << endl;
         SetSuspended_impl(from);
         SetReady_impl(to);
         Schedule_impl();
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void TerminateTask_impl(const Task &from) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) from.id << ")" << endl;
         SetSuspended_impl(from);
         Schedule_impl();
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void GetResource_impl(const Task &current_task, const Task::prio_t new_prio) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
         SetPriority(current_task, new_prio);
         SetSystemPriority(new_prio);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void ReleaseResource_impl(const Task &current_task, const Task::prio_t new_prio) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
         SetPriority(current_task, new_prio);
         SetSystemPriority(new_prio);
         Schedule_impl();
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) other_task.id << ")" << endl;
         tlist.set_events(other_task.id, event_mask);
         Schedule_impl();
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void WaitEvent_impl(const Task &current_task, const int event_mask) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
         tlist.wait_events(current_task.id, event_mask);
         Schedule_impl();
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
         tlist.clear_events(current_task.id, event_mask);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline uint32_t GetEvent_impl(const Task &current_task) {
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
         return tlist.get_events(current_task.id);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     forceinline void SetReadyFromSuspended_impl(const Task &task) {
-
-        pthread_mutex_lock(&scheduler_mutex);
+        debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
         SetPriority(task, task.prio);
         // Clear all Events
         tlist.clear_events(task.id, ~0);
-        pthread_mutex_unlock(&scheduler_mutex);
     }
 
     // Low level interface to the task list
@@ -551,7 +534,7 @@ void inlinehint Counter::tick() {
 extern "C" void __OS_StartOS_dispatch(int arg0){
     debug_core << __FUNCTION__ << endl;
     (void) arg0;
-    pthread_mutex_lock(&scheduler_mutex);
+    guard.enter();
     scheduler_.InlinedReschedule();
 }
 
@@ -564,6 +547,7 @@ extern "C" void StartAP(){
 
 extern "C" void StartOS(int arg0){
     (void) arg0;
+    init_cpuid();
     Dispatcher::Prepare(OS_H1_task);
     Dispatcher::Prepare(OS_H2_task);
     Dispatcher::Prepare(OS_H3_task);
@@ -572,7 +556,6 @@ extern "C" void StartOS(int arg0){
     scheduler_.SetReadyFromSuspended_impl(OS_H2_task);
     scheduler_.SetReadyFromSuspended_impl(OS_H5_task);
 
-    init_cpuid();
     arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
 
     CALL_HOOK(StartupHook);

@@ -4,6 +4,7 @@
 #include  "machine.h"
 #include "os/util/assert.h"
 #include <stdio.h>
+#include "guard.h"
 
 #define ASM_SAVE_REGISTERS \
     "push %%ebx\n"\
@@ -21,9 +22,6 @@
 extern "C" void *OS_basic_task_stackptr;
 extern "C" uint8_t shared_basic_stack[];
 #endif
-
-#include <pthread.h>
-extern pthread_mutex_t scheduler_mutex;
 
 namespace arch { struct TCB; }
 
@@ -103,8 +101,7 @@ namespace arch {
 		basic_task_frame_pointer() = sp;
 		_startToBT(this);
 	    } else {
-		pthread_mutex_unlock(&scheduler_mutex);
-		_returnTo(&this->sp);
+		_returnToFirst(&this->sp);
 	    }
 	    Machine::unreachable();
 	}
@@ -295,6 +292,8 @@ namespace arch {
 	static noinline void _switchTo(void **from_sp, void **to_sp_ptr) {
             void *to_sp = *to_sp_ptr;
             *to_sp_ptr = 0;
+			debug_core << __FUNCTION__ << endl;
+			guard.leave();
 	    asm __volatile__ ("push $1f\n"
                               ASM_SAVE_REGISTERS
 			      "mov  %%esp, (%0)\n"
@@ -310,6 +309,22 @@ namespace arch {
 	static forceinline void _returnTo(void **to_sp_ptr) {
             void *to_sp = *to_sp_ptr;
             *to_sp_ptr = 0;
+			debug_core << __FUNCTION__ << endl;
+	    asm __volatile__ ("mov  %0, %%esp\n"
+			      ASM_RESTORE_REGISTERS
+			      "ret\n"
+			      :
+			      : "r" (to_sp)
+			      : "memory"
+		);
+	    Machine::unreachable();
+	}
+
+	static forceinline void _returnToFirst(void **to_sp_ptr) {
+            void *to_sp = *to_sp_ptr;
+            *to_sp_ptr = 0;
+			debug_core << __FUNCTION__ << endl;
+			guard.leave();
 	    asm __volatile__ ("mov  %0, %%esp\n"
 			      ASM_RESTORE_REGISTERS
 			      "ret\n"

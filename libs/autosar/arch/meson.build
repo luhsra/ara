@@ -1,4 +1,4 @@
-subdir('generic')
+autosar_includes += ['-I', meson.current_source_dir() / 'generic']
 
 if get_option('arch') == 'arm'
   subdir('arm')
@@ -8,3 +8,5 @@ else
   warning('unknown arch')
   subdir('posix')
 endif
+
+subdir('generic')
