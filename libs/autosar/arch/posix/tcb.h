@@ -101,7 +101,7 @@ namespace arch {
 		basic_task_frame_pointer() = sp;
 		_startToBT(this);
 	    } else {
-		_returnToFirst(&this->sp);
+		switchTo(this);
 	    }
 	    Machine::unreachable();
 	}
@@ -310,21 +310,6 @@ namespace arch {
             void *to_sp = *to_sp_ptr;
             *to_sp_ptr = 0;
 			debug_core << __FUNCTION__ << endl;
-	    asm __volatile__ ("mov  %0, %%esp\n"
-			      ASM_RESTORE_REGISTERS
-			      "ret\n"
-			      :
-			      : "r" (to_sp)
-			      : "memory"
-		);
-	    Machine::unreachable();
-	}
-
-	static forceinline void _returnToFirst(void **to_sp_ptr) {
-            void *to_sp = *to_sp_ptr;
-            *to_sp_ptr = 0;
-			debug_core << __FUNCTION__ << endl;
-			guard.leave();
 	    asm __volatile__ ("mov  %0, %%esp\n"
 			      ASM_RESTORE_REGISTERS
 			      "ret\n"
