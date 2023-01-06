@@ -39,12 +39,12 @@ namespace arch
 
 	int get_cpuid() {
 		pthread_t id = get_thread_id();
-		for (int i = 0; i <= MAX_CPUS; i++) {
+		for (int i = 0; i < MAX_CPUS; i++) {
 			if (id == cpuid[i])
 				return i;
 		}
 		debug << "CPU ID not initialized!" << endl;
-		return 0;
+		return MAX_CPUS-1;
 	}
 
 	void init_cpuid()
@@ -56,20 +56,6 @@ namespace arch
 		cpuid[0] = get_thread_id();
 		debug_core << "thread " << hex << cpuid[0] << " hw " << 0 << endl;
 	}
-
-	void wait_for_cpus()
-	{
-		int this_id = get_cpuid();
-
-		for (int i = 0; i < MAX_CPUS; i++) {
-			if (i != this_id && cpuid[i] != -1 ) {
-				pthread_join(cpuid[i], 0);
-				debug_core << "joining cpuid " << i << endl;
-			}
-		}
-
-	}
-
 }
 
 
