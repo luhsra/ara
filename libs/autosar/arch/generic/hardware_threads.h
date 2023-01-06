@@ -22,6 +22,8 @@ namespace arch {
 
 	int get_cpuid();
 	void init_cpuid();
+	void wait_for_cpus();
+	void stop_hardware_thread();
 }
 
 #endif

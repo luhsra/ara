@@ -2,8 +2,9 @@
 #include "arch/generic/hardware_threads.h"
 #include <pthread.h>
 #include "output.h"
-
+#include "machine.h"
 pthread_t cpuid[MAX_CPUS];
+int threads = 0;
 
 static void *pthread_wrapper(void* function)
 {
@@ -28,7 +29,7 @@ namespace arch
 
 		debug_core << "thread " << hex << thread << " hw " << hardware_number << endl;
 		cpuid[hardware_number] = thread;
-
+		threads++;
 		pthread_detach(thread);
 		return !error;
 	}
@@ -55,6 +56,24 @@ namespace arch
 
 		cpuid[0] = get_thread_id();
 		debug_core << "thread " << hex << cpuid[0] << " hw " << 0 << endl;
+	}
+
+	void wait_for_cpus()
+	{
+		while (true)
+		{
+			if (threads == 0){
+				return;
+			}
+		}
+	}
+
+	void stop_hardware_thread()
+	{
+		threads--;
+		while(true){
+			Machine::nop();
+		}
 	}
 }
 

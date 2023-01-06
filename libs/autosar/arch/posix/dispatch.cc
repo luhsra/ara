@@ -1,6 +1,6 @@
 #include "dispatch.h"
 
-static char idlestack[arch::IDLESTACKSIZE][MAX_CPUS];
+static char idlestack[MAX_CPUS][arch::IDLESTACKSIZE];
 void * arch::Dispatcher::idle_sp[MAX_CPUS];
 
 arch::TCB arch::Dispatcher::m_idle[MAX_CPUS] = {
