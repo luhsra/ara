@@ -15,7 +15,7 @@ from ara.visualization.signal import ara_signal
 from ara.visualization.signal.signal_combiner import SignalCombiner
 from ara.visualization.trace import trace_handler, trace_lib
 from ara.visualization.util import StepMode
-from ara.visualization.widgets.graph_elements import AbstractNode, GraphicsObject, InstanceNode, SVFGNode, Subgraph, AbbNode, CallGraphNode
+from ara.visualization.widgets.graph_elements import GraphicsObject, InstanceNode, SVFGNode, Subgraph, AbbNode, CallGraphNode, GraphEdge
 
 
 class GraphScene(QGraphicsScene):
@@ -256,6 +256,9 @@ class BaseGraphView(QGraphicsView):
         pass
 
     def handle_node_add(self, node):
+        """
+            Applies node settings if they exist.
+        """
         if isinstance(node, self.node_type):
             trace_setting = trace_lib.TraceElementSetting(
                 True, self.graph_type, int(node.id))
@@ -265,7 +268,16 @@ class BaseGraphView(QGraphicsView):
                     trace_setting].apply(node)
 
     def handle_edge_add(self, edge):
-        pass
+        """
+            Applies edge settings if they exist.
+        """
+        if isinstance(edge, GraphEdge):
+            trace_setting = trace_lib.TraceElementSetting(
+                False, self.graph_type, edge.id)
+            if trace_handler.INSTANCE.gui_element_settings.__contains__(
+                    trace_setting):
+                trace_handler.INSTANCE.gui_element_settings[
+                    trace_setting].apply(edge)
 
 
 class CallGraphView(BaseGraphView):
@@ -311,13 +323,6 @@ class CallGraphView(BaseGraphView):
                 node.widget.setProperty("selected", "true")
                 node.selected = True
                 node.reload_stylesheet()
-
-    def handle_edge_add(self, edge):
-        """
-            Applies edge settings if they exist.
-        """
-        if trace_handler.INSTANCE.gui_element_settings.__contains__(edge.id):
-            trace_handler.INSTANCE.gui_element_settings[edge.id].apply(edge)
 
     def setup_signals(self):
         super().setup_signals()

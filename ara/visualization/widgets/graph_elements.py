@@ -329,16 +329,14 @@ class NodeSetting:
             node.set_highlighted(self.highlight_color)
 
 
-class CallgraphEdgeSetting:
+class EdgeSetting:
     """
-        This is used by the trace system to set the visual design of a call graph edge.
+        This is used by the trace system to set the visual design of an edge.
     """
 
     def __init__(self,
-                 edge_id,
                  highlighting: bool,
                  highlighting_color=trace_lib.Color.RED):
-        self.edge_id = edge_id
         self.highlighting = highlighting
         self.highlight_color = highlighting_color
 

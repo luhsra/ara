@@ -12,7 +12,7 @@ from graph_tool.libgraph_tool_core import Vertex
 
 from ara.visualization.trace import trace_lib
 from ara.graph.mix import GraphType
-from ara.visualization.widgets.graph_elements import NodeSetting, CallgraphEdgeSetting
+from ara.visualization.widgets.graph_elements import NodeSetting, EdgeSetting
 
 
 class TraceContext:
@@ -197,21 +197,58 @@ class CallgraphNodeHighlightTraceElement(NodeHighlightTraceElement):
         # TODO: handle extension point remove
 
 
-class CallgraphPathHighlightTraceElement(BaseTraceElement):
+class PathHighlightTraceElement(BaseTraceElement):
     """
         Trace element which highlights a path out of edges.
     """
 
-    def __init__(self):
+    def __init__(self, graph_type: GraphType):
         super().__init__()
         self.path = PriorityQueue()
         self.edge_index = 0
+        self.graph_type = graph_type
 
-    def add_edge(self, edge, callgraph, color=trace_lib.Color.RED):
-        self.path.put((self.index, callgraph.ep.callsite_name[edge]),
+    def add_edge(self, edge, color=trace_lib.Color.RED):
+        self.path.put((self.index, edge),
                       block=False)
         self.edge_index += 1
         self.color = color
+
+    def _add_elem_setting(self, current_edge):
+        trace_setting = trace_lib.TraceElementSetting(
+            False, self.graph_type, current_edge)
+        self.gui_element_settings[trace_setting] = EdgeSetting(
+            highlighting=True,
+            highlighting_color=self.color)
+
+    def apply_changes(self, context: TraceContext):
+        try:
+            while not self.path.empty():
+                current_edge = self.path.get(block=False)[1]
+                self._add_elem_setting(current_edge)
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+
+    def undo_changes(self, gui_element_settings: dict):
+        try:
+            while not self.path.empty():
+                current_edge = self.path.get(block=False)[1]
+                trace_setting = trace_lib.TraceElementSetting(
+                    False, self.graph_type, current_edge)
+                del gui_element_settings[trace_setting]
+        except KeyError as e:
+            pass
+        except Exception as e:
+            print(traceback.format_exc())
+
+
+class CallgraphPathHighlightTraceElement(PathHighlightTraceElement):
+    def __init__(self):
+        super().__init__(GraphType.CALLGRAPH)
+
+    def add_edge(self, edge, callgraph, color=trace_lib.Color.RED):
+        super().add_edge(callgraph.ep.callsite_name[edge], color)
 
     def apply_changes(self, context: TraceContext):
         try:
@@ -223,10 +260,7 @@ class CallgraphPathHighlightTraceElement(BaseTraceElement):
                     context.callgraph.vp.function_name[edge.source()])
                 self.extension_points.add(
                     context.callgraph.vp.function_name[edge.target()])
-                self.gui_element_settings[current_edge] = CallgraphEdgeSetting(
-                    current_edge,
-                    highlighting=True,
-                    highlighting_color=self.color)
+                self._add_elem_setting(current_edge)
         except Exception as e:
             print(e)
             print(traceback.format_exc())
@@ -246,7 +280,6 @@ class CallgraphPathHighlightTraceElement(BaseTraceElement):
 
         for e in tmp:
             self.path.put(e, block=False)
-
 
 class ResetPartialChangesTraceElement(BaseTraceElement):
     """
