@@ -33,8 +33,9 @@ TASK(H4) {
 
 TASK(H5) {
 	test_trace('5');
-	ActivateTask(H4);
-	TerminateTask();
+	ChainTask(H4);
+	//ActivateTask(H4);
+	//TerminateTask();
 }
 
 void PreIdleHook() {

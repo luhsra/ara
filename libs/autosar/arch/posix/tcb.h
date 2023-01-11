@@ -310,6 +310,7 @@ namespace arch {
             void *to_sp = *to_sp_ptr;
             *to_sp_ptr = 0;
 			debug_core << __FUNCTION__ << endl;
+			guard.leave();
 	    asm __volatile__ ("mov  %0, %%esp\n"
 			      ASM_RESTORE_REGISTERS
 			      "ret\n"

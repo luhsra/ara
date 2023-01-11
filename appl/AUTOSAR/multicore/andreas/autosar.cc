@@ -376,7 +376,6 @@ struct Scheduler {
 
     forceinline void Schedule_impl(bool from_interrupt=false) {
         debug_core << __FUNCTION__ << endl;
-        guard.enter();
         if(!from_interrupt && in_syscall()) {
             // in syscall: reschedule directly
 #ifdef CONFIG_OS_INLINE_SCHEDULER
@@ -389,7 +388,6 @@ struct Scheduler {
             // Calls also Reschedule()
             request_reschedule_ast();
         }
-        guard.leave();
     }
 
     forceinline void SetReady_impl(const Task &task) {
@@ -411,7 +409,7 @@ struct Scheduler {
     }
 
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
-        debug_core << __FUNCTION__ << "(" << (int) from.id << "," << to.id <<")" << endl;
+        debug_core << __FUNCTION__ << "(" << (int) from.id << "," << (int)to.id <<")" << endl;
         SetSuspended_impl(from);
         SetReady_impl(to);
         Schedule_impl();
@@ -534,7 +532,6 @@ void inlinehint Counter::tick() {
 extern "C" void __OS_StartOS_dispatch(int arg0){
     debug_core << __FUNCTION__ << endl;
     (void) arg0;
-    guard.enter();
     scheduler_.InlinedReschedule();
 }
 

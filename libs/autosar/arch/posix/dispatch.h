@@ -28,7 +28,6 @@ namespace arch {
 
         static noinline void idleEntry(void) {
             debug_core << "idleEntry" << endl;
-            guard.leave();
             CALL_HOOK(PreIdleHook);
             while(true){
                 Machine::nop();
@@ -36,6 +35,7 @@ namespace arch {
         }
 
         static forceinline void doDispatch(const TCB *from, const TCB *to) {
+            guard.enter();
             // update current context
             m_current[get_cpuid()] = to;
 
