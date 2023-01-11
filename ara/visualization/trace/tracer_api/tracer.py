@@ -13,7 +13,10 @@ from ara.visualization.trace import trace_lib
 from ara.visualization.trace.trace_type import AlgorithmTrace
 
 if SUPPORT_FOR_GUI:
-    from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement, CallgraphPathHighlightTraceElement
+    from ara.visualization.trace.trace_components import \
+        BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, \
+        NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, \
+        SVFGNodeHighlightTraceElement, CallgraphPathHighlightTraceElement
 else:
     # stubs
     class BaseTraceElement:
