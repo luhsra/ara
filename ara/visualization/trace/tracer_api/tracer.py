@@ -13,7 +13,7 @@ from ara.visualization.trace import trace_lib
 from ara.visualization.trace.trace_type import AlgorithmTrace
 
 if SUPPORT_FOR_GUI:
-    from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement
+    from ara.visualization.trace.trace_components import BaseTraceElement, CFGNodeHighlightTraceElement, CallgraphNodeHighlightTraceElement, NodeHighlightTraceElement, ResetChangesTraceElement, ResetPartialChangesTraceElement, SVFGNodeHighlightTraceElement, CallgraphPathHighlightTraceElement
 else:
     # stubs
     class BaseTraceElement:
@@ -139,6 +139,23 @@ class Tracer:
                     NodeHighlightTraceElement(node.node, node.graph, color))
         return highlight_node_elems
 
+    def _highlight_paths(self,
+                         paths: List[GraphPath],
+                         color=trace_lib.Color.RED) -> List[BaseTraceElement]:
+        if not SUPPORT_FOR_GUI:
+            return []
+
+        highlight_path_elems = []
+        for path in paths:
+            if path.graph == GraphType.CALLGRAPH:
+                trace_elem = CallgraphPathHighlightTraceElement()
+            else:
+                continue  # for now
+            for edge in path.path:
+                trace_elem.add_edge(edge, self.low_level_trace.callgraph, color)
+            highlight_path_elems.append(trace_elem)
+        return highlight_path_elems
+
     def _handle_entity_reset(
             self, ent: Entity,
             actions: List[BaseTraceElement]) -> List[BaseTraceElement]:
@@ -178,8 +195,8 @@ class Tracer:
     def entity_is_looking_at(self, ent: Entity, paths: List[GraphPath]):
         if isinstance(paths, GraphPath):
             paths = [paths]
-        actions = self._handle_entity_reset(ent, [])  # TODO: add action
-        self._handle_entity_reset(ent, actions)
+        actions = self._handle_entity_reset(
+            ent, self._highlight_paths(paths, ent.color))
         self.low_level_trace.add_element(
             actions, self._format_list_output(ent, paths, "is looking at "))
 
