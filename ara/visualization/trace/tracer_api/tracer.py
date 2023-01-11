@@ -73,7 +73,7 @@ class GraphPath:
 
 class Tracer:
 
-    last_reset = [
+    _last_reset = [
     ]  # contains clear actions that need to be performed on next trace
 
     def __init__(self,
@@ -130,9 +130,9 @@ class Tracer:
     def _handle_entity_reset(
             self, ent: Entity,
             actions: List[BaseTraceElement]) -> List[BaseTraceElement]:
-        """Fill actions with undo operation of all changes from last trace of the entity (or from self.last_reset).
+        """Fill actions with undo operation of all changes from last trace of the entity (or from self._last_reset).
         
-        Also updates the last_reset field with the changes in actions
+        Also updates the _last_reset field with the changes in actions
         """
         if not SUPPORT_FOR_GUI:
             return actions
@@ -141,9 +141,9 @@ class Tracer:
         ent.last_reset = ResetPartialChangesTraceElement(actions.copy())
 
         # undo previous change:
-        if len(self.last_reset) > 0:
-            actions = self.last_reset + actions
-            self.last_reset = []
+        if len(self._last_reset) > 0:
+            actions = self._last_reset + actions
+            self._last_reset = []
         if undo_previous_elems is not None:
             actions.insert(0, undo_previous_elems)
         return actions
@@ -211,12 +211,12 @@ class Tracer:
         
         Note: All entities are invalidated at this point, do not reuse them.
         """
-        self.last_reset.append(ResetChangesTraceElement())
+        self._last_reset.append(ResetChangesTraceElement())
 
     def die_entity(self, ent: Entity):
         """Remove all trace elements of an entity"""
-        self.last_reset.append(ent.last_reset)
-        ent.last_reset = None
+        self._last_reset.append(ent._last_reset)
+        ent._last_reset = None
 
     def add_element(self,
                     element: List[BaseTraceElement],
@@ -252,7 +252,7 @@ class Tracer:
 
     def destroy(self):
         """Called after step is gone"""
-        self.last_reset = []
+        self._last_reset = []
 
 
 def init_fast_trace(step, name: str = None):
