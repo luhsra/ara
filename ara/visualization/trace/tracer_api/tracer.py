@@ -76,6 +76,7 @@ class GraphPath:
 
 class Tracer:
 
+    # TODO: check why this is working (it is not used as static variable):
     _last_reset = [
     ]  # contains clear actions that need to be performed on next trace
 
@@ -182,9 +183,8 @@ class Tracer:
 
     def get_entity(self, name: str):
         """Creates a new entity on this trace"""
-        # TODO: choose multiple colors automatically
-        ent = Entity(name, self._color_order[self._color_index], None)
-        self._color_index += 1
+        ent = Entity(name, Tracer._color_order[Tracer._color_index % len(Tracer._color_order)], None)
+        Tracer._color_index += 1
         return ent
 
     def entity_on_node(self, ent: Entity, nodes: List[GraphNode]):
@@ -249,8 +249,8 @@ class Tracer:
 
     def die_entity(self, ent: Entity):
         """Remove all trace elements of an entity"""
-        self._last_reset.append(ent._last_reset)
-        ent._last_reset = None
+        self._last_reset.append(self._last_reset)
+        ent.last_reset = None
 
     def add_element(self,
                     element: List[BaseTraceElement],
@@ -287,6 +287,7 @@ class Tracer:
     def destroy(self):
         """Called after step is gone"""
         self._last_reset = []
+        Tracer._color_index = 0
 
 
 def init_fast_trace(step, name: str = None):
