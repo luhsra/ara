@@ -48,6 +48,18 @@
 	border-color: orange;
 }
 
+#svfg_node[highlighted=&quot;5&quot;] {
+	border-color: purple;
+}
+
+#svfg_node[highlighted=&quot;6&quot;] {
+	border-color: yellow;
+}
+
+#svfg_node[highlighted=&quot;7&quot;] {
+	border-color: blue;
+}
+
 </string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">

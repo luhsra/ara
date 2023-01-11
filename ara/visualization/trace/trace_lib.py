@@ -20,6 +20,9 @@ class Color(Enum):
     AQUA = "2"
     GREEN = "3"
     ORANGE = "4"
+    PURPLE = "5"
+    YELLOW = "6"
+    BLUE = "7"
 
 
 @dataclass(frozen=True)

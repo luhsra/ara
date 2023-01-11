@@ -45,6 +45,18 @@
 #node[highlighted=&quot;4&quot;] {
 	border-color: orange;
 }
+
+#node[highlighted=&quot;5&quot;] {
+	border-color: purple;
+}
+
+#node[highlighted=&quot;6&quot;] {
+	border-color: yellow;
+}
+
+#node[highlighted=&quot;7&quot;] {
+	border-color: blue;
+}
 </string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
