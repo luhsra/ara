@@ -76,6 +76,18 @@ class Tracer:
     _last_reset = [
     ]  # contains clear actions that need to be performed on next trace
 
+    _color_order = [
+        trace_lib.Color.RED,
+        trace_lib.Color.AQUA,
+        trace_lib.Color.GREEN,
+        trace_lib.Color.ORANGE,
+        trace_lib.Color.PURPLE,
+        trace_lib.Color.YELLOW,
+        trace_lib.Color.BLUE
+    ]
+
+    _color_index = 0
+
     def __init__(self,
                  trace_name: str,
                  callgraph,
@@ -151,7 +163,9 @@ class Tracer:
     def get_entity(self, name: str):
         """Creates a new entity on this trace"""
         # TODO: choose multiple colors automatically
-        return Entity(name, trace_lib.Color.GREEN, None)
+        ent = Entity(name, self._color_order[self._color_index], None)
+        self._color_index += 1
+        return ent
 
     def entity_on_node(self, ent: Entity, nodes: List[GraphNode]):
         if isinstance(nodes, GraphNode):
