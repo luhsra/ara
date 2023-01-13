@@ -563,16 +563,9 @@ extern "C" void StartOS(int arg0){
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
-
-    if (get_cpuid() == 0) {
-        wait_for_cpus();
-        CALL_HOOK(ShutdownHook, arg0);
-        ShutdownMachine();
-        Machine::unreachable();
-    } else {
-        stop_hardware_thread();
-        Machine::unreachable();
-    }
+    CALL_HOOK(ShutdownHook, arg0);
+    ShutdownMachine();
+    Machine::unreachable();
 }
 
 extern "C" void __OS_ASTSchedule(int arg0){

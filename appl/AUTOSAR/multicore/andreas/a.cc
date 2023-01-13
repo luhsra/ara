@@ -39,7 +39,10 @@ TASK(H5) {
 }
 
 void PreIdleHook() {
-	AUTOSAR_ShutdownOS(E_OK);
+	if (arch::get_cpuid() == 0)	{
+		sleep(1);
+		AUTOSAR_ShutdownOS(E_OK);
+	}
 }
 
 void ShutdownHook(StatusType status) {

@@ -4,7 +4,6 @@
 #include "output.h"
 #include "machine.h"
 pthread_t cpuid[MAX_CPUS];
-int threads = 0;
 
 static void *pthread_wrapper(void* function)
 {
@@ -27,19 +26,20 @@ namespace arch
 		pthread_t thread;
 		int error = pthread_create(&thread, nullptr, pthread_wrapper, reinterpret_cast<void*>(startup_function));
 
-		debug_core << "thread " << hex << thread << " hw " << hardware_number << endl;
+		debug_core << "thread " << thread << " hw " << hardware_number << endl;
 		cpuid[hardware_number] = thread;
-		threads++;
 		pthread_detach(thread);
 		return !error;
 	}
 
-	pthread_t get_thread_id() {
-		return pthread_self();
+	pthread_t get_thread_id(int id)
+	{
+		return cpuid[id];
 	}
 
-	int get_cpuid() {
-		pthread_t id = get_thread_id();
+	int get_cpuid()
+	{
+		pthread_t id = pthread_self();
 		for (int i = 0; i < MAX_CPUS; i++) {
 			if (id == cpuid[i])
 				return i;
@@ -54,26 +54,8 @@ namespace arch
 			cpuid[i] = -1;
 		}
 
-		cpuid[0] = get_thread_id();
-		debug_core << "thread " << hex << cpuid[0] << " hw " << 0 << endl;
-	}
-
-	void wait_for_cpus()
-	{
-		while (true)
-		{
-			if (threads == 0){
-				return;
-			}
-		}
-	}
-
-	void stop_hardware_thread()
-	{
-		threads--;
-		while(true){
-			Machine::nop();
-		}
+		cpuid[0] = pthread_self();
+		debug_core << "thread " << cpuid[0] << " hw " << 0 << endl;
 	}
 }
 
