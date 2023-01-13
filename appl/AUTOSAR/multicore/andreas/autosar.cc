@@ -542,6 +542,13 @@ extern "C" void StartAP(){
     Machine::unreachable();
 }
 
+void irq_handler (int signo) {
+    debug_core << "IRQ " << signo << endl;
+
+    scheduler_.SetReady_impl(OS_H2_task);
+    scheduler_.Schedule_impl(true);
+}
+
 extern "C" void StartOS(int arg0){
     (void) arg0;
     init_cpuid();
@@ -550,9 +557,11 @@ extern "C" void StartOS(int arg0){
     Dispatcher::Prepare(OS_H3_task);
     Dispatcher::Prepare(OS_H4_task);
     Dispatcher::Prepare(OS_H5_task);
-    scheduler_.SetReadyFromSuspended_impl(OS_H2_task);
+    //scheduler_.SetReadyFromSuspended_impl(OS_H2_task);
     scheduler_.SetReadyFromSuspended_impl(OS_H5_task);
 
+    arch::irq.set_handler(SIGUSR1, irq_handler);
+    arch::irq.enable(SIGUSR1);
     arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
 
     CALL_HOOK(StartupHook);
@@ -578,6 +587,9 @@ extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
     {
         scheduler_.ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false);
     }
+
+    if (get_cpuid() == 0)
+        Machine::trigger_interrupt(SIGUSR1, 1);
 
     __OS_enable_irq_after_kernel();
     (void) arg0;

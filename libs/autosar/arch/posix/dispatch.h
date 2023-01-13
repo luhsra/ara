@@ -48,7 +48,7 @@ namespace arch {
 
             CALL_HOOK(PreTaskHook);
 
-            debug_core << "from " << hex << from << endl;
+            debug_core << "from " << from << endl;
 
             // start up
             if (!from) {

@@ -5,7 +5,12 @@
 #include "irq.h"
 #include "os/scheduler/scheduler.h"
 #include "dispatch.h"
+#include "hardware_threads.h"
+#include <pthread.h>
 
+namespace arch {
+    extern pthread_t get_thread_id(int);
+}
 
 using namespace arch;
 
@@ -45,14 +50,17 @@ void IRQ::disable(int signum) {
     sigaction(signum, &sig, NULL);
 }
 
-void IRQ::trigger_interrupt(int irq) {
+void IRQ::trigger_interrupt(int irq, int cpuid) {
     /* Send an signal to our own thread */
-    kill(getpid(), irq);
+    debug_core << __FUNCTION__ << "(" << irq << ", " << cpuid << ")" << endl;
+    pthread_kill(get_thread_id(cpuid), irq);
 }
 
 extern void __OS_enable_irq_after_kernel(void);
 
 noinline void IRQ::deliver_interrupt(int irq) {
+    debug_core << __FUNCTION__ << "(" << irq << ")" << endl;
+
     if (interrupts_enabled(irq)) {
         sigset_t old_mask;
         disable_interrupts(&old_mask);

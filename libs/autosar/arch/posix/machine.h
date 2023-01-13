@@ -128,11 +128,11 @@ public:
 	/**
 	 * \brief Trigger an interrupt
 	 */
-	static forceinline void trigger_interrupt(uint8_t irq_) {
-		arch::irq.trigger_interrupt(irq_);
+	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0) {
+		arch::irq.trigger_interrupt(irq_, cpuid);
 	}
-	static forceinline void trigger_interrupt_from_user(uint8_t irq_) {
-		arch::irq.trigger_interrupt(irq_);
+	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0) {
+		arch::irq.trigger_interrupt(irq_, cpuid);
 	}
 
 };
