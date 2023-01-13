@@ -17,21 +17,35 @@ namespace ara::step {
 	// clang-format is failing to recognize the lambda function here
 	namespace {
 		// manual mapping of svf/include/Graphs/VFGNode.h
+		#define vfg_type_to_str(name) result[VFGNode::VFGNodeK::name] = #name "VFGNode";
 		constexpr auto type_to_str{[]() constexpr {
-			std::array<const char*, 24> result{};
-			result[VFGNode::VFGNodeK::Addr] = "AddrVFGNode";
-			result[VFGNode::VFGNodeK::Copy] = "Copy";
-			result[VFGNode::VFGNodeK::Gep] = "Gep";
-			result[VFGNode::VFGNodeK::Store] = "Store";
-			result[VFGNode::VFGNodeK::Load] = "Load";
-			result[VFGNode::VFGNodeK::Cmp] = "Cmp";
-			result[VFGNode::VFGNodeK::BinaryOp] = "BinaryOp";
-			result[VFGNode::VFGNodeK::UnaryOp] = "UnaryOp";
-			result[VFGNode::VFGNodeK::TPhi] = "TPhi";
-			result[VFGNode::VFGNodeK::TIntraPhi] = "TIntraPhi";
-			result[VFGNode::VFGNodeK::TInterPhi] = "TInterPhi";
-			result[VFGNode::VFGNodeK::MPhi] = "MPhi";
-			// TODO: here are some values missing, see svf/include/Graphs/VFGNode.h
+			std::array<const char*, 26> result{};
+			vfg_type_to_str(Addr)
+			vfg_type_to_str(Copy)
+			vfg_type_to_str(Gep)
+			vfg_type_to_str(Store)
+			vfg_type_to_str(Load)
+			vfg_type_to_str(Cmp)
+			vfg_type_to_str(BinaryOp)
+			vfg_type_to_str(UnaryOp)
+			vfg_type_to_str(Branch)
+			vfg_type_to_str(TPhi)
+			vfg_type_to_str(TIntraPhi)
+			vfg_type_to_str(TInterPhi)
+			vfg_type_to_str(MPhi)
+			vfg_type_to_str(MIntraPhi)
+			vfg_type_to_str(MInterPhi)
+			vfg_type_to_str(FRet)
+			vfg_type_to_str(ARet)
+			vfg_type_to_str(AParm)
+			vfg_type_to_str(FParm)
+			vfg_type_to_str(FunRet)
+			vfg_type_to_str(APIN)
+			vfg_type_to_str(APOUT)
+			vfg_type_to_str(FPIN)
+			vfg_type_to_str(FPOUT)
+			vfg_type_to_str(NPtr)
+			vfg_type_to_str(DummyVProp)
 			return result;
 		}()};
 	} // namespace
@@ -59,7 +73,7 @@ namespace ara::step {
 		for (const auto& [_, svf_vertex] : svfg_svf) {
 			auto graphtool_vertex = boost::add_vertex(g);
 			std::stringstream ss;
-			ss << type_to_str[svf_vertex->getNodeKind()] << " ID: " << static_cast<uint64_t>(graphtool_vertex);
+			ss << type_to_str.at(svf_vertex->getNodeKind()) << " ID: " << static_cast<uint64_t>(graphtool_vertex);
 			svfg_graphtool.label[graphtool_vertex] = ss.str();
 			svfg_graphtool.obj[graphtool_vertex] = reinterpret_cast<uintptr_t>(svf_vertex);
 
