@@ -23,8 +23,8 @@ namespace ara::step {
 	void PosixClangGlobalTest::run() {
 		assert(input_file.get());
 		std::string file = *input_file.get();
-		bool static_case = (file == "subprojects/posix/appl/objs/clang_global_var_static.ll");
-		if (!static_case && file != "subprojects/posix/appl/objs/clang_global_var_dynamic.ll") {
+		bool static_case = (file == "subprojects/ara-posix-apps/appl/objs/clang_global_var_static.ll");
+		if (!static_case && file != "subprojects/ara-posix-apps/appl/objs/clang_global_var_dynamic.ll") {
 			this->fail("unknown input file \"" + file +
 			           "\" (arbitrary input files are not allowed for this test case)");
 		}
