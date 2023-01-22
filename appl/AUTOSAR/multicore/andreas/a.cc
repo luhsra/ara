@@ -22,6 +22,8 @@ TASK(H2) {
 
 TASK(H3) {
 	test_trace('3');
+
+	Machine::trigger_interrupt(SIGUSR1, 1);
 	TerminateTask();
 }
 
@@ -34,8 +36,7 @@ TASK(H4) {
 TASK(H5) {
 	test_trace('5');
 	ChainTask(H4);
-	//ActivateTask(H4);
-	//TerminateTask();
+	TerminateTask();
 }
 
 void PreIdleHook() {

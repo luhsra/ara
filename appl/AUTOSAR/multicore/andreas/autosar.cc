@@ -536,16 +536,19 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
 }
 
 extern "C" void StartAP(){
-    CALL_HOOK(StartupHook);
     debug_core << "StartAP" << endl;
+    guard.enter();
+    CALL_HOOK(StartupHook);
     syscall(__OS_StartOS_dispatch);
+    // TODO why is thread 1 sometimes not continueing here
     Machine::unreachable();
 }
 
 void irq_handler (int signo) {
+    // TODO correctly parametrize the task
     debug_core << "IRQ " << signo << endl;
 
-    scheduler_.SetReady_impl(OS_H2_task);
+    scheduler_.SetReadyFromSuspended_impl(OS_H2_task);
     scheduler_.Schedule_impl(true);
 }
 
@@ -557,23 +560,24 @@ extern "C" void StartOS(int arg0){
     Dispatcher::Prepare(OS_H3_task);
     Dispatcher::Prepare(OS_H4_task);
     Dispatcher::Prepare(OS_H5_task);
-    //scheduler_.SetReadyFromSuspended_impl(OS_H2_task);
     scheduler_.SetReadyFromSuspended_impl(OS_H5_task);
 
     arch::irq.set_handler(SIGUSR1, irq_handler);
     arch::irq.enable(SIGUSR1);
-    arch::start_hardware_thread(1, H2_stack, 4096, StartAP);
 
-    CALL_HOOK(StartupHook);
+    arch::start_hardware_thread(1, nullptr, NULL, StartAP);
 
-    syscall(__OS_StartOS_dispatch);
+    StartAP();
+
     Machine::unreachable();
 }
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
+    guard.enter();
     CALL_HOOK(ShutdownHook, arg0);
     ShutdownMachine();
+    guard.leave();
     Machine::unreachable();
 }
 
@@ -583,26 +587,28 @@ extern "C" void __OS_ASTSchedule(int arg0){
 }
 
 extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
+    debug_core << __FUNCTION__ << endl;
+    guard.enter();
     Machine::disable_interrupts();
     {
         scheduler_.ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false);
     }
 
-    if (get_cpuid() == 0)
-        Machine::trigger_interrupt(SIGUSR1, 1);
-
     __OS_enable_irq_after_kernel();
     (void) arg0;
+    // guard.leave() in tcb switch
     return E_OK;
 }
 
 extern "C" StatusType AUTOSAR_TerminateTask(){
-
+    debug_core << __FUNCTION__ << endl;
+    guard.enter();
     Machine::disable_interrupts();
     {
         scheduler_.TerminateTask_impl(os::getTask(scheduler_.current_tasks[get_cpuid()]));
     }
     // Return with closed interrupts
+    // guard.leave() in tcb switch
     return E_OK;
 }
 
@@ -611,16 +617,20 @@ extern "C" void AUTOSAR_kickoff(){
 }
 
 extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
+    debug_core << __FUNCTION__ << endl;
+    guard.enter();
     Machine::disable_interrupts();
     {
         scheduler_.ChainTask_impl(os::getTask(scheduler_.current_tasks[get_cpuid()]), os::getTask(arg0));
     }
     // Return with closed interrupts
     (void) arg0;
+    // guard.leave() in tcb switch
     return E_OK;
 }
 
 extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
+    guard.enter();
     Machine::disable_interrupts();
     {
         scheduler_.GetResource_impl(os::getTask(scheduler_.current_tasks[get_cpuid()]), 8); // new prio
@@ -628,16 +638,18 @@ extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
         Dispatcher::ResumeToTask(os::getTask(scheduler_.current_tasks[get_cpuid()]));
     }
     __OS_enable_irq_after_kernel();
+    guard.leave();
     return E_OK;
 }
 
 extern "C" StatusType AUTOSAR_ReleaseResource(ResourceType arg0){
-
+    guard.enter();
     Machine::disable_interrupts();
     {
         scheduler_.ReleaseResource_impl(os::getTask(scheduler_.current_tasks[get_cpuid()]), 2); // new prio
     }
     __OS_enable_irq_after_kernel();
+    guard.leave();
     return E_OK;
 }
 

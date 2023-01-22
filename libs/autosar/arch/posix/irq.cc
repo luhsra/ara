@@ -70,12 +70,12 @@ noinline void IRQ::deliver_interrupt(int irq) {
 }
 
 void IRQ::disable_interrupts(sigset_t *old_mask) {
-    sigprocmask(SIG_BLOCK, &full_mask, old_mask);
+    pthread_sigmask(SIG_BLOCK, &full_mask, old_mask);
 }
 
 void IRQ::enable_interrupts(sigset_t *new_mask) {
     sigset_t *mask = new_mask != nullptr ? new_mask: &full_mask;
-    sigprocmask(SIG_UNBLOCK, mask, NULL);
+    pthread_sigmask(SIG_UNBLOCK, mask, NULL);
 }
 
 static int my_sigisemptyset(sigset_t *sigset) {
@@ -101,7 +101,7 @@ void IRQ::clear_interrupts() {
 
 bool IRQ::interrupts_enabled(int irq) {
 	sigset_t mask;
-    sigprocmask(0, NULL, &mask);
+    pthread_sigmask(0, NULL, &mask);
     if (irq == 0) {
         return my_sigisemptyset(&mask);
     } else {

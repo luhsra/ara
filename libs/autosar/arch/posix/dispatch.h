@@ -35,7 +35,6 @@ namespace arch {
         }
 
         static forceinline void doDispatch(const TCB *from, const TCB *to) {
-            guard.enter();
             // update current context
             m_current[get_cpuid()] = to;
 

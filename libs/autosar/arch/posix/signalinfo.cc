@@ -36,7 +36,7 @@ int printSigMask(const char *msg) {
         debug << msg;
     }
 
-    if (sigprocmask(SIG_BLOCK, NULL, &currMask) == -1) {
+    if (pthread_sigmask(SIG_BLOCK, NULL, &currMask) == -1) {
         return -1;
     }
 
