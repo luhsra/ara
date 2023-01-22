@@ -22,7 +22,11 @@ void Guard::leave()
 {
     debug_core << "leaving" << endl;
 
+    Machine::disable_interrupts();
+
     pthread_mutex_unlock(&mutex);
 
     active[arch::get_cpuid()] = false;
+
+    Machine::enable_interrupts();
 }

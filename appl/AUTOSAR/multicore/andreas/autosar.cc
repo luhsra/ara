@@ -376,7 +376,8 @@ struct Scheduler {
 
     forceinline void Schedule_impl(bool from_interrupt=false) {
         debug_core << __FUNCTION__ << endl;
-        if(!from_interrupt && in_syscall()) {
+        // TODO: in_syscall replacement needed ?
+        if(!from_interrupt /*&& in_syscall()*/) {
             // in syscall: reschedule directly
 #ifdef CONFIG_OS_INLINE_SCHEDULER
             InlinedReschedule();
@@ -386,6 +387,7 @@ struct Scheduler {
         } else {
             // not in syscall (probably in ISR): request reschedule AST
             // Calls also Reschedule()
+            debug_core << "request_reschedule_ast" << endl;
             request_reschedule_ast();
         }
     }
