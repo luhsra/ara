@@ -20,6 +20,7 @@ namespace arch {
 	                           unsigned int size_of_stack,
 	                           void (*startup_function)());
 
+	unsigned int get_thread_id(int id);
 	int get_cpuid();
 	void init_cpuid();
 	void wait_for_cpus();

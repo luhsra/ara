@@ -8,10 +8,6 @@
 #include "hardware_threads.h"
 #include <pthread.h>
 
-namespace arch {
-    extern pthread_t get_thread_id(int);
-}
-
 using namespace arch;
 
 static void panic(int signal) {

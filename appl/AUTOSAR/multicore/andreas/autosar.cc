@@ -615,8 +615,8 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
 
     if (cores-- > 1) {
         int curr_cpuid = get_cpuid();
-        for (int i = 0; i < 2; i++) { // TODO: why not MAX_CPU working? triggering for 2
-            if (i == curr_cpuid)
+        for (int i = 0; i < MAX_CPUS; i++) {
+            if (i == curr_cpuid || get_thread_id(i) == 0)
                 continue;
             Machine::trigger_interrupt(SIGTERM, i);
         }

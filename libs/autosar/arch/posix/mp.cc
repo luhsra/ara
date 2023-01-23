@@ -32,9 +32,9 @@ namespace arch
 		return !error;
 	}
 
-	pthread_t get_thread_id(int id)
+	unsigned int get_thread_id(int id)
 	{
-		return cpuid[id];
+		return (unsigned int) cpuid[id];
 	}
 
 	int get_cpuid()
@@ -51,7 +51,7 @@ namespace arch
 	void init_cpuid()
 	{
 		for (int i = 0; i < MAX_CPUS; i++) {
-			cpuid[i] = -1;
+			cpuid[i] = 0;
 		}
 
 		cpuid[0] = pthread_self();
