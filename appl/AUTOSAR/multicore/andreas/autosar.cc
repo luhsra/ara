@@ -347,13 +347,13 @@ using namespace arch;
 struct Scheduler {
     os::scheduler::TaskList tlist;
 
-    os::scheduler::TaskList::current_prio_t current_prios[MAX_CPUS];
-    os::scheduler::TaskList::current_task_t current_tasks[MAX_CPUS];
+    os::scheduler::TaskList::current_prio_t current_prios;
+    os::scheduler::TaskList::current_task_t current_tasks;
 
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
-        tlist.head<possible_tasks>(current_tasks[get_cpuid()], current_prios[get_cpuid()]);
+        tlist.head<possible_tasks>(current_tasks, current_prios);
 
         dispatchToCurrentTask();
     }
@@ -361,7 +361,7 @@ struct Scheduler {
     forceinline void InlinedReschedule(void) {
         debug_core << __FUNCTION__ << endl;
         // update current_task
-        tlist.head(current_tasks[get_cpuid()], current_prios[get_cpuid()]);
+        tlist.head(current_tasks, current_prios);
         // dispatch
         dispatchToCurrentTask();
     }
@@ -369,7 +369,7 @@ struct Scheduler {
     noinline void Reschedule() {
         debug_core << __FUNCTION__ << endl;
         // update current_task
-        tlist.head(current_tasks[get_cpuid()], current_prios[get_cpuid()]);
+        tlist.head(current_tasks, current_prios);
         // dispatch
         dispatchToCurrentTask();
     }
@@ -470,13 +470,13 @@ struct Scheduler {
         if (task.preemptable == false) {
             // promote non-preemptable task to RES_SCHEDULER
             tlist.set(task.id, tlist.scheduler_prio);
-            current_prios[get_cpuid()] = tlist.scheduler_prio;
+            current_prios = tlist.scheduler_prio;
         }
-        current_tasks[get_cpuid()] = tlist.encode_task_id(task.id);
+        current_tasks = tlist.encode_task_id(task.id);
     }
 
     forceinline void SetSystemPriority(const Task::prio_t new_prio) {
-        current_prios[get_cpuid()] = tlist.encode_task_prio(new_prio);
+        current_prios = tlist.encode_task_prio(new_prio);
     }
 
     forceinline void SetPriority(const Task &task, const Task::prio_t new_prio) {
@@ -488,22 +488,22 @@ struct Scheduler {
     }
 
     forceinline Task::id_t getCurrent_TaskID(void) const {
-        return tlist.decode_task_id(current_tasks[get_cpuid()]);
+        return tlist.decode_task_id(current_tasks);
     }
 
     forceinline void dispatchToCurrentTask(void) {
         // dispatch or enter idle
-        if(current_tasks[get_cpuid()] == 1) {
+        if(current_tasks == 1) {
             Dispatcher::Dispatch(OS_H1_task);
-        } else if(current_tasks[get_cpuid()] == 2) {
+        } else if(current_tasks == 2) {
             Dispatcher::Dispatch(OS_H2_task);
-        } else if(current_tasks[get_cpuid()] == 3) {
+        } else if(current_tasks == 3) {
             Dispatcher::Dispatch(OS_H3_task);
-        } else if(current_tasks[get_cpuid()] == 4) {
+        } else if(current_tasks == 4) {
             Dispatcher::Dispatch(OS_H4_task);
-        } else if(current_tasks[get_cpuid()] == 5) {
+        } else if(current_tasks == 5) {
             Dispatcher::Dispatch(OS_H5_task);
-        } else if(current_tasks[get_cpuid()] == TaskList::idle_id) {
+        } else if(current_tasks == TaskList::idle_id) {
             Dispatcher::Idle();
         } else {
         CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
@@ -613,7 +613,6 @@ extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
 
     __OS_enable_irq_after_kernel();
     (void) arg0;
-    // //guard.leave() in tcb switch
     return E_OK;
 }
 
@@ -622,10 +621,9 @@ extern "C" StatusType AUTOSAR_TerminateTask(){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].TerminateTask_impl(os::getTask(scheduler_[get_cpuid()].current_tasks[get_cpuid()]));
+        scheduler_[get_cpuid()].TerminateTask_impl(os::getTask(scheduler_[get_cpuid()].current_tasks));
     }
     // Return with closed interrupts
-    // //guard.leave() in tcb switch
     return E_OK;
 }
 
@@ -638,11 +636,10 @@ extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ChainTask_impl(os::getTask(scheduler_[get_cpuid()].current_tasks[get_cpuid()]), os::getTask(arg0));
+        scheduler_[get_cpuid()].ChainTask_impl(os::getTask(scheduler_[get_cpuid()].current_tasks), os::getTask(arg0));
     }
     // Return with closed interrupts
     (void) arg0;
-    // //guard.leave() in tcb switch
     return E_OK;
 }
 
@@ -650,9 +647,9 @@ extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].GetResource_impl(os::getTask(scheduler_[get_cpuid()].current_tasks[get_cpuid()]), 8); // new prio
+        scheduler_[get_cpuid()].GetResource_impl(os::getTask(scheduler_[get_cpuid()].current_tasks), 8); // new prio
 
-        Dispatcher::ResumeToTask(os::getTask(scheduler_[get_cpuid()].current_tasks[get_cpuid()]));
+        Dispatcher::ResumeToTask(os::getTask(scheduler_[get_cpuid()].current_tasks));
     }
     __OS_enable_irq_after_kernel();
     
@@ -663,7 +660,7 @@ extern "C" StatusType AUTOSAR_ReleaseResource(ResourceType arg0){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ReleaseResource_impl(os::getTask(scheduler_[get_cpuid()].current_tasks[get_cpuid()]), 2); // new prio
+        scheduler_[get_cpuid()].ReleaseResource_impl(os::getTask(scheduler_[get_cpuid()].current_tasks), 2); // new prio
     }
     __OS_enable_irq_after_kernel();
     
