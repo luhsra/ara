@@ -160,6 +160,9 @@
 #define ShutdownOS(STATUS)			\
   AUTOSAR_ShutdownOS(STATUS)
 
+#define ShutdownAllCores(STATUS)			\
+  AUTOSAR_ShutdownAllCores(STATUS)
+
 #define DisableAllInterrupts()                  \
   AUTOSAR_DisableAllInterrupts()
 #define EnableAllInterrupts()                  \
@@ -370,7 +373,7 @@ extern StatusType AUTOSAR_DeactivateDevice(DeviceType r);
  ******************************************************************************/
 
 extern __attribute__((noreturn)) void AUTOSAR_ShutdownOS(StatusType status);
-
+extern __attribute__((noreturn)) void AUTOSAR_ShutdownAllCores(StatusType status);
 
 #ifdef __cplusplus
 }

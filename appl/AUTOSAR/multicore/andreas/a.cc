@@ -11,7 +11,7 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
 	test_trace('1');
-	AUTOSAR_ShutdownOS(E_OK);
+	ShutdownAllCores(E_OK);
 }
 
 TASK(H2) {
@@ -24,6 +24,8 @@ TASK(H3) {
 	test_trace('3');
 
 	Machine::trigger_interrupt(SIGUSR1, 1);
+
+	//ShutdownOS(E_OK);
 	TerminateTask();
 }
 

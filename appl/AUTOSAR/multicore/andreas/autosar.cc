@@ -17,6 +17,7 @@ extern "C" void  AUTOSAR_TASK_FUNC_H5();
 extern "C" void  __OS_StartOS_dispatch(int);
 extern "C" void  StartOS(int);
 extern "C" void  AUTOSAR_ShutdownOS(StatusType);
+extern "C" void  AUTOSAR_ShutdownAllCores(StatusType);
 extern "C" void  __OS_ASTSchedule(int);
 
 void  __OS_HOOK_PreIdleHook();
@@ -541,8 +542,12 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
     scheduler_[get_cpuid()].InlinedReschedule();
 }
 
+static int cores = 0;
+
 extern "C" void AUTOSAR_StartCore() {
     debug_core << __FUNCTION__ << endl;
+
+    cores++;
     
     CALL_HOOK(StartupHook);
     syscall(__OS_StartOS_dispatch);
@@ -554,8 +559,17 @@ void irq_handler (int signo) {
     // TODO correctly parametrize the task
     debug_core << "IRQ " << signo << endl;
 
-    scheduler_[get_cpuid()].SetReadyFromSuspended_impl(OS_H2_task);
-    scheduler_[get_cpuid()].Schedule_impl(true);
+    if (signo == SIGUSR1) {
+
+        scheduler_[get_cpuid()].SetReadyFromSuspended_impl(OS_H2_task);
+        scheduler_[get_cpuid()].Schedule_impl(true);
+    } else if (signo == SIGTERM) {
+        cores --;
+        Machine::halt();
+    }
+
+    // unblock more interrupts
+    __OS_enable_irq_after_kernel();
 }
 
 extern "C" void StartOS(int arg0){
@@ -571,7 +585,14 @@ extern "C" void StartOS(int arg0){
     arch::irq.set_handler(SIGUSR1, irq_handler);
     arch::irq.enable(SIGUSR1);
 
+    arch::irq.set_handler(SIGTERM, irq_handler);
+    arch::irq.enable(SIGTERM);
+
+    int curr_cores = cores;
     arch::start_hardware_thread(1, nullptr, NULL, AUTOSAR_StartCore);
+
+    // wait until core is started
+    while (curr_cores == cores);
 
     AUTOSAR_StartCore();
 
@@ -580,22 +601,33 @@ extern "C" void StartOS(int arg0){
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
-    
-    CALL_HOOK(ShutdownHook, arg0);
-    ShutdownMachine();
-    
+
+    if (cores-- > 1) {
+        Machine::halt();
+    } else { // last core
+        AUTOSAR_ShutdownAllCores(arg0);
+    }
     Machine::unreachable();
 }
 
-// TODO correctly handle Shutdown
-/*extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
+extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
-    
+
+    if (cores-- > 1) {
+        int curr_cpuid = get_cpuid();
+        for (int i = 0; i < 2; i++) { // TODO: why not MAX_CPU working? triggering for 2
+            if (i == curr_cpuid)
+                continue;
+            Machine::trigger_interrupt(SIGTERM, i);
+        }
+    }
+
+    while (cores > 0);
+
     CALL_HOOK(ShutdownHook, arg0);
     ShutdownMachine();
-    
     Machine::unreachable();
-}*/
+}
 
 
 extern "C" void __OS_ASTSchedule(int arg0){
