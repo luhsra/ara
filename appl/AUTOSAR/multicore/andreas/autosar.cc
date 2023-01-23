@@ -360,7 +360,6 @@ struct Scheduler {
     }
 
     forceinline void InlinedReschedule(void) {
-        debug_core << __FUNCTION__ << endl;
         // update current_task
         tlist.head(current_tasks, current_prios);
         // dispatch
@@ -368,7 +367,6 @@ struct Scheduler {
     }
 
     noinline void Reschedule() {
-        debug_core << __FUNCTION__ << endl;
         // update current_task
         tlist.head(current_tasks, current_prios);
         // dispatch
@@ -376,7 +374,7 @@ struct Scheduler {
     }
 
     forceinline void Schedule_impl(bool from_interrupt=false) {
-        debug_core << __FUNCTION__ << endl;
+        debug_core << __FUNCTION__ << "(" << from_interrupt << ")" << endl;
         // TODO: in_syscall replacement needed ?
         if(!from_interrupt /*&& in_syscall()*/) {
             // in syscall: reschedule directly
@@ -537,7 +535,6 @@ void inlinehint Counter::tick() {
 } // os
 
 extern "C" void __OS_StartOS_dispatch(int arg0){
-    debug_core << __FUNCTION__ << endl;
     (void) arg0;
     scheduler_[get_cpuid()].InlinedReschedule();
 }
@@ -636,7 +633,6 @@ extern "C" void __OS_ASTSchedule(int arg0){
 }
 
 extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
-    debug_core << __FUNCTION__ << endl;
     
     Machine::disable_interrupts();
     {
@@ -649,7 +645,6 @@ extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
 }
 
 extern "C" StatusType AUTOSAR_TerminateTask(){
-    debug_core << __FUNCTION__ << endl;
     
     Machine::disable_interrupts();
     {
@@ -664,7 +659,6 @@ extern "C" void AUTOSAR_kickoff(){
 }
 
 extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
-    debug_core << __FUNCTION__ << endl;
     
     Machine::disable_interrupts();
     {

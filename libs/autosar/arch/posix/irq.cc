@@ -111,7 +111,6 @@ void IRQ::guardian(int signum) {
         irq.m_gate[signum](signum);
 	irq.ast_level--;
 	if (irq.ast_level == 0 && irq.ast_requested) {
-        debug_core << "ast_requested" << endl;
 		irq.ast_requested = false;
 		__OS_ASTSchedule(0);
 	}

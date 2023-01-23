@@ -45,8 +45,6 @@ namespace arch {
 
             CALL_HOOK(PreTaskHook);
 
-            debug_core << "from " << from << endl;
-
             // start up
             if (!from) {
                 /*
@@ -107,7 +105,7 @@ namespace arch {
                 return;
             }
 
-            debug_core << "Dispatch to ID: " << (int)next.id << " " << ((void *)&next.tcb) << endl;
+            debug_core << "Dispatch to ID: " << (int)next.id << endl;
 
             doDispatch(cur, &next.tcb);
         }

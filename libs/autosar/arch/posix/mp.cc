@@ -26,7 +26,6 @@ namespace arch
 		pthread_t thread;
 		int error = pthread_create(&thread, nullptr, pthread_wrapper, reinterpret_cast<void*>(startup_function));
 
-		debug_core << "thread " << thread << " hw " << hardware_number << endl;
 		cpuid[hardware_number] = thread;
 		pthread_detach(thread);
 		return !error;
@@ -55,7 +54,6 @@ namespace arch
 		}
 
 		cpuid[0] = pthread_self();
-		debug_core << "thread " << cpuid[0] << " hw " << 0 << endl;
 	}
 }
 
