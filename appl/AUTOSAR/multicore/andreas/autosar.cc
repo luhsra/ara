@@ -587,6 +587,17 @@ extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     Machine::unreachable();
 }
 
+// TODO correctly handle Shutdown
+/*extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
+    debug_core << __FUNCTION__ << endl;
+    
+    CALL_HOOK(ShutdownHook, arg0);
+    ShutdownMachine();
+    
+    Machine::unreachable();
+}*/
+
+
 extern "C" void __OS_ASTSchedule(int arg0){
     (void) arg0;
     scheduler_[get_cpuid()].InlinedReschedule();

@@ -11,7 +11,7 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
 	test_trace('1');
-	TerminateTask();
+	AUTOSAR_ShutdownOS(E_OK);
 }
 
 TASK(H2) {
@@ -40,10 +40,6 @@ TASK(H5) {
 }
 
 void PreIdleHook() {
-	if (arch::get_cpuid() == 0)	{
-		sleep(1);
-		AUTOSAR_ShutdownOS(E_OK);
-	}
 }
 
 void ShutdownHook(StatusType status) {
