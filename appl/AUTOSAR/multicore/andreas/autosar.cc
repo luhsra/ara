@@ -541,12 +541,12 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
     scheduler_[get_cpuid()].InlinedReschedule();
 }
 
-extern "C" void StartAP(){
-    debug_core << "StartAP" << endl;
+extern "C" void AUTOSAR_StartCore() {
+    debug_core << __FUNCTION__ << endl;
     
     CALL_HOOK(StartupHook);
     syscall(__OS_StartOS_dispatch);
-    // TODO why is thread 1 sometimes not continueing here
+
     Machine::unreachable();
 }
 
@@ -571,9 +571,9 @@ extern "C" void StartOS(int arg0){
     arch::irq.set_handler(SIGUSR1, irq_handler);
     arch::irq.enable(SIGUSR1);
 
-    arch::start_hardware_thread(1, nullptr, NULL, StartAP);
+    arch::start_hardware_thread(1, nullptr, NULL, AUTOSAR_StartCore);
 
-    StartAP();
+    AUTOSAR_StartCore();
 
     Machine::unreachable();
 }
