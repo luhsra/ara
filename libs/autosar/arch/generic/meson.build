@@ -3,7 +3,6 @@ autosar_includes += ['-I', meson.current_source_dir()]
 src_files = [
     'startup',
     'timing-arch',
-    'guard',
 ]
 
 obj_targets = []

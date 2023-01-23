@@ -15,8 +15,6 @@
 #include "tcb.h"
 #include "os/hooks.h"
 #include "hardware_threads.h"
-#include "guard.h"
-
 namespace arch {
 
     static const int IDLESTACKSIZE = 4096;

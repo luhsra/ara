@@ -4,7 +4,6 @@
 #include  "machine.h"
 #include "os/util/assert.h"
 #include <stdio.h>
-#include "guard.h"
 
 #define ASM_SAVE_REGISTERS \
     "push %%ebx\n"\
@@ -293,7 +292,7 @@ namespace arch {
             void *to_sp = *to_sp_ptr;
             *to_sp_ptr = 0;
 			debug_core << __FUNCTION__ << endl;
-			guard.leave();
+			
 	    asm __volatile__ ("push $1f\n"
                               ASM_SAVE_REGISTERS
 			      "mov  %%esp, (%0)\n"
@@ -310,7 +309,7 @@ namespace arch {
             void *to_sp = *to_sp_ptr;
             *to_sp_ptr = 0;
 			debug_core << __FUNCTION__ << endl;
-			guard.leave();
+			
 	    asm __volatile__ ("mov  %0, %%esp\n"
 			      ASM_RESTORE_REGISTERS
 			      "ret\n"
