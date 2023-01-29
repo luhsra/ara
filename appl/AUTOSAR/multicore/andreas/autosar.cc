@@ -553,7 +553,16 @@ extern "C" void AUTOSAR_StartCore() {
 }
 
 void irq_handler (int signo) {
-    // TODO correctly parametrize the task
+    /** TODO correctly parametrize the task
+    *
+     * The sender should fill in placeholder for the correct core and wait until it is unset again.
+     * e.g. core 0 --> core 1 : activate task 3
+     * new_task[1] = 3
+     * while (3) { wait }
+     * [SWS_Os_00598] The call of ActivateTask across cores shall behave synchronously
+     * ActivateTaskAsyn as alternative
+    */
+
     debug_core << "IRQ " << signo << endl;
 
     if (signo == SIGUSR1) {
