@@ -580,7 +580,7 @@ void irq_handler (int signo) {
 
 extern "C" void StartOS(int arg0){
     (void) arg0;
-    init_cpuid();
+
     Dispatcher::Prepare(OS_H1_task);
     Dispatcher::Prepare(OS_H2_task);
     Dispatcher::Prepare(OS_H3_task);

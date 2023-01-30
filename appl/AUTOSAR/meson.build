@@ -223,10 +223,10 @@ foreach app : autosar_apps
                             input: [
                               autosar_obj,
                               app_obj,
+                              libautosar_test,
                               libautosar_os,
-                              libautosar_generic,
                               libautosar_posix,
-                              libautosar_test
+                              libautosar_generic
                             ],
                             output : full_name,
                             depfile : full_name + '.dep',
