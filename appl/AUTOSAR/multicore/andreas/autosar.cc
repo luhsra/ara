@@ -534,7 +534,7 @@ struct Scheduler {
     forceinline void ChainTask_impl(const Task &from, const Task &to) {
         debug_core << __FUNCTION__ << "(" << (int) from.id << "," << (int)to.id <<")" << endl;
         SetSuspended_impl(from);
-        SetReady_impl(to);
+        ActivateTask_impl(to); // Use ActivateTask IPI if cross core
         Schedule_impl();
     }
 
@@ -686,7 +686,7 @@ Scheduler scheduler_[MAX_CPUS];
 
 extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync) {
     if (task.target_cpuid != get_cpuid()) {
-        debug_core << __FUNCTION__ << "(" << task.id << ")" << endl;
+        debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
         scheduler_[task.target_cpuid].ipi_activated_task_id = task.id; // store task id to activate
 
         Machine::trigger_interrupt(SIGUSR1, task.target_cpuid);
