@@ -276,7 +276,7 @@ struct TaskList : public UnencodedTaskListStatic {
                 }
             }
             if (possible_tasks == nullptr || possible_tasks[2]) {
-                if(H2 > prio && ((H1_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
+                if(H2 > prio && ((H2_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
                     prio = H2;
                     id = 2;
                 }

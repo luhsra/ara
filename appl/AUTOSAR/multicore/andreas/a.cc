@@ -19,6 +19,7 @@ TASK(H1) {
 }
 
 TASK(H2) {
+	WaitEvent(E1);
 	test_trace('2');
 	ActivateTask(H1);
 	TerminateTask();
@@ -26,25 +27,19 @@ TASK(H2) {
 
 TASK(H3) {
 	test_trace('3');
-
-	WaitEvent(E1); // TODO cross core events ??
-
-	ActivateTask(H2);
-
+	SetEvent(H2, E1);
 	TerminateTask();
 }
 
 TASK(H4) {
 	test_trace('4');
 	ActivateTask(H3); // TODO chainTask cross core ??
-
-	SetEvent(H3, E1);
-
 	TerminateTask();
 }
 
 TASK(H5) {
 	test_trace('5');
+	ActivateTask(H2);
 	ActivateTask(H4);
 	TerminateTask();
 }
