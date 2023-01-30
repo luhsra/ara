@@ -23,6 +23,7 @@ extern "C" void  AUTOSAR_ShutdownAllCores(StatusType);
 extern "C" void  __OS_ASTSchedule(int);
 
 extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync = true);
+extern "C" bool SetEvent_IPI_helper(const Task &task, EventMaskType mask, bool sync = true);
 
 void  __OS_HOOK_PreIdleHook();
 void  __OS_HOOK_FaultDetectedHook(DetectedFault_t,uint32_t,uint32_t);
@@ -158,21 +159,35 @@ struct TaskList : public UnencodedTaskListStatic {
     static constexpr auto scheduler_prio = 8;
 
     Task::prio_t H1;
+    event_mask_t H1_events_waiting;
+    event_mask_t H1_events_set;
+
     Task::prio_t H2;
+    event_mask_t H2_events_waiting;
+    event_mask_t H2_events_set;
+
     Task::prio_t H3;
+    event_mask_t H3_events_waiting;
+    event_mask_t H3_events_set;
+
     Task::prio_t H4;
+    event_mask_t H4_events_waiting;
+    event_mask_t H4_events_set;
+
     Task::prio_t H5;
+    event_mask_t H5_events_waiting;
+    event_mask_t H5_events_set;
 
     // idle task id/priority
     static constexpr Task::id_t idle_id     = 0;
     static constexpr Task::prio_t idle_prio = 0;
 
     TaskList() : UnencodedTaskListStatic()
-            , H1(0)
-            , H2(0)
-            , H3(0)
-            , H4(0)
-            , H5(0)
+        , H1(0), H1_events_waiting(0), H1_events_set(0)
+        , H2(0), H2_events_waiting(0), H2_events_set(0)
+        , H3(0), H3_events_waiting(0), H3_events_set(0)
+        , H4(0), H4_events_waiting(0), H4_events_set(0)
+        , H5(0), H5_events_waiting(0), H5_events_set(0)
 
     { /* empty constructor */ }
 
@@ -215,22 +230,32 @@ struct TaskList : public UnencodedTaskListStatic {
         if (id == 1) {
             if (H1 < prio) {
                 H1 = prio;
+                H1_events_waiting = 0;
+                H1_events_set = 0;
             }
         } else if (id == 2) {
             if (H2 < prio) {
                 H2 = prio;
+                H2_events_waiting = 0;
+                H2_events_set = 0;
             }
         } else if (id == 3) {
             if (H3 < prio) {
                 H3 = prio;
+                H3_events_waiting = 0;
+                H3_events_set = 0;
             }
         } else if (id == 4) {
             if (H4 < prio) {
                 H4 = prio;
+                H4_events_waiting = 0;
+                H4_events_set = 0;
             }
         } else if (id == 5) {
             if (H5 < prio) {
                 H5 = prio;
+                H5_events_waiting = 0;
+                H5_events_set = 0;
             }
         } else {
             assert(false);
@@ -245,13 +270,13 @@ struct TaskList : public UnencodedTaskListStatic {
 
         if (get_cpuid() == 1) {
             if (possible_tasks == nullptr || possible_tasks[1]) {
-                if(H1 > prio ) {
+                if(H1 > prio && ((H1_events_waiting == 0) || (H1_events_waiting & H1_events_set) != 0)) {
                     prio = H1;
                     id = 1;
                 }
             }
             if (possible_tasks == nullptr || possible_tasks[2]) {
-                if(H2 > prio ) {
+                if(H2 > prio && ((H1_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
                     prio = H2;
                     id = 2;
                 }
@@ -259,19 +284,19 @@ struct TaskList : public UnencodedTaskListStatic {
         }
         else if (get_cpuid() == 0) {
             if (possible_tasks == nullptr || possible_tasks[3]) {
-                if(H3 > prio ) {
+                if(H3 > prio && ((H3_events_waiting == 0) || (H3_events_waiting & H3_events_set) != 0)) {
                     prio = H3;
                     id = 3;
                 }
             }
             if (possible_tasks == nullptr || possible_tasks[4]) {
-                if(H4 > prio ) {
+                if(H4 > prio && ((H4_events_waiting == 0) || (H4_events_waiting & H4_events_set) != 0)) {
                     prio = H4;
                     id = 4;
                 }
             }
             if (possible_tasks == nullptr || possible_tasks[5]) {
-                if(H5 > prio ) {
+                if(H5 > prio && ((H5_events_waiting == 0) || (H5_events_waiting & H5_events_set) != 0)) {
                     prio = H5;
                     id = 5;
                 }
@@ -283,7 +308,18 @@ struct TaskList : public UnencodedTaskListStatic {
     forceinline void wait_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
-     {
+
+        if (id == 1) {
+           H1_events_waiting = mask;
+        } else if (id == 2) {
+           H2_events_waiting = mask;
+        } else if (id == 3) {
+           H3_events_waiting = mask;
+        } else if (id == 4) {
+           H4_events_waiting = mask;
+        } else if (id == 5) {
+           H5_events_waiting = mask;
+        } else {
             assert(false);
         }
     }
@@ -292,7 +328,17 @@ struct TaskList : public UnencodedTaskListStatic {
     forceinline void set_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
-     {
+        if (id == 1) {
+           H1_events_set |= mask;
+        } else if (id == 2) {
+           H2_events_set |= mask;
+        } else if (id == 3) {
+           H3_events_set |= mask;
+        } else if (id == 4) {
+           H4_events_set |= mask;
+        } else if (id == 5) {
+           H5_events_set |= mask;
+        } else {
             assert(false);
         }
     }
@@ -301,7 +347,23 @@ struct TaskList : public UnencodedTaskListStatic {
     forceinline void clear_events(const Task::id_t id, const event_mask_t mask) {
         (void) id;
         (void) mask;
-     {
+        if (id == 1) {
+           H1_events_waiting &= ~mask;
+           H1_events_set &= ~mask;
+        } else if (id == 2) {
+           H2_events_waiting &= ~mask;
+           H2_events_set &= ~mask;
+        } else if (id == 3) {
+           H3_events_waiting &= ~mask;
+           H3_events_set &= ~mask;
+        } else if (id == 4) {
+           H4_events_waiting &= ~mask;
+           H4_events_set &= ~mask;
+        } else if (id == 5) {
+           H5_events_waiting &= ~mask;
+           H5_events_set &= ~mask;
+        } else {
+            assert(false);
         }
     }
 
@@ -312,19 +374,20 @@ struct TaskList : public UnencodedTaskListStatic {
     /** Get Events **/
     forceinline event_mask_t get_events(const Task::id_t id) {
         (void) id;
-if (id == 1) {
-
+        if (id == 1) {
+            return H1_events_set;
         } else if (id == 2) {
-
+            return H2_events_set;
         } else if (id == 3) {
-
+            return H3_events_set;
         } else if (id == 4) {
-
+            return H4_events_set;
         } else if (id == 5) {
-
-        } else        {
-          }
-          return 0;
+            return H5_events_set;
+        } else {
+            assert(false);
+        }
+        return 0;
     }
 
     static Task::id_t decode_task_id(Task::id_t id){
@@ -344,13 +407,27 @@ if (id == 1) {
 
 /** Equality operator (used for TMR) [enc=0] **/
 bool operator==(const TaskList& lhs, const TaskList& rhs) {
-     if(lhs.H1 != rhs.H1) return false;
-     if(lhs.H2 != rhs.H2) return false;
-     if(lhs.H3 != rhs.H3) return false;
-     if(lhs.H4 != rhs.H4) return false;
-     if(lhs.H5 != rhs.H5) return false;
+    if(lhs.H1 != rhs.H1) return false;
+    if(lhs.H1_events_waiting != rhs.H1_events_waiting) return false;
+    if(lhs.H1_events_set != rhs.H1_events_set) return false;
 
-        return true;
+    if(lhs.H2 != rhs.H2) return false;
+    if(lhs.H2_events_waiting != rhs.H2_events_waiting) return false;
+    if(lhs.H2_events_set != rhs.H2_events_set) return false;
+
+    if(lhs.H3 != rhs.H3) return false;
+    if(lhs.H3_events_waiting != rhs.H3_events_waiting) return false;
+    if(lhs.H3_events_set != rhs.H3_events_set) return false;
+
+    if(lhs.H4 != rhs.H4) return false;
+    if(lhs.H4_events_waiting != rhs.H4_events_waiting) return false;
+    if(lhs.H4_events_set != rhs.H4_events_set) return false;
+
+    if(lhs.H5 != rhs.H5) return false;
+    if(lhs.H5_events_waiting != rhs.H5_events_waiting) return false;
+    if(lhs.H5_events_set != rhs.H5_events_set) return false;
+
+    return true;
 }
 
 bool operator!=(const TaskList& lhs, const TaskList& rhs) { return !(lhs == rhs); }
@@ -374,6 +451,8 @@ struct Scheduler {
     os::scheduler::TaskList::current_task_t current_task;
 
     Task::id_t ipi_activated_task_id = 0;
+    EventMaskType ipi_event_mask = 0;
+    Task::id_t ipi_event_task_id = 0;
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
@@ -444,10 +523,11 @@ struct Scheduler {
 
     forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false, bool sync=true) {
         debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
-        SetReady_impl(task);
+
         if (ActivateTask_IPI_helper(task, sync)) {
             return; // no need to reschedule on this core
         }
+        SetReady_impl(task);
         Schedule_impl(from_interrupt);
     }
 
@@ -477,20 +557,26 @@ struct Scheduler {
         Schedule_impl();
     }
 
-    forceinline void SetEvent_impl(const Task &other_task, const int event_mask) {
+    forceinline void SetEvent_impl(const Task &other_task, const int event_mask, bool sync=true) {
         debug_core << __FUNCTION__ << "(" << (int) other_task.id << ")" << endl;
+
+
+        if (SetEvent_IPI_helper(other_task, event_mask, sync)) {
+            return; // no need to reschedule on this core
+        }
+
         tlist.set_events(other_task.id, event_mask);
         Schedule_impl();
     }
 
     forceinline void WaitEvent_impl(const Task &current_task, const int event_mask) {
-        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ", " << event_mask << ")" << endl;
         tlist.wait_events(current_task.id, event_mask);
         Schedule_impl();
     }
 
     forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
-        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
+        debug_core << __FUNCTION__ << "(" << (int) current_task.id << ", " << event_mask << ")" << endl;
         tlist.clear_events(current_task.id, event_mask);
     }
 
@@ -614,6 +700,24 @@ extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync) {
     return false;
 }
 
+extern "C" bool SetEvent_IPI_helper(const Task &task, EventMaskType mask, bool sync) {
+    if (task.target_cpuid != get_cpuid()) {
+        debug_core << __FUNCTION__ << "(" << task.id << ", " << mask << ")" << endl;
+
+        scheduler_[task.target_cpuid].ipi_event_mask = mask;
+
+        scheduler_[task.target_cpuid].ipi_event_task_id = task.id;
+        Machine::trigger_interrupt(SIGUSR2, task.target_cpuid);
+
+        if (sync) {
+            while (scheduler_[task.target_cpuid].ipi_event_mask == mask); // wait until IPI succeeded
+            debug_core << __FUNCTION__ << " waiting finished" << endl;
+        }
+        return true;
+    }
+    return false;
+}
+
 extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
     *a = scheduler_[get_cpuid()].getCurrent_TaskID();
     return E_OK;
@@ -681,10 +785,16 @@ void irq_handler (int signo) {
     debug_core << "IRQ " << signo << endl;
 
     if (signo == SIGUSR1) {
-
-        scheduler_[get_cpuid()].SetReadyFromSuspended_impl(os::getTask(scheduler_[get_cpuid()].ipi_activated_task_id));
+        scheduler_[get_cpuid()].SetReady_impl(os::getTask(scheduler_[get_cpuid()].ipi_activated_task_id));
         scheduler_[get_cpuid()].Schedule_impl(true);
-        scheduler_[get_cpuid()].ipi_activated_task_id = 0; // signal completion
+        scheduler_[get_cpuid()].ipi_activated_task_id = 0; // mark IPI as completed
+
+    } else if (signo == SIGUSR2) {
+        scheduler_[get_cpuid()].tlist.set_events(scheduler_[get_cpuid()].ipi_event_task_id, scheduler_[get_cpuid()].ipi_event_mask);
+        scheduler_[get_cpuid()].Schedule_impl(true);
+        scheduler_[get_cpuid()].ipi_event_mask = 0; // mark IPI as completed
+        scheduler_[get_cpuid()].ipi_event_task_id = 0; // mark IPI as completed
+
     } else if (signo == SIGTERM) {
         cores --;
         debug_core << "Force stopping this core" << endl;
@@ -709,6 +819,8 @@ extern "C" void StartOS(int arg0){
 
     arch::irq.set_handler(SIGUSR1, irq_handler);
     arch::irq.enable(SIGUSR1);
+    arch::irq.set_handler(SIGUSR2, irq_handler);
+    arch::irq.enable(SIGUSR2);
 
     arch::irq.set_handler(SIGTERM, irq_handler);
     arch::irq.enable(SIGTERM);
@@ -809,6 +921,7 @@ extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
     return E_OK;
 }
 
+// TODO: Test get/release resource
 extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
     
     Machine::disable_interrupts();
@@ -833,6 +946,49 @@ extern "C" StatusType AUTOSAR_ReleaseResource(ResourceType arg0){
     return E_OK;
 }
 
+extern "C" StatusType AUTOSAR_SetEvent(TaskType arg0, EventMaskType arg1){
+
+    Machine::disable_interrupts();
+
+    {
+        const os::scheduler::Task &task = os::getTask(arg0);
+
+        scheduler_[get_cpuid()].SetEvent_impl(task, arg1);
+    }
+
+    __OS_enable_irq_after_kernel();
+
+    (void) arg0;
+    (void) arg1;
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_WaitEvent(EventMaskType arg0){
+
+    Machine::disable_interrupts();
+    {
+
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        scheduler_[get_cpuid()].WaitEvent_impl(curr_task, arg0);
+    }
+    __OS_enable_irq_after_kernel();
+    (void) arg0;
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_ClearEvent(EventMaskType arg0){
+    Machine::disable_interrupts();
+    {
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        scheduler_[get_cpuid()].ClearEvent_impl(curr_task, arg0);
+        // Dispatch directly back to Userland
+        Dispatcher::ResumeToTask(curr_task);
+    }
+    __OS_enable_irq_after_kernel();
+
+    (void) arg0;
+    return E_OK;
+}
 
 
 void __OS_HOOK_PreIdleHook(){

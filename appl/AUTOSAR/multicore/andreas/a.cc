@@ -7,6 +7,8 @@ DeclareTask(H3);
 DeclareTask(H4);
 DeclareTask(H5);
 
+DeclareEvent(E1, 1);
+
 DeclareSpinlock(S1);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
@@ -17,32 +19,32 @@ TASK(H1) {
 }
 
 TASK(H2) {
-	GetSpinlock(S1);
 	test_trace('2');
-	ReleaseSpinlock(S1);
-
 	ActivateTask(H1);
 	TerminateTask();
 }
 
 TASK(H3) {
 	test_trace('3');
-	//ChainTask(H2);  // TODO chainTask cross core ??
+
+	WaitEvent(E1); // TODO cross core events ??
+
 	ActivateTask(H2);
+
 	TerminateTask();
 }
 
 TASK(H4) {
 	test_trace('4');
-	ChainTask(H3);
+	ChainTask(H3); // TODO chainTask cross core ??
 	TerminateTask();
 }
 
 TASK(H5) {
 	test_trace('5');
-	GetSpinlock(S1);
 	ActivateTask(H4);
-	ReleaseSpinlock(S1);
+
+	SetEvent(H3, E1);
 	TerminateTask();
 }
 
