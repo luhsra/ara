@@ -350,6 +350,10 @@ struct Scheduler {
     }
 
     forceinline void InlinedReschedule(void) {
+
+        if (Dispatcher::getSpinlockCnt()) {
+            debug_core << "Task still holding Spinlocks, cannot reschedule" << endl;
+        }
         // update current_task
         tlist.head(current_task, current_prio);
         // dispatch
@@ -357,6 +361,9 @@ struct Scheduler {
     }
 
     noinline void Reschedule() {
+        if (Dispatcher::getSpinlockCnt()) {
+            debug_core << "Task still holding Spinlocks, cannot reschedule" << endl;
+        }
         // update current_task
         tlist.head(current_task, current_prio);
         // dispatch

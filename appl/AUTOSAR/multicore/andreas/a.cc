@@ -27,7 +27,8 @@ TASK(H2) {
 
 TASK(H3) {
 	test_trace('3');
-
+	//ChainTask(H2);  // TODO chainTask cross core ??
+	ActivateTask(H2);
 	TerminateTask();
 }
 
@@ -40,9 +41,6 @@ TASK(H4) {
 TASK(H5) {
 	test_trace('5');
 	GetSpinlock(S1);
-	ActivateTask(H2);
-
-	// TODO this thread should not be rescheduled when spinlock is held
 	ActivateTask(H4);
 	ReleaseSpinlock(S1);
 	TerminateTask();

@@ -20,6 +20,7 @@ namespace arch {
     static const int IDLESTACKSIZE = 4096;
 
     class Dispatcher {
+        static int spinlocks[MAX_CPUS];
         static const TCB* m_current[MAX_CPUS];
         static TCB m_idle[MAX_CPUS];
 	    static void *idle_sp[MAX_CPUS];
@@ -69,13 +70,22 @@ namespace arch {
         }
 
     public:
+        static void spinlockInc(int id) {
+            Dispatcher::spinlocks[id]++;
+        }
+        static void spinlockDec(int id) {
+            Dispatcher::spinlocks[id]--;
+        }
+        static int getSpinlockCnt(int id) {
+            return Dispatcher::spinlocks[id];
+        }
 
         static void init(void) {
             // setup idle context
             for (int i = 0; i < MAX_CPUS; i++) {
                 m_idle[i].reset();
             }
-            
+
         }
 
 
