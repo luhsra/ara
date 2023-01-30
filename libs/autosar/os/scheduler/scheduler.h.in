@@ -179,7 +179,7 @@ void Scheduler::Reschedule() {
 
 Scheduler scheduler_;
 
-extern "C" StatusType OSEKOS_GetTaskID(TaskRefType a) {
+extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
     *a = scheduler_.getCurrent_TaskID();
     return E_OK;
 }
