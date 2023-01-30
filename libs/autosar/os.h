@@ -83,6 +83,9 @@
 #define SetEvent(task,event)						\
   AUTOSAR_SetEvent(AUTOSAR_TASK_##task,event)
 
+#define SetEventAsync(task,event)						\
+  AUTOSAR_SetEventAsync(AUTOSAR_TASK_##task,event)
+
 #define GetEvent(task,event)						\
   AUTOSAR_GetEvent(AUTOSAR_TASK_##task,event)
 

@@ -36,15 +36,16 @@ TASK(H3) {
 
 TASK(H4) {
 	test_trace('4');
-	ChainTask(H3); // TODO chainTask cross core ??
+	ActivateTask(H3); // TODO chainTask cross core ??
+
+	SetEvent(H3, E1);
+
 	TerminateTask();
 }
 
 TASK(H5) {
 	test_trace('5');
 	ActivateTask(H4);
-
-	SetEvent(H3, E1);
 	TerminateTask();
 }
 

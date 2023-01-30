@@ -702,7 +702,7 @@ extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync) {
 
 extern "C" bool SetEvent_IPI_helper(const Task &task, EventMaskType mask, bool sync) {
     if (task.target_cpuid != get_cpuid()) {
-        debug_core << __FUNCTION__ << "(" << task.id << ", " << mask << ")" << endl;
+        debug_core << __FUNCTION__ << "(" << (int) task.id << ", " << mask << ")" << endl;
 
         scheduler_[task.target_cpuid].ipi_event_mask = mask;
 
@@ -802,6 +802,7 @@ void irq_handler (int signo) {
     }
 
     // unblock more interrupts
+    debug_core << "IRQ completed" << endl;
     __OS_enable_irq_after_kernel();
 }
 
@@ -953,13 +954,26 @@ extern "C" StatusType AUTOSAR_SetEvent(TaskType arg0, EventMaskType arg1){
     {
         const os::scheduler::Task &task = os::getTask(arg0);
 
-        scheduler_[get_cpuid()].SetEvent_impl(task, arg1);
+        scheduler_[get_cpuid()].SetEvent_impl(task, arg1, /* sync */ true);
     }
 
     __OS_enable_irq_after_kernel();
 
-    (void) arg0;
-    (void) arg1;
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_SetEventAsync(TaskType arg0, EventMaskType arg1){
+
+    Machine::disable_interrupts();
+
+    {
+        const os::scheduler::Task &task = os::getTask(arg0);
+
+        scheduler_[get_cpuid()].SetEvent_impl(task, arg1, /* sync */ false);
+    }
+
+    __OS_enable_irq_after_kernel();
+
     return E_OK;
 }
 
