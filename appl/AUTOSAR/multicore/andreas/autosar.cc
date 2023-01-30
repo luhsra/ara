@@ -377,6 +377,11 @@ struct Scheduler {
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
+        if (Dispatcher::getSpinlockCnt(get_cpuid())) {
+            debug_core << "Task still holding Spinlocks, cannot reschedule" << endl;
+            return;
+        }
+
         tlist.head<possible_tasks>(current_task, current_prio);
 
         dispatchToCurrentTask();
