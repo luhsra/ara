@@ -43,6 +43,9 @@
 #define ActivateTask(x)				\
   AUTOSAR_ActivateTask(AUTOSAR_TASK_##x)
 
+#define ActivateTaskAsync(x)				\
+  AUTOSAR_ActivateTaskAsync(AUTOSAR_TASK_##x)
+
 #define ChainTask(x)				\
 	AUTOSAR_ChainTask(AUTOSAR_TASK_##x)
 

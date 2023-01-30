@@ -23,7 +23,7 @@ TASK(H2) {
 TASK(H3) {
 	test_trace('3');
 
-	Machine::trigger_interrupt(SIGUSR1, 1);
+	ActivateTask(H2);
 
 	//ShutdownOS(E_OK);
 	TerminateTask();

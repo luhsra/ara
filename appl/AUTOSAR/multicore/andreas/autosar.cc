@@ -20,6 +20,8 @@ extern "C" void  AUTOSAR_ShutdownOS(StatusType);
 extern "C" void  AUTOSAR_ShutdownAllCores(StatusType);
 extern "C" void  __OS_ASTSchedule(int);
 
+extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync = true);
+
 void  __OS_HOOK_PreIdleHook();
 void  __OS_HOOK_FaultDetectedHook(DetectedFault_t,uint32_t,uint32_t);
 void  __OS_HOOK_StartupHook();
@@ -97,11 +99,11 @@ namespace arch{
 
 namespace os{
     namespace tasks{
-        constexpr const os::scheduler::Task OS_H1_task(1, 7, true, arch::OS_H1_tcb);
-        constexpr const os::scheduler::Task OS_H2_task(2, 5, true, arch::OS_H2_tcb);
-        constexpr const os::scheduler::Task OS_H3_task(3, 3, true, arch::OS_H3_tcb);
-        constexpr const os::scheduler::Task OS_H4_task(4, 2, true, arch::OS_H4_tcb);
-        constexpr const os::scheduler::Task OS_H5_task(5, 1, true, arch::OS_H5_tcb);
+        constexpr const os::scheduler::Task OS_H1_task(1, 1, 7, true, arch::OS_H1_tcb);
+        constexpr const os::scheduler::Task OS_H2_task(2, 1, 5, true, arch::OS_H2_tcb);
+        constexpr const os::scheduler::Task OS_H3_task(3, 0, 3, true, arch::OS_H3_tcb);
+        constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb);
+        constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
     }
 
     const os::scheduler::Task& getTask(id_t task_id) {
@@ -351,6 +353,7 @@ struct Scheduler {
     os::scheduler::TaskList::current_prio_t current_prios;
     os::scheduler::TaskList::current_task_t current_tasks;
 
+    Task::id_t ipi_activated_task_id = 0;
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
@@ -403,9 +406,12 @@ struct Scheduler {
         tlist.remove(t.id);
     }
 
-    forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
+    forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false, bool sync=true) {
         debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
         SetReady_impl(task);
+        if (ActivateTask_IPI_helper(task, sync)) {
+            return; // no need to reschedule on this core
+        }
         Schedule_impl(from_interrupt);
     }
 
@@ -513,6 +519,22 @@ struct Scheduler {
 
 Scheduler scheduler_[MAX_CPUS];
 
+extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync) {
+    if (task.target_cpuid != get_cpuid()) {
+        debug_core << __FUNCTION__ << "(" << task.id << ")" << endl;
+        scheduler_[task.target_cpuid].ipi_activated_task_id = task.id; // store task id to activate
+
+        Machine::trigger_interrupt(SIGUSR1, task.target_cpuid);
+
+        if (sync) {
+            while (scheduler_[task.target_cpuid].ipi_activated_task_id == task.id); // wait until IPI succeeded
+            debug_core << __FUNCTION__ << " waiting finished" << endl;
+        }
+        return true;
+    }
+    return false;
+}
+
 extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
     *a = scheduler_[get_cpuid()].getCurrent_TaskID();
     return E_OK;
@@ -567,8 +589,9 @@ void irq_handler (int signo) {
 
     if (signo == SIGUSR1) {
 
-        scheduler_[get_cpuid()].SetReadyFromSuspended_impl(OS_H2_task);
+        scheduler_[get_cpuid()].SetReadyFromSuspended_impl(os::getTask(scheduler_[get_cpuid()].ipi_activated_task_id));
         scheduler_[get_cpuid()].Schedule_impl(true);
+        scheduler_[get_cpuid()].ipi_activated_task_id = 0; // signal completion
     } else if (signo == SIGTERM) {
         cores --;
         Machine::halt();
@@ -577,6 +600,8 @@ void irq_handler (int signo) {
     // unblock more interrupts
     __OS_enable_irq_after_kernel();
 }
+
+// TODO: handle 7.9.4 Multi-Core start-up concept correctly
 
 extern "C" void StartOS(int arg0){
     (void) arg0;
@@ -645,7 +670,19 @@ extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false);
+        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false, /*sync*/ true);
+    }
+
+    __OS_enable_irq_after_kernel();
+    (void) arg0;
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_ActivateTaskAsync(TaskType arg0) {
+
+    Machine::disable_interrupts();
+    {
+        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false, /*sync*/ false);
     }
 
     __OS_enable_irq_after_kernel();
