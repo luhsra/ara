@@ -9,7 +9,8 @@ src_files = [
   'output',
   'signalinfo',
   'startup',
-  'terminal'
+  'terminal',
+  'spinlock'
 ]
 
 obj_targets = []

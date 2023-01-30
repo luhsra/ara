@@ -3,6 +3,8 @@
 #include "os/scheduler/task.h"
 #include "os/counter.h"
 #include "os/alarm.h"
+#include "os/spinlock.h"
+#include <errno.h>
 #include "os/scheduler/scheduler.h"
 #include "os/util/redundant.h"
 #include "syscall.h"
@@ -43,6 +45,8 @@ extern "C" const TaskType AUTOSAR_TASK_H5;
 extern "C" const ResourceType AUTOSAR_RESOURCE_R234;
 extern "C" const ResourceType AUTOSAR_RESOURCE_R345;
 extern "C" const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER;
+extern "C" const SpinlockType AUTOSAR_SPINLOCK_S1;
+
 namespace arch{
     extern void * OS_H1_stackptr;
     extern void * OS_H2_stackptr;
@@ -82,6 +86,9 @@ const TaskType AUTOSAR_TASK_H5 = 5;
 const ResourceType AUTOSAR_RESOURCE_R234 = 6;
 const ResourceType AUTOSAR_RESOURCE_R345 = 4;
 const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER = 8;
+
+const SpinlockType AUTOSAR_SPINLOCK_S1 = 9;
+
 namespace arch{
     void * OS_H1_stackptr;
     void * OS_H2_stackptr;
@@ -95,6 +102,19 @@ namespace arch{
     constexpr const arch::TCB OS_H3_tcb(&AUTOSAR_TASK_FUNC_H3, H3_stack, OS_H3_stackptr, 3, 4096);
     constexpr const arch::TCB OS_H4_tcb(&AUTOSAR_TASK_FUNC_H4, H4_stack, OS_H4_stackptr, 4, 4096);
     constexpr const arch::TCB OS_H5_tcb(&AUTOSAR_TASK_FUNC_H5, H5_stack, OS_H5_stackptr, 5, 4096);
+}
+
+namespace os{
+    os::Spinlock OS_S1(AUTOSAR_SPINLOCK_S1);
+
+    os::Spinlock* getSpinlockFromType(SpinlockType type) {
+        switch(type) {
+            case AUTOSAR_SPINLOCK_S1:
+                return &OS_S1;
+            default:
+                return nullptr;
+        }
+    }
 }
 
 namespace os{
@@ -514,6 +534,49 @@ struct Scheduler {
         CALL_HOOK(FaultDetectedHook, LOGIC_ERRORdetected, 0, 0);
         }
     }
+
+    forceinline StatusType GetSpinlock_impl(SpinlockType r) {
+        debug_core << __FUNCTION__ << "(" << r << ")" << endl;
+        os::Spinlock* sl = getSpinlockFromType(r);
+
+        if (sl->lock()) {
+            return E_NOT_OK;
+        }
+        // TODO mark thread as holding spinlock
+        return E_OK;
+    }
+
+    forceinline StatusType TryToGetSpinlock_impl(SpinlockType r, int* success) {
+        debug_core << __FUNCTION__ << "(" << r << ")" << endl;
+        os::Spinlock* sl = getSpinlockFromType(r);
+
+        int rc = sl->trylock();
+
+        if (rc == EBUSY) {
+            *success = false;
+            debug_core << __FUNCTION__ << " BUSY" << endl;
+            return E_OK;
+        }
+        if (rc != 0) {
+            *success = false;
+            return E_NOT_OK;
+        }
+
+        *success = true;
+        // TODO mark thread as holding spinlock
+        return E_OK;
+    }
+
+    forceinline StatusType ReleaseSpinlock_impl(SpinlockType r) {
+    debug_core << __FUNCTION__ << "(" << r << ")" << endl;
+    os::Spinlock* sl = getSpinlockFromType(r);
+
+    if (sl->unlock()) {
+        return E_NOT_OK;
+    }
+    // TODO unmark thread holding spinlock
+    return E_OK;
+}
 };
 
 
@@ -543,6 +606,29 @@ extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
 extern "C" CoreIdType AUTOSAR_GetCoreID() {
     return get_cpuid();
 }
+
+extern "C" StatusType AUTOSAR_GetSpinlock(SpinlockType r) {
+
+    Machine::disable_interrupts();
+    StatusType rc = scheduler_[get_cpuid()].GetSpinlock_impl(r);
+    __OS_enable_irq_after_kernel();
+    return rc;
+}
+
+extern "C" StatusType AUTOSAR_TryToGetSpinlock(SpinlockType r, int* success) {
+    Machine::disable_interrupts();
+    StatusType rc = scheduler_[get_cpuid()].TryToGetSpinlock_impl(r, success);
+    __OS_enable_irq_after_kernel();
+    return rc;
+}
+
+extern "C" StatusType AUTOSAR_ReleaseSpinlock(SpinlockType r) {
+    Machine::disable_interrupts();
+    StatusType rc = scheduler_[get_cpuid()].ReleaseSpinlock_impl(r);
+    __OS_enable_irq_after_kernel();
+    return rc;
+}
+
 
 }; // scheduler
 }; // os
@@ -575,15 +661,6 @@ extern "C" void AUTOSAR_StartCore() {
 }
 
 void irq_handler (int signo) {
-    /** TODO correctly parametrize the task
-    *
-     * The sender should fill in placeholder for the correct core and wait until it is unset again.
-     * e.g. core 0 --> core 1 : activate task 3
-     * new_task[1] = 3
-     * while (3) { wait }
-     * [SWS_Os_00598] The call of ActivateTask across cores shall behave synchronously
-     * ActivateTaskAsyn as alternative
-    */
 
     debug_core << "IRQ " << signo << endl;
 
@@ -594,6 +671,7 @@ void irq_handler (int signo) {
         scheduler_[get_cpuid()].ipi_activated_task_id = 0; // signal completion
     } else if (signo == SIGTERM) {
         cores --;
+        debug_core << "Force stopping this core" << endl;
         Machine::halt();
     }
 
