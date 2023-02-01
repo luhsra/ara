@@ -786,8 +786,6 @@ void irq_handler (int signo) {
     __OS_enable_irq_after_kernel();
 }
 
-// TODO: handle 7.9.4 Multi-Core start-up concept correctly
-
 extern "C" void AUTOSAR_StartOS(int arg0){
     (void) arg0;
 
@@ -809,7 +807,11 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         AUTOSAR_StartCore(4);
         AUTOSAR_StartCore(5); // core with autostart task at last
 
-        pthread_exit(0);
+        while(1)
+        {
+            Machine::nop();
+        }
+        Machine::unreachable();
     }
 
 
