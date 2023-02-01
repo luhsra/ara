@@ -200,9 +200,6 @@ foreach app : autosar_apps
   if get_option('arch') == 'posix'
 
   supported = [
-    'autosar_singlecore_bcc1_sse1_a',
-    'autosar_singlecore_bcc1_sse1_b',
-    'autosar_singlecore_bcc1_sse1_c',
     'autosar_multicore_andreas_a',
   ]
   if full_name in supported
