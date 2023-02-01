@@ -5,6 +5,7 @@ src_files = [
     'helper',
     'isr',
     'timing',
+    'ipi',
 ]
 
 obj_targets = []

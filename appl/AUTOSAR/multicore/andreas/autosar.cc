@@ -452,7 +452,7 @@ struct Scheduler {
     os::scheduler::TaskList::current_task_t current_task;
 
     os::Spinlock ipi_lock;
-    os::IPIData ipi_data;
+    os::IPI::Data ipi_data;
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
@@ -524,7 +524,7 @@ struct Scheduler {
     forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false, bool sync=true) {
         debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
 
-        if (ActivateTask_IPI_helper(task, sync)) {
+        if (os::IPI::ActivateTaskIPI(task, sync)) {
             return; // no need to reschedule on this core
         }
         SetReady_impl(task);
@@ -561,7 +561,7 @@ struct Scheduler {
         debug_core << __FUNCTION__ << "(" << (int) other_task.id << ")" << endl;
 
 
-        if (SetEvent_IPI_helper(other_task, event_mask, sync)) {
+        if (os::IPI::SetEventIPI(other_task, event_mask, sync)) {
             return; // no need to reschedule on this core
         }
 
@@ -684,49 +684,6 @@ struct Scheduler {
 
 Scheduler scheduler_[MAX_CPUS];
 
-extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync) {
-    if (task.target_cpuid != get_cpuid()) {
-        debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
-
-        /**
-         * TODO: fill a struct with necessary information for the IPI receiver
-         * - proposal: store at receiver in a locked struct (IPI may take longer but thats okay according to spec)
-         *      - unlock must be done by other thread. pthread mutex CAN unlock on other thread! but maybe semaphore design is better?
-        */
-
-        scheduler_[task.target_cpuid].ipi_lock.lock();
-        scheduler_[task.target_cpuid].ipi_data.id = os::IPI::ActivateTask;
-         = task.id; // store task id to activate
-
-        Machine::trigger_interrupt(SIGUSR1, task.target_cpuid);
-
-        if (sync) {
-            while (scheduler_[task.target_cpuid].ipi_activated_task_id == task.id); // wait until IPI succeeded
-            debug_core << __FUNCTION__ << " waiting finished" << endl;
-        }
-        return true;
-    }
-    return false;
-}
-
-extern "C" bool SetEvent_IPI_helper(const Task &task, EventMaskType mask, bool sync) {
-    if (task.target_cpuid != get_cpuid()) {
-        debug_core << __FUNCTION__ << "(" << (int) task.id << ", " << mask << ")" << endl;
-
-        scheduler_[task.target_cpuid].ipi_event_mask = mask;
-
-        scheduler_[task.target_cpuid].ipi_event_task_id = task.id;
-        Machine::trigger_interrupt(SIGUSR2, task.target_cpuid);
-
-        if (sync) {
-            while (scheduler_[task.target_cpuid].ipi_event_mask == mask); // wait until IPI succeeded
-            debug_core << __FUNCTION__ << " waiting finished" << endl;
-        }
-        return true;
-    }
-    return false;
-}
-
 extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
     *a = scheduler_[get_cpuid()].getCurrent_TaskID();
     return E_OK;
@@ -792,22 +749,34 @@ extern "C" void AUTOSAR_StartCore() {
 void irq_handler (int signo) {
 
     debug_core << "IRQ " << signo << endl;
+    os::IPI::Data *data = &ipi_data[get_cpuid()];
 
-    if (signo == SIGUSR1) {
-        scheduler_[get_cpuid()].SetReady_impl(os::getTask(scheduler_[get_cpuid()].ipi_activated_task_id));
-        scheduler_[get_cpuid()].Schedule_impl(true);
-        scheduler_[get_cpuid()].ipi_activated_task_id = 0; // mark IPI as completed
+    switch (signo) {
+    case SIGUSR1:
+        switch (data->id) {
+        case os::IPI::ActivateTask:
+            scheduler_[get_cpuid()].SetReady_impl(os::getTask(data->target_task_id));
+            scheduler_[get_cpuid()].Schedule_impl(true);
+            data->id = os::IPI::Cleared;
+            break;
+        case os::IPI::SetEvent:
+            scheduler_[get_cpuid()].tlist.set_events(data->target_task_id, data->set_event_mask);
+            scheduler_[get_cpuid()].Schedule_impl(true);
+            data->id = os::IPI::Cleared;
+            break;
+        default:
+            debug_core << "unsupported IPI: " << data->id << endl;
+        }
+        break;
 
-    } else if (signo == SIGUSR2) {
-        scheduler_[get_cpuid()].tlist.set_events(scheduler_[get_cpuid()].ipi_event_task_id, scheduler_[get_cpuid()].ipi_event_mask);
-        scheduler_[get_cpuid()].Schedule_impl(true);
-        scheduler_[get_cpuid()].ipi_event_mask = 0; // mark IPI as completed
-        scheduler_[get_cpuid()].ipi_event_task_id = 0; // mark IPI as completed
-
-    } else if (signo == SIGTERM) {
+    case SIGTERM:
         cores --;
         debug_core << "Force stopping this core" << endl;
         Machine::halt();
+        break;
+
+    default:
+        debug_core << "unsupported IRQ" << signo << endl;
     }
 
     // unblock more interrupts
