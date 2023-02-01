@@ -4,6 +4,7 @@
 os::IPI::Data ipi_data[MAX_CPUS];
 os::Spinlock ipi_lock[MAX_CPUS];
 
+// TODO unify IPIs?
 extern "C" bool os::IPI::ActivateTaskIPI(const os::scheduler::Task &task, bool sync)
 {
     if (task.target_cpuid != arch::get_cpuid()) {

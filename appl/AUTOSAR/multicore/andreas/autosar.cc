@@ -23,9 +23,6 @@ extern "C" void  AUTOSAR_ShutdownOS(StatusType);
 extern "C" void  AUTOSAR_ShutdownAllCores(StatusType);
 extern "C" void  __OS_ASTSchedule(int);
 
-extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync = true);
-extern "C" bool SetEvent_IPI_helper(const Task &task, EventMaskType mask, bool sync = true);
-
 void  __OS_HOOK_PreIdleHook();
 void  __OS_HOOK_FaultDetectedHook(DetectedFault_t,uint32_t,uint32_t);
 void  __OS_HOOK_StartupHook();
@@ -755,8 +752,7 @@ void irq_handler (int signo) {
     case SIGUSR1:
         switch (data->id) {
         case os::IPI::ActivateTask:
-            scheduler_[get_cpuid()].SetReady_impl(os::getTask(data->target_task_id));
-            scheduler_[get_cpuid()].Schedule_impl(true);
+            scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(data->target_task_id), true, false);
             data->id = os::IPI::Cleared;
             break;
         case os::IPI::SetEvent:
