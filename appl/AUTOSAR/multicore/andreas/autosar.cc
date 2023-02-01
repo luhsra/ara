@@ -4,6 +4,7 @@
 #include "os/counter.h"
 #include "os/alarm.h"
 #include "os/spinlock.h"
+#include "os/ipi.h"
 #include <errno.h>
 #include "os/scheduler/scheduler.h"
 #include "os/util/redundant.h"
@@ -450,9 +451,8 @@ struct Scheduler {
     os::scheduler::TaskList::current_prio_t current_prio;
     os::scheduler::TaskList::current_task_t current_task;
 
-    Task::id_t ipi_activated_task_id = 0;
-    EventMaskType ipi_event_mask = 0;
-    Task::id_t ipi_event_task_id = 0;
+    os::Spinlock ipi_lock;
+    os::IPIData ipi_data;
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
@@ -687,7 +687,16 @@ Scheduler scheduler_[MAX_CPUS];
 extern "C" bool ActivateTask_IPI_helper(const Task &task, bool sync) {
     if (task.target_cpuid != get_cpuid()) {
         debug_core << __FUNCTION__ << "(" << (int) task.id << ")" << endl;
-        scheduler_[task.target_cpuid].ipi_activated_task_id = task.id; // store task id to activate
+
+        /**
+         * TODO: fill a struct with necessary information for the IPI receiver
+         * - proposal: store at receiver in a locked struct (IPI may take longer but thats okay according to spec)
+         *      - unlock must be done by other thread. pthread mutex CAN unlock on other thread! but maybe semaphore design is better?
+        */
+
+        scheduler_[task.target_cpuid].ipi_lock.lock();
+        scheduler_[task.target_cpuid].ipi_data.id = os::IPI::ActivateTask;
+         = task.id; // store task id to activate
 
         Machine::trigger_interrupt(SIGUSR1, task.target_cpuid);
 
