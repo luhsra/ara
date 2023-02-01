@@ -29,8 +29,8 @@
 #include "signalinfo.h"
 #include "output.h"
 #include "irq.h"
-
-
+#include "hardware_threads.h"
+extern pthread_t cpuid[MAX_CPUS];
 class Machine
 {
 public:
@@ -51,6 +51,7 @@ public:
 	 * \brief Halts the machine. (hlt)
 	 */
 	static forceinline void halt(void) {
+		cpuid[arch::get_cpuid()] = 0;
         //pause();
         sigset_t mask;
         sigemptyset(&mask);

@@ -732,7 +732,7 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
     scheduler_[get_cpuid()].InlinedReschedule();
 }
 
-static int cores = 0;
+static int cores = 1; // core 0 is started by default
 
 extern "C" void AUTOSAR_StartCoreStage2() {
     debug_core << "StartCore successful" << endl;
@@ -742,6 +742,9 @@ extern "C" void AUTOSAR_StartCoreStage2() {
 }
 
 extern "C" void AUTOSAR_StartCore(CoreIdType CoreID) {
+    if (CoreID == 0) // already started
+        return;
+
     int curr_cores = cores;
     arch::start_hardware_thread(CoreID, nullptr, NULL, AUTOSAR_StartCoreStage2);
 
@@ -773,7 +776,6 @@ void irq_handler (int signo) {
 
     case SIGTERM:
         cores --;
-        debug_core << "Force stopping this core" << endl;
         Machine::halt();
         break;
 
@@ -800,54 +802,33 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         arch::irq.set_handler(SIGTERM, irq_handler);
         arch::irq.enable(SIGTERM);
 
-        /* setup */
+        /**
+         * start all other cores
+         * Autostarted core last
+         */
         AUTOSAR_StartCore(1);
         AUTOSAR_StartCore(2);
         AUTOSAR_StartCore(3);
         AUTOSAR_StartCore(4);
-        AUTOSAR_StartCore(5); // core with autostart task at last
+        AUTOSAR_StartCore(5);
 
-        while(1)
-        {
-            Machine::nop();
-        }
-        Machine::unreachable();
+        Dispatcher::Prepare(OS_H1_task);
+        Dispatcher::Prepare(OS_H2_task);
+        Dispatcher::Prepare(OS_H3_task);
+        Dispatcher::Prepare(OS_H4_task);
+        Dispatcher::Prepare(OS_H5_task);
     }
-
 
     debug_core << __FUNCTION__ << endl;
-    while (cores != 5); // start schedule on all cores simultaneously 
 
-    switch(GetCoreID()) {
-        case 1:
-            Dispatcher::Prepare(OS_H1_task);
-            CALL_HOOK(StartupHook);
-            syscall(__OS_StartOS_dispatch);
-            Machine::unreachable();
-        case 2:
-            Dispatcher::Prepare(OS_H2_task);
-            CALL_HOOK(StartupHook);
-            syscall(__OS_StartOS_dispatch);
-            Machine::unreachable();
-        case 3:
-            Dispatcher::Prepare(OS_H3_task);
-            CALL_HOOK(StartupHook);
-            syscall(__OS_StartOS_dispatch);
-            Machine::unreachable();
-        case 4:
-            Dispatcher::Prepare(OS_H4_task);
-            CALL_HOOK(StartupHook);
-            syscall(__OS_StartOS_dispatch);
-            Machine::unreachable();
-        case 5:
-            CALL_HOOK(StartupHook);
-            Dispatcher::Prepare(OS_H5_task);
-            scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
-            syscall(__OS_StartOS_dispatch);
-            Machine::unreachable();
-        default:
-            break;
+    if (GetCoreID() == 5) {
+        sleep(0.1); // TODO make sure that all cores are up ??
+        scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }
+
+    CALL_HOOK(StartupHook);
+    syscall(__OS_StartOS_dispatch);
+    Machine::unreachable();
 }
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){

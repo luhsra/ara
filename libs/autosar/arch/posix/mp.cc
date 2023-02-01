@@ -52,6 +52,7 @@ namespace arch
 		for (int i = 0; i < MAX_CPUS; i++) {
 			cpuid[i] = 0;
 		}
+		cpuid[0] = pthread_self();
 	}
 }
 
