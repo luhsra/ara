@@ -65,6 +65,9 @@
 #define GetTaskID(x)					\
   AUTOSAR_GetTaskID(x)
 
+#define GetCoreID()						\
+  AUTOSAR_GetCoreID()
+
 #define ReleaseResource(x)				\
   AUTOSAR_ReleaseResource(AUTOSAR_RESOURCE_##x)
 
@@ -232,6 +235,11 @@ extern StatusType AUTOSAR_Schedule();
  * Get current Task's ID
  */
 extern StatusType AUTOSAR_GetTaskID(TaskRefType a);
+
+/**
+ * Get current Core ID
+ */
+extern CoreIdType AUTOSAR_GetCoreID();
 
 /**
  * \brief Acquire a RESOURCE

@@ -44,7 +44,7 @@ namespace arch
 				return i;
 		}
 		debug << "CPU ID not initialized!" << endl;
-		return MAX_CPUS-1;
+		return -1;
 	}
 
 	void init_cpuid()
@@ -52,8 +52,6 @@ namespace arch
 		for (int i = 0; i < MAX_CPUS; i++) {
 			cpuid[i] = 0;
 		}
-
-		cpuid[0] = pthread_self();
 	}
 }
 

@@ -119,10 +119,10 @@ namespace os{
 namespace os{
     namespace tasks{
         constexpr const os::scheduler::Task OS_H1_task(1, 1, 7, true, arch::OS_H1_tcb);
-        constexpr const os::scheduler::Task OS_H2_task(2, 1, 5, true, arch::OS_H2_tcb);
-        constexpr const os::scheduler::Task OS_H3_task(3, 0, 3, true, arch::OS_H3_tcb);
-        constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb);
-        constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
+        constexpr const os::scheduler::Task OS_H2_task(2, 2, 5, true, arch::OS_H2_tcb);
+        constexpr const os::scheduler::Task OS_H3_task(3, 3, 3, true, arch::OS_H3_tcb);
+        constexpr const os::scheduler::Task OS_H4_task(4, 4 /*0*/, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
+        constexpr const os::scheduler::Task OS_H5_task(5, 5, 1, true, arch::OS_H5_tcb);
     }
 
     const os::scheduler::Task& getTask(id_t task_id) {
@@ -266,33 +266,35 @@ struct TaskList : public UnencodedTaskListStatic {
         id = idle_id;
         prio = idle_prio;
 
-        if (get_cpuid() == 1) {
+        if (GetCoreID() == 1) {
             if (possible_tasks == nullptr || possible_tasks[1]) {
                 if(H1 > prio && ((H1_events_waiting == 0) || (H1_events_waiting & H1_events_set) != 0)) {
                     prio = H1;
                     id = 1;
                 }
             }
+        } else if (GetCoreID() == 2) {
             if (possible_tasks == nullptr || possible_tasks[2]) {
                 if(H2 > prio && ((H2_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
                     prio = H2;
                     id = 2;
                 }
             }
-        }
-        else if (get_cpuid() == 0) {
+        } else if (GetCoreID() == 3) {
             if (possible_tasks == nullptr || possible_tasks[3]) {
                 if(H3 > prio && ((H3_events_waiting == 0) || (H3_events_waiting & H3_events_set) != 0)) {
                     prio = H3;
                     id = 3;
                 }
             }
+        } else if (GetCoreID() == 4) {
             if (possible_tasks == nullptr || possible_tasks[4]) {
                 if(H4 > prio && ((H4_events_waiting == 0) || (H4_events_waiting & H4_events_set) != 0)) {
                     prio = H4;
                     id = 4;
                 }
             }
+        } else if (GetCoreID() == 5) {
             if (possible_tasks == nullptr || possible_tasks[5]) {
                 if(H5 > prio && ((H5_events_waiting == 0) || (H5_events_waiting & H5_events_set) != 0)) {
                     prio = H5;
@@ -732,15 +734,19 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
 
 static int cores = 0;
 
-extern "C" void AUTOSAR_StartCore() {
-    debug_core << __FUNCTION__ << endl;
-
+extern "C" void AUTOSAR_StartCoreStage2() {
+    debug_core << "StartCore successful" << endl;
     cores++;
-    
-    CALL_HOOK(StartupHook);
-    syscall(__OS_StartOS_dispatch);
 
-    Machine::unreachable();
+    AUTOSAR_StartOS(0);
+}
+
+extern "C" void AUTOSAR_StartCore(CoreIdType CoreID) {
+    int curr_cores = cores;
+    arch::start_hardware_thread(CoreID, nullptr, NULL, AUTOSAR_StartCoreStage2);
+
+    // wait until core is in stage 2
+    while (curr_cores == cores);
 }
 
 void irq_handler (int signo) {
@@ -782,33 +788,64 @@ void irq_handler (int signo) {
 
 // TODO: handle 7.9.4 Multi-Core start-up concept correctly
 
-extern "C" void StartOS(int arg0){
+extern "C" void AUTOSAR_StartOS(int arg0){
     (void) arg0;
 
-    Dispatcher::Prepare(OS_H1_task);
-    Dispatcher::Prepare(OS_H2_task);
-    Dispatcher::Prepare(OS_H3_task);
-    Dispatcher::Prepare(OS_H4_task);
-    Dispatcher::Prepare(OS_H5_task);
-    scheduler_[get_cpuid()].SetReadyFromSuspended_impl(OS_H5_task);
+    static bool bootstrap = true;
+    if (bootstrap) {
+        debug << __FUNCTION__ << " bootstrap" << endl;
+        bootstrap = false;
 
-    arch::irq.set_handler(SIGUSR1, irq_handler);
-    arch::irq.enable(SIGUSR1);
-    arch::irq.set_handler(SIGUSR2, irq_handler);
-    arch::irq.enable(SIGUSR2);
+        arch::irq.set_handler(SIGUSR1, irq_handler);
+        arch::irq.enable(SIGUSR1);
 
-    arch::irq.set_handler(SIGTERM, irq_handler);
-    arch::irq.enable(SIGTERM);
+        arch::irq.set_handler(SIGTERM, irq_handler);
+        arch::irq.enable(SIGTERM);
 
-    int curr_cores = cores;
-    arch::start_hardware_thread(1, nullptr, NULL, AUTOSAR_StartCore);
+        /* setup */
+        AUTOSAR_StartCore(1);
+        AUTOSAR_StartCore(2);
+        AUTOSAR_StartCore(3);
+        AUTOSAR_StartCore(4);
+        AUTOSAR_StartCore(5); // core with autostart task at last
 
-    // wait until core is started
-    while (curr_cores == cores);
+        pthread_exit(0);
+    }
 
-    AUTOSAR_StartCore();
 
-    Machine::unreachable();
+    debug_core << __FUNCTION__ << endl;
+    while (cores != 5); // start schedule on all cores simultaneously 
+
+    switch(GetCoreID()) {
+        case 1:
+            Dispatcher::Prepare(OS_H1_task);
+            CALL_HOOK(StartupHook);
+            syscall(__OS_StartOS_dispatch);
+            Machine::unreachable();
+        case 2:
+            Dispatcher::Prepare(OS_H2_task);
+            CALL_HOOK(StartupHook);
+            syscall(__OS_StartOS_dispatch);
+            Machine::unreachable();
+        case 3:
+            Dispatcher::Prepare(OS_H3_task);
+            CALL_HOOK(StartupHook);
+            syscall(__OS_StartOS_dispatch);
+            Machine::unreachable();
+        case 4:
+            Dispatcher::Prepare(OS_H4_task);
+            CALL_HOOK(StartupHook);
+            syscall(__OS_StartOS_dispatch);
+            Machine::unreachable();
+        case 5:
+            CALL_HOOK(StartupHook);
+            Dispatcher::Prepare(OS_H5_task);
+            scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
+            syscall(__OS_StartOS_dispatch);
+            Machine::unreachable();
+        default:
+            break;
+    }
 }
 
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
