@@ -603,7 +603,7 @@ class FreeRTOS(OSBase):
         task_handler = find_return_value(abb, cp, va)
 
         v = state.instances.add_vertex()
-        func_name = args.task_function.get_name()
+        func_name = args.task_function.get_name() if args.task_function is not None and not isinstance(args.task_function, UnknownArgument) else None
         state.instances.vp.label[v] = f"Task: {args.task_name} ({func_name})"
 
         # check if task_parameters is call path independent
@@ -618,7 +618,7 @@ class FreeRTOS(OSBase):
                                          artificial=False,
                                          cpu_id=-1,
                                          vidx=v,
-                                         function=cfg.get_function_by_name(func_name),
+                                         function=cfg.get_function_by_name(func_name) if func_name is not None else None,
                                          name=args.task_name,
                                          stack_size=args.task_stack_size,
                                          parameters=task_parameters,
