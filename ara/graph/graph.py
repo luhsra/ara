@@ -693,7 +693,7 @@ class InstanceGraph(graph_tool.Graph):
         for inst in self.get_controls().vertices():
             inst = self.vertex(inst)
             obj = self.vp.obj[inst]
-            if obj.artificial:
+            if obj.artificial or obj.function is None:
                 continue
             yield obj.function, inst
 
