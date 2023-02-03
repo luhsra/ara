@@ -39,7 +39,7 @@ elif get_option('arch') == 'posix'
   clang_flags += '-m32'
   clang_flags += [
     '-DDEBUG',
-    '-g',
+    '-gdwarf-4',
   ]
   ld_flags += '-lpthread'
 elif get_option('arch') == 'arm'
