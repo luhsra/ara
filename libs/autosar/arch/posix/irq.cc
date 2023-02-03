@@ -10,6 +10,10 @@
 
 using namespace arch;
 
+namespace arch {
+extern unsigned int get_thread_id(int id);
+}
+
 static void panic(int signal) {
 	kout << "spurious interrupt: " << signal << endl;
 }
@@ -49,7 +53,11 @@ void IRQ::disable(int signum) {
 void IRQ::trigger_interrupt(int irq, int cpuid) {
     /* Send an signal to our own thread */
     debug_core << __FUNCTION__ << "(" << irq << ", " << cpuid << ")" << endl;
-    pthread_kill(get_thread_id(cpuid), irq);
+
+    if (cpu_online(cpuid))
+        pthread_kill(get_thread_id(cpuid), irq);
+    else
+        debug_core << "cpuid  " << cpuid << " offline" << endl;
 }
 
 extern void __OS_enable_irq_after_kernel(void);

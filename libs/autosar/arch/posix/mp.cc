@@ -36,6 +36,11 @@ namespace arch
 		return (unsigned int) cpuid[id];
 	}
 
+	bool cpu_online(int cpuid)
+	{
+		return (bool) get_thread_id(cpuid);
+	}
+
 	int get_cpuid()
 	{
 		pthread_t id = pthread_self();

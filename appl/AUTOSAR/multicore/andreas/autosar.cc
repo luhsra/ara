@@ -822,7 +822,10 @@ extern "C" void AUTOSAR_StartOS(int arg0){
     debug_core << __FUNCTION__ << endl;
 
     if (GetCoreID() == 5) {
-        sleep(0.1); // TODO make sure that all cores are up ??
+        for (int i = 0; i < 5; i++)
+        {
+            while (! cpu_online(i)); // wait for cores 0-4
+        }
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }
 
@@ -848,7 +851,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     if (cores-- > 1) {
         int curr_cpuid = get_cpuid();
         for (int i = 0; i < MAX_CPUS; i++) {
-            if (i == curr_cpuid || get_thread_id(i) == 0)
+            if (i == curr_cpuid || !cpu_online(i) )
                 continue;
             Machine::trigger_interrupt(SIGTERM, i);
         }
