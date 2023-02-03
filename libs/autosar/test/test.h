@@ -116,9 +116,9 @@ static forceinline void test_start()
 	experiment_number++;
 	positive_tests = 0;
 
-	kout.setcolor(Color::WHITE, Color::BLACK);
-	kout << "Test " << (unsigned) experiment_number << ": " << endl;
 	kout.setcolor(Color::YELLOW, Color::BLACK);
+	kout << "Test " << (unsigned) experiment_number << ": " << endl;
+	kout.setcolor(Color::WHITE, Color::BLACK);
 }
 
 static forceinline void test_start_check() {
@@ -268,9 +268,9 @@ static forceinline void test_init(void) {
 
 static forceinline void test_main(void)
 {
-	debug.setcolor(Color::RED, Color::WHITE);
-	debug << "dOSEK start" << endl;
 	debug.setcolor(Color::YELLOW, Color::BLACK);
+	debug << "AUTOSAR start" << endl;
+	debug.setcolor(Color::WHITE, Color::BLACK);
 
 	// prepare tests
 	test_init();
