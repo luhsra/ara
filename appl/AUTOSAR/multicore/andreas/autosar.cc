@@ -11,6 +11,7 @@
 #include "syscall.h"
 #include "machine.h"
 #include "hardware_threads.h"
+#include "itimer.h"
 
 extern "C" void  AUTOSAR_TASK_FUNC_H1();
 extern "C" void  AUTOSAR_TASK_FUNC_H2();
@@ -45,6 +46,8 @@ extern "C" const ResourceType AUTOSAR_RESOURCE_R234;
 extern "C" const ResourceType AUTOSAR_RESOURCE_R345;
 extern "C" const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER;
 extern "C" const SpinlockType AUTOSAR_SPINLOCK_S1;
+extern "C" const AlarmType AUTOSAR_ALARM_A1;
+extern "C" const CounterType AUTOSAR_COUNTER_C1;
 
 namespace arch{
     extern void * OS_H1_stackptr;
@@ -71,6 +74,11 @@ namespace os{
     }
 }
 
+namespace os{
+    extern UnencodedCounter OS_C1_counter;
+    extern UnencodedAlarm<&OS_C1_counter> OS_A1_alarm;
+}
+
 
 uint8_t H1_stack[4096];
 uint8_t H2_stack[4096];
@@ -86,7 +94,9 @@ const ResourceType AUTOSAR_RESOURCE_R234 = 6;
 const ResourceType AUTOSAR_RESOURCE_R345 = 4;
 const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER = 8;
 
-const SpinlockType AUTOSAR_SPINLOCK_S1 = 9;
+const SpinlockType AUTOSAR_SPINLOCK_S1 = 1;
+const AlarmType AUTOSAR_ALARM_A1 = 1;
+const CounterType AUTOSAR_COUNTER_C1 = 0;
 
 namespace arch{
     void * OS_H1_stackptr;
@@ -134,6 +144,11 @@ namespace os{
             case 5: return tasks::OS_H5_task;
         }
     }
+}
+
+namespace os{
+    UnencodedCounter OS_C1_counter(1000, 1, 1);
+    UnencodedAlarm<&OS_C1_counter> OS_A1_alarm(os::tasks::OS_H1_task, true, 1000, 1000, 1);
 }
 
 using namespace arch;
@@ -723,6 +738,13 @@ extern "C" StatusType AUTOSAR_ReleaseSpinlock(SpinlockType r) {
 namespace os {
 
 void inlinehint Counter::tick() {
+    if (AUTOSAR_GetCoreID() == 1) {
+        OS_C1_counter.do_tick();
+
+        if (OS_A1_alarm.checkTrigger()) {
+            AUTOSAR_ActivateTask(AUTOSAR_TASK_H1);
+        }
+    }
 }
 
 } // os
@@ -828,6 +850,8 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         }
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }
+
+    ITimer::init();
 
     CALL_HOOK(StartupHook);
     syscall(__OS_StartOS_dispatch);

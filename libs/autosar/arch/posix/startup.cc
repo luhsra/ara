@@ -22,7 +22,7 @@ void arch_startup()
     Dispatcher::init();
 
     // setup timer
-    ITimer::init();
+    //ITimer::init();
 
     arch::init_cpuid();
 

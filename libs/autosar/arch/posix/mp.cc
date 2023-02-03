@@ -49,7 +49,7 @@ namespace arch
 				return i;
 		}
 		debug << "CPU ID not initialized!" << endl;
-		return -1;
+		exit(1);
 	}
 
 	void init_cpuid()

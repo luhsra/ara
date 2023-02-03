@@ -15,7 +15,8 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
 	test_trace('1');
-	ShutdownAllCores(E_OK);
+	//ShutdownAllCores(E_OK);
+	TerminateTask();
 }
 
 TASK(H2) {
