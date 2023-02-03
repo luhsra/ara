@@ -149,6 +149,12 @@ namespace os{
 namespace os{
     UnencodedCounter OS_C1_counter(1000, 1, 1);
     UnencodedAlarm<&OS_C1_counter> OS_A1_alarm(os::tasks::OS_H1_task, true, 1000, 1000, 1);
+
+    os::UnencodedAlarm<&OS_C1_counter>& getAlarmFromType(AlarmType alarm_id) {
+        switch(alarm_id) {
+            case 1: return OS_A1_alarm;
+        }
+    }
 }
 
 using namespace arch;
@@ -1024,6 +1030,56 @@ extern "C" StatusType AUTOSAR_ClearEvent(EventMaskType arg0){
         scheduler_[get_cpuid()].ClearEvent_impl(curr_task, arg0);
         // Dispatch directly back to Userland
         Dispatcher::ResumeToTask(curr_task);
+    }
+    __OS_enable_irq_after_kernel();
+
+    (void) arg0;
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_CancelAlarm(AlarmType arg0){
+    Machine::disable_interrupts();
+    {
+        // TODO locking of OS ressources that are cross core
+        os::getAlarmFromType(arg0).setArmed(false);
+
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        // Dispatch directly back to Userland
+        Dispatcher::ResumeToTask(curr_task);  // TODO IRQs closed ?? 
+    }
+    __OS_enable_irq_after_kernel();
+
+    (void) arg0;
+    return E_OK;
+}
+
+extern "C" StatusType AUTOSAR_SetRelAlarm(AlarmType arg0, TickType arg1 ,TickType arg2){
+    Machine::disable_interrupts();
+    {
+        os::getAlarmFromType(arg0).setRelativeTime(arg1);
+        os::getAlarmFromType(arg0).setCycleTime(arg2);
+        os::getAlarmFromType(arg0).setArmed(true);
+
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        // Dispatch directly back to Userland
+        Dispatcher::ResumeToTask(curr_task);
+    }
+    __OS_enable_irq_after_kernel();
+
+    (void) arg0;
+    return E_OK;
+}
+
+// TODO: GetAlarmBase not supported in dOSEK?
+
+extern "C" StatusType AUTOSAR_GetAlarm(AlarmType arg0, TickType* arg1){
+    Machine::disable_interrupts();
+    {
+        *arg1 = os::getAlarmFromType(arg0).getRemainingTicks();
+    
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        // Dispatch directly back to Userland
+        Dispatcher::ResumeToTask(curr_task);  // TODO IRQs closed ?? 
     }
     __OS_enable_irq_after_kernel();
 

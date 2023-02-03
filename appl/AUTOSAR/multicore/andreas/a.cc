@@ -7,6 +7,8 @@ DeclareTask(H3);
 DeclareTask(H4);
 DeclareTask(H5);
 
+DeclareAlarm(A1);
+DeclareCounter(C1);
 DeclareEvent(E1, 1);
 
 DeclareSpinlock(S1);
@@ -15,6 +17,10 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
 	test_trace('1');
+
+    TickType ticks;
+    GetAlarm(A1, &ticks);
+	debug_core << ticks << endl;
 	ShutdownAllCores(E_OK);
 	TerminateTask();
 }
