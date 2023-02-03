@@ -824,7 +824,7 @@ extern "C" void AUTOSAR_StartOS(int arg0){
     if (GetCoreID() == 5) {
         for (int i = 0; i < 5; i++)
         {
-            while (! cpu_online(i)); // wait for cores 0-4
+            while (! Dispatcher::coreDispatched(i)); // wait for cores 0-4
         }
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }
