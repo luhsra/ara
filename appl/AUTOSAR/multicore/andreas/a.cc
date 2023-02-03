@@ -15,7 +15,7 @@ TEST_MAKE_OS_MAIN(StartOS(0))
 
 TASK(H1) {
 	test_trace('1');
-	//ShutdownAllCores(E_OK);
+	ShutdownAllCores(E_OK);
 	TerminateTask();
 }
 
@@ -28,13 +28,12 @@ TASK(H2) {
 TASK(H3) {
 	test_trace('3');
 	SetEvent(H2, E1); // cross core
-	ChainTask(H1); // cross core
+	TerminateTask();
 }
 
 TASK(H4) {
 	test_trace('4');
-	ActivateTask(H3);
-	TerminateTask();
+	ChainTask(H3); // cross core
 }
 
 TASK(H5) {

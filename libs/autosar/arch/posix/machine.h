@@ -53,7 +53,6 @@ public:
 	 * \brief Halts the machine. (hlt)
 	 */
 	static forceinline void halt(void) {
-		cpuid[arch::get_cpuid()] = 0;
         //pause();
         sigset_t mask;
         sigemptyset(&mask);

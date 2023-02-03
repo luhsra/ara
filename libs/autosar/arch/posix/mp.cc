@@ -41,6 +41,15 @@ namespace arch
 		return (bool) get_thread_id(cpuid);
 	}
 
+	void stop_hardware_thread()
+	{
+		Machine::disable_interrupts();
+		cpuid[arch::get_cpuid()] = 0;
+		while(1) {
+			Machine::nop();
+		}
+	}
+
 	int get_cpuid()
 	{
 		pthread_t id = pthread_self();

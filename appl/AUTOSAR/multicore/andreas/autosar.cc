@@ -741,8 +741,8 @@ void inlinehint Counter::tick() {
     if (AUTOSAR_GetCoreID() == 1) {
         OS_C1_counter.do_tick();
 
-        if (OS_A1_alarm.checkTrigger()) {
-            AUTOSAR_ActivateTask(AUTOSAR_TASK_H1);
+        if (OS_A1_alarm.checkTrigger() ) {
+            scheduler_[1].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
         }
     }
 }
@@ -798,7 +798,7 @@ void irq_handler (int signo) {
 
     case SIGTERM:
         cores --;
-        Machine::halt();
+        arch::stop_hardware_thread();
         break;
 
     default:
@@ -861,8 +861,11 @@ extern "C" void AUTOSAR_StartOS(int arg0){
 extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
 
-    if (cores-- > 1) {
-        Machine::halt();
+    Machine::disable_interrupts();
+
+    if (cores > 1) {
+        cores --;
+        arch::stop_hardware_thread();
     } else { // last core
         AUTOSAR_ShutdownAllCores(arg0);
     }
@@ -872,7 +875,10 @@ extern "C" void AUTOSAR_ShutdownOS(StatusType arg0){
 extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     debug_core << __FUNCTION__ << endl;
 
-    if (cores-- > 1) {
+    Machine::disable_interrupts();
+    cores--;
+
+    if (cores > 1) {
         int curr_cpuid = get_cpuid();
         for (int i = 0; i < MAX_CPUS; i++) {
             if (i == curr_cpuid || !cpu_online(i) )
