@@ -19,10 +19,6 @@ extern "C" void  AUTOSAR_TASK_FUNC_H3();
 extern "C" void  AUTOSAR_TASK_FUNC_H4();
 extern "C" void  AUTOSAR_TASK_FUNC_H5();
 
-
-void  AUTOSAR_TASK_FUNC_H4() {}
-void  AUTOSAR_TASK_FUNC_H5() {}
-
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
@@ -148,11 +144,11 @@ namespace os{
 
 namespace os{
     namespace tasks{
-        constexpr const os::scheduler::Task OS_H1_task(1, 0, 4, true, arch::OS_H1_tcb);
-        constexpr const os::scheduler::Task OS_H2_task(2, 0, 3, false, arch::OS_H2_tcb);
-        constexpr const os::scheduler::Task OS_H3_task(3, 0, 5, false, arch::OS_H3_tcb);
-        constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
-        constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
+        constexpr const os::scheduler::Task OS_H1_task(1, 1, 5, true, arch::OS_H1_tcb);
+        constexpr const os::scheduler::Task OS_H2_task(2, 2, 4, true, arch::OS_H2_tcb);
+        constexpr const os::scheduler::Task OS_H3_task(3, 3, 3, true, arch::OS_H3_tcb);
+        constexpr const os::scheduler::Task OS_H4_task(4, 4, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
+        constexpr const os::scheduler::Task OS_H5_task(5, 5, 1, true, arch::OS_H5_tcb);
     }
 
     const os::scheduler::Task& getTask(id_t task_id) {
@@ -168,7 +164,7 @@ namespace os{
 
 namespace os{
     UnencodedCounter OS_C1_counter(1000, 1, 1);
-    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 1, 100, 1);
+    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
 
     UnencodedCounter OS_C2_counter(1000, 1, 1);
     UnencodedAlarm OS_A2_alarm(&OS_C2_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
@@ -786,9 +782,9 @@ void inlinehint Counter::tick() {
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            //AUTOSAR_ALARMCB_A1();
-            //scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H3), true, false);
-            AUTOSAR_SetEvent(AUTOSAR_TASK_H1, AUTOSAR_EVENT_E1);
+            AUTOSAR_ALARMCB_A1();
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
+            //AUTOSAR_SetEvent(AUTOSAR_TASK_H1, AUTOSAR_EVENT_E1);
         }
 
         /*if (OS_A2_alarm.checkTrigger() ) {
@@ -892,11 +888,11 @@ extern "C" void AUTOSAR_StartOS(int arg0){
          * start all other cores
          * Autostarted core last
          */
-        /*AUTOSAR_StartCore(1);
+        AUTOSAR_StartCore(1);
         AUTOSAR_StartCore(2);
         AUTOSAR_StartCore(3);
         AUTOSAR_StartCore(4);
-        AUTOSAR_StartCore(5);*/
+        AUTOSAR_StartCore(5);
 
         Dispatcher::Prepare(OS_H1_task);
         Dispatcher::Prepare(OS_H2_task);
@@ -907,15 +903,13 @@ extern "C" void AUTOSAR_StartOS(int arg0){
 
     debug_core << __FUNCTION__ << endl;
 
-    /*if (GetCoreID() == 5) {
+    if (GetCoreID() == 5) {
         for (int i = 0; i < 5; i++)
         {
             while (! Dispatcher::coreDispatched(i)); // wait for cores 0-4
         }
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
-    }*/
-
-    scheduler_[0].SetReadyFromSuspended_impl(OS_H1_task);
+    }
 
     ITimer::init();
 
