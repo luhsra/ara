@@ -772,11 +772,11 @@ void inlinehint Counter::tick() {
         //OS_C2_counter.do_tick();
 
 
-        /*if (OS_A1_alarm.checkTrigger() ) {
+        if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            AUTOSAR_ALARMCB_A1();
-            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H2), true, false);
-        }*/
+            //AUTOSAR_ALARMCB_A1();
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H3), true, false);
+        }
 
         /*if (OS_A2_alarm.checkTrigger() ) {
             debug_core << "A2 triggered" << endl;
@@ -1152,6 +1152,7 @@ extern "C" StatusType AUTOSAR_GetAlarm(AlarmType arg0, TickType* arg1){
 
 void __OS_HOOK_PreIdleHook(){
     AUTOSAR_kickoff();
+    //TODO generator must know whether defined or not
     __OS_HOOK_DEFINED_PreIdleHook();
 }
 
