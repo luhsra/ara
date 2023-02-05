@@ -18,6 +18,8 @@ extern "C" void  AUTOSAR_TASK_FUNC_H2();
 extern "C" void  AUTOSAR_TASK_FUNC_H3();
 extern "C" void  AUTOSAR_TASK_FUNC_H4();
 extern "C" void  AUTOSAR_TASK_FUNC_H5();
+extern "C" void  AUTOSAR_ALARMCB_A1();
+extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
 extern "C" void  StartOS(int);
 extern "C" void  AUTOSAR_ShutdownOS(StatusType);
@@ -30,6 +32,7 @@ void  __OS_HOOK_StartupHook();
 void  __OS_HOOK_PreTaskHook();
 void  __OS_HOOK_PostTaskHook();
 void  __OS_HOOK_ShutdownHook(StatusType);
+
 void  __OS_enable_irq_after_kernel();
 
 extern "C" uint8_t H1_stack[4096];
@@ -748,6 +751,8 @@ void inlinehint Counter::tick() {
         OS_C1_counter.do_tick();
 
         if (OS_A1_alarm.checkTrigger() ) {
+            debug_core << "A1 triggered" << endl;
+            AUTOSAR_ALARMCB_A1();
             scheduler_[1].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
         }
     }
@@ -807,13 +812,15 @@ void irq_handler (int signo) {
         arch::stop_hardware_thread();
         break;
 
+    case SIGTRAP:
+        AUTOSAR_ISR_ISR1();
+        break;
+
     default:
         debug_core << "unsupported IRQ" << signo << endl;
     }
 
-    // unblock more interrupts
     debug_core << "IRQ completed" << endl;
-    __OS_enable_irq_after_kernel();
 }
 
 extern "C" void AUTOSAR_StartOS(int arg0){
@@ -829,6 +836,9 @@ extern "C" void AUTOSAR_StartOS(int arg0){
 
         arch::irq.set_handler(SIGTERM, irq_handler);
         arch::irq.enable(SIGTERM);
+
+        arch::irq.set_handler(SIGTRAP, irq_handler);
+        arch::irq.enable(SIGTRAP);
 
         /**
          * start all other cores
@@ -902,6 +912,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
 
 
 extern "C" void __OS_ASTSchedule(int arg0){
+    debug_core << __FUNCTION__ << endl;
     (void) arg0;
     scheduler_[get_cpuid()].InlinedReschedule();
 }

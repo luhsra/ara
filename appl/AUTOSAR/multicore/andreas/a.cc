@@ -15,8 +15,12 @@ DeclareSpinlock(S1);
 
 TEST_MAKE_OS_MAIN(StartOS(0))
 
-TASK(H1) {
+void alarm_test()
+{
 	test_trace('1');
+}
+
+TASK(H1) {
 
     TickType ticks;
     GetAlarm(A1, &ticks);
@@ -43,10 +47,18 @@ TASK(H4) {
 }
 
 TASK(H5) {
-	test_trace('5');
+	Machine::trigger_interrupt_from_user(SIGTRAP);
 	ActivateTask(H2); // cross core
 	ActivateTask(H4);
 	TerminateTask();
+}
+
+ISR2(ISR1) {
+	test_trace('5');
+}
+
+ALARMCALLBACK(A1) {
+	alarm_test();
 }
 
 void PreIdleHook() {
