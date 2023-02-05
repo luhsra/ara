@@ -51,7 +51,7 @@ void IRQ::disable(int signum) {
 }
 
 void IRQ::trigger_interrupt(int irq, int cpuid) {
-    /* Send an signal to our own thread */
+    /* Send an signal to a specified thread */
     debug_core << __FUNCTION__ << "(" << irq << ", " << cpuid << ")" << endl;
 
     if (cpu_online(cpuid))

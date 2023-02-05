@@ -19,9 +19,6 @@ extern "C" void  AUTOSAR_TASK_FUNC_H3();
 extern "C" void  AUTOSAR_TASK_FUNC_H4();
 extern "C" void  AUTOSAR_TASK_FUNC_H5();
 
-void AUTOSAR_TASK_FUNC_H4(){};
-void AUTOSAR_TASK_FUNC_H5(){};
-
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
@@ -143,7 +140,7 @@ namespace os{
     namespace tasks{
         constexpr const os::scheduler::Task OS_H1_task(1, 0, 5, true, arch::OS_H1_tcb);
         constexpr const os::scheduler::Task OS_H2_task(2, 0, 4, true, arch::OS_H2_tcb);
-        constexpr const os::scheduler::Task OS_H3_task(3, 0, 3, true, arch::OS_H3_tcb);
+        constexpr const os::scheduler::Task OS_H3_task(3, 0, 8, false, arch::OS_H3_tcb);
         constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
         constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
     }
@@ -771,11 +768,11 @@ void inlinehint Counter::tick() {
         //OS_C2_counter.do_tick();
 
 
-        if (OS_A1_alarm.checkTrigger() ) {
+        /*if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
             AUTOSAR_ALARMCB_A1();
             scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H2), true, false);
-        }
+        }*/
 
         /*if (OS_A2_alarm.checkTrigger() ) {
             debug_core << "A2 triggered" << endl;
@@ -840,6 +837,7 @@ void irq_handler (int signo) {
         break;
 
     case SIGTRAP:
+    case 37:
         trap[get_cpuid()] = true;
         AUTOSAR_ISR_ISR1();
         trap[get_cpuid()] = false;
@@ -870,6 +868,9 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         arch::irq.set_handler(SIGTRAP, irq_handler);
         arch::irq.enable(SIGTRAP);
 
+        arch::irq.set_handler(37, irq_handler);
+        arch::irq.enable(37);
+
         /**
          * start all other cores
          * Autostarted core last
@@ -897,7 +898,7 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }*/
 
-    //scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
+    scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
 
     ITimer::init();
 

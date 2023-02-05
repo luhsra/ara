@@ -222,6 +222,7 @@ foreach app : autosar_apps
     'autosar_singlecore_bcc1_complex1_b',
     'autosar_singlecore_bcc1_complex1_c',
     'autosar_singlecore_bcc1_complex1_d',
+    'autosar_singlecore_bcc1_complex2_a',
   ]
   if full_name in supported
 
