@@ -37,18 +37,18 @@ TASK(H2) {
 
 TASK(H3) {
 	test_trace('3');
-	SetEvent(H2, E1); // cross core
+	SetEvent(H2, E1);
 	TerminateTask();
 }
 
 TASK(H4) {
 	test_trace('4');
-	ChainTask(H3); // cross core
+	ChainTask(H3);
 }
 
 TASK(H5) {
 	Machine::trigger_interrupt_from_user(SIGTRAP);
-	ActivateTask(H2); // cross core
+	ActivateTask(H2);
 	ActivateTask(H4);
 	TerminateTask();
 }

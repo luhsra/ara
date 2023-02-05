@@ -568,6 +568,7 @@ struct Scheduler {
     }
 
     forceinline void GetResource_impl(const Task &current_task, const Task::prio_t new_prio) {
+        // TODO: spinlock nesting
         debug_core << __FUNCTION__ << "(" << (int) current_task.id << ")" << endl;
         SetPriority(current_task, new_prio);
         SetSystemPriority(new_prio);
@@ -966,12 +967,13 @@ extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
     return E_OK;
 }
 
-// TODO: Test get/release resource
+/**
+ * Resource sharing between cores must be forbidden by generator
+*/
 extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
-    
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].GetResource_impl(os::getTask(scheduler_[get_cpuid()].current_task), 8); // new prio
+        scheduler_[get_cpuid()].GetResource_impl(os::getTask(scheduler_[get_cpuid()].current_task), arg0);
 
         Dispatcher::ResumeToTask(os::getTask(scheduler_[get_cpuid()].current_task));
     }
@@ -984,7 +986,8 @@ extern "C" StatusType AUTOSAR_ReleaseResource(ResourceType arg0){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ReleaseResource_impl(os::getTask(scheduler_[get_cpuid()].current_task), 2); // new prio
+        os::scheduler::Task task = os::getTask(scheduler_[get_cpuid()].current_task);
+        scheduler_[get_cpuid()].ReleaseResource_impl(task, task.prio);
     }
     __OS_enable_irq_after_kernel();
     
