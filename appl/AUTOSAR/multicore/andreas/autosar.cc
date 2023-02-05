@@ -21,6 +21,7 @@ extern "C" void  AUTOSAR_TASK_FUNC_H5();
 
 void AUTOSAR_TASK_FUNC_H4(){};
 void AUTOSAR_TASK_FUNC_H5(){};
+void PreIdleHook(){};
 
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
@@ -54,7 +55,9 @@ extern "C" const ResourceType AUTOSAR_RESOURCE_R345;
 extern "C" const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER;
 extern "C" const SpinlockType AUTOSAR_SPINLOCK_S1;
 extern "C" const AlarmType AUTOSAR_ALARM_A1;
+extern "C" const AlarmType AUTOSAR_ALARM_A2;
 extern "C" const CounterType AUTOSAR_COUNTER_C1;
+extern "C" const CounterType AUTOSAR_COUNTER_C2;
 
 namespace arch{
     extern void * OS_H1_stackptr;
@@ -83,7 +86,9 @@ namespace os{
 
 namespace os{
     extern UnencodedCounter OS_C1_counter;
-    extern UnencodedAlarm<&OS_C1_counter> OS_A1_alarm;
+    extern UnencodedAlarm OS_A1_alarm;
+    extern UnencodedCounter OS_C2_counter;
+    extern UnencodedAlarm OS_A2_alarm;
 }
 
 
@@ -103,7 +108,9 @@ const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER = 8;
 
 const SpinlockType AUTOSAR_SPINLOCK_S1 = 1;
 const AlarmType AUTOSAR_ALARM_A1 = 1;
+const AlarmType AUTOSAR_ALARM_A2 = 2;
 const CounterType AUTOSAR_COUNTER_C1 = 0;
+const CounterType AUTOSAR_COUNTER_C2 = 1;
 
 namespace arch{
     void * OS_H1_stackptr;
@@ -155,11 +162,15 @@ namespace os{
 
 namespace os{
     UnencodedCounter OS_C1_counter(1000, 1, 1);
-    UnencodedAlarm<&OS_C1_counter> OS_A1_alarm(os::tasks::OS_H1_task, true, 100, 100, 1);
+    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
 
-    os::UnencodedAlarm<&OS_C1_counter>& getAlarmFromType(AlarmType alarm_id) {
+    UnencodedCounter OS_C2_counter(1000, 1, 1);
+    UnencodedAlarm OS_A2_alarm(&OS_C2_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
+
+    os::UnencodedAlarm& getAlarmFromType(AlarmType alarm_id) {
         switch(alarm_id) {
-            case 1: return OS_A1_alarm;
+            case AUTOSAR_ALARM_A1: return OS_A1_alarm;
+            case AUTOSAR_ALARM_A2: return OS_A2_alarm;
         }
     }
 }
@@ -754,9 +765,17 @@ namespace os {
 void inlinehint Counter::tick() {
     if (AUTOSAR_GetCoreID() == 0) {
         OS_C1_counter.do_tick();
+        OS_C2_counter.do_tick();
+
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
+            //AUTOSAR_ALARMCB_A1();
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
+        }
+
+        if (OS_A2_alarm.checkTrigger() ) {
+            debug_core << "A2 triggered" << endl;
             //AUTOSAR_ALARMCB_A1();
             scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H2), true, false);
         }
@@ -872,7 +891,7 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }*/
 
-    //scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
+    scheduler_[0].SetReadyFromSuspended_impl(OS_H3_task);
 
     ITimer::init();
 

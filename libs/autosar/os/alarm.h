@@ -15,10 +15,10 @@ namespace os {
 		inlinehint static void checkCounter(const Counter& counter);
 	};
 
-	template <const UnencodedCounter* const configuration_>
 	class UnencodedAlarm : public Alarm {
 		typedef UnencodedCounter CounterType;
 
+		CounterType* configuration_;
 		bool armed_;
 		TickType absoluteTime_;
 		TickType cycleTime_;
@@ -28,13 +28,13 @@ namespace os {
 		const Task* const task_;
 		const uint32_t id_;
 
-		constexpr UnencodedAlarm(const uint32_t id)
-		    : armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
-		constexpr UnencodedAlarm(const Task& task, const uint32_t id)
-		    : armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
-		constexpr UnencodedAlarm(const Task& task, bool armed, TickType absoluteTime, TickType cycleTime,
+		constexpr UnencodedAlarm(CounterType* configuration, const uint32_t id)
+		    : configuration_(configuration), armed_(false), absoluteTime_(0), cycleTime_(0), task_(0), id_(id) {}
+		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, const uint32_t id)
+		    : configuration_(configuration), armed_(false), absoluteTime_(0), cycleTime_(0), task_(&task), id_(id) {}
+		constexpr UnencodedAlarm(CounterType* configuration, const Task& task, bool armed, TickType absoluteTime, TickType cycleTime,
 		                         const uint32_t id)
-		    : armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
+		    : configuration_(configuration), armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
 
 		void setArmed(bool armed) { armed_ = armed; }
 
