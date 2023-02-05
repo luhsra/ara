@@ -19,10 +19,6 @@ extern "C" void  AUTOSAR_TASK_FUNC_H3();
 extern "C" void  AUTOSAR_TASK_FUNC_H4();
 extern "C" void  AUTOSAR_TASK_FUNC_H5();
 
-void AUTOSAR_TASK_FUNC_H4(){};
-void AUTOSAR_TASK_FUNC_H5(){};
-void PreIdleHook(){};
-
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
@@ -765,20 +761,20 @@ namespace os {
 void inlinehint Counter::tick() {
     if (AUTOSAR_GetCoreID() == 0) {
         OS_C1_counter.do_tick();
-        OS_C2_counter.do_tick();
+        //OS_C2_counter.do_tick();
 
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
             //AUTOSAR_ALARMCB_A1();
-            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H3), true, false);
         }
 
-        if (OS_A2_alarm.checkTrigger() ) {
+        /*if (OS_A2_alarm.checkTrigger() ) {
             debug_core << "A2 triggered" << endl;
             //AUTOSAR_ALARMCB_A1();
             scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H2), true, false);
-        }
+        }*/
     }
 }
 
@@ -891,7 +887,7 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }*/
 
-    scheduler_[0].SetReadyFromSuspended_impl(OS_H3_task);
+    scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
 
     ITimer::init();
 
