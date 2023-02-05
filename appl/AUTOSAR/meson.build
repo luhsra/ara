@@ -201,11 +201,16 @@ foreach app : autosar_apps
 
   supported = [
     'autosar_multicore_andreas_a',
+    'autosar_singlecore_bcc1_alarm1_a',
+    'autosar_singlecore_bcc1_sse1_a',
+    'autosar_singlecore_bcc1_sse1_b',
+    'autosar_singlecore_bcc1_sse1_c',
   ]
   if full_name in supported
 
     autosar_obj = custom_target(full_name + '_autosar_obj',
-                          input : app['core'] / app['path'] / 'autosar.cc',
+                          #input : app['core'] / app['path'] / 'autosar.cc',
+                          input : 'multicore' / 'andreas' / 'autosar.cc',
                           output : full_name + '_autosar.o',
                           depfile : full_name + '_autosar.dep',
                           command : clang_cpp +
@@ -231,6 +236,9 @@ foreach app : autosar_apps
                                       autosar_includes +
                                       ld_flags +
                                       clang_flags)
+
+    run_target('run_' + full_name,
+      command: [app_link])
   endif
   endif
 

@@ -131,11 +131,11 @@ namespace os{
 
 namespace os{
     namespace tasks{
-        constexpr const os::scheduler::Task OS_H1_task(1, 1, 7, true, arch::OS_H1_tcb);
-        constexpr const os::scheduler::Task OS_H2_task(2, 2, 5, true, arch::OS_H2_tcb);
-        constexpr const os::scheduler::Task OS_H3_task(3, 3, 3, true, arch::OS_H3_tcb);
-        constexpr const os::scheduler::Task OS_H4_task(4, 4 /*0*/, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
-        constexpr const os::scheduler::Task OS_H5_task(5, 5, 1, true, arch::OS_H5_tcb);
+        constexpr const os::scheduler::Task OS_H1_task(1, 0, 7, true, arch::OS_H1_tcb);
+        constexpr const os::scheduler::Task OS_H2_task(2, 0, 5, true, arch::OS_H2_tcb);
+        constexpr const os::scheduler::Task OS_H3_task(3, 0, 3, true, arch::OS_H3_tcb);
+        constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
+        constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
     }
 
     const os::scheduler::Task& getTask(id_t task_id) {
@@ -290,42 +290,42 @@ struct TaskList : public UnencodedTaskListStatic {
         id = idle_id;
         prio = idle_prio;
 
-        if (GetCoreID() == 1) {
+        //if (GetCoreID() == 1) {
             if (possible_tasks == nullptr || possible_tasks[1]) {
                 if(H1 > prio && ((H1_events_waiting == 0) || (H1_events_waiting & H1_events_set) != 0)) {
                     prio = H1;
                     id = 1;
                 }
             }
-        } else if (GetCoreID() == 2) {
+        //} else if (GetCoreID() == 2) {
             if (possible_tasks == nullptr || possible_tasks[2]) {
                 if(H2 > prio && ((H2_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
                     prio = H2;
                     id = 2;
                 }
             }
-        } else if (GetCoreID() == 3) {
+        //} else if (GetCoreID() == 3) {
             if (possible_tasks == nullptr || possible_tasks[3]) {
                 if(H3 > prio && ((H3_events_waiting == 0) || (H3_events_waiting & H3_events_set) != 0)) {
                     prio = H3;
                     id = 3;
                 }
             }
-        } else if (GetCoreID() == 4) {
+        //} else if (GetCoreID() == 4) {
             if (possible_tasks == nullptr || possible_tasks[4]) {
                 if(H4 > prio && ((H4_events_waiting == 0) || (H4_events_waiting & H4_events_set) != 0)) {
                     prio = H4;
                     id = 4;
                 }
             }
-        } else if (GetCoreID() == 5) {
+        //} else if (GetCoreID() == 5) {
             if (possible_tasks == nullptr || possible_tasks[5]) {
                 if(H5 > prio && ((H5_events_waiting == 0) || (H5_events_waiting & H5_events_set) != 0)) {
                     prio = H5;
                     id = 5;
                 }
             }
-        }
+        //}
     }
 
     /** Wait for a specific event mask **/
@@ -753,7 +753,7 @@ void inlinehint Counter::tick() {
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            AUTOSAR_ALARMCB_A1();
+            //AUTOSAR_ALARMCB_A1();
             scheduler_[1].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
         }
     }
@@ -814,7 +814,7 @@ void irq_handler (int signo) {
         break;
 
     case SIGTRAP:
-        AUTOSAR_ISR_ISR1();
+        //AUTOSAR_ISR_ISR1();
         break;
 
     default:
@@ -845,11 +845,11 @@ extern "C" void AUTOSAR_StartOS(int arg0){
          * start all other cores
          * Autostarted core last
          */
-        AUTOSAR_StartCore(1);
+        /*AUTOSAR_StartCore(1);
         AUTOSAR_StartCore(2);
         AUTOSAR_StartCore(3);
         AUTOSAR_StartCore(4);
-        AUTOSAR_StartCore(5);
+        AUTOSAR_StartCore(5);*/
 
         Dispatcher::Prepare(OS_H1_task);
         Dispatcher::Prepare(OS_H2_task);
@@ -860,13 +860,15 @@ extern "C" void AUTOSAR_StartOS(int arg0){
 
     debug_core << __FUNCTION__ << endl;
 
-    if (GetCoreID() == 5) {
+    /*if (GetCoreID() == 5) {
         for (int i = 0; i < 5; i++)
         {
             while (! Dispatcher::coreDispatched(i)); // wait for cores 0-4
         }
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
-    }
+    }*/
+
+    scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
 
     ITimer::init();
 
