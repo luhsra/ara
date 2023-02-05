@@ -19,6 +19,9 @@ extern "C" void  AUTOSAR_TASK_FUNC_H3();
 extern "C" void  AUTOSAR_TASK_FUNC_H4();
 extern "C" void  AUTOSAR_TASK_FUNC_H5();
 
+void  AUTOSAR_TASK_FUNC_H4() {}
+void  AUTOSAR_TASK_FUNC_H5() {}
+
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
@@ -140,7 +143,7 @@ namespace os{
     namespace tasks{
         constexpr const os::scheduler::Task OS_H1_task(1, 0, 5, true, arch::OS_H1_tcb);
         constexpr const os::scheduler::Task OS_H2_task(2, 0, 4, true, arch::OS_H2_tcb);
-        constexpr const os::scheduler::Task OS_H3_task(3, 0, 8, false, arch::OS_H3_tcb);
+        constexpr const os::scheduler::Task OS_H3_task(3, 0, 3, true, arch::OS_H3_tcb);
         constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
         constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
     }
@@ -898,7 +901,7 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }*/
 
-    scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
+    //scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
 
     ITimer::init();
 
