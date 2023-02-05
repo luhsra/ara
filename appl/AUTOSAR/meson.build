@@ -228,6 +228,16 @@ foreach app : autosar_apps
     'autosar_singlecore_bcc1_isr2_c',
     'autosar_singlecore_bcc1_isr2_d',
     'autosar_singlecore_bcc1_isr2_e',
+    'autosar_singlecore_bcc1_resource1_a',
+    'autosar_singlecore_bcc1_resource1_b',
+    'autosar_singlecore_bcc1_resource1_c',
+    'autosar_singlecore_bcc1_resource1_d',
+    'autosar_singlecore_bcc1_resource1_e',
+    'autosar_singlecore_bcc1_resource1_f',
+    'autosar_singlecore_bcc1_resource1_g',
+    'autosar_singlecore_bcc1_resource1_h',
+    'autosar_singlecore_bcc1_resource1_j',
+    'autosar_singlecore_bcc1_resource1_k',
   ]
   if full_name in supported
 
