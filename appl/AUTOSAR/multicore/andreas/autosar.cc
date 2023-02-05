@@ -669,13 +669,13 @@ struct Scheduler {
             Dispatcher::Dispatch(OS_H1_task);
         } else if(current_task == 2) {
             // promote non-preemptable task to RES_SCHEDULER
-            tlist.set(2, tlist.scheduler_prio);
-            current_prio = tlist.scheduler_prio;
+            //tlist.set(2, tlist.scheduler_prio);
+            //current_prio = tlist.scheduler_prio;
             Dispatcher::Dispatch(OS_H2_task);
         } else if(current_task == 3) {
             // promote non-preemptable task to RES_SCHEDULER
-            tlist.set(3, tlist.scheduler_prio);
-            current_prio = tlist.scheduler_prio;
+            //tlist.set(3, tlist.scheduler_prio);
+            //current_prio = tlist.scheduler_prio;
             Dispatcher::Dispatch(OS_H3_task);
         } else if(current_task == 4) {
             Dispatcher::Dispatch(OS_H4_task);
