@@ -19,6 +19,9 @@ extern "C" void  AUTOSAR_TASK_FUNC_H3();
 extern "C" void  AUTOSAR_TASK_FUNC_H4();
 extern "C" void  AUTOSAR_TASK_FUNC_H5();
 
+void AUTOSAR_TASK_FUNC_H4(){};
+void AUTOSAR_TASK_FUNC_H5(){};
+
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
@@ -138,8 +141,8 @@ namespace os{
 
 namespace os{
     namespace tasks{
-        constexpr const os::scheduler::Task OS_H1_task(1, 0, 7, true, arch::OS_H1_tcb);
-        constexpr const os::scheduler::Task OS_H2_task(2, 0, 5, true, arch::OS_H2_tcb);
+        constexpr const os::scheduler::Task OS_H1_task(1, 0, 5, true, arch::OS_H1_tcb);
+        constexpr const os::scheduler::Task OS_H2_task(2, 0, 4, true, arch::OS_H2_tcb);
         constexpr const os::scheduler::Task OS_H3_task(3, 0, 3, true, arch::OS_H3_tcb);
         constexpr const os::scheduler::Task OS_H4_task(4, 0, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
         constexpr const os::scheduler::Task OS_H5_task(5, 0, 1, true, arch::OS_H5_tcb);
@@ -158,7 +161,7 @@ namespace os{
 
 namespace os{
     UnencodedCounter OS_C1_counter(1000, 1, 1);
-    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
+    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 1, 100, 1);
 
     UnencodedCounter OS_C2_counter(1000, 1, 1);
     UnencodedAlarm OS_A2_alarm(&OS_C2_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
@@ -170,6 +173,10 @@ namespace os{
         }
     }
 }
+
+
+bool trap[MAX_CPUS] = {false};
+
 
 using namespace arch;
 using namespace os::tasks;
@@ -766,8 +773,8 @@ void inlinehint Counter::tick() {
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            //AUTOSAR_ALARMCB_A1();
-            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H3), true, false);
+            AUTOSAR_ALARMCB_A1();
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H2), true, false);
         }
 
         /*if (OS_A2_alarm.checkTrigger() ) {
@@ -833,7 +840,10 @@ void irq_handler (int signo) {
         break;
 
     case SIGTRAP:
-        //AUTOSAR_ISR_ISR1();
+        trap[get_cpuid()] = true;
+        AUTOSAR_ISR_ISR1();
+        trap[get_cpuid()] = false;
+
         break;
 
     default:
@@ -887,7 +897,7 @@ extern "C" void AUTOSAR_StartOS(int arg0){
         scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
     }*/
 
-    scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
+    //scheduler_[0].SetReadyFromSuspended_impl(OS_H5_task);
 
     ITimer::init();
 
@@ -940,6 +950,13 @@ extern "C" void __OS_ASTSchedule(int arg0){
 }
 
 extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
+
+    if (trap[get_cpuid()])
+    {   // TODO use trap flag instead of parameter
+        // or replace every Syscall with specific implementation like dOSEK?
+        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ true, /*sync*/ true);
+        return;
+    }
     
     Machine::disable_interrupts();
     {
@@ -973,6 +990,8 @@ extern "C" StatusType AUTOSAR_TerminateTask(){
     return E_OK;
 }
 
+
+// TODO: generator must call AUTOSAR_kickoff() fir each TASK as first!
 extern "C" void AUTOSAR_kickoff(){
     __OS_enable_irq_after_kernel();
 }
