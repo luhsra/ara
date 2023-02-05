@@ -247,6 +247,12 @@ foreach app : autosar_apps
     'autosar_singlecore_ecc1_event1_e',
     'autosar_singlecore_ecc1_event1_f',
     'autosar_singlecore_ecc1_event1_g',
+    'autosar_singlecore_ecc1_eventisr1_a',
+    'autosar_singlecore_ecc1_eventisr1_b',
+    'autosar_singlecore_ecc1_eventisr1_c',
+    'autosar_singlecore_ecc1_eventisr1_d',
+    'autosar_singlecore_ecc1_eventisr1_e',
+    'autosar_singlecore_ecc1_eventisr1_f',
   ]
   if full_name in supported
 
