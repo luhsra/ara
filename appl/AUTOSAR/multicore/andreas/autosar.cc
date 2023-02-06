@@ -22,10 +22,12 @@ extern "C" void  AUTOSAR_TASK_FUNC_H5();
 extern "C" void  AUTOSAR_ALARMCB_A1();
 extern "C" void  AUTOSAR_ISR_ISR1();
 extern "C" void  __OS_StartOS_dispatch(int);
-extern "C" void  StartOS(int);
+extern "C" void  AUTOSAR_StartOS(int);
 extern "C" void  AUTOSAR_ShutdownOS(StatusType);
 extern "C" void  AUTOSAR_ShutdownAllCores(StatusType);
 extern "C" void  __OS_ASTSchedule(int);
+
+extern "C" void SyncAllCores_Init();
 
 void  __OS_HOOK_PreIdleHook();
 void  __OS_HOOK_FaultDetectedHook(DetectedFault_t,uint32_t,uint32_t);
@@ -105,6 +107,9 @@ const ResourceType AUTOSAR_RESOURCE_RES_SCHEDULER = 8;
 // store previous priorities for ceiling protocol
 // TODO: replace with generator implementation
 ResourceType AUTOSAR_RESOURCE_prev[9] = {0};
+
+static bool kickoff_done[MAX_CPUS] = {false};
+static int cores = 1; // core 0 is started by default
 
 const SpinlockType AUTOSAR_SPINLOCK_S1 = 1;
 const AlarmType AUTOSAR_ALARM_A1 = 1;
@@ -311,42 +316,37 @@ struct TaskList : public UnencodedTaskListStatic {
         id = idle_id;
         prio = idle_prio;
 
-        //if (GetCoreID() == 1) {
-            if (possible_tasks == nullptr || possible_tasks[1]) {
-                if(H1 > prio && ((H1_events_waiting == 0) || (H1_events_waiting & H1_events_set) != 0)) {
-                    prio = H1;
-                    id = 1;
-                }
+        if (possible_tasks == nullptr || possible_tasks[1]) {
+            if(H1 > prio && ((H1_events_waiting == 0) || (H1_events_waiting & H1_events_set) != 0)) {
+                prio = H1;
+                id = 1;
             }
-        //} else if (GetCoreID() == 2) {
-            if (possible_tasks == nullptr || possible_tasks[2]) {
-                if(H2 > prio && ((H2_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
-                    prio = H2;
-                    id = 2;
-                }
+        }
+        if (possible_tasks == nullptr || possible_tasks[2]) {
+            if(H2 > prio && ((H2_events_waiting == 0) || (H2_events_waiting & H2_events_set) != 0)) {
+                prio = H2;
+                id = 2;
             }
-        //} else if (GetCoreID() == 3) {
-            if (possible_tasks == nullptr || possible_tasks[3]) {
-                if(H3 > prio && ((H3_events_waiting == 0) || (H3_events_waiting & H3_events_set) != 0)) {
-                    prio = H3;
-                    id = 3;
-                }
+        }
+        if (possible_tasks == nullptr || possible_tasks[3]) {
+            if(H3 > prio && ((H3_events_waiting == 0) || (H3_events_waiting & H3_events_set) != 0)) {
+                prio = H3;
+                id = 3;
             }
-        //} else if (GetCoreID() == 4) {
-            if (possible_tasks == nullptr || possible_tasks[4]) {
-                if(H4 > prio && ((H4_events_waiting == 0) || (H4_events_waiting & H4_events_set) != 0)) {
-                    prio = H4;
-                    id = 4;
-                }
+        }
+        if (possible_tasks == nullptr || possible_tasks[4]) {
+            if(H4 > prio && ((H4_events_waiting == 0) || (H4_events_waiting & H4_events_set) != 0)) {
+                prio = H4;
+                id = 4;
             }
-        //} else if (GetCoreID() == 5) {
-            if (possible_tasks == nullptr || possible_tasks[5]) {
-                if(H5 > prio && ((H5_events_waiting == 0) || (H5_events_waiting & H5_events_set) != 0)) {
-                    prio = H5;
-                    id = 5;
-                }
+        }
+        if (possible_tasks == nullptr || possible_tasks[5]) {
+            if(H5 > prio && ((H5_events_waiting == 0) || (H5_events_waiting & H5_events_set) != 0)) {
+                prio = H5;
+                id = 5;
             }
-        //}
+        }
+
     }
 
     /** Wait for a specific event mask **/
@@ -500,7 +500,7 @@ struct Scheduler {
 
     template<const bool *possible_tasks = nullptr>
     forceinline void PartialReschedule() {
-        if (Dispatcher::getSpinlockCnt(get_cpuid())) {
+        if (Dispatcher::getSpinlockCnt(AUTOSAR_GetCoreID())) {
             debug_core << "Task still holding Spinlocks, cannot reschedule" << endl;
             return;
         }
@@ -512,7 +512,7 @@ struct Scheduler {
 
     forceinline void InlinedReschedule(void) {
 
-        if (Dispatcher::getSpinlockCnt(get_cpuid())) {
+        if (Dispatcher::getSpinlockCnt(AUTOSAR_GetCoreID())) {
             debug_core << "Task still holding Spinlocks, cannot reschedule" << endl;
             return;
         }
@@ -525,7 +525,7 @@ struct Scheduler {
 
     noinline void Reschedule() {
 
-        if (Dispatcher::getSpinlockCnt(get_cpuid())) {
+        if (Dispatcher::getSpinlockCnt(AUTOSAR_GetCoreID())) {
             debug_core << "Task still holding Spinlocks, cannot reschedule" << endl;
             return;
         }
@@ -695,7 +695,7 @@ struct Scheduler {
         if (sl->lock()) {
             return E_NOT_OK;
         }
-        Dispatcher::spinlockInc(get_cpuid());
+        Dispatcher::spinlockInc(AUTOSAR_GetCoreID());
         return E_OK;
     }
 
@@ -716,7 +716,7 @@ struct Scheduler {
         }
 
         *success = true;
-        Dispatcher::spinlockInc(get_cpuid());
+        Dispatcher::spinlockInc(AUTOSAR_GetCoreID());
         return E_OK;
     }
 
@@ -727,7 +727,7 @@ struct Scheduler {
     if (sl->unlock()) {
         return E_NOT_OK;
     }
-    Dispatcher::spinlockDec(get_cpuid());
+    Dispatcher::spinlockDec(AUTOSAR_GetCoreID());
     return E_OK;
 }
 };
@@ -736,32 +736,32 @@ struct Scheduler {
 Scheduler scheduler_[MAX_CPUS];
 
 extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
-    *a = scheduler_[get_cpuid()].getCurrent_TaskID();
+    *a = scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID();
     return E_OK;
 }
 
 extern "C" CoreIdType AUTOSAR_GetCoreID() {
-    return get_cpuid();
+    return arch::get_cpuid();
 }
 
 extern "C" StatusType AUTOSAR_GetSpinlock(SpinlockType r) {
 
     Machine::disable_interrupts();
-    StatusType rc = scheduler_[get_cpuid()].GetSpinlock_impl(r);
+    StatusType rc = scheduler_[AUTOSAR_GetCoreID()].GetSpinlock_impl(r);
     __OS_enable_irq_after_kernel();
     return rc;
 }
 
 extern "C" StatusType AUTOSAR_TryToGetSpinlock(SpinlockType r, int* success) {
     Machine::disable_interrupts();
-    StatusType rc = scheduler_[get_cpuid()].TryToGetSpinlock_impl(r, success);
+    StatusType rc = scheduler_[AUTOSAR_GetCoreID()].TryToGetSpinlock_impl(r, success);
     __OS_enable_irq_after_kernel();
     return rc;
 }
 
 extern "C" StatusType AUTOSAR_ReleaseSpinlock(SpinlockType r) {
     Machine::disable_interrupts();
-    StatusType rc = scheduler_[get_cpuid()].ReleaseSpinlock_impl(r);
+    StatusType rc = scheduler_[AUTOSAR_GetCoreID()].ReleaseSpinlock_impl(r);
     __OS_enable_irq_after_kernel();
     return rc;
 }
@@ -775,15 +775,15 @@ extern "C" StatusType AUTOSAR_ReleaseSpinlock(SpinlockType r) {
 namespace os {
 
 void inlinehint Counter::tick() {
-    if (AUTOSAR_GetCoreID() == 0) {
+    if (AUTOSAR_GetCoreID() == OS_CORE_ID_1) {
         OS_C1_counter.do_tick();
         //OS_C2_counter.do_tick();
 
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            AUTOSAR_ALARMCB_A1();
             scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
+            AUTOSAR_ALARMCB_A1();
             //AUTOSAR_SetEvent(AUTOSAR_TASK_H1, AUTOSAR_EVENT_E1);
         }
 
@@ -797,46 +797,61 @@ void inlinehint Counter::tick() {
 
 } // os
 
-extern "C" void __OS_StartOS_dispatch(int arg0){
-    (void) arg0;
-    scheduler_[get_cpuid()].InlinedReschedule();
+extern "C" void SyncAllCores_Init() {
+    int synced = 0;
+    while (synced != cores-1) {
+        synced = 0;
+        for (int i = 0; i < MAX_CPUS; i++) {
+            if (kickoff_done[i])
+                synced++;
+        }
+    }
+    debug_core << "synced " << synced << " cores" << endl;
 }
 
-static int cores = 1; // core 0 is started by default
+extern "C" void __OS_StartOS_dispatch(int arg0){
+    (void) arg0;
+    scheduler_[AUTOSAR_GetCoreID()].InlinedReschedule();
+}
 
 extern "C" void AUTOSAR_StartCoreStage2() {
     debug_core << "StartCore successful" << endl;
     cores++;
 
-    AUTOSAR_StartOS(0);
+    ap_main();
 }
 
-extern "C" void AUTOSAR_StartCore(CoreIdType CoreID) {
-    if (CoreID == 0) // already started
+extern "C" void AUTOSAR_StartCore(CoreIdType CoreID, StatusType *status) {
+    if (CoreID == OS_CORE_ID_MASTER)
+    {
+        *status = E_NOT_OK;  // already started
         return;
+    }
 
     int curr_cores = cores;
     arch::start_hardware_thread(CoreID, nullptr, NULL, AUTOSAR_StartCoreStage2);
 
     // wait until core is in stage 2
     while (curr_cores == cores);
+
+    *status = E_OK;
 }
 
 void irq_handler (int signo) {
 
     debug_core << "IRQ " << signo << endl;
-    os::IPI::Data *data = &ipi_data[get_cpuid()];
+    os::IPI::Data *data = &ipi_data[AUTOSAR_GetCoreID()];
 
     switch (signo) {
     case SIGUSR1:
         switch (data->id) {
         case os::IPI::ActivateTask:
-            scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(data->target_task_id), true, false);
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(data->target_task_id), true, false);
             data->id = os::IPI::Cleared;
             break;
         case os::IPI::SetEvent:
-            scheduler_[get_cpuid()].tlist.set_events(data->target_task_id, data->set_event_mask);
-            scheduler_[get_cpuid()].Schedule_impl(true);
+            scheduler_[AUTOSAR_GetCoreID()].tlist.set_events(data->target_task_id, data->set_event_mask);
+            scheduler_[AUTOSAR_GetCoreID()].Schedule_impl(true);
             data->id = os::IPI::Cleared;
             break;
         default:
@@ -851,9 +866,9 @@ void irq_handler (int signo) {
 
     case SIGTRAP:
     case 37:
-        trap[get_cpuid()] = true;
+        trap[AUTOSAR_GetCoreID()] = true;
         AUTOSAR_ISR_ISR1();
-        trap[get_cpuid()] = false;
+        trap[AUTOSAR_GetCoreID()] = false;
 
         break;
 
@@ -867,49 +882,31 @@ void irq_handler (int signo) {
 extern "C" void AUTOSAR_StartOS(int arg0){
     (void) arg0;
 
-    static bool bootstrap = true;
-    if (bootstrap) {
-        debug << __FUNCTION__ << " bootstrap" << endl;
-        bootstrap = false;
-
-        arch::irq.set_handler(SIGUSR1, irq_handler);
-        arch::irq.enable(SIGUSR1);
-
-        arch::irq.set_handler(SIGTERM, irq_handler);
-        arch::irq.enable(SIGTERM);
-
-        arch::irq.set_handler(SIGTRAP, irq_handler);
-        arch::irq.enable(SIGTRAP);
-
-        arch::irq.set_handler(37, irq_handler);
-        arch::irq.enable(37);
-
-        /**
-         * start all other cores
-         * Autostarted core last
-         */
-        AUTOSAR_StartCore(1);
-        AUTOSAR_StartCore(2);
-        AUTOSAR_StartCore(3);
-        AUTOSAR_StartCore(4);
-        AUTOSAR_StartCore(5);
-
-        Dispatcher::Prepare(OS_H1_task);
-        Dispatcher::Prepare(OS_H2_task);
-        Dispatcher::Prepare(OS_H3_task);
-        Dispatcher::Prepare(OS_H4_task);
-        Dispatcher::Prepare(OS_H5_task);
-    }
-
     debug_core << __FUNCTION__ << endl;
 
-    if (GetCoreID() == 5) {
-        for (int i = 0; i < 5; i++)
-        {
-            while (! Dispatcher::coreDispatched(i)); // wait for cores 0-4
-        }
-        scheduler_[5].SetReadyFromSuspended_impl(OS_H5_task);
+    if (GetCoreID() == OS_CORE_ID_5) {
+        scheduler_[OS_CORE_ID_5].SetReadyFromSuspended_impl(OS_H5_task);
+        SyncAllCores_Init();
     }
+
+    arch::irq.set_handler(SIGUSR1, irq_handler);
+    arch::irq.enable(SIGUSR1);
+
+    arch::irq.set_handler(SIGTERM, irq_handler);
+    arch::irq.enable(SIGTERM);
+
+    arch::irq.set_handler(SIGTRAP, irq_handler);
+    arch::irq.enable(SIGTRAP);
+
+    arch::irq.set_handler(37, irq_handler);
+    arch::irq.enable(37);
+
+
+    Dispatcher::Prepare(OS_H1_task);
+    Dispatcher::Prepare(OS_H2_task);
+    Dispatcher::Prepare(OS_H3_task);
+    Dispatcher::Prepare(OS_H4_task);
+    Dispatcher::Prepare(OS_H5_task);
 
     ITimer::init();
 
@@ -939,7 +936,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     cores--;
 
     if (cores > 1) {
-        int curr_cpuid = get_cpuid();
+        int curr_cpuid = AUTOSAR_GetCoreID();
         for (int i = 0; i < MAX_CPUS; i++) {
             if (i == curr_cpuid || !cpu_online(i) )
                 continue;
@@ -958,21 +955,21 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
 extern "C" void __OS_ASTSchedule(int arg0){
     debug_core << __FUNCTION__ << endl;
     (void) arg0;
-    scheduler_[get_cpuid()].InlinedReschedule();
+    scheduler_[AUTOSAR_GetCoreID()].InlinedReschedule();
 }
 
 extern "C" StatusType AUTOSAR_ActivateTask(TaskType arg0) {
 
-    if (trap[get_cpuid()])
+    if (trap[AUTOSAR_GetCoreID()])
     {   // TODO use trap flag instead of parameter
         // or replace every Syscall with specific implementation like dOSEK?
-        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ true, /*sync*/ true);
+        scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ true, /*sync*/ true);
         return;
     }
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false, /*sync*/ true);
+        scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false, /*sync*/ true);
     }
 
     __OS_enable_irq_after_kernel();
@@ -984,7 +981,7 @@ extern "C" StatusType AUTOSAR_ActivateTaskAsync(TaskType arg0) {
 
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false, /*sync*/ false);
+        scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(arg0), /* from_interrupt */ false, /*sync*/ false);
     }
 
     __OS_enable_irq_after_kernel();
@@ -996,7 +993,7 @@ extern "C" StatusType AUTOSAR_TerminateTask(){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].TerminateTask_impl(os::getTask(scheduler_[get_cpuid()].current_task));
+        scheduler_[AUTOSAR_GetCoreID()].TerminateTask_impl(os::getTask(scheduler_[AUTOSAR_GetCoreID()].current_task));
     }
     // Return with closed interrupts
     return E_OK;
@@ -1005,6 +1002,7 @@ extern "C" StatusType AUTOSAR_TerminateTask(){
 
 // TODO: generator must call AUTOSAR_kickoff() fir each TASK as first!
 extern "C" void AUTOSAR_kickoff(){
+    kickoff_done[AUTOSAR_GetCoreID()] = true;
     __OS_enable_irq_after_kernel();
 }
 
@@ -1012,7 +1010,7 @@ extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
     
     Machine::disable_interrupts();
     {
-        scheduler_[get_cpuid()].ChainTask_impl(os::getTask(scheduler_[get_cpuid()].current_task), os::getTask(arg0));
+        scheduler_[AUTOSAR_GetCoreID()].ChainTask_impl(os::getTask(scheduler_[AUTOSAR_GetCoreID()].current_task), os::getTask(arg0));
     }
     // Return with closed interrupts
     (void) arg0;
@@ -1025,10 +1023,10 @@ extern "C" StatusType AUTOSAR_ChainTask(TaskType arg0){
 extern "C" StatusType AUTOSAR_GetResource(ResourceType arg0){
     Machine::disable_interrupts();
     {
-        AUTOSAR_RESOURCE_prev[arg0] = scheduler_[get_cpuid()].current_prio; // store old prio
-        scheduler_[get_cpuid()].GetResource_impl(os::getTask(scheduler_[get_cpuid()].current_task), arg0);
+        AUTOSAR_RESOURCE_prev[arg0] = scheduler_[AUTOSAR_GetCoreID()].current_prio; // store old prio
+        scheduler_[AUTOSAR_GetCoreID()].GetResource_impl(os::getTask(scheduler_[AUTOSAR_GetCoreID()].current_task), arg0);
 
-        Dispatcher::ResumeToTask(os::getTask(scheduler_[get_cpuid()].current_task));
+        Dispatcher::ResumeToTask(os::getTask(scheduler_[AUTOSAR_GetCoreID()].current_task));
     }
     __OS_enable_irq_after_kernel();
     
@@ -1039,10 +1037,10 @@ extern "C" StatusType AUTOSAR_ReleaseResource(ResourceType arg0){
     
     Machine::disable_interrupts();
     {
-        os::scheduler::Task task = os::getTask(scheduler_[get_cpuid()].current_task);
+        os::scheduler::Task task = os::getTask(scheduler_[AUTOSAR_GetCoreID()].current_task);
 
         // restore old prio
-        scheduler_[get_cpuid()].ReleaseResource_impl(task, AUTOSAR_RESOURCE_prev[arg0]);
+        scheduler_[AUTOSAR_GetCoreID()].ReleaseResource_impl(task, AUTOSAR_RESOURCE_prev[arg0]);
     }
     __OS_enable_irq_after_kernel();
     
@@ -1056,7 +1054,7 @@ extern "C" StatusType AUTOSAR_SetEvent(TaskType arg0, EventMaskType arg1){
     {
         const os::scheduler::Task &task = os::getTask(arg0);
 
-        scheduler_[get_cpuid()].SetEvent_impl(task, arg1, /* sync */ true);
+        scheduler_[AUTOSAR_GetCoreID()].SetEvent_impl(task, arg1, /* sync */ true);
     }
 
     __OS_enable_irq_after_kernel();
@@ -1071,7 +1069,7 @@ extern "C" StatusType AUTOSAR_SetEventAsync(TaskType arg0, EventMaskType arg1){
     {
         const os::scheduler::Task &task = os::getTask(arg0);
 
-        scheduler_[get_cpuid()].SetEvent_impl(task, arg1, /* sync */ false);
+        scheduler_[AUTOSAR_GetCoreID()].SetEvent_impl(task, arg1, /* sync */ false);
     }
 
     __OS_enable_irq_after_kernel();
@@ -1084,8 +1082,8 @@ extern "C" StatusType AUTOSAR_WaitEvent(EventMaskType arg0){
     Machine::disable_interrupts();
     {
 
-        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
-        scheduler_[get_cpuid()].WaitEvent_impl(curr_task, arg0);
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID());
+        scheduler_[AUTOSAR_GetCoreID()].WaitEvent_impl(curr_task, arg0);
     }
     __OS_enable_irq_after_kernel();
     (void) arg0;
@@ -1095,8 +1093,8 @@ extern "C" StatusType AUTOSAR_WaitEvent(EventMaskType arg0){
 extern "C" StatusType AUTOSAR_ClearEvent(EventMaskType arg0){
     Machine::disable_interrupts();
     {
-        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
-        scheduler_[get_cpuid()].ClearEvent_impl(curr_task, arg0);
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID());
+        scheduler_[AUTOSAR_GetCoreID()].ClearEvent_impl(curr_task, arg0);
         // Dispatch directly back to Userland
         Dispatcher::ResumeToTask(curr_task);
     }
@@ -1112,7 +1110,7 @@ extern "C" StatusType AUTOSAR_CancelAlarm(AlarmType arg0){
         // TODO locking of OS ressources that are cross core
         os::getAlarmFromType(arg0).setArmed(false);
 
-        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID());
         // Dispatch directly back to Userland
         Dispatcher::ResumeToTask(curr_task);  // TODO IRQs closed ?? 
     }
@@ -1129,7 +1127,7 @@ extern "C" StatusType AUTOSAR_SetRelAlarm(AlarmType arg0, TickType arg1 ,TickTyp
         os::getAlarmFromType(arg0).setCycleTime(arg2);
         os::getAlarmFromType(arg0).setArmed(true);
 
-        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID());
         // Dispatch directly back to Userland
         Dispatcher::ResumeToTask(curr_task);
     }
@@ -1146,7 +1144,7 @@ extern "C" StatusType AUTOSAR_GetAlarm(AlarmType arg0, TickType* arg1){
     {
         *arg1 = os::getAlarmFromType(arg0).getRemainingTicks();
     
-        const os::scheduler::Task &curr_task = os::getTask(scheduler_[get_cpuid()].getCurrent_TaskID());
+        const os::scheduler::Task &curr_task = os::getTask(scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID());
         // Dispatch directly back to Userland
         Dispatcher::ResumeToTask(curr_task);  // TODO IRQs closed ?? 
     }

@@ -297,7 +297,9 @@ extern "C" noinline void test_trace(char chr);
 	void os_main(void) {		\
 		test_main();			\
 	}							\
-								\
+	void ap_main() {			\
+		body;					\
+	}							\
 	void test() {				\
 		test_start();			\
 		body;					\

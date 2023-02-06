@@ -147,6 +147,19 @@
 	AUTOSAR_StartOS(x)		\
 
 
+#define StartCore(core, status)						\
+  AUTOSAR_StartCore(core, status)
+
+
+#define OS_CORE_ID_0 0
+#define OS_CORE_ID_1 1
+#define OS_CORE_ID_2 2
+#define OS_CORE_ID_3 3
+#define OS_CORE_ID_4 4
+#define OS_CORE_ID_5 5
+#define OS_CORE_ID_6 6
+#define OS_CORE_ID_7 7
+#define OS_CORE_ID_MASTER OS_CORE_ID_0
 
 // #define DeclareMessage(x)						\
 // struct MESSAGEStruct AUTOSAR_MESSAGE_##x
@@ -201,6 +214,7 @@ extern "C" {
 
 
 void os_main(void);
+void ap_main(void);
 EXTERN_C_DECL void StartOS(int);
 
 
@@ -240,6 +254,11 @@ extern StatusType AUTOSAR_GetTaskID(TaskRefType a);
  * Get current Core ID
  */
 extern CoreIdType AUTOSAR_GetCoreID();
+
+/**
+ * Start a new Core
+ */
+extern void AUTOSAR_StartCore(CoreIdType r, StatusType *status);
 
 /**
  * \brief Acquire a RESOURCE
