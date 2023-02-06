@@ -44,6 +44,7 @@ TASK(H1) {
     TickType ticks;
     GetAlarm(A1, &ticks);
     debug_core << ticks << endl;
+    test_trace('1');
     ShutdownAllCores(E_OK);
     TerminateTask();
 }
@@ -52,6 +53,7 @@ TASK(H2) {
     AUTOSAR_kickoff();
     WaitEvent(E1);
     test_trace('2');
+    ActivateTask(H1);
     TerminateTask();
 }
 
@@ -70,7 +72,7 @@ TASK(H4) {
 
 TASK(H5) {
     AUTOSAR_kickoff();
-    Machine::trigger_interrupt_from_user(SIGTRAP, 2);
+    Machine::trigger_interrupt_from_user(SIGUSR2, 2);
     ActivateTask(H2);
     ActivateTask(H4);
     TerminateTask();
@@ -81,7 +83,7 @@ ISR2(ISR1) {
 }
 
 ALARMCALLBACK(A1) {
-    test_trace('1');
+    debug_core << "alarm" << endl;
 }
 
 void PreIdleHook() {

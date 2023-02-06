@@ -152,7 +152,7 @@ namespace os{
         constexpr const os::scheduler::Task OS_H1_task(1, 1, 5, true, arch::OS_H1_tcb);
         constexpr const os::scheduler::Task OS_H2_task(2, 2, 4, true, arch::OS_H2_tcb);
         constexpr const os::scheduler::Task OS_H3_task(3, 3, 3, true, arch::OS_H3_tcb);
-        constexpr const os::scheduler::Task OS_H4_task(4, 4, 2, true, arch::OS_H4_tcb); // TODO: trigger interrupt segfault if this is on thread 0 (not started)
+        constexpr const os::scheduler::Task OS_H4_task(4, 4, 2, true, arch::OS_H4_tcb);
         constexpr const os::scheduler::Task OS_H5_task(5, 5, 1, true, arch::OS_H5_tcb);
     }
 
@@ -169,10 +169,10 @@ namespace os{
 
 namespace os{
     UnencodedCounter OS_C1_counter(1000, 1, 1);
-    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
+    UnencodedAlarm OS_A1_alarm(&OS_C1_counter, os::tasks::OS_H1_task, true, 1000, 1000, 1);
 
     UnencodedCounter OS_C2_counter(1000, 1, 1);
-    UnencodedAlarm OS_A2_alarm(&OS_C2_counter, os::tasks::OS_H1_task, true, 100, 100, 1);
+    UnencodedAlarm OS_A2_alarm(&OS_C2_counter, os::tasks::OS_H1_task, true, 1000, 1000, 1);
 
     os::UnencodedAlarm& getAlarmFromType(AlarmType alarm_id) {
         switch(alarm_id) {
@@ -782,8 +782,8 @@ void inlinehint Counter::tick() {
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
-            AUTOSAR_ALARMCB_A1();
+            //scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
+            //AUTOSAR_ALARMCB_A1();
             //AUTOSAR_SetEvent(AUTOSAR_TASK_H1, AUTOSAR_EVENT_E1);
         }
 
@@ -814,7 +814,10 @@ extern "C" void __OS_StartOS_dispatch(int arg0){
     scheduler_[AUTOSAR_GetCoreID()].InlinedReschedule();
 }
 
-extern "C" void AUTOSAR_StartCoreStage2() {
+extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
+
+    int* core = (int*)arg;
+    while (!cpu_online(*core));
     debug_core << "StartCore successful" << endl;
     cores++;
 
@@ -865,6 +868,7 @@ void irq_handler (int signo) {
         break;
 
     case SIGTRAP:
+    case SIGUSR2:
     case 37:
         trap[AUTOSAR_GetCoreID()] = true;
         AUTOSAR_ISR_ISR1();
@@ -891,6 +895,9 @@ extern "C" void AUTOSAR_StartOS(int arg0){
 
     arch::irq.set_handler(SIGUSR1, irq_handler);
     arch::irq.enable(SIGUSR1);
+
+    arch::irq.set_handler(SIGUSR2, irq_handler);
+    arch::irq.enable(SIGUSR2);
 
     arch::irq.set_handler(SIGTERM, irq_handler);
     arch::irq.enable(SIGTERM);

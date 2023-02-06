@@ -1,9 +1,10 @@
 #ifndef __HARDWARE_THREADS_H__
 #define __HARDWARE_THREADS_H__
 
+#define MAX_CPUS 8
+
 namespace arch {
 
-	#define MAX_CPUS 8
 	/**
 	 * \brief Starts another hardware thread (generic interface)
 	 *
@@ -18,7 +19,7 @@ namespace arch {
 	bool start_hardware_thread(unsigned int hardware_number,
 	                           void *bottom_of_stack,
 	                           unsigned int size_of_stack,
-	                           void (*startup_function)());
+	                           void* (*startup_function)(void*));
 
 	bool cpu_online(int cpuid);
 	int get_cpuid();

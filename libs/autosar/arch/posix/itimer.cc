@@ -45,7 +45,7 @@ void ITimer::set_periodic(uint16_t rateHz) {
     sev.sigev_value.sival_ptr = &timerid;
     timer_create(CLOCK_REALTIME, &sev, &timerid);
 
-    freq_nanosecs = 1*1000*1000; // 1 ms
+    freq_nanosecs = 1e9 / rateHz;
     its.it_value.tv_sec = freq_nanosecs / 1000000000;
     its.it_value.tv_nsec = freq_nanosecs % 1000000000;
     its.it_interval.tv_sec = its.it_value.tv_sec;

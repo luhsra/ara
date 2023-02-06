@@ -17,15 +17,14 @@ namespace arch
 	bool start_hardware_thread(unsigned int hardware_number,
 	                           void *bottom_of_stack,
 	                           unsigned int size_of_stack,
-	                           void (*startup_function)())
+	                           void* (*startup_function)(void*))
 	{
 		/* These parameter are not required, since on posix there is already
 		 * an operating system handling the stack and cpu startup. */
 		(void) bottom_of_stack;
 		(void) size_of_stack;
 		pthread_t thread;
-		int error = pthread_create(&thread, nullptr, pthread_wrapper, reinterpret_cast<void*>(startup_function));
-
+		int error = pthread_create(&thread, nullptr, startup_function, &hardware_number);
 		cpuid[hardware_number] = thread;
 		pthread_detach(thread);
 		return !error;
