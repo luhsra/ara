@@ -44,7 +44,7 @@ TASK(H1) {
 
     AUTOSAR_kickoff();
 
-    if (cnt++ == 3) {
+    if (cnt++ == 1) {
         test_trace('1');
         ShutdownAllCores(E_OK);
     }
@@ -56,7 +56,6 @@ TASK(H2) {
     AUTOSAR_kickoff();
     WaitEvent(E1);
     test_trace('2');
-    ActivateTask(H1);
     TerminateTask();
 }
 
@@ -75,14 +74,14 @@ TASK(H4) {
 
 TASK(H5) {
     AUTOSAR_kickoff();
-    Machine::trigger_interrupt_from_user(SIGUSR2, 2);
     ActivateTask(H2);
-    ActivateTask(H4);
+    Machine::trigger_interrupt_from_user(SIGUSR2, 4);
     TerminateTask();
 }
 
 ISR2(ISR1) {
     test_trace('5');
+    ActivateTask(H4);
 }
 
 ALARMCALLBACK(A1) {
