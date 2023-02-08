@@ -40,12 +40,15 @@ void start()
 TEST_MAKE_OS_MAIN(start())
 
 TASK(H1) {
+    static int cnt = 0;
+
     AUTOSAR_kickoff();
-    TickType ticks;
-    GetAlarm(A1, &ticks);
-    debug_core << ticks << endl;
-    test_trace('1');
-    ShutdownAllCores(E_OK);
+
+    if (cnt++ == 3) {
+        test_trace('1');
+        ShutdownAllCores(E_OK);
+    }
+
     TerminateTask();
 }
 

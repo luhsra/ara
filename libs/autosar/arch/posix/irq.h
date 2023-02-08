@@ -2,13 +2,14 @@
 #define _POSIX_IRQ_H_
 
 #include <signal.h>
+#include "hardware_threads.h"
 
 #define SIGMAX 256
 
 namespace arch {
 class IRQ {
-    bool ast_requested;
-    int ast_level;
+    bool ast_requested[MAX_CPUS];
+    int ast_level[MAX_CPUS];
     sigset_t full_mask;
 public:
     typedef void (*irq_handler_t)(int);
@@ -28,9 +29,9 @@ public:
 
     bool interrupts_enabled(int irq = 0);
 
-    bool forceinline in_interrupt() { return ast_level > 0;}
+    bool forceinline in_interrupt() { return ast_level[arch::get_cpuid()] > 0;}
 
-    void request_ast() { ast_requested = true; }
+    void request_ast() { ast_requested[arch::get_cpuid()] = true; }
 
 private:
     static void guardian(int signum);

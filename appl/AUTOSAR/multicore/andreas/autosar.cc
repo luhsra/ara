@@ -782,8 +782,8 @@ void inlinehint Counter::tick() {
 
         if (OS_A1_alarm.checkTrigger() ) {
             debug_core << "A1 triggered" << endl;
-            //scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
-            //AUTOSAR_ALARMCB_A1();
+            scheduler_[AUTOSAR_GetCoreID()].ActivateTask_impl(os::getTask(AUTOSAR_TASK_H1), true, false);
+            AUTOSAR_ALARMCB_A1();
             //AUTOSAR_SetEvent(AUTOSAR_TASK_H1, AUTOSAR_EVENT_E1);
         }
 

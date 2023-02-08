@@ -15,13 +15,14 @@ extern unsigned int get_thread_id(int id);
 }
 
 static void panic(int signal) {
-	kout << "spurious interrupt: " << signal << endl;
+    kout << "spurious interrupt: " << signal << endl;
 }
 
 IRQ::IRQ() {
     for(unsigned int i = 0; i < SIGMAX; i++)
         m_gate[i] = &panic;
-    ast_level = 0;
+    for(unsigned int i = 0; i < MAX_CPUS; i++)
+        ast_level[i] = 0;
     sigfillset(&full_mask);
 }
 
@@ -104,7 +105,7 @@ void IRQ::clear_interrupts() {
 }
 
 bool IRQ::interrupts_enabled(int irq) {
-	sigset_t mask;
+    sigset_t mask;
     pthread_sigmask(0, NULL, &mask);
     if (irq == 0) {
         return my_sigisemptyset(&mask);
@@ -114,14 +115,15 @@ bool IRQ::interrupts_enabled(int irq) {
 }
 
 void IRQ::guardian(int signum) {
-	/* Interrupts are prohibited during the ISR */
-	irq.ast_level++;
+    /* Interrupts are prohibited during the ISR */
+    int cpuid = arch::get_cpuid();
+    irq.ast_level[cpuid]++;
         irq.m_gate[signum](signum);
-	irq.ast_level--;
-	if (irq.ast_level == 0 && irq.ast_requested) {
-		irq.ast_requested = false;
-		__OS_ASTSchedule(0);
-	}
+    irq.ast_level[cpuid]--;
+    if (irq.ast_level[cpuid] == 0 && irq.ast_requested[cpuid]) {
+        irq.ast_requested[cpuid] = false;
+        __OS_ASTSchedule(0);
+    }
 }
 
 IRQ arch::irq;
