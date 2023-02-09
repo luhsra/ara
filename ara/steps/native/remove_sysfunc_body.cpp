@@ -22,6 +22,8 @@ namespace ara::step {
 	void RemoveSysfuncBody::init_options() {
 		drop_llvm_suffix = drop_llvm_suffix_template.instantiate(get_name());
 		opts.emplace_back(drop_llvm_suffix);
+		disable = disable_template.instantiate(get_name());
+		opts.emplace_back(disable);
 	}
 
 	void RemoveSysfuncBody::remove_llvm_suffix_syscall(Function& func, const std::string& name_without_suffix,
@@ -55,6 +57,11 @@ namespace ara::step {
 	}
 
 	void RemoveSysfuncBody::run() {
+
+		if (disable.get().value_or(false)) {
+			logger.info() << "RemoveSysfuncBody is disabled!" << std::endl;
+			return;
+		}
 
 		std::set<std::string> os_syscalls = this->graph.get_os().get_syscall_names();
 

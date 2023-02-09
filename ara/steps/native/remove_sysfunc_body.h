@@ -29,6 +29,13 @@ namespace ara::step {
 		    /* ty = */ option::Bool(),
 		    /* default = */ true};
 		option::TOptEntity<option::Bool> drop_llvm_suffix;
+		const static inline option::TOption<option::Bool> disable_template{
+		    "disable",
+		    "If true this step is disabled and does nothing. "
+		    "For the synthesisi it can be helpful to disable this step and keep all sysfuncs",
+		    /* ty = */ option::Bool(),
+		    /* default = */ false};
+		option::TOptEntity<option::Bool> disable;
 		virtual void init_options();
 		void remove_llvm_suffix_syscall(llvm::Function& func, const std::string& name_without_suffix,
 		                                llvm::Module& module);
@@ -36,7 +43,7 @@ namespace ara::step {
 	  public:
 		static std::string get_name() { return "RemoveSysfuncBody"; }
 		static std::string get_description();
-		static Step::OptionVec get_local_options() { return {drop_llvm_suffix_template}; }
+		static Step::OptionVec get_local_options() { return {drop_llvm_suffix_template, disable_template}; }
 
 		virtual std::vector<std::string> get_single_dependencies() override { return {"IRReader"}; }
 
