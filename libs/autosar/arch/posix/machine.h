@@ -117,6 +117,7 @@ public:
 	static forceinline void shutdown(void) {
         debug.setcolor(Color::MAGENTA, Color::BLACK);
         debug << ("Machine::shutdown!\n");
+        debug.setcolor(Color::WHITE, Color::BLACK);
 		// No unreachable() here, otherwise the generator will be unhappy!
 
 		// The call to exit is required, because there might be a ressources
