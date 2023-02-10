@@ -41,7 +41,10 @@ elif get_option('arch') == 'posix'
     '-DDEBUG',
     '-gdwarf-4',
   ]
-  ld_flags += '-lpthread'
+  ld_flags += [
+    '-lpthread',
+    '-lrt',
+  ]
 elif get_option('arch') == 'arm'
   clang_flags += ['--target=' + target_triple,
                   '-mthumb',
