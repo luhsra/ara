@@ -5,6 +5,7 @@
 #include "scheduler/task.h"
 #include "stdint.h"
 #include "util/inline.h"
+#include "spinlock.h"
 
 using namespace os::scheduler;
 
@@ -17,7 +18,7 @@ namespace os {
 
 	class UnencodedAlarm : public Alarm {
 		typedef UnencodedCounter CounterType;
-
+		Spinlock mutex;
 		CounterType* configuration_;
 		bool armed_;
 		TickType absoluteTime_;
@@ -36,18 +37,29 @@ namespace os {
 		                         const uint32_t id)
 		    : configuration_(configuration), armed_(armed), absoluteTime_(absoluteTime), cycleTime_(cycleTime), task_(&task), id_(id) {}
 
-		void setArmed(bool armed) { armed_ = armed; }
+		void setArmed(bool armed) {
+			mutex.lock();
+			armed_ = armed;
+			mutex.unlock();
+		}
 
 		bool getArmed() const { return armed_; }
 
-		void setAbsoluteTime(TickType absoluteTime) { absoluteTime_ = absoluteTime; }
+		void setAbsoluteTime(TickType absoluteTime) {
+			mutex.lock();
+			absoluteTime_ = absoluteTime;
+			mutex.unlock();
+		}
 
 		template <typename Encoded>
 		void setRelativeTime(Encoded encoded) {
+			mutex.lock();
 			setRelativeTime(encoded.decode());
+			mutex.unlock();
 		}
 
 		void setRelativeTime(TickType relativeTime) {
+			mutex.lock();
 			auto value = configuration_->getValue();
 			auto remaining = configuration_->maxallowedvalue - value;
 
@@ -56,6 +68,7 @@ namespace os {
 			} else {
 				absoluteTime_ = relativeTime - remaining - 1;
 			}
+			mutex.unlock();
 		}
 
 		TickType getAbsoluteTime() const { return absoluteTime_; }
@@ -65,7 +78,11 @@ namespace os {
 			setCycleTime(encoded.decode());
 		}
 
-		void setCycleTime(TickType cycleTime) { cycleTime_ = cycleTime; }
+		void setCycleTime(TickType cycleTime) {
+			mutex.lock();
+			cycleTime_ = cycleTime;
+			mutex.unlock();
+		}
 
 		TickType getCycleTime() const { return cycleTime_; }
 
@@ -96,6 +113,7 @@ namespace os {
 		}
 	};
 
+	//TODO: get rid of encoded stuff
 	template <B_t B, B_t CB, const EncodedCounter<CB>* const configuration_>
 	class EncodedAlarm : public Alarm {
 		typedef EncodedCounter<CB> CounterType;
