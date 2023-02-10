@@ -2,11 +2,18 @@
   "cpus": [
     {
       "id": 0,
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 1,
       "tasks": {
-        "T01": {
+        "H1": {
           "activation": 1,
-          "autostart": true,
-          "priority": 4,
+          "autostart": false,
+          "priority": 1,
           "schedule": true,
           "spinlocks": ["S1", "S2"]
         }
@@ -17,11 +24,59 @@
       "counters": {},
       "isrs": {}
     }, {
-      "id": 1,
+      "id": 2,
       "tasks": {
-        "T11": {
+        "H2": {
           "activation": 1,
           "autostart": false,
+          "priority": 1,
+          "schedule": true,
+          "spinlocks": ["S1", "S2"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 3,
+      "tasks": {
+        "H3": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true,
+          "spinlocks": ["S1", "S2"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 4,
+      "tasks": {
+        "H4": {
+          "activation": 1,
+          "autostart": false,
+          "priority": 1,
+          "schedule": true,
+          "spinlocks": ["S1", "S2"]
+        }
+      },
+      "resources": {},
+      "events": {},
+      "alarms": {},
+      "counters": {},
+      "isrs": {}
+    }, {
+      "id": 5,
+      "tasks": {
+        "H5": {
+          "activation": 1,
+          "autostart": true,
           "priority": 1,
           "schedule": true,
           "spinlocks": ["S1", "S2"]
