@@ -1,0 +1,14 @@
+{
+	"steps": [
+		"AutosarGeneratorIR",
+		"IRWriter"
+	],
+	"AutosarGeneratorIR": {
+		"log_level": "debug",
+		"rename_syscalls": true
+	},
+	"logger": {
+		"StepManager": "info",
+		"AUTOSAR": "debug"
+	}
+}

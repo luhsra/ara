@@ -11,8 +11,22 @@ namespace ara::step {
                "Add AUTOSAR_kickoff() function to each TASK";
     }
 
+    void AutosarGeneratorIR::init_options() {
+		rename_syscalls = rename_syscalls_template.instantiate(get_name());
+		opts.emplace_back(rename_syscalls);
+	}
+
+	Step::OptionVec AutosarGeneratorIR::get_local_options() { return {rename_syscalls_template}; }
+
+
     void AutosarGeneratorIR::run() {
         logger.info() << "Execute AutosarGeneratorIR step." << std::endl;
+
+        const auto& rename = rename_syscalls.get();
+        assert(rename);
+            if (rename) {
+                logger.debug() << "rename_syscalls option enabled" << std::endl;
+        }
 
         Module& module = graph.get_module();
         LLVMContext& context = module.getContext();
@@ -33,7 +47,7 @@ namespace ara::step {
                 builder.SetInsertPoint(inst);
 
                 std::vector<Value*> ArgsV;
-                CallInst *CS = builder.CreateCall(kickoff, ArgsV);
+                /*CallInst *CS = */builder.CreateCall(kickoff, ArgsV);
 
                 logger.debug() << "add " << kickoff->getName().str() <<
                     " to " << function.getName().str() << std::endl;
