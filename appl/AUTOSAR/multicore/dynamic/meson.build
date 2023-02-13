@@ -44,3 +44,5 @@ step_data = custom_target(full_name + '.multisse.with_timing.stepdata.json',
                          )
 
 subdir('gen')
+
+subdir('bestof')
