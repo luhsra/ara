@@ -5,7 +5,7 @@
 	],
 	"AutosarGeneratorIR": {
 		"log_level": "debug",
-		"rename_syscalls": false
+		"rename_syscalls": true
 	},
 	"logger": {
 		"StepManager": "info",
