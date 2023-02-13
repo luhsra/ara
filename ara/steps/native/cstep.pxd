@@ -30,6 +30,10 @@ cdef extern from "step.h" namespace "ara::step":
 
 # all step following
 
+cdef extern from "autosar_generator_ir.h" namespace "ara::step":
+    cdef cppclass AutosarGeneratorIR:
+        pass
+
 cdef extern from "bb_split.h" namespace "ara::step":
     cdef cppclass BBSplit:
         pass

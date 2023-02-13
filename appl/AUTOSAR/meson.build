@@ -196,8 +196,7 @@ foreach app : autosar_apps
                           '--os', 'AUTOSAR',
                           '--oilfile', app['oil'],
                           '--ir_output', '@OUTPUT@',
-                          '-s', 'LockElision',
-                          '-s', 'IPIAvoidance',
+                          '-s', 'AutosarGeneratorIR',
                         ])
     app += {'ll_mod': app_ll_mod}
 

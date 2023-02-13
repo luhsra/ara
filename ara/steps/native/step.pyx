@@ -388,7 +388,8 @@ def provide_steps():
     """Provide a list of all native steps. This also constructs as many
     objects as steps exist.
     """
-    return [_native_step_fac(make_step_fac[cstep.BBSplit]()),
+    return [_native_step_fac(make_step_fac[cstep.AutosarGeneratorIR]()),
+            _native_step_fac(make_step_fac[cstep.BBSplit]()),
             _native_step_fac(make_step_fac[cstep.BBTimings]()),
             _native_step_fac(make_step_fac[cstep.CDummy]()),
             _native_step_fac(make_step_fac[cstep.CompInsert]()),

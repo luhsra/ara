@@ -42,8 +42,6 @@ TEST_MAKE_OS_MAIN(start())
 TASK(H1) {
     static int cnt = 0;
 
-    AUTOSAR_kickoff();
-
     if (cnt++ == 1) {
         test_trace('1');
         ShutdownAllCores(E_OK);
@@ -53,27 +51,23 @@ TASK(H1) {
 }
 
 TASK(H2) {
-    AUTOSAR_kickoff();
     WaitEvent(E1);
     test_trace('2');
     TerminateTask();
 }
 
 TASK(H3) {
-    AUTOSAR_kickoff();
     test_trace('3');
     SetEvent(H2, E1);
     TerminateTask();
 }
 
 TASK(H4) {
-    AUTOSAR_kickoff();
     test_trace('4');
     ChainTask(H3);
 }
 
 TASK(H5) {
-    AUTOSAR_kickoff();
     ActivateTask(H2);
     Machine::trigger_interrupt_from_user(SIGUSR2, 4);
     TerminateTask();

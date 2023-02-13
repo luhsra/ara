@@ -83,6 +83,7 @@ step_mod = py3_inst.extension_module('step',
         'option.cpp',
         'step_manager.cpp',
         # C++ steps from here on (sorted alphabetically)
+        'autosar_generator_ir.cpp',
         'bb_split.cpp',
         'bb_timings.cpp',
         'callgraph.cpp',
