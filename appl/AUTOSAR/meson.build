@@ -185,94 +185,26 @@ foreach app : autosar_apps
                                    clang_flags)
   app += {'ll': app_ll}
 
-  app_obj = custom_target(full_name + '_obj',
-                          input : app_ll,
-                          output : full_name + '.ll.o',
-                          depfile : full_name + '.dep',
-                          command : clang_cpp +
-                                    autosar_includes +
-                                    ld_flags +
-                                    obj_flags +
-                                    clang_flags)
-
-  app += {'obj': app_obj}
-
   if get_option('arch') == 'posix'
 
-  supported = [
-    'autosar_multicore_andreas_a',
-    'autosar_singlecore_bcc1_alarm1_a',
-    'autosar_singlecore_bcc1_sse1_a',
-    'autosar_singlecore_bcc1_sse1_b',
-    'autosar_singlecore_bcc1_sse1_c',
-    'autosar_singlecore_bcc1_alarm1_a',
-    'autosar_singlecore_bcc1_alarm1_b',
-    'autosar_singlecore_bcc1_alarm1_c',
-    'autosar_singlecore_bcc1_alarm1_d',
-    'autosar_singlecore_bcc1_alarm1_e',
-    'autosar_singlecore_bcc1_alarm2_a',
-    'autosar_singlecore_bcc1_alarm2_b',
-    'autosar_singlecore_bcc1_alarm2_c',
-    'autosar_singlecore_bcc1_alarm3_a',
-    'autosar_singlecore_bcc1_alarm3_b',
-    'autosar_singlecore_bcc1_alarm3_c',
-    'autosar_singlecore_bcc1_alarm3_d',
-    'autosar_singlecore_bcc1_alarm3_e',
-    'autosar_singlecore_bcc1_complex1_a',
-    'autosar_singlecore_bcc1_complex1_b',
-    'autosar_singlecore_bcc1_complex1_c',
-    'autosar_singlecore_bcc1_complex1_d',
-    'autosar_singlecore_bcc1_complex2_a',
-    'autosar_singlecore_bcc1_isr2_a',
-    'autosar_singlecore_bcc1_isr2_b',
-    'autosar_singlecore_bcc1_isr2_c',
-    'autosar_singlecore_bcc1_isr2_d',
-    'autosar_singlecore_bcc1_isr2_e',
-    'autosar_singlecore_bcc1_resource1_a',
-    'autosar_singlecore_bcc1_resource1_b',
-    'autosar_singlecore_bcc1_resource1_c',
-    'autosar_singlecore_bcc1_resource1_d',
-    'autosar_singlecore_bcc1_resource1_e',
-    'autosar_singlecore_bcc1_resource1_f',
-    'autosar_singlecore_bcc1_resource1_g',
-    'autosar_singlecore_bcc1_resource1_h',
-    'autosar_singlecore_bcc1_resource1_j',
-    'autosar_singlecore_bcc1_resource1_k',
-    'autosar_singlecore_bcc1_resource2_a',
-    'autosar_singlecore_bcc1_resource2_b',
-    'autosar_singlecore_ecc1_event1_a',
-    'autosar_singlecore_ecc1_event1_b',
-    'autosar_singlecore_ecc1_event1_c',
-    'autosar_singlecore_ecc1_event1_d',
-    'autosar_singlecore_ecc1_event1_e',
-    'autosar_singlecore_ecc1_event1_f',
-    'autosar_singlecore_ecc1_event1_g',
-    'autosar_singlecore_ecc1_eventisr1_a',
-    'autosar_singlecore_ecc1_eventisr1_b',
-    'autosar_singlecore_ecc1_eventisr1_c',
-    'autosar_singlecore_ecc1_eventisr1_d',
-    'autosar_singlecore_ecc1_eventisr1_e',
-    'autosar_singlecore_ecc1_eventisr1_f',
-  ]
-  if full_name in supported
-
-    autosar_obj = custom_target(full_name + '_autosar_obj',
-                          #input : app['core'] / app['path'] / 'autosar.cc',
-                          input : 'multicore' / 'andreas' / 'autosar.cc',
-                          output : full_name + '_autosar.o',
-                          depfile : full_name + '_autosar.dep',
-                          command : clang_cpp +
-                                    autosar_includes +
-                                    ld_flags +
-                                    obj_flags +
-                                    clang_flags)
-
-    app += {'autosar_obj': autosar_obj}
+    app_ll_mod = custom_target(full_name + '_mod',
+                        input : app_ll,
+                        output : full_name + '_mod.ll',
+                        depfile : full_name + '_mod.ll.dep',
+                        command : [
+                          py3_inst, ara_py, app['ll'],
+                          '--os', 'AUTOSAR',
+                          '--oilfile', app['oil'],
+                          '--ir_output', '@OUTPUT@',
+                          '-s', 'LockElision',
+                          '-s', 'IPIAvoidance',
+                        ])
+    app += {'ll_mod': app_ll_mod}
 
     app_link = custom_target(full_name + '_link',
                             input: [
-                              autosar_obj,
-                              app_obj,
+                              'multicore' / 'andreas' / 'autosar.cc',
+                              app_ll_mod,
                               libautosar_test,
                               libautosar_os,
                               libautosar_posix,
@@ -285,9 +217,7 @@ foreach app : autosar_apps
                                       ld_flags +
                                       clang_flags)
 
-    run_target('run_' + full_name,
-      command: [app_link])
-  endif
+    run_target('run_' + full_name, command: [app_link])
   endif
 
   # trace file for sse testing
