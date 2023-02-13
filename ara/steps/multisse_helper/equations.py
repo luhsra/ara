@@ -30,6 +30,14 @@ def e_str(h_edge):
     return f"{h_edge}_hashed"
 
 
+def _to_var(idx):
+    """Converts a number into a meaningful string."""
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'
+    if idx >= len(alphabet):
+        return f'v{idx}'
+    return alphabet[idx]
+
+
 class Equations:
     """Equation system for calculation of possible pairing partners."""
     def __init__(self):
@@ -46,20 +54,18 @@ class Equations:
                 f"_highest: {self._highest})")
 
     def __str__(self):
-        alphabet = 'abcdefghijklmnopqrstuvwxyz'
-        assert self._highest < len(alphabet), "We have no more letters"
         ret = "Equations("
         for var, bound in self._bounds.items():
-            ret += f"\n  {bound.up} < {alphabet[var]} < {bound.to}"
+            ret += f"\n  {bound.up} < {_to_var(var)} < {bound.to}"
 
         for eq in self._equalities:
             left = ' + '.join(
-                [alphabet[idx] for idx, elem in enumerate(eq) if elem == 1])
+                [_to_var(idx) for idx, elem in enumerate(eq) if elem == 1])
             right = ' + '.join(
-                [alphabet[idx] for idx, elem in enumerate(eq) if elem == -1])
+                [_to_var(idx) for idx, elem in enumerate(eq) if elem == -1])
 
             ret += f"\n  {left} = {right}"
-        ret += f"\n  Mapping: {[(e_str(e), alphabet[idx]) for e, idx in self._v_map.items()]})"
+        ret += f"\n  Mapping: {[(e_str(e), _to_var(idx)) for e, idx in self._v_map.items()]})"
         return ret
 
     def _get_variable(self, edge, must_exist=False):
