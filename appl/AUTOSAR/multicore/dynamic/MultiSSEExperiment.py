@@ -72,6 +72,7 @@ RUN_ARA = """
   '--oilfile', {name}_cc[1],
   '--step-settings', {timed}_timing_settings,
   '--timings', 'BB',
+  '--os', 'AUTOSAR',
   '--step-data', '@OUTPUT0@'],
 )
 
