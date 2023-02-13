@@ -56,7 +56,7 @@ class TimingCalculator():
         for edge in edges:
             if mstg.ep.type[edge] != MSTType.follow_sync:
                 continue
-            yield TimedEdge(edge=self._mstg.edge(edge),
+            yield TimedEdge(edge=edge,
                             range=TimeRange(up=get_time(mstg.ep.bcet, edge),
                                             to=get_time(mstg.ep.wcet, edge)))
 
