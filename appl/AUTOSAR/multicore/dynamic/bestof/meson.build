@@ -4,14 +4,7 @@ with_jsons = []
 all_jsons = []
 
 
-synthetic_03C_01L_2U_15T_90A_90S_05E__0039_cc = custom_target('synthetic_03C_01L_2U_15T_90A_90S_05E__0039_cc',
-  output: ['synthetic_03C_01L_2U_15T_90A_90S_05E__0039.cc', 'synthetic_03C_01L_2U_15T_90A_90S_05E__0039.oil.json'],
-  command: [benchmark_gen, '--seed', '39', '--system', '@OUTPUT0@',
-             '--oil', '@OUTPUT1@', '--cores', '3', '--locks', '1',
-             '--lock-users', '2', '--subtasks', '15',
-             '--at-local', '90', '--se-local', '90',
-             '--events', '5']
-  )
+synthetic_03C_01L_2U_15T_90A_90S_05E__0039_cc = files('synthetic_03C_01L_2U_15T_90A_90S_05E__0039.cc', 'synthetic_03C_01L_2U_15T_90A_90S_05E__0039.oil.json')
 
 synthetic_03C_01L_2U_15T_90A_90S_05E__0039_ll = custom_target('synthetic_03C_01L_2U_15T_90A_90S_05E__0039_ll',
   input: synthetic_03C_01L_2U_15T_90A_90S_05E__0039_cc[0],
@@ -48,14 +41,7 @@ synthetic_03C_01L_2U_15T_90A_90S_05E__0039_with_stepdata = custom_target('synthe
 with_jsons +=synthetic_03C_01L_2U_15T_90A_90S_05E__0039_with_stepdata
 all_jsons += synthetic_03C_01L_2U_15T_90A_90S_05E__0039_with_stepdata
 
-synthetic_03C_01L_2U_15T_90A_90S_05E__0030_cc = custom_target('synthetic_03C_01L_2U_15T_90A_90S_05E__0030_cc',
-  output: ['synthetic_03C_01L_2U_15T_90A_90S_05E__0030.cc', 'synthetic_03C_01L_2U_15T_90A_90S_05E__0030.oil.json'],
-  command: [benchmark_gen, '--seed', '30', '--system', '@OUTPUT0@',
-             '--oil', '@OUTPUT1@', '--cores', '3', '--locks', '1',
-             '--lock-users', '2', '--subtasks', '15',
-             '--at-local', '90', '--se-local', '90',
-             '--events', '5']
-  )
+synthetic_03C_01L_2U_15T_90A_90S_05E__0030_cc = files('synthetic_03C_01L_2U_15T_90A_90S_05E__0030.cc', 'synthetic_03C_01L_2U_15T_90A_90S_05E__0030.oil.json')
 
 synthetic_03C_01L_2U_15T_90A_90S_05E__0030_ll = custom_target('synthetic_03C_01L_2U_15T_90A_90S_05E__0030_ll',
   input: synthetic_03C_01L_2U_15T_90A_90S_05E__0030_cc[0],
@@ -92,14 +78,7 @@ synthetic_03C_01L_2U_15T_90A_90S_05E__0030_with_stepdata = custom_target('synthe
 with_jsons +=synthetic_03C_01L_2U_15T_90A_90S_05E__0030_with_stepdata
 all_jsons += synthetic_03C_01L_2U_15T_90A_90S_05E__0030_with_stepdata
 
-synthetic_02C_01L_2U_15T_90A_90S_00E__0017_cc = custom_target('synthetic_02C_01L_2U_15T_90A_90S_00E__0017_cc',
-  output: ['synthetic_02C_01L_2U_15T_90A_90S_00E__0017.cc', 'synthetic_02C_01L_2U_15T_90A_90S_00E__0017.oil.json'],
-  command: [benchmark_gen, '--seed', '17', '--system', '@OUTPUT0@',
-             '--oil', '@OUTPUT1@', '--cores', '2', '--locks', '1',
-             '--lock-users', '2', '--subtasks', '15',
-             '--at-local', '90', '--se-local', '90',
-             '--events', '0']
-  )
+synthetic_02C_01L_2U_15T_90A_90S_00E__0017_cc = files('synthetic_02C_01L_2U_15T_90A_90S_00E__0017.cc', 'synthetic_02C_01L_2U_15T_90A_90S_00E__0017.oil.json')
 
 synthetic_02C_01L_2U_15T_90A_90S_00E__0017_ll = custom_target('synthetic_02C_01L_2U_15T_90A_90S_00E__0017_ll',
   input: synthetic_02C_01L_2U_15T_90A_90S_00E__0017_cc[0],
