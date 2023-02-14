@@ -64,6 +64,7 @@ class TimingCalculator():
                                             to=get_time(mstg.ep.wcet, edge)))
 
     def _calculate_entry_execution_time(self, eqs, sp, cpu_id, entry,
+                                        recursion_depth,
                                         entry_must_be_over=True):
         """Calculate the execution time of an entry node.
 
@@ -73,6 +74,9 @@ class TimingCalculator():
         If entry_must_be_over is set, the function calculates the equation
         system so that the entry node is already executed otherwise it returns
         the equation system that the entry is currently in execution.
+
+        The function is recursive. recursive_depth stores the length of the
+        call chain and allows to break hard.
         """
         mstg = self._mstg
         g1 = mstg.edge_type(MSTType.st2sy, MSTType.s2s, MSTType.en2ex)
@@ -197,6 +201,15 @@ class TimingCalculator():
                                        "are not able to handle this, currently.")
                         eqs.add_range(entry_edge, default_range)
                         return
+                    if recursion_depth > 5:
+                        self._log.warn("Got a recursion depth greater than "
+                                       "five. While there might be a tighter "
+                                       "solution at higher depths, it does "
+                                       "not justify the additional "
+                                       "computation time, so falling back to "
+                                       "default in this case.")
+                        eqs.add_range(entry_edge, default_range)
+                        return
                     # we have an entry that is continued but is not the entry
                     # state in the previous metastate. So get the relative
                     # time up until that entry. Our original search must end
@@ -204,7 +217,8 @@ class TimingCalculator():
                     prev_sp = single_check(sp_sps)
                     self.get_relative_time(prev_sp,
                                            interrupted_state, eqs=eqs,
-                                           include_self=False)
+                                           include_self=False,
+                                           recursion_depth=recursion_depth + 1)
                     # edge calculated with get_relative_time
                     grt_edge = FakeEdge(src=prev_sp, tgt=interrupted_state)
                     # get_relative_set calculates the time up to the entry of
@@ -274,7 +288,8 @@ class TimingCalculator():
         if after_hook:
             after_hook()
 
-    def get_relative_time(self, sp, state, eqs=None, include_self=True):
+    def get_relative_time(self, sp, state, eqs=None, include_self=True,
+                          recursion_depth=0):
         """Return the execution time of state relative to the SP sp.
 
         Since the current state can be a continuation (same ABB) of
@@ -290,6 +305,9 @@ class TimingCalculator():
         If include_self is set, the relative time from the SP sp to the point
         in time _after_ the execution of the State state is calculated else
         the point in time _directly before_ the execution of the State state.
+
+        recursion_depth specifies the current recursion depth and is set
+        internally. Do not set it by yourself.
         """
         mstg = self._mstg
         cpu_id = mstg.vp.cpu_id[state]
@@ -303,6 +321,8 @@ class TimingCalculator():
 
         if not eqs:
             eqs = Equations()
+
+        target_edge = FakeEdge(src=sp, tgt=state)
 
         # early return when no work is given
         if not include_self and state == entry:
@@ -342,14 +362,13 @@ class TimingCalculator():
         t_from[entry] = 0
         t_to[entry] = 0
 
-        target_edge = FakeEdge(src=sp, tgt=state)
-
         if type_map[entry] in inf_time:
             inf = True
             eqs.add_range(target_edge, TimeRange(up=0, to=math.inf))
         else:
             # add the actual execution time of the first node
             self._calculate_entry_execution_time(eqs, sp, cpu_id, entry,
+                                                 recursion_depth,
                                                  entry_must_be_over=(entry != state))
 
         self._log.debug("Timings of entry state %d (CPU %d, coming from SP %d): %s",
