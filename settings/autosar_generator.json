@@ -1,7 +1,8 @@
 {
 	"steps": [
 		"AutosarGeneratorIR",
-		"IRWriter"
+		"IRWriter",
+		"Generator"
 	],
 	"AutosarGeneratorIR": {
 		"log_level": "debug",
@@ -10,5 +11,12 @@
 	"logger": {
 		"StepManager": "info",
 		"AUTOSAR": "debug"
+	},
+	"Generator": {
+		"arch": "posix",
+		"instantiation_style": "static",
+		"interaction_style": "vanilla",
+		"os": "autosar",
+		"generator_output": "autosar.cc"
 	}
 }

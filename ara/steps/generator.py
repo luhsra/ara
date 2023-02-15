@@ -17,14 +17,17 @@ from ara.generator import *
 from ara.generator.Generator import Generator as GenImpl
 
 from ara.os.freertos import FreeRTOS
+from ara.os.autosar import AUTOSAR
 from ara.generator.coder.freertos import FreeRTOSGenericOS
+from ara.generator.coder.autosar import AUTOSARGenericOS
 
 
 
 class Generator(Step):
     """Generate whole OS code based on the previous analyses."""
 
-    os_choices = {FreeRTOS: FreeRTOSGenericOS}
+    os_choices = {FreeRTOS: FreeRTOSGenericOS,
+                  AUTOSAR:  AUTOSARGenericOS}
 
     arch_choices = []
     for os in os_choices.values():
@@ -47,6 +50,7 @@ class Generator(Step):
     def get_single_dependencies(self):
         if self.passthrough.get():
             return ['IRReader', 'SysFuncts']
+        #TODO needed for autosar ?
         deps = ['SIA', 'ManualCorrections', 'SysFuncts']
         if self.get_os():
             deps += self.get_os().get_dependencies()

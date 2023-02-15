@@ -133,10 +133,14 @@ class TaskContext(ControlContext):
                            received_events=self.received_events,
                            waited_events=self.waited_events)
 
-
-@dataclass(frozen=True)
+"""
+(frozen=True)
+"""
+@dataclass
 class Spinlock:
     name: str
+    def __hash__(self):
+        return hash(("Spinlock", self.name))
 
 
 @dataclass
