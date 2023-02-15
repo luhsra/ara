@@ -222,6 +222,7 @@ class _PairingPartnerSearch:
             root_edges = self._get_edges_to(root_sp)
             e = FakeEdge(src=entry_sp, tgt=v)
             cur_edges = self._get_followsync_path(entry_sp) + [e]
+            self._add_ranges(new_eqs, cur_edges[:-1])
             new_eqs.add_equality(root_edges, cur_edges)
             if new_eqs.solvable():
                 good_v.append((v, new_eqs))
