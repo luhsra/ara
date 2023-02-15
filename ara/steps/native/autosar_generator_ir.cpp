@@ -2,26 +2,7 @@
 
 #include "autosar_generator_ir.h"
 #include <set>
-
-std::set<std::string> SystemCalls {
-    "AUTOSAR_ActivateTask",
-    "AUTOSAR_ActivateTaskAsync",
-    "AUTOSAR_ChainTask",
-    "AUTOSAR_GetEvent",
-    "AUTOSAR_SetEvent",
-    "AUTOSAR_SetEventAsync",
-    "AUTOSAR_WaitEvent",
-    "AUTOSAR_ClearEvent",
-    "AUTOSAR_TerminateTask",
-    "AUTOSAR_GetResource",
-    "AUTOSAR_ReleaseResource",
-    "AUTOSAR_GetSpinlock",
-    "AUTOSAR_ReleaseSpinlock",
-    "AUTOSAR_SetRelAlarm",
-    "AUTOSAR_SetAbsAlarm",
-    "AUTOSAR_GetAlarm",
-    "AUTOSAR_CancelAlarm"
-};
+#include <regex>
 
 namespace ara::step {
     using namespace llvm;
@@ -85,6 +66,18 @@ namespace ara::step {
 
     /*! Find all systemcalls and rename them via RenameSystemcall(). */
     void AutosarGeneratorIR::RenameSystemcalls(Module &module) {
+
+        std::set<std::string> SystemCalls = this->graph.get_os().get_syscall_names();
+        // only a subset of system calls are renamed
+        std::regex re("Resource|Task|Event|Spinlock|Alarm");
+
+        for (const std::string &call : SystemCalls) {
+            if (std::regex_search(call, re))
+                continue;
+
+            SystemCalls.erase(call);
+        }
+
         for (auto &function : module) {
             for (auto &bb : function) {
                 for (auto &inst : bb) {
