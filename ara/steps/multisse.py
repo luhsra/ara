@@ -10,11 +10,11 @@ from typing import List, Dict, Set
 
 import graph_tool
 
-from graph_tool.topology import all_paths
+from graph_tool.topology import all_paths, shortest_path
 
 from ara.graph import (MSTGraph, StateType, MSTType, CallPath, single_check,
                        edge_types)
-from ara.util import pairwise
+from ara.util import pairwise, has_path
 from ara.os.os_base import (OSState, CPUList, CPU, IRQ, CrossCoreAction,
                             IRQContext, TaskStatus)
 from ara.os.os_util import set_next_abb
@@ -468,10 +468,22 @@ class MultiSSE(Step):
                 continue
 
             entry_sp = g.vertex(mstg.get_entry_sp(cur_sp))
+            assert sp_graph.edge(entry_sp, cur_sp)
             for n in chain.from_iterable(map(lambda x: x.in_neighbors(),
                                              entry_sp.in_neighbors())):
                 assert mstg.vp.type[n] == StateType.exit_sync
                 if sp_follow.edge(n, entry_sp):
+                    # it may be that to SPs are connected via a metastate but
+                    # do not have a direct follow_edge between them but several
+                    # follow edges that synchronize other cores. Check for a
+                    # path between them under this conditions.
+                    if not follow_sync.edge(n, entry_sp):
+                        lc = not_core.copy()
+                        lc[entry_sp] = True
+                        lc[n] = True
+                        nc = graph_tool.GraphView(sp_graph, vfilt=lc)
+                        if not has_path(nc, n, entry_sp):
+                            continue
                     succs[n].add(cur_sp)
                     stack.append(n)
 
@@ -523,6 +535,7 @@ class MultiSSE(Step):
                     lc[nex] = True
                     # extent next_paths by all paths consisting of exit SPs without the first element going from last to nex
                     nc = graph_tool.GraphView(sp_graph, vfilt=lc)
+                    assert has_path(nc, last, nex)
                     next_paths.extend(map(lambda p: islice(filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p), 1, None), all_paths(nc, last, nex)))
                 # put all other elements to new paths
                 for n in next_paths[1:]:
