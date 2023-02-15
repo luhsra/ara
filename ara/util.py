@@ -207,6 +207,8 @@ def dominates(dom_tree, x, y):
 
 def has_path(graph, source, target):
     """Is there a path from source to target?"""
+    if source == target:
+        return True
     _, elist = shortest_path(graph, graph.vertex(source), graph.vertex(target))
     return len(elist) > 0
 
