@@ -509,7 +509,7 @@ class MultiSSE(Step):
                     # connected via follow_sync edges because they are sharing
                     # a sy2sy edge only. However, in this case, there must be
                     # at least one path of follow_sync edges between them. We
-                    # need to find the pathes in this case.
+                    # need to find the paths in this case.
                     entry_sp = mstg.get_entry_sp(nex)
                     if follow_sync.edge(last, entry_sp):
                         # direct edge, just append
@@ -521,6 +521,7 @@ class MultiSSE(Step):
                     lc[last] = True
                     lc[entry_sp] = True
                     lc[nex] = True
+                    # extent next_paths by all paths consisting of exit SPs without the first element going from last to nex
                     nc = graph_tool.GraphView(sp_graph, vfilt=lc)
                     next_paths.extend(map(lambda p: islice(filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p), 1, None), all_paths(nc, last, nex)))
                 # put all other elements to new paths
@@ -817,6 +818,7 @@ class MultiSSE(Step):
                                "probably unwanted.")
             else:
                 m2sy_edge = mstg.add_edge(pred_sp.vertex, sp)
+                self._log.debug(f"Add follow_sync edge: {str(m2sy_edge)}")
                 mstg.ep.type[m2sy_edge] = MSTType.follow_sync
                 set_time(mstg.ep.bcet, m2sy_edge, pred_sp.range.up)
                 set_time(mstg.ep.wcet, m2sy_edge, pred_sp.range.to)

@@ -138,7 +138,7 @@ class StateType(enum.IntEnum): # */
 # m2s = metastate to state
 # st2sy = state to sync (or vice versa)
 # s2s = state to state (normal SSE transition)
-# sy2sy = sync to sync (with full context)
+# sy2sy = sync to sync (parent to child, where the parent has greater context)
 # follow_sync = sync to sync (which follows in the time domain)
 # en2ex = edge between an entry and exit sync state
 # m2sy = edge between a metastate and a sync state

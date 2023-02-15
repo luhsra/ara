@@ -119,12 +119,13 @@ class _PairingPartnerSearch:
         self._sp_graph = graph_tool.GraphView(reach, efilt=cut_history)
 
         # do the actual work
-        self._log.debug(f"Evaluating cross state {int(self._cross_state)}"
+        self._log.debug(f"Evaluating cross state {int(self._cross_state)} "
+                        f"(State {self._mstg.vp.state[self._cross_state].id}) "
                         f" with path {[int(x) for x in self._path]}"
                         " from the root SP to the last SP.")
 
         corridor = self._get_corridor()
-        self._log.debug(f"Starting from SPs {corridor}.")
+        self._log.debug(f"Starting from SPs (format: {{cpu_id: range}}) {corridor}.")
 
         if self._timings:
             assert time, "Timings are requested but not given"
