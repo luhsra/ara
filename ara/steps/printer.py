@@ -25,6 +25,9 @@ _sysshort = {
     "AUTOSAR_WaitEvent": "WE",
 }
 
+# from ara.util import get_logger
+# log = get_logger("Printer")
+
 
 def _sstg_state_as_dot(sstg, state_vert):
     attrs = {"fontsize": 14}
