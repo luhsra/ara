@@ -79,17 +79,21 @@ class TimingCalculator():
         call chain and allows to break hard.
         """
         mstg = self._mstg
-        g1 = mstg.edge_type(MSTType.st2sy, MSTType.s2s, MSTType.en2ex)
         st2sy = mstg.edge_type(MSTType.st2sy)
         follow_sync_tmp = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
+        # graph that consists of follow_sync, en2ex edges and SPs only
         follow_sync = vertex_types(follow_sync_tmp, mstg.vp.type,
                                    StateType.entry_sync, StateType.exit_sync)
+
+        g1 = mstg.edge_type(MSTType.st2sy, MSTType.s2s, MSTType.en2ex)
 
         def core_graph_good_edge(e):
             if mstg.ep.type[e] == MSTType.st2sy:
                 return mstg.ep.cpu_id[e] == cpu_id
             return True
 
+        # graph that consists of st2sy s2s and en2ex edges which are specific
+        # for the current cpu_id and excludes all idle states
         core_graph = GraphView(g1, efilt=core_graph_good_edge,
                                vfilt=self._type_map.fa != CrossExecState.idle)
 
@@ -109,9 +113,20 @@ class TimingCalculator():
         after_hook = None
         # SP where entry really starts
         while True:
+            # start with the complete core_graph and narrow it down while
+            # exploring the graph
             g = GraphView(core_graph, vfilt=v_filter)
+
+            # basic idea: We search loops in the graph. An entry state (i.e. a
+            # state that follows an exit SP) that is continued also leads
+            # somehow to this exit SP.
+            # We expect
+            # - no path if it is not continued
+            # - a path of 2 edges (entry state - entry SP - exit SP) when it
+            #   is continued.
             _, elist = shortest_path(g, entry_state, exit_sp)
 
+            # sanity handling
             if len(elist) > 2:
                 # the state was somewhere blocked and is now resumed
                 # currently not supported
@@ -123,10 +138,13 @@ class TimingCalculator():
             if mstg.vertex(exit_sp).in_degree() == 0:
                 # starting point, there were no previous executions
                 break
+
+            # determine the interrupted state, i.e. the exact state that was
+            # interrupted by the exit SP
             entry_sp = mstg.get_entry_sp(exit_sp)
             if len(elist) < 2:
                 # the state was not executed before
-                # maybe the ABB was executed before
+                # maybe the ABB was executed before (this also reduces time)
                 esp = core_graph.vertex(entry_sp)
                 if esp.in_degree() == 0:
                     # probably coming from idle, we found the end
@@ -142,6 +160,9 @@ class TimingCalculator():
 
                 # we have the same executing ABBs
                 # just handle the state as interrupted one
+                self._log.debug("Found an SP (%s) that interrupted the "
+                                "execution of an ABB while breaking its "
+                                "execution into two states.", exit_sp)
                 interrupted_state = last_state
             else:
                 # the same state was executed before
@@ -166,6 +187,10 @@ class TimingCalculator():
                 # no common SP between interrupted state and predecessors in
                 # time of the current SP, trying to search a path over the SPs
                 # that do not belong to the current core.
+                # The idea here is that maybe not a direct follow sync
+                # connection between exists but a connection going over
+                # multiple other SPs that does not synchronize the current
+                # state.
 
                 def follow_sync_good_vertex(v):
                     if v in state_sps:
@@ -194,19 +219,25 @@ class TimingCalculator():
                     self._log.debug("Found a previous execution fitting to the"
                                     " path %s.", list(map(str, found[1])))
                     to_substract.update(self._timed_follow_edges(*found[1]))
+                    # prepare next loop iteration
+                    # the current exit_sp is handled, set the new one to the
+                    # start of the path
                     v_filter[exit_sp] = False
                     exit_sp = found[0]
                     continue
                 else:
+                    # the interrupted state does not begin at an SP
                     if len(sp_sps) > 1:
                         self._log.warn("The requested entry is continued but "
                                        "not an entry in the previous metastate."
                                        " The SP that interrupts the entry also "
-                                       "have multiple predecessors in time. We "
+                                       "has multiple predecessors in time. We "
                                        "are not able to handle this, currently.")
                         eqs.add_range(entry_edge, default_range)
                         return
                     if recursion_depth > 5:
+                        # TODO: this actually skips all previous calculations.
+                        # be more fine grained by keeping them
                         self._log.warn("Got a recursion depth greater than "
                                        "five. While there might be a tighter "
                                        "solution at higher depths, it does "
