@@ -220,6 +220,16 @@ class TimingCalculator():
                     # time up until that entry. Our original search must end
                     # here.
                     prev_sp = single_check(sp_sps)
+                    if (mstg.vp.cpu_id[interrupted_state]
+                            not in self._sp_core_map[prev_sp]):
+                        # TODO: this may be a bug, investigate further
+                        self._log.warn("Found for the current SP only a "
+                                       "predecessor in time that synchronizes "
+                                       "another core set than the interupted "
+                                       "state. We cannot handle this.")
+                        eqs.add_range(entry_edge, default_range)
+                        return
+
                     self.get_relative_time(prev_sp,
                                            interrupted_state, eqs=eqs,
                                            include_self=False,
