@@ -495,6 +495,7 @@ class Callgraph(graph_tool.Graph):
         new = Callgraph(cfg, self)
         return new
 
+
 class MSTGraph(graph_tool.Graph):
     """The Multi state transition graph"""
     def __init__(self):
