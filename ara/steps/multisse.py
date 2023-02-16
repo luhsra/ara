@@ -548,10 +548,9 @@ class MultiSSE(Step):
 
     def _get_sp_graph(self):
         """Return a graph consisting only of SPs that follow in the time domain."""
-        return graph_tool.GraphView(
-                self._mstg.g.vertex_type(StateType.entry_sync,
-                                         StateType.exit_sync),
-                efilt=self._mstg.g.ep.type.fa != MSTType.sy2sy)
+        g = self._mstg.g.vertex_type(StateType.entry_sync, StateType.exit_sync)
+        return edge_types(g, self._mstg.g.ep.type, MSTType.en2ex,
+                          MSTType.follow_sync)
 
     def _find_pairing_partners(self, cross_state, last_sp,
                                start_from=None, only_root=None):
