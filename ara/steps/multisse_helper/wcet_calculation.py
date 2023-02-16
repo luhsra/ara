@@ -80,6 +80,7 @@ class TimingCalculator():
         """
         mstg = self._mstg
         g1 = mstg.edge_type(MSTType.st2sy, MSTType.s2s, MSTType.en2ex)
+        st2sy = mstg.edge_type(MSTType.st2sy)
         follow_sync_tmp = mstg.edge_type(MSTType.follow_sync, MSTType.en2ex)
         follow_sync = vertex_types(follow_sync_tmp, mstg.vp.type,
                                    StateType.entry_sync, StateType.exit_sync)
@@ -146,7 +147,12 @@ class TimingCalculator():
                 # the same state was executed before
                 interrupted_state = entry_state
 
-            state_sps = set(interrupted_state.in_neighbors())
+            # Try to find the common SPs, i.e. the SPs that are predecessors
+            # of time the interrupting SP and also directly lead to
+            # interrupted state. Multiple of them are not supported, if it is
+            # exactly one, the follow edge between to common SP and the exit
+            # SP specifies the correct time.
+            state_sps = set(st2sy.vertex(interrupted_state).in_neighbors())
             sp_sps = set(follow_sync.vertex(entry_sp).in_neighbors())
             common_sps = state_sps & sp_sps
 
@@ -173,8 +179,7 @@ class TimingCalculator():
 
                 found = None
                 for state_sp in state_sps:
-                    if mstg.vp.type[state_sp] != StateType.exit_sync:
-                        continue
+                    assert mstg.vp.type[state_sp] == StateType.exit_sync
                     _, sp_list = shortest_path(fs_non_core, state_sp, entry_sp)
                     if len(sp_list) > 0:
                         if found:
