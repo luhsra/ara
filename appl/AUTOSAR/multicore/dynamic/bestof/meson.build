@@ -115,6 +115,43 @@ synthetic_02C_01L_2U_15T_90A_90S_00E__0017_with_stepdata = custom_target('synthe
 with_jsons +=synthetic_02C_01L_2U_15T_90A_90S_00E__0017_with_stepdata
 all_jsons += synthetic_02C_01L_2U_15T_90A_90S_00E__0017_with_stepdata
 
+synthetic_02C_01L_2U_15T_90A_90S_05E__0006_cc = files('synthetic_02C_01L_2U_15T_90A_90S_05E__0006.cc', 'synthetic_02C_01L_2U_15T_90A_90S_05E__0006.oil.json')
+
+synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll = custom_target('synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll',
+    input: synthetic_02C_01L_2U_15T_90A_90S_05E__0006_cc[0],
+      depfile: 'synthetic_02C_01L_2U_15T_90A_90S_05E__0006.cc.dep',
+        output: 'synthetic_02C_01L_2U_15T_90A_90S_05E__0006.cc.ll',
+	  command: clang_cpp + libs_includes + ir_flags + clang_flags)
+ir_files += synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll
+
+synthetic_02C_01L_2U_15T_90A_90S_05E__0006_no_stepdata = custom_target('synthetic_02C_01L_2U_15T_90A_90S_05E__0006_no_stepdata',
+    input: [ara_py, synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll],
+      output: 'synthetic_02C_01L_2U_15T_90A_90S_05E__0006.multisse.no_timing.stepdata.json',
+        command: [py3_inst, ara_py, synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll,
+	    '--oilfile', synthetic_02C_01L_2U_15T_90A_90S_05E__0006_cc[1],
+	      '--step-settings', no_timing_settings,
+	        '--timings', 'BB',
+		  '--os', 'AUTOSAR',
+		    '--step-data', '@OUTPUT0@'],
+	)
+
+no_jsons +=synthetic_02C_01L_2U_15T_90A_90S_05E__0006_no_stepdata
+all_jsons += synthetic_02C_01L_2U_15T_90A_90S_05E__0006_no_stepdata
+
+synthetic_02C_01L_2U_15T_90A_90S_05E__0006_with_stepdata = custom_target('synthetic_02C_01L_2U_15T_90A_90S_05E__0006_with_stepdata',
+    input: [ara_py, synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll],
+      output: 'synthetic_02C_01L_2U_15T_90A_90S_05E__0006.multisse.with_timing.stepdata.json',
+        command: [py3_inst, ara_py, synthetic_02C_01L_2U_15T_90A_90S_05E__0006_ll,
+	    '--oilfile', synthetic_02C_01L_2U_15T_90A_90S_05E__0006_cc[1],
+	      '--step-settings', with_timing_settings,
+	        '--timings', 'BB',
+		  '--os', 'AUTOSAR',
+		    '--step-data', '@OUTPUT0@'],
+	)
+
+with_jsons +=synthetic_02C_01L_2U_15T_90A_90S_05E__0006_with_stepdata
+all_jsons += synthetic_02C_01L_2U_15T_90A_90S_05E__0006_with_stepdata
+
 
 
 
