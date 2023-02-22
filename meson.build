@@ -101,15 +101,6 @@ nop = find_program('true')
 st_flash = find_program('st-flash', required: false, disabler: true)
 sed = find_program('sed')
 
-## POSIX
-wllvm = find_program('wllvm', required: false, disabler: true)
-extract_bc = find_program('extract-bc', required: false, disabler: true) # provided by wllvm
-realpath = find_program('realpath', required: false, disabler: true)
-
-# Note: libmicrohttpd needs this tools available via PATH:
-autoconf = find_program('autoconf', required: false, disabler: true)
-automake = find_program('automake', required: false, disabler: true)
-
 ## arch specific build tools
 if get_option('arch') == 'i386'
     target_triple='x86_64-linux-gnu'
