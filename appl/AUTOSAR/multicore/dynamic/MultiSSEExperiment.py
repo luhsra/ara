@@ -160,23 +160,40 @@ class GenericTimingExperiment(Experiment):
         summary_file.value = json.dumps(res_summary)
 
     def summarize_results(self, details):
-        res = {'no': {}, 'with': {}, 'count': {}, 'better': {}}
+        res = {'no': {}, 'with': {}, 'count': {}, 'better': {}, 'min': {}, 'max': {}}
 
         for metric, data in details.items():
             with_timing = 0
             no_timing = 0
             count = 0
+            min_with = float('inf')
+            max_with = 0
+            min_no = float('inf')
+            max_no = 0
             for entry in data.values():
                 if len(entry) != 2:
                     continue
                 with_timing += entry['with']
+                min_with = min(entry['with'], min_with)
+                max_with = max(entry['with'], max_with)
                 no_timing += entry['no']
+                min_no = min(entry['with'], min_no)
+                max_no = max(entry['with'], max_no)
                 count += 1
             better = no_timing - with_timing
             res['with'][metric] = with_timing
+            res['with'][metric+'_min'] = min_with
+            res['with'][metric+'_max'] = max_with
+            res['with'][metric] = with_timing
             res['no'][metric] = no_timing
+            res['no'][metric+'_min'] = min_no
+            res['no'][metric+'_max'] = max_no
             res['better'][metric] = better
             res['count'][metric] = count
+
+            for timed in ['with', 'no']:
+                res[timed][metric+'_mean'] = res[timed][metric]/res['count'][metric]
+
         return res
 
     def collect_results(self, result):
@@ -190,6 +207,7 @@ class GenericTimingExperiment(Experiment):
                'ipi_needed': {},
                'ipi_avoidable': {},
                'deadlocks': {},
+               'duration': {},
                }
         for name, data in result['stepdata'].items():
             for k in res:
@@ -221,6 +239,23 @@ class GenericTimingExperiment(Experiment):
                 res['ipi_needed'][name][timed] = needed_ipis
                 res['ipi_avoidable'][name][timed] = avoidable_ipis
                 res['deadlocks'][name][timed] = len(stats['LockElision']['DEADLOCK'])
+
+        with open(osp.join(self.run_dir, '.ninja_log')) as logfile:
+            for line in logfile.read().strip().split('\n'):
+                # print(line)
+                if line.startswith('#'):
+                    continue
+                if 'stepdata' not in line:
+                    continue
+                start, end, _, name, h = line.split('\t')
+                start = int(start)
+                end = int(end)
+                base = osp.basename(name)
+                name, _, t, _, _ = base.split('.')
+                timed, _ = t.split('_')
+                logger.warning("%10d %10d %10d %s %s", start, end, end-start, timed, name)
+                res['duration'][name][timed] = end-start
+                # res
         return res
 
 
