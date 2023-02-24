@@ -68,7 +68,7 @@ RUN_ARA = """
 {name}_{timed}_stepdata = custom_target('{name}_{timed}_stepdata',
   input: [ara_py, {name}_ll],
   output: '{name}.multisse.{timed}_timing.stepdata.json',
-  command: [py3_inst, ara_py, {name}_ll,
+  command: [ctimeout, py3_inst, ara_py, {name}_ll,
   '--oilfile', {name}_cc[1],
   '--step-settings', {timed}_timing_settings,
   '--timings', 'BB',

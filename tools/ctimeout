@@ -1,0 +1,9 @@
+#!/bin/sh
+if test $# -lt 1
+then
+    echo "Usage: $0 timeout command arg ..."
+    exit 126
+fi
+time=$((60*60*2))
+ulimit -t $time || { echo "Error: cannot set timeout $1"; exit 126; }
+eval "$@"
