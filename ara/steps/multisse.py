@@ -406,6 +406,16 @@ class MultiSSE(Step):
             is_new=is_new,
         )
 
+    def _get_only_affected(self, path, affected_cores):
+        """Filter an SP path so it only contains SP that synchronize any of
+        the affected cores.
+        """
+        return tuple([
+            int(x)
+            for x in path
+            if set(self._mstg.sync_point_map[x]) & set(affected_cores)
+        ])
+
     def _find_root_sync_points(self, sp, current_core, affected_cores, only_root=None):
         """Find all last SPs that contains all needed cores.
 
@@ -548,14 +558,23 @@ class MultiSSE(Step):
                     # extent next_paths by all paths consisting of exit SPs
                     # without the first element going from last to nex
                     nc = graph_tool.GraphView(sp_graph, vfilt=lc)
-                    # assert has_path(nc, last, nex)
                     nnp = map(
-                        lambda p: islice(
+                        lambda p: list(islice(
                                 filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p),
                                 1,
-                                None),
+                                None)),
                         all_paths(nc, last, nex))
-                    next_paths.extend(nnp)
+                    # the paths does not contain the current core but may go
+                    # about SPs that does not contain any affected core. The
+                    # order of these SPs does not have any effect therefore we
+                    # filter them out (deduplicate and keep only one)
+                    nnp_dedups = {
+                        self._get_only_affected(path, affected_cores): path
+                        for path in sorted(nnp,
+                                           key=lambda x: len(x),
+                                           reverse=True)
+                    }
+                    next_paths.extend(nnp_dedups.values())
                 assert next_paths, "No paths between last and all nexts. Not possible."
                 # put all other elements to new paths
                 for n in next_paths[1:]:
