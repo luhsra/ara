@@ -488,7 +488,8 @@ class MultiSSE(Step):
                     stack.append(n)
 
         # self._log.debug(f"FR: roots {[int(x) for x in root_sps]}")
-        # self._log.debug(f"FR: succs {succs}")
+        # self._log.debug(f"FR: succs {sorted([(int(x), [int(z) for z in y]) for x, y in succs.items()])}")
+        # self._log.debug(f"Current core: {current_core}")
         if only_root:
             root_sps = {only_root} & set(root_sps)
             self._log.debug(f"Evaluation only {[int(x) for x in root_sps]} as "
@@ -510,11 +511,22 @@ class MultiSSE(Step):
                     # the path is ready
                     i += 1
                     continue
-                nexts = succs[last]
-                # check for loops in the path
-                if last in path[:-1]:
-                    nexts -= set(path[:-1])
+                nexts = set(map(int, succs[last]))
+                # remove loops in the path
+                nexts -= set(map(int, path[:-1]))
 
+                # calculate all paths between the last (the current end of the
+                # path) and nex (the successor given by succs)
+                # append all those paths to next_paths
+
+                # self._log.debug(f"Path: {[int(x) for x in path]}")
+                # self._log.debug(f"Cores of Path: {[list(self._mstg.sync_point_map[x]) for x in path]}")
+                # self._log.debug(f"Nexts: {[int(x) for x in nexts]}")
+                if not nexts:
+                    # invalid path
+                    paths[i] = None
+                    i += 1
+                    continue
                 next_paths = []
                 for nex in nexts:
                     # It is possible that the current path and nex are not
@@ -533,17 +545,27 @@ class MultiSSE(Step):
                     lc[last] = True
                     lc[entry_sp] = True
                     lc[nex] = True
-                    # extent next_paths by all paths consisting of exit SPs without the first element going from last to nex
+                    # extent next_paths by all paths consisting of exit SPs
+                    # without the first element going from last to nex
                     nc = graph_tool.GraphView(sp_graph, vfilt=lc)
-                    assert has_path(nc, last, nex)
-                    next_paths.extend(map(lambda p: islice(filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p), 1, None), all_paths(nc, last, nex)))
+                    # assert has_path(nc, last, nex)
+                    nnp = map(
+                        lambda p: islice(
+                                filter(lambda v: mstg.vp.type[v] == StateType.exit_sync, p),
+                                1,
+                                None),
+                        all_paths(nc, last, nex))
+                    next_paths.extend(nnp)
+                assert next_paths, "No paths between last and all nexts. Not possible."
                 # put all other elements to new paths
                 for n in next_paths[1:]:
                     paths.append(list(chain(path, n)))
                 # put first element to the current path
-                if next_paths:
-                    path.extend(next_paths[0])
-            ret.extend(paths)
+                path.extend(next_paths[0])
+            ret.extend(filter(lambda x: x is not None, paths))
+        # additional sanity check
+        for path in ret:
+            assert len(path) == len(set(path))
         return ret
 
     def _get_sp_graph(self):
