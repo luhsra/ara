@@ -3,6 +3,28 @@ no_jsons = []
 with_jsons = []
 all_jsons = []
 
+synthetic_03C_02L_2U_15T_90A_90S_00E__0057_cc = files('synthetic_03C_02L_2U_15T_90A_90S_00E__0057.cc', 'synthetic_03C_02L_2U_15T_90A_90S_00E__0057.oil.json')
+
+synthetic_03C_02L_2U_15T_90A_90S_00E__0057_ll = custom_target('synthetic_03C_02L_2U_15T_90A_90S_00E__0057_ll',
+  input: synthetic_03C_02L_2U_15T_90A_90S_00E__0057_cc[0],
+  depfile: 'synthetic_03C_02L_2U_15T_90A_90S_00E__0057.cc.dep',
+  output: 'synthetic_03C_02L_2U_15T_90A_90S_00E__0057.cc.ll',
+  command: clang_cpp + libs_includes + ir_flags + clang_flags)
+ir_files += synthetic_03C_02L_2U_15T_90A_90S_00E__0057_ll
+
+synthetic_03C_02L_2U_15T_90A_90S_00E__0057_no_stepdata = custom_target('synthetic_03C_02L_2U_15T_90A_90S_00E__0057_no_stepdata',
+  input: [ara_py, synthetic_03C_02L_2U_15T_90A_90S_00E__0057_ll],
+  output: 'synthetic_03C_02L_2U_15T_90A_90S_00E__0057.multisse.no_timing.stepdata.json',
+  command: [ctimeout, py3_inst, ara_py, synthetic_03C_02L_2U_15T_90A_90S_00E__0057_ll,
+  '--oilfile', synthetic_03C_02L_2U_15T_90A_90S_00E__0057_cc[1],
+  '--step-settings', no_timing_settings,
+  '--timings', 'BB',
+  '--os', 'AUTOSAR',
+  '--step-data', '@OUTPUT0@'],
+)
+
+no_jsons +=synthetic_03C_02L_2U_15T_90A_90S_00E__0057_no_stepdata
+all_jsons += synthetic_03C_02L_2U_15T_90A_90S_00E__0057_no_stepdata
 
 synthetic_03C_01L_2U_15T_90A_90S_05E__0039_cc = files('synthetic_03C_01L_2U_15T_90A_90S_05E__0039.cc', 'synthetic_03C_01L_2U_15T_90A_90S_05E__0039.oil.json')
 
