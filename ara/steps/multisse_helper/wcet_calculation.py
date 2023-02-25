@@ -124,7 +124,9 @@ class TimingCalculator():
             # - no path if it is not continued
             # - a path of 2 edges (entry state - entry SP - exit SP) when it
             #   is continued.
-            _, elist = shortest_path(g, entry_state, exit_sp)
+            _, elist = shortest_path(g,
+                                     g.vertex(entry_state),
+                                     g.vertex(exit_sp))
 
             # sanity handling
             if len(elist) > 2:
@@ -222,6 +224,13 @@ class TimingCalculator():
                     # prepare next loop iteration
                     # the current exit_sp is handled, set the new one to the
                     # start of the path
+                    if not v_filter[found[0]]:
+                        # TODO: this may be a bug, investigate further
+                        self._log.warn("Found a previously already "
+                                       "investigated SP. We cannot handle "
+                                       "this.")
+                        eqs.add_range(entry_edge, default_range)
+                        return
                     v_filter[exit_sp] = False
                     exit_sp = found[0]
                     continue
@@ -295,6 +304,12 @@ class TimingCalculator():
                     break
 
             common_sp = single_check(common_sps)
+            if not v_filter[common_sp]:
+                # TODO: this may be a bug, investigate further
+                self._log.warn("Found a previously already investigated SP. "
+                               "We cannot handle this.")
+                eqs.add_range(entry_edge, default_range)
+                return
             follow_edge = follow_sync.edge(common_sp, entry_sp)
             to_substract.update(self._timed_follow_edges(follow_edge))
             self._log.debug("Found a previous execution fitting to edge %s.",
