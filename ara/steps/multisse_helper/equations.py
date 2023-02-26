@@ -54,6 +54,7 @@ class Equations:
                 f"_highest: {self._highest})")
 
     def __str__(self):
+        return f"Equations({len(self._bounds.items())}, {len(self._equalities)})"
         ret = "Equations("
         for var, bound in self._bounds.items():
             ret += f"\n  {bound.up} < {_to_var(var)} < {bound.to}"
