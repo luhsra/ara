@@ -24,6 +24,7 @@ def provide_steps():
     from .lock_elision import LockElision
     from .manual_corrections import ManualCorrections
     from .mark_loop_head import MarkLoopHead
+    from .mstg_stats import MSTGStats
     from .multisse import MultiSSE
     from .printer import Printer
     from .reduce_sstg import ReduceSSTG
@@ -62,6 +63,7 @@ def provide_steps():
     yield LockElision
     yield ManualCorrections
     yield MarkLoopHead
+    yield MSTGStats
     yield MultiSSE
     yield POSIXInit
     yield Printer

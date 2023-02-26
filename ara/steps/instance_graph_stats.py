@@ -90,6 +90,7 @@ class InstanceGraphStats(Step):
                 f.write("\n")
 
     def run(self):
+        # TODO: convert to StatsStep, see SSTGStats
         output_dict = {"instances": {"type": {}, "num": 0},
                        "interactions": {"num": 0,
                                         "to_instance_type": {},

@@ -16,6 +16,7 @@ class CFGStats(Step):
         return ["CreateABBs", "Syscall"]
 
     def run(self):
+        # TODO: convert to StatsStep, see SSTGStats
         cfg = self._graph.cfg
         icfg = self._graph.icfg
         lcfg = self._graph.lcfg

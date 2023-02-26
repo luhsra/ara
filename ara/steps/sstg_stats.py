@@ -1,11 +1,8 @@
 """Container for SSTGStats."""
-from .step import Step
-from .util import open_with_dirs
-
-import json
+from .stats import StatsStep, StatData
 
 
-class SSTGStats(Step):
+class SSTGStats(StatsStep):
     """Gather statistics about the System state transition graph."""
 
     def get_single_dependencies(self):
@@ -14,14 +11,9 @@ class SSTGStats(Step):
     def run(self):
         sstg = self._graph.sstg
 
-        num_absss = sstg.num_vertices()
-        num_transitions = sstg.num_edges()
+        data = [
+            StatData(key="AbSSs", value=sstg.num_vertices()),
+            StatData(key="transitions", value=sstg.num_edges())
+        ]
 
-        self._log.info(f"Number of AbSSs: {num_absss}")
-        self._log.info(f"Number of transitions: {num_transitions}")
-
-        if self.dump.get():
-            with open_with_dirs(self.dump_prefix.get() + '.json', 'w') as f:
-                values = {"num_absss": num_absss,
-                          "num_transitions": num_transitions}
-                json.dump(values, f, indent=4)
+        self._print_and_store(data)

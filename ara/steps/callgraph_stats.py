@@ -15,6 +15,7 @@ class CallGraphStats(Step):
         return ["CallGraph"]
 
     def run(self):
+        # TODO convert to StatsStep, see SSTGStats
         callgraph = self._graph.callgraph
 
         num_functions = callgraph.num_vertices()
