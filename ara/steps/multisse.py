@@ -632,13 +632,13 @@ class MultiSSE(Step):
                                                  only_root=only_root)
 
         combinations = set()
-        self._log.error("New PPS")
-        self._log.error(f"Len {len(root_paths)}")
-        self._log.error(f"Cur core {current_core}")
-        self._log.error(f"Affected cores {list(affected_cores)}")
-        for path in root_paths:
-            self._log.error([int(x) for x in path])
-            self._log.error([(int(x), set(self._mstg.sync_point_map[x])) for x in path])
+        self._log.info("New pairing partner search over %d paths",
+                       len(root_paths))
+        # self._log.debug(f"Cur core {current_core}")
+        # self._log.debug(f"Affected cores {list(affected_cores)}")
+        # for path in root_paths:
+        #     self._log.debug([int(x) for x in path])
+        #     self._log.debug([(int(x), set(self._mstg.sync_point_map[x])) for x in path])
         assert len(root_paths) < 20000, "Too much"
         for path in root_paths:
             # self._log.debug([int(x) for x in path])
