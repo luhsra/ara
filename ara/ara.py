@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import sys
+import graph_tool
 
 from .graph import Graph
 from .stepmanager import StepManager
@@ -82,6 +83,10 @@ class Main:
                             help="File to store modified IR into", metavar="FILE")
         parser.add_argument('--Werr', help="Treat warnings as errors",
                             action='store_true')
+        parser.add_argument('--threads',
+                            help="Number of threads (set 0 for automatic)",
+                            type=int,
+                            default=int(os.environ.get('ARA_THREADS', 0)))
         parser.add_argument('--manual-corrections', metavar="FILE",
                             help="File with manual corrections")
         if gui:
@@ -109,6 +114,12 @@ class Main:
 
         logger = init_logging(level=self.args.log_level, root_name='ara',
                               werr=self.args.Werr)
+
+        if self.args.threads > 0:
+            graph_tool.openmp_set_num_threads(self.args.threads)
+            os.environ["MKL_NUM_THREADS"] = str(self.args.threads)
+            os.environ["NUMEXPR_NUM_THREADS"] = str(self.args.threads)
+            os.environ["OMP_NUM_THREADS"] = str(self.args.threads)
 
         avail_steps = self.s_manager.get_steps()
 
