@@ -132,7 +132,7 @@ class TimingCalculator():
             if len(elist) > 2:
                 # the state was somewhere blocked and is now resumed
                 # currently not supported
-                self._log.warn("Found an previously resumed state that is "
+                self._log.warn("Found a previously resumed state that is "
                                "continued. This is not supported. Aborting...")
                 eqs.add_range(entry_edge, default_range)
                 return
