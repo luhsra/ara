@@ -523,7 +523,7 @@ class MultiSSE(Step):
                     continue
                 nexts = set(map(int, succs[last]))
                 # remove loops in the path
-                nexts -= set(map(int, path[:-1]))
+                nexts -= set(map(int, path))
 
                 # calculate all paths between the last (the current end of the
                 # path) and nex (the successor given by succs)
@@ -581,7 +581,10 @@ class MultiSSE(Step):
                     paths.append(list(chain(path, n)))
                 # put first element to the current path
                 path.extend(next_paths[0])
-            ret.extend(filter(lambda x: x is not None, paths))
+            ret.extend(
+                filter(lambda x: x is not None and len(x) == len(set(x)),
+                       paths)
+            )
         # additional sanity check
         for path in ret:
             assert len(path) == len(set(path))
@@ -627,7 +630,16 @@ class MultiSSE(Step):
                                                  only_root=only_root)
 
         combinations = set()
+        self._log.error("New PPS")
+        self._log.error(f"Len {len(root_paths)}")
+        self._log.error(f"Cur core {current_core}")
+        self._log.error(f"Affected cores {list(affected_cores)}")
         for path in root_paths:
+            self._log.error([int(x) for x in path])
+            self._log.error([(int(x), set(self._mstg.sync_point_map[x])) for x in path])
+        assert len(root_paths) < 100, "Too much"
+        for path in root_paths:
+            # self._log.debug([int(x) for x in path])
             self._log.debug("Find pairing candidates for node %d (time: %s) "
                             "starting from root SP %d", cross_state, time, path[0])
             # 2. For each root sync point get the actual affected following
