@@ -515,6 +515,8 @@ class MultiSSE(Step):
             paths = [[root]]
             i = 0
             while i < len(paths):
+                self._log.debug(f"Calculating root paths, index: {i}, paths: {len(paths)}")
+                assert len(paths) < 50000, "Too much"
                 path = paths[i]
                 last = path[-1]
                 if last == sp:
@@ -637,7 +639,7 @@ class MultiSSE(Step):
         for path in root_paths:
             self._log.error([int(x) for x in path])
             self._log.error([(int(x), set(self._mstg.sync_point_map[x])) for x in path])
-        assert len(root_paths) < 100, "Too much"
+        assert len(root_paths) < 20000, "Too much"
         for path in root_paths:
             # self._log.debug([int(x) for x in path])
             self._log.debug("Find pairing candidates for node %d (time: %s) "

@@ -844,6 +844,7 @@ class AUTOSAR(OSBase):
             # create a new state for every cpu to wakeup
             for wait_cpu in wait_for:
                 new_state = state.copy()
+                assert state.cpus[wait_cpu].abb is not None
                 set_next_abb(new_state, wait_cpu)
                 new_states.append(new_state)
         else:
