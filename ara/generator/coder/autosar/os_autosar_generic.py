@@ -10,7 +10,7 @@ from .implementations import add_impl as _add_impl
 
 from ..elements import CodeTemplate, Function
 
-from ara.os.autosar import Resource
+from ara.os.autosar import Resource, Task
 
 
 
@@ -75,7 +75,6 @@ class TaskListTemplate(CodeTemplate):
     def subtask_desc(self, snippet, args):
         return self._subtask.impl.task_descriptor.name
 
-
     def foreach_subtask(self, snippet, args):
         body = args[0]
         def do(subtask):
@@ -84,6 +83,7 @@ class TaskListTemplate(CodeTemplate):
         return self.rules.foreach_subtask(do)
 
     def if_events(self, snippet, args):
+        # TODO support events in tasks
         if len(self._subtask.events) > 0:
             return self.expand_snippet(args[0])
         return ""
@@ -104,7 +104,7 @@ class SchedulerTemplate(CodeTemplate):
     def __init__(self, rules):
         CodeTemplate.__init__(self, rules.generator, self.template_file())
         self.rules = rules
-        self.system_graph = self.generator.system_graph
+        self.ara_graph = self.generator.ara_graph
 
     def template_file(self):
         return "os/scheduler/scheduler.h.in"
@@ -113,7 +113,7 @@ class SchedulerTemplate(CodeTemplate):
         return self._subtask.impl.task_descriptor.name
 
     def subtask_id(self, snippet, args):
-        return str(self._subtask.impl.task_id)
+        return self._subtask.name
 
     def foreach_subtask(self, snippet, args):
         body = args[0]

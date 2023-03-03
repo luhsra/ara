@@ -5,7 +5,7 @@ from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
 
 from ..base import BaseCoder
 
-from ara.os.autosar import Resource
+from ara.os.autosar import Resource, Task
 #from generator.transform.GenerateAssertions import AssertionType
 #from generator.analysis.Function import Function as GraphFunction
 #from generator.analysis.Resource import Resource
@@ -14,6 +14,18 @@ from ara.generator.tools import panic
 
 
 class GenericSystemCalls(BaseCoder):
+
+
+    def foreach_subtask(self, func):
+        """Call func for every task"""
+        ret = []
+        task_list = [self.ara_graph.instances.vp.obj[v]
+                for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        for task in task_list:
+            ret += func(task)
+        return ret
+
     def __init__(self):
         super(GenericSystemCalls, self).__init__()
         self.alarms = AlarmTemplate

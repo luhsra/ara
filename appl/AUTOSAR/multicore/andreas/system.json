@@ -31,11 +31,14 @@
           "autostart": false,
           "priority": 1,
           "schedule": true,
+          "events": ["E1"],
           "spinlocks": ["S1", "S2"]
         }
       },
       "resources": {},
-      "events": {},
+      "events": {
+        "E1": {}
+      },
       "alarms": {},
       "counters": {},
       "isrs": {}
@@ -47,11 +50,14 @@
           "autostart": false,
           "priority": 1,
           "schedule": true,
+          "events": ["E1"],
           "spinlocks": ["S1", "S2"]
         }
       },
       "resources": {},
-      "events": {},
+      "events": {
+        "E1": {}
+      },
       "alarms": {},
       "counters": {},
       "isrs": {}
