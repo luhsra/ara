@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: ara.py generator",
+            "type": "python",
+            "request": "launch",
+            "program": "build/ara.py",
+            "args": [
+                "build/appl/AUTOSAR/autosar_multicore_andreas_a.ll",
+                "--os=AUTOSAR",
+                "--oilfile=appl/AUTOSAR/multicore/andreas/system.json",
+                "--step-settings=settings/autosar_generator.json",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
