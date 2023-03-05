@@ -15,6 +15,22 @@ from ara.generator.tools import panic
 
 class GenericSystemCalls(BaseCoder):
 
+    def call(self, block, function, rettype="void", arguments=None, prepend = False):
+        """Generates a call to a function and stores the result in an
+           variable, if it isn't void"""
+        ret_var = VariableDefinition.new(self.generator, rettype)
+        if ret_var:
+            block.add(ret_var)
+            name = ret_var.name
+        else:
+            name = None
+        if arguments is None:
+            arguments = []
+        if prepend:
+            block.prepend( FunctionCall(function, arguments, name))
+        else:
+            block.add( FunctionCall(function, arguments, name))
+        return ret_var
 
     def foreach_subtask(self, func):
         """Call func for every task"""
@@ -56,19 +72,21 @@ class GenericSystemCalls(BaseCoder):
     def StartOS(self, block):
         block.unused_parameter(0)
         highestTask = None
-        for subtask in self.system_graph.subtasks:
-            if not subtask.is_real_thread():
-                continue
+        task_list = [self.ara_graph.instances.vp.obj[v]
+                for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+
+        for task in task_list:
             # Use Reset the stack pointer for all all tasks
             self.call(block, "Dispatcher::Prepare",
-                      "void", [self.task_desc(subtask)])
+                      "void", [self.task_desc(task)])
 
-            if subtask.conf.autostart:
+            if task.conf.autostart:
                 self.call(block, "scheduler_.SetReadyFromSuspended_impl",
-                          "void", [self.task_desc(subtask)])
+                          "void", [self.task_desc(task)])
 
-            if subtask.conf.autostart and (not highestTask or subtask.static_priority > highestTask.static_priority):
-                highestTask = subtask
+            if task.conf.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
+                highestTask = task
 
         # Call the StartupHook
         self.call(block, "CALL_HOOK", "void", ["StartupHook"])
@@ -92,20 +110,12 @@ class GenericSystemCalls(BaseCoder):
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
-        if self.system_graph.conf.os.inline_scheduler:
-            self.call(kernelspace, "scheduler_.InlinedReschedule",
-                               "void", [])
-        else:
-            self.call(kernelspace, "scheduler_.Reschedule",
-                               "void", [])
+        self.call(kernelspace, "scheduler_.Reschedule",
+                            "void", [])
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        if self.system_graph.conf.os.inline_scheduler:
-            self.call(kernelspace, "scheduler_.InlinedReschedule",
-                               "void", [])
-        else:
-            self.call(kernelspace, "scheduler_.Reschedule",
+        self.call(kernelspace, "scheduler_.Reschedule",
                                "void", [])
 
 

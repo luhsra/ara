@@ -1,4 +1,4 @@
-from ara.os.autosar import Task, Spinlock, TaskGroup, Event
+from ara.os.autosar import *
 
 class BaseImpl:
     def __init__(self, instance):
@@ -28,6 +28,13 @@ class EventImpl(BaseImpl):
         self.event_mask = None
         self.name = None
 
+class AlarmImpl(BaseImpl):
+    def __init__(self, instance):
+        super().__init__(instance)
+        self.alarm_id   = None
+        self.name = None
+        self.alarm_desc = None
+
 def add_impl(instance):
     if isinstance(instance, Task):
         instance.impl = TaskImpl(instance)
@@ -37,5 +44,7 @@ def add_impl(instance):
         instance.impl = TaskGroupImpl(instance)
     elif isinstance(instance, Event):
         instance.impl = EventImpl(instance)
+    elif isinstance(instance, Alarm):
+        instance.impl = AlarmImpl(instance)
     else:
         raise ValueError("Unknown Type:", type(instance))

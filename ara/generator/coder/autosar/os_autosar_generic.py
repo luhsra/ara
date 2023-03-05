@@ -94,9 +94,9 @@ class TaskListTemplate(CodeTemplate):
         return ""
 
     def scheduler_prio(self, snippet, args):
-        return "0" #TODO
-        RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
-        str(RES_SCHEDULER.conf.static_priority)
+        return "8" #TODO
+        #RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
+        #str(RES_SCHEDULER.conf.static_priority)
 
 
 
@@ -123,6 +123,6 @@ class SchedulerTemplate(CodeTemplate):
         return self.rules.foreach_subtask(do)
 
     def if_not_preemptable(self, snippet, args):
-        if not self._subtask.conf.preemptable:
+        if not self._subtask.schedule:
             return self.expand_snippet(args[0])
         return ""
