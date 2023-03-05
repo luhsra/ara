@@ -1,6 +1,6 @@
 import os
 
-from ..os_generic import GenericOS
+from .os_generic import GenericOS
 from ..elements.IncludeManager import Include
 
 from .arch_posix import PosixArch
@@ -10,7 +10,7 @@ from .implementations import add_impl as _add_impl
 
 from ..elements import CodeTemplate, Function
 
-from ara.os.autosar import Resource, Task
+from ara.os.autosar import Resource, Task, Event
 
 
 
@@ -43,12 +43,6 @@ class AUTOSARGenericOS(GenericOS):
     def get_arch_rules(self, arch):
         return self.arch_choices[arch]
 
-    def generate_data_objects(self):
-        pass
-        #TODO copy from dosek
-
-    def generate_system_code(self):
-        pass
 
     @staticmethod
     def add_impl(instance):
@@ -70,6 +64,7 @@ class TaskListTemplate(CodeTemplate):
         return self._subtask.name
 
     def subtask_id(self, snippet, args):
+
         return str(self._subtask.impl.task_id)
 
     def subtask_desc(self, snippet, args):
@@ -83,13 +78,15 @@ class TaskListTemplate(CodeTemplate):
         return self.rules.foreach_subtask(do)
 
     def if_events(self, snippet, args):
-        # TODO support events in tasks
-        if len(self._subtask.events) > 0:
+        task_vertex = self.ara_graph.instances.get_node(self._subtask)
+        vertex_neighbors = task_vertex.out_neighbors()
+        objects = [self.ara_graph.instances.vp.obj[n] for n in vertex_neighbors]
+        if any([isinstance(n, Event) for n in objects]):
             return self.expand_snippet(args[0])
         return ""
 
     def if_not_preemptable(self, snippet, args):
-        if not self._subtask.conf.preemptable:
+        if not self._subtask.schedule:
             return self.expand_snippet(args[0])
         return ""
 

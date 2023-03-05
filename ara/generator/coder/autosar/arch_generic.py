@@ -13,68 +13,69 @@ class GenericArch(BaseCoder):
     def generate_dataobjects_task_stacks(self):
         """Generate the stacks for the tasks, including the task pointers"""
         # Ignore the Idle thread and ISR subtasks
-        for subtask in self.system_graph.real_subtasks:
-            if subtask.conf.basic_task:
-                # With a stacksize of 8, we indicate we're having a
-                # basic task here, that runs on the shared stack
-                stacksize = 8
+        task_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        for task in task_list:
+            #if subtask.conf.basic_task:
+            #    # With a stacksize of 8, we indicate we're having a
+            #    # basic task here, that runs on the shared stack
+            #    stacksize = 8
+#
+            #    stack = DataObjectArray("uint8_t", subtask.name + "_dynamic_state", str(stacksize),
+            #                            extern_c = True)
+            #    self.generator.source_file.data_manager.add(stack)
+#
+#
+            #    # Get a common stack pointer for all basic tasks
+            #    if not self.system_graph.impl.basic_task_stackptr:
+            #        basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
+            #                                      extern_c = True)
+            #        stackptr = DataObject("void *", "OS_basic_task_stackptr",
+            #                              static_initializer = (basic_stack.name + "+ 4096"), extern_c = True)
+            #        self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
+            #        self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+            #        self.system_graph.impl.basic_task_stackptr = stackptr
+            #    else:
+            #        stackptr = self.system_graph.impl.basic_task_stackptr
+            #else:
+            if (True):
+                stacksize = str(4096)
 
-                stack = DataObjectArray("uint8_t", subtask.name + "_dynamic_state", str(stacksize),
+                stack = DataObjectArray("uint8_t", task.name + "_stack", stacksize,
                                         extern_c = True)
                 self.generator.source_file.data_manager.add(stack)
 
-
-                # Get a common stack pointer for all basic tasks
-                if not self.system_graph.impl.basic_task_stackptr:
-                    basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
-                                                  extern_c = True)
-                    stackptr = DataObject("void *", "OS_basic_task_stackptr",
-                                          static_initializer = (basic_stack.name + "+ 4096"), extern_c = True)
-                    self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
-                    self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
-                    self.system_graph.impl.basic_task_stackptr = stackptr
-                else:
-                    stackptr = self.system_graph.impl.basic_task_stackptr
-            else:
-                stacksize = subtask.get_stack_size()
-
-                stack = DataObjectArray("uint8_t", subtask.name + "_stack", stacksize,
-                                        extern_c = True)
-                self.generator.source_file.data_manager.add(stack)
-
-                stackptr = DataObject("void *", "OS_" + subtask.name + "_stackptr")
+                stackptr = DataObject("void *", "OS_" + task.name + "_stackptr")
                 self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
 
-            subtask.impl.stack = stack
-            subtask.impl.stackptr = stackptr
-            subtask.impl.stacksize = stacksize
+            task.impl.stack = stack
+            task.impl.stackptr = stackptr
+            task.impl.stacksize = stacksize
 
-        for subtask in self.system_graph.subtasks:
-            if self.system_graph.conf.verify.generate_mockup:
-                IP = DataObject("void *", "OS_" + subtask.name + "_ip")
-                self.generator.source_file.data_manager.add(IP, namespace = ("arch",))
-                subtask.impl.instruction_ptr = IP
 
         # create basic-task stack for semi-extended tasks
-        # TODO: only needed if systemconfiguration enabled set's in the first place
-        if not self.system_graph.impl.basic_task_stackptr:
-            basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
-                                          extern_c = True)
-            stackptr = DataObject("void *", "OS_basic_task_stackptr",
-                                  static_initializer = (basic_stack.name + "+ 4096"), extern_c = True)
-            self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
-            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
-            self.system_graph.impl.basic_task_stackptr = stackptr
+        ## TODO: only needed if systemconfiguration enabled set's in the first place
+        #if not self.system_graph.impl.basic_task_stackptr:
+        #    basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
+        #                                  extern_c = True)
+        #    stackptr = DataObject("void *", "OS_basic_task_stackptr",
+        #                          static_initializer = (basic_stack.name + "+ 4096"), extern_c = True)
+        #    self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
+        #    self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+        #    self.system_graph.impl.basic_task_stackptr = stackptr
 
+    def generate_default_interrupt_handlers(self):
+        pass
 
     def generate_dataobjects_task_entries(self):
-        for subtask in self.system_graph.subtasks:
-            # Ignore the Idle thread
-            if not subtask.is_real_thread():
-                continue
-            entry_function = FunctionDeclaration(subtask.function_name, extern_c = True)
+        task_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        for task in task_list:
+            entry_function = FunctionDeclaration(TASK_PREFIX + task.name, extern_c = True)
             self.generator.source_file.function_manager.add(entry_function)
-            subtask.impl.entry_function = entry_function
+            task.impl.entry_function = entry_function
 
     def generate_functions(self):
         pass

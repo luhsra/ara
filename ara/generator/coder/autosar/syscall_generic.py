@@ -5,7 +5,7 @@ from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
 
 from ..base import BaseCoder
 
-from ara.os.autosar import Resource, Task
+from ara.os.autosar import Resource, Task, Alarm, Counter
 #from generator.transform.GenerateAssertions import AssertionType
 #from generator.analysis.Function import Function as GraphFunction
 #from generator.analysis.Resource import Resource
@@ -401,33 +401,43 @@ class AlarmTemplate(CodeTemplate):
         CodeTemplate.__init__(self, rules.generator, "os/alarm.h.in")
         self.rules = rules
         self.alarm_filter = alarm_filter
-        self.system_graph = self.generator.system_graph
+        self.ara_graph = self.generator.ara_graph
 
         # Link the foreach_subtask method from the rules
         self.foreach_subtask = self.rules.foreach_subtask
 
         # Check if there are any counters/alarms which have to be implemented
         self.subsystem_enabled = False
+        alarm_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
+
         if self.alarm_filter:
-            if any(self.alarm_filter(x) for x in self.system_graph.alarms):
+            if any(self.alarm_filter(x) for x in alarm_list):
                 self.subsystem_enabled = True
         else:
-            if len(self.system_graph.alarms) > 0:
+            if len(alarm_list) > 0:
                 self.subsystem_enabled = True
 
     def increase_counters(self, snippet, args):
         ret = []
-        for counter in self.system_graph.counters:
+
+        ctr_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
+        for counter in ctr_list:
             # Softcounters are ignored by the hardware interrupt
-            if counter.conf.softcounter:
-                continue
+            # TODO support softcounters?
+            #if counter.conf.softcounter:
+            #    continue
             # Ignore all counters, that have no alarm attached, which
             # is actually implemented
-            if self.alarm_filter:
-                if all(self.alarm_filter(x) is False for x in counter.alarms):
-                    continue
+
+            #if self.alarm_filter:
+            #    if all(self.alarm_filter(x) is False for x in counter.alarms):
+            #        continue
             ret += self.expand_snippet("increase_counter",
-                                       name = counter.impl.name)
+                                       name = counter.name)
         return ret
 
 
@@ -481,6 +491,8 @@ class AlarmTemplate(CodeTemplate):
         return ret
 
     def generate_check_alarms(self, snippet, args):
+        return []
+        # TODO support AlarmHandlerSubtask
         if not self.system_graph.AlarmHandlerSubtask:
             return []
         ret = []

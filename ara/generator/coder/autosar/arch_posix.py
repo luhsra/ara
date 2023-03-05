@@ -1,19 +1,21 @@
 from .arch_generic import GenericArch
 from ..elements import *
-#from generator.analysis.Subtask import Subtask
-
+from ara.os.autosar import Task
 
 class PosixArch(GenericArch):
     def __init__(self):
         super(PosixArch, self).__init__()
 
+    def generate_startup_code(self):
+        pass
+
     # config-constraint-: (arch.self == posix) -> !arch.mpu
     def generate_linkerscript(self):
         """Posix does not require a linker script"""
-        with self.generator.open_file("linker.ld") as fd:
-            fd.write("IGNORED IN POSIX")
+        #with self.generator.open_file("linker.ld") as fd:
+        #    fd.write("IGNORED IN POSIX")
 
-    def generate_dataobjects(self):
+    def generate_data_objects(self):
         """Generate all dataobjects for the system"""
         self.generate_dataobjects_task_stacks() # From GenericArch
         self.generate_dataobjects_task_entries() # From GenericArch
@@ -24,20 +26,23 @@ class PosixArch(GenericArch):
 
     def generate_dataobjects_tcbs(self):
         self.generator.source_file.include("tcb.h")
-        for subtask in self.system_graph.real_subtasks:
+        task_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        for task in task_list:
             initializer = "(&%s, %s, %s, %d, %s)" % (
-                subtask.impl.entry_function.name,
-                subtask.impl.stack.name,
-                subtask.impl.stackptr.name,
-                subtask.impl.task_id,
-                subtask.impl.stacksize,
+                task.impl.entry_function.name,
+                task.impl.stack.name,
+                task.impl.stackptr.name,
+                task.impl.task_id,
+                task.impl.stacksize,
             )
 
-            tcb = DataObject("const arch::TCB", "OS_" + subtask.name + "_tcb",
+            tcb = DataObject("const arch::TCB", "OS_" + task.name + "_tcb",
                               initializer)
             tcb.allocation_prefix = "constexpr "
             self.generator.source_file.data_manager.add(tcb, namespace = ("arch",))
-            subtask.impl.tcb_descriptor = tcb
+            task.impl.tcb_descriptor = tcb
 
     def generate_enable_irq_after_kernel(self):
         """Enable only those interrupts that can happen according to the OIL

@@ -7,13 +7,22 @@ class BaseImpl:
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items() if k != 'instance']) + '>'
 
 class TaskImpl(BaseImpl):
+    task_id_counter = 0
     def __init__(self, instance):
         super().__init__(instance)
+        # Stack
         self.stack = None
         self.stackptr = None
-        self.tcb = None
-        self.tcbptr = None
+        self.stacksize = None
+        self.task_id = TaskImpl.task_id_counter
+        TaskImpl.task_id_counter+=1
+        self.entry_function = None
+        self.task_descriptor = None
+        self.tcb_descriptor = None
+        self.present = None
 
+
+        self.generated_functions = []
 class SpinlockImpl(BaseImpl):
     def __init__(self, instance):
         super().__init__(instance)

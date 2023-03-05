@@ -1,0 +1,205 @@
+from ..elements import *
+from ..base import BaseCoder
+#from generator.analysis.Function import Function as GraphFunction
+from .implementations import *
+import logging
+
+from collections import namedtuple
+
+class GenericOS(BaseCoder):
+    def __init__(self):
+        super(GenericOS, self).__init__()
+
+    def systemcall(self, systemcall, function):
+        """Generate systemcall into function"""
+        raise NotImplementedError()
+
+    def generate_data_objects(self):
+        """In this function, we generate all system objects which are used by OS implementation."""
+        self.generate_dataobjects_task_descriptors()
+        self.generate_dataobjects_counters_and_alarms()
+        self.generate_dataobjects_global_ids()
+        # Give the passes the chance to generate dataobjects
+        #self.callback_in_valid_passes("generate_dataobjects")
+
+
+
+    def generate_dataobjects_task_descriptors(self):
+        self.generator.source_file.include("os/scheduler/task.h")
+
+        task_list = [self.ara_graph.instances.vp.obj[v]
+                for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        for task in task_list:
+
+            initializer = "(%d, %d, %s, arch::%s)" % (
+                task.impl.task_id,
+                task.priority,
+                str(task.schedule).lower(),
+                task.impl.tcb_descriptor.name
+            )
+
+            desc = DataObject("const os::scheduler::Task", "OS_" + task.name + "_task",
+                              initializer)
+            desc.allocation_prefix = "constexpr "
+
+            self.generator.source_file.data_manager.add(desc, namespace = ("os", "tasks"))
+            task.impl.task_descriptor = desc
+
+
+    def generate_counter(self, ctr):
+        return DataObject("UnencodedCounter",
+                             "OS_%s_counter" % (ctr.name),
+                             "(%d, %d, %d)" % (ctr.conf.maxallowedvalue,
+                                               ctr.conf.ticksperbase,
+                                               ctr.conf.mincycle))
+    def generate_alarm(self, alarm, counter, task):
+        return DataObject("UnencodedAlarm<&%s>" % counter.impl.name,
+                           "OS_%s_alarm" %( alarm.conf.name),
+                           "(%s, %s, %d, %d, %d)" % (task,
+                                                     str(alarm.conf.armed).lower(),
+                                                     alarm.conf.reltime,
+                                                     alarm.conf.cycletime,
+                                                     alarm.impl.alarm_id,
+                           ))
+
+    def generate_dataobjects_counters_and_alarms(self):
+        self.generator.source_file.include("os/counter.h")
+        self.generator.source_file.include("os/alarm.h")
+
+        ctr_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
+
+        for ctr in ctr_list:
+            assert ctr.conf.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
+
+            impl = self.generate_counter(ctr)
+
+            if impl:
+                # Add and save counter Implementation
+                self.generator.source_file.data_manager.add(impl, namespace = ("os",))
+                ctr.impl = impl
+
+        alarm_id = 1
+
+        alarm_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
+        for alarm in alarm_list:
+            subtask = alarm.conf.subtask
+            task = "os::tasks::" + subtask.impl.task_descriptor.name
+
+            alarm.impl = AlarmImpl()
+            alarm.impl.alarm_id = alarm_id
+            alarm_id += 1
+
+            impl = self.generate_alarm(alarm, alarm.conf.counter, task)
+            if impl:
+                # Add and save alarm implementation
+                self.generator.source_file.data_manager.add(impl, namespace = ("os",))
+                alarm.impl.name = impl.name
+                alarm.impl.alarm_desc = impl
+
+    def generate_system_code(self):
+        pass
+
+    def generate_dataobjects_global_ids(self):
+        """We have to generate identifiers for every system object. This has
+           to be done after the objects are allocated.
+
+        """
+        task_list = [self.ara_graph.instances.vp.obj[v]
+                for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
+        for task in task_list:
+            # add: const TaskType subtaskname_id = OS_subtask.name_task.id;
+            iddesc = DataObject("const TaskType", "AUTOSAR_TASK_" + task.name,
+                                static_initializer = str(task.impl.task_id),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+        alarm_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
+        for alarm in alarm_list:
+            iddesc = DataObject("const AlarmType", "AUTOSAR_ALARM_" + alarm.name,
+                                static_initializer = str(alarm.impl.alarm_id),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+        res_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Resource)]
+        for res in res_list:
+            iddesc = DataObject("const ResourceType", "AUTOSAR_RESOURCE_" + res.name,
+                                static_initializer = str(res.conf.static_priority),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+        ctr_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
+        for counter in ctr_list:
+            iddesc = DataObject("const CounterType", "AUTOSAR_COUNTER_" + counter.name,
+                                static_initializer = "0",
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+        # TODO whats this
+        #for res in self.system_graph.devices:
+        #    iddesc = DataObject("const DeviceType", "OSEKOS_DEVICE_" + res.name,
+        #                        static_initializer = str(res.device_id),
+        #                        extern_c = True)
+        #    self.generator.source_file.data_manager.add(iddesc);
+
+
+        event_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Event)]
+        for event in event_list:
+            #event.impl = EventImpl()
+            #event.impl.name = event.conf.name
+            #event.impl.event_mask = event.event_mask
+
+            iddesc = DataObject("const EventMaskType", "AUTOSAR_EVENT_" + event.name,
+                                static_initializer = str(event.impl.event_mask),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+
+    def generate_hooks(self):
+        hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"]),
+                 ("StartupHook", []), ("PreTaskHook", []), ("PostTaskHook", []),
+                 ("ShutdownHook", ["StatusType"])]
+        for hook,args in hooks:
+            hook_function = Function("__OS_HOOK_" + hook, "void", args)
+            self.generator.source_file.function_manager.add(hook_function)
+            # Cast arguments to void, to get rid of unused parameter warning
+            for i in range(0, len(args)):
+                hook_function.unused_parameter(i);
+
+            # In the pre idle hook, we place the kickoff method of the
+            # idle subtask
+            if hook == "PreIdleHook":
+                self.call(hook_function,
+                                   self.system_graph.idle_subtask.entry_abb\
+                                   .generated_function_name(),
+                                   "void", [])
+
+
+            user_defined = "__OS_HOOK_DEFINED_" + hook
+            #TODO correct this
+            #if self.system_graph.find(GraphFunction, user_defined):
+                # Generate actual call, only if user had defined the hook function
+            #    self.call(hook_function, user_defined, "void", hook_function.arguments_names())
+            #    if hook == "PostTaskHook":
+            #        logging.warning("Be aware that PostTaskHooks are not properly implemented")
+
+            if hook == "FaultDetectedHook":
+                hook_function.add(Statement("debug << \"FaultDetectedHook \" << arg0<< endl"))
+                self.call(hook_function, "ShutdownMachine",
+                                   "void", [])
+                self.call(hook_function, "Machine::unreachable",
+                                   "void", [])
+
