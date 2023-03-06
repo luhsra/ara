@@ -73,6 +73,12 @@ namespace ara::step {
 			bool end;
 		};
 
+		/**
+		 * Container for "equal" types.
+		 *
+		 * The idea of this container is to group all types that are equal to each other to be able to iterate over them
+		 * afterwards. The information about equal types comes from the given TypeMap.
+		 */
 		class FuzzyFuncType {
 			std::vector<std::variant<llvm::Type*, std::vector<llvm::Type*>>> types;
 			llvm::Type* return_type;
@@ -132,7 +138,6 @@ namespace ara::step {
 
 		void link_indirect_pointer(const SVF::CallICFGNode& cbn, SVF::PTACallGraph& callgraph,
 		                           const llvm::Function& target, const SVF::LLVMModuleSet& svfModule);
-		bool is_valid_call_target(const llvm::FunctionType& caller_type, const llvm::Function& candidate) const;
 
 		void get_atf_from_value(const llvm::Value& value,
 		                        std::vector<std::reference_wrapper<const llvm::Function>>& functions);
