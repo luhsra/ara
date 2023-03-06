@@ -322,7 +322,7 @@ class InteractionAnalysis(FlatAnalysis):
 
     def get_single_dependencies(self):
         deps = self._get_os_specific_deps()
-        if self._graph.os and self._graph.os.has_dynamic_instances():
+        if self._graph.os.has_dynamic_instances():
             deps.append('SIA')
         return deps
 

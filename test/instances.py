@@ -8,7 +8,7 @@ from init_test import init_test, fail_if
 
 def main():
     """Test for correct instance detection."""
-    config = {"steps": ["SIA", "DumpCFG"]}
+    config = {"steps": ["SIA", "DumpCFG", "DumpInstances"]}
     data = init_test(extra_config=config)
     instances = data.graph.instances
     dump = []
