@@ -51,7 +51,8 @@ class Generator(Step):
         if self.passthrough.get():
             return ['IRReader', 'SysFuncts']
         #TODO needed for autosar ?
-        deps = ['SIA', 'ManualCorrections', 'SysFuncts']
+        #deps = ['SIA', 'ManualCorrections', 'SysFuncts']
+        deps = []
         if self.get_os():
             deps += self.get_os().get_dependencies()
         return deps

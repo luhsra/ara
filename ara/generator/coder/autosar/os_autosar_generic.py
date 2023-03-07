@@ -35,6 +35,9 @@ class AUTOSARGenericOS(GenericOS):
 
     @staticmethod
     def get_dependencies():
+        return []
+        #TODO update
+        #return ['LoadOIL', 'SysFuncts']
         return ['AutosarGeneratorIR']
 
     def get_syscall_rules(self):

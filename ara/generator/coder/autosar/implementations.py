@@ -44,6 +44,15 @@ class AlarmImpl(BaseImpl):
         self.name = None
         self.alarm_desc = None
 
+class IRQImpl(BaseImpl):
+    def __init__(self, instance):
+        super().__init__(instance)
+
+class ISRImpl(BaseImpl):
+    def __init__(self, instance):
+        super().__init__(instance)
+
+
 def add_impl(instance):
     if isinstance(instance, Task):
         instance.impl = TaskImpl(instance)
@@ -55,5 +64,9 @@ def add_impl(instance):
         instance.impl = EventImpl(instance)
     elif isinstance(instance, Alarm):
         instance.impl = AlarmImpl(instance)
+    elif isinstance(instance, IRQ):
+        instance.impl = IRQImpl(instance)
+    elif isinstance(instance, ISR):
+        instance.impl = ISRImpl(instance)
     else:
         raise ValueError("Unknown Type:", type(instance))

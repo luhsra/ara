@@ -15,23 +15,6 @@ from ara.generator.tools import panic
 
 class GenericSystemCalls(BaseCoder):
 
-    def call(self, block, function, rettype="void", arguments=None, prepend = False):
-        """Generates a call to a function and stores the result in an
-           variable, if it isn't void"""
-        ret_var = VariableDefinition.new(self.generator, rettype)
-        if ret_var:
-            block.add(ret_var)
-            name = ret_var.name
-        else:
-            name = None
-        if arguments is None:
-            arguments = []
-        if prepend:
-            block.prepend( FunctionCall(function, arguments, name))
-        else:
-            block.add( FunctionCall(function, arguments, name))
-        return ret_var
-
     def foreach_subtask(self, func):
         """Call func for every task"""
         ret = []
@@ -45,8 +28,6 @@ class GenericSystemCalls(BaseCoder):
     def __init__(self):
         super(GenericSystemCalls, self).__init__()
         self.alarms = AlarmTemplate
-
-        self.has_scheduler_object = True
 
     def generate_system_code(self):
         # Use the tasklist and scheduler that is given by the kind of OS (encoded, unencoded)
@@ -81,11 +62,11 @@ class GenericSystemCalls(BaseCoder):
             self.call(block, "Dispatcher::Prepare",
                       "void", [self.task_desc(task)])
 
-            if task.conf.autostart:
+            if task.autostart:
                 self.call(block, "scheduler_.SetReadyFromSuspended_impl",
                           "void", [self.task_desc(task)])
 
-            if task.conf.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
+            if task.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
                 highestTask = task
 
         # Call the StartupHook

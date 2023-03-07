@@ -91,8 +91,9 @@ class GenericOS(BaseCoder):
             subtask = alarm.conf.subtask
             task = "os::tasks::" + subtask.impl.task_descriptor.name
 
-            alarm.impl = AlarmImpl()
-            alarm.impl.alarm_id = alarm_id
+            # TODO is this needed
+            #alarm.impl = AlarmImpl()
+            #alarm.impl.alarm_id = alarm_id
             alarm_id += 1
 
             impl = self.generate_alarm(alarm, alarm.conf.counter, task)
@@ -172,22 +173,24 @@ class GenericOS(BaseCoder):
             for i in range(0, len(args)):
                 hook_function.unused_parameter(i);
 
+            #TODO is this needed
             # In the pre idle hook, we place the kickoff method of the
             # idle subtask
-            if hook == "PreIdleHook":
-                self.call(hook_function,
-                                   self.system_graph.idle_subtask.entry_abb\
-                                   .generated_function_name(),
-                                   "void", [])
+
+            #if hook == "PreIdleHook":
+            #    self.call(hook_function,
+            #                       self.system_graph.idle_subtask.entry_abb\
+            #                       .generated_function_name(),
+            #                       "void", [])
 
 
             user_defined = "__OS_HOOK_DEFINED_" + hook
             #TODO correct this
-            #if self.system_graph.find(GraphFunction, user_defined):
+            if self.ara_graph.cfg.contains_function_by_name(user_defined):
                 # Generate actual call, only if user had defined the hook function
-            #    self.call(hook_function, user_defined, "void", hook_function.arguments_names())
-            #    if hook == "PostTaskHook":
-            #        logging.warning("Be aware that PostTaskHooks are not properly implemented")
+                self.call(hook_function, user_defined, "void", hook_function.arguments_names())
+                if hook == "PostTaskHook":
+                    logging.warning("Be aware that PostTaskHooks are not properly implemented")
 
             if hook == "FaultDetectedHook":
                 hook_function.add(Statement("debug << \"FaultDetectedHook \" << arg0<< endl"))
