@@ -73,7 +73,7 @@ class GenericArch(BaseCoder):
             for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
         for task in task_list:
-            entry_function = FunctionDeclaration(TASK_PREFIX + task.name, extern_c = True)
+            entry_function = FunctionDeclaration(TASK_PREFIX + "FUNC_" + task.name, extern_c = True)
             self.generator.source_file.function_manager.add(entry_function)
             task.impl.entry_function = entry_function
 

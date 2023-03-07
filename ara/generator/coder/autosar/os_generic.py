@@ -32,8 +32,9 @@ class GenericOS(BaseCoder):
                 if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
         for task in task_list:
 
-            initializer = "(%d, %d, %s, arch::%s)" % (
+            initializer = "(%d, %d, %d, %s, arch::%s)" % (
                 task.impl.task_id,
+                task.cpu_id,
                 task.priority,
                 str(task.schedule).lower(),
                 task.impl.tcb_descriptor.name

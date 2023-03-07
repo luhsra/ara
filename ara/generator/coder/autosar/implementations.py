@@ -7,7 +7,7 @@ class BaseImpl:
         return '<' + '|'.join([str((k,v)) for k,v in self.__dict__.items() if k != 'instance']) + '>'
 
 class TaskImpl(BaseImpl):
-    task_id_counter = 0
+    task_id_counter = 1
     def __init__(self, instance):
         super().__init__(instance)
         # Stack
