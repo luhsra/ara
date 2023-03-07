@@ -132,16 +132,6 @@
 
 #define GetCounter(x)								\
 	AUTOSAR_GetCounter(AUTOSAR_COUNTER_##x)
-
-#define DeclareDevice(x)                                                \
-    extern const DeviceType AUTOSAR_DEVICE_ ## x;			\
-    static dosek_unused const DeviceType &x = AUTOSAR_DEVICE_ ## x
-
-#define ActivateDevice(x)                          \
-    AUTOSAR_ActivateDevice(AUTOSAR_DEVICE_##x)
-
-#define DeactivateDevice(x)                      \
-    AUTOSAR_DeactivateDevice(AUTOSAR_DEVICE_##x)
     
 #define StartOS(x)				\
 	AUTOSAR_StartOS(x)		\
@@ -392,10 +382,6 @@ extern void AUTOSAR_SuspendAllInterrupts();
 extern void AUTOSAR_ResumeAllInterrupts();
 extern void AUTOSAR_SuspendOSInterrupts();
 extern void AUTOSAR_ResumeOSInterrupts();
-
-
-extern StatusType AUTOSAR_ActivateDevice(DeviceType r);
-extern StatusType AUTOSAR_DeactivateDevice(DeviceType r);
 
 
 

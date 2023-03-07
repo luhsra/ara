@@ -294,13 +294,6 @@ class GenericSystemCalls(BaseCoder):
                            [self.get_calling_task_desc(abb),
                             str(next_prio)])
 
-    def ActivateDevice(self, abb, userspace, kernelspace):
-        kernelspace.add(Comment("Empty"))
-
-
-    def DeactivateDevice(self, abb, userspace, kernelspace):
-        kernelspace.add(Comment("Empty"))
-
 
     # Interrupt Handling
     def disable_irq(self, block, abb):
@@ -334,67 +327,6 @@ class GenericSystemCalls(BaseCoder):
         self.enable_irq(kernelspace, abb)
     ResumeAllInterrupts = EnableAllInterrupts
     ResumeOSInterrupts  = EnableAllInterrupts
-
-    # Dependability Service
-    def AcquireCheckedObject(self, abb, userspace, kernelspace):
-        self.call(kernelspace, "acquire_CheckedObject",
-                  "void", [abb.arguments[0]])
-
-    def ReleaseCheckedObject(self, abb, userspace, kernelspace):
-        self.call(kernelspace, "release_CheckedObject",
-                           "void", [abb.arguments[0]])
-
-    # Assertions
-    def do_assertions(self, block, assertions):
-        conds = []
-        for a in assertions:
-            (prepare, c) = self.__do_assertion(a)
-            if prepare:
-                block.add(prepare)
-            conds += ["%s" % x for x in c]
-
-        for c in conds:
-            block.add(Statement("color_assert(%s, COLOR_ASSERT_SYSTEM_STATE)" % c))
-        call_hook = Statement("CALL_HOOK(FaultDetectedHook, STATE_ASSERTdetected, __LINE__, 0)")
-        # if conds:
-        #    check = Block("if (%s)" % "  || ".join(conds))
-        #    check.add(call_hook)
-        #    block.add(check)
-
-    def __do_assertion(self, assertion):
-        task = assertion.get_arguments()[0]
-
-        if assertion.isA(AssertionType.TaskIsSuspended):
-            cond = "!scheduler_.isReady(%s)" % self.task_desc(task)
-            return (None, [cond])
-        elif assertion.isA(AssertionType.TaskIsReady):
-            cond = "scheduler_.isReady(%s)" % self.task_desc(task)
-            return (None, [cond])
-        elif assertion.isA(AssertionType.TaskWasKickoffed):
-            cond = "%s.tcb.is_running()" % self.task_desc(task)
-            return (None, [cond])
-        elif assertion.isA(AssertionType.TaskWasNotKickoffed):
-            cond =  "!%s.tcb.is_running()" % self.task_desc(task)
-            return (None, [cond])
-        elif assertion.isA(AssertionType.EventsCheck):
-            event_cleared = assertion.get_arguments()[1]
-            event_set = assertion.get_arguments()[2]
-            var = "event_mask_%s" % task.name
-            prepare = Statement("uint32_t {var} = scheduler_.GetEvent_impl({task});".format(
-                task = self.task_desc(task), var = var))
-            conds = []
-            if event_cleared:
-                # Mask Should equal to zero
-                mask = Event.combine_event_masks(event_cleared)
-                conds.append("(({var} & {mask}) == 0)".format(var=var, mask=mask))
-            if event_set:
-                # Mask Should equal to zero
-                mask = Event.combine_event_masks(event_set)
-                conds.append("((({var} & {mask}) ^ {mask}) == 0)".format(var=var, mask=mask))
-
-            return (prepare, conds)
-        else:
-            panic("Unsupported assert type %s", assertion)
 
 class AlarmTemplate(CodeTemplate):
     def __init__(self, rules, alarm_filter = None):

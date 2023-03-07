@@ -147,14 +147,6 @@ class GenericOS(BaseCoder):
                                 extern_c = True)
             self.generator.source_file.data_manager.add(iddesc);
 
-        # TODO whats this
-        #for res in self.system_graph.devices:
-        #    iddesc = DataObject("const DeviceType", "OSEKOS_DEVICE_" + res.name,
-        #                        static_initializer = str(res.device_id),
-        #                        extern_c = True)
-        #    self.generator.source_file.data_manager.add(iddesc);
-
-
         event_list = [self.ara_graph.instances.vp.obj[v]
             for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Event)]
