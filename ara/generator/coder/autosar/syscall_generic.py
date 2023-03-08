@@ -1,20 +1,39 @@
-from ..syscall_generic import GenericSystemCalls as _GenericSystemCalls
 from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        Statement, Include, Comment, VariableDefinition,
                        FunctionDeclaration, CodeTemplate, Block)
 
 from ..base import BaseCoder
 
-from ara.os.autosar import Resource, Task, Alarm, Counter
+from ara.os.autosar import Resource, Task, Alarm, Counter, ISR
 #from generator.transform.GenerateAssertions import AssertionType
 #from generator.analysis.Function import Function as GraphFunction
 #from generator.analysis.Resource import Resource
 
 from ara.generator.tools import panic
+from ara.graph import ABBType
 
 
 class GenericSystemCalls(BaseCoder):
-
+    AUTOSAR_SYSCALLS = {
+        "AUTOSAR_ActivateTask": ["StatusType", "TaskType"],
+        "AUTOSAR_ChainTask": ["StatusType", "TaskType"],
+        "AUTOSAR_TerminateTask": ["StatusType"],
+        "AUTOSAR_EnableAllInterrupts"  : ["void"],
+        "AUTOSAR_DisableAllInterrupts" : ["void"],
+        "AUTOSAR_ResumeAllInterrupts"  : ["void"],
+        "AUTOSAR_SuspendAllInterrupts" : ["void"],
+        "AUTOSAR_ResumeOSInterrupts"   : ["void"],
+        "AUTOSAR_SuspendOSInterrupts"  : ["void"],
+        "AUTOSAR_GetResource": ["StatusType", "ResourceType"],
+        "AUTOSAR_ReleaseResource": ["StatusType", "ResourceType"],
+        "AUTOSAR_SetEvent": ["StatusType", "TaskType", "EventMaskType"],
+        "AUTOSAR_GetEvent": ["StatusType", "TaskType", "EventMaskRefType"],
+        "AUTOSAR_ClearEvent": ["StatusType", "EventMaskType"],
+        "AUTOSAR_WaitEvent": ["StatusType", "EventMaskType"],
+        "AUTOSAR_GetAlarm": ["StatusType", "AlarmType", "TickRefType"],
+        "AUTOSAR_SetRelAlarm": ["StatusType", "AlarmType", "TickType", "TickType"],
+        "AUTOSAR_CancelAlarm": ["StatusType", "AlarmType"],
+    }
     def foreach_subtask(self, func):
         """Call func for every task"""
         ret = []
@@ -41,6 +60,68 @@ class GenericSystemCalls(BaseCoder):
         self.generator.source_file.include("os/util/redundant.h")
         self.generator.source_file.declarations.append(self.alarms(self).expand())
 
+        #TODO is this needed according to spec?
+        # Only generate an os_main, if it does not exist
+        #if self.system_graph.find(GraphFunction, "os_main") is None:
+        #    logging.info("Generating an os_main function calling StartOS")
+        #    os_main = Function("os_main", "void", [], extern_c = True)
+        #    os_main.add( FunctionCall("StartOS", ["0"]) )
+        #    self.source_file.function_manager.add(os_main)
+
+        self._log.debug("generate StartOS")
+        # Generate a StartOS function and delegate it to the OS rule set
+        StartOS = Function("AUTOSAR_StartOS", "void", ["int"], extern_c = True)
+        self.syscall_rules.StartOS(StartOS)
+        self.generator.source_file.function_manager.add(StartOS)
+        self.StartOS = StartOS
+
+        # Generate a ShutdownOS function
+        self._log.debug("generate AUTOSAR_ShutdownOS")
+        ShutdownOS = Function("AUTOSAR_ShutdownOS", "void", ["StatusType"], extern_c = True)
+        self.syscall_rules.ShutdownOS(ShutdownOS)
+        self.generator.source_file.function_manager.add(ShutdownOS)
+
+        # Generate the interrupt scheduler
+        self._log.debug("generate __OS_ASTSchedule")
+
+        ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c = True)
+        self.syscall_rules.ASTSchedule(ASTSchedule)
+        self.generator.source_file.function_manager.add(ASTSchedule)
+
+        bbs = self.ara_graph.bbs.vertices() # need local ref here
+
+        ## find all syscalls
+        for bb in bbs:
+            abb = self.ara_graph.cfg.get_abb(bb)
+
+            if abb == None or self.ara_graph.cfg.vp.type[abb] != ABBType.syscall:
+                continue
+
+            syscall_name = self.ara_graph.cfg.get_syscall_name(abb)
+            bb_name = self.ara_graph.cfg.vp.name[bb]
+            abb_name = self.ara_graph.cfg.vp.name[abb]
+
+            self._log.debug("Syscall %s in %s %s", syscall_name, bb_name, abb_name)
+
+            userspace = Function(syscall_name+"_"+bb_name,
+                                 self.AUTOSAR_SYSCALLS[syscall_name][0], #rettype
+                                 self.AUTOSAR_SYSCALLS[syscall_name][1:], #argtypes
+                                 extern_c = True)
+            self.generator.source_file.function_manager.add(userspace)
+
+            #TODO fill it
+            #self.os_rules.systemcall(abb)
+
+
+        # Generate the hooks into the operating system
+        self.os_rules.generate_hooks()
+
+        # Generate ISRs
+        isr_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], ISR)]
+
+        self.arch_rules.generate_isr_table(isr_list)
 
     def task_desc(self, subtask):
         """Returns a string that generates the task id"""
