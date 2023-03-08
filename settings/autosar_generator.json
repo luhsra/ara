@@ -13,6 +13,7 @@
 		"AUTOSAR": "debug"
 	},
 	"Generator": {
+		"log_level": "debug",
 		"arch": "posix",
 		"instantiation_style": "static",
 		"interaction_style": "vanilla",
