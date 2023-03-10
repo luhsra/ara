@@ -22,7 +22,7 @@ namespace ara::step {
 	void CFGOptimizeTest::run() {
 		assert(input_file.get());
 		std::string file = *input_file.get();
-		assert(file == "appl/freertos-optimization.ll");
+		assert(file == "appl/freertos-optimization.ll" || file == "subprojects/ara/appl/freertos-optimization.ll");
 
 		bool main_found = false, number_found = false;
 		llvm::Module& module = graph.get_module();
