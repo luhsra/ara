@@ -10,9 +10,18 @@ class GenericOS(BaseCoder):
     def __init__(self):
         super(GenericOS, self).__init__()
 
-    def systemcall(self, systemcall, function):
-        """Generate systemcall into function"""
-        raise NotImplementedError()
+    def systemcall(self, abb, userspace):
+        """Generate systemcall"""
+        syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
+        abb_name = self.ara_graph.cfg.vp.name[abb]
+        fn = self.ara_graph.cfg.get_function(abb)
+        fn_name = self.ara_graph.cfg.vp.name[fn]
+
+        if hasattr(self.syscall_rules, syscall_name):
+            f = getattr(self.syscall_rules, syscall_name)
+            f(abb, userspace, userspace)
+        else:
+            raise NotImplementedError("Not yet supported %d", syscall_name)
 
     def generate_data_objects(self):
         """In this function, we generate all system objects which are used by OS implementation."""

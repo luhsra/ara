@@ -109,8 +109,7 @@ class GenericSystemCalls(BaseCoder):
                                  extern_c = True)
             self.generator.source_file.function_manager.add(userspace)
 
-            #TODO fill it
-            #self.os_rules.systemcall(abb)
+            self.os_rules.systemcall(abb, userspace)
 
 
         # Generate the hooks into the operating system
@@ -129,7 +128,15 @@ class GenericSystemCalls(BaseCoder):
         return task_desc
 
     def get_calling_task_desc(self, abb):
-        return self.task_desc(abb.function.subtask)
+        fn = self.ara_graph.cfg.get_function(abb)
+
+        for v in self.ara_graph.instances.vertices():
+            inst = self.ara_graph.instances.vp.obj[v]
+            if isinstance(inst, Task):
+                if inst.function == fn:
+                    return self.task_desc(inst)
+
+        return "X"
 
     def StartOS(self, block):
         block.unused_parameter(0)
@@ -198,15 +205,17 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace,
                            "scheduler_.ActivateTask_impl",
                            "void",
-                           [self.task_desc(syscall.arguments[0]),
-                            "/* from_interrupt */ %s" % str(syscall.subtask.conf.is_isr).lower()])
-
+                           [
+                            "x",#[self.task_desc(syscall.arguments[0]),
+                            "x" #/* from_interrupt */ %s" % str(syscall.subtask.conf.is_isr).lower()])
+                            ])
     def ChainTask(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
                            "scheduler_.ChainTask_impl",
                            "void",
                            [self.get_calling_task_desc(syscall),
-                            self.task_desc(syscall.arguments[0])])
+                            "x"#self.task_desc(syscall.arguments[0])
+                            ])
 
 
     def WaitEvent(self, syscall, userspace, kernelspace):
@@ -214,7 +223,7 @@ class GenericSystemCalls(BaseCoder):
                            "scheduler_.WaitEvent_impl",
                            "void",
                            [self.get_calling_task_desc(syscall),
-                            str(Event.combine_event_masks(syscall.arguments[0]))
+                            "x" #str(Event.combine_event_masks(syscall.arguments[0]))
                            ])
 
     def ClearEvent(self, syscall, userspace, kernelspace):
@@ -260,13 +269,14 @@ class GenericSystemCalls(BaseCoder):
     def SetEvent(self, syscall, userspace, kernelspace):
         userspace.unused_parameter(1)
 
-        subtask = syscall.arguments[0][0].task
+        #subtask = syscall.arguments[0][0].task
         self.call(kernelspace,
                            "scheduler_.SetEvent_impl",
                            "void",
-                           [self.task_desc(subtask),
-                            str(Event.combine_event_masks(syscall.arguments[0]))
-                           ])
+                           [])
+                           #[self.task_desc(subtask),
+                           # str(Event.combine_event_masks(syscall.arguments[0]))
+                           #])
 
     def SetRelAlarm(self, abb, userspace, kernelspace):
         arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
