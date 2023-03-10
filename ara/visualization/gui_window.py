@@ -23,6 +23,7 @@ from .trace import trace_handler
 from .util import RESOURCE_PATH, StepMode
 from .widgets import graph_views
 from .widgets.graph_views import CFGView, CallGraphView, InstanceGraphView, SVFGView
+from .widgets.properties_info import PropertiesInfo
 
 loader = QUiLoader()
 
@@ -70,6 +71,10 @@ class GuiWindow(QMainWindow):
         self.dw_callgraph = QDockWidget("CallGraph View", self)
         self.dw_instance_graph = QDockWidget("Instance View", self)
         self.dw_svfg = QDockWidget("SVFG View", self)
+
+        self.info_field = QDockWidget("Info Field", self)
+        self.info_field.setFeatures(QDockWidget.DockWidgetMovable
+                                    | QDockWidget.DockWidgetFloatable)
 
         self.dw_cfg.setFeatures(QDockWidget.DockWidgetMovable
                                 | QDockWidget.DockWidgetFloatable)
@@ -164,6 +169,7 @@ class GuiWindow(QMainWindow):
         self.dw_callgraph.setWidget(CallGraphView(signal_combiner))
         self.dw_instance_graph.setWidget(InstanceGraphView(signal_combiner))
         self.dw_svfg.setWidget(SVFGView(signal_combiner))
+        self.info_field.setWidget(PropertiesInfo(signal_combiner))
 
         self.dw_cfg.widget().setRenderHint(QPainter.Antialiasing)
         self.dw_callgraph.widget().setRenderHint(QPainter.Antialiasing)
@@ -171,6 +177,7 @@ class GuiWindow(QMainWindow):
         self.dw_svfg.widget().setRenderHint(QPainter.Antialiasing)
 
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_cfg)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.info_field)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_callgraph)
         self.addDockWidget(Qt.TopDockWidgetArea, self.dw_instance_graph)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dw_svfg)
