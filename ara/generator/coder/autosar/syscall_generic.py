@@ -127,16 +127,28 @@ class GenericSystemCalls(BaseCoder):
         task_desc = subtask.impl.task_descriptor.name
         return task_desc
 
-    def get_calling_task_desc(self, abb):
+    def get_calling_task(self,abb):
         fn = self.ara_graph.cfg.get_function(abb)
 
         for v in self.ara_graph.instances.vertices():
             inst = self.ara_graph.instances.vp.obj[v]
             if isinstance(inst, Task):
                 if inst.function == fn:
-                    return self.task_desc(inst)
+                    return inst
 
-        return "X"
+    def get_calling_isr(self,abb):
+        fn = self.ara_graph.cfg.get_function(abb)
+
+        for v in self.ara_graph.instances.vertices():
+            inst = self.ara_graph.instances.vp.obj[v]
+            if isinstance(inst, ISR):
+                if inst.function == fn:
+                    return inst
+
+    def get_calling_task_desc(self, abb):
+        task = self.get_calling_task(abb)
+        return self.task_desc(task)
+
 
     def StartOS(self, block):
         block.unused_parameter(0)
@@ -197,41 +209,53 @@ class GenericSystemCalls(BaseCoder):
         pass
 
     def TerminateTask(self, syscall, userspace, kernelspace):
-        self.call(kernelspace, "scheduler_.TerminateTask_impl",
+        task = self.get_calling_task(syscall)
+        self.call(kernelspace, "scheduler_["+str(task.cpu_id)+"].TerminateTask_impl",
                            "void",
                            [self.get_calling_task_desc(syscall)])
 
     def ActivateTask(self, syscall, userspace, kernelspace):
+        args = self.ara_graph.cfg.vp.arguments[syscall]
+        task = self.get_calling_task(syscall)
+        from_interrupt = "false"
+        if task == None:
+            task = self.get_calling_isr(syscall)
+            from_interrupt = "true"
+
         self.call(kernelspace,
-                           "scheduler_.ActivateTask_impl",
+                           "scheduler_["+str(task.cpu_id)+"].ActivateTask_impl",
                            "void",
-                           [
-                            "x",#[self.task_desc(syscall.arguments[0]),
-                            "x" #/* from_interrupt */ %s" % str(syscall.subtask.conf.is_isr).lower()])
-                            ])
+                            [self.task_desc(args.task),
+                            "/* from_interrupt */ %s" % from_interrupt])
     def ChainTask(self, syscall, userspace, kernelspace):
+        args = self.ara_graph.cfg.vp.arguments[syscall]
+        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_.ChainTask_impl",
+                           "scheduler_["+str(task.cpu_id)+"].ChainTask_impl",
                            "void",
                            [self.get_calling_task_desc(syscall),
-                            "x"#self.task_desc(syscall.arguments[0])
+                            self.task_desc(args.task)
                             ])
 
 
     def WaitEvent(self, syscall, userspace, kernelspace):
+        args = self.ara_graph.cfg.vp.arguments[syscall]
+        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_.WaitEvent_impl",
+                           "scheduler_["+str(task.cpu_id)+"].WaitEvent_impl",
                            "void",
                            [self.get_calling_task_desc(syscall),
-                            "x" #str(Event.combine_event_masks(syscall.arguments[0]))
+                            str(args.event_mask) # TODO combine_event_masks ?
                            ])
 
     def ClearEvent(self, syscall, userspace, kernelspace):
+        args = self.ara_graph.cfg.vp.arguments[syscall]
+        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_.ClearEvent_impl",
+                           "scheduler_["+str(task.cpu_id)+"].ClearEvent_impl",
                            "void",
                            [self.get_calling_task_desc(syscall),
-                            str(Event.combine_event_masks(syscall.arguments[0]))
+                            str(args.event_mask)
                            ])
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
@@ -239,8 +263,10 @@ class GenericSystemCalls(BaseCoder):
                            [self.get_calling_task_desc(syscall)])
 
     def GetEvent(self, syscall, userspace, kernelspace):
-        mask = self.call(kernelspace, "scheduler_.GetEvent_impl",
-                                  "EventMaskType", [self.task_desc(syscall.arguments[0])])
+        args = self.ara_graph.cfg.vp.arguments[syscall]
+        task = self.get_calling_task(syscall)
+        mask = self.call(kernelspace, "scheduler_["+str(task.cpu_id)+"].GetEvent_impl",
+                                  "EventMaskType", [self.task_desc(args.task)])
 
         return_variable = self.os_rules.get_syscall_return_variable("EventMaskType", 4)
 
@@ -268,15 +294,14 @@ class GenericSystemCalls(BaseCoder):
 
     def SetEvent(self, syscall, userspace, kernelspace):
         userspace.unused_parameter(1)
-
-        #subtask = syscall.arguments[0][0].task
+        args = self.ara_graph.cfg.vp.arguments[syscall]
+        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_.SetEvent_impl",
+                           "scheduler_["+str(task.cpu_id)+"].SetEvent_impl",
                            "void",
-                           [])
-                           #[self.task_desc(subtask),
-                           # str(Event.combine_event_masks(syscall.arguments[0]))
-                           #])
+                           [self.task_desc(args.task),
+                           str(args.event_mask)
+                           ])
 
     def SetRelAlarm(self, abb, userspace, kernelspace):
         arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
@@ -344,9 +369,11 @@ class GenericSystemCalls(BaseCoder):
                            [self.get_calling_task_desc(abb)])
 
     def GetResource(self, abb, userspace, kernelspace):
+
+        task = self.get_calling_task(abb)
         next_prio = abb.definite_after(E.task_level).dynamic_priority
         self.call(kernelspace,
-                           "scheduler_.GetResource_impl",
+                           "scheduler_["+str(task.cpu_id)+"].GetResource_impl",
                            "void",
                            [self.get_calling_task_desc(abb),
                             str(next_prio)])
@@ -357,11 +384,13 @@ class GenericSystemCalls(BaseCoder):
                            [self.get_calling_task_desc(abb)])
 
     def ReleaseResource(self, abb, userspace, kernelspace):
+
+        task = self.get_calling_task(abb)
         next_prio = abb.definite_after(E.task_level).dynamic_priority
         if not abb.subtask.conf.preemptable:
             next_prio = self.system_graph.get(Resource, "RES_SCHEDULER").conf.static_priority
         self.call(kernelspace,
-                           "scheduler_.ReleaseResource_impl",
+                           "scheduler_["+str(task.cpu_id)+"].ReleaseResource_impl",
                            "void",
                            [self.get_calling_task_desc(abb),
                             str(next_prio)])

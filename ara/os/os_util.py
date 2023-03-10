@@ -298,6 +298,9 @@ class SysCall:
         Arguments = dataclasses.make_dataclass('Arguments', fields)
         args = Arguments(*values)
 
+        #store arguments in syscall abb
+        graph.cfg.vp.arguments[abb] = args
+
         # syscall specific handling
         new_states = self._func(graph, new_state, cpu_id, args, va)
         assert new_states is not None, (f"The syscall {self.name} does not "
