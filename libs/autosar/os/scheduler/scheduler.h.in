@@ -150,8 +150,12 @@ void Scheduler::Reschedule() {
 Scheduler scheduler_[MAX_CPUS];
 
 extern "C" StatusType AUTOSAR_GetTaskID(TaskRefType a) {
-    *a = scheduler_.getCurrent_TaskID();
+    *a = scheduler_[AUTOSAR_GetCoreID()].getCurrent_TaskID();
     return E_OK;
+}
+
+extern "C" CoreIdType AUTOSAR_GetCoreID() {
+    return arch::get_cpuid();
 }
 
 }; // scheduler

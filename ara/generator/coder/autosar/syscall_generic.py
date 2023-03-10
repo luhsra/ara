@@ -163,7 +163,7 @@ class GenericSystemCalls(BaseCoder):
                       "void", [self.task_desc(task)])
 
             if task.autostart:
-                self.call(block, "scheduler_.SetReadyFromSuspended_impl",
+                self.call(block, "scheduler_["+str(task.cpu_id)+"].SetReadyFromSuspended_impl",
                           "void", [self.task_desc(task)])
 
             if task.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
@@ -191,12 +191,12 @@ class GenericSystemCalls(BaseCoder):
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.call(kernelspace, "scheduler_.Reschedule",
+        self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Reschedule",
                             "void", [])
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.call(kernelspace, "scheduler_.Reschedule",
+        self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Reschedule",
                                "void", [])
 
 

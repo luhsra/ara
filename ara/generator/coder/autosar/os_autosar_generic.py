@@ -67,7 +67,6 @@ class TaskListTemplate(CodeTemplate):
         return self._subtask.name
 
     def subtask_id(self, snippet, args):
-
         return str(self._subtask.impl.task_id)
 
     def subtask_desc(self, snippet, args):
@@ -113,7 +112,7 @@ class SchedulerTemplate(CodeTemplate):
         return self._subtask.impl.task_descriptor.name
 
     def subtask_id(self, snippet, args):
-        return self._subtask.name
+        return str(self._subtask.impl.task_id)
 
     def foreach_subtask(self, snippet, args):
         body = args[0]

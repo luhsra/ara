@@ -19,7 +19,9 @@ class GenericOS(BaseCoder):
 
         if hasattr(self.syscall_rules, syscall_name):
             f = getattr(self.syscall_rules, syscall_name)
+            self.call(userspace, "Machine::disable_interrupts")
             f(abb, userspace, userspace)
+            self.call(userspace, "__OS_enable_irq_after_kernel")
         else:
             raise NotImplementedError("Not yet supported %d", syscall_name)
 
