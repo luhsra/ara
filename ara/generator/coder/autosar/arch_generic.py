@@ -100,91 +100,62 @@ class GenericArch(BaseCoder):
         """returns a KernelSpace object"""
         raise NotImplementedError()
 
-    def generate_kernelspace__inline(self, userspace, abb, arguments):
+    def generate_kernelspace__inline(self, userspace, abb, args):
         """When a systemcall is done from a app (synchroanous syscall), then we
            disable interrupts. In the interrupt handler they are already
            disabled.
         """
-        userspace.add(Comment("Subtask: %s" % abb.subtask.name))
 
-        if abb.subtask.conf.is_isr:
+        task = self.syscall_rules.get_calling_task(abb)
+
+        from_interrupt = False
+        if task == None:
+            task = self.syscall_rules.get_calling_isr(abb)
+            from_interrupt = True
+
+        userspace.add(Comment("Callsite: %s" % task.name))
+        userspace.calling_task = task
+        userspace.is_isr = from_interrupt
+
+        if from_interrupt:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
         else:
             self.disable_irq(userspace)
 
-        args = [(arg.name, arg.datatype) for arg in arguments]
+        #TODO fix args
+        #self.convert_argument(userspace, args[1])
+        #self.convert_argument(abb.impl.userspace, args[2])
+
         pre_hook  = Hook("SystemEnterHook",arguments =  args)
         system    = Block(arguments = args)
         post_hook = Hook("SystemLeaveHook", userspace.arguments())
 
-        if self.system_graph.conf.verify.generate_mockup and not abb.subtask.conf.is_isr:
-            if abb.syscall_type.doesTerminateTask():
-                pre_hook.add(Statement("%s = 0;" % abb.subtask.impl.instruction_ptr.name))
-            else:
-                pre_hook.add(Statement("%s = &&resume_label;" % abb.subtask.impl.instruction_ptr.name))
-                post_hook.add(Statement("resume_label: (void) 0;"))
-                post_hook.add(Statement("%s = 0;" % abb.subtask.impl.instruction_ptr.name))
 
+        syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
 
-        userspace.add(pre_hook)
-        userspace.add(system)
-        userspace.add(post_hook)
+        if syscall_name in [
+            "EnableAllInterrupts", "ResumeAllInterrupts", "ResumeOSInterrupts", "kickoff", "iret"
+        ]:
+            userspace.add(pre_hook)
+            userspace.add(post_hook)
+            userspace.add(system)
+        elif syscall_name in [
+            "DisableAllInterrupts", "SuspendAllInterrupts", "SuspendOSInterrupts", "SetRelAlarm"
+        ]:
+            userspace.add(system)
+            userspace.add(pre_hook)
+            userspace.add(post_hook)
+        else:
+            userspace.add(pre_hook)
+            userspace.add(system)
+            userspace.add(post_hook)
 
-        if abb.subtask.conf.is_isr:
+        if from_interrupt:
             userspace.add(Comment("Called from ISR, no enable interrupts required!"))
-        elif abb.syscall_type.doesTerminateTask():
-            userspace.add(Comment("Return with closed interrupts"))
+        elif syscall_name in ["TerminateTask","ChainTask"]:
+            userspace.add(Comment("Terminating Task: return with closed interrupts"))
         else:
             self.enable_irq_after_kernel(userspace)
 
         return self.KernelSpace(pre_hook, system, post_hook)
 
-    def generate_kernelspace__syscall(self, userspace, abb, arguments):
-        """When a systemcall is done from a app (synchronous syscall), then we
-           disable interrupts. In the interrupt handler they are already
-           disabled.
-        """
-        pre_hook  = Hook("SystemEnterHook")
-        post_hook = Hook("SystemLeaveHook", userspace.arguments())
-
-        if self.system_graph.conf.verify.generate_mockup and not abb.subtask.conf.is_isr:
-            if abb.syscall_type.doesTerminateTask():
-                pre_hook.add(Statement("%s = 0;" % abb.subtask.impl.instruction_ptr.name))
-            else:
-                pre_hook.add(Statement("%s = &&resume_label;" % abb.subtask.impl.instruction_ptr.name))
-                post_hook.add(Statement("resume_label: (void) 0;"))
-                post_hook.add(Statement("%s = 0;" % abb.subtask.impl.instruction_ptr.name))
-
-
-        userspace.attributes.append("inlinehint")
-
-        if abb.subtask.conf.is_isr:
-            userspace.add(Comment("Called from ISR, no disable interrupts required!"))
-
-            system    = Block(arguments = [(arg.name, arg.datatype) for arg in arguments])
-
-            userspace.add(pre_hook)
-            userspace.add(system)
-            userspace.add(post_hook)
-
-            return self.KernelSpace(pre_hook, system, post_hook)
-
-        # Generate a function, that will be executed in system mode,
-        # but is specific for this systemcall
-        syscall = Function("__OS_syscall_" + userspace.function_name,
-                           "void", [arg.datatype for arg in arguments], extern_c = True)
-
-        self.generator.source_file.function_manager.add(syscall)
-        # Mention the generated function in the stats
-        self.stats.add_data(abb, "generated-function", syscall.name)
-        # The syscall function is called from the function that will
-        # be inlined into the application
-        syscall.add(pre_hook)
-        self.call(userspace, "syscall", "void", [syscall.function_name] + [str(arg.name) for arg in arguments])
-        userspace.add(post_hook)
-
-        # Since we return to userspace with closed interrupts, we have
-        # to enable them again.
-        self.call(userspace, "Machine::enable_interrupts")
-
-        return self.KernelSpace(pre_hook, syscall, post_hook)

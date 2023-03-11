@@ -209,64 +209,53 @@ class GenericSystemCalls(BaseCoder):
         pass
 
     def TerminateTask(self, syscall, userspace, kernelspace):
-        task = self.get_calling_task(syscall)
-        self.call(kernelspace, "scheduler_["+str(task.cpu_id)+"].TerminateTask_impl",
+        self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].TerminateTask_impl",
                            "void",
-                           [self.get_calling_task_desc(syscall)])
+                           [self.task_desc(userspace.calling_task)])
 
     def ActivateTask(self, syscall, userspace, kernelspace):
-        args = self.ara_graph.cfg.vp.arguments[syscall]
-        task = self.get_calling_task(syscall)
-        from_interrupt = "false"
-        if task == None:
-            task = self.get_calling_isr(syscall)
+        if userspace.is_isr:
             from_interrupt = "true"
+        else:
+            from_interrupt = "false"
 
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].ActivateTask_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ActivateTask_impl",
                            "void",
-                            [self.task_desc(args.task),
+                            [self.task_desc(kernelspace.arguments().task),
                             "/* from_interrupt */ %s" % from_interrupt])
     def ChainTask(self, syscall, userspace, kernelspace):
-        args = self.ara_graph.cfg.vp.arguments[syscall]
-        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].ChainTask_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ChainTask_impl",
                            "void",
-                           [self.get_calling_task_desc(syscall),
-                            self.task_desc(args.task)
+                           [self.task_desc(userspace.calling_task),
+                            self.task_desc(kernelspace.arguments().task)
                             ])
 
 
     def WaitEvent(self, syscall, userspace, kernelspace):
-        args = self.ara_graph.cfg.vp.arguments[syscall]
-        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].WaitEvent_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].WaitEvent_impl",
                            "void",
-                           [self.get_calling_task_desc(syscall),
-                            str(args.event_mask) # TODO combine_event_masks ?
+                           [self.task_desc(userspace.calling_task),
+                            str(kernelspace.arguments().event_mask) # TODO combine_event_masks ?
                            ])
 
     def ClearEvent(self, syscall, userspace, kernelspace):
-        args = self.ara_graph.cfg.vp.arguments[syscall]
-        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].ClearEvent_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ClearEvent_impl",
                            "void",
-                           [self.get_calling_task_desc(syscall),
-                            str(args.event_mask)
+                           [self.task_desc(userspace.calling_task),
+                            str(kernelspace.arguments().event_mask)
                            ])
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(syscall)])
+                           [self.task_desc(userspace.calling_task)])
 
     def GetEvent(self, syscall, userspace, kernelspace):
-        args = self.ara_graph.cfg.vp.arguments[syscall]
-        task = self.get_calling_task(syscall)
-        mask = self.call(kernelspace, "scheduler_["+str(task.cpu_id)+"].GetEvent_impl",
-                                  "EventMaskType", [self.task_desc(args.task)])
+        mask = self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetEvent_impl",
+                                  "EventMaskType", [self.task_desc(kernelspace.arguments().task)])
 
         return_variable = self.os_rules.get_syscall_return_variable("EventMaskType", 4)
 
@@ -288,25 +277,23 @@ class GenericSystemCalls(BaseCoder):
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(syscall)])
+                           [self.task_desc(userspace.calling_task)])
 
 
 
     def SetEvent(self, syscall, userspace, kernelspace):
-        userspace.unused_parameter(1)
-        args = self.ara_graph.cfg.vp.arguments[syscall]
-        task = self.get_calling_task(syscall)
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].SetEvent_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].SetEvent_impl",
                            "void",
-                           [self.task_desc(args.task),
-                           str(args.event_mask)
+                           [self.task_desc(kernelspace.arguments().task),
+                           str(kernelspace.arguments().event_mask)
                            ])
 
-    def SetRelAlarm(self, abb, userspace, kernelspace):
+    def SetRelAlarm(self, syscall, userspace, kernelspace):
+        #TODO fix args
         arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
         arg2 = self.arch_rules.get_syscall_argument(kernelspace, 1)
-        alarm = abb.arguments[0]
+        alarm = kernelspace.arguments["alarm"]
         self.call(kernelspace, "%s.setRelativeTime" % alarm.impl.name,
                            "void", [arg1.name])
         self.call(kernelspace, "%s.setCycleTime" % alarm.impl.name,
@@ -316,23 +303,23 @@ class GenericSystemCalls(BaseCoder):
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(abb)])
+                           [self.task_desc(userspace.calling_task)])
 
-    def AdvanceCounter(self, abb, userspace, kernelspace):
-        counter = abb.arguments[0]
+    def AdvanceCounter(self, syscall, userspace, kernelspace):
+        counter = syscall.arguments[0]
 
         # Increase Counter and check the counter
         kernelspace.add(Statement("%s.do_tick()" % counter.impl.name))
         for alarm in self.system_graph.alarms:
             if alarm.conf.counter == counter:
-                alarm.carried_syscall.function = abb.function
+                alarm.carried_syscall.function = syscall.function
                 check_alarm = self.alarms(self).generate_check_alarm_softcounter(alarm)
                 kernelspace.add(Statement(check_alarm))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(abb)])
+                           [self.task_desc(userspace.calling_task)])
 
     def GetAlarm(self, abb, userspace, kernelspace):
         alarm = abb.arguments[0]
@@ -347,7 +334,7 @@ class GenericSystemCalls(BaseCoder):
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(abb)])
+                           [self.task_desc(userspace.calling_task)])
 
         # Read out the result of the system call
         post = abb.impl.post_hook
@@ -366,7 +353,7 @@ class GenericSystemCalls(BaseCoder):
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(abb)])
+                           [self.task_desc(userspace.calling_task)])
 
     def GetResource(self, abb, userspace, kernelspace):
 
@@ -375,13 +362,13 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace,
                            "scheduler_["+str(task.cpu_id)+"].GetResource_impl",
                            "void",
-                           [self.get_calling_task_desc(abb),
+                           [self.task_desc(userspace.calling_task),
                             str(next_prio)])
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
-                           [self.get_calling_task_desc(abb)])
+                           [self.task_desc(userspace.calling_task)])
 
     def ReleaseResource(self, abb, userspace, kernelspace):
 
@@ -392,7 +379,7 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace,
                            "scheduler_["+str(task.cpu_id)+"].ReleaseResource_impl",
                            "void",
-                           [self.get_calling_task_desc(abb),
+                           [self.task_desc(userspace.calling_task),
                             str(next_prio)])
 
 

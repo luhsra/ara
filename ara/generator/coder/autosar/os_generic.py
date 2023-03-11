@@ -16,12 +16,15 @@ class GenericOS(BaseCoder):
         abb_name = self.ara_graph.cfg.vp.name[abb]
         fn = self.ara_graph.cfg.get_function(abb)
         fn_name = self.ara_graph.cfg.vp.name[fn]
+        args = self.ara_graph.cfg.vp.arguments[abb]
+        if args == None:
+            args = []
+
+        kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, args)
 
         if hasattr(self.syscall_rules, syscall_name):
             f = getattr(self.syscall_rules, syscall_name)
-            self.call(userspace, "Machine::disable_interrupts")
-            f(abb, userspace, userspace)
-            self.call(userspace, "__OS_enable_irq_after_kernel")
+            f(abb, userspace, kernelspace.system)
         else:
             raise NotImplementedError("Not yet supported %d", syscall_name)
 
