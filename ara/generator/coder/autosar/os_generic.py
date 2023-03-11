@@ -166,9 +166,8 @@ class GenericOS(BaseCoder):
             for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Event)]
         for event in event_list:
-            #event.impl = EventImpl()
-            #event.impl.name = event.conf.name
-            #event.impl.event_mask = event.event_mask
+            event.impl.name = event.name
+            event.impl.event_mask = event.index
 
             iddesc = DataObject("const EventMaskType", "AUTOSAR_EVENT_" + event.name,
                                 static_initializer = str(event.impl.event_mask),
