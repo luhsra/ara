@@ -83,11 +83,11 @@ class PosixArch(GenericArch):
         # Call kickoff, user defined function, and iret system call
         #kickoff, iret = isr.entry_abb, isr.exit_abb
         #self.call(handler, kickoff.generated_function_name())
-        self.call(handler, isr.name)
+        self.call(handler, "AUTOSAR_ISR_"+isr.name)
         #self.call(handler, iret.generated_function_name())
 
 
-        forward = FunctionDeclaration(isr.name, extern_c=True)
+        forward = FunctionDeclaration("AUTOSAR_ISR_"+isr.name, extern_c=True)
         self.generator.source_file.function_manager.add(forward)
 
         self.call(self.generator.syscall_rules.StartOS,

@@ -17,7 +17,6 @@
 		"arch": "posix",
 		"instantiation_style": "static",
 		"interaction_style": "vanilla",
-		"os": "autosar",
-		"generator_output": "autosar.cc"
+		"os": "autosar"
 	}
 }

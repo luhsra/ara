@@ -22,6 +22,7 @@ namespace ara::step {
 
     /*! Create a unique kickoff function call at the beginning of each task. */
     void AutosarGeneratorIR::AddKickoffFunctionCalls(Module &module, LLVMContext &context) {
+        logger.info() << "Execute AddKickoffFunctionCalls" << std::endl;
 
         std::vector<Type *> args;
         FunctionType *kickoff_type = FunctionType::get(Type::getVoidTy(context), args, false);
@@ -66,6 +67,7 @@ namespace ara::step {
 
     /*! Find all systemcalls and rename them via RenameSystemcall(). */
     void AutosarGeneratorIR::RenameSystemcalls(Module &module) {
+        logger.info() << "Execute RenameSystemcalls" << std::endl;
 
         std::set<std::string> SystemCalls = this->graph.get_os().get_syscall_names();
         // only a subset of system calls are renamed

@@ -76,10 +76,10 @@ class GenericSystemCalls(BaseCoder):
         self.StartOS = StartOS
 
         # Generate a ShutdownOS function
-        self._log.debug("generate AUTOSAR_ShutdownOS")
-        ShutdownOS = Function("AUTOSAR_ShutdownOS", "void", ["StatusType"], extern_c = True)
-        self.syscall_rules.ShutdownOS(ShutdownOS)
-        self.generator.source_file.function_manager.add(ShutdownOS)
+        #self._log.debug("generate AUTOSAR_ShutdownOS")
+        #ShutdownOS = Function("AUTOSAR_ShutdownOS", "void", ["StatusType"], extern_c = True)
+        #self.syscall_rules.ShutdownOS(ShutdownOS)
+        #self.generator.source_file.function_manager.add(ShutdownOS)
 
         # Generate the interrupt scheduler
         self._log.debug("generate __OS_ASTSchedule")
@@ -87,6 +87,12 @@ class GenericSystemCalls(BaseCoder):
         ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c = True)
         self.syscall_rules.ASTSchedule(ASTSchedule)
         self.generator.source_file.function_manager.add(ASTSchedule)
+
+        self._log.debug("generate kickoff")
+        kickoff_fn = Function("AUTOSAR_kickoff", "void",[], extern_c = True)
+        kickoff_fn.attributes.append("inlinehint")
+        self.arch_rules.kickoff(None, kickoff_fn)
+        self.generator.source_file.function_manager.add(kickoff_fn)
 
         bbs = self.ara_graph.bbs.vertices() # need local ref here
 
@@ -180,13 +186,13 @@ class GenericSystemCalls(BaseCoder):
         self.call(block, "syscall", "void", [dispatch_func.function_name])
         self.call(block, "Machine::unreachable")
 
-    def ShutdownOS(self, block):
-        block.unused_parameter(0)
-
-        self.call(block, "CALL_HOOK", "void", ["ShutdownHook", block.arguments_names()[0]])
-
-        block.add(Statement('ShutdownMachine()'))
-        self.call(block, "Machine::unreachable")
+    #def ShutdownOS(self, block):
+    #    block.unused_parameter(0)
+#
+    #    self.call(block, "CALL_HOOK", "void", ["ShutdownHook", block.arguments_names()[0]])
+#
+    #    block.add(Statement('ShutdownMachine()'))
+    #    self.call(block, "Machine::unreachable")
 
 
     def InitialSyscall(self, kernelspace):
@@ -200,13 +206,13 @@ class GenericSystemCalls(BaseCoder):
                                "void", [])
 
 
-    def kickoff(self, syscall, userspace, kernelspace):
-        userspace.attributes.append("inlinehint")
-        if not syscall.subtask.conf.is_isr:
-            self.arch_rules.kickoff(syscall, userspace)
-
-    def iret(self, syscall, userspace, kernelspace):
-        pass
+    #def kickoff(self, syscall, userspace, kernelspace):
+    #    userspace.attributes.append("inlinehint")
+    #    if not syscall.subtask.conf.is_isr:
+    #        self.arch_rules.kickoff(syscall, userspace)
+    #
+    #def iret(self, syscall, userspace, kernelspace):
+    #    pass
 
     def TerminateTask(self, syscall, userspace, kernelspace):
         self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].TerminateTask_impl",
