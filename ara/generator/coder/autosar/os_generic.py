@@ -28,6 +28,13 @@ class GenericOS(BaseCoder):
         else:
             raise NotImplementedError("Not yet supported %d", syscall_name)
 
+        # TODO Fill up the hooks
+        #self.system_enter_hook(abb, abb.impl.pre_hook)
+        #self.system_leave_hook(abb, abb.impl.post_hook)
+
+        if self.syscall_rules.AUTOSAR_SYSCALLS["AUTOSAR_"+syscall_name][0] != 'void':
+            userspace.return_statement("E_OK")
+
     def generate_data_objects(self):
         """In this function, we generate all system objects which are used by OS implementation."""
         self.generate_dataobjects_task_descriptors()
