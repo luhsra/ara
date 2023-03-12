@@ -136,10 +136,23 @@ class GenericSystemCalls(BaseCoder):
     def get_calling_task(self,abb):
         fn = self.ara_graph.cfg.get_function(abb)
 
+        callgraph_fn = self.ara_graph.cfg.vp.call_graph_link[fn]
+
+        traversed = False
+        while (not traversed):
+            callsites = self.ara_graph.callgraph.get_in_neighbors(callgraph_fn)
+
+            if len(callsites) == 0:
+                traversed = True
+            elif len(callsites) == 1:
+                callgraph_fn = callsites[0]
+            else:
+                assert False == len(callsites), "Unsupported: too many callsites for "+self.ara_graph.cfg.vp.name[fn]
+
         for v in self.ara_graph.instances.vertices():
             inst = self.ara_graph.instances.vp.obj[v]
             if isinstance(inst, Task):
-                if inst.function == fn:
+                if self.ara_graph.cfg.vp.call_graph_link[inst.function] == callgraph_fn:
                     return inst
 
     def get_calling_isr(self,abb):

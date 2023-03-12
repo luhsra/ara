@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: ara.py generator",
+            "name": "autosar_multicore_andreas_a",
             "type": "python",
             "request": "launch",
             "program": "build/ara.py",
@@ -14,6 +14,24 @@
                 "--os=AUTOSAR",
                 "--oilfile=appl/AUTOSAR/multicore/andreas/system.json",
                 "--step-settings=settings/autosar_generator.json",
+                "--generator_output=autosar.cc",
+                "--dump"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "autosar_singlecore_bcc1_task1_b",
+            "type": "python",
+            "request": "launch",
+            "program": "build/ara.py",
+            "args": [
+                "build/appl/AUTOSAR/autosar_singlecore_bcc1_task1_b.ll",
+                "--os=AUTOSAR",
+                "--oilfile=appl/AUTOSAR/singlecore/bcc1/task1/system.json",
+                "--step-settings=settings/autosar_generator.json",
+                "--generator_output=autosar.cc",
+                "--dump"
             ],
             "console": "integratedTerminal",
             "justMyCode": true
