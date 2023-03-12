@@ -151,12 +151,15 @@ class GenericOS(BaseCoder):
                                 extern_c = True)
             self.generator.source_file.data_manager.add(iddesc);
 
-        res_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
+        res_vertex_list = [v for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Resource)]
-        for res in res_list:
+        for res_vertex in res_vertex_list:
+            res = self.ara_graph.instances.vp.obj[res_vertex]
+            neighbors = self.ara_graph.instances.get_all_neighbors(res_vertex)
+            tasks_prio = [self.ara_graph.instances.vp.obj[n].priority for n in neighbors]
+            res.impl.static_priority = max(tasks_prio)+1
             iddesc = DataObject("const ResourceType", "AUTOSAR_RESOURCE_" + res.name,
-                                static_initializer = str(res.conf.static_priority),
+                                static_initializer = str(res.impl.static_priority),
                                 extern_c = True)
             self.generator.source_file.data_manager.add(iddesc);
 

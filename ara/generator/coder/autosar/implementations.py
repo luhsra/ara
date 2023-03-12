@@ -52,6 +52,12 @@ class ISRImpl(BaseImpl):
     def __init__(self, instance):
         super().__init__(instance)
 
+class ResourceImpl(BaseImpl):
+    def __init__(self, instance):
+        super().__init__(instance)
+        self.static_priority = None
+        self.prev_prio = None
+
 
 def add_impl(instance):
     if isinstance(instance, Task):
@@ -68,5 +74,7 @@ def add_impl(instance):
         instance.impl = IRQImpl(instance)
     elif isinstance(instance, ISR):
         instance.impl = ISRImpl(instance)
+    elif isinstance(instance, Resource):
+        instance.impl = ResourceImpl(instance)
     else:
         raise ValueError("Unknown Type:", type(instance))

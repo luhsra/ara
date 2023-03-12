@@ -93,10 +93,10 @@ class TaskListTemplate(CodeTemplate):
         return ""
 
     def scheduler_prio(self, snippet, args):
-        return "8" #TODO
-        #RES_SCHEDULER = self.system_graph.get(Resource, "RES_SCHEDULER")
-        #str(RES_SCHEDULER.conf.static_priority)
-
+        res_sched = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if (self.ara_graph.instances.vp.obj[v].name == "RES_SCHEDULER")]
+        return "8"#str(res_sched[0].impl.static_priority)
 
 
 class SchedulerTemplate(CodeTemplate):

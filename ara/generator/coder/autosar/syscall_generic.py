@@ -375,14 +375,17 @@ class GenericSystemCalls(BaseCoder):
                            [self.task_desc(userspace.calling_task)])
 
     def GetResource(self, abb, userspace, kernelspace):
+        res = kernelspace.arguments().resource.impl
 
-        task = self.get_calling_task(abb)
-        next_prio = abb.definite_after(E.task_level).dynamic_priority
+        if res.static_priority > userspace.calling_task.priority:
+            res.prev_priority = userspace.calling_task.priority
+            userspace.calling_task.priority = res.static_priority
+
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].GetResource_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetResource_impl",
                            "void",
                            [self.task_desc(userspace.calling_task),
-                            str(next_prio)])
+                            str(userspace.calling_task.priority)])
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
@@ -390,17 +393,20 @@ class GenericSystemCalls(BaseCoder):
                            [self.task_desc(userspace.calling_task)])
 
     def ReleaseResource(self, abb, userspace, kernelspace):
+        res = kernelspace.arguments().resource.impl
 
-        task = self.get_calling_task(abb)
-        next_prio = abb.definite_after(E.task_level).dynamic_priority
-        if not abb.subtask.conf.preemptable:
-            next_prio = self.system_graph.get(Resource, "RES_SCHEDULER").conf.static_priority
+        if res.static_priority == userspace.calling_task.priority:
+            userspace.calling_task.priority = res.prev_priority
+            res.prev_priority = None
+
+        # not needed?
+        #if not abb.subtask.conf.preemptable:
+        #    next_prio = self.system_graph.get(Resource, "RES_SCHEDULER").conf.static_priority
         self.call(kernelspace,
-                           "scheduler_["+str(task.cpu_id)+"].ReleaseResource_impl",
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ReleaseResource_impl",
                            "void",
                            [self.task_desc(userspace.calling_task),
-                            str(next_prio)])
-
+                            str(userspace.calling_task.priority)])
 
     # Interrupt Handling
     def disable_irq(self, block, abb):
