@@ -771,6 +771,7 @@ def convert_to_json(cpus):
             if isinstance(alarm.action_params, Alarm.SETEVENT):
                 j_alarms[alarm_name]["action"] = {
                     "action": "setevent",
+                    "task": alarm.action_params.TASK.name,
                     "event": alarm.action_params.EVENT.name
                 }
 
