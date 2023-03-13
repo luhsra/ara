@@ -74,16 +74,22 @@ class GenericOS(BaseCoder):
     def generate_counter(self, ctr):
         return DataObject("UnencodedCounter",
                              "OS_%s_counter" % (ctr.name),
-                             "(%d, %d, %d)" % (ctr.conf.maxallowedvalue,
-                                               ctr.conf.ticksperbase,
-                                               ctr.conf.mincycle))
+                             "(%d, %d, %d)" % (ctr.maxallowedvalue,
+                                               ctr.ticksperbase,
+                                               ctr.mincycle))
     def generate_alarm(self, alarm, counter, task):
-        return DataObject("UnencodedAlarm<&%s>" % counter.impl.name,
-                           "OS_%s_alarm" %( alarm.conf.name),
-                           "(%s, %s, %d, %d, %d)" % (task,
-                                                     str(alarm.conf.armed).lower(),
-                                                     alarm.conf.reltime,
-                                                     alarm.conf.cycletime,
+        if alarm.autostart:
+            alarm.impl.armed = True
+        else:
+            alarm.impl.armed = False
+        return DataObject("UnencodedAlarm",
+                           "OS_%s_alarm" %( alarm.name),
+                           "(&%s, %s, %s, %d, %d, %d)" % (
+                                                     counter.impl.name,
+                                                     task,
+                                                     str(alarm.impl.armed).lower(),
+                                                     alarm.alarmtime, # TODO right time?
+                                                     alarm.cycletime,
                                                      alarm.impl.alarm_id,
                            ))
 
@@ -96,7 +102,7 @@ class GenericOS(BaseCoder):
                 if isinstance(self.ara_graph.instances.vp.obj[v], Counter)]
 
         for ctr in ctr_list:
-            assert ctr.conf.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
+            assert ctr.maxallowedvalue < 2**16, "At the moment the maxallowedvalue has to fit into a 16 Bit Value"
 
             impl = self.generate_counter(ctr)
 
@@ -107,19 +113,24 @@ class GenericOS(BaseCoder):
 
         alarm_id = 1
 
-        alarm_list = [self.ara_graph.instances.vp.obj[v]
-            for v in self.ara_graph.instances.vertices()
-                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
-        for alarm in alarm_list:
-            subtask = alarm.conf.subtask
-            task = "os::tasks::" + subtask.impl.task_descriptor.name
+        alarm_vertex_list = [v for v in self.ara_graph.instances.vertices()
+            if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
+        for alarm_vertex in alarm_vertex_list:
+            alarm = self.ara_graph.instances.vp.obj[alarm_vertex]
+            neighbors = alarm_vertex.all_neighbors()
 
-            # TODO is this needed
-            #alarm.impl = AlarmImpl()
-            #alarm.impl.alarm_id = alarm_id
+            for n in neighbors:
+                if isinstance(self.ara_graph.instances.vp.obj[n], Task):
+                    alarm.impl.task = self.ara_graph.instances.vp.obj[n]
+                if isinstance(self.ara_graph.instances.vp.obj[n], Counter):
+                    alarm.impl.counter = self.ara_graph.instances.vp.obj[n]
+
+            task = "os::tasks::" + alarm.impl.task.impl.task_descriptor.name
+
+            alarm.impl.alarm_id = alarm_id
             alarm_id += 1
 
-            impl = self.generate_alarm(alarm, alarm.conf.counter, task)
+            impl = self.generate_alarm(alarm, alarm.impl.counter, task)
             if impl:
                 # Add and save alarm implementation
                 self.generator.source_file.data_manager.add(impl, namespace = ("os",))
@@ -198,15 +209,10 @@ class GenericOS(BaseCoder):
             for i in range(0, len(args)):
                 hook_function.unused_parameter(i);
 
-            #TODO is this needed
-            # In the pre idle hook, we place the kickoff method of the
-            # idle subtask
+            # In the pre idle hook, we place the kickoff method
 
-            #if hook == "PreIdleHook":
-            #    self.call(hook_function,
-            #                       self.system_graph.idle_subtask.entry_abb\
-            #                       .generated_function_name(),
-            #                       "void", [])
+            if hook == "PreIdleHook":
+                self.call(hook_function, "AUTOSAR_kickoff", "void", [])
 
 
             user_defined = "__OS_HOOK_DEFINED_" + hook

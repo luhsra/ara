@@ -4,7 +4,7 @@ from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
 
 from ..base import BaseCoder
 
-from ara.os.autosar import Resource, Task, Alarm, Counter, ISR
+from ara.os.autosar import Resource, Task, Alarm, Counter, ISR, Event
 #from generator.transform.GenerateAssertions import AssertionType
 #from generator.analysis.Function import Function as GraphFunction
 #from generator.analysis.Resource import Resource
@@ -168,6 +168,8 @@ class GenericSystemCalls(BaseCoder):
                 for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
 
+        # TODO complete ISRS, cpu specific startOS
+
         for task in task_list:
             # Use Reset the stack pointer for all all tasks
             self.call(block, "Dispatcher::Prepare",
@@ -179,6 +181,10 @@ class GenericSystemCalls(BaseCoder):
 
             if task.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
                 highestTask = task
+
+        # TODO only when needed
+        self.generator.source_file.include("itimer.h")
+        self.call(block, "ITimer::init")
 
         # Call the StartupHook
         self.call(block, "CALL_HOOK", "void", ["StartupHook"])
@@ -474,7 +480,7 @@ class AlarmTemplate(CodeTemplate):
             #    if all(self.alarm_filter(x) is False for x in counter.alarms):
             #        continue
             ret += self.expand_snippet("increase_counter",
-                                       name = counter.name)
+                                       name = counter.impl.name)
         return ret
 
 
@@ -496,14 +502,12 @@ class AlarmTemplate(CodeTemplate):
         return ret
 
     def generate_check_alarm(self, alarm):
-        callback_name = "OSEKOS_ALARMCB_%s" % (alarm.name)
-        has_callback  = (self.system_graph.find(GraphFunction, callback_name) != None)
-        args = {"alarm": alarm.impl.name}
-        # Add a label to identify this basic block
         ret = ""
-        ret += "    abb_%(label)s: (void) &&abb_%(label)s;\n" %{
-            "label": alarm.carried_checkalarm.generated_function_name()
-        }
+        callback_name = "AUTOSAR_ALARMCB_%s" % (alarm.name)
+        has_callback = self.ara_graph.cfg.contains_function_by_name(callback_name)
+
+        args = {"alarm": alarm.impl.name}
+
         ret += self.expand_snippet("if_alarm", **args) + "\n"
         # This alarm has an callback
         if has_callback:
@@ -512,38 +516,51 @@ class AlarmTemplate(CodeTemplate):
             self.generator.source_file.function_manager.add(decl)
             ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
 
-        carried = alarm.carried_syscall
-        # SetEvent needs two arguments
-        if alarm.conf.event:
-            arglist = "(0, 0)"
-        else:
-            arglist = "(0)"
-        # Add a label to identify this basic block
-        ret += "        abb_%(label)s: (void) &&abb_%(label)s;\n" %{
-            "label": carried.generated_function_name()
-        }
-        ret += "        " + carried.generated_function_name() + arglist + ";\n"
+        alarm_vertex = self.ara_graph.instances.get_node(alarm)
+        neighbors = self.ara_graph.instances.get_all_neighbors(alarm_vertex)
+
+        # check for syscall action
+        for n in neighbors:
+            inst = self.ara_graph.instances.vp.obj[n]
+
+            if isinstance(inst, Task):
+                ret += "scheduler_["+str(inst.cpu_id)+"].ActivateTask_impl(" + \
+                    self.rules.task_desc(inst) + \
+                    ", /* from_interrupt */ true);\n"
+
+            if isinstance(inst, Event):
+                ret += "scheduler_["+str(inst.cpu_id)+"].SetEvent_impl(" + \
+                   self.rules.task_desc(inst.impl.task) + \
+                    ", " + \
+                    inst.inst.alarm_id + ");\n"
+
+        #carried = alarm.carried_syscall
+        ## SetEvent needs two arguments
+        #if alarm.conf.event:
+        #    arglist = "(0, 0)"
+        #else:
+        #    arglist = "(0)"
+        ## Add a label to identify this basic block
+        #ret += "        abb_%(label)s: (void) &&abb_%(label)s;\n" %{
+        #    "label": carried.generated_function_name()
+        #}
+        #ret += "        " + carried.generated_function_name() + arglist + ";\n"
         ret += self.expand_snippet("endif_alarm", **args) + "\n"
 
         return ret
 
     def generate_check_alarms(self, snippet, args):
-        return []
-        # TODO support AlarmHandlerSubtask
-        if not self.system_graph.AlarmHandlerSubtask:
-            return []
+        # TODO only when needed
         ret = []
 
-        # The AlarmHandlerSubtask carries a _sorted_ list of alarms
-        kickoff    = self.system_graph.AlarmHandlerSubtask.entry_abb
-        iret    = self.system_graph.AlarmHandlerSubtask.exit_abb
+        alarm_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
 
-        ret += ["    " + kickoff.generated_function_name() + "();\n"]
-        for alarm in self.system_graph.alarms:
-            if alarm.conf.counter.conf.softcounter:
-                continue
+        for alarm in alarm_list:
+            # TODO soft counters
+            #if alarm.conf.counter.conf.softcounter:
+            #    continue
             ret += [self.generate_check_alarm(alarm)]
-
-        ret += ["    " + iret.generated_function_name() + "();\n"]
 
         return ret

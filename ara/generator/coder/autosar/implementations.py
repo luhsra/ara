@@ -27,10 +27,6 @@ class SpinlockImpl(BaseImpl):
     def __init__(self, instance):
         super().__init__(instance)
 
-class TaskGroupImpl(BaseImpl):
-    def __init__(self, instance):
-        super().__init__(instance)
-
 class EventImpl(BaseImpl):
     def __init__(self, instance):
         super().__init__(instance)
@@ -43,15 +39,9 @@ class AlarmImpl(BaseImpl):
         self.alarm_id   = None
         self.name = None
         self.alarm_desc = None
-
-class IRQImpl(BaseImpl):
-    def __init__(self, instance):
-        super().__init__(instance)
-
-class ISRImpl(BaseImpl):
-    def __init__(self, instance):
-        super().__init__(instance)
-
+        self.counter = None
+        self.task = None
+        self.armed = None
 class ResourceImpl(BaseImpl):
     def __init__(self, instance):
         super().__init__(instance)
@@ -65,16 +55,18 @@ def add_impl(instance):
     elif isinstance(instance, Spinlock):
         instance.impl = SpinlockImpl(instance)
     elif isinstance(instance, TaskGroup):
-        instance.impl = TaskGroupImpl(instance)
+        instance.impl = None
     elif isinstance(instance, Event):
         instance.impl = EventImpl(instance)
     elif isinstance(instance, Alarm):
         instance.impl = AlarmImpl(instance)
     elif isinstance(instance, IRQ):
-        instance.impl = IRQImpl(instance)
+        instance.impl = None
     elif isinstance(instance, ISR):
-        instance.impl = ISRImpl(instance)
+        instance.impl = None
     elif isinstance(instance, Resource):
         instance.impl = ResourceImpl(instance)
+    elif isinstance(instance, Counter):
+        instance.impl = None
     else:
         raise ValueError("Unknown Type:", type(instance))
