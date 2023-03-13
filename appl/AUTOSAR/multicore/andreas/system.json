@@ -91,7 +91,8 @@
       "isrs": {
         "ISR1": {
           "category": 2,
-          "priority": 10
+          "priority": 10,
+          "device": 37
         }
       }
     }

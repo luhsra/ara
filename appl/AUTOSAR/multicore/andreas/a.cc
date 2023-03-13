@@ -69,7 +69,7 @@ TASK(H4) {
 
 TASK(H5) {
     ActivateTask(H2);
-    Machine::trigger_interrupt_from_user(SIGUSR2, 4);
+    Machine::trigger_interrupt_from_user(37, 4);
     TerminateTask();
 }
 
