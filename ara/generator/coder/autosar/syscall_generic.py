@@ -133,7 +133,7 @@ class GenericSystemCalls(BaseCoder):
         task_desc = subtask.impl.task_descriptor.name
         return task_desc
 
-    def get_calling_task(self,abb):
+    def get_calling_inst(self, abb):
         fn = self.ara_graph.cfg.get_function(abb)
 
         callgraph_fn = self.ara_graph.cfg.vp.call_graph_link[fn]
@@ -147,25 +147,17 @@ class GenericSystemCalls(BaseCoder):
             elif len(callsites) == 1:
                 callgraph_fn = callsites[0]
             else:
-                assert False == len(callsites), "Unsupported: too many callsites for "+self.ara_graph.cfg.vp.name[fn]
+                self._log.warning("too many callsites for %s, using first one", self.ara_graph.cfg.vp.name[fn])
+                callgraph_fn = callsites[0]
 
         for v in self.ara_graph.instances.vertices():
             inst = self.ara_graph.instances.vp.obj[v]
-            if isinstance(inst, Task):
+            if isinstance(inst, Task) or isinstance(inst, ISR):
                 if self.ara_graph.cfg.vp.call_graph_link[inst.function] == callgraph_fn:
                     return inst
 
-    def get_calling_isr(self,abb):
-        fn = self.ara_graph.cfg.get_function(abb)
-
-        for v in self.ara_graph.instances.vertices():
-            inst = self.ara_graph.instances.vp.obj[v]
-            if isinstance(inst, ISR):
-                if inst.function == fn:
-                    return inst
-
     def get_calling_task_desc(self, abb):
-        task = self.get_calling_task(abb)
+        task = self.get_calling_inst(abb)
         return self.task_desc(task)
 
 

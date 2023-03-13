@@ -106,18 +106,15 @@ class GenericArch(BaseCoder):
            disabled.
         """
 
-        task = self.syscall_rules.get_calling_task(abb)
+        call_inst = self.syscall_rules.get_calling_inst(abb)
 
-        from_interrupt = False
-        if task == None:
-            task = self.syscall_rules.get_calling_isr(abb)
-            from_interrupt = True
+        if isinstance(call_inst, ISR):
+            userspace.is_isr = True
 
-        userspace.add(Comment("Callsite: %s" % task.name))
-        userspace.calling_task = task
-        userspace.is_isr = from_interrupt
+        userspace.add(Comment("Callsite: %s" % call_inst.name))
+        userspace.calling_task = call_inst
 
-        if from_interrupt:
+        if userspace.is_isr:
             userspace.add(Comment("Called from ISR, no disable interrupts required!"))
         else:
             self.disable_irq(userspace)
@@ -150,7 +147,7 @@ class GenericArch(BaseCoder):
             userspace.add(system)
             userspace.add(post_hook)
 
-        if from_interrupt:
+        if userspace.is_isr:
             userspace.add(Comment("Called from ISR, no enable interrupts required!"))
         elif syscall_name in ["TerminateTask","ChainTask"]:
             userspace.add(Comment("Terminating Task: return with closed interrupts"))
