@@ -721,9 +721,11 @@ class AUTOSAR(OSBase):
         state.cpus[cpu_id].irq_on = True
         return state
 
-    @syscall
-    def AUTOSAR_GetAlarm(cfg, abb, state):
-        pass
+    @syscall(categories={SyscallCategory.comm},
+             signature=(Arg("alarm", ty=Alarm, hint=SigType.instance),
+                           Arg("tick", ty=Alarm, hint=SigType.symbol)))
+    def AUTOSAR_GetAlarm(cfg, state, cpu_id, args, va):
+        return state
 
     @staticmethod
     def get_cpus_of_spinlock(spinlock, instances):
