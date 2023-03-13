@@ -518,21 +518,10 @@ class AlarmTemplate(CodeTemplate):
 
             if isinstance(inst, Event):
                 ret += "scheduler_["+str(inst.cpu_id)+"].SetEvent_impl(" + \
-                   self.rules.task_desc(inst.impl.task) + \
+                   self.rules.task_desc(alarm.impl.task) + \
                     ", " + \
-                    inst.inst.alarm_id + ");\n"
+                    str(inst.impl.event_mask) + ");\n"
 
-        #carried = alarm.carried_syscall
-        ## SetEvent needs two arguments
-        #if alarm.conf.event:
-        #    arglist = "(0, 0)"
-        #else:
-        #    arglist = "(0)"
-        ## Add a label to identify this basic block
-        #ret += "        abb_%(label)s: (void) &&abb_%(label)s;\n" %{
-        #    "label": carried.generated_function_name()
-        #}
-        #ret += "        " + carried.generated_function_name() + arglist + ";\n"
         ret += self.expand_snippet("endif_alarm", **args) + "\n"
 
         return ret

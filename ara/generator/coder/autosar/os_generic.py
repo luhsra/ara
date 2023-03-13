@@ -124,6 +124,8 @@ class GenericOS(BaseCoder):
                     alarm.impl.task = self.ara_graph.instances.vp.obj[n]
                 if isinstance(self.ara_graph.instances.vp.obj[n], Counter):
                     alarm.impl.counter = self.ara_graph.instances.vp.obj[n]
+                if isinstance(self.ara_graph.instances.vp.obj[n], Event):
+                    alarm.impl.event = self.ara_graph.instances.vp.obj[n]
 
             task = "os::tasks::" + alarm.impl.task.impl.task_descriptor.name
 
