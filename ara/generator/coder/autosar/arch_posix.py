@@ -119,7 +119,3 @@ class PosixArch(GenericArch):
     def generate_kernelspace(self, userspace, abb, arguments):
         # Use the inline kernelspace variant
         return self.generate_kernelspace__inline(userspace, abb, arguments)
-
-    def get_syscall_argument(self, block, i):
-        name, typename = block.arguments()[i]
-        return VariableDefinition(typename, name)

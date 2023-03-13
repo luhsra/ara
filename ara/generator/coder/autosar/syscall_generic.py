@@ -307,14 +307,14 @@ class GenericSystemCalls(BaseCoder):
                            ])
 
     def SetRelAlarm(self, syscall, userspace, kernelspace):
-        #TODO fix args
-        arg1 = self.arch_rules.get_syscall_argument(kernelspace, 0)
-        arg2 = self.arch_rules.get_syscall_argument(kernelspace, 1)
-        alarm = kernelspace.arguments["alarm"]
+        alarm = kernelspace.arguments().alarm
+        #cycle = kernelspace.arguments().cycle
+        #increment = kernelspace.arguments().increment
+
         self.call(kernelspace, "%s.setRelativeTime" % alarm.impl.name,
-                           "void", [arg1.name])
+                           "void", ["arg1"])
         self.call(kernelspace, "%s.setCycleTime" % alarm.impl.name,
-                           "void", [arg2.name])
+                           "void", ["arg2"])
         self.call(kernelspace, "%s.setArmed" % alarm.impl.name,
                            "void", ["true"])
         kernelspace.add(Comment("Dispatch directly back to Userland"))
@@ -339,32 +339,20 @@ class GenericSystemCalls(BaseCoder):
                            [self.task_desc(userspace.calling_task)])
 
     def GetAlarm(self, abb, userspace, kernelspace):
-        alarm = abb.arguments[0]
+        alarm = kernelspace.arguments().alarm
 
-        return_variable = self.os_rules.get_syscall_return_variable("TickType")
-
-        # Fill return variable
-        kernelspace.add(Statement("%s.set(%s.getRemainingTicks())"%(
-            return_variable.name,
-            alarm.impl.name)))
+        kernelspace.add(Statement("*arg1 = %s.getRemainingTicks()" %(
+            alarm.impl.name
+        )))
 
         kernelspace.add(Comment("Dispatch directly back to Userland"))
         self.call(kernelspace, "Dispatcher::ResumeToTask",
                            "void",
                            [self.task_desc(userspace.calling_task)])
 
-        # Read out the result of the system call
-        post = abb.impl.post_hook
-        post.add(Statement("%s.check()" %(
-            return_variable.name
-        )))
-        post.add(Statement("*%s = %s.get()" %(
-            userspace.arguments()[1][0], # Name of the first argument
-            return_variable.name
-        )))
-
     def CancelAlarm(self, abb, userspace, kernelspace):
-        alarm = abb.arguments[0]
+        alarm = kernelspace.arguments().alarm
+
         self.call(kernelspace, "%s.setArmed" % alarm.impl.name,
                            "void", ["false"])
         kernelspace.add(Comment("Dispatch directly back to Userland"))
