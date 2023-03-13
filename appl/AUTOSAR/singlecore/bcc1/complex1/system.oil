@@ -30,10 +30,11 @@ CPU TestSystem {
         AUTOSTART = FALSE;
     };
 
-	ISR ISR1 {
-		CATEGORY = 2;
-		DEVICE = 5;
-	};
+    ISR ISR1 {
+        CATEGORY = 2;
+        DEVICE = 5;
+        PRIORITY = 1337;
+    };
 
 
     ALARM A1 {

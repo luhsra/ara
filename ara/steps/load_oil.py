@@ -303,6 +303,7 @@ class LoadOIL(Step):
                         function=i_function,
                         priority=isr["priority"],
                         category=isr["category"],
+                        device=isr["device"],
                         artificial=False
                 )
                 instances.vp.is_control[i] = True

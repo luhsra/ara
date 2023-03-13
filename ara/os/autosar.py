@@ -187,6 +187,7 @@ class AlarmContext:
 class ISR(AUTOSARInstance, ControlInstance):
     priority: int
     category: int
+    device: int
 
     def __hash__(self):
         return AUTOSARInstance.__hash__(self)
