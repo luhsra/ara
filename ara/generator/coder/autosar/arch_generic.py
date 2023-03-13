@@ -110,6 +110,8 @@ class GenericArch(BaseCoder):
 
         if isinstance(call_inst, ISR):
             userspace.is_isr = True
+        else:
+            userspace.is_isr = False
 
         userspace.add(Comment("Callsite: %s" % call_inst.name))
         userspace.calling_task = call_inst
