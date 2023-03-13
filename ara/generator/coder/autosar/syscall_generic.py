@@ -396,24 +396,24 @@ class GenericSystemCalls(BaseCoder):
 
     # Interrupt Handling
     def disable_irq(self, block, abb):
-        before = abb.get_incoming_nodes(E.task_level)
-        disabled = [x.interrupt_block_all or x.interrupt_block_os
-                    for x in before]
-        # If the interrupts were blocked before do not a thing
-        if any(disabled):
-            assert all(disabled)
-            return
+        #before = abb.get_incoming_nodes(E.task_level)
+        #disabled = [x.interrupt_block_all or x.interrupt_block_os
+        #            for x in before]
+        ## If the interrupts were blocked before do not a thing
+        #if any(disabled):
+        #    assert all(disabled)
+        #    return
 
         self.arch_rules.disable_irq(block)
 
     def enable_irq(self, block, abb):
-        before = abb.get_outgoing_nodes(E.task_level)
-        disabled = [x.interrupt_block_all or x.interrupt_block_os
-                    for x in before]
-        # If the interrupts were unblocked before do not a thing
-        if any(disabled):
-            assert all(disabled)
-            return
+        #before = abb.get_outgoing_nodes(E.task_level)
+        #disabled = [x.interrupt_block_all or x.interrupt_block_os
+        #            for x in before]
+        ## If the interrupts were unblocked before do not a thing
+        #if any(disabled):
+        #    assert all(disabled)
+        #    return
 
         self.arch_rules.enable_irq_after_kernel(block)
 
