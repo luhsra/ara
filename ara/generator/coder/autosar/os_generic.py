@@ -18,7 +18,9 @@ class GenericOS(BaseCoder):
         fn_name = self.ara_graph.cfg.vp.name[fn]
         args = self.ara_graph.cfg.vp.arguments[abb]
         if args == None:
-            args = []
+            self._log.info("systemcall %s in %s never called", syscall_name, abb_name)
+            userspace.add(Comment("never called"))
+            return
 
         kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, args)
 
