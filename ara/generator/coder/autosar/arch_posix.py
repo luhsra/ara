@@ -7,7 +7,6 @@ from ara.graph import ABBType
 
 class PosixArch(GenericArch):
 
-    isr_device = 37
     def __init__(self):
         super(PosixArch, self).__init__()
 
@@ -91,14 +90,12 @@ class PosixArch(GenericArch):
         self.generator.source_file.function_manager.add(forward)
 
         self.call(self.generator.syscall_rules.StartOS,
-                           "arch::irq.enable", "void", [str(PosixArch.isr_device)],
+                           "arch::irq.enable", "void", [str(isr.device)],
                            prepend = True)
         self.call(self.generator.syscall_rules.StartOS,
-                           "arch::irq.set_handler", "void", [str(PosixArch.isr_device),
+                           "arch::irq.set_handler", "void", [str(isr.device),
                                                              handler.function_name],
                            prepend = True)
-
-        PosixArch.isr_device += 1
 
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("machine.h")
