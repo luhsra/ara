@@ -1,7 +1,7 @@
 [external "pyllco"]
 	path = subprojects/pyllco
-	url = https://scm.sra.uni-hannover.de/published/pyllco.git
-	branch = master
+	url = https://github.com/luhsra/pyllco.git
+	branch = main
 	vcs = git
 
 [external "svf"]
