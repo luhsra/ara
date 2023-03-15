@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # ara code that is used project wide in graph and steps
 # technically it is packaged as a set of headers and a static library
 

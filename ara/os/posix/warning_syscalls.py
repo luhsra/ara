@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """This module contains syscall implementations that only throw a warning."""
 
 from ara.graph import SyscallCategory

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Checks the interoperability of Python and C++ passes."""
 if __name__ == '__main__':
     __package__ = 'test.native_step_test'

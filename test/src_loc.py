@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import json
 import os.path
 

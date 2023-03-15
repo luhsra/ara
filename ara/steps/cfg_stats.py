@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2020 Manuel Breiden
+# SPDX-FileCopyrightText: 2021 Jan Neugebauer
+# SPDX-FileCopyrightText: 2022 Tino Lorenz
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Container for CFGStats."""
 from ara.graph import ABBType, CFGView, CFType, Graph, SyscallCategory, NodeLevel
 from .step import Step

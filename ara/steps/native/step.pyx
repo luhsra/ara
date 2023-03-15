@@ -1,3 +1,15 @@
+# SPDX-FileCopyrightText: 2019 Benedikt Steinmeier
+# SPDX-FileCopyrightText: 2019 Manuel Breiden
+# SPDX-FileCopyrightText: 2020 Kenny Albes
+# SPDX-FileCopyrightText: 2020 Manuel Breiden
+# SPDX-FileCopyrightText: 2020 Yannick Loeck
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # cython: language_level=3
 """Common description of both Python and C++ steps. A step is a part of
 ARA, that fulfils one specific task. Therefore, it manipulates the systemgraph

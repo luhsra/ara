@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from .common import TimeRange
 
 from ara.util import get_logger

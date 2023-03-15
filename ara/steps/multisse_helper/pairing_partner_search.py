@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from dataclasses import dataclass
 from typing import List, Set, Tuple
 from itertools import chain, permutations, product

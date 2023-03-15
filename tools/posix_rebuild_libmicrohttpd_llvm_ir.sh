@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 # This script rebuilds the libmicrohttpd LLVM IR
 # Execute this script after modifying the libmicrohttpd project. 

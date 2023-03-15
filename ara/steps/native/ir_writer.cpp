@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2020 Yannick Loeck
+// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2023 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // vim: set noet ts=4 sw=4:
 
 #include "ir_writer.h"

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# SPDX-FileCopyrightText: 2021 Jan Neugebauer
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Note: init_test must be imported first
 from init_test import init_test, fail_if
 from common_json_graphs import json_callgraph

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "arguments.h"
 
 #include "common/llvm_common.h"

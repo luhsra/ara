@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """This module builds the full POSIX OS Model.
 
 Just import the POSIX OS Model via "from ara.os.posix.posix import POSIX"

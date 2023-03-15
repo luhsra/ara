@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2021 Kenny Albes
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from pickletools import pybytes
 import graph_tool.util
 from ara.graph.mix import ARA_ENTRY_POINT

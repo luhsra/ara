@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2021 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Container for CFGStats."""
 from .step import Step
 from .util import open_with_dirs

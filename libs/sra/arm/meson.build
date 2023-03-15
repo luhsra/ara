@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 libsra_objs += custom_target('libsra-output.o',
                              input: 'output.cc',
                              output: 'output.cc.o',

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "step.h"
 #include "step_pyx.h"
 

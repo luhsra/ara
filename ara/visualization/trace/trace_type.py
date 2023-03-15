@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from collections import deque
 from typing import List
 from ara.visualization.util import SUPPORT_FOR_GUI

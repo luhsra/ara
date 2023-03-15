@@ -1,3 +1,13 @@
+// SPDX-FileCopyrightText: 2020 Fredo Nowak
+// SPDX-FileCopyrightText: 2020 Kenny Albes
+// SPDX-FileCopyrightText: 2020 Yannick Loeck
+// SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+// SPDX-FileCopyrightText: 2021 Björn Fiedler <fiedler@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2022 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "graph.h"
 
 #include "common/exceptions.h"

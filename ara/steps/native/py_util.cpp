@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "py_util.h"
 
 namespace ara::step::py_util {

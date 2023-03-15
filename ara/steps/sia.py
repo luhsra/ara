@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Domenik Kuhn
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Container for SIA."""
 
 from ara.graph import ABBType, CFGView, SyscallCategory, CallPath, Callgraph, CFType

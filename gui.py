@@ -1,4 +1,9 @@
-#!/usr/bin/python3 
+#!/usr/bin/python3
+
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Automatic Real-time System Analyzer"""
 import importlib
 import sys

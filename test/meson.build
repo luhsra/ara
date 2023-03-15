@@ -1,3 +1,13 @@
+# SPDX-FileCopyrightText: 2019 Benedikt Steinmeier
+# SPDX-FileCopyrightText: 2020 Manuel Breiden
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Domenik Kuhn
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 if get_option('enable_step_tests')
     test('create-abbs',
         py3_inst,

@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2021 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """This file contains functions to translate common graphs to there JSON equivalent."""
 
 import os.path

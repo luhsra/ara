@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2018 Benedikt Steinmeier
+// SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // vim: set noet ts=4 sw=4:
 
 #include "test.h"

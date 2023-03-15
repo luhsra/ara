@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from PySide6.QtCore import Qt, Slot, Signal
 from PySide6.QtWidgets import QMainWindow, QApplication, QDockWidget, QWidget, QVBoxLayout, QTextEdit, QPushButton, \
     QLineEdit, QLabel

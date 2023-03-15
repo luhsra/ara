@@ -1,5 +1,9 @@
 #!/usr/bin/env python3.6
 
+# SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import logging
 
 from init_test import get_config

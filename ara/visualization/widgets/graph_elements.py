@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import QGraphicsPathItem, QWidget, QVBoxLayout, QGraphicsTextItem

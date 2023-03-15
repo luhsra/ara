@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """This module contains useful functions and classes for all POSIX modules in this package."""
 
 from enum import IntEnum

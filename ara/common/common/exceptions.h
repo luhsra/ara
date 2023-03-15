@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2021 Lukas Berg
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #pragma once
 
 #include <exception>

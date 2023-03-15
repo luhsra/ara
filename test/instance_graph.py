@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from enum import IntEnum
 from init_test import init_test, fail_if_json_not_equal
 from ara.os.os_util import UnknownArgument, DefaultArgument, LikelyArgument

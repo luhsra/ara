@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2021 Kenny Albes
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from ara.steps.instance_graph_stats import MissingInteractions
 from .os_util import UnknownArgument, syscall, Arg, set_next_abb, connect_from_here, connect_instances, add_self_edge, find_instance_node, AutoDotInstance
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState

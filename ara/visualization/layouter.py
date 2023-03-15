@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2020 Fredo Nowak
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import traceback
 
 from PySide6.QtCore import Slot, QObject, Signal

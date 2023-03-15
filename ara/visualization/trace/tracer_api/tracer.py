@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from graph_tool.libgraph_tool_core import Vertex, Edge
 from datetime import datetime
 from dataclasses import dataclass

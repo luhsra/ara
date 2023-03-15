@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2021 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 """This module contains the syscall_set.
 

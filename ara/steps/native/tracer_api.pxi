@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # cython: language_level=3
 # vim: set et ts=4 sw=4:
 

@@ -1,3 +1,11 @@
+# SPDX-FileCopyrightText: 2018 Benedikt Steinmeier
+# SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Björn Fiedler <fiedler@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Manages all steps.
 
 In principal, there are two different concepts:

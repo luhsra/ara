@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from ubuntu:jammy
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Berlin

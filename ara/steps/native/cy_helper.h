@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * Helper function for cython incompabilities. DO NOT USE IN OTHER C++-PARTS!
  */

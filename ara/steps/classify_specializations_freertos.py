@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Container for ClassifySpecializationsFreeRTOS"""
 from ara.graph import Graph
 from .step import Step

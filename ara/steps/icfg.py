@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Container for Syscall."""
 from ara.graph import ABBType, CFType, CFGView
 from .step import Step

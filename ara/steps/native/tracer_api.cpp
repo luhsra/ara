@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2022 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "tracer_api.h"
 

@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2019 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <serial.h>
 #include <stm32f1xx_hal_rcc.h>
 #include <stm32f1xx_ll_gpio.h>

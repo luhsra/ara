@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2021 Kenny Albes
+// SPDX-FileCopyrightText: 2022 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // vim: set noet ts=4 sw=4:
 
 #pragma once

@@ -1,3 +1,10 @@
+# SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from .arch_generic import GenericArch
 from ..elements import (
     CodeTemplate,

@@ -6,6 +6,12 @@
 #define STREAM_OPERATOR(Name) std::ostream& operator<<(std::ostream&, const Name&);
 #define STANDARD_OPERATORS(Name) EQUAL_OPERATOR(Name) NOT_EQUAL_OPERATOR(Name) STREAM_OPERATOR(Name)
 #define MIX 1 /*
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
 # NOTE: This is a special file that can be read from Python and C++.
 # It is used to define common enums between the Python model and C++ model.
 import enum

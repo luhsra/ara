@@ -1,3 +1,15 @@
+<!--
+SPDX-FileCopyrightText: 2019 Gerion Entrup <entrup@sra.uni-hannover.de>
+SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+SPDX-FileCopyrightText: 2020 Yannick Loeck
+SPDX-FileCopyrightText: 2021 Björn Fiedler <fiedler@sra.uni-hannover.de>
+SPDX-FileCopyrightText: 2021 Kenny Albes
+SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+SPDX-FileCopyrightText: 2022 Jan Neugebauer
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 ARA - Automatic Real-time System Analyzer
 =========================================
 

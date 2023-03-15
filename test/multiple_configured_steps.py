@@ -1,4 +1,9 @@
 #!/usr/bin/env python3.6
+
+# SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 Test double execution of steps if the dependencies cannot be solved in a
 way, where each step is executed once.

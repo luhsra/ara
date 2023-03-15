@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2019 Benedikt Steinmeier
+// SPDX-FileCopyrightText: 2020 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #pragma once
 
 #include <assert.h>

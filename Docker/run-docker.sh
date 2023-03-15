@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 export UID=$(id -u)
 export GID=$(id -g)
 # We're entering the container as the same user as the host user. This allows to use stuff located in the home directory such as qemu-system-arm, etc.

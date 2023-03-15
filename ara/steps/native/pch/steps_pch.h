@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef ARA_STEP_PCH_H
 #define ARA_STEP_PCH_H
 

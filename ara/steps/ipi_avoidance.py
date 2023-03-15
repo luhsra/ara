@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Container for IPIAvoidance."""
 from ara.graph import MSTType, single_check
 from .step import Step

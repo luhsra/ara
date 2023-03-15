@@ -1,3 +1,13 @@
+// SPDX-FileCopyrightText: 2019 Benedikt Steinmeier
+// SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+// SPDX-FileCopyrightText: 2021 Björn Fiedler <fiedler@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2021 Christoph Möller
+// SPDX-FileCopyrightText: 2021 Lukas Berg
+// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2022 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "value_analyzer.h"
 
 #include "common/llvm_common.h"

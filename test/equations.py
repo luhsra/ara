@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# SPDX-FileCopyrightText: 2023 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Note: init_test must be imported first
 from init_test import init_test_logging
 from ara.steps.multisse_helper.equations import Equations

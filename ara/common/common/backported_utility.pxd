@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # taken from https://github.com/cython/cython/blob/master/Cython/Includes/libcpp/utility.pxd
 # to avoid dependency on Cython >= 0.29.17 which is not available in
 # Ubuntu 20.04

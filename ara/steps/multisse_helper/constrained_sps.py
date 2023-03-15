@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from collections import defaultdict
 from graph_tool import GraphView
 from graph_tool.search import bfs_search, BFSVisitor, StopSearch

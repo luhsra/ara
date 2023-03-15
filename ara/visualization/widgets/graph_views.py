@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2022 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from abc import abstractmethod
 from PySide6.QtCore import Slot, Qt, QThread, Signal, QObject
 from PySide6.QtGui import QWheelEvent, QPainter

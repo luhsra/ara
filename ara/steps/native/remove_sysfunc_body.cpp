@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+// SPDX-FileCopyrightText: 2022 Jan Neugebauer
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "remove_sysfunc_body.h"
 
 #include <common/llvm_common.h>

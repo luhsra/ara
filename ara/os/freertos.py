@@ -1,3 +1,12 @@
+# SPDX-FileCopyrightText: 2020 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2021 Bastian Fuhlenriede
+# SPDX-FileCopyrightText: 2021 Lukas Berg
+# SPDX-FileCopyrightText: 2022 Björn Fiedler <fiedler@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+# SPDX-FileCopyrightText: 2022 Jan Neugebauer
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from .os_util import syscall, assign_id, Arg, find_return_value, UnknownArgument, set_next_abb, connect_from_here, find_instance_node
 from .os_base import OSBase, ControlInstance, CPUList, CPU, OSState, ExecState
 

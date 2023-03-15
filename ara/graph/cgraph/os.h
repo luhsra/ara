@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2021 Jan Neugebauer
+// SPDX-FileCopyrightText: 2022 Gerion Entrup <entrup@sra.uni-hannover.de>
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /**
  * This is a very lightweight representation of the operating system model.
  */
