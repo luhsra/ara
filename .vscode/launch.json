@@ -5,14 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "autosar_multicore_andreas_a",
+            "name": "autosar_multicore_andreas_ipi_a",
             "type": "python",
             "request": "launch",
             "program": "build/ara.py",
             "args": [
-                "build/appl/AUTOSAR/autosar_multicore_andreas_a.ll",
+                "build/appl/AUTOSAR/autosar_multicore_andreas_ipi_a.ll",
                 "--os=AUTOSAR",
-                "--oilfile=appl/AUTOSAR/multicore/andreas/system.json",
+                "--oilfile=appl/AUTOSAR/multicore/andreas/ipi/system.json",
                 "--step-settings=settings/autosar_generator.json",
                 "--generator_output=autosar.cc",
                 "--dump"

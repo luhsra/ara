@@ -41,7 +41,8 @@ struct Scheduler {
 		tlist.remove(t.id);
     }
 
-    forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
+    /*
+	forceinline void ActivateTask_impl(const Task &task, bool from_interrupt=false) {
         SetReady_impl(task);
         Schedule_impl(from_interrupt);
     }
@@ -51,6 +52,7 @@ struct Scheduler {
 		SetReady_impl(to);
         Schedule_impl();
     }
+	*/
 
     forceinline void TerminateTask_impl(const Task &from) {
 		SetSuspended_impl(from);

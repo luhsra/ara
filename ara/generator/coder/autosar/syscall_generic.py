@@ -69,11 +69,6 @@ class GenericSystemCalls(BaseCoder):
         self.call(StartOS, "arch::irq.enable", "void", ["30"], prepend=True)
         self.call(StartOS, "arch::irq.set_handler", "void", ["30", "__OS_ASTSchedule"], prepend=True)
 
-        self._log.debug("generate kickoff")
-        kickoff_fn = Function("AUTOSAR_kickoff", "void",[], extern_c = True)
-        kickoff_fn.attributes.append("inlinehint")
-        self.arch_rules.kickoff(None, kickoff_fn)
-        self.generator.source_file.function_manager.add(kickoff_fn)
 
         bbs = self.ara_graph.bbs.vertices() # need local ref here
 
@@ -148,7 +143,6 @@ class GenericSystemCalls(BaseCoder):
 
     def StartOS(self, block):
         block.unused_parameter(0)
-        highestTask = None
 
         block.add(Statement("debug_core << __FUNCTION__ << endl"))
 
@@ -162,8 +156,6 @@ class GenericSystemCalls(BaseCoder):
             # Use Reset the stack pointer for all all tasks
             self.call(block, "Dispatcher::Prepare",
                       "void", [self.task_desc(task)])
-            if task.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
-                highestTask = task
 
         for task in task_list:
             if task.autostart:
@@ -212,18 +204,26 @@ class GenericSystemCalls(BaseCoder):
         else:
             from_interrupt = "false"
 
-        self.call(kernelspace,
-                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ActivateTask_impl",
-                           "void",
-                            [self.task_desc(kernelspace.arguments().task),
-                            "/* from_interrupt */ %s" % from_interrupt])
+        curr_cpu = userspace.calling_task.cpu_id
+        target_cpu = kernelspace.arguments().task.cpu_id
+
+        self.call(kernelspace, "scheduler_[%d].SetReady_impl"%target_cpu,
+                "void", [self.task_desc(kernelspace.arguments().task)])
+
+        if curr_cpu != target_cpu:
+            self.call(kernelspace, "Machine::trigger_interrupt", "void", ["30", str(target_cpu)])
+        else:
+            self.call(kernelspace,
+                           "scheduler_[%d].Schedule_impl"%curr_cpu,
+                           "void", ["/* from_interrupt */ %s" % from_interrupt])
     def ChainTask(self, syscall, userspace, kernelspace):
-        self.call(kernelspace,
-                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ChainTask_impl",
-                           "void",
-                           [self.task_desc(userspace.calling_task),
-                            self.task_desc(kernelspace.arguments().task)
-                            ])
+
+        task = userspace.calling_task
+
+        self.call(kernelspace, "scheduler_[%d].SetSuspended_impl"%task.cpu_id,
+            "void", [self.task_desc(task)])
+
+        self.ActivateTask(syscall, userspace, kernelspace)
 
 
     def WaitEvent(self, syscall, userspace, kernelspace):

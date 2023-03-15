@@ -27,7 +27,6 @@ namespace arch {
         static bool m_core_dispatched[MAX_CPUS];
 
         static noinline void idleEntry(void) {
-            debug_core << "idleEntry" << endl;
             CALL_HOOK(PreIdleHook);
             while(true){
                 Machine::nop();

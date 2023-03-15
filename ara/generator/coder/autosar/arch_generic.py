@@ -48,8 +48,6 @@ class GenericArch(BaseCoder):
     def asm_marker(self, block, label):
         self.call(block, "asm_label", "void", ['"%s"' % label])
 
-    def kickoff(self, abb, block):
-        self.enable_irq_after_kernel(block)
 
     def enable_irq(self, block):
         self.call(block, "Machine::enable_interrupts")
