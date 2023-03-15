@@ -180,7 +180,7 @@ extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
 
     int* core = (int*)arg;
     while (!cpu_online(*core));
-    debug_core << "StartCore successful" << endl;
+    debug_core << "StartCore successful" <<  endl;
     cores++;
 
     ap_main();
@@ -231,7 +231,6 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
             Machine::trigger_interrupt(SIGTERM, i);
         }
     }
-	while (cores > 0);
 
     CALL_HOOK(ShutdownHook, arg0);
     ShutdownMachine();

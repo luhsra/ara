@@ -36,6 +36,16 @@ void arch_startup()
 int main(int argc, char**argv){
     (void) argc;
     (void) argv;
+
+    /* set affinity to CPU 0*/
+    cpu_set_t cpuset;
+    pthread_t thread;
+    thread = pthread_self();
+    CPU_ZERO(&cpuset);
+    CPU_SET(0, &cpuset);
+    pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
+
+
     arch_startup();
     return 0;
 }

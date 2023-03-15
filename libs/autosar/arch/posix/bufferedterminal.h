@@ -22,6 +22,8 @@ public:
 	virtual void putchar(char character) override {
 		if (idx == 0) {
 			buf[idx++] = '0' + arch::get_cpuid();
+			buf[idx++] = '-';
+			buf[idx++] = '0' + sched_getcpu();
 			buf[idx++] = ':';
 		}
 		buf[idx++] = character;
