@@ -51,14 +51,23 @@ void IRQ::disable(int signum) {
     sigaction(signum, &sig, NULL);
 }
 
-void IRQ::trigger_interrupt(int irq, int cpuid) {
-    /* Send an signal to a specified thread */
-    debug_core << __FUNCTION__ << "(" << irq << ", " << cpuid << ")" << endl;
+volatile bool ipi_cleared[MAX_CPUS];
 
-    if (cpu_online(cpuid))
+void IRQ::trigger_interrupt(int irq, int cpuid, bool sync) {
+    /* Send an signal to a specified thread */
+    debug_core << __FUNCTION__ << "(" << irq << ", " << cpuid << ", " << sync << ")" << endl;
+
+    if (cpu_online(cpuid)) {
+        ipi_cleared[cpuid] = false;
         pthread_kill(get_thread_id(cpuid), irq);
+
+        if (sync) {
+            while(ipi_cleared[cpuid] == false);
+            debug_core << __FUNCTION__ << " completed" << endl;
+        }
+    }
     else
-        debug_core << "cpuid  " << cpuid << " offline" << endl;
+        debug_core << "cpuid " << cpuid << " offline" << endl;
 }
 
 extern void __OS_enable_irq_after_kernel(void);
@@ -119,6 +128,7 @@ void IRQ::guardian(int signum) {
     int cpuid = arch::get_cpuid();
     irq.ast_level[cpuid]++;
         irq.m_gate[signum](signum);
+        ipi_cleared[cpuid] = true;
     irq.ast_level[cpuid]--;
     if (irq.ast_level[cpuid] == 0 && irq.ast_requested[cpuid]) {
         irq.ast_requested[cpuid] = false;

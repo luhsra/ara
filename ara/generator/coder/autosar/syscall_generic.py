@@ -220,7 +220,7 @@ class GenericSystemCalls(BaseCoder):
                 "void", [self.task_desc(kernelspace.arguments().task)])
 
         if curr_cpu != target_cpu:
-            self.call(kernelspace, "Machine::trigger_interrupt", "void", ["30", str(target_cpu)])
+            self.call(kernelspace, "Machine::trigger_interrupt", "void", ["30", str(target_cpu), "true"])
         else:
             self.call(kernelspace,
                            "scheduler_[%d].Schedule_impl"%curr_cpu,

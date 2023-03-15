@@ -21,7 +21,7 @@ public:
     void set_handler(int signum, irq_handler_t gate);
     void enable(int signum);
     void disable(int signum);
-    noinline void trigger_interrupt(int irq, int cpuid);
+    noinline void trigger_interrupt(int irq, int cpuid, bool sync = false);
     noinline void deliver_interrupt(int irq);
 
     void enable_interrupts(sigset_t *mask = nullptr);

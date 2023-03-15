@@ -233,6 +233,7 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
             Machine::trigger_interrupt(SIGTERM, i);
         }
     }
+	while (cores > 0);
 
     CALL_HOOK(ShutdownHook, arg0);
     ShutdownMachine();
