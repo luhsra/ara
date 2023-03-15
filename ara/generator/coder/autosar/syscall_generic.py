@@ -238,6 +238,7 @@ class GenericSystemCalls(BaseCoder):
 
         self.ActivateTask(syscall, userspace, kernelspace)
 
+        self.call(kernelspace, "scheduler_[%d].Schedule_impl"%task.cpu_id)
 
     def WaitEvent(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
