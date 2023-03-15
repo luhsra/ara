@@ -82,17 +82,6 @@ class PosixArch(GenericArch):
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("machine.h")
 
-        ipi = ISR(
-            cfg=0,
-            name="IPI",
-            cpu_id=0,
-            function=0,
-            priority=0,
-            category=0,
-            device=30, # SIGUSR1
-            artificial=True
-        )
-        isrs += [ipi]
         for isr in isrs:
             self.generate_isr(isr)
 

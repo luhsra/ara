@@ -58,17 +58,16 @@ class GenericSystemCalls(BaseCoder):
         self.generator.source_file.function_manager.add(StartOS)
         self.StartOS = StartOS
 
-        self._log.debug("generate AUTOSAR_ISR_IPI")
-        isr_ipi = Function("AUTOSAR_ISR_IPI", "void", [], extern_c = True)
-        self.syscall_rules.Reschedule(isr_ipi)
-        self.generator.source_file.function_manager.add(isr_ipi)
-
         # Generate the interrupt scheduler
         self._log.debug("generate __OS_ASTSchedule")
 
         ASTSchedule = Function("__OS_ASTSchedule", "void", ["int"], extern_c = True)
         self.syscall_rules.ASTSchedule(ASTSchedule)
         self.generator.source_file.function_manager.add(ASTSchedule)
+
+        # IPI
+        self.call(StartOS, "arch::irq.enable", "void", ["30"], prepend=True)
+        self.call(StartOS, "arch::irq.set_handler", "void", ["30", "__OS_ASTSchedule"], prepend=True)
 
         self._log.debug("generate kickoff")
         kickoff_fn = Function("AUTOSAR_kickoff", "void",[], extern_c = True)
@@ -189,17 +188,17 @@ class GenericSystemCalls(BaseCoder):
         self.call(block, "syscall", "void", [dispatch_func.function_name])
         self.call(block, "Machine::unreachable")
 
-    def Reschedule(self, kernelspace):
-        self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Reschedule",
-                            "void", [])
+    def Reschedule(self, kernelspace, from_interrupt):
+        self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Schedule_impl",
+                            "void", [str(from_interrupt).lower()])
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.Reschedule(kernelspace)
+        self.Reschedule(kernelspace, False)
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.Reschedule(kernelspace)
+        self.Reschedule(kernelspace, True)
 
 
     def TerminateTask(self, syscall, userspace, kernelspace):
@@ -362,7 +361,7 @@ class GenericSystemCalls(BaseCoder):
             userspace.calling_task.priority = res.prev_priority
             res.prev_priority = None
 
-        # not needed?
+        # TODO not needed?
         #if not abb.subtask.conf.preemptable:
         #    next_prio = self.system_graph.get(Resource, "RES_SCHEDULER").conf.static_priority
         self.call(kernelspace,
