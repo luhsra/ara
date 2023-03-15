@@ -1,6 +1,6 @@
 from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
                        Statement, Include, Comment, VariableDefinition,
-                       FunctionDeclaration, CodeTemplate, Block)
+                       FunctionDeclaration, CodeTemplate, Block, If)
 
 from ..base import BaseCoder
 
@@ -57,6 +57,11 @@ class GenericSystemCalls(BaseCoder):
         self.syscall_rules.StartOS(StartOS)
         self.generator.source_file.function_manager.add(StartOS)
         self.StartOS = StartOS
+
+        self._log.debug("generate AUTOSAR_ISR_IPI")
+        isr_ipi = Function("AUTOSAR_ISR_IPI", "void", [], extern_c = True)
+        self.syscall_rules.Reschedule(isr_ipi)
+        self.generator.source_file.function_manager.add(isr_ipi)
 
         # Generate the interrupt scheduler
         self._log.debug("generate __OS_ASTSchedule")
@@ -158,13 +163,16 @@ class GenericSystemCalls(BaseCoder):
             # Use Reset the stack pointer for all all tasks
             self.call(block, "Dispatcher::Prepare",
                       "void", [self.task_desc(task)])
-
-            if task.autostart:
-                self.call(block, "scheduler_["+str(task.cpu_id)+"].SetReadyFromSuspended_impl",
-                          "void", [self.task_desc(task)])
-
             if task.autostart and (not highestTask or task.static_priority > highestTask.static_priority):
                 highestTask = task
+
+        for task in task_list:
+            if task.autostart:
+                core_id = "OS_CORE_ID_"+str(task.cpu_id)
+                ifblock = If("AUTOSAR_GetCoreID() == "+core_id)
+                self.call(ifblock, "scheduler_["+core_id+"].SetReadyFromSuspended_impl",
+                          "void", [self.task_desc(task)])
+                block.add(ifblock)
 
         # TODO only when needed
         self.generator.source_file.include("itimer.h")
@@ -181,16 +189,17 @@ class GenericSystemCalls(BaseCoder):
         self.call(block, "syscall", "void", [dispatch_func.function_name])
         self.call(block, "Machine::unreachable")
 
-
-    def InitialSyscall(self, kernelspace):
-        kernelspace.unused_parameter(0)
+    def Reschedule(self, kernelspace):
         self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Reschedule",
                             "void", [])
 
+    def InitialSyscall(self, kernelspace):
+        kernelspace.unused_parameter(0)
+        self.Reschedule(kernelspace)
+
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Reschedule",
-                               "void", [])
+        self.Reschedule(kernelspace)
 
 
     def TerminateTask(self, syscall, userspace, kernelspace):

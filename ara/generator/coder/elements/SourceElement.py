@@ -106,6 +106,13 @@ class Block(SourceElement):
     def __str__(self):
         return "<<" + ", ".join([str(x) for x in self.inner]) + ">>"
 
+class If(Block):
+    def __init__(self, condition):
+        Block.__init__(self)
+        self.condition = condition
+
+    def block_guard(self):
+        return "if(%s)"%self.condition
 
 class ForRange(Block):
     count = 0
