@@ -57,18 +57,6 @@ class PosixArch(GenericArch):
 
         block.add(Statement("sigset_t mask; sigfillset(&mask)"))
 
-        # TODO is this needed ?
-        #for isr in self.system_graph.isrs:
-        #    if has_scheduler and isr and isr.task.does_promise("serialized"):
-        #        device = isr.handler.conf.DEVICE
-        #        ready = []
-        #        for subtask in isr.task.subtasks:
-        #            if not subtask.conf.is_isr:
-        #                ready.append("scheduler_.isReady(%s)" % subtask.impl.task_descriptor.name)
-#
-        #        block.add(Statement("if (%s) { sigdelset(&mask, %s); }" % (
-        #            " || ".join(ready), device)))
-
         block.add(Statement("irq.enable_interrupts(&mask)"))
 
     def generate_isr(self, isr):
@@ -78,13 +66,7 @@ class PosixArch(GenericArch):
         handler = Function(isr.name + "_wrapper", "void", ["int"])
         self.generator.source_file.function_manager.add(handler)
 
-        #TODO
-        # Call kickoff, user defined function, and iret system call
-        #kickoff, iret = isr.entry_abb, isr.exit_abb
-        #self.call(handler, kickoff.generated_function_name())
         self.call(handler, "AUTOSAR_ISR_"+isr.name)
-        #self.call(handler, iret.generated_function_name())
-
 
         forward = FunctionDeclaration("AUTOSAR_ISR_"+isr.name, extern_c=True)
         self.generator.source_file.function_manager.add(forward)

@@ -17,53 +17,18 @@ class GenericArch(BaseCoder):
             for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
         for task in task_list:
-            #if subtask.conf.basic_task:
-            #    # With a stacksize of 8, we indicate we're having a
-            #    # basic task here, that runs on the shared stack
-            #    stacksize = 8
-#
-            #    stack = DataObjectArray("uint8_t", subtask.name + "_dynamic_state", str(stacksize),
-            #                            extern_c = True)
-            #    self.generator.source_file.data_manager.add(stack)
-#
-#
-            #    # Get a common stack pointer for all basic tasks
-            #    if not self.system_graph.impl.basic_task_stackptr:
-            #        basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
-            #                                      extern_c = True)
-            #        stackptr = DataObject("void *", "OS_basic_task_stackptr",
-            #                              static_initializer = (basic_stack.name + "+ 4096"), extern_c = True)
-            #        self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
-            #        self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
-            #        self.system_graph.impl.basic_task_stackptr = stackptr
-            #    else:
-            #        stackptr = self.system_graph.impl.basic_task_stackptr
-            #else:
-            if (True):
-                stacksize = str(4096)
+            stacksize = str(4096)
 
-                stack = DataObjectArray("uint8_t", task.name + "_stack", stacksize,
-                                        extern_c = True)
-                self.generator.source_file.data_manager.add(stack)
+            stack = DataObjectArray("uint8_t", task.name + "_stack", stacksize,
+                                    extern_c = True)
+            self.generator.source_file.data_manager.add(stack)
 
-                stackptr = DataObject("void *", "OS_" + task.name + "_stackptr")
-                self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
+            stackptr = DataObject("void *", "OS_" + task.name + "_stackptr")
+            self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
 
             task.impl.stack = stack
             task.impl.stackptr = stackptr
             task.impl.stacksize = stacksize
-
-
-        # create basic-task stack for semi-extended tasks
-        ## TODO: only needed if systemconfiguration enabled set's in the first place
-        #if not self.system_graph.impl.basic_task_stackptr:
-        #    basic_stack = DataObjectArray("uint8_t __attribute__((aligned(4096)))", "shared_basic_stack", "4096",
-        #                                  extern_c = True)
-        #    stackptr = DataObject("void *", "OS_basic_task_stackptr",
-        #                          static_initializer = (basic_stack.name + "+ 4096"), extern_c = True)
-        #    self.generator.source_file.data_manager.add(basic_stack, namespace = ("arch",))
-        #    self.generator.source_file.data_manager.add(stackptr, namespace = ("arch",))
-        #    self.system_graph.impl.basic_task_stackptr = stackptr
 
     def generate_default_interrupt_handlers(self):
         pass
@@ -121,33 +86,15 @@ class GenericArch(BaseCoder):
         else:
             self.disable_irq(userspace)
 
-        #TODO fix args
-        #self.convert_argument(userspace, args[1])
-        #self.convert_argument(abb.impl.userspace, args[2])
-
         pre_hook  = Hook("SystemEnterHook",arguments =  args)
         system    = Block(arguments = args)
         post_hook = Hook("SystemLeaveHook", userspace.arguments())
 
-
         syscall_name = self.ara_graph.cfg.get_syscall_name(abb)[8:]
 
-        if syscall_name in [
-            "EnableAllInterrupts", "ResumeAllInterrupts", "ResumeOSInterrupts", "kickoff", "iret"
-        ]:
-            userspace.add(pre_hook)
-            userspace.add(post_hook)
-            userspace.add(system)
-        elif syscall_name in [
-            "DisableAllInterrupts", "SuspendAllInterrupts", "SuspendOSInterrupts", "SetRelAlarm"
-        ]:
-            userspace.add(system)
-            userspace.add(pre_hook)
-            userspace.add(post_hook)
-        else:
-            userspace.add(pre_hook)
-            userspace.add(system)
-            userspace.add(post_hook)
+        userspace.add(pre_hook)
+        userspace.add(system)
+        userspace.add(post_hook)
 
         if userspace.is_isr:
             userspace.add(Comment("Called from ISR, no enable interrupts required!"))

@@ -86,7 +86,7 @@ class GenericOS(BaseCoder):
                                                      counter.impl.name,
                                                      task,
                                                      str(alarm.impl.armed).lower(),
-                                                     alarm.alarmtime, # TODO right time?
+                                                     alarm.alarmtime,
                                                      alarm.cycletime,
                                                      alarm.impl.alarm_id,
                            ))
@@ -214,7 +214,7 @@ class GenericOS(BaseCoder):
 
 
             user_defined = "__OS_HOOK_DEFINED_" + hook
-            #TODO correct this
+
             if self.ara_graph.cfg.contains_function_by_name(user_defined):
                 # Generate actual call, only if user had defined the hook function
                 self.call(hook_function, user_defined, "void", hook_function.arguments_names())

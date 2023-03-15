@@ -35,9 +35,6 @@ class AUTOSARGenericOS(GenericOS):
 
     @staticmethod
     def get_dependencies():
-        return []
-        #TODO update
-        #return ['LoadOIL', 'SysFuncts']
         return ['AutosarGeneratorIR']
 
     def get_syscall_rules(self):
@@ -57,8 +54,6 @@ class TaskListTemplate(CodeTemplate):
         CodeTemplate.__init__(self, rules.generator, self.template_file())
         self.rules = rules
         self.ara_graph = self.generator.ara_graph
-        #TODO where is the data in the graph
-        # self.idle = self.ara_graph.find(Function, "Idle")
 
     def template_file(self):
         return "os/scheduler/tasklist-unencoded.h.in"

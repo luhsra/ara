@@ -5,9 +5,6 @@ from ..elements import (DataObjectArray, DataObject, Function, FunctionCall,
 from ..base import BaseCoder
 
 from ara.os.autosar import Resource, Task, Alarm, Counter, ISR, Event
-#from generator.transform.GenerateAssertions import AssertionType
-#from generator.analysis.Function import Function as GraphFunction
-#from generator.analysis.Resource import Resource
 
 from ara.generator.tools import panic
 from ara.graph import ABBType
@@ -54,26 +51,12 @@ class GenericSystemCalls(BaseCoder):
         self.generator.source_file.include("os/util/redundant.h")
         self.generator.source_file.declarations.append(self.alarms(self).expand())
 
-        #TODO is this needed according to spec?
-        # Only generate an os_main, if it does not exist
-        #if self.system_graph.find(GraphFunction, "os_main") is None:
-        #    logging.info("Generating an os_main function calling StartOS")
-        #    os_main = Function("os_main", "void", [], extern_c = True)
-        #    os_main.add( FunctionCall("StartOS", ["0"]) )
-        #    self.source_file.function_manager.add(os_main)
-
         self._log.debug("generate StartOS")
         # Generate a StartOS function and delegate it to the OS rule set
         StartOS = Function("AUTOSAR_StartOS", "void", ["int"], extern_c = True)
         self.syscall_rules.StartOS(StartOS)
         self.generator.source_file.function_manager.add(StartOS)
         self.StartOS = StartOS
-
-        # Generate a ShutdownOS function
-        #self._log.debug("generate AUTOSAR_ShutdownOS")
-        #ShutdownOS = Function("AUTOSAR_ShutdownOS", "void", ["StatusType"], extern_c = True)
-        #self.syscall_rules.ShutdownOS(ShutdownOS)
-        #self.generator.source_file.function_manager.add(ShutdownOS)
 
         # Generate the interrupt scheduler
         self._log.debug("generate __OS_ASTSchedule")
@@ -198,14 +181,6 @@ class GenericSystemCalls(BaseCoder):
         self.call(block, "syscall", "void", [dispatch_func.function_name])
         self.call(block, "Machine::unreachable")
 
-    #def ShutdownOS(self, block):
-    #    block.unused_parameter(0)
-#
-    #    self.call(block, "CALL_HOOK", "void", ["ShutdownHook", block.arguments_names()[0]])
-#
-    #    block.add(Statement('ShutdownMachine()'))
-    #    self.call(block, "Machine::unreachable")
-
 
     def InitialSyscall(self, kernelspace):
         kernelspace.unused_parameter(0)
@@ -217,14 +192,6 @@ class GenericSystemCalls(BaseCoder):
         self.call(kernelspace, "scheduler_[AUTOSAR_GetCoreID()].Reschedule",
                                "void", [])
 
-
-    #def kickoff(self, syscall, userspace, kernelspace):
-    #    userspace.attributes.append("inlinehint")
-    #    if not syscall.subtask.conf.is_isr:
-    #        self.arch_rules.kickoff(syscall, userspace)
-    #
-    #def iret(self, syscall, userspace, kernelspace):
-    #    pass
 
     def TerminateTask(self, syscall, userspace, kernelspace):
         self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].TerminateTask_impl",
@@ -397,25 +364,9 @@ class GenericSystemCalls(BaseCoder):
 
     # Interrupt Handling
     def disable_irq(self, block, abb):
-        #before = abb.get_incoming_nodes(E.task_level)
-        #disabled = [x.interrupt_block_all or x.interrupt_block_os
-        #            for x in before]
-        ## If the interrupts were blocked before do not a thing
-        #if any(disabled):
-        #    assert all(disabled)
-        #    return
-
         self.arch_rules.disable_irq(block)
 
     def enable_irq(self, block, abb):
-        #before = abb.get_outgoing_nodes(E.task_level)
-        #disabled = [x.interrupt_block_all or x.interrupt_block_os
-        #            for x in before]
-        ## If the interrupts were unblocked before do not a thing
-        #if any(disabled):
-        #    assert all(disabled)
-        #    return
-
         self.arch_rules.enable_irq_after_kernel(block)
 
     def DisableAllInterrupts(self, abb, userspace, kernelspace):
