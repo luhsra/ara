@@ -2,6 +2,7 @@
 #define _POSIX_IRQ_H_
 
 #include <signal.h>
+#include "inline.h"
 #include "hardware_threads.h"
 
 #define SIGMAX 256
