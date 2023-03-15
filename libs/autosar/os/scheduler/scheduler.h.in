@@ -164,6 +164,19 @@ extern "C" CoreIdType AUTOSAR_GetCoreID() {
 }; // os
 
 int cores = 1;
+bool kickoff_done[MAX_CPUS] = {false};
+
+extern "C" void AUTOSAR_kickoff() {
+	debug_core << __FUNCTION__ << endl;
+	kickoff_done[AUTOSAR_GetCoreID()] = true;
+	Machine::enable_interrupts();
+}
+
+extern "C" void AUTOSAR_SyncCore(CoreIdType CoreID)
+{
+	debug_core << __FUNCTION__ << endl;
+	while(!kickoff_done[CoreID]);
+}
 
 extern "C" void* AUTOSAR_StartCoreStage2(void* arg) {
 

@@ -65,6 +65,11 @@ class GenericSystemCalls(BaseCoder):
         self.syscall_rules.ASTSchedule(ASTSchedule)
         self.generator.source_file.function_manager.add(ASTSchedule)
 
+        # add IPI wrapper
+        IPI_wrapper = Function("__OS_IPI_wrapper", "void", ["int"], extern_c = True)
+        self.syscall_rules.IPI_wrapper(IPI_wrapper)
+        self.generator.source_file.function_manager.add(IPI_wrapper)
+
         # IPI
         self.call(StartOS, "arch::irq.enable", "void", ["30"], prepend=True)
         self.call(StartOS, "arch::irq.set_handler", "void", ["30", "__OS_ASTSchedule"], prepend=True)
@@ -150,13 +155,16 @@ class GenericSystemCalls(BaseCoder):
                 for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Task)]
 
-        # TODO complete ISRS, cpu specific startOS
 
+        # prepare tasks only on one core
+        ifblock = If("AUTOSAR_GetCoreID() == OS_CORE_ID_MASTER")
         for task in task_list:
             # Use Reset the stack pointer for all all tasks
-            self.call(block, "Dispatcher::Prepare",
+            self.call(ifblock, "Dispatcher::Prepare",
                       "void", [self.task_desc(task)])
+        block.add(ifblock)
 
+        # add autostarted tasks
         for task in task_list:
             if task.autostart:
                 core_id = "OS_CORE_ID_"+str(task.cpu_id)
@@ -190,7 +198,12 @@ class GenericSystemCalls(BaseCoder):
 
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
-        self.Reschedule(kernelspace, True)
+        self.Reschedule(kernelspace, False)
+
+    def IPI_wrapper(self, kernelspace):
+        kernelspace.unused_parameter(0)
+        self.Reschedule(kernelspace, False)
+
 
 
     def TerminateTask(self, syscall, userspace, kernelspace):
