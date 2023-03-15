@@ -18,12 +18,6 @@ class GenericSystemCalls(BaseCoder):
         "AUTOSAR_ActivateTask": ["StatusType", "TaskType"],
         "AUTOSAR_ChainTask": ["StatusType", "TaskType"],
         "AUTOSAR_TerminateTask": ["StatusType"],
-        "AUTOSAR_EnableAllInterrupts"  : ["void"],
-        "AUTOSAR_DisableAllInterrupts" : ["void"],
-        "AUTOSAR_ResumeAllInterrupts"  : ["void"],
-        "AUTOSAR_SuspendAllInterrupts" : ["void"],
-        "AUTOSAR_ResumeOSInterrupts"   : ["void"],
-        "AUTOSAR_SuspendOSInterrupts"  : ["void"],
         "AUTOSAR_GetResource": ["StatusType", "ResourceType"],
         "AUTOSAR_ReleaseResource": ["StatusType", "ResourceType"],
         "AUTOSAR_SetEvent": ["StatusType", "TaskType", "EventMaskType"],
@@ -104,6 +98,10 @@ class GenericSystemCalls(BaseCoder):
                 continue
 
             syscall_name = self.ara_graph.cfg.get_syscall_name(abb)
+
+            if syscall_name not in self.AUTOSAR_SYSCALLS:
+                continue
+
             bb_name = self.ara_graph.cfg.vp.name[bb]
             abb_name = self.ara_graph.cfg.vp.name[abb]
 
@@ -164,6 +162,9 @@ class GenericSystemCalls(BaseCoder):
     def StartOS(self, block):
         block.unused_parameter(0)
         highestTask = None
+
+        block.add(Statement("debug_core << __FUNCTION__ << endl"))
+
         task_list = [self.ara_graph.instances.vp.obj[v]
                 for v in self.ara_graph.instances.vertices()
                 if isinstance(self.ara_graph.instances.vp.obj[v], Task)]

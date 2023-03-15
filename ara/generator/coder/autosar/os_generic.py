@@ -30,9 +30,7 @@ class GenericOS(BaseCoder):
         else:
             raise NotImplementedError("Not yet supported %d", syscall_name)
 
-        # TODO Fill up the hooks
-        #self.system_enter_hook(abb, abb.impl.pre_hook)
-        #self.system_leave_hook(abb, abb.impl.post_hook)
+        kernelspace.pre_hook.add(Statement("debug_core << __FUNCTION__ << endl"))
 
         if self.syscall_rules.AUTOSAR_SYSCALLS["AUTOSAR_"+syscall_name][0] != 'void':
             userspace.return_statement("E_OK")
@@ -224,7 +222,7 @@ class GenericOS(BaseCoder):
                     logging.warning("Be aware that PostTaskHooks are not properly implemented")
 
             if hook == "FaultDetectedHook":
-                hook_function.add(Statement("debug << \"FaultDetectedHook \" << arg0<< endl"))
+                hook_function.add(Statement("debug_core << \"FaultDetectedHook \" << arg0<< endl"))
                 self.call(hook_function, "ShutdownMachine",
                                    "void", [])
                 self.call(hook_function, "Machine::unreachable",
