@@ -44,7 +44,7 @@ extern "C" {
             good = 0;
         } else {
             for (unsigned char i = 0; i < trace_table_idx; i++) {
-                if (trace_table[i] != expected[i]) {
+                if (trace_table[i] != expected[i] && expected[i] != 'X') { // dont care
                     kout << "too unqeual: " <<  trace_table[i] << " at " << (int)i <<endl;
                     good = 0;
                     break;

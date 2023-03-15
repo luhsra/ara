@@ -225,6 +225,15 @@ extern "C" void AUTOSAR_ShutdownAllCores(StatusType arg0){
     Machine::disable_interrupts();
     cores--;
 
+	if (cores > 1) {
+        int curr_cpuid = AUTOSAR_GetCoreID();
+        for (int i = 0; i < MAX_CPUS; i++) {
+            if (i == curr_cpuid || !cpu_online(i) )
+                continue;
+            Machine::trigger_interrupt(SIGTERM, i);
+        }
+    }
+
     CALL_HOOK(ShutdownHook, arg0);
     ShutdownMachine();
     Machine::unreachable();

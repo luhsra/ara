@@ -82,7 +82,25 @@ class PosixArch(GenericArch):
     def generate_isr_table(self, isrs):
         self.generator.source_file.include("machine.h")
 
-        for isr in isrs:
+        ipi = ISR(cfg=0,
+            name="IPI",
+            cpu_id=0,
+            function=0,
+            priority=0,
+            category=0,
+            device=30, # SIGUSR1
+            artificial=True)
+
+        shutdown = ISR(cfg=0,
+            name="TERM",
+            cpu_id=0,
+            function=0,
+            priority=0,
+            category=0,
+            device=15, # SIGTERM
+            artificial=True)
+
+        for isr in isrs + [ipi, shutdown]:
             self.generate_isr(isr)
 
     def enable_irq_after_kernel(self, block):

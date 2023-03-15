@@ -65,14 +65,16 @@ class GenericSystemCalls(BaseCoder):
         self.syscall_rules.ASTSchedule(ASTSchedule)
         self.generator.source_file.function_manager.add(ASTSchedule)
 
-        # add IPI wrapper
-        IPI_wrapper = Function("__OS_IPI_wrapper", "void", ["int"], extern_c = True)
-        self.syscall_rules.IPI_wrapper(IPI_wrapper)
-        self.generator.source_file.function_manager.add(IPI_wrapper)
+        # add IPI handler
+        IPI_handler = Function("AUTOSAR_ISR_IPI", "void", [], extern_c = True)
+        self.Reschedule(IPI_handler, True)
+        self.generator.source_file.function_manager.add(IPI_handler)
 
-        # IPI
-        self.call(StartOS, "arch::irq.enable", "void", ["30"], prepend=True)
-        self.call(StartOS, "arch::irq.set_handler", "void", ["30", "__OS_ASTSchedule"], prepend=True)
+        # add termination handler for shutdownAllCores
+        TERM_handler = Function("AUTOSAR_ISR_TERM", "void", [], extern_c = True)
+        TERM_handler.add(Statement("cores--"))
+        self.call(TERM_handler, "arch::stop_hardware_thread")
+        self.generator.source_file.function_manager.add(TERM_handler)
 
 
         bbs = self.ara_graph.bbs.vertices() # need local ref here
@@ -199,12 +201,6 @@ class GenericSystemCalls(BaseCoder):
     def ASTSchedule(self, kernelspace):
         kernelspace.unused_parameter(0)
         self.Reschedule(kernelspace, False)
-
-    def IPI_wrapper(self, kernelspace):
-        kernelspace.unused_parameter(0)
-        self.Reschedule(kernelspace, False)
-
-
 
     def TerminateTask(self, syscall, userspace, kernelspace):
         self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].TerminateTask_impl",
