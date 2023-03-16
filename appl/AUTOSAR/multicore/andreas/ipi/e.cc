@@ -7,8 +7,8 @@ DeclareTask(T20);
 DeclareTask(T30);
 
 DeclareEvent(E1, 1);
-DeclareCounter(C2);
-DeclareAlarm(A2);
+DeclareCounter(C1);
+DeclareAlarm(A1);
 
 void start()
 {
@@ -32,15 +32,16 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
     test_trace('0');
-    SetRelAlarm(A2, 500, 500);
+    SetRelAlarm(A1, 500, 500);
     WaitEvent(E1);
-    ActivateTask(T10);
-    TerminateTask();
+    ChainTask(T20);
 }
 
 TASK(T10) {
     test_trace('1');
-    ChainTask(T20);
+    CancelAlarm(A1);
+    SetEvent(T00, E1);
+    TerminateTask();
 }
 
 TASK(T20) {
@@ -50,7 +51,6 @@ TASK(T20) {
 
 TASK(T30) {
     test_trace('3');
-    CancelAlarm(A2);
     ShutdownAllCores(E_OK);
 }
 

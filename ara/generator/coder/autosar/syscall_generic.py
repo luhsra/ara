@@ -481,9 +481,8 @@ class AlarmTemplate(CodeTemplate):
         callback_name = "AUTOSAR_ALARMCB_%s" % (alarm.name)
         has_callback = self.ara_graph.cfg.contains_function_by_name(callback_name)
 
-        args = {"alarm": alarm.impl.name}
 
-        ret += self.expand_snippet("if_alarm", **args) + "\n"
+        ret += self.expand_snippet("if_alarm", alarm=alarm.impl.name, cpuid=alarm.cpu_id) + "\n"
         # This alarm has an callback
         if has_callback:
             # Add a Declaration
@@ -508,7 +507,7 @@ class AlarmTemplate(CodeTemplate):
         else:
             ret += "scheduler_[%d].Schedule_impl();\n"%alarm.impl.task.cpu_id,
 
-        ret += self.expand_snippet("endif_alarm", **args) + "\n"
+        ret += self.expand_snippet("endif_alarm", alarm=alarm.impl.name) + "\n"
 
         return ret
 

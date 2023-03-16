@@ -3,11 +3,11 @@
 
 namespace os {
 
-{{{snippet:if_alarm:counter,alarm|
-	if (%(alarm)s.checkTrigger()) {
+{{{snippet:if_alarm:alarm,counter,cpuid|
+	if (cpuid == %(cpuid)s && %(alarm)s.checkTrigger()) {
         debug_core << "alarm triggered" << endl;
 }}}
-{{{snippet:endif_alarm:counter,alarm|    }
+{{{snippet:endif_alarm:alarm,counter,cpuid|    }
 }}}
 {{{snippet:alarm_alarmcallback:callback|    %(callback)s();}}}
 
@@ -15,15 +15,9 @@ namespace os {
 void inlinehint Counter::tick() {
     int cpuid = AUTOSAR_GetCoreID();
 
-    switch(cpuid)
-    {
-    {{{snippet:increase_counter:name:cpuid|case %(cpuid)s: %(name)s.do_tick();}}}
+    {{{snippet:increase_counter:name:cpuid|if (cpuid == %(cpuid)s) { %(name)s.do_tick(); } }}}
     {{{generate:increase_counters}}}
     {{{generate:generate_check_alarms}}}
-        break;
-    default:
-        break;
-    }
 }
 
 } // os
