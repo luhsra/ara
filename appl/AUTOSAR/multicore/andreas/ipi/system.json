@@ -82,8 +82,26 @@
       },
       "resources": {},
       "events": {},
-      "alarms": {},
-      "counters": {},
+      "alarms": {
+        "A2": {
+          "counter": "C2",
+          "action": {
+            "action": "setevent",
+            "event": "E1",
+            "task": "T00"
+          },
+          "autostart": false,
+          "cycletime": 100,
+          "alarmtime": 100
+        }
+      },
+      "counters": {
+        "C2": {
+          "maxallowedvalue": 1024,
+          "ticksperbase": 1,
+          "mincycle": 1
+        }
+      },
       "isrs": {}
     }
   ],

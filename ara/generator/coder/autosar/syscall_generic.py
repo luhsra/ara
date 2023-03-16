@@ -492,21 +492,21 @@ class AlarmTemplate(CodeTemplate):
             ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
 
         if alarm.impl.event != None:
-            # TODO cross core
-            ret += "scheduler_["+str(alarm.impl.event.cpu_id)+"].SetEvent_impl(" + \
-                   self.rules.task_desc(alarm.impl.task) + \
-                    ", " + \
-                    str(alarm.impl.event.event_mask) + ");\n"
+            ret += "scheduler_[%d].tlist.set_events(%d, %d);\n"% (
+                alarm.impl.task.cpu_id,
+                alarm.impl.task.impl.task_id,
+                alarm.impl.event.impl.event_mask,
+            )
         else:
             ret += "scheduler_[%d].SetReady_impl(%s);\n"% (
                 alarm.impl.task.cpu_id,
                 self.rules.task_desc(alarm.impl.task)
             )
 
-            if alarm.cpu_id != alarm.impl.task.cpu_id:
-                ret += "Machine::trigger_interrupt(30, %d, 0);\n"%alarm.impl.task.cpu_id
-            else:
-                ret += "scheduler_[%d].Schedule_impl();\n"%alarm.impl.task.cpu_id,
+        if alarm.cpu_id != alarm.impl.task.cpu_id:
+            ret += "Machine::trigger_interrupt(30, %d, 0);\n"%alarm.impl.task.cpu_id
+        else:
+            ret += "scheduler_[%d].Schedule_impl();\n"%alarm.impl.task.cpu_id,
 
         ret += self.expand_snippet("endif_alarm", **args) + "\n"
 
