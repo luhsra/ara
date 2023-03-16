@@ -285,12 +285,26 @@ class GenericSystemCalls(BaseCoder):
 
 
     def SetEvent(self, syscall, userspace, kernelspace):
-        self.call(kernelspace,
-                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].SetEvent_impl",
-                           "void",
-                           [self.task_desc(kernelspace.arguments().task),
-                           str(kernelspace.arguments().event_mask)
-                           ])
+        if userspace.is_isr:
+            from_interrupt = "true"
+        else:
+            from_interrupt = "false"
+
+        curr_cpu = userspace.calling_task.cpu_id
+        target_cpu = kernelspace.arguments().task.cpu_id
+
+        tid = str(kernelspace.arguments().task.impl.task_id)
+        mask = str(kernelspace.arguments().event_mask)
+
+        self.call(kernelspace, "scheduler_[%d].tlist.set_events"%target_cpu,
+                "void", [tid, mask])
+
+        if curr_cpu != target_cpu:
+            self.call(kernelspace, "Machine::trigger_interrupt", "void", ["30", str(target_cpu), "true"])
+        else:
+            self.call(kernelspace,
+                           "scheduler_[%d].Schedule_impl"%curr_cpu,
+                           "void", ["/* from_interrupt */ %s" % from_interrupt])
 
     def SetRelAlarm(self, syscall, userspace, kernelspace):
         alarm = kernelspace.arguments().alarm
