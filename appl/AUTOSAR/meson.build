@@ -140,6 +140,7 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'a',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'b',                     'oil': 'system.json'},
   {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'c',                     'oil': 'system.json'},
+  {'core': 'multicore',  'path': 'andreas'/ 'ipi',     'name': 'd',                     'oil': 'system.json'},
 ]
 # conformance tests for trampoline
 subdir('multicore' / 'trampoline')

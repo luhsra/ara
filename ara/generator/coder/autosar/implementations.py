@@ -42,6 +42,7 @@ class AlarmImpl(BaseImpl):
         self.name = None
         self.alarm_desc = None
         self.counter = None
+        self.event = None
         self.task = None
         self.armed = None
 class ResourceImpl(BaseImpl):

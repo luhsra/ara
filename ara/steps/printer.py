@@ -30,6 +30,9 @@ _sysshort = {
     "AUTOSAR_ChainTask": "CT",
     "AUTOSAR_SetEvent": "SE",
     "AUTOSAR_WaitEvent": "WE",
+    "AUTOSAR_SetRelAlarm": "SRA",
+    "AUTOSAR_GetAlarm": "GA",
+    "AUTOSAR_CancelAlarm": "CA",
 }
 
 # from ara.util import get_logger

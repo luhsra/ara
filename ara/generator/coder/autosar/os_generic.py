@@ -115,15 +115,20 @@ class GenericOS(BaseCoder):
             if isinstance(self.ara_graph.instances.vp.obj[v], Alarm)]
         for alarm_vertex in alarm_vertex_list:
             alarm = self.ara_graph.instances.vp.obj[alarm_vertex]
-            neighbors = alarm_vertex.all_neighbors()
+            edges = [e for e in alarm_vertex.out_edges()] + [e for e in alarm_vertex.in_edges()]
 
-            for n in neighbors:
-                if isinstance(self.ara_graph.instances.vp.obj[n], Task):
-                    alarm.impl.task = self.ara_graph.instances.vp.obj[n]
-                if isinstance(self.ara_graph.instances.vp.obj[n], Counter):
-                    alarm.impl.counter = self.ara_graph.instances.vp.obj[n]
-                if isinstance(self.ara_graph.instances.vp.obj[n], Event):
-                    alarm.impl.event = self.ara_graph.instances.vp.obj[n]
+            for e in edges:
+                label = self.ara_graph.instances.ep.label[e]
+                if label == "activate":
+                    t = self.ara_graph.instances.vp.obj[e.target()]
+                    alarm.impl.task = t
+                elif label == "set":
+                    event = self.ara_graph.instances.vp.obj[e.target()]
+                    alarm.impl.event = event
+                else:
+                    inst = self.ara_graph.instances.vp.obj[e.source()]
+                    if isinstance(inst, Counter):
+                         alarm.impl.counter = inst
 
             task = "os::tasks::" + alarm.impl.task.impl.task_descriptor.name
 

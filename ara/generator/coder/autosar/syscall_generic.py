@@ -9,6 +9,8 @@ from ara.os.autosar import Resource, Task, Alarm, Counter, ISR, Event
 from ara.generator.tools import panic
 from ara.graph import ABBType
 
+import dataclasses
+
 
 class GenericSystemCalls(BaseCoder):
     AUTOSAR_SYSCALLS = {
@@ -103,7 +105,6 @@ class GenericSystemCalls(BaseCoder):
             self.generator.source_file.function_manager.add(userspace)
 
             self.os_rules.systemcall(abb, userspace)
-
 
         # Generate the hooks into the operating system
         self.os_rules.generate_hooks()
@@ -452,11 +453,13 @@ class AlarmTemplate(CodeTemplate):
             #    if all(self.alarm_filter(x) is False for x in counter.alarms):
             #        continue
             ret += self.expand_snippet("increase_counter",
-                                       name = counter.impl.name)
+                                       name = counter.impl.name,
+                                       cpuid = counter.cpu_id)
         return ret
 
 
     def generate_check_alarm_softcounter(self, alarm):
+        #TODO fix softcounters
         args = {"alarm": alarm.impl.name}
 
         abb = alarm.carried_syscall
@@ -488,23 +491,22 @@ class AlarmTemplate(CodeTemplate):
             self.generator.source_file.function_manager.add(decl)
             ret += self.expand_snippet("alarm_alarmcallback", callback = callback_name) + "\n"
 
-        alarm_vertex = self.ara_graph.instances.get_node(alarm)
-        neighbors = self.ara_graph.instances.get_all_neighbors(alarm_vertex)
-
-        # check for syscall action
-        for n in neighbors:
-            inst = self.ara_graph.instances.vp.obj[n]
-
-            if isinstance(inst, Task):
-                ret += "scheduler_["+str(inst.cpu_id)+"].ActivateTask_impl(" + \
-                    self.rules.task_desc(inst) + \
-                    ", /* from_interrupt */ true);\n"
-
-            if isinstance(inst, Event):
-                ret += "scheduler_["+str(inst.cpu_id)+"].SetEvent_impl(" + \
+        if alarm.impl.event != None:
+            # TODO cross core
+            ret += "scheduler_["+str(alarm.impl.event.cpu_id)+"].SetEvent_impl(" + \
                    self.rules.task_desc(alarm.impl.task) + \
                     ", " + \
-                    str(inst.impl.event_mask) + ");\n"
+                    str(alarm.impl.event.event_mask) + ");\n"
+        else:
+            ret += "scheduler_[%d].SetReady_impl(%s);\n"% (
+                alarm.impl.task.cpu_id,
+                self.rules.task_desc(alarm.impl.task)
+            )
+
+            if alarm.cpu_id != alarm.impl.task.cpu_id:
+                ret += "Machine::trigger_interrupt(30, %d, 0);\n"%alarm.impl.task.cpu_id
+            else:
+                ret += "scheduler_[%d].Schedule_impl();\n"%alarm.impl.task.cpu_id,
 
         ret += self.expand_snippet("endif_alarm", **args) + "\n"
 

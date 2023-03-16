@@ -282,7 +282,7 @@ class LoadOIL(Step):
 
                     task = find_instance_by_name(action["task"], _autosar.Task)
                     e = self._add_edge(instances, a, task)
-                    instances.ep.label[e] = "set_task"
+                    instances.ep.label[e] = "activate"
 
                 else:
                     raise NotImplementedError
