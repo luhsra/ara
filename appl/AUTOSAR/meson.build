@@ -194,29 +194,35 @@ foreach app : autosar_apps
 
   if get_option('arch') == 'posix'
 
-    app_ll_mod = custom_target(full_name + '_mod',
+    out = custom_target(full_name + '_mod',
                         input : app_ll,
-                        output : full_name + '_mod.ll',
+                        output : [
+                          full_name + '_mod.ll',
+                          full_name+'_autosar.cc'
+                        ],
                         depfile : full_name + '_mod.ll.dep',
                         command : [
                           py3_inst, ara_py, app['ll'],
                           '--os', 'AUTOSAR',
                           '--oilfile', app['oil'],
-                          '--ir_output', '@OUTPUT@',
+                          '--ir_output', '@OUTPUT0@',
                           '--step-settings', '../settings/autosar_generator.json',
-		                      '--generator_output', 'appl/AUTOSAR/'+full_name+'_autosar.cc'
+		                      '--generator_output', '@OUTPUT1@',
                         ])
-    app += {'ll_mod': app_ll_mod}
+    app_ll_mod = out[0]
+    autosar = out[1]
+    app += {'app_ll_mod': app_ll_mod}
+    app += {'autosar': autosar}
 
-    autosar = custom_target(full_name + '_autosar',
-                        input : app_ll_mod,
-                        output : full_name+'_autosar.cc',
-                        command : [
-                          clang_format,
-                          '-i',
-                          '--style=file',
-                          '@OUTPUT@',
-                        ])
+    #autosar = custom_target(full_name + '_autosar',
+    #                    input : app_ll_mod,
+    #                    output : full_name+'_autosar.cc',
+    #                    command : [
+    #                      clang_format,
+    #                      '-i',
+    #                      '--style=file',
+    #                      '@OUTPUT@',
+    #                    ])
 
     app_link = custom_target(full_name + '_link',
                             input: [

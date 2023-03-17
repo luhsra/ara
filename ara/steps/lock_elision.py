@@ -95,6 +95,10 @@ class LockElision(Step):
             s = {True: "will spin", False: "won't spin"}[res['spins']]
             self._log.warn(f"State {res['state']} {s}")
 
+        # TODO add option
+        if deadlock:
+            self._fail(f"Deadlock detected {deadlock}")
+
         self._set_step_data({'spin_states': lock_count,
                              'DEADLOCK': deadlock,
                              'callsites': details,

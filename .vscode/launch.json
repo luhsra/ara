@@ -13,12 +13,12 @@
             "cwd": "${workspaceFolder}"
         },
         {
-        "name": "autosar_multicore_andreas_spinlock_a",
+        "name": "autosar_multicore_andreas_spinlock_b",
         "type": "python",
         "request": "launch",
         "program": "build/ara.py",
         "args": [
-            "build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_a.ll",
+            "build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_b.ll",
             "--os=AUTOSAR",
             "--oilfile=appl/AUTOSAR/multicore/andreas/spinlock/system.json",
             "--step-settings=settings/autosar_generator.json",
@@ -29,12 +29,12 @@
         "justMyCode": true
         },
         {
-            "name": "autosar_multicore_andreas_ipi_d",
+            "name": "autosar_multicore_andreas_ipi_f",
             "type": "python",
             "request": "launch",
             "program": "build/ara.py",
             "args": [
-                "build/appl/AUTOSAR/autosar_multicore_andreas_ipi_d.ll",
+                "build/appl/AUTOSAR/autosar_multicore_andreas_ipi_f.ll",
                 "--os=AUTOSAR",
                 "--oilfile=appl/AUTOSAR/multicore/andreas/ipi/system.json",
                 "--step-settings=settings/autosar_generator.json",

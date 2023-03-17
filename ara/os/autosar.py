@@ -1040,6 +1040,14 @@ class AUTOSAR(OSBase):
         assert(isinstance(args.event_mask, int))
         cur_ctx = state.cur_context(cpu_id)
 
+        cur_task = state.cur_control_inst(cpu_id)
+        # check if we are holding a spinlock
+        for o_lock_v, o_lock in state.instances.get(Spinlock):
+            if o_lock in state.context:
+                o_ctx = state.context[o_lock]
+                if o_ctx.on_hold and o_ctx.held_by == cur_task:
+                    return state
+
         if args.event_mask & cur_ctx.received_events == 0:
             cur_ctx.status = TaskStatus.blocked
             cur_ctx.waited_events = args.event_mask

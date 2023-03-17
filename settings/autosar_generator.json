@@ -18,5 +18,9 @@
 		"instantiation_style": "static",
 		"interaction_style": "vanilla",
 		"os": "autosar"
+	},
+	"MultiSSE" : {
+		"log_level": "debug",
+		"dump": true
 	}
 }
