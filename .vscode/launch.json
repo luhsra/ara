@@ -5,6 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
+        "name": "autosar_multicore_andreas_spinlock_a",
+        "type": "python",
+        "request": "launch",
+        "program": "build/ara.py",
+        "args": [
+            "build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_a.ll",
+            "--os=AUTOSAR",
+            "--oilfile=appl/AUTOSAR/multicore/andreas/spinlock/system.json",
+            "--step-settings=settings/autosar_generator.json",
+            "--generator_output=autosar.cc",
+            "--dump"
+        ],
+        "console": "integratedTerminal",
+        "justMyCode": true
+        },
+        {
             "name": "autosar_multicore_andreas_ipi_d",
             "type": "python",
             "request": "launch",

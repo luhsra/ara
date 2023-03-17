@@ -1,6 +1,9 @@
 #ifndef _SPINLOCK_H_
 #define _SPINLOCK_H_
 
+#include <stdint.h>
+#include "osek_types.h"
+
 namespace os {
 class Spinlock {
 private:
@@ -15,9 +18,9 @@ public:
     Spinlock(const int id = 0);
     ~Spinlock();
 
-    int lock();
-    int trylock();
-    int unlock();
+    StatusType lock();
+    StatusType trylock(TryToGetSpinlockType* success);
+    StatusType unlock();
 };
 }
 

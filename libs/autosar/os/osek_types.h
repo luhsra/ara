@@ -63,6 +63,12 @@ typedef struct {
 	unsigned long mincycle;
 } AlarmBaseType;
 
+typedef enum
+{
+  TRYTOGETSPINLOCK_SUCCESS,
+  TRYTOGETSPINLOCK_NOSUCCESS
+} TryToGetSpinlockType;
+
 typedef AlarmBaseType* AlarmBaseRefType;
 
 typedef uint32_t CounterType;

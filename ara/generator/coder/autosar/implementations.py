@@ -23,9 +23,13 @@ class TaskImpl(BaseImpl):
 
 
         self.generated_functions = []
+
 class SpinlockImpl(BaseImpl):
+    spinlock_id_counter = 1
     def __init__(self, instance):
         super().__init__(instance)
+        self.id = SpinlockImpl.spinlock_id_counter
+        SpinlockImpl.spinlock_id_counter +=1
 
 class EventImpl(BaseImpl):
     event_id_counter = 1

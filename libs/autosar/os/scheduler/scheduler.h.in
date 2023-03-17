@@ -118,6 +118,25 @@ struct Scheduler {
         return tlist.decode_task_id(current_task);
     }
 
+
+	forceinline StatusType GetSpinlock_impl(os::Spinlock &sl) {
+        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+
+        return sl.lock();
+    }
+
+    forceinline StatusType TryToGetSpinlock_impl(os::Spinlock &sl, TryToGetSpinlockType* success) {
+        debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+
+        return  sl.trylock(success);
+    }
+
+    forceinline StatusType ReleaseSpinlock_impl(os::Spinlock &sl) {
+		debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
+
+		return sl.unlock();
+	}
+
 	forceinline void dispatchToCurrentTask(void) {
 		// dispatch or enter idle
 		{{{!foreach_subtask|

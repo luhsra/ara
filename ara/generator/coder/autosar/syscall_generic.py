@@ -26,6 +26,9 @@ class GenericSystemCalls(BaseCoder):
         "AUTOSAR_GetAlarm": ["StatusType", "AlarmType", "TickRefType"],
         "AUTOSAR_SetRelAlarm": ["StatusType", "AlarmType", "TickType", "TickType"],
         "AUTOSAR_CancelAlarm": ["StatusType", "AlarmType"],
+        "AUTOSAR_GetSpinlock": ["StatusType", "SpinlockType"],
+        "AUTOSAR_TryGetSpinlock": ["StatusType", "SpinlockType", "int*"],
+        "AUTOSAR_ReleaseSpinlock": ["StatusType", "SpinlockType"],
     }
     def foreach_subtask(self, func):
         """Call func for every task"""
@@ -236,6 +239,18 @@ class GenericSystemCalls(BaseCoder):
         self.ActivateTask(syscall, userspace, kernelspace)
 
         self.call(kernelspace, "scheduler_[%d].Schedule_impl"%task.cpu_id)
+
+    def GetSpinlock(self, syscall, userspace, kernelspace):
+        self.call(kernelspace,
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetSpinlock_impl",
+                           "void",
+                           [str(kernelspace.arguments().spinlock.impl.descriptor.name)])
+
+    def ReleaseSpinlock(self, syscall, userspace, kernelspace):
+        self.call(kernelspace,
+                           "scheduler_["+str(userspace.calling_task.cpu_id)+"].ReleaseSpinlock_impl",
+                           "void",
+                           [str(kernelspace.arguments().spinlock.impl.descriptor.name)])
 
     def WaitEvent(self, syscall, userspace, kernelspace):
         self.call(kernelspace,

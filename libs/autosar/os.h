@@ -279,7 +279,7 @@ extern StatusType AUTOSAR_GetSpinlock(SpinlockType r);
  * \brief Try to acquire a SPINLOCK
  * \param r The SPINLOCK to be locked
  **/
-extern StatusType AUTOSAR_TryToGetSpinlock(SpinlockType r, int* success);
+extern StatusType AUTOSAR_TryToGetSpinlock(SpinlockType r, TryToGetSpinlockType* success);
 
 /**
  * \brief Release the given SPINLOCK again

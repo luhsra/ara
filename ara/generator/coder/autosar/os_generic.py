@@ -200,6 +200,21 @@ class GenericOS(BaseCoder):
                                 extern_c = True)
             self.generator.source_file.data_manager.add(iddesc);
 
+        spinlock_list = [self.ara_graph.instances.vp.obj[v]
+            for v in self.ara_graph.instances.vertices()
+                if isinstance(self.ara_graph.instances.vp.obj[v], Spinlock)]
+
+        self.generator.source_file.include("os/spinlock.h")
+
+        for spinlock in spinlock_list:
+            iddesc = DataObject("const SpinlockType", "AUTOSAR_SPINLOCK_" + spinlock.name,
+                                static_initializer = str(spinlock.impl.id),
+                                extern_c = True)
+            self.generator.source_file.data_manager.add(iddesc);
+
+            desc = DataObject("os::Spinlock", "OS_" + spinlock.name, "("+iddesc.name+")")
+            self.generator.source_file.data_manager.add(desc, namespace = ("os",))
+            spinlock.impl.descriptor = desc
 
     def generate_hooks(self):
         hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"]),
