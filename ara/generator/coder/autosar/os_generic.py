@@ -21,7 +21,7 @@ class GenericOS(BaseCoder):
             self._log.info("systemcall %s in %s never called", syscall_name, abb_name)
             userspace.add(Comment("never called"))
 
-            userspace.add(Statement("debug_core << \"This should never be called\" << endl"))
+            userspace.add(Statement("debug_core << __FUNCTION__ << \" should never be called\" << endl"))
             userspace.add(Statement("AUTOSAR_ShutdownAllCores(E_NOT_OK)"))
             return
         userspace.add(Statement("StatusType result = E_OK"))
