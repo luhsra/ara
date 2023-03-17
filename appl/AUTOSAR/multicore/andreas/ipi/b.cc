@@ -28,7 +28,7 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
     test_trace('0');
-    // Test synchronity
+    // Test synchronicity
     ActivateTask(T10);
     ActivateTask(T20);
     ActivateTask(T30);

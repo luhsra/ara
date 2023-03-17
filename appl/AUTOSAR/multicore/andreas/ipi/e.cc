@@ -33,6 +33,7 @@ TEST_MAKE_OS_MAIN(start())
 TASK(T00) {
     test_trace('0');
     SetRelAlarm(A1, 500, 500);
+    ActivateTask(T30);
     WaitEvent(E1);
     ChainTask(T20);
 }
@@ -46,10 +47,12 @@ TASK(T10) {
 
 TASK(T20) {
     test_trace('2');
-    ChainTask(T30);
+    SetEvent(T30, E1);
+    TerminateTask();
 }
 
 TASK(T30) {
+    WaitEvent(E1);
     test_trace('3');
     ShutdownAllCores(E_OK);
 }

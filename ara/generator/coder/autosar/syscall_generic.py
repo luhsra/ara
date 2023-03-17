@@ -505,7 +505,7 @@ class AlarmTemplate(CodeTemplate):
         if alarm.cpu_id != alarm.impl.task.cpu_id:
             ret += "Machine::trigger_interrupt(30, %d, 0);\n"%alarm.impl.task.cpu_id
         else:
-            ret += "scheduler_[%d].Schedule_impl();\n"%alarm.impl.task.cpu_id,
+            ret += "scheduler_[%d].Schedule_impl();\n"%alarm.impl.task.cpu_id
 
         ret += self.expand_snippet("endif_alarm", alarm=alarm.impl.name) + "\n"
 
