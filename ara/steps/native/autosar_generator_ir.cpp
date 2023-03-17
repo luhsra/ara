@@ -30,11 +30,10 @@ namespace ara::step {
             "AUTOSAR_kickoff", &module);
 
         for (auto &function : module) {
-            BasicBlock &bb = *function.begin();
-            IRBuilder<> builder(context);
-
             // all TASK(foo) functions start with this string, see os/os.h
             if (function.getName().startswith("AUTOSAR_TASK_FUNC")) {
+				BasicBlock &bb = *function.begin();
+				IRBuilder<> builder(context);
                 Instruction *inst = &*bb.begin();
                 builder.SetInsertPoint(inst);
 
