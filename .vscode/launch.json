@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "lldb",
+            "request": "launch",
+            "name": "LLDB autosar_multicore_andreas_spinlock_b",
+            "program": "${workspaceFolder}/build/appl/AUTOSAR/autosar_multicore_andreas_spinlock_b",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
         "name": "autosar_multicore_andreas_spinlock_a",
         "type": "python",
         "request": "launch",

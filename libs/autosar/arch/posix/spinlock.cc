@@ -16,7 +16,6 @@ Spinlock::~Spinlock() {
 StatusType Spinlock::lock() {
     int rc = pthread_spin_lock(&sl);
     if (rc == 0) {
-        // todo store somewhere for reschedule
         return E_OK;
     }
     return E_NOT_OK;
@@ -31,14 +30,12 @@ StatusType Spinlock::trylock(TryToGetSpinlockType* success) {
         return E_NOT_OK;
     } else {
         *success = TRYTOGETSPINLOCK_SUCCESS;
-        // todo store somewhere for reschedule
         return E_OK;
     }
 }
 StatusType Spinlock::unlock() {
     int rc = pthread_spin_unlock(&sl);
     if (rc == 0) {
-        // todo store somewhere for reschedule
         return E_OK;
     }
     return E_NOT_OK;

@@ -20,7 +20,11 @@ class GenericOS(BaseCoder):
         if args == None:
             self._log.info("systemcall %s in %s never called", syscall_name, abb_name)
             userspace.add(Comment("never called"))
+
+            userspace.add(Statement("debug_core << \"This should never be called\" << endl"))
+            userspace.add(Statement("AUTOSAR_ShutdownAllCores(E_NOT_OK)"))
             return
+        userspace.add(Statement("StatusType result = E_OK"))
 
         kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, args)
 
@@ -33,7 +37,7 @@ class GenericOS(BaseCoder):
         kernelspace.pre_hook.add(Statement("debug_core << __FUNCTION__ << endl"))
 
         if self.syscall_rules.AUTOSAR_SYSCALLS["AUTOSAR_"+syscall_name][0] != 'void':
-            userspace.return_statement("E_OK")
+            userspace.return_statement("result")
 
     def generate_data_objects(self):
         """In this function, we generate all system objects which are used by OS implementation."""

@@ -15,6 +15,3 @@ arch::TCB arch::Dispatcher::m_idle[MAX_CPUS] = {
 };
 const arch::TCB* arch::Dispatcher::m_current[MAX_CPUS] = {0};
 uint32_t arch::current_abb[32];
-
-int arch::Dispatcher::spinlocks[MAX_CPUS] = {0};
-bool arch::Dispatcher::m_core_dispatched[MAX_CPUS] = {false};

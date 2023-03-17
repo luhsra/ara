@@ -243,14 +243,14 @@ class GenericSystemCalls(BaseCoder):
     def GetSpinlock(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
                            "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetSpinlock_impl",
-                           "void",
-                           [str(kernelspace.arguments().spinlock.impl.descriptor.name)])
+                           "StatusType",
+                           [self.task_desc(userspace.calling_task), str(kernelspace.arguments().spinlock.impl.descriptor.name)], name = "result")
 
     def ReleaseSpinlock(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
                            "scheduler_["+str(userspace.calling_task.cpu_id)+"].ReleaseSpinlock_impl",
-                           "void",
-                           [str(kernelspace.arguments().spinlock.impl.descriptor.name)])
+                           "StatusType",
+                           [self.task_desc(userspace.calling_task), str(kernelspace.arguments().spinlock.impl.descriptor.name)], name = "result")
 
     def WaitEvent(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
@@ -276,6 +276,7 @@ class GenericSystemCalls(BaseCoder):
         mask = self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].GetEvent_impl",
                                   "EventMaskType", [self.task_desc(kernelspace.arguments().task)])
 
+        # TODO fix this
         return_variable = self.os_rules.get_syscall_return_variable("EventMaskType", 4)
 
         # Fill return variable

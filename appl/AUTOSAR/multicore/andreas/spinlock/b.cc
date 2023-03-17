@@ -23,10 +23,9 @@ void start()
 TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
-	GetSpinlock(S1);
-    ActivateTask(T01); // deadlock!
-
-	ReleaseSpinlock(S1);
+    GetSpinlock(S1);
+    ActivateTask(T01); // deadlock
+    ReleaseSpinlock(S1);
     TerminateTask();
 }
 

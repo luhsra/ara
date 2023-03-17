@@ -18,6 +18,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
 {{{!foreach_subtask|
     Task::prio_t {{{!subtask}}};
+    uint32_t {{{!subtask}}}_spinlocks_held;
     {{{!if_events|\
     event_mask_t {{{!subtask}}}_events_waiting;
 	event_mask_t {{{!subtask}}}_events_set;
@@ -30,7 +31,7 @@ struct TaskList : public UnencodedTaskListStatic {
 
     TaskList() : UnencodedTaskListStatic()
     {{{!foreach_subtask|
-        , {{{!subtask}}}(0)\
+        , {{{!subtask}}}(0), {{{!subtask}}}_spinlocks_held(0)\
         {{{!if_events|\
            , {{{!subtask}}}_events_waiting(0), {{{!subtask}}}_events_set(0)\
         }}}
@@ -67,6 +68,7 @@ struct TaskList : public UnencodedTaskListStatic {
         if (id == {{{!subtask_id}}}) {
 			if ({{{!subtask}}} < prio) {
 				{{{!subtask}}} = prio;
+                {{{!subtask}}}_spinlocks_held = 0;
 				{{{!if_events|
 				{{{!subtask}}}_events_waiting = 0;
                 {{{!subtask}}}_events_set = 0;\
@@ -112,6 +114,42 @@ struct TaskList : public UnencodedTaskListStatic {
    }}}
         } else \
    }}}\
+}}}     {
+			assert(false);
+		}
+    }
+
+    /** holds locks **/
+    forceinline int num_spinlock(const Task::id_t id) {
+        (void) id;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+           return {{{!subtask}}}_spinlocks_held;
+        } else \
+}}}     {
+			return 0;
+		}
+    }
+
+    /** increase locks **/
+    forceinline void inc_spinlock(const Task::id_t id) {
+        (void) id;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_spinlocks_held ++;
+        } else \
+}}}     {
+			assert(false);
+		}
+    }
+
+    /** decrease locks **/
+    forceinline void dec_spinlock(const Task::id_t id) {
+        (void) id;
+{{{!foreach_subtask|\
+        if (id == {{{!subtask_id}}}) {
+           {{{!subtask}}}_spinlocks_held --;
+        } else \
 }}}     {
 			assert(false);
 		}

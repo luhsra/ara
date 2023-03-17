@@ -7,22 +7,22 @@ from .elements import (FunctionCall,VariableDefinition)
 
 class BaseCoder:
 
-    def call(self, block, function, rettype="void", arguments=None, prepend = False):
+    def call(self, block, function, rettype="void", arguments=None, prepend = False, name=None):
         """Generates a call to a function and stores the result in an
            variable, if it isn't void"""
-        ret_var = VariableDefinition.new(self.generator, rettype)
-        if ret_var:
-            block.add(ret_var)
-            name = ret_var.name
-        else:
-            name = None
+
+        if not name:
+            ret_var = VariableDefinition.new(self.generator, rettype)
+            if ret_var:
+                block.add(ret_var)
+                name = ret_var.name
+
         if arguments is None:
             arguments = []
         if prepend:
             block.prepend( FunctionCall(function, arguments, name))
         else:
             block.add( FunctionCall(function, arguments, name))
-        return ret_var
 
     def __init__(self):
         self.generator = None

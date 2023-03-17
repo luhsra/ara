@@ -169,7 +169,7 @@ class VariableDefinition(SourceElement):
     def new(generator, datatype, array_length = None):
         if datatype == "void":
             return None
-        varname = generator.variable_name_for_datatype(datatype)
+        varname = "ret"
         return VariableDefinition(datatype, varname, array_length)
 
 class FunctionCall(SourceElement):

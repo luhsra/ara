@@ -20,11 +20,9 @@ namespace arch {
     static const int IDLESTACKSIZE = 4096;
 
     class Dispatcher {
-        static int spinlocks[MAX_CPUS];
         static const TCB* m_current[MAX_CPUS];
         static TCB m_idle[MAX_CPUS];
 	    static void *idle_sp[MAX_CPUS];
-        static bool m_core_dispatched[MAX_CPUS];
 
         static noinline void idleEntry(void) {
             CALL_HOOK(PreIdleHook);
@@ -45,8 +43,6 @@ namespace arch {
             }
 
             CALL_HOOK(PreTaskHook);
-
-            m_core_dispatched[get_cpuid()] = true;
 
             // start up
             if (!from) {
@@ -72,19 +68,6 @@ namespace arch {
         }
 
     public:
-        static bool coreDispatched(int cpuid) {
-            return m_core_dispatched[cpuid];
-        }
-
-        static void spinlockInc(int id) {
-            Dispatcher::spinlocks[id]++;
-        }
-        static void spinlockDec(int id) {
-            Dispatcher::spinlocks[id]--;
-        }
-        static int getSpinlockCnt(int id) {
-            return Dispatcher::spinlocks[id];
-        }
 
         static void init(void) {
             // setup idle context

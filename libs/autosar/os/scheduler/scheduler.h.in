@@ -21,7 +21,11 @@ struct Scheduler {
 	noinline void Reschedule(void);
 
 	forceinline void Schedule_impl(bool from_interrupt=false) {
-        if(!from_interrupt /*&& in_syscall()*/) {
+		if (tlist.num_spinlock(current_task)) {
+			debug_core << "current_task "<< (int) current_task <<" holds locks" << endl;
+			return;
+		}
+        if(!from_interrupt) {
             // in syscall: reschedule directly
 			Reschedule();
         } else {
@@ -119,22 +123,31 @@ struct Scheduler {
     }
 
 
-	forceinline StatusType GetSpinlock_impl(os::Spinlock &sl) {
+	forceinline StatusType GetSpinlock_impl(const Task &task, os::Spinlock &sl) {
         debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
 
-        return sl.lock();
+        StatusType rc = sl.lock();
+		if (rc == 0)
+			tlist.inc_spinlock(task.id);
+		return rc;
     }
 
-    forceinline StatusType TryToGetSpinlock_impl(os::Spinlock &sl, TryToGetSpinlockType* success) {
+    forceinline StatusType TryToGetSpinlock_impl(const Task &task, os::Spinlock &sl, TryToGetSpinlockType* success) {
         debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
 
-        return  sl.trylock(success);
+        StatusType rc = sl.trylock(success);
+		if (*success == TRYTOGETSPINLOCK_SUCCESS)
+			tlist.inc_spinlock(task.id);
+		return rc;
     }
 
-    forceinline StatusType ReleaseSpinlock_impl(os::Spinlock &sl) {
+    forceinline StatusType ReleaseSpinlock_impl(const Task &task, os::Spinlock &sl) {
 		debug_core << __FUNCTION__ << "(" << sl.id << ")" << endl;
 
-		return sl.unlock();
+		StatusType rc = sl.unlock();
+		if (rc == 0)
+			tlist.dec_spinlock(task.id);
+		return rc;
 	}
 
 	forceinline void dispatchToCurrentTask(void) {
