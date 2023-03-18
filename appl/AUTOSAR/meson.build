@@ -199,7 +199,7 @@ foreach app : autosar_apps
                         input : app_ll,
                         output : [
                           full_name + '_mod.ll',
-                          full_name+'_autosar.cc'
+                          full_name+'_autosar.unfmt.cc'
                         ],
                         depfile : full_name + '_mod.ll.dep',
                         command : [
@@ -211,19 +211,20 @@ foreach app : autosar_apps
 		                      '--generator_output', '@OUTPUT1@',
                         ])
     app_ll_mod = out[0]
-    autosar = out[1]
+    autosar_unfmt = out[1]
     app += {'app_ll_mod': app_ll_mod}
-    app += {'autosar': autosar}
 
-    #autosar = custom_target(full_name + '_autosar',
-    #                    input : app_ll_mod,
-    #                    output : full_name+'_autosar.cc',
-    #                    command : [
-    #                      clang_format,
-    #                      '-i',
-    #                      '--style=file',
-    #                      '@OUTPUT@',
-    #                    ])
+    autosar = custom_target(full_name + '_autosar',
+                        input : autosar_unfmt,
+                        output : full_name+'_autosar.cc',
+                        capture: true,
+                        command : [
+                          clang_format,
+                          '--style=file',
+                          '@INPUT@',
+                        ])
+
+    app += {'autosar': autosar}
 
     app_link = custom_target(full_name + '_link',
                             input: [
