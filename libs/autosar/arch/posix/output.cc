@@ -8,8 +8,8 @@
 
 #if DEBUG
 
-ColorTerminal kout(Terminal::STDOUT);
-ColorTerminal debug(Terminal::STDERR);
+Terminal kout(Terminal::STDOUT);
+Terminal debug(Terminal::STDERR);
 
 
 BufferedTerminal debug_core_arr[MAX_CPUS] = {
@@ -25,7 +25,7 @@ BufferedTerminal debug_core_arr[MAX_CPUS] = {
 
 #else // DEBUG
 
-ColorTerminal kout(Terminal::STDOUT);
+Terminal kout(Terminal::STDOUT);
 Null_Stream debug;
 
 #endif // DEBUG

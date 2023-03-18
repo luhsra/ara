@@ -36,9 +36,9 @@ class Machine
 public:
 
     static void init(void) {
-        debug.setcolor(Color::MAGENTA, Color::BLACK);
+        //debug.setcolor(Color::MAGENTA, Color::BLACK);
         debug << "Machine::init()" << endl;
-        debug.setcolor(Color::WHITE, Color::BLACK);
+        //debug.setcolor(Color::WHITE, Color::BLACK);
 		arch::irq.disable_interrupts();
     }
 
@@ -64,7 +64,7 @@ public:
 	 * Used for runtime asserts.
 	 */
 	static forceinline void debug_trap(void) {
-        debug.setcolor(Color::MAGENTA, Color::BLACK);
+        //debug.setcolor(Color::MAGENTA, Color::BLACK);
         debug << "Machine::debug_trap !" << endl;
 		exit(EXIT_FAILURE);
 	}
@@ -115,9 +115,9 @@ public:
 	 * The static ACPI values used work for QEMU and Bochs but probably not on real PCs!
 	 */
 	static forceinline void shutdown(void) {
-        debug.setcolor(Color::MAGENTA, Color::BLACK);
+        //debug.setcolor(Color::MAGENTA, Color::BLACK);
         debug << ("Machine::shutdown!\n");
-        debug.setcolor(Color::WHITE, Color::BLACK);
+        //debug.setcolor(Color::WHITE, Color::BLACK);
 		// No unreachable() here, otherwise the generator will be unhappy!
 
 		// The call to exit is required, because there might be a ressources

@@ -8,14 +8,13 @@
 #include <cstring>
 #include <pthread.h>
 
-class BufferedTerminal : public ColorTerminal {
+class BufferedTerminal : public Terminal {
 	char buf[128] = {0};
 	int idx = 0;
 	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-    char m_colorcode[sizeof("\033[0;3X;4Ym")]; //! set color in terminal: 3X = foreground, 4Y = background
 
 public:
-    BufferedTerminal(Terminal::port_t port = STDOUT) : ColorTerminal(port) {};
+    BufferedTerminal(Terminal::port_t port = STDOUT) : Terminal(port) {};
 
 	void clear(){};
 

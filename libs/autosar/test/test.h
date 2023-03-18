@@ -116,9 +116,9 @@ static forceinline void test_start()
 	experiment_number++;
 	positive_tests = 0;
 
-	kout.setcolor(Color::YELLOW, Color::BLACK);
+	//kout.setcolor(Color::YELLOW, Color::BLACK);
 	kout << "Test " << (unsigned) experiment_number << ": " << endl;
-	kout.setcolor(Color::WHITE, Color::BLACK);
+	//kout.setcolor(Color::WHITE, Color::BLACK);
 }
 
 static forceinline void test_start_check() {
@@ -129,15 +129,15 @@ static forceinline void test_start_check() {
 static forceinline void test_equality(expected_value_t real_value, const expected_value_t expected_value, bool equal)
 {
 	if((equal && real_value == expected_value) || (!equal && real_value != expected_value)) {
-		kout.setcolor(Color::GREEN, Color::BLACK);
+		//kout.setcolor(Color::GREEN, Color::BLACK);
 		kout << "  +" << endl;
-		kout.setcolor(Color::WHITE, Color::BLACK);
+		//kout.setcolor(Color::WHITE, Color::BLACK);
 
 		positive_tests++;
 	} else {
-		kout.setcolor(Color::RED, Color::BLACK);
+		//kout.setcolor(Color::RED, Color::BLACK);
 		kout << "  -[" << real_value << (equal ? " != " : " == ") << expected_value << "]" << endl;
-		kout.setcolor(Color::WHITE, Color::BLACK);
+		//kout.setcolor(Color::WHITE, Color::BLACK);
 	}
 }
 
@@ -175,15 +175,15 @@ static forceinline void __test_positive_tests(int pos_tests, int sign) {
 		|| (sign == 0 && delta == 0)
 		|| (sign > 0 && delta > 0)) {
 
-		kout.setcolor(Color::GREEN, Color::BLACK);
+		//kout.setcolor(Color::GREEN, Color::BLACK);
 		kout << "SUCCESS " << 1 << " " << (experiment_number * 4) << ":" << experiment_number << endl;
-		kout.setcolor(Color::WHITE, Color::BLACK);
+		//kout.setcolor(Color::WHITE, Color::BLACK);
 	} else {
 		global_all_ok = false;
 
-		kout.setcolor(Color::RED, Color::BLACK);
+		//kout.setcolor(Color::RED, Color::BLACK);
 		kout << "FAIL " << experiment_number << "(positive_tests = " << positive_tests << ")" << endl;
-		kout.setcolor(Color::WHITE, Color::BLACK);
+		//kout.setcolor(Color::WHITE, Color::BLACK);
 	}
 
 	if(interrupts_suspended) Machine::enable_interrupts();
@@ -268,9 +268,9 @@ static forceinline void test_init(void) {
 
 static forceinline void test_main(void)
 {
-	debug.setcolor(Color::YELLOW, Color::BLACK);
+	//debug.setcolor(Color::YELLOW, Color::BLACK);
 	debug << "AUTOSAR start" << endl;
-	debug.setcolor(Color::WHITE, Color::BLACK);
+	//debug.setcolor(Color::WHITE, Color::BLACK);
 
 	// prepare tests
 	test_init();
@@ -282,7 +282,7 @@ static forceinline void test_main(void)
 	/* test_finish(); */
 
 	/* // halt system */
-	/* debug.setcolor(Color::RED, Color::WHITE); */
+	/* //debug.setcolor(Color::RED, Color::WHITE); */
 	/* debug << "dOSEK halt" << endl; */
 }
 
