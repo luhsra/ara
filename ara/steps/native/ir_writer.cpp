@@ -37,9 +37,9 @@ namespace ara::step {
 		} else {
 			std::error_code error;
 			std::filesystem::path parent_path = std::filesystem::path(fn).parent_path();
-			// check if path exists first to circumvent bug in C++17 create_directories()
+			// check for directory first to circumvent bug in C++17 create_directories()
 			// issue LWG 2935 (https://cplusplus.github.io/LWG/issue2935)
-			if (!std::filesystem::exists(parent_path)) {
+			if (std::filesystem::is_directory(parent_path)) {
 				std::filesystem::create_directories(parent_path);
 			}
 			out_file = std::make_unique<llvm::raw_fd_ostream>(fn, error, llvm::sys::fs::OpenFlags::OF_Text);
