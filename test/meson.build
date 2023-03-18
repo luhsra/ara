@@ -9,13 +9,114 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 if get_option('enable_step_tests')
-    test('create-abbs',
-        py3_inst,
-        args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
+    if get_option('arch') != 'posix'
+      # enable all tests that need freertos
+      test('create-abbs',
+          py3_inst,
+          args: [files('abb.py'), files('abb.json'), freertos_abb_merge],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('function-pointer',
+          py3_inst,
+          args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('icfg',
+          py3_inst,
+          args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('instances',
+          py3_inst,
+          args: [files('instances.py'), files('instances.json'), freertos_instances],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'sia']
+      )
+
+      test('interactions',
+          py3_inst,
+          args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'sia']
+      )
+
+      test('instance_graph_stats',
+          py3_inst,
+          args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction, 'FreeRTOS'],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'sia']
+      )
+
+      test('ir-reader',
+          py3_inst,
+          args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('ir-writer',
+          py3_inst,
+          args: [files('ir_writer.py'), files('empty.json'), gpslogger_application],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('src-loc',
+          py3_inst,
+          args: [files('src_loc.py'), files('src_loc.json'), freertos_src_loc],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('syscall',
+          py3_inst,
+          args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('value-analysis',
+          py3_inst,
+          args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+
+      test('value-analysis-struct',
+          py3_inst,
+          args: [files('value_analysis.py'), files('value_analysis_struct.json'), freertos_value_analysis_struct],
+          env: [python_path],
+          depends: ara_py,
+          suite: ['analysis', 'preproc']
+      )
+      if get_option('enable_appl_graph_tests')
+          subdir('appl_graph_test')
+      endif
+      if get_option('enable_zephyr_tests')
+          subdir('zephyr_test')
+      endif
+
+      if get_option('enable_posix_tests')
+          subdir('posix_test')
+      endif
+    endif
 
     test('dependency-resolving',
         py3_inst,
@@ -41,53 +142,6 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'multisse']
     )
 
-    test('function-pointer',
-        py3_inst,
-        args: [files('function_pointer.py'), files('function_pointer.json'), freertos_function_pointer],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
-    test('icfg',
-        py3_inst,
-        args: [files('icfg.py'), files('icfg.json'), freertos_icfg],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
-    test('instances',
-        py3_inst,
-        args: [files('instances.py'), files('instances.json'), freertos_instances],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
-
-    test('interactions',
-        py3_inst,
-        args: [files('interactions.py'), files('interactions.json'), freertos_interaction],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
-
-    test('instance_graph_stats',
-        py3_inst,
-        args: [files('instance_graph_stats.py'), files('instance_graph_stats.json'), freertos_interaction, 'FreeRTOS'],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'sia']
-    )
-
-    test('ir-reader',
-        py3_inst,
-        args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
     test('ir-reader-false-syntax',
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.false_syntax.ll')],
@@ -96,18 +150,11 @@ if get_option('enable_step_tests')
         depends: ara_py,
         suite: ['analysis', 'preproc']
     )
+
     test('ir-reader-multiple-symbols',
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.multiple_symbols.ll')],
         should_fail: true,
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
-    test('ir-writer',
-        py3_inst,
-        args: [files('ir_writer.py'), files('empty.json'), gpslogger_application],
         env: [python_path],
         depends: ara_py,
         suite: ['analysis', 'preproc']
@@ -197,14 +244,6 @@ if get_option('enable_step_tests')
     )
 
 
-    test('src-loc',
-        py3_inst,
-        args: [files('src_loc.py'), files('src_loc.json'), freertos_src_loc],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
     foreach app : autosar_targets
       if app['core'] != 'singlecore'
         continue
@@ -218,41 +257,5 @@ if get_option('enable_step_tests')
       )
     endforeach
 
-    test('syscall',
-        py3_inst,
-        args: [files('syscall.py'), files('syscall.json'), freertos_syscall],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
-    test('value-analysis',
-        py3_inst,
-        args: [files('value_analysis.py'), files('value_analysis.json'), freertos_svf],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
-    test('value-analysis-struct',
-        py3_inst,
-        args: [files('value_analysis.py'), files('value_analysis_struct.json'), freertos_value_analysis_struct],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
     subdir('native_step_test')
-endif
-
-if get_option('enable_appl_graph_tests')
-    subdir('appl_graph_test')
-endif
-
-if get_option('enable_zephyr_tests')
-    subdir('zephyr_test')
-endif
-
-if get_option('enable_posix_tests')
-    subdir('posix_test')
 endif

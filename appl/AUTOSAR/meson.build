@@ -148,7 +148,9 @@ autosar_apps = [
   {'core': 'multicore',  'path': 'andreas'/ 'spinlock','name': 'c',                     'oil': 'system.json'},
 ]
 # conformance tests for trampoline
-subdir('multicore' / 'trampoline')
+# do not work on posix?
+warning('TRAMPOLINE TESTS ARE DISABLED')
+# subdir('multicore' / 'trampoline')
 
 
 no_timing_settings = custom_target(

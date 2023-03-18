@@ -242,8 +242,8 @@ if get_option('arch') == 'posix'
     subdir('appl' / 'AUTOSAR')
 else
     subdir('appl')
-    subdir('test')
 endif
+subdir('test')
 
 # application tests
 # tests that aren't actually tests, but a way to store ara invocations with a given set of arguments
