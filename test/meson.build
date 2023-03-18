@@ -281,11 +281,6 @@ if get_option('enable_step_tests')
         # filter supported tests
         if app['path'] in supported
 
-          # TODO fix these test cases
-          if app['full_name'] == 'autosar_multicore_andreas_spinlock_b'
-            continue
-          endif
-
           test('autosar_generator_' + app['full_name'],
               py3_inst,
               args: [files('autosar_generator.py'), app['app_image']],

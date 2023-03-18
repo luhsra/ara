@@ -7,6 +7,7 @@ DeclareTask(T10);
 DeclareTask(T11);
 
 DeclareSpinlock(S1);
+DeclareSpinlock(S2);
 
 void start()
 {
@@ -24,35 +25,40 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
     GetSpinlock(S1);
-    ActivateTask(T01); // deadlock
+    test_trace('0');
+    ActivateTask(T01);
     ReleaseSpinlock(S1);
     TerminateTask();
 }
 
 TASK(T01) {
-	GetSpinlock(S1);
+	GetSpinlock(S2);
     test_trace('1');
 	ActivateTask(T10);
-	ReleaseSpinlock(S1);
+	ReleaseSpinlock(S2);
     TerminateTask();
 }
 
 TASK(T10) {
 	GetSpinlock(S1);
     test_trace('2');
-    ActivateTask(T11); // deadlock
+    ActivateTask(T11);
 	ReleaseSpinlock(S1);
     TerminateTask();
 }
 
 TASK(T11) {
-	GetSpinlock(S1);
+	GetSpinlock(S2);
     test_trace('3');
-	GetSpinlock(S1);
+
+    // second GetSpinlock must fail
+	GetSpinlock(S2);
+
+	ReleaseSpinlock(S2);
     ShutdownAllCores(E_OK);
 }
 
-void ShutdownHook(StatusType status) {
+void ErrorHook(StatusType status) {
     (void) status;
     /* The testcase has finished, check the output */
     if (GetCoreID() == OS_CORE_ID_1) {
