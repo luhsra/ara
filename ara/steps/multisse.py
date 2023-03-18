@@ -458,7 +458,6 @@ class MultiSSE(Step):
             if current_core not in self._mstg.sync_point_map[v]:
                 not_core[v] = True
 
-        sp_follow = mstg.edge_type(MSTType.follow_sync, MSTType.sy2sy)
         follow_sync = mstg.edge_type(MSTType.follow_sync)
         # self._log.debug(f"FR: {int(sp)}, {current_core}, {affected_cores}")
 
@@ -489,20 +488,19 @@ class MultiSSE(Step):
             for n in chain.from_iterable(map(lambda x: x.in_neighbors(),
                                              entry_sp.in_neighbors())):
                 assert mstg.vp.type[n] == StateType.exit_sync
-                if sp_follow.edge(n, entry_sp):
-                    # it may be that to SPs are connected via a metastate but
-                    # do not have a direct follow_edge between them but several
-                    # follow edges that synchronize other cores. Check for a
-                    # path between them under this conditions.
-                    if not follow_sync.edge(n, entry_sp):
-                        lc = not_core.copy()
-                        lc[entry_sp] = True
-                        lc[n] = True
-                        nc = graph_tool.GraphView(sp_graph, vfilt=lc)
-                        if not has_path(nc, n, entry_sp):
-                            continue
-                    succs[n].add(cur_sp)
-                    stack.append(n)
+                # it may be that to SPs are connected via a metastate but
+                # do not have a direct follow_edge between them but several
+                # follow edges that synchronize other cores. Check for a
+                # path between them under this conditions.
+                if not follow_sync.edge(n, entry_sp):
+                    lc = not_core.copy()
+                    lc[entry_sp] = True
+                    lc[n] = True
+                    nc = graph_tool.GraphView(sp_graph, vfilt=lc)
+                    if not has_path(nc, n, entry_sp):
+                        continue
+                succs[n].add(cur_sp)
+                stack.append(n)
 
         # self._log.debug(f"FR: roots {[int(x) for x in root_sps]}")
         # self._log.debug(f"FR: succs {sorted([(int(x), [int(z) for z in y]) for x, y in succs.items()])}")
