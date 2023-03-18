@@ -24,7 +24,7 @@ void ITimer::init() {
     arch::irq.enable(SIGALRM);
 
     // generate signal @ 1 kHz
-    set_periodic(1000); 
+    set_periodic(1000);
 }
 
 

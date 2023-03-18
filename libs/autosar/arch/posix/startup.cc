@@ -6,6 +6,7 @@
 
 #include "itimer.h"
 #include "dispatch.h"
+#include <pthread.h>
 
 /** Initialisation stub for generic startup code */
 extern "C" void init_generic();

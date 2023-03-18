@@ -22,7 +22,7 @@ extern BufferedTerminal debug_core_arr[MAX_CPUS];
 
 // not debugging: print kout on stdout, ignore debug
 #include "colorterminal.h"
-extern ColorTerminal kout;
+extern Terminal kout;
 extern Null_Stream debug;
 
 #define debug_core debug

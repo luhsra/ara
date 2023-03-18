@@ -15,6 +15,7 @@ namespace arch {
 
 /** \brief Request the reschedule AST to run after all other interrupts compelete. */
 forceinline void request_reschedule_ast() {
+    debug_core << "request AST" << endl;
 	irq.request_ast();
     return;
 }

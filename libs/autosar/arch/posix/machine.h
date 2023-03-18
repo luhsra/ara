@@ -134,7 +134,7 @@ public:
 	static forceinline void trigger_interrupt(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
 		arch::irq.trigger_interrupt(irq_, cpuid, sync);
 	}
-	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = false) {
+	static forceinline void trigger_interrupt_from_user(uint8_t irq_, uint8_t cpuid = 0, bool sync = true) {
 		arch::irq.trigger_interrupt(irq_, cpuid, sync);
 	}
 
