@@ -116,6 +116,7 @@ class Task(AUTOSARInstance, ControlInstance):
 class TaskContext(ControlContext):
     received_events: int = 0
     waited_events: int = 0
+    in_critical_section: bool = False
 
     def __hash__(self):
         return hash(("TaskContext",
@@ -793,6 +794,7 @@ class AUTOSAR(OSBase):
         # just go to the next block but set the lock
         lock_ctx.on_hold = True
         lock_ctx.held_by = cur_ctl
+        state.context[cur_ctl].in_critical_section = True
         set_next_abb(state, cpu_id)
         return state
 
@@ -849,6 +851,7 @@ class AUTOSAR(OSBase):
         lock_ctx.wait_for = []
         lock_ctx.on_hold = False
         lock_ctx.held_by = None
+        state.context[cur_ctl].in_critical_section = False
 
         # the current CPU just follows the control flow
         set_next_abb(state, cpu_id)
@@ -1009,11 +1012,8 @@ class AUTOSAR(OSBase):
         assert isinstance(cur_task, Task), "TerminateTask must be called in a task"
 
         # check if we are holding a spinlock
-        for o_lock_v, o_lock in state.instances.get(Spinlock):
-            if o_lock in state.context:
-                o_ctx = state.context[o_lock]
-                if o_ctx.on_hold and o_ctx.held_by == cur_task:
-                    return state
+        if state.context[cur_task].in_critical_section:
+            return state
 
         state.context[cur_task] = TaskContext(status=TaskStatus.suspended,
                                               abb=state.cfg.get_entry_abb(cur_task.function),
@@ -1042,11 +1042,8 @@ class AUTOSAR(OSBase):
 
         cur_task = state.cur_control_inst(cpu_id)
         # check if we are holding a spinlock
-        for o_lock_v, o_lock in state.instances.get(Spinlock):
-            if o_lock in state.context:
-                o_ctx = state.context[o_lock]
-                if o_ctx.on_hold and o_ctx.held_by == cur_task:
-                    return state
+        if state.context[cur_task].in_critical_section:
+            return state
 
         if args.event_mask & cur_ctx.received_events == 0:
             cur_ctx.status = TaskStatus.blocked
