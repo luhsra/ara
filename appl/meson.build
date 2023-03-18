@@ -272,16 +272,6 @@ foreach app : ir_apps + hw_apps
             )
 endforeach
 
-# gpslogger is special
-subdir('FreeRTOS/GPSLogger')
-freertos_targets += gpslogger_application
-
-subdir('FreeRTOS/SmartPlug')
-freertos_targets += smartplug_targets
-
-subdir('FreeRTOS/Librepilot')
-freertos_targets += librepilot_application
-
 freertos_examples = run_target('freertos-examples',
                                command: nop,
                                depends: freertos_targets)
@@ -317,72 +307,10 @@ osek_examples = run_target('osek-examples',
 # AUTOSAR examples
 subdir('AUTOSAR')
 
-
-# Zephyr samples
-subdir('Zephyr')
-
-zephyr_examples = alias_target('zephyr_examples', zephyr_targets)
-
-run_target('z_clean',
-    command: ['rm', '-rf', join_paths(meson.current_build_dir(), 'Zephyr')])
-
 examples = run_target('examples',
                       command: nop,
-                      depends: [osek_targets, freertos_targets, zephyr_targets])
+                      depends: [osek_targets, freertos_targets])
 
-
-# versuchung experiments
-librepilot_settings = files('librepilot_experiment_settings.json')
-zephyr_settings = files('zephyr_experiment_settings.json')
-posix_settings = files('posix_experiment_settings.json')
-
-run_target('gpslogger_instance_exp',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir', gpslogger_application, '--os=FreeRTOS'],
-    env: [python_path],
-    depends: ara_py
-)
-
-run_target('librepilot_instance_exp',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir', librepilot_application, '--os=FreeRTOS',
-              '--step_settings', librepilot_settings],
-    env: [python_path],
-    depends: ara_py
-)
-
-run_target('zephyr_app_kernel_instance_exp',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v', '-v',
-              '--llvm_ir', zephyr_app_kernel, '--os=ZEPHYR',
-              '--step_settings', zephyr_settings],
-    env: [python_path],
-    depends: ara_py
-)
-
-run_target('zephyr_sys_kernel_instance_exp',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir', zephyr_sys_kernel, '--os=ZEPHYR',
-              '--step_settings', zephyr_settings],
-    env: [python_path],
-    depends: ara_py
-)
-
-# TODO: create target for libmicrohttpd and instance graph stats llvm ir files
-run_target('libmicrohttpd_mod_instance_exp',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir=appl/POSIX/microhttpd_fileserver_dirs.ll', '--os=POSIX',
-              '--step_settings', posix_settings],
-    env: [python_path],
-    depends: ara_py
-)
-
-run_target('libmicrohttpd_orig_instance_exp',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir=appl/POSIX/microhttpd_fileserver_dirs_orig.ll', '--os=POSIX',
-              '--step_settings', posix_settings],
-    env: [python_path],
-    depends: ara_py
-)
 
 i4copter = autosar_singlecore_complex_isorc
 run_target('i4copter_instance_exp',
@@ -403,15 +331,3 @@ run_target('i4copter_sse_exp',
     env: [python_path],
     depends: ara_py
 )
-
-# simply for testing purpose
-run_target('posix_instance_exp_test',
-    command: [py3_inst, InstanceGraphExperiment, '--title=ARA_Instance_Graph_Experiment', '-v',
-              '--llvm_ir=appl/POSIX/instance_graph_stats.ll', '--os=POSIX',
-              '--step_settings', posix_settings],
-    env: [python_path],
-    depends: ara_py
-)
-
-
-subdir('POSIX')

@@ -81,13 +81,6 @@ if get_option('enable_step_tests')
         suite: ['analysis', 'sia']
     )
 
-    test('ir-reader',
-        py3_inst,
-        args: [files('ir_reader.py'), files('empty.json'), gpslogger_application],
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
     test('ir-reader-false-syntax',
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.false_syntax.ll')],
@@ -100,14 +93,6 @@ if get_option('enable_step_tests')
         py3_inst,
         args: [files('ir_reader.py'), files('empty.json'), files('ir_reader.multiple_symbols.ll')],
         should_fail: true,
-        env: [python_path],
-        depends: ara_py,
-        suite: ['analysis', 'preproc']
-    )
-
-    test('ir-writer',
-        py3_inst,
-        args: [files('ir_writer.py'), files('empty.json'), gpslogger_application],
         env: [python_path],
         depends: ara_py,
         suite: ['analysis', 'preproc']
@@ -243,16 +228,4 @@ if get_option('enable_step_tests')
     )
 
     subdir('native_step_test')
-endif
-
-if get_option('enable_appl_graph_tests')
-    subdir('appl_graph_test')
-endif
-
-if get_option('enable_zephyr_tests')
-    subdir('zephyr_test')
-endif
-
-if get_option('enable_posix_tests')
-    subdir('posix_test')
 endif

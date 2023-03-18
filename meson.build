@@ -280,30 +280,6 @@ if get_option('enable_toplevel_tests')
       timeout: 30
     )
 
-    # OSPERT tests
-    posix_settings = files('settings' / 'posix_instance_graph.json')
-    test('posix_ospert',
-        py3_inst,
-        args: [ara_py, posix_ospert_2022_example,
-                '--os', 'POSIX',
-                '-v',
-                '--step-settings', posix_settings],
-        suite: 'toplevel',
-        timeout: 90
-    )
-
-    if get_option('enable_posix_toplevel_tests')
-        test('microhttpd_fileserver_dirs',
-            py3_inst,
-            args: [ara_py, posix_microhttpd_fileserver_dirs_musl,
-                    '--os', 'POSIX',
-                    '-v',
-                    '--step-settings', posix_settings],
-            suite: 'toplevel',
-            timeout: 14400
-        )
-    endif
-
     test('cfg_pic',
        py3_inst,
        args: [ara_py, freertos_cfg_pic,
@@ -344,25 +320,4 @@ if get_option('enable_toplevel_tests')
       timeout: 30
     )
 
-    librepilot_instance_graph_settings = files(settings / 'ina_librepilot.json')
-    librepilot_manual_corrections = files('appl' / 'FreeRTOS' / 'Librepilot' / 'instance_corrections.json')
-    test('ina-librepilot',
-       py3_inst,
-       args: [ara_py, librepilot_application,
-              '--os', 'FreeRTOS',
-              '--log-level', 'info',
-              '--step-settings', librepilot_instance_graph_settings,
-              '--manual-corrections', librepilot_manual_corrections],
-       suite: 'toplevel',
-       timeout: 0
-    )
-
-    test('ina-gpslogger',
-       py3_inst,
-       args: [ara_py, gpslogger_application,
-              '--log-level', 'info',
-              '--step-settings', files(settings /'ina_gpslogger.json')],
-       suite: 'toplevel',
-       timeout: 0
-    )
 endif
