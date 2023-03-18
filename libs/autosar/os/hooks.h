@@ -47,6 +47,11 @@ EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_PostTaskHook(void);
 
 #define PostTaskHook() __OS_HOOK_DEFINED_PostTaskHook(void)
 
+// called on failed systemcall
+EXTERN_C_DECL void __OS_HOOK_ErrorHook(StatusType);
+EXTERN_C_DECL inlinehint void __OS_HOOK_DEFINED_ErrorHook(StatusType);
+#define ErrorHook(status) __OS_HOOK_DEFINED_ErrorHook(status)
+
 /**
  * \brief Called on ShutdownOS
  */

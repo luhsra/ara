@@ -25,33 +25,30 @@ TEST_MAKE_OS_MAIN(start())
 
 TASK(T00) {
     GetSpinlock(S1);
+    test_trace('0');
+    WaitEvent(E1); // error hook because of lock
 
-    //WaitEvent(E1); // no reschedule because of lock
-    //debug_core << "WaitEvent here" << endl;
-    TerminateTask(); // no terminate bacause of lock
-    debug_core << "TerminateTask here" << endl;
-    ReleaseSpinlock(S1);
-
-    ShutdownAllCores(E_OK);
+    TerminateTask();
 }
 
 TASK(T01) {
+    test_trace('1');
     TerminateTask();
 }
 
 TASK(T10) {
+    test_trace('2');
     TerminateTask();
 }
 
 TASK(T11) {
+    test_trace('3');
     TerminateTask();
 }
 
-void ShutdownHook(StatusType status) {
+void ErrorHook(StatusType status) {
     (void) status;
     /* The testcase has finished, check the output */
-    if (GetCoreID() == OS_CORE_ID_1) {
-        test_trace_assert("0123");
-        test_finish();
-    }
+    test_trace_assert("0");
+    test_finish();
 }

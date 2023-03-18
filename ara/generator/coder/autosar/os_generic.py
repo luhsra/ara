@@ -24,7 +24,9 @@ class GenericOS(BaseCoder):
             userspace.add(Statement("debug_core << __FUNCTION__ << \" should never be called\" << endl"))
             userspace.add(Statement("AUTOSAR_ShutdownAllCores(E_NOT_OK)"))
             return
-        userspace.add(Statement("StatusType result = E_OK"))
+        ret_type = self.syscall_rules.AUTOSAR_SYSCALLS["AUTOSAR_"+syscall_name][0]
+        if ret_type != "void":
+            userspace.add(Statement("StatusType result = E_OK"))
 
         kernelspace = self.arch_rules.generate_kernelspace(userspace, abb, args)
 
@@ -36,7 +38,12 @@ class GenericOS(BaseCoder):
 
         kernelspace.pre_hook.add(Statement("debug_core << __FUNCTION__ << endl"))
 
-        if self.syscall_rules.AUTOSAR_SYSCALLS["AUTOSAR_"+syscall_name][0] != 'void':
+
+        if ret_type != "void":
+            check_error = If ("result != E_OK")
+            check_error.add(Statement("CALL_HOOK(ErrorHook, result)"))
+            kernelspace.post_hook.add(check_error)
+
             userspace.return_statement("result")
 
     def generate_data_objects(self):
@@ -223,7 +230,7 @@ class GenericOS(BaseCoder):
     def generate_hooks(self):
         hooks = [("PreIdleHook",[]),("FaultDetectedHook",["DetectedFault_t","uint32_t","uint32_t"]),
                  ("StartupHook", []), ("PreTaskHook", []), ("PostTaskHook", []),
-                 ("ShutdownHook", ["StatusType"])]
+                 ("ShutdownHook", ["StatusType"]), ("ErrorHook", ["StatusType"])]
         for hook,args in hooks:
             hook_function = Function("__OS_HOOK_" + hook, "void", args)
             self.generator.source_file.function_manager.add(hook_function)
@@ -245,10 +252,8 @@ class GenericOS(BaseCoder):
                 if hook == "PostTaskHook":
                     logging.warning("Be aware that PostTaskHooks are not properly implemented")
 
-            if hook == "FaultDetectedHook":
-                hook_function.add(Statement("debug_core << \"FaultDetectedHook \" << arg0<< endl"))
-                self.call(hook_function, "ShutdownMachine",
-                                   "void", [])
-                self.call(hook_function, "Machine::unreachable",
-                                   "void", [])
+            if hook == "FaultDetectedHook" or hook == "ErrorHook":
+                hook_function.add(Statement(f"debug_core << \"{hook} \" << arg0 << endl"))
+                self.call(hook_function, "ShutdownMachine", "void", [])
+                self.call(hook_function, "Machine::unreachable", "void", [])
 

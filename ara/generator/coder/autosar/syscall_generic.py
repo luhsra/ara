@@ -208,8 +208,8 @@ class GenericSystemCalls(BaseCoder):
 
     def TerminateTask(self, syscall, userspace, kernelspace):
         self.call(kernelspace, "scheduler_["+str(userspace.calling_task.cpu_id)+"].TerminateTask_impl",
-                           "void",
-                           [self.task_desc(userspace.calling_task)])
+                           "StatusType",
+                           [self.task_desc(userspace.calling_task)], name="result")
 
     def ActivateTask(self, syscall, userspace, kernelspace):
         if userspace.is_isr:
@@ -255,10 +255,10 @@ class GenericSystemCalls(BaseCoder):
     def WaitEvent(self, syscall, userspace, kernelspace):
         self.call(kernelspace,
                            "scheduler_["+str(userspace.calling_task.cpu_id)+"].WaitEvent_impl",
-                           "void",
+                           "StatusType",
                            [self.task_desc(userspace.calling_task),
                             str(kernelspace.arguments().event_mask) # TODO combine_event_masks ?
-                           ])
+                           ], name = "result")
 
     def ClearEvent(self, syscall, userspace, kernelspace):
         self.call(kernelspace,

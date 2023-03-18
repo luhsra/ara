@@ -46,23 +46,19 @@ struct Scheduler {
         Schedule_impl(from_interrupt);
     }
 
-    forceinline void ChainTask_impl(const Task &from, const Task &to) {
-		if (tlist.num_spinlock(from.id)) {
-			debug_core << "Task "<< (int) from.id <<" holds locks" << endl;
-			return;
-		}
-		SetSuspended_impl(from);
+    /*forceinline StatusType ChainTask_impl(const Task &from, const Task &to) {
 		SetReady_impl(to);
-        Schedule_impl();
-    }
+		return TerminateTask_impl(from);
+    }*/
 
-    forceinline void TerminateTask_impl(const Task &from) {
+    forceinline StatusType TerminateTask_impl(const Task &from) {
 		if (tlist.num_spinlock(from.id)) {
-			debug_core << "Task "<< (int) from.id <<" holds locks" << endl;
-			return;
+			debug_core << "Error: Task "<< (int) from.id <<" holds locks" << endl;
+			return E_NOT_OK;
 		}
 		SetSuspended_impl(from);
 		Schedule_impl();
+		return E_OK;
     }
 
     forceinline void GetResource_impl(const Task &current_task, const Task::prio_t new_prio) {
@@ -81,13 +77,14 @@ struct Scheduler {
 		Schedule_impl();
 	}
 
-	forceinline void WaitEvent_impl(const Task &current_task, const int event_mask) {
+	forceinline StatusType WaitEvent_impl(const Task &current_task, const int event_mask) {
 		if (tlist.num_spinlock(current_task.id)) {
-			debug_core << "Task "<< (int) current_task.id <<" holds locks" << endl;
-			return;
+			debug_core << "Error: Task "<< (int) current_task.id <<" holds locks" << endl;
+			return E_NOT_OK;
 		}
 		tlist.wait_events(current_task.id, event_mask);
 		Schedule_impl();
+		return E_OK;
 	}
 
 	forceinline void ClearEvent_impl(const Task &current_task, const int event_mask) {
