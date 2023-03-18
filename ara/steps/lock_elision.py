@@ -10,9 +10,15 @@ from ara.os.os_base import ExecState
 from ara.graph import MSTType
 from .step import Step
 
+from .option import Option, Bool
 
 class LockElision(Step):
     """Detect lock usages within the SSTG that are not necessary."""
+
+    fail_on_deadlock = Option(name="fail_on_deadlock",
+                              help="Step will fail if at least one deadlock is detected",
+                              ty=Bool(),
+                              default_value=False)
 
     # Operating system specific API to get locks
     # This is a list of tuples. One tuple is OS specific.
@@ -95,9 +101,11 @@ class LockElision(Step):
             s = {True: "will spin", False: "won't spin"}[res['spins']]
             self._log.warn(f"State {res['state']} {s}")
 
-        # TODO add option
         if deadlock:
-            self._fail(f"Deadlock detected {deadlock}")
+            if self.fail_on_deadlock.get():
+                self._fail(f"Deadlock detected {deadlock}")
+            else:
+                self._log.warn(f"Deadlock detected {deadlock}")
 
         self._set_step_data({'spin_states': lock_count,
                              'DEADLOCK': deadlock,

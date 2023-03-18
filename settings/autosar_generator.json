@@ -1,5 +1,6 @@
 {
 	"steps": [
+		"LockElision",
 		"AutosarGeneratorIR",
 		"IRWriter",
 		"Generator"
@@ -22,5 +23,8 @@
 	"MultiSSE" : {
 		"log_level": "debug",
 		"dump": true
+	},
+	"LockElision": {
+		"fail_on_deadlock": true
 	}
 }
