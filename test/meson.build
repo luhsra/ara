@@ -257,5 +257,51 @@ if get_option('enable_step_tests')
       )
     endforeach
 
+    # system runtime test for generator
+    if get_option('arch') == 'posix'
+      supported = [
+        'bcc1/alarm1',
+        'bcc1/alarm2',
+        'bcc1/alarm3',
+        'bcc1/complex1',
+        'bcc1/complex2',
+        'bcc1/isr2',
+        'bcc1/resource1',
+        'bcc1/resource2',
+        'bcc1/sse1',
+        'bcc1/task1',
+        'bcc1/task2',
+        'ecc1/bt1',
+        'ecc1/event1',
+        'ecc1/eventisr1',
+        'andreas/ipi',
+        'andreas/spinlock',
+      ]
+      foreach app : autosar_targets
+        # filter supported tests
+        if app['path'] in supported
+
+          # TODO fix these test cases
+          if app['full_name'] == 'autosar_multicore_andreas_spinlock_b'
+            continue
+          endif
+          if app['full_name'] == 'autosar_singlecore_bcc1_sse1_c'
+            continue
+          endif
+          if app['full_name'] == 'autosar_singlecore_bcc1_resource1_l'
+            continue
+          endif
+
+          test('autosar_generator_' + app['full_name'],
+              py3_inst,
+              args: [files('autosar_generator.py'), app['app_image']],
+              env: [python_path],
+              depends: ara_py,
+              suite: ['autosar_generator']
+          )
+        endif
+      endforeach
+    endif
+
     subdir('native_step_test')
 endif

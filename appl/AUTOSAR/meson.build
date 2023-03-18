@@ -228,7 +228,7 @@ foreach app : autosar_apps
 
     app += {'autosar': autosar}
 
-    app_link = custom_target(full_name + '_link',
+    app_image = custom_target(full_name + '_image',
                             input: [
                               app_ll_mod,
                               autosar,
@@ -244,7 +244,8 @@ foreach app : autosar_apps
                                       ld_flags +
                                       clang_flags)
 
-    run_target('run_' + full_name, command: [app_link])
+    app += {'app_image': app_image}
+    run_target('run_' + full_name, command: [app_image])
   endif
 
   # trace file for sse testing
