@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 instance_graph_test = files('instance_graph.py')
+instance_graph_stats = files('instance_graph_stats.py')
 
 if get_option('enable_step_tests')
     test('create-abbs',
