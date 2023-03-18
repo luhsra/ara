@@ -93,12 +93,12 @@
             "justMyCode": true
         },
         {
-            "name": "autosar_singlecore_bcc1_sse1_b",
+            "name": "autosar_singlecore_bcc1_sse1_c",
             "type": "python",
             "request": "launch",
             "program": "build/ara.py",
             "args": [
-                "build/appl/AUTOSAR/autosar_singlecore_bcc1_sse1_b.ll",
+                "build/appl/AUTOSAR/autosar_singlecore_bcc1_sse1_c.ll",
                 "--os=AUTOSAR",
                 "--oilfile=appl/AUTOSAR/singlecore/bcc1/sse1/system.json",
                 "--step-settings=settings/autosar_generator.json",
