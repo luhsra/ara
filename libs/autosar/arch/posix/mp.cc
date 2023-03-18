@@ -25,15 +25,7 @@ namespace arch
         (void) size_of_stack;
         pthread_t thread;
 
-        /* set CPU affinity to hardware_number */
-        pthread_attr_t attr;
-        cpu_set_t cpus;
-        CPU_ZERO(&cpus);
-           CPU_SET(hardware_number, &cpus);
-        pthread_attr_init(&attr);
-        pthread_attr_setaffinity_np(&attr, sizeof(cpu_set_t), &cpus);
-
-        int error = pthread_create(&thread, &attr, startup_function, &hardware_number);
+        int error = pthread_create(&thread, NULL, startup_function, &hardware_number);
         cpuid[hardware_number] = thread;
         pthread_detach(thread);
         return !error;
