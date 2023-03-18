@@ -13,9 +13,17 @@ extern "C" void init_generic();
 using namespace arch;
 
 //!< i386 specific startup code
-void arch_startup()
+extern "C" void arch_startup()
 {
     // global constructors habe been are already called before main.
+
+    /* set affinity to CPU 0*/
+    cpu_set_t cpuset;
+    pthread_t thread;
+    thread = pthread_self();
+    CPU_ZERO(&cpuset);
+    CPU_SET(0, &cpuset);
+    pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
 
     Machine::init();
 
@@ -28,24 +36,4 @@ void arch_startup()
 
     // Proceed to generic initialisation
     init_generic();
-}
-
-//!< POSIX startup obviously in "main"
-//!< Here, all constructors are already called.
-
-int main(int argc, char**argv){
-    (void) argc;
-    (void) argv;
-
-    /* set affinity to CPU 0*/
-    cpu_set_t cpuset;
-    pthread_t thread;
-    thread = pthread_self();
-    CPU_ZERO(&cpuset);
-    CPU_SET(0, &cpuset);
-    pthread_setaffinity_np(thread, sizeof(cpuset), &cpuset);
-
-
-    arch_startup();
-    return 0;
 }
