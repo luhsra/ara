@@ -21,8 +21,7 @@
 		"os": "autosar"
 	},
 	"MultiSSE" : {
-		"log_level": "debug",
-		"dump": true
+		"log_level": "debug"
 	},
 	"LockElision": {
 		"fail_on_deadlock": true
