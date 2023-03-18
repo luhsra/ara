@@ -39,7 +39,8 @@ namespace ara::step {
 		const llvm::Constant* initializer = global->getInitializer();
 		const llvm::StructType* init_type = llvm::dyn_cast_or_null<llvm::StructType>(initializer->getType());
 		// No type in initializer:
-		if (init_type == nullptr || init_type->getStructName().str().length() == 0) {
+		if (init_type == nullptr || init_type->isLiteral() // Literal structs never have names
+		    || init_type->getStructName().str().length() == 0) {
 			if (!static_case) {
 				this->fail("dynamic global does not have a typed initializer! Clang/LLVM is working differently");
 			}

@@ -103,7 +103,8 @@ namespace ara::step {
 					const llvm::StructType* init_type =
 					    llvm::dyn_cast_or_null<llvm::StructType>(initializer->getType());
 					// Detect static initializers: {{{0}}} overrides struct type name in LLVM initializer:
-					if (init_type == nullptr || init_type->getStructName().str().length() == 0) {
+					if (init_type == nullptr || init_type->isLiteral() // Literal structs never have names
+					    || init_type->getStructName().str().length() == 0) {
 						parser->second(*this);
 					}
 				}
